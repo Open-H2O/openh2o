@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""The methodology editor shows only the live method's field, and heads the
-banking levers as what they are (143-09, R-050, R-051).
+"""The methodology editor shows only the live method's field (143-09, R-050).
+
+148-02 removes R-051's "Banked surplus" section along with it (the bank /
+depreciation_rate / expiry_months levers it headed are gone): the floor step
+now shows only the floor.
 
 `seed_calculation_plan` gives the one plan/step chain the page reads;
 each test edits the precipitation step's own config to the method under
@@ -99,21 +102,14 @@ class TestOnlyTheLiveFieldRenders:
 
 
 @pytest.mark.django_db
-class TestBankedSurplusHeadsItsOwnLevers:
-    """R-051: 'Banked surplus' sits between Floor and Bank surplus, so a
-    reader can tell that carrying a surplus forward is not part of clamping
-    a number at zero."""
+class TestFloorStepHasOnlyTheFloor:
+    """148-02: the "Banked surplus" section (R-051) is gone: bank,
+    depreciation_rate and expiry_months were its only fields, and none of
+    them does anything any more, so the floor step shows only the floor."""
 
-    def test_banked_surplus_sits_between_floor_and_bank_surplus(self, seeded):
+    def test_no_banked_surplus_section_renders(self, seeded):
         body = _staff_client().get(reverse("accounting:methodology_settings")).content.decode()
-        floor_i = body.index("Floor (AF)")
-        heading_i = body.index("Banked surplus")
-        bank_i = body.index(">Bank surplus<")
-        assert floor_i < heading_i < bank_i
-
-    def test_the_sentence_under_the_head_names_what_the_settings_do(self, seeded):
-        body = _staff_client().get(reverse("accounting:methodology_settings")).content.decode()
-        assert (
-            "When the chain comes out below the floor, the difference is a "
-            "surplus."
-        ) in body
+        assert "Banked surplus" not in body
+        assert ">Bank surplus<" not in body
+        assert "Depreciation" not in body
+        assert "Expiry (months)" not in body

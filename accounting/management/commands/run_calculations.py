@@ -14,21 +14,20 @@ disposition "metered". Both the calculated row and the run are delete-then-inser
 (parcel, month) inside one transaction, so re-running is idempotent: running twice
 yields identical balances (no drift, no double-count).
 
-38-04 folds WaterCredit banking into this same per-parcel transaction. In a wet
-month the chain nets below the floor; clamp_floor surfaces that surplus and we
-DEPOSIT it as a WaterCredit. In a later deficit month we DRAW down available,
-non-expired credits (oldest first, each depreciated) to reduce the billable
-number — the drawn amount comes out of `final_af` BEFORE the single calculated
-row is written, and the draws themselves are recorded as WaterCreditDraw rows for
-lifecycle + audit. The credit offset folds into the one calculated row; it is NOT
-a separate ledger row (the spine stays the single source of truth).
+148-02: the rain bank is retired. In a wet month the chain nets below the
+floor; clamp_floor surfaces that surplus as `rain_surplus_af` on the run's
+breakdown: information about rain the crop did not need, not a credit.
+Nothing is deposited and nothing is drawn: `_resolve_leftover` writes no
+WaterCredit and no WaterCreditDraw, for any origin. It still CLEARS whatever
+a pre-148-02 run of the engine wrote for this parcel-period (its own
+WaterCreditDraw rows and its own `precip_surplus`-origin WaterCredit), so a
+re-run on a database an older engine wrote removes what it wrote for that
+month rather than leaving it stale. `final_af` passes through unchanged.
 
-Idempotency is preserved by clearing this period's banking state (this-period
-draws + this-period precip_surplus deposits) at the top of the transaction before
-re-depositing/re-drawing. Periods are processed FORWARD in time: a credit can
-only be drawn by a later period; re-running an older period after newer periods
-already drew the same credit is out of scope here (run by --period, one month at
-a time, in order).
+The WaterCredit / WaterCreditDraw tables and their `precip_surplus` choice
+stay on the model so an old database still loads. Nothing writes either
+table any more; year-end carry-over (`rollover_allocations`) writes
+`AllocationCarryover`, a different model.
 """
 
 import datetime as dt
@@ -38,9 +37,8 @@ from decimal import Decimal
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
-from django.db.models import Q, Sum
+from django.db.models import Q
 
-from accounting.banking_math import depreciated_value, is_expired, periods_between
 from accounting.calculation import evaluate_chain, plan_config_hash
 from accounting.carryover_math import water_year_of
 from accounting.locks import override
@@ -68,13 +66,6 @@ from parcels.models import Parcel, ParcelLedger
 FORCE_REASON = "--force on a finalized period"
 
 PERIOD_RE = re.compile(r"^\d{4}-\d{2}$")
-
-
-def _add_months(period, months):
-    """Return the 'YYYY-MM' string `months` after `period` (months may be 0)."""
-    year, month = int(period[:4]), int(period[5:7])
-    idx = year * 12 + (month - 1) + int(months)
-    return f"{idx // 12:04d}-{idx % 12 + 1:02d}"
 
 
 # ISS-052: incidental-recharge ledger rows the engine writes are tagged with this
@@ -118,49 +109,29 @@ def _parcel_pool_zone(parcel):
     return pz.zone if pz else None
 
 
-def _apply_banking(parcel, period, final_af, breakdown, *, routes_personal, commit):
-    """Deposit a wet-month surplus and draw credits down in a deficit month.
+def _resolve_leftover(parcel, period, final_af, breakdown, *, commit):
+    """Clear this period's legacy rain-bank state; `final_af` is not touched.
 
-    Reads the clamp_floor record from `breakdown` for the surplus + credit levers,
-    then (when commit) clears this period's banking state, deposits any surplus as
-    a WaterCredit, and draws available non-expired credits oldest-first to cover a
-    positive `final_af`, writing WaterCreditDraw rows. Returns
-    `(net_final_af, {"deposited", "drawn"})`.
+    148-02: the rain bank is retired. This writes NO WaterCredit and NO
+    WaterCreditDraw, for any origin: `bank` was the only lever that ever made
+    this function deposit or draw, and it is gone. What is left is cleanup:
+    when committing, delete whatever a pre-148-02 run of the engine wrote for
+    THIS parcel-period (its own WaterCreditDraw rows, and its own
+    `precip_surplus`-origin WaterCredit), so a re-run on a database an older
+    engine wrote removes what it wrote for that month instead of leaving it
+    stale beside a run that no longer explains it. `breakdown` is accepted for
+    call-site symmetry with the rest of the per-parcel pipeline; nothing in it
+    is read here any more (the rain figure lives in the clamp_floor detail as
+    `rain_surplus_af`, read directly by whatever wants to show it).
 
-    When commit is False (dry-run) it computes the SAME numbers but writes nothing
-    and clears nothing — the available-credit math excludes this-period draws, so
-    the preview matches what a real run (which clears them) would produce.
+    Returns `(final_af, {"deposited": Decimal("0"), "drawn": Decimal("0")})`;
+    the zero shape is kept so CalculationRun.banked_af / drawn_af, which stay
+    on the model for old runs, keep writing 0 for every new one exactly the
+    same way as any other absent term.
 
-    MUST be called inside the per-parcel transaction.atomic() block when committing.
+    MUST be called inside the per-parcel transaction.atomic() block when
+    committing.
     """
-    # 54-01: WaterCredit banking (deposit AND draw) is a CONJUNCTIVE-only
-    # mechanism — a personal, drawable credit only makes sense for a parcel with a
-    # well to pump it back. A no-well parcel banks/draws nothing: no undrawable
-    # credit is minted and delta_storage stays 0. (Flood-MAR basin recharge for a
-    # no-well parcel is handled separately at the write site and is unaffected.)
-    if not routes_personal:
-        return final_af, {"deposited": Decimal("0"), "drawn": Decimal("0")}
-
-    clamp = next(
-        (s for s in breakdown if s["step_type"] == "clamp_floor"), None
-    )
-    if clamp is None:
-        return final_af, {"deposited": Decimal("0"), "drawn": Decimal("0")}
-
-    detail = clamp["detail"]
-    bank = bool(detail.get("bank", False))
-    # ISS-052: bank ONLY the genuine rain-surplus portion of the below-floor
-    # amount. Surface water delivered beyond crop demand is deep-percolation
-    # recharge (written separately as a GW recharge row), NOT a drawable credit —
-    # banking it masked real summer pumping. Fall back to the old lumped
-    # surplus_af for breakdowns produced before the split existed.
-    surplus_af = Decimal(
-        str(detail.get("precip_surplus_af", detail.get("surplus_af", "0")))
-    )
-    rate = Decimal(str(detail.get("depreciation_rate", 0) or 0))
-    expiry_months = detail.get("expiry_months", None)
-
-    # (a) Clear this period's banking state so re-runs don't double-bank/draw.
     if commit:
         WaterCreditDraw.objects.filter(
             credit__parcel=parcel, draw_period=period
@@ -168,60 +139,7 @@ def _apply_banking(parcel, period, final_af, breakdown, *, routes_personal, comm
         WaterCredit.objects.filter(
             parcel=parcel, origin_period=period, origin="precip_surplus"
         ).delete()
-
-    # (c) Deposit a surplus as one immutable WaterCredit.
-    deposited = Decimal("0")
-    if bank and surplus_af > 0:
-        deposited = surplus_af.quantize(Decimal("0.0001"))
-        expires_period = (
-            _add_months(period, expiry_months) if expiry_months is not None else None
-        )
-        if commit:
-            WaterCredit.objects.create(
-                parcel=parcel,
-                origin_period=period,
-                amount_af=deposited,
-                origin="precip_surplus",
-                depreciation_rate=rate,
-                expires_period=expires_period,
-            )
-
-    # (d) Draw down available non-expired credits, oldest origin_period first.
-    drawn_total = Decimal("0")
-    if final_af > 0:
-        remaining = final_af
-        credits = WaterCredit.objects.filter(
-            parcel=parcel, origin_period__lte=period
-        ).order_by("origin_period", "id")
-        for credit in credits:
-            if remaining <= 0:
-                break
-            if is_expired(credit.expires_period, period):
-                continue
-            elapsed = periods_between(credit.origin_period, period)
-            gross = depreciated_value(
-                credit.amount_af, credit.depreciation_rate, elapsed
-            )
-            # available = depreciated value minus draws in STRICTLY EARLIER periods
-            # (this-period draws are excluded so clear-then-recompute is idempotent).
-            prior = credit.draws.filter(draw_period__lt=period).aggregate(
-                total=Sum("amount_af")
-            )["total"] or Decimal("0")
-            available = gross - prior
-            if available <= 0:
-                continue
-            draw = min(available, remaining).quantize(Decimal("0.0001"))
-            if draw <= 0:
-                continue
-            if commit:
-                WaterCreditDraw.objects.create(
-                    credit=credit, draw_period=period, amount_af=draw
-                )
-            drawn_total += draw
-            remaining -= draw
-        final_af = remaining
-
-    return final_af, {"deposited": deposited, "drawn": drawn_total}
+    return final_af, {"deposited": Decimal("0"), "drawn": Decimal("0")}
 
 
 def _persist_calculation_run(
@@ -310,7 +228,7 @@ def _persist_calculation_run(
 class Command(BaseCommand):
     help = (
         "Evaluate the active CalculationPlan and write one idempotent "
-        "`calculated` ledger row per parcel-month (with WaterCredit banking)."
+        "`calculated` ledger row per parcel-month."
     )
 
     def add_arguments(self, parser):
@@ -450,25 +368,6 @@ class Command(BaseCommand):
         plan_id = active_plan.id if active_plan else None
         plan_name = active_plan.name if active_plan else ""
 
-        # ISS-032: a clamp_floor configured with expiry_months <= 0 makes a
-        # just-banked credit expire the very month it is deposited
-        # (_add_months(period, 0) == period, and is_expired is `current >=
-        # expires`), silently destroying the surplus it was meant to carry
-        # forward. Reject it at config-validation time — before any row is
-        # written — the same way the finalized-period guard refuses up front.
-        if active_plan is not None:
-            for step in active_plan.steps.filter(
-                enabled=True, step_type="clamp_floor"
-            ):
-                expiry = (step.config or {}).get("expiry_months")
-                if expiry is not None and int(expiry) <= 0:
-                    raise CommandError(
-                        f"clamp_floor step '{step.label}' has expiry_months="
-                        f"{expiry}: a banked credit would expire the month it is "
-                        f"deposited. Use a positive month-count, or leave it blank "
-                        f"to never expire."
-                    )
-
         # GW water type for incidental-recharge rows (ISS-052); resolved once.
         gw_water_type, _ = WaterType.objects.get_or_create(
             code="GW", defaults={"name": "Groundwater"}
@@ -478,8 +377,6 @@ class Command(BaseCommand):
         unmet = 0
         metered = 0
         skipped_no_et = 0
-        banked = 0
-        drew = 0
         recharged = 0
         for parcel in parcels:
             is_metered = parcel.id in metered_row_ids
@@ -523,15 +420,10 @@ class Command(BaseCommand):
             )
 
             if dry_run:
-                net_af, info = _apply_banking(
-                    parcel, period, final_af, breakdown,
-                    routes_personal=routes_personal, commit=False,
+                net_af, info = _resolve_leftover(
+                    parcel, period, final_af, breakdown, commit=False,
                 )
                 extra = ""
-                if info["deposited"] > 0:
-                    extra += f"; would bank {info['deposited']} AF"
-                if info["drawn"] > 0:
-                    extra += f"; would draw {info['drawn']} AF"
                 if incidental_af > 0:
                     extra += (
                         f"; would credit recharge "
@@ -584,9 +476,8 @@ class Command(BaseCommand):
                 continue
 
             with transaction.atomic():
-                net_af, info = _apply_banking(
-                    parcel, period, final_af, breakdown,
-                    routes_personal=routes_personal, commit=True,
+                net_af, info = _resolve_leftover(
+                    parcel, period, final_af, breakdown, commit=True,
                 )
                 # ISS-025 invariant, explicit at the write site: a `calculated`
                 # row is only ever written for a parcel with real matched ET. The
@@ -706,12 +597,6 @@ class Command(BaseCommand):
                             origin=INCIDENTAL_RECHARGE_POOL,
                         )
             extra = ""
-            if info["deposited"] > 0:
-                extra += f"; banked {info['deposited']} AF"
-                banked += 1
-            if info["drawn"] > 0:
-                extra += f"; drew {info['drawn']} AF"
-                drew += 1
             if incidental_af > 0:
                 extra += f"; recharge {incidental_af.quantize(Decimal('0.0001'))} AF (GW)"
                 recharged += 1
@@ -744,6 +629,6 @@ class Command(BaseCommand):
                 f"{metered} metered parcel(s) given an ET reference run "
                 f"(meter authoritative, no GW row); "
                 f"{skipped_no_et} parcel(s) skipped (no ET data); "
-                f"{banked} banked, {drew} drew, {recharged} credited recharge."
+                f"{recharged} credited recharge."
             )
         )

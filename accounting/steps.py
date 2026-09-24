@@ -308,39 +308,44 @@ def clamp_floor(running_af, parcel, period, ctx, config):
     """Floor running_af at config['floor'] (default 0), surfacing any surplus.
 
     Side-effect-FREE by contract: this primitive is also called by --dry-run and
-    the live preview screen, so it must never write a WaterCredit. It only SIGNALS
-    intent — the surplus magnitudes and the credit levers — in step_record["detail"];
-    run_calculations reads that and does the actual banking + recharge writes
-    inside its transaction.
+    the live preview screen, so it must never write anything. It only SIGNALS
+    the surplus magnitude in step_record["detail"]; run_calculations reads that
+    and clears any legacy banking state inside its own transaction (148-02).
 
     A *total surplus* is the chain coming in BELOW the floor (effective precip +
     surface water exceeded gross ET): total_surplus = max(0, floor - running_af).
-    ISS-052 splits that total into two physically distinct parts:
+    ISS-052 splits that total into two physically distinct parts, and 148-02
+    retires the bank that used to sit under the first one:
 
-      - **precip_surplus_af** — genuine rainfall that exceeded crop ET on its own
-        (max(0, Pe - ET)). This is real saved water; run_calculations BANKS it as
-        a WaterCredit to draw down in a later dry month.
+      - **rain_surplus_af** (renamed from precip_surplus_af, 148-02): genuine
+        rainfall that exceeded crop ET on its own (max(0, Pe - ET)). Under the
+        extraction basis, rain-fed use is never extraction, so this is
+        information about the month, not a credit; the rain bank that used to
+        carry it forward as a WaterCredit is retired (see
+        run_calculations._resolve_leftover). It is still computed and recorded
+        here so a reader can see that a below-floor month was genuine rain, not
+        surface over-delivery.
       - **incidental_recharge_af** — the remainder, which is surface water
         delivered beyond crop demand. Physically this is deep percolation that
-        recharges the aquifer, NOT a conservation credit. run_calculations writes
-        it as a positive groundwater recharge ledger row. Banking it (the pre-052
-        behavior) silently masked summer pumping via phantom credit draws.
+        recharges the aquifer, NOT crop use and NOT a credit. run_calculations
+        writes it as a positive groundwater recharge ledger row (or to the GSA
+        basin pool for a no-well parcel).
 
-    The genuine-precip portion is CAPPED at the total surplus
+    The genuine-rain portion is CAPPED at the total surplus
     (min(total_surplus, max(0, Pe - ET))) so a parcel whose running was forced to
-    the floor by an earlier step (e.g. facility_only_zero) never banks a phantom
-    rain credit. ET and Pe are read from the shared ctx (stashed by et_gross and
-    subtract_effective_precip). If either is absent — a plan without those steps,
-    or an isolated unit call — we fall back to the pre-052 behavior: the whole
-    surplus is treated as precip_surplus and incidental recharge is zero, so
-    existing chains and tests are unchanged.
+    the floor by an earlier step (e.g. facility_only_zero) never records a
+    phantom rain surplus. ET and Pe are read from the shared ctx (stashed by
+    et_gross and subtract_effective_precip). If either is absent (a plan
+    without those steps, or an isolated unit call), we fall back to the pre-052
+    behavior: the whole surplus is treated as rain surplus and incidental
+    recharge is zero, so existing chains and tests are unchanged.
 
-    The credit levers (depreciation_rate, expiry_months) are passed straight
-    through from config so the runner reads them off the breakdown without
-    re-querying the step.
+    148-02: the `bank`, `depreciation_rate` and `expiry_months` config keys are
+    gone: a below-floor month is no longer bankable, so those levers would do
+    nothing. An old plan whose config still carries them is unaffected; they
+    are simply never read, and none of the three appears in the detail below.
     """
     floor = Decimal(str(config.get("floor", 0)))
-    bank = bool(config.get("bank", False))
 
     total_surplus = floor - running_af
     if total_surplus < 0:
@@ -348,29 +353,25 @@ def clamp_floor(running_af, parcel, period, ctx, config):
 
     # Split the surplus (ISS-052). ctx carries the gross-ET and effective-precip
     # magnitudes when the full chain ran; absent them, fall back to "all surplus
-    # is precip" so legacy/no-precip plans behave exactly as before.
+    # is rain" so legacy/no-precip plans behave exactly as before.
     et_af = ctx.get("et_gross_af")
     pe_af = ctx.get("effective_precip_af")
     if et_af is not None and pe_af is not None:
-        genuine_precip = pe_af - et_af
-        if genuine_precip < 0:
-            genuine_precip = Decimal("0")
-        precip_surplus_af = min(total_surplus, genuine_precip)
+        genuine_rain = pe_af - et_af
+        if genuine_rain < 0:
+            genuine_rain = Decimal("0")
+        rain_surplus_af = min(total_surplus, genuine_rain)
     else:
-        precip_surplus_af = total_surplus
-    incidental_recharge_af = total_surplus - precip_surplus_af
+        rain_surplus_af = total_surplus
+    incidental_recharge_af = total_surplus - rain_surplus_af
 
     new_running = running_af if running_af >= floor else floor
     detail = {
         "floor": str(floor),
-        "bank": bank,
         # surplus_af retained for backward compatibility (it equals the total).
         "surplus_af": str(total_surplus),
-        "precip_surplus_af": str(precip_surplus_af),
+        "rain_surplus_af": str(rain_surplus_af),
         "incidental_recharge_af": str(incidental_recharge_af),
-        # Credit levers passed through for run_calculations (38-04 banking).
-        "depreciation_rate": config.get("depreciation_rate", 0),
-        "expiry_months": config.get("expiry_months", None),
     }
     return new_running, _record("clamp_floor", running_af, new_running, detail)
 

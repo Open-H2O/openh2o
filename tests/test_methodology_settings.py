@@ -205,32 +205,26 @@ def test_editing_one_step_config_never_drops_another_steps_plumbing():
 
 
 @pytest.mark.django_db
-def test_clamp_floor_save_exposes_the_banking_levers():
+def test_clamp_floor_save_writes_only_the_floor():
+    """148-02: bank / depreciation_rate / expiry_months are gone from the editor.
+    Posting them anyway (an old client, a stale form) does nothing; the view
+    reads none of them, and the seeded config never carries them to begin
+    with, so they never appear in the saved config."""
     call_command("seed_calculation_plan")
     c = _staff_client()
     clamp = _step("clamp_floor")
 
     resp = c.post(
         reverse("accounting:methodology_step_config", args=[clamp.id]),
-        {"floor": "0", "bank": "on", "depreciation_rate": "0.10", "expiry_months": "12"},
+        {"floor": "1.5", "bank": "on", "depreciation_rate": "0.10", "expiry_months": "12"},
     )
     assert resp.status_code == 200
 
     clamp.refresh_from_db()
-    assert clamp.config.get("bank") is True
-    assert Decimal(str(clamp.config.get("depreciation_rate"))) == Decimal("0.10")
-    assert clamp.config.get("expiry_months") == 12
-
-    # Blank expiry must persist as None (never), not "" — banking_math needs None.
-    resp = c.post(
-        reverse("accounting:methodology_step_config", args=[clamp.id]),
-        {"floor": "0", "expiry_months": ""},
-    )
-    assert resp.status_code == 200
-    clamp.refresh_from_db()
-    assert clamp.config.get("expiry_months") is None
-    # bank checkbox absent from the second POST -> unchecked.
-    assert clamp.config.get("bank") is False
+    assert Decimal(str(clamp.config.get("floor"))) == Decimal("1.5")
+    assert "bank" not in clamp.config
+    assert "depreciation_rate" not in clamp.config
+    assert "expiry_months" not in clamp.config
 
 
 # --------------------------------------------------------------------------

@@ -1807,6 +1807,19 @@ def _step_detail_summary(step):
             f"{af_clause}"
         )
     if step_type == "subtract_surface_water":
+        # 148-02: with the field's efficiency applied, the subtracted figure is
+        # the part the crop could use, not the delivery; say both.
+        if detail.get("delivered_af") is not None and detail.get("efficiency"):
+            whose = (
+                "its irrigation method"
+                if detail.get("efficiency_source") == "method"
+                else "the agency-wide figure"
+            )
+            return (
+                f"−{_fmt(detail.get('consumed_af'))} AF the crop could use, of "
+                f"{_fmt(detail.get('delivered_af'))} AF delivered "
+                f"(efficiency {_fmt(detail.get('efficiency'), 2)}, {whose})"
+            )
         return f"−{_fmt(detail.get('surface_water_af'))} AF surface water delivered"
     if step_type == "facility_only_zero":
         return "facility-only — zeroed" if detail.get("facility_only") else "has irrigation — unchanged"
@@ -1814,7 +1827,11 @@ def _step_detail_summary(step):
         surplus = Decimal(str(detail.get("surplus_af", "0") or "0"))
         base = f"floor {_fmt(detail.get('floor'), 2)}"
         if surplus > 0:
-            return f"{base}; {_fmt(surplus)} AF surplus banked"
+            # A run from before 148-02 with banking on did bank it; a new run
+            # carries the figure as information only.
+            if detail.get("bank"):
+                return f"{base}; {_fmt(surplus)} AF surplus banked"
+            return f"{base}; {_fmt(surplus)} AF below the floor, not carried forward"
         return base
     return ""
 
@@ -1975,9 +1992,9 @@ def delivery_settings(request):
 # ---------------------------------------------------------------------------
 #
 # Staff tune the config-as-data methodology (reorder / enable-disable steps, edit
-# each step's knobs and the WaterCredit banking levers) and preview the effect on
-# a sample parcel before it touches a real billing run. Every view here is gated
-# with BOTH @login_required and @admin_required.
+# each step's knobs) and preview the effect on a sample parcel before it touches
+# a real billing run. Every view here is gated with BOTH @login_required and
+# @admin_required.
 
 
 def _latest_calculated_period():
@@ -2025,21 +2042,6 @@ def _to_float(raw, default):
         return float(raw)
     except (TypeError, ValueError):
         return default
-
-
-def _to_int_or_none(raw):
-    """Coerce expiry_months: blank → None (never expires), else an int month-count.
-
-    Must be None and not "" — banking_math.is_expired / run_calculations treat
-    None as 'never' and otherwise call _add_months(period, expiry_months) which
-    needs a real integer.
-    """
-    if raw is None or str(raw).strip() == "":
-        return None
-    try:
-        return int(float(raw))
-    except (TypeError, ValueError):
-        return None
 
 
 def _render_steps(request, plan):
@@ -2138,13 +2140,8 @@ def methodology_step_config(request, step_id):
             request.POST.get("soil_storage_in"), config.get("soil_storage_in", 3.0)
         )
     elif step.step_type == "clamp_floor":
-        # The four WaterCredit banking levers.
+        # 148-02: the rain bank is retired -- floor is the step's only knob.
         config["floor"] = _to_float(request.POST.get("floor"), config.get("floor", 0))
-        config["bank"] = "bank" in request.POST
-        config["depreciation_rate"] = _to_float(
-            request.POST.get("depreciation_rate"), config.get("depreciation_rate", 0)
-        )
-        config["expiry_months"] = _to_int_or_none(request.POST.get("expiry_months"))
     # et_gross / subtract_surface_water / facility_only_zero: no editable knobs;
     # their config is left untouched (et_gross keeps its model/variable plumbing).
 

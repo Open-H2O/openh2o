@@ -67,13 +67,10 @@ DEFAULT_STEPS = [
         "order": 5,
         "step_type": "clamp_floor",
         "enabled": True,
-        # depreciation_rate 0 = banked surplus never decays; expiry_months None =
-        # never expires. Both are agency-tunable from the 38-06 settings screen.
+        # 148-02: the rain bank is retired -- bank / depreciation_rate /
+        # expiry_months are gone, so the floor is the step's only knob.
         "config": {
             "floor": 0,
-            "bank": True,
-            "depreciation_rate": 0,
-            "expiry_months": None,
         },
         "label": "Clamp at floor",
     },

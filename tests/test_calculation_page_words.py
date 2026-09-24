@@ -200,3 +200,36 @@ class TestOneListOfMethodNames:
         body = client.get(reverse("accounting:methodology_settings")).content.decode()
         for label in METHOD_LABELS.values():
             assert f">{label}<" in body
+
+
+def test_surface_step_summary_names_delivered_and_what_the_crop_could_use():
+    """148-02: the subtracted figure is the crop's part, so the line says both."""
+    step = {
+        "step_type": "subtract_surface_water",
+        "detail": {
+            "delivered_af": "123.1769",
+            "efficiency": "0.750",
+            "efficiency_source": "agency",
+            "consumed_af": "92.3827",
+            "surface_water_af": "92.3827",
+        },
+    }
+    assert _step_detail_summary(step) == (
+        "−92.3827 AF the crop could use, of 123.1769 AF delivered "
+        "(efficiency 0.75, the agency-wide figure)"
+    )
+    old = {"step_type": "subtract_surface_water", "detail": {"surface_water_af": "5"}}
+    assert _step_detail_summary(old) == "−5.0000 AF surface water delivered"
+
+
+def test_floor_step_summary_says_banked_only_on_an_old_banking_run():
+    """148-02: a new run's below-floor figure is information, not a credit."""
+    new = {"step_type": "clamp_floor", "detail": {"floor": "0", "surplus_af": "1.5"}}
+    assert _step_detail_summary(new) == (
+        "floor 0.00; 1.5000 AF below the floor, not carried forward"
+    )
+    old = {
+        "step_type": "clamp_floor",
+        "detail": {"floor": "0", "surplus_af": "1.5", "bank": True},
+    }
+    assert _step_detail_summary(old) == "floor 0.00; 1.5000 AF surplus banked"

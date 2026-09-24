@@ -1,22 +1,23 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""DB-bound tests for WaterCredit banking ORCHESTRATION (38-04).
+"""DB-bound tests for the retired rain bank (148-02).
 
-The pure depreciation/expiry math is proven Django-free in
-tests/test_banking_math.py; this file proves run_calculations' banking flow: a
-wet-month surplus is deposited as one WaterCredit, a later deficit draws available
-non-expired credits oldest-first (depreciated) and folds the draw into the single
-`calculated` row, expiry is respected, and re-runs / dry-runs never double-bank,
-double-draw, or write phantom rows.
+Before 148-02, `run_calculations` deposited a wet-month's genuine rain surplus
+as a `precip_surplus`-origin WaterCredit and drew it back down in a later
+deficit month. 148-02 retires that: a below-floor month's rain surplus is
+still computed and recorded on the run (`clamp_floor`'s detail carries it as
+`rain_surplus_af`), but it is information about the month, not a credit: no
+WaterCredit is deposited and none is drawn, for any origin. What
+`_resolve_leftover` still does is CLEAR whatever a pre-148-02 run of the
+engine wrote for a parcel-period, so a re-run on a database an older engine
+banked into removes its stale WaterCredit / WaterCreditDraw rows.
 
-The draw/expiry/FIFO/idempotency tests seed WaterCredits directly and exercise
-the unchanged draw machinery. The DEPOSIT story changed with ISS-052: under
-usda_scs the effective-precip credit is capped at ET, so the only way the chain
-nets below the floor is surface-water delivery exceeding crop ET — and that
-over-delivery is now correctly treated as deep-percolation RECHARGE credited to
-groundwater, NOT a bankable precip WaterCredit (which masked summer pumping). So
-the deposit test asserts the recharge outcome; genuine rain-surplus banking
-(which needs Pe>ET, only possible under method=raw) is covered in
-test_calculation_run.py. Runs in the web container (needs the DB).
+The over-delivery (surface water beyond crop ET) story is unchanged by this
+plan, it is deep-percolation recharge, ISS-052/053, and
+test_surface_overdelivery_pools_recharge_not_a_watercredit is currently RED
+for a Task 1 (canal efficiency) reason that belongs to 148-02 Task 3; its
+over-delivery assertions are left exactly as they were.
+
+Runs in the web container (needs the DB).
 """
 import datetime as dt
 from decimal import Decimal
@@ -25,8 +26,14 @@ import pytest
 from django.contrib.gis.geos import MultiPolygon, Polygon
 from django.core.management import call_command
 
-from accounting.banking_math import depreciated_value
-from accounting.models import AllocationCarryover, WaterCredit, WaterCreditDraw
+from accounting.models import (
+    AllocationCarryover,
+    CalculationPlan,
+    CalculationRun,
+    CalculationStep,
+    WaterCredit,
+    WaterCreditDraw,
+)
 from accounting.services import INCIDENTAL_RECHARGE_POOL, et_mm_to_acre_feet
 from parcels.models import CropType, Parcel, ParcelLedger, UsageLocation
 from tests.factories import (
@@ -89,6 +96,22 @@ def _et_cache(parcel, period="2024-06", et_mm=100.0):
     )
 
 
+def _precip_cache(parcel, period, precip_mm):
+    """A GRIDMET precip cache row in the live shape (value keyed "precip")."""
+    from datasync.models import OpenETCache
+
+    year, month = int(period[:4]), int(period[5:7])
+    return OpenETCache.objects.create(
+        parcel=parcel,
+        geometry=_square(),
+        start_date=dt.date(year, month, 1),
+        end_date=dt.date(year, month, 28),
+        variable="precip",
+        model_name="GRIDMET",
+        et_data=[{"precip": precip_mm, "date": period, "unit": "mm"}],
+    )
+
+
 def _surface_row(parcel, period, af):
     """A surface_diversion ledger row (stored NEGATIVE, like the live data)."""
     year, month = int(period[:4]), int(period[5:7])
@@ -115,8 +138,21 @@ def _calc_row(parcel, period):
     )
 
 
+def _run(parcel, period):
+    return CalculationRun.objects.get(parcel=parcel, period=period)
+
+
+def _raw_precip_plan():
+    """A plan with method='raw' so effective precip can exceed ET (genuine rain
+    surplus), and the seeded clamp_floor (148-02: floor only, no bank lever)."""
+    call_command("seed_calculation_plan")
+    CalculationStep.objects.filter(
+        plan=CalculationPlan.active(), step_type="subtract_effective_precip"
+    ).update(config={"method": "raw"})
+
+
 # --------------------------------------------------------------------------
-# Deposit
+# Deposit: nothing is ever banked
 # --------------------------------------------------------------------------
 
 
@@ -148,7 +184,6 @@ def test_surface_overdelivery_pools_recharge_not_a_watercredit():
     assert not ParcelLedger.objects.filter(
         parcel=parcel, source_type="calculated"
     ).exists()
-    from accounting.models import CalculationRun
 
     run = CalculationRun.objects.get(parcel=parcel, period="2024-02")
     assert run.residual_disposition == "unmet_demand"
@@ -169,8 +204,59 @@ def test_normal_extraction_month_banks_nothing():
     assert _calc_row(parcel, "2024-06").amount_acre_feet < 0
 
 
+@pytest.mark.django_db
+def test_below_floor_rain_month_deposits_nothing_and_records_rain_surplus_af():
+    """148-02: a below-floor month driven by genuine rain (Pe > ET, method=raw)
+    deposits NO WaterCredit (the rain bank is retired), but the rain figure is
+    still computed and recorded on the run as `rain_surplus_af`. Acreage 30.48
+    (area_acres is a 2-decimal-place field, so it must round-trip exactly) and
+    mm inputs divisible by 25.4 are chosen so every conversion in the chain
+    (mm -> AF, mm -> in -> mm) is an EXACT decimal, so the expected value below
+    is a literal, not a recomputation of the chain's own arithmetic."""
+    parcel = _parcel("BANK-RAIN", acres="30.48")
+    _et_cache(parcel, period="2024-02", et_mm=100.0)  # -> 10.0000 AF gross ET
+    _precip_cache(parcel, period="2024-02", precip_mm=254.0)  # -> 25.4000 AF rain
+    _irrigate(parcel)  # crop, well: banking (if it existed) would be well-gated
+    WellIrrigatedParcelFactory(parcel=parcel)
+    _raw_precip_plan()
+
+    call_command("run_calculations", "--period", "2024-02")
+
+    assert WaterCredit.objects.count() == 0
+    assert WaterCreditDraw.objects.count() == 0
+
+    run = _run(parcel, "2024-02")
+    assert run.banked_af == Decimal("0.0000")
+    clamp = next(s for s in run.breakdown if s["step_type"] == "clamp_floor")
+    detail = clamp["detail"]
+    assert "bank" not in detail
+    assert "depreciation_rate" not in detail
+    assert "expiry_months" not in detail
+    # No surface delivery this month, so the WHOLE below-floor amount is rain,
+    # none of it incidental (surface) recharge: 25.4 rain - 10.0 ET = 15.4.
+    assert Decimal(detail["rain_surplus_af"]) == Decimal("15.4")
+    assert Decimal(detail["incidental_recharge_af"]) == Decimal("0")
+    assert Decimal(detail["surplus_af"]) == Decimal("15.4")
+
+
+@pytest.mark.django_db
+def test_dry_run_writes_no_credits_or_draws():
+    parcel = _parcel("BANK-DRY", acres="10")
+    _et_cache(parcel, period="2024-02", et_mm=100.0)
+    _irrigate(parcel)
+    _surface_row(parcel, "2024-02", af=5)  # over-delivery, never a credit anyway
+    call_command("seed_calculation_plan")
+
+    call_command("run_calculations", "--period", "2024-02", "--dry-run")
+
+    assert WaterCredit.objects.count() == 0
+    assert WaterCreditDraw.objects.count() == 0
+    # And no calculated ledger row was written either.
+    assert not ParcelLedger.objects.filter(source_type="calculated").exists()
+
+
 # --------------------------------------------------------------------------
-# Draw (with depreciation)
+# Draw: nothing is ever drawn, even against a pre-existing (legacy) credit
 # --------------------------------------------------------------------------
 
 
@@ -186,111 +272,69 @@ def _seed_prior_credit(parcel, amount, rate, origin="2024-01", expires=None):
 
 
 @pytest.mark.django_db
-def test_deficit_month_draws_depreciated_credit_and_reduces_bill():
-    parcel = _parcel("BANK-DRAW", acres="10")
+def test_deficit_month_draws_nothing_and_bills_in_full_even_with_a_legacy_credit():
+    """A pre-148-02 database can carry a real, still-live precip_surplus
+    WaterCredit from an earlier period. The retired engine never draws it: the
+    deficit bills in full (no draw folded in), and the untouched older-period
+    credit is left exactly as it was (only THIS period's own WaterCredit /
+    WaterCreditDraw rows are ever cleared, per _resolve_leftover)."""
+    parcel = _parcel("BANK-NODRAW", acres="10")
     _et_cache(parcel, period="2024-03", et_mm=100.0)  # ~3.28 AF deficit
     _irrigate(parcel)
-    WellIrrigatedParcelFactory(parcel=parcel)  # 54-01: draw is well-gated
-    # Credit 2 AF @ 10%/mo from 2024-01; two months later it is worth 2*0.81=1.62.
-    _seed_prior_credit(parcel, amount="2", rate="0.10", origin="2024-01")
-    call_command("seed_calculation_plan")
-
-    call_command("run_calculations", "--period", "2024-03")
-
-    draws = WaterCreditDraw.objects.filter(credit__parcel=parcel)
-    assert draws.count() == 1
-    drawn = depreciated_value(Decimal("2"), Decimal("0.10"), 2).quantize(Q)
-    assert drawn == Decimal("1.6200")  # depreciation visibly shrank the 2 AF
-    assert draws.first().amount_af == drawn
-    assert draws.first().draw_period == "2024-03"
-    # Bill reduced by the drawn amount (not zeroed — the credit was too small).
-    net = _gross_af() - drawn
-    assert _calc_row(parcel, "2024-03").amount_acre_feet == (-net).quantize(Q)
-
-
-@pytest.mark.django_db
-def test_expired_credit_is_not_drawn_and_deficit_bills_in_full():
-    parcel = _parcel("BANK-EXP", acres="10")
-    _et_cache(parcel, period="2024-03", et_mm=100.0)
-    _irrigate(parcel)
-    WellIrrigatedParcelFactory(parcel=parcel)  # 54-01: draw is well-gated
-    # Expires 2024-02, which is <= the 2024-03 draw period -> dead.
-    _seed_prior_credit(parcel, amount="5", rate="0", origin="2024-01", expires="2024-02")
+    WellIrrigatedParcelFactory(parcel=parcel)
+    credit = _seed_prior_credit(parcel, amount="2", rate="0.10", origin="2024-01")
     call_command("seed_calculation_plan")
 
     call_command("run_calculations", "--period", "2024-03")
 
     assert WaterCreditDraw.objects.filter(credit__parcel=parcel).count() == 0
+    # Billed at the FULL gross ET: nothing came off it.
     assert _calc_row(parcel, "2024-03").amount_acre_feet == (-_gross_af()).quantize(Q)
+    run = _run(parcel, "2024-03")
+    assert run.drawn_af == Decimal("0.0000")
+    assert run.final_af == _gross_af().quantize(Q)
+    # The older-period credit is untouched; it belongs to 2024-01, not this run.
+    assert WaterCredit.objects.filter(pk=credit.pk).exists()
 
 
 @pytest.mark.django_db
-def test_oldest_credit_is_consumed_first():
-    parcel = _parcel("BANK-FIFO", acres="10")
-    _et_cache(parcel, period="2024-03", et_mm=100.0)  # ~3.28 AF deficit
+def test_rerun_removes_a_legacy_precip_surplus_credit_and_its_draw_for_that_period():
+    """A database an older engine wrote can carry, for the SAME period being
+    re-run, both a `precip_surplus` WaterCredit it deposited and a
+    WaterCreditDraw against some other credit it drew in that period.
+    148-02: `_resolve_leftover` clears both on commit, so a re-run leaves no
+    stale rain-bank rows behind."""
+    parcel = _parcel("BANK-LEGACY", acres="10")
+    _et_cache(parcel, period="2024-04", et_mm=100.0)
     _irrigate(parcel)
-    WellIrrigatedParcelFactory(parcel=parcel)  # 54-01: draw is well-gated
-    older = _seed_prior_credit(parcel, amount="5", rate="0", origin="2024-01")
-    newer = _seed_prior_credit(parcel, amount="5", rate="0", origin="2024-02")
+    WellIrrigatedParcelFactory(parcel=parcel)
     call_command("seed_calculation_plan")
 
-    call_command("run_calculations", "--period", "2024-03")
-
-    # The 3.28 AF deficit is fully covered by the older 5 AF credit; newer untouched.
-    assert older.draws.count() == 1
-    assert newer.draws.count() == 0
-    assert older.draws.first().amount_af == _gross_af().quantize(Q)
-    assert _calc_row(parcel, "2024-03").amount_acre_feet == Decimal("0.0000")
-
-
-# --------------------------------------------------------------------------
-# Idempotency + dry-run
-# --------------------------------------------------------------------------
-
-
-@pytest.mark.django_db
-def test_rerunning_a_deficit_period_is_identical_no_drift():
-    parcel = _parcel("BANK-IDEM", acres="10")
-    _et_cache(parcel, period="2024-03", et_mm=100.0)
-    _irrigate(parcel)
-    WellIrrigatedParcelFactory(parcel=parcel)  # 54-01: draw is well-gated
-    _seed_prior_credit(parcel, amount="2", rate="0.10", origin="2024-01")
-    call_command("seed_calculation_plan")
-
-    call_command("run_calculations", "--period", "2024-03")
-    draws1 = list(
-        WaterCreditDraw.objects.filter(credit__parcel=parcel)
-        .order_by("id")
-        .values_list("draw_period", "amount_af")
+    # As if a pre-148-02 run had deposited a credit THIS period and drawn one
+    # down THIS period too (against some other, older credit).
+    legacy_deposit = WaterCredit.objects.create(
+        parcel=parcel,
+        origin_period="2024-04",
+        amount_af=Decimal("1.5000"),
+        origin="precip_surplus",
     )
-    calc1 = _calc_row(parcel, "2024-03").amount_acre_feet
-
-    call_command("run_calculations", "--period", "2024-03")  # second run
-    draws2 = list(
-        WaterCreditDraw.objects.filter(credit__parcel=parcel)
-        .order_by("id")
-        .values_list("draw_period", "amount_af")
+    older_credit = WaterCredit.objects.create(
+        parcel=parcel,
+        origin_period="2024-01",
+        amount_af=Decimal("2.0000"),
+        origin="precip_surplus",
     )
-    calc2 = _calc_row(parcel, "2024-03").amount_acre_feet
+    legacy_draw = WaterCreditDraw.objects.create(
+        credit=older_credit, draw_period="2024-04", amount_af=Decimal("1.0000")
+    )
 
-    # Exactly one draw, identical amount, identical bill — no double-draw, no drift.
-    assert len(draws1) == 1
-    assert draws1 == draws2
-    assert calc1 == calc2
-    assert WaterCreditDraw.objects.filter(credit__parcel=parcel).count() == 1
+    call_command("run_calculations", "--period", "2024-04")
 
-
-@pytest.mark.django_db
-def test_dry_run_writes_no_credits_or_draws():
-    parcel = _parcel("BANK-DRY", acres="10")
-    _et_cache(parcel, period="2024-02", et_mm=100.0)
-    _irrigate(parcel)
-    _surface_row(parcel, "2024-02", af=5)  # would bank a surplus
-    call_command("seed_calculation_plan")
-
-    call_command("run_calculations", "--period", "2024-02", "--dry-run")
-
-    assert WaterCredit.objects.count() == 0
-    assert WaterCreditDraw.objects.count() == 0
-    # And no calculated ledger row was written either.
-    assert not ParcelLedger.objects.filter(source_type="calculated").exists()
+    # This period's own deposit and this period's own draw are both gone.
+    assert not WaterCredit.objects.filter(pk=legacy_deposit.pk).exists()
+    assert not WaterCreditDraw.objects.filter(pk=legacy_draw.pk).exists()
+    # The older credit itself (origin_period 2024-01, a different period) is
+    # not this period's deposit, so it is left alone.
+    assert WaterCredit.objects.filter(pk=older_credit.pk).exists()
+    # And the re-run drew nothing new in its place.
+    assert WaterCreditDraw.objects.filter(credit__parcel=parcel).count() == 0

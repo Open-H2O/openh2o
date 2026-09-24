@@ -9,8 +9,9 @@ defensibility invariants the blueprint demands:
   - Reconstruct — the run's stored figures add up to the billable number, and the
     persisted breakdown is an internally consistent gross->net waterfall.
   - Idempotency — re-running a period leaves exactly one run with identical values.
-  - Banking captured — a deposit month records banked_af; a later draw month
-    records drawn_af.
+  - Rain bank retired (148-02): banked_af / drawn_af stay 0 on every new run; a
+    below-floor month's rain surplus is still named in the breakdown as
+    `rain_surplus_af`, information rather than a credit.
 
 A run that merely EXISTS but doesn't reconstruct is worse than none (it looks
 defensible and isn't), so the reconstruct test walks the math, it doesn't just
@@ -30,6 +31,8 @@ from accounting.models import (
     CalculationRun,
     CalculationStep,
     ReportingPeriod,
+    WaterCredit,
+    WaterCreditDraw,
 )
 from accounting.ledger_words import (
     INCIDENTAL_RECHARGE_WORDS,
@@ -334,11 +337,6 @@ def test_rerunning_a_period_leaves_one_identical_run():
 
 
 # --------------------------------------------------------------------------
-# Banking captured — deposit month records banked_af, draw month drawn_af
-# --------------------------------------------------------------------------
-
-
-# --------------------------------------------------------------------------
 # Methodology provenance (ISS-020 #2) — every run carries a durable fingerprint
 # of the recipe that made it; the fingerprint is stable across re-runs and moves
 # when the enabled config moves, but not when a cosmetic label changes.
@@ -561,13 +559,15 @@ def test_no_well_incidental_pool_is_idempotent_across_reruns():
 
 
 @pytest.mark.django_db
-def test_genuine_rain_surplus_still_banks_under_raw_precip():
-    """Banking still works for REAL rain surplus: under method="raw" effective
-    precip can exceed ET, so a wet month banks a credit a dry month draws. No
-    surface here -> no incidental recharge row, banking only."""
+def test_genuine_rain_surplus_records_rain_surplus_af_but_banks_and_draws_nothing():
+    """148-02: the rain bank is retired. Under method="raw" effective precip can
+    still exceed ET (a genuine rain surplus), and it is still recorded on the
+    wet month's run as `rain_surplus_af`, but nothing is banked, and the
+    following dry month draws nothing back: it bills the full gross ET. No
+    surface here -> no incidental recharge row either."""
     parcel = _parcel("RUN-RAINBANK", acres="10")
     _irrigate(parcel)
-    WellIrrigatedParcelFactory(parcel=parcel)  # 54-01: banking is well-gated
+    WellIrrigatedParcelFactory(parcel=parcel)
     _et_cache(parcel, period="2024-02", et_mm=100.0)          # ~3.28 AF ET
     _precip_cache(parcel, period="2024-02", precip_mm=250.0)  # ~8.2 AF rain >> ET
     _et_cache(parcel, period="2024-03", et_mm=100.0)          # dry: ET only
@@ -582,22 +582,24 @@ def test_genuine_rain_surplus_still_banks_under_raw_precip():
     )
     CalculationStep.objects.create(
         plan=plan, order=3, step_type="clamp_floor", enabled=True,
-        config={"floor": 0, "bank": True, "depreciation_rate": 0,
-                "expiry_months": None},
-        label="floor",
+        config={"floor": 0}, label="floor",
     )
 
     call_command("run_calculations", "--period", "2024-02")
     call_command("run_calculations", "--period", "2024-03")
 
-    deposit_run = _run(parcel, "2024-02")
-    draw_run = _run(parcel, "2024-03")
+    wet_run = _run(parcel, "2024-02")
+    dry_run = _run(parcel, "2024-03")
 
-    # Genuine rain surplus banked; no surface -> NO incidental recharge row.
-    assert deposit_run.banked_af > 0
+    # Nothing banked, but the rain surplus is still named on the run's detail.
+    assert wet_run.banked_af == Decimal("0.0000")
+    clamp = next(s for s in wet_run.breakdown if s["step_type"] == "clamp_floor")
+    assert Decimal(clamp["detail"]["rain_surplus_af"]) > 0
     assert not ParcelLedger.objects.filter(
         parcel=parcel, source_type="recharge"
     ).exists()
-    # Dry month draws the banked credit down, reducing the bill below gross ET.
-    assert draw_run.drawn_af > 0
-    assert draw_run.final_af < _gross_af().quantize(Q)
+    # The dry month draws NOTHING back; it bills the full gross ET.
+    assert dry_run.drawn_af == Decimal("0.0000")
+    assert dry_run.final_af == _gross_af().quantize(Q)
+    assert not WaterCredit.objects.filter(parcel=parcel).exists()
+    assert not WaterCreditDraw.objects.filter(credit__parcel=parcel).exists()

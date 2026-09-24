@@ -169,12 +169,10 @@ def test_facility_only_zero_passes_through_irrigated_parcel():
 @pytest.mark.django_db
 def test_clamp_floor_floors_negative_at_zero():
     parcel = _parcel("CL-1")
-    new, record = clamp_floor(
-        Decimal("-2"), parcel, "2024-06", {}, {"floor": 0, "bank": True}
-    )
+    new, record = clamp_floor(Decimal("-2"), parcel, "2024-06", {}, {"floor": 0})
     assert new == Decimal("0")
-    # bank is recorded but a no-op in 38-02
-    assert record["detail"]["bank"] is True
+    # 148-02: bank is gone; the detail carries no banking levers at all.
+    assert "bank" not in record["detail"]
 
 
 @pytest.mark.django_db
@@ -193,60 +191,53 @@ def test_clamp_floor_passes_value_above_floor():
 @pytest.mark.django_db
 def test_clamp_floor_routes_surface_overdelivery_to_incidental_recharge():
     """When surface water (not rain) drove the chain below the floor, the surplus
-    is deep percolation — all incidental recharge, nothing to bank (ISS-052)."""
+    is deep percolation: all incidental recharge, none of it rain (ISS-052)."""
     parcel = _parcel("CL-SW")
     # ET 3.28 AF, no effective rain, surface over-delivery pushed running to -1.72.
     ctx = {"et_gross_af": Decimal("3.28"), "effective_precip_af": Decimal("0")}
-    new, record = clamp_floor(
-        Decimal("-1.72"), parcel, "2024-06", ctx, {"floor": 0, "bank": True}
-    )
+    new, record = clamp_floor(Decimal("-1.72"), parcel, "2024-06", ctx, {"floor": 0})
     d = record["detail"]
     assert new == Decimal("0")
     assert Decimal(d["surplus_af"]) == Decimal("1.72")            # total below floor
-    assert Decimal(d["precip_surplus_af"]) == Decimal("0")        # nothing banks
+    assert Decimal(d["rain_surplus_af"]) == Decimal("0")          # none of it rain
     assert Decimal(d["incidental_recharge_af"]) == Decimal("1.72")  # all recharge
 
 
 @pytest.mark.django_db
-def test_clamp_floor_banks_only_rain_surplus_routes_surface_excess():
-    """Rain beyond ET banks; surface delivered on top of that is recharge."""
+def test_clamp_floor_names_rain_surplus_separately_from_surface_excess():
+    """148-02: rain beyond ET is recorded as rain_surplus_af (information, not a
+    credit); surface delivered on top of that is still incidental recharge."""
     parcel = _parcel("CL-RAIN")
     # ET 3.28, Pe 5.0 (rain beats ET by 1.72), plus 2.0 surface -> running -3.72.
     ctx = {"et_gross_af": Decimal("3.28"), "effective_precip_af": Decimal("5.0")}
-    _, record = clamp_floor(
-        Decimal("-3.72"), parcel, "2024-02", ctx, {"floor": 0, "bank": True}
-    )
+    _, record = clamp_floor(Decimal("-3.72"), parcel, "2024-02", ctx, {"floor": 0})
     d = record["detail"]
-    assert Decimal(d["precip_surplus_af"]) == Decimal("1.72")       # rain - ET banks
-    assert Decimal(d["incidental_recharge_af"]) == Decimal("2.00")  # surface recharge
+    assert Decimal(d["rain_surplus_af"]) == Decimal("1.72")          # rain beyond ET
+    assert Decimal(d["incidental_recharge_af"]) == Decimal("2.00")   # surface recharge
 
 
 @pytest.mark.django_db
 def test_clamp_floor_caps_rain_surplus_at_total_below_floor():
     """A parcel forced to the floor by an earlier step (running already 0) must
-    not bank a phantom rain credit even if Pe>ET — the genuine portion is capped
-    at the actual below-floor amount (here zero)."""
+    not record a phantom rain surplus even if Pe>ET; the genuine portion is
+    capped at the actual below-floor amount (here zero)."""
     parcel = _parcel("CL-CAP")
     ctx = {"et_gross_af": Decimal("3.28"), "effective_precip_af": Decimal("5.0")}
-    _, record = clamp_floor(
-        Decimal("0"), parcel, "2024-02", ctx, {"floor": 0, "bank": True}
-    )
+    _, record = clamp_floor(Decimal("0"), parcel, "2024-02", ctx, {"floor": 0})
     d = record["detail"]
     assert Decimal(d["surplus_af"]) == Decimal("0")
-    assert Decimal(d["precip_surplus_af"]) == Decimal("0")
+    assert Decimal(d["rain_surplus_af"]) == Decimal("0")
     assert Decimal(d["incidental_recharge_af"]) == Decimal("0")
 
 
 @pytest.mark.django_db
-def test_clamp_floor_without_ctx_falls_back_to_all_precip():
+def test_clamp_floor_without_ctx_falls_back_to_all_rain():
     """No ctx (legacy/no-precip plan or isolated call): the whole surplus is
-    treated as precip and incidental recharge is zero — pre-052 behavior."""
+    treated as rain and incidental recharge is zero (pre-052 behavior)."""
     parcel = _parcel("CL-FALLBACK")
-    _, record = clamp_floor(
-        Decimal("-2"), parcel, "2024-06", {}, {"floor": 0, "bank": True}
-    )
+    _, record = clamp_floor(Decimal("-2"), parcel, "2024-06", {}, {"floor": 0})
     d = record["detail"]
-    assert Decimal(d["precip_surplus_af"]) == Decimal("2")
+    assert Decimal(d["rain_surplus_af"]) == Decimal("2")
     assert Decimal(d["incidental_recharge_af"]) == Decimal("0")
 
 
@@ -514,36 +505,3 @@ def test_read_cache_mm_flags_item_outside_row_span(caplog):
     assert total_mm == Decimal("0")
     assert row_count == 1
     assert any("outside its span" in r.getMessage() for r in caplog.records)
-
-
-# --------------------------------------------------------------------------
-# ISS-032c: expiry_months<=0 is rejected at config-validation time
-# --------------------------------------------------------------------------
-
-
-@pytest.mark.django_db
-def test_run_calculations_rejects_nonpositive_expiry_months():
-    """expiry_months<=0 would expire a credit the month it is banked. Reject it
-    up front, before any ledger row is written (ISS-032)."""
-    from django.core.management.base import CommandError
-
-    parcel = _parcel("EXP-0", acres="10")
-    _et_cache(parcel, period="2024-06", et_mm=100.0)
-    _irrigate(parcel)
-    plan = CalculationPlan.objects.create(name="Bad-expiry", is_active=True)
-    CalculationStep.objects.create(
-        plan=plan, order=1, step_type="et_gross", enabled=True,
-        config={"model": "Ensemble", "variable": "ET"}, label="gross",
-    )
-    CalculationStep.objects.create(
-        plan=plan, order=2, step_type="clamp_floor", enabled=True,
-        config={
-            "floor": 0, "bank": True, "depreciation_rate": 0, "expiry_months": 0,
-        },
-        label="floor",
-    )
-
-    with pytest.raises(CommandError, match="expiry_months"):
-        call_command("run_calculations", "--period", "2024-06")
-    # The guard fired before the parcel loop — nothing was written.
-    assert not ParcelLedger.objects.filter(source_type="calculated").exists()

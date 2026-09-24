@@ -9,8 +9,9 @@ The engine runs on EVERY parcel by default and resolves each residual by archety
     row — the meter reading owns the groundwater, and a calculated row would
     double-count it — with ``residual_disposition="metered"``.
   * **groundwater** — a well, no meter: the residual is its calculated GW row.
-  * **unmet_demand** — no well: no calculated row; the residual is recorded on the
-    run (54-01), and the parcel never banks a personal WaterCredit it cannot pump.
+  * **unmet_demand**: no well, no calculated row; the residual is recorded on
+    the run (54-01). No archetype ever banks a personal WaterCredit any more
+    (148-02 retires the rain bank).
 
 ``--unmetered-only`` is kept as a deprecated alias: it warns and runs the default.
 
@@ -182,12 +183,14 @@ def test_unmetered_only_is_deprecated_alias_matching_default(mixed_parcels):
     assert alias_calc == default_calc
 
 
-# --- (d) no-well parcel banks no WaterCredit; a well parcel still banks ---------
+# --- (d) neither a no-well nor a well parcel ever banks a WaterCredit ----------
 
 @pytest.mark.django_db
-def test_no_well_rain_surplus_banks_no_credit_but_well_parcel_does():
-    """A genuine rain surplus (method=raw so Pe can exceed ET) banks a WaterCredit
-    on a well parcel, but NEVER on a no-well parcel (no well to draw it back)."""
+def test_no_well_and_well_parcel_both_bank_no_credit_for_a_rain_surplus():
+    """148-02: the rain bank is retired. A genuine rain surplus (method=raw so
+    Pe can exceed ET) banks NO WaterCredit, not on a no-well parcel, and not
+    on a well parcel either, even though a well parcel COULD have drawn one
+    back under the old, well-gated banking rule."""
     no_well = _parcel("CREDIT-NOWELL")
     _et_cache(no_well, et_mm=40.0)
     _precip_cache(no_well, precip_mm=200.0)  # rain > ET → genuine surplus
@@ -206,4 +209,11 @@ def test_no_well_rain_surplus_banks_no_credit_but_well_parcel_does():
     call_command("run_calculations", "--period", PERIOD)
 
     assert WaterCredit.objects.filter(parcel=no_well).count() == 0
-    assert WaterCredit.objects.filter(parcel=well).count() == 1
+    assert WaterCredit.objects.filter(parcel=well).count() == 0
+
+    # The rain surplus is still named on both runs' breakdowns: information,
+    # not a credit.
+    for parcel in (no_well, well):
+        run = CalculationRun.objects.get(parcel=parcel, period=PERIOD)
+        clamp = next(s for s in run.breakdown if s["step_type"] == "clamp_floor")
+        assert Decimal(clamp["detail"]["rain_surplus_af"]) > 0
