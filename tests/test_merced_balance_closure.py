@@ -17,34 +17,43 @@ use on EVERY parcel, incl. a metered reference run) -> ``allocate_district_deliv
 the Merced demo exercises:
 
   * **Surface-only** (POD, no well, ample delivery) — the ISS-054 / MER-APN-031
-    case. Supply over-delivers slightly; the surplus percolates as incidental
-    recharge, so the residual is ~0 — ZERO pumped groundwater, NO phantom
-    ``calculated`` row (54-01).
+    case. ``allocate_district_delivery``'s demand-weighted split (ISS-218) caps
+    consumed at demand ÷ efficiency BY CONSTRUCTION, so this field-year's
+    over-delivery is 0 and the residual is ~0 — ZERO pumped groundwater, NO
+    phantom ``calculated`` row (54-01). 148-02 Task 3 (Q1, an over-delivery is
+    nobody's credit): were the split ever to leave a real over-delivery, it
+    would land ONLY on the run's ``over_delivery_af``, never a recharge ledger
+    row or a pool deposit — see ``test_no_well_flat_delivery_residual_equals_its_over_delivery``
+    for that positive case, built without the split.
   * **Conjunctive** (well + POD, short delivery) — the MER-APN-016 case. The
     surface shortfall is met by engine-estimated pumped groundwater, so the residual
     is ~0 on the ``calculated`` groundwater term.
   * **Basin / flood-MAR** (no well, ample delivery, in a GSA management zone) —
-    the over-delivery's incidental recharge routes to the GSA basin POOL with NO
-    personal credit the parcel could never pump (ISS-053); residual ~0.
+    the MER-APN-BASIN case. Same ISS-218 construction as surface-only: the
+    split caps consumed at demand, so over-delivery is 0 and nothing pools
+    (148-02 Task 3 retired that pool deposit even when over-delivery is
+    positive); residual ~0, no personal credit the parcel could never pump
+    (ISS-053).
   * **Metered** (well + authoritative ``meter_reading``, 58-03) — the meter owns
     the groundwater (NO ``calculated`` row); the run is the ET reference value. The
     meter is sized to pump a little MORE than the crop consumed (the on-farm
     loss / return flow), so the parcel carries a small POSITIVE residual within the
     band — never a deficit, never alarming.
 
-The closing identity (52.6-03) is
-``surface + precip + gw_recovered = et + recharge + runoff + delta_storage``; the
-residual is ``sum(inputs) - sum(outputs)``. It is exercised on the engine's OWN
-output (not hand-seeded run rows), so the band proves the seed's measured-ET sizing
-lands supply realistically against the SAME ET the balance checks.
+The closing identity (52.6-03, extended by 148-02 Task 1) is
+``surface + precip + gw_recovered = et + recharge + runoff + delta_storage
++ deep_percolation_surface_af``; the residual is ``sum(inputs) - sum(outputs)``.
+It is exercised on the engine's OWN output (not hand-seeded run rows), so the
+band proves the seed's measured-ET sizing lands supply realistically against
+the SAME ET the balance checks. ``recharge`` (148-02 Task 3) is real
+``recharge`` ledger rows only — managed recharge, never an over-delivery,
+which is nobody's credit (Q1) and never appears as a ledger row of any kind.
 
 Hermetic ORM fixtures (no network): OpenETCache rows mirror the live GEE shape —
 ET rows ``variable="ET"/model="Ensemble"`` keyed ``"et"``, precip rows
 ``variable="precip"/model="GRIDMET"`` keyed ``"precip"``. The fixture keeps
 gross ET well above effective precip per month, so net consumptive use stays
-positive and ``clamp_floor`` parks the whole surface over-delivery in
-``incidental_recharge_af`` (a no-well parcel banks nothing, so any bankable
-precip-surplus would otherwise vanish).
+positive.
 """
 import datetime as dt
 from decimal import Decimal
@@ -212,8 +221,18 @@ def _two_pass_refresh(pods, rp):
 # --- the three archetype closure proofs -------------------------------------
 
 def test_surface_only_parcel_mass_balance_closes():
-    """Surface-only (no well, ample delivery): closes via incidental recharge,
-    with NO pumped groundwater and NO phantom `calculated` row (54-01 / ISS-054)."""
+    """Surface-only (no well, ample delivery): closes with NO pumped groundwater
+    and NO phantom `calculated` row (54-01 / ISS-054).
+
+    148-02 Task 3 (Q1, an over-delivery is nobody's credit) RETARGET: this
+    field's canal figure is demand-weighted split by `allocate_district_delivery`
+    (ISS-218), which caps the consumed part at net demand ÷ efficiency BY
+    CONSTRUCTION — so this AMPLE-delivery field-year's over_delivery_af is 0,
+    not the positive "incidental recharge" the pre-Task-3 engine wrote. No
+    `recharge` ledger row is written any more (personal or pooled), so the
+    balance closes on ET/precip alone. The positive-over-delivery case (a
+    field-year whose canal figure was NOT demand-split) is
+    test_no_well_flat_delivery_residual_equals_its_over_delivery, below."""
     rp = _setup_period()
     parcel = _parcel("MER-APN-031")
     _et_cache(parcel, et_mm=140.0)
@@ -228,7 +247,15 @@ def test_surface_only_parcel_mass_balance_closes():
     balance = parcel_mass_balance(parcel, rp)
     assert abs(balance["residual_af"]) <= BAND * balance["outputs"]["et"], balance
     assert balance["inputs"]["gw_recovered"] == Decimal("0")
-    assert balance["outputs"]["recharge"] > 0  # over-delivery percolated
+    # No recharge ledger row of any kind any more.
+    assert balance["outputs"]["recharge"] == Decimal("0")
+    assert not ParcelLedger.objects.filter(
+        parcel=parcel, source_type="recharge").exists()
+    run = CalculationRun.objects.get(parcel=parcel, period=PERIOD)
+    # ISS-218, by construction: the demand-weighted split caps consumed at
+    # demand, so this AMPLE field-year's over-delivery is 0 — the residual
+    # equals it exactly (both 0 here).
+    assert balance["residual_af"] == run.over_delivery_af, balance
     # 54-01 invariant: a no-well parcel writes NO phantom groundwater row.
     assert not ParcelLedger.objects.filter(
         parcel=parcel, source_type="calculated").exists()
@@ -257,9 +284,16 @@ def test_conjunctive_parcel_mass_balance_closes():
 
 
 def test_basin_parcel_mass_balance_closes_with_pooled_recharge():
-    """Basin / flood-MAR (no well, ample delivery, in a GSA zone): closes, and the
-    incidental recharge routes to the GSA basin POOL with NO personal credit
-    (ISS-053)."""
+    """Basin / flood-MAR (no well, ample delivery, in a GSA zone): closes, with
+    NO personal credit and — 148-02 Task 3 RETARGET — no pooled credit either.
+
+    Q1 (an over-delivery is nobody's credit) retires the basin-pool deposit
+    ISS-053 used to write for this archetype, not just the personal row. This
+    field's canal figure is demand-weighted split (ISS-218), which caps
+    consumed at demand by construction, so this AMPLE field-year's
+    over_delivery_af is 0 — see
+    test_no_well_flat_delivery_residual_equals_its_over_delivery for the
+    positive case."""
     rp = _setup_period()
     parcel = _parcel("MER-APN-BASIN")
     _et_cache(parcel, et_mm=140.0)
@@ -274,17 +308,70 @@ def test_basin_parcel_mass_balance_closes_with_pooled_recharge():
     balance = parcel_mass_balance(parcel, rp)
     assert abs(balance["residual_af"]) <= BAND * balance["outputs"]["et"], balance
     assert balance["inputs"]["gw_recovered"] == Decimal("0")
-    assert balance["outputs"]["recharge"] > 0
-    # ISS-053: the over-delivery recharge pooled to the GSA basin, NOT a personal
-    # credit; the parcel keeps no positive recharge ledger row it could not pump.
+    assert balance["outputs"]["recharge"] == Decimal("0")
+    # No recharge ledger row — personal or otherwise.
     assert not ParcelLedger.objects.filter(
-        parcel=parcel, source_type="recharge", amount_acre_feet__gt=0).exists()
-    pool = AllocationCarryover.objects.filter(
-        zone=zone, origin="incidental_recharge_pool")
-    assert pool.exists() and pool.first().amount_af > 0
+        parcel=parcel, source_type="recharge").exists()
+    # No basin-pool deposit either.
+    assert not AllocationCarryover.objects.filter(
+        zone=zone, origin="incidental_recharge_pool").exists()
     # And no phantom groundwater row (no well to pump it).
     assert not ParcelLedger.objects.filter(
         parcel=parcel, source_type="calculated").exists()
+
+
+def test_no_well_flat_delivery_residual_equals_its_over_delivery():
+    """148-02 Task 3 (Q1) value test: the positive-over-delivery counterpart to
+    the two AMPLE closure tests above. Those fields' canal figures come from
+    `allocate_district_delivery`'s demand-weighted split (ISS-218), which caps
+    consumed at demand ÷ efficiency BY CONSTRUCTION, so their over-delivery is
+    0. Here the delivery is written straight to the ledger (as a district's
+    own flat CSV import would), bypassing that split, so efficiency alone
+    decides what the crop could use and the rest is a genuine over-delivery.
+
+    No `recharge` ledger row and no basin-pool deposit are written for it
+    (Q1); it shows up ONLY as `CalculationRun.over_delivery_af`, unchanged
+    across a re-run. Unlike the AMPLE closure tests above, this residual is
+    NOT small — a genuine over-delivery is a real, large residual, and the
+    mass balance identity says so plainly rather than masking it as a small
+    "realistic" figure or manufacturing it back as an output term (ISS-158):
+    the residual equals the over-delivery exactly."""
+    rp = _setup_period()
+    parcel = _parcel("MER-APN-FLAT-OVER")
+    _et_cache(parcel, et_mm=140.0)
+    _precip_cache(parcel, precip_mm=40.0)
+    _irrigate(parcel)  # no well -> FLOOD_MAR
+    zone, ParcelZone = _pool_zone("flat-over-pool")
+    ParcelZone.objects.create(parcel=parcel, zone=zone)
+    # A flat delivery written straight to the ledger — no DiversionRecord, no
+    # allocate_district_delivery, so the ISS-218 demand cap never applies.
+    ParcelLedger.objects.create(
+        parcel=parcel, transaction_date=dt.date(2024, 1, 1),
+        effective_date=dt.date(2024, 1, 1), amount_acre_feet=Decimal("-100.0000"),
+        source_type="surface_diversion", reporting_period=rp,
+    )
+
+    call_command("run_calculations", "--period", PERIOD)
+    run = CalculationRun.objects.get(parcel=parcel, period=PERIOD)
+    assert run.over_delivery_af > 0, "fixture must produce a real over-delivery"
+
+    balance = parcel_mass_balance(parcel, rp)
+    assert balance["outputs"]["recharge"] == Decimal("0")
+    assert balance["residual_af"] == run.over_delivery_af, balance
+    assert not ParcelLedger.objects.filter(
+        parcel=parcel, source_type="recharge").exists()
+    assert not AllocationCarryover.objects.filter(
+        zone=zone, origin="incidental_recharge_pool").exists()
+
+    # Unchanged across a re-run: no ledger row and no pool row appear, and the
+    # run's own over_delivery_af is delete-then-insert idempotent.
+    call_command("run_calculations", "--period", PERIOD)
+    run_again = CalculationRun.objects.get(parcel=parcel, period=PERIOD)
+    assert run_again.over_delivery_af == run.over_delivery_af
+    assert not ParcelLedger.objects.filter(
+        parcel=parcel, source_type="recharge").exists()
+    assert not AllocationCarryover.objects.filter(
+        zone=zone, origin="incidental_recharge_pool").exists()
 
 
 def test_metered_parcel_mass_balance_within_band():
@@ -562,7 +649,7 @@ def test_parcel_pane_states_one_subtraction_with_the_badge_inside_it():
 
 
 def test_parcel_pane_panel_reads_a_flood_mar_field_as_a_deficit():
-    """The same 110 AF in and 100 AF of ET, plus 20 AF spread to recharge.
+    """The same 110 AF in and 100 AF of ET, plus 20 AF of REAL managed recharge.
 
     This is the shape ISS-148 was filed over. Card 3's identity (supplies minus
     gross ET) prints +10.00 and reads as spare supply; the mass balance, which
@@ -570,8 +657,11 @@ def test_parcel_pane_panel_reads_a_flood_mar_field_as_a_deficit():
     reads as a deficit. The panel states the mass balance, so the sign and the
     badge word agree, and the uses foot shows where the 20 AF went.
 
-    Recharge is read off the engine's own breakdown (the ``clamp_floor`` step's
-    ``incidental_recharge_af``), which is where ``parcel_mass_balance`` looks.
+    148-02 Task 3 (Q1, an over-delivery is nobody's credit) RETARGET: `recharge`
+    is no longer read off the engine's breakdown (that was the over-delivery
+    the engine no longer writes anywhere) — it now reads only real `recharge`
+    ledger rows for the period, so this fixture writes one directly (as
+    `create_recharge_ledger_entries`'s managed-recharge personal path would).
     """
     from django.test import Client
     from django.urls import reverse
@@ -589,18 +679,17 @@ def test_parcel_pane_panel_reads_a_flood_mar_field_as_a_deficit():
         amount_acre_feet=Decimal("-110.0000"),
         transaction_date=dt.date(2026, 1, 15), effective_date=dt.date(2026, 1, 15),
     )
+    ParcelLedgerFactory(
+        parcel=parcel, reporting_period=rp, source_type="recharge",
+        amount_acre_feet=Decimal("20.0000"),
+        transaction_date=dt.date(2026, 1, 15), effective_date=dt.date(2026, 1, 15),
+    )
     CalculationRun.objects.create(
         parcel=parcel, period="2026-01",
         gross_et_af=Decimal("100.0000"),
         net_consumptive_use_af=Decimal("100.0000"),
         effective_precip_af=Decimal("0.0000"),
         final_af=Decimal("100.0000"),
-        breakdown=[
-            {
-                "step_type": "clamp_floor",
-                "detail": {"incidental_recharge_af": "20.0000"},
-            }
-        ],
     )
 
     client = Client()
@@ -629,9 +718,9 @@ def test_parcel_pane_panel_reads_a_flood_mar_field_as_a_deficit():
         '<span>Recharge <span class="text-tertiary">(estimated)</span></span><b>20.00</b>'
     ) in html, (
         "the uses breakdown does not show the 20.00 AF that left this field for the "
-        "basin, so the residual is not legible from the panel. Incidental "
-        "recharge is always engine-derived, so it carries the (estimated) label "
-        "whenever it is non-zero (ISS-158)."
+        "basin, so the residual is not legible from the panel. The template gates "
+        "the (estimated) label on the value being non-zero (ISS-158), unchanged by "
+        "148-02 Task 3's switch to a real recharge ledger row as the source."
     )
 
 

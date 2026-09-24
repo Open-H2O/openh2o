@@ -344,6 +344,15 @@ def clamp_floor(running_af, parcel, period, ctx, config):
     gone: a below-floor month is no longer bankable, so those levers would do
     nothing. An old plan whose config still carries them is unaffected; they
     are simply never read, and none of the three appears in the detail below.
+
+    148-02 Task 3 (Q1, an over-delivery is nobody's credit): `incidental_recharge_af`
+    KEEPS its key here — an old run's stored breakdown still reads it, and
+    `deposit_to_basin_pool` / `create_recharge_ledger_entries`'s managed-recharge
+    callers are untouched by this rename. `over_delivery_af` is added beside it,
+    same value, same meaning — the run's own column (`CalculationRun.over_delivery_af`)
+    is read off this key, not `incidental_recharge_af`, so the field name a reader
+    sees on the run says what it is: canal water the crop could use beyond its net
+    use, never a recharge credit.
     """
     floor = Decimal(str(config.get("floor", 0)))
 
@@ -372,6 +381,10 @@ def clamp_floor(running_af, parcel, period, ctx, config):
         "surplus_af": str(total_surplus),
         "rain_surplus_af": str(rain_surplus_af),
         "incidental_recharge_af": str(incidental_recharge_af),
+        # 148-02 Task 3: same value as incidental_recharge_af, under the name
+        # CalculationRun.over_delivery_af is read from. incidental_recharge_af
+        # stays for an old run's stored breakdown.
+        "over_delivery_af": str(incidental_recharge_af),
     }
     return new_running, _record("clamp_floor", running_af, new_running, detail)
 

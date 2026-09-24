@@ -255,9 +255,14 @@ def test_no_well_under_irrigation_records_unmet_demand_not_groundwater():
 
 @pytest.mark.django_db
 def test_no_well_over_delivery_preserves_flood_mar_basin_pool():
-    """(c) NO-WELL parcel, OVER-delivered → the incidental deep-percolation routes
-    to the GSA basin pool UNCHANGED (origin incidental_recharge_pool); NO personal
-    recharge row; NO calculated row; disposition=="unmet_demand", unmet=0."""
+    """(c) NO-WELL parcel, OVER-delivered.
+
+    148-02 Task 3 (Q1, an over-delivery is nobody's credit) RETARGET: the
+    incidental deep-percolation no longer routes to the GSA basin pool at
+    all — that deposit is retired along with the personal recharge row. NO
+    recharge row of any kind; NO calculated row; NO basin-pool deposit;
+    disposition=="unmet_demand", unmet=0; the amount is recorded only as
+    `over_delivery_af` on the run."""
     zone = _pool_zone("flood-pool")
     parcel = _parcel("R-NOWELL-FLOOD")
     _et_cache(parcel, et_mm=40.0)  # ~1.3 AF ET
@@ -271,19 +276,24 @@ def test_no_well_over_delivery_preserves_flood_mar_basin_pool():
         parcel=parcel, source_type="calculated").exists()
     assert not ParcelLedger.objects.filter(
         parcel=parcel, source_type="recharge").exists()
-    pool = AllocationCarryover.objects.filter(
-        zone=zone, origin="incidental_recharge_pool")
-    assert pool.exists()
-    assert pool.first().amount_af > 0
+    assert not AllocationCarryover.objects.filter(
+        zone=zone, origin="incidental_recharge_pool").exists()
     run = CalculationRun.objects.get(parcel=parcel, period=PERIOD)
     assert run.residual_disposition == "unmet_demand"
     assert run.unmet_demand_af == Decimal("0")  # over-delivered → no shortfall
+    assert run.over_delivery_af > 0, "fixture must produce a real over-delivery"
 
 
 @pytest.mark.django_db
 def test_no_well_residual_disposition_is_idempotent():
     """(d) Running the under-irrigated and over-delivered no-well cases twice
-    leaves identical rows and an unchanged basin pool."""
+    leaves identical rows.
+
+    148-02 Task 3 (Q1) RETARGET: the basin pool no longer receives a deposit
+    for the over-delivered case at all (that deposit is retired), so
+    idempotency here is the over-delivered field-year's run itself — its
+    `over_delivery_af` unchanged across a re-run, and the pool staying
+    EMPTY rather than "unchanged" at some nonzero value."""
     zone = _pool_zone("idem-pool")
     flood = _parcel("R-IDEM-FLOOD")
     _et_cache(flood, et_mm=40.0)
@@ -298,17 +308,19 @@ def test_no_well_residual_disposition_is_idempotent():
 
     call_command("run_calculations", "--period", PERIOD, "--parcel", "R-IDEM-FLOOD")
     call_command("run_calculations", "--period", PERIOD, "--parcel", "R-IDEM-SHORT")
-    pool_after_one = AllocationCarryover.objects.get(
-        zone=zone, origin="incidental_recharge_pool").amount_af
+    flood_over_delivery_one = CalculationRun.objects.get(
+        parcel=flood, period=PERIOD).over_delivery_af
+    assert flood_over_delivery_one > 0, "fixture must produce a real over-delivery"
     short_unmet_one = CalculationRun.objects.get(
         parcel=short, period=PERIOD).unmet_demand_af
 
     call_command("run_calculations", "--period", PERIOD, "--parcel", "R-IDEM-FLOOD")
     call_command("run_calculations", "--period", PERIOD, "--parcel", "R-IDEM-SHORT")
-    assert AllocationCarryover.objects.filter(
-        zone=zone, origin="incidental_recharge_pool").count() == 1
-    assert AllocationCarryover.objects.get(
-        zone=zone, origin="incidental_recharge_pool").amount_af == pool_after_one
+    assert not AllocationCarryover.objects.filter(
+        zone=zone, origin="incidental_recharge_pool").exists()
+    assert CalculationRun.objects.filter(parcel=flood, period=PERIOD).count() == 1
+    assert CalculationRun.objects.get(
+        parcel=flood, period=PERIOD).over_delivery_af == flood_over_delivery_one
     assert CalculationRun.objects.filter(parcel=short, period=PERIOD).count() == 1
     assert CalculationRun.objects.get(
         parcel=short, period=PERIOD).unmet_demand_af == short_unmet_one

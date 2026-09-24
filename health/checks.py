@@ -261,15 +261,15 @@ def check_ledger_integrity():
         status = "yellow"
         msg = (
             f"{zero_count} calculated ledger rows where no groundwater "
-            "extraction was derived (rainfall and delivered surface water "
-            "covered the estimated use)"
+            "extraction was derived (rainfall and the canal water the crop "
+            "could use covered the estimated use)"
         )
     elif zero_count > 0:
         status = "green"
         msg = (
             f"{zero_count} calculated ledger rows where no groundwater "
-            "extraction was derived (rainfall and delivered surface water "
-            "covered the estimated use; demo data, informational)"
+            "extraction was derived (rainfall and the canal water the crop "
+            "could use covered the estimated use; demo data, informational)"
         )
     else:
         status = "green"

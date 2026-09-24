@@ -68,6 +68,15 @@ def recharge_routes_to_personal(parcel_or_archetype):
     routes personal; ``BASIN`` and ``FLOOD_MAR`` route to the GSA basin pool.
     This is the ISS-053 guard: no parcel earns a personal groundwater credit
     without a well to pump it back.
+
+    148-02 Task 3 (Q1, an over-delivery is nobody's credit): ``run_calculations``
+    no longer calls this to route an over-delivery to a personal row or the
+    basin pool — that amount now lands only on ``CalculationRun.over_delivery_af``.
+    This function stays for the managed-recharge path
+    (``accounting.services.create_recharge_ledger_entries``, a real
+    ``RechargeEvent`` deliberately spread onto a basin), which the routing
+    question still applies to unchanged, and for ``run_calculations``'s own
+    one-time reversal of a pre-148-02 pool deposit.
     """
     if isinstance(parcel_or_archetype, str):
         archetype = parcel_or_archetype

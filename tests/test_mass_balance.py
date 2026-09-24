@@ -6,13 +6,19 @@ term for a parcel-period from the ledger, the CalculationRun audit, and the
 Phase-39 banking machinery, and reports whether the books close:
 
     surface + precip + gw_recovered = et + recharge + runoff + delta_storage
+                                       + deep_percolation_surface_af
 
 These tests build parcel-periods with KNOWN terms (seeded CalculationRun +
 ledger rows) so each balance closes by construction, and prove the function
 gathers and nets them correctly. The load-bearing invariant is ISS-053: a
-no-well parcel carries ZERO personal recharge credit it could never pump, yet
-its balance still closes because the percolated recharge is sourced from the
-parcel's own engine breakdown (and routes to the basin pool, not the parcel).
+no-well parcel carries ZERO personal recharge credit it could never pump.
+
+148-02 Task 3 (Q1, an over-delivery is nobody's credit): `recharge` above is
+now real `recharge` ledger rows ONLY (managed recharge) — an over-delivery
+never becomes one, personal or pooled, so a month with a real over-delivery
+and no managed recharge does NOT close any more; its residual states the
+over-delivery plainly instead (`test_no_well_flood_mar_closes_with_zero_personal_recharge`,
+`test_mer_apn_031_shape_no_personal_recharge_pooled`).
 """
 from datetime import date
 from decimal import Decimal
@@ -36,8 +42,10 @@ def _clamp_floor_breakdown(incidental_af):
     """A minimal CalculationRun.breakdown carrying a deep-percolation magnitude.
 
     Mirrors the shape the calculation engine writes: the clamp_floor step's
-    detail records ``incidental_recharge_af`` (ISS-052), which is the recharge
-    term the mass balance reads back per parcel-month.
+    detail records ``incidental_recharge_af`` (ISS-052) — kept here so an old
+    run's stored breakdown still has the shape a reader expects, but 148-02
+    Task 3's `parcel_mass_balance` no longer reads it back; `_run` below sets
+    `over_delivery_af` on the CalculationRun directly instead.
     """
     return [
         {
@@ -49,7 +57,13 @@ def _clamp_floor_breakdown(incidental_af):
 
 def _run(parcel, period, *, gross_et, precip, surface, banked, drawn, final,
          incidental):
-    """Create one CalculationRun (a parcel-month audit row) with known terms."""
+    """Create one CalculationRun (a parcel-month audit row) with known terms.
+
+    148-02 Task 3: `over_delivery_af` is set to the same `incidental` figure
+    the breakdown carries (mirroring what `run_calculations` actually does,
+    steps.py::clamp_floor) — it is the run's OWN column now, not something
+    `parcel_mass_balance` re-derives from the breakdown any more.
+    """
     return CalculationRun.objects.create(
         parcel=parcel,
         period=period,
@@ -59,6 +73,7 @@ def _run(parcel, period, *, gross_et, precip, surface, banked, drawn, final,
         banked_af=Decimal(str(banked)),
         drawn_af=Decimal(str(drawn)),
         final_af=Decimal(str(final)),
+        over_delivery_af=Decimal(str(incidental)),
         breakdown=_clamp_floor_breakdown(incidental),
     )
 
@@ -111,27 +126,32 @@ def test_conjunctive_parcel_balance_closes():
 
 
 def test_no_well_flood_mar_closes_with_zero_personal_recharge():
-    """A FLOOD_MAR (crop, no well) over-delivery month closes via percolation.
-
-    Surface over-delivery percolates to the aquifer (the recharge output term),
-    sourced from the parcel's engine breakdown. No personal groundwater is
-    pumped and no personal recharge credit is left on the parcel.
-    """
+    """148-02 Task 3 (Q1, an over-delivery is nobody's credit) RETARGET: a
+    FLOOD_MAR (crop, no well) over-delivery month no longer closes via a
+    `recharge` output term — that term is real recharge ledger rows only, and
+    an over-delivery is never one. The 4 AF the crop could not use shows up
+    only as `over_delivery_af` on the run, and the RESIDUAL equals it exactly
+    (the identity states the over-delivery plainly rather than absorbing it
+    into a manufactured recharge figure, ISS-158). No personal groundwater is
+    pumped and no personal recharge credit is left on the parcel."""
     rp = ReportingPeriodFactory()
     parcel = ParcelFactory()
     UsageLocationFactory(parcel=parcel)  # crop, no well -> FLOOD_MAR
 
-    # 12 surface + 2 precip vs 10 ET => 4 AF over-delivery percolates (recharge).
-    _run(parcel, "2024-02", gross_et=10, precip=2, surface=12,
-         banked=0, drawn=0, final=0, incidental=4)
+    # 12 surface + 2 precip vs 10 ET => 4 AF over-delivery.
+    run = _run(parcel, "2024-02", gross_et=10, precip=2, surface=12,
+               banked=0, drawn=0, final=0, incidental=4)
     _surface_row(parcel, rp, date(2024, 2, 1), 12)
 
     result = parcel_mass_balance(parcel, rp)
 
     assert result["inputs"]["gw_recovered"] == Decimal("0")
-    assert result["outputs"]["recharge"] == Decimal("4")
+    # No real recharge ledger row exists, so the output term is 0 — the
+    # over-delivery is NOT a recharge output any more.
+    assert result["outputs"]["recharge"] == Decimal("0")
     assert result["outputs"]["delta_storage"] == Decimal("0")
-    assert result["closes"] is True
+    assert result["closes"] is False
+    assert result["residual_af"] == run.over_delivery_af == Decimal("4")
     # ISS-053: no positive personal recharge ledger credit on a no-well parcel.
     from parcels.models import ParcelLedger
     assert not ParcelLedger.objects.filter(
@@ -140,26 +160,28 @@ def test_no_well_flood_mar_closes_with_zero_personal_recharge():
 
 
 def test_mer_apn_031_shape_no_personal_recharge_pooled():
-    """MER-APN-031 shape: surface-only, no well, recharge pools, books close.
+    """148-02 Task 3 (Q1) RETARGET: MER-APN-031 shape (surface-only, no well).
 
-    The ISS-053 worked case. gw_recovered == 0, the percolated recharge is
-    attributable to the basin pool (NOT a personal credit the parcel owns), the
-    residual is within tolerance, and no positive personal recharge row exists.
-    """
+    The ISS-053 worked case, updated: gw_recovered == 0, no personal recharge
+    row, and — Q1 — no pooled deposit either, since an over-delivery is
+    nobody's credit at all any more. The 3 AF the crop could not use is the
+    run's `over_delivery_af`, and the residual equals it exactly (the books
+    do not close, and are not made to)."""
     rp = ReportingPeriodFactory()
     parcel = ParcelFactory(parcel_number="MER-APN-031")
     UsageLocationFactory(parcel=parcel)  # a crop + (below) surface, but no well
 
-    # 9 surface + 1 precip vs 7 ET => 3 AF percolates to the basin pool.
-    _run(parcel, "2024-03", gross_et=7, precip=1, surface=9,
-         banked=0, drawn=0, final=0, incidental=3)
+    # 9 surface + 1 precip vs 7 ET => 3 AF over-delivery.
+    run = _run(parcel, "2024-03", gross_et=7, precip=1, surface=9,
+               banked=0, drawn=0, final=0, incidental=3)
     _surface_row(parcel, rp, date(2024, 3, 1), 9)
 
     result = parcel_mass_balance(parcel, rp)
 
     assert result["inputs"]["gw_recovered"] == Decimal("0")
-    assert result["outputs"]["recharge"] == Decimal("3")
-    assert result["closes"] is True
+    assert result["outputs"]["recharge"] == Decimal("0")
+    assert result["closes"] is False
+    assert result["residual_af"] == run.over_delivery_af == Decimal("3")
 
     from parcels.models import ParcelLedger
     personal_recharge = ParcelLedger.objects.filter(

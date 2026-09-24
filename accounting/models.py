@@ -587,6 +587,16 @@ class CalculationRun(models.Model):
         "delivery. Null when the apply_efficiency knob is off, nothing was "
         "delivered, or the step ran on a plan from before 148-02.",
     )
+    over_delivery_af = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        default=Decimal("0"),
+        help_text="148-02 (Q1, an over-delivery is nobody's credit): the month's "
+        "canal water the crop could use beyond its net use, read off the "
+        "clamp_floor step's incidental_recharge_af. No ledger row is written for "
+        "it — the amount is recorded here only, never a recharge credit and "
+        "never a personal or pooled deposit. 0 on a run with no over-delivery.",
+    )
     net_consumptive_use_af = models.DecimalField(
         max_digits=12,
         decimal_places=4,

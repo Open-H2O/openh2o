@@ -78,6 +78,16 @@ def deposit_to_basin_pool(
     ``select_for_update`` inside a transaction serialises the read-modify-write so
     the engine's per-parcel loop can deposit many times for one key without losing
     an increment. Returns the pool row.
+
+    148-02 Task 3 (Q1, an over-delivery is nobody's credit): ``run_calculations``
+    no longer calls this with ``origin=incidental_recharge_pool`` to deposit a
+    no-well parcel's over-delivery — that amount now lands only on
+    ``CalculationRun.over_delivery_af``, never a pool row. This function stays
+    for the managed-recharge path (``create_recharge_ledger_entries``'s
+    ``basin_recharge_pool`` deposit, a real ``RechargeEvent``) and for
+    ``run_calculations``'s own one-time reversal of a pre-148-02 incidental
+    deposit (a negative delta, same origin, so a database an older engine
+    wrote nets back to what this engine would have left it).
     """
     amount = Decimal(str(amount_af))
     with transaction.atomic():
@@ -699,23 +709,6 @@ def residual_band_status(residual_af, gross_et_af, *, closes):
     return "large"
 
 
-def _incidental_recharge_af(breakdown):
-    """Read deep-percolation recharge (AF) off a CalculationRun.breakdown.
-
-    Mirrors the engine's reader (run_calculations._incidental_recharge_af): the
-    clamp_floor step records ``incidental_recharge_af`` — the surface/precip
-    over-delivery that percolated to the aquifer (ISS-052). Duplicated here as a
-    few lines rather than imported, to keep services.py free of an import cycle
-    with the management command (which imports from services). Returns a
-    non-negative Decimal; 0 when no clamp_floor step ran.
-    """
-    for step in breakdown or []:
-        if step.get("step_type") == "clamp_floor":
-            detail = step.get("detail") or {}
-            return Decimal(str(detail.get("incidental_recharge_af", "0")))
-    return Decimal("0")
-
-
 def runs_in_period(queryset, reporting_period):
     """Narrow a ``CalculationRun`` queryset to one reporting period, by DATE.
 
@@ -817,10 +810,18 @@ def parcel_mass_balance(parcel, reporting_period=None):
       timing is carried by ``delta_storage`` (banked − drawn), not double-counted
       here.
     * ``et`` (output): ``CalculationRun.gross_et_af`` (gross actual ET).
-    * ``recharge`` (output): deep-percolation that left the parcel, read from
-      each month's engine breakdown (``incidental_recharge_af``). For a no-well
-      parcel this water routes to the GSA basin pool, NOT a personal credit — the
-      ISS-053 invariant — but it is still a real output of this parcel's balance.
+    * ``recharge`` (output, 148-02 Task 3): magnitude of real ``recharge``
+      ledger rows for the period — managed recharge deliberately spread onto a
+      has-well parcel (``create_recharge_ledger_entries``'s personal path), on
+      the SAME billable basis ``surface`` above reads. An over-delivery (canal
+      water a field could use beyond its net use) is NOT a recharge output any
+      more: Q1 (an over-delivery is nobody's credit) means it never becomes a
+      ledger row of any kind, so it cannot appear here, and it is never added
+      back as a manufactured term either — that is the ISS-158 plug. It is
+      recorded only on the run, as ``CalculationRun.over_delivery_af``,
+      informational, not part of this identity. A no-well over-delivered
+      field-year's residual therefore equals that amount rather than closing
+      to ~0, which is what 148's closure tests now check.
     * ``runoff`` (output): an explicit bookkeeping term, always Decimal("0") under
       the "no real hydrology" boundary (CONTEXT). Named, never silently dropped.
     * ``delta_storage`` (output): change in banked credit over the period
@@ -861,11 +862,21 @@ def parcel_mass_balance(parcel, reporting_period=None):
         )["s"]
         or Decimal("0")
     )
+    # 148-02 Task 3: real recharge only (managed recharge's personal-path row).
+    # No over-delivery ever reaches a `recharge` ledger row any more, so this
+    # is no longer read off the engine breakdown (_incidental_recharge_af) —
+    # abs() mirrors `surface` above for the same defensive reason, though the
+    # supply-row-positive constraint already keeps these rows non-negative.
+    recharge = abs(
+        billable.filter(source_type="recharge").aggregate(
+            s=Sum("amount_acre_feet")
+        )["s"]
+        or Decimal("0")
+    )
 
     # CalculationRun-sourced terms: ET, effective precip, banking, percolation.
     precip = Decimal("0")
     et = Decimal("0")
-    recharge = Decimal("0")
     delta_storage = Decimal("0")
     deep_percolation_surface = Decimal("0")
     for run in _calculation_runs_for_period(parcel, reporting_period):
@@ -874,7 +885,6 @@ def parcel_mass_balance(parcel, reporting_period=None):
         delta_storage += (run.banked_af or Decimal("0")) - (
             run.drawn_af or Decimal("0")
         )
-        recharge += _incidental_recharge_af(run.breakdown)
         # 148-02: the part of a canal delivery the crop could NOT use. Neither
         # crop use nor a credit, and never manufactured (ISS-158). Only present
         # on a run whose apply_efficiency knob was on and something was
@@ -917,8 +927,8 @@ def parcel_mass_balance(parcel, reporting_period=None):
         "inputs": inputs,
         "inputs_total": inputs_total,
         # True when the groundwater supply above is the engine's estimate rather
-        # than a meter reading. Recharge is ALWAYS engine-derived, so it needs no
-        # flag — the template gates that one on the value being non-zero.
+        # than a meter reading. Recharge carries no separate flag of its own —
+        # the template gates its "(estimated)" label on the value being non-zero.
         "gw_is_estimated": gw_is_estimated,
         "outputs": outputs,
         "outputs_total": outputs_total,

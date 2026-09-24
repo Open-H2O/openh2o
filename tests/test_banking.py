@@ -11,11 +11,12 @@ WaterCredit is deposited and none is drawn, for any origin. What
 engine wrote for a parcel-period, so a re-run on a database an older engine
 banked into removes its stale WaterCredit / WaterCreditDraw rows.
 
-The over-delivery (surface water beyond crop ET) story is unchanged by this
-plan, it is deep-percolation recharge, ISS-052/053, and
-test_surface_overdelivery_pools_recharge_not_a_watercredit is currently RED
-for a Task 1 (canal efficiency) reason that belongs to 148-02 Task 3; its
-over-delivery assertions are left exactly as they were.
+The over-delivery (surface water beyond what the field's efficiency lets the
+crop use) story is Task 3's, not this task's: Q1 (an over-delivery is
+nobody's credit) retires the personal recharge row AND the basin-pool deposit
+ISS-052/053 used to write, so test_surface_overdelivery_pools_recharge_not_a_watercredit
+is retargeted there to prove neither is written any more and the amount lands
+only on `CalculationRun.over_delivery_af`.
 
 Runs in the web container (needs the DB).
 """
@@ -158,9 +159,18 @@ def _raw_precip_plan():
 
 @pytest.mark.django_db
 def test_surface_overdelivery_pools_recharge_not_a_watercredit():
-    """ISS-052/053: surface delivered beyond crop ET is deep-percolation recharge
-    — NOT a bankable precip WaterCredit. On a NO-WELL parcel it cannot be pumped
-    back, so it deposits to the GSA basin pool, not a personal recharge row."""
+    """148-02 Task 3 (Q1, an over-delivery is nobody's credit): surface delivered
+    beyond what the field's own efficiency lets the crop use is neither a
+    bankable precip WaterCredit NOR a recharge credit of any kind — personal or
+    pooled. The amount is recorded only on the run, as `over_delivery_af`.
+
+    RETARGETED from the pre-Task-3 expectation that a no-well parcel's
+    over-delivery deposited to the GSA basin pool (ISS-052/053): that pool
+    deposit is gone too, not just the personal row. `EFF` is the agency-wide
+    default `field_efficiency` falls back to when no SiteConfig row exists
+    (surface/services.py); the 5 AF delivered here only lets the crop use
+    5 x EFF = 3.75 AF, so the over-delivery is smaller than the pre-Task-1
+    ~1.72 AF figure (delivered minus ET) this test used to assert."""
     parcel = _parcel("BANK-DEP", acres="10")
     _et_cache(parcel, period="2024-02", et_mm=100.0)  # ~3.28 AF gross
     _irrigate(parcel)  # crop, no well -> FLOOD_MAR -> pool
@@ -176,9 +186,15 @@ def test_surface_overdelivery_pools_recharge_not_a_watercredit():
     assert not ParcelLedger.objects.filter(
         parcel=parcel, source_type="recharge"
     ).exists()
-    # The over-delivery landed in the zone's incidental basin pool instead.
-    over_delivery = (Decimal("5") - _gross_af()).quantize(Q)
-    assert _incidental_pool_total(zone).quantize(Q) == over_delivery
+    # No pooled recharge either — Q1 retires that deposit too.
+    assert _incidental_pool_total(zone) == Decimal("0")
+    # The amount is recorded on the run instead.
+    EFF = Decimal("0.750")
+    consumed = (Decimal("5") * EFF).quantize(Q)
+    over_delivery = (consumed - _gross_af()).quantize(Q)
+    assert over_delivery > 0, "fixture must produce a real over-delivery"
+    run = CalculationRun.objects.get(parcel=parcel, period="2024-02")
+    assert run.over_delivery_af == over_delivery
     # 54-01: a no-well parcel gets NO `calculated` groundwater row — over-delivered,
     # so the run records unmet demand of 0 (the residual was fully covered).
     assert not ParcelLedger.objects.filter(

@@ -33,12 +33,18 @@ from accounting.models import (
     ReportingPeriod,
     WaterCredit,
     WaterCreditDraw,
+    WaterType,
 )
 from accounting.ledger_words import (
     INCIDENTAL_RECHARGE_WORDS,
     LEGACY_INCIDENTAL_RECHARGE_WORDS,
 )
-from accounting.services import INCIDENTAL_RECHARGE_POOL, et_mm_to_acre_feet
+from accounting.carryover_math import water_year_of
+from accounting.services import (
+    INCIDENTAL_RECHARGE_POOL,
+    deposit_to_basin_pool,
+    et_mm_to_acre_feet,
+)
 from parcels.models import CropType, Parcel, ParcelLedger, UsageLocation
 from tests.factories import ParcelZoneFactory, WellIrrigatedParcelFactory, ZoneFactory
 
@@ -428,14 +434,20 @@ def test_config_hash_ignores_labels_but_tracks_enabled_set():
 
 @pytest.mark.django_db
 def test_no_well_overdelivery_routes_to_basin_pool_not_a_personal_credit():
-    """ISS-052/053: surface delivered beyond crop ET is deep-percolation recharge.
-    On a NO-WELL parcel it cannot be recovered, so it deposits to the GSA basin
-    pool — NOT a personal recharge row (the MER-APN-031 phantom) and NOT a precip
-    credit drawn down later (which masked real summer pumping)."""
+    """148-02 Task 3 (Q1, an over-delivery is nobody's credit): surface delivered
+    beyond what the field's own efficiency lets the crop use is NOT a personal
+    recharge row (the MER-APN-031 phantom), NOT a precip credit drawn down
+    later, and — RETARGETED from the pre-Task-3 expectation — NOT a GSA basin
+    pool deposit either. The amount is recorded only on the run.
+
+    `EFF` mirrors `field_efficiency`'s agency-wide fallback (no SiteConfig row
+    in this fixture); 5 AF delivered lets the crop use 5 x EFF = 3.75 AF, so
+    the over-delivery (~0.47 AF) is smaller than the pre-Task-1 ~1.72 AF
+    figure (delivered minus ET) this test used to assert."""
     parcel = _parcel("RUN-RECHARGE", acres="10")
     _irrigate(parcel)  # crop, no well -> FLOOD_MAR -> pool
     zone = _zone_for(parcel)
-    # "Wet" month: surface (5 AF) exceeds gross ET (~3.28 AF) by ~1.72 AF.
+    # "Wet" month: surface (5 AF) exceeds gross ET (~3.28 AF).
     _et_cache(parcel, period="2024-02", et_mm=100.0)
     _surface_row(parcel, "2024-02", af=5)
     # Following month: ET only, no surface.
@@ -445,26 +457,23 @@ def test_no_well_overdelivery_routes_to_basin_pool_not_a_personal_credit():
     call_command("run_calculations", "--period", "2024-02")
     call_command("run_calculations", "--period", "2024-03")
 
-    over_delivery = (Decimal("5") - _gross_af()).quantize(Q)  # ~1.72 AF
+    EFF = Decimal("0.750")
+    consumed = (Decimal("5") * EFF).quantize(Q)
+    over_delivery = (consumed - _gross_af()).quantize(Q)
+    assert over_delivery > 0, "fixture must produce a real over-delivery"
 
     deposit_run = _run(parcel, "2024-02")
     # Nothing banked (no genuine rain surplus); surface covered all ET, bill 0.
     assert deposit_run.banked_af == Decimal("0.0000")
     assert deposit_run.final_af == Decimal("0.0000")
-    clamp = next(
-        s for s in deposit_run.breakdown if s["step_type"] == "clamp_floor"
-    )
-    assert (
-        Decimal(clamp["detail"]["incidental_recharge_af"]).quantize(Q)
-        == over_delivery
-    )
+    assert deposit_run.over_delivery_af == over_delivery
 
     # NO personal recharge ledger row — the phantom credit is gone.
     assert not ParcelLedger.objects.filter(
         parcel=parcel, source_type="recharge"
     ).exists()
-    # The over-delivery landed in the zone's incidental basin pool instead.
-    assert _incidental_pool_total(zone).quantize(Q) == over_delivery
+    # No basin pool deposit either — Q1 retires that too.
+    assert _incidental_pool_total(zone) == Decimal("0")
 
     # The next month draws NOTHING (no phantom credit). With no well, the real
     # shortfall is recorded as unmet demand on the run — NOT a phantom groundwater
@@ -481,25 +490,37 @@ def test_no_well_overdelivery_routes_to_basin_pool_not_a_personal_credit():
 
 @pytest.mark.django_db
 def test_has_well_parcel_keeps_personal_incidental_recharge_row():
-    """A CONJUNCTIVE (has-well) parcel CAN pump its own recharge, so its incidental
-    over-delivery stays a personal GW ledger row and nothing goes to the pool."""
+    """148-02 Task 3 (Q1, an over-delivery is nobody's credit): RETARGETED from
+    the pre-Task-3 title's claim — a CONJUNCTIVE (has-well) parcel's
+    over-delivery is NO LONGER a personal recoverable recharge row either. No
+    ledger row is written for it on ANY archetype; it is recorded only on the
+    run, as `over_delivery_af`, and the basin pool (which a has-well parcel
+    never fed anyway) stays untouched.
+
+    `EFF` mirrors `field_efficiency`'s agency-wide fallback; the resulting
+    over-delivery (~0.47 AF) differs from the pre-Task-1 ~1.72 AF figure this
+    test used to assert."""
     parcel = _parcel("RUN-CONJUNCTIVE", acres="10")
     _irrigate(parcel)
     WellIrrigatedParcelFactory(parcel=parcel)  # has well -> CONJUNCTIVE
-    _zone_for(parcel)  # zone present, but the personal path wins for has-well
+    _zone_for(parcel)  # zone present, but has-well never reaches the pool
     _et_cache(parcel, period="2024-02", et_mm=100.0)
     _surface_row(parcel, "2024-02", af=5)
     call_command("seed_calculation_plan")
 
     call_command("run_calculations", "--period", "2024-02")
 
-    over_delivery = (Decimal("5") - _gross_af()).quantize(Q)
-    recharge = ParcelLedger.objects.get(
-        parcel=parcel, effective_date=dt.date(2024, 2, 1), source_type="recharge"
-    )
-    assert recharge.amount_acre_feet.quantize(Q) == over_delivery
-    assert recharge.water_type.code == "GW"
-    assert recharge.description == INCIDENTAL_RECHARGE_WORDS
+    EFF = Decimal("0.750")
+    consumed = (Decimal("5") * EFF).quantize(Q)
+    over_delivery = (consumed - _gross_af()).quantize(Q)
+    assert over_delivery > 0, "fixture must produce a real over-delivery"
+
+    run = _run(parcel, "2024-02")
+    assert run.over_delivery_af == over_delivery
+    # No `recharge` ledger row of any kind — personal or otherwise.
+    assert not ParcelLedger.objects.filter(
+        parcel=parcel, source_type="recharge"
+    ).exists()
     # A has-well parcel never feeds the basin pool.
     assert not AllocationCarryover.objects.filter(
         origin=INCIDENTAL_RECHARGE_POOL
@@ -507,14 +528,17 @@ def test_has_well_parcel_keeps_personal_incidental_recharge_row():
 
 
 @pytest.mark.django_db
-def test_legacy_incidental_recharge_row_is_replaced_by_a_rerun():
-    """ISS-052 preserved across the 143-11 rename: a `recharge` row an agency
-    wrote before this change (carrying `LEGACY_INCIDENTAL_RECHARGE_WORDS`) is
-    deleted by a re-run and replaced by exactly one row carrying the new
-    words; never doubled, never left stale."""
+def test_legacy_incidental_recharge_row_is_cleaned_up_by_a_rerun():
+    """148-02 Task 3 (Q1, an over-delivery is nobody's credit): RETARGETED from
+    the pre-Task-3 expectation that a re-run REPLACES an old-engine row with a
+    freshly-worded one. This engine writes no over-delivery `recharge` row of
+    any kind — old OR new wording — so a re-run over either a pre-143-11 row
+    (`LEGACY_INCIDENTAL_RECHARGE_WORDS`) or a post-143-11 one
+    (`INCIDENTAL_RECHARGE_WORDS`) must clean it up and leave NONE behind, not
+    replace it with one."""
     parcel = _parcel("RUN-LEGACY-RENAME", acres="10")
     _irrigate(parcel)
-    WellIrrigatedParcelFactory(parcel=parcel)  # has well -> CONJUNCTIVE / personal
+    WellIrrigatedParcelFactory(parcel=parcel)  # has well -> CONJUNCTIVE
     _et_cache(parcel, period="2024-02", et_mm=100.0)
     _surface_row(parcel, "2024-02", af=5)
     call_command("seed_calculation_plan")
@@ -532,14 +556,24 @@ def test_legacy_incidental_recharge_row_is_replaced_by_a_rerun():
     rows = ParcelLedger.objects.filter(
         parcel=parcel, effective_date=dt.date(2024, 2, 1), source_type="recharge"
     )
-    assert rows.count() == 1
-    assert rows.get().description == INCIDENTAL_RECHARGE_WORDS
+    assert rows.count() == 0
+    # The words constant is still imported and matched on delete, even though
+    # nothing writes it any more; INCIDENTAL_RECHARGE_WORDS itself is exercised
+    # by test_ledger_words.py.
+    assert INCIDENTAL_RECHARGE_WORDS != LEGACY_INCIDENTAL_RECHARGE_WORDS
 
 
 @pytest.mark.django_db
 def test_no_well_incidental_pool_is_idempotent_across_reruns():
-    """Re-running a period leaves the basin pool unchanged — the engine deposits a
-    signed delta (new − prior), so a no-well parcel's incidental never double-counts."""
+    """148-02 Task 3 (Q1) re-run safety: RETARGETED from the pre-Task-3
+    expectation that the engine keeps DEPOSITING to the pool idempotently
+    (delta new-minus-prior). This engine never deposits for an over-delivery
+    at all; the only pool activity left is a ONE-TIME REVERSAL of whatever a
+    pre-148-02 engine deposited for this (parcel, period). Simulates that:
+    seeds a pre-148-02 CalculationRun (breakdown carries
+    `incidental_recharge_af` but NOT `over_delivery_af`) plus the pool deposit
+    that old engine made, then proves a re-run reverses it exactly once —
+    old-engine run -> re-run reverses -> re-run again, pool unchanged."""
     parcel = _parcel("RUN-RECHARGE-IDEM", acres="10")
     _irrigate(parcel)  # no well -> pool
     zone = _zone_for(parcel)
@@ -547,15 +581,37 @@ def test_no_well_incidental_pool_is_idempotent_across_reruns():
     _surface_row(parcel, "2024-02", af=5)
     call_command("seed_calculation_plan")
 
-    call_command("run_calculations", "--period", "2024-02")
-    call_command("run_calculations", "--period", "2024-02")  # re-run
+    gw, _ = WaterType.objects.get_or_create(code="GW", defaults={"name": "Groundwater"})
+    prior_incidental = Decimal("1.7200")
+    CalculationRun.objects.create(
+        parcel=parcel, period="2024-02",
+        gross_et_af=_gross_af().quantize(Q), net_consumptive_use_af=Decimal("0"),
+        final_af=Decimal("0"),
+        breakdown=[
+            {
+                "step_type": "clamp_floor",
+                "detail": {"incidental_recharge_af": str(prior_incidental)},
+            }
+        ],
+    )
+    deposit_to_basin_pool(
+        zone, gw, water_year_of("2024-02"), prior_incidental,
+        origin=INCIDENTAL_RECHARGE_POOL,
+    )
+    assert _incidental_pool_total(zone) == prior_incidental
 
-    over_delivery = (Decimal("5") - _gross_af()).quantize(Q)
-    # No personal row, and the pool holds the amount ONCE (not doubled).
+    call_command("run_calculations", "--period", "2024-02")  # reverses once
+    assert _incidental_pool_total(zone) == Decimal("0")
     assert not ParcelLedger.objects.filter(
         parcel=parcel, source_type="recharge"
     ).exists()
-    assert _incidental_pool_total(zone).quantize(Q) == over_delivery
+
+    call_command("run_calculations", "--period", "2024-02")  # re-run again
+    assert _incidental_pool_total(zone) == Decimal("0"), (
+        "a second re-run must not double-reverse — the run this engine just "
+        "wrote carries over_delivery_af, so its own prior is no longer "
+        "pre-148-02"
+    )
 
 
 @pytest.mark.django_db

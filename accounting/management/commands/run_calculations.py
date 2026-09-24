@@ -28,6 +28,17 @@ The WaterCredit / WaterCreditDraw tables and their `precip_surplus` choice
 stay on the model so an old database still loads. Nothing writes either
 table any more; year-end carry-over (`rollover_allocations`) writes
 `AllocationCarryover`, a different model.
+
+148-02 Task 3 (Q1): an over-delivery is nobody's credit. The month's canal
+water a parcel could use beyond its net use — clamp_floor's
+`incidental_recharge_af` — is recorded ONLY on the run, as
+`CalculationRun.over_delivery_af`. No `recharge` ledger row is written for it
+(a has-well parcel's old personal credit) and no basin-pool deposit is made
+for it (a no-well parcel's old pooled credit); `deposit_to_basin_pool` and
+`recharge_routes_to_personal` stay in this module only to CLEAN UP what a
+pre-148-02 engine wrote — see `prior_is_pre_148_02`, below — and for the
+managed-recharge path (`accounting.services.create_recharge_ledger_entries`),
+which this plan does not touch.
 """
 
 import datetime as dt
@@ -66,15 +77,6 @@ from parcels.models import Parcel, ParcelLedger
 FORCE_REASON = "--force on a finalized period"
 
 PERIOD_RE = re.compile(r"^\d{4}-\d{2}$")
-
-
-# ISS-052: incidental-recharge ledger rows the engine writes are tagged with this
-# description prefix so a re-run replaces only its OWN rows (delete-then-insert)
-# and never touches managed-basin recharge (which uses a "Managed ..." prefix).
-# 143-11: the words themselves moved to `accounting/ledger_words.py`, beside
-# every other sentence the ledger shows a reader; this stays an alias so
-# nothing else in this module has to move.
-INCIDENTAL_RECHARGE_DESC = INCIDENTAL_RECHARGE_WORDS
 
 
 def _incidental_recharge_af(breakdown):
@@ -203,6 +205,12 @@ def _persist_calculation_run(
         gross_q - (effective_precip_af or Decimal("0"))
     ).quantize(quant)
 
+    # 148-02 Task 3 (Q1): the over-delivery amount lands on the run, read off
+    # clamp_floor's over_delivery_af (same value as the legacy
+    # incidental_recharge_af key; see steps.py::clamp_floor). No ledger row is
+    # written for it any more — see the caller.
+    over_delivery_af = _incidental_recharge_af(breakdown).quantize(quant)
+
     CalculationRun.objects.filter(parcel=parcel, period=period).delete()
     CalculationRun.objects.create(
         parcel=parcel,
@@ -212,6 +220,7 @@ def _persist_calculation_run(
         surface_water_af=surface_water_af,
         surface_delivered_af=surface_delivered_af,
         surface_efficiency=surface_efficiency,
+        over_delivery_af=over_delivery_af,
         net_consumptive_use_af=net_consumptive_use_af,
         residual_disposition=residual_disposition,
         unmet_demand_af=unmet_demand_af,
@@ -377,7 +386,7 @@ class Command(BaseCommand):
         unmet = 0
         metered = 0
         skipped_no_et = 0
-        recharged = 0
+        over_delivered = 0
         for parcel in parcels:
             is_metered = parcel.id in metered_row_ids
             final_af, breakdown = evaluate_chain(parcel, period)
@@ -401,22 +410,44 @@ class Command(BaseCommand):
 
             gross_af = Decimal(et_step["output_af"]) if et_step else Decimal("0")
 
-            # ISS-053: a parcel's incidental (deep-percolation) recharge becomes a
-            # PERSONAL groundwater credit only if it has a well to pump it back
-            # (CONJUNCTIVE). A no-well parcel's over-delivery still percolates, but
-            # it cannot recover it, so that recharge belongs to the GSA basin pool.
-            # Capture the PRIOR incidental from the existing CalculationRun before
-            # _persist_calculation_run overwrites it, so the no-well pool deposit
-            # can be a signed delta (new − prior) and a re-run never double-counts.
+            # 148-02 Task 3 (Q1): an over-delivery is nobody's credit. No ledger
+            # row and no pool deposit is written for it any more — the amount
+            # lands on the run as over_delivery_af (_persist_calculation_run,
+            # below). routes_personal / pool_zone still decide WHERE a stale
+            # pre-148-02 write needs cleaning up: a has-well parcel's old personal
+            # row is caught by the delete-by-prefix inside the transaction; a
+            # no-well parcel's old POOL deposit needs an explicit one-time
+            # reversal, decided next.
             routes_personal = recharge_routes_to_personal(parcel)
             pool_zone = None if routes_personal else _parcel_pool_zone(parcel)
             prior_run = CalculationRun.objects.filter(
                 parcel=parcel, period=period
             ).first()
-            prior_incidental = (
-                _incidental_recharge_af(prior_run.breakdown)
+            prior_clamp = (
+                next(
+                    (s for s in prior_run.breakdown if s["step_type"] == "clamp_floor"),
+                    None,
+                )
                 if prior_run
+                else None
+            )
+            prior_incidental = (
+                Decimal(str(prior_clamp["detail"].get("incidental_recharge_af", "0")))
+                if prior_clamp
                 else Decimal("0")
+            )
+            # A run written by THIS (148-02) engine always carries
+            # over_delivery_af in its clamp_floor detail (see steps.py). Its
+            # absence, alongside a positive incidental_recharge_af, means the
+            # prior run predates this change and deposited that amount to the
+            # basin pool — reverse it exactly once. A second re-run sees a
+            # prior breakdown that already carries over_delivery_af (this
+            # engine's own last write) and reverses nothing, so a re-run never
+            # double-reverses.
+            prior_is_pre_148_02 = (
+                prior_clamp is not None
+                and "over_delivery_af" not in prior_clamp["detail"]
+                and prior_incidental > 0
             )
 
             if dry_run:
@@ -426,8 +457,8 @@ class Command(BaseCommand):
                 extra = ""
                 if incidental_af > 0:
                     extra += (
-                        f"; would credit recharge "
-                        f"{incidental_af.quantize(Decimal('0.0001'))} AF (GW)"
+                        f"; {incidental_af.quantize(Decimal('0.0001'))} AF canal "
+                        f"water beyond the month's use, would be recorded on the run"
                     )
                 # 148-02: a canal-served field's line also names what was
                 # delivered, the field's own efficiency (and where it came
@@ -552,14 +583,16 @@ class Command(BaseCommand):
                     residual_disposition=residual_disposition,
                     unmet_demand_af=unmet_demand_af,
                 )
-                # ISS-052/053: surface-over-delivery is deep-percolation recharge,
-                # credited to the aquifer rather than banked as a phantom precip
-                # credit. WHERE it lands depends on the parcel's archetype. The
-                # delete-by-prefix always runs first so a re-run (or an archetype
-                # flip) clears any stale PERSONAL row before re-deciding.
-                # Matches EITHER prefix: an agency that ran the engine before
-                # 143-11 and re-runs it after must replace its incidental rows,
-                # not double them (ISS-052 preserved across the wording change).
+                # 148-02 Task 3 (Q1): an over-delivery is nobody's credit — no
+                # `recharge` ledger row and no basin-pool deposit is written for
+                # it, on either archetype. The amount is recorded ONLY on the
+                # run, as over_delivery_af (_persist_calculation_run, above).
+                # This delete-by-prefix still runs, unconditionally, so a re-run
+                # on a database an OLDER engine wrote (either wording,
+                # INCIDENTAL_RECHARGE_WORDS or the pre-143-11
+                # LEGACY_INCIDENTAL_RECHARGE_WORDS) cleans up that engine's
+                # stale PERSONAL row rather than leaving it stand unexplained
+                # beside a run that no longer writes one.
                 ParcelLedger.objects.filter(
                     Q(description__startswith=INCIDENTAL_RECHARGE_WORDS)
                     | Q(description__startswith=LEGACY_INCIDENTAL_RECHARGE_WORDS),
@@ -567,39 +600,27 @@ class Command(BaseCommand):
                     effective_date=eff_date,
                     source_type="recharge",
                 ).delete()
-                if routes_personal:
-                    # CONJUNCTIVE (has well): a personal, recoverable GW credit.
-                    if incidental_af > 0:
-                        ParcelLedger.objects.create(
-                            parcel=parcel,
-                            transaction_date=dt.date.today(),
-                            effective_date=eff_date,
-                            amount_acre_feet=incidental_af.quantize(
-                                Decimal("0.0001")
-                            ),
-                            source_type="recharge",
-                            description=INCIDENTAL_RECHARGE_DESC,
-                            reporting_period=reporting_period,
-                            water_type=gw_water_type,
-                        )
-                elif pool_zone is not None:
-                    # No well: the recharge belongs to the GSA basin pool, not the
-                    # parcel. Deposit a signed delta (new − prior) so re-running the
-                    # period leaves the pool unchanged (idempotent). Covers the
-                    # removal case too (incidental fell to 0 → delta subtracts).
-                    delta = incidental_af - prior_incidental
-                    if delta != 0:
-                        deposit_to_basin_pool(
-                            pool_zone,
-                            gw_water_type,
-                            water_year_of(period),
-                            delta,
-                            origin=INCIDENTAL_RECHARGE_POOL,
-                        )
+                if pool_zone is not None and prior_is_pre_148_02:
+                    # No well, and the prior run at this (parcel, period) was
+                    # written by an engine that deposited its incidental amount
+                    # to the basin pool. Reverse exactly that deposit, once — a
+                    # negative delta with nothing added back. A later re-run's
+                    # "prior" is THIS run, which carries over_delivery_af, so
+                    # prior_is_pre_148_02 is False and nothing reverses again.
+                    deposit_to_basin_pool(
+                        pool_zone,
+                        gw_water_type,
+                        water_year_of(period),
+                        -prior_incidental,
+                        origin=INCIDENTAL_RECHARGE_POOL,
+                    )
             extra = ""
             if incidental_af > 0:
-                extra += f"; recharge {incidental_af.quantize(Decimal('0.0001'))} AF (GW)"
-                recharged += 1
+                extra += (
+                    f"; {incidental_af.quantize(Decimal('0.0001'))} AF canal "
+                    f"water beyond the month's use, recorded on the run"
+                )
+                over_delivered += 1
             if is_metered:
                 self.stdout.write(
                     f"  {parcel.parcel_number}: gross {gross_af} AF -> "
@@ -629,6 +650,7 @@ class Command(BaseCommand):
                 f"{metered} metered parcel(s) given an ET reference run "
                 f"(meter authoritative, no GW row); "
                 f"{skipped_no_et} parcel(s) skipped (no ET data); "
-                f"{recharged} credited recharge."
+                f"{over_delivered} field(s) with canal water beyond the "
+                f"month's use."
             )
         )

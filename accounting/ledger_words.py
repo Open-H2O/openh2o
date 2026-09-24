@@ -185,6 +185,13 @@ DELIVERY_SHARE_BY_FIXED = "the fixed share on file"
 
 #: A recharge row credited to a use area (or the basin pool) for canal water
 #: delivered beyond what the month's estimated use called for.
+#:
+#: 148-02 Task 3 (Q1, an over-delivery is nobody's credit): `run_calculations`
+#: no longer writes a row carrying this text — the amount now lives only on
+#: `CalculationRun.over_delivery_af`. The constant STAYS: an old database's
+#: rows still carry it and still render through `ledger_row_words`, and
+#: `run_calculations`'s delete-by-prefix still matches it so a re-run on a
+#: database an older engine wrote cleans those rows up.
 INCIDENTAL_RECHARGE_WORDS = (
     "Credit for canal water delivered beyond the use area's estimated use "
     "for the month"
@@ -194,6 +201,11 @@ INCIDENTAL_RECHARGE_WORDS = (
 #: delete, alongside `INCIDENTAL_RECHARGE_WORDS`, so a re-run on a database
 #: written before this change replaces its own rows instead of doubling them
 #: (ISS-052 preserved across the wording change). Never written by new code.
+#:
+#: 148-02 Task 3: for the same reason as `INCIDENTAL_RECHARGE_WORDS` above,
+#: this is now doubly retired (no over-delivery caller writes it, and it was
+#: already superseded by that constant at 143-11) but stays for the same
+#: delete-by-prefix cleanup on a database two engines old.
 LEGACY_INCIDENTAL_RECHARGE_WORDS = (
     "Incidental recharge — deep percolation from surface over-delivery"
 )
@@ -207,12 +219,17 @@ PUMPING_ESTIMATE_WORDS = (
 )
 
 #: The 143-05 zero-row sentence, moved into the engine verbatim (byte for
-#: byte, including the full stop). `health/checks.py:265` carries the same
-#: claim and `tests/test_health_checks.py:343` pins the two together; neither
-#: is edited by 143-11.
+#: byte, including the full stop). `health/checks.py` carries the same claim
+#: and `tests/test_health_checks.py` pins the two together.
+#:
+#: 148-02 Task 3: reworded from "delivered surface water" to "the canal water
+#: the crop could use" — Task 1's per-field efficiency means the delivered
+#: magnitude and what the crop could use are no longer the same number, and
+#: this sentence describes what actually closed the month out (rule 14: no
+#: "recharge", no "credit").
 NO_PUMPING_DERIVED_WORDS = (
     "No groundwater extraction was derived for this month; rainfall and "
-    "delivered surface water covered the estimated use."
+    "the canal water the crop could use covered the estimated use."
 )
 
 

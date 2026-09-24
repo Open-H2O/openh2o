@@ -349,15 +349,20 @@ class TestHealthDemoMode:
         tell the same story about a zero-amount calculated row, not two
         different words for the same fact. The ledger's Description cell
         says 'No groundwater extraction was derived for this month; rainfall
-        and delivered surface water covered the estimated use.'; this
-        message carries the same claim (no extraction derived, floor hit by
-        rainfall and delivered surface water), not the old bare 'calculated
+        and the canal water the crop could use covered the estimated use.'
+        (148-02 Task 3 reworded it from "delivered surface water" once
+        delivered and consumed became two different numbers); this message
+        carries the same claim (no extraction derived, floor hit by rainfall
+        and the canal water the crop could use), not the old bare 'calculated
         rows have zero amount' framing."""
         ParcelLedgerFactory(amount_acre_feet=Decimal("0"), source_type="calculated")
         result = check_ledger_integrity()
         message = result["message"]
         assert "no groundwater extraction was derived" in message.lower()
-        assert "rainfall and delivered surface water covered the estimated use" in message.lower()
+        assert (
+            "rainfall and the canal water the crop could use covered the "
+            "estimated use"
+        ) in message.lower()
 
 
 # ---------------------------------------------------------------------------
