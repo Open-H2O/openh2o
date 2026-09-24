@@ -217,6 +217,18 @@ run_step refresh_merced_accounting --period "WY 2024-2025" --period "WY 2025-202
 # rather than duplicating them, and every pinned count stays where it is.
 run_step seed_merced_measurements
 
+# THE GOLDEN CARRIES NO INVENTED HISTORY. Every seed command above ran through
+# ordinary model saves, bulk_create and QuerySet.update() -- exactly the paths
+# django-pghistory tracks (core/history.py, Phase 147) -- so by this point the
+# candidate is full of change-history rows nobody's district actually made.
+# Gates 1 and 2 of verify-candidate.sh pin every pghistory event table (and
+# pghistory_context) at 0 in data/demo/expected_shape.json, so this MUST be the
+# last step before the dump: anything seeded after it would leave its own
+# history behind uncleared. --golden-build is required because on a real
+# deployment the change history is the record this feature exists to keep;
+# this is the one caller allowed to clear it.
+run_step clear_change_history --golden-build
+
 # ---------------------------------------------------------------------------
 # Dump the candidate.
 # ---------------------------------------------------------------------------

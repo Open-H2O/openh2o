@@ -18,50 +18,100 @@
       "tolerance": 0,
       "reason": "Recharge POOL rows plus the account carryover seed_merced's allocation step writes. MOVED 4 -> 8 by Plan 133-02, observed on the candidate: 2 GSA zones x 2 pool origins (basin_recharge_pool from seed_merced_recharge_events, incidental_recharge_pool from the engine) x 2 WATER YEARS. The second water year is what is new -- a pool is keyed by water_year, so once WY 2025-2026 carries managed and incidental recharge it earns its own row per zone per origin rather than adding into the first year's."
     },
+    "accounting.AllocationCarryoverEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+    },
     "accounting.AllocationPlan": {
       "expected": 16,
       "tolerance": 0,
       "reason": "One plan per water account per reporting period, created by seed_merced. Moves only if the account set or the number of periods changes."
+    },
+    "accounting.AllocationPlanEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
     },
     "accounting.CalculationPlan": {
       "expected": 1,
       "tolerance": 0,
       "reason": "The single methodology version the demonstration is locked to, created by seed_calculation_plan. A second row means a methodology was added without the version lock being considered (Phase 42)."
     },
+    "accounting.CalculationPlanEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+    },
     "accounting.CalculationRun": {
       "expected": 1824,
       "tolerance": 0,
       "reason": "Output of refresh_merced_accounting over the committed parcel set, now across BOTH water years. MOVED 912 -> 1824 by Plan 133-01, which synthesized a second, drier OpenET window so the engine has a demand side for WY 2025-2026. 76 parcels x 12 months x 2 years, with no short count -- observed as 912 per year, not derived. A candidate with 0 here has data but no accounting; a candidate with 912 has only half the demonstration and its period selector shows an empty year."
+    },
+    "accounting.CalculationRunEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
     },
     "accounting.CalculationStep": {
       "expected": 5,
       "tolerance": 0,
       "reason": "The five ordered steps of the locked calculation plan. Structural, not data -- a change here is a methodology change."
     },
+    "accounting.CalculationStepEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+    },
     "accounting.ReportingPeriod": {
       "expected": 2,
       "tolerance": 0,
       "reason": "The two water years the demonstration covers. BOTH now carry accounting: the committed ET cache holds two adjacent windows (WY 2024-25 and the drier WY 2025-26 that 133-01 synthesized from it), the engine has run all 24 months, and 133-02 gave the second year its surface deliveries, metered groundwater and diversion records. This reason previously said a second period 'would produce empty accounting for it' -- that was true when it was written and is now false; the sentence was Phase 133's acceptance test and it has been met. A THIRD period would need its own cache window and its own supply season, and the same sentence would apply to it."
+    },
+    "accounting.ReportingPeriodEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
     },
     "accounting.WaterAccount": {
       "expected": 11,
       "tolerance": 0,
       "reason": "The invented accounts seed_merced creates. Every holder name here is fabricated by design; gate 1 is what proves that separately."
     },
+    "accounting.WaterAccountEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+    },
     "accounting.WaterAccountParcel": {
       "expected": 76,
       "tolerance": 0,
       "reason": "One row per parcel, tying each to its account. Must equal parcels.Parcel exactly -- a lower number means parcels exist that no account is responsible for, which renders as blank accounting rather than an error."
+    },
+    "accounting.WaterAccountParcelEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
     },
     "accounting.WaterCredit": {
       "expected": 5,
       "tolerance": 0,
       "reason": "Banked-water credits created by seed_merced to exercise the credit ledger. Fixed set."
     },
+    "accounting.WaterCreditEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+    },
     "accounting.WaterCreditDraw": {
       "expected": 0,
       "tolerance": 0,
       "reason": "Draws against credits are a visitor action, not seeded content. Non-zero in a candidate means the build captured somebody's session."
+    },
+    "accounting.WaterCreditDrawEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
     },
     "accounting.WaterType": {
       "expected": 6,
@@ -78,10 +128,20 @@
       "tolerance": 0,
       "reason": "The single site configuration row. Zero means the deployment has no identity and the header renders unbranded."
     },
+    "core.SiteConfigEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+    },
     "core.User": {
       "expected": 0,
       "tolerance": 0,
       "reason": "THE POINT OF THE WHOLE MILESTONE. The rebuild never boots a serving web container, so entrypoint.sh's no-argument branch -- and with it ensure_superuser -- never runs. A non-zero count means a deployment's admin account got baked into an artifact that ships to production. That is the exact mechanism by which staging admin rows once reached production, and it is why every step of rebuild-golden.sh is 'run --rm' rather than 'up web'. Production's own admin returns from its .env on the next container boot after a restore, so nothing is lost by shipping zero."
+    },
+    "core.UserUsernameFirstNameLastNameEmailIsActiveIsStaffIsSuperuserAgencyAdminEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
     },
     "core.UserRole": {
       "expected": 0,
@@ -138,6 +198,11 @@
       "tolerance": 0,
       "reason": "The lab results behind those events -- the largest single table in the demonstration. 103-01 reproduced production's 22,367 exactly. A collapse here would empty the drinking-water pages that Phase 92-99 built, while every page still rendered."
     },
+    "drinking.SampleResultEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+    },
     "drinking.SamplingPoint": {
       "expected": 27,
       "tolerance": 0,
@@ -148,20 +213,40 @@
       "tolerance": 0,
       "reason": "146-04 Task 4 (D8): the operator's own sampling checklist. Zero because a schedule is the operator's to type, and the demonstration seeds none; the door is proven by tests/test_sampling_schedule.py, never by seeding the demo database."
     },
+    "drinking.SamplingScheduleEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+    },
     "drinking.SystemProduction": {
       "expected": 0,
       "tolerance": 0,
       "reason": "146-04 Task 2 (D7, ISS-184): production by month and source. Zero because the demonstration's real water system, Le Grand CSD, has no seed step that loads its eAR production history -- the door is proven by import tests against the real 2022 figures (tests/test_production_import.py), never by seeding the demo database."
+    },
+    "drinking.SystemProductionEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
     },
     "drinking.SystemFacility": {
       "expected": 61,
       "tolerance": 0,
       "reason": "Facilities of the demonstration water system. Published record."
     },
+    "drinking.SystemFacilityEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+    },
     "drinking.WaterSystem": {
       "expected": 1,
       "tolerance": 0,
       "reason": "The single water system the drinking-water module demonstrates. Zero would leave the drinking front door pointing at nothing -- which is exactly what production served from the 7/27 launch until this milestone, because the domain was empty on prod and nobody could tell from the repository."
+    },
+    "drinking.WaterSystemEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
     },
     "feedback.Feedback": {
       "expected": 0,
@@ -188,10 +273,20 @@
       "tolerance": 0,
       "reason": "Parcel-to-zone memberships, derived from the committed parcel and zone geometry by spatial intersection. Deterministic given both inputs."
     },
+    "geography.ParcelZoneEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+    },
     "geography.Zone": {
       "expected": 8,
       "tolerance": 0,
       "reason": "The management zones the subbasin is divided into. Committed geometry."
+    },
+    "geography.ZoneEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
     },
     "geography.ZoneGroup": {
       "expected": 0,
@@ -213,6 +308,11 @@
       "tolerance": 0,
       "reason": "Monthly totalizer reads on the 12 certified meters across BOTH water years (12 x 24), written by seed_merced_measurements. MOVED 144 -> 288 by Plan 133-02: a totalizer is a lifetime counter and does not restart on October 1, so the second year continues the first year's running value rather than opening a new record. Each month's delta is READ OFF the ParcelLedger meter_reading rows for the parcels that well irrigates, not invented -- so this number moves only if the meter set or the ledger's month coverage moves, and a change in one without the other is the regression to look for. read_by is NULL on every row: gate 2 requires core.User = 0."
     },
+    "measurements.MeterReadingEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+    },
     "measurements.Sensor": {
       "expected": 1,
       "tolerance": 0,
@@ -228,6 +328,11 @@
       "tolerance": 0,
       "reason": "Hand-entered depth-to-water readings at the cadence each monitoring well declares, across BOTH water years. MOVED 20 -> 40 by Plan 133-02 -- the same cadence, twice the span. Per year: MER-W-001 monthly (12), MER-W-002 quarterly (4), and 4 quarterly steel-tape checks against the transducer on MER-W-004. The checks sit a few hundredths off the logger on purpose -- that disagreement is what the quality flag exists to carry. recorded_by is NULL on every row."
     },
+    "measurements.WaterMeasurementEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+    },
     "parcels.CropType": {
       "expected": 5,
       "tolerance": 0,
@@ -238,10 +343,20 @@
       "tolerance": 0,
       "reason": "The selection is committed in data/merced/selected_parcels.geojson and seed_merced_parcels_from_selection.py has zero randomness in it, so this number cannot legitimately move without that file moving. Every other per-parcel count in this file is anchored to it: OpenETCache is 76 x 5, WaterAccountParcel is 76, UsageLocation is 76."
     },
+    "parcels.ParcelEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+    },
     "parcels.ParcelLedger": {
       "expected": 2313,
       "tolerance": 0,
       "reason": "The keyed water ledger entries the accounting engine writes per parcel per period. MOVED 1271 -> 2313 by Plan 133-02, which gave the open water year its supply side. Observed composition: 176 allocation rows (88 a period -- BOTH periods always had these), 1,095 rows for WY 2024-2025 and 1,042 for WY 2025-2026. THE COMMITTED YEAR DID NOT MOVE: 1271 - 176 = 1095, exactly what it still holds. The open year's 1,042 are 588 surface_diversion, 215 calculated, 133 meter_reading and 106 recharge. Derived output -- a shortfall here means the engine ran partially, which no page would show as an error."
+    },
+    "parcels.ParcelLedgerEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
     },
     "parcels.ParcelStaging": {
       "expected": 0,
@@ -258,10 +373,35 @@
       "tolerance": 0,
       "reason": "Managed aquifer recharge events across the seven sites, created by seed_merced_recharge_events. MOVED 28 -> 42 by Plan 133-02: 7 basins x (4 wet-year fills + 2 dry-year fills). The dry winter spreads 0.50x basin capacity against the wet year's 1.00x -- the same rainfall multiplier 133-01 applied to the satellite record -- and does it in two mid-winter storms rather than four, because a dry winter is short of storms before it is short of water in each one. December and March do not happen."
     },
+    "pghistory.Context": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history, and pghistory_context is the table every event's who/command/note context row lives in."
+    },
+    "pghistory.Events": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "The unmanaged union of every pghistory event table -- it has no rows of its own to hold, so it reads 0 for the same reason every underlying event table does: clear_change_history --golden-build clears them all before the golden dump."
+    },
+    "pghistory.MiddlewareEvents": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "A proxy of pghistory.Events with no table of its own; empty for the same reason -- clear_change_history --golden-build clears every underlying event table before the golden dump."
+    },
+    "recharge.RechargeEventEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+    },
     "recharge.RechargeMeasurement": {
       "expected": 126,
       "tolerance": 0,
       "reason": "On-site readings at each of the 7 basins (ponded depth, canal inflow, percolation, source-water TDS) across every fill seed_merced_recharge_events writes -- three readings a fill. MOVED 84 -> 126 by Plan 133-02: 7 basins x 3 x 6 fills, the dry year's two included. THE ONLY SLICE OF PHASE 132 WITH A SCREEN: the recharge detail page renders the ten most recent, and before Phase 132 the card read 'No measurements recorded.' on all seven pages. The fill schedule is now IMPORTED from the events seed rather than copied, so an event history with no reading beside it cannot happen by drift. Moves if the basin count or the fill schedule moves."
+    },
+    "recharge.RechargeMeasurementEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
     },
     "recharge.RechargeSite": {
       "expected": 7,
@@ -277,6 +417,11 @@
       "expected": 0,
       "tolerance": 0,
       "reason": "THE CANDIDATE IS THE CORRECT SIDE HERE. Production carries 11 rows that have been restored nightly since early June: orphan drafts with no user attached, all still in draft, ten of the eleven pointing at a file that does not exist. They are test artifacts that got photocopied into a golden and have been coming back every night for eight weeks. A build produces none, which is the whole thesis of this milestone in one line."
+    },
+    "reporting.ReportSubmissionEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
     },
     "reporting.ReportTemplate": {
       "expected": 4,
@@ -313,60 +458,120 @@
       "tolerance": 0,
       "reason": "One curtailment order, so the demonstration exercises the curtailment path at all. Invented."
     },
+    "surface.CurtailmentOrderEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+    },
     "surface.DiversionRecord": {
       "expected": 173,
       "tolerance": 0,
       "reason": "Reported diversions across the points of diversion, for both water years. MOVED 161 -> 173 by Plan 134-01: twelve to_storage records, one per managed basin fill per feeding intake, written by seed_merced_ledgers. Six fill dates across the two years x two intakes -- MER-BPOD-001 El Nido Canal Recharge Intake (five basins) and MER-POD-009-DEMO Bottomlands Riparian Take (two Flood-MAR croplands) -- so 4 wet-year storms x 2 = 8 and 2 dry-year storms x 2 = 4. Before this the intake's own page carried the note 'Operated during high-flow/storm events to divert water for managed aquifer recharge' directly above 'No diversion records yet.', and validate_report(period, 'calwatrs_a2') errored in BOTH years because all 161 records were direct_use. The 161 direct_use records are unchanged and are still: five district headgates recording 12 months in each year (60 + 60); the curtailed El Nido POD recording 9 months in WY 2024-2025 (October-June) and NOTHING in WY 2025-2026, because MER-CURT-001 is effective 2025-07-01 and is never rescinded; the two diversion-reach journey PODs recording 12 + 4 in each year (16 + 16). 69 + 16 = 85 and 60 + 16 = 76. Invented records on real river geometry -- the river is protected published fact, the diverters are not. Moves if the fill schedule, the basin set or the basin-POD links move."
+    },
+    "surface.DiversionRecordEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
     },
     "surface.IrrigationMethod": {
       "expected": 18,
       "tolerance": 0,
       "reason": "East Turlock Subbasin GSA's published irrigation-efficiency table (Rules and Regulations Phase 2 Final, 2025-08-28, Section 4.05, citing Zaccaria 2018, ANR Publication 8570): 18 method rows, counted off the PDF on 2026-09-23 by Plan 146-05. Seeded by the data migration surface/0016_seed_irrigation_methods, not by any seed command, so every deployment and every golden rebuild carries the same 18 after migrate. Moves only if that migration's row list moves."
     },
+    "surface.IrrigationMethodEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+    },
     "surface.MeasuringDevice": {
       "expected": 0,
       "tolerance": 0,
       "reason": "The 23 CCR 934(b)(1) device registry added by Plan 146-03 Task 1. The demonstration seeds no device on any point of diversion -- every point in the demo dataset stays without a current device until an operator adds one through the screen. Non-zero means a seed command started writing invented devices without this file being told."
+    },
+    "surface.MeasuringDeviceEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
     },
     "surface.ParcelIrrigationMethod": {
       "expected": 9,
       "tolerance": 0,
       "reason": "Which irrigation method a use area records (146-05 Task 1). MOVED 0 -> 9 by the 146-05 checkpoint (Brent's ruling 1, 2026-09-23): MER-APN-001 through 009 are visibly center-pivot fields on the aerial map, and seed_merced_pivot_irrigation now sets each of those nine to the seeded Center Pivot row by outline shape (ST_Area(g_3310) / ST_Area(ST_MinimumBoundingCircle(g_3310)) >= 0.90, g_3310 the geometry transformed to EPSG:3310) -- measured on staging at 0.968-0.984 for exactly those nine of the demonstration's 76 use areas and at most 0.656 for every other one, and reproduced by a fresh run of the command against the local demo (146-05-EVIDENCE.md). Every other use area is left unset; nothing in the engine reads any of this yet until Phase 148 decides what it does."
     },
+    "surface.ParcelIrrigationMethodEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+    },
     "surface.PointOfDiversion": {
       "expected": 9,
       "tolerance": 0,
       "reason": "The nine points of diversion. Their names are protected published record (Crocker-Huffman River Diversion, Snelling Re-Diversion and so on); the rights attached to them are invented."
+    },
+    "surface.PointOfDiversionEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
     },
     "surface.PointOfDiversionDevice": {
       "expected": 0,
       "tolerance": 0,
       "reason": "The point-to-device link (146-03 Task 1, mirroring wells.WellMeter). Zero because surface.MeasuringDevice is zero: the demo seeds no device, so nothing links one to a point either. Moves only together with MeasuringDevice."
     },
+    "surface.PointOfDiversionDeviceEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+    },
     "surface.PointOfDiversionParcel": {
       "expected": 59,
       "tolerance": 0,
       "reason": "Which parcels each point of diversion serves. Must stay equal to surface.WaterRightParcel."
+    },
+    "surface.PointOfDiversionParcelEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
     },
     "surface.UnallocatedDelivery": {
       "expected": 18,
       "tolerance": 0,
       "reason": "Deliveries not explained by crop demand, which allocate_district_delivery records against the POD rather than dropping. MOVED 14 -> 18 by Plan 133-02, OBSERVED on the candidate and not predicted: 14 in WY 2024-2025 (unchanged) and 4 new ones in WY 2025-2026. The mechanism is the one 131-01 recorded when this moved 13 -> 14: seed_merced_ledgers sizes each served parcel's delivery as its measured demand divided by its OWN crop's irrigation-method efficiency (alfalfa 0.62 border-check flood through almonds 0.87 micro/drip), while the kernel caps every parcel at demand / the AGENCY-WIDE efficiency (SiteConfig, 0.750) because it takes one efficiency per call and changing that would be an engine change. A POD-month whose crop mix is flood-heavy enough records more than those caps explain, and the surplus is written here. A drier year raises every parcel's demand, so four more POD-months cross that threshold. check_unallocated_delivery reads YELLOW at 364.8532 AF across 18 POD-months and is reported as it reads, not tuned."
     },
+    "surface.UnallocatedDeliveryEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+    },
     "surface.WaterAccountDeliveryPoint": {
       "expected": 0,
       "tolerance": 0,
       "reason": "Which point of diversion delivers to an account (146-05 Task 3, Q8). A `surface` row rather than a `delivery_pod` column on `accounting.WaterAccount` -- `accounting` is schema-resident and `surface` is truly removable, so a column there pointing into `surface` would dangle on every deployment without it (rule 1, core/modules.py), the same fault Task 1 hit with Parcel.irrigation_method. Zero because the demonstration sets no account's delivery through a point of diversion; the checkpoint's shape-1 example is proven by a test fixture, not by seeded demonstration data."
+    },
+    "surface.WaterAccountDeliveryPointEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
     },
     "surface.WaterRight": {
       "expected": 7,
       "tolerance": 0,
       "reason": "Seven invented water rights. Their holder_name column is the single most dangerous field in the database: it is where four real district names sat on production for three days in July 2026 beneath a page promising the demonstration names no real water district at all. Gate 1 reads it. MOVED 6 -> 7 by Plan 136-02 on 2026-09-06 (ISS-152, option a, Brent 2026-09-05): MER-WR-011-DEMO, the demonstration's own recharge right for MER-BPOD-001 El Nido Canal Recharge Intake, holder Halvern Irrigation District (the Phase 97 demonstration name, the same holder as MER-WR-004-DEMO and the operator the five El Nido basins record), created by seed_merced_basins_from_selection in the block that creates the intake. It serves NO parcel -- surface.WaterRightParcel and surface.PointOfDiversionParcel stay at 59 -- so the storm records stay out of every field's ledger, and it is why the To Storage filing now carries the intake's rows instead of withholding them for a blank Water Right ID. Observed on the candidate built at 0e494c0 (66,505 rows across 70 models) BEFORE this pin was written: exactly one count moved."
     },
+    "surface.WaterRightEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+    },
     "surface.WaterRightParcel": {
       "expected": 59,
       "tolerance": 0,
       "reason": "Parcels served by each right. Equal to PointOfDiversionParcel by construction."
+    },
+    "surface.WaterRightParcelEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
     },
     "surface.WaterRightType": {
       "expected": 6,
@@ -383,15 +588,30 @@
       "tolerance": 0,
       "reason": "The 45 wells seed_merced creates. Their names are protected published record (Le Grand Ag Well and the rest); their owners are invented."
     },
+    "wells.WellEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+    },
     "wells.WellIrrigatedParcel": {
       "expected": 29,
       "tolerance": 0,
       "reason": "Which parcels each well irrigates -- the groundwater side of the mixed-use accounting the platform exists to do."
     },
+    "wells.WellIrrigatedParcelEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+    },
     "wells.WellMeter": {
       "expected": 12,
       "tolerance": 0,
       "reason": "Meters installed on wells. Must equal measurements.Meter; a mismatch means one side was seeded and the other was not."
+    },
+    "wells.WellMeterEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
     },
     "wells.WellType": {
       "expected": 5,

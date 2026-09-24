@@ -121,3 +121,76 @@ def test_the_instrument_record_is_seeded_after_the_ledger_is_final():
         "measurement record written before it reconciles to a ledger that is "
         "gone by the time the candidate is dumped."
     )
+
+
+def test_the_golden_carries_no_change_history():
+    """The golden must ship with zero rows of invented change history.
+
+    `core/history.py` (Phase 147, ISS-177) tracks 41 models through
+    django-pghistory, and every seed command above writes through the exact
+    paths pghistory records -- ordinary saves, `bulk_create`,
+    `QuerySet.update()`. Gates 1 and 2 of `verify-candidate.sh` pin every
+    pghistory event table (and `pghistory_context`) at 0 in
+    `data/demo/expected_shape.json`, so a rebuild that skips this step ships a
+    demonstration with change history no district ever made.
+    """
+    steps = _steps(REBUILD_SCRIPT.read_text())
+    assert "clear_change_history" in steps, (
+        "scripts/rebuild-golden.sh no longer runs `clear_change_history`. The "
+        "candidate will carry every pghistory event row the seed commands "
+        "wrote, and gate 2 will refuse the promotion."
+    )
+
+
+def test_change_history_is_cleared_with_the_golden_build_flag():
+    """The refusal in `clear_change_history` exists for every OTHER caller.
+
+    Without `--golden-build` the command raises `CommandError` rather than
+    truncating anything, which would fail this step (and the whole rebuild)
+    loudly rather than silently leaving history in the candidate.
+    """
+    text = REBUILD_SCRIPT.read_text()
+    assert "run_step clear_change_history --golden-build" in text, (
+        "scripts/rebuild-golden.sh must call `clear_change_history "
+        "--golden-build` -- the bare command refuses to run at all, which "
+        "would fail the rebuild rather than silently skip the clear."
+    )
+
+
+def test_change_history_is_cleared_after_every_seed_step():
+    """Clearing has to be LAST — anything seeded after it leaves its own history.
+
+    Mirrors the ordering guard above for `seed_merced_measurements`: the
+    candidate is only as history-free as its last write, so this step has to
+    follow every seed and refresh step, not merely some of them.
+    """
+    steps = _steps(REBUILD_SCRIPT.read_text())
+    assert "clear_change_history" in steps and "seed_merced_measurements" in steps
+    assert steps.index("clear_change_history") > steps.index(
+        "seed_merced_measurements"
+    ), (
+        "`clear_change_history` must run after every seed step, including the "
+        "second `seed_merced_measurements` -- anything seeded after it would "
+        "leave its own change history in the candidate uncleared."
+    )
+    assert steps[-1] == "clear_change_history", (
+        "`clear_change_history` must be the LAST management command the "
+        "rebuild runs, immediately before `pg_dump`."
+    )
+
+
+def test_change_history_is_cleared_before_the_dump():
+    """`pg_dump` is not a `run_step` call, so `_steps()` alone can't see it.
+
+    Read the raw script text instead and compare byte positions -- the same
+    thing this file's own docstring says about the script being the thing that
+    can regress.
+    """
+    text = REBUILD_SCRIPT.read_text()
+    clear_pos = text.index("run_step clear_change_history")
+    dump_pos = text.index("pg_dump -Fc")
+    assert clear_pos < dump_pos, (
+        "`clear_change_history --golden-build` must run before `pg_dump` -- "
+        "clearing history after the dump has already been taken leaves it in "
+        "the candidate."
+    )
