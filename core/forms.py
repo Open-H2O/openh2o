@@ -191,6 +191,15 @@ class DeliverySettingsForm(forms.Form):
     ``rollover_allocations`` read it for any zone's unused allocation, surface or
     not.
 
+    **The groundwater efficiency field belongs to ``wells`` the same way
+    (148-02 Task 4, Q2).** ``groundwater_efficiency`` has exactly one consumer —
+    ``run_calculations``, which splits an estimated field's residual into what
+    the crop consumed and what the pump had to extract to deliver it. A
+    deployment with no Wells module has no well to pump, so the field is shown
+    and saved under the same ``shows_groundwater_efficiency`` gate, mirroring
+    ``shows_efficiency``'s percent display/entry convention (75 shown, 0.750
+    stored).
+
     **``diversion_report_year_rule`` belongs to ``surface`` the same way
     (146-03 Task 3).** It is the 145-01 memo's crosswalk layer for a bulk
     diversion import a later plan adds; on a deployment with no Surface
@@ -218,6 +227,20 @@ class DeliverySettingsForm(forms.Form):
         # sentence does not need the word — where the water goes is already
         # said — so the copy changed rather than `_FORBIDDEN_VOCABULARY`.
         help_text="Typical: 75%.",
+        widget=forms.NumberInput(
+            attrs={"class": "form-input", "style": "width: 6rem;", "step": "1"}
+        ),
+    )
+    # 148-02 Task 4 (Q2): the groundwater sibling of efficiency_percent, shown
+    # only when `wells` is enabled (see the class docstring). Same percent
+    # display / Decimal-fraction storage convention.
+    groundwater_efficiency_percent = forms.IntegerField(
+        min_value=1,
+        max_value=100,
+        label="Share of pumped groundwater the crop consumes",
+        help_text="Typical: 80%. Estimated groundwater extracted is the "
+        "estimated groundwater consumed divided by this share; a meter "
+        "reading is used as recorded.",
         widget=forms.NumberInput(
             attrs={"class": "form-input", "style": "width: 6rem;", "step": "1"}
         ),
@@ -293,6 +316,10 @@ class DeliverySettingsForm(forms.Form):
         # Same gate as efficiency (see the class docstring), named for what
         # it shows rather than for the reason both happen to share.
         self.shows_diversion_settings = self.shows_efficiency
+        # 148-02 Task 4 (Q2): groundwater_efficiency's own gate, `wells` rather
+        # than `surface` -- a deployment can run either module without the
+        # other, so this is intentionally independent of shows_efficiency.
+        self.shows_groundwater_efficiency = is_enabled("wells")
         if instance is not None and "initial" not in kwargs:
             initial = {
                 "recovery_horizon": instance.default_recovery_horizon,
@@ -303,6 +330,10 @@ class DeliverySettingsForm(forms.Form):
                 initial["efficiency_percent"] = int(
                     (instance.default_irrigation_efficiency * 100).to_integral_value()
                 )
+            if self.shows_groundwater_efficiency:
+                initial["groundwater_efficiency_percent"] = int(
+                    (instance.groundwater_efficiency * 100).to_integral_value()
+                )
             if self.shows_diversion_settings:
                 initial["diversion_report_year_rule"] = instance.diversion_report_year_rule
                 initial["season_start_month"] = instance.season_start_month
@@ -310,6 +341,8 @@ class DeliverySettingsForm(forms.Form):
         super().__init__(*args, **kwargs)
         if not self.shows_efficiency:
             del self.fields["efficiency_percent"]
+        if not self.shows_groundwater_efficiency:
+            del self.fields["groundwater_efficiency_percent"]
         if not self.shows_diversion_settings:
             del self.fields["diversion_report_year_rule"]
             del self.fields["season_start_month"]
@@ -344,6 +377,14 @@ class DeliverySettingsForm(forms.Form):
         except InvalidOperation:
             raise forms.ValidationError("Enter a whole number between 1 and 100.")
 
+    def clean_groundwater_efficiency_percent(self):
+        percent = self.cleaned_data["groundwater_efficiency_percent"]
+        # Percent (80) -> Decimal fraction (0.800), the stored convention.
+        try:
+            return (Decimal(percent) / Decimal("100")).quantize(Decimal("0.001"))
+        except InvalidOperation:
+            raise forms.ValidationError("Enter a whole number between 1 and 100.")
+
     def save(self):
         """Write the shown fields back onto the singleton SiteConfig instance.
 
@@ -361,6 +402,11 @@ class DeliverySettingsForm(forms.Form):
                 "efficiency_percent"
             ]
             updated.append("default_irrigation_efficiency")
+        if self.shows_groundwater_efficiency:
+            config.groundwater_efficiency = self.cleaned_data[
+                "groundwater_efficiency_percent"
+            ]
+            updated.append("groundwater_efficiency")
         if self.shows_diversion_settings:
             config.diversion_report_year_rule = self.cleaned_data["diversion_report_year_rule"]
             config.season_start_month = self.cleaned_data.get("season_start_month")

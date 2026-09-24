@@ -212,7 +212,13 @@ def _pool_zone(name):
 def test_well_parcel_residual_becomes_calculated_groundwater_row():
     """(a) CONJUNCTIVE parcel (well), residual > 0 → a `calculated` GW row IS
     written; disposition="groundwater", unmet_demand_af=0, water_type=GW, and the
-    GW water_type is balance-neutral (_balance_dict keys on sign+source_type)."""
+    GW water_type is balance-neutral (_balance_dict keys on sign+source_type).
+
+    148-02 Task 4 (Q2): `_balance_dict["usage"]` now CHARGES the run's stamped
+    extraction estimate for a `calculated` row, not the row's recorded
+    (consumed) amount -- the budget spends extraction (`run.gw_extracted_af`),
+    the ledger row still carries what the crop consumed. Retargeted from
+    `== abs(row.amount_acre_feet)`, which pinned the pre-Task-4 equality."""
     parcel = _parcel("R-WELL")
     _et_cache(parcel, et_mm=140.0)  # ~4.6 AF gross, no precip/surface → residual > 0
     _irrigate(parcel)
@@ -226,8 +232,9 @@ def test_well_parcel_residual_becomes_calculated_groundwater_row():
     run = CalculationRun.objects.get(parcel=parcel, period=PERIOD)
     assert run.residual_disposition == "groundwater"
     assert run.unmet_demand_af == Decimal("0")
+    assert run.gw_extracted_af is not None
     billable = billable_ledger(ParcelLedger.objects.filter(parcel=parcel))
-    assert _balance_dict(billable)["usage"] == abs(row.amount_acre_feet)
+    assert _balance_dict(billable)["usage"] == run.gw_extracted_af
 
 
 @pytest.mark.django_db

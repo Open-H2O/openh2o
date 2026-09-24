@@ -31,7 +31,7 @@ from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
 from django.db import transaction
-from django.db.models import Q, Sum
+from django.db.models import Case, DecimalField, F, OuterRef, Q, Subquery, Sum, When
 from django.utils import timezone
 
 from geography.models import ParcelZone
@@ -581,13 +581,91 @@ def parcel_balance_breakdown(parcel, reporting_period=None):
     return _balance_dict(billable_ledger(qs))
 
 
+_Q4 = Decimal("0.0001")
+
+
+def _recorded_usage(queryset):
+    """The pre-148-02-Task-4 usage computation: recorded magnitude, at face
+    value, of every negative non-``surface_diversion`` row.
+
+    Extracted out of ``_balance_dict`` so a caller that must show what
+    actually reached the crop -- ``consumptive_use_balance``'s
+    ``supplies["groundwater"]``, the Supplies panel's number -- can keep
+    reading it directly rather than through ``charged_groundwater`` below,
+    which now answers a different question for ``_balance_dict`` and the
+    budget readers built on it (148-02 Task 4, Q2: extraction spends the
+    allocation; consumption is what the Supplies panel shows).
+    """
+    usage_neg = queryset.filter(amount_acre_feet__lt=0).exclude(
+        source_type="surface_diversion"
+    ).aggregate(s=Sum("amount_acre_feet"))["s"]
+    return abs(usage_neg or Decimal("0"))
+
+
+def charged_groundwater(queryset):
+    """The budget-spend magnitude for a ParcelLedger queryset (148-02 Task 4, Q2).
+
+    **The budget spends extraction, not consumption.** Every negative,
+    non-``surface_diversion`` row charges at its recorded (consumed) magnitude
+    EXCEPT a ``calculated`` row whose ``CalculationRun`` stamped an extraction
+    estimate (``gw_extracted_af``, not null) -- that row charges the run's
+    stamped figure instead. The run's figure was read once, when the run was
+    computed, off the ``SiteConfig.groundwater_efficiency`` in force at that
+    moment (``run_calculations.py``); it is never re-derived here from
+    whatever the setting holds NOW, so a finalized period's billable
+    groundwater cannot move just because someone tunes the setting
+    afterwards (ISS-177 -- the finalized-period lock protects runs, not
+    settings). A ``calculated`` row from an OLD run, written before 148-02
+    Task 4 (so ``gw_extracted_af`` is null), falls back to its recorded
+    amount -- today's behaviour, unchanged. A ``meter_reading`` row is always
+    charged as recorded; the meter IS the number.
+
+    Joined to ``CalculationRun`` in SQL (parcel + the run's ``period_start``
+    against the ledger row's ``effective_date`` -- both first-of-month), never
+    a per-row Python loop: every budget reader here can be a dashboard read
+    over every parcel in a zone.
+
+    Returns the charged usage magnitude, positive, the same sign convention
+    ``_balance_dict["usage"]`` has always used.
+    """
+    other_usage = _recorded_usage(queryset.exclude(source_type="calculated"))
+
+    calculated = queryset.filter(
+        amount_acre_feet__lt=0, source_type="calculated"
+    ).annotate(
+        run_gw_extracted_af=Subquery(
+            CalculationRun.objects.filter(
+                parcel_id=OuterRef("parcel_id"),
+                period_start=OuterRef("effective_date"),
+            )
+            .order_by("-created_at")
+            .values("gw_extracted_af")[:1]
+        )
+    )
+    calculated_charged = calculated.aggregate(
+        total=Sum(
+            Case(
+                When(run_gw_extracted_af__isnull=False, then=F("run_gw_extracted_af")),
+                default=F("amount_acre_feet") * -1,
+                output_field=DecimalField(max_digits=12, decimal_places=4),
+            )
+        )
+    )["total"] or Decimal("0")
+
+    return (other_usage + calculated_charged).quantize(_Q4)
+
+
 def _balance_dict(queryset):
     """Compute supply/usage/net from a ParcelLedger queryset.
 
     Returns:
         dict with keys: total (alias for net), supply, usage, net.
         - supply: positive entries + surface-water delivered (Decimal, >= 0)
-        - usage: absolute value of negative groundwater entries (Decimal, >= 0)
+        - usage: the CHARGED groundwater magnitude (Decimal, >= 0) -- see
+          ``charged_groundwater`` (148-02 Task 4, Q2: the budget spends
+          extraction, not consumption; a caller that wants the consumed
+          figure instead calls ``_recorded_usage`` directly, as
+          ``consumptive_use_balance`` does)
         - net: supply - usage (can be negative if usage exceeds supply)
         - total: alias for net
 
@@ -610,17 +688,13 @@ def _balance_dict(queryset):
             "amount_acre_feet",
             filter=Q(amount_acre_feet__gt=0) & ~Q(source_type="surface_diversion"),
         ),
-        usage_neg=Sum(
-            "amount_acre_feet",
-            filter=Q(amount_acre_feet__lt=0) & ~Q(source_type="surface_diversion"),
-        ),
         surface=Sum(
             "amount_acre_feet",
             filter=Q(source_type="surface_diversion"),
         ),
     )
     supply = (agg["supply_pos"] or Decimal("0")) + abs(agg["surface"] or Decimal("0"))
-    usage = abs(agg["usage_neg"] or Decimal("0"))
+    usage = charged_groundwater(queryset)
     net = supply - usage
     return {
         "total": net,
@@ -796,6 +870,7 @@ def parcel_mass_balance(parcel, reporting_period=None):
 
         surface + precip + gw_recovered = et + recharge + runoff + delta_storage
                                            + deep_percolation_surface_af
+                                           + deep_percolation_gw_af
 
     Term sourcing — deliberately REUSING the existing billable/balance helpers
     so this never drifts from ``parcel_balance_breakdown``:
@@ -806,9 +881,16 @@ def parcel_mass_balance(parcel, reporting_period=None):
     * ``precip`` (input): ``CalculationRun.effective_precip_af`` summed over the
       period's parcel-months.
     * ``gw_recovered`` (input): the billable groundwater usage — literally the
-      ``_balance_dict`` usage term, so the two can never disagree. Credit-draw
-      timing is carried by ``delta_storage`` (banked − drawn), not double-counted
-      here.
+      ``_balance_dict`` usage term, so the two can never disagree. **148-02
+      Task 4 (Q2) changed what that term means**: it now CHARGES a calculated
+      row's stamped extraction estimate where one exists, so ``gw_recovered``
+      is the EXTRACTED magnitude (what the pump lifted), not the consumed one
+      (what reached the crop) — physically correct for a mass balance (what
+      came out of the ground has to be accounted for, not just the part the
+      crop used), and why ``deep_percolation_gw_af`` below exists: it is the
+      output term that makes the identity close again now that the input grew
+      by the same amount. Credit-draw timing is carried by ``delta_storage``
+      (banked − drawn), not double-counted here.
     * ``et`` (output): ``CalculationRun.gross_et_af`` (gross actual ET).
     * ``recharge`` (output, 148-02 Task 3): magnitude of real ``recharge``
       ledger rows for the period — managed recharge deliberately spread onto a
@@ -834,6 +916,13 @@ def parcel_mass_balance(parcel, reporting_period=None):
       that predates 148-02 (``surface_delivered_af`` null), same as every other
       absent CalculationRun term above. ``surface`` above stays the delivered
       magnitude; this is what the delivered figure did NOT become.
+    * ``deep_percolation_gw_af`` (output, 148-02 Task 4): summed straight off
+      each run's own ``deep_percolation_gw_af`` column (null → 0) — the pumped
+      water that returned to the aquifer rather than reaching the crop.
+      Physically: pumped water in, the crop's share to ET, the rest back to
+      the aquifer. Without this term, ``gw_recovered`` becoming the extracted
+      figure above would leave every estimated field-year failing to close by
+      exactly this amount.
 
     Where no CalculationRun exists for a parcel-month, its ET/precip/recharge/
     storage terms are simply absent (0); surface always comes from the ledger.
@@ -844,7 +933,8 @@ def parcel_mass_balance(parcel, reporting_period=None):
 
     Returns:
         dict: ``{"inputs": {surface, precip, gw_recovered}, "inputs_total":
-        Decimal, "outputs": {et, recharge, runoff, delta_storage},
+        Decimal, "outputs": {et, recharge, runoff, delta_storage,
+        deep_percolation_surface_af, deep_percolation_gw_af},
         "outputs_total": Decimal, "residual_af": Decimal, "closes": bool}``.
         ``residual_af = inputs_total − outputs_total``; ``closes`` iff
         ``abs(residual_af) <= MASS_BALANCE_TOLERANCE``.
@@ -879,6 +969,7 @@ def parcel_mass_balance(parcel, reporting_period=None):
     et = Decimal("0")
     delta_storage = Decimal("0")
     deep_percolation_surface = Decimal("0")
+    deep_percolation_gw = Decimal("0")
     for run in _calculation_runs_for_period(parcel, reporting_period):
         et += run.gross_et_af or Decimal("0")
         precip += run.effective_precip_af or Decimal("0")
@@ -893,6 +984,10 @@ def parcel_mass_balance(parcel, reporting_period=None):
         if run.surface_delivered_af is not None:
             consumed = run.surface_water_af or Decimal("0")
             deep_percolation_surface += run.surface_delivered_af - consumed
+        # 148-02 Task 4 (Q2): the groundwater sibling of the term above --
+        # pumped water that returned to the aquifer rather than reaching the
+        # crop. Null on a metered or no-well run (same absent-term convention).
+        deep_percolation_gw += run.deep_percolation_gw_af or Decimal("0")
 
     runoff = Decimal("0")  # bookkeeping boundary: no surface-hydrology model.
 
@@ -914,6 +1009,7 @@ def parcel_mass_balance(parcel, reporting_period=None):
         "runoff": runoff,
         "delta_storage": delta_storage,
         "deep_percolation_surface_af": deep_percolation_surface,
+        "deep_percolation_gw_af": deep_percolation_gw,
     }
     # 137-01: the two operands the parcel pane's balance panel states. Summed
     # here rather than in the template so the screen adds the same rows the
@@ -1054,9 +1150,24 @@ def consumptive_use_balance(parcel_ids, reporting_period=None):
     v1.10 lens. Every term is sourced from an EXISTING helper so this read can
     never drift from the billable ledger or the mass balance:
 
-    * ``supplies["groundwater"]`` == ``_balance_dict(billable_ledger(qs))["usage"]``
-      for the parcels — the pumped/extracted magnitude, identical to the mass
-      balance's ``gw_recovered``. Not recomputed from raw rows.
+    * ``supplies["groundwater"]`` == ``_recorded_usage(billable_ledger(qs))`` for
+      the parcels — the CONSUMED magnitude, what reached the crop, identical to
+      the figure the Supplies panel has always shown. **148-02 Task 4 (Q2)
+      changed this line**: it used to read ``_balance_dict(...)["usage"]``, but
+      that helper's usage now CHARGES a calculated row's stamped extraction
+      estimate where one exists (the budget spends extraction, not
+      consumption) — this call site is deliberately NOT one of the budget
+      readers, so it was moved onto ``_recorded_usage`` directly to keep
+      showing consumption. The two agree exactly wherever no run has stamped
+      an extraction estimate (an old run, a metered run, or none); they
+      diverge on an estimated field precisely where 148-02 Task 4 means them
+      to.
+    * ``groundwater_charged`` (new key, 148-02 Task 4): the BUDGET figure —
+      ``charged_groundwater(billable_ledger(qs))`` — read by
+      ``zone_groundwater_budget`` and the account-row "remaining" arithmetic
+      instead of ``supplies["groundwater"]``, so the Supplies panel and the
+      budget can print two different numbers for the same field without
+      either being recomputed from scratch.
     * ``supplies["surface"]`` == magnitude of billable ``surface_diversion`` rows
       (stored negative; a canal delivery is a supply), the same surface term
       ``parcel_mass_balance`` uses.
@@ -1081,6 +1192,7 @@ def consumptive_use_balance(parcel_ids, reporting_period=None):
                           "precip": Decimal},
              "supply_total": Decimal,            # surface + groundwater + precip
              "net_vs_supply": Decimal,           # supply_total − consumptive_use_gross
+             "groundwater_charged": Decimal,     # 148-02 Task 4: the budget-spend figure
              "calculation_runs": int}            # how many runs the sums came from
 
     ``calculation_runs`` is the difference between "these parcels consumed no
@@ -1099,7 +1211,8 @@ def consumptive_use_balance(parcel_ids, reporting_period=None):
         qs = qs.filter(reporting_period=reporting_period)
     billable = billable_ledger(qs)
 
-    groundwater = _balance_dict(billable)["usage"]
+    groundwater = _recorded_usage(billable)
+    groundwater_charged = charged_groundwater(billable)
     surface = abs(
         billable.filter(source_type="surface_diversion").aggregate(
             s=Sum("amount_acre_feet")
@@ -1130,6 +1243,11 @@ def consumptive_use_balance(parcel_ids, reporting_period=None):
         },
         "supply_total": supply_total,
         "net_vs_supply": supply_total - gross,
+        # 148-02 Task 4 (Q2): the budget-spend figure, kept separate from
+        # `supplies["groundwater"]` above so a budget reader (zone_groundwater_budget,
+        # the account row's remaining) and a Supplies-panel reader can each call
+        # this ONE function and get the number that is actually theirs.
+        "groundwater_charged": groundwater_charged,
         # Counted from the rows actually summed, NOT from a second query. A
         # separate `.count()` could disagree with the loop the moment the
         # membership rule in `runs_in_period` changes, and then the dashboard
@@ -1245,6 +1363,18 @@ def water_year_usage_by_type(zone, date_start, date_end):
             )
             continue
         buckets[code] = buckets.get(code, Decimal("0")) + (-row.amount_acre_feet)
+
+    # 148-02 Task 4 (Q2): the GW bucket is a budget figure (it feeds
+    # per-type carry-over), so a calculated row charges the extraction its
+    # run stamped, the same way every other budget reader does. The loop
+    # above added each engine row at its recorded (consumed) amount; add the
+    # difference between the charged and recorded figures over just those
+    # rows, in SQL. A metered GW-typed row stays in the bucket as recorded.
+    if "GW" in buckets:
+        engine_rows = qs.filter(source_type__in=("et_estimate", "calculated"))
+        buckets["GW"] += charged_groundwater(engine_rows) - _recorded_usage(
+            engine_rows
+        )
     return buckets
 
 
@@ -1275,10 +1405,12 @@ def zone_groundwater_budget(zone, reporting_period):
 
     Like with like, per DESIGN.md rule 12: a groundwater allocation is spent by
     groundwater use, and a surface allocation by water delivered. Groundwater use
-    here is ``zone_consumptive_balance(...)["supplies"]["groundwater"]`` — the
-    same term the mass balance calls ``gw_recovered`` — so this can never drift
-    from the billable ledger. It counts metered and calculated pumping, never a
-    canal delivery.
+    here is ``zone_consumptive_balance(...)["groundwater_charged"]`` — the
+    same ``charged_groundwater`` term the mass balance's ``gw_recovered`` now
+    reads too — so this can never drift from the billable ledger. It counts
+    metered pumping as recorded and calculated pumping at its run's
+    EXTRACTED figure (148-02 Task 4, Q2: the budget spends extraction, not
+    the crop's consumed share), never a canal delivery.
 
     **Absent, not zero, when the zone has no groundwater plan** (136-01's dash
     rule). The five surface service areas carry surface plans only; a zero
@@ -1300,8 +1432,8 @@ def zone_groundwater_budget(zone, reporting_period):
              "remaining":  Decimal | None}   # available − used
     """
     used = zone_consumptive_balance(zone, reporting_period=reporting_period)[
-        "supplies"
-    ]["groundwater"]
+        "groundwater_charged"
+    ]
 
     # Resolved by CODE, not by id: the water types are seeded reference data and
     # their primary keys differ between deployments.

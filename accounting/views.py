@@ -145,8 +145,16 @@ def _account_summary_row(account, selected_period, has_allocations, groundwater_
         # for. An account whose zones carry no groundwater plan has no
         # groundwater budget: absent, not zero, so the template dashes it
         # rather than printing its pumping as an overdraft of nothing.
+        #
+        # 148-02 Task 4 (Q2): spends `groundwater_charged`, not
+        # `supplies["groundwater"]` -- the Groundwater column a few lines
+        # below still shows the CONSUMED figure (what reached the crop);
+        # this is the budget, which a calculated row now spends at its
+        # run's stamped EXTRACTED figure instead (an old run with no
+        # extraction estimate, or a meter, charges as recorded -- both
+        # unchanged from before this task).
         if groundwater_plans.exists():
-            remaining = allocation - cu["supplies"]["groundwater"]
+            remaining = allocation - cu["groundwater_charged"]
         else:
             allocation = None
             remaining = None
@@ -1961,6 +1969,12 @@ def delivery_settings(request):
     if form.shows_efficiency:
         position += 1
     efficiency_number = position or None
+    # 148-02 Task 4 (Q2): the groundwater card sits beside the surface one it
+    # mirrors, before the always-shown cards -- its own `wells` gate, computed
+    # the same DISPLAY-order way as every other optional card here.
+    if form.shows_groundwater_efficiency:
+        position += 1
+    groundwater_number = position if form.shows_groundwater_efficiency else None
     position += 1
     recovery_number = position
     diversion_number = None
@@ -1980,6 +1994,7 @@ def delivery_settings(request):
             "form": form,
             "settings_total": settings_total,
             "efficiency_number": efficiency_number,
+            "groundwater_number": groundwater_number,
             "recovery_number": recovery_number,
             "diversion_number": diversion_number,
             "identifier_number": identifier_number,

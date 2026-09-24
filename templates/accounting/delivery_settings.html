@@ -63,6 +63,26 @@
     </div>
     {% endif %}
 
+    {% comment %} Setting: groundwater efficiency (148-02 Task 4, Q2). `wells`
+         owns it (see DeliverySettingsForm), the groundwater sibling of the
+         efficiency card above -- same percent convention, its own module
+         gate. {% endcomment %}
+    {% if form.shows_groundwater_efficiency %}
+    <div class="card-raised">
+      <span class="step-eyebrow">Setting {{ groundwater_number }} of {{ settings_total }}</span>
+      <h2 class="section-header">Groundwater</h2>
+      <p class="text-secondary text-base m-0" style="margin-bottom: var(--space-sm);">{{ form.groundwater_efficiency_percent.label }}</p>
+      <p class="text-secondary text-sm" style="margin-bottom: var(--space-md);">{{ form.groundwater_efficiency_percent.help_text }}</p>
+      <div class="field-group mb-0">
+        <span class="input-suffix">
+          {{ form.groundwater_efficiency_percent }}
+          <span class="input-suffix-unit">%</span>
+        </span>
+      </div>
+      {% if form.groundwater_efficiency_percent.errors %}<p class="text-sm text-furnace mt-sm">{{ form.groundwater_efficiency_percent.errors|striptags }}</p>{% endif %}
+    </div>
+    {% endif %}
+
     <!-- Setting: year-end unused water -->
     <div class="card-raised">
       <span class="step-eyebrow">Setting {{ recovery_number }} of {{ settings_total }}</span>

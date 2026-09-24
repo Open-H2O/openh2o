@@ -190,6 +190,10 @@ def test_delivery_settings_record_user_note_and_exact_decimal(administrator):
         url,
         {
             "efficiency_percent": "80",
+            # 148-02 Task 4: `wells` is enabled by default in these tests, so
+            # groundwater_efficiency_percent is a required field on this POST
+            # the same way efficiency_percent is (surface).
+            "groundwater_efficiency_percent": "80",
             "recovery_horizon": "carry_forward",
             "diversion_report_year_rule": "season",
             "season_start_month": "3",

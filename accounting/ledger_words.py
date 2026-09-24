@@ -213,9 +213,17 @@ LEGACY_INCIDENTAL_RECHARGE_WORDS = (
 #: A `calculated` row's sentence when the month's residual is nonzero: the
 #: platform's own estimate of pumping, derived from the month's estimated use
 #: less rainfall and canal water delivered.
+#:
+#: 148-02 Task 4 (Q2): reworded from "Estimated pumping" to "Estimated
+#: groundwater consumed" -- the row still carries the CONSUMED amount
+#: (final_af, unchanged), but Task 4 also stamps this run with a separate
+#: extracted figure (gw_extracted_af) and "pumping" alone no longer says
+#: which of the two the row means. "canal water delivered" -> "the canal
+#: water the crop could use", the same Task 1 fix Task 3 already made to
+#: NO_PUMPING_DERIVED_WORDS below.
 PUMPING_ESTIMATE_WORDS = (
-    "Estimated pumping: the month's estimated use, less rainfall and canal "
-    "water delivered"
+    "Estimated groundwater consumed: the month's estimated use, less "
+    "rainfall and the canal water the crop could use."
 )
 
 #: The 143-05 zero-row sentence, moved into the engine verbatim (byte for

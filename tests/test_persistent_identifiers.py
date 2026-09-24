@@ -364,6 +364,9 @@ def test_identifier_host_saves_without_its_scheme(admin_client):
         reverse("accounting:delivery_settings"),
         {
             "efficiency_percent": "75",
+            # 148-02 Task 4: `wells` is enabled by default in these tests, so
+            # groundwater_efficiency_percent is required on this POST too.
+            "groundwater_efficiency_percent": "80",
             "recovery_horizon": "carry_forward",
             "diversion_report_year_rule": "water_year",
             "season_start_month": "",

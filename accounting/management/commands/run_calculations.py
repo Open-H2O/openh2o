@@ -69,6 +69,7 @@ from accounting.models import (
 )
 from accounting.recharge_policy import recharge_routes_to_personal
 from accounting.services import INCIDENTAL_RECHARGE_POOL, deposit_to_basin_pool
+from core.models import SiteConfig
 from geography.models import ParcelZone
 from parcels.models import Parcel, ParcelLedger
 
@@ -91,6 +92,28 @@ def _incidental_recharge_af(breakdown):
     if clamp is None:
         return Decimal("0")
     return Decimal(str(clamp["detail"].get("incidental_recharge_af", "0")))
+
+
+def _groundwater_extraction(final_af, groundwater_efficiency):
+    """148-02 Task 4 (Q2): split a `groundwater`-disposition run's CONSUMED
+    magnitude (``final_af``, the calculated row's amount) into what the pump
+    had to extract and what never reached the crop.
+
+    ``gw_extracted_af = final_af / groundwater_efficiency``;
+    ``deep_percolation_gw_af = gw_extracted_af - final_af``. Both quantized to
+    4dp, the ledger's own convention. ``groundwater_efficiency`` is the
+    ``SiteConfig`` value read ONCE per run, by the caller, at compute time --
+    never re-read later, so a setting change after the run does not move a
+    figure already stamped on it (ISS-177, the finalized-period lock protects
+    runs, not settings). A zero-residual month (``final_af == 0``) divides to
+    ``(0, 0)`` with no special-casing needed.
+
+    Returns ``(gw_extracted_af, deep_percolation_gw_af)``, both ``Decimal``.
+    """
+    quant = Decimal("0.0001")
+    extracted = (final_af / groundwater_efficiency).quantize(quant)
+    deep_percolation = (extracted - final_af).quantize(quant)
+    return extracted, deep_percolation
 
 
 def _parcel_pool_zone(parcel):
@@ -146,7 +169,7 @@ def _resolve_leftover(parcel, period, final_af, breakdown, *, commit):
 
 def _persist_calculation_run(
     parcel, period, gross_af, net_af, breakdown, info, plan_id, plan_name, plan_hash,
-    *, residual_disposition, unmet_demand_af,
+    *, residual_disposition, unmet_demand_af, groundwater_efficiency,
 ):
     """Write the one CalculationRun for this (parcel, period) — the audit trail.
 
@@ -156,6 +179,14 @@ def _persist_calculation_run(
     ``-ledger.amount_acre_feet`` exactly. Input magnitudes come straight off the
     breakdown the runner already evaluated; a step that did not run in this chain
     (e.g. effective precip disabled) stores NULL rather than a fabricated zero.
+
+    148-02 Task 4 (Q2): ``gw_extracted_af`` / ``deep_percolation_gw_af`` are set
+    only when ``residual_disposition == "groundwater"`` (a has-well, unmetered
+    parcel) — ``_groundwater_extraction`` splits the CONSUMED magnitude
+    (``final_af``, quantized) by ``groundwater_efficiency``, the SiteConfig
+    value the CALLER read once for this whole run (never re-read per parcel;
+    it is one agency-wide setting). Null on a metered or no-well run, exactly
+    as the model field's help text says.
 
     MUST be called inside the per-parcel transaction.atomic() block.
     """
@@ -211,6 +242,17 @@ def _persist_calculation_run(
     # written for it any more — see the caller.
     over_delivery_af = _incidental_recharge_af(breakdown).quantize(quant)
 
+    final_af = net_af.quantize(quant)
+    # 148-02 Task 4 (Q2): only a `groundwater`-disposition run (has a well, no
+    # meter) ever gets an extraction estimate -- a metered run's meter IS the
+    # number, and a no-well run has no pump to have extracted anything.
+    gw_extracted_af = None
+    deep_percolation_gw_af = None
+    if residual_disposition == "groundwater":
+        gw_extracted_af, deep_percolation_gw_af = _groundwater_extraction(
+            final_af, groundwater_efficiency
+        )
+
     CalculationRun.objects.filter(parcel=parcel, period=period).delete()
     CalculationRun.objects.create(
         parcel=parcel,
@@ -224,9 +266,11 @@ def _persist_calculation_run(
         net_consumptive_use_af=net_consumptive_use_af,
         residual_disposition=residual_disposition,
         unmet_demand_af=unmet_demand_af,
+        gw_extracted_af=gw_extracted_af,
+        deep_percolation_gw_af=deep_percolation_gw_af,
         banked_af=info["deposited"],
         drawn_af=info["drawn"],
-        final_af=net_af.quantize(quant),
+        final_af=final_af,
         breakdown=breakdown,
         methodology_plan_id=plan_id,
         methodology_plan_name=plan_name,
@@ -382,6 +426,17 @@ class Command(BaseCommand):
             code="GW", defaults={"name": "Groundwater"}
         )
 
+        # 148-02 Task 4 (Q2): the agency-wide extraction-efficiency setting,
+        # read ONCE for the whole run -- identical for every parcel (it is one
+        # SiteConfig row, not per-parcel like surface's field_efficiency), and
+        # deliberately not re-read per parcel so a setting edit mid-run cannot
+        # tear. `SiteConfig.objects.first() or SiteConfig()` is the established
+        # idiom (`surface/services.py::field_efficiency`): reads safely before
+        # a row exists, falling back to the field's own class default (0.800).
+        groundwater_efficiency = (
+            SiteConfig.objects.first() or SiteConfig()
+        ).groundwater_efficiency
+
         written = 0
         unmet = 0
         metered = 0
@@ -481,6 +536,22 @@ class Command(BaseCommand):
                             f"({sd['efficiency_source']}) = {consumed} AF the "
                             f"crop could use"
                         )
+                # 148-02 Task 4 (Q2): an estimated field (has a well, no
+                # meter) also names the extraction split the run would stamp
+                # -- what the pump had to lift beyond what the crop consumed.
+                # Metered and no-well parcels never divide by the setting (a
+                # meter is the number; there is no pump to have extracted
+                # anything).
+                if not is_metered and routes_personal:
+                    consumed_af = net_af.quantize(Decimal("0.0001"))
+                    extracted_af, deep_percolation_af = _groundwater_extraction(
+                        consumed_af, groundwater_efficiency
+                    )
+                    extra += (
+                        f"; groundwater consumed {consumed_af} AF / "
+                        f"{groundwater_efficiency} = {extracted_af} AF "
+                        f"extracted, {deep_percolation_af} AF deep percolation"
+                    )
                 if is_metered:
                     self.stdout.write(
                         f"  {parcel.parcel_number}: gross {gross_af} AF -> "
@@ -582,6 +653,7 @@ class Command(BaseCommand):
                     plan_id, plan_name, plan_hash,
                     residual_disposition=residual_disposition,
                     unmet_demand_af=unmet_demand_af,
+                    groundwater_efficiency=groundwater_efficiency,
                 )
                 # 148-02 Task 3 (Q1): an over-delivery is nobody's credit — no
                 # `recharge` ledger row and no basin-pool deposit is written for

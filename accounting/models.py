@@ -611,7 +611,13 @@ class CalculationRun(models.Model):
     residual_disposition = models.CharField(
         max_length=20,
         choices=[
-            ("groundwater", "Groundwater extraction"),
+            # 148-02 Task 4 (Q2): relabeled from "Groundwater extraction" --
+            # the calculated row this disposition writes carries the CONSUMED
+            # amount (final_af), never the extracted one; gw_extracted_af below
+            # is a separate, derived figure. "(estimated)" names what the two
+            # groundwater fields on this run both are: an ET-based estimate,
+            # not a meter.
+            ("groundwater", "Groundwater consumed (estimated)"),
             ("unmet_demand", "Unmet demand / unallocated"),
             ("metered", "Metered extraction (authoritative)"),
         ],
@@ -621,6 +627,30 @@ class CalculationRun(models.Model):
         "unmet demand (no well — under-irrigation or a surface-allocation error), or "
         "marked metered (the parcel carries an authoritative meter reading that owns "
         "its groundwater — the run is an ET reference value, no calculated row).",
+    )
+    gw_extracted_af = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text="148-02 Task 4 (Q2): the estimated field's pumped magnitude -- "
+        "final_af divided by SiteConfig.groundwater_efficiency AT COMPUTE TIME "
+        "(read once when this run was written, never re-derived from a setting "
+        "that may have moved since — a finalized period's billable groundwater "
+        "must not move when someone tunes the setting, ISS-177). Null on a "
+        "metered run (the meter is the number) or a no-well run (unmet demand, "
+        "never a phantom extraction). 0 on a zero-residual estimated month.",
+    )
+    deep_percolation_gw_af = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text="148-02 Task 4 (Q2): gw_extracted_af minus final_af -- the "
+        "pumped water the crop did not consume, returning to the aquifer. "
+        "Neither crop use nor a credit; feeds parcel_mass_balance's own output "
+        "term of the same name so an estimated field-year still closes. Null "
+        "wherever gw_extracted_af is null.",
     )
     unmet_demand_af = models.DecimalField(
         max_digits=12,

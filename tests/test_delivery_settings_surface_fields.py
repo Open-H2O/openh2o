@@ -105,6 +105,10 @@ def test_diversion_settings_save_onto_site_config(admin_client):
         reverse("accounting:delivery_settings"),
         {
             "efficiency_percent": "75",
+            # 148-02 Task 4: `wells` is enabled by default here too, so this
+            # POST needs groundwater_efficiency_percent the same way it needs
+            # efficiency_percent.
+            "groundwater_efficiency_percent": "80",
             "recovery_horizon": "carry_forward",
             "diversion_report_year_rule": "season",
             "season_start_month": "3",
@@ -141,7 +145,10 @@ def test_saving_on_a_drinking_only_configuration_leaves_diversion_fields_untouch
 
     resp = admin_client.post(
         reverse("accounting:delivery_settings"),
-        {"recovery_horizon": "same_water_year"},
+        # 148-02 Task 4: `_WITHOUT_SURFACE` drops surface (and recharge) but
+        # leaves `wells` on, so groundwater_efficiency_percent is still a
+        # required field on this POST even though efficiency_percent is not.
+        {"recovery_horizon": "same_water_year", "groundwater_efficiency_percent": "80"},
     )
     assert resp.status_code == 302
     config.refresh_from_db()
