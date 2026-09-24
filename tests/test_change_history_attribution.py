@@ -242,6 +242,7 @@ def test_forced_recompute_of_a_finalized_period_carries_the_reason():
     assert event.pgh_context.metadata == {
         "command": "run_calculations",
         "argv": argv[1:],
+        "override": True,
         "reason": FORCE_REASON,
     }
     assert FORCE_REASON == "--force on a finalized period"
@@ -254,7 +255,12 @@ def test_forced_recompute_without_a_caller_context_still_carries_the_reason():
 
     run = CalculationRun.objects.get(parcel=parcel, period="2024-06")
     event = run.events.get(pgh_label="insert")
-    assert event.pgh_context.metadata == {"reason": "--force on a finalized period"}
+    # 147-02: the forced recompute goes through the finalized-period lock's
+    # recorded door, which marks every write it makes as an override.
+    assert event.pgh_context.metadata == {
+        "override": True,
+        "reason": "--force on a finalized period",
+    }
 
 
 # -- Writes no signal sees: bulk_create and QuerySet.update ---------------------

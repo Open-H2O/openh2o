@@ -318,6 +318,26 @@ def recharge_event_create(request, pk):
 
     event = form.save(commit=False)
     event.recharge_site = site
+    # The event's recharge lands in the ledger or the basin pool of the water
+    # year it starts in; a finalized year refuses it (147-02), so say so
+    # beside the form before anything is saved.
+    from accounting.locks import PeriodFinalized, refuse_if_finalized
+
+    try:
+        refuse_if_finalized(event.start_date)
+    except PeriodFinalized as exc:
+        form.add_error("start_date", str(exc))
+        events = list(
+            RechargeEvent.objects.filter(recharge_site=site)
+            .select_related("water_type")
+            .order_by("-start_date")
+        )
+        return render(request, "recharge/partials/_event_history.html", {
+            "site": site,
+            "events": events,
+            "event_groups": _group_recharge_events(events, ReportingPeriod.objects.all()),
+            "event_form": form,
+        })
     event.save()
 
     # The service is the single source of truth for the zone rule; let it decide.

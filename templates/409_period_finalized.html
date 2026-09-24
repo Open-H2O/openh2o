@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% comment %}
+  The refusal for a write into a finalized water year that reached the
+  database (147-02, accounting.locks.FinalizedPeriodMiddleware). Status 409.
+  Every path a person normally uses answers beside its own form first; this
+  page is the backstop for the rest (the Django admin, a path added later).
+{% endcomment %}
+
+{% block title %}Water year finalized - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Water year finalized{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'index' %}">Home</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Water year finalized</span>
+  </nav>
+  <p class="page-description">Nothing was changed.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack page-medium">
+  <div class="card-raised empty-state">
+    <p class="empty-state-text">{{ finalized_message }}</p>
+    <a href="{% url 'index' %}" class="btn-primary">Back to Home</a>
+  </div>
+</div>
+{% endblock %}

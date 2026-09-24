@@ -16,7 +16,7 @@ from io import StringIO
 import pytest
 from django.core.management import call_command
 
-from accounting.models import AllocationCarryover
+from accounting.models import AllocationCarryover, ReportingPeriod
 from core.models import SiteConfig
 from parcels.models import ParcelLedger
 from tests.factories import (
@@ -35,13 +35,24 @@ def gw_type():
     return WaterTypeFactory(name="Groundwater", code="GW")
 
 
-def wy_period(finalized=True):
+def wy_period():
+    """WY 2023-2024, open while a test writes its figures; see :func:`rollover`."""
     return ReportingPeriodFactory(
         name="WY 2023-2024",
         start_date=date(2023, 10, 1),
         end_date=date(2024, 9, 30),
-        is_finalized=finalized,
     )
+
+
+def rollover(**kwargs):
+    """Close WY 2023-2024, then roll it forward.
+
+    The year's figures are written while it is open: a finalized year refuses
+    every write (147-02). Closing it here, just before the command, keeps the
+    rollover reading a finalized year, as it always has in these tests.
+    """
+    ReportingPeriod.objects.filter(name="WY 2023-2024").update(is_finalized=True)
+    call_command("rollover_allocations", "--water-year", "2024", **kwargs)
 
 
 def _usage_row(parcel, af):
@@ -76,7 +87,7 @@ def test_carry_forward_zone_banks_surplus():
     period = wy_period()
     zone = make_zone(gw, period, alloc=100, usage=30)
 
-    call_command("rollover_allocations", "--water-year", "2024", stdout=StringIO())
+    rollover(stdout=StringIO())
 
     row = AllocationCarryover.objects.get(zone=zone, water_type=gw)
     assert row.amount_af == Decimal("70.0000")
@@ -89,7 +100,7 @@ def test_expire_zone_surplus_not_written():
     zone = make_zone(gw, period, alloc=100, usage=30, recovery_horizon="same_water_year")
 
     out = StringIO()
-    call_command("rollover_allocations", "--water-year", "2024", stdout=out)
+    rollover(stdout=out)
 
     assert not AllocationCarryover.objects.filter(zone=zone).exists()
     assert "EXPIRES" in out.getvalue()
@@ -101,7 +112,7 @@ def test_expire_zone_debt_still_written():
     period = wy_period()
     zone = make_zone(gw, period, alloc=100, usage=130, recovery_horizon="same_water_year")
 
-    call_command("rollover_allocations", "--water-year", "2024", stdout=StringIO())
+    rollover(stdout=StringIO())
 
     row = AllocationCarryover.objects.get(zone=zone, water_type=gw)
     assert row.amount_af == Decimal("-30.0000")
@@ -116,7 +127,7 @@ def test_null_override_follows_agency_default():
     period = wy_period()
     zone = make_zone(gw, period, alloc=100, usage=30, recovery_horizon=None)
 
-    call_command("rollover_allocations", "--water-year", "2024", stdout=StringIO())
+    rollover(stdout=StringIO())
 
     # Inherited expire policy: the surplus is shed.
     assert not AllocationCarryover.objects.filter(zone=zone).exists()
@@ -135,9 +146,9 @@ def test_idempotent_with_mixed_horizons():
         gw, period, alloc=100, usage=130, recovery_horizon="same_water_year"
     )  # debt -> -30 still carried
 
-    call_command("rollover_allocations", "--water-year", "2024", stdout=StringIO())
+    rollover(stdout=StringIO())
     first = sorted((c.zone_id, c.amount_af) for c in AllocationCarryover.objects.all())
-    call_command("rollover_allocations", "--water-year", "2024", stdout=StringIO())
+    rollover(stdout=StringIO())
     second = sorted((c.zone_id, c.amount_af) for c in AllocationCarryover.objects.all())
 
     assert AllocationCarryover.objects.count() == 2  # expire surplus suppressed

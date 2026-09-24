@@ -101,6 +101,7 @@ from django.contrib.gis.geos import MultiPolygon
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
+from accounting.locks import demonstration_seed
 from accounting.models import (
     AllocationPlan,
     ReportingPeriod,
@@ -360,6 +361,7 @@ class Command(BaseCommand):
             "live seeding that cannot perturb the whole-basin closure.",
         )
 
+    @demonstration_seed
     def handle(self, *args, **options):
         if options.get("journey_only"):
             # 133-02: both demonstration water years, not just the finalized one.

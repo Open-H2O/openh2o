@@ -33,6 +33,7 @@ from decimal import Decimal
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
+from accounting.locks import demonstration_seed
 from accounting.models import AllocationCarryover, ReportingPeriod, WaterType
 from accounting.services import BASIN_RECHARGE_POOL, create_recharge_ledger_entries
 from geography.models import Zone
@@ -108,6 +109,7 @@ class Command(BaseCommand):
     )
 
     @transaction.atomic
+    @demonstration_seed
     def handle(self, *args, **options):
         # Local import: `recharge` is an optional module, so this must not run at
         # module scope (ISS-072).

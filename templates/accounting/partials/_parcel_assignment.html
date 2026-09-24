@@ -6,6 +6,9 @@
   copy of the breakdown table above. The date a use area was added is on the
   chip's title; the figures for it are in the table.
 {% endcomment %}
+{% if assignment_error %}
+<p class="text-sm mb-md text-deficit" role="alert">{{ assignment_error }}</p>
+{% endif %}
 {% if assignments %}
 <div class="assignment-chips">
   {% for wap in assignments %}

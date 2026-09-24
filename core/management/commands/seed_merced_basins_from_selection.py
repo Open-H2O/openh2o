@@ -68,6 +68,7 @@ from django.contrib.gis.geos import GEOSGeometry, MultiPolygon
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
+from accounting.locks import demonstration_seed
 from accounting.models import AllocationCarryover
 from accounting.services import BASIN_RECHARGE_POOL
 from geography.models import Boundary, Flowline, Zone
@@ -128,6 +129,7 @@ class Command(BaseCommand):
     )
 
     @transaction.atomic
+    @demonstration_seed
     def handle(self, *args, **options):
         basins = self._load(BASINS_FIXTURE, "selected_basins.geojson")
         river = self._load(RIVER_FIXTURE, "selected_river_ag_parcels.geojson")

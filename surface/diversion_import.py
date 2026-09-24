@@ -77,6 +77,7 @@ from decimal import Decimal, InvalidOperation
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
+from accounting.locks import finalized_message
 from accounting.models import ReportingPeriod
 from core.models import SiteConfig
 from surface.models import DiversionRecord, PointOfDiversion, WaterRight
@@ -769,11 +770,31 @@ def commit_rows(built, *, method="", data_state="provisional", dry_run=False):
             .values_list("point_of_diversion_id", "month", "diversion_type")
         )
 
+    # A month inside a finalized water year is refused as a row error in
+    # plain words (147-02), in the preview as well as on commit, so the
+    # preview never counts a row the commit would refuse. The database lock
+    # (accounting/locks.py) refuses the same rows anyway.
+    finalized_spans = list(
+        ReportingPeriod.objects.filter(is_finalized=True).values_list(
+            "start_date", "end_date", "name"
+        )
+    )
+
     survivors = []
     for c in candidates:
         key = (c["point"].pk, c["month"], c["diversion_type"])
         if key in existing:
             skipped_duplicates += 1
+            continue
+        locked = next(
+            (n for (start, end, n) in finalized_spans if start <= c["month"] <= end),
+            None,
+        )
+        if locked:
+            errors.append({
+                "line": ", ".join(str(n) for n in c["source_lines"]),
+                "message": finalized_message(locked),
+            })
             continue
         record = DiversionRecord(
             point_of_diversion=c["point"],

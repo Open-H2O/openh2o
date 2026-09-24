@@ -57,6 +57,8 @@ figures (the v1.9/v1.10 demo is framed as not-yet-submittable).
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 
+from accounting.locks import override
+from accounting.management.commands.run_calculations import FORCE_REASON
 from accounting.models import ReportingPeriod
 
 DEFAULT_PERIOD = "WY 2024-2025"
@@ -148,6 +150,14 @@ class Command(BaseCommand):
             self._print_plan(label, months)
             return
 
+        # The demonstration's prior water year is finalized, and every pass
+        # below writes into it on purpose: through the recorded door
+        # (147-02, accounting/locks.py), with the same reason the engine's
+        # own --force records.
+        with override(FORCE_REASON):
+            self._refresh(label, months)
+
+    def _refresh(self, label, months):
         # Pass 1 — populate net_consumptive_use_af (surface-independent, 54-01).
         self.stdout.write(self.style.MIGRATE_HEADING(
             f"\n=== Pass 1/3: run_calculations — populate net consumptive use "

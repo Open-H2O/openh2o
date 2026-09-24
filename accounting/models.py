@@ -20,6 +20,7 @@ from django.contrib.postgres.fields.ranges import RangeOperators
 from django.core.exceptions import ValidationError
 from django.db.models import Func
 
+from accounting.locks import finalized_period_lock
 from core.history import track_changes
 
 
@@ -209,6 +210,8 @@ class WaterAccountParcel(models.Model):
 
     class Meta:
         unique_together = [("water_account", "parcel", "reporting_period")]
+        # A finalized water year is closed to change (147-02, accounting/locks.py).
+        triggers = [finalized_period_lock(period_column="reporting_period_id")]
 
     def __str__(self):
         return f"{self.water_account} - {self.parcel}"
@@ -229,6 +232,8 @@ class AllocationPlan(models.Model):
 
     class Meta:
         unique_together = [("zone", "water_type", "reporting_period")]
+        # A finalized water year is closed to change (147-02, accounting/locks.py).
+        triggers = [finalized_period_lock(period_column="reporting_period_id")]
         verbose_name = "Allocation Plan"
         verbose_name_plural = "Allocation Plans"
 
@@ -350,6 +355,8 @@ class WaterCredit(models.Model):
 
     class Meta:
         ordering = ["origin_period"]
+        # A finalized water year is closed to change (147-02, accounting/locks.py).
+        triggers = [finalized_period_lock(month_text_column="origin_period")]
 
     def __str__(self):
         return f"{self.parcel} {self.amount_af} AF @ {self.origin_period}"
@@ -380,6 +387,8 @@ class WaterCreditDraw(models.Model):
 
     class Meta:
         ordering = ["draw_period"]
+        # A finalized water year is closed to change (147-02, accounting/locks.py).
+        triggers = [finalized_period_lock(month_text_column="draw_period")]
 
     def __str__(self):
         return f"{self.amount_af} AF @ {self.draw_period} from {self.credit_id}"
@@ -481,6 +490,8 @@ class AllocationCarryover(models.Model):
         # ``origin`` is part of the key so a zone-year can hold BOTH a rollover
         # carryover AND its basin-pool rows without colliding (52.6-02).
         unique_together = [("zone", "water_type", "water_year", "origin")]
+        # A finalized water year is closed to change (147-02, accounting/locks.py).
+        triggers = [finalized_period_lock(water_year_column="water_year")]
         verbose_name = "Allocation carryover"
         verbose_name_plural = "Allocation carryovers"
 
@@ -631,6 +642,12 @@ class CalculationRun(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        # A finalized water year is closed to change (147-02, accounting/locks.py).
+        triggers = [
+            finalized_period_lock(
+                date_column="period_start", fallback_month_text_column="period"
+            )
+        ]
 
     @staticmethod
     def period_to_date(period):

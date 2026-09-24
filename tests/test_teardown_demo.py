@@ -71,10 +71,12 @@ def _shared_reference():
     """The agency-agnostic rows ALL basins share — the teardown must keep these."""
     gw, _ = WaterType.objects.get_or_create(code="GW", defaults={"name": "Groundwater"})
     sw, _ = WaterType.objects.get_or_create(code="SW", defaults={"name": "Surface Water"})
+    # Open while the basins below write into it; _build_multi_basin_world
+    # finalizes it last, as the seed leaves it (a finalized year refuses
+    # writes, 147-02).
     prior, _ = ReportingPeriod.objects.get_or_create(
         name="WY 2024-2025",
-        defaults={"start_date": date(2024, 10, 1), "end_date": date(2025, 9, 30),
-                  "is_finalized": True},
+        defaults={"start_date": date(2024, 10, 1), "end_date": date(2025, 9, 30)},
     )
     ReportingPeriod.objects.get_or_create(
         name="WY 2025-2026",
@@ -199,6 +201,7 @@ def _build_multi_basin_world():
         recharge_name="Cressey-Winton Recharge Basin",
         station_ext="MER-ST-1", station_source="cimis", gw=gw, prior=prior,
         zone_type="management_area", basin_code="5-022.04")
+    ReportingPeriod.objects.filter(pk=prior.pk).update(is_finalized=True)
 
 
 def _merced_counts():

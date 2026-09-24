@@ -115,6 +115,9 @@ MIDDLEWARE = [
     # Refuses every unsafe request from a Viewer (read-only) account, on every
     # route, whatever ACCESS_CONTROL_ENFORCED says (Phase 147, core/access.py).
     "core.access.ReadOnlyMiddleware",
+    # Turns a write refused by the finalized-period lock into the 409 page in
+    # plain words instead of a 500 (Phase 147, accounting/locks.py).
+    "accounting.locks.FinalizedPeriodMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",

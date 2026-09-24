@@ -23,8 +23,12 @@ Rules enforced here, in order:
    coercion is COUNTED and reported to the operator — normalizing is a judgement
    about the file, and it must never be silent. The web upload's dry-run preview
    surfaces the count before anything is written.
-3. FINALIZED-PERIOD GUARD (ISS-029). A row dated inside a finalized period is
-   refused, because that period is a number already filed with the state.
+3. FINALIZED-PERIOD GUARD (ISS-029, 147-02). A row dated inside a finalized
+   period, or any row when the period picked for the whole file is finalized,
+   is refused as a row error in plain words. It runs on every import, the
+   preview included, whether or not a period was picked (the web upload with a
+   period picked used to skip it entirely). The database refuses the same
+   rows anyway (accounting/locks.py); this says which ones before writing.
 4. DEDUP (ISS-029 idempotency). The ledger is an append-only journal, so we never
    delete — we skip a row that already exists with the same
    (parcel, effective_date, source_type, amount) and collapse exact duplicates
@@ -37,6 +41,7 @@ from decimal import Decimal, InvalidOperation
 
 from django.db import transaction
 
+from accounting.locks import finalized_message
 from accounting.models import ReportingPeriod, WaterType
 from parcels.models import (
     NON_POSITIVE_SOURCE_TYPES,
@@ -84,9 +89,9 @@ def import_ledger_rows(
 ):
     """Validate and import ledger rows from an open text-mode CSV file.
 
-    ``reporting_period`` is assigned to every created row when given. When it is
-    None, rows carry no period and the finalized-period guard runs per row by
-    date instead. ``dry_run`` validates and reports without writing.
+    ``reporting_period`` is assigned to every created row when given; a
+    finalized one refuses every row. The finalized-period guard also runs per
+    row by date, either way. ``dry_run`` validates and reports without writing.
 
     Returns a dict: created_count, error_count, errors (list of
     {"line", "messages"}), preview (first 5 rows), skipped_duplicate,
@@ -117,15 +122,15 @@ def import_ledger_rows(
     if missing:
         return _fatal(f"Missing required columns: {', '.join(sorted(missing))}")
 
-    # Finalized periods are loaded once. Only needed when no explicit period was
-    # given — an explicit finalized period is refused by the caller up front.
-    finalized_spans = []
-    if reporting_period is None and not dry_run:
-        finalized_spans = list(
-            ReportingPeriod.objects.filter(is_finalized=True).values_list(
-                "start_date", "end_date", "name"
-            )
+    # Finalized periods are loaded once, for every import (147-02): with or
+    # without a period picked, and for the preview as well as the commit, so
+    # the preview never counts a row the commit would refuse.
+    finalized_spans = list(
+        ReportingPeriod.objects.filter(is_finalized=True).values_list(
+            "start_date", "end_date", "name"
         )
+    )
+    picked_is_finalized = bool(reporting_period and reporting_period.is_finalized)
 
     for line_num, row in enumerate(reader, start=2):
         row = {k.strip().lower(): v.strip() for k, v in row.items() if k}
@@ -209,17 +214,21 @@ def import_ledger_rows(
             if effective_date is None:
                 row_errors.append(f"invalid effective_date: {effective_date_raw}")
 
-        # Finalized-period guard
-        if effective_date is not None and finalized_spans:
+        # Finalized-period guard: the row's own date, then the period picked
+        # for the whole file.
+        hit = None
+        if effective_date is not None:
             hit = next(
                 (n for (s, e, n) in finalized_spans if s <= effective_date <= e),
                 None,
             )
-            if hit:
-                row_errors.append(
-                    f"effective_date {effective_date} falls inside finalized "
-                    f"reporting period '{hit}' — that number is already filed"
-                )
+        if hit is None and picked_is_finalized:
+            hit = reporting_period.name
+        if hit:
+            row_errors.append(
+                f"effective_date {effective_date or effective_date_raw}: "
+                f"{finalized_message(hit)}"
+            )
 
         # Optional water type
         water_type = None

@@ -51,6 +51,7 @@ against an empty flowline set.
 import math
 from decimal import Decimal
 
+from accounting.locks import demonstration_seed
 from django.conf import settings
 from django.contrib.gis.geos import Point
 from django.core.management.base import BaseCommand, CommandError
@@ -350,6 +351,7 @@ class Command(BaseCommand):
             "destroying any hand-drawn QGIS shapes on the live demo.",
         )
 
+    @demonstration_seed
     def handle(self, *args, **options):
         # Base-layer guard runs first, BEFORE any flush, so a wrong instance
         # fails fast and leaves existing data untouched.

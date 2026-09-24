@@ -38,6 +38,7 @@ removes both.
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
+from accounting.locks import TEARDOWN_REASON, overriding
 from accounting.models import (
     AllocationPlan,
     WaterAccount,
@@ -103,6 +104,7 @@ class Command(BaseCommand):
             help="Remove only the Demo Valley (Fresno) demo data.",
         )
 
+    @overriding(TEARDOWN_REASON)
     def handle(self, *args, **options):
         if options["kaweah_only"] and options["fresno_only"]:
             raise CommandError(

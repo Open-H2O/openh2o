@@ -24,6 +24,7 @@ from django.contrib.gis.geos import MultiPolygon, Point, Polygon
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
+from accounting.locks import demonstration_seed
 from accounting.models import (
     AllocationPlan,
     ReportingPeriod,
@@ -130,6 +131,7 @@ class Command(BaseCommand):
             help="Delete existing demo data before seeding.",
         )
 
+    @demonstration_seed
     def handle(self, *args, **options):
         if options["flush"]:
             self._flush()

@@ -33,6 +33,7 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from core.access import public_in_open_demo
 from core.map_labels import map_label
 
+from accounting.locks import PeriodFinalized, refuse_if_finalized, refuse_if_period_finalized
 from accounting.models import ReportingPeriod
 from accounting.services import current_period_id as compute_current_period_id
 from core.models import SiteConfig
@@ -574,7 +575,10 @@ def diversion_record_create(request, pk):
         # never runs it -- without this, a duplicate (POD, month, type) hit
         # the database's own constraint as a raw IntegrityError, a 500.
         try:
+            refuse_if_period_finalized(period)
             record.validate_unique()
+        except PeriodFinalized as exc:
+            form.add_error(None, str(exc))
         except ValidationError:
             form.add_error(None, _DUPLICATE_RECORD_ERROR)
         else:
@@ -626,6 +630,11 @@ def diversion_record_edit(request, pk, rpk):
 
     form = DiversionRecordForm(request.POST, instance=record, pod=pod)
     if form.is_valid():
+        # The record as stored, before the form's values land on it: a record
+        # inside a finalized year can be neither changed nor moved out of it.
+        stored_period = ReportingPeriod.objects.filter(
+            start_date__lte=record.month, end_date__gte=record.month,
+        ).first()
         updated = form.save(commit=False)
         month = updated.month
         updated.reporting_period = ReportingPeriod.objects.filter(
@@ -633,7 +642,11 @@ def diversion_record_edit(request, pk, rpk):
             end_date__gte=month,
         ).first()
         try:
+            refuse_if_period_finalized(stored_period)
+            refuse_if_period_finalized(updated.reporting_period)
             updated.validate_unique()
+        except PeriodFinalized as exc:
+            form.add_error(None, str(exc))
         except ValidationError:
             form.add_error(None, _DUPLICATE_RECORD_ERROR)
         else:
@@ -653,6 +666,12 @@ def diversion_record_delete(request, pk, rpk):
     """Delete one diversion record (146-02 Task 3, ISS-181)."""
     pod = get_object_or_404(PointOfDiversion, pk=pk)
     record = get_object_or_404(DiversionRecord, pk=rpk, point_of_diversion=pod)
+    try:
+        refuse_if_finalized(record.month)
+    except PeriodFinalized as exc:
+        return _render_diversion_records_section(
+            request, pod, period_warning=f"Nothing was deleted. {exc}",
+        )
     record.delete()
     return _render_diversion_records_section(request, pod)
 

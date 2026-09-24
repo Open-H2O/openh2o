@@ -21,6 +21,7 @@ from django.contrib.gis.db import models
 from django.core.exceptions import ValidationError
 from django.urls import reverse
 
+from accounting.locks import finalized_period_lock
 from core.history import track_changes
 
 
@@ -794,6 +795,10 @@ class DiversionRecord(models.Model):
     class Meta:
         ordering = ["-month"]
         unique_together = [("point_of_diversion", "month", "diversion_type")]
+        # A finalized water year is closed to change (147-02, accounting/locks.py).
+        triggers = [
+            finalized_period_lock(date_column="month", period_column="reporting_period_id")
+        ]
 
     #: The first month the 2026 rewrite (23 CCR 934) governs -- Water Year
     #: 2027 opens October 1, 2026. Every earlier month is still Water Year
@@ -955,6 +960,10 @@ class UnallocatedDelivery(models.Model):
                 check=models.Q(amount_acre_feet__gt=0),
                 name="unallocated_delivery_amount_positive",
             ),
+        ]
+        # A finalized water year is closed to change (147-02, accounting/locks.py).
+        triggers = [
+            finalized_period_lock(date_column="month", period_column="reporting_period_id")
         ]
         verbose_name_plural = "unallocated deliveries"
 

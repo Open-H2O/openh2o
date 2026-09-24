@@ -502,6 +502,13 @@ def attach_orphans_to_period(period):
     """
     counts = {"diversion_records": 0, "unallocated_deliveries": 0, "ledger_rows": 0}
 
+    # A finalized period takes no new rows (147-02). A period is never
+    # finalized at creation, the one caller today, so this refuses only a
+    # future caller that attaches after finalizing.
+    from accounting.locks import refuse_if_period_finalized
+
+    refuse_if_period_finalized(period)
+
     if is_enabled("surface"):
         from surface.models import DiversionRecord, UnallocatedDelivery
 

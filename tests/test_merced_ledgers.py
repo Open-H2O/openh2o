@@ -663,14 +663,19 @@ def test_seed_surface_split_is_demand_weighted_when_calculations_exist(seeded):
     # district total is fixed; a SHORT delivery (demand-supply exceeds it) forces
     # the demand-weighted branch so the larger-demand parcel wins.
     month = "2025-06"
-    CalculationRun.objects.create(
-        parcel=thirsty, period=month,
-        gross_et_af=Decimal("90"), net_consumptive_use_af=Decimal("90"),
-        final_af=Decimal("0"))
-    CalculationRun.objects.create(
-        parcel=modest, period=month,
-        gross_et_af=Decimal("10"), net_consumptive_use_af=Decimal("10"),
-        final_af=Decimal("0"))
+    # The prior WY is finalized by the seed, so the fixture's demand rows go
+    # through the lock's recorded door, as the seed's own writes do (147-02).
+    from accounting.locks import override
+
+    with override("test fixture: demand in the finalized year"):
+        CalculationRun.objects.create(
+            parcel=thirsty, period=month,
+            gross_et_af=Decimal("90"), net_consumptive_use_af=Decimal("90"),
+            final_af=Decimal("0"))
+        CalculationRun.objects.create(
+            parcel=modest, period=month,
+            gross_et_af=Decimal("10"), net_consumptive_use_af=Decimal("10"),
+            final_af=Decimal("0"))
 
     call_command("seed_merced_ledgers")
 

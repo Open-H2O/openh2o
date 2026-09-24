@@ -30,6 +30,11 @@ from core.history import CHANGE_NOTE_HELP, NOTE_MAX_LENGTH, change_note
 from datasync import freshness
 from datasync.models import MonitoredStation
 from accounting.calculation import evaluate_chain
+from accounting.locks import (
+    PeriodFinalized,
+    refuse_if_finalized,
+    refuse_if_period_finalized,
+)
 from accounting.forms import (
     AllocationPlanForm,
     CsvUploadForm,
@@ -762,8 +767,13 @@ def allocation_create(request):
     if request.method == "POST":
         form = AllocationPlanForm(request.POST)
         if form.is_valid():
-            form.save()
-            return redirect("accounting:allocations_list")
+            try:
+                refuse_if_period_finalized(form.cleaned_data["reporting_period"])
+            except PeriodFinalized as exc:
+                form.add_error("reporting_period", str(exc))
+            else:
+                form.save()
+                return redirect("accounting:allocations_list")
     else:
         form = AllocationPlanForm()
 
@@ -1151,6 +1161,9 @@ def assign_parcel(request, pk):
     parcel_id = request.POST.get("parcel_id")
     parcel = get_object_or_404(Parcel, pk=parcel_id)
 
+    # This door writes the undated assignment (no reporting period), which
+    # no finalized year locks (147-02: an assignment is locked only when it
+    # names a finalized period), so it has nothing to refuse.
     wap, created = WaterAccountParcel.objects.get_or_create(
         water_account=account,
         parcel=parcel,
@@ -1182,6 +1195,10 @@ def remove_parcel(request, pk, wap_pk):
     """Remove a parcel from a water account (soft delete by setting removed_date)."""
     account = get_object_or_404(WaterAccount, pk=pk)
     wap = get_object_or_404(WaterAccountParcel, pk=wap_pk, water_account=account)
+    try:
+        refuse_if_period_finalized(wap.reporting_period)
+    except PeriodFinalized as exc:
+        return _assignment_refused(request, account, exc)
     wap.removed_date = timezone.now().date()
     wap.save(update_fields=["removed_date"])
 
@@ -1191,6 +1208,19 @@ def remove_parcel(request, pk, wap_pk):
         request,
         "accounting/partials/_parcel_assignment.html",
         {"account": account, "assignments": assignments},
+    )
+
+
+def _assignment_refused(request, account, exc):
+    """The assignment section again, carrying the finalized-year refusal."""
+    return render(
+        request,
+        "accounting/partials/_parcel_assignment.html",
+        {
+            "account": account,
+            "assignments": _account_assignments(account),
+            "assignment_error": str(exc),
+        },
     )
 
 
@@ -1538,8 +1568,14 @@ def ledger_create(request):
         if form.is_valid():
             entry = form.save(commit=False)
             entry.created_by = request.user
-            entry.save()
-            return redirect("accounting:ledger_list")
+            try:
+                refuse_if_finalized(entry.effective_date)
+                refuse_if_period_finalized(entry.reporting_period)
+            except PeriodFinalized as exc:
+                form.add_error("effective_date", str(exc))
+            else:
+                entry.save()
+                return redirect("accounting:ledger_list")
     else:
         form = ParcelLedgerForm()
         # Pre-fill parcel if provided via query string

@@ -13,6 +13,7 @@ from django.conf import settings
 from django.contrib.gis.db import models
 from django.urls import reverse
 
+from accounting.locks import finalized_period_lock
 from core.history import track_changes
 
 
@@ -131,6 +132,12 @@ class ParcelLedger(models.Model):
                 ),
                 name="parcelledger_usage_rows_non_positive",
             ),
+        ]
+        # A finalized water year is closed to change (147-02, accounting/locks.py).
+        triggers = [
+            finalized_period_lock(
+                date_column="effective_date", period_column="reporting_period_id"
+            )
         ]
 
     def __str__(self):

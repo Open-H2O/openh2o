@@ -8,6 +8,7 @@ from django.contrib.gis.geos import MultiPolygon, Polygon
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
+from accounting.locks import demonstration_seed
 from accounting.models import (
     AllocationPlan,
     ReportingPeriod,
@@ -34,6 +35,7 @@ def make_box(cx, cy, size=0.005):
 class Command(BaseCommand):
     help = "Seed demo data: 3 zones, 30 parcels, 3 accounts, 6 months ledger."
 
+    @demonstration_seed
     def handle(self, *args, **options):
         with transaction.atomic():
             self._run()

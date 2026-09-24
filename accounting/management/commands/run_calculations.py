@@ -36,8 +36,6 @@ import re
 from contextlib import ExitStack
 from decimal import Decimal
 
-import pghistory
-
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.db.models import Q, Sum
@@ -45,6 +43,7 @@ from django.db.models import Q, Sum
 from accounting.banking_math import depreciated_value, is_expired, periods_between
 from accounting.calculation import evaluate_chain, plan_config_hash
 from accounting.carryover_math import water_year_of
+from accounting.locks import override
 from accounting.ledger_words import (
     INCIDENTAL_RECHARGE_WORDS,
     LEGACY_INCIDENTAL_RECHARGE_WORDS,
@@ -419,7 +418,10 @@ class Command(BaseCommand):
                     f"the state is being recomputed — this changes a filed figure."
                 )
             )
-            self._history.enter_context(pghistory.context(reason=FORCE_REASON))
+            # The recorded door through the finalized-period lock (147-02):
+            # every write below carries override=True and this reason in the
+            # change history, and only the lock triggers are switched off.
+            self._history.enter_context(override(FORCE_REASON))
 
         # Snapshot the methodology ONCE: the active plan is identical for every
         # parcel in a single run, so hashing per-parcel would be wasted work and

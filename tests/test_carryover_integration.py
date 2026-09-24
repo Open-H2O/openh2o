@@ -20,7 +20,7 @@ from django.core.management import call_command
 from django.test import Client
 from django.urls import reverse
 
-from accounting.models import AllocationCarryover
+from accounting.models import AllocationCarryover, ReportingPeriod
 from accounting.services import (
     water_year_periods,
     water_year_usage_by_type,
@@ -174,8 +174,10 @@ class TestRolloverCommand:
         zone = ZoneFactory()
         parcel = ParcelFactory()
         ParcelZoneFactory(parcel=parcel, zone=zone)
+        # The year's figures are written while it is open, then it closes:
+        # a finalized year refuses every write (147-02).
         period = wy_period(
-            "WY 2023-2024", date(2023, 10, 1), date(2024, 9, 30), finalized
+            "WY 2023-2024", date(2023, 10, 1), date(2024, 9, 30), finalized=False
         )
         AllocationPlanFactory(
             zone=zone,
@@ -185,6 +187,8 @@ class TestRolloverCommand:
         )
         if usage:
             usage_row(parcel, date(2024, 6, 1), usage, source_type="et_estimate")
+        if finalized:
+            ReportingPeriod.objects.filter(pk=period.pk).update(is_finalized=True)
         return zone, gw
 
     def test_surplus_rolls_forward_signed(self):

@@ -37,7 +37,6 @@ def test_rollover_preserves_basin_pool_row_in_target_year():
         name="WY 2023-2024",
         start_date=date(2023, 10, 1),
         end_date=date(2024, 9, 30),
-        is_finalized=True,
     )
     zone = ZoneFactory()
     AllocationPlanFactory(
@@ -46,6 +45,9 @@ def test_rollover_preserves_basin_pool_row_in_target_year():
         reporting_period=period,
         allocation_acre_feet=Decimal("100"),
     )
+    # Written while open, then closed: a finalized year refuses writes (147-02).
+    period.is_finalized = True
+    period.save(update_fields=["is_finalized"])
 
     # Managed recharge already deposited into the pool for the TARGET year (2025).
     deposit_to_basin_pool(zone, gw, 2025, Decimal("975.0000"))
