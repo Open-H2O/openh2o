@@ -21,6 +21,8 @@ from django.contrib.gis.db import models
 from django.core.exceptions import ValidationError
 from django.urls import reverse
 
+from core.history import track_changes
+
 
 class WaterRightType(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -31,6 +33,7 @@ class WaterRightType(models.Model):
         return self.name
 
 
+@track_changes()
 class WaterRight(models.Model):
     STATUS_CHOICES = [
         ("active", "Active"),
@@ -178,6 +181,7 @@ def _season_display(start_month, start_day, end_month, end_day, label):
     )
 
 
+@track_changes()
 class WaterRightParcel(models.Model):
     water_right = models.ForeignKey(
         WaterRight, on_delete=models.CASCADE, related_name="water_right_parcels"
@@ -194,6 +198,7 @@ class WaterRightParcel(models.Model):
         return f"{self.water_right} → {self.parcel}"
 
 
+@track_changes()
 class PointOfDiversion(models.Model):
     STATUS_CHOICES = [
         ("active", "Active"),
@@ -390,6 +395,7 @@ class PointOfDiversion(models.Model):
         return reverse("surface:pod_detail", args=[self.pk])
 
 
+@track_changes()
 class PointOfDiversionParcel(models.Model):
     point_of_diversion = models.ForeignKey(
         PointOfDiversion, on_delete=models.CASCADE, related_name="pod_parcels"
@@ -407,6 +413,7 @@ class PointOfDiversionParcel(models.Model):
         return f"{self.point_of_diversion} → {self.parcel} ({self.fraction})"
 
 
+@track_changes()
 class IrrigationMethod(models.Model):
     """One row of a published irrigation-efficiency table (146-05 Task 1, S1).
 
@@ -453,6 +460,7 @@ class IrrigationMethod(models.Model):
         return f"{self.name}, {self.percent()}%"
 
 
+@track_changes()
 class ParcelIrrigationMethod(models.Model):
     """How one use area is irrigated (146-05 Task 1, S1); no row means not set.
 
@@ -476,6 +484,7 @@ class ParcelIrrigationMethod(models.Model):
         return f"{self.parcel} → {self.method}"
 
 
+@track_changes()
 class WaterAccountDeliveryPoint(models.Model):
     """Which point of diversion delivers to an account (146-05 Task 3, Q8).
 
@@ -513,6 +522,7 @@ class WaterAccountDeliveryPoint(models.Model):
         return f"{self.account} → {self.point_of_diversion}"
 
 
+@track_changes()
 class MeasuringDevice(models.Model):
     """A measuring or recording device under 23 CCR 934(b)(1) (146-03 Task 1).
 
@@ -684,6 +694,7 @@ class MeasuringDevice(models.Model):
         return date.today() >= due
 
 
+@track_changes()
 class PointOfDiversionDevice(models.Model):
     """Which measuring device sits on a point of diversion, and when.
 
@@ -706,6 +717,7 @@ class PointOfDiversionDevice(models.Model):
         return f"{self.point_of_diversion} - {self.device}"
 
 
+@track_changes()
 class DiversionRecord(models.Model):
     DIVERSION_TYPE_CHOICES = [
         ("direct_use", "Direct Use"),
@@ -859,6 +871,7 @@ class DiversionRecord(models.Model):
         return f"{self.point_of_diversion} {self.month}: {self.volume_acre_feet} AF"
 
 
+@track_changes()
 class CurtailmentOrder(models.Model):
     STATUS_CHOICES = [
         ("active", "Active"),
@@ -885,6 +898,7 @@ class CurtailmentOrder(models.Model):
         return self.order_id
 
 
+@track_changes()
 class UnallocatedDelivery(models.Model):
     """Delivered surface water that no served parcel's crop demand can explain.
 

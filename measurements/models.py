@@ -12,6 +12,8 @@ approved / estimated).
 from django.conf import settings
 from django.contrib.gis.db import models
 
+from core.history import track_changes
+
 # Observation quality/status, following SensorThings + USGS semantics. Freshly
 # synced or hand-entered data is "provisional" until a later workflow promotes
 # it to "approved"; "estimated" marks values derived/filled rather than measured.
@@ -58,6 +60,7 @@ class Meter(models.Model):
         return self.serial_number
 
 
+@track_changes()
 class MeterReading(models.Model):
     meter = models.ForeignKey(Meter, on_delete=models.CASCADE)
     observed_property = models.ForeignKey(
@@ -150,6 +153,7 @@ class SensorMeasurement(models.Model):
         return f"{self.sensor} @ {self.measurement_date}: {self.value}"
 
 
+@track_changes()
 class WaterMeasurement(models.Model):
     SOURCE_CHOICES = [
         ("manual", "Manual"),

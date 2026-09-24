@@ -14,6 +14,7 @@ from django.db import models
 from django.urls import reverse
 
 from core.constants import RECOVERY_HORIZON_CHOICES
+from core.history import track_changes
 
 
 class BoundaryManager(models.Manager):
@@ -71,6 +72,7 @@ class Boundary(models.Model):
         return (self.name,)
 
 
+@track_changes()
 class Zone(models.Model):
     ZONE_TYPE_CHOICES = [
         ("management_area", "Management Area"),
@@ -167,6 +169,7 @@ class ZoneGroup(models.Model):
         return self.name
 
 
+@track_changes()
 class ParcelZone(models.Model):
     parcel = models.ForeignKey("parcels.Parcel", on_delete=models.CASCADE, related_name="parcel_zones")
     zone = models.ForeignKey(Zone, on_delete=models.CASCADE, related_name="parcel_zones")

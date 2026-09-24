@@ -35,6 +35,8 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.urls import reverse
 
+from core.history import track_changes
+
 # -- Published code lists ----------------------------------------------------
 # Source: DDW "Data Dictionary for SDWIS.CSV Files", rev 12/2021 (System Status).
 ACTIVITY_STATUS_CHOICES = [
@@ -165,6 +167,7 @@ RESULT_KIND_CHOICES = [
 # -- 1.1 System identity -----------------------------------------------------
 
 
+@track_changes()
 class WaterSystem(models.Model):
     """A public water system. Usually one row per deployment, but a table so
     wholesalers and consecutive systems can be referenced by PWSID."""
@@ -275,6 +278,7 @@ class WaterSystem(models.Model):
         return reverse("drinking:overview")
 
 
+@track_changes()
 class SystemFacility(models.Model):
     """Mirrors SDWIS WATER_SYSTEM_FACILITY."""
 
@@ -525,6 +529,7 @@ class SampleEvent(models.Model):
         return f"{self.sampling_point.ps_code} @ {self.sample_date}"
 
 
+@track_changes()
 class SampleResult(models.Model):
     """One analyte's finding within a sample event.
 
@@ -761,6 +766,7 @@ PRODUCTION_GALLONS_PER_CCF = Decimal("748.05")
 _TWO_PLACES = Decimal("0.01")
 
 
+@track_changes()
 class SystemProduction(models.Model):
     """One month's production or delivery, by source type, for a water system.
 
@@ -871,6 +877,7 @@ SCHEDULE_FREQUENCY_CHOICES = [
 ]
 
 
+@track_changes()
 class SamplingSchedule(models.Model):
     """One row of the operator's own sampling checklist.
 

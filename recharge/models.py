@@ -12,6 +12,8 @@ has-well parcel on the conjunctive path.
 from django.contrib.gis.db import models
 from django.urls import reverse
 
+from core.history import track_changes
+
 
 class RechargeSite(models.Model):
     SITE_TYPE_CHOICES = [
@@ -81,6 +83,7 @@ class RechargeSitePOD(models.Model):
         return f"{self.recharge_site} ← {self.point_of_diversion}"
 
 
+@track_changes()
 class RechargeEvent(models.Model):
     recharge_site = models.ForeignKey(RechargeSite, on_delete=models.CASCADE)
     start_date = models.DateField()
@@ -100,6 +103,7 @@ class RechargeEvent(models.Model):
         return f"{self.recharge_site} {self.start_date}: {self.volume_acre_feet} AF"
 
 
+@track_changes()
 class RechargeMeasurement(models.Model):
     MEASUREMENT_TYPE_CHOICES = [
         ("water_level", "Water Level"),

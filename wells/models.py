@@ -12,6 +12,8 @@ wells used for water-level monitoring rather than extraction.
 from django.contrib.gis.db import models
 from django.urls import reverse
 
+from core.history import track_changes
+
 
 MEASUREMENT_METHOD_CHOICES = [
     ("certified_meter", "Certified Meter"),
@@ -79,6 +81,7 @@ class WellType(models.Model):
         return self.name
 
 
+@track_changes()
 class Well(models.Model):
     STATUS_CHOICES = [
         ("active", "Active"),
@@ -190,6 +193,7 @@ class Well(models.Model):
         return reverse("wells:detail", args=[self.pk])
 
 
+@track_changes()
 class WellMeter(models.Model):
     well = models.ForeignKey(Well, on_delete=models.CASCADE)
     meter = models.ForeignKey("measurements.Meter", on_delete=models.CASCADE)
@@ -207,6 +211,7 @@ class WellMeter(models.Model):
         return f"{self.well} - {self.meter}"
 
 
+@track_changes()
 class WellIrrigatedParcel(models.Model):
     well = models.ForeignKey(Well, on_delete=models.CASCADE)
     parcel = models.ForeignKey("parcels.Parcel", on_delete=models.CASCADE)

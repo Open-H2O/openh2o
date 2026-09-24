@@ -20,6 +20,8 @@ from django.contrib.postgres.fields.ranges import RangeOperators
 from django.core.exceptions import ValidationError
 from django.db.models import Func
 
+from core.history import track_changes
+
 
 class WaterType(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -30,6 +32,7 @@ class WaterType(models.Model):
         return self.name
 
 
+@track_changes()
 class ReportingPeriod(models.Model):
     name = models.CharField(max_length=100)
     start_date = models.DateField()
@@ -98,6 +101,9 @@ UNIT_KIND_SENTENCES = {
 }
 
 
+# The verification key is a credential-shaped value that moves no figure;
+# history is readable by everyone signed in, so it is never copied there.
+@track_changes(exclude=("verification_key",))
 class WaterAccount(models.Model):
     STATUS_CHOICES = [
         ("active", "Active"),
@@ -191,6 +197,7 @@ class WaterAccount(models.Model):
         return f"{self.account_number} - {self.name}"
 
 
+@track_changes()
 class WaterAccountParcel(models.Model):
     water_account = models.ForeignKey(WaterAccount, on_delete=models.CASCADE)
     parcel = models.ForeignKey("parcels.Parcel", on_delete=models.CASCADE)
@@ -207,6 +214,7 @@ class WaterAccountParcel(models.Model):
         return f"{self.water_account} - {self.parcel}"
 
 
+@track_changes()
 class AllocationPlan(models.Model):
     name = models.CharField(max_length=200)
     zone = models.ForeignKey("geography.Zone", on_delete=models.CASCADE)
@@ -228,6 +236,7 @@ class AllocationPlan(models.Model):
         return self.name
 
 
+@track_changes()
 class CalculationPlan(models.Model):
     """A named, config-as-data recipe for deriving net consumptive use.
 
@@ -258,6 +267,7 @@ class CalculationPlan(models.Model):
         return cls.objects.filter(is_active=True).order_by("id").first()
 
 
+@track_changes()
 class CalculationStep(models.Model):
     """One ordered operation in a CalculationPlan's chain.
 
@@ -294,6 +304,7 @@ class CalculationStep(models.Model):
         return f"{self.order}. {self.label}"
 
 
+@track_changes()
 class WaterCredit(models.Model):
     """An immutable surplus deposit — banked water carried forward to a later month.
 
@@ -344,6 +355,7 @@ class WaterCredit(models.Model):
         return f"{self.parcel} {self.amount_af} AF @ {self.origin_period}"
 
 
+@track_changes()
 class WaterCreditDraw(models.Model):
     """A consumption record: how much of a WaterCredit a later deficit month drew.
 
@@ -373,6 +385,7 @@ class WaterCreditDraw(models.Model):
         return f"{self.amount_af} AF @ {self.draw_period} from {self.credit_id}"
 
 
+@track_changes()
 class AllocationCarryover(models.Model):
     """A closed water year's leftover (or over-drawn) budget, rolled forward.
 
@@ -478,6 +491,7 @@ class AllocationCarryover(models.Model):
         )
 
 
+@track_changes()
 class CalculationRun(models.Model):
     """The reconstructable audit record for one `calculated` ledger row (38-05).
 

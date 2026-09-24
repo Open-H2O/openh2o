@@ -13,6 +13,8 @@ from django.conf import settings
 from django.contrib.gis.db import models
 from django.urls import reverse
 
+from core.history import track_changes
+
 
 class CropType(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -23,6 +25,7 @@ class CropType(models.Model):
         return self.name
 
 
+@track_changes()
 class Parcel(models.Model):
     STATUS_CHOICES = [
         ("active", "Active"),
@@ -74,6 +77,7 @@ NON_POSITIVE_SOURCE_TYPES = (
 # unconstrained — an operator correction has to be able to go either way.
 
 
+@track_changes()
 class ParcelLedger(models.Model):
     SOURCE_TYPE_CHOICES = [
         ("meter_reading", "Meter Reading"),

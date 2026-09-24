@@ -987,7 +987,7 @@ SCHEMA_EXCEPTIONS: tuple = (
         model="Sensor",
         field="well",
         target="wells",
-        where="measurements/models.py:109",
+        where="measurements/models.py:112",
         why=(
             "A sensor is physically installed in a well. Recording which one on "
             "the sensor is the natural place for it, and measurements is a "
@@ -1004,7 +1004,7 @@ SCHEMA_EXCEPTIONS: tuple = (
         model="WaterMeasurement",
         field="well",
         target="wells",
-        where="measurements/models.py:175",
+        where="measurements/models.py:179",
         why=(
             "A water measurement records where it was taken; for groundwater "
             "that is a well. Dropping the link would leave readings that cannot "
@@ -1021,7 +1021,7 @@ SCHEMA_EXCEPTIONS: tuple = (
         model="WaterMeasurement",
         field="parcel",
         target="parcels",
-        where="measurements/models.py:172",
+        where="measurements/models.py:176",
         why=(
             "The surface-water counterpart of the arrow above: a measurement "
             "taken on a use area rather than at a well."
@@ -1071,7 +1071,7 @@ SCHEMA_EXCEPTIONS: tuple = (
         model="ParcelZone",
         field="parcel",
         target="parcels",
-        where="geography/models.py:171",
+        where="geography/models.py:174",
         why=(
             "ParcelZone is the use-area-to-zone join, and zoning is geography's "
             "job. geography is standard, so this arrow is what pins parcels "
@@ -1090,7 +1090,7 @@ SCHEMA_EXCEPTIONS: tuple = (
         model="ParcelLedger",
         field="water_type",
         target="accounting",
-        where="parcels/models.py:94",
+        where="parcels/models.py:98",
         why=(
             "A ledger row has to say which kind of water it moved, and that "
             "vocabulary belongs to accounting."
@@ -1108,7 +1108,7 @@ SCHEMA_EXCEPTIONS: tuple = (
         model="SystemFacility",
         field="well",
         target="wells",
-        where="drinking/models.py:333",
+        where="drinking/models.py:337",
         why=(
             "A drinking-water facility very often IS a well — the same physical "
             "hole in the ground that the extraction ledger meters — so "
@@ -1134,7 +1134,7 @@ SCHEMA_EXCEPTIONS: tuple = (
         model="ParcelLedger",
         field="reporting_period",
         target="accounting",
-        where="parcels/models.py:99",
+        where="parcels/models.py:103",
         why=(
             "A ledger row falls in a water year, and the water-year calendar "
             "belongs to accounting."
@@ -1149,7 +1149,7 @@ SCHEMA_EXCEPTIONS: tuple = (
         model="WaterAccount",
         field="delivery_well",
         target="wells",
-        where="accounting/models.py:143",
+        where="accounting/models.py:149",
         why=(
             "An account delivered by groundwater names the well it draws "
             "from, and accounting is schema-resident so this arrow is safe: "

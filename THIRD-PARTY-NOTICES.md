@@ -54,6 +54,8 @@ copyleft obligation on OpenH2O. Listed here for completeness.
 | Pillow | HPND (MIT-CMU) |
 | requests | Apache-2.0 |
 | earthengine-api | Apache-2.0 |
+| django-pghistory | BSD-3-Clause |
+| django-pgtrigger | BSD-3-Clause |
 | pytest, factory-boy | MIT |
 | pytest-django | BSD-3-Clause |
 

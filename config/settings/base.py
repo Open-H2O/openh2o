@@ -91,6 +91,9 @@ INSTALLED_APPS = [
     "allauth.account",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
+    # Change history by Postgres trigger (Phase 147). See core/history.py.
+    "pgtrigger",
+    "pghistory",
     # Local — composed from OPENH2O_MODULES via the registry. Note this is
     # `installed_apps_for`, not the enabled-module list: a SCHEMA-RESIDENT module
     # that an operator switched off still appears here, so its tables keep
@@ -106,6 +109,9 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    # Attaches the signed-in user and the request path to every change the
+    # request makes (Phase 147, core/history.py).
+    "pghistory.middleware.HistoryMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",

@@ -19,7 +19,12 @@ def main():
             "available on your PYTHONPATH environment variable? Did you "
             "forget to activate a virtual environment?"
         ) from exc
-    execute_from_command_line(sys.argv)
+    # Every change a command makes (a seed, an import, an engine run) is
+    # recorded against the command's name; see core/history.py.
+    from core.history import command_context
+
+    with command_context(sys.argv):
+        execute_from_command_line(sys.argv)
 
 
 if __name__ == "__main__":

@@ -16,8 +16,23 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from core.constants import RECOVERY_HORIZON_CHOICES
+from core.history import track_changes
 
 
+# Only who a person is and what they may do. The password hash and the last
+# login time change without anyone changing a figure, and are not history.
+@track_changes(
+    fields=(
+        "username",
+        "first_name",
+        "last_name",
+        "email",
+        "is_active",
+        "is_staff",
+        "is_superuser",
+        "agency_admin",
+    )
+)
 class User(AbstractUser):
     agency_admin = models.BooleanField(default=False)
     phone = models.CharField(max_length=20, blank=True)
@@ -59,6 +74,7 @@ class UserRole(models.Model):
         return f"{self.user} - {self.role}"
 
 
+@track_changes()
 class SiteConfig(models.Model):
     agency_name = models.CharField(max_length=200)
     timezone = models.CharField(max_length=50, default="America/Los_Angeles")

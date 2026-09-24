@@ -31,6 +31,7 @@ dependencies = [
     "Pillow>=10.3",  # 10.2/10.3 fixed buffer-overflow CVEs; processes uploaded screenshots
     "requests>=2.32.2",  # 2.32.2 fixed the cert-verification regression
     "earthengine-api>=1.0,<2.0",
+    "django-pghistory>=3.9.2",  # change history by Postgres trigger, so bulk and raw SQL writes are recorded too
 ]
 
 [project.optional-dependencies]

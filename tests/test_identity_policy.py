@@ -296,13 +296,19 @@ def test_findings_are_machine_readable(capsys):
         call_command("scan_demo_identity", as_json=True)
     payload = json.loads(capsys.readouterr().out)
 
-    assert payload["violations"] == 1
-    finding = payload["findings"][0]
-    assert finding["table"] == "parcels_parcel"
-    assert finding["column"] == "owner_name"
-    assert finding["matched"] == "Turner Island Farms LLC"
-    assert finding["out_of_scope"] is False
-    assert finding["reason"]
+    # Two findings for one planted row: the row itself, and the change-history
+    # copy its insert wrote (Phase 147). A banned name is banned in history
+    # too, judged by the tracked column's own scope, so the copy is in scope.
+    assert payload["violations"] == 2
+    assert [f["table"] for f in payload["findings"]] == [
+        "parcels_parcel",
+        "parcels_parcelevent",
+    ]
+    for finding in payload["findings"]:
+        assert finding["column"] == "owner_name"
+        assert finding["matched"] == "Turner Island Farms LLC"
+        assert finding["out_of_scope"] is False
+        assert finding["reason"]
 
 
 # ---------------------------------------------------------------------------

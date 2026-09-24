@@ -290,6 +290,8 @@ django==5.2.15 \
     #   django-allauth
     #   django-extensions
     #   django-htmx
+    #   django-pghistory
+    #   django-pgtrigger
 django-allauth==65.18.0 \
     --hash=sha256:afb82e2c545b9a5539370ad120468faaed84715e095a7b6e76972dacdc6376fe \
     --hash=sha256:e508640c83b94eaf1a9b4e9ac5332dc310dcdc83fca40d58a3f670e15bad1e84
@@ -306,6 +308,14 @@ django-htmx==1.27.0 \
     --hash=sha256:036e5da801bfdf5f1ca815f21592cfb9f004a898f330c842f15e55c70e301a75 \
     --hash=sha256:13e1e13b87d39b57f95aae6e4987cb3df056d0b1373a41f4a94504a00298ffd8
     # via openh2o (pyproject.toml)
+django-pghistory==3.9.2 \
+    --hash=sha256:1623633af429837567dd11469823b9bb3c3f908cc117d60f097d23f3f0622fa2 \
+    --hash=sha256:1d07b75b61501a209330e7fb43fad2b2482f7f0399a36fa91aa7600a03025921
+    # via openh2o (pyproject.toml)
+django-pgtrigger==4.17.0 \
+    --hash=sha256:06048cdeb57e20987fd0bf7dd673512a1413a08868eea248d70dbb970e967175 \
+    --hash=sha256:55d297a756b5b6a8e0c533d3323fda1589c699e7d14aa3fff7fa7d774c46363c
+    # via django-pghistory
 earthengine-api==1.7.33 \
     --hash=sha256:17ac52585eb1b232d0eb1b831210c3582bbe6d75b9f4e5895c01271213e645e2 \
     --hash=sha256:a028817ef404e293c0a9d8199b0fc422636fb621f048a7c91fe0c31117900ff2

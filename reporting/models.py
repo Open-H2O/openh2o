@@ -12,6 +12,8 @@ to the columns the state portals expect.
 from django.conf import settings
 from django.contrib.gis.db import models
 
+from core.history import track_changes
+
 
 class ReportingProfile(models.Model):
     """The agency's state-issued filing identity and certifier of record.
@@ -90,6 +92,7 @@ class ReportTemplate(models.Model):
         return self.name
 
 
+@track_changes()
 class ReportSubmission(models.Model):
     """A report OpenH2O prepared for a filing the user makes themselves.
 

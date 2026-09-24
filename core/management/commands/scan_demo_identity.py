@@ -198,6 +198,20 @@ class Command(BaseCommand):
                     continue
                 yield model, table, field.column, field.attname
 
+    @staticmethod
+    def _policy_table(model, table):
+        """The table whose policy scopes govern this model's columns.
+
+        A change-history table (Phase 147, ``core/history.py``) holds copies of
+        its tracked table's columns, so each copy is judged by the tracked
+        column's own scope: a real place name protected on ``wells_well.
+        owner_name`` stays protected on ``wells_wellevent.owner_name``, and a
+        name banned there is banned in its history too. Every other table is
+        its own scope.
+        """
+        tracked = getattr(model, "pgh_tracked_model", None)
+        return tracked._meta.db_table if tracked is not None else table
+
     # ------------------------------------------------------------------
     # The slug form
     # ------------------------------------------------------------------
@@ -264,16 +278,17 @@ class Command(BaseCommand):
         blanket_skipped = []
 
         for model, table, column, attname in self._text_columns():
+            scope = self._policy_table(model, table)
             applicable = [
                 entry
                 for entry in banned
                 if entry.get("match", "global") == "global"
-                or applies_to(entry, table, column)
+                or applies_to(entry, scope, column)
             ]
             if not applicable:
                 continue
 
-            blanket = self._blanket_for(protected, table, column)
+            blanket = self._blanket_for(protected, scope, column)
             if blanket is not None:
                 # Every hit here would be suppressed, so do not pay for the
                 # query. Recorded, not silent — `--explain` prints it.
@@ -315,7 +330,7 @@ class Command(BaseCommand):
                             continue
                         form = "slug"
                     span = value[index : index + len(needle)]
-                    if self._suppressor(protected, table, column, span) is not None:
+                    if self._suppressor(protected, scope, column, span) is not None:
                         continue
                     findings.append(
                         {
@@ -326,7 +341,7 @@ class Command(BaseCommand):
                             "matched": entry["value"],
                             "form": form,
                             "reason": entry["reason"],
-                            "out_of_scope": not applies_to(entry, table, column),
+                            "out_of_scope": not applies_to(entry, scope, column),
                         }
                     )
         return findings, blanket_skipped
@@ -346,7 +361,7 @@ class Command(BaseCommand):
             total = 0
             where = []
             for model, table, column, attname in columns:
-                if not applies_to(entry, table, column):
+                if not applies_to(entry, self._policy_table(model, table), column):
                     continue
                 count = model.objects.filter(**{f"{attname}__icontains": value}).count()
                 if count:
