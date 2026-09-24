@@ -31,11 +31,10 @@ budget); a unit stated once in the caller's own subtitle, never on a column.
       <th rowspan="2" class="th-right"><span class="th-stack">Consumptive use</span></th>
       <th rowspan="2" class="th-right">Balance{% include "partials/_explainer_popout.html" with title="Balance" text="Total supplies minus consumptive use, for this account and period. Positive means the supplies on record exceeded the estimated use." link=wb_help_url link_label="How water balances work" %}</th>
       {% if has_allocations %}
-      {% comment %}148-02 Task 4 (Q2): "Groundwater budget, spent by
-           extraction", same reason and the same day as the Zones table's identical group
+      {% comment %}148-02 Task 4 (Q2): "Extraction budget", same reason and the same day as the Zones table's identical group
            header in _dashboard_content.html -- one label, both tables (rule
            12).{% endcomment %}
-      <th colspan="2" class="th-group-label col-sep">Groundwater budget, spent by extraction</th>
+      <th colspan="2" class="th-group-label col-sep">Extraction budget</th>
       {% endif %}
     </tr>
     <tr>

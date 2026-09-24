@@ -173,10 +173,10 @@ def test_the_strip_counts_groundwater_overdrafts():
     assert "account over groundwater budget" in html
 
 
-def test_the_budget_columns_say_spent_by_extraction():
+def test_the_budget_columns_say_extraction_budget():
     """The words beside the numbers: both tables head their budget columns under
     one group label. 148-02 Task 4 (Q2) relabeled it from "Groundwater budget"
-    to "Groundwater budget, spent by extraction" -- the budget now spends a calculated row's stamped
+    to "Extraction budget" -- the budget now spends a calculated row's stamped
     extraction estimate, not the consumed figure the Supplies "Groundwater"
     column beside it shows, and "budget" alone no longer said which of the
     two the group meant (136-01, DESIGN.md rule 12; the group header replaced
@@ -185,7 +185,7 @@ def test_the_budget_columns_say_spent_by_extraction():
 
     html = _dashboard(period).content.decode()
 
-    assert html.count("Groundwater budget, spent by extraction") == 2
+    assert html.count("Extraction budget") == 2
     assert "GW allocation (AF)" not in html
     assert "GW remaining (AF)" not in html
     assert "Allocation minus estimated consumptive use" not in html
@@ -299,13 +299,13 @@ def _header_rows(table_html):
 
 def test_the_accounts_table_reads_as_the_equation():
     """Design B: Account | Supplies (Surface, Groundwater, Rain, Total) |
-    Consumptive use | Balance | Groundwater budget, spent by extraction (Allocation, Remaining)."""
+    Consumptive use | Balance | Extraction budget (Allocation, Remaining)."""
     period, _zone, _parcel, _account = _basin()
 
     table = _accounts_table(_dashboard(period).content.decode())
 
     assert _header_rows(table) == [
-        ["Account", "Supplies", "Consumptive use", "Balance", "Groundwater budget, spent by extraction"],
+        ["Account", "Supplies", "Consumptive use", "Balance", "Extraction budget"],
         ["Surface", "Groundwater", "Rain", "Total", "Allocation", "Remaining"],
     ]
     assert 'colspan="4"' in table
@@ -319,7 +319,7 @@ def test_the_zones_table_spans_three_budget_columns():
     table = _zones_table(_dashboard(period).content.decode())
 
     assert _header_rows(table) == [
-        ["Zone", "Supplies", "Consumptive use", "Balance", "Groundwater budget, spent by extraction"],
+        ["Zone", "Supplies", "Consumptive use", "Balance", "Extraction budget"],
         ["Surface", "Groundwater", "Rain", "Total", "Allocation", "Carried fwd", "Remaining"],
     ]
     assert 'colspan="3"' in table
