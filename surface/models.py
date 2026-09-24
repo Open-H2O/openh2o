@@ -423,8 +423,10 @@ class IrrigationMethod(models.Model):
     Turlock Subbasin GSA's Section 4.05 table, 18 rows counted off the PDF on
     2026-09-23. It lives in ``surface`` for the reason the agency-wide
     efficiency does: nothing reads an efficiency where there is no canal.
-    Nothing reads this one yet either; Phase 148 decides what the engine does
-    with it.
+    148-02 wires it in: ``surface.services.field_efficiency`` reads a parcel's
+    assigned row here (falling back to the agency-wide default when the
+    parcel has none), and that same figure caps the demand-weighted canal
+    split and drives the engine's ``subtract_surface_water`` consumption math.
     """
 
     name = models.CharField(max_length=100, unique=True)
@@ -471,7 +473,10 @@ class ParcelIrrigationMethod(models.Model):
     dangling reference that stops ``migrate`` on every deployment without it
     (rule 1 of the composition rule, ``core/modules.py``). Pointing this way,
     the row leaves with ``surface``, like ``WaterRightParcel`` above.
-    ``surface/services.py`` does not read it this phase.
+    ``surface.services.field_efficiency`` reads it (148-02): a parcel with a
+    row here is capped and consumed at its method's assigned efficiency; a
+    parcel with none falls back to the agency-wide default via the ``related_name``
+    ``irrigation`` accessed from this model's ``parcel`` field.
     """
 
     parcel = models.OneToOneField(

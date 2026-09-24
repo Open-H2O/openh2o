@@ -227,3 +227,47 @@ def test_gw_recovered_reconciles_with_balance_dict_usage():
 
     assert result["inputs"]["gw_recovered"] == breakdown["usage"]
     assert result["inputs"]["gw_recovered"] == Decimal("7")
+
+
+def test_deep_percolation_surface_af_is_delivered_minus_consumed():
+    """148-02: a run carrying surface_delivered_af (the apply_efficiency knob
+    was on) names the part of the delivery the crop could not use as its OWN
+    output term -- separate from recharge, and it subtracts from the residual
+    like every other output, so the books still close."""
+    rp = ReportingPeriodFactory()
+    parcel = ParcelFactory()
+    UsageLocationFactory(parcel=parcel)
+
+    # 12 AF delivered, only 9 AF of it consumed (the field's own efficiency) ==
+    # 9 AF gross ET, so the books close with the 3 AF difference named as
+    # deep_percolation_surface_af rather than left to look like a phantom gain.
+    run = _run(parcel, "2024-05", gross_et=9, precip=0, surface=9,
+               banked=0, drawn=0, final=0, incidental=0)
+    run.surface_delivered_af = Decimal("12")
+    run.save()
+    _surface_row(parcel, rp, date(2024, 5, 1), 12)
+
+    result = parcel_mass_balance(parcel, rp)
+
+    assert result["inputs"]["surface"] == Decimal("12")  # delivered, unchanged
+    assert result["outputs"]["deep_percolation_surface_af"] == Decimal("3")
+    assert result["closes"] is True
+
+
+def test_deep_percolation_surface_af_is_zero_when_run_predates_the_knob():
+    """A run with no surface_delivered_af (an old run, or the knob off)
+    contributes 0 -- the new term never invents a number an old run never
+    recorded."""
+    rp = ReportingPeriodFactory()
+    parcel = ParcelFactory()
+    WellIrrigatedParcelFactory(parcel=parcel)
+
+    _run(parcel, "2024-01", gross_et=20, precip=3, surface=10,
+         banked=0, drawn=0, final=7, incidental=0)
+    _surface_row(parcel, rp, date(2024, 1, 1), 10)
+    _calculated_row(parcel, rp, date(2024, 1, 1), 7)
+
+    result = parcel_mass_balance(parcel, rp)
+
+    assert result["outputs"]["deep_percolation_surface_af"] == Decimal("0")
+    assert result["closes"] is True

@@ -564,7 +564,28 @@ class CalculationRun(models.Model):
         decimal_places=4,
         null=True,
         blank=True,
-        help_text="Surface water subtracted (AF); null if no surface-water step ran.",
+        help_text="Surface water subtracted (AF); null if no surface-water step ran. "
+        "With the apply_efficiency knob on, this is the CONSUMED part of a canal "
+        "delivery (delivered x efficiency); with the knob off, or on an old run "
+        "from before 148-02, it is the delivered magnitude itself.",
+    )
+    surface_delivered_af = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text="Recorded delivery for the month (AF), before the field's "
+        "efficiency is applied. Null when no surface-water step ran or the run "
+        "predates 148-02.",
+    )
+    surface_efficiency = models.DecimalField(
+        max_digits=4,
+        decimal_places=3,
+        null=True,
+        blank=True,
+        help_text="The field-efficiency factor applied to this run's surface "
+        "delivery. Null when the apply_efficiency knob is off, nothing was "
+        "delivered, or the step ran on a plan from before 148-02.",
     )
     net_consumptive_use_af = models.DecimalField(
         max_digits=12,

@@ -253,11 +253,26 @@ def _persist_calculation_run(
             str(precip_step["detail"]["effective_precip_af"])
         ).quantize(quant)
 
+    # 148-02: surface_water_af keeps its name and holds the CONSUMED part
+    # (delivered x efficiency, when the apply_efficiency knob is on; the
+    # delivered magnitude itself when it is off). surface_delivered_af and
+    # surface_efficiency are only present in the step detail when the knob is
+    # on ("delivered_af" / "efficiency" keys). An old breakdown, or the knob
+    # off, stores null for both, exactly as it always has for the one column.
     surface_water_af = None
+    surface_delivered_af = None
+    surface_efficiency = None
     if surface_step is not None:
-        surface_water_af = Decimal(
-            str(surface_step["detail"]["surface_water_af"])
-        ).quantize(quant)
+        detail = surface_step["detail"]
+        surface_water_af = Decimal(str(detail["surface_water_af"])).quantize(quant)
+        if "delivered_af" in detail:
+            surface_delivered_af = Decimal(
+                str(detail["delivered_af"])
+            ).quantize(quant)
+        if detail.get("efficiency") is not None:
+            surface_efficiency = Decimal(str(detail["efficiency"])).quantize(
+                Decimal("0.001")
+            )
 
     # Net consumptive use is the source-agnostic spine: gross ET minus effective
     # precip ONLY (never surface). It is recorded for every ET-bearing parcel
@@ -277,6 +292,8 @@ def _persist_calculation_run(
         gross_et_af=gross_q,
         effective_precip_af=effective_precip_af,
         surface_water_af=surface_water_af,
+        surface_delivered_af=surface_delivered_af,
+        surface_efficiency=surface_efficiency,
         net_consumptive_use_af=net_consumptive_use_af,
         residual_disposition=residual_disposition,
         unmet_demand_af=unmet_demand_af,
@@ -520,6 +537,27 @@ class Command(BaseCommand):
                         f"; would credit recharge "
                         f"{incidental_af.quantize(Decimal('0.0001'))} AF (GW)"
                     )
+                # 148-02: a canal-served field's line also names what was
+                # delivered, the field's own efficiency (and where it came
+                # from), and what that leaves the crop to use. "delivered_af"
+                # is only in the detail when apply_efficiency is on; delivered
+                # 0 never reaches this line because subtract_surface_water
+                # itself skips the efficiency lookup at 0.
+                surface_step = next(
+                    (s for s in breakdown if s["step_type"] == "subtract_surface_water"),
+                    None,
+                )
+                if surface_step is not None and "delivered_af" in surface_step["detail"]:
+                    sd = surface_step["detail"]
+                    delivered = Decimal(str(sd["delivered_af"]))
+                    if delivered > 0:
+                        surface_eff = Decimal(str(sd["efficiency"]))
+                        consumed = Decimal(str(sd["consumed_af"]))
+                        extra += (
+                            f"; canal delivered {delivered} AF x {surface_eff} "
+                            f"({sd['efficiency_source']}) = {consumed} AF the "
+                            f"crop could use"
+                        )
                 if is_metered:
                     self.stdout.write(
                         f"  {parcel.parcel_number}: gross {gross_af} AF -> "

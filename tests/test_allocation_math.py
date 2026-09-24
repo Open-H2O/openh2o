@@ -205,6 +205,97 @@ def test_negative_demand_raises():
 
 
 # --------------------------------------------------------------------------
+# 148-02, S1: efficiency as a per-parcel MAPPING, not just a single number.
+# A mixed-method headgate where a center pivot and a furrow field share one
+# point of diversion but must not share one cap.
+# --------------------------------------------------------------------------
+
+
+def test_mapping_ample_each_parcel_gets_its_own_cap():
+    # A: demand 30, eff 0.75 -> cap 40. B: demand 10, eff 0.50 -> cap 20.
+    # Different efficiencies, different caps, on the SAME delivery.
+    got = allocate_by_demand(
+        Decimal("100"),
+        {"A": Decimal("30"), "B": Decimal("10")},
+        {"A": Decimal("0.75"), "B": Decimal("0.50")},
+    )
+    assert got == {"A": Decimal("40.0000"), "B": Decimal("20.0000")}, f"got {got}"
+
+
+def test_mapping_ample_sums_to_the_mixed_caps():
+    got = allocate_by_demand(
+        Decimal("100"),
+        {"A": Decimal("30"), "B": Decimal("10")},
+        {"A": Decimal("0.75"), "B": Decimal("0.50")},
+    )
+    assert _sum(got) == Decimal("60.0000"), f"expected sum 60 (40+20), got {_sum(got)}"
+
+
+def test_mapping_short_still_splits_by_demand_weight_not_by_cap():
+    # Same mixed efficiencies as above, but a SHORT delivery (20 < 60 sum of
+    # caps). The ruling is explicit: short stays a pure demand-weight split
+    # (3:1 for A:B), never a cap-weighted one; mapping efficiency must not
+    # change the short branch's math.
+    got = allocate_by_demand(
+        Decimal("20"),
+        {"A": Decimal("30"), "B": Decimal("10")},
+        {"A": Decimal("0.75"), "B": Decimal("0.50")},
+    )
+    assert got == {"A": Decimal("15.0000"), "B": Decimal("5.0000")}, f"got {got}"
+    assert _sum(got) == Decimal("20.0000")
+
+
+def test_mapping_single_parcel_still_works():
+    got = allocate_by_demand(Decimal("100"), {"A": Decimal("30")}, {"A": Decimal("0.75")})
+    assert got == {"A": Decimal("40.0000")}, f"got {got}"
+
+
+def test_mapping_missing_key_with_positive_demand_raises():
+    assert _raises(
+        lambda: allocate_by_demand(
+            Decimal("100"),
+            {"A": Decimal("30"), "B": Decimal("10")},
+            {"A": Decimal("0.75")},  # B has positive demand, no efficiency given
+        )
+    )
+
+
+def test_mapping_missing_key_with_zero_demand_does_not_raise():
+    # A zero-demand parcel never enters the cap dict, so a mapping that omits
+    # it is not a fail-closed violation.
+    got = allocate_by_demand(
+        Decimal("100"),
+        {"A": Decimal("30"), "B": Decimal("0")},
+        {"A": Decimal("0.75")},
+    )
+    assert got == {"A": Decimal("40.0000")}, f"got {got}"
+
+
+def test_mapping_value_zero_raises():
+    assert _raises(
+        lambda: allocate_by_demand(
+            Decimal("100"), {"A": Decimal("30")}, {"A": Decimal("0")}
+        )
+    )
+
+
+def test_mapping_value_above_one_raises():
+    assert _raises(
+        lambda: allocate_by_demand(
+            Decimal("100"), {"A": Decimal("30")}, {"A": Decimal("1.5")}
+        )
+    )
+
+
+def test_mapping_value_negative_raises():
+    assert _raises(
+        lambda: allocate_by_demand(
+            Decimal("100"), {"A": Decimal("30")}, {"A": Decimal("-0.5")}
+        )
+    )
+
+
+# --------------------------------------------------------------------------
 # bare-Python runner (RED/GREEN without pytest)
 # --------------------------------------------------------------------------
 

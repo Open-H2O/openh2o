@@ -802,6 +802,7 @@ def parcel_mass_balance(parcel, reporting_period=None):
     cannot use it. The named identity is::
 
         surface + precip + gw_recovered = et + recharge + runoff + delta_storage
+                                           + deep_percolation_surface_af
 
     Term sourcing — deliberately REUSING the existing billable/balance helpers
     so this never drifts from ``parcel_balance_breakdown``:
@@ -825,6 +826,13 @@ def parcel_mass_balance(parcel, reporting_period=None):
     * ``delta_storage`` (output): change in banked credit over the period
       (``banked_af − drawn_af`` netted). The closure term that absorbs the timing
       between banking surplus in a wet month and recovering it later.
+    * ``deep_percolation_surface_af`` (output, 148-02): the part of a canal
+      delivery the crop could not use (``surface_delivered_af − surface_water_af``,
+      summed over the period's runs). Neither crop use nor a credit; it is
+      never manufactured as either (ISS-158). 0 on a run whose knob was off or
+      that predates 148-02 (``surface_delivered_af`` null), same as every other
+      absent CalculationRun term above. ``surface`` above stays the delivered
+      magnitude; this is what the delivered figure did NOT become.
 
     Where no CalculationRun exists for a parcel-month, its ET/precip/recharge/
     storage terms are simply absent (0); surface always comes from the ledger.
@@ -859,6 +867,7 @@ def parcel_mass_balance(parcel, reporting_period=None):
     et = Decimal("0")
     recharge = Decimal("0")
     delta_storage = Decimal("0")
+    deep_percolation_surface = Decimal("0")
     for run in _calculation_runs_for_period(parcel, reporting_period):
         et += run.gross_et_af or Decimal("0")
         precip += run.effective_precip_af or Decimal("0")
@@ -866,6 +875,14 @@ def parcel_mass_balance(parcel, reporting_period=None):
             run.drawn_af or Decimal("0")
         )
         recharge += _incidental_recharge_af(run.breakdown)
+        # 148-02: the part of a canal delivery the crop could NOT use. Neither
+        # crop use nor a credit, and never manufactured (ISS-158). Only present
+        # on a run whose apply_efficiency knob was on and something was
+        # delivered (surface_delivered_af not null); an old run, or the knob
+        # off, contributes 0 here, exactly like every other absent term above.
+        if run.surface_delivered_af is not None:
+            consumed = run.surface_water_af or Decimal("0")
+            deep_percolation_surface += run.surface_delivered_af - consumed
 
     runoff = Decimal("0")  # bookkeeping boundary: no surface-hydrology model.
 
@@ -886,6 +903,7 @@ def parcel_mass_balance(parcel, reporting_period=None):
         "recharge": recharge,
         "runoff": runoff,
         "delta_storage": delta_storage,
+        "deep_percolation_surface_af": deep_percolation_surface,
     }
     # 137-01: the two operands the parcel pane's balance panel states. Summed
     # here rather than in the template so the screen adds the same rows the

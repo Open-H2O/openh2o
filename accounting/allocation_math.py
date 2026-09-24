@@ -98,26 +98,46 @@ def allocate_by_demand(delivery_total, demand_by_parcel, efficiency):
         delivery_total: recorded district delivery for the period (AF, >= 0).
         demand_by_parcel: ``{parcel_key: net_consumptive_demand_af}`` (each >= 0).
             ``parcel_key`` may be an int id or a Parcel instance.
-        efficiency: irrigation efficiency, ``0 < eff <= 1`` (e.g. ``0.75``).
+        efficiency: irrigation efficiency, EITHER one number, ``0 < eff <= 1``
+            (e.g. ``0.75``, applied to every parcel alike, today's behavior),
+            OR a mapping ``{parcel_key: eff}`` keyed like ``demand_by_parcel``
+            (148-02: a mixed-method headgate, where a center pivot and a furrow
+            field sharing one point of diversion get their OWN caps). Every
+            value in a mapping is validated the same way a lone number is.
 
     Returns:
         ``{parcel_key: delivery_af}`` quantized to 4dp. AMPLE: every parcel with
-        positive demand mapped to its cap ``demand/eff`` (sum == ``sum(caps)``).
-        SHORT: the whole ``delivery_total`` split by demand weight (sum ==
-        ``delivery_total`` exactly). ZERO total demand or empty input: ``{}``.
-        ZERO ``delivery_total`` (with positive demand): every input parcel mapped
-        to ``Decimal("0.0000")`` — a recorded zero-delivery month is real data,
-        distinct from "no demand".
+        positive demand mapped to its own cap ``demand/eff`` (sum == ``sum(caps)``).
+        SHORT: the whole ``delivery_total`` split by demand weight ALONE, never by
+        cap weight (sum == ``delivery_total`` exactly); efficiency only sets the
+        ample/short boundary and the per-parcel ceiling, never the short split.
+        ZERO total demand or empty input: ``{}``. ZERO ``delivery_total`` (with
+        positive demand): every input parcel mapped to ``Decimal("0.0000")``, since
+        a recorded zero-delivery month is real data, distinct from "no demand".
 
     Raises:
-        ValueError: efficiency outside ``(0, 1]``, a negative ``delivery_total``,
-            or any negative demand (fail closed).
+        ValueError: an efficiency (lone or in the mapping) outside ``(0, 1]``, a
+            mapping missing a key some parcel has positive demand for, a negative
+            ``delivery_total``, or any negative demand (fail closed).
     """
-    eff = _dec(efficiency)
     total = _dec(delivery_total)
 
-    if eff <= 0 or eff > 1:
-        raise ValueError(f"efficiency must be in (0, 1], got {efficiency!r}")
+    if isinstance(efficiency, dict):
+        eff_map = {}
+        for key, value in efficiency.items():
+            e = _dec(value)
+            if e <= 0 or e > 1:
+                raise ValueError(
+                    f"efficiency for {key!r} must be in (0, 1], got {value!r}"
+                )
+            eff_map[key] = e
+        eff = None
+    else:
+        eff = _dec(efficiency)
+        if eff <= 0 or eff > 1:
+            raise ValueError(f"efficiency must be in (0, 1], got {efficiency!r}")
+        eff_map = None
+
     if total < 0:
         raise ValueError(f"delivery_total must be >= 0, got {delivery_total!r}")
 
@@ -140,23 +160,37 @@ def allocate_by_demand(delivery_total, demand_by_parcel, efficiency):
     if total == 0:
         return {key: Decimal("0.0000") for key in demand}
 
+    if eff_map is not None:
+        missing = [key for key, d in demand.items() if d > 0 and key not in eff_map]
+        if missing:
+            raise ValueError(
+                f"efficiency mapping is missing key(s) with positive demand: "
+                f"{missing!r}"
+            )
+
+    def _eff_for(key):
+        return eff_map[key] if eff_map is not None else eff
+
     # Quantize the caps up front: they are what the ample branch hands out, so the
     # ample/short boundary compares against the SAME 4dp sum we'd return — a raw
     # sum (e.g. 53.33333...) would make a delivery of exactly sum(caps) fall a
     # rounding-hair short and wrongly take the short branch.
-    caps = {key: _q(d / eff) for key, d in demand.items() if d > 0}
+    caps = {key: _q(d / _eff_for(key)) for key, d in demand.items() if d > 0}
     total_caps = sum(caps.values(), Decimal("0"))
 
-    # AMPLE: the delivery covers every cap. Each parcel gets exactly its cap; the
-    # leftover above sum(caps) is the recovery-horizon surplus the caller routes,
-    # so this does NOT sum to delivery_total by design.
+    # AMPLE: the delivery covers every cap. Each parcel gets exactly its OWN cap
+    # (demand/its own efficiency); the leftover above sum(caps) is the
+    # recovery-horizon surplus the caller routes, so this does NOT sum to
+    # delivery_total by design.
     if total >= total_caps:
         return dict(caps)
 
     # SHORT: distribute the whole delivery by DEMAND weight (demand_p / total_demand,
-    # NOT the cap). Each share is <= its cap because total < sum(caps). Quantize,
-    # then place the rounding residual on the last parcel by sorted str(key) so the
-    # result sums EXACTLY to delivery_total with no Decimal drift.
+    # NOT the cap, and NOT efficiency-weighted even when efficiency is a mapping;
+    # the ruling is explicit that a mixed-method headgate's short split stays a
+    # pure demand split). Each share is <= its cap because total < sum(caps).
+    # Quantize, then place the rounding residual on the last parcel by sorted
+    # str(key) so the result sums EXACTLY to delivery_total with no Decimal drift.
     shares = {key: _q(total * (demand[key] / total_demand)) for key in caps}
     return _place_residual(shares, total)
 

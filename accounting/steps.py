@@ -219,8 +219,24 @@ def subtract_surface_water(running_af, parcel, period, ctx, config):
     """Subtract surface water delivered to this parcel in the period.
 
     surface_diversion ledger rows are stored NEGATIVE (delivered magnitude as a
-    negative number); take the absolute value of their sum and subtract it. Does
-    NOT floor the result — clamp_floor owns the floor.
+    negative number); take the absolute value of their sum. Does NOT floor the
+    result — clamp_floor owns the floor.
+
+    ``apply_efficiency`` (148-02, S1): missing or ``False`` reproduces today's
+    behavior exactly, so the whole delivered magnitude is subtracted, and
+    ``detail["surface_water_af"]`` is that delivered figure. ``True``: only the
+    part of the delivery the crop could actually use is subtracted:
+    ``consumed = delivered x efficiency``, where efficiency is this parcel's
+    OWN ``surface.services.field_efficiency`` (a method's assigned efficiency,
+    or the agency-wide default). ``detail`` then also carries ``delivered_af``,
+    ``efficiency``, ``efficiency_source`` and ``consumed_af``; ``surface_water_af``
+    keeps its key but becomes the consumed figure, so an old reader of that key
+    still gets a real, usable number.
+
+    Delivered ``0`` is a special case even with the knob on: efficiency is
+    never looked up (``efficiency`` and ``efficiency_source`` stay ``None``,
+    ``consumed_af`` is ``0``) so a deployment with no ``surface`` module never
+    reaches ``field_efficiency``'s ``SiteConfig`` read through this step.
     """
     from parcels.models import ParcelLedger
 
@@ -231,10 +247,38 @@ def subtract_surface_water(running_af, parcel, period, ctx, config):
         effective_date__year=year,
         effective_date__month=month,
     ).aggregate(total=Sum("amount_acre_feet"))
-    surface_af = abs(agg["total"] or Decimal("0"))
+    delivered_af = abs(agg["total"] or Decimal("0"))
 
-    new_running = running_af - surface_af
-    detail = {"surface_water_af": str(surface_af)}
+    if not config.get("apply_efficiency", False):
+        new_running = running_af - delivered_af
+        detail = {"surface_water_af": str(delivered_af)}
+        return new_running, _record(
+            "subtract_surface_water", running_af, new_running, detail
+        )
+
+    quant = Decimal("0.0001")
+    if delivered_af == 0:
+        efficiency = None
+        efficiency_source = None
+        consumed_af = Decimal("0.0000")
+    else:
+        # Imported lazily: subtract_surface_water must not force a load-time
+        # dependency on surface, and delivered==0 skips this import entirely
+        # (the check above), so a deployment without the surface module never
+        # touches surface tables through this step.
+        from surface.services import field_efficiency
+
+        efficiency, efficiency_source = field_efficiency(parcel)
+        consumed_af = (delivered_af * efficiency).quantize(quant)
+
+    new_running = running_af - consumed_af
+    detail = {
+        "delivered_af": str(delivered_af),
+        "efficiency": str(efficiency) if efficiency is not None else None,
+        "efficiency_source": efficiency_source,
+        "consumed_af": str(consumed_af),
+        "surface_water_af": str(consumed_af),
+    }
     return new_running, _record(
         "subtract_surface_water", running_af, new_running, detail
     )

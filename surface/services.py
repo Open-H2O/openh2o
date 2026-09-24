@@ -31,9 +31,13 @@ Invariants honored (must agree with the calc engine + the Plan-01 kernel):
   ``rollover_allocations`` delete-then-insert.
 * ``dry_run=True`` returns the would-be rows (unsaved) and writes nothing.
 
-Efficiency defaults to the agency-wide ``SiteConfig.default_irrigation_efficiency``
-(55-02); a caller may override it per call. Shared-well / shared-POD apportionment
-is Phase 56 — out of scope here.
+Efficiency is resolved PER PARCEL by ``field_efficiency`` (148-02, S1): a served
+parcel with a recorded ``surface.ParcelIrrigationMethod`` (146-05) is capped at
+its own method's assigned efficiency; a parcel with no method falls back to the
+agency-wide ``SiteConfig.default_irrigation_efficiency`` (55-02). An explicit
+``efficiency=`` override on this call still wins for every served parcel, so
+the per-parcel lookup only runs when no override is given. Shared-well /
+shared-POD apportionment is Phase 56, out of scope here.
 """
 
 import logging
@@ -58,14 +62,41 @@ logger = logging.getLogger(__name__)
 _Q = Decimal("0.0001")
 
 
-def _resolve_efficiency(efficiency):
-    """The explicit override if given, else the agency-wide SiteConfig default."""
-    if efficiency is not None:
-        return Decimal(str(efficiency))
+def field_efficiency(parcel):
+    """One parcel's own field efficiency, and where it came from (148-02, S1).
+
+    Returns ``(Decimal, source)``. ``source`` is ``"method"`` when the parcel
+    carries a ``ParcelIrrigationMethod`` (146-05's one-to-one, related_name
+    ``irrigation``), which gives the assigned efficiency off that method's
+    row. Otherwise ``"agency"``, the deployment-wide
+    ``SiteConfig.default_irrigation_efficiency``.
+
+    This is the SAME figure ``allocate_district_delivery``'s per-parcel cap and
+    ``subtract_surface_water``'s consumption math both read, so the split and
+    the subtraction can never drift apart on a mixed-method headgate (a center
+    pivot and a furrow field sharing one point of diversion must not share one
+    cap; the 146-05 carry).
+
+    ``SiteConfig.objects.first() or SiteConfig()`` rather than ``.get()``
+    (the established idiom, ``surface/diversion_import.py``): a real deployment
+    always carries exactly one row, but this reads safely before one exists,
+    falling back to the field's own class default (0.750) instead of raising.
+    """
     # Imported lazily so this module has no load-time dependency on core.
     from core.models import SiteConfig
 
-    return SiteConfig.objects.get().default_irrigation_efficiency
+    link = getattr(parcel, "irrigation", None)
+    if link is not None:
+        return link.method.assigned_efficiency, "method"
+    config = SiteConfig.objects.first() or SiteConfig()
+    return config.default_irrigation_efficiency, "agency"
+
+
+def _resolve_efficiency(efficiency, parcel):
+    """The explicit override if given, else this parcel's own field_efficiency."""
+    if efficiency is not None:
+        return Decimal(str(efficiency))
+    return field_efficiency(parcel)[0]
 
 
 def _month_demand(parcel, month):
@@ -210,15 +241,16 @@ def allocate_district_delivery(
         point_of_diversion: a ``surface.models.PointOfDiversion``.
         reporting_period: the ``accounting.models.ReportingPeriod`` to allocate
             (``None`` = every recorded diversion on the POD).
-        efficiency: optional irrigation-efficiency override in ``(0, 1]``; default
-            is the agency-wide ``SiteConfig.default_irrigation_efficiency``.
+        efficiency: optional irrigation-efficiency override in ``(0, 1]``, applied
+            to EVERY served parcel; default is each parcel's own
+            ``field_efficiency`` (146-05's ``ParcelIrrigationMethod`` where set,
+            else the agency-wide ``SiteConfig.default_irrigation_efficiency``).
         dry_run: when ``True``, return the would-be rows (unsaved) and write nothing.
 
     Returns:
         the list of ``ParcelLedger`` rows written (or, for ``dry_run``, the
         unsaved instances that would have been written).
     """
-    eff = _resolve_efficiency(efficiency)
     pod = point_of_diversion
 
     # Surface deliveries are, by definition, Surface Water. Resolve the type ONCE
@@ -235,6 +267,12 @@ def allocate_district_delivery(
     )
     served = [link.parcel for link in served_links]
 
+    # Per-parcel cap (148-02, S1): each served parcel's own field_efficiency,
+    # unless the caller passed an explicit override, which wins for every
+    # parcel. Resolved once here, not per record, since the served list and
+    # each parcel's method do not change across a POD's diversion records.
+    eff_by_parcel = {p: _resolve_efficiency(efficiency, p) for p in served}
+
     records = list(_records_for_period(pod, reporting_period))
 
     to_write = []
@@ -242,7 +280,7 @@ def allocate_district_delivery(
     for record in records:
         delivery_total = record.consumed_acre_feet()
         demand_by_parcel = {p: _month_demand(p, record.month) for p in served}
-        shares = allocate_by_demand(delivery_total, demand_by_parcel, eff)
+        shares = allocate_by_demand(delivery_total, demand_by_parcel, eff_by_parcel)
 
         if shares:
             to_write.extend(_demand_rows(record, shares, pod, sw_type))

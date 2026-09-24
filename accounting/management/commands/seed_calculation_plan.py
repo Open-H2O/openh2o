@@ -11,6 +11,15 @@ subtract_effective_precip step is ENABLED with the USDA-SCS / TR-21 method
 
 et_gross config uses variable="ET" / model="Ensemble" to match the strings the
 GEE adapter actually writes into OpenETCache (verified live in a deployment).
+
+148-02, S1: subtract_surface_water's apply_efficiency knob defaults to True in
+THIS seed. It is the deployment's own choice, made on the methodology page
+(accounting.views.methodology_step_config), and it is NOT retroactively turned
+on for an existing deployment's plan -- this command only runs at first seed,
+and there is deliberately no data migration flipping the knob on a plan that
+already exists. A deployment that seeded before 148-02 keeps its old plan's
+config (missing the key, which behaves exactly as False) until an operator
+turns it on themselves.
 """
 
 from django.core.management.base import BaseCommand
@@ -39,7 +48,12 @@ DEFAULT_STEPS = [
         "order": 3,
         "step_type": "subtract_surface_water",
         "enabled": True,
-        "config": {},
+        # apply_efficiency (148-02, S1): the deployment's own choice, set here
+        # for a first seed only -- see the module docstring above. On: only
+        # the part of a canal delivery the field's own efficiency says the
+        # crop could use is subtracted; the rest is deep percolation, named
+        # on the parcel's balance, never crop use and never a credit.
+        "config": {"apply_efficiency": True},
         "label": "Subtract surface water delivered",
     },
     {

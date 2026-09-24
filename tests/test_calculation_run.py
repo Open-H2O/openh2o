@@ -284,7 +284,11 @@ def test_run_reconstructs_the_billable_value():
 
     # The surface-water subtraction is captured; the precip step ran (Pe = 0
     # with no precip data) so its column is 0.0000, NOT null.
-    assert run.surface_water_af == Decimal("1.0000")
+    # 148-02: the seeded plan applies the field's efficiency (agency 0.750 here),
+    # so the run keeps the delivered figure and the part the crop could use.
+    assert run.surface_delivered_af == Decimal("1.0000")
+    assert run.surface_efficiency == Decimal("0.750")
+    assert run.surface_water_af == Decimal("0.7500")
     assert run.effective_precip_af == Decimal("0.0000")
 
 
