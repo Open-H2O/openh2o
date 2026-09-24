@@ -166,3 +166,61 @@ def persistent_identifier(request, kind, pk):
             response.status_code = 303
     patch_vary_headers(response, ["Accept"])
     return response
+
+
+# -- Change history (147-01) ----------------------------------------------------
+
+
+def _parse_date(value):
+    import datetime as dt
+
+    try:
+        return dt.date.fromisoformat((value or "").strip())
+    except ValueError:
+        return None
+
+
+@login_required
+@require_safe
+def change_history(request):
+    """Every recorded change, newest first, 50 to a page (147-01, ISS-177).
+
+    Readable by everyone signed in, whatever their role: the record of who
+    changed a figure is not an administrator's private file. Filters: record
+    type, person (or commands), date range, and one record (the History panel's
+    "See all" link). ``core/changes.py`` builds the rows.
+    """
+    from core import changes
+
+    record_type = request.GET.get("type", "")
+    person = request.GET.get("person", "")
+    since = _parse_date(request.GET.get("from"))
+    until = _parse_date(request.GET.get("to"))
+    object_id = request.GET.get("record", "")
+    filters = changes.build_filters(
+        record_type=record_type,
+        person=person,
+        since=since,
+        until=until,
+        object_id=int(object_id) if object_id.isdigit() else None,
+    )
+    page = changes.recent_changes(filters, page=request.GET.get("page") or 1)
+
+    query = request.GET.copy()
+    query.pop("page", None)
+    return render(
+        request,
+        "core/changes.html",
+        {
+            "page_obj": page,
+            "record_types": changes.record_types(),
+            "people": changes.people_choices(),
+            "command_filter": changes.COMMAND_FILTER,
+            "record_type": filters.get("record_type", ""),
+            "person": person,
+            "since": since.isoformat() if since else "",
+            "until": until.isoformat() if until else "",
+            "record_filtered": "object_id" in filters,
+            "querystring": query.urlencode(),
+        },
+    )

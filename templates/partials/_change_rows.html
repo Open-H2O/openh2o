@@ -1,0 +1,53 @@
+{% comment %}
+One table of change rows, shared by the Change history page and the History
+panel on record pages (147-01). `rows` is a list of core.changes.ChangeRow;
+`show_record` is False on a record's own panel, where the record column would
+name the page the reader is already on. Values are the stored ones, formatted
+by core.changes.format_decimal and friends; this template composes nothing.
+{% endcomment %}
+<table class="data-table change-table">
+  <thead>
+    <tr>
+      <th>When</th>
+      <th>Who</th>
+      {% if show_record %}<th>Record</th>{% endif %}
+      <th>What changed</th>
+      <th>Note</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      <td class="text-secondary" style="white-space: nowrap;">
+        {{ row.when|date:"M j, Y" }}<br>
+        <span class="text-tertiary text-sm">{{ row.when|date:"g:i A T" }}</span>
+      </td>
+      <td>{{ row.who }}</td>
+      {% if show_record %}
+      <td>
+        <span class="text-tertiary text-sm">{{ row.record_type }}</span><br>
+        {% if row.record_url %}<a href="{{ row.record_url }}" class="data-table-link">{{ row.record_name }}</a>{% else %}{{ row.record_name }}{% endif %}
+      </td>
+      {% endif %}
+      <td>
+        <span class="text-secondary text-sm">{{ row.action|capfirst }}</span>
+        <ul class="change-list">
+          {% for change in row.changes %}
+          <li>
+            <span class="text-secondary">{{ change.name }}:</span>
+            {% if row.action == "changed" %}
+            <span class="change-value">{{ change.before|default:"blank" }}</span> &rarr; <span class="change-value">{{ change.after|default:"blank" }}</span>
+            {% elif row.action == "removed" %}
+            <span class="change-value">{{ change.before }}</span>
+            {% else %}
+            <span class="change-value">{{ change.after }}</span>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      </td>
+      <td class="text-secondary" style="white-space: normal;">{{ row.note }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>

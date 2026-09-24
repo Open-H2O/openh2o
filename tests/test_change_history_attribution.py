@@ -255,3 +255,47 @@ def test_forced_recompute_without_a_caller_context_still_carries_the_reason():
     run = CalculationRun.objects.get(parcel=parcel, period="2024-06")
     event = run.events.get(pgh_label="insert")
     assert event.pgh_context.metadata == {"reason": "--force on a finalized period"}
+
+
+# -- Writes no signal sees: bulk_create and QuerySet.update ---------------------
+
+
+def test_a_bulk_ledger_import_leaves_one_insert_event_per_row():
+    from accounting.ledger_import import import_ledger_rows
+    from parcels.models import ParcelLedger
+    from tests.test_ledger_import_sign_report import (
+        SHAPE_6_LEDGER_CSV,
+        SHAPE_6_PARCEL_NUMBERS,
+    )
+    from tests.factories import WaterTypeFactory
+    import io
+
+    for apn in SHAPE_6_PARCEL_NUMBERS:
+        ParcelFactory(parcel_number=apn)
+    WaterTypeFactory(code="GW")
+    WaterTypeFactory(code="SW")
+    with command_context(["manage.py", "import_ledger_csv"]):
+        import_ledger_rows(io.StringIO(SHAPE_6_LEDGER_CSV))
+
+    rows = list(ParcelLedger.objects.order_by("pk"))
+    assert rows, "the fixture imported no rows"
+    for row in rows:
+        event = row.events.get(pgh_label="insert")
+        assert event.amount_acre_feet == row.amount_acre_feet
+        assert event.pgh_context.metadata["command"] == "import_ledger_csv"
+
+
+def test_attach_orphans_to_period_update_leaves_a_before_and_after():
+    import datetime as dt
+
+    from accounting.services import attach_orphans_to_period
+    from tests.factories import ParcelLedgerFactory, ReportingPeriodFactory
+
+    row = ParcelLedgerFactory(effective_date=dt.date(2024, 6, 15), reporting_period=None)
+    period = ReportingPeriodFactory(start_date=dt.date(2024, 1, 1), end_date=dt.date(2024, 12, 31))
+
+    attach_orphans_to_period(period)
+
+    before, after = _pair(row)
+    assert before.reporting_period is None
+    assert after.reporting_period == period.pk

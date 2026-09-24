@@ -343,6 +343,16 @@ MODULE_REGISTRY: dict = {
         url_module="core.urls",
         url_order=120,
         nav=(
+            # 147-01: every signed-in role reads the change history, so it sits
+            # in Overview (shown in both view modes) with no visibility gate.
+            NavEntry(
+                url_name="change_history",
+                label="Change History",
+                icon="history",
+                section=SECTION_OVERVIEW,
+                order=40,
+                active_match="/changes/",
+            ),
             NavEntry(
                 url_name="core:users_list",
                 label="Users",

@@ -1891,6 +1891,21 @@ def delivery_settings(request):
             "recovery_number": recovery_number,
             "diversion_number": diversion_number,
             "identifier_number": identifier_number,
+            # 147-01: the History panel names the one settings row, limited to
+            # the settings this page shows (a surface-only setting leaves with
+            # its card, and the use-row rule lives on the import screen).
+            "site_config": config,
+            "history_fields": [
+                name
+                for name, shown in (
+                    ("default_irrigation_efficiency", form.shows_efficiency),
+                    ("default_recovery_horizon", True),
+                    ("diversion_report_year_rule", form.shows_diversion_settings),
+                    ("season_start_month", form.shows_diversion_settings),
+                    ("identifier_host", True),
+                )
+                if shown
+            ],
         },
     )
 
@@ -1925,7 +1940,7 @@ def methodology_settings(request):
     letting evaluate_chain's ValueError become a 500.
     """
     plan = CalculationPlan.active()
-    steps = list(plan.steps.order_by("order")) if plan is not None else []
+    steps = _with_last_change(list(plan.steps.order_by("order")) if plan is not None else [])
 
     context = {
         "plan": plan,
@@ -1969,9 +1984,24 @@ def _to_int_or_none(raw):
         return None
 
 
+def _with_last_change(steps):
+    """Attach each step's latest recorded change as ``step.last_change``.
+
+    ISS-177: what a district sees when a step changed. One query for the whole
+    list (``core.changes.last_changed``); a step never changed since history
+    began has none.
+    """
+    from core.changes import last_changed
+
+    latest = last_changed(steps)
+    for step in steps:
+        step.last_change = latest.get(step.pk)
+    return steps
+
+
 def _render_steps(request, plan):
     """Render the steps-editor partial for an HTMX swap of #methodology-steps."""
-    steps = list(plan.steps.order_by("order")) if plan is not None else []
+    steps = _with_last_change(list(plan.steps.order_by("order")) if plan is not None else [])
     return render(
         request,
         "accounting/partials/_methodology_steps.html",

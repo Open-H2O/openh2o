@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static change_history %}
 
 {% comment %}
   A single water right's full detail page — the Bucket-3 detail view (see
@@ -46,6 +46,13 @@
   <div id="detail-body">
     {% include "surface/partials/_water_right_detail_pane.html" with on_full_page=True %}
   </div>
+
+  {% comment %} 147-01: the last ten recorded changes to this water right, at
+       the end of the page's main stack. Placed here rather than inside
+       _water_right_detail_pane.html so the pane fragment the workspace swaps
+       stays one query-light include; this page is the full-page view only. {% endcomment %}
+  {% change_history_panel water_right %}
+
 </div>
 {% endblock %}
 

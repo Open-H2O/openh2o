@@ -15,6 +15,7 @@ list re-renders in place. Loaded by methodology_settings.html via {% include %}.
           <strong style="color: var(--color-text-primary);">{{ step.label }}</strong>
           <span class="text-tertiary text-sm">({{ step.get_step_type_display }})</span>
           {% if not step.enabled %}<span class="badge badge-pill badge-grey" style="margin-left: var(--space-xs);">Disabled</span>{% endif %}
+          {% if step.last_change %}<br><span class="text-tertiary text-sm">Last changed {{ step.last_change.when|date:"M j, Y" }} by {{ step.last_change.who }}</span>{% endif %}
         </span>
       </div>
       <div class="flex" style="gap: var(--space-xs); flex-shrink: 0;">

@@ -1,4 +1,4 @@
-{% load placeholders %}{% comment %}
+{% load placeholders change_history %}{% comment %}
   Per-account detail BODY, swapped into #detail-body on a row click in the
   accounts workspace (and reused by the standalone account_detail.html page), so
   the in-pane view and the full page never drift. Bucket 1 — a heavy, interactive
@@ -198,6 +198,17 @@
       {# Empty until a search is typed; the placeholder in the box already says what to type. #}
       <div id="parcel-search-results" class="assignment-search-results"></div>
     </div>
+
+    {% comment %} 147-01: the last ten recorded changes to this account, on
+         the full page only (the workspace pane stays one query-light swap).
+         Full width -- this grid holds the page's whole content, so its end is
+         the end of the page's main stack, the same reasoning the parcel pane
+         used for its shorter column. {% endcomment %}
+    {% if on_full_page %}
+    <div class="page-grid-account-full">
+      {% change_history_panel account %}
+    </div>
+    {% endif %}
 
   </div>
 </div>

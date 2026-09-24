@@ -138,7 +138,7 @@
       "tolerance": 0,
       "reason": "THE POINT OF THE WHOLE MILESTONE. The rebuild never boots a serving web container, so entrypoint.sh's no-argument branch -- and with it ensure_superuser -- never runs. A non-zero count means a deployment's admin account got baked into an artifact that ships to production. That is the exact mechanism by which staging admin rows once reached production, and it is why every step of rebuild-golden.sh is 'run --rm' rather than 'up web'. Production's own admin returns from its .env on the next container boot after a restore, so nothing is lost by shipping zero."
     },
-    "core.UserUsernameFirstNameLastNameEmailIsActiveIsStaffIsSuperuserAgencyAdminEvent": {
+    "core.UserEvent": {
       "expected": 0,
       "tolerance": 0,
       "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."

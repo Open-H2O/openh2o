@@ -127,6 +127,10 @@ _PAGES = (
     ("/health/", "health"),
     ("/users/", "core"),
     ("/profile/", None),
+    # 147-01: the change history. Served on every configuration (`core`), and
+    # its record-type filter lists only the installed modules' records, so a
+    # dropped module's record names must not reach it.
+    ("/changes/", None),
     ("/map/zones/", "geography"),
     ("/map/", "geography"),
     ("/wells/", "wells"),

@@ -5192,3 +5192,24 @@ details[open] > summary .disclosure-mark {
     }
 }
 
+
+/* Change history (147-01): the "What changed" cell of the Change history page
+   and the History panel. One field per line, before and after as figures. */
+.change-list {
+    list-style: none;
+    margin: var(--space-xs) 0 0;
+    padding: 0;
+}
+.change-list li {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+.change-value {
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
+}
+/* A change row can run to many lines; every cell starts at the row's top so
+   the when and who line up with the first field that changed. */
+.change-table td {
+    vertical-align: top;
+}

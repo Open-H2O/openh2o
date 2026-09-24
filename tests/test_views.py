@@ -1081,10 +1081,14 @@ class TestAccountGridOnWellsAndAddPage:
         heading_pos = body.index("Measurement history")
         assert "page-grid-account-full" in body[heading_pos - 300:heading_pos]
 
-        # Bounded by the next <script> tag: the persistent-map script is the
-        # last thing in the pane, after Measurement history, so everything
-        # between the heading and it is this card's own two tables.
-        card = body[heading_pos:body.index("<script>", heading_pos)]
+        # Bounded by the History panel (147-01), which now follows this card,
+        # or else by the next <script> tag (the persistent-map script is the
+        # last thing in the pane): everything between the heading and that
+        # bound is this card's own two tables.
+        end = body.index("<script>", heading_pos)
+        if "change-history-panel" in body[heading_pos:end]:
+            end = body.index("change-history-panel", heading_pos)
+        card = body[heading_pos:end]
         assert card.count("<table") == 2
 
     def test_add_page_map_is_a_landscape_band_above_the_form(self, auth_client):

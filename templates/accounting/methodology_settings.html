@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load change_history %}
 
 {% block title %}Methodology - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Methodology{% endblock %}
@@ -67,6 +68,12 @@
 
     {% include "accounting/partials/_methodology_steps.html" %}
   </div>
+
+  {% comment %} 147-01: the last ten recorded changes to any step in this
+       plan, after the steps editor so a reader sees what changed right below
+       where they would go to change it next. record_type, not one record: a
+       plan is a set of steps, not a single row. {% endcomment %}
+  {% change_history_panel record_type="accounting.CalculationStep" heading="History of these steps" %}
 
   <!-- Live preview picker -->
   <div class="card-raised">

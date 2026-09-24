@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Change history - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Change history{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <span>Overview</span>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Change History</span>
+  </nav>
+  <p class="page-description">Every change to a figure, or to a link that moves one, with its value before and after. A change made on a page names the person signed in; one made by a command (an import, a seed or a calculation run) names the command. The database records each change itself, so bulk imports and direct database edits are listed too.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack">
+
+  {% comment %} A plain GET form: the filters are the page's address, so a
+       filtered view can be bookmarked or sent to someone. {% endcomment %}
+  <form method="get" action="{% url 'change_history' %}" class="card-raised toolbar-row" style="flex-wrap: wrap;">
+    <div style="min-width: 220px;">
+      <label class="form-label" for="filter-type">Record type</label>
+      <select id="filter-type" name="type" class="form-select">
+        <option value="">All record types</option>
+        {% for value, name in record_types %}
+        <option value="{{ value }}" {% if record_type == value %}selected{% endif %}>{{ name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div style="min-width: 200px;">
+      <label class="form-label" for="filter-person">Person</label>
+      <select id="filter-person" name="person" class="form-select">
+        <option value="">Everyone</option>
+        <option value="{{ command_filter }}" {% if person == command_filter %}selected{% endif %}>Commands</option>
+        {% for value, name in people %}
+        <option value="{{ value }}" {% if person == value %}selected{% endif %}>{{ name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div style="min-width: 150px;">
+      <label class="form-label" for="filter-from">From</label>
+      <input type="date" id="filter-from" name="from" value="{{ since }}" class="form-input">
+    </div>
+    <div style="min-width: 150px;">
+      <label class="form-label" for="filter-to">To</label>
+      <input type="date" id="filter-to" name="to" value="{{ until }}" class="form-input">
+    </div>
+    {% if record_filtered %}<input type="hidden" name="record" value="{{ request.GET.record }}">{% endif %}
+    <div class="row-start" style="gap: var(--space-sm);">
+      <button type="submit" class="btn-secondary btn-sm">Apply</button>
+      {% if querystring %}<a href="{% url 'change_history' %}" class="btn-secondary btn-sm">Clear</a>{% endif %}
+    </div>
+  </form>
+
+  <div class="card-raised table-scroll" style="padding: 0;">
+    <div class="ledger-card-head">
+      <div class="text-secondary text-base">
+        {{ page_obj.paginator.count|intcomma }} change{{ page_obj.paginator.count|pluralize }}{% if record_filtered %} to one record{% endif %}, newest first
+      </div>
+    </div>
+    {% if page_obj.object_list %}
+    {% include "partials/_change_rows.html" with rows=page_obj.object_list show_record=True %}
+    {% else %}
+    <p class="text-tertiary" style="padding: var(--space-lg) var(--space-md); margin: 0; text-align: center;">
+      {% if querystring %}No changes match these filters.{% else %}No changes recorded yet.{% endif %}
+    </p>
+    {% endif %}
+  </div>
+
+  {% if page_obj.paginator.num_pages > 1 %}
+  <div class="ledger-paging">
+    {% if page_obj.has_previous %}
+    <a class="btn-secondary btn-sm" href="?{% if querystring %}{{ querystring }}&amp;{% endif %}page={{ page_obj.previous_page_number }}">&larr; Previous</a>
+    {% else %}
+    <button type="button" class="btn-secondary btn-sm" disabled>&larr; Previous</button>
+    {% endif %}
+    <span class="pagination-label text-tertiary text-sm">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+    <a class="btn-secondary btn-sm" href="?{% if querystring %}{{ querystring }}&amp;{% endif %}page={{ page_obj.next_page_number }}">Next &rarr;</a>
+    {% else %}
+    <button type="button" class="btn-secondary btn-sm" disabled>Next &rarr;</button>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -4,7 +4,7 @@ from django.contrib import admin
 from django.urls import include, path
 
 from core.modules import enabled_modules, url_specs_for
-from core.views import persistent_identifier
+from core.views import change_history, persistent_identifier
 from core.oauth import (
     google_callback_guard,
     google_login_by_token_guard,
@@ -76,6 +76,9 @@ urlpatterns = [
         persistent_identifier,
         name="persistent_identifier",
     ),
+    # Change history (147-01). Top-level for the same reason as /id/ above:
+    # `core` is in every deployment, and every signed-in role reads it.
+    path("changes/", change_history, name="change_history"),
     path("", index, name="index"),
 ]
 

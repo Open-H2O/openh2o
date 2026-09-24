@@ -95,7 +95,14 @@ def track_changes(*, exclude=(), fields=None):
         skip |= {f.name for f in local if isinstance(f, gis_models.GeometryField)}
         if fields is not None:
             kept = [name for name in fields if name not in skip]
-            chosen = {"fields": kept}
+            # pghistory names a field-subset event model after its fields
+            # (UserUsernameFirstName...Event) and its reverse accessor the
+            # same way; name both the way every other tracked model's are.
+            chosen = {
+                "fields": kept,
+                "model_name": f"{model.__name__}Event",
+                "obj_field": pghistory.ObjForeignKey(related_name="events"),
+            }
         else:
             kept = [f.name for f in local if f.name not in skip]
             chosen = {"exclude": sorted(skip & {f.name for f in local})}

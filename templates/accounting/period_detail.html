@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load humanize %}
+{% load humanize change_history %}
 
 {% block title %}{{ period.name }} - Open Water Accounting Platform{% endblock %}
 {% block page_title %}{{ period.name }}{% endblock %}
@@ -207,6 +207,13 @@
         <p class="text-tertiary text-base">No allocations for this period.</p>
       </div>
       {% endif %}
+    </div>
+
+    {% comment %} 147-01: the last ten recorded changes to this period, full
+         width under the Allocations table -- this grid holds the page's
+         whole content, so its end is the end of the page's main stack. {% endcomment %}
+    <div class="page-grid-account-full">
+      {% change_history_panel period %}
     </div>
 
   </div>
