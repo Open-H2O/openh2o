@@ -21,15 +21,18 @@ list re-renders in place. Loaded by methodology_settings.html via {% include %}.
         <button type="button" class="btn-secondary btn-xs"
                 title="Move up"
                 hx-post="{% url 'accounting:methodology_step_move' step.id 'up' %}"
+                hx-include="#methodology-note" data-uses-methodology-note
                 hx-target="#methodology-steps" hx-swap="outerHTML"
                 {% if forloop.first %}disabled{% endif %}>&uarr;</button>
         <button type="button" class="btn-secondary btn-xs"
                 title="Move down"
                 hx-post="{% url 'accounting:methodology_step_move' step.id 'down' %}"
+                hx-include="#methodology-note" data-uses-methodology-note
                 hx-target="#methodology-steps" hx-swap="outerHTML"
                 {% if forloop.last %}disabled{% endif %}>&darr;</button>
         <button type="button" class="btn-xs {% if step.enabled %}btn-primary{% else %}btn-secondary{% endif %}"
                 hx-post="{% url 'accounting:methodology_step_toggle' step.id %}"
+                hx-include="#methodology-note" data-uses-methodology-note
                 hx-target="#methodology-steps" hx-swap="outerHTML">
           {% if step.enabled %}Enabled{% else %}Disabled{% endif %}
         </button>
@@ -125,6 +128,13 @@ list re-renders in place. Loaded by methodology_settings.html via {% include %}.
         </div>
       </div>
       {% endif %}
+
+      {% comment %} 147-01: optional reason, saved with this step's change in
+           the change history. {% endcomment %}
+      <div class="field-group mb-0" style="margin-top: var(--space-md);">
+        <label class="form-label" for="step-note-{{ step.id }}">Note (why)</label>
+        <input type="text" name="note" id="step-note-{{ step.id }}" maxlength="{{ note_max_length }}" class="form-input" style="width: 100%;">
+      </div>
 
       <div class="form-footer-ruled" style="margin-top: var(--space-md); justify-content: flex-end;">
         <button type="submit" class="btn-secondary btn-sm">Save step</button>

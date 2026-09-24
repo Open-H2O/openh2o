@@ -7,6 +7,7 @@ from django import forms
 from django.contrib.auth.password_validation import validate_password
 
 from core.constants import RECOVERY_HORIZON_CHOICES
+from core.history import CHANGE_NOTE_HELP, NOTE_MAX_LENGTH
 from core.models import SiteConfig, User
 
 
@@ -225,6 +226,18 @@ class DeliverySettingsForm(forms.Form):
         "records) so the addresses never change.",
         widget=forms.TextInput(
             attrs={"class": "form-input", "placeholder": "water.example.org"}
+        ),
+    )
+
+    # Phase 147: why the settings changed, saved with the change in the change
+    # history (core/history.py). Optional here; not a SiteConfig field.
+    note = forms.CharField(
+        required=False,
+        max_length=NOTE_MAX_LENGTH,
+        label="Note (why)",
+        help_text=CHANGE_NOTE_HELP,
+        widget=forms.TextInput(
+            attrs={"class": "form-input", "maxlength": str(NOTE_MAX_LENGTH)}
         ),
     )
 

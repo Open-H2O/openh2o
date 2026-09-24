@@ -33,7 +33,10 @@ a time, in order).
 
 import datetime as dt
 import re
+from contextlib import ExitStack
 from decimal import Decimal
+
+import pghistory
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
@@ -60,6 +63,10 @@ from accounting.recharge_policy import recharge_routes_to_personal
 from accounting.services import INCIDENTAL_RECHARGE_POOL, deposit_to_basin_pool
 from geography.models import ParcelZone
 from parcels.models import Parcel, ParcelLedger
+
+# The reason recorded on every change a forced recompute of a finalized period
+# writes, so the change history says why a filed figure moved.
+FORCE_REASON = "--force on a finalized period"
 
 PERIOD_RE = re.compile(r"^\d{4}-\d{2}$")
 
@@ -322,6 +329,14 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        # Held open for the whole run so a reason added part-way (--force on a
+        # finalized period, below) reaches every change the run writes, whether
+        # or not a caller already opened a history context (core/history.py).
+        with ExitStack() as history:
+            self._history = history
+            return self._handle(*args, **options)
+
+    def _handle(self, *args, **options):
         period = options["period"]
         if not PERIOD_RE.match(period):
             raise CommandError(f"--period must be YYYY-MM, got {period!r}")
@@ -403,6 +418,9 @@ class Command(BaseCommand):
                     f"('{reporting_period.name}'). A number already filed with "
                     f"the state is being recomputed — this changes a filed figure."
                 )
+            )
+            self._history.enter_context(
+                pghistory.context(reason=FORCE_REASON)
             )
 
         # Snapshot the methodology ONCE: the active plan is identical for every

@@ -26,6 +26,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from core.csv_safe import safe_row
+from core.history import CHANGE_NOTE_HELP, NOTE_MAX_LENGTH, change_note
 from datasync import freshness
 from datasync.models import MonitoredStation
 from accounting.calculation import evaluate_chain
@@ -1849,7 +1850,8 @@ def delivery_settings(request):
     if request.method == "POST":
         form = DeliverySettingsForm(request.POST, instance=config)
         if form.is_valid():
-            form.save()
+            with change_note(form.cleaned_data.get("note")):
+                form.save()
             messages.success(request, "Delivery settings saved.")
             return redirect("accounting:delivery_settings")
     else:
@@ -1934,6 +1936,8 @@ def methodology_settings(request):
         # labels the audit page's Detail cell uses, so the two pages can never
         # name a method differently.
         "method_labels": METHOD_LABELS.items(),
+        "note_max_length": NOTE_MAX_LENGTH,
+        "change_note_help": CHANGE_NOTE_HELP,
     }
     return render(request, "accounting/methodology_settings.html", context)
 
@@ -1971,7 +1975,12 @@ def _render_steps(request, plan):
     return render(
         request,
         "accounting/partials/_methodology_steps.html",
-        {"plan": plan, "steps": steps, "method_labels": METHOD_LABELS.items()},
+        {
+            "plan": plan,
+            "steps": steps,
+            "method_labels": METHOD_LABELS.items(),
+            "note_max_length": NOTE_MAX_LENGTH,
+        },
     )
 
 
@@ -1987,7 +1996,8 @@ def methodology_step_toggle(request, step_id):
     """
     step = get_object_or_404(CalculationStep, pk=step_id)
     step.enabled = not step.enabled
-    step.save(update_fields=["enabled"])
+    with change_note(request.POST.get("note")):
+        step.save(update_fields=["enabled"])
     return _render_steps(request, step.plan)
 
 
@@ -2000,8 +2010,9 @@ def methodology_step_move(request, step_id, direction):
     unique_together(plan, order) forbids two rows sharing an order even mid-swap
     (Postgres checks the unique constraint per statement, not at commit), so we
     never swap two values in place. Instead we compute the desired sequence in
-    Python and renumber the WHOLE list 1..N in a transaction — first lifting every
-    row out of the 1..N namespace (+10000) so the final write can never collide.
+    Python and renumber the list 1..N in a transaction, first lifting every row
+    that moves out of the 1..N namespace (+10000) so the final write can never
+    collide.
     """
     step = get_object_or_404(CalculationStep, pk=step_id)
     plan = step.plan
@@ -2014,13 +2025,18 @@ def methodology_step_move(request, step_id, direction):
         ordered[idx + 1], ordered[idx] = ordered[idx], ordered[idx + 1]
     # No-op cleanly at the ends (first can't move up, last can't move down).
 
-    with transaction.atomic():
-        for s in ordered:
+    # Only the steps whose place actually changes are written (147-01): every
+    # write is recorded in the change history, and a step that stays put has
+    # no change to record.
+    moving = [s for i, s in enumerate(ordered, start=1) if s.order != i]
+    with change_note(request.POST.get("note")), transaction.atomic():
+        for s in moving:
             s.order = s.order + 10000
             s.save(update_fields=["order"])
         for i, s in enumerate(ordered, start=1):
-            s.order = i
-            s.save(update_fields=["order"])
+            if s.order != i:
+                s.order = i
+                s.save(update_fields=["order"])
 
     return _render_steps(request, plan)
 
@@ -2064,7 +2080,8 @@ def methodology_step_config(request, step_id):
     label = request.POST.get("label", "").strip()
     if label:
         step.label = label
-    step.save(update_fields=["config", "label"])
+    with change_note(request.POST.get("note")):
+        step.save(update_fields=["config", "label"])
     return _render_steps(request, step.plan)
 
 

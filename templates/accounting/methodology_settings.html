@@ -55,6 +55,16 @@
       <span class="text-tertiary text-sm">{{ steps|length }} step{{ steps|length|pluralize }} — reorder, enable or disable, and set each step's parameters</span>
     </div>
 
+    {% comment %} 147-01: one shared, optional reason for the move and
+         enable/disable buttons below (each Save step form has its own). It
+         sits outside the swapped list so it survives the re-render, and is
+         cleared once a change has used it. {% endcomment %}
+    <div class="field-group" style="margin-bottom: var(--space-md);">
+      <label class="form-label" for="methodology-note">Note for the next move or enable/disable (why)</label>
+      <input type="text" name="note" id="methodology-note" maxlength="{{ note_max_length }}" class="form-input" style="width: 100%;">
+      <p class="text-secondary text-sm" style="margin-top: var(--space-xs);">{{ change_note_help }}</p>
+    </div>
+
     {% include "accounting/partials/_methodology_steps.html" %}
   </div>
 
@@ -90,4 +100,21 @@
   {% endif %}
 
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+{% comment %} Clears the shared note once a move or enable/disable has sent it,
+     so it is not attached to the next change by accident. A delegated listener
+     rather than hx-on: the site's Content-Security-Policy has no
+     'unsafe-eval', which hx-on needs. {% endcomment %}
+<script>
+(function () {
+  document.body.addEventListener('htmx:afterRequest', function (e) {
+    var source = e.detail && e.detail.elt;
+    if (!source || !source.hasAttribute('data-uses-methodology-note')) return;
+    var box = document.getElementById('methodology-note');
+    if (box && e.detail.successful) box.value = '';
+  });
+})();
+</script>
 {% endblock %}

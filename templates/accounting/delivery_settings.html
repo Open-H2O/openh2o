@@ -123,6 +123,17 @@
       </div>
     </div>
 
+    {% comment %} 147-01: an optional reason, saved with this change in the
+         change history (core/history.py). Not a setting, so no eyebrow. {% endcomment %}
+    <div class="card-raised">
+      <div class="field-group mb-0">
+        <label class="form-label" for="{{ form.note.id_for_label }}">{{ form.note.label }}</label>
+        {{ form.note }}
+        <p class="text-secondary text-sm" style="margin-top: var(--space-xs);">{{ form.note.help_text }}</p>
+        {% if form.note.errors %}<p class="text-sm text-furnace mt-sm">{{ form.note.errors|striptags }}</p>{% endif %}
+      </div>
+    </div>
+
     <div class="row-start">
       <button type="submit" class="btn-primary">Save settings</button>
     </div>

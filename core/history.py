@@ -59,6 +59,12 @@ ALWAYS_EXCLUDED = ("updated_at",)
 # The longest note the forms accept.
 NOTE_MAX_LENGTH = 500
 
+# The help line under every "Note (why)" box, one wording everywhere.
+CHANGE_NOTE_HELP = (
+    "Optional. Saved with this change in the change history, which everyone "
+    "signed in can read."
+)
+
 
 def _id_column_for(field):
     """A plain integer column standing in for a copied foreign key.
