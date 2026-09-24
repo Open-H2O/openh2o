@@ -4,7 +4,7 @@
 {% block page_title %}Allocations{% endblock %}
 
 {% block page_actions %}
-<a href="{% url 'accounting:allocation_create' %}" class="btn-primary btn-sm">+ New allocation</a>
+{% if user_can_write %}<a href="{% url 'accounting:allocation_create' %}" class="btn-primary btn-sm">+ New allocation</a>{% endif %}
 {% endblock %}
 
 {% block breadcrumbs %}

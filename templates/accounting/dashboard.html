@@ -28,9 +28,11 @@
       This deployment has no watershed yet. Set one up to import parcels{% if 'wells' in enabled_modules %}, wells{% endif %},
       groundwater basins{% if 'datasync' in enabled_modules %}, and the monitoring stations near your district{% endif %}.
     </p>
+    {% if user_can_write %}
     <div class="form-footer" style="justify-content: center; margin-top: var(--space-lg);">
       {% if 'setup' in enabled_modules %}<a href="{% url 'setup:wizard' %}" class="btn-primary">Set up your watershed →</a>{% endif %}
     </div>
+    {% endif %}
   </div>
   {% endif %}
 
@@ -45,7 +47,7 @@
     <div class="onboarding-steps">
       <div class="onboarding-step">
         <span class="step-badge step-badge-active">1</span>
-        <span class="text-sm"><a href="{% url 'accounting:period_create' %}" class="link-accent">Create a reporting period</a> (e.g., Water Year 2024-2025)</span>
+        <span class="text-sm">{% if user_can_write %}<a href="{% url 'accounting:period_create' %}" class="link-accent">Create a reporting period</a>{% else %}Create a reporting period{% endif %} (e.g., Water Year 2024-2025)</span>
       </div>
       <div class="onboarding-step">
         <span class="step-badge">2</span>

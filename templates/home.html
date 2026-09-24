@@ -44,7 +44,7 @@
 
     <h2 class="home-section-label">Start a task</h2>
     <div class="home-task-grid">
-        {% if 'accounting' in enabled_modules %}<a href="{% url 'accounting:ledger_create' %}" class="home-task-card home-task-card--primary">
+        {% if 'accounting' in enabled_modules %}{% if user_can_write %}<a href="{% url 'accounting:ledger_create' %}" class="home-task-card home-task-card--primary">
             <span class="home-task-icon">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
             </span>
@@ -52,7 +52,7 @@
                 <span class="home-task-label">Log water use</span>
                 <span class="home-task-sublabel">Record a new measurement or ledger entry</span>
             </span>
-        </a>
+        </a>{% endif %}
         <a href="{% url 'accounting:dashboard' %}" class="home-task-card">
             <span class="home-task-icon">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
@@ -102,7 +102,7 @@
                 {% endcomment %}<span class="home-task-sublabel">Everything you manage on one basin view</span>
             </span>
         </a>
-        {% if 'setup' in enabled_modules %}{% if not access_enforced or user_is_admin %}
+        {% if 'setup' in enabled_modules %}{% if user_can_write %}{% if not access_enforced or user_is_admin %}
         <a href="{% url 'setup:wizard' %}" class="home-task-card">
             <span class="home-task-icon">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -112,7 +112,7 @@
                 <span class="home-task-sublabel">Boundaries, zones and data import</span>
             </span>
         </a>
-        {% endif %}{% endif %}
+        {% endif %}{% endif %}{% endif %}
         <a href="{% url 'getting_started' %}" class="home-task-card">
             <span class="home-task-icon">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>

@@ -29,7 +29,11 @@
 
   <a href="{% url 'drinking:schedule' %}" class="back-link">&larr; Back to Schedule</a>
 
-  {% if not system %}
+  {% if not user_can_write %}
+  <div class="card-raised">
+    <p class="text-tertiary text-sm">You can read the sampling schedule but not add or change rows. An administrator can change your role on the Users page.</p>
+  </div>
+  {% elif not system %}
   <div class="card-raised">
     <h2 class="card-header-ruled">No water system yet</h2>
     <p class="text-base text-secondary mt-md">

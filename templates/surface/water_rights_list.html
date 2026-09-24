@@ -5,8 +5,10 @@
 {% block page_title %}Water Rights{% endblock %}
 
 {% block page_actions %}
+{% if user_can_write %}
 <a href="{% url 'surface:water_right_import' %}" class="btn-secondary btn-sm">Import</a>
 <a href="{% url 'surface:water_right_create' %}" class="btn-primary btn-sm">+ Add right</a>
+{% endif %}
 {% endblock %}
 
 {% block breadcrumbs %}

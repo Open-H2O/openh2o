@@ -15,7 +15,7 @@
 {% endblock %}
 
 {% block page_actions %}
-{% if 'infrastructure' in enabled_modules %}
+{% if user_can_write and 'infrastructure' in enabled_modules %}
 <a href="{% url 'infrastructure:import' %}?type=well" class="btn-secondary btn-sm">Import</a>
 <a href="{% url 'infrastructure:add' %}?type=well" class="btn-primary btn-sm">+ Add well</a>
 {% endif %}

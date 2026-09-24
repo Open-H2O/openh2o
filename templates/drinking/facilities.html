@@ -99,9 +99,11 @@ nobody would notice until one of them broke.
         {% endfor %}
       </select>
     </div>
+    {% if user_can_write %}
     <div style="margin-left: auto; align-self: flex-end;">
       <a href="{% url 'drinking:facility_add' %}" class="btn-secondary">+ Add facility</a>
     </div>
+    {% endif %}
   </div>
 
   {% comment %}

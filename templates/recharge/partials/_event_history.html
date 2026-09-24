@@ -62,6 +62,7 @@
   <p class="text-tertiary text-sm" style="padding: 0 var(--space-lg) var(--space-lg);">No recharge events recorded.</p>
 {% endif %}
 
+{% if user_can_write %}
 <div style="max-width: 640px; padding: 0 var(--space-lg) var(--space-lg);">
 <form class="border-separator"
       hx-post="{% url 'recharge:event_create' site.pk %}"
@@ -82,3 +83,4 @@
   <button type="submit" class="btn-primary btn-sm">Log event</button>
 </form>
 </div>
+{% endif %}

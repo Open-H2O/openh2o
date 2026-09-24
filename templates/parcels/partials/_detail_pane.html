@@ -288,14 +288,14 @@
                 {{ ef.value|blank }}
               {% endif %}
             </span>
-            <button
+            {% if user_can_write %}<button
               hx-get="{% url 'parcels:edit_field' parcel.pk %}?field={{ ef.name }}"
               hx-target="#field-{{ ef.name }}"
               hx-swap="innerHTML"
               class="edit-btn"
               title="Edit {{ ef.label }}">
               &#9998;
-            </button>
+            </button>{% endif %}
           </div>
         </div>
         {% endfor %}
@@ -354,10 +354,10 @@
                class="text-tertiary back-link text-xs">
               View All
             </a>
-            <a href="{% url 'accounting:ledger_create' %}?parcel={{ parcel.pk }}"
+            {% if user_can_write %}<a href="{% url 'accounting:ledger_create' %}?parcel={{ parcel.pk }}"
                class="btn-primary btn-sm">
               + Add entry
-            </a>
+            </a>{% endif %}
           </div>
         </div>
         {% comment %}

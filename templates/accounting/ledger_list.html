@@ -8,12 +8,12 @@
 <a href="{% url 'accounting:ledger_export' %}?period={{ period_id }}&source_type={{ source_type }}&water_type={{ water_type_id }}&start_date={{ start_date }}&end_date={{ end_date }}&active_areas={{ active_areas }}" class="btn-secondary btn-sm">
   Download CSV
 </a>
-<a href="{% url 'accounting:csv_upload' %}" class="btn-secondary btn-sm">
+{% if user_can_write %}<a href="{% url 'accounting:csv_upload' %}" class="btn-secondary btn-sm">
   Upload CSV
 </a>
 <a href="{% url 'accounting:ledger_create' %}" class="btn-primary btn-sm">
   + New entry
-</a>
+</a>{% endif %}
 {% endblock %}
 
 {% block breadcrumbs %}

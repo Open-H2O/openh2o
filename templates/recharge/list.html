@@ -15,7 +15,7 @@
 {% endblock %}
 
 {% block page_actions %}
-{% if 'infrastructure' in enabled_modules %}
+{% if user_can_write and 'infrastructure' in enabled_modules %}
 <a href="{% url 'infrastructure:import' %}?type=recharge_site" class="btn-secondary btn-sm">Import</a>
 {% comment %}A storage pond or tank is a RechargeSite row and already appears in the
    list below, but until 2026-08-27 nothing anywhere linked to `?type=storage`

@@ -39,8 +39,10 @@
     {% if 'datasync' in enabled_modules %}<span>Stations reporting</span><b>{{ stations_reporting }} of {{ stations_active }}</b>{% endif %}
   </div>
 
+  {% if user_can_write %}
   <div class="period-card-actions">
     <a href="{% url 'accounting:ledger_create' %}" class="btn-secondary btn-sm">Add ledger entry</a>
     <a href="{% url 'accounting:csv_upload' %}" class="btn-secondary btn-sm">Upload CSV</a>
   </div>
+  {% endif %}
 </div>

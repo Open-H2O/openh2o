@@ -40,13 +40,13 @@ second wrapping div breaking the grid's direct-child selectors).
         {{ ef.value|blank }}
       {% endif %}
     </span>
-    <button
+    {% if user_can_write %}<button
       hx-get="{% url 'wells:edit_field' well.pk %}?field={{ ef.name }}"
       hx-target="#field-{{ ef.name }}"
       hx-swap="innerHTML"
       class="edit-btn"
       title="Edit {{ ef.label }}">
       &#9998;
-    </button>
+    </button>{% endif %}
   </div>
 </div>

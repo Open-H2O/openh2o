@@ -22,9 +22,11 @@
 </div>
 {% endif %}
 
+{% if user_can_write %}
 <div class="row-start" style="gap: var(--space-sm); margin-bottom: var(--space-md);">
   <a href="{% url 'surface:water_right_edit' water_right.pk %}" class="btn-secondary btn-sm">Edit right</a>
 </div>
+{% endif %}
 
 {% comment %}
   143-10 (R-121, R-122, R-055). Composed as a page at 1,730 CSS px, reusing
@@ -369,7 +371,7 @@
             {{ unmatched_curtailments|length }} order{{ unmatched_curtailments|length|pluralize }} could apply
             ({% for curtailment in unmatched_curtailments %}{{ curtailment.order_id }}{% if not forloop.last %}, {% endif %}{% endfor %})
             but this right carries no priority date to test against a cutoff.
-            <a href="{% url 'surface:water_right_edit' water_right.pk %}" class="data-table-link">Edit the right</a> to add one.
+            {% if user_can_write %}<a href="{% url 'surface:water_right_edit' water_right.pk %}" class="data-table-link">Edit the right</a> to add one.{% endif %}
           </div>
         </div>
         {% endif %}

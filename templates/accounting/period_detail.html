@@ -84,6 +84,7 @@
         {% endif %}
       </div>
 
+      {% if user_can_write %}
       <!-- Finalize / Unfinalize (Phase 75: primary action made prominent) -->
       <div class="border-separator">
         {% if period.is_finalized %}
@@ -99,6 +100,7 @@
           </form>
         {% endif %}
       </div>
+      {% endif %}
 
       <!-- Timestamps -->
       <div class="border-separator">

@@ -80,7 +80,7 @@
                it to distinguish, unlike the well pane's pill that flips to a source label. {% endcomment %}
           Account information
         </h2>
-        <a href="{% url 'accounting:account_edit' account.pk %}" class="text-tertiary text-xs">Edit</a>
+        {% if user_can_write %}<a href="{% url 'accounting:account_edit' account.pk %}" class="text-tertiary text-xs">Edit</a>{% endif %}
       </div>
 
       {% comment %}
@@ -183,7 +183,7 @@
         <div id="parcel-assignments">
           {% include "accounting/partials/_parcel_assignment.html" %}
         </div>
-        <input
+        {% if user_can_write %}<input
           type="text"
           name="q"
           placeholder="Assign a use area: parcel number or owner..."
@@ -192,11 +192,13 @@
           hx-target="#parcel-search-results"
           hx-trigger="keyup changed delay:300ms"
           class="form-input assignment-search"
-        >
+        >{% endif %}
       </div>
 
+      {% if user_can_write %}
       {# Empty until a search is typed; the placeholder in the box already says what to type. #}
       <div id="parcel-search-results" class="assignment-search-results"></div>
+      {% endif %}
     </div>
 
     {% comment %} 147-01: the last ten recorded changes to this account, on

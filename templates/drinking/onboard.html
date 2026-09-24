@@ -34,6 +34,11 @@
   {% endcomment %}
   {% include "partials/_messages.html" %}
 
+  {% if not user_can_write %}
+  <div class="card-raised">
+    <p class="text-tertiary text-sm">You can read this deployment's water systems but not onboard a new one. An administrator can change your role on the Users page.</p>
+  </div>
+  {% else %}
   <div class="card-raised">
     <h2 class="card-header-ruled">Look up a public water system</h2>
     <p class="text-base text-secondary mt-md">
@@ -109,6 +114,7 @@
 
   {% comment %}Review and result are swapped in here by HTMX.{% endcomment %}
   <div id="onboard-area"></div>
+  {% endif %}
 
 </div>
 {% endblock %}

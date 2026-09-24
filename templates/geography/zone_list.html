@@ -16,7 +16,7 @@
 {% endblock %}
 
 {% block page_actions %}
-<a href="{% url 'geography:zone_create' %}" class="btn-primary btn-sm">+ Add zone</a>
+{% if user_can_write %}<a href="{% url 'geography:zone_create' %}" class="btn-primary btn-sm">+ Add zone</a>{% endif %}
 {% endblock %}
 
 {% block breadcrumbs %}

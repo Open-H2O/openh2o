@@ -278,7 +278,7 @@
       <span class="step-eyebrow">Step 1 &middot; done{% if system.facility_count %} &mdash; {{ system.facility_count|intcomma }} facilit{{ system.facility_count|pluralize:"y,ies" }}{% endif %}</span>
       <h2 class="section-header">Onboard a water system</h2>
       <p class="text-secondary text-base">Enter a PWSID and OpenH2O looks the system up in EPA&rsquo;s Envirofacts record &mdash; the regulatory details and the facilities. Nothing is written until you have reviewed what came back. Run it again to add a second system this agency operates.</p>
-      <a href="{% url 'drinking:onboard' %}" class="text-sm text-accent">Onboard another system &rarr;</a>
+      {% if user_can_write %}<a href="{% url 'drinking:onboard' %}" class="text-sm text-accent">Onboard another system &rarr;</a>{% endif %}
     </div>
   </div>
 
@@ -290,7 +290,7 @@
       <span class="step-eyebrow">Step 2 &middot; {% if system.step_points_done %}done &mdash; {{ system.sampling_point_count|intcomma }} point{{ system.sampling_point_count|pluralize }}{% else %}not yet{% endif %}</span>
       <h2 class="section-header">Build its sampling points</h2>
       <p class="text-secondary text-base">Envirofacts carries the facilities but not their sampling points, so onboarding creates none. The builder composes each PS Code in the state&rsquo;s published format, one per facility you choose.</p>
-      <a href="{% url 'drinking:onboard_points' system.pwsid %}" class="text-sm text-accent">Go to the point builder &rarr;</a>
+      {% if user_can_write %}<a href="{% url 'drinking:onboard_points' system.pwsid %}" class="text-sm text-accent">Go to the point builder &rarr;</a>{% endif %}
     </div>
   </div>
 
@@ -302,7 +302,7 @@
       <span class="step-eyebrow">Step 3 &middot; {% if system.step_results_done %}done &mdash; {{ system.result_count|intcomma }} result{{ system.result_count|pluralize }}{% else %}not yet{% endif %}</span>
       <h2 class="section-header">Import lab results</h2>
       <p class="text-secondary text-base">Upload a laboratory file in the state&rsquo;s own SDWIS.CSV layout. Each row is matched to one of your sampling points by its PS Code, and you see a preview of what matched and what did not before anything is written.</p>
-      <a href="{% url 'drinking:import' %}" class="text-sm text-accent">Go to lab import &rarr;</a>
+      {% if user_can_write %}<a href="{% url 'drinking:import' %}" class="text-sm text-accent">Go to lab import &rarr;</a>{% endif %}
     </div>
   </div>
   {% empty %}

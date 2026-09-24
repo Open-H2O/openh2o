@@ -25,7 +25,7 @@
 {% endblock %}
 
 {% block page_actions %}
-<a href="{% url 'drinking:import' %}" class="btn-primary btn-sm">Import lab results</a>
+{% if user_can_write %}<a href="{% url 'drinking:import' %}" class="btn-primary btn-sm">Import lab results</a>{% endif %}
 {% endblock %}
 
 {% block content %}

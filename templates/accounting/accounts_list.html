@@ -4,7 +4,7 @@
 {% block page_title %}Water accounts{% endblock %}
 
 {% block page_actions %}
-<a href="{% url 'accounting:account_create' %}" class="btn-primary btn-sm">+ New account</a>
+{% if user_can_write %}<a href="{% url 'accounting:account_create' %}" class="btn-primary btn-sm">+ New account</a>{% endif %}
 {% endblock %}
 
 {% block breadcrumbs %}

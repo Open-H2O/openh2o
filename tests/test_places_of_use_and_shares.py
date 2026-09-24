@@ -239,10 +239,15 @@ def test_well_share_editor_accepts_half_and_rejects_out_of_range(auth_client):
 
 def test_places_of_use_panel_renders_when_parcels_is_enabled():
     right = WaterRightFactory(right_id="A007012")
+    # 147-02: the search-parcels box is a write control, gated on
+    # `user_can_write`. This test's subject is the `parcels` module guard, not
+    # the viewer role, so it supplies the flag a real request's context
+    # processor always sets for anyone but a viewer.
     html = render_to_string("surface/partials/_places_of_use.html", {
         "water_right": right,
         "places_of_use": [],
         "enabled_modules": ["surface", "parcels", "accounting"],
+        "user_can_write": True,
     })
     assert "Places of use" in html
     assert reverse("surface:water_right_search_parcels", args=[right.pk]) in html

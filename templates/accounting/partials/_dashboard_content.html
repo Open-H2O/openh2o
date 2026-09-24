@@ -150,7 +150,7 @@
 <!-- Info banner: no allocations for this period -->
 <div class="card-raised" style="border-left: 3px solid var(--color-accent); padding: var(--space-md);">
   <p class="text-secondary text-sm m-0">
-    No allocations set for this period. <a href="{% url 'accounting:allocation_create' %}" class="link-accent">Create an allocation</a> to enable allocation tracking.
+    {% if user_can_write %}No allocations set for this period. <a href="{% url 'accounting:allocation_create' %}" class="link-accent">Create an allocation</a> to enable allocation tracking.{% else %}No allocations set for this period.{% endif %}
   </p>
 </div>
 {% endif %}

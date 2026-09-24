@@ -15,10 +15,12 @@
 {% endblock %}
 
 {% block page_actions %}
+{% if user_can_write %}
 <a href="{% url 'surface:diversion_import' %}" class="btn-secondary btn-sm">Import diversion records</a>
 {% if 'infrastructure' in enabled_modules %}
 <a href="{% url 'infrastructure:import' %}?type=diversion" class="btn-secondary btn-sm">Import</a>
 <a href="{% url 'infrastructure:add' %}?type=diversion" class="btn-primary btn-sm">+ Add diversion</a>
+{% endif %}
 {% endif %}
 {% endblock %}
 

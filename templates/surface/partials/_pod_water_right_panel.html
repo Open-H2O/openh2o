@@ -59,6 +59,7 @@
     <p class="text-secondary text-sm">No water right linked.</p>
   {% endif %}
 
+  {% if user_can_write %}
   <form
     hx-post="{% url 'surface:pod_link_right' pod.pk %}"
     hx-target="#pod-water-right-panel"
@@ -77,4 +78,5 @@
     <span class="text-tertiary text-xs">CalWATRS reports will flag this diversion as [INCOMPLETE].</span>
     {% endif %}
   </form>
+  {% endif %}
 </div>

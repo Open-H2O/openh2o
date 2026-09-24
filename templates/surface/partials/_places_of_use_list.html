@@ -8,14 +8,14 @@
   {% for wrp in places_of_use %}
   <span class="assignment-chip">
     <a href="{% url 'parcels:detail' wrp.parcel.pk %}" class="assignment-chip-link">{{ wrp.parcel.parcel_number }}</a>
-    <button
+    {% if user_can_write %}<button
       type="button"
       hx-post="{% url 'surface:water_right_remove_parcel' water_right.pk wrp.pk %}"
       hx-target="#places-of-use-list"
       hx-confirm="Remove parcel {{ wrp.parcel.parcel_number }} as a place of use on this right?"
       class="assignment-chip-remove"
       aria-label="Remove {{ wrp.parcel.parcel_number }} as a place of use"
-      title="Remove as a place of use">&times;</button>
+      title="Remove as a place of use">&times;</button>{% endif %}
   </span>
   {% endfor %}
 </div>

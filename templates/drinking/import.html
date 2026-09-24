@@ -30,6 +30,11 @@
 
   <a href="{% url 'drinking:results' %}" class="back-link">&larr; Back to Sample Results</a>
 
+  {% if not user_can_write %}
+  <div class="card-raised">
+    <p class="text-tertiary text-sm">You can read sample results but not import them. An administrator can change your role on the Users page.</p>
+  </div>
+  {% else %}
   <div class="card-raised">
     {% comment %} Was "Import lab results", the page title word for word (Phase 143-02,
          copy rule 13). The card is the file step; the header says so. {% endcomment %}
@@ -113,6 +118,7 @@
 
   {% comment %}Preview and results are swapped in here by HTMX.{% endcomment %}
   <div id="import-area"></div>
+  {% endif %}
 
 </div>
 

@@ -71,7 +71,8 @@
         {{ record.method_display }}{% if record.device %} &middot; {{ record.device }}{% endif %} &middot; {{ record.get_data_state_display }}
       </td>
       <td class="th-right text-sm">
-        {% if edit_record.pk == record.pk %}
+        {% if not user_can_write %}
+        {% elif edit_record.pk == record.pk %}
         <span class="text-tertiary">Editing below</span>
         {% else %}
         <button type="button"
@@ -107,6 +108,7 @@
   <p class="text-tertiary text-sm" style="padding: 0 var(--space-lg) var(--space-lg);">No diversion records yet.</p>
 {% endif %}
 
+{% if user_can_write %}
 <div style="max-width: 640px; padding: 0 var(--space-lg) var(--space-lg);">
 {% if edit_record %}
 {% include "surface/partials/_diversion_record_edit_form.html" %}
@@ -114,3 +116,4 @@
 {% include "surface/partials/_diversion_form.html" %}
 {% endif %}
 </div>
+{% endif %}

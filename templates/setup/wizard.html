@@ -18,6 +18,12 @@
 {% block content %}
 <div class="page-stack page-medium">
 
+  {% if not user_can_write %}
+  <div class="card-raised">
+    <p class="text-tertiary text-sm">You can read this deployment's data but not set it up. An administrator can change your role on the Users page.</p>
+  </div>
+  {% else %}
+
   <!-- Step indicator -->
   <div class="row-start" style="gap: var(--space-lg);">
     <div class="row-start">
@@ -181,6 +187,8 @@
       <a href="{% url 'index' %}" class="btn-secondary" id="btn-skip">Start without one →</a>
     </div>
   </div>
+
+  {% endif %}
 
 </div>
 

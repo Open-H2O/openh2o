@@ -11,14 +11,14 @@
   {% for wap in assignments %}
   <span class="assignment-chip" title="Added {{ wap.added_date|date:"M d, Y" }}">
     <a href="{% url 'parcels:detail' wap.parcel.pk %}" class="assignment-chip-link">{{ wap.parcel.parcel_number }}</a>
-    <button
+    {% if user_can_write %}<button
       type="button"
       hx-post="{% url 'accounting:remove_parcel' account.pk wap.pk %}"
       hx-target="#parcel-assignments"
       hx-confirm="Remove parcel {{ wap.parcel.parcel_number }} from this account?"
       class="assignment-chip-remove"
       aria-label="Remove {{ wap.parcel.parcel_number }} from this account"
-      title="Remove from this account">&times;</button>
+      title="Remove from this account">&times;</button>{% endif %}
   </span>
   {% endfor %}
 </div>

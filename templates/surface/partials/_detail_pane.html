@@ -41,9 +41,11 @@
   tall left column beside a right column that ended a third of the way down
   (R-112) -- no worked shape here to copy from; the account grid is.
 {% endcomment %}
+{% if user_can_write %}
 <div class="row-start" style="gap: var(--space-sm); margin-bottom: var(--space-md);">
   <a href="{% url 'surface:pod_edit' pod.pk %}" class="btn-secondary btn-sm">Edit point</a>
 </div>
+{% endif %}
 
 <div class="pane-stack">
   <div class="page-grid-account">

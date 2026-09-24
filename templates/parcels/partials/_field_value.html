@@ -11,7 +11,7 @@ Replaces the content of #field-<fieldname>.
     {{ value|blank }}
   {% endif %}
 </span>
-<button
+{% if user_can_write %}<button
   hx-get="{% url 'parcels:edit_field' parcel.pk %}?field={{ field }}"
   hx-target="#field-{{ field }}"
   hx-swap="innerHTML"
@@ -20,4 +20,4 @@ Replaces the content of #field-<fieldname>.
   onmouseover="this.style.color='var(--color-accent)'"
   onmouseout="this.style.color='var(--color-text-tertiary)'">
   &#9998;
-</button>
+</button>{% endif %}

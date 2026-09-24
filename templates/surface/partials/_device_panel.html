@@ -12,7 +12,7 @@
 <div class="card-raised page-grid-account-full" id="pod-device-panel">
   <div class="page-grid-account-head mb-md">
     <h2 class="section-header-flush">Measuring device</h2>
-    {% if not device %}
+    {% if not device and user_can_write %}
     <a href="{% url 'surface:device_add' pod.pk %}" class="btn-secondary btn-sm">Add device</a>
     {% endif %}
   </div>
@@ -45,6 +45,7 @@
   <p class="text-secondary text-sm mt-sm">evidence of proper functioning is due at least every five years (934(d)).</p>
   {% endif %}
 
+  {% if user_can_write %}
   <div class="row-start mt-sm" style="gap: var(--space-sm); align-items: center;">
     <a href="{% url 'surface:device_edit' device.pk %}" class="btn-secondary btn-sm">Edit</a>
     <form
@@ -55,6 +56,7 @@
       <button type="submit" class="btn-secondary btn-sm">Mark removed</button>
     </form>
   </div>
+  {% endif %}
   {% else %}
   <p class="text-secondary text-sm">no current device</p>
   {% endif %}

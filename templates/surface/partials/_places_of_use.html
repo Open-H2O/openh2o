@@ -26,7 +26,7 @@
     <div id="places-of-use-list">
       {% include "surface/partials/_places_of_use_list.html" %}
     </div>
-    <input
+    {% if user_can_write %}<input
       type="text"
       name="q"
       placeholder="Add a place of use: parcel number or owner..."
@@ -35,10 +35,12 @@
       hx-target="#places-of-use-search-results"
       hx-trigger="keyup changed delay:300ms"
       class="form-input assignment-search"
-    >
+    >{% endif %}
   </div>
 
+  {% if user_can_write %}
   {# Empty until a search is typed; the placeholder in the box already says what to type. #}
   <div id="places-of-use-search-results" class="assignment-search-results"></div>
+  {% endif %}
 </div>
 {% endif %}

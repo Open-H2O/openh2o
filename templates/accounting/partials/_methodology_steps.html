@@ -18,6 +18,7 @@ list re-renders in place. Loaded by methodology_settings.html via {% include %}.
           {% if step.last_change %}<br><span class="text-tertiary text-sm">Last changed {{ step.last_change.when|date:"M j, Y" }} by {{ step.last_change.who }}</span>{% endif %}
         </span>
       </div>
+      {% if user_can_write %}
       <div class="flex" style="gap: var(--space-xs); flex-shrink: 0;">
         <button type="button" class="btn-secondary btn-xs"
                 title="Move up"
@@ -38,11 +39,15 @@ list re-renders in place. Loaded by methodology_settings.html via {% include %}.
           {% if step.enabled %}Enabled{% else %}Disabled{% endif %}
         </button>
       </div>
+      {% endif %}
     </div>
 
     {% comment %} Config form: only the knobs relevant to this step_type. The header
          above is separated by a ruled divider; the knobs lay out as a
-         responsive grid so each label + helper hint sits above its input. {% endcomment %}
+         responsive grid so each label + helper hint sits above its input.
+         147-02: a viewer reads the step (the header row above) but never
+         this form -- every field in it exists to be POSTed back. {% endcomment %}
+    {% if user_can_write %}
     <form hx-post="{% url 'accounting:methodology_step_config' step.id %}"
           hx-target="#methodology-steps" hx-swap="outerHTML"
           style="margin-top: var(--space-md); border-top: 1px solid var(--color-border); padding-top: var(--space-md);">
@@ -141,6 +146,7 @@ list re-renders in place. Loaded by methodology_settings.html via {% include %}.
         <button type="submit" class="btn-secondary btn-sm">Save step</button>
       </div>
     </form>
+    {% endif %}
   </div>
   {% endfor %}
 </div>

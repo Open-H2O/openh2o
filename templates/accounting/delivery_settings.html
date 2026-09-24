@@ -33,6 +33,7 @@
     view and the sidebar read.{% endcomment %}{% explainer_available "surface_deliveries" as show_delivery_help %}<p class="text-secondary text-base m-0">These settings apply to every district. An analyst sets them once; a single district can differ from the default where it needs to (set that on the district's own page).{% if show_delivery_help %} <a href="{% url 'surface_deliveries' %}" class="text-sm text-accent">Learn more &rarr;</a>{% endif %}</p>
   </div>
 
+  {% if user_can_write %}
   <form method="post" class="page-stack">
     {% csrf_token %}
 
@@ -138,6 +139,9 @@
       <button type="submit" class="btn-primary">Save settings</button>
     </div>
   </form>
+  {% else %}
+  <p class="text-tertiary text-sm">You can read these settings but not change them. An administrator can change your role on the Users page.</p>
+  {% endif %}
 
   {% comment %} 147-01: the last ten recorded changes to these settings,
        after the form, in the page stack. site_config is the one SiteConfig

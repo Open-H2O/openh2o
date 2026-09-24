@@ -42,6 +42,22 @@
   `tests/test_nav_golden.py` pins this file's rendered output byte-for-byte
   against fixtures captured before the rewrite. Change the markup here and that
   suite tells you exactly which permutation moved.
+
+  147-02: two entries in the loop below open a write flow rather than a page —
+  Setup Wizard (`setup:wizard`) and Onboard System (`drinking:onboard`) — and
+  neither carries a `visibility` predicate a viewer's read-only role can use.
+  They are named by `url_name` rather than given a new `visibility` value,
+  because the registry has no per-entry "this is a write flow" flag today and
+  adding one is a `core/modules.py` change outside this template's own file
+  (reported in the plan summary rather than made here). Checked with
+  `user_can_write == False` rather than `not user_can_write`:
+  `test_nav_golden.py` renders this template directly, without the
+  `access_flags` context processor, so `user_can_write` is simply absent from
+  its context — `not <missing>` would be True and hide both entries from every
+  golden fixture, while `<missing> == False` stays False and leaves the golden
+  renders untouched. A real request always carries the flag as an actual
+  Python bool, so the strict comparison changes nothing for a signed-in
+  viewer's own browser.
 {% endcomment %}
         <!-- OVERVIEW (no label) -->
         <a href="{% url 'index' %}"
@@ -56,7 +72,7 @@
         <!-- {{ section.label|upper }}{% if section.requires_admin_mode %} (Admin view only){% endif %} -->{% endif %}{% if not section.requires_admin_mode or nav_mode == 'admin' %}{% if section.label %}
         <div class="sidebar-section">
             <span class="sidebar-link-text sidebar-section-label">{{ section.label }}</span>
-        </div>{% endif %}{% for entry in section.entries %}{% if entry.visibility == 'agency_admin' and not user_is_admin %}{% elif entry.visibility == 'setup_gate' and access_enforced and not user_is_admin %}{% else %}{% if entry.starts_group and not forloop.first %}
+        </div>{% endif %}{% for entry in section.entries %}{% if entry.visibility == 'agency_admin' and not user_is_admin %}{% elif entry.visibility == 'setup_gate' and access_enforced and not user_is_admin %}{% elif entry.url_name == 'setup:wizard' and user_can_write == False %}{% elif entry.url_name == 'drinking:onboard' and user_can_write == False %}{% else %}{% if entry.starts_group and not forloop.first %}
         <hr class="sidebar-divider">{% endif %}
         <a href="{% url entry.url_name %}"
            class="sidebar-link{% if entry|nav_active:request.path %} active{% endif %}">
