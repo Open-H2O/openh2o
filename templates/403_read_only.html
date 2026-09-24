@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% comment %}
+  The refusal a Viewer (read-only) account sees for any change it tries
+  (147-02, core.access.ReadOnlyMiddleware). Status 403. The message is the
+  middleware's own constant, so the page and the tests read one sentence.
+{% endcomment %}
+
+{% block title %}Read-only account - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Read-only account{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'index' %}">Home</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Read-only account</span>
+  </nav>
+  <p class="page-description">Nothing was changed.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack page-medium">
+  <div class="card-raised empty-state">
+    <p class="empty-state-text">{{ read_only_message }}</p>
+    <a href="{% url 'index' %}" class="btn-primary">Back to Home</a>
+  </div>
+</div>
+{% endblock %}

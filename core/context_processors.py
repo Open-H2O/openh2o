@@ -8,7 +8,7 @@ in-app feedback endpoints.
 """
 from django.conf import settings
 
-from core.access import is_administrator
+from core.access import is_administrator, is_viewer
 from core.models import SiteConfig
 
 
@@ -22,6 +22,8 @@ def access_flags(request):
     Drives the admin-only sidebar grouping (ISS-021, 41-02):
       - ``access_enforced`` mirrors the ACCESS_CONTROL_ENFORCED master switch.
       - ``user_is_admin`` is the anonymous-safe two-tier check (core.access).
+      - ``user_can_write`` is False only for a Viewer (read-only) account
+        (147-02); every control that changes a record sits inside it.
 
     Admin-only links (Users, Methodology) show only when ``user_is_admin``; the
     Setup Wizard stays visible to everyone while the switch is OFF so the demo's
@@ -30,6 +32,7 @@ def access_flags(request):
     return {
         "access_enforced": settings.ACCESS_CONTROL_ENFORCED,
         "user_is_admin": is_administrator(getattr(request, "user", None)),
+        "user_can_write": not is_viewer(getattr(request, "user", None)),
     }
 
 

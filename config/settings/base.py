@@ -112,6 +112,9 @@ MIDDLEWARE = [
     # Attaches the signed-in user and the request path to every change the
     # request makes (Phase 147, core/history.py).
     "pghistory.middleware.HistoryMiddleware",
+    # Refuses every unsafe request from a Viewer (read-only) account, on every
+    # route, whatever ACCESS_CONTROL_ENFORCED says (Phase 147, core/access.py).
+    "core.access.ReadOnlyMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",

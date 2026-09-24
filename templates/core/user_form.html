@@ -13,7 +13,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Add User</span>
   </nav>
-  <p class="page-description">A sign-in for a colleague on this deployment: the email they sign in with, a starting password to hand them, and whether they administer the agency.</p>
+  <p class="page-description">A sign-in for a colleague on this deployment: the email they sign in with, a starting password to hand them, and their role.</p>
 </div>
 {% endblock %}
 
@@ -71,13 +71,16 @@
         {% if form.password.errors %}<p class="form-error-text">{{ form.password.errors|striptags }}</p>{% endif %}
       </div>
 
-      <div class="form-group">
+      <div class="form-group" role="radiogroup" aria-labelledby="role-label">
+        <span class="form-label" id="role-label">Role</span>
+        {% for choice in form.role %}
         <label class="row-start" style="gap: var(--space-sm); cursor: pointer;">
-          {{ form.agency_admin }}
-          <span class="form-label m-0">Administrator</span>
+          {{ choice.tag }}
+          <span>{{ choice.choice_label }}</span>
         </label>
-        <p class="text-sm text-tertiary mt-xs">{{ form.agency_admin.help_text }}</p>
-        {% if form.agency_admin.errors %}<p class="form-error-text">{{ form.agency_admin.errors|striptags }}</p>{% endif %}
+        {% endfor %}
+        <p class="text-sm text-tertiary mt-xs">{{ form.role.help_text }}</p>
+        {% if form.role.errors %}<p class="form-error-text">{{ form.role.errors|striptags }}</p>{% endif %}
       </div>
 
       <div class="form-footer">

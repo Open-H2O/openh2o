@@ -4,7 +4,8 @@
 Two contracts are locked here:
 
   1. The Users area (core.urls) is admin-gated, lets an administrator add a user
-     who can then sign in by email, and flips admin/active state -- with two
+     who can then sign in by email, and sets role (administrator, operator or
+     viewer, 147-02) and active state -- with two
      lock-out guards: you can't change your OWN status, and the LAST administrator
      can't be demoted or deactivated. The last-admin guard genuinely matters while
      the master switch is OFF, because admin_required is then a pass-through: any
@@ -88,7 +89,7 @@ def test_create_form_mints_login_ready_user():
     form = UserCreateForm(data={
         "email": "New.Person@District.Gov",
         "first_name": "New", "last_name": "Person", "title": "Clerk",
-        "password": "a-good-passw0rd", "agency_admin": False,
+        "password": "a-good-passw0rd", "role": "operator",
     })
     assert form.is_valid(), form.errors
     user = form.save()
@@ -103,20 +104,31 @@ def test_create_form_mints_login_ready_user():
     assert ea.verified and ea.primary and ea.user_id == user.id
 
 
-def test_create_form_administrator_checkbox_writes_flag():
+def test_create_form_administrator_role_writes_flag():
     form = UserCreateForm(data={
         "email": "boss@district.gov", "first_name": "Boss", "last_name": "Person",
-        "title": "", "password": "a-good-passw0rd", "agency_admin": True,
+        "title": "", "password": "a-good-passw0rd", "role": "administrator",
     })
     assert form.is_valid(), form.errors
-    assert form.save().is_administrator
+    user = form.save()
+    assert (user.agency_admin, user.read_only) == (True, False)
+
+
+def test_create_form_viewer_role_writes_flag():
+    form = UserCreateForm(data={
+        "email": "reader@district.gov", "first_name": "Read", "last_name": "Er",
+        "title": "", "password": "a-good-passw0rd", "role": "viewer",
+    })
+    assert form.is_valid(), form.errors
+    user = form.save()
+    assert (user.agency_admin, user.read_only) == (False, True)
 
 
 def test_create_form_rejects_duplicate_email():
     _operator(email="dupe@district.gov")
     form = UserCreateForm(data={
         "email": "Dupe@District.gov", "first_name": "", "last_name": "",
-        "title": "", "password": "a-good-passw0rd", "agency_admin": False,
+        "title": "", "password": "a-good-passw0rd", "role": "operator",
     })
     assert not form.is_valid()
     assert "email" in form.errors
@@ -126,27 +138,39 @@ def test_create_view_adds_user():
     c = _client_for(_agency_admin())
     resp = c.post(reverse("core:user_create"), {
         "email": "added@district.gov", "first_name": "Add", "last_name": "Ed",
-        "title": "", "password": "a-good-passw0rd", "agency_admin": False,
+        "title": "", "password": "a-good-passw0rd", "role": "operator",
     })
     assert resp.status_code == 302
     assert User.objects.filter(email="added@district.gov").exists()
 
 
 # --------------------------------------------------------------------------
-# Toggles + lock-out guards
+# The role control (147-02: Administrator / Operator / Viewer) + lock-out guards
 # --------------------------------------------------------------------------
 
 
-def test_toggle_admin_grants_and_revokes():
+def _set_role(client, user, role):
+    return client.post(reverse("core:user_set_role", args=[user.pk]), {"role": role})
+
+
+def test_role_control_moves_through_all_three_roles():
     actor = _superuser()
     target = _operator()
     c = _client_for(actor)
-    c.post(reverse("core:user_toggle_admin", args=[target.pk]))
+    seen = []
+    for role in ("administrator", "viewer", "operator"):
+        assert _set_role(c, target, role).status_code == 302
+        target.refresh_from_db()
+        seen.append((target.agency_admin, target.read_only))
+    assert seen == [(True, False), (False, True), (False, False)]
+
+
+def test_role_control_refuses_an_unknown_role():
+    actor = _superuser()
+    target = _operator()
+    _set_role(_client_for(actor), target, "owner")
     target.refresh_from_db()
-    assert target.agency_admin is True
-    c.post(reverse("core:user_toggle_admin", args=[target.pk]))
-    target.refresh_from_db()
-    assert target.agency_admin is False
+    assert (target.agency_admin, target.read_only) == (False, False)
 
 
 def test_cannot_revoke_own_admin():
@@ -154,9 +178,9 @@ def test_cannot_revoke_own_admin():
     # A second admin exists, so only the self-guard (not last-admin) can stop this.
     _superuser()
     c = _client_for(actor)
-    c.post(reverse("core:user_toggle_admin", args=[actor.pk]))
+    _set_role(c, actor, "viewer")
     actor.refresh_from_db()
-    assert actor.agency_admin is True  # unchanged
+    assert (actor.agency_admin, actor.read_only) == (True, False)  # unchanged
 
 
 def test_cannot_demote_last_administrator():
@@ -165,18 +189,19 @@ def test_cannot_demote_last_administrator():
     only_admin = _agency_admin()
     actor = _operator()
     c = _client_for(actor)
-    c.post(reverse("core:user_toggle_admin", args=[only_admin.pk]))
-    only_admin.refresh_from_db()
-    assert only_admin.agency_admin is True  # last admin protected
+    for role in ("operator", "viewer"):
+        _set_role(c, only_admin, role)
+        only_admin.refresh_from_db()
+        assert (only_admin.agency_admin, only_admin.read_only) == (True, False)
 
 
 def test_staff_admin_status_not_togglable_here():
     actor = _agency_admin()
     staff = _superuser()
     c = _client_for(actor)
-    c.post(reverse("core:user_toggle_admin", args=[staff.pk]))
+    _set_role(c, staff, "viewer")
     staff.refresh_from_db()
-    assert staff.is_staff is True and staff.agency_admin is False  # untouched
+    assert (staff.is_staff, staff.agency_admin, staff.read_only) == (True, False, False)
 
 
 def test_toggle_active_deactivates_and_reactivates():

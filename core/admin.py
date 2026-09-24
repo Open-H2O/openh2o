@@ -8,10 +8,10 @@ from .models import Role, SiteConfig, User, UserRole
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    list_display = ["username", "email", "first_name", "last_name", "agency_admin", "title", "is_staff"]
-    list_filter = ["agency_admin", "is_staff", "is_active"]
+    list_display = ["username", "email", "first_name", "last_name", "agency_admin", "read_only", "title", "is_staff"]
+    list_filter = ["agency_admin", "read_only", "is_staff", "is_active"]
     fieldsets = BaseUserAdmin.fieldsets + (
-        ("Agency", {"fields": ("agency_admin", "phone", "title")}),
+        ("Agency", {"fields": ("agency_admin", "read_only", "phone", "title")}),
     )
 
 

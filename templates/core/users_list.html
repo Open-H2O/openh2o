@@ -20,7 +20,7 @@
   can do is unreachable. "Methodology" is an ordinary English word and must not
   go in the forbidden-vocabulary table, so no word list can ever catch this —
   `module_nouns` reproduces the hardcoded list byte-for-byte with everything
-  on.{% endcomment %}<p class="page-description">Manage who can sign in and who has administrator access. Administrators can manage {% module_nouns "core:users" "setup:the setup wizard" "accounting:methodology" %}; operators can enter and view data.</p>
+  on.{% endcomment %}<p class="page-description">Manage who can sign in and what each person may do. Administrators can manage {% module_nouns "core:users" "setup:the setup wizard" "accounting:methodology" %}; operators can enter and view data; viewers can read every page and change nothing.</p>
 </div>
 {% endblock %}
 
@@ -58,8 +58,10 @@
           <td>{{ u.get_full_name|blank }}{% if u.title %}<br><span class="text-secondary text-sm">{{ u.title }}</span>{% endif %}</td>
           <td class="text-secondary">{{ u.email|default:u.username }}</td>
           <td>
-            {% if u.is_administrator %}
+            {% if u.role_value == "administrator" %}
               <span class="badge badge-pill badge-gold">Administrator</span>
+            {% elif u.role_value == "viewer" %}
+              <span class="badge badge-pill badge-grey">Viewer</span>
             {% else %}
               <span class="badge badge-pill badge-grey">Operator</span>
             {% endif %}
@@ -78,11 +80,15 @@
               <span class="value-empty">Host administrator; managed outside this page.</span>
             {% else %}
             <div class="row-start" style="gap: var(--space-xs); justify-content: flex-end; flex-wrap: wrap;">
-              <form method="post" action="{% url 'core:user_toggle_admin' u.pk %}" style="display:inline;">
+              <form method="post" action="{% url 'core:user_set_role' u.pk %}" class="row-start" style="display:inline-flex; gap: var(--space-xs);">
                 {% csrf_token %}
-                <button type="submit" class="btn-secondary btn-sm">
-                  {% if u.agency_admin %}Revoke admin{% else %}Make admin{% endif %}
-                </button>
+                <label class="sr-only" for="role-{{ u.pk }}">Role for {{ u.email|default:u.username }}</label>
+                <select name="role" id="role-{{ u.pk }}" class="form-select form-select--compact">
+                  {% for value, label in role_choices %}
+                  <option value="{{ value }}"{% if value == u.role_value %} selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+                <button type="submit" class="btn-secondary btn-sm">Change role</button>
               </form>
               <form method="post" action="{% url 'core:user_toggle_active' u.pk %}" style="display:inline;">
                 {% csrf_token %}

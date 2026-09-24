@@ -41,6 +41,40 @@ class ProfileForm(forms.ModelForm):
         }
 
 
+# The three roles, in the order the Users screen offers them (147-02). An
+# administrator is `agency_admin`; a viewer is `read_only`; an operator is
+# neither. They are exclusive: User.clean() refuses a viewer who is also an
+# administrator.
+ROLE_ADMINISTRATOR = "administrator"
+ROLE_OPERATOR = "operator"
+ROLE_VIEWER = "viewer"
+ROLE_CHOICES = [
+    (ROLE_ADMINISTRATOR, "Administrator"),
+    (ROLE_OPERATOR, "Operator"),
+    (ROLE_VIEWER, "Viewer (read only)"),
+]
+ROLE_HELP = (
+    "Administrators also manage users and the agency's settings. Operators "
+    "enter and view data. Viewers read every page and change nothing."
+)
+
+
+def role_of(user):
+    """The role value for ``user``, one of ROLE_CHOICES."""
+    if user.agency_admin or user.is_staff:
+        return ROLE_ADMINISTRATOR
+    if user.read_only:
+        return ROLE_VIEWER
+    return ROLE_OPERATOR
+
+
+def apply_role(user, role):
+    """Set ``user``'s role flags for ``role``; returns the fields changed."""
+    user.agency_admin = role == ROLE_ADMINISTRATOR
+    user.read_only = role == ROLE_VIEWER
+    return ["agency_admin", "read_only"]
+
+
 class UserCreateForm(forms.ModelForm):
     """Add a new user from the in-app admin Users page (ISS-021, 41-02).
 
@@ -50,6 +84,9 @@ class UserCreateForm(forms.ModelForm):
     verified, primary allauth ``EmailAddress`` row the same way ``ensure_superuser``
     does, so the new account can sign in by email immediately. (allauth
     authenticates against ``EmailAddress``, not ``User.email``.)
+
+    The role is one choice of three (147-02), stored on the two flags by
+    :func:`apply_role`.
     """
 
     password = forms.CharField(
@@ -61,10 +98,17 @@ class UserCreateForm(forms.ModelForm):
             "Sign-in & Security."
         ),
     )
+    role = forms.ChoiceField(
+        choices=ROLE_CHOICES,
+        initial=ROLE_OPERATOR,
+        widget=forms.RadioSelect,
+        label="Role",
+        help_text=ROLE_HELP,
+    )
 
     class Meta:
         model = User
-        fields = ["email", "first_name", "last_name", "title", "agency_admin"]
+        fields = ["email", "first_name", "last_name", "title"]
         widgets = {
             "email": forms.EmailInput(
                 attrs={"class": "form-input", "placeholder": "name@district.gov"}
@@ -74,21 +118,12 @@ class UserCreateForm(forms.ModelForm):
             "title": forms.TextInput(
                 attrs={"class": "form-input", "placeholder": "e.g. Water Resources Manager"}
             ),
-            "agency_admin": forms.CheckboxInput(),
         }
         labels = {
             "email": "Email",
             "first_name": "First name",
             "last_name": "Last name",
             "title": "Title",
-            "agency_admin": "Administrator",
-        }
-        help_texts = {
-            "agency_admin": (
-                "Administrators can manage users, the setup wizard, and "
-                "methodology. Leave unchecked for an operator (data entry and "
-                "viewing only)."
-            ),
         }
 
     def __init__(self, *args, **kwargs):
@@ -116,6 +151,7 @@ class UserCreateForm(forms.ModelForm):
         user.email = email
         user.username = email
         user.is_active = True
+        apply_role(user, self.cleaned_data["role"])
         user.set_password(self.cleaned_data["password"])
         if commit:
             user.save()
@@ -124,6 +160,12 @@ class UserCreateForm(forms.ModelForm):
                 defaults={"user": user, "verified": True, "primary": True},
             )
         return user
+
+
+class UserRoleForm(forms.Form):
+    """The Users screen's per-row role control (147-02)."""
+
+    role = forms.ChoiceField(choices=ROLE_CHOICES)
 
 
 class DeliverySettingsForm(forms.Form):

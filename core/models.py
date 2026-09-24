@@ -31,12 +31,43 @@ from core.history import track_changes
         "is_staff",
         "is_superuser",
         "agency_admin",
+        "read_only",
     )
 )
 class User(AbstractUser):
     agency_admin = models.BooleanField(default=False)
+    # The third role (147-02): a Viewer signs in and reads every page but
+    # changes nothing. Enforced for every unsafe request by
+    # core.access.ReadOnlyMiddleware, whatever ACCESS_CONTROL_ENFORCED says,
+    # because a viewer is an explicit assignment, not a deployment posture.
+    read_only = models.BooleanField(default=False, verbose_name="Viewer (read only)")
     phone = models.CharField(max_length=20, blank=True)
     title = models.CharField(max_length=100, blank=True)
+
+    def clean(self):
+        super().clean()
+        if self.read_only and (self.agency_admin or self.is_staff):
+            raise ValidationError(
+                "A viewer cannot also be an administrator. Choose one role."
+            )
+
+    @property
+    def can_write(self):
+        """True for an active account that is not a viewer."""
+        return bool(self.is_active and not self.read_only)
+
+    @property
+    def role_label(self):
+        """The one role word the Users screen shows for this account.
+
+        Read from the role flags alone: whether the account is active is a
+        separate column on that screen.
+        """
+        if self.is_staff or self.agency_admin:
+            return "Administrator"
+        if self.read_only:
+            return "Viewer"
+        return "Operator"
 
     @property
     def is_administrator(self):

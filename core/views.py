@@ -3,15 +3,16 @@
 
 A deliberately small Users area so non-technical district staff never have to
 touch the developer-facing Django back-end (/admin/). It manages exactly two
-states per user -- administrator-or-not and active-or-not -- not a general RBAC
-scheme (the dormant Role/UserRole models are DEPRECATED; see core.models).
+things per user -- a role of three (administrator, operator or viewer; 147-02)
+and active-or-not -- not a general RBAC scheme (the dormant Role/UserRole
+models are DEPRECATED; see core.models).
 
 Every view stacks @login_required + @admin_required, so the whole area rides the
 same ACCESS_CONTROL_ENFORCED master switch as the rest of Phase 41: invisible
 while the switch is OFF for the demo, admin-only once it flips at go-live.
 
 Two lock-out guards run on every state change:
-  - self-guard: you can't strip your own admin or deactivate your own account.
+  - self-guard: you can't change your own role or deactivate your own account.
   - last-admin guard: the final administrator can't be demoted or deactivated,
     so the platform can never end up with no one who can reach the admin screens.
 """
@@ -26,9 +27,23 @@ from django.utils.cache import patch_vary_headers
 from django.views.decorators.http import require_POST, require_safe
 
 from core.access import admin_required
-from core.forms import UserCreateForm
+from core.forms import (
+    ROLE_ADMINISTRATOR,
+    ROLE_CHOICES,
+    UserCreateForm,
+    UserRoleForm,
+    apply_role,
+    role_of,
+)
 from core.identifiers import jsonld_for, resolve
 from core.models import User
+
+
+ROLE_SENTENCES = {
+    "administrator": "an administrator",
+    "operator": "an operator",
+    "viewer": "a viewer (read only)",
+}
 
 
 def _administrators():
@@ -45,9 +60,15 @@ def _administrators():
 @login_required
 @admin_required
 def users_list(request):
-    """List every user with role (Administrator / Operator) and active state."""
-    users = User.objects.all().order_by("first_name", "last_name", "email")
-    return render(request, "core/users_list.html", {"users": users})
+    """List every user with role (Administrator / Operator / Viewer) and state."""
+    users = list(User.objects.all().order_by("first_name", "last_name", "email"))
+    for user in users:
+        user.role_value = role_of(user)
+    return render(
+        request,
+        "core/users_list.html",
+        {"users": users, "role_choices": ROLE_CHOICES},
+    )
 
 
 @login_required
@@ -68,28 +89,40 @@ def user_create(request):
 @login_required
 @admin_required
 @require_POST
-def user_toggle_admin(request, pk):
-    """Grant or revoke agency_admin on another non-staff user."""
+def user_set_role(request, pk):
+    """Make another non-staff user an administrator, an operator or a viewer.
+
+    One control of three (147-02) in place of the old administrator toggle.
+    The change is recorded in the change history by the User tracking
+    (147-01), with the administrator who made it.
+    """
     target = get_object_or_404(User, pk=pk)
+    form = UserRoleForm(request.POST)
+    if not form.is_valid():
+        messages.error(request, "Choose a role: administrator, operator or viewer.")
+        return redirect("core:users_list")
     if target == request.user:
-        messages.error(request, "You can't change your own administrator status.")
+        messages.error(request, "You can't change your own role.")
         return redirect("core:users_list")
     # Django staff/superusers get their admin status from is_staff, which is
-    # managed in the developer back-end, not here. Toggling agency_admin on them
-    # would be a confusing no-op for access.
+    # managed in the developer back-end, not here. Changing agency_admin on
+    # them would be a confusing no-op for access.
     if target.is_staff:
         messages.error(
             request,
             "That user is a system administrator; manage them in the Django admin.",
         )
         return redirect("core:users_list")
-    if target.is_administrator and _administrators().count() <= 1:
+    role = form.cleaned_data["role"]
+    if (
+        role != ROLE_ADMINISTRATOR
+        and target.is_administrator
+        and _administrators().count() <= 1
+    ):
         messages.error(request, "You can't remove the last administrator.")
         return redirect("core:users_list")
-    target.agency_admin = not target.agency_admin
-    target.save(update_fields=["agency_admin"])
-    role = "an administrator" if target.agency_admin else "an operator"
-    messages.success(request, f"{target.email} is now {role}.")
+    target.save(update_fields=apply_role(target, role))
+    messages.success(request, f"{target.email} is now {ROLE_SENTENCES[role]}.")
     return redirect("core:users_list")
 
 
