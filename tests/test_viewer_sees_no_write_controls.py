@@ -5,7 +5,7 @@ Task 1 gave the platform a Viewer role, ``core.access.ReadOnlyMiddleware`` (whic
 refuses a viewer's POST/PUT/PATCH/DELETE outside a short allowlist) and the
 ``user_can_write`` template flag. Task 1 stops there: it refuses the write, it
 does not hide the button that leads to it. This file is the guard for the other
-half — a viewer should never be shown a control whose only purpose is to change
+half: a viewer should never be shown a control whose only purpose is to change
 a record, even one the middleware would refuse if pressed.
 
 **Rendered WITH rows, deliberately (ISS-091).** An empty database hides a write
@@ -22,7 +22,7 @@ shape of data get a real chance to show it.
 
 **Run twice, in both ``ACCESS_CONTROL_ENFORCED`` postures.** OFF is the hosted
 demo, where ``admin_required`` is a pass-through and a signed-in viewer reaches
-admin-only screens (Users, Methodology) that ON would bounce away entirely —
+admin-only screens (Users, Methodology) that ON would bounce away entirely:
 so OFF is the posture where a viewer reaches the most pages, and it is where
 this guard has the most to check. ON is checked too because the Viewer role
 holds "whichever way the switch is set" (``core/access.py``), and a page that
@@ -34,14 +34,14 @@ passes only under one posture would be a gap the other posture never noticed.
   * any ``hx-post``, ``hx-patch``, ``hx-put`` or ``hx-delete`` attribute, on any
     tag;
   * any ``href`` or ``hx-get`` whose target resolves (via ``django.urls.resolve``)
-    to a URL name that opens a form which changes a record — a create, add,
+    to a URL name that opens a form which changes a record: a create, add,
     edit, upload, import, assign, remove, finalize or delete control (this is
     where ``edit_field``'s inline-edit trigger lives: the button is a GET that
     opens an edit form, and the PATCH it eventually sends is caught by the rule
     above on the rendered edit form itself, wherever that also renders).
 
 A resolved URL is only allowed when ``core.access.viewer_may_post`` says the
-viewer may act on it — logout, password change and the other ``account_*``
+viewer may act on it: logout, password change and the other ``account_*``
 allauth views, the feedback widget, the nav-mode switch, the profile page.
 Anything else is an offender, and the assertion message names the page, the
 attribute that carried it, and the URL name it resolved to, so a failure is
@@ -124,10 +124,12 @@ def _seed_rows():
         name="Viewer Sweep Finalized WY",
         start_date=date(2021, 10, 1),
         end_date=date(2022, 9, 30),
-        is_finalized=True,
-        finalized_at=timezone.now(),
     )
     AllocationPlanFactory(zone=zone, reporting_period=finalized_period)
+    # Written while open, then closed: a finalized year refuses writes (147-02).
+    finalized_period.is_finalized = True
+    finalized_period.finalized_at = timezone.now()
+    finalized_period.save(update_fields=["is_finalized", "finalized_at"])
 
     right_type = WaterRightTypeFactory(name="Viewer Sweep Right Type")
     water_right = WaterRightFactory(
@@ -204,7 +206,7 @@ def _detail_pages(rows):
     Named explicitly rather than derived, same discipline as ``checks.py``'s own
     ``_PAGES`` table: a wrong guess about which detail routes exist is a wrong
     guess this file would otherwise never notice. Diversion records and
-    allocation plans have no detail route of their own — a diversion record
+    allocation plans have no detail route of their own: a diversion record
     shows on the POD's own page and an allocation shows on the period's own
     page, both already covered by the two rows below.
     """
@@ -293,7 +295,7 @@ def find_write_controls(html, page_path):
     """Every write control in ``html``, as ``(attr, view_name)`` tuples.
 
     ``view_name`` is ``None`` when the target could not be resolved (an
-    external link, an anchor, a target no URLconf matches) — those never carry
+    external link, an anchor, a target no URLconf matches): those never carry
     a write, so they are never offenders, and are dropped by the caller instead
     of being returned as unresolvable findings.
     """
@@ -326,7 +328,7 @@ def _offenders(html, page_path):
     offenders = []
     for attr, view_name in find_write_controls(html, page_path):
         if view_name is None:
-            # A form/hx-* target that resolved to nothing is not analyzable —
+            # A form/hx-* target that resolved to nothing is not analyzable:
             # record it too, rather than silently letting an unresolvable
             # action hide a real write (a typo'd action attribute, a target
             # this test's own settings do not route, is a defect either way).

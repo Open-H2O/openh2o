@@ -43,8 +43,8 @@
   against fixtures captured before the rewrite. Change the markup here and that
   suite tells you exactly which permutation moved.
 
-  147-02: two entries in the loop below open a write flow rather than a page —
-  Setup Wizard (`setup:wizard`) and Onboard System (`drinking:onboard`) — and
+  147-02: two entries in the loop below open a write flow rather than a page,
+  Setup Wizard (`setup:wizard`) and Onboard System (`drinking:onboard`), and
   neither carries a `visibility` predicate a viewer's read-only role can use.
   They are named by `url_name` rather than given a new `visibility` value,
   because the registry has no per-entry "this is a write flow" flag today and
@@ -53,7 +53,7 @@
   `user_can_write == False` rather than `not user_can_write`:
   `test_nav_golden.py` renders this template directly, without the
   `access_flags` context processor, so `user_can_write` is simply absent from
-  its context — `not <missing>` would be True and hide both entries from every
+  its context, `not <missing>` would be True and hide both entries from every
   golden fixture, while `<missing> == False` stays False and leaves the golden
   renders untouched. A real request always carries the flag as an actual
   Python bool, so the strict comparison changes nothing for a signed-in
