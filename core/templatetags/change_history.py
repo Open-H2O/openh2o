@@ -24,7 +24,9 @@ def change_history_panel(obj=None, record_type="", heading="History", fields=Non
     if obj is not None:
         rows = changes.changes_for(obj, fields=fields)
         query = {"type": obj._meta.label, "record": obj.pk}
-        show_record = False
+        # A record whose history takes in its linked records (a well's use
+        # area shares) names which record each row is about.
+        show_record = bool(changes.related_records(obj._meta.label))
     else:
         filters = changes.build_filters(record_type=record_type)
         rows = changes.recent_changes(filters, per_page=changes.PANEL_SIZE).object_list

@@ -108,6 +108,59 @@ RECORD_TYPE_NAMES = {
 }
 
 
+# The records a record's page edits besides itself: a well's page sets the
+# share each linked use area takes, a point of diversion's page records its
+# monthly diversions. A reader who changes one there looks for it in that
+# page's History panel, so a record's history includes these, found by the
+# foreign key the history row copied (as a plain id column, core/history.py).
+# A use area's ledger entries are left out on purpose: the engine rewrites
+# them every run, and ten of them would push every edit a person made off the
+# panel. They are one filter away on the Change history page.
+RELATED_RECORDS = {
+    "parcels.Parcel": (
+        ("wells.WellIrrigatedParcel", "parcel"),
+        ("surface.PointOfDiversionParcel", "parcel"),
+        ("surface.WaterRightParcel", "parcel"),
+        ("surface.ParcelIrrigationMethod", "parcel"),
+        ("geography.ParcelZone", "parcel"),
+        ("accounting.WaterAccountParcel", "parcel"),
+    ),
+    "wells.Well": (
+        ("wells.WellIrrigatedParcel", "well"),
+        ("wells.WellMeter", "well"),
+    ),
+    "surface.PointOfDiversion": (
+        ("surface.DiversionRecord", "point_of_diversion"),
+        ("surface.PointOfDiversionParcel", "point_of_diversion"),
+        ("surface.PointOfDiversionDevice", "point_of_diversion"),
+        ("surface.UnallocatedDelivery", "point_of_diversion"),
+    ),
+    "surface.WaterRight": (
+        ("surface.WaterRightParcel", "water_right"),
+        ("surface.PointOfDiversion", "water_right"),
+    ),
+    "accounting.WaterAccount": (
+        ("accounting.WaterAccountParcel", "water_account"),
+        ("surface.WaterAccountDeliveryPoint", "account"),
+    ),
+    "accounting.ReportingPeriod": (
+        ("accounting.AllocationPlan", "reporting_period"),
+    ),
+}
+
+
+def related_records(label):
+    """(child label, id column) pairs whose changes join ``label``'s history."""
+    pairs = []
+    for child, field_name in RELATED_RECORDS.get(label, ()):
+        try:
+            column = apps.get_model(child)._meta.get_field(field_name).column
+        except LookupError:
+            continue  # the child's module is not installed on this deployment
+        pairs.append((child, column))
+    return pairs
+
+
 def record_type_name(model):
     """The sentence-case name a page uses for one kind of record."""
     label = model._meta.label
@@ -266,11 +319,18 @@ def _index_sql(filters):
     context, newest first.
     """
     by_label = event_models()
-    labels = [filters["record_type"]] if filters.get("record_type") else sorted(by_label)
+    # (label, column that must equal the record's id or None) per event table.
+    if filters.get("record_type") and filters.get("object_id") is not None:
+        targets = [(filters["record_type"], "pgh_obj_id")] + [
+            (child, column)
+            for child, column in related_records(filters["record_type"])
+            if child in by_label
+        ]
+    elif filters.get("record_type"):
+        targets = [(filters["record_type"], None)]
+    else:
+        targets = [(label, None) for label in sorted(by_label)]
     where, params_each = [], []
-    if filters.get("object_id") is not None:
-        where.append("pgh_obj_id = %s")
-        params_each.append(filters["object_id"])
     if filters.get("since") is not None:
         where.append("pgh_created_at >= %s")
         params_each.append(filters["since"])
@@ -289,18 +349,21 @@ def _index_sql(filters):
             " WHERE metadata->>'user' = %s)"
         )
         params_each.append(str(person))
-    clause = (" WHERE " + " AND ".join(where)) if where else ""
-
     branches, params = [], []
-    for label in labels:
+    for label, column in targets:
         table = connection.ops.quote_name(by_label[label]._meta.db_table)
+        conditions, values = list(where), list(params_each)
+        if column is not None:
+            conditions.insert(0, f"{connection.ops.quote_name(column)} = %s")
+            values.insert(0, filters["object_id"])
+        clause = (" WHERE " + " AND ".join(conditions)) if conditions else ""
         branches.append(
             f"SELECT %s AS model, pgh_obj_id AS obj, pgh_id, pgh_created_at,"
             f" pgh_context_id,"
             f" COALESCE(pgh_context_id::text, pgh_created_at::text) AS grp"
             f" FROM {table}{clause}"
         )
-        params.extend([label, *params_each])
+        params.extend([label, *values])
     union = " UNION ALL ".join(branches)
     sql = (
         "SELECT model, obj, MIN(pgh_id), MAX(pgh_id), MAX(pgh_created_at) AS at,"
@@ -345,7 +408,10 @@ class _ChangeIndex:
                 params,
             )
             groups = cursor.fetchall()
-        return build_rows(groups, only=self.filters.get("fields"))
+        only = self.filters.get("fields")
+        return build_rows(
+            groups, only={self.filters["record_type"]: only} if only else None
+        )
 
 
 def build_rows(groups, only=None):
@@ -399,7 +465,7 @@ def build_rows(groups, only=None):
             people,
             names,
             live,
-            only,
+            (only or {}).get(label),
         )
         if row is not None:
             rows.append(row)

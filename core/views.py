@@ -221,6 +221,8 @@ def change_history(request):
             "since": since.isoformat() if since else "",
             "until": until.isoformat() if until else "",
             "record_filtered": "object_id" in filters,
+            "record_has_links": "object_id" in filters
+            and bool(changes.related_records(filters["record_type"])),
             "querystring": query.urlencode(),
         },
     )

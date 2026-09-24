@@ -262,3 +262,39 @@ def test_the_delivery_settings_panel_shows_only_the_settings_on_that_page(admini
     html = _client(administrator).get(reverse("accounting:delivery_settings")).content.decode()
     assert "water.example.org</span>" in html
     assert "USE row" not in html
+
+
+def test_a_well_share_edit_shows_in_the_well_panel_and_its_see_all_page(operator):
+    well = WellFactory(name="Linked-history well")
+    wip = WellIrrigatedParcelFactory(well=well, fraction="0.2500")
+    _patch(
+        _client(operator),
+        reverse("wells:irrigated_parcel_edit_share", args=[well.pk, wip.pk]),
+        value="0.4",
+    )
+
+    rows = changes_for(well)
+    shares = [r for r in rows if r.record_type == "Well use area share"]
+    assert [(r.action, r.who) for r in shares][0] == ("changed", "Dana Reyes")
+    assert [(c.name, c.before, c.after) for c in shares[0].changes] == [
+        ("Fraction", "0.25", "0.40")
+    ]
+
+    html = _client(operator).get(
+        reverse("change_history") + f"?type=wells.Well&record={well.pk}"
+    ).content.decode()
+    assert "to one record and the records linked to it" in html
+    assert '<span class="change-value">0.25</span> &rarr; <span class="change-value">0.40</span>' in html
+
+
+def test_a_diversion_record_edit_shows_in_the_point_of_diversion_panel(operator):
+    from tests.factories import DiversionRecordFactory, PointOfDiversionFactory
+
+    pod = PointOfDiversionFactory()
+    record = DiversionRecordFactory(point_of_diversion=pod, volume_acre_feet=Decimal("11.4158"))
+    type(record).objects.filter(pk=record.pk).update(volume_acre_feet=Decimal("15.0000"))
+
+    rows = [r for r in changes_for(pod) if r.record_type == "Diversion record"]
+    assert rows, "the diversion record's history is missing from its point's panel"
+    values = [(c.name, c.after) for r in rows for c in r.changes if c.name == "Volume acre feet"]
+    assert ("Volume acre feet", "15.00") in values

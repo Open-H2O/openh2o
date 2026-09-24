@@ -58,7 +58,7 @@
   <div class="card-raised table-scroll" style="padding: 0;">
     <div class="ledger-card-head">
       <div class="text-secondary text-base">
-        {{ page_obj.paginator.count|intcomma }} change{{ page_obj.paginator.count|pluralize }}{% if record_filtered %} to one record{% endif %}, newest first
+        {{ page_obj.paginator.count|intcomma }} change{{ page_obj.paginator.count|pluralize }}{% if record_has_links %} to one record and the records linked to it{% elif record_filtered %} to one record{% endif %}, newest first
       </div>
     </div>
     {% if page_obj.object_list %}
