@@ -15,7 +15,6 @@ from django.contrib.auth import get_user_model
 from django.test import Client, override_settings
 from django.urls import reverse
 
-from accounting.models import ReportingPeriod
 from core.access import READ_ONLY_MESSAGE
 from core.history import LABEL_BEFORE_UPDATE
 from tests.factories import ReportingPeriodFactory

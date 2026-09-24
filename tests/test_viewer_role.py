@@ -18,13 +18,13 @@ from django.test import Client, override_settings
 from django.urls import reverse
 from django.utils.http import urlencode
 
-from parcels.models import ParcelLedger
 from core.access import (
     READ_ONLY_MESSAGE,
     VIEWER_ALLOWED_URL_NAME_PREFIX,
     VIEWER_ALLOWED_URL_NAMES,
     viewer_may_post,
 )
+from parcels.models import ParcelLedger
 from tests.factories import ParcelFactory
 
 pytestmark = pytest.mark.django_db

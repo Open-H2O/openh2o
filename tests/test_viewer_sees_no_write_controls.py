@@ -57,7 +57,6 @@ from django.test import Client, override_settings
 from django.urls import Resolver404, resolve
 from django.utils import timezone
 
-from accounting.models import CalculationPlan
 from core.access import viewer_may_post
 from drinking.models import SamplingSchedule
 from tests.droppability.checks import KEPT_PAGES
