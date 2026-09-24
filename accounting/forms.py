@@ -3,8 +3,13 @@
 from django import forms
 
 from accounting.models import AllocationPlan, ReportingPeriod, WaterAccount, WaterType
+from core.history import CHANGE_NOTE_HELP, NOTE_MAX_LENGTH
 from core.modules import is_enabled
 from parcels.models import ParcelLedger
+
+#: Shortest reason accepted for reopening a finalized period (147-02, Brent
+#: 2026-09-23). Finalizing takes the same box with no minimum.
+REOPEN_NOTE_MIN_LENGTH = 10
 
 
 class ReportingPeriodForm(forms.ModelForm):
@@ -33,6 +38,57 @@ class ReportingPeriodForm(forms.ModelForm):
         if start and end and end <= start:
             self.add_error("end_date", "The end date must be after the start date.")
         return cleaned
+
+
+class PeriodFinalizeForm(forms.Form):
+    """The note behind finalizing or reopening a reporting period (147-02).
+
+    Reopening a finalized period requires a reason, 10-500 characters, kept
+    with the reopening save via ``core.history.change_note`` so it lands on
+    the period's change-history event. Finalizing takes the same box,
+    optional. ``reopening`` is passed explicitly by the view rather than read
+    from the posted data, so a form cannot choose for itself which rule to
+    enforce.
+    """
+
+    note = forms.CharField(
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "rows": 3,
+                "class": "form-textarea",
+                "maxlength": str(NOTE_MAX_LENGTH),
+            }
+        ),
+    )
+
+    def __init__(self, *args, reopening=False, **kwargs):
+        self.reopening = reopening
+        super().__init__(*args, **kwargs)
+        if reopening:
+            self.fields["note"].label = "Reason for reopening (why)"
+            self.fields["note"].help_text = (
+                f"Required, {REOPEN_NOTE_MIN_LENGTH}-{NOTE_MAX_LENGTH} characters. "
+                "Saved with this change in the change history, which everyone "
+                "signed in can read."
+            )
+        else:
+            self.fields["note"].label = "Note (why)"
+            self.fields["note"].help_text = CHANGE_NOTE_HELP
+
+    def clean_note(self):
+        note = (self.cleaned_data.get("note") or "").strip()
+        if self.reopening:
+            if len(note) < REOPEN_NOTE_MIN_LENGTH:
+                raise forms.ValidationError(
+                    "Reopening a finalized period needs a reason, at least "
+                    f"{REOPEN_NOTE_MIN_LENGTH} characters."
+                )
+            if len(note) > NOTE_MAX_LENGTH:
+                raise forms.ValidationError(
+                    f"Keep the reason to {NOTE_MAX_LENGTH} characters or fewer."
+                )
+        return note
 
 
 class AllocationPlanForm(forms.ModelForm):

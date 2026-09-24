@@ -84,18 +84,32 @@
         {% endif %}
       </div>
 
-      {% if user_can_write %}
-      <!-- Finalize / Unfinalize (Phase 75: primary action made prominent) -->
+      {% if user_is_admin %}
+      {% comment %} Finalize / Unfinalize (Phase 75: primary action made prominent;
+           147-02: administrators only, and reopening asks for a reason, kept
+           with the change history via core.history.change_note). {% endcomment %}
       <div class="border-separator">
         {% if period.is_finalized %}
           <form method="post" action="{% url 'accounting:period_finalize' period.pk %}">
             {% csrf_token %}
+            <div class="field-group" style="margin-bottom: var(--space-sm);">
+              <label class="form-label" for="{{ finalize_form.note.id_for_label }}">{{ finalize_form.note.label }}</label>
+              {{ finalize_form.note }}
+              <p class="text-secondary text-sm" style="margin-top: var(--space-xs);">{{ finalize_form.note.help_text }}</p>
+              {% if finalize_form.note.errors %}<p class="form-error-text">{{ finalize_form.note.errors|striptags }}</p>{% endif %}
+            </div>
             <button type="submit" class="btn-secondary btn-sm">Reopen period</button>
           </form>
         {% else %}
-          <p class="text-tertiary text-xs" style="margin: 0 0 var(--space-sm);">Finalizing locks this water year's allocations and ledger against further edits so its reports stay stable.</p>
+          <p class="text-tertiary text-xs" style="margin: 0 0 var(--space-sm);">Finalizing stops this water year's ledger entries, allocations, diversion records and calculation results from being added, changed or removed until an administrator reopens it. Reopening asks for a reason, which is kept in the change history.</p>
           <form method="post" action="{% url 'accounting:period_finalize' period.pk %}">
             {% csrf_token %}
+            <div class="field-group" style="margin-bottom: var(--space-sm);">
+              <label class="form-label" for="{{ finalize_form.note.id_for_label }}">{{ finalize_form.note.label }}</label>
+              {{ finalize_form.note }}
+              <p class="text-secondary text-sm" style="margin-top: var(--space-xs);">{{ finalize_form.note.help_text }}</p>
+              {% if finalize_form.note.errors %}<p class="form-error-text">{{ finalize_form.note.errors|striptags }}</p>{% endif %}
+            </div>
             <button type="submit" class="btn-primary" style="width: 100%;">Finalize period</button>
           </form>
         {% endif %}

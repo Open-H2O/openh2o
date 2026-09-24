@@ -28,6 +28,12 @@ class ReportingPeriodAdmin(admin.ModelAdmin):
     list_display = ["name", "start_date", "end_date", "is_finalized", "finalized_at"]
     list_filter = ["is_finalized"]
     search_fields = ["name"]
+    # 147-02 Task 3: finalizing and reopening is a recorded door with a
+    # required reopen note (accounting.views.period_finalize, admin-only).
+    # /admin/ editing these fields directly would bypass both the note and
+    # the note's place in the change history, so the period page is the only
+    # way to flip them.
+    readonly_fields = ["is_finalized", "finalized_by", "finalized_at"]
 
 
 @admin.register(WaterAccount)

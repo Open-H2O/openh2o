@@ -39,6 +39,7 @@ from accounting.forms import (
     AllocationPlanForm,
     CsvUploadForm,
     ParcelLedgerForm,
+    PeriodFinalizeForm,
     ReportingPeriodForm,
     WaterAccountForm,
 )
@@ -524,20 +525,13 @@ def periods_list(request):
     return render(request, "accounting/periods_list.html", context)
 
 
-@login_required
-def period_detail(request, pk):
-    """Detail view for a single reporting period.
+def _period_detail_context(period, finalize_form=None):
+    """The period page's context, shared by ``period_detail`` and by
+    ``period_finalize`` re-rendering the same page on a rejected note (147-02).
 
-    143-06 (R-034): the old "Summary" tile row (Allocations count, Ledger
-    entries count) goes. The period leads with what it IS (its dates, its
-    finalized status) and the one figure it exists for — its allocations by
-    water type, in the same ``.budget-panel`` shape and the same subtotal
-    grouping the allocations list uses for one period, so the two screens
-    never say this water year's totals two different ways. The Allocations
-    table below is that list's own columns, link and footer, brought here
-    rather than re-derived (zone as the link, no Name column).
+    ``finalize_form`` lets ``period_finalize`` hand back the bound form
+    carrying its validation error; a fresh unbound one is built otherwise.
     """
-    period = get_object_or_404(ReportingPeriod, pk=pk)
     allocations = AllocationPlan.objects.filter(
         reporting_period=period
     ).select_related("zone", "water_type").order_by("water_type__name", "zone__name")
@@ -552,13 +546,33 @@ def period_detail(request, pk):
         .order_by("water_type__name")
     )
 
-    context = {
+    return {
         "period": period,
         "allocations": allocations,
         "allocation_subtotals": allocation_subtotals,
         "ledger_count": ledger_count,
+        "finalize_form": finalize_form
+        or PeriodFinalizeForm(reopening=period.is_finalized),
     }
-    return render(request, "accounting/period_detail.html", context)
+
+
+@login_required
+def period_detail(request, pk):
+    """Detail view for a single reporting period.
+
+    143-06 (R-034): the old "Summary" tile row (Allocations count, Ledger
+    entries count) goes. The period leads with what it IS (its dates, its
+    finalized status) and the one figure it exists for — its allocations by
+    water type, in the same ``.budget-panel`` shape and the same subtotal
+    grouping the allocations list uses for one period, so the two screens
+    never say this water year's totals two different ways. The Allocations
+    table below is that list's own columns, link and footer, brought here
+    rather than re-derived (zone as the link, no Name column).
+    """
+    period = get_object_or_404(ReportingPeriod, pk=pk)
+    return render(
+        request, "accounting/period_detail.html", _period_detail_context(period)
+    )
 
 
 @login_required
@@ -588,21 +602,46 @@ def period_create(request):
 
 
 @login_required
+@admin_required
 @require_POST
 def period_finalize(request, pk):
-    """Toggle finalized status on a reporting period."""
+    """Toggle finalized status on a reporting period, administrators only (147-02).
+
+    Reopening keeps 147-01's history intact (the earlier finalizer stays on
+    the change history; only the live ``finalized_by``/``finalized_at`` are
+    nulled) and now requires a reason, 10-500 characters, via
+    ``PeriodFinalizeForm``; finalizing takes the same note, optional. Either
+    way the note is attached with ``change_note`` so it lands on the period's
+    change-history event. An invalid note re-renders the period page with the
+    form's error and saves nothing (status 200) -- never a redirect, so the
+    error survives to be shown.
+
+    When ``ACCESS_CONTROL_ENFORCED`` is off, ``admin_required`` passes every
+    signed-in user through by design (the hosted demo's documented posture);
+    this view does not touch that switch.
+    """
     period = get_object_or_404(ReportingPeriod, pk=pk)
+    reopening = period.is_finalized
+    form = PeriodFinalizeForm(request.POST, reopening=reopening)
 
-    if period.is_finalized:
-        period.is_finalized = False
-        period.finalized_at = None
-        period.finalized_by = None
-    else:
-        period.is_finalized = True
-        period.finalized_at = timezone.now()
-        period.finalized_by = request.user
+    if not form.is_valid():
+        return render(
+            request,
+            "accounting/period_detail.html",
+            _period_detail_context(period, finalize_form=form),
+        )
 
-    period.save()
+    with change_note(form.cleaned_data.get("note")):
+        if reopening:
+            period.is_finalized = False
+            period.finalized_at = None
+            period.finalized_by = None
+        else:
+            period.is_finalized = True
+            period.finalized_at = timezone.now()
+            period.finalized_by = request.user
+        period.save()
+
     return redirect("accounting:period_detail", pk=period.pk)
 
 

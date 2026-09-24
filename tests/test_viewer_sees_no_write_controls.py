@@ -381,24 +381,38 @@ def test_viewer_sees_no_write_control_on_any_page(access_control_enforced):
     )
 
 
-def test_an_operator_still_sees_the_finalize_control():
-    """The guard hides controls from a viewer; it must not hide them from
-    anyone else. An operator reaching the open period's page still sees the
-    Finalize control that ``test_viewer_sees_no_write_control_on_any_page``
-    proves is gone for a viewer on the exact same page.
+def test_an_administrator_sees_the_finalize_control_and_an_operator_does_not():
+    """The guard hides controls from a viewer; it must not hide them from an
+    administrator. 147-02 Task 3 narrowed the finalize/reopen control from
+    "anyone who can write" to administrators only (``user_is_admin``), so an
+    operator -- who could see it before that task -- no longer does. This is
+    the same page ``test_viewer_sees_no_write_control_on_any_page`` proves is
+    also clear of the control for a viewer.
     """
     rows = _seed_rows()
+    administrator = User.objects.create_user(
+        username="write-control-administrator",
+        email="write-control-administrator@example.org",
+        password="a-good-passw0rd",
+        is_active=True,
+        agency_admin=True,
+    )
     operator = User.objects.create_user(
         username="write-control-operator",
         email="write-control-operator@example.org",
         password="a-good-passw0rd",
         is_active=True,
     )
-    client = Client()
-    client.force_login(operator)
+    period_url = "/accounting/reporting-periods/%d/" % rows["open_period"].pk
 
-    response = client.get(
-        "/accounting/reporting-periods/%d/" % rows["open_period"].pk
-    )
-    assert response.status_code == 200
-    assert "Finalize period" in response.content.decode()
+    admin_client = Client()
+    admin_client.force_login(administrator)
+    admin_response = admin_client.get(period_url)
+    assert admin_response.status_code == 200
+    assert "Finalize period" in admin_response.content.decode()
+
+    operator_client = Client()
+    operator_client.force_login(operator)
+    operator_response = operator_client.get(period_url)
+    assert operator_response.status_code == 200
+    assert "Finalize period" not in operator_response.content.decode()
