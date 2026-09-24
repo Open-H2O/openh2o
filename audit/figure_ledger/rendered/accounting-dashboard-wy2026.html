@@ -10,6 +10,46 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/static/img/apple-touch-icon.png?v=3">
 
     
+    
+    <script>
+    (function () {
+      var D = window.__oh2oDiag = { errors: [], net: [] };
+      function push(arr, item) { arr.push(item); if (arr.length > 25) arr.shift(); }
+      window.addEventListener('error', function (e) {
+        push(D.errors, {
+          type: 'error',
+          msg: e.message || String(e),
+          src: (e.filename || '') + ':' + (e.lineno || '') + ':' + (e.colno || ''),
+          stack: (e.error && e.error.stack) ? String(e.error.stack).slice(0, 2000) : null,
+          t: new Date().toISOString()
+        });
+      });
+      window.addEventListener('unhandledrejection', function (e) {
+        var r = e.reason;
+        push(D.errors, {
+          type: 'promise',
+          msg: (r && r.message) ? r.message : String(r),
+          stack: (r && r.stack) ? String(r.stack).slice(0, 2000) : null,
+          t: new Date().toISOString()
+        });
+      });
+      if (window.fetch) {
+        var _fetch = window.fetch;
+        window.fetch = function () {
+          var url = '';
+          try { var a = arguments[0]; url = (typeof a === 'string') ? a : (a && a.url) || ''; } catch (_) {}
+          return _fetch.apply(this, arguments).then(function (res) {
+            if (!res.ok) push(D.net, { url: String(url).slice(0, 300), status: res.status, t: new Date().toISOString() });
+            return res;
+          }).catch(function (err) {
+            push(D.net, { url: String(url).slice(0, 300), status: 'network-error', msg: String((err && err.message) || err), t: new Date().toISOString() });
+            return Promise.reject(err);
+          });
+        };
+      }
+    })();
+    </script>
+    
 
     <!-- Google Fonts: Public Sans (single sitewide typeface) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,7 +61,7 @@
     <!-- Compiled Tailwind CSS -->
     <link rel="stylesheet" href="/static/css/output.css">
     <!-- App layout and component styles -->
-    <link rel="stylesheet" href="/static/css/app.css?v=71">
+    <link rel="stylesheet" href="/static/css/app.css?v=85">
 
     <!-- MapLibre GL JS (available in map pages via block) -->
     
@@ -37,7 +77,7 @@
 
     
 </head>
-<body class="section-overview" hx-headers='{"X-CSRFToken": "OmEjSH7Jg8dKPMGpUJprw1Unc2w98kt5cl786HYE9HT1cn85mqQHWuSiLzOLFmnT"}'>
+<body class="section-overview" hx-headers='{"X-CSRFToken": "SY9LtIf3kPk54MtgE5a0fTlBCEC531PVuvnGZqQvEbVPA6iYoloEhXa7qzom4BvC"}'>
     
     <a href="#main-content" class="skip-link">Skip to main content</a>
     <div id="loading-bar" class="loading-bar"></div>
@@ -216,6 +256,28 @@
 
             <span class="sidebar-link-text">Sample Results</span>
         </a>
+        <a href="/drinking/production/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 3v18h18"/>
+                <path d="M7 16l4-6 4 3 5-8"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Production</span>
+        </a>
+        <a href="/drinking/schedule/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="5" y="4" width="14" height="17" rx="2"/>
+                <path d="M9 2h6v4H9z"/>
+                <path d="M9 11l1.5 1.5L13 10"/>
+                <path d="M9 17h6"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Schedule</span>
+        </a>
         <a href="/drinking/onboard/"
            class="sidebar-link">
                         <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -241,6 +303,16 @@
 
 
             <span class="sidebar-link-text">Water Rights</span>
+        </a>
+        <a href="/surface/curtailments/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Curtailment Orders</span>
         </a>
         <a href="/accounting/accounts/"
            class="sidebar-link">
@@ -438,6 +510,16 @@
         </a>
         </details>
 
+        
+        
+        <button type="button" class="sidebar-link sidebar-feedback" id="oh2o-fb-open" aria-haspopup="dialog">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            <span class="sidebar-link-text">Send feedback</span>
+        </button>
+        
+
         <!-- VIEW MODE — segmented toggle, tucked at the foot of the nav -->
         <div class="nav-mode-toggle" role="group" aria-label="Sidebar view mode">
             <a href="/nav-mode/?mode=operations"
@@ -523,19 +605,25 @@
 
 
             
+            <div class="page-head ">
+                <div class="page-head-row">
+                    <h1 class="page-title">Dashboard</h1>
+                    <div class="page-head-meta"></div>
+                    <div class="page-head-actions"></div>
+                </div>
+                
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
     <span>Accounting</span>
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Dashboard</span>
   </nav>
-  <p class="page-description">Summary of your district's water data for the selected period — recorded supplies and uses by account and zone, with satellite-estimated crop water use (evapotranspiration, or ET) shown as one estimated input.</p>
+  <p class="page-description">Recorded supplies and uses by account and zone for the period, with satellite-estimated crop water use (ET) as one estimated input.</p>
 </div>
 
+            </div>
 
             <main class="app-content" id="main-content">
-                
-                <h1 class="sr-only">Dashboard</h1>
                 
                 
 <div class="card-raised demo-notice" role="note" aria-label="Demonstration data notice">
@@ -552,33 +640,10 @@
 <div class="page-stack">
 
   
-  <div><span class="badge badge-pill badge-demo" title="Sample data — not a real legal action">DEMO</span>
-</div>
-  
 
   
 
   
-
-  <!-- Period selector -->
-  <div style="display: flex; justify-content: flex-end;">
-    <label class="text-secondary text-sm" style="display: flex; align-items: center; gap: var(--space-sm);">
-      Period
-      <select name="period"
-              hx-get="/accounting/dashboard/"
-              hx-target="#dashboard-content"
-              hx-trigger="change"
-              class="form-select"
-              style="min-width: 200px;">
-        
-        <option value="2" selected>WY 2025-2026</option>
-        
-        <option value="1" >WY 2024-2025</option>
-        
-      </select>
-    </label>
-  </div>
-
   <!-- HTMX-swappable content area -->
   <div id="dashboard-content">
     
@@ -586,44 +651,11 @@
 
 
 
-<div class="attention-strip card-raised">
-  
-  <span class="attention-strip-label">Needs attention</span>
 
-  
-
-  
-  <a href="/datasync/stations/" class="attention-pill attention-pill-down">
-    <span class="attention-pill-count">25</span>
-    stations down
-  </a>
-  
-
-  
-  <a href="#active-accounts" class="attention-pill attention-pill-over">
-    <span class="attention-pill-count">5</span>
-    accounts over groundwater budget
-  </a>
-  
-
-  
-  
-  <a href="#unmet-demand" class="attention-pill attention-pill-over">
-    <span class="attention-pill-count">6</span>
-    fields with water use recorded, no supply reported
-  </a>
-  
-
-  
-</div>
-
-
-
-
-
-<div class="budget-panel">
+<div class="page-grid-dashboard-top">
+<div class="budget-panel budget-panel--centered">
   <div class="budget-panel-head">
-    <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">Supply vs. use
+    <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">District water balance
 <span class="explainer-popout">
   <button type="button" class="explainer-icon" aria-label="Explain: How this balance is built">?</button>
   <span class="explainer-panel" role="tooltip">
@@ -637,77 +669,173 @@
 </span>
     <span class="budget-panel-period">WY 2025-2026</span>
   </div>
-  <div class="budget-panel-row">
-    <div class="budget-seg">
-      <div class="budget-seg-label">Supplies</div>
-      <div class="budget-seg-value text-supply">17,458.35<span class="budget-seg-unit">AF</span></div>
+  <div class="budget-panel-body">
+    <div class="budget-panel-row">
+      <div class="budget-seg">
+        <div class="budget-seg-label">Supplies</div>
+        <div class="budget-seg-value text-supply">17,247.39<span class="budget-seg-unit">AF</span></div>
+        <div class="budget-seg-caption">water on record for the period</div>
+        
+        <div class="budget-breakdown-group">
+          <div class="budget-breakdown-title">Supplies by source</div>
+          <div class="budget-breakdown-row"><span>Surface</span><b>11,115.67</b></div>
+          <div class="budget-breakdown-row"><span>Groundwater</span><b>4,458.45</b></div>
+          <div class="budget-breakdown-row"><span>Rain</span><b>1,673.27</b></div>
+        </div>
+      </div>
+      <div class="budget-op">&minus;</div>
+      <div class="budget-seg">
+        <div class="budget-seg-label">Consumptive use</div>
+        
+        
+        <div class="budget-seg-value text-usage">16,209.28<span class="budget-seg-unit">AF</span></div>
+        
+        <div class="budget-seg-caption">estimated from satellite ET</div>
+        
+        <div class="budget-breakdown-group">
+          <div class="budget-breakdown-title">Estimate coverage</div>
+          <div class="budget-breakdown-row"><span>Accounts with estimates</span><b>11 of 11</b></div>
+          <div class="budget-breakdown-row"><span>Calculation runs</span><b>912</b></div>
+        </div>
+      </div>
+      <div class="budget-op">&equals;</div>
+      <div class="budget-seg budget-seg--result">
+        <div class="budget-seg-label">Balance</div>
+        
+        <div class="budget-seg-value text-surplus">1,038.11<span class="budget-seg-unit">AF</span></div>
+        
+        <div class="budget-seg-caption">supplies minus consumptive use</div>
+        
+        
+        <div class="budget-breakdown-group">
+          <div class="budget-breakdown-title">Balance by account</div>
+          <div class="budget-breakdown-row"><span>In surplus</span><b>9</b></div>
+          <div class="budget-breakdown-row"><span>In deficit</span><b>2</b></div>
+        </div>
+        
+      </div>
     </div>
-    <div class="budget-op">&minus;</div>
-    <div class="budget-seg">
-      <div class="budget-seg-label">Consumptive use</div>
-      
-      
-      <div class="budget-seg-value text-usage">16,209.28<span class="budget-seg-unit">AF</span></div>
-      
-    </div>
-    <div class="budget-op">&equals;</div>
-    <div class="budget-seg">
-      <div class="budget-seg-label">Balance</div>
-      
-      <div class="budget-seg-value text-surplus">1,249.07<span class="budget-seg-unit">AF</span></div>
-      
-    </div>
-  </div>
-  <div class="budget-panel-foot">
-    <span>Surface <b>11,407.71</b></span>
-    <span>Groundwater <b>4,377.38</b></span>
-    <span>Rain <b>1,673.27</b></span>
-  </div>
-</div>
-
-<!-- Consumptive-use model explainer -->
-<div class="card-raised card-inset">
-  <p class="text-tertiary text-sm m-0">
-    <strong class="text-secondary">How this summary works:</strong>
-    <span class="text-supply">Consumptive use</span>, estimated here from satellite evapotranspiration (ET), is the demand. It is met by three supplies: surface-water deliveries, groundwater pumping, and effective rainfall. Each area's consumptive use is shown below beside the supplies that met it; the balance is the supplies minus consumptive use.
-  </p>
-</div>
-
-
-
-
-
-<h2 class="content-section-label" id="active-accounts">Account details</h2>
-<div class="card-raised">
-  <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-    <h2 class="section-header-flush">Active water accounts</h2>
-    <span class="text-tertiary text-xs">Active accounts only — each groups parcels under one water user; zone totals below cover all parcels</span>
   </div>
   
-  <div class="table-scroll">
-  <table class="data-table">
-    <thead>
-      <tr>
-        <th style="min-width: 200px;">Account</th>
-        <th class="th-right">Consumptive Use (AF)</th>
-        <th class="th-right">Surface (AF)</th>
-        <th class="th-right">Groundwater (AF)</th>
-        <th class="th-right">Precip (AF)</th>
-        <th class="th-right">Supplies (AF)</th>
-        <th class="th-right">Net (AF)
+  <div class="budget-panel-note">Totals across the 11 active water accounts below.</div>
+  
+</div>
+
+<div class="card-raised period-card">
+  <div class="row-between period-card-head">
+    <h2 class="section-header-flush">This period</h2>
+    <select name="period"
+            hx-get="/accounting/dashboard/"
+            hx-target="#dashboard-content"
+            hx-trigger="change"
+            class="form-select form-select--compact">
+      
+      <option value="2" selected>WY 2025-2026</option>
+      
+      <option value="1" >WY 2024-2025</option>
+      
+    </select>
+  </div>
+  <div class="text-secondary text-sm">Oct 1, 2025 to Sep 30, 2026 &middot; <span class="text-primary">Open</span></div>
+
+  
+
+
+<div class="period-card-label">Needs attention</div>
+<div class="attention-list">
+
+  
+
+  
+  <a href="/datasync/stations/" class="attention-row">
+    <span class="attention-count attention-count--down">25</span>
+    <span class="attention-row-text">stations down</span>
+  </a>
+  
+
+  
+  <a href="#active-accounts" class="attention-row">
+    <span class="attention-count attention-count--over">6</span>
+    <span class="attention-row-text">accounts over groundwater budget</span>
+  </a>
+  
+
+  
+  
+  <a href="#unmet-demand" class="attention-row">
+    <span class="attention-count attention-count--over">46</span>
+    <span class="attention-row-text">fields with water use recorded, no supply reported</span>
+  </a>
+  
+
+</div>
+
+
+
+
+  <div class="period-card-label">Latest data</div>
+  <div class="period-card-facts">
+    <span>Last ledger entry</span><b>Sep 24, 2026</b>
+    <span>Last calculation run</span><b>Sep 24, 2026</b>
+    <span>Stations reporting</span><b>17 of 42</b>
+  </div>
+
+  
+  <div class="period-card-actions">
+    <a href="/accounting/ledger/create/" class="btn-secondary btn-sm">Add ledger entry</a>
+    <a href="/accounting/ledger/upload/" class="btn-secondary btn-sm">Upload CSV</a>
+  </div>
+  
+</div>
+
+</div>
+
+
+
+
+
+
+
+<div class="card-raised" id="active-accounts">
+  <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+    <h2 class="section-header-flush">Active water accounts</h2>
+    <span class="text-tertiary text-xs">One row per active water account, WY 2025-2026. All figures in acre-feet (AF).</span>
+  </div>
+  
+
+
+
+<div class="table-scroll">
+<table class="data-table data-table--grouped">
+  <thead>
+    <tr class="th-group">
+      <th rowspan="2" style="min-width: 170px;">Account</th>
+      <th colspan="4" class="th-group-label">Supplies</th>
+      <th rowspan="2" class="th-right"><span class="th-stack">Consumptive use</span></th>
+      <th rowspan="2" class="th-right">Balance
 <span class="explainer-popout">
-  <button type="button" class="explainer-icon" aria-label="Explain: Net">?</button>
+  <button type="button" class="explainer-icon" aria-label="Explain: Balance">?</button>
   <span class="explainer-panel" role="tooltip">
-    <span class="explainer-title">Net</span>
-    <span class="explainer-text">Supplies minus estimated consumptive use for this account — the balance left after the water its crops drank is subtracted from the surface, groundwater, and rainfall that met that demand.</span>
+    <span class="explainer-title">Balance</span>
+    <span class="explainer-text">Total supplies minus consumptive use, for this account and period. Positive means the supplies on record exceeded the estimated use.</span>
     
     <a href="/help/water-balances/" class="explainer-link">How water balances work &rarr;</a>
     
   </span>
 </span>
 </th>
-        
-        <th class="th-right">GW allocation (AF)
+      
+      
+      <th colspan="2" class="th-group-label col-sep">Groundwater budget, spent by extraction</th>
+      
+    </tr>
+    <tr>
+      <th class="th-right">Surface</th>
+      <th class="th-right">Groundwater</th>
+      <th class="th-right">Rain</th>
+      <th class="th-right">Total</th>
+      
+      <th class="th-right col-sep">Allocation
 <span class="explainer-popout">
   <button type="button" class="explainer-icon" aria-label="Explain: GW allocation">?</button>
   <span class="explainer-panel" role="tooltip">
@@ -719,7 +847,7 @@
   </span>
 </span>
 </th>
-        <th class="th-right">GW remaining (AF)
+      <th class="th-right">Remaining
 <span class="explainer-popout">
   <button type="button" class="explainer-icon" aria-label="Explain: GW remaining">?</button>
   <span class="explainer-panel" role="tooltip">
@@ -731,468 +859,496 @@
   </span>
 </span>
 </th>
-        
-      </tr>
-    </thead>
-    <tbody>
       
-      <tr>
-        <td>
-          <a href="/accounting/accounts/12/" class="data-table-link">
-            MER-ACCT-001
-          </a>
-          
-          <span class="block text-secondary text-sm">Ashvale Orchards Inc.</span>
-          
-        </td>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr>
+      <td>
+        <a href="/accounting/accounts/12/" class="data-table-link">
+          MER-ACCT-001
+        </a>
         
-        <td class="td-num text-usage">
-          4,589.61
-        </td>
-        <td class="td-num text-supply">
-          5,500.97
-        </td>
-        <td class="td-num text-supply">
-          0.00
-        </td>
-        <td class="td-num text-supply">
-          420.12
-        </td>
-        <td class="td-num-bold text-supply">
-          5,921.09
-        </td>
-        <td class="td-num-bold text-surplus">
-          1,331.48
-        </td>
+        <span class="block text-secondary text-sm">Ashvale Orchards Inc.</span>
         
-        <td class="td-num">
-          957.22
-        </td>
-        <td class="td-num-bold text-surplus">
-          957.22
-        </td>
-        
-      </tr>
+      </td>
       
-      <tr>
-        <td>
-          <a href="/accounting/accounts/13/" class="data-table-link">
-            MER-ACCT-002
-          </a>
-          
-          <span class="block text-secondary text-sm">Brayfield Family Ranch</span>
-          
-        </td>
-        
-        <td class="td-num text-usage">
-          520.07
-        </td>
-        <td class="td-num text-supply">
-          0.00
-        </td>
-        <td class="td-num text-supply">
-          474.91
-        </td>
-        <td class="td-num text-supply">
-          45.16
-        </td>
-        <td class="td-num-bold text-supply">
-          520.07
-        </td>
-        <td class="td-num-bold text-surplus">
-          0.00
-        </td>
-        
-        <td class="td-num">
-          154.79
-        </td>
-        <td class="td-num-bold text-deficit">
-          -320.12
-        </td>
-        
-      </tr>
+      <td class="td-num text-supply">
+        5,500.97
+      </td>
+      <td class="td-num text-supply">
+        5.69
+      </td>
+      <td class="td-num text-supply">
+        420.12
+      </td>
+      <td class="td-num-bold text-supply">
+        5,926.78
+      </td>
+      <td class="td-num text-usage">
+        4,589.61
+      </td>
+      <td class="td-num-bold text-surplus">
+        1,337.17
+      </td>
       
-      <tr>
-        <td>
-          <a href="/accounting/accounts/14/" class="data-table-link">
-            MER-ACCT-003
-          </a>
-          
-          <span class="block text-secondary text-sm">Dunmoor Bottoms Farming</span>
-          
-        </td>
-        
-        <td class="td-num text-usage">
-          1,868.68
-        </td>
-        <td class="td-num text-supply">
-          1,886.71
-        </td>
-        <td class="td-num text-supply">
-          0.00
-        </td>
-        <td class="td-num text-supply">
-          285.43
-        </td>
-        <td class="td-num-bold text-supply">
-          2,172.14
-        </td>
-        <td class="td-num-bold text-surplus">
-          303.46
-        </td>
-        
-        <td class="td-num">
-          610.85
-        </td>
-        <td class="td-num-bold text-surplus">
-          610.85
-        </td>
-        
-      </tr>
+      <td class="td-num col-sep">
+        957.22
+      </td>
+      <td class="td-num-bold text-surplus">
+        950.11
+      </td>
       
-      <tr>
-        <td>
-          <a href="/accounting/accounts/15/" class="data-table-link">
-            MER-ACCT-004
-          </a>
-          
-          <span class="block text-secondary text-sm">Dunmoor Ranch Co.</span>
-          
-        </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/accounting/accounts/13/" class="data-table-link">
+          MER-ACCT-002
+        </a>
         
-        <td class="td-num text-usage">
-          611.62
-        </td>
-        <td class="td-num text-supply">
-          0.00
-        </td>
-        <td class="td-num text-supply">
-          663.14
-        </td>
-        <td class="td-num text-supply">
-          60.64
-        </td>
-        <td class="td-num-bold text-supply">
-          723.78
-        </td>
-        <td class="td-num-bold text-surplus">
-          112.16
-        </td>
+        <span class="block text-secondary text-sm">Brayfield Family Ranch</span>
         
-        <td class="td-num">
-          154.79
-        </td>
-        <td class="td-num-bold text-deficit">
-          -508.35
-        </td>
-        
-      </tr>
+      </td>
       
-      <tr>
-        <td>
-          <a href="/accounting/accounts/16/" class="data-table-link">
-            MER-ACCT-005
-          </a>
-          
-          <span class="block text-secondary text-sm">Halvern Valley Farms LLC</span>
-          
-        </td>
-        
-        <td class="td-num text-usage">
-          932.16
-        </td>
-        <td class="td-num text-supply">
-          0.00
-        </td>
-        <td class="td-num text-supply">
-          1,190.04
-        </td>
-        <td class="td-num text-supply">
-          80.90
-        </td>
-        <td class="td-num-bold text-supply">
-          1,270.95
-        </td>
-        <td class="td-num-bold text-surplus">
-          338.79
-        </td>
-        
-        <td class="td-num">
-          187.42
-        </td>
-        <td class="td-num-bold text-deficit">
-          -1,002.63
-        </td>
-        
-      </tr>
+      <td class="td-num text-supply">
+        0.00
+      </td>
+      <td class="td-num text-supply">
+        474.91
+      </td>
+      <td class="td-num text-supply">
+        45.16
+      </td>
+      <td class="td-num-bold text-supply">
+        520.07
+      </td>
+      <td class="td-num text-usage">
+        520.07
+      </td>
+      <td class="td-num-bold text-surplus">
+        0.00
+      </td>
       
-      <tr>
-        <td>
-          <a href="/accounting/accounts/17/" class="data-table-link">
-            MER-ACCT-006
-          </a>
-          
-          <span class="block text-secondary text-sm">Muddy Bar Growers</span>
-          
-        </td>
-        
-        <td class="td-num text-usage">
-          436.47
-        </td>
-        <td class="td-num text-supply">
-          0.00
-        </td>
-        <td class="td-num text-supply">
-          399.36
-        </td>
-        <td class="td-num text-supply">
-          37.12
-        </td>
-        <td class="td-num-bold text-supply">
-          436.47
-        </td>
-        <td class="td-num-bold text-deficit">
-          0.00
-        </td>
-        
-        <td class="td-num">
-          454.72
-        </td>
-        <td class="td-num-bold text-surplus">
-          55.37
-        </td>
-        
-      </tr>
+      <td class="td-num col-sep">
+        154.79
+      </td>
+      <td class="td-num-bold text-deficit">
+        -438.84
+      </td>
       
-      <tr>
-        <td>
-          <a href="/accounting/accounts/18/" class="data-table-link">
-            MER-ACCT-007
-          </a>
-          
-          <span class="block text-secondary text-sm">Saddlebow Ag Holdings</span>
-          
-        </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/accounting/accounts/14/" class="data-table-link">
+          MER-ACCT-003
+        </a>
         
-        <td class="td-num text-usage">
-          3,096.66
-        </td>
-        <td class="td-num text-supply">
-          0.00
-        </td>
-        <td class="td-num text-supply">
-          951.97
-        </td>
-        <td class="td-num text-supply">
-          344.85
-        </td>
-        <td class="td-num-bold text-supply">
-          1,296.82
-        </td>
-        <td class="td-num-bold text-deficit">
-          -1,799.84
-        </td>
+        <span class="block text-secondary text-sm">Dunmoor Bottoms Farming</span>
         
-        <td class="td-num">
-          549.77
-        </td>
-        <td class="td-num-bold text-deficit">
-          -402.20
-        </td>
-        
-      </tr>
+      </td>
       
-      <tr>
-        <td>
-          <a href="/accounting/accounts/19/" class="data-table-link">
-            MER-ACCT-008
-          </a>
-          
-          <span class="block text-secondary text-sm">Tulepine Bottomlands Ranch</span>
-          
-        </td>
-        
-        <td class="td-num text-usage">
-          1,003.78
-        </td>
-        <td class="td-num text-supply">
-          1,074.37
-        </td>
-        <td class="td-num text-supply">
-          0.00
-        </td>
-        <td class="td-num text-supply">
-          79.71
-        </td>
-        <td class="td-num-bold text-supply">
-          1,154.08
-        </td>
-        <td class="td-num-bold text-surplus">
-          150.29
-        </td>
-        
-        <td class="td-num">
-          354.69
-        </td>
-        <td class="td-num-bold text-surplus">
-          354.69
-        </td>
-        
-      </tr>
+      <td class="td-num text-supply">
+        1,886.71
+      </td>
+      <td class="td-num text-supply">
+        75.39
+      </td>
+      <td class="td-num text-supply">
+        285.43
+      </td>
+      <td class="td-num-bold text-supply">
+        2,247.53
+      </td>
+      <td class="td-num text-usage">
+        1,868.68
+      </td>
+      <td class="td-num-bold text-surplus">
+        378.85
+      </td>
       
-      <tr>
-        <td>
-          <a href="/accounting/accounts/20/" class="data-table-link">
-            MER-ACCT-009
-          </a>
-          
-          <span class="block text-secondary text-sm">Tulepine Ranch Partners</span>
-          
-        </td>
-        
-        <td class="td-num text-usage">
-          105.21
-        </td>
-        <td class="td-num text-supply">
-          107.11
-        </td>
-        <td class="td-num text-supply">
-          0.00
-        </td>
-        <td class="td-num text-supply">
-          14.89
-        </td>
-        <td class="td-num-bold text-supply">
-          122.00
-        </td>
-        <td class="td-num-bold text-surplus">
-          16.80
-        </td>
-        
-        <td class="td-num">
-          163.11
-        </td>
-        <td class="td-num-bold text-surplus">
-          163.11
-        </td>
-        
-      </tr>
+      <td class="td-num col-sep">
+        610.85
+      </td>
+      <td class="td-num-bold text-surplus">
+        516.62
+      </td>
       
-      <tr>
-        <td>
-          <a href="/accounting/accounts/21/" class="data-table-link">
-            MER-ACCT-010
-          </a>
-          
-          <span class="block text-secondary text-sm">Verdano Island Farms LLC</span>
-          
-        </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/accounting/accounts/15/" class="data-table-link">
+          MER-ACCT-004
+        </a>
         
-        <td class="td-num text-usage">
-          573.60
-        </td>
-        <td class="td-num text-supply">
-          0.00
-        </td>
-        <td class="td-num text-supply">
-          693.37
-        </td>
-        <td class="td-num text-supply">
-          48.51
-        </td>
-        <td class="td-num-bold text-supply">
-          741.88
-        </td>
-        <td class="td-num-bold text-surplus">
-          168.27
-        </td>
+        <span class="block text-secondary text-sm">Dunmoor Ranch Co.</span>
         
-        <td class="td-num">
-          606.30
-        </td>
-        <td class="td-num-bold text-deficit">
-          -87.07
-        </td>
-        
-      </tr>
+      </td>
       
-      <tr>
-        <td>
-          <a href="/accounting/accounts/22/" class="data-table-link">
-            MER-ACCT-011
-          </a>
-          
-          <span class="block text-secondary text-sm">Wrenfield Land &amp; Cattle</span>
-          
-        </td>
-        
-        <td class="td-num text-usage">
-          2,471.40
-        </td>
-        <td class="td-num text-supply">
-          2,838.55
-        </td>
-        <td class="td-num text-supply">
-          4.58
-        </td>
-        <td class="td-num text-supply">
-          255.94
-        </td>
-        <td class="td-num-bold text-supply">
-          3,099.07
-        </td>
-        <td class="td-num-bold text-surplus">
-          627.67
-        </td>
-        
-        <td class="td-num">
-          427.60
-        </td>
-        <td class="td-num-bold text-surplus">
-          423.02
-        </td>
-        
-      </tr>
+      <td class="td-num text-supply">
+        0.00
+      </td>
+      <td class="td-num text-supply">
+        663.14
+      </td>
+      <td class="td-num text-supply">
+        60.64
+      </td>
+      <td class="td-num-bold text-supply">
+        723.78
+      </td>
+      <td class="td-num text-usage">
+        611.62
+      </td>
+      <td class="td-num-bold text-surplus">
+        112.16
+      </td>
       
-    </tbody>
-  </table>
-  </div>
+      <td class="td-num col-sep">
+        154.79
+      </td>
+      <td class="td-num-bold text-deficit">
+        -569.09
+      </td>
+      
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/accounting/accounts/16/" class="data-table-link">
+          MER-ACCT-005
+        </a>
+        
+        <span class="block text-secondary text-sm">Halvern Valley Farms LLC</span>
+        
+      </td>
+      
+      <td class="td-num text-supply">
+        0.00
+      </td>
+      <td class="td-num text-supply">
+        1,190.04
+      </td>
+      <td class="td-num text-supply">
+        80.90
+      </td>
+      <td class="td-num-bold text-supply">
+        1,270.95
+      </td>
+      <td class="td-num text-usage">
+        932.16
+      </td>
+      <td class="td-num-bold text-surplus">
+        338.79
+      </td>
+      
+      <td class="td-num col-sep">
+        187.42
+      </td>
+      <td class="td-num-bold text-deficit">
+        -1,009.35
+      </td>
+      
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/accounting/accounts/17/" class="data-table-link">
+          MER-ACCT-006
+        </a>
+        
+        <span class="block text-secondary text-sm">Muddy Bar Growers</span>
+        
+      </td>
+      
+      <td class="td-num text-supply">
+        0.00
+      </td>
+      <td class="td-num text-supply">
+        399.36
+      </td>
+      <td class="td-num text-supply">
+        37.12
+      </td>
+      <td class="td-num-bold text-supply">
+        436.47
+      </td>
+      <td class="td-num text-usage">
+        436.47
+      </td>
+      <td class="td-num-bold text-deficit">
+        0.00
+      </td>
+      
+      <td class="td-num col-sep">
+        454.72
+      </td>
+      <td class="td-num-bold text-deficit">
+        -44.47
+      </td>
+      
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/accounting/accounts/18/" class="data-table-link">
+          MER-ACCT-007
+        </a>
+        
+        <span class="block text-secondary text-sm">Saddlebow Ag Holdings</span>
+        
+      </td>
+      
+      <td class="td-num text-supply">
+        0.00
+      </td>
+      <td class="td-num text-supply">
+        951.97
+      </td>
+      <td class="td-num text-supply">
+        344.85
+      </td>
+      <td class="td-num-bold text-supply">
+        1,296.82
+      </td>
+      <td class="td-num text-usage">
+        3,096.66
+      </td>
+      <td class="td-num-bold text-deficit">
+        -1,799.84
+      </td>
+      
+      <td class="td-num col-sep">
+        549.77
+      </td>
+      <td class="td-num-bold text-deficit">
+        -451.06
+      </td>
+      
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/accounting/accounts/19/" class="data-table-link">
+          MER-ACCT-008
+        </a>
+        
+        <span class="block text-secondary text-sm">Tulepine Bottomlands Ranch</span>
+        
+      </td>
+      
+      <td class="td-num text-supply">
+        1,074.37
+      </td>
+      <td class="td-num text-supply">
+        0.00
+      </td>
+      <td class="td-num text-supply">
+        79.71
+      </td>
+      <td class="td-num-bold text-supply">
+        1,154.08
+      </td>
+      <td class="td-num text-usage">
+        1,003.78
+      </td>
+      <td class="td-num-bold text-surplus">
+        150.29
+      </td>
+      
+      <td class="td-num col-sep">
+        354.69
+      </td>
+      <td class="td-num-bold text-surplus">
+        354.69
+      </td>
+      
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/accounting/accounts/20/" class="data-table-link">
+          MER-ACCT-009
+        </a>
+        
+        <span class="block text-secondary text-sm">Tulepine Ranch Partners</span>
+        
+      </td>
+      
+      <td class="td-num text-supply">
+        107.11
+      </td>
+      <td class="td-num text-supply">
+        0.00
+      </td>
+      <td class="td-num text-supply">
+        14.89
+      </td>
+      <td class="td-num-bold text-supply">
+        122.00
+      </td>
+      <td class="td-num text-usage">
+        105.21
+      </td>
+      <td class="td-num-bold text-surplus">
+        16.80
+      </td>
+      
+      <td class="td-num col-sep">
+        163.11
+      </td>
+      <td class="td-num-bold text-surplus">
+        163.11
+      </td>
+      
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/accounting/accounts/21/" class="data-table-link">
+          MER-ACCT-010
+        </a>
+        
+        <span class="block text-secondary text-sm">Verdano Island Farms LLC</span>
+        
+      </td>
+      
+      <td class="td-num text-supply">
+        0.00
+      </td>
+      <td class="td-num text-supply">
+        693.37
+      </td>
+      <td class="td-num text-supply">
+        48.51
+      </td>
+      <td class="td-num-bold text-supply">
+        741.88
+      </td>
+      <td class="td-num text-usage">
+        573.60
+      </td>
+      <td class="td-num-bold text-surplus">
+        168.27
+      </td>
+      
+      <td class="td-num col-sep">
+        606.30
+      </td>
+      <td class="td-num-bold text-deficit">
+        -87.07
+      </td>
+      
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/accounting/accounts/22/" class="data-table-link">
+          MER-ACCT-011
+        </a>
+        
+        <span class="block text-secondary text-sm">Wrenfield Land &amp; Cattle</span>
+        
+      </td>
+      
+      <td class="td-num text-supply">
+        2,546.51
+      </td>
+      <td class="td-num text-supply">
+        4.58
+      </td>
+      <td class="td-num text-supply">
+        255.94
+      </td>
+      <td class="td-num-bold text-supply">
+        2,807.03
+      </td>
+      <td class="td-num text-usage">
+        2,471.40
+      </td>
+      <td class="td-num-bold text-surplus">
+        335.62
+      </td>
+      
+      <td class="td-num col-sep">
+        427.60
+      </td>
+      <td class="td-num-bold text-surplus">
+        423.02
+      </td>
+      
+    </tr>
+    
+  </tbody>
   
+  <tfoot>
+    <tr>
+      <td class="tfoot-total">All 11 active accounts</td>
+      <td class="td-num text-supply">11,115.67</td>
+      <td class="td-num text-supply">4,458.45</td>
+      <td class="td-num text-supply">1,673.27</td>
+      <td class="td-num-bold text-supply">17,247.39</td>
+      <td class="td-num text-usage">16,209.28</td>
+      <td class="td-num-bold text-surplus">1,038.11</td>
+      
+      <td class="col-sep"></td>
+      <td></td>
+      
+    </tr>
+  </tfoot>
+</table>
 </div>
 
-<h2 class="content-section-label">Zone details</h2>
+
+</div>
+
 <div class="card-raised">
   <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
     <h2 class="section-header-flush">Zones</h2>
-    <span class="text-tertiary text-xs">Geographic management areas with allocations</span>
+    <span class="text-tertiary text-xs">One row per zone, WY 2025-2026. A parcel can lie in more than one zone, so rows are not added. All figures in acre-feet (AF).</span>
   </div>
   
   <div class="table-scroll">
-  <table class="data-table">
+  <table class="data-table data-table--grouped">
     <thead>
-      <tr>
-        <th style="min-width: 240px;">Zone</th>
-        <th class="th-right">Consumptive Use (AF)</th>
-        <th class="th-right">Surface (AF)</th>
-        <th class="th-right">Groundwater (AF)</th>
-        <th class="th-right">Precip (AF)</th>
-        <th class="th-right">Supplies (AF)</th>
-        <th class="th-right">Net (AF)</th>
+      <tr class="th-group">
+        <th rowspan="2" style="min-width: 190px;">Zone</th>
+        <th colspan="4" class="th-group-label">Supplies</th>
+        <th rowspan="2" class="th-right"><span class="th-stack">Consumptive use</span></th>
+        <th rowspan="2" class="th-right">Balance</th>
         
-        <th class="th-right">GW allocation (AF)</th>
-        <th class="th-right">Carried fwd (AF)</th>
-        <th class="th-right">GW remaining (AF)</th>
+        
+        <th colspan="3" class="th-group-label col-sep">Groundwater budget, spent by extraction</th>
+        
+      </tr>
+      <tr>
+        <th class="th-right">Surface</th>
+        <th class="th-right">Groundwater</th>
+        <th class="th-right">Rain</th>
+        <th class="th-right">Total</th>
+        
+        <th class="th-right col-sep">Allocation</th>
+        <th class="th-right"><span class="th-stack">Carried fwd</span></th>
+        <th class="th-right">Remaining</th>
         
       </tr>
     </thead>
     <tbody>
       
+      
+      
+      
+      <tr class="row-group">
+        <td colspan="10">Zones with a groundwater budget for WY 2025-2026</td>
+      </tr>
+      
+      
       <tr>
-        <td class="font-semibold">Halvern Irrigation-Urban GSA</td>
+        <td><a href="/map/zones/2/" class="data-table-link">Halvern Irrigation-Urban GSA</a></td>
         
-        <td class="td-num text-usage">
-          1,189.75
-        </td>
         <td class="td-num text-supply">
           1,170.93
         </td>
@@ -1205,232 +1361,70 @@
         <td class="td-num-bold text-supply">
           1,423.63
         </td>
+        <td class="td-num text-usage">
+          1,189.75
+        </td>
         <td class="td-num-bold text-surplus">
           233.88
         </td>
         
-        <td class="td-num">
+        <td class="td-num col-sep">
           750.32
         </td>
         <td class="td-num text-surplus">
-          +303.40
+          +79.80
         </td>
         <td class="td-num-bold text-surplus">
-          911.58
+          676.93
         </td>
         
       </tr>
       
+      
+      
+      
+      
       <tr>
-        <td class="font-semibold">Halvern Valley GSA</td>
+        <td><a href="/map/zones/1/" class="data-table-link">Halvern Valley GSA</a></td>
         
-        <td class="td-num text-usage">
-          14,009.45
+        <td class="td-num text-supply">
+          9,944.74
         </td>
         <td class="td-num text-supply">
-          10,236.78
-        </td>
-        <td class="td-num text-supply">
-          3,142.51
+          3,223.58
         </td>
         <td class="td-num text-supply">
           1,477.08
         </td>
         <td class="td-num-bold text-supply">
-          14,856.37
+          14,645.40
+        </td>
+        <td class="td-num text-usage">
+          14,009.45
         </td>
         <td class="td-num-bold text-surplus">
-          846.91
+          635.95
         </td>
         
-        <td class="td-num">
+        <td class="td-num col-sep">
           2,809.93
         </td>
         <td class="td-num text-surplus">
-          +3,336.08
+          +1,595.70
         </td>
         <td class="td-num-bold text-surplus">
-          3,003.50
+          937.78
         </td>
         
       </tr>
       
-      <tr>
-        <td class="font-semibold">MER Surface Service Area — Ashvale-Dunmoor Water District (MER-WR-005-DEMO)</td>
-        
-        <td class="td-num text-usage">
-          4,589.61
-        </td>
-        <td class="td-num text-supply">
-          5,500.97
-        </td>
-        <td class="td-num text-supply">
-          0.00
-        </td>
-        <td class="td-num text-supply">
-          420.12
-        </td>
-        <td class="td-num-bold text-supply">
-          5,921.09
-        </td>
-        <td class="td-num-bold text-surplus">
-          1,331.48
-        </td>
-        
-        <td class="td-num">
-          &mdash;
-        </td>
-        <td class="td-num text-tertiary">
-          &mdash;
-        </td>
-        <td class="td-num-bold text-tertiary">
-          &mdash;
-        </td>
-        
-      </tr>
+      
+      
+      
       
       <tr>
-        <td class="font-semibold">MER Surface Service Area — Halvern Irrigation District (MER-WR-004-DEMO)</td>
+        <td><a href="/map/zones/3/" class="data-table-link">Verdano Island Water District GSA</a></td>
         
-        <td class="td-num text-usage">
-          1,973.89
-        </td>
-        <td class="td-num text-supply">
-          1,993.82
-        </td>
-        <td class="td-num text-supply">
-          0.00
-        </td>
-        <td class="td-num text-supply">
-          300.32
-        </td>
-        <td class="td-num-bold text-supply">
-          2,294.14
-        </td>
-        <td class="td-num-bold text-surplus">
-          320.26
-        </td>
-        
-        <td class="td-num">
-          &mdash;
-        </td>
-        <td class="td-num text-tertiary">
-          &mdash;
-        </td>
-        <td class="td-num-bold text-tertiary">
-          &mdash;
-        </td>
-        
-      </tr>
-      
-      <tr>
-        <td class="font-semibold">MER Surface Service Area — Saddlebow Irrigation District (MER-WR-009-DEMO)</td>
-        
-        <td class="td-num text-usage">
-          3,096.66
-        </td>
-        <td class="td-num text-supply">
-          0.00
-        </td>
-        <td class="td-num text-supply">
-          951.97
-        </td>
-        <td class="td-num text-supply">
-          344.85
-        </td>
-        <td class="td-num-bold text-supply">
-          1,296.82
-        </td>
-        <td class="td-num-bold text-deficit">
-          -1,799.84
-        </td>
-        
-        <td class="td-num">
-          &mdash;
-        </td>
-        <td class="td-num text-tertiary">
-          &mdash;
-        </td>
-        <td class="td-num-bold text-tertiary">
-          &mdash;
-        </td>
-        
-      </tr>
-      
-      <tr>
-        <td class="font-semibold">MER Surface Service Area — Tulepine Bottomlands Ranch (MER-WR-008-DEMO)</td>
-        
-        <td class="td-num text-usage">
-          1,003.78
-        </td>
-        <td class="td-num text-supply">
-          1,074.37
-        </td>
-        <td class="td-num text-supply">
-          0.00
-        </td>
-        <td class="td-num text-supply">
-          79.71
-        </td>
-        <td class="td-num-bold text-supply">
-          1,154.08
-        </td>
-        <td class="td-num-bold text-surplus">
-          150.29
-        </td>
-        
-        <td class="td-num">
-          &mdash;
-        </td>
-        <td class="td-num text-tertiary">
-          &mdash;
-        </td>
-        <td class="td-num-bold text-tertiary">
-          &mdash;
-        </td>
-        
-      </tr>
-      
-      <tr>
-        <td class="font-semibold">MER Surface Service Area — Wrenfield Water District (MER-WR-006-DEMO)</td>
-        
-        <td class="td-num text-usage">
-          2,471.40
-        </td>
-        <td class="td-num text-supply">
-          2,838.55
-        </td>
-        <td class="td-num text-supply">
-          4.58
-        </td>
-        <td class="td-num text-supply">
-          255.94
-        </td>
-        <td class="td-num-bold text-supply">
-          3,099.07
-        </td>
-        <td class="td-num-bold text-surplus">
-          627.67
-        </td>
-        
-        <td class="td-num">
-          &mdash;
-        </td>
-        <td class="td-num text-tertiary">
-          &mdash;
-        </td>
-        <td class="td-num-bold text-tertiary">
-          &mdash;
-        </td>
-        
-      </tr>
-      
-      <tr>
-        <td class="font-semibold">Verdano Island Water District GSA</td>
-        
-        <td class="td-num text-usage">
-          1,010.08
-        </td>
         <td class="td-num text-supply">
           0.00
         </td>
@@ -1443,18 +1437,215 @@
         <td class="td-num-bold text-supply">
           1,178.35
         </td>
+        <td class="td-num text-usage">
+          1,010.08
+        </td>
         <td class="td-num-bold text-surplus">
           168.27
         </td>
         
-        <td class="td-num">
+        <td class="td-num col-sep">
           1,061.02
         </td>
         <td class="td-num text-tertiary">
           0.00
         </td>
         <td class="td-num-bold text-deficit">
-          -31.71
+          -131.55
+        </td>
+        
+      </tr>
+      
+      
+      
+      
+      <tr class="row-group">
+        <td colspan="10">Zones with no groundwater budget for WY 2025-2026: allocation, carry-over and remaining are not applicable</td>
+      </tr>
+      
+      
+      <tr>
+        <td><a href="/map/zones/10/" class="data-table-link">MER Surface Service Area — Ashvale-Dunmoor Water District (MER-WR-005-DEMO)</a></td>
+        
+        <td class="td-num text-supply">
+          5,500.97
+        </td>
+        <td class="td-num text-supply">
+          5.69
+        </td>
+        <td class="td-num text-supply">
+          420.12
+        </td>
+        <td class="td-num-bold text-supply">
+          5,926.78
+        </td>
+        <td class="td-num text-usage">
+          4,589.61
+        </td>
+        <td class="td-num-bold text-surplus">
+          1,337.17
+        </td>
+        
+        <td class="td-num col-sep">
+          &mdash;
+        </td>
+        <td class="td-num text-tertiary">
+          &mdash;
+        </td>
+        <td class="td-num-bold text-tertiary">
+          &mdash;
+        </td>
+        
+      </tr>
+      
+      
+      
+      
+      
+      <tr>
+        <td><a href="/map/zones/9/" class="data-table-link">MER Surface Service Area — Halvern Irrigation District (MER-WR-004-DEMO)</a></td>
+        
+        <td class="td-num text-supply">
+          1,993.82
+        </td>
+        <td class="td-num text-supply">
+          75.39
+        </td>
+        <td class="td-num text-supply">
+          300.32
+        </td>
+        <td class="td-num-bold text-supply">
+          2,369.53
+        </td>
+        <td class="td-num text-usage">
+          1,973.89
+        </td>
+        <td class="td-num-bold text-surplus">
+          395.64
+        </td>
+        
+        <td class="td-num col-sep">
+          &mdash;
+        </td>
+        <td class="td-num text-tertiary">
+          &mdash;
+        </td>
+        <td class="td-num-bold text-tertiary">
+          &mdash;
+        </td>
+        
+      </tr>
+      
+      
+      
+      
+      
+      <tr>
+        <td><a href="/map/zones/13/" class="data-table-link">MER Surface Service Area — Saddlebow Irrigation District (MER-WR-009-DEMO)</a></td>
+        
+        <td class="td-num text-supply">
+          0.00
+        </td>
+        <td class="td-num text-supply">
+          951.97
+        </td>
+        <td class="td-num text-supply">
+          344.85
+        </td>
+        <td class="td-num-bold text-supply">
+          1,296.82
+        </td>
+        <td class="td-num text-usage">
+          3,096.66
+        </td>
+        <td class="td-num-bold text-deficit">
+          -1,799.84
+        </td>
+        
+        <td class="td-num col-sep">
+          &mdash;
+        </td>
+        <td class="td-num text-tertiary">
+          &mdash;
+        </td>
+        <td class="td-num-bold text-tertiary">
+          &mdash;
+        </td>
+        
+      </tr>
+      
+      
+      
+      
+      
+      <tr>
+        <td><a href="/map/zones/12/" class="data-table-link">MER Surface Service Area — Tulepine Bottomlands Ranch (MER-WR-008-DEMO)</a></td>
+        
+        <td class="td-num text-supply">
+          1,074.37
+        </td>
+        <td class="td-num text-supply">
+          0.00
+        </td>
+        <td class="td-num text-supply">
+          79.71
+        </td>
+        <td class="td-num-bold text-supply">
+          1,154.08
+        </td>
+        <td class="td-num text-usage">
+          1,003.78
+        </td>
+        <td class="td-num-bold text-surplus">
+          150.29
+        </td>
+        
+        <td class="td-num col-sep">
+          &mdash;
+        </td>
+        <td class="td-num text-tertiary">
+          &mdash;
+        </td>
+        <td class="td-num-bold text-tertiary">
+          &mdash;
+        </td>
+        
+      </tr>
+      
+      
+      
+      
+      
+      <tr>
+        <td><a href="/map/zones/11/" class="data-table-link">MER Surface Service Area — Wrenfield Water District (MER-WR-006-DEMO)</a></td>
+        
+        <td class="td-num text-supply">
+          2,546.51
+        </td>
+        <td class="td-num text-supply">
+          4.58
+        </td>
+        <td class="td-num text-supply">
+          255.94
+        </td>
+        <td class="td-num-bold text-supply">
+          2,807.03
+        </td>
+        <td class="td-num text-usage">
+          2,471.40
+        </td>
+        <td class="td-num-bold text-surplus">
+          335.62
+        </td>
+        
+        <td class="td-num col-sep">
+          &mdash;
+        </td>
+        <td class="td-num text-tertiary">
+          &mdash;
+        </td>
+        <td class="td-num-bold text-tertiary">
+          &mdash;
         </td>
         
       </tr>
@@ -1469,9 +1660,7 @@
 
 
 
-
-<h2 class="content-section-label" id="unmet-demand">Field details</h2>
-<div class="card-raised">
+<div class="card-raised" id="unmet-demand">
   <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
     <h2 class="section-header-flush">Fields with water use recorded and no supply reported</h2>
     <span class="text-tertiary text-xs">WY 2025-2026
@@ -1485,7 +1674,7 @@
     
   </span>
 </span>
-</span>
+ · All figures in acre-feet (AF).</span>
   </div>
   
   <div class="table-scroll">
@@ -1493,9 +1682,9 @@
     <thead>
       <tr>
         <th style="min-width: 200px;">Field</th>
-        <th class="th-right">Consumptive Use (AF)</th>
+        <th class="th-right">Consumptive use</th>
         
-        <th class="th-right">Water use recorded, no supply reported (AF)</th>
+        <th class="th-right">Not met by supplies</th>
       </tr>
     </thead>
     <tbody>
@@ -1548,12 +1737,332 @@
         <td class="td-num-bold">150.12</td>
       </tr>
       
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/76/?period=2" class="link-accent">MER-APN-076</a>
+        </td>
+        <td class="td-num text-usage">535.79</td>
+        <td class="td-num-bold">63.64</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/75/?period=2" class="link-accent">MER-APN-075</a>
+        </td>
+        <td class="td-num text-usage">322.35</td>
+        <td class="td-num-bold">38.30</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/40/?period=2" class="link-accent">MER-APN-040</a>
+        </td>
+        <td class="td-num text-usage">343.48</td>
+        <td class="td-num-bold">33.82</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/49/?period=2" class="link-accent">MER-APN-049</a>
+        </td>
+        <td class="td-num text-usage">328.36</td>
+        <td class="td-num-bold">29.97</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/46/?period=2" class="link-accent">MER-APN-046</a>
+        </td>
+        <td class="td-num text-usage">167.10</td>
+        <td class="td-num-bold">14.88</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/44/?period=2" class="link-accent">MER-APN-044</a>
+        </td>
+        <td class="td-num text-usage">159.02</td>
+        <td class="td-num-bold">14.16</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/60/?period=2" class="link-accent">MER-APN-060</a>
+        </td>
+        <td class="td-num text-usage">64.89</td>
+        <td class="td-num-bold">6.39</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/24/?period=2" class="link-accent">MER-APN-024</a>
+        </td>
+        <td class="td-num text-usage">601.88</td>
+        <td class="td-num-bold">5.84</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/23/?period=2" class="link-accent">MER-APN-023</a>
+        </td>
+        <td class="td-num text-usage">554.24</td>
+        <td class="td-num-bold">5.34</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/29/?period=2" class="link-accent">MER-APN-029</a>
+        </td>
+        <td class="td-num text-usage">472.06</td>
+        <td class="td-num-bold">4.47</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/25/?period=2" class="link-accent">MER-APN-025</a>
+        </td>
+        <td class="td-num text-usage">421.33</td>
+        <td class="td-num-bold">4.10</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/69/?period=2" class="link-accent">MER-APN-069</a>
+        </td>
+        <td class="td-num text-usage">33.57</td>
+        <td class="td-num-bold">3.94</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/36/?period=2" class="link-accent">MER-APN-036</a>
+        </td>
+        <td class="td-num text-usage">399.12</td>
+        <td class="td-num-bold">3.87</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/37/?period=2" class="link-accent">MER-APN-037</a>
+        </td>
+        <td class="td-num text-usage">315.46</td>
+        <td class="td-num-bold">3.04</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/74/?period=2" class="link-accent">MER-APN-074</a>
+        </td>
+        <td class="td-num text-usage">22.06</td>
+        <td class="td-num-bold">2.45</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/73/?period=2" class="link-accent">MER-APN-073</a>
+        </td>
+        <td class="td-num text-usage">19.78</td>
+        <td class="td-num-bold">2.21</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/67/?period=2" class="link-accent">MER-APN-067</a>
+        </td>
+        <td class="td-num text-usage">18.63</td>
+        <td class="td-num-bold">2.08</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/72/?period=2" class="link-accent">MER-APN-072</a>
+        </td>
+        <td class="td-num text-usage">18.19</td>
+        <td class="td-num-bold">2.00</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/34/?period=2" class="link-accent">MER-APN-034</a>
+        </td>
+        <td class="td-num text-usage">196.42</td>
+        <td class="td-num-bold">1.91</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/31/?period=2" class="link-accent">MER-APN-031</a>
+        </td>
+        <td class="td-num text-usage">192.65</td>
+        <td class="td-num-bold">1.84</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/21/?period=2" class="link-accent">MER-APN-021</a>
+        </td>
+        <td class="td-num text-usage">177.23</td>
+        <td class="td-num-bold">1.68</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/71/?period=2" class="link-accent">MER-APN-071</a>
+        </td>
+        <td class="td-num text-usage">14.80</td>
+        <td class="td-num-bold">1.67</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/38/?period=2" class="link-accent">MER-APN-038</a>
+        </td>
+        <td class="td-num text-usage">164.43</td>
+        <td class="td-num-bold">1.59</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/58/?period=2" class="link-accent">MER-APN-058</a>
+        </td>
+        <td class="td-num text-usage">13.05</td>
+        <td class="td-num-bold">1.17</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/59/?period=2" class="link-accent">MER-APN-059</a>
+        </td>
+        <td class="td-num text-usage">13.27</td>
+        <td class="td-num-bold">1.15</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/68/?period=2" class="link-accent">MER-APN-068</a>
+        </td>
+        <td class="td-num text-usage">10.38</td>
+        <td class="td-num-bold">1.14</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/28/?period=2" class="link-accent">MER-APN-028</a>
+        </td>
+        <td class="td-num text-usage">115.24</td>
+        <td class="td-num-bold">1.12</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/33/?period=2" class="link-accent">MER-APN-033</a>
+        </td>
+        <td class="td-num text-usage">104.26</td>
+        <td class="td-num-bold">1.01</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/70/?period=2" class="link-accent">MER-APN-070</a>
+        </td>
+        <td class="td-num text-usage">7.73</td>
+        <td class="td-num-bold">0.87</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/27/?period=2" class="link-accent">MER-APN-027</a>
+        </td>
+        <td class="td-num text-usage">78.49</td>
+        <td class="td-num-bold">0.75</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/64/?period=2" class="link-accent">MER-APN-064</a>
+        </td>
+        <td class="td-num text-usage">6.88</td>
+        <td class="td-num-bold">0.64</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/63/?period=2" class="link-accent">MER-APN-063</a>
+        </td>
+        <td class="td-num text-usage">7.12</td>
+        <td class="td-num-bold">0.64</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/35/?period=2" class="link-accent">MER-APN-035</a>
+        </td>
+        <td class="td-num text-usage">58.21</td>
+        <td class="td-num-bold">0.56</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/26/?period=2" class="link-accent">MER-APN-026</a>
+        </td>
+        <td class="td-num text-usage">40.43</td>
+        <td class="td-num-bold">0.39</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/30/?period=2" class="link-accent">MER-APN-030</a>
+        </td>
+        <td class="td-num text-usage">33.02</td>
+        <td class="td-num-bold">0.32</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/22/?period=2" class="link-accent">MER-APN-022</a>
+        </td>
+        <td class="td-num text-usage">23.95</td>
+        <td class="td-num-bold">0.23</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/7/?period=2" class="link-accent">MER-APN-007</a>
+        </td>
+        <td class="td-num text-usage">19.50</td>
+        <td class="td-num-bold">0.00</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/9/?period=2" class="link-accent">MER-APN-009</a>
+        </td>
+        <td class="td-num text-usage">8.74</td>
+        <td class="td-num-bold">0.00</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/4/?period=2" class="link-accent">MER-APN-004</a>
+        </td>
+        <td class="td-num text-usage">10.58</td>
+        <td class="td-num-bold">0.00</td>
+      </tr>
+      
+      <tr>
+        <td class="font-semibold">
+          <a href="/parcels/1/?period=2" class="link-accent">MER-APN-001</a>
+        </td>
+        <td class="td-num text-usage">21.42</td>
+        <td class="td-num-bold">0.00</td>
+      </tr>
+      
     </tbody>
     <tfoot>
       <tr>
-        <td class="font-semibold">District total</td>
+        <td class="tfoot-total">District total</td>
         <td></td>
-        <td class="td-num-bold">1,986.50</td>
+        <td class="td-num-bold">2,245.69</td>
       </tr>
     </tfoot>
   </table>
@@ -1577,22 +2086,23 @@
   <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
     <h2 class="section-header-flush">CITY OF MERCED</h2>
     <span class="text-tertiary text-xs">
-      CA2410009
+      Public water system ID (PWSID) CA2410009
     </span>
   </div>
+  <p class="text-secondary text-sm" style="margin: 0 0 var(--space-md);">Records this platform holds for the system: counts, and the date of the latest sample.</p>
 
   
   <div class="stat-grid-4col">
     <div class="card-raised card-inset stat-card">
-      <div class="stat-card-label">Facilities</div>
+      <div class="stat-card-label">Facilities on record</div>
       <div class="stat-card-value-sm"><a href="/drinking/facilities/" class="data-table-link">61</a></div>
     </div>
     <div class="card-raised card-inset stat-card">
-      <div class="stat-card-label">Sampling points</div>
+      <div class="stat-card-label">Sampling points on record</div>
       <div class="stat-card-value-sm"><a href="/drinking/sampling-points/" class="data-table-link">27</a></div>
     </div>
     <div class="card-raised card-inset stat-card">
-      <div class="stat-card-label">Sample results</div>
+      <div class="stat-card-label">Sample results stored</div>
       <div class="stat-card-value-sm"><a href="/drinking/results/" class="data-table-link">22,367</a></div>
     </div>
     <div class="card-raised card-inset stat-card">
@@ -1625,6 +2135,328 @@
 
             
             
+
+<style>
+  /* The floating .oh2o-fb-btn rules that lived here were retired with the
+     trigger's move into the sidebar (Phase 143-02, R-024); its style is
+     .sidebar-feedback in app.css. */
+  .oh2o-fb-panel {
+    position: fixed; bottom: 1.25rem; right: 1.25rem; z-index: 901;
+    width: min(360px, calc(100vw - 2rem));
+    max-height: calc(100vh - 3rem); overflow-y: auto;
+    background: var(--color-elevated,#1A2633); border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-lg);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5); padding: 1.1rem 1.1rem 1.2rem;
+    color: var(--color-text-primary,#E7EEF2); font-family: 'Public Sans', sans-serif;
+    opacity: 0; transform: translateY(12px) scale(.98); pointer-events: none;
+    transition: opacity .18s ease, transform .18s ease;
+  }
+  .oh2o-fb-panel.open { opacity: 1; transform: none; pointer-events: auto; }
+  .oh2o-fb-panel.drag { border-color: var(--color-blue-bright,#3DB4E0); box-shadow: 0 0 0 2px rgba(61,180,224,.4), 0 12px 40px rgba(0,0,0,0.5); }
+  .oh2o-fb-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: .25rem; }
+  .oh2o-fb-head h2 { margin: 0; font-size: 1rem; font-weight: 700; }
+  .oh2o-fb-x { background: none; border: none; color: var(--color-text-secondary,#8FA3AE); font-size: 1.3rem; line-height: 1; cursor: pointer; padding: 0 .2rem; }
+  .oh2o-fb-x:hover { color: var(--color-text-primary,#E7EEF2); }
+  .oh2o-fb-sub { margin: 0 0 .85rem; font-size: .8rem; color: var(--color-text-secondary,#8FA3AE); }
+  .oh2o-fb-panel label { display: block; font-size: .75rem; color: var(--color-text-secondary,#8FA3AE); margin: .55rem 0 .2rem; }
+  .oh2o-fb-panel input[type=text], .oh2o-fb-panel input[type=email], .oh2o-fb-panel textarea {
+    width: 100%; box-sizing: border-box; background: var(--color-card,#141E2A); color: var(--color-text-primary,#E7EEF2);
+    border: 1px solid rgba(255,255,255,0.12); border-radius: var(--radius-sm); padding: .5rem .6rem;
+    font: 400 .85rem 'Public Sans', sans-serif; resize: vertical;
+  }
+  .oh2o-fb-panel input:focus, .oh2o-fb-panel textarea:focus { outline: none; border-color: var(--color-blue-bright,#3DB4E0); }
+
+  /* Category segmented control */
+  .oh2o-fb-cats { display: grid; grid-template-columns: 1fr 1fr; gap: .35rem; margin-top: .15rem; }
+  .oh2o-fb-cat {
+    display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+    background: var(--color-card,#141E2A); border: 1px solid rgba(255,255,255,0.12); border-radius: var(--radius-sm);
+    color: var(--color-text-secondary,#8FA3AE); padding: .4rem .3rem; font: 600 .78rem 'Public Sans', sans-serif;
+    cursor: pointer; text-align: center; transition: border-color .12s, color .12s, background .12s;
+  }
+  .oh2o-fb-cat svg { width: 15px; height: 15px; flex-shrink: 0; }
+  .oh2o-fb-cat:hover { color: var(--color-text-primary,#E7EEF2); }
+  .oh2o-fb-cat.sel { border-color: var(--color-blue-bright,#3DB4E0); color: #fff; background: rgba(27,127,175,.25); }
+
+  /* Attach row + thumbnails */
+  .oh2o-fb-attach {
+    display: inline-flex; align-items: center; gap: .4rem; margin-top: .35rem;
+    background: none; border: 1px dashed rgba(255,255,255,0.2); border-radius: var(--radius-sm);
+    color: var(--color-text-secondary,#8FA3AE); padding: .45rem .6rem; font: 600 .78rem 'Public Sans', sans-serif; cursor: pointer;
+  }
+  .oh2o-fb-attach:hover { color: var(--color-text-primary,#E7EEF2); border-color: var(--color-blue-bright,#3DB4E0); }
+  .oh2o-fb-hint { font-size: .68rem; color: var(--color-text-tertiary,#7E93A4); margin: .3rem 0 0; }
+  .oh2o-fb-thumbs { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .5rem; }
+  .oh2o-fb-thumb { position: relative; width: 54px; height: 54px; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid rgba(255,255,255,0.12); }
+  .oh2o-fb-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .oh2o-fb-thumb button {
+    position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; border-radius: 50%;
+    border: none; background: #c0392b; color: #fff; font-size: .8rem; line-height: 1; cursor: pointer;
+  }
+
+  .oh2o-fb-send {
+    width: 100%; margin-top: .9rem; padding: .6rem; border: none; border-radius: var(--radius-sm); cursor: pointer;
+    background: #1B7FAF; color: #fff; font: 600 .9rem 'Public Sans', sans-serif; transition: background .15s;
+  }
+  .oh2o-fb-send:hover { background: var(--color-blue-bright,#3DB4E0); }
+  .oh2o-fb-send:disabled { opacity: .6; cursor: default; }
+  /* Honeypot: hidden from real users, catnip for bots. */
+  .oh2o-fb-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+</style>
+
+
+
+<div class="oh2o-fb-panel" id="oh2o-fb-panel" role="dialog" aria-modal="false" aria-labelledby="oh2o-fb-title">
+  <div class="oh2o-fb-head">
+    <h2 id="oh2o-fb-title">Send feedback</h2>
+    <button type="button" class="oh2o-fb-x" id="oh2o-fb-close" aria-label="Close">&times;</button>
+  </div>
+  <p class="oh2o-fb-sub">Found a bug or have an idea? Let us know.</p>
+  <form id="oh2o-fb-form">
+    <label>What kind of feedback?</label>
+    <div class="oh2o-fb-cats" id="oh2o-fb-cats" role="radiogroup" aria-label="Feedback type">
+      <button type="button" class="oh2o-fb-cat sel" data-cat="bug" role="radio" aria-checked="true">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 2 1.88 1.88"/><path d="M14.12 3.88 16 2"/><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"/><path d="M12 20v-9"/><path d="M6.53 9C4.6 8.8 3 7.1 3 5"/><path d="M6 13H2"/><path d="M3 21c0-2.1 1.7-3.9 3.8-4"/><path d="M20.97 5c0 2.1-1.6 3.8-3.5 4"/><path d="M22 13h-4"/><path d="M17.2 17c2.1.1 3.8 1.9 3.8 4"/></svg>
+        Bug
+      </button>
+      <button type="button" class="oh2o-fb-cat" data-cat="idea" role="radio" aria-checked="false">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+        Idea
+      </button>
+      <button type="button" class="oh2o-fb-cat" data-cat="question" role="radio" aria-checked="false">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Question
+      </button>
+      <button type="button" class="oh2o-fb-cat" data-cat="data" role="radio" aria-checked="false">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Data looks wrong
+      </button>
+    </div>
+
+    <label for="oh2o-fb-name">Name <span style="opacity:.6">(optional)</span></label>
+    <input type="text" id="oh2o-fb-name" name="name" autocomplete="name" maxlength="200">
+    <label for="oh2o-fb-email">Email <span style="opacity:.6">(optional, for a reply)</span></label>
+    <input type="email" id="oh2o-fb-email" name="email" autocomplete="email" maxlength="254">
+    <label for="oh2o-fb-msg">Message</label>
+    <textarea id="oh2o-fb-msg" name="message" rows="4" required maxlength="5000"></textarea>
+
+    <button type="button" class="oh2o-fb-attach" id="oh2o-fb-attach">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+      Attach a screenshot
+    </button>
+    <input type="file" id="oh2o-fb-file" accept="image/*" multiple class="oh2o-fb-hp" tabindex="-1" aria-label="Attach screenshot images">
+    <p class="oh2o-fb-hint">Click to attach, drag an image here, or paste (Ctrl/⌘+V) a screenshot.</p>
+    <div class="oh2o-fb-thumbs" id="oh2o-fb-thumbs"></div>
+
+    <div class="oh2o-fb-hp" aria-hidden="true">
+      <label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+    </div>
+    <button type="submit" class="oh2o-fb-send" id="oh2o-fb-send">Send feedback</button>
+  </form>
+</div>
+
+<script>
+(function () {
+  var WIDGET = {
+    url: "/feedback/submit/",
+    csrf: "SY9LtIf3kPk54MtgE5a0fTlBCEC531PVuvnGZqQvEbVPA6iYoloEhXa7qzom4BvC",
+    version: "dev",
+    maxAttachments: 5,
+    auth: {
+      authenticated: true,
+      email: "render\u002Dcrawl@example.invalid",
+      name: "",
+      admin: true
+    }
+  };
+
+  var openBtn = document.getElementById('oh2o-fb-open');
+  var panel = document.getElementById('oh2o-fb-panel');
+  var closeBtn = document.getElementById('oh2o-fb-close');
+  var form = document.getElementById('oh2o-fb-form');
+  var sendBtn = document.getElementById('oh2o-fb-send');
+  var fileInput = document.getElementById('oh2o-fb-file');
+  var attachBtn = document.getElementById('oh2o-fb-attach');
+  var thumbs = document.getElementById('oh2o-fb-thumbs');
+  var cats = document.getElementById('oh2o-fb-cats');
+
+  var category = 'bug';
+  var attachments = []; // { blob, name, url }
+
+  // Pre-fill identity for signed-in users.
+  if (WIDGET.auth.authenticated) {
+    if (WIDGET.auth.name) document.getElementById('oh2o-fb-name').value = WIDGET.auth.name;
+    if (WIDGET.auth.email) document.getElementById('oh2o-fb-email').value = WIDGET.auth.email;
+  }
+
+  function open() { panel.classList.add('open'); openBtn.style.display = 'none'; document.getElementById('oh2o-fb-msg').focus(); }
+  function close() { panel.classList.remove('open'); openBtn.style.display = ''; }
+  openBtn.addEventListener('click', open);
+  closeBtn.addEventListener('click', close);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && panel.classList.contains('open')) close(); });
+
+  function toast(msg, type) { if (window.showToast) window.showToast(msg, type); else alert(msg); }
+
+  // -- Category selection ----------------------------------------------------
+  cats.addEventListener('click', function (e) {
+    var btn = e.target.closest('.oh2o-fb-cat');
+    if (!btn) return;
+    category = btn.getAttribute('data-cat');
+    Array.prototype.forEach.call(cats.querySelectorAll('.oh2o-fb-cat'), function (b) {
+      var on = b === btn;
+      b.classList.toggle('sel', on);
+      b.setAttribute('aria-checked', on ? 'true' : 'false');
+    });
+  });
+
+  // -- Attachments: pick / drop / paste --------------------------------------
+  attachBtn.addEventListener('click', function () { fileInput.click(); });
+  fileInput.addEventListener('change', function () { handleFiles(fileInput.files); fileInput.value = ''; });
+
+  panel.addEventListener('dragover', function (e) { e.preventDefault(); panel.classList.add('drag'); });
+  panel.addEventListener('dragleave', function (e) { if (e.target === panel) panel.classList.remove('drag'); });
+  panel.addEventListener('drop', function (e) {
+    e.preventDefault(); panel.classList.remove('drag');
+    if (e.dataTransfer && e.dataTransfer.files) handleFiles(e.dataTransfer.files);
+  });
+  document.addEventListener('paste', function (e) {
+    if (!panel.classList.contains('open')) return;
+    var items = (e.clipboardData && e.clipboardData.items) || [];
+    var imgs = [];
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].type && items[i].type.indexOf('image') === 0) { var f = items[i].getAsFile(); if (f) imgs.push(f); }
+    }
+    if (imgs.length) handleFiles(imgs);
+  });
+
+  function handleFiles(files) {
+    for (var i = 0; i < files.length; i++) {
+      if (attachments.length >= WIDGET.maxAttachments) { toast('Up to ' + WIDGET.maxAttachments + ' images.', 'error'); break; }
+      var file = files[i];
+      if (!file.type || file.type.indexOf('image/') !== 0) continue;
+      prepareImage(file, addAttachment);
+    }
+  }
+
+  // Keep screenshots legible — reading the bug is the whole point. A normal
+  // phone or laptop screenshot is sent UNTOUCHED at full fidelity. Only a
+  // genuinely huge capture (a 4K/5K desktop grab) is resized, and only to 2560px
+  // on its longest side — well above where small UI text starts to break down —
+  // then re-encoded as WebP, which keeps text crisp (JPEG fuzzes it).
+  var MAX_DIM = 2560;                          // longest side, for oversized only
+  var PASSTHROUGH_BYTES = 2 * 1024 * 1024;     // <=2MB & within MAX_DIM -> as-is
+
+  function prepareImage(file, cb) {
+    var img = new Image();
+    var url = URL.createObjectURL(file);
+    img.onload = function () {
+      URL.revokeObjectURL(url);
+      var longest = Math.max(img.width, img.height);
+      if (file.size <= PASSTHROUGH_BYTES && longest <= MAX_DIM) {
+        cb(file, file.name || 'screenshot.png');   // full fidelity, no re-encode
+        return;
+      }
+      var scale = Math.min(1, MAX_DIM / longest);
+      var w = Math.max(1, Math.round(img.width * scale));
+      var h = Math.max(1, Math.round(img.height * scale));
+      var canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      try {
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        canvas.toBlob(function (blob) {
+          if (blob) cb(blob, baseName(file.name) + '.webp');
+          else cb(file, file.name || 'screenshot.png');  // WebP unsupported -> original
+        }, 'image/webp', 0.92);
+      } catch (_) { cb(file, file.name || 'screenshot.png'); }
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); cb(file, file.name || 'screenshot.png'); };
+    img.src = url;
+  }
+
+  function baseName(n) { n = n || 'screenshot'; return n.replace(/\.[^.]+$/, '') || 'screenshot'; }
+
+  function addAttachment(blob, name) {
+    var url = URL.createObjectURL(blob);
+    var att = { blob: blob, name: name, url: url };
+    attachments.push(att);
+    renderThumbs();
+  }
+
+  function renderThumbs() {
+    thumbs.innerHTML = '';
+    attachments.forEach(function (att, idx) {
+      var wrap = document.createElement('div');
+      wrap.className = 'oh2o-fb-thumb';
+      var im = document.createElement('img'); im.src = att.url; im.alt = att.name;
+      var rm = document.createElement('button'); rm.type = 'button'; rm.textContent = '×'; rm.setAttribute('aria-label', 'Remove');
+      rm.addEventListener('click', function () { URL.revokeObjectURL(att.url); attachments.splice(idx, 1); renderThumbs(); });
+      wrap.appendChild(im); wrap.appendChild(rm);
+      thumbs.appendChild(wrap);
+    });
+  }
+
+  // -- Diagnostics gathered silently at submit -------------------------------
+  function gatherDiagnostics() {
+    var d = window.__oh2oDiag || { errors: [], net: [] };
+    var diag = {
+      url: window.location.href,
+      referrer: document.referrer || null,
+      viewport: { w: window.innerWidth, h: window.innerHeight, dpr: window.devicePixelRatio || 1 },
+      screen: { w: (window.screen || {}).width || null, h: (window.screen || {}).height || null },
+      user_agent: navigator.userAgent,
+      language: navigator.language,
+      platform: navigator.platform,
+      online: navigator.onLine,
+      build: WIDGET.version,
+      auth: WIDGET.auth,
+      errors: d.errors.slice(),
+      failed_requests: d.net.slice(),
+      timestamp: new Date().toISOString()
+    };
+    try { diag.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (_) {}
+    try {
+      var nav = (performance.getEntriesByType && performance.getEntriesByType('navigation')[0]);
+      if (nav) diag.perf = { load_ms: Math.round(nav.loadEventEnd), dom_ms: Math.round(nav.domContentLoadedEventEnd), type: nav.type };
+    } catch (_) {}
+    // Map state if the page exposes a MapLibre instance (best-effort hook).
+    try {
+      var m = window.__oh2oMap || (window.OH2O && window.OH2O.map);
+      if (m && m.getCenter) { var c = m.getCenter(); diag.map = { lng: +c.lng.toFixed(5), lat: +c.lat.toFixed(5), zoom: +m.getZoom().toFixed(2) }; }
+    } catch (_) {}
+    return diag;
+  }
+
+  // -- Submit ----------------------------------------------------------------
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var msg = form.message.value.trim();
+    if (!msg) { toast('Please enter a message.', 'error'); return; }
+
+    var fd = new FormData();
+    fd.append('category', category);
+    fd.append('message', msg);
+    fd.append('name', form.name.value.trim());
+    fd.append('email', form.email.value.trim());
+    fd.append('page_url', window.location.href);
+    fd.append('website', form.website.value); // honeypot
+    fd.append('diagnostics', JSON.stringify(gatherDiagnostics()));
+    attachments.forEach(function (att) { fd.append('attachments', att.blob, att.name); });
+
+    sendBtn.disabled = true; sendBtn.textContent = 'Sending…';
+    fetch(WIDGET.url, { method: 'POST', headers: { 'X-CSRFToken': WIDGET.csrf }, body: fd })
+      .then(function (r) { if (!r.ok) throw new Error('bad status ' + r.status); return r.json(); })
+      .then(function (res) {
+        form.reset();
+        attachments.forEach(function (a) { URL.revokeObjectURL(a.url); });
+        attachments = []; renderThumbs();
+        close();
+        var ref = (res && res.ref) ? ' (ref #' + res.ref + ')' : '';
+        toast('Thanks for your feedback!' + ref, 'success');
+      })
+      .catch(function () { toast('Sorry, that didn\'t send. Please try again.', 'error'); })
+      .finally(function () { sendBtn.disabled = false; sendBtn.textContent = 'Send feedback'; });
+  });
+})();
+</script>
 
 
         </div>
@@ -1708,6 +2540,29 @@
     document.body.addEventListener('showToast', function(e) {
         var detail = e.detail || {};
         window.showToast(detail.message || 'Done', detail.type || 'success', detail.duration || 3000);
+    });
+
+    // Copy controls (146-06): any button carrying data-copy-text copies it,
+    // including one HTMX swaps in later, which is why this is delegated from
+    // the document rather than bound per button. The textarea fallback is for
+    // a plain-HTTP deployment, where the Clipboard API is not offered.
+    document.addEventListener('click', function(e) {
+        var btn = e.target.closest && e.target.closest('[data-copy-text]');
+        if (!btn) return;
+        var text = btn.getAttribute('data-copy-text');
+        var announce = function() { window.showToast('Copied ' + text); };
+        var fallback = function() {
+            var ta = document.createElement('textarea');
+            ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+            document.body.appendChild(ta); ta.select();
+            try { document.execCommand('copy'); } finally { document.body.removeChild(ta); }
+            announce();
+        };
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(announce, fallback);
+        } else {
+            fallback();
+        }
     });
     </script>
 

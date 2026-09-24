@@ -1,110 +1,11 @@
 [
   {
-    "slug": "d-zone-detail-halvern-irrigation-urban",
-    "url": "/map/zones/2/",
+    "slug": "accounting-dashboard-wy2026",
+    "url": "/accounting/dashboard/?period=2",
     "status": 200,
-    "bytes": 163860,
-    "sha256": "f3da2c2bbf3847328bce1b0f0190eb4437b36299bd4eb43d755f2be07b098066",
-    "note": "SECTION D PIN for FIG-geography-001..004 (137-02 renumbering: the 001..003 range above named this pin before the Carried forward column added a fourth site). Halvern Irrigation-Urban GSA (zone id 2), the same zone the accounting dashboard's zone table is pinned to in section 1, so the two screens' figures for one zone can be laid side by side. The page takes no period parameter: its Allocation vs. use table lists every period at once, newest first, so the pinned row is the FIRST row, WY 2025-2026 (reporting period id 2, the dry year), water type GW. FIG-geography-005, the parcel-area column (renumbered from FIG-geography-004 the same way), is read from this same page: _zone_parcels.html is included here at line 77, and the only two other routes that render it (zone_parcel_assign, zone_parcel_remove) are POST-only and both mutate, so this is the figure's one read-only rendering path. Pinned parcel row: MER-APN-026, the first by parcel number among this zone's 23 parcels.",
-    "commit": "54edc819a3d342858900e03c2241880ff929a566"
-  },
-  {
-    "slug": "d-datasync-station-list",
-    "url": "/datasync/stations/",
-    "status": 200,
-    "bytes": 167105,
-    "sha256": "24de48cd0d19ad316b6019ee80d6fb94da7b06ac8449e2222a99bb5d2a5a66d4",
-    "note": "SECTION D EVIDENCE, not a figure site. The station detail pane cannot be reached on this data: datasync_monitoredstation holds ZERO rows. This capture records what the station list actually says, so the four UNVERIFIED datasync rows rest on the served page and not only on a row count.",
-    "commit": "54edc819a3d342858900e03c2241880ff929a566"
-  },
-  {
-    "slug": "d-datasync-station-detail-lowest-id",
-    "url": "/datasync/stations/1/",
-    "status": 200,
-    "bytes": 50702,
-    "sha256": "ad7fa3fde37e2687fcdabec79d8d61f2c33310a4914909464e23075ff0cdecc9",
-    "note": "SECTION D EVIDENCE for FIG-datasync-001..004. Expected to be a non-200: no MonitoredStation row exists with any primary key, so the pane that carries all four datasync figures has no instance to render. Recorded as a finding, not retried.",
-    "commit": "54edc819a3d342858900e03c2241880ff929a566"
-  },
-  {
-    "slug": "d-well-detail-mer-w-001",
-    "url": "/wells/10/",
-    "status": 200,
-    "bytes": 62227,
-    "sha256": "d34abc290d309e25cd404c73c072e572bc098889b725e86d16e344ccafce0b36",
-    "note": "SECTION D PIN for FIG-wells-001..008 (Plan 137-03 added the Measurement history card's FIG-wells-001..004 ahead of the four figures already on this page, renumbered FIG-wells-005..008 in remaining_subsystems.sql). Well id 10, registration MER-W-001, 'Ag well on MER-APN-002'. Pinned meter read: the newest, 30 September 2026, on meter MTR-MER-W-001 -- Totalizer 41,241.64, Delta 65.91 AF. Pinned water-level month: the newest, September 2026 -- Close 101.92 ft, Change 3.13 ft; well 10 has no Sensor row, so the digest reads the hand-entered WaterMeasurement record. Also carries the four pre-existing wells figures: an irrigated-parcel row (MER-APN-002), a monitoring record with a reference elevation (182.40 ft), an integer number field (Year Pumping Began 1987) and a two-decimal number field (Capacity 2000.00 gpm, the first such field in the pane's own order).",
-    "commit": "54edc819a3d342858900e03c2241880ff929a566"
-  },
-  {
-    "slug": "d-well-detail-mer-w-004",
-    "url": "/wells/13/",
-    "status": 200,
-    "bytes": 53616,
-    "sha256": "aa1352cc5b966bfe1a07a99eb603b53d78fac530ccd5db51ecb8507a01dc6a16",
-    "note": "SECTION D EVIDENCE, not a figure site -- no FIG- row cites this well. MER-W-004 (well id 13), 'Ag well on MER-APN-006', the transducer well ISS-145's dry-year decline lives on (Sensor id 2, 730 daily SensorMeasurement rows, 4 marked anomalous and dropped). Its water-level digest reads 94.15 ft at the September 2025 close and 109.65 ft at the September 2026 close, a 15.50 ft two-year decline, recomputed in audit/figure_ledger/sql/well_measurement_history.sql (cross-checks X3-well-13-sept-2025-close, X3-well-13-sept-2026-close, X3-well-13-two-year-decline). Captured so the finding names a screen a reader can open, not only a row in a recomputation file.",
-    "commit": "54edc819a3d342858900e03c2241880ff929a566"
-  },
-  {
-    "slug": "d-recharge-detail-el-nido-basin-1",
-    "url": "/recharge/1/",
-    "status": 200,
-    "bytes": 46283,
-    "sha256": "b8179c45e7dabd5d9e8e68c54b9571d3e3a99fdcccb66baed49992e35def8819",
-    "note": "SECTION D PIN for FIG-recharge-001, -002 and -003. El Nido Recharge Basin 1 (site id 6), the first site by name on the list page, so the list figure and the detail figures describe the same basin. Pinned measurement row: the newest, 2026-02-18 water quality, 315.2601 mg/L. Pinned event row: the newest by start date, 2026-02-15 to 2026-02-18, 127.4200 AF.",
-    "commit": "54edc819a3d342858900e03c2241880ff929a566"
-  },
-  {
-    "slug": "d-recharge-list",
-    "url": "/recharge/",
-    "status": 200,
-    "bytes": 44001,
-    "sha256": "33aadddb8af58a4ab3cb91d587be45cf824a7b5ee3fe272c29e9d0dbd6edf7ad",
-    "note": "SECTION D PIN for FIG-recharge-004. The list is ordered by name and shows every site on one page, so the pinned row is the first: El Nido Recharge Basin 1, capacity 637.10 AF rendered to whole acre-feet.",
-    "commit": "54edc819a3d342858900e03c2241880ff929a566"
-  },
-  {
-    "slug": "d-setup-wizard",
-    "url": "/setup/",
-    "status": 200,
-    "bytes": 36518,
-    "sha256": "c18451a46d4310063f1a06e975f6c1099ec3a3628d4cd1e82e23da0e141c7dbf",
-    "note": "SECTION D PIN for FIG-setup-002. The figure renders inside an <option> of the 'District boundary' dropdown. One Boundary row exists, Merced Subbasin, so the pinned option is the only one: stated area 800.948 square miles.",
-    "commit": "54edc819a3d342858900e03c2241880ff929a566"
-  },
-  {
-    "slug": "d-setup-confirm",
-    "url": "/setup/confirm/",
-    "status": 302,
-    "bytes": 0,
-    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "note": "SECTION D, FIG-setup-001. Expected to redirect: the confirmation step reads a boundary out of the visitor's session, which is written by the wizard's POST, and this capture performs GETs only. Recorded as a finding so the row says why the screen could not be read rather than borrowing a number from the wizard page.",
-    "commit": "54edc819a3d342858900e03c2241880ff929a566"
-  },
-  {
-    "slug": "d-zone-detail-halvern-valley-gsa",
-    "url": "/map/zones/1/",
-    "status": 200,
-    "bytes": 514342,
-    "sha256": "a5843fe0991b75af0328e372d9c05238278b294acd8ca2c8f0294500f7ac71e2",
-    "note": "SECTION D whole-column check on FIG-geography-001..003. Halvern Valley GSA (zone id 1), 46 parcels, the largest groundwater zone. Captured so the Used column's finding rests on every groundwater zone's screen rather than on one.",
-    "commit": "54edc819a3d342858900e03c2241880ff929a566"
-  },
-  {
-    "slug": "d-zone-detail-verdano-island-gsa",
-    "url": "/map/zones/3/",
-    "status": 200,
-    "bytes": 68189,
-    "sha256": "6c055d0e1e0a3f9692d4298c066a0f019587007b79a550d119e838b014ffada6",
-    "note": "SECTION D whole-column check on FIG-geography-001..003. Verdano Island Water District GSA (zone id 3), 7 parcels. The one groundwater zone whose parcels take no surface canal delivery, so its Used figure is the control case.",
-    "commit": "54edc819a3d342858900e03c2241880ff929a566"
-  },
-  {
-    "slug": "d-zone-detail-surface-service-area-halvern",
-    "url": "/map/zones/9/",
-    "status": 200,
-    "bytes": 79725,
-    "sha256": "daac33f29a2c28c3a8f7c4c64fc85f418667c6b3c18f9f1bbd3324998b7b4ee4",
-    "note": "SECTION D whole-column check on FIG-geography-001..003. MER Surface Service Area - Halvern Irrigation District (zone id 39), a surface-water allocation, so the page takes the other branch (geography/views.py:205) and labels the figure 'delivered'. Captured to show that branch does filter on source type where the groundwater branch does not.",
-    "commit": "54edc819a3d342858900e03c2241880ff929a566"
+    "bytes": 95814,
+    "sha256": "fd23ccdac1e4dc312ea7f1d4af2f3017e31a79f68d51c51e3ce4eed773629d67",
+    "note": "THE PINNED INSTANCE for ledger section 1. WY 2025-2026, the dry year, and the period the bare /accounting/dashboard/ URL resolves to on this data. Pinned account row: MER-ACCT-001 Ashvale Orchards Inc. (id 78, first row on screen). Pinned zone row: Halvern Irrigation-Urban GSA (id 2, first row on screen, 23 parcels). THE PINNED INSTANCE also for FIG-accounting-052..048 (137-02, ISS-157 surface 2): the new Fields with water use recorded and no supply reported section, pinned to MER-APN-011, the fourth of the six rows the dry year lists (450.51, 406.26, 360.43, 330.37, 288.80, 150.12), District total 1,986.50.",
+    "commit": "57bd2627867e246aab80e0006194428ff9c9c3ed"
   }
 ]
