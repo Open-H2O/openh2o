@@ -101,7 +101,7 @@
             <button type="submit" class="btn-secondary btn-sm">Reopen period</button>
           </form>
         {% else %}
-          <p class="text-tertiary text-xs" style="margin: 0 0 var(--space-sm);">Finalizing stops this water year's ledger entries, allocations, diversion records and calculation results from being added, changed or removed until an administrator reopens it. Reopening asks for a reason, which is kept in the change history.</p>
+          <p class="text-tertiary text-xs" style="margin: 0 0 var(--space-md);">Finalizing stops this water year's ledger entries, allocations, diversion records and calculation results from being added, changed or removed until an administrator reopens it. Reopening asks for a reason, which is kept in the change history.</p>
           <form method="post" action="{% url 'accounting:period_finalize' period.pk %}">
             {% csrf_token %}
             <div class="field-group" style="margin-bottom: var(--space-sm);">

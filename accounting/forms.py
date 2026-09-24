@@ -53,10 +53,11 @@ class PeriodFinalizeForm(forms.Form):
 
     note = forms.CharField(
         required=False,
-        widget=forms.Textarea(
+        # One line, the house note box (the methodology and delivery settings
+        # pages' "Note (why)" is the same single form-input).
+        widget=forms.TextInput(
             attrs={
-                "rows": 3,
-                "class": "form-textarea",
+                "class": "form-input",
                 "maxlength": str(NOTE_MAX_LENGTH),
             }
         ),
