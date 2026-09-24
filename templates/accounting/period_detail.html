@@ -84,38 +84,6 @@
         {% endif %}
       </div>
 
-      {% if user_is_admin %}
-      {% comment %} Finalize / Unfinalize (Phase 75: primary action made prominent;
-           147-02: administrators only, and reopening asks for a reason, kept
-           with the change history via core.history.change_note). {% endcomment %}
-      <div class="border-separator">
-        {% if period.is_finalized %}
-          <form method="post" action="{% url 'accounting:period_finalize' period.pk %}">
-            {% csrf_token %}
-            <div class="field-group" style="margin-bottom: var(--space-sm);">
-              <label class="form-label" for="{{ finalize_form.note.id_for_label }}">{{ finalize_form.note.label }}</label>
-              {{ finalize_form.note }}
-              <p class="text-secondary text-sm" style="margin-top: var(--space-xs);">{{ finalize_form.note.help_text }}</p>
-              {% if finalize_form.note.errors %}<p class="form-error-text">{{ finalize_form.note.errors|striptags }}</p>{% endif %}
-            </div>
-            <button type="submit" class="btn-secondary btn-sm">Reopen period</button>
-          </form>
-        {% else %}
-          <p class="text-tertiary text-xs" style="margin: 0 0 var(--space-md);">Finalizing stops this water year's ledger entries, allocations, diversion records and calculation results from being added, changed or removed until an administrator reopens it. Reopening asks for a reason, which is kept in the change history.</p>
-          <form method="post" action="{% url 'accounting:period_finalize' period.pk %}">
-            {% csrf_token %}
-            <div class="field-group" style="margin-bottom: var(--space-sm);">
-              <label class="form-label" for="{{ finalize_form.note.id_for_label }}">{{ finalize_form.note.label }}</label>
-              {{ finalize_form.note }}
-              <p class="text-secondary text-sm" style="margin-top: var(--space-xs);">{{ finalize_form.note.help_text }}</p>
-              {% if finalize_form.note.errors %}<p class="form-error-text">{{ finalize_form.note.errors|striptags }}</p>{% endif %}
-            </div>
-            <button type="submit" class="btn-primary" style="width: 100%;">Finalize period</button>
-          </form>
-        {% endif %}
-      </div>
-      {% endif %}
-
       <!-- Timestamps -->
       <div class="border-separator">
         <div class="text-tertiary text-xs">
@@ -174,6 +142,36 @@
       <p class="text-tertiary text-base">No allocations for this period.</p>
       {% endif %}
     </div>
+
+    {% if user_is_admin %}
+    {% comment %}Finalize / reopen (Phase 75 made it prominent; 147-02: administrators only, and reopening asks for a reason, kept with the change history via core.history.change_note). Its own full-width card since 147-02's page verdict: inside Period information, the note box made that card twice the allocations card's natural height and stretched the figures beside it over blank fill (measured 511 against 255 px at 1,730).{% endcomment %}
+    <div class="card-raised page-grid-account-full">
+      <div class="period-close">
+        <div>
+          <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">{% if period.is_finalized %}Reopen this water year{% else %}Finalize this water year{% endif %}</h2>
+          {% if period.is_finalized %}
+          <p class="text-secondary text-base m-0">While it is finalized, this water year's ledger entries, allocations, diversion records and calculation results cannot be added, changed or removed. Reopening asks for a reason, which is kept in the change history.</p>
+          {% else %}
+          <p class="text-secondary text-base m-0">Finalizing stops this water year's ledger entries, allocations, diversion records and calculation results from being added, changed or removed until an administrator reopens it. Reopening asks for a reason, which is kept in the change history.</p>
+          {% endif %}
+        </div>
+        <form method="post" action="{% url 'accounting:period_finalize' period.pk %}" class="period-close-form">
+          {% csrf_token %}
+          <div>
+            <label class="form-label" for="{{ finalize_form.note.id_for_label }}">{{ finalize_form.note.label }}</label>
+            {{ finalize_form.note }}
+            <p class="text-secondary text-sm" style="margin-top: var(--space-xs);">{{ finalize_form.note.help_text }}</p>
+            {% if finalize_form.note.errors %}<p class="form-error-text">{{ finalize_form.note.errors|striptags }}</p>{% endif %}
+          </div>
+          {% if period.is_finalized %}
+          <button type="submit" class="btn-secondary">Reopen period</button>
+          {% else %}
+          <button type="submit" class="btn-primary">Finalize period</button>
+          {% endif %}
+        </form>
+      </div>
+    </div>
+    {% endif %}
 
     <div class="card-raised page-grid-account-full" style="padding: 0;">
       {% if allocations %}

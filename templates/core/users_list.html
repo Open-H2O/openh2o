@@ -29,19 +29,14 @@
 
   {% include "partials/_messages.html" %}
 
-  <!-- Toolbar -->
-  <div class="card-raised toolbar-row">
-    <div style="flex: 1;">
-      <span class="text-secondary text-sm">
-        <span class="count-pill">{{ users|length }}</span>
-        user{{ users|length|pluralize }}
-      </span>
-    </div>
-  </div>
-
-  <!-- Results -->
+  {% comment %}147-02 page verdict: the count used to sit alone in a full-width toolbar card (a card holding one pill); it heads the table's own card now, the way the period page's Allocations card is headed.{% endcomment %}
   {% if users %}
-  <div class="card-raised table-scroll">
+  <div class="card-raised" style="padding: 0;">
+    <div class="ledger-card-head">
+      <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">People</h2>
+      <div class="text-secondary text-base">{{ users|length }} user{{ users|length|pluralize }}</div>
+    </div>
+    <div class="table-scroll">
     <table class="data-table">
       <thead>
         <tr>
@@ -105,6 +100,7 @@
         {% endfor %}
       </tbody>
     </table>
+    </div>
   </div>
   {% else %}
   <div class="card-raised empty-state">
