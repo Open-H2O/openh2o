@@ -16,6 +16,7 @@ The master switch is ``settings.ACCESS_CONTROL_ENFORCED`` (default ``True``):
 The third role, Viewer (147-02), is enforced by :class:`ReadOnlyMiddleware`
 below, and holds whichever way the switch is set.
 """
+import re
 from functools import wraps
 
 from django.conf import settings
@@ -113,6 +114,17 @@ VIEWER_ALLOWED_URL_NAMES = frozenset(
 #: the viewer's own sign-in.
 VIEWER_ALLOWED_URL_NAME_PREFIX = "account_"
 
+#: URL names whose page exists only to change something: a create or edit
+#: form, an importer, an inline editor, an assign or remove step. A viewer's
+#: GET of one is refused with the same page as a refused change, so an address
+#: typed by hand shows the sentence instead of a live form (147-02 walk). Read
+#: pages never match: ``tests/test_viewer_role.py`` pins the full list of
+#: names this matches against the URL configuration.
+VIEWER_WRITE_PAGE_PATTERN = re.compile(
+    r"(create|add|_edit$|edit_|upload|import|assign|remove|finalize|delete"
+    r"|_toggle$|_move$|_config$|onboard|link_right|mark_removed|share$)"
+)
+
 READ_ONLY_MESSAGE = (
     "Your account can read but not change records. An administrator can "
     "change your role on the Users page."
@@ -126,6 +138,13 @@ def is_viewer(user):
         and user.is_active
         and getattr(user, "read_only", False)
     )
+
+
+def is_write_page(view_name):
+    """Whether ``view_name`` is a page that exists only to change something."""
+    if not view_name or viewer_may_post(view_name):
+        return False
+    return bool(VIEWER_WRITE_PAGE_PATTERN.search(view_name.split(":")[-1]))
 
 
 def viewer_may_post(view_name):
@@ -144,23 +163,26 @@ class ReadOnlyMiddleware:
     ``ACCESS_CONTROL_ENFORCED``: that switch opens the administrator screens
     on the hosted demonstration, but a viewer is an explicit assignment by an
     administrator, so it holds on every deployment. Covers ``/admin/`` and
-    every HTMX endpoint too, because it runs before any view.
+    every HTMX endpoint too, because it runs before any view. A viewer's GET
+    of a page that exists only to change something (:func:`is_write_page`)
+    gets the same refusal.
     """
 
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        if request.method in UNSAFE_METHODS and is_viewer(
-            getattr(request, "user", None)
-        ):
+        if is_viewer(getattr(request, "user", None)):
             from django.urls import Resolver404, resolve
 
             try:
                 view_name = resolve(request.path_info).view_name
             except Resolver404:
                 view_name = ""
-            if not viewer_may_post(view_name):
+            if request.method in UNSAFE_METHODS:
+                if not viewer_may_post(view_name):
+                    return read_only_response(request)
+            elif is_write_page(view_name):
                 return read_only_response(request)
         return self.get_response(request)
 

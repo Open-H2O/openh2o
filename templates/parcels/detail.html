@@ -24,7 +24,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">{{ parcel.parcel_number }}</span>
   </nav>
-  <p class="page-description">Use area details and related data. Click any editable field to update it.</p>
+  <p class="page-description">Use area details and related data.{% if user_can_write %} Click any editable field to update it.{% endif %}</p>
 </div>
 {% endblock %}
 

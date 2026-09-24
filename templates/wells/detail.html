@@ -24,7 +24,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">{{ well.name }}</span>
   </nav>
-  <p class="page-description">Well details, linked meters, and measurement history. Click any editable field to update it.</p>
+  <p class="page-description">Well details, linked meters, and measurement history.{% if user_can_write %} Click any editable field to update it.{% endif %}</p>
 </div>
 {% endblock %}
 

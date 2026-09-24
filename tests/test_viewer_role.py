@@ -22,6 +22,7 @@ from core.access import (
     READ_ONLY_MESSAGE,
     VIEWER_ALLOWED_URL_NAME_PREFIX,
     VIEWER_ALLOWED_URL_NAMES,
+    is_write_page,
     viewer_may_post,
 )
 from parcels.models import ParcelLedger
@@ -242,3 +243,76 @@ def test_the_template_flag_is_false_only_for_a_viewer(viewer, operator):
     assert _client(viewer).get(url).context["user_can_write"] is False
     assert _client(operator).get(url).context["user_can_write"] is True
     assert Client().get(reverse("about")).context["user_can_write"] is True
+
+
+# -- Pages that exist only to change something -------------------------------------
+
+#: Every URL name (outside the Django admin) whose page exists only to change
+#: something, on a deployment running every module. A viewer's GET of any of
+#: them is refused like a POST. Pinned so a read page can never match by
+#: accident and a new write page is a deliberate addition here.
+WRITE_PAGES = [
+    "accounting:account_create", "accounting:account_edit", "accounting:allocation_create",
+    "accounting:assign_parcel", "accounting:csv_upload", "accounting:ledger_create",
+    "accounting:methodology_step_config", "accounting:methodology_step_move",
+    "accounting:methodology_step_toggle", "accounting:parcel_search_for_assignment",
+    "accounting:period_create", "accounting:period_finalize", "accounting:remove_parcel",
+    "core:user_create", "datasync:station_add", "datasync:station_toggle",
+    "drinking:facility_add", "drinking:facility_edit", "drinking:import",
+    "drinking:import_commit", "drinking:import_preview", "drinking:onboard",
+    "drinking:onboard_commit", "drinking:onboard_lookup", "drinking:onboard_points",
+    "drinking:onboard_points_add", "drinking:production_add", "drinking:production_import",
+    "drinking:production_import_commit", "drinking:production_import_preview",
+    "drinking:schedule_add", "drinking:schedule_edit", "geography:zone_create",
+    "geography:zone_edit", "geography:zone_parcel_assign", "geography:zone_parcel_remove",
+    "infrastructure:add", "infrastructure:import", "infrastructure:import_commit",
+    "infrastructure:import_preview", "infrastructure:parcel_create", "parcels:edit_field",
+    "recharge:event_create", "surface:curtailment_create", "surface:curtailment_edit",
+    "surface:device_add", "surface:device_edit", "surface:device_mark_removed",
+    "surface:diversion_import", "surface:diversion_import_commit",
+    "surface:diversion_import_preview", "surface:diversion_record_create",
+    "surface:diversion_record_delete", "surface:diversion_record_edit", "surface:pod_edit",
+    "surface:pod_link_right", "surface:pod_parcel_edit_share",
+    "surface:water_right_assign_parcel", "surface:water_right_create",
+    "surface:water_right_edit", "surface:water_right_import",
+    "surface:water_right_import_commit", "surface:water_right_import_preview",
+    "surface:water_right_remove_parcel", "wells:edit_field",
+    "wells:irrigated_parcel_edit_share",
+]
+
+
+def _all_url_names():
+    from django.urls import URLPattern, URLResolver, get_resolver
+
+    names = []
+
+    def walk(resolver, prefix=""):
+        for pattern in resolver.url_patterns:
+            if isinstance(pattern, URLResolver):
+                walk(pattern, f"{prefix}{pattern.namespace}:" if pattern.namespace else prefix)
+            elif isinstance(pattern, URLPattern) and pattern.name:
+                names.append(prefix + pattern.name)
+
+    walk(get_resolver())
+    return set(names)
+
+
+def test_the_write_pages_are_exactly_these():
+    matched = sorted(n for n in _all_url_names() if not n.startswith("admin:") and is_write_page(n))
+    assert matched == WRITE_PAGES
+
+
+def test_a_viewer_opening_a_write_page_by_address_is_refused(viewer, operator):
+    url = reverse("accounting:ledger_create")
+    assert _refused(_client(viewer).get(url)) == (403, True)
+    response = _client(operator).get(url)
+    assert response.status_code == 200
+    assert READ_ONLY_MESSAGE not in response.content.decode()
+
+
+def test_a_viewer_opening_an_inline_editor_is_refused(viewer):
+    parcel = ParcelFactory(parcel_number="VIEW-005")
+    response = _client(viewer).get(
+        reverse("parcels:edit_field", args=[parcel.pk]), {"field": "area_acres"}
+    )
+    assert _refused(response) == (403, True)

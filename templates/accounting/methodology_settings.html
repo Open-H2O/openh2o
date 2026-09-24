@@ -22,14 +22,14 @@
   <div class="card-raised card-inset honesty-note">
     <p class="text-sm" style="margin: 0; color: var(--color-text-secondary);">
       <strong>Changes affect every future calculation.</strong>
-      The result is a derived extraction estimate, not measured pumping. Edit a step, save, then preview a sample parcel to see the effect before committing to a billing run.
+      The result is a derived extraction estimate, not measured pumping.{% if user_can_write %} Edit a step, save, then preview a sample parcel to see the effect before committing to a billing run.{% endif %}
     </p>
   </div>
 
   <!-- What is a methodology? help block -->
   <div class="card-raised">
     <h2 class="section-header mb-md">What is a methodology?</h2>
-    <p class="text-secondary text-base">A <strong>methodology</strong> (or calculation plan) is the ordered, configurable chain of <strong>steps</strong> the platform applies to turn measurements into a defensible billable-groundwater figure for each use area: gross ET, minus effective precipitation, minus surface water deliveries, minus edge cases. Each step below is one operation in that chain: reorder, enable or disable, and set its parameters; then preview a sample parcel.</p>
+    <p class="text-secondary text-base">A <strong>methodology</strong> (or calculation plan) is the ordered, configurable chain of <strong>steps</strong> the platform applies to turn measurements into a defensible billable-groundwater figure for each use area: gross ET, minus effective precipitation, minus surface water deliveries, minus edge cases. Each step below is one operation in that chain{% if user_can_write %}: reorder, enable or disable, and set its parameters; then preview a sample parcel{% endif %}.</p>
     <a href="{% url 'glossary' %}" class="text-sm text-accent">Glossary &rarr;</a>
     <span class="text-tertiary text-sm" style="margin: 0 var(--space-xs);">|</span>
     <a href="{% url 'getting_started' %}" class="text-sm text-accent">Getting Started &rarr;</a>
@@ -53,7 +53,7 @@
   <div class="card-raised">
     <div class="row-between mb-md">
       <h2 class="section-header m-0">{{ plan.name }}</h2>
-      <span class="text-tertiary text-sm">{{ steps|length }} step{{ steps|length|pluralize }} — reorder, enable or disable, and set each step's parameters</span>
+      <span class="text-tertiary text-sm">{{ steps|length }} step{{ steps|length|pluralize }}{% if user_can_write %}: reorder, enable or disable, and set each step's parameters{% endif %}</span>
     </div>
 
     {% comment %} 147-01: one shared, optional reason for the move and
