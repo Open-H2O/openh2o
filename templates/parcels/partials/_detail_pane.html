@@ -116,6 +116,7 @@
           <div class="budget-breakdown-group">
             <div class="budget-breakdown-title">Uses by destination</div>
             <div class="budget-breakdown-row"><span>Consumptive use</span><b>{{ mass_balance.outputs.et|floatformat:2|intcomma }}</b></div>
+            <div class="budget-breakdown-row"><span>Deep percolation</span><b>{{ mass_balance.deep_percolation_af|floatformat:2|intcomma }}</b></div>
             <div class="budget-breakdown-row"><span>Recharge{% if mass_balance.outputs.recharge %} <span class="text-tertiary">(estimated)</span>{% endif %}</span><b>{{ mass_balance.outputs.recharge|floatformat:2|intcomma }}</b></div>
             <div class="budget-breakdown-row"><span>Storage change</span><b>{{ mass_balance.outputs.delta_storage|floatformat:2|intcomma }}</b></div>
           </div>

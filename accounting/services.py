@@ -1028,6 +1028,10 @@ def parcel_mass_balance(parcel, reporting_period=None):
         "gw_is_estimated": gw_is_estimated,
         "outputs": outputs,
         "outputs_total": outputs_total,
+        # 148-02: the two deep-percolation outputs as the one row the balance
+        # panel lists, so the rows under Uses add up to Uses. Kept outside
+        # `outputs` so outputs_total does not count it twice.
+        "deep_percolation_af": deep_percolation_surface + deep_percolation_gw,
         "residual_af": residual,
         "closes": closes,
         # 58-03: presentation classification — "closes" / "realistic" / "large".

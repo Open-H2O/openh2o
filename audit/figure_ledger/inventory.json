@@ -1083,10 +1083,10 @@
     "kind": "figure",
     "template": "templates/parcels/partials/_detail_pane.html",
     "line": 119,
-    "column": 200,
-    "expression": "{{ mass_balance.outputs.recharge|floatformat:2|intcomma }}",
+    "column": 115,
+    "expression": "{{ mass_balance.deep_percolation_af|floatformat:2|intcomma }}",
     "enclosing_loop": null,
-    "nearest_label": "{{ mass_balance.outputs.recharge|"
+    "nearest_label": "{{ mass_balance.deep_percolation_af|"
   },
   {
     "id": "FIG-parcels-008",
@@ -1094,43 +1094,43 @@
     "kind": "figure",
     "template": "templates/parcels/partials/_detail_pane.html",
     "line": 120,
-    "column": 115,
-    "expression": "{{ mass_balance.outputs.delta_storage|floatformat:2|intcomma }}",
+    "column": 200,
+    "expression": "{{ mass_balance.outputs.recharge|floatformat:2|intcomma }}",
     "enclosing_loop": null,
-    "nearest_label": "{{ mass_balance.outputs.delta_storage|"
+    "nearest_label": "{{ mass_balance.outputs.recharge|"
   },
   {
     "id": "FIG-parcels-009",
     "app": "parcels",
     "kind": "figure",
     "template": "templates/parcels/partials/_detail_pane.html",
-    "line": 135,
-    "column": 206,
-    "expression": "{{ mass_balance.residual_af|floatformat:2|intcomma }}",
+    "line": 121,
+    "column": 115,
+    "expression": "{{ mass_balance.outputs.delta_storage|floatformat:2|intcomma }}",
     "enclosing_loop": null,
-    "nearest_label": "{{ mass_balance.residual_af|"
+    "nearest_label": "{{ mass_balance.outputs.delta_storage|"
   },
   {
     "id": "FIG-parcels-010",
     "app": "parcels",
     "kind": "figure",
     "template": "templates/parcels/partials/_detail_pane.html",
-    "line": 185,
-    "column": 53,
-    "expression": "{{ unmet_demand_af|floatformat:2|intcomma }}",
+    "line": 136,
+    "column": 206,
+    "expression": "{{ mass_balance.residual_af|floatformat:2|intcomma }}",
     "enclosing_loop": null,
-    "nearest_label": "{{ unmet_demand_af|"
+    "nearest_label": "{{ mass_balance.residual_af|"
   },
   {
     "id": "FIG-parcels-011",
     "app": "parcels",
     "kind": "figure",
     "template": "templates/parcels/partials/_detail_pane.html",
-    "line": 241,
-    "column": 81,
-    "expression": "{{ consumptive_balance.supplies.surface|floatformat:2 }}",
+    "line": 186,
+    "column": 53,
+    "expression": "{{ unmet_demand_af|floatformat:2|intcomma }}",
     "enclosing_loop": null,
-    "nearest_label": "surface {{ consumptive_balance.supplies.surface|"
+    "nearest_label": "{{ unmet_demand_af|"
   },
   {
     "id": "FIG-parcels-012",
@@ -1138,39 +1138,50 @@
     "kind": "figure",
     "template": "templates/parcels/partials/_detail_pane.html",
     "line": 242,
-    "column": 89,
-    "expression": "{{ consumptive_balance.supplies.groundwater|floatformat:2 }}",
+    "column": 81,
+    "expression": "{{ consumptive_balance.supplies.surface|floatformat:2 }}",
     "enclosing_loop": null,
-    "nearest_label": "groundwater {{ consumptive_balance.supplies.groundwater|"
+    "nearest_label": "surface {{ consumptive_balance.supplies.surface|"
   },
   {
     "id": "FIG-parcels-013",
     "app": "parcels",
     "kind": "figure",
     "template": "templates/parcels/partials/_detail_pane.html",
-    "line": 284,
-    "column": 58,
-    "expression": "{{ ef.value|floatformat:2 }}",
-    "enclosing_loop": "ef in editable_fields_with_values",
-    "nearest_label": "{{ ef.value|"
+    "line": 243,
+    "column": 89,
+    "expression": "{{ consumptive_balance.supplies.groundwater|floatformat:2 }}",
+    "enclosing_loop": null,
+    "nearest_label": "groundwater {{ consumptive_balance.supplies.groundwater|"
   },
   {
     "id": "FIG-parcels-014",
     "app": "parcels",
     "kind": "figure",
     "template": "templates/parcels/partials/_detail_pane.html",
-    "line": 336,
-    "column": 65,
-    "expression": "{{ wip.fraction|floatformat:2 }}",
-    "enclosing_loop": "wip in related_wells",
-    "nearest_label": "{{ wip.fraction|"
+    "line": 285,
+    "column": 58,
+    "expression": "{{ ef.value|floatformat:2 }}",
+    "enclosing_loop": "ef in editable_fields_with_values",
+    "nearest_label": "{{ ef.value|"
   },
   {
     "id": "FIG-parcels-015",
     "app": "parcels",
     "kind": "figure",
     "template": "templates/parcels/partials/_detail_pane.html",
-    "line": 409,
+    "line": 337,
+    "column": 65,
+    "expression": "{{ wip.fraction|floatformat:2 }}",
+    "enclosing_loop": "wip in related_wells",
+    "nearest_label": "{{ wip.fraction|"
+  },
+  {
+    "id": "FIG-parcels-016",
+    "app": "parcels",
+    "kind": "figure",
+    "template": "templates/parcels/partials/_detail_pane.html",
+    "line": 410,
     "column": 119,
     "expression": "{{ entry.amount_acre_feet|floatformat:2 }}",
     "enclosing_loop": "entry in recent_ledger",

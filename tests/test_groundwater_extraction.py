@@ -474,3 +474,32 @@ def test_a_metered_calculation_page_shows_no_extracted_figure(admin_client):
     ).content.decode()
 
     assert "Estimated groundwater extracted" not in html
+
+
+def test_the_balance_panel_rows_add_up_to_uses(admin_client):
+    """148-02: the two deep-percolation outputs count in Uses, so the panel
+    lists them as one row; without it the rows under Uses fell short of the
+    Uses total by exactly that amount (MER-APN-032, WY 2025-2026: 181.25)."""
+    period = "2025-05"
+    parcel = _et_only_parcel("GWX-PANEL", period, et_mm="26.8224")
+    call_command("seed_calculation_plan")
+    call_command("run_calculations", "--period", period)
+
+    result = parcel_mass_balance(parcel, reporting_period=None)
+    outputs = result["outputs"]
+    assert result["deep_percolation_af"] == (
+        outputs["deep_percolation_surface_af"] + outputs["deep_percolation_gw_af"]
+    )
+    assert result["deep_percolation_af"] == Decimal("0.2200")
+    listed = (
+        outputs["et"]
+        + outputs["recharge"]
+        + outputs["delta_storage"]
+        + result["deep_percolation_af"]
+    )
+    assert listed == result["outputs_total"]
+
+    html = admin_client.get(
+        reverse("parcels:detail", args=[parcel.id])
+    ).content.decode()
+    assert "Deep percolation" in html
