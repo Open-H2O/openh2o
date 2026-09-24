@@ -419,9 +419,7 @@ class Command(BaseCommand):
                     f"the state is being recomputed — this changes a filed figure."
                 )
             )
-            self._history.enter_context(
-                pghistory.context(reason=FORCE_REASON)
-            )
+            self._history.enter_context(pghistory.context(reason=FORCE_REASON))
 
         # Snapshot the methodology ONCE: the active plan is identical for every
         # parcel in a single run, so hashing per-parcel would be wasted work and

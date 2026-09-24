@@ -74,8 +74,7 @@ def test_golden_build_clears_every_tracked_models_event_table_and_context():
     exclude list) so the command is proven to discover tables from the
     registry rather than a table this suite happens to touch first.
     """
-    from core.models import SiteConfig
-    from core.models import SiteConfigEvent
+    from core.models import SiteConfig, SiteConfigEvent
 
     zone = ZoneFactory()
     config = SiteConfig.objects.create(agency_name=f"Test Agency {uuid.uuid4()}")
