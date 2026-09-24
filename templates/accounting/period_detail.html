@@ -57,7 +57,7 @@
           <div class="field-value">
             {% if period.is_finalized %}
               <span class="badge badge-pill badge-green">Finalized</span>
-              <span class="text-tertiary text-sm" style="margin-left: var(--space-sm);">
+              <span class="text-tertiary text-sm" style="margin-left: var(--space-sm); overflow-wrap: anywhere;">
                 {{ period.finalized_at|date:"M d, Y H:i" }}{% if period.finalized_by %} by {{ period.finalized_by }}{% endif %}
               </span>
             {% else %}
