@@ -279,9 +279,10 @@ class DeliverySettingsForm(forms.Form):
         min_value=0,
         max_value=100,
         label="Share left in the basin",
-        help_text="Typical: 10%. On a field with no well, the credited "
-        "share goes to the zone's shared account instead, because there is "
-        "no well to pump it back. A change applies to months calculated "
+        # 148-04: the sentence about fields without a well is in the
+        # template, behind the `wells` gate: a kept page may not name a
+        # dropped module's noun (tests/droppability).
+        help_text="Typical: 10%. A change applies to months calculated "
         "after it.",
         widget=forms.NumberInput(
             attrs={"class": "form-input", "style": "width: 6rem;", "step": "1"}

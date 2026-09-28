@@ -87,7 +87,7 @@
           {{ form.over_delivery_leave_behind_percent }}
           <span class="input-suffix-unit">%</span>
         </span>
-        <p class="text-secondary text-sm" style="margin-top: var(--space-xs);">{{ form.over_delivery_leave_behind_percent.help_text }}</p>
+        <p class="text-secondary text-sm" style="margin-top: var(--space-xs);">{{ form.over_delivery_leave_behind_percent.help_text }} {% if form.shows_groundwater_efficiency %}On a field with no well, the credited share goes to the zone's shared account instead, because there is no well to pump it back.{% else %}The credited share goes to the zone's shared account.{% endif %}</p>
         {% if form.over_delivery_leave_behind_percent.errors %}<p class="text-sm text-furnace mt-sm">{{ form.over_delivery_leave_behind_percent.errors|striptags }}</p>{% endif %}
       </div>
     </div>
