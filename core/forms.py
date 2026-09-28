@@ -200,6 +200,19 @@ class DeliverySettingsForm(forms.Form):
     ``shows_efficiency``'s percent display/entry convention (75 shown, 0.750
     stored).
 
+    **The over-delivery treatment belongs to ``surface`` the same way (148-04
+    Task 1, Brent's Q1 ruling 2026-09-20).** ``over_delivery_treatment`` and
+    ``over_delivery_leave_behind`` are read once per run by
+    ``run_calculations`` (148-04 Task 2); only canal water can be
+    over-delivered, so both fields are shown and saved under the same
+    ``shows_efficiency`` gate. Both fields are ``required=False`` at the
+    Django level so a caller that does not offer them (an old test, or a
+    deployment with ``surface`` off) leaves the stored values exactly as
+    they were rather than writing a value nobody was offered -- the same
+    "leave it alone" outcome ``shows_efficiency`` gives every other field
+    here, reached a different way because this pair shares one card with a
+    conditional second field (the percent only applies to "credited").
+
     **``diversion_report_year_rule`` belongs to ``surface`` the same way
     (146-03 Task 3).** It is the 145-01 memo's crosswalk layer for a bulk
     diversion import a later plan adds; on a deployment with no Surface
@@ -241,6 +254,35 @@ class DeliverySettingsForm(forms.Form):
         help_text="Typical: 80%. Estimated groundwater extracted is the "
         "estimated groundwater consumed divided by this share; a meter "
         "reading is used as recorded.",
+        widget=forms.NumberInput(
+            attrs={"class": "form-input", "style": "width: 6rem;", "step": "1"}
+        ),
+    )
+    # 148-04 Task 1: what happens to a canal delivery that went beyond what
+    # its field's crop could use. `required=False` at the Django level (see
+    # the class docstring) -- a submission that omits it leaves the stored
+    # treatment untouched, same convention as `identifier_host` blank meaning
+    # "use the default". Plain-language radio labels are set in __init__,
+    # like `recovery_horizon`'s.
+    over_delivery_treatment = forms.ChoiceField(
+        choices=SiteConfig.OVER_DELIVERY_TREATMENT_CHOICES,
+        required=False,
+        label="Canal water beyond what the crop could use",
+        widget=forms.RadioSelect,
+    )
+    # Shown/entered as a whole-number percent, stored as a Decimal fraction --
+    # the same convention as `efficiency_percent`. Required only when
+    # "credited" is the chosen treatment (enforced in `clean()`); otherwise
+    # the stored leave-behind share is left exactly as it was.
+    over_delivery_leave_behind_percent = forms.IntegerField(
+        required=False,
+        min_value=0,
+        max_value=100,
+        label="Share left in the basin",
+        help_text="Typical: 10%. On a field with no well, the credited "
+        "share goes to the zone's shared account instead, because there is "
+        "no well to pump it back. A change applies to months calculated "
+        "after it.",
         widget=forms.NumberInput(
             attrs={"class": "form-input", "style": "width: 6rem;", "step": "1"}
         ),
@@ -334,6 +376,11 @@ class DeliverySettingsForm(forms.Form):
                 initial["groundwater_efficiency_percent"] = int(
                     (instance.groundwater_efficiency * 100).to_integral_value()
                 )
+            if self.shows_efficiency:
+                initial["over_delivery_treatment"] = instance.over_delivery_treatment
+                initial["over_delivery_leave_behind_percent"] = int(
+                    (instance.over_delivery_leave_behind * 100).to_integral_value()
+                )
             if self.shows_diversion_settings:
                 initial["diversion_report_year_rule"] = instance.diversion_report_year_rule
                 initial["season_start_month"] = instance.season_start_month
@@ -343,6 +390,9 @@ class DeliverySettingsForm(forms.Form):
             del self.fields["efficiency_percent"]
         if not self.shows_groundwater_efficiency:
             del self.fields["groundwater_efficiency_percent"]
+        if not self.shows_efficiency:
+            del self.fields["over_delivery_treatment"]
+            del self.fields["over_delivery_leave_behind_percent"]
         if not self.shows_diversion_settings:
             del self.fields["diversion_report_year_rule"]
             del self.fields["season_start_month"]
@@ -352,6 +402,25 @@ class DeliverySettingsForm(forms.Form):
             ("carry_forward", "Carry it forward as a credit toward next year"),
             ("same_water_year", "Let it expire (use-it-or-lose-it)"),
         ]
+        if self.shows_efficiency:
+            # 148-04 Task 1 working words (Brent's checkpoint may polish; no
+            # "recharge" -- this page is served without that module).
+            self.fields["over_delivery_treatment"].choices = [
+                (
+                    "not_credited",
+                    "Not credited to anyone. The amount is shown on the "
+                    "month's calculation.",
+                ),
+                (
+                    "credited",
+                    "Credited to the landowner, less a share left in the basin",
+                ),
+                (
+                    "named_line",
+                    "Shown on the field's page as its own line. It is not "
+                    "a credit and is not charged.",
+                ),
+            ]
         if self.shows_diversion_settings:
             self.fields["diversion_report_year_rule"].choices = [
                 ("water_year", "Water year: October to September"),
@@ -385,6 +454,29 @@ class DeliverySettingsForm(forms.Form):
         except InvalidOperation:
             raise forms.ValidationError("Enter a whole number between 1 and 100.")
 
+    def clean_over_delivery_leave_behind_percent(self):
+        percent = self.cleaned_data.get("over_delivery_leave_behind_percent")
+        if percent is None:
+            return None
+        # Percent (90) -> Decimal fraction (0.900), the stored convention.
+        try:
+            return (Decimal(percent) / Decimal("100")).quantize(Decimal("0.001"))
+        except InvalidOperation:
+            raise forms.ValidationError("Enter a whole number between 0 and 100.")
+
+    def clean(self):
+        cleaned = super().clean()
+        if self.shows_efficiency:
+            treatment = cleaned.get("over_delivery_treatment")
+            leave_behind = cleaned.get("over_delivery_leave_behind_percent")
+            if treatment == "credited" and leave_behind is None:
+                self.add_error(
+                    "over_delivery_leave_behind_percent",
+                    "Enter the share left in the basin when crediting the "
+                    "landowner.",
+                )
+        return cleaned
+
     def save(self):
         """Write the shown fields back onto the singleton SiteConfig instance.
 
@@ -407,6 +499,21 @@ class DeliverySettingsForm(forms.Form):
                 "groundwater_efficiency_percent"
             ]
             updated.append("groundwater_efficiency")
+        if self.shows_efficiency:
+            # 148-04 Task 1: a submission that omits the treatment (nobody
+            # was offered it, e.g. a caller built before this plan) leaves
+            # both stored values exactly as they were. A submitted treatment
+            # other than "credited" leaves the stored leave-behind share
+            # untouched too -- it only means something when crediting.
+            treatment = self.cleaned_data.get("over_delivery_treatment")
+            if treatment:
+                config.over_delivery_treatment = treatment
+                updated.append("over_delivery_treatment")
+                if treatment == "credited":
+                    config.over_delivery_leave_behind = self.cleaned_data[
+                        "over_delivery_leave_behind_percent"
+                    ]
+                    updated.append("over_delivery_leave_behind")
         if self.shows_diversion_settings:
             config.diversion_report_year_rule = self.cleaned_data["diversion_report_year_rule"]
             config.season_start_month = self.cleaned_data.get("season_start_month")

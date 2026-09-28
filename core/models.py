@@ -131,6 +131,38 @@ class SiteConfig(models.Model):
         default=Decimal("0.750"),
         help_text="Share of delivered water the crop consumes.",
     )
+
+    # 148-04 Task 1 (Brent's Q1 ruling, 2026-09-20): what a canal delivery that
+    # went beyond what its field's crop could use does to the numbers. Belongs
+    # to `surface` exactly as default_irrigation_efficiency does -- only canal
+    # water can be over-delivered, so DeliverySettingsForm shows and saves both
+    # fields under the same `shows_efficiency` gate. `run_calculations` (148-04
+    # Task 2) is the one reader; nothing here reaches the engine directly.
+    OVER_DELIVERY_TREATMENT_CHOICES = [
+        ("not_credited", "Not credited"),
+        ("credited", "Credited to the landowner, less a share left in the basin"),
+        ("named_line", "Its own line, not a credit"),
+    ]
+    over_delivery_treatment = models.CharField(
+        max_length=20,
+        choices=OVER_DELIVERY_TREATMENT_CHOICES,
+        default="not_credited",
+        help_text="What happens to the amount a canal delivery went beyond "
+        "what its field's crop could use, on the month's calculation: not "
+        "credited to anyone (today's behavior), credited to the landowner "
+        "with a share left in the basin, or shown as its own line that is "
+        "not a credit.",
+    )
+    over_delivery_leave_behind = models.DecimalField(
+        max_digits=4,
+        decimal_places=3,
+        default=Decimal("0.100"),
+        validators=[MinValueValidator(0), MaxValueValidator(1)],
+        help_text="The share of a credited over-delivery left in the basin "
+        "rather than credited to the landowner. Read only when the setting "
+        "above is credited. Default 10%, the Lower Tule convention.",
+    )
+
     # 148-02 Task 4 (Q2): the groundwater sibling of default_irrigation_efficiency,
     # belonging to `wells` exactly as that field belongs to `surface`
     # (DeliverySettingsForm hides it without the module; core/changes.py maps it

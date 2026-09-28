@@ -206,6 +206,9 @@ FIELD_MODULES = {
     "core.SiteConfig.diversion_use_type_rule": "surface",
     "core.SiteConfig.diversion_report_year_rule": "surface",
     "core.SiteConfig.season_start_month": "surface",
+    # 148-04 Task 1: only canal water can be over-delivered.
+    "core.SiteConfig.over_delivery_treatment": "surface",
+    "core.SiteConfig.over_delivery_leave_behind": "surface",
 }
 
 

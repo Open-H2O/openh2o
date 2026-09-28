@@ -63,6 +63,36 @@
     </div>
     {% endif %}
 
+    {% comment %} Setting: over-delivery treatment (148-04, Brent's Q1 ruling
+         2026-09-20, built 2026-09-28). `surface` owns both fields, same gate
+         as efficiency: only canal water can be over-delivered. Its position is
+         computed in the view like every other optional card. {% endcomment %}
+    {% if form.shows_efficiency %}
+    <div class="card-raised">
+      <span class="step-eyebrow">Setting {{ over_delivery_number }} of {{ settings_total }}</span>
+      <h2 class="section-header">{{ form.over_delivery_treatment.label }}</h2>
+      <div class="field-group mt-sm">
+        {% for radio in form.over_delivery_treatment %}
+        <label class="radio-option">
+          {{ radio.tag }}
+          <span class="text-secondary text-base">{{ radio.choice_label }}</span>
+        </label>
+        {% endfor %}
+      </div>
+      {% if form.over_delivery_treatment.errors %}<p class="text-sm text-furnace mt-sm">{{ form.over_delivery_treatment.errors|striptags }}</p>{% endif %}
+
+      <div class="field-group mt-md mb-0">
+        <label class="form-label" for="{{ form.over_delivery_leave_behind_percent.id_for_label }}">{{ form.over_delivery_leave_behind_percent.label }}</label>
+        <span class="input-suffix">
+          {{ form.over_delivery_leave_behind_percent }}
+          <span class="input-suffix-unit">%</span>
+        </span>
+        <p class="text-secondary text-sm" style="margin-top: var(--space-xs);">{{ form.over_delivery_leave_behind_percent.help_text }}</p>
+        {% if form.over_delivery_leave_behind_percent.errors %}<p class="text-sm text-furnace mt-sm">{{ form.over_delivery_leave_behind_percent.errors|striptags }}</p>{% endif %}
+      </div>
+    </div>
+    {% endif %}
+
     {% comment %} Setting: groundwater efficiency (148-02 Task 4, Q2). `wells`
          owns it (see DeliverySettingsForm), the groundwater sibling of the
          efficiency card above -- same percent convention, its own module

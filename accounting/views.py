@@ -1978,6 +1978,12 @@ def delivery_settings(request):
     if form.shows_efficiency:
         position += 1
     efficiency_number = position or None
+    # 148-04: the over-delivery card follows the efficiency card, same
+    # `surface` gate (only canal water can be over-delivered).
+    over_delivery_number = None
+    if form.shows_efficiency:
+        position += 1
+        over_delivery_number = position
     # 148-02 Task 4 (Q2): the groundwater card sits beside the surface one it
     # mirrors, before the always-shown cards -- its own `wells` gate, computed
     # the same DISPLAY-order way as every other optional card here.
@@ -2003,6 +2009,7 @@ def delivery_settings(request):
             "form": form,
             "settings_total": settings_total,
             "efficiency_number": efficiency_number,
+            "over_delivery_number": over_delivery_number,
             "groundwater_number": groundwater_number,
             "recovery_number": recovery_number,
             "diversion_number": diversion_number,
