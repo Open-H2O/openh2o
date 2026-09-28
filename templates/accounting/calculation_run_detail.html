@@ -176,5 +176,38 @@
   </div>
   {% endif %}
 
+  {% comment %} 148-04: canal water beyond what the crop could use. The
+     sentence is chosen by the run's OWN stamped treatment, read back off the
+     run the same way the divisor above is, never the live Delivery Settings
+     value, so a later change to that setting does not move what an
+     already-run month says about itself. `over_delivery_left_af` and
+     `over_delivery_share_pct` are the view's own arithmetic on the run's two
+     stamps; this page's four-place convention applies to them the same as
+     every other AF figure here. A "credited" run that credited nothing this
+     month (over_delivery_left_af is then None) reads the same as
+     not_credited: nothing was credited. Absent on a run with no
+     over-delivery. {% endcomment %}
+  {% if run.over_delivery_af > 0 %}
+  <div class="result-card">
+    <div>
+      <div class="field-label">Canal water beyond what the crop could use</div>
+      <p class="text-tertiary text-sm" style="margin: var(--space-xs) 0 0 0;">
+        {% if run.over_delivery_treatment == "credited" and over_delivery_left_af is not None and not run.over_delivery_credit_pooled %}
+        {{ run.over_delivery_credited_af|floatformat:4 }} AF credited to this field; {{ over_delivery_left_af|floatformat:4 }} AF ({{ over_delivery_share_pct|floatformat:0 }}%) left in the basin.
+        {% elif run.over_delivery_treatment == "credited" and over_delivery_left_af is not None and run.over_delivery_credit_pooled %}
+        {{ run.over_delivery_credited_af|floatformat:4 }} AF credited to the zone's shared account, because this field has no well; {{ over_delivery_left_af|floatformat:4 }} AF left in the basin.
+        {% elif run.over_delivery_treatment == "named_line" %}
+        Shown on the field's page as its own line. It is not a credit and is not charged.
+        {% else %}
+        Recorded here. It is not credited to anyone.
+        {% endif %}
+      </p>
+    </div>
+    <div class="result-card-value">
+      {{ run.over_delivery_af|floatformat:4 }} <span class="stat-card-unit" style="font-size: 1rem;">AF</span>
+    </div>
+  </div>
+  {% endif %}
+
 </div>
 {% endblock %}

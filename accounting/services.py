@@ -1098,6 +1098,32 @@ def parcel_unmet_demand(parcel, reporting_period=None):
     return total.quantize(Decimal("0.0001"))
 
 
+def parcel_over_delivery_shown(parcel, reporting_period=None):
+    """Canal water beyond what this field's crop could use, shown but not credited (AF).
+
+    148-04 decision (c): under the "named_line" over-delivery treatment a run
+    stamps the amount and writes no ledger row and credits nobody. Decision 4
+    in 148-04-PLAN.md keeps it off the Use Ledger, because every row there is a
+    credit or a debit. This is where a reader sees it instead: summed the same
+    way ``parcel_unmet_demand`` sums its own figure, through
+    ``_calculation_runs_for_period`` so it scopes identically to the balance
+    read beside it. A run stamped "not_credited" or "credited" never
+    contributes here, whatever its own ``over_delivery_af`` reads.
+
+    Returns:
+        Decimal: the summed amount, quantized to 4 places; ``Decimal("0")``
+        when no run in the period was stamped named_line.
+    """
+    total = (
+        _calculation_runs_for_period(parcel, reporting_period)
+        .filter(over_delivery_treatment="named_line")
+        .aggregate(s=Sum("over_delivery_af"))["s"]
+    )
+    if total is None:
+        return Decimal("0")
+    return total.quantize(Decimal("0.0001"))
+
+
 def unmet_demand_by_parcel(reporting_period):
     """Fields whose water use no reported supply explains, one row per field.
 

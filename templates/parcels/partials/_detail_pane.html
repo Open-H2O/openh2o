@@ -187,6 +187,22 @@
           </p>
           {% endif %}
 
+          {% comment %}
+            148-04 (c). The deployment can set canal water beyond what a
+            field's crop could use to show as its own line rather than a
+            credit (Delivery Settings, "named_line"). This is that line: a
+            month set another way never reaches this figure, so a field
+            reads as its own history under whichever setting was in force
+            when each month ran. A zero renders NOTHING, the same rule the
+            unmet-demand line above follows.
+          {% endcomment %}
+          {% if over_delivery_shown_af > 0 %}
+          <p class="text-secondary">
+            <strong>Canal water beyond what the crop could use:</strong>
+            <span class="td-num">{{ over_delivery_shown_af|floatformat:2|intcomma }}</span> AF, shown, not a credit{% include "partials/_explainer_popout.html" with title="Canal water beyond what the crop could use" text="The deployment can set this amount to show as its own line instead of a credit. It is stored as a figure only, not booked as a credit and not charged against this field." link=wb_help_url link_label="How water balances work" %}
+          </p>
+          {% endif %}
+
           {% if mass_balance.band_status == "realistic" %}
           <p class="text-tertiary">
             {% if mass_balance.is_surplus %}

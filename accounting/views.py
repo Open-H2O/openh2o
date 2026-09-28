@@ -1844,6 +1844,33 @@ def _step_detail_summary(step):
     return ""
 
 
+def _over_delivery_left_af(run):
+    """148-04: what the run's own two stamped figures leave in the basin.
+
+    ``over_delivery_af`` and ``over_delivery_credited_af`` are both read off
+    THIS run, never the live setting (ISS-177, the same rule that protects
+    ``gw_extracted_af``), so a later change to Delivery Settings moves
+    nothing this page says about a run already computed. None whenever
+    nothing was actually credited this run: not_credited, named_line, or a
+    "credited" run that credited nothing (no over-delivery to apply the
+    share to, or a no-well field with no zone to hold its share). The
+    template reads that state the same way it reads not_credited.
+    """
+    if run.over_delivery_treatment != "credited" or run.over_delivery_credited_af is None:
+        return None
+    return (run.over_delivery_af - run.over_delivery_credited_af).quantize(Decimal("0.0001"))
+
+
+def _over_delivery_share_pct(run):
+    """148-04: the stamped leave-behind share, as a percent number for the
+    template's own ``floatformat:0`` (never a pre-formatted string, so the
+    figure ledger can trace the site the same way it traces every other
+    number on this page)."""
+    if run.over_delivery_leave_behind is None:
+        return None
+    return run.over_delivery_leave_behind * 100
+
+
 @login_required
 def calculation_run_detail(request, parcel_id, period):
     """Read-only audit page reconstructing one parcel-month's gross→net waterfall.
@@ -1918,6 +1945,15 @@ def calculation_run_detail(request, parcel_id, period):
             if run.gw_extracted_af
             else None
         ),
+        # 148-04: the figures behind canal water beyond what the crop could
+        # use, read off the run's own stamps (never the live setting). The
+        # template composes the four sentences and applies floatformat, so
+        # every number it prints has a figure-ledger site the same way the
+        # divisor above does. The card is absent whenever over_delivery_af
+        # is 0, so these are computed unconditionally but only read by the
+        # template under that guard.
+        "over_delivery_left_af": _over_delivery_left_af(run),
+        "over_delivery_share_pct": _over_delivery_share_pct(run),
         # 42-01: the methodology fingerprint behind this number. Blank on a
         # pre-42 run, which the template renders as dashes (honest: "ran before
         # provenance was recorded").
