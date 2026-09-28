@@ -42,6 +42,10 @@ from core.modules import is_enabled
 
 from accounting.carryover_math import available_with_carryover, water_year_of
 from accounting.ledger_import import import_ledger_rows
+from accounting.ledger_words import (
+    INCIDENTAL_RECHARGE_WORDS,
+    LEGACY_INCIDENTAL_RECHARGE_WORDS,
+)
 from accounting.models import (
     AllocationCarryover,
     AllocationPlan,
@@ -79,15 +83,15 @@ def deposit_to_basin_pool(
     the engine's per-parcel loop can deposit many times for one key without losing
     an increment. Returns the pool row.
 
-    148-02 Task 3 (Q1, an over-delivery is nobody's credit): ``run_calculations``
-    no longer calls this with ``origin=incidental_recharge_pool`` to deposit a
-    no-well parcel's over-delivery — that amount now lands only on
-    ``CalculationRun.over_delivery_af``, never a pool row. This function stays
-    for the managed-recharge path (``create_recharge_ledger_entries``'s
-    ``basin_recharge_pool`` deposit, a real ``RechargeEvent``) and for
-    ``run_calculations``'s own one-time reversal of a pre-148-02 incidental
-    deposit (a negative delta, same origin, so a database an older engine
-    wrote nets back to what this engine would have left it).
+    148-02 Task 3 made an over-delivery nobody's credit; 148-04 made that the
+    DEFAULT of a setting (``SiteConfig.over_delivery_treatment``). Under
+    "credited", ``run_calculations`` calls this again with
+    ``origin=incidental_recharge_pool`` for a no-well parcel's credited share,
+    always as a signed delta against what that parcel's prior run pooled (which
+    also covers the one-time reversal of a pre-148-02 deposit), and deletes the
+    row if it nets to exactly zero. The managed-recharge path
+    (``create_recharge_ledger_entries``'s ``basin_recharge_pool`` deposit, a
+    real ``RechargeEvent``) is unchanged.
     """
     amount = Decimal(str(amount_af))
     with transaction.atomic():
@@ -892,18 +896,28 @@ def parcel_mass_balance(parcel, reporting_period=None):
       by the same amount. Credit-draw timing is carried by ``delta_storage``
       (banked − drawn), not double-counted here.
     * ``et`` (output): ``CalculationRun.gross_et_af`` (gross actual ET).
-    * ``recharge`` (output, 148-02 Task 3): magnitude of real ``recharge``
-      ledger rows for the period — managed recharge deliberately spread onto a
-      has-well parcel (``create_recharge_ledger_entries``'s personal path), on
-      the SAME billable basis ``surface`` above reads. An over-delivery (canal
-      water a field could use beyond its net use) is NOT a recharge output any
-      more: Q1 (an over-delivery is nobody's credit) means it never becomes a
-      ledger row of any kind, so it cannot appear here, and it is never added
-      back as a manufactured term either — that is the ISS-158 plug. It is
-      recorded only on the run, as ``CalculationRun.over_delivery_af``,
-      informational, not part of this identity. A no-well over-delivered
-      field-year's residual therefore equals that amount rather than closing
-      to ~0, which is what 148's closure tests now check.
+    * ``recharge`` (output, 148-02 Task 3, revised 148-04 decision 3): magnitude
+      of real ``recharge`` ledger rows for the period — managed recharge
+      deliberately spread onto a has-well parcel
+      (``create_recharge_ledger_entries``'s personal path) — on the SAME
+      billable basis ``surface`` above reads, EXCLUDING any row whose
+      description starts with ``INCIDENTAL_RECHARGE_WORDS`` or
+      ``LEGACY_INCIDENTAL_RECHARGE_WORDS``. Under the default
+      ("not_credited") or "named_line" no such row exists to exclude — Q1
+      (an over-delivery is nobody's credit under the default) means it never
+      becomes a ledger row at all, so it cannot appear here, and it is never
+      added back as a manufactured term either (the ISS-158 plug). 148-04's
+      "credited" setting DOES write such a row again (a has-well field's own
+      share, or a no-well field's pooled share) — the exclusion keeps it out
+      of this identity all the same: a credit is money-like, not water that
+      moved twice, so the physical balance must read identically under every
+      treatment value (decision 3). The over-delivery is recorded only on the
+      run, as ``CalculationRun.over_delivery_af`` (the whole month's amount)
+      and, under "credited", ``over_delivery_credited_af`` (what was actually
+      credited) — informational, not part of this identity. A no-well
+      over-delivered field-year's residual therefore equals the over-delivery
+      amount rather than closing to ~0 under EVERY treatment value, which
+      148's closure tests (and 148-04's) check.
     * ``runoff`` (output): an explicit bookkeeping term, always Decimal("0") under
       the "no real hydrology" boundary (CONTEXT). Named, never silently dropped.
     * ``delta_storage`` (output): change in banked credit over the period
@@ -952,15 +966,19 @@ def parcel_mass_balance(parcel, reporting_period=None):
         )["s"]
         or Decimal("0")
     )
-    # 148-02 Task 3: real recharge only (managed recharge's personal-path row).
-    # No over-delivery ever reaches a `recharge` ledger row any more, so this
-    # is no longer read off the engine breakdown (_incidental_recharge_af) —
-    # abs() mirrors `surface` above for the same defensive reason, though the
+    # 148-02 Task 3, revised 148-04: real recharge only (managed recharge's
+    # personal-path row), EXCLUDING an over-delivery credit row (either
+    # prefix) even when "credited" writes one again — decision 3, the
+    # physical balance never moves with the credit policy. abs() mirrors
+    # `surface` above for the same defensive reason, though the
     # supply-row-positive constraint already keeps these rows non-negative.
     recharge = abs(
-        billable.filter(source_type="recharge").aggregate(
-            s=Sum("amount_acre_feet")
-        )["s"]
+        billable.filter(source_type="recharge")
+        .exclude(
+            Q(description__startswith=INCIDENTAL_RECHARGE_WORDS)
+            | Q(description__startswith=LEGACY_INCIDENTAL_RECHARGE_WORDS)
+        )
+        .aggregate(s=Sum("amount_acre_feet"))["s"]
         or Decimal("0")
     )
 

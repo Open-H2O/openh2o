@@ -69,14 +69,18 @@ def recharge_routes_to_personal(parcel_or_archetype):
     This is the ISS-053 guard: no parcel earns a personal groundwater credit
     without a well to pump it back.
 
-    148-02 Task 3 (Q1, an over-delivery is nobody's credit): ``run_calculations``
-    no longer calls this to route an over-delivery to a personal row or the
-    basin pool — that amount now lands only on ``CalculationRun.over_delivery_af``.
-    This function stays for the managed-recharge path
-    (``accounting.services.create_recharge_ledger_entries``, a real
-    ``RechargeEvent`` deliberately spread onto a basin), which the routing
-    question still applies to unchanged, and for ``run_calculations``'s own
-    one-time reversal of a pre-148-02 pool deposit.
+    148-02 Task 3 (Q1, an over-delivery is nobody's credit under the default):
+    under ``SiteConfig.over_delivery_treatment == "not_credited"`` (the
+    default) or ``"named_line"``, ``run_calculations`` does not call this to
+    route an over-delivery anywhere — that amount lands only on
+    ``CalculationRun.over_delivery_af``. This function stays for the
+    managed-recharge path (``accounting.services.create_recharge_ledger_entries``,
+    a real ``RechargeEvent`` deliberately spread onto a basin), which the
+    routing question still applies to unchanged, for ``run_calculations``'s
+    own one-time reversal of a pre-148-02 pool deposit, and — 148-04 — for the
+    "credited" treatment, which calls this again exactly as the pre-148-02
+    engine did: a has-well field's credited share is a personal recharge row,
+    a no-well field's credited share joins its zone's basin pool.
     """
     if isinstance(parcel_or_archetype, str):
         archetype = parcel_or_archetype

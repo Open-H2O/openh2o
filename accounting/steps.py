@@ -345,14 +345,19 @@ def clamp_floor(running_af, parcel, period, ctx, config):
     nothing. An old plan whose config still carries them is unaffected; they
     are simply never read, and none of the three appears in the detail below.
 
-    148-02 Task 3 (Q1, an over-delivery is nobody's credit): `incidental_recharge_af`
-    KEEPS its key here — an old run's stored breakdown still reads it, and
-    `deposit_to_basin_pool` / `create_recharge_ledger_entries`'s managed-recharge
-    callers are untouched by this rename. `over_delivery_af` is added beside it,
-    same value, same meaning — the run's own column (`CalculationRun.over_delivery_af`)
-    is read off this key, not `incidental_recharge_af`, so the field name a reader
-    sees on the run says what it is: canal water the crop could use beyond its net
-    use, never a recharge credit.
+    148-02 Task 3 (Q1, an over-delivery is nobody's credit under the default):
+    `incidental_recharge_af` KEEPS its key here — an old run's stored breakdown
+    still reads it, and `deposit_to_basin_pool` / `create_recharge_ledger_entries`'s
+    managed-recharge callers are untouched by this rename. `over_delivery_af` is
+    added beside it, same value, same meaning — the run's own column
+    (`CalculationRun.over_delivery_af`) is read off this key, not
+    `incidental_recharge_af`, so the field name a reader sees on the run says
+    what it is: canal water the crop could use beyond its net use. 148-04:
+    this primitive stays side-effect-free either way — it only ever signals
+    the magnitude; whether that magnitude becomes a recharge credit (the
+    'credited' setting), stays informational only (the default, or
+    'named_line'), is decided by `run_calculations` reading
+    `SiteConfig.over_delivery_treatment`, never by this step.
     """
     floor = Decimal(str(config.get("floor", 0)))
 

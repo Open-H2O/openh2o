@@ -186,12 +186,15 @@ DELIVERY_SHARE_BY_FIXED = "the fixed share on file"
 #: A recharge row credited to a use area (or the basin pool) for canal water
 #: delivered beyond what the month's estimated use called for.
 #:
-#: 148-02 Task 3 (Q1, an over-delivery is nobody's credit): `run_calculations`
-#: no longer writes a row carrying this text — the amount now lives only on
-#: `CalculationRun.over_delivery_af`. The constant STAYS: an old database's
-#: rows still carry it and still render through `ledger_row_words`, and
-#: `run_calculations`'s delete-by-prefix still matches it so a re-run on a
-#: database an older engine wrote cleans those rows up.
+#: 148-02 Task 3 (Q1, an over-delivery is nobody's credit under the default):
+#: under the default ("not_credited") or "named_line", `run_calculations`
+#: writes no row carrying this text — the amount lives only on
+#: `CalculationRun.over_delivery_af`. 148-04: under "credited",
+#: `run_calculations` writes this row again, always as this exact prefix
+#: (`over_delivery_credit_words`, below, composes it) so an old database's
+#: rows and a "credited"-treatment row read the same way, and so
+#: `run_calculations`'s delete-by-prefix (which runs every time, on every
+#: treatment) still matches it.
 INCIDENTAL_RECHARGE_WORDS = (
     "Credit for canal water delivered beyond the use area's estimated use "
     "for the month"
@@ -297,3 +300,21 @@ def delivery_share_words(record, pod, *, fixed_share=None):
         sentence += ", " + DELIVERY_SHARE_BY_USE
 
     return sentence
+
+
+def over_delivery_credit_words(share):
+    """The Description sentence for an over-delivery `recharge` row (148-04).
+
+    `share` is `SiteConfig.over_delivery_leave_behind` in force when the run
+    that writes this row was computed — the Decimal fraction (0..1) left in
+    the basin rather than credited to the field. Starts with
+    `INCIDENTAL_RECHARGE_WORDS` (unchanged from the pre-148-04 constant) so
+    `run_calculations`'s delete-by-prefix still matches this row on a re-run
+    or a later switch to "not_credited" / "named_line". The split is stated
+    in whole percent points, both reading off the one `share` value so they
+    always sum to 100%: `share=Decimal("0.100")` ->
+    "..., 90% credited and 10% left in the basin".
+    """
+    left = format(share, ".0%")
+    credited = format(Decimal("1") - share, ".0%")
+    return f"{INCIDENTAL_RECHARGE_WORDS}, {credited} credited and {left} left in the basin"

@@ -22,6 +22,7 @@ from django.db.models import Func
 
 from accounting.locks import finalized_period_lock
 from core.history import track_changes
+from core.models import SiteConfig
 
 
 class WaterType(models.Model):
@@ -591,11 +592,59 @@ class CalculationRun(models.Model):
         max_digits=12,
         decimal_places=4,
         default=Decimal("0"),
-        help_text="148-02 (Q1, an over-delivery is nobody's credit): the month's "
-        "canal water the crop could use beyond its net use, read off the "
-        "clamp_floor step's incidental_recharge_af. No ledger row is written for "
-        "it — the amount is recorded here only, never a recharge credit and "
-        "never a personal or pooled deposit. 0 on a run with no over-delivery.",
+        help_text="148-02 (Q1, an over-delivery is nobody's credit under the "
+        "default): the month's canal water the crop could use beyond its net "
+        "use, read off the clamp_floor step's incidental_recharge_af. Under "
+        "the default (not_credited) and under named_line, no ledger row is "
+        "written for it and it is never a personal or pooled deposit — the "
+        "amount is recorded here only. 148-04: under 'credited', see "
+        "over_delivery_treatment / over_delivery_credited_af / "
+        "over_delivery_credit_pooled for what this run actually did with it. "
+        "0 on a run with no over-delivery.",
+    )
+    over_delivery_treatment = models.CharField(
+        max_length=20,
+        choices=SiteConfig.OVER_DELIVERY_TREATMENT_CHOICES,
+        default="not_credited",
+        help_text="148-04: the SiteConfig.over_delivery_treatment setting in "
+        "force when THIS run was written — read once at compute time, never "
+        "re-read, so a later change to the setting moves no figure on this "
+        "run until it is re-run (ISS-177, the same rule that protects "
+        "gw_extracted_af). Default 'not_credited' so a run written before "
+        "this setting existed reads as what it always was.",
+    )
+    over_delivery_leave_behind = models.DecimalField(
+        max_digits=4,
+        decimal_places=3,
+        null=True,
+        blank=True,
+        help_text="148-04: the SiteConfig.over_delivery_leave_behind share in "
+        "force when this run was written. Stamped whenever "
+        "over_delivery_treatment is 'credited' on this run, whether or not "
+        "there was an over-delivery to apply it to this month; null under "
+        "'not_credited' or 'named_line'.",
+    )
+    over_delivery_credited_af = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text="148-04: the amount this run actually credited — to the "
+        "field's own ledger (over_delivery_credit_pooled False) or to its "
+        "zone's shared pool (over_delivery_credit_pooled True). Null unless "
+        "'credited' treatment credited something this run: a month with no "
+        "over-delivery credits nothing, and a no-well field with no "
+        "management-area zone has nowhere to credit it either.",
+    )
+    over_delivery_credit_pooled = models.BooleanField(
+        default=False,
+        help_text="148-04: True when over_delivery_credited_af went to the "
+        "field's zone's shared basin pool rather than the field's own ledger "
+        "— a no-well field has no well to pump a personal credit back with, "
+        "so its credited share joins the zone's shared account instead "
+        "(ISS-053's routing rule, applied again under 'credited'). False "
+        "(the default) on every run that credited nothing, or credited the "
+        "field itself.",
     )
     net_consumptive_use_af = models.DecimalField(
         max_digits=12,

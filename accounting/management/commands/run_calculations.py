@@ -29,16 +29,30 @@ stay on the model so an old database still loads. Nothing writes either
 table any more; year-end carry-over (`rollover_allocations`) writes
 `AllocationCarryover`, a different model.
 
-148-02 Task 3 (Q1): an over-delivery is nobody's credit. The month's canal
-water a parcel could use beyond its net use — clamp_floor's
-`incidental_recharge_af` — is recorded ONLY on the run, as
-`CalculationRun.over_delivery_af`. No `recharge` ledger row is written for it
-(a has-well parcel's old personal credit) and no basin-pool deposit is made
-for it (a no-well parcel's old pooled credit); `deposit_to_basin_pool` and
-`recharge_routes_to_personal` stay in this module only to CLEAN UP what a
-pre-148-02 engine wrote — see `prior_is_pre_148_02`, below — and for the
-managed-recharge path (`accounting.services.create_recharge_ledger_entries`),
-which this plan does not touch.
+148-02 Task 3 (Q1): an over-delivery is nobody's credit, under the DEFAULT
+setting. The month's canal water a parcel could use beyond its net use —
+clamp_floor's `incidental_recharge_af` — is always recorded on the run, as
+`CalculationRun.over_delivery_af`.
+
+148-04 (Brent's Q1 ruling, 2026-09-20) makes what happens to it a deployment
+setting, `SiteConfig.over_delivery_treatment`, read ONCE per run alongside
+`groundwater_efficiency`: `"not_credited"` (the default, exactly the
+behaviour above) writes no `recharge` ledger row and no basin-pool deposit;
+`"named_line"` is identical on the engine side (the amount is shown
+elsewhere, never here); `"credited"` writes a `recharge` row for a has-well
+parcel's own share (`deposit_to_basin_pool` and `recharge_routes_to_personal`
+route it exactly as the pre-148-02 engine did) or deposits a no-well parcel's
+share to its zone's basin pool, less `SiteConfig.over_delivery_leave_behind`
+kept back in the basin either way. Every run stamps what it did —
+`over_delivery_treatment`, `over_delivery_leave_behind`,
+`over_delivery_credited_af`, `over_delivery_credit_pooled` — so a later
+change to the setting moves no figure until the month is re-run (ISS-177),
+and re-running (or switching the setting and re-running) is idempotent in
+both directions: a personal row is delete-then-insert per (parcel, period),
+and a pool deposit is always a signed DELTA against what THIS field's prior
+run pooled (`prior_pooled`, below), which folds in the pre-148-02 one-time
+reversal (`prior_is_pre_148_02`) as one case of the same computation rather
+than a second, separate step.
 """
 
 import datetime as dt
@@ -58,6 +72,7 @@ from accounting.ledger_words import (
     LEGACY_INCIDENTAL_RECHARGE_WORDS,
     NO_PUMPING_DERIVED_WORDS,
     PUMPING_ESTIMATE_WORDS,
+    over_delivery_credit_words,
 )
 from accounting.models import (
     CalculationPlan,
@@ -134,6 +149,59 @@ def _parcel_pool_zone(parcel):
     return pz.zone if pz else None
 
 
+def _over_delivery_decision(over, treatment, leave_behind, *, routes_personal, pool_zone):
+    """148-04: what THIS parcel-month's over-delivery becomes under `treatment`.
+
+    Pure — writes nothing, reads nothing; every input is already in hand.
+    Returns ``(credited_af, credit_pooled, leave_behind_stamp, note)``:
+
+      - ``credited_af`` — the amount actually credited this run, or ``None``
+        when nothing was (every treatment but "credited", a zero-or-negative
+        `over`, or a no-well field with no management-area zone to hold it).
+      - ``credit_pooled`` — ``True`` iff ``credited_af`` went to the field's
+        zone's shared pool rather than the field's own ledger (ISS-053's
+        routing rule: no well, no way to pump a personal credit back).
+      - ``leave_behind_stamp`` — the share read from SiteConfig THIS run,
+        stamped whenever ``treatment == "credited"`` (whether or not there
+        was anything to apply it to this month); ``None`` otherwise.
+      - ``note`` — the fragment for the per-parcel --dry-run / live output
+        line, or ``None`` when there is nothing to say.
+    """
+    quant = Decimal("0.0001")
+
+    if treatment != "credited":
+        note = None
+        if treatment == "named_line" and over > 0:
+            note = "shown as its own line"
+        return None, False, None, note
+
+    leave_behind_stamp = leave_behind
+    if over <= 0:
+        return None, False, leave_behind_stamp, None
+
+    credited = (over * (Decimal("1") - leave_behind)).quantize(quant)
+    if credited <= 0:
+        # The whole over-delivery is left in the basin (leave_behind == 1, the
+        # validators' own top of range) -- nothing to write a `recharge` row
+        # OR a pool deposit FOR (the ledger's supply-rows-positive constraint
+        # requires amount_acre_feet > 0), so this reads the same as "nothing
+        # credited this month", not an error.
+        return None, False, leave_behind_stamp, None
+    left = (over - credited).quantize(quant)
+    left_pct = format(leave_behind, ".0%")
+
+    if routes_personal:
+        note = f"credited {credited} AF to the field, {left} AF ({left_pct}) left in the basin"
+        return credited, False, leave_behind_stamp, note
+    if pool_zone is not None:
+        note = (
+            f"credited {credited} AF to the zone's shared account, "
+            f"{left} AF ({left_pct}) left in the basin"
+        )
+        return credited, True, leave_behind_stamp, note
+    return None, False, leave_behind_stamp, "no zone to hold it, nothing credited"
+
+
 def _resolve_leftover(parcel, period, final_af, breakdown, *, commit):
     """Clear this period's legacy rain-bank state; `final_af` is not touched.
 
@@ -170,6 +238,8 @@ def _resolve_leftover(parcel, period, final_af, breakdown, *, commit):
 def _persist_calculation_run(
     parcel, period, gross_af, net_af, breakdown, info, plan_id, plan_name, plan_hash,
     *, residual_disposition, unmet_demand_af, groundwater_efficiency,
+    over_delivery_treatment, over_delivery_leave_behind, over_delivery_credited_af,
+    over_delivery_credit_pooled,
 ):
     """Write the one CalculationRun for this (parcel, period) — the audit trail.
 
@@ -187,6 +257,11 @@ def _persist_calculation_run(
     value the CALLER read once for this whole run (never re-read per parcel;
     it is one agency-wide setting). Null on a metered or no-well run, exactly
     as the model field's help text says.
+
+    148-04: the four ``over_delivery_*`` stamps are the CALLER's decision
+    (``_over_delivery_decision``, computed before this function runs) —
+    passed straight through, never re-derived here, so this function stays a
+    pure "write what I was told" persister for every field it owns.
 
     MUST be called inside the per-parcel transaction.atomic() block.
     """
@@ -263,6 +338,10 @@ def _persist_calculation_run(
         surface_delivered_af=surface_delivered_af,
         surface_efficiency=surface_efficiency,
         over_delivery_af=over_delivery_af,
+        over_delivery_treatment=over_delivery_treatment,
+        over_delivery_leave_behind=over_delivery_leave_behind,
+        over_delivery_credited_af=over_delivery_credited_af,
+        over_delivery_credit_pooled=over_delivery_credit_pooled,
         net_consumptive_use_af=net_consumptive_use_af,
         residual_disposition=residual_disposition,
         unmet_demand_af=unmet_demand_af,
@@ -433,9 +512,14 @@ class Command(BaseCommand):
         # tear. `SiteConfig.objects.first() or SiteConfig()` is the established
         # idiom (`surface/services.py::field_efficiency`): reads safely before
         # a row exists, falling back to the field's own class default (0.800).
-        groundwater_efficiency = (
-            SiteConfig.objects.first() or SiteConfig()
-        ).groundwater_efficiency
+        # 148-04: the over-delivery treatment and leave-behind share are read
+        # from this SAME SiteConfig object, once, for the same reason —
+        # one agency-wide setting, never re-read per parcel so a mid-run edit
+        # cannot tear.
+        site_config = SiteConfig.objects.first() or SiteConfig()
+        groundwater_efficiency = site_config.groundwater_efficiency
+        over_delivery_treatment = site_config.over_delivery_treatment
+        over_delivery_leave_behind = site_config.over_delivery_leave_behind
 
         written = 0
         unmet = 0
@@ -465,16 +549,15 @@ class Command(BaseCommand):
 
             gross_af = Decimal(et_step["output_af"]) if et_step else Decimal("0")
 
-            # 148-02 Task 3 (Q1): an over-delivery is nobody's credit. No ledger
-            # row and no pool deposit is written for it any more — the amount
-            # lands on the run as over_delivery_af (_persist_calculation_run,
-            # below). routes_personal / pool_zone still decide WHERE a stale
-            # pre-148-02 write needs cleaning up: a has-well parcel's old personal
-            # row is caught by the delete-by-prefix inside the transaction; a
-            # no-well parcel's old POOL deposit needs an explicit one-time
-            # reversal, decided next.
+            # 148-04: `over_delivery_treatment` decides what happens to this
+            # month's over-delivery — routes_personal / pool_zone say WHERE
+            # (has-well -> the field's own ledger; no well -> its zone's
+            # shared pool). `pool_zone` is read REGARDLESS of the parcel's
+            # CURRENT well status: a field that gained a well since a prior
+            # (b) run must still be able to find the zone that holds its old
+            # deposit, to take it back down to 0 (see prior_pooled, below).
             routes_personal = recharge_routes_to_personal(parcel)
-            pool_zone = None if routes_personal else _parcel_pool_zone(parcel)
+            pool_zone = _parcel_pool_zone(parcel)
             prior_run = CalculationRun.objects.filter(
                 parcel=parcel, period=period
             ).first()
@@ -505,6 +588,18 @@ class Command(BaseCommand):
                 and prior_incidental > 0
             )
 
+            # 148-04: decide what this parcel-month's over-delivery becomes
+            # under the setting read once above — a pure computation, shared
+            # by the --dry-run preview and the real write below, so the two
+            # can never say something different happened.
+            over = incidental_af.quantize(Decimal("0.0001"))
+            credited_af, credit_pooled, leave_behind_stamp, credit_note = (
+                _over_delivery_decision(
+                    over, over_delivery_treatment, over_delivery_leave_behind,
+                    routes_personal=routes_personal, pool_zone=pool_zone,
+                )
+            )
+
             if dry_run:
                 net_af, info = _resolve_leftover(
                     parcel, period, final_af, breakdown, commit=False,
@@ -515,6 +610,8 @@ class Command(BaseCommand):
                         f"; {incidental_af.quantize(Decimal('0.0001'))} AF canal "
                         f"water beyond the month's use, would be recorded on the run"
                     )
+                if credit_note:
+                    extra += f"; {credit_note}"
                 # 148-02: a canal-served field's line also names what was
                 # delivered, the field's own efficiency (and where it came
                 # from), and what that leaves the crop to use. "delivered_af"
@@ -654,17 +751,19 @@ class Command(BaseCommand):
                     residual_disposition=residual_disposition,
                     unmet_demand_af=unmet_demand_af,
                     groundwater_efficiency=groundwater_efficiency,
+                    over_delivery_treatment=over_delivery_treatment,
+                    over_delivery_leave_behind=leave_behind_stamp,
+                    over_delivery_credited_af=credited_af,
+                    over_delivery_credit_pooled=credit_pooled,
                 )
-                # 148-02 Task 3 (Q1): an over-delivery is nobody's credit — no
-                # `recharge` ledger row and no basin-pool deposit is written for
-                # it, on either archetype. The amount is recorded ONLY on the
-                # run, as over_delivery_af (_persist_calculation_run, above).
-                # This delete-by-prefix still runs, unconditionally, so a re-run
-                # on a database an OLDER engine wrote (either wording,
+                # 148-04: the delete-by-prefix runs unconditionally, every
+                # treatment, every run — it clears THIS field's own stale
+                # credit row (a switch away from "credited", or a re-run of
+                # "credited" itself, which is delete-then-insert) and cleans
+                # up a row an older engine wrote (either wording,
                 # INCIDENTAL_RECHARGE_WORDS or the pre-143-11
-                # LEGACY_INCIDENTAL_RECHARGE_WORDS) cleans up that engine's
-                # stale PERSONAL row rather than leaving it stand unexplained
-                # beside a run that no longer writes one.
+                # LEGACY_INCIDENTAL_RECHARGE_WORDS), BEFORE deciding whether
+                # to write a fresh one.
                 ParcelLedger.objects.filter(
                     Q(description__startswith=INCIDENTAL_RECHARGE_WORDS)
                     | Q(description__startswith=LEGACY_INCIDENTAL_RECHARGE_WORDS),
@@ -672,20 +771,60 @@ class Command(BaseCommand):
                     effective_date=eff_date,
                     source_type="recharge",
                 ).delete()
-                if pool_zone is not None and prior_is_pre_148_02:
-                    # No well, and the prior run at this (parcel, period) was
-                    # written by an engine that deposited its incidental amount
-                    # to the basin pool. Reverse exactly that deposit, once — a
-                    # negative delta with nothing added back. A later re-run's
-                    # "prior" is THIS run, which carries over_delivery_af, so
-                    # prior_is_pre_148_02 is False and nothing reverses again.
-                    deposit_to_basin_pool(
-                        pool_zone,
-                        gw_water_type,
-                        water_year_of(period),
-                        -prior_incidental,
-                        origin=INCIDENTAL_RECHARGE_POOL,
+                if routes_personal and credited_af is not None:
+                    # "credited", has a well: a personal, recoverable credit —
+                    # exactly the pre-148-02 shape, less the leave-behind share.
+                    ParcelLedger.objects.create(
+                        parcel=parcel,
+                        transaction_date=dt.date.today(),
+                        effective_date=eff_date,
+                        amount_acre_feet=credited_af,
+                        source_type="recharge",
+                        description=over_delivery_credit_words(
+                            over_delivery_leave_behind
+                        ),
+                        reporting_period=reporting_period,
+                        water_type=gw_water_type,
                     )
+
+                # 148-04: the basin-pool side, unified. A no-well field's
+                # credited share joins its zone's shared pool; a field that
+                # is NOT currently pooling (every other case — "not_credited",
+                # "named_line", a has-well field under "credited", or a
+                # no-well field with nothing to credit) still needs its PRIOR
+                # pooled amount taken back down if a past run left one. Both
+                # are one signed delta against `prior_pooled`, which folds in
+                # the pre-148-02 one-time reversal as the first of its three
+                # cases rather than a second, separate step — a re-run's
+                # "prior" is always THIS engine's own last write once it has
+                # run once, so `prior_is_pre_148_02` is only ever true the
+                # first time.
+                prior_pooled = (
+                    prior_incidental
+                    if prior_is_pre_148_02 and not routes_personal
+                    else (
+                        (prior_run.over_delivery_credited_af or Decimal("0"))
+                        if prior_run is not None
+                        and prior_run.over_delivery_credit_pooled
+                        else Decimal("0")
+                    )
+                )
+                new_pooled = credited_af if credit_pooled else Decimal("0")
+                if pool_zone is not None:
+                    delta = new_pooled - prior_pooled
+                    if delta != 0:
+                        pool_row = deposit_to_basin_pool(
+                            pool_zone,
+                            gw_water_type,
+                            water_year_of(period),
+                            delta,
+                            origin=INCIDENTAL_RECHARGE_POOL,
+                        )
+                        # An a→b→a (or any) round trip must leave the table as
+                        # it found it — an exact-zero row left standing is a
+                        # phantom the pool's readers would have to explain.
+                        if pool_row.amount_af == Decimal("0"):
+                            pool_row.delete()
             extra = ""
             if incidental_af > 0:
                 extra += (
@@ -693,6 +832,8 @@ class Command(BaseCommand):
                     f"water beyond the month's use, recorded on the run"
                 )
                 over_delivered += 1
+            if credit_note:
+                extra += f"; {credit_note}"
             if is_metered:
                 self.stdout.write(
                     f"  {parcel.parcel_number}: gross {gross_af} AF -> "
