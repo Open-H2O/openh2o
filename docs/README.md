@@ -14,6 +14,7 @@ change it.
 | [AI-OPERATOR-GUIDE.md](AI-OPERATOR-GUIDE.md) | Walks an AI agent from a bare server to a running, seeded instance. Start here if an agent is doing the deployment. |
 | [DATA-IMPORT.md](DATA-IMPORT.md) | Getting an agency's existing data in. |
 | [DATA-STANDARDS.md](DATA-STANDARDS.md) | The observed-property crosswalk and the `check_conformance` gate — what "born compliant" means and how to keep it true when you add an adapter. `crosswalk.csv` is its data. |
+| [water-budget-terms.md](water-budget-terms.md) | How each of OpenH2O's water quantities lines up with the state's water-budget handbook (a draft) and the C2VSimFG model's budget columns, and which have no state term. Linked from the Methods help page. |
 | [earth-engine-tier-setup.md](earth-engine-tier-setup.md) | Standing up the OpenET / Earth Engine tier, which is optional. |
 | [ROADMAP.md](ROADMAP.md) | Where the product is going. |
 
