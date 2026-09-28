@@ -198,8 +198,8 @@
           {% endcomment %}
           {% if over_delivery_shown_af > 0 %}
           <p class="text-secondary">
-            <strong>Canal water beyond what the crop could use:</strong>
-            <span class="td-num">{{ over_delivery_shown_af|floatformat:2|intcomma }}</span> AF, shown, not a credit{% include "partials/_explainer_popout.html" with title="Canal water beyond what the crop could use" text="The deployment can set this amount to show as its own line instead of a credit. It is stored as a figure only, not booked as a credit and not charged against this field." link=wb_help_url link_label="How water balances work" %}
+            <strong>Canal water beyond crop use:</strong>
+            <span class="td-num">{{ over_delivery_shown_af|floatformat:2|intcomma }}</span> AF, not a credit{% include "partials/_explainer_popout.html" with title="Canal water beyond what the crop could use" text="The deployment can set this amount to show as its own line instead of a credit. It is stored as a figure only, not booked as a credit and not charged against this field." link=wb_help_url link_label="How water balances work" %}
           </p>
           {% endif %}
 

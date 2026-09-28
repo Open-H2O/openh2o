@@ -28,7 +28,7 @@ User = get_user_model()
 pytestmark = pytest.mark.django_db
 
 CARD_LABEL = "Canal water beyond what the crop could use"
-FIELD_LABEL = "Canal water beyond what the crop could use:"
+FIELD_LABEL = "Canal water beyond crop use:"
 
 OVER = Decimal("4.0000")
 SHARE = Decimal("0.100")
@@ -214,7 +214,7 @@ class TestFieldPageLine:
         html = _field_page(parcel)
         assert FIELD_LABEL in html
         assert "5.50" in html, "4.0000 + 1.5000 named_line AF, the credited run excluded"
-        assert "shown, not a credit" in html
+        assert "AF, not a credit" in html
 
     def test_absent_for_a_field_with_no_named_line_run(self):
         parcel = ParcelFactory(parcel_number="R148-04-H")

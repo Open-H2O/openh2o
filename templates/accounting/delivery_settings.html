@@ -83,11 +83,12 @@
 
       <div class="field-group mt-md mb-0">
         <label class="form-label" for="{{ form.over_delivery_leave_behind_percent.id_for_label }}">{{ form.over_delivery_leave_behind_percent.label }}</label>
+        {% comment %} The explanation sits above the box, as on the efficiency and groundwater cards (a fresh reader flagged the difference, 2026-09-28). {% endcomment %}
+        <p class="text-secondary text-sm" style="margin-bottom: var(--space-md);">{{ form.over_delivery_leave_behind_percent.help_text }} {% if form.shows_groundwater_efficiency %}On a field with no well, the credited share goes to the zone's shared account instead, because there is no well to pump it back.{% else %}The credited share goes to the zone's shared account.{% endif %}</p>
         <span class="input-suffix">
           {{ form.over_delivery_leave_behind_percent }}
           <span class="input-suffix-unit">%</span>
         </span>
-        <p class="text-secondary text-sm" style="margin-top: var(--space-xs);">{{ form.over_delivery_leave_behind_percent.help_text }} {% if form.shows_groundwater_efficiency %}On a field with no well, the credited share goes to the zone's shared account instead, because there is no well to pump it back.{% else %}The credited share goes to the zone's shared account.{% endif %}</p>
         {% if form.over_delivery_leave_behind_percent.errors %}<p class="text-sm text-furnace mt-sm">{{ form.over_delivery_leave_behind_percent.errors|striptags }}</p>{% endif %}
       </div>
     </div>
