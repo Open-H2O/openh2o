@@ -191,7 +191,7 @@ def _drinking_glossary_entries(name: str) -> list:
 
 
 def _platform_glossary_entries() -> list:
-    """``(term, definition)`` for the 36 entries ``/help/glossary/`` serves.
+    """``(term, definition)`` for the 40 entries ``/help/glossary/`` serves.
 
     Parsed out of ``config/views.py`` with ``ast`` rather than by calling the
     view, so the gate needs no request, no database and no login — and so a

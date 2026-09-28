@@ -2148,6 +2148,164 @@ html { color-scheme: dark; }
     min-width: 0;
 }
 
+/* The two explainer pages built around the 148-01 picture (help/water_balances,
+   help/methods) and the ledger partial they share
+   (help/partials/_the_subtraction.html). Brent, 2026-09-28, on the first render:
+   "the attention to detail isn't there aesthetically... the text looks hastily
+   formatted." Every rule below answers one named fault; the page container
+   carries `.help-page` so none of them leaks onto another page. Tokens only. */
+
+/* Copy rule 6: body prose at 75ch. The card is 752px inside its padding, which
+   is ~100ch at 0.875rem, so a bare paragraph ran a third wider than the band.
+   Cells, headings and the link cards' short lines are not prose and are left. */
+.help-page p,
+.help-page li {
+    max-width: 75ch;
+}
+
+/* One frame per section. A sub-block inside a card (the ledger, the note about
+   the demonstration) is ruled off from the block above it instead of drawn as
+   a second card: a raised card nested in a raised card painted the border and
+   the pop shadow twice and doubled the padding (the 117-01 finding again). */
+.help-subsection {
+    margin-top: var(--space-lg);
+    padding-top: var(--space-lg);
+    border-top: 1px solid var(--color-border);
+}
+
+/* `.callout-rule` carries its own margins for pages that drop it into running
+   prose; here the utilities set the rhythm, so it sits flush like every other
+   block. */
+.help-page .callout-rule {
+    margin: 0;
+}
+
+/* Three panels that belong together sit three across. The default card grid
+   (auto-fill at 300px) packs two into the 752px card and orphans the third
+   in a row of its own, which read as a layout accident. Compound selectors:
+   `.card-grid` itself is declared further down this file and would otherwise
+   win on source order. */
+.card-grid.card-grid--3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 767px) {
+    .card-grid.card-grid--3 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Link cards whose count depends on which modules are on (two or three): as
+   many across as there are, so a module switched off leaves no empty slot. */
+.card-grid.card-grid--fit {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+/* A panel whose last line says how its figure is known ("Estimated from
+   weather data for the area"): the panel is a column and the foot sits at the
+   bottom, ruled off, so the three lines sit level across the row whatever the
+   length of the sentence above each. The same shape as `.stat-card-note`, the
+   provenance line under a stat figure, at a size a full sentence can be read
+   at. It was a pill: a sentence in a pill wrapped into a five-line tinted
+   slab, which is the "longer phrases in the pills" Brent named. */
+.card-grid--3 > .concept-panel {
+    display: flex;
+    flex-direction: column;
+}
+
+.concept-panel-foot {
+    margin-top: auto;
+    padding-top: var(--space-sm);
+    border-top: 1px solid var(--color-border);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    color: var(--color-text-secondary);
+}
+
+/* The body keeps a fixed gap above the rule; `margin-top: auto` on the foot
+   only adds to it. */
+.concept-panel > p:has(+ .concept-panel-foot) {
+    margin-bottom: var(--space-md);
+}
+
+/* The ledger table ("Where this field's water came from"): the name, the
+   figure under the same bracketed header, the source, and a one-line pill.
+   Before this the figure shared a cell with its name ("Crop water use · 87.83
+   acre-feet" over three lines) and no two figures lined up. */
+.how-sure-table {
+    /* Four columns, one of them a sentence: below this the table scrolls
+       inside `.table-scroll` instead of squeezing the sentence to one word a
+       line (the 390px render). */
+    min-width: 40rem;
+}
+
+.how-sure-table td {
+    vertical-align: top;
+}
+
+.how-sure-table .col-name {
+    width: 28%;
+    font-weight: 600;
+}
+
+.how-sure-table .col-amount {
+    width: 1%;
+    white-space: nowrap;
+}
+
+/* A line the plan does not run has words in the figure column; let them wrap
+   in a column no wider than a figure would take. */
+.how-sure-table .col-amount.value-empty {
+    white-space: normal;
+    min-width: 8em;
+}
+
+.how-sure-table .col-sure {
+    width: 1%;
+    white-space: nowrap;
+}
+
+/* One line, one width: the column of pills reads as a column, not five
+   different shapes. 10em holds the longest word pair ("By subtraction"). */
+.how-sure-table .col-sure .badge {
+    min-width: 10em;
+    justify-content: center;
+    white-space: nowrap;
+}
+
+/* `.badge-orange` lettering is `--furnace-400`, 2.55:1 on the card (measured
+   2026-09-28). The deficit token is the same burnt orange one step up, 5.0:1,
+   and is what `.text-deficit` already paints figures with. Scoped here; the
+   badge system's own colour is a product-wide call. */
+.how-sure-table .badge-orange {
+    color: var(--color-deficit);
+}
+
+/* Notes under the table: the words the cells were too narrow for. Secondary
+   at small size with the table's own gap above, not a tertiary line jammed
+   against the last row. */
+.help-table-notes p + p {
+    margin-top: var(--space-sm);
+}
+
+/* The Methods page's five steps: inset panels inside one card, stacked with a
+   small gap. Was five copies of the same inline style. */
+.step-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.step-card--inset {
+    background: var(--color-inset);
+    border-radius: var(--radius-md);
+    padding: var(--space-md) var(--space-lg);
+}
+
+.step-card--inset .step-body p {
+    margin-top: var(--space-xs);
+}
+
 .glossary-letter-heading {
     font-size: 1.25rem;
     font-weight: 700;

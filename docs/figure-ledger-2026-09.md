@@ -3,15 +3,22 @@
 Every number this platform puts on a screen, traced to the rows it came from and
 then worked out a second way, independently, to see whether the two agree.
 
-**This ledger is complete.** All 166 figures the platform renders have a row, and
+**This ledger is complete.** All 176 figures the platform renders have a row, and
 a test in the build refuses to let that stay true by accident: add a figure to a
 template without tracing it, or leave a row behind after deleting a template, and
 the suite goes red.
 
 ## What this is, and what it is not
 
-The platform renders 166 figures across 24 page templates (159 until 2026-09-28,
-when 148-04 gave the calculation page a card naming what happened to canal water
+The platform renders 176 figures across 24 page templates (166 until 2026-09-28,
+when 148-03 gave the two help pages explaining crop-water accounting a shared
+worked field-month table ("Where this field's water came from"), in one new
+partial, `templates/help/partials/_the_subtraction.html`, included with no extra
+context by both `help/water_balances.html`'s and `help/methods.html`'s own "The
+short version" sections so the two pages can never show two different examples
+for the same deployment; ten sites, `FIG-help-001..010`, the ledger's first rows
+under a new app, `help`, with no other app's ids moved and no site lost; 159
+until 2026-09-28, when 148-04 gave the calculation page a card naming what happened to canal water
 beyond what the crop could use, six sites (the headline figure,
 FIG-accounting-016, and the credited/left/share figures behind its two credited
 branches, FIG-accounting-011..015), with every accounting id after them moving
@@ -1981,3 +1988,81 @@ at them together is what turned twenty-one flags into three causes.
 - The band and the identity: `accounting/services.py:581`, `:702`, `:767`
 - The deep-percolation rule: `accounting/steps.py:270-330`
 - The curtailment: `surface_curtailmentorder`, order `MER-CURT-001`
+
+---
+
+## Section 7: The help pages' worked field-month (10 figures)
+
+**Added 2026-09-28 by 148-03.** `templates/help/partials/_the_subtraction.html`,
+"Where this field's water came from," teaches the platform's own subtraction
+(crop water use, less rain, less canal water, is groundwater consumed) against
+one real field-month rather than in the abstract. It is included with no extra
+context by both `help/water_balances.html`'s and `help/methods.html`'s own "The
+short version" sections (`config/views.py:438` and `:454`, both views calling
+`accounting/services.py`'s `example_field_month`), so the two pages can never
+show two different worked examples for the same deployment: one arithmetic
+path and one set of figure sites, the same reasoning Section 1 already applies
+to the accounts table shared between the dashboard and the accounts list.
+
+Ten `floatformat` sites, all new, all under a new app, `help`: `FIG-help-001`
+through `FIG-help-010`. No other app's ids moved and no site elsewhere was
+lost; `audit/figure_ledger/remap_ids.py`, run against the previously committed
+inventory, reported these ten as the only gain and nothing as lost.
+
+**Pinned screen:** `/help/water-balances/`. The partial renders byte-for-byte
+the same table at `/help/methods/` (fetched and compared 2026-09-28); the
+`view`, `service` and figures below apply to both, and only the first is
+carried in the `screen` column so the row is not stated twice for one figure.
+
+**Pinned instance.** `accounting/services.py`'s `example_field_month` orders
+its candidates by `period_start` descending, then parcel number, filtered to
+`residual_disposition = "groundwater"`, `surface_delivered_af > 0`, a period
+that has already ended, preferring a `final_af` of at least 0.01 AF. On this
+database that lands on `MER-APN-032`, August 2026 (`CalculationRun` id 3528).
+`audit/figure_ledger/sql/help_subtraction_example.sql` block A reproduces the
+filter and ordering directly against `accounting_calculationrun`, naming no
+Python function, and returns that same run on top, so the pin is confirmed by
+a second route rather than trusted from the page alone.
+
+### The ledger
+
+| `id` | `screen` | `site` | `label` | `context_var` | `view` | `service` | `raw_tables` | `rendered` | `recomputed` | `delta` | `verdict` | `notes` |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| `FIG-help-001` | `/help/water-balances/` | `templates/help/partials/_the_subtraction.html:45` | Crop water use | `gross_et_af` | `config/views.py:438` | `(model field, read at accounting/services.py:1679 in _subtraction_context)` | `accounting_calculationrun` | 87.83 | 87.83 | MATCH | MATCH | New site, 148-03: satellite-estimated gross evapotranspiration for MER-APN-032, August 2026, read straight off the pinned run's own `gross_et_af` column. Independence: restatement of a stored value, the weakest kind of check there is, stated as such. Same table and same value render unchanged at `/help/methods/`, verified by fetching both pages 2026-09-28. |
+| `FIG-help-002` | `/help/water-balances/` | `templates/help/partials/_the_subtraction.html:53` | Rain the crop could use | `effective_precip_af` | `config/views.py:438` | `(model field, read at accounting/services.py:1680)` | `accounting_calculationrun` | 0.00 | 0.00 | MATCH | MATCH | New site, 148-03: a real zero, not a missing value. The run's own `subtract_effective_precip` step (its stored `breakdown` JSON) computed 0.00 AF of usable rain for this field-month. Independence: restatement. |
+| `FIG-help-003` | `/help/water-balances/` | `templates/help/partials/_the_subtraction.html:69` | Delivered to this field | `surface_delivered_af` | `config/views.py:438` | `(model field, read at accounting/services.py:1681)` | `accounting_calculationrun` | 115.94 | 115.94 | MATCH | MATCH | New site, 148-03: the headgate total this district's record assigns to this field for the month, before efficiency is applied. Independence: restatement. |
+| `FIG-help-004` | `/help/water-balances/` | `templates/help/partials/_the_subtraction.html:81` | Canal water the crop could use | `surface_water_af` | `config/views.py:438` | `(model field, read at accounting/services.py:1686)` | `accounting_calculationrun` | 86.95 | 86.95 | MATCH | MATCH | New site, 148-03: the delivery (`FIG-help-003`) times the field's irrigation efficiency, 0.750 on this run (its `subtract_surface_water` step, `efficiency_source: "agency"`), 115.9396 times 0.750 equals 86.9547. Independence: restatement, plus the multiplication is checked separately at `FIG-help-005`. This branch renders whenever `surface_delivered_af is not None`, which is always true on this deployment's runs; the sibling branch below (`FIG-help-006`) can therefore never render here. |
+| `FIG-help-005` | `/help/water-balances/` | `templates/help/partials/_the_subtraction.html:82` | Canal water the crop could use, irrigation efficiency stated in the sentence beside it | `irrigation_efficiency_pct` | `config/views.py:438` | `_subtraction_context, accounting/services.py:1631` | `accounting_calculationrun` | 75 | 75 | MATCH | MATCH | New site, 148-03: `surface_efficiency` (0.750) times 100. Independence: direct arithmetic on the stored fraction, the same multiplication `_subtraction_context` performs, starting from the column rather than calling the function. This run's `irrigation_efficiency_source` is `"agency"` (read off the same `subtract_surface_water` breakdown step), not `"method"`, so the sentence names "the deployment's default on Delivery Settings" rather than an irrigation method, which is what the served page states. |
+| `FIG-help-006` | `/help/water-balances/` | `templates/help/partials/_the_subtraction.html:88` | Canal water subtracted (branch not rendered) | `surface_water_af` | `config/views.py:438` | `(model field, read at accounting/services.py:1686)` | `accounting_calculationrun` | *(not rendered)* | *(not applicable, the other branch renders)* | NO VALUE | UNVERIFIED | New site, 148-03: the `{% elif surface_water_af is not None %}` sibling of `FIG-help-004`'s `{% if surface_delivered_af is not None %}` branch, same template line's other shape, drawn only when a calculation plan has a canal-water figure with no delivery figure alongside it. Every run this deployment's calculation plan produces carries a `surface_delivered_af`, so the `{% if %}` branch always wins and this line cannot currently render on this deployment. Kept as its own site because the inventory script counts one record per occurrence, not per rendered outcome (`scripts/figure_inventory.py`'s own docstring on the comment-prose site makes the same point). |
+| `FIG-help-007` | `/help/water-balances/` | `templates/help/partials/_the_subtraction.html:96` | Groundwater consumed | `final_af` | `config/views.py:438` | `(model field, read at accounting/services.py:1687)` | `accounting_calculationrun` | 0.88 | 0.88 | MATCH | MATCH | New site, 148-03: crop water use (`FIG-help-001`) less rain (`FIG-help-002`) less canal water (`FIG-help-004`), 87.8349 minus 0.0000 minus 86.9547 equals 0.8802, the run's own stored `final_af`. Independence: restatement, plus the subtraction agrees with the three figures above it read separately. |
+| `FIG-help-008` | `/help/water-balances/` | `templates/help/partials/_the_subtraction.html:110` | Canal water beyond what the crop could use (branch not rendered) | `over_delivery_af` | `config/views.py:438` | `(model field, read at accounting/services.py:1692)` | `accounting_calculationrun` | *(not rendered)* | *(not applicable under the default)* | NO VALUE | UNVERIFIED | New site, 148-03: renders only when `over_delivery_af > 0` (DESIGN.md rule 8, the same rule `FIG-accounting-016`'s card and `FIG-parcels-012` already follow). On the pinned run `over_delivery_af` is 0.0000 (rain and canal water together did not exceed crop use this field-month), so the guard is false and the row does not print. Independence: a direct read of the same stored column `FIG-accounting-016`'s own recomputation already covers. |
+| `FIG-help-009` | `/help/water-balances/` | `templates/help/partials/_the_subtraction.html:118` | Groundwater extracted | `extracted_af` | `config/views.py:438` | `(model field, read at accounting/services.py:1691, gw_extracted_af)` | `accounting_calculationrun` | 1.10 | 1.10 | MATCH | MATCH | New site, 148-03: the run's own stored `gw_extracted_af`, the figure the groundwater allocation is charged. Independence: restatement, plus the division below (`FIG-help-010`) is checked against this same column and `final_af`. |
+| `FIG-help-010` | `/help/water-balances/` | `templates/help/partials/_the_subtraction.html:123` | Groundwater extracted, efficiency stated in the sentence beside it | `gw_efficiency_pct` | `config/views.py:438` | `_subtraction_context, accounting/services.py:1642, 1648` | `accounting_calculationrun` | 80 | 80 | MATCH | MATCH | New site, 148-03: `final_af` divided by `gw_extracted_af` (0.8802 / 1.1002, quantized to 4 places, 0.8000), times 100. The same division `accounting/views.py`'s `calculation_run_detail` performs on this same run as `gw_efficiency_applied` (`FIG-accounting-009`'s own recomputation already rests on this identity), computed here directly from the run's two stored columns rather than by calling either function. `gw_extracted_af` is nonzero on this run, so the live-`SiteConfig` fallback branch never fires and the served sentence reads "a setting on Delivery Settings," matching `gw_efficiency_is_live_setting = False`. |
+
+### What section 7 found
+
+**All eight figures that render agree with the run behind them to the cent, and
+the selection rule that picks the run checks out independently too.** Nothing
+on this table computes a number wrongly. The two sites that do not render on
+this deployment, `FIG-help-006` and `FIG-help-008`, are named rather than
+omitted: both are template branches this deployment's data can never reach
+(every run carries a delivery figure, and this pinned run's over-delivery is a
+real zero), and both are covered by a recomputation that reads the same stored
+column their sibling row already reads, so the day either branch does become
+reachable the number is already on file.
+
+**The one honesty this section adds to the rest of the document.** Every other
+section pins one screen per figure. This one pins one figure-month to two
+screens on purpose: `help/water_balances.html` and `help/methods.html` share
+the identical partial with no per-page context, so a discrepancy between the
+two would be a Django templating defect, not a data one. Fetching both pages
+and diffing the rendered table (2026-09-28) found none.
+
+### Where this section's evidence lives
+
+- Recomputation: `audit/figure_ledger/sql/help_subtraction_example.sql`
+- The selection rule and the context it builds: `accounting/services.py:1547`
+  (`example_field_month`), `:1598` (`_subtraction_context`)
+- The two views that share it: `config/views.py:438` (`water_balances`), `:454`
+  (`methods`)
+- The partial itself: `templates/help/partials/_the_subtraction.html`

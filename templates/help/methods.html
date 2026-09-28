@@ -12,168 +12,157 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Methods Behind the Numbers</span>
   </nav>
-  <p class="page-description">How a satellite measurement becomes a defensible billable figure &mdash; the calculation chain, and how one district&rsquo;s delivery is shared fairly across many fields.</p>
+  <p class="page-description">How a satellite estimate becomes a groundwater figure: the steps as they run, which figure the allocation is charged, and what is not built yet.</p>
 </div>
 {% endblock %}
 
 {% block content %}
 {% comment %}
-  Phase 89. Link guards ONLY — every word on this page is left exactly as it
-  was, deliberately. These Help pages are *about* the switched-off domain, so a
-  guard makes them render without making them honest; whether they should be
-  reachable at all in a deployment with no Accounting is 89-02's call, and it is
-  recorded there rather than answered here.
+  148-03 (revision 3): rebuilt around the picture Brent approved
+  (the-subtraction.html / picture-two.html, 2026-09-24). This page is *about*
+  accounting, parcels, surface and wells (config/views.py
+  EXPLAINER_MODULES), so it 404s rather than renders wherever any one of
+  them is off; the guards below are only for the individual CARDS and links
+  this page points OUT to, each on its own narrower module set.
 
-  Worth knowing before reading the guards: the `{% templatetag openblock %} url
-  ... as var {% templatetag closeblock %}` form at the top of this file does NOT
-  raise NoReverseMatch — Django documents it as failing silently to the empty
-  string, and that was re-measured for this phase. So the defect these guards
-  close is a DEAD LINK (href=""), not a 500. Quieter, and therefore easier to
-  ship without noticing.
+  Worth knowing before reading the guards: the `{% templatetag openblock %}
+  url ... as var {% templatetag closeblock %}` form at the top of this file
+  does NOT raise NoReverseMatch — Django documents it as failing silently to
+  the empty string. So the defect these guards close is a DEAD LINK
+  (href=""), not a 500.
+
+  Layout (2026-09-28): the same shape as water_balances.html. "The short
+  version" opens with its one-line intro (the sentence that used to trail
+  the table, unchanged) and the ledger partial is a ruled sub-section of
+  the card, not a card inside it. The five steps are `.step-list` of
+  `.step-card--inset`, three-up rows are `.card-grid--3`, and spacing is
+  the mt-* utilities; the rules are the `.help-page` block in app.css.
 {% endcomment %}{% url 'accounting:methodology_settings' as methodology_url %}
 {% url 'surface_deliveries' as surface_url %}
 {% url 'water_balances' as water_balances_url %}
 {% url 'glossary' as glossary_url %}
-<div class="page-stack page-medium">
+<div class="page-stack page-medium help-page">
 
   <div class="card-raised">
     <h2 class="section-header">The short version</h2>
-    <p class="text-secondary text-base">Turning a satellite measurement into a defensible number is a <strong>chain of subtractions.</strong> Start from what the crops used, the one figure available for every field. Then take away what rain covered, and what the canals delivered. Whatever use is still left unexplained is, on a field with a well, the groundwater figure.</p>
+    {% explainer_available "water_balances" as show_water_balances %}<p class="text-secondary text-base">One subtraction per supply, then one division. {% if show_water_balances %}If &ldquo;estimated use against supplies&rdquo; is new, start with <a class="prose-link" href="{{ water_balances_url }}">How Water Balances Work</a>; this page gives the arithmetic.{% endif %}</p>
 
-    <div class="budget-panel budget-panel--concept" style="margin: var(--space-lg) 0 var(--space-sm);">
-      <div class="budget-panel-row">
-        <div class="budget-seg">
-          <div class="budget-seg-label">Start</div>
-          <div class="budget-seg-value text-neutral">Gross ET</div>
-          <div class="budget-seg-caption">what the crops used</div>
-        </div>
-        <div class="budget-op" aria-hidden="true">&minus;</div>
-        <div class="budget-seg">
-          <div class="budget-seg-label">Rain</div>
-          <div class="budget-seg-value text-supply">Effective precip</div>
-          <div class="budget-seg-caption">met for free</div>
-        </div>
-        <div class="budget-op" aria-hidden="true">&minus;</div>
-        <div class="budget-seg">
-          <div class="budget-seg-label">Canals</div>
-          <div class="budget-seg-value text-supply">Surface water</div>
-          <div class="budget-seg-caption">district deliveries</div>
-        </div>
-        <div class="budget-op" aria-hidden="true">&minus;</div>
-        <div class="budget-seg">
-          <div class="budget-seg-label">Adjust</div>
-          <div class="budget-seg-value text-neutral">Edge cases</div>
-          <div class="budget-seg-caption">most fields: none</div>
-        </div>
-        <div class="budget-op" aria-hidden="true">=</div>
-        <div class="budget-seg">
-          <div class="budget-seg-label">Result</div>
-          <div class="budget-seg-value text-gold">Billable groundwater</div>
-          <div class="budget-seg-caption">well-only</div>
-        </div>
-      </div>
-    </div>
-    {% explainer_available "water_balances" as show_water_balances %}<p class="text-tertiary text-sm m-0">One subtraction per supply, in order.{% if show_water_balances %} If &ldquo;estimated use vs. supplies&rdquo; is new, start with <a class="prose-link" href="{{ water_balances_url }}">How Water Balances Work</a>; this page gives the arithmetic.{% endif %}</p>
+    {% include "help/partials/_the_subtraction.html" %}
   </div>
 
   <div class="card-raised">
     <h2 class="section-header">Step by step</h2>
-    <p class="text-secondary text-base">Every field runs through the same ordered chain. Each step removes one supply, in order: rain, then canal deliveries, then groundwater as the remainder.</p>
+    <p class="text-secondary text-base">Every field runs through the same steps each month. Steps 1 to 4 are the calculation plan, the list an operator sees on Methodology Settings. Step 5 runs after the plan.</p>
 
-    <div style="margin: var(--space-md) 0;">
-      <div class="step-card" style="background: var(--color-inset); border-radius: var(--radius-md); padding: var(--space-md) var(--space-lg); margin-bottom: var(--space-sm);">
+    <div class="step-list mt-md">
+      <div class="step-card step-card--inset">
         <div class="step-number">1</div>
         <div class="step-body">
-          <strong style="color: var(--color-text-primary);">Start with gross ET</strong>
-          <p class="text-secondary text-base" style="margin: var(--space-xs) 0 0;">The total water the crops consumed that month, estimated from satellites &mdash; <a class="prose-link" href="{{ glossary_url }}">evapotranspiration</a>. This is the demand the field had to meet, whatever the source.</p>
+          <strong>Crop water use for the month.</strong>
+          <p class="text-secondary text-base">The satellite estimate for this field, in acre-feet. It is the demand every supply is matched against, whatever the source, and it is an estimate, never a reading.</p>
         </div>
       </div>
-      <div class="step-card" style="background: var(--color-inset); border-radius: var(--radius-md); padding: var(--space-md) var(--space-lg); margin-bottom: var(--space-sm);">
+      <div class="step-card step-card--inset">
         <div class="step-number">2</div>
         <div class="step-body">
-          <strong style="color: var(--color-text-primary);">Subtract effective precipitation</strong>
-          <p class="text-secondary text-base" style="margin: var(--space-xs) 0 0;">Rainfall available to the crop, not the total that fell. That much demand was met for free.</p>
+          <strong>Take off the rain the crop could use.</strong>
+          <p class="text-secondary text-base">Rain for the area comes from weather data, not a gauge on the field. The share of it the crop could use is worked out by the method set on Methodology Settings: all of the month's rain, a flat fraction of it, or the USDA-SCS soil-storage method, which is the default. What is left after this step is crop water use after rain, which the platform records as net consumptive use. It is also the figure the split of each headgate's total reads.</p>
         </div>
       </div>
-      <div class="step-card" style="background: var(--color-inset); border-radius: var(--radius-md); padding: var(--space-md) var(--space-lg); margin-bottom: var(--space-sm);">
+      <div class="step-card step-card--inset">
         <div class="step-number">3</div>
         <div class="step-body">
-          <strong style="color: var(--color-text-primary);">Subtract surface-water deliveries</strong>
-          <p class="text-secondary text-base" style="margin: var(--space-xs) 0 0;">Canal water the district delivered to the field. The consumed share of that delivery comes off the demand next.</p>
+          <strong>Take off the canal water the crop could use.</strong>
+          <p class="text-secondary text-base">The delivery on record for the month, times the field's irrigation efficiency. Not all the canal water reaches the crop: some soaks past the roots and some runs off the end of the field. The efficiency is the field's own where one is set (the field's irrigation method, from a published table of eighteen methods, 60% for conventional furrow up to 95% for subsurface drip); otherwise the deployment's default on Delivery Settings, 75% unless changed. The month's calculation records the delivery, the efficiency it used and the result, so the figure can be read back later whatever the setting says by then.</p>
+          <p class="text-secondary text-base">The switch: whether this step applies the efficiency at all is a setting on the step itself in the calculation plan. On, only the canal water the crop could use comes off; off, the whole delivery comes off and the month's calculation records no separate delivered figure. A plan seeded on a new deployment has it on. The switch is not yet on the Methodology Settings screen; it is set in the plan directly.</p>
         </div>
       </div>
-      <div class="step-card" style="background: var(--color-inset); border-radius: var(--radius-md); padding: var(--space-md) var(--space-lg); margin-bottom: var(--space-sm);">
+      <div class="step-card step-card--inset">
         <div class="step-number">4</div>
         <div class="step-body">
-          <strong style="color: var(--color-text-primary);">Subtract edge cases</strong>
-          <p class="text-secondary text-base" style="margin: var(--space-xs) 0 0;">Optional adjustments an agency may configure, such as a floor that keeps a month&rsquo;s result from going below zero. Most fields never need these.</p>
+          <strong>What is left, by what the field has.</strong>
+          <p class="text-secondary text-base">Two plan steps, shown as two entries on Methodology Settings: a field with no crop on record is set to zero, and then the remainder is floored at zero. Where rain and canal water together came to more than the crop used, the remainder is zero and the excess is recorded on the month's calculation in two parts: rain the crop did not need, kept as information, and canal water beyond what the crop could use, which the next section covers. What a positive remainder becomes depends on the field: groundwater consumed on a field with a well and no meter reading for the month; water use recorded, no supply reported on a field with no well; and on a month with a meter reading on record, a figure kept for comparison only, because the reading stands and no groundwater row is written.</p>
         </div>
       </div>
-      <div class="step-card" style="background: var(--color-inset); border-radius: var(--radius-md); padding: var(--space-md) var(--space-lg); border-left-color: var(--color-accent);">
+      <div class="step-card step-card--inset">
         <div class="step-number">5</div>
         <div class="step-body">
-          <strong style="color: var(--color-text-primary);">What remains is billable groundwater</strong> <span class="badge badge-pill badge-gold">the result</span>
-          <p class="text-secondary text-base" style="margin: var(--space-xs) 0 0;">But only on a field that has a well. Where a well exists the leftover is written as groundwater; where none does, as <em>unmet demand</em>. A missing meter yields no pumping figure.</p>
+          <strong>From consumed to extracted.</strong>
+          <p class="text-secondary text-base">This step runs after the plan, in the calculation itself, and its value is on Delivery Settings, not Methodology Settings. On a field with a well and no meter reading for the month, groundwater consumed is divided by the share of pumped groundwater the crop consumes (80% unless changed). The result is groundwater extracted. A pump has to lift more water than the crop ends up using, because some water soaks past the roots. The difference between the two figures is recorded on the month's calculation as deep percolation. The groundwater allocation is charged groundwater extracted, at the figure stamped when the month was calculated. A change to the setting applies when a month is next calculated; a month already calculated keeps its stamped figure until it is re-run.</p>
         </div>
       </div>
     </div>
 
-    <p class="text-secondary text-base">This chain isn&rsquo;t hard-coded &mdash; an agency tunes it on the {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a>{% else %}Methodology Settings{% endif %} page, where these exact steps appear as a reorderable, switch-on/switch-off list. The help text here and that settings screen describe the <em>same</em> chain, so what you read matches what you configure. Because every future calculation flows through it, change it deliberately.</p>
-
-    {% include "partials/_deep_dive.html" with label="What &ldquo;effective&rdquo; precipitation means, and why the chain works for any field" body="<p><strong>Not all rain counts.</strong> &ldquo;Effective&rdquo; precipitation is the portion of rainfall the crop could actually use &mdash; what soaked into the root zone and stayed there. Rain that ran off, or fell faster than the soil could absorb, or landed on already-saturated ground doesn&rsquo;t reduce the crop&rsquo;s draw on other supplies, so it isn&rsquo;t subtracted. Agencies pick how to estimate the effective share: a flat fraction of total rain, or a soil-storage model (the USDA-SCS / TR-21 method), tuned on the Methodology Settings page.</p><p><strong>The chain is a step-walker, not a single equation.</strong> Under the hood it&rsquo;s a small configurable engine (<code>evaluate_chain</code>) that runs whatever ordered steps the agency has enabled. Crucially, it&rsquo;s <em>source-agnostic</em>: it reads estimated consumptive use for any parcel and works through the supplies, with no well required to run. A well only matters at the very end &mdash; it decides whether the unexplained leftover is booked as groundwater or recorded as unmet demand.</p>" %}
+    <p class="text-secondary text-base mt-md">The plan is not hard-coded. An operator reorders, switches and tunes steps 1 to 4 on the {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a>{% else %}Methodology Settings{% endif %} page (the rain method and the floor are editable there; the other steps have no knobs on that screen), and every month calculated after a change carries the plan it ran under.</p>
   </div>
 
   <div class="card-raised">
-    <h2 class="section-header">Sharing one delivery across many fields</h2>
-    <p class="text-secondary text-base">Here is the problem that makes this platform necessary. Districts hold one water right and deliver canal water to many farms; the canal is not metered per field, so only the total delivered is known. So how much of that total belongs to each farm?</p>
-
-    <div class="stat-grid-2col" style="margin: var(--space-md) 0;">
-      <div class="concept-panel concept-panel-use">
-        <div class="concept-panel-title">Split it evenly <span class="badge badge-pill badge-red">the wrong way</span></div>
-        <p class="text-secondary text-base m-0">Every field gets the same share, no matter what&rsquo;s growing. A fallow field is credited the same as a vineyard: fields that used no water are credited, and fields that did are short.</p>
-      </div>
-      <div class="concept-panel concept-panel-supply">
-        <div class="concept-panel-title">Split by ET demand <span class="badge badge-pill badge-green">how it works</span></div>
-        <p class="text-secondary text-base m-0">Each field&rsquo;s share follows its crop&rsquo;s ET that month: the summer crop takes the larger share, the fallow field almost none. Each share is also capped, so no field is credited with using more than it physically could.</p>
-      </div>
-    </div>
-
-    {% explainer_available "surface_deliveries" as show_surface_help %}{% if show_surface_help %}<a class="prose-link" href="{{ surface_url }}">Read the Surface Delivery Settings &rarr;</a>{% endif %}
-
-    {% comment %}89-03: this deep-dive's body ends with a pointer at the Surface
-    Delivery Settings page, which 89-02 hides wherever the deployment lacks
-    `recharge`. The sentence lives inside a `body` STRING, where no
-    {% templatetag openblock %} if {% templatetag closeblock %} can reach — so the
-    body is hoisted here with its last paragraph left OPEN, and `body_tail`
-    closes it either way. Every word above the pointer is written once, and a full
-    deployment keeps the pointer verbatim.{% endcomment %}{% with ladder_body="<p>When the platform has to choose a number, it follows a strict priority ladder &mdash; <strong>measurement first, estimate last:</strong></p><ol class='concept-list'><li>A per-field <strong>direct measurement</strong> wins over everything &mdash; if someone metered this field, that&rsquo;s the truth.</li><li>A district&rsquo;s <strong>hand-set value</strong> is next &mdash; an agency&rsquo;s own recorded figure beats any estimate.</li><li><strong>Satellite ET</strong> fills the gap only when nothing was measured or entered.</li><li>An <strong>even split</strong> is the last resort, used only when there&rsquo;s no better signal at all.</li></ol><p>A district&rsquo;s recorded total is always honored as-is; ET only decides how to split the <em>unmeasured per-field breakdown</em> of that total. The cap on each field&rsquo;s share is its demand divided by an efficiency factor &mdash; because not all delivered water is consumed (some sinks past the roots and recharges the aquifer). That efficiency, typically around 75%, is an agency setting" %}{% if show_surface_help %}{% include "partials/_deep_dive.html" with label="The measurement-first ladder and where the cap comes from" body=ladder_body body_tail="; the Surface Delivery Settings page explains it in plain language.</p>" %}{% else %}{% include "partials/_deep_dive.html" with label="The measurement-first ladder and where the cap comes from" body=ladder_body body_tail=".</p>" %}{% endif %}{% endwith %}
+    <h2 class="section-header">Canal water beyond what the crop could use</h2>
+    <p class="text-secondary text-base">When rain and the canal water the crop could use add up to more than the crop used, the canal part of the excess is recorded on the month's calculation as canal water beyond what the crop could use. What happens to it is one setting on Delivery Settings. Every month's calculation records the value it ran under. A change applies when a month is next calculated; a month already calculated keeps what it recorded until it is re-run.</p>
+    <ul class="concept-list text-secondary text-base mt-md">
+      <li><strong>Not credited.</strong> The default, and the demonstration's setting. The amount is recorded on the month's calculation and nothing else happens. It is nobody's credit and it is not charged.</li>
+      <li><strong>Credited to the landowner, less a share left in the basin.</strong> The share left in the basin is 10% unless changed. A field with a well gets the credited amount on its own ledger. A field with no well has no well to pump it back, so its credited amount goes to its management-area zone's shared account instead; a field with no such zone has nowhere to credit it, and nothing is credited.</li>
+      <li><strong>Its own line.</strong> The amount is shown on the field's page as its own line. It is not a credit and is not charged.</li>
+    </ul>
+    <p class="text-secondary text-base mt-md">Under every value the field's water balance reads the same; the setting changes what the amount is called and where a credit lands, not the balance.</p>
   </div>
 
   <div class="card-raised">
-    <h2 class="section-header">Sharing a well or a headgate</h2>
-    <p class="text-secondary text-base">The same method covers the smaller case: two or more fields on one well or one headgate, with only the combined pumping or diversion known. The old shortcut was to split it 50/50 (or evenly among however many fields). That is the canal&rsquo;s mistake again: it ignores what was growing.</p>
-
-    <div class="callout-rule">
-      <div class="concept-panel-title" style="margin-bottom: var(--space-xs);">By demand, not by headcount</div>
-      <p class="text-secondary text-base m-0">A shared well serving a vineyard and an alfalfa field is apportioned by each field&rsquo;s estimated ET demand. If the vineyard consumed twice what the alfalfa did that month, it carries twice the share of the pumping. The total always reconciles to what the well or headgate produced; the demand weights only divide it.</p>
+    <h2 class="section-header">Three endings</h2>
+    <div class="card-grid card-grid--3">
+      <div class="concept-panel">
+        <div class="concept-panel-title">A month with a meter reading</div>
+        <p class="text-secondary text-base">The reading is the month's groundwater record and the allocation is charged it as recorded. The calculation still runs and is kept on the month's page for comparison, but it writes no groundwater row and stamps no extracted figure, so nothing is double counted.</p>
+      </div>
+      <div class="concept-panel">
+        <div class="concept-panel-title">A well, no meter reading</div>
+        <p class="text-secondary text-base">The remainder is written to the field's ledger as groundwater consumed, with a sentence saying so. Groundwater extracted is stamped on the month's calculation beside it and is what the allocation is charged. A month where rain and canal water covered the crop writes a 0.00 acre-feet line and says that no groundwater extraction was derived.</p>
+      </div>
+      <div class="concept-panel">
+        <div class="concept-panel-title">No well</div>
+        <p class="text-secondary text-base">Water use recorded, no supply reported. The remainder is stored on the month's calculation and shown on the field's page. It says the arithmetic did not close from the supplies on record and nothing about why. It is never written as pumping and it is never a finding about the grower.</p>
+      </div>
     </div>
+  </div>
+
+  <div class="card-raised">
+    <h2 class="section-header">Sharing one canal total across many fields</h2>
+    <p class="text-secondary text-base">A district records what left each headgate, not what reached each field. The software divides each month's headgate total among the fields it serves. When a headgate's canal total is less than its fields could use, it is divided up among them in proportion to each field's crop water use after rain. When it covers every field, each field gets what it could use (its crop water use after rain divided by its irrigation efficiency) and the rest is recorded against the headgate. Where no field the headgate serves has an estimated use on record for the month, which is also the case before the calculation first runs, the total is divided by the fixed share on file for each field instead. The ledger row for each field's share says which of the two it was.</p>
+
+    <div class="callout-rule mt-md">
+      <div class="concept-panel-title">The total is honored as recorded</div>
+      <p class="text-secondary text-base">The headgate's total is never changed. The split only decides how much of it each field is charged with. Anything left after every field has what it could use is recorded against the headgate, not dropped.</p>
+    </div>
+
+    {% explainer_available "surface_deliveries" as show_surface_help %}{% if show_surface_help %}<p class="text-base mt-md"><a class="prose-link" href="{{ surface_url }}">Read the Surface Delivery Settings &rarr;</a></p>{% endif %}
+  </div>
+
+  <div class="card-raised">
+    <h2 class="section-header">What this platform does not do yet</h2>
+    <ul class="concept-list text-secondary text-base">
+      <li><strong>Canal losses.</strong> The platform has a place for the district's own figures: three shares of the diverted volume on each point of diversion, for evaporation, seepage and spill, each with an optional band the district states. Until a district enters its own, evaporation carries a 1% convention and seepage and spill read 0. The engine that takes those shares off before the split is next. Until it runs, the split divides the diverted volume the district recorded, less any water the record shows returned to the stream.</li>
+      <li><strong>A diversion with no meter.</strong> The platform will estimate a diversion that has no meter from the crop water use of the fields it serves, surface water first, and cap the estimate at the water right's season and its face value in acre-feet. A diversion whose estimate reaches the face value will be flagged as reaching it, for the district to look at. The estimate will be labeled as one wherever it appears.</li>
+      <li><strong>A field's own delivery record.</strong> A field with a recorded delivery of its own will keep it, and the split will divide only the remainder of the headgate total among the fields without one.</li>
+      <li><strong>A flat yearly rain allowance.</strong> Later. Rain is taken off month by month as described in step 2; a single yearly allowance is not built.</li>
+    </ul>
+    <p class="text-secondary text-sm mt-md">This platform does not submit reports to the state.</p>
   </div>
 
   <div class="card-raised">
     <h2 class="section-header">Where to go next</h2>
-    <p class="text-secondary text-base">The concept, the configuration, and the vocabulary &mdash; one click each.</p>
-    <div class="card-grid">
+    <p class="text-secondary text-base"><a class="prose-link" href="https://github.com/Open-H2O/openh2o/blob/main/docs/water-budget-terms.md" target="_blank" rel="noopener noreferrer">How these terms line up with the state's water-budget terms</a></p>
+    <div class="card-grid card-grid--fit mt-md">
       {% if show_water_balances %}<a href="{{ water_balances_url }}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>How Water Balances Work</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm m-0">The one idea underneath all of this: estimated use vs. supplies.</p>
+        <div class="concept-panel-title" style="justify-content: space-between;"><span>How Water Balances Work</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm">The one idea underneath all of this: estimated use vs. supplies.</p>
       </a>{% endif %}
       {% if 'accounting' in enabled_modules %}<a href="{{ methodology_url }}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Methodology Settings</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm m-0">Where the calculation chain above is reordered and tuned.</p>
+        <div class="concept-panel-title" style="justify-content: space-between;"><span>Methodology Settings</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm">Where the calculation plan's steps are reordered and tuned.</p>
       </a>{% endif %}
       <a href="{{ glossary_url }}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Glossary</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm m-0">Plain-language definitions for every term used here.</p>
+        <div class="concept-panel-title" style="justify-content: space-between;"><span>Glossary</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm">Plain-language definitions for every term used here.</p>
       </a>
     </div>
   </div>

@@ -29,6 +29,19 @@ aquifer" carry the fact), S-0669 (the candidates row misquoted the sentence;
 the settled first sentence stands and the second stays), S-0639 (its address
 was `onboard.html`, not `overview.html`).
 
+A row whose PAGE was rewritten wholesale under a later, dated ruling is marked
+`retired`, never deleted: `Row.retired` names that ruling and its date, and a
+retired row skips test 1 (the settled sentence is present) and test 3 (it
+scans clean), because the settled sentence Brent ruled on 2026-09-17 is
+genuinely gone, on purpose, under separate authority -- not a defect this
+suite should keep reporting. Test 2 (the struck sentence stays gone) still
+runs for a retired row: retiring it is not un-ruling the words it replaced, so
+the old, struck wording must still never reappear. 32 rows on
+templates/help/water_balances.html, templates/help/methods.html and
+config/views.py's glossary were retired 2026-09-28 this way, under 148-01's
+"picture two" ruling (Brent, 2026-09-24 07:52 PDT) as carried to its final
+wording at the 148-03 checkpoint.
+
 Comparison is on collapsed text: whitespace collapsed, HTML entities
 unescaped, curly quotes straightened, Django tags and `{{ }}` figures removed
 (a `<x>` in a settled sentence stands for a figure; the fragments around it are
@@ -58,6 +71,12 @@ class Row(NamedTuple):
     #: (see ``struck_probe``) would collide with a different, live sentence
     #: that shares its tail.
     probe: str | None = None
+    #: Set only when the whole PAGE this row pins was rewritten under a
+    #: later, dated ruling -- the ruling and its date, as a short string.
+    #: Skips test 1 and test 3 for this row (see the module docstring's RULE
+    #: 8 paragraph); test 2 still runs. Never set to silence an ordinary
+    #: failure -- that is still a defect.
+    retired: str | None = None
 
 
 SETTLED = [
@@ -240,7 +259,8 @@ SETTLED = [
     Row('S-0050',
         'config/views.py',
         'so the total always reconciles back to what the source actually produced.',
-        'so the total reconciles to what the source produced.'),
+        'so the total reconciles to what the source produced.',
+        retired='Rewritten around picture two, approved by Brent 2026-09-24 07:52 PDT as the voice for the help pages (148-01); final wording at the 148-03 checkpoint'),
     Row('S-0056',
         'config/views.py',
         'A small leftover residual is normal — real books rarely close to exactly zero.',
@@ -248,7 +268,8 @@ SETTLED = [
     Row('S-0059 · S-0062 [1]',
         'config/views.py',
         'how much of a delivery the crop actually uses',
-        'how much of a delivery the crop uses'),
+        'how much of a delivery the crop uses',
+        retired='Rewritten around picture two, approved by Brent 2026-09-24 07:52 PDT as the voice for the help pages (148-01); final wording at the 148-03 checkpoint'),
     Row('S-0059 · S-0062 [2]',
         'config/views.py',
         'The portion of rainfall that crops actually use',
@@ -366,75 +387,93 @@ SETTLED = [
     Row('S-1123',
         'templates/help/water_balances.html',
         'A water balance answers a deceptively hard question: who used what?',
-        'A water balance answers one question: who used what?'),
+        'A water balance answers one question: who used what?',
+        retired='Rewritten around picture two, approved by Brent 2026-09-24 07:52 PDT as the voice for the help pages (148-01); final wording at the 148-03 checkpoint'),
     Row('S-1125',
         'templates/help/water_balances.html',
         'Out of everything a field involves, there is exactly one quantity we can estimate for every field, from space, whether its water came from a canal, a well, or rain: the water the crops actually drank.',
-        'One quantity can be estimated for every field, from satellite, whatever its water source: the water the crops consumed.'),
+        'One quantity can be estimated for every field, from satellite, whatever its water source: the water the crops consumed.',
+        retired='Rewritten around picture two, approved by Brent 2026-09-24 07:52 PDT as the voice for the help pages (148-01); final wording at the 148-03 checkpoint'),
     Row('S-1127',
         'templates/help/water_balances.html',
         '— is the anchor.',
-        'is the reference figure.'),
+        'is the reference figure.',
+        retired='Rewritten around picture two, approved by Brent 2026-09-24 07:52 PDT as the voice for the help pages (148-01); final wording at the 148-03 checkpoint'),
     Row('S-1128',
         'templates/help/water_balances.html',
         'Everything else is a supply we line up against it to see whether the books add up.',
-        'Everything else is a supply, compared against it.'),
+        'Everything else is a supply, compared against it.',
+        retired='Rewritten around picture two, approved by Brent 2026-09-24 07:52 PDT as the voice for the help pages (148-01); final wording at the 148-03 checkpoint'),
     Row('S-1132',
         'templates/help/water_balances.html',
         'a perfect zero would be the surprise.',
-        'an exact zero would be unusual.'),
+        'an exact zero would be unusual.',
+        retired='Rewritten around picture two, approved by Brent 2026-09-24 07:52 PDT as the voice for the help pages (148-01); final wording at the 148-03 checkpoint'),
     Row('S-1141',
         'templates/help/water_balances.html',
         'A balance lays the supplies alongside the use and asks whether they line up.',
-        'A balance compares the supplies with the use.'),
+        'A balance compares the supplies with the use.',
+        retired='Rewritten around picture two, approved by Brent 2026-09-24 07:52 PDT as the voice for the help pages (148-01); final wording at the 148-03 checkpoint'),
     Row('S-1142',
         'templates/help/water_balances.html',
         'Because ET is the floor, the supplies delivered usually run a little higher than the estimated ET — and that difference is itself information.',
-        'Because ET is the floor, supplies usually run a little above estimated ET; the difference is itself information.'),
+        'Because ET is the floor, supplies usually run a little above estimated ET; the difference is itself information.',
+        retired='Rewritten around picture two, approved by Brent 2026-09-24 07:52 PDT as the voice for the help pages (148-01); final wording at the 148-03 checkpoint'),
     Row('S-1143',
         'templates/help/water_balances.html',
         'Reading it honestly is the next section.',
-        'Reading that difference is the next section.'),
+        'Reading that difference is the next section.',
+        retired='Rewritten around picture two, approved by Brent 2026-09-24 07:52 PDT as the voice for the help pages (148-01); final wording at the 148-03 checkpoint'),
     Row('S-1145',
         'templates/help/water_balances.html',
         'Reconciling is just supplies minus use.',
-        'Reconciling is supplies minus use.'),
+        'Reconciling is supplies minus use.',
+        retired='Rewritten around picture two, approved by Brent 2026-09-24 07:52 PDT as the voice for the help pages (148-01); final wording at the 148-03 checkpoint'),
     Row('S-1146',
         'templates/help/water_balances.html',
         "Start with the estimated use, subtract the supplies we already know about — surface deliveries first, then rain — and look at what's left unexplained.",
-        'Start with the estimated use, subtract the known supplies (surface deliveries first, then rain), and read what is left.'),
+        'Start with the estimated use, subtract the known supplies (surface deliveries first, then rain), and read what is left.',
+        retired='Rewritten around picture two, approved by Brent 2026-09-24 07:52 PDT as the voice for the help pages (148-01); final wording at the 148-03 checkpoint'),
     Row('S-1148',
         'templates/help/water_balances.html',
         'The rule that keeps it honest',
-        'Where the leftover goes'),
+        'Where the leftover goes',
+        retired='Rewritten around picture two, approved by Brent 2026-09-24 07:52 PDT as the voice for the help pages (148-01); final wording at the 148-03 checkpoint'),
     Row('S-1149',
         'templates/help/water_balances.html',
         'An unexplained leftover is booked as groundwater only where a well actually exists.',
-        'Only where a well exists is an unexplained leftover booked as groundwater.'),
+        'Only where a well exists is an unexplained leftover booked as groundwater.',
+        retired='Rewritten around picture two, approved by Brent 2026-09-24 07:52 PDT as the voice for the help pages (148-01); final wording at the 148-03 checkpoint'),
     Row('S-1150',
         'templates/help/water_balances.html',
         "On a field with no well, that same leftover is unmet demand — the crop wanted more than it got — or a surface number that's off.",
-        'On a field with no well, the leftover is unmet demand, or a surface figure that is wrong.'),
+        'On a field with no well, the leftover is unmet demand, or a surface figure that is wrong.',
+        retired='Rewritten around picture two, approved by Brent 2026-09-24 07:52 PDT as the voice for the help pages (148-01); final wording at the 148-03 checkpoint'),
     Row('S-1151 + S-1152',
         'templates/help/water_balances.html',
         'It is never phantom pumping. The platform refuses to invent groundwater out of a missing meter.',
-        'It is never written as pumping; a missing meter yields no groundwater figure.'),
+        'It is never written as pumping; a missing meter yields no groundwater figure.',
+        retired='Rewritten around picture two, approved by Brent 2026-09-24 07:52 PDT as the voice for the help pages (148-01); final wording at the 148-03 checkpoint'),
     Row('S-1154',
         'templates/help/water_balances.html',
         'ET is the floor, so the water delivered will usually exceed the water consumed — some seeps from canals on the way (conveyance loss), some runs off, some sinks past the roots back into the aquifer.',
-        'ET is the floor, so delivered water usually exceeds consumed water: conveyance loss, runoff and deep percolation take the rest.'),
+        'ET is the floor, so delivered water usually exceeds consumed water: conveyance loss, runoff and deep percolation take the rest.',
+        retired='Rewritten around picture two, approved by Brent 2026-09-24 07:52 PDT as the voice for the help pages (148-01); final wording at the 148-03 checkpoint'),
     Row('S-1156 + S-1157',
         'templates/help/water_balances.html',
         "it's how irrigation actually behaves. The job isn't to force the balance to zero — it's to make the remaining gap small enough to explain.",
-        'that is normal. The aim is not a zero balance but a gap small enough to explain.'),
+        'that is normal. The aim is not a zero balance but a gap small enough to explain.',
+        retired='Rewritten around picture two, approved by Brent 2026-09-24 07:52 PDT as the voice for the help pages (148-01); final wording at the 148-03 checkpoint'),
     Row('S-1158 + S-1159',
         'templates/help/water_balances.html',
         'All of this exists to solve one stubborn problem: most water diversions in California are not metered. Reporting is sparse, self-reported, and exempt below certain thresholds — so for the vast majority of fields, nobody knows how much water actually moved.',
-        'Most water diversions in California are not metered, and reporting is sparse, self-reported and exempt below thresholds; for most fields the volume moved is unknown.'),
+        'Most water diversions in California are not metered, and reporting is sparse, self-reported and exempt below thresholds; for most fields the volume moved is unknown.',
+        retired='Rewritten around picture two, approved by Brent 2026-09-24 07:52 PDT as the voice for the help pages (148-01); final wording at the 148-03 checkpoint'),
     Row('S-1160 + S-1162',
         'templates/help/water_balances.html',
         'Evapotranspiration estimated from space is the answer to that missing-meter problem. … That is what makes a credible balance possible where one was never possible before.',
-        'Evapotranspiration estimated from satellite covers the fields no meter does.'),
+        'Evapotranspiration estimated from satellite covers the fields no meter does.',
+        retired='Rewritten around picture two, approved by Brent 2026-09-24 07:52 PDT as the voice for the help pages (148-01); final wording at the 148-03 checkpoint'),
     Row('S-1166',
         'templates/help/water_balances.html',
         'Now that the idea is clear, here is where to watch it work and where to dig deeper.',
@@ -442,11 +481,13 @@ SETTLED = [
     Row('S-0992 + S-0993',
         'templates/help/methods.html',
         'Turning a satellite measurement into a number you can stand behind is a chain of subtractions. Start from what the crops actually used — the one thing we can measure for every field, from space.',
-        'Turning a satellite measurement into a defensible number is a chain of subtractions. Start from what the crops used, the one figure available for every field.'),
+        'Turning a satellite measurement into a defensible number is a chain of subtractions. Start from what the crops used, the one figure available for every field.',
+        retired='Rewritten around picture two, approved by Brent 2026-09-24 07:52 PDT as the voice for the help pages (148-01); final wording at the 148-03 checkpoint'),
     Row('S-0996',
         'templates/help/methods.html',
         'No single clever formula — just honest bookkeeping, one supply at a time.',
-        'One subtraction per supply, in order.'),
+        'One subtraction per supply, in order.',
+        retired='Rewritten around picture two, approved by Brent 2026-09-24 07:52 PDT as the voice for the help pages (148-01); final wording at the 148-03 checkpoint'),
     Row('S-0998',
         'templates/help/methods.html',
         'this page picks up where that one leaves off and walks the actual arithmetic.',
@@ -454,43 +495,53 @@ SETTLED = [
     Row('S-1000',
         'templates/help/methods.html',
         'Each step removes one supply we can account for — and the order matters: you subtract the free water (rain) and the delivered water (canals) before asking what groundwater had to make up the difference.',
-        'Each step removes one supply, in order: rain, then canal deliveries, then groundwater as the remainder.'),
+        'Each step removes one supply, in order: rain, then canal deliveries, then groundwater as the remainder.',
+        retired='Rewritten around picture two, approved by Brent 2026-09-24 07:52 PDT as the voice for the help pages (148-01); final wording at the 148-03 checkpoint'),
     Row('S-1003',
         'templates/help/methods.html',
         'Rain that actually soaked in and was available to the crop — not every drop that fell, just the share the plants could use.',
-        'Rainfall available to the crop, not the total that fell.'),
+        'Rainfall available to the crop, not the total that fell.',
+        retired='Rewritten around picture two, approved by Brent 2026-09-24 07:52 PDT as the voice for the help pages (148-01); final wording at the 148-03 checkpoint'),
     Row('S-1006',
         'templates/help/methods.html',
         'What the crop drank from that delivery comes off the demand next.',
-        'The consumed share of that delivery comes off the demand next.'),
+        'The consumed share of that delivery comes off the demand next.',
+        retired='Rewritten around picture two, approved by Brent 2026-09-24 07:52 PDT as the voice for the help pages (148-01); final wording at the 148-03 checkpoint'),
     Row('S-1011 + S-1012',
         'templates/help/methods.html',
         "The platform writes that leftover as a groundwater figure where a well exists, and as unmet demand (the crop wanted more than it got) where one doesn't. It never invents pumping out of a missing meter.",
-        'Where a well exists the leftover is written as groundwater; where none does, as unmet demand. A missing meter yields no pumping figure.'),
+        'Where a well exists the leftover is written as groundwater; where none does, as unmet demand. A missing meter yields no pumping figure.',
+        retired='Rewritten around picture two, approved by Brent 2026-09-24 07:52 PDT as the voice for the help pages (148-01); final wording at the 148-03 checkpoint'),
     Row('S-1018 + S-1019',
         'templates/help/methods.html',
         "A water district holds one water right and delivers canal water to dozens of farms — but the canal isn't metered field by field. All the district knows is the total it sent down the ditch.",
-        'Districts hold one water right and deliver canal water to many farms; the canal is not metered per field, so only the total delivered is known.'),
+        'Districts hold one water right and deliver canal water to many farms; the canal is not metered per field, so only the total delivered is known.',
+        retired='Rewritten around picture two, approved by Brent 2026-09-24 07:52 PDT as the voice for the help pages (148-01); final wording at the 148-03 checkpoint'),
     Row('S-1023',
         'templates/help/methods.html',
         'A fallow field is credited the same as a thirsty vineyard — so water lands on fields that never used it, and the fields that did go short.',
-        'A fallow field is credited the same as a vineyard: fields that used no water are credited, and fields that did are short.'),
+        'A fallow field is credited the same as a vineyard: fields that used no water are credited, and fields that did are short.',
+        retired='Rewritten around picture two, approved by Brent 2026-09-24 07:52 PDT as the voice for the help pages (148-01); final wording at the 148-03 checkpoint'),
     Row('S-1025 + S-1026 + S-1027',
         'templates/help/methods.html',
         "Each field's share tracks what its crop actually drank that month. The thirsty summer crop draws the larger share; the fallow field draws almost none.",
-        "Each field's share follows its crop's ET that month: the summer crop takes the larger share, the fallow field almost none."),
+        "Each field's share follows its crop's ET that month: the summer crop takes the larger share, the fallow field almost none.",
+        retired='Rewritten around picture two, approved by Brent 2026-09-24 07:52 PDT as the voice for the help pages (148-01); final wording at the 148-03 checkpoint'),
     Row('S-1030',
         'templates/help/methods.html',
         'The same logic settles a smaller, thornier case: when two or more fields share a single well or a single headgate, and only the combined pumping or diversion is known.',
-        'The same method covers the smaller case: two or more fields on one well or one headgate, with only the combined pumping or diversion known.'),
+        'The same method covers the smaller case: two or more fields on one well or one headgate, with only the combined pumping or diversion known.',
+        retired='Rewritten around picture two, approved by Brent 2026-09-24 07:52 PDT as the voice for the help pages (148-01); final wording at the 148-03 checkpoint'),
     Row('S-1032',
         'templates/help/methods.html',
         "That's the same mistake as the canal — it ignores what was actually growing.",
-        "That is the canal's mistake again: it ignores what was growing."),
+        "That is the canal's mistake again: it ignores what was growing.",
+        retired='Rewritten around picture two, approved by Brent 2026-09-24 07:52 PDT as the voice for the help pages (148-01); final wording at the 148-03 checkpoint'),
     Row('S-1036',
         'templates/help/methods.html',
         'The total always reconciles back to what the well or headgate actually produced — the demand weights only decide how that known total is divided.',
-        'The total always reconciles to what the well or headgate produced; the demand weights only divide it.'),
+        'The total always reconciles to what the well or headgate produced; the demand weights only divide it.',
+        retired='Rewritten around picture two, approved by Brent 2026-09-24 07:52 PDT as the voice for the help pages (148-01); final wording at the 148-03 checkpoint'),
     Row('S-0887 + S-0888 + S-0889',
         'templates/help/budgets_allocations.html',
         "An allocation ceiling and an allocation are the same number seen from two directions. The ceiling is the whole pie — the total volume of water assigned to a management zone for a reporting period. The allocation is one account's slice of that pie, worked out from how much land the account holds in the zone.",
@@ -698,6 +749,8 @@ IDS = [f"{r.id} · {Path(r.path).name}" for r in SETTLED]
 def test_the_settled_sentence_is_in_its_file(row):
     if row.settled is None:
         pytest.skip("struck outright; test 2 covers it")
+    if row.retired:
+        pytest.skip(f"retired: {row.retired}")
     text = _file_text(row.path)
     missing = [collapse(f) for f in fragments(row.settled) if collapse(f) not in text]
     assert not missing, (
@@ -727,6 +780,8 @@ def test_the_struck_sentence_is_gone_from_the_product(row, product_text):
 def test_every_settled_sentence_scans_clean(row):
     if row.settled is None:
         pytest.skip("struck outright")
+    if row.retired:
+        pytest.skip(f"retired: {row.retired}")
     offences = scan(row.settled.replace("<x>", "X"))
     assert not offences, (
         f"{row.id}: the settled sentence explains the water (copy rule 11): "

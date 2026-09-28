@@ -1078,6 +1078,116 @@
     "nearest_label": "{{ use_area_acreage_total|"
   },
   {
+    "id": "FIG-help-001",
+    "app": "help",
+    "kind": "figure",
+    "template": "templates/help/partials/_the_subtraction.html",
+    "line": 45,
+    "column": 56,
+    "expression": "{{ gross_et_af|floatformat:2|intcomma }}",
+    "enclosing_loop": null,
+    "nearest_label": "{{ gross_et_af|"
+  },
+  {
+    "id": "FIG-help-002",
+    "app": "help",
+    "kind": "figure",
+    "template": "templates/help/partials/_the_subtraction.html",
+    "line": 53,
+    "column": 64,
+    "expression": "{{ effective_precip_af|floatformat:2|intcomma }}",
+    "enclosing_loop": null,
+    "nearest_label": "{{ effective_precip_af|"
+  },
+  {
+    "id": "FIG-help-003",
+    "app": "help",
+    "kind": "figure",
+    "template": "templates/help/partials/_the_subtraction.html",
+    "line": 69,
+    "column": 65,
+    "expression": "{{ surface_delivered_af|floatformat:2|intcomma }}",
+    "enclosing_loop": null,
+    "nearest_label": "{{ surface_delivered_af|"
+  },
+  {
+    "id": "FIG-help-004",
+    "app": "help",
+    "kind": "figure",
+    "template": "templates/help/partials/_the_subtraction.html",
+    "line": 81,
+    "column": 61,
+    "expression": "{{ surface_water_af|floatformat:2|intcomma }}",
+    "enclosing_loop": null,
+    "nearest_label": "{{ surface_water_af|"
+  },
+  {
+    "id": "FIG-help-005",
+    "app": "help",
+    "kind": "figure",
+    "template": "templates/help/partials/_the_subtraction.html",
+    "line": 82,
+    "column": 98,
+    "expression": "{{ irrigation_efficiency_pct|floatformat:0 }}",
+    "enclosing_loop": null,
+    "nearest_label": "The delivery times the field's irrigation efficiency, {{ irrigation_efficiency_pct|"
+  },
+  {
+    "id": "FIG-help-006",
+    "app": "help",
+    "kind": "figure",
+    "template": "templates/help/partials/_the_subtraction.html",
+    "line": 88,
+    "column": 61,
+    "expression": "{{ surface_water_af|floatformat:2|intcomma }}",
+    "enclosing_loop": null,
+    "nearest_label": "{{ surface_water_af|"
+  },
+  {
+    "id": "FIG-help-007",
+    "app": "help",
+    "kind": "figure",
+    "template": "templates/help/partials/_the_subtraction.html",
+    "line": 96,
+    "column": 53,
+    "expression": "{{ final_af|floatformat:2|intcomma }}",
+    "enclosing_loop": null,
+    "nearest_label": "{{ final_af|"
+  },
+  {
+    "id": "FIG-help-008",
+    "app": "help",
+    "kind": "figure",
+    "template": "templates/help/partials/_the_subtraction.html",
+    "line": 110,
+    "column": 61,
+    "expression": "{{ over_delivery_af|floatformat:2|intcomma }}",
+    "enclosing_loop": null,
+    "nearest_label": "{{ over_delivery_af|"
+  },
+  {
+    "id": "FIG-help-009",
+    "app": "help",
+    "kind": "figure",
+    "template": "templates/help/partials/_the_subtraction.html",
+    "line": 118,
+    "column": 57,
+    "expression": "{{ extracted_af|floatformat:2|intcomma }}",
+    "enclosing_loop": null,
+    "nearest_label": "{{ extracted_af|"
+  },
+  {
+    "id": "FIG-help-010",
+    "app": "help",
+    "kind": "figure",
+    "template": "templates/help/partials/_the_subtraction.html",
+    "line": 123,
+    "column": 66,
+    "expression": "{{ gw_efficiency_pct|floatformat:0 }}",
+    "enclosing_loop": null,
+    "nearest_label": "Groundwater consumed divided by {{ gw_efficiency_pct|"
+  },
+  {
     "id": "FIG-parcels-001",
     "app": "parcels",
     "kind": "figure",

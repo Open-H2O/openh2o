@@ -1539,3 +1539,157 @@ def resolve_recovery_horizon(zone, *, agency_default=None):
 
     cfg = SiteConfig.objects.first()
     return cfg.default_recovery_horizon if cfg else CARRY_FORWARD
+
+
+# -- 148-03: the help pages' shared "where this field's water came from" table --
+
+
+def example_field_month():
+    """The one real field-month `templates/help/partials/_the_subtraction.html`
+    teaches its arithmetic from.
+
+    Selection (words-help-pages.md A.1): prefer the most recent
+    ``CalculationRun`` with a well and no meter (``residual_disposition ==
+    "groundwater"``) that also had canal water that month
+    (``surface_delivered_af > 0``) -- most recent ``period_start`` first, then
+    parcel number, in a month that has ended -- and within that set, prefer a
+    run whose ``final_af`` is at least 0.01 AF, so the division line has a figure in it rather than a 0.00 that
+    is arithmetically correct but teaches nothing. Falls back to the most
+    recent groundwater run of any kind, then to ``None`` -- the partial's
+    words-only variant -- when this deployment has no qualifying run yet.
+
+    Returns ``None``, without touching either table, when ``parcels`` or
+    ``accounting`` is switched off (the two schema-resident modules a run
+    depends on; see ``config/views.py``'s ``explainer_available`` for the
+    same gating idiom applied to a whole page rather than one partial).
+    """
+    if not (is_enabled("parcels") and is_enabled("accounting")):
+        return None
+
+    # A month still in progress is not an example: its figures move until it
+    # ends. 0.01 AF is the smallest remainder that is water, not the 0.0001 AF
+    # of rounding the split leaves on some months (ISS-221).
+    this_month = timezone.localdate().replace(day=1)
+    canal_months = (
+        CalculationRun.objects.filter(
+            residual_disposition="groundwater",
+            surface_delivered_af__gt=Decimal("0"),
+            period_start__lt=this_month,
+        )
+        .select_related("parcel")
+        .order_by("-period_start", "parcel__parcel_number")
+    )
+    run = canal_months.filter(final_af__gte=Decimal("0.01")).first()
+    if run is None:
+        run = canal_months.first()
+    if run is None:
+        run = (
+            CalculationRun.objects.filter(residual_disposition="groundwater")
+            .select_related("parcel")
+            .order_by("-period_start", "parcel__parcel_number")
+            .first()
+        )
+    if run is None:
+        return None
+
+    return _subtraction_context(run)
+
+
+def _subtraction_context(run):
+    """The template variables `_the_subtraction.html` reads, for one run.
+
+    Split out of ``example_field_month`` so the selection rule and the
+    context-building are two separate, separately-testable things: a test can
+    hand this a hand-built run and check the arithmetic without needing the
+    ordering rule to have picked it.
+    """
+    from accounting.ledger_words import DELIVERY_SHARE_BY_FIXED
+    from core.models import SiteConfig
+    from parcels.models import ParcelLedger
+
+    quant = Decimal("0.0001")
+
+    # `irrigation_efficiency_source` and the method name behind it live only
+    # in the run's own stored `breakdown` (the evaluate_chain step list,
+    # verbatim), not as a column -- reading it back off the run rather than
+    # re-deriving it from the parcel's CURRENT irrigation method, which may
+    # have changed since this run was computed (A.2's documented mismatch).
+    irrigation_efficiency_source = None
+    for step in run.breakdown:
+        if step.get("step_type") == "subtract_surface_water":
+            irrigation_efficiency_source = step.get("detail", {}).get(
+                "efficiency_source"
+            )
+            break
+
+    irrigation_method_name = None
+    if irrigation_efficiency_source == "method":
+        link = getattr(run.parcel, "irrigation", None)
+        if link is not None:
+            irrigation_method_name = link.method.name
+
+    irrigation_efficiency_pct = (
+        run.surface_efficiency * 100 if run.surface_efficiency is not None else None
+    )
+
+    # `run.final_af / run.gw_extracted_af` is the same division
+    # `accounting/views.py::calculation_run_detail` builds as
+    # `gw_efficiency_applied`; a 0.00 month can't be divided back apart, so
+    # this falls back to the LIVE setting and says so (words-help-pages.md
+    # A.2), rather than reading as though a Delivery Settings figure this
+    # month never actually used.
+    gw_efficiency_is_live_setting = False
+    if run.gw_extracted_af:
+        gw_efficiency = (run.final_af / run.gw_extracted_af).quantize(quant)
+    else:
+        config = SiteConfig.objects.first() or SiteConfig()
+        gw_efficiency = config.groundwater_efficiency
+        gw_efficiency_is_live_setting = True
+    gw_efficiency_pct = gw_efficiency * 100 if gw_efficiency is not None else None
+
+    # `delivery_split` (words-help-pages.md A.2, revision 3): no live writer
+    # records a delivery against a field's own gate -- `create_diversion_
+    # ledger_entries` is a deprecated alias no live path calls -- so this is
+    # a two-way split, never a third "recorded at this field" case.
+    # "fixed_share" only when this parcel's own surface_diversion ledger row
+    # for the month carries the fallback sentence (`DELIVERY_SHARE_BY_FIXED`,
+    # "the fixed share on file"); otherwise "by_use", the demand-weighted
+    # split, which is also the correct default when no ledger row matches at
+    # all.
+    delivery_split = "by_use"
+    if run.surface_delivered_af and run.period_start is not None:
+        fixed_share = ParcelLedger.objects.filter(
+            parcel=run.parcel,
+            source_type="surface_diversion",
+            effective_date__year=run.period_start.year,
+            effective_date__month=run.period_start.month,
+            description__contains=DELIVERY_SHARE_BY_FIXED,
+        ).exists()
+        if fixed_share:
+            delivery_split = "fixed_share"
+
+    site_config = SiteConfig.objects.first()
+
+    return {
+        "example": run,
+        "field_label": run.parcel.parcel_number,
+        "month_label": (
+            run.period_start.strftime("%B %Y") if run.period_start else run.period
+        ),
+        "gross_et_af": run.gross_et_af,
+        "effective_precip_af": run.effective_precip_af,
+        "surface_delivered_af": run.surface_delivered_af,
+        "irrigation_efficiency": run.surface_efficiency,
+        "irrigation_efficiency_pct": irrigation_efficiency_pct,
+        "irrigation_efficiency_source": irrigation_efficiency_source,
+        "irrigation_method_name": irrigation_method_name,
+        "surface_water_af": run.surface_water_af,
+        "final_af": run.final_af,
+        "gw_efficiency": gw_efficiency,
+        "gw_efficiency_pct": gw_efficiency_pct,
+        "gw_efficiency_is_live_setting": gw_efficiency_is_live_setting,
+        "extracted_af": run.gw_extracted_af,
+        "over_delivery_af": run.over_delivery_af,
+        "delivery_split": delivery_split,
+        "demonstration": site_config.demonstration_mode if site_config else False,
+    }
