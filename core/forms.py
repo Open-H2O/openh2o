@@ -447,7 +447,7 @@ class DeliverySettingsForm(forms.Form):
             )
         descriptions = {
             "not_credited": (
-                "The amount is stated on the month's calculation and nothing "
+                "The amount is recorded with the month's figures and nothing "
                 "else happens. This is the default."
             ),
             "credited": credited,
