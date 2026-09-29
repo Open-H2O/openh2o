@@ -63,19 +63,29 @@
     </div>
     {% endif %}
 
-    {% comment %} Setting: over-delivery treatment (148-04, Brent's Q1 ruling
-         2026-09-20, built 2026-09-28). `surface` owns both fields, same gate
-         as efficiency: only canal water can be over-delivered. Its position is
-         computed in the view like every other optional card. {% endcomment %}
+    {% comment %} Setting: canal water beyond what the crop could use (148-04,
+         Brent's Q1 ruling 2026-09-20, built 2026-09-28; the words settled by
+         148-03 the same day). `surface` owns both fields, same gate as
+         efficiency: only canal water can be over-delivered. Its position is
+         computed in the view like every other optional card. Each choice is a
+         label line with what it does on a quieter line under it
+         (`form.over_delivery_options`), so the three radios line up instead of
+         wrapping to three different lengths. The sentence about a field with
+         no well lives in the credited choice's description, behind the
+         `wells` gate, and is said once. {% endcomment %}
     {% if form.shows_efficiency %}
     <div class="card-raised">
       <span class="step-eyebrow">Setting {{ over_delivery_number }} of {{ settings_total }}</span>
       <h2 class="section-header">{{ form.over_delivery_treatment.label }}</h2>
+      <p class="text-secondary text-sm" style="margin-bottom: var(--space-md);">Some months a field is delivered more canal water than its crop could use; the amount is recorded on the month's calculation, and this setting says what else happens to it.</p>
       <div class="field-group mt-sm">
-        {% for radio in form.over_delivery_treatment %}
+        {% for radio, description in form.over_delivery_options %}
         <label class="radio-option">
           {{ radio.tag }}
-          <span class="text-secondary text-base">{{ radio.choice_label }}</span>
+          <span class="radio-option-text">
+            <span class="text-secondary text-base">{{ radio.choice_label }}</span>
+            <span class="text-tertiary text-sm radio-option-description">{{ description }}</span>
+          </span>
         </label>
         {% endfor %}
       </div>
@@ -84,7 +94,7 @@
       <div class="field-group mt-md mb-0">
         <label class="form-label" for="{{ form.over_delivery_leave_behind_percent.id_for_label }}">{{ form.over_delivery_leave_behind_percent.label }}</label>
         {% comment %} The explanation sits above the box, as on the efficiency and groundwater cards (a fresh reader flagged the difference, 2026-09-28). {% endcomment %}
-        <p class="text-secondary text-sm" style="margin-bottom: var(--space-md);">{{ form.over_delivery_leave_behind_percent.help_text }} {% if form.shows_groundwater_efficiency %}On a field with no well, the credited share goes to the zone's shared account instead, because there is no well to pump it back.{% else %}The credited share goes to the zone's shared account.{% endif %}</p>
+        <p class="text-secondary text-sm" style="margin-bottom: var(--space-md);">{{ form.over_delivery_leave_behind_percent.help_text }}</p>
         <span class="input-suffix">
           {{ form.over_delivery_leave_behind_percent }}
           <span class="input-suffix-unit">%</span>

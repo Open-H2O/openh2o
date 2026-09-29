@@ -2273,14 +2273,6 @@ html { color-scheme: dark; }
     white-space: nowrap;
 }
 
-/* `.badge-orange` lettering is `--furnace-400`, 2.55:1 on the card (measured
-   2026-09-28). The deficit token is the same burnt orange one step up, 5.0:1,
-   and is what `.text-deficit` already paints figures with. Scoped here; the
-   badge system's own colour is a product-wide call. */
-.how-sure-table .badge-orange {
-    color: var(--color-deficit);
-}
-
 /* Notes under the table: the words the cells were too narrow for. Secondary
    at small size with the table's own gap above, not a tertiary line jammed
    against the last row. */
@@ -2394,9 +2386,11 @@ html { color-scheme: dark; }
     color: var(--forest-400);
 }
 
+/* Lettering is the deficit token (5.0:1 on the card), the colour `.text-deficit`
+   paints figures with; `--furnace-400` measured 2.55:1 (2026-09-28, 148-03). */
 .badge-orange {
     background-color: oklch(0.45 0.12 55 / 0.2);
-    color: var(--furnace-400);
+    color: var(--color-deficit);
 }
 
 .badge-red {
@@ -2864,6 +2858,15 @@ html { color-scheme: dark; }
 .budget-breakdown-row {
     display: contents;
 }
+/* A qualifier under a breakdown label, on its own line, so the label track
+   stays the label's width: "Groundwater extracted (estimated)" on one line ran
+   its figure across the divider at 1,265 and 1,440 (collision sweep,
+   2026-09-28). */
+.budget-breakdown-note {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+}
 .budget-breakdown-row > span {
     padding: 2px 0;
 }
@@ -3015,6 +3018,44 @@ html { color-scheme: dark; }
     }
     .budget-panel-body .budget-op:has(+ .budget-seg--result) {
         padding-top: 1.45rem;
+    }
+}
+/* 148-03: a row of two or three result figures with NO operator between
+   them, the calculation page's result row (its three stacked .result-card
+   bands, each a small label far left and one figure far right, took a
+   third of the page for three numbers: two fresh readers, DO NOT SHIP,
+   2026-09-28). The cells pack to the left at their own width, since two
+   figures spread across a 1,600px panel read as far apart as the bands
+   did (checked at 1,730 the same day); the rule between cells is drawn on
+   the cell, since there is no operator to carry it. In the stacked layout
+   under 700px the rule turns into a top border, one figure per row. */
+.budget-panel-body .budget-panel-row--figures {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--space-md) 0;
+}
+.budget-panel-body .budget-panel-row--figures > .budget-seg {
+    flex: 0 1 auto;
+    min-width: 14rem;
+    max-width: 26rem;
+    padding-right: var(--space-xl);
+}
+.budget-panel-body .budget-panel-row--figures > .budget-seg + .budget-seg {
+    border-left: 1px solid var(--color-border);
+    padding-left: var(--space-xl);
+}
+@container (max-width: 700px) {
+    .budget-panel-body .budget-panel-row--figures > .budget-seg {
+        flex-basis: 100%;
+        max-width: none;
+        padding-right: 0;
+    }
+    .budget-panel-body .budget-panel-row--figures > .budget-seg + .budget-seg {
+        border-left: none;
+        padding-left: 0;
+        border-top: 1px solid var(--color-border);
+        padding-top: var(--space-md);
     }
 }
 .budget-panel-row {
@@ -4916,6 +4957,19 @@ details[open] > summary .disclosure-mark {
 .radio-option input[type="radio"]:focus-visible {
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
+}
+/* 148-03: a choice with a label line and, under it, what the choice does.
+   The Delivery Settings card's three over-delivery choices used to be one
+   string each, so the tiles wrapped to three different lengths; the label
+   is now one short line and the description a quieter one beneath it. */
+.radio-option-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+.radio-option-description {
+    line-height: 1.45;
 }
 
 /* Input with an attached unit suffix (e.g. an efficiency percent + "%"). The

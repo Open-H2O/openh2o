@@ -203,7 +203,12 @@ class TestOneListOfMethodNames:
 
 
 def test_surface_step_summary_names_delivered_and_what_the_crop_could_use():
-    """148-02: the subtracted figure is the crop's part, so the line says both."""
+    """148-02: the subtracted figure is the crop's part, so the line says both.
+
+    148-03: a delivery that was a share of a headgate total says how the share
+    was made, in the ruled words (ISS-218); a field's own gate record says
+    nothing about a split; the switch-off form says the whole delivery came off.
+    """
     step = {
         "step_type": "subtract_surface_water",
         "detail": {
@@ -215,11 +220,23 @@ def test_surface_step_summary_names_delivered_and_what_the_crop_could_use():
         },
     }
     assert _step_detail_summary(step) == (
-        "−92.3827 AF the crop could use, of 123.1769 AF delivered "
-        "(efficiency 0.75, the agency-wide figure)"
+        "92.3827 AF the crop could use, of 123.1769 AF delivered; "
+        "irrigation efficiency 0.75 (the deployment's default)"
     )
+    assert _step_detail_summary(step, delivery_split="use") == (
+        "92.3827 AF the crop could use, of 123.1769 AF delivered, divided up "
+        "from the canal total in proportion to each field's crop water use "
+        "after rain; irrigation efficiency 0.75 (the deployment's default)"
+    )
+    assert _step_detail_summary(step, delivery_split="fixed") == (
+        "92.3827 AF the crop could use, of 123.1769 AF delivered, divided up "
+        "from the canal total by the fixed share on file; irrigation "
+        "efficiency 0.75 (the deployment's default)"
+    )
+    by_method = {"step_type": "subtract_surface_water", "detail": dict(step["detail"], efficiency_source="method")}
+    assert _step_detail_summary(by_method).endswith("(the field's irrigation method)")
     old = {"step_type": "subtract_surface_water", "detail": {"surface_water_af": "5"}}
-    assert _step_detail_summary(old) == "−5.0000 AF surface water delivered"
+    assert _step_detail_summary(old) == "5.0000 AF delivered, all of it taken off"
 
 
 def test_floor_step_summary_says_banked_only_on_an_old_banking_run():

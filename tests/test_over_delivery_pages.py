@@ -27,7 +27,10 @@ User = get_user_model()
 
 pytestmark = pytest.mark.django_db
 
-CARD_LABEL = "Canal water beyond what the crop could use"
+# 148-03: the calculation page's result row prints the short form on its
+# cell label (a tight label, per DESIGN.md rule 12's row); the field page's own
+# line keeps the short form too.
+CARD_LABEL = "Canal water beyond crop use"
 FIELD_LABEL = "Canal water beyond crop use:"
 
 OVER = Decimal("4.0000")
@@ -38,17 +41,16 @@ LEFT = Decimal("0.4000")
 # The four sentences are literal template text (composed with floatformat
 # in the template, not a pre-built Python string), so Django's autoescape
 # never touches them; the apostrophes render plain.
-NOT_CREDITED_SENTENCE = "Recorded here. It is not credited to anyone."
+NOT_CREDITED_SENTENCE = "Recorded here and not credited to anyone."
 CREDITED_FIELD_SENTENCE = (
-    "3.6000 AF credited to this field; 0.4000 AF (10%) left in the basin."
+    "3.6000 AF is credited to this field; 0.4000 AF (10%) stays in the basin."
 )
 CREDITED_POOL_SENTENCE = (
-    "3.6000 AF credited to the zone's shared account, because this "
-    "field has no well; 0.4000 AF left in the basin."
+    "3.6000 AF is credited to the zone's shared account, because this "
+    "field has no well to pump it back; 0.4000 AF (10%) stays in the basin."
 )
 NAMED_LINE_SENTENCE = (
-    "Shown on the field's page as its own line. It is not a credit "
-    "and is not charged."
+    "Shown on the field's page as its own line. Not a credit and not charged."
 )
 
 
@@ -214,7 +216,7 @@ class TestFieldPageLine:
         html = _field_page(parcel)
         assert FIELD_LABEL in html
         assert "5.50" in html, "4.0000 + 1.5000 named_line AF, the credited run excluded"
-        assert "AF, not a credit" in html
+        assert "AF, not a credit and not charged" in html
 
     def test_absent_for_a_field_with_no_named_line_run(self):
         parcel = ParcelFactory(parcel_number="R148-04-H")

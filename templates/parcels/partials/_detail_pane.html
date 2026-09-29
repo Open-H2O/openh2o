@@ -42,8 +42,8 @@
       the answer twice, in two identities that disagree in sign on 32 of 76
       wet-year and 24 of 76 dry-year parcels, with the answer given third and
       smallest. This panel states the MASS balance — supplies minus uses, where
-      uses carry consumptive use, water spread to recharge and the change in
-      banked storage — and nothing else.
+      uses carry consumptive use, deep percolation, managed recharge and the
+      change in banked storage, and nothing else.
 
       Why this identity and not the dashboard's (supplies minus gross ET): the
       badge is DEFINED on this residual, DESIGN.md rule 12 defines "Residual"
@@ -62,7 +62,7 @@
     {% endcomment %}
     <div class="budget-panel">
       <div class="budget-panel-head">
-        <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Supplies are water that reached the field: surface deliveries, groundwater pumped (metered or calculated), effective rainfall. Uses are the crop's consumptive use, water spread to recharge from this field, and the change in banked storage. The residual is what is left; a residual within a quarter of consumptive use is ordinary field loss." link=methods_help_url link_label="Methods behind the numbers" %}</span>
+        <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Supplies are water that reached the field: canal water delivered, groundwater extracted (the meter's reading, or the engine's estimate), and effective rain. Uses are the crop's consumptive use, deep percolation (the part of the canal water and of the pumped water the crop could not use), managed recharge recorded from this field, and the change in banked storage. The residual is what is left; within a quarter of consumptive use it is shown as small, beyond that as large." link=methods_help_url link_label="Methods behind the numbers" %}</span>
         {% include "parcels/partials/_period_control.html" %}
       </div>
       {% comment %}
@@ -77,15 +77,17 @@
         badge plus the lines that judge it, which used to float below the
         panel aligned to nothing.
 
-        ⚠ Two of the breakdown cells are the engine's OWN OUTPUT re-entering the
-        balance as an input, which is why they carry "(estimated)". On a field
-        with a well and no meter the leftover after crop use minus rainfall
-        minus surface water IS the pumping figure; on a field with no well an
-        over-delivery IS the recharge figure. Either way the books then close by
-        construction. Measured 2026-09-06: 113 of 152 field-years read 0.00, and
-        every one of them had one of those two plugs available -- not one
-        field-year carrying a meter closes. A bare 0.00 would read as a
-        reconciliation. See ISS-158; retiring the word "Balanced" is its own job.
+        The Groundwater extracted cell is the engine's OWN OUTPUT re-entering
+        the balance as an input on a field with a well and no meter, which is
+        why it carries "(estimated)": the leftover after crop use minus rain
+        minus the canal water the crop could use IS the groundwater figure (the
+        `calculated` row, divided to the extracted amount), so the books close
+        by arithmetic. The badge under the residual says so in one word
+        (Estimated, 148-03). Managed recharge carries no tag: since 148-04 the
+        row sums only recorded managed recharge, never a credit the engine
+        wrote (ISS-158 closed). Measured 2026-09-06, before the badge word
+        changed: 113 of 152 field-years read 0.00, every one with the engine's
+        own row available, and not one field-year carrying a meter closed.
 
         Runoff is deliberately NOT here: FIG-parcels-013 is a fixed-zero
         bookkeeping placeholder (verdict EXPLAINED in the 135-03 ledger) and a
@@ -105,7 +107,7 @@
           <div class="budget-breakdown-group">
             <div class="budget-breakdown-title">Supplies by source</div>
             <div class="budget-breakdown-row"><span>Surface</span><b>{{ mass_balance.inputs.surface|floatformat:2|intcomma }}</b></div>
-            <div class="budget-breakdown-row"><span>Groundwater{% if mass_balance.gw_is_estimated %} <span class="text-tertiary">(estimated)</span>{% endif %}</span><b>{{ mass_balance.inputs.gw_recovered|floatformat:2|intcomma }}</b></div>
+            <div class="budget-breakdown-row"><span>Groundwater extracted{% if mass_balance.gw_is_estimated %}<span class="budget-breakdown-note">estimated</span>{% endif %}</span><b>{{ mass_balance.inputs.gw_recovered|floatformat:2|intcomma }}</b></div>
             <div class="budget-breakdown-row"><span>Rain</span><b>{{ mass_balance.inputs.precip|floatformat:2|intcomma }}</b></div>
           </div>
         </div>
@@ -117,7 +119,7 @@
             <div class="budget-breakdown-title">Uses by destination</div>
             <div class="budget-breakdown-row"><span>Consumptive use</span><b>{{ mass_balance.outputs.et|floatformat:2|intcomma }}</b></div>
             <div class="budget-breakdown-row"><span>Deep percolation</span><b>{{ mass_balance.deep_percolation_af|floatformat:2|intcomma }}</b></div>
-            <div class="budget-breakdown-row"><span>Recharge{% if mass_balance.outputs.recharge %} <span class="text-tertiary">(estimated)</span>{% endif %}</span><b>{{ mass_balance.outputs.recharge|floatformat:2|intcomma }}</b></div>
+            <div class="budget-breakdown-row"><span>Managed recharge</span><b>{{ mass_balance.outputs.recharge|floatformat:2|intcomma }}</b></div>
             <div class="budget-breakdown-row"><span>Storage change</span><b>{{ mass_balance.outputs.delta_storage|floatformat:2|intcomma }}</b></div>
           </div>
         </div>
@@ -135,25 +137,50 @@
           {% endcomment %}
           <div class="budget-seg-value {% if mass_balance.band_status == "closes" %}text-neutral{% elif mass_balance.is_surplus %}text-surplus{% else %}text-deficit{% endif %}">{{ mass_balance.residual_af|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
           {% comment %}
-            Three words only: Balanced / Residual / Deficit (Brent, 2026-09-05;
-            DESIGN.md rule 12). "Surplus" read as good news to a water manager,
-            and a positive residual here is the opposite: water recorded
-            arriving that the field's uses do not account for (ISS-143). The
-            COLOUR carries the size — a deficit is orange at any size; a
-            positive residual is green until it passes REALISTIC_RESIDUAL_BAND,
-            then orange. The badge sits INSIDE this segment because it judges
-            THIS number; that placement is the half of ISS-143 that closes with
-            ISS-148 (its NUMBER still waits on ISS-139).
+            The badge says what closed the balance, by what the field HAS
+            (148-03, 2026-09-28; DESIGN.md rule 12, the Residual row). Three
+            cases:
+
+            A. The balance closed on the engine's own estimate (a field with
+               a well and no meter): grey "Estimated". The residual reads 0.00
+               because the well's share was worked out as the remainder and
+               then put back in as a supply; it is zero by arithmetic, not
+               because two records agreed. "Balanced" said the opposite and
+               retired with this change (ISS-158; the gate holds it at zero).
+            B. The residual is real (no meter, and no closing estimate: a
+               field with no well, or a well field whose covered months wrote
+               a 0 AF estimate): "Residual" for a positive figure, "Deficit"
+               for a negative one, the words Brent set on 2026-09-05. The
+               COLOUR carries the size: a deficit is orange at any size; a
+               positive residual is green until it passes
+               REALISTIC_RESIDUAL_BAND, then orange. "Surplus" read as good
+               news to a water manager, and a positive residual here is the
+               opposite (ISS-143).
+            C. A metered field: no word. The figure stands with its colour,
+               because the residual is a difference between records and there
+               is nothing to name it but the number. A metered field that
+               closes within 0.01 AF also prints no word: a closed balance
+               with no estimate in it needs no label. A field with no meter
+               and no estimate that happens to close is treated the same way.
+
+            The badge sits INSIDE this segment because it judges THIS number
+            (the half of ISS-143 that closed with ISS-148). The cause lines
+            under it are chosen by the same three cases.
 
             This block tag is required for a note this long: Django's hash-style
             template comment is SINGLE-LINE only, and a multi-line one renders
             onto the page as visible text. That shipped to Brent's screen on
             2026-09-05.
           {% endcomment %}
+          {% if mass_balance.band_status == "closes" %}
+          {% if mass_balance.gw_is_estimated and not mass_balance.gw_is_metered %}
           <div class="mt-sm">
-            {% if mass_balance.band_status == "closes" %}
-            <span class="badge badge-grey">Balanced</span>
-            {% elif not mass_balance.is_surplus %}
+            <span class="badge badge-grey">Estimated</span>
+          </div>
+          {% endif %}
+          {% elif not mass_balance.gw_is_metered %}
+          <div class="mt-sm">
+            {% if not mass_balance.is_surplus %}
             <span class="badge badge-orange">Deficit</span>
             {% elif mass_balance.band_status == "realistic" %}
             <span class="badge badge-green">Residual</span>
@@ -161,7 +188,37 @@
             <span class="badge badge-orange">Residual</span>
             {% endif %}
           </div>
+          {% endif %}
           <div class="budget-seg-notes">
+          {% comment %}
+            148-03: the cause lines, by the badge's three cases (the comment
+            above). Case A and case C each state in one sentence what the
+            residual IS on that kind of field. Case B prints the stored figures
+            where they are nonzero (the canal figure here, the unmet-demand
+            line below, and a closing line for rain beyond the crop's water
+            use, whose figure is not stored on the run and so is not printed)
+            and never claims the residual equals any one of them: over a
+            period with both kinds of months the residual is the canal figure
+            plus rain beyond crop use minus the shortfall. The four sentences
+            that used to sit at the foot of this block (on-farm loss, deficit
+            irrigation, ditch seepage, a curtailment shortfall) explained the
+            water (DESIGN.md copy rule 11) and are gone.
+          {% endcomment %}
+          {% if mass_balance.band_status == "closes" and mass_balance.gw_is_estimated and not mass_balance.gw_is_metered %}
+          <p class="text-tertiary">
+            Groundwater here came out as the remainder, so this balance closes by arithmetic. A meter reading would replace the estimate.
+          </p>
+          {% elif mass_balance.gw_is_metered %}
+          <p class="text-tertiary">
+            Supplies from the meter and the district's record, against the satellite estimate of consumptive use.
+          </p>
+          {% elif over_delivery_total_af > 0 %}
+          <p class="text-secondary">
+            <strong>Canal water beyond what the crop could use:</strong>
+            <span class="td-num">{{ over_delivery_total_af|floatformat:2|intcomma }}</span> AF
+          </p>
+          {% endif %}
+
           {% comment %}
             ISS-157, the field's surface. The platform has always recorded this — on a
             field with no well the engine writes the leftover as unmet demand rather
@@ -199,36 +256,13 @@
           {% if over_delivery_shown_af > 0 %}
           <p class="text-secondary">
             <strong>Canal water beyond crop use:</strong>
-            <span class="td-num">{{ over_delivery_shown_af|floatformat:2|intcomma }}</span> AF, not a credit{% include "partials/_explainer_popout.html" with title="Canal water beyond what the crop could use" text="The deployment can set this amount to show as its own line instead of a credit. It is stored as a figure only, not booked as a credit and not charged against this field." link=wb_help_url link_label="How water balances work" %}
+            <span class="td-num">{{ over_delivery_shown_af|floatformat:2|intcomma }}</span> AF, not a credit and not charged{% include "partials/_explainer_popout.html" with title="Canal water beyond what the crop could use" text="This deployment shows the amount as its own line instead of a credit. It is a figure on the month's calculation, not booked on the ledger and not charged to this field." link=wb_help_url link_label="How water balances work" %}
           </p>
           {% endif %}
 
-          {% if mass_balance.band_status == "realistic" %}
+          {% if not mass_balance.gw_is_metered and mass_balance.band_status != "closes" and mass_balance.is_surplus and mass_balance.residual_af > over_delivery_total_af %}
           <p class="text-tertiary">
-            {% if mass_balance.is_surplus %}
-            Supplies exceed estimated consumptive use by a small margin: on-farm loss or
-            return flow.
-            {% else %}
-            Estimated consumptive use exceeds recorded supplies by a small margin: deficit
-            irrigation, or water the meters do not capture.
-            {% endif %}
-          </p>
-          {% elif mass_balance.band_status == "large" and mass_balance.is_surplus %}
-          <p class="text-tertiary">
-            Recorded supplies exceed estimated consumptive use by more than a quarter.
-            The platform has no conveyance-loss entry, so ditch seepage and evaporation
-            are counted in this residual.
-          </p>
-          {% elif mass_balance.band_status == "large" and not mass_balance.is_surplus %}
-          {% comment %}
-            This line used to finish "— expected where a junior surface right was
-            curtailed going into peak season and the parcel had no groundwater to
-            substitute". That is the Merced demonstration's story hardcoded into the
-            product: false on any other deployment, and it explains the water rather
-            than the software (DESIGN.md rule 11). It states the arithmetic and stops.
-          {% endcomment %}
-          <p class="text-tertiary">
-            Recorded supplies fell well short of estimated consumptive use this period.
+            The rest is rain beyond the crop's water use.
           </p>
           {% endif %}
           </div>
@@ -248,7 +282,7 @@
     </div>
     {% else %}
     <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-      <h2 class="section-header-flush" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Supplies are water that reached the field: surface deliveries, groundwater pumped (metered or calculated), effective rainfall. Uses are the crop's consumptive use, water spread to recharge from this field, and the change in banked storage. The residual is what is left; a residual within a quarter of consumptive use is ordinary field loss." link=methods_help_url link_label="Methods behind the numbers" %}</h2>
+      <h2 class="section-header-flush" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Supplies are water that reached the field: canal water delivered, groundwater extracted (the meter's reading, or the engine's estimate), and effective rain. Uses are the crop's consumptive use, deep percolation (the part of the canal water and of the pumped water the crop could not use), managed recharge recorded from this field, and the change in banked storage. The residual is what is left; within a quarter of consumptive use it is shown as small, beyond that as large." link=methods_help_url link_label="Methods behind the numbers" %}</h2>
       {% include "parcels/partials/_period_control.html" %}
     </div>
     <div class="alert-warning">

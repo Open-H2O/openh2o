@@ -54,6 +54,11 @@ from accounting.models import (
     WaterCreditDraw,
     WaterType,
 )
+from accounting.ledger_words import (
+    DELIVERY_SHARE_BY_FIXED,
+    DELIVERY_SHARE_BY_USE,
+    LEGACY_DELIVERY_SHARE_BY_USE,
+)
 from accounting.precip_math import METHOD_LABELS
 from core.access import admin_required
 from core.models import SiteConfig
@@ -1779,12 +1784,49 @@ def _mm_to_in(mm):
         return None
 
 
-def _step_detail_summary(step):
+def _delivery_split_kind(parcel, period):
+    """How the month's canal delivery to this field was arrived at, off its ledger rows.
+
+    148-03: the calculation page's canal line says, in the ruled words, when
+    the field's delivered figure was divided up from a headgate's canal total
+    rather than read from the field's own gate record. The run stores no such
+    flag, so this reads the month's ``surface_diversion`` rows and looks for
+    the tail ``delivery_share_words`` writes: ``"use"`` for a share weighted
+    by crop water use (the current tail, or the one written before the
+    wording changed on 2026-09-28), ``"fixed"`` for the fixed share on file,
+    ``None`` when the rows carry neither (a field's own recorded delivery, or
+    no delivery at all). ``description__contains`` on purpose: the
+    fixed-share sentence carries its tail in the middle, followed by the
+    percentage and the "because" clause.
+    """
+    try:
+        year, month = (int(part) for part in period.split("-")[:2])
+    except (AttributeError, ValueError):
+        return None
+    rows = ParcelLedger.objects.filter(
+        parcel=parcel,
+        source_type="surface_diversion",
+        effective_date__year=year,
+        effective_date__month=month,
+    )
+    if rows.filter(
+        Q(description__contains=DELIVERY_SHARE_BY_USE)
+        | Q(description__contains=LEGACY_DELIVERY_SHARE_BY_USE)
+    ).exists():
+        return "use"
+    if rows.filter(description__contains=DELIVERY_SHARE_BY_FIXED).exists():
+        return "fixed"
+    return None
+
+
+def _step_detail_summary(step, *, delivery_split=None):
     """The salient, human-readable detail for one breakdown step.
 
     Each primitive stores different keys (et_gross has et_mm/area; the precip step
     has the method + effective_precip_af; clamp_floor has floor/surplus), so we
     surface only the line that explains what THAT step did to the running total.
+    ``delivery_split`` is ``_delivery_split_kind``'s answer for the month and
+    is read by the canal step only.
     """
     detail = step.get("detail", {}) or {}
     step_type = step.get("step_type")
@@ -1816,21 +1858,30 @@ def _step_detail_summary(step):
         )
     if step_type == "subtract_surface_water":
         # 148-02: with the field's efficiency applied, the subtracted figure is
-        # the part the crop could use, not the delivery; say both.
+        # the part the crop could use, not the delivery; say both. 148-03: a
+        # delivery that was a share of a headgate total says how the share
+        # was made, in the ruled words (`delivery_split`, read off the month's
+        # ledger rows by `_delivery_split_kind`; the run stores no split flag).
         if detail.get("delivered_af") is not None and detail.get("efficiency"):
             whose = (
-                "its irrigation method"
+                "the field's irrigation method"
                 if detail.get("efficiency_source") == "method"
-                else "the agency-wide figure"
+                else "the deployment's default"
             )
+            if delivery_split == "use":
+                split = f", {DELIVERY_SHARE_BY_USE}"
+            elif delivery_split == "fixed":
+                split = f", divided up from the canal total by {DELIVERY_SHARE_BY_FIXED}"
+            else:
+                split = ""
             return (
-                f"−{_fmt(detail.get('consumed_af'))} AF the crop could use, of "
-                f"{_fmt(detail.get('delivered_af'))} AF delivered "
-                f"(efficiency {_fmt(detail.get('efficiency'), 2)}, {whose})"
+                f"{_fmt(detail.get('consumed_af'))} AF the crop could use, of "
+                f"{_fmt(detail.get('delivered_af'))} AF delivered{split}; "
+                f"irrigation efficiency {_fmt(detail.get('efficiency'), 2)} ({whose})"
             )
-        return f"−{_fmt(detail.get('surface_water_af'))} AF surface water delivered"
+        return f"{_fmt(detail.get('surface_water_af'))} AF delivered, all of it taken off"
     if step_type == "facility_only_zero":
-        return "facility-only — zeroed" if detail.get("facility_only") else "has irrigation — unchanged"
+        return "no crop on record, set to zero" if detail.get("facility_only") else "has a crop on record, unchanged"
     if step_type == "clamp_floor":
         surplus = Decimal(str(detail.get("surplus_af", "0") or "0"))
         base = f"floor {_fmt(detail.get('floor'), 2)}"
@@ -1895,6 +1946,7 @@ def calculation_run_detail(request, parcel_id, period):
     # a smaller output is a reduction (subtraction), a larger output is an
     # addition, an equal output is a pass-through. Lets the gross→net descent be
     # read at a glance instead of decoded from the In/Out columns.
+    delivery_split = _delivery_split_kind(parcel, period)
     steps = []
     for i, s in enumerate(run.breakdown):
         inp = s.get("input_af")
@@ -1918,7 +1970,7 @@ def calculation_run_detail(request, parcel_id, period):
                 "label": s.get("label") or s.get("step_type"),
                 "input_af": inp,
                 "output_af": out,
-                "detail_text": _step_detail_summary(s),
+                "detail_text": _step_detail_summary(s, delivery_split=delivery_split),
                 "kind": kind,
             }
         )
@@ -2267,12 +2319,13 @@ def methodology_preview(request):
         return render(request, "accounting/partials/_methodology_preview.html", context)
 
     context["final_af"] = final_af
+    delivery_split = _delivery_split_kind(parcel, period)
     context["steps"] = [
         {
             "label": s.get("label") or s.get("step_type"),
             "input_af": s.get("input_af"),
             "output_af": s.get("output_af"),
-            "detail_text": _step_detail_summary(s),
+            "detail_text": _step_detail_summary(s, delivery_split=delivery_split),
         }
         for s in breakdown
     ]

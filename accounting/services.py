@@ -1019,6 +1019,12 @@ def parcel_mass_balance(parcel, reporting_period=None):
     # meter closes. The screen labels the derived figure rather than letting a
     # 0.00 residual read as a reconciliation.
     gw_is_estimated = billable.filter(source_type="calculated").exists()
+    # 148-03: the badge's three cases are defined by what the field HAS, not
+    # by `gw_is_estimated` alone, which is false on a field with no well as
+    # well as on a metered one. A meter row in the period is the third case:
+    # the groundwater figure is a reading, nothing in the balance was built
+    # from the other side, and the residual is a difference between records.
+    gw_is_metered = billable.filter(source_type="meter_reading").exists()
 
     inputs = {"surface": surface, "precip": precip, "gw_recovered": gw_recovered}
     outputs = {
@@ -1044,6 +1050,9 @@ def parcel_mass_balance(parcel, reporting_period=None):
         # than a meter reading. Recharge carries no separate flag of its own —
         # the template gates its "(estimated)" label on the value being non-zero.
         "gw_is_estimated": gw_is_estimated,
+        # True when a meter reading is among the groundwater supply rows, so
+        # the pane prints no badge word (148-03; the word Balanced retired).
+        "gw_is_metered": gw_is_metered,
         "outputs": outputs,
         "outputs_total": outputs_total,
         # 148-02: the two deep-percolation outputs as the one row the balance
@@ -1119,6 +1128,32 @@ def parcel_over_delivery_shown(parcel, reporting_period=None):
         .filter(over_delivery_treatment="named_line")
         .aggregate(s=Sum("over_delivery_af"))["s"]
     )
+    if total is None:
+        return Decimal("0")
+    return total.quantize(Decimal("0.0001"))
+
+
+def parcel_over_delivery_total(parcel, reporting_period=None):
+    """Canal water beyond what this field's crop could use, every month, every setting (AF).
+
+    148-03: the field page's residual is real on a field with no meter and no
+    closing estimate (a field with no well, or a well field whose covered
+    months wrote a 0 AF estimate), and its cause lines print the stored
+    figures where they are nonzero. This is the canal figure: the sum of
+    ``CalculationRun.over_delivery_af`` over the same runs
+    ``_calculation_runs_for_period`` selects for the balance beside it,
+    whatever ``over_delivery_treatment`` each run was stamped with.
+    ``parcel_over_delivery_shown`` above sums only the named-line runs and is
+    the field page's own line under that setting; this read is the cause
+    line under the residual, and a run contributes here under every value.
+
+    Returns:
+        Decimal: the summed amount, quantized to 4 places; ``Decimal("0")``
+        when no run in the period recorded one.
+    """
+    total = _calculation_runs_for_period(parcel, reporting_period).aggregate(
+        s=Sum("over_delivery_af")
+    )["s"]
     if total is None:
         return Decimal("0")
     return total.quantize(Decimal("0.0001"))

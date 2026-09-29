@@ -168,10 +168,28 @@ def ledger_row_words(entry):
 # `tests/test_domain_vocabulary.py::scan` at planning time.
 # --------------------------------------------------------------------------
 
-#: The tail of a demand-weighted delivery-share sentence: the share was split
-#: across the use areas a point of diversion serves by each one's estimated
-#: use for the month. Composed by ``delivery_share_words`` below.
+#: The tail of a demand-weighted delivery-share sentence, in the ruled words
+#: (ISS-218, Brent 2026-09-25, applied 2026-09-28): the field's figure was
+#: divided up from the canal total in proportion to each field's crop water
+#: use after rain (the weight is ``CalculationRun.net_consumptive_use_af``,
+#: read by ``surface.services._month_demand``). Composed by
+#: ``delivery_share_words`` below, and printed again, in the same words, on
+#: the calculation page's canal line (``accounting/views.py``).
 DELIVERY_SHARE_BY_USE = (
+    "divided up from the canal total in proportion to each field's crop "
+    "water use after rain"
+)
+
+#: The tail ``DELIVERY_SHARE_BY_USE`` carried before 2026-09-28. NEVER
+#: written. It is not a delete key either: ``surface_diversion`` rows are
+#: replaced by ``(parcel, effective_date, source_type)`` when a delivery is
+#: next allocated (``surface/services.py::allocate_district_delivery``), so
+#: a re-allocation replaces old-tail rows whatever their wording. It is kept
+#: for one reader only: the calculation page, which tells a split delivery
+#: from a field's own gate record by the tail its ledger row carries, and a
+#: deployment that has not re-allocated since the wording changed still
+#: holds rows with this one.
+LEGACY_DELIVERY_SHARE_BY_USE = (
     "split among the use areas it serves by each one's estimated use for the "
     "month"
 )

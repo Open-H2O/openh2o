@@ -34,7 +34,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">{{ parcel.parcel_number }} · {{ period }}</span>
   </nav>
-  <p class="page-description">The step-by-step derivation behind one calculated ledger entry, from gross satellite ET down to the billable groundwater figure.</p>
+  <p class="page-description">Every step behind one month's figure for this field, from the satellite estimate of crop water use to the groundwater that is left.</p>
 </div>
 {% endblock %}
 
@@ -66,17 +66,30 @@
           Methodology: <span class="text-secondary">{{ methodology_plan_name|blank }}</span>
         </div>
       </div>
-      <div class="td-num-bold" style="font-size: 1.5rem; color: var(--color-text-primary); text-align: right;">
-        {{ run.final_af|floatformat:4 }} AF
-        <div class="field-label" style="text-align: right;">Estimated groundwater consumed</div>
+      {% comment %} 148-03: the header says what the field HAS, which is what
+         the ending depends on, and repeats no figure (the consumed figure used
+         to sit here at 1.5rem above a band restating it larger; two fresh
+         readers faulted the repeat, 2026-09-28). The page's one headline is the
+         result row at the foot. Keyed on the run's own stamped disposition. {% endcomment %}
+      <div style="text-align: right;">
+        {% if run.residual_disposition == "metered" %}
+        <div class="field-value" style="font-weight: 600;">Metered well</div>
+        <div class="field-label" style="margin-top: 2px;">Groundwater comes from the meter's reading.</div>
+        {% elif run.residual_disposition == "unmet_demand" %}
+        <div class="field-value" style="font-weight: 600;">No well</div>
+        <div class="field-label" style="margin-top: 2px;">The remainder is water use with no supply on record.</div>
+        {% else %}
+        <div class="field-value" style="font-weight: 600;">Well, no meter</div>
+        <div class="field-label" style="margin-top: 2px;">Groundwater comes out as the remainder.</div>
+        {% endif %}
       </div>
     </div>
 
     <!-- Honesty label (prominent, gold inset) -->
     <div class="card-raised card-inset honesty-note mt-md">
       <p class="text-sm" style="margin: 0; color: var(--color-text-secondary);">
-        <strong>Estimated, not measured.</strong>
-        This figure is computed from satellite evapotranspiration, not read from a meter. The steps below show every adjustment so the number can be checked.
+        <strong>An estimate, not a reading.</strong>
+        The crop's water use is a satellite estimate and the rain is estimated from weather data for the area; the canal water is the district's record. Every step is shown so the figures can be checked.{% if run.residual_disposition == "metered" %} Its groundwater figure comes from the meter's reading.{% endif %}
       </p>
     </div>
   </div>
@@ -144,70 +157,99 @@
   </div>
   {% endif %}
 
-  <!-- Result: the final number the waterfall produces, tied back to the ledger -->
-  <div class="result-card">
-    <div>
-      <div class="field-label">Estimated groundwater consumed</div>
-      <p class="text-tertiary text-sm" style="margin: var(--space-xs) 0 0 0;">
-        Equals the magnitude of the <span class="text-secondary">calculated</span> ledger entry for {{ period }}.
-      </p>
-    </div>
-    <div class="result-card-value">
-      {{ run.final_af|floatformat:4 }} <span class="stat-card-unit" style="font-size: 1rem;">AF</span>
-    </div>
-  </div>
+  {% comment %} 148-03: the result row. The three stacked .result-card bands
+     that stood here (consumed, extracted, canal water beyond crop use) each
+     put a small label far left and one figure far right, a third of the page
+     for three numbers, and the header repeated the first of them smaller than
+     the band below it (two fresh readers, DO NOT SHIP on the same fault,
+     2026-09-28). They are one row now, in the house .budget-panel shape the
+     field page uses (DESIGN.md, House "concept" components): two or three
+     figure cells, each a label, a figure with its unit and one caption, and
+     no caption repeats its label (copy rule 13).
 
-  {% comment %} 148-02 (Q2): what the allocation is charged. The run stamps the
-     extracted figure when it is computed, so a later change to the setting
-     does not move it; the divisor shown is read back off the run's own two
-     figures. Absent on a metered or no-well run (the meter is the number, or
-     nothing was pumped). {% endcomment %}
-  {% if run.gw_extracted_af is not None %}
-  <div class="result-card">
-    <div>
-      <div class="field-label">Estimated groundwater extracted</div>
-      <p class="text-tertiary text-sm" style="margin: var(--space-xs) 0 0 0;">
-        The consumed figure above{% if gw_efficiency_applied %} divided by {{ gw_efficiency_applied|floatformat:2 }}, the share of pumped groundwater the crop consumes{% endif %}. The allocation is charged this figure.
-      </p>
-    </div>
-    <div class="result-card-value">
-      {{ run.gw_extracted_af|floatformat:4 }} <span class="stat-card-unit" style="font-size: 1rem;">AF</span>
-    </div>
-  </div>
-  {% endif %}
-
-  {% comment %} 148-04: canal water beyond what the crop could use. The
-     sentence is chosen by the run's OWN stamped treatment, read back off the
-     run the same way the divisor above is, never the live Delivery Settings
-     value, so a later change to that setting does not move what an
+     Cell 1 is what the field's month came to, by the run's own stamped
+     disposition: the consumed figure on a field with a well (the calculated
+     ledger entry; kept for comparison on a metered field, where the meter is
+     the groundwater figure), or, on a field with no well, the remainder
+     recorded as water use with no supply on record. Cell 2, only when the
+     run stamped an extracted figure: what the groundwater budget is spent by,
+     with the divisor read back off the run's own two figures (148-02), never
+     the live setting. Cell 3, only when the run recorded canal water beyond
+     what the crop could use: the amount, with the treatment the run was
+     stamped with (148-04), read off the run and never the live Delivery
+     Settings value, so a later change to that setting moves nothing an
      already-run month says about itself. `over_delivery_left_af` and
      `over_delivery_share_pct` are the view's own arithmetic on the run's two
      stamps; this page's four-place convention applies to them the same as
      every other AF figure here. A "credited" run that credited nothing this
      month (over_delivery_left_af is then None) reads the same as
-     not_credited: nothing was credited. Absent on a run with no
-     over-delivery. {% endcomment %}
-  {% if run.over_delivery_af > 0 %}
-  <div class="result-card">
-    <div>
-      <div class="field-label">Canal water beyond what the crop could use</div>
-      <p class="text-tertiary text-sm" style="margin: var(--space-xs) 0 0 0;">
+     not_credited: nothing was credited. {% endcomment %}
+  <div class="budget-panel">
+    <div class="budget-panel-head">
+      <span class="budget-panel-title">Result</span>
+    </div>
+    <div class="budget-panel-body">
+      <div class="budget-panel-row budget-panel-row--figures">
+        {% comment %} A zero renders nothing (DESIGN.md rule 12's row for this
+           quantity): on a no-well month whose canal water went past the crop,
+           the unmet figure is 0 and the canal cell carries the result alone. {% endcomment %}
+        {% if run.residual_disposition != "unmet_demand" or run.unmet_demand_af or not run.over_delivery_af %}
+        <div class="budget-seg">
+          {% if run.residual_disposition == "unmet_demand" %}
+          <div class="budget-seg-label">Water use recorded, no supply reported</div>
+          <div class="budget-seg-value">{{ run.unmet_demand_af|floatformat:4 }}<span class="budget-seg-unit">AF</span></div>
+          <div class="budget-seg-caption">no well, so nothing is booked as pumping</div>
+          {% else %}
+          <div class="budget-seg-label">Groundwater consumed</div>
+          <div class="budget-seg-value">{{ run.final_af|floatformat:4 }}<span class="budget-seg-unit">AF</span></div>
+          {% if run.residual_disposition == "metered" %}
+          <div class="budget-seg-caption">the remainder, kept for comparison; the meter is the groundwater figure</div>
+          {% else %}
+          <div class="budget-seg-caption">the calculated ledger entry for {{ period }}</div>
+          {% endif %}
+          {% endif %}
+        </div>
+        {% endif %}
+        {% if run.gw_extracted_af is not None %}
+        <div class="budget-seg">
+          <div class="budget-seg-label">Groundwater extracted</div>
+          <div class="budget-seg-value">{{ run.gw_extracted_af|floatformat:4 }}<span class="budget-seg-unit">AF</span></div>
+          {% if gw_efficiency_applied %}
+          <div class="budget-seg-caption">consumed &divide; {{ gw_efficiency_applied|floatformat:2 }}; this is what the groundwater budget is spent by</div>
+          {% else %}
+          <div class="budget-seg-caption">nothing to divide; the budget is spent 0 AF</div>
+          {% endif %}
+        </div>
+        {% endif %}
+        {% if run.over_delivery_af > 0 %}
+        <div class="budget-seg">
+          <div class="budget-seg-label">Canal water beyond crop use</div>
+          <div class="budget-seg-value">{{ run.over_delivery_af|floatformat:4 }}<span class="budget-seg-unit">AF</span></div>
+          {% if run.over_delivery_treatment == "credited" and over_delivery_left_af is not None %}
+          <div class="budget-seg-caption">credited, less {{ over_delivery_share_pct|floatformat:0 }}% left in the basin</div>
+          {% elif run.over_delivery_treatment == "named_line" %}
+          <div class="budget-seg-caption">its own line on the field's page</div>
+          {% else %}
+          <div class="budget-seg-caption">not credited</div>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+      {% if run.over_delivery_af > 0 %}
+      <p class="text-sm text-secondary" style="margin: var(--space-md) 0 0;">
         {% if run.over_delivery_treatment == "credited" and over_delivery_left_af is not None and not run.over_delivery_credit_pooled %}
-        {{ run.over_delivery_credited_af|floatformat:4 }} AF credited to this field; {{ over_delivery_left_af|floatformat:4 }} AF ({{ over_delivery_share_pct|floatformat:0 }}%) left in the basin.
+        {{ run.over_delivery_credited_af|floatformat:4 }} AF is credited to this field; {{ over_delivery_left_af|floatformat:4 }} AF ({{ over_delivery_share_pct|floatformat:0 }}%) stays in the basin.
         {% elif run.over_delivery_treatment == "credited" and over_delivery_left_af is not None and run.over_delivery_credit_pooled %}
-        {{ run.over_delivery_credited_af|floatformat:4 }} AF credited to the zone's shared account, because this field has no well; {{ over_delivery_left_af|floatformat:4 }} AF left in the basin.
+        {{ run.over_delivery_credited_af|floatformat:4 }} AF is credited to the zone's shared account, because this field has no well to pump it back; {{ over_delivery_left_af|floatformat:4 }} AF ({{ over_delivery_share_pct|floatformat:0 }}%) stays in the basin.
         {% elif run.over_delivery_treatment == "named_line" %}
-        Shown on the field's page as its own line. It is not a credit and is not charged.
+        Shown on the field's page as its own line. Not a credit and not charged.
         {% else %}
-        Recorded here. It is not credited to anyone.
+        Recorded here and not credited to anyone.
         {% endif %}
       </p>
-    </div>
-    <div class="result-card-value">
-      {{ run.over_delivery_af|floatformat:4 }} <span class="stat-card-unit" style="font-size: 1rem;">AF</span>
+      {% endif %}
     </div>
   </div>
-  {% endif %}
 
 </div>
 {% endblock %}

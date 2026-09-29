@@ -26,6 +26,7 @@ from accounting.services import (
     parcel_consumptive_balance,
     parcel_mass_balance,
     parcel_over_delivery_shown,
+    parcel_over_delivery_total,
     parcel_run_periods,
     parcel_unmet_demand,
 )
@@ -256,6 +257,9 @@ def _parcel_detail_context(parcel, period_id=None):
     # 148-04 (c): canal water beyond what the crop could use, on a run stamped
     # to show it as its own named line rather than a credit.
     over_delivery_shown_af = parcel_over_delivery_shown(parcel, balance_period)
+    # 148-03: the same figure under every setting value, the cause line under
+    # a residual that is real (a field with no meter and no closing estimate).
+    over_delivery_total_af = parcel_over_delivery_total(parcel, balance_period)
 
     # ISS-165 / R-107. This queryset used to run above, before `balance_period`
     # was resolved, and filtered on the parcel ONLY. So the water balance and the
@@ -317,6 +321,7 @@ def _parcel_detail_context(parcel, period_id=None):
         "run_periods": run_periods,
         "unmet_demand_af": unmet_demand_af,
         "over_delivery_shown_af": over_delivery_shown_af,
+        "over_delivery_total_af": over_delivery_total_af,
         "editable_fields": editable_fields,
         "editable_fields_with_values": editable_fields_with_values,
         # Pass the Python object (or None); the template escapes it via

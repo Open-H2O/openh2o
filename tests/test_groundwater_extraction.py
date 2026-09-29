@@ -450,10 +450,16 @@ def test_the_calculation_page_names_consumed_and_charges_extracted(admin_client)
     ).content.decode()
 
     assert "Billable groundwater" not in html
-    assert "Estimated groundwater consumed" in html
-    assert "Estimated groundwater extracted" in html
-    assert "divided by 0.80" in html
+    # 148-03: the result row's two cells, in rule 12's nouns, and the divisor
+    # read back off the run's own two figures (0.8802 / 1.1003 = 0.80).
+    assert "Estimated groundwater consumed" not in html
+    assert "Groundwater consumed" in html
+    assert "Groundwater extracted" in html
+    assert "consumed &divide; 0.80; this is what the groundwater budget is spent by" in html
     assert "1.1000" in html
+    # The header names what the field has and repeats no figure.
+    assert "Well, no meter" in html
+    assert "Groundwater comes out as the remainder." in html
 
 
 def test_a_metered_calculation_page_shows_no_extracted_figure(admin_client):
@@ -473,7 +479,9 @@ def test_a_metered_calculation_page_shows_no_extracted_figure(admin_client):
         reverse("accounting:calculation_run_detail", args=[parcel.id, period])
     ).content.decode()
 
-    assert "Estimated groundwater extracted" not in html
+    assert "Groundwater extracted" not in html
+    assert "Metered well" in html
+    assert "Its groundwater figure comes from the meter's reading." in html
 
 
 def test_the_balance_panel_rows_add_up_to_uses(admin_client):

@@ -530,13 +530,19 @@ def test_diversion_reach_journey_does_not_move_basin_closure():
 # The rendered badge word (136-01, ISS-143 / ISS-148 words)
 # ---------------------------------------------------------------------------
 #
-# The parcel pane's badge trio is Balanced / Residual / Deficit (Brent,
-# 2026-09-05; DESIGN.md rule 12). "Surplus" read as good news to the one
-# audience the platform is for, and on this pane a positive residual is the
-# opposite: water recorded arriving that the parcel's uses do not account for.
-# The `is_surplus` KEY in `parcel_mass_balance` keeps its name (it is code, and
-# `test_metered_parcel_mass_balance_within_band` above still reads it); only the
-# word on screen changed. How the badge sits beside the figure is Phase 137's.
+# The parcel pane's badge words are Estimated / Residual / Deficit, and no word
+# on a metered field (148-03, 2026-09-28; DESIGN.md rule 12, the Residual row).
+# Residual / Deficit are the words Brent set on 2026-09-05: "Surplus" read as
+# good news to the one audience the platform is for, and on this pane a
+# positive residual is the opposite, water recorded arriving that the parcel's
+# uses do not account for. "Balanced" retired the same day the badge began to
+# say what closed the balance: on a field with a well and no meter the engine's
+# own remainder re-enters as a supply, so a 0.00 residual is arithmetic, not
+# agreement, and the badge says "Estimated". A metered field prints no word:
+# its residual is a difference between records and there is nothing to name it
+# but the number. The `is_surplus` KEY in `parcel_mass_balance` keeps its name
+# (it is code, and `test_metered_parcel_mass_balance_within_band` above still
+# reads it); only the words on screen changed.
 
 
 def _pane_user():
@@ -575,14 +581,19 @@ def budget_segment(html, label):
 
 
 def test_parcel_pane_states_one_subtraction_with_the_badge_inside_it():
-    """One meter reading of 110 AF against 100 AF of gross ET.
+    """One `calculated` row of 110 AF against 100 AF of gross ET.
 
-    Inputs 110 (pumped), outputs 100 (ET), so the residual is +10.00 AF: 10% of
-    ET, inside REALISTIC_RESIDUAL_BAND (25%), so the badge is the green
-    Residual. The pane must state that subtraction ONCE — Supplies 110.00 −
-    Uses 100.00 = Residual 10.00 — with the badge inside the residual segment.
-    The literals are hand-computed from the fixture above and pasted, never
-    re-derived from the code under test (DESIGN.md rule 12, review question 2).
+    Inputs 110 (the engine's row, charged as recorded because its run stamped
+    no extracted figure), outputs 100 (ET), so the residual is +10.00 AF: 10%
+    of ET, inside REALISTIC_RESIDUAL_BAND (25%), and the balance does not
+    close, so the badge is the green Residual (case B: no meter, no closing
+    estimate). The pane must state that subtraction ONCE (Supplies 110.00 −
+    Uses 100.00 = Residual 10.00), with the badge inside the residual segment.
+    148-03 moved this fixture from a meter reading to a calculated row: a
+    metered field prints no badge word now, and the claim under test is
+    where the badge sits. The literals are hand-computed from the fixture
+    above and pasted, never re-derived from the code under test (DESIGN.md
+    rule 12, review question 2).
     """
     from django.test import Client
     from django.urls import reverse
@@ -596,7 +607,7 @@ def test_parcel_pane_states_one_subtraction_with_the_badge_inside_it():
     )
     parcel = ParcelFactory()
     ParcelLedgerFactory(
-        parcel=parcel, reporting_period=rp, source_type="meter_reading",
+        parcel=parcel, reporting_period=rp, source_type="calculated",
         amount_acre_feet=Decimal("-110.0000"),
         transaction_date=dt.date(2026, 1, 15), effective_date=dt.date(2026, 1, 15),
     )
@@ -636,6 +647,9 @@ def test_parcel_pane_states_one_subtraction_with_the_badge_inside_it():
         "gave the answer twice in two identities and put the badge beside the "
         "one it does not judge; the badge belongs in the statement it judges."
     )
+    assert "Supplies from the meter" not in residual, (
+        "the metered case's sentence printed on a field with no meter reading"
+    )
 
     assert "Supplies \u2212 consumptive use" not in html, (
         "card 3 (supplies minus gross ET) is still on the pane. The panel states "
@@ -654,8 +668,10 @@ def test_parcel_pane_panel_reads_a_flood_mar_field_as_a_deficit():
     This is the shape ISS-148 was filed over. Card 3's identity (supplies minus
     gross ET) prints +10.00 and reads as spare supply; the mass balance, which
     also carries the water that left for the basin, is 110 − 120 = -10.00 and
-    reads as a deficit. The panel states the mass balance, so the sign and the
-    badge word agree, and the uses foot shows where the 20 AF went.
+    reads as a deficit. The panel states the mass balance, so the sign is
+    right, and the uses foot shows where the 20 AF went. 148-03: this field is
+    metered, so it prints no badge word (case C); the colour carries the sign
+    and the one sentence under the figure names the two records.
 
     148-02 Task 3 (Q1, an over-delivery is nobody's credit) RETARGET: `recharge`
     is no longer read off the engine's breakdown (that was the over-delivery
@@ -712,15 +728,17 @@ def test_parcel_pane_panel_reads_a_flood_mar_field_as_a_deficit():
         '<div class="budget-seg-value text-deficit">-10.00'
         '<span class="budget-seg-unit">AF</span></div>'
     ) in residual
-    assert '<span class="badge badge-orange">Deficit</span>' in residual
+    assert '<span class="badge badge-orange">Deficit</span>' not in residual, (
+        "a metered field printed a badge word; its residual is a difference "
+        "between records and the number stands with its colour (148-03)"
+    )
+    assert "Supplies from the meter and the district's record, against the satellite estimate of consumptive use." in residual
 
-    assert (
-        '<span>Recharge <span class="text-tertiary">(estimated)</span></span><b>20.00</b>'
-    ) in html, (
+    assert "<span>Managed recharge</span><b>20.00</b>" in html, (
         "the uses breakdown does not show the 20.00 AF that left this field for the "
-        "basin, so the residual is not legible from the panel. The template gates "
-        "the (estimated) label on the value being non-zero (ISS-158), unchanged by "
-        "148-02 Task 3's switch to a real recharge ledger row as the source."
+        "basin, so the residual is not legible from the panel. The row sums only "
+        "recorded managed recharge (148-04), so it carries no (estimated) tag "
+        "(148-03)."
     )
 
 
@@ -730,8 +748,10 @@ def test_a_balanced_field_does_not_paint_its_residual_as_a_deficit():
     `is_surplus` is `residual >= 0`, which makes a hair-below-zero closing
     residual "not a surplus" and painted it deficit orange under a grey Balanced
     badge. Observed on the served page for MER-APN-032 (residual -0.0001 AF)
-    while building the panel. The colour and the badge word describe the same
-    number and may not disagree.
+    while building the panel. The colour and the badge describe the same
+    number and may not disagree. 148-03: this field is metered and closes, so
+    it prints no badge word at all (a closed balance with no estimate in it
+    needs no label); the colour is still the neutral one.
     """
     from django.test import Client
     from django.urls import reverse
@@ -763,10 +783,15 @@ def test_a_balanced_field_does_not_paint_its_residual_as_a_deficit():
     assert response.status_code == 200
 
     residual = budget_segment(response.content.decode(), "Residual")
-    assert '<span class="badge badge-grey">Balanced</span>' in residual
+    assert "Balanced" not in residual, (
+        "the word Balanced is back on the pane; it retired on 2026-09-28 (148-03)"
+    )
+    assert '<span class="badge badge-grey">Estimated</span>' not in residual, (
+        "a metered field that closes was labelled Estimated; nothing in this "
+        "balance is the engine's estimate"
+    )
     assert "budget-seg-value text-deficit" not in residual, (
-        "a field whose books CLOSE is painting its residual deficit orange under "
-        "a grey Balanced badge"
+        "a field whose books CLOSE is painting its residual deficit orange"
     )
     assert "budget-seg-value text-neutral" in residual
 
@@ -821,9 +846,15 @@ def test_a_plugged_figure_says_it_is_an_estimate():
     run_for(plugged)
     # 143-01: the figure sits in a titled breakdown row, marker beside the
     # name and the number in the row's own <b>.
+    plugged_html = render(plugged)
     assert (
-        '<span>Groundwater <span class="text-tertiary">(estimated)</span></span><b>100.00</b>'
-    ) in render(plugged)
+        '<span>Groundwater extracted<span class="budget-breakdown-note">estimated</span></span><b>100.00</b>'
+    ) in plugged_html
+    # 148-03, case A: 100 in (the engine's own row) against 100 of ET closes
+    # by arithmetic, and the badge says so in one word.
+    plugged_residual = budget_segment(plugged_html, "Residual")
+    assert '<span class="badge badge-grey">Estimated</span>' in plugged_residual
+    assert "Groundwater here came out as the remainder, so this balance closes by arithmetic. A meter reading would replace the estimate." in plugged_residual
 
     # A meter owns this one: the engine had nothing to solve for.
     metered = ParcelFactory()
@@ -834,8 +865,12 @@ def test_a_plugged_figure_says_it_is_an_estimate():
     )
     run_for(metered)
     metered_html = render(metered)
-    assert "<span>Groundwater</span><b>110.00</b>" in metered_html, (
+    assert "<span>Groundwater extracted</span><b>110.00</b>" in metered_html, (
         "a metered groundwater figure is a recorded measurement and must not be "
         "labelled an estimate"
     )
     assert "(estimated)" not in metered_html
+    assert "budget-breakdown-note" not in metered_html
+    assert "Estimated</span>" not in metered_html, (
+        "a metered field printed the Estimated badge (148-03, case C: no word)"
+    )

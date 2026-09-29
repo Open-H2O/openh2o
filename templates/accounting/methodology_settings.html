@@ -10,7 +10,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Methodology Settings</span>
   </nav>
-  <p class="page-description">Tune how gross satellite ET becomes billable groundwater. Changes here drive every future calculation.</p>
+  <p class="page-description">Tune how the satellite estimate of crop water use becomes the groundwater figure. Changes here drive every future calculation.</p>
 </div>
 {% endblock %}
 
@@ -28,7 +28,7 @@
   <!-- What is a methodology? help block -->
   <div class="card-raised">
     <h2 class="section-header mb-md">What is a methodology?</h2>
-    <p class="text-secondary text-base">A <strong>methodology</strong> (or calculation plan) is the ordered, configurable chain of <strong>steps</strong> the platform applies to turn measurements into a defensible billable-groundwater figure for each use area: gross ET, minus effective precipitation, minus surface water deliveries, minus edge cases. Each step below is one operation in that chain{% if user_can_write %}: reorder, enable or disable, and set its parameters; then preview a sample parcel{% endif %}.</p>
+    <p class="text-secondary text-base">A <strong>methodology</strong> (or calculation plan) is the ordered, configurable chain of <strong>steps</strong> the platform applies to turn the satellite estimate into the groundwater figure for each use area: gross ET, minus effective precipitation, minus surface water deliveries, minus edge cases. Each step below is one operation in that chain{% if user_can_write %}: reorder, enable or disable, and set its parameters; then preview a sample parcel{% endif %}.</p>
     <a href="{% url 'glossary' %}" class="text-sm text-accent">Glossary &rarr;</a>
     <span class="text-tertiary text-sm" style="margin: 0 var(--space-xs);">|</span>
     <a href="{% url 'getting_started' %}" class="text-sm text-accent">Getting Started &rarr;</a>

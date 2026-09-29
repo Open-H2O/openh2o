@@ -282,8 +282,9 @@ class DeliverySettingsForm(forms.Form):
         # 148-04: the sentence about fields without a well is in the
         # template, behind the `wells` gate: a kept page may not name a
         # dropped module's noun (tests/droppability).
-        help_text="Typical: 10%. A change applies to months calculated "
-        "after it.",
+        help_text="Applies to the credited choice. 10% unless you change it. "
+        "A change applies to months calculated after it; a month already "
+        "calculated keeps the share it ran under.",
         widget=forms.NumberInput(
             attrs={"class": "form-input", "style": "width: 6rem;", "step": "1"}
         ),
@@ -404,23 +405,14 @@ class DeliverySettingsForm(forms.Form):
             ("same_water_year", "Let it expire (use-it-or-lose-it)"),
         ]
         if self.shows_efficiency:
-            # 148-04 Task 1 working words (Brent's checkpoint may polish; no
-            # "recharge" -- this page is served without that module).
+            # The settled words (148-03, 2026-09-28): the radio's label is the
+            # choice, one line; what it does is the description the template
+            # prints under it (`over_delivery_options`). No "recharge": this
+            # page is served without that module.
             self.fields["over_delivery_treatment"].choices = [
-                (
-                    "not_credited",
-                    "Not credited to anyone. The amount is shown on the "
-                    "month's calculation.",
-                ),
-                (
-                    "credited",
-                    "Credited to the landowner, less a share left in the basin",
-                ),
-                (
-                    "named_line",
-                    "Shown on the field's page as its own line. It is not "
-                    "a credit and is not charged.",
-                ),
+                ("not_credited", "Not credited to anyone."),
+                ("credited", "Credited to the landowner, less a share left in the basin."),
+                ("named_line", "Shown on the field's page as its own line."),
             ]
         if self.shows_diversion_settings:
             self.fields["diversion_report_year_rule"].choices = [
@@ -428,6 +420,46 @@ class DeliverySettingsForm(forms.Form):
                 ("calendar_year", "Calendar year: January to December"),
                 ("season", "A single irrigation season each year"),
             ]
+
+    @property
+    def over_delivery_options(self):
+        """``(radio, description)`` per choice, in the choices' own order.
+
+        148-03: the Delivery Settings card prints each choice as a label line
+        with what it does on a quieter line under it, so the three radios
+        line up instead of wrapping to three different lengths. The
+        descriptions live here, beside the labels, and not in the template,
+        so the words that describe a choice sit with the choice. Empty when
+        the field is not shown (no ``surface`` module).
+        """
+        if not self.shows_efficiency:
+            return []
+        if self.shows_groundwater_efficiency:
+            credited = (
+                "The landowner's share is a credit on the field's ledger. "
+                "A field with no well has its share go to the zone's shared "
+                "account, because it has no well to pump it back."
+            )
+        else:
+            credited = (
+                "The landowner's share is a credit on the field's ledger. "
+                "The share goes to the zone's shared account."
+            )
+        descriptions = {
+            "not_credited": (
+                "The amount is stated on the month's calculation and nothing "
+                "else happens. This is the default."
+            ),
+            "credited": credited,
+            "named_line": (
+                "Not a credit and not charged. The field's water balance "
+                "reads the same as under the other two choices."
+            ),
+        }
+        return [
+            (radio, descriptions[radio.data["value"]])
+            for radio in self["over_delivery_treatment"]
+        ]
 
     def clean_identifier_host(self):
         from core.identifiers import normalize_host
