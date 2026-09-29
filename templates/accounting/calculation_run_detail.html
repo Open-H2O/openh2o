@@ -1,26 +1,30 @@
 {% extends "base.html" %}
 
+{% load humanize %}
 {% load placeholders %}
 {% comment %}
-  **Four decimal places on this page are deliberate — ISS-142, ruled by Brent
-  2026-09-06 and closed as a decision, not a sweep.**
+  The calculation page as a receipt (148-03; Brent approved the design
+  2026-09-28 20:12 PDT after rejecting two step tables the same day: "I have
+  no idea what all this means", and of the running-total redesign, "what does
+  left mean?").
 
-  This page is the gross-to-net audit trail behind one calculated figure, and
-  its whole point is that the steps sum exactly to the final number below them.
-  Rounding each step to two places would leave the arithmetic visibly not
-  closing to a reader checking it by hand — a worse defect than the tidiness it
-  would buy.
+  The page answers one question and nothing else: this field was charged
+  groundwater nobody measured; where did that number come from? Only a month
+  on a field with a well and no meter reading has that question, so the
+  receipt renders only when the run's residual_disposition is "groundwater".
+  A metered or no-well month reached by a direct URL gets the short page at
+  the foot of this file: one plain sentence and a link back to the field.
 
-  The complaint ISS-142 was raised on is already fixed and was a different
-  thing: the parcel detail panel showed a four-decimal residual beside
-  two-decimal neighbours on a SUMMARY screen. Nothing on this page is a summary
-  screen. If you are here because a long number looked odd, that is the answer;
-  please do not sweep the four-place formatting off this page.
+  Answer first (the headline), then the subtraction as a two-column table in
+  the finish of the approved help-page table (`.how-sure-table`), then one
+  line per figure on where it comes from. No Amount / Left columns, no step
+  numbers, no methodology step names. Two decimals here; the run's own
+  four-decimal value sits in each figure's title attribute, printed as the
+  stored Decimal so it adds no figure site of its own.
 
-  (Written without naming the template filter it is about, on purpose:
-  `scripts/figure_inventory.py` treats any comment mentioning that filter as an
-  inventory entry, and one more entry at the top of this file would renumber
-  every accounting row in `docs/figure-ledger-2026-09.md`.)
+  Every figure is the run's own stamped column, and both percentages are
+  read back off the run (the view's docstring says how), never off the live
+  Delivery Settings value.
 {% endcomment %}
 {% block title %}How was this calculated? - Open Water Accounting Platform{% endblock %}
 {% block page_title %}How was this calculated?{% endblock %}
@@ -32,220 +36,135 @@
     <span class="breadcrumb-separator">/</span>
     <a href="{% url 'accounting:ledger_list' %}">Use Ledger</a>
     <span class="breadcrumb-separator">/</span>
-    <span class="breadcrumb-current">{{ parcel.parcel_number }} · {{ period }}</span>
+    <span class="breadcrumb-current">{{ parcel.parcel_number }} &middot; {{ month_label }}</span>
   </nav>
-  <p class="page-description">Every step behind one month's figure for this field, from the satellite estimate of crop water use to the groundwater that is left.</p>
+  <p class="page-description">{% if receipt %}Where this field's estimated pumping for {{ month_label }} came from, one figure at a time.{% else %}Nothing was estimated for this field in {{ month_label }}.{% endif %}</p>
 </div>
 {% endblock %}
 
 {% block content %}
 <div class="page-stack">
 
-  <!-- Back link -->
   <div>
-    <a href="{% url 'accounting:ledger_list' %}" class="back-link">
-      &larr; Back to Use Ledger
+    {% if 'parcels' in enabled_modules %}
+    <a href="{% url 'parcels:detail' parcel.pk %}" class="back-link">
+      &larr; Back to {{ parcel.parcel_number }}
     </a>
-  </div>
-
-  <!-- Header: parcel + period + honesty label -->
-  <div class="card-raised">
-    <div>
-      <div>
-        <h2 class="section-header" style="margin-bottom: var(--space-xs);">
-          {{ parcel.parcel_number }} &middot; {{ period }}
-        </h2>
-        <div class="text-tertiary text-sm">
-          {% if parcel.owner_name %}{{ parcel.owner_name }} &middot; {% endif %}{{ parcel.area_acres|floatformat:2 }} acres
-        </div>
-        <div class="text-tertiary text-sm mt-xs">
-          {% comment %} The run's config_hash (a 12-character fingerprint of the enabled
-             steps and their settings) is NOT printed: no page compares two runs by it, so a
-             reader had nothing to do with the code (Brent, 2026-09-16 15:39 PDT, at the 143-09
-             checkpoint). It stays on the model and in the JSON for engineers. {% endcomment %}
-          Methodology: <span class="text-secondary">{{ methodology_plan_name|blank }}</span>
-        </div>
-        {% comment %} 148-03: the card says what the field HAS, which is what the
-           ending depends on, and repeats no figure (the consumed figure used to
-           sit here above a band restating it; two fresh readers faulted the
-           repeat). It sits with the field's other facts: a right-hand block over
-           an empty middle read as stranded (two readers, 2026-09-28). {% endcomment %}
-        <div class="text-sm mt-xs">
-          {% if run.residual_disposition == "metered" %}
-          <strong>Metered well.</strong> <span class="text-secondary">Groundwater comes from the meter's reading.</span>
-          {% elif run.residual_disposition == "unmet_demand" %}
-          <strong>No well.</strong> <span class="text-secondary">The remainder is water use with no supply on record.</span>
-          {% else %}
-          <strong>Well, no meter.</strong> <span class="text-secondary">Groundwater comes out as the remainder.</span>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-
-    <!-- Honesty label (prominent, gold inset) -->
-    <div class="card-raised card-inset honesty-note mt-md">
-      <p class="text-sm" style="margin: 0; color: var(--color-text-secondary);">
-        <strong>An estimate, not a reading.</strong>
-        The crop's water use is a satellite estimate and the rain is estimated from weather data for the area; the canal water is the district's record. Every step is shown so the figures can be checked.{% if run.residual_disposition == "metered" %} Its groundwater figure comes from the meter's reading.{% endif %}
-      </p>
-    </div>
-  </div>
-
-  <!-- The gross → net waterfall -->
-  <div class="card-raised">
-    <h2 class="section-header mb-md">Calculation steps</h2>
-    <table class="data-table waterfall text-sm">
-      <thead>
-        <tr>
-          <th style="width: 1%; white-space: nowrap;">#</th>
-          <th>Step</th>
-          <th>Detail</th>
-          <th class="th-right">In (AF)</th>
-          <th class="th-right">Out (AF)</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for step in steps %}
-        <tr class="wf-{{ step.kind }}">
-          <td class="text-tertiary">{{ forloop.counter }}</td>
-          <td style="font-weight: 600;">{{ step.label }}</td>
-          <td class="text-secondary">{{ step.detail_text }}</td>
-          <td class="td-num text-tertiary">{{ step.input_af|floatformat:4 }}</td>
-          <td class="td-num">{{ step.output_af|floatformat:4 }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-
-  <!-- Banking block (only when a credit was deposited or drawn) -->
-  {% if has_banking %}
-  <div class="card-raised">
-    <h2 class="section-header mb-md">Banked water</h2>
-    <div style="display: flex; gap: var(--space-xl); margin-bottom: var(--space-md);">
-      <div class="field-group mb-0">
-        <div class="field-label">Deposited this month</div>
-        <div class="td-num-bold" style="font-size: 1.1rem; color: var(--color-text-primary);">{{ run.banked_af|floatformat:4 }} AF</div>
-      </div>
-      <div class="field-group mb-0">
-        <div class="field-label">Drawn down this month</div>
-        <div class="td-num-bold" style="font-size: 1.1rem; color: var(--color-text-primary);">{{ run.drawn_af|floatformat:4 }} AF</div>
-      </div>
-    </div>
-    {% if draws %}
-    <p class="text-tertiary text-sm" style="margin-bottom: var(--space-sm);">Credits drawn down to reduce this month's bill:</p>
-    <table class="data-table text-sm">
-      <thead>
-        <tr>
-          <th>Credit banked in</th>
-          <th class="th-right">Drawn (AF)</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for draw in draws %}
-        <tr>
-          <td class="text-secondary">{{ draw.credit.origin_period }}</td>
-          <td class="td-num">{{ draw.amount_af|floatformat:4 }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    {% else %}
+    <a href="{% url 'accounting:ledger_list' %}" class="back-link">
+      &larr; Back to the Use Ledger
+    </a>
     {% endif %}
   </div>
-  {% endif %}
 
-  {% comment %} 148-03: the result row. The three stacked .result-card bands
-     that stood here (consumed, extracted, canal water beyond crop use) each
-     put a small label far left and one figure far right, a third of the page
-     for three numbers, and the header repeated the first of them smaller than
-     the band below it (two fresh readers, DO NOT SHIP on the same fault,
-     2026-09-28). They are one row now, in the house .budget-panel shape the
-     field page uses (DESIGN.md, House "concept" components): two or three
-     figure cells, each a label, a figure with its unit and one caption, and
-     no caption repeats its label (copy rule 13).
-
-     Cell 1 is what the field's month came to, by the run's own stamped
-     disposition: the consumed figure on a field with a well (the calculated
-     ledger entry; kept for comparison on a metered field, where the meter is
-     the groundwater figure), or, on a field with no well, the remainder
-     recorded as water use with no supply on record. Cell 2, only when the
-     run stamped an extracted figure: what the groundwater budget is spent by,
-     with the divisor read back off the run's own two figures (148-02), never
-     the live setting. Cell 3, only when the run recorded canal water beyond
-     what the crop could use: the amount, with the treatment the run was
-     stamped with (148-04), read off the run and never the live Delivery
-     Settings value, so a later change to that setting moves nothing an
-     already-run month says about itself. `over_delivery_left_af` and
-     `over_delivery_share_pct` are the view's own arithmetic on the run's two
-     stamps; this page's four-place convention applies to them the same as
-     every other AF figure here. A "credited" run that credited nothing this
-     month (over_delivery_left_af is then None) reads the same as
-     not_credited: nothing was credited. {% endcomment %}
-  <div class="budget-panel">
-    <div class="budget-panel-head">
-      <span class="budget-panel-title">Result</span>
+  <div class="card-raised receipt{% if not receipt %} receipt-short{% endif %}">
+    <div class="text-tertiary text-sm receipt-facts">
+      {{ parcel.parcel_number }}{% if parcel.owner_name %} &middot; {{ parcel.owner_name }}{% endif %} &middot; {{ parcel.area_acres|floatformat:2 }} acres &middot; Methodology: {{ methodology_plan_name|blank }}
     </div>
-    <div class="budget-panel-body">
-      <div class="budget-panel-row budget-panel-row--figures">
-        {% comment %} A zero renders nothing (DESIGN.md rule 12's row for this
-           quantity): on a no-well month whose canal water went past the crop,
-           the unmet figure is 0 and the canal cell carries the result alone. {% endcomment %}
-        {% if run.residual_disposition != "unmet_demand" or run.unmet_demand_af or not run.over_delivery_af %}
-        <div class="budget-seg">
-          {% if run.residual_disposition == "unmet_demand" %}
-          <div class="budget-seg-label">Water use recorded, no supply reported</div>
-          <div class="budget-seg-value">{{ run.unmet_demand_af|floatformat:4 }}<span class="budget-seg-unit">AF</span></div>
-          <div class="budget-seg-caption">no well, so nothing is booked as pumping</div>
-          {% else %}
-          <div class="budget-seg-label">Groundwater consumed</div>
-          <div class="budget-seg-value">{{ run.final_af|floatformat:4 }}<span class="budget-seg-unit">AF</span></div>
-          {% if run.residual_disposition == "metered" %}
-          <div class="budget-seg-caption">the remainder, kept for comparison; the meter is the groundwater figure</div>
-          {% else %}
-          <div class="budget-seg-caption">the calculated ledger entry for {{ period }}</div>
-          {% endif %}
-          {% endif %}
-        </div>
+
+    {% if receipt %}
+    <h2 class="receipt-headline">
+      {% if run.gw_extracted_af is not None %}Estimated pumping{% else %}Estimated well water{% endif %}, {{ month_label }}:
+      <span class="receipt-headline-figure" title="{{ headline_af }} acre-feet">{{ headline_af|floatformat:2|intcomma }} acre-feet</span>
+    </h2>
+    <p class="text-secondary receipt-lead">This field's well has no meter, so the pumping is worked out from what the crop used.</p>
+
+    <div class="receipt-body">
+    <div class="receipt-main">
+    <table class="data-table receipt-table">
+      <thead>
+        <tr>
+          <th><span class="sr-only">Figure</span></th>
+          <th class="th-right">acre-feet</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="col-name">Water the crop used (satellite estimate)</td>
+          <td class="col-amount td-num" title="{{ run.gross_et_af }} acre-feet">{{ run.gross_et_af|floatformat:2|intcomma }}</td>
+        </tr>
+        {% if run.effective_precip_af is not None %}
+        <tr>
+          <td class="col-name">minus rain the crop could use</td>
+          <td class="col-amount td-num" title="{{ run.effective_precip_af }} acre-feet">{{ run.effective_precip_af|floatformat:2|intcomma }}</td>
+        </tr>
         {% endif %}
-        {% if run.gw_extracted_af is not None %}
-        <div class="budget-seg">
-          <div class="budget-seg-label">Groundwater extracted</div>
-          <div class="budget-seg-value">{{ run.gw_extracted_af|floatformat:4 }}<span class="budget-seg-unit">AF</span></div>
-          {% if gw_efficiency_applied %}
-          <div class="budget-seg-caption">consumed &divide; {{ gw_efficiency_applied|floatformat:2 }}; this is what the groundwater budget is spent by</div>
-          {% else %}
-          <div class="budget-seg-caption">nothing to divide; the budget is spent 0 AF</div>
-          {% endif %}
-        </div>
+        {% if run.surface_water_af is not None %}
+        <tr>
+          <td class="col-name">minus canal water the crop could use</td>
+          <td class="col-amount td-num" title="{{ run.surface_water_af }} acre-feet">{{ run.surface_water_af|floatformat:2|intcomma }}</td>
+        </tr>
         {% endif %}
-        {% if run.over_delivery_af > 0 %}
-        <div class="budget-seg">
-          <div class="budget-seg-label">Canal water beyond crop use</div>
-          <div class="budget-seg-value">{{ run.over_delivery_af|floatformat:4 }}<span class="budget-seg-unit">AF</span></div>
-          {% if run.over_delivery_treatment == "credited" and over_delivery_left_af is not None %}
-          <div class="budget-seg-caption">credited, less {{ over_delivery_share_pct|floatformat:0 }}% left in the basin</div>
-          {% elif run.over_delivery_treatment == "named_line" %}
-          <div class="budget-seg-caption">its own line on the field's page</div>
-          {% else %}
-          <div class="budget-seg-caption">not credited</div>
-          {% endif %}
-        </div>
+        <tr class="receipt-total">
+          <td class="col-name">= well water the crop used</td>
+          <td class="col-amount td-num" title="{{ run.final_af }} acre-feet">{{ run.final_af|floatformat:2|intcomma }}</td>
+        </tr>
+        {% if gw_efficiency_pct is not None %}
+        <tr>
+          <td class="col-name">divided by {{ gw_efficiency_pct|floatformat:0 }}%, because a pump lifts more than the crop uses</td>
+          <td class="col-amount td-num"></td>
+        </tr>
+        <tr class="receipt-total">
+          <td class="col-name">= pumped, charged to the groundwater budget</td>
+          <td class="col-amount td-num" title="{{ run.gw_extracted_af }} acre-feet">{{ run.gw_extracted_af|floatformat:2|intcomma }}</td>
+        </tr>
         {% endif %}
-      </div>
-      {% if run.over_delivery_af > 0 %}
-      <p class="text-sm text-secondary" style="margin: var(--space-md) 0 0;">
-        {% if run.over_delivery_treatment == "credited" and over_delivery_left_af is not None and not run.over_delivery_credit_pooled %}
-        {{ run.over_delivery_credited_af|floatformat:4 }} AF is credited to this field; {{ over_delivery_left_af|floatformat:4 }} AF ({{ over_delivery_share_pct|floatformat:0 }}%) stays in the basin.
-        {% elif run.over_delivery_treatment == "credited" and over_delivery_left_af is not None and run.over_delivery_credit_pooled %}
-        {{ run.over_delivery_credited_af|floatformat:4 }} AF is credited to the zone's shared account, because this field has no well to pump it back; {{ over_delivery_left_af|floatformat:4 }} AF ({{ over_delivery_share_pct|floatformat:0 }}%) stays in the basin.
-        {% elif run.over_delivery_treatment == "named_line" %}
-        Shown on the field's page as its own line. Not a credit and not charged.
+      </tbody>
+    </table>
+
+    {% if run.final_af == 0 %}
+    {% comment %} A well month where rain and canal water covered the crop,
+       in the month's own numbers. What happened to the canal water beyond
+       what the crop could use is said only under the credited or named-line
+       setting, off the run's own stamp; under the default (not credited)
+       the figure stands and nothing more is said. The fixed noun for that
+       figure stays on every other page; this sentence describes it in the
+       month's own words and names nothing new. {% endcomment %}
+    <p class="text-secondary receipt-zero">
+      {% if covered_by %}{{ covered_by }} covered the crop this month, so nothing was pumped.{% else %}No crop on record for this field this month, so nothing was pumped.{% endif %}
+      {% if run.over_delivery_af > 0 %}<span title="{{ run.over_delivery_af }} acre-feet">{{ run.over_delivery_af|floatformat:2|intcomma }}</span> acre-feet of the canal water was more than the crop needed.{% if run.over_delivery_treatment == "credited" and over_delivery_left_af is not None %} {{ run.over_delivery_credited_af|floatformat:2|intcomma }} acre-feet of it is credited to this field; {{ over_delivery_left_af|floatformat:2|intcomma }} acre-feet ({{ over_delivery_share_pct|floatformat:0 }}%) stays in the basin.{% elif run.over_delivery_treatment == "named_line" %} It is shown on the field's page as its own line, not a credit and not charged.{% endif %}{% endif %}
+    </p>
+    {% endif %}
+
+    </div>
+
+    <div class="help-table-notes receipt-notes">
+      <h3 class="receipt-notes-title">Where each figure comes from</h3>
+      <p class="text-secondary text-sm"><strong>Water the crop used.</strong> A satellite estimate for this field, this month.</p>
+      {% if run.effective_precip_af is not None %}
+      <p class="text-secondary text-sm"><strong>Rain the crop could use.</strong> Weather data for the area, then the share of it the crop could use by the method set on Methodology Settings. Not a gauge on this field.</p>
+      {% endif %}
+      {% if run.surface_water_af is not None %}
+      <p class="text-secondary text-sm"><strong>Canal water the crop could use.</strong>
+        {% if run.surface_delivered_af %}
+        The district's delivery record, <span title="{{ run.surface_delivered_af }} acre-feet">{{ run.surface_delivered_af|floatformat:2|intcomma }}</span> acre-feet{% if delivery_split == "use" %}, divided up from the canal total in proportion to each field's crop water use after rain{% elif delivery_split == "fixed" %}, divided up from the canal total by the fixed share on file{% endif %}{% if irrigation_efficiency_pct is not None %}, times the field's irrigation efficiency, {{ irrigation_efficiency_pct|floatformat:0 }}% ({% if irrigation_efficiency_source == "method" %}{% if irrigation_method_name %}from the field's irrigation method on file, {{ irrigation_method_name }}{% else %}from the field's irrigation method on file{% endif %}{% else %}the deployment's default on Delivery Settings{% endif %}){% endif %}.
+        {% elif run.surface_water_af %}
+        The whole delivery on the district's record, because this deployment's calculation plan applies no irrigation efficiency.
         {% else %}
-        Recorded here and not credited to anyone.
+        No canal delivery on record for this field this month.
         {% endif %}
       </p>
       {% endif %}
+      {% if gw_efficiency_pct is not None %}
+      <p class="text-secondary text-sm"><strong>The {{ gw_efficiency_pct|floatformat:0 }}%.</strong> A Delivery Settings value, stamped on this month when it was calculated, so a later change to the setting leaves this month as it was.</p>
+      {% endif %}
+      <p class="text-secondary text-sm">With a meter on this well, its reading would replace the estimate.</p>
     </div>
+    </div>
+
+    {% else %}
+    {% comment %} The short page: a month with nothing to estimate, reached by
+       a direct URL (the field page links only receipt months). Not a 404,
+       because the run exists and the reader deserves the one sentence. {% endcomment %}
+    <h2 class="receipt-headline">No estimated pumping for {{ month_label }}</h2>
+    <p class="text-secondary receipt-lead">
+      {% if run.residual_disposition == "metered" %}
+      This field's well has a meter, so the pumping is the meter's reading and nothing is estimated.
+      {% else %}
+      This field has no well on record, so there is no pumping to estimate.
+      {% endif %}
+    </p>
+    {% endif %}
   </div>
 
 </div>

@@ -1,3 +1,11 @@
+-- FIG-accounting-001 and the account, ledger, allocation and reporting-period
+-- figures (their ids have moved with later renumberings; the ledger document's
+-- rows are the authority). The calculation-run block below, "The
+-- calculation-run audit page", recomputed the old FIG-accounting-002..008 for
+-- MER-APN-016, March 2026; 148-03 made that page a receipt on 2026-09-28 and
+-- its sites are now traced in calculation_receipt.sql. The block is kept as a
+-- second route to the same run's arithmetic.
+-- (Header as first written, 2026-09-05:)
 -- FIG-accounting-001..022, FIG-accounting-053..060. The accounting money layer:
 -- the account balance pane, the calculation-run audit page, the methodology live
 -- preview, the use-ledger table and its footer subtotals, the allocations table,

@@ -2,6 +2,8 @@
 -- FIG-accounting-053, FIG-accounting-054, FIG-accounting-055 (ISS-155)
 -- FIG-accounting-022 (ISS-156)
 -- FIG-parcels-016, FIG-parcels-017, FIG-accounting-005..007 (UNVERIFIED reasons)
+-- (FIG-accounting-005..007 as numbered on 2026-09-05, the banked-water block;
+-- retired 2026-09-28 when 148-03 made the calculation page a receipt.)
 --
 -- THIRD-ROUTE RE-DERIVATION for audit/figure_ledger/triage.md.
 --

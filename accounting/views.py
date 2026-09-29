@@ -51,7 +51,6 @@ from accounting.models import (
     ReportingPeriod,
     WaterAccount,
     WaterAccountParcel,
-    WaterCreditDraw,
     WaterType,
 )
 from accounting.ledger_words import (
@@ -1922,15 +1921,87 @@ def _over_delivery_share_pct(run):
     return run.over_delivery_leave_behind * 100
 
 
+def _receipt_context(parcel, run, period):
+    """The receipt's own words for one run with a well and no meter.
+
+    148-03 (Brent approved the design 2026-09-28 20:12): the page answers one
+    question, where this field's estimated pumping for the month came from,
+    as a subtraction the reader can follow line by line. Every figure is the
+    run's own stamped column; the two percentages are read back off the run
+    (the irrigation efficiency it stored; the groundwater efficiency as
+    final_af / gw_extracted_af), never off the live setting, so a change to
+    Delivery Settings moves nothing a month already run says about itself.
+    """
+    irrigation_efficiency_source = None
+    for step in run.breakdown:
+        if step.get("step_type") == "subtract_surface_water":
+            irrigation_efficiency_source = (step.get("detail") or {}).get(
+                "efficiency_source"
+            )
+            break
+    irrigation_method_name = None
+    if irrigation_efficiency_source == "method":
+        link = getattr(parcel, "irrigation", None)
+        if link is not None:
+            irrigation_method_name = link.method.name
+
+    # A zero month: rain and canal water (one or both) covered the crop, or a
+    # field with no crop on record was set to 0 by the plan. Which of the two
+    # supplies did the covering is read off the run's own figures, so the
+    # sentence names only water that was there.
+    rain = run.effective_precip_af or Decimal("0")
+    canal = run.surface_water_af or Decimal("0")
+    covered_by = None
+    if run.final_af == 0:
+        if rain > 0 and canal > 0:
+            covered_by = "Rain and canal water"
+        elif rain > 0:
+            covered_by = "Rain"
+        elif canal > 0:
+            covered_by = "Canal water"
+
+    return {
+        "receipt": True,
+        # The headline figure: pumped where the run stamped it; on a run from
+        # before pumping was stamped, the well water itself, and the template
+        # names it as such.
+        "headline_af": (
+            run.gw_extracted_af if run.gw_extracted_af is not None else run.final_af
+        ),
+        "gw_efficiency_pct": (
+            run.final_af / run.gw_extracted_af * 100 if run.gw_extracted_af else None
+        ),
+        "irrigation_efficiency_pct": (
+            run.surface_efficiency * 100 if run.surface_efficiency is not None else None
+        ),
+        "irrigation_efficiency_source": irrigation_efficiency_source,
+        "irrigation_method_name": irrigation_method_name,
+        # "use" / "fixed" / None, off the month's ledger rows (the run stores
+        # no split flag), for the ruled words on the canal line.
+        "delivery_split": _delivery_split_kind(parcel, period),
+        "covered_by": covered_by,
+        # 148-04: what happened to canal water beyond what the crop could use,
+        # by the run's own stamp. None whenever nothing was credited.
+        "over_delivery_left_af": _over_delivery_left_af(run),
+        "over_delivery_share_pct": _over_delivery_share_pct(run),
+    }
+
+
 @login_required
 def calculation_run_detail(request, parcel_id, period):
-    """Read-only audit page reconstructing one parcel-month's gross→net waterfall.
+    """One month's calculation receipt: where the estimated pumping came from.
 
     Keyed on the STABLE (parcel, period), not the run's pk: the calculated ledger
     row is delete-recreated every run (its pk churns) and the ledger list iterates
     rows, not runs, so this key lets a ledger link resolve without threading a run
     pk through the list and survives re-runs. Most-recent run wins if more than one
     ever exists; 404 when none.
+
+    148-03: only a month with a well and no meter reading
+    (``residual_disposition == "groundwater"``) has a receipt. A metered or
+    no-well month is a short page (one sentence and a link back to the field),
+    not a 404: the field page no longer links those months, but a direct URL
+    still answers.
     """
     parcel = get_object_or_404(Parcel, pk=parcel_id)
     run = (
@@ -1941,77 +2012,20 @@ def calculation_run_detail(request, parcel_id, period):
     if run is None:
         raise Http404("No calculation run for this parcel and period.")
 
-    # Classify each row by what it does to the running total so the template can
-    # shade the waterfall: the first row is the starting gross figure; after that
-    # a smaller output is a reduction (subtraction), a larger output is an
-    # addition, an equal output is a pass-through. Lets the gross→net descent be
-    # read at a glance instead of decoded from the In/Out columns.
-    delivery_split = _delivery_split_kind(parcel, period)
-    steps = []
-    for i, s in enumerate(run.breakdown):
-        inp = s.get("input_af")
-        out = s.get("output_af")
-        # breakdown is JSON, so the AF figures arrive as strings — compare them
-        # numerically (a lexical compare reads "9.81" as greater than "16.89").
-        try:
-            inp_n, out_n = float(inp), float(out)
-        except (TypeError, ValueError):
-            inp_n = out_n = None
-        if i == 0:
-            kind = "start"
-        elif inp_n is None or out_n is None or out_n == inp_n:
-            kind = "same"
-        elif out_n < inp_n:
-            kind = "reduce"
-        else:
-            kind = "add"
-        steps.append(
-            {
-                "label": s.get("label") or s.get("step_type"),
-                "input_af": inp,
-                "output_af": out,
-                "detail_text": _step_detail_summary(s, delivery_split=delivery_split),
-                "kind": kind,
-            }
-        )
-
-    draws = (
-        WaterCreditDraw.objects.filter(credit__parcel=parcel, draw_period=period)
-        .select_related("credit")
-        .order_by("credit__origin_period")
-    )
-
     context = {
         "parcel": parcel,
         "period": period,
         "run": run,
-        "steps": steps,
-        "draws": draws,
-        "has_banking": run.banked_af > 0 or run.drawn_af > 0,
-        # 148-02: the groundwater efficiency this run applied, read back off
-        # its own two stamped figures rather than the live setting, so the
-        # page states what the charge was computed with. None on a metered,
-        # no-well or pre-148-02 run, and on a zero month (nothing to divide).
-        "gw_efficiency_applied": (
-            run.final_af / run.gw_extracted_af
-            if run.gw_extracted_af
-            else None
+        "month_label": (
+            run.period_start.strftime("%B %Y") if run.period_start else period
         ),
-        # 148-04: the figures behind canal water beyond what the crop could
-        # use, read off the run's own stamps (never the live setting). The
-        # template composes the four sentences and applies floatformat, so
-        # every number it prints has a figure-ledger site the same way the
-        # divisor above does. The card is absent whenever over_delivery_af
-        # is 0, so these are computed unconditionally but only read by the
-        # template under that guard.
-        "over_delivery_left_af": _over_delivery_left_af(run),
-        "over_delivery_share_pct": _over_delivery_share_pct(run),
-        # 42-01: the methodology fingerprint behind this number. Blank on a
-        # pre-42 run, which the template renders as dashes (honest: "ran before
-        # provenance was recorded").
-        "config_hash": run.config_hash,
+        # The run's config_hash (a 12-character fingerprint) is NOT printed:
+        # no page compares two runs by it (Brent, 2026-09-16, 143-09).
         "methodology_plan_name": run.methodology_plan_name,
+        "receipt": False,
     }
+    if run.residual_disposition == "groundwater":
+        context.update(_receipt_context(parcel, run, period))
     return render(request, "accounting/calculation_run_detail.html", context)
 
 

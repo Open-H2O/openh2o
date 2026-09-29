@@ -272,14 +272,21 @@
     </div>
 
 
+    {% comment %} 148-03: only a month with a well and no meter has a receipt
+       to show (where its estimated pumping came from), so only those months
+       link, and a field with none (no well, or every month metered) has no
+       block here at all. `receipt_periods` is parcel_receipt_periods(); the
+       panel above stays gated on the wider run_periods. {% endcomment %}
+    {% if receipt_periods %}
     <div class="border-separator">
-      <div class="text-tertiary text-xs mb-sm">See the calculation for each month:</div>
+      <div class="text-tertiary text-xs mb-sm">Estimated pumping, month by month:</div>
       <div class="row-start" style="flex-wrap: wrap; gap: var(--space-xs);">
-        {% for period in run_periods %}
+        {% for period in receipt_periods %}
         <a href="{% url 'accounting:calculation_run_detail' parcel.pk period %}" class="badge badge-blue">{{ period }}</a>
         {% endfor %}
       </div>
     </div>
+    {% endif %}
     {% else %}
     <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
       <h2 class="section-header-flush" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Supplies are water that reached the field: canal water delivered, groundwater extracted (the meter's reading, or the engine's estimate), and effective rain. Uses are the crop's consumptive use, deep percolation (the part of the canal water and of the pumped water the crop could not use), managed recharge recorded from this field, and the change in banked storage. The residual is what is left; within a quarter of consumptive use it is shown as small, beyond that as large." link=methods_help_url link_label="Methods behind the numbers" %}</h2>

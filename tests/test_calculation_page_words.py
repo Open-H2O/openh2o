@@ -1,13 +1,15 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""The calculation audit page names its inches and its
-method by the same words the methodology editor uses (143-09, R-045, R-046,
-R-047).
+"""The calculation page prints no machine key (143-09, R-045), and the
+methodology preview names its inches and its method by the same words the
+methodology editor uses (R-046, R-047; moved off the calculation page on
+2026-09-28 when 148-03 made that page a receipt with no step detail).
 
 Each guard is a VALUE assertion against a fixture whose numbers are typed in
 here, never a re-derivation of `_step_detail_summary`'s own arithmetic. The
 parcel and period names are fictional so the session-scoped Merced seed
 cannot collide with them.
 """
+import datetime as dt
 from decimal import Decimal
 
 import pytest
@@ -116,41 +118,57 @@ class TestCalculationPageDoesNotPrintTheConfigHash:
 
 
 @pytest.mark.django_db
-class TestCalculationPageNamesItsInches:
-    """R-046 / R-047: step 1 shows the inches an auditor can check by hand;
-    step 2 names its method the same way the editor does, and the config
-    key never reaches the page."""
+class TestThePreviewNamesItsInches:
+    """R-046 / R-047, moved on 2026-09-28 (148-03): the calculation page is a
+    receipt now and prints no step detail, so the inches an auditor can check
+    by hand and the method's editor name are pinned on the methodology
+    preview, the one screen that still renders `_step_detail_summary`."""
+
+    def _preview(self):
+        from django.core.management import call_command
+
+        from datasync.models import OpenETCache
+        from django.contrib.gis.geos import MultiPolygon, Polygon
+        from parcels.models import CropType, Parcel, UsageLocation
+
+        call_command("seed_calculation_plan")
+        parcel = Parcel.objects.create(parcel_number="R047-APN-001", area_acres=Decimal("10.00"))
+        crop = CropType.objects.create(name="Crop-R047")
+        UsageLocation.objects.create(parcel=parcel, name="field", crop_type=crop)
+        OpenETCache.objects.create(
+            parcel=parcel,
+            geometry=MultiPolygon(Polygon(((-119.5, 36.5), (-119.5, 36.6), (-119.4, 36.6), (-119.4, 36.5), (-119.5, 36.5)))),
+            start_date=dt.date(2024, 6, 1),
+            end_date=dt.date(2024, 6, 28),
+            variable="ET",
+            model_name="Ensemble",
+            et_data=[{"et": 127.0, "date": "2024-06", "unit": "mm"}],
+        )
+        user = User.objects.create_user(
+            username="r047-staff", email="r047-staff@example.com",
+            password="x", is_active=True, is_staff=True,
+        )
+        client = Client()
+        client.force_login(user)
+        resp = client.post(
+            reverse("accounting:methodology_preview"),
+            {"parcel_id": str(parcel.id), "period": "2024-06"},
+        )
+        assert resp.status_code == 200
+        return resp.content.decode()
 
     def test_step1_detail_shows_the_inches_and_the_division(self):
-        parcel = ParcelFactory(parcel_number="R047-APN-001")
-        _run(parcel, period="2026-08")
-        client = _auth_client()
-        resp = client.get(
-            reverse(
-                "accounting:calculation_run_detail",
-                kwargs={"parcel_id": parcel.pk, "period": "2026-08"},
-            )
-        )
-        body = resp.content.decode()
+        body = self._preview()
         assert "5.0000 in of ET (127.00 mm) × 10.00 ac ÷ 12 in/ft" in body
 
     def test_step2_detail_names_the_method_and_hides_the_config_key(self):
-        parcel = ParcelFactory(parcel_number="R046-APN-001")
-        _run(parcel, period="2026-08")
-        client = _auth_client()
-        resp = client.get(
-            reverse(
-                "accounting:calculation_run_detail",
-                kwargs={"parcel_id": parcel.pk, "period": "2026-08"},
-            )
-        )
-        body = resp.content.decode()
-        assert "USDA-SCS (TR-21): 0.5000 in effective of 1.0000 in rain" in body
+        body = self._preview()
+        assert "USDA-SCS (TR-21)" in body
         assert "usda_scs" not in body
 
     def test_step_detail_summary_directly_on_the_same_dicts(self):
-        """The unit underneath the page: `_step_detail_summary` on the exact
-        detail dicts the fixture above stores, so a page-level regression and
+        """The unit underneath the preview: `_step_detail_summary` on the
+        exact detail dicts the fixture stores, so a page-level regression and
         a formula-level regression cannot be confused for one another."""
         et_step = {
             "step_type": "et_gross",

@@ -27,6 +27,7 @@ from accounting.services import (
     parcel_mass_balance,
     parcel_over_delivery_shown,
     parcel_over_delivery_total,
+    parcel_receipt_periods,
     parcel_run_periods,
     parcel_unmet_demand,
 )
@@ -252,6 +253,9 @@ def _parcel_detail_context(parcel, period_id=None):
     # which the template renders as an honest "ET not yet computed" state rather
     # than a scary red residual.
     run_periods = parcel_run_periods(parcel, balance_period)
+    # 148-03: the months that link to a calculation receipt are only those
+    # with a well and no meter; a field with none shows no link block at all.
+    receipt_periods = parcel_receipt_periods(parcel, balance_period)
     # ISS-157: what the platform already stored and no screen had ever shown.
     unmet_demand_af = parcel_unmet_demand(parcel, balance_period)
     # 148-04 (c): canal water beyond what the crop could use, on a run stamped
@@ -319,6 +323,7 @@ def _parcel_detail_context(parcel, period_id=None):
         "consumptive_balance": consumptive_balance,
         "mass_balance": mass_balance,
         "run_periods": run_periods,
+        "receipt_periods": receipt_periods,
         "unmet_demand_af": unmet_demand_af,
         "over_delivery_shown_af": over_delivery_shown_af,
         "over_delivery_total_af": over_delivery_total_af,

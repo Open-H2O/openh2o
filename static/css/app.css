@@ -2280,6 +2280,126 @@ html { color-scheme: dark; }
     margin-top: var(--space-sm);
 }
 
+/* The calculation page as a receipt (148-03, 2026-09-28): the answer first,
+   then a two-column subtraction in the finish of the help-page table above
+   (the same .data-table rules, the name column weighted the same, the figure
+   in its own right-aligned column), then the notes. Two columns need no
+   minimum width, so the table never scrolls at phone width; it is capped at
+   the prose measure so the name and its figure sit together instead of a
+   label far left and a number far right (the fault two fresh readers named
+   on the result bands this page used to end with). */
+.receipt-facts {
+    margin-bottom: var(--space-sm);
+}
+
+.receipt-headline {
+    font-size: 1.375rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--color-text-primary);
+    margin: 0 0 var(--space-xs);
+}
+
+.receipt-headline-figure {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.receipt-lead {
+    margin: 0 0 var(--space-md);
+    max-width: 70ch;
+}
+
+.receipt-table {
+    width: auto;
+    min-width: min(100%, 28rem);
+    max-width: 44rem;
+}
+
+.receipt-table td {
+    vertical-align: top;
+}
+
+/* The unit header sits on one line over its column (it is the 1%-wide
+   figure column, which would otherwise break "acre-feet" in two). */
+.receipt-table th {
+    white-space: nowrap;
+}
+
+.receipt-table .col-name {
+    font-weight: 500;
+}
+
+.receipt-table .col-amount {
+    width: 1%;
+    white-space: nowrap;
+    min-width: 6em;
+}
+
+/* The two "=" lines: what the subtraction comes to, and what is charged.
+   Ruled off above with the header's own accent, bolder than the lines that
+   make them up, no new colour. */
+.receipt-table tr.receipt-total td {
+    font-weight: 700;
+    border-top: 2px solid var(--color-accent-muted);
+}
+
+/* The short page (a month with nothing estimated): one sentence, so the card
+   is as wide as what it holds and closes evenly under it. */
+.receipt-short {
+    width: fit-content;
+    max-width: 100%;
+}
+
+.receipt-short .receipt-lead {
+    margin-bottom: 0;
+}
+
+.receipt-zero {
+    margin: var(--space-md) 0 0;
+    max-width: 70ch;
+}
+
+.receipt-notes p {
+    max-width: 70ch;
+}
+
+.receipt-notes {
+    margin-top: var(--space-md);
+}
+
+.receipt-notes-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-tertiary);
+    margin: 0 0 var(--space-sm);
+}
+
+/* On a wide screen the notes sit beside the table they explain, so the card
+   is filled by the receipt itself rather than by a hollow strip to the right
+   of a narrow table (two fresh readers, 2026-09-29). Below 1,400 px they
+   stack under it, in the same reading order. */
+@media (min-width: 1400px) {
+    .receipt-body {
+        display: grid;
+        grid-template-columns: minmax(0, 40rem) minmax(20rem, 1fr);
+        gap: var(--space-xl);
+        align-items: start;
+    }
+
+    .receipt-body .receipt-table {
+        width: 100%;
+    }
+
+    .receipt-notes {
+        margin-top: 0;
+        padding-left: var(--space-xl);
+        border-left: 1px solid var(--color-border);
+    }
+}
+
 /* The Methods page's five steps: inset panels inside one card, stacked with a
    small gap. Was five copies of the same inline style. */
 .step-list {

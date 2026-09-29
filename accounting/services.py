@@ -865,6 +865,26 @@ def parcel_run_periods(parcel, reporting_period=None):
     )
 
 
+def parcel_receipt_periods(parcel, reporting_period=None):
+    """The months a parcel has a calculation receipt for, sorted ``"YYYY-MM"``.
+
+    148-03 (Brent, 2026-09-28): the calculation page answers one question,
+    where this field's estimated pumping for the month came from, and only a
+    month on a field with a well and no meter reading has that question
+    (``residual_disposition == "groundwater"``). A metered month's pumping is
+    the meter's reading and a no-well month has nothing to estimate, so the
+    field page links neither. Same period scoping as ``parcel_run_periods``,
+    which still answers the wider "was the engine run" question the balance
+    panel is gated on.
+    """
+    return sorted(
+        _calculation_runs_for_period(parcel, reporting_period)
+        .filter(residual_disposition="groundwater")
+        .values_list("period", flat=True)
+        .distinct()
+    )
+
+
 def parcel_mass_balance(parcel, reporting_period=None):
     """The closing water mass balance for one parcel over a reporting period.
 

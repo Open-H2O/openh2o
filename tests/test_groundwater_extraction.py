@@ -450,16 +450,17 @@ def test_the_calculation_page_names_consumed_and_charges_extracted(admin_client)
     ).content.decode()
 
     assert "Billable groundwater" not in html
-    # 148-03: the result row's two cells, in rule 12's nouns, and the divisor
-    # read back off the run's own two figures (0.8802 / 1.1003 = 0.80).
-    assert "Estimated groundwater consumed" not in html
-    assert "Groundwater consumed" in html
-    assert "Groundwater extracted" in html
-    assert "consumed &divide; 0.80; this is what the groundwater budget is spent by" in html
-    assert "1.1000" in html
-    # The header names what the field has and repeats no figure.
-    assert "Well, no meter" in html
-    assert "Groundwater comes out as the remainder." in html
+    # 148-03 (2026-09-28): the page is a receipt. The answer first, the
+    # pumped figure at two places, and the divisor read back off the run's
+    # own two figures (0.8800 / 1.1000 = 80%), never the live setting.
+    assert "Estimated pumping, May 2025:" in html
+    assert ">1.10 acre-feet</span>" in html
+    assert "= well water the crop used" in html
+    assert ">0.88<" in html
+    assert "divided by 80%, because a pump lifts more than the crop uses" in html
+    assert "= pumped, charged to the groundwater budget" in html
+    assert "This field's well has no meter, so the pumping is worked out from what the crop used." in html
+    assert "Groundwater consumed" not in html
 
 
 def test_a_metered_calculation_page_shows_no_extracted_figure(admin_client):
@@ -479,9 +480,15 @@ def test_a_metered_calculation_page_shows_no_extracted_figure(admin_client):
         reverse("accounting:calculation_run_detail", args=[parcel.id, period])
     ).content.decode()
 
-    assert "Groundwater extracted" not in html
-    assert "Metered well" in html
-    assert "Its groundwater figure comes from the meter's reading." in html
+    # 148-03: a metered month has nothing to estimate, so it gets the short
+    # page (one sentence, a link back to the field), never the receipt.
+    assert "Estimated pumping," not in html
+    assert "= pumped" not in html
+    assert "No estimated pumping for May 2025" in html
+    assert (
+        "This field's well has a meter, so the pumping is the meter's reading "
+        "and nothing is estimated."
+    ) in html
 
 
 def test_the_balance_panel_rows_add_up_to_uses(admin_client):

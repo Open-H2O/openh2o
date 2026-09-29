@@ -27,10 +27,14 @@ User = get_user_model()
 
 pytestmark = pytest.mark.django_db
 
-# 148-03: the calculation page's result row prints the short form on its
-# cell label (a tight label, per DESIGN.md rule 12's row); the field page's own
-# line keeps the short form too.
-CARD_LABEL = "Canal water beyond crop use"
+# 148-03 (2026-09-28): the calculation page is a receipt. A well month where
+# rain and canal water covered the crop says so in the month's own numbers,
+# and what happened to the canal water beyond what the crop could use is one
+# sentence under the credited or named-line setting only; under the default
+# (not credited) the figure stands and nothing more is said. The field page's
+# own line keeps the fixed noun's short form.
+ZERO_SENTENCE = "Rain and canal water covered the crop this month, so nothing was pumped."
+EXCESS_SENTENCE = ">4.00</span> acre-feet of the canal water was more than the crop needed."
 FIELD_LABEL = "Canal water beyond crop use:"
 
 OVER = Decimal("4.0000")
@@ -38,19 +42,14 @@ SHARE = Decimal("0.100")
 CREDITED = Decimal("3.6000")
 LEFT = Decimal("0.4000")
 
-# The four sentences are literal template text (composed with floatformat
-# in the template, not a pre-built Python string), so Django's autoescape
-# never touches them; the apostrophes render plain.
-NOT_CREDITED_SENTENCE = "Recorded here and not credited to anyone."
+# The sentences are literal template text (composed with floatformat in the
+# template, not a pre-built Python string), so Django's autoescape never
+# touches them; the apostrophes render plain.
 CREDITED_FIELD_SENTENCE = (
-    "3.6000 AF is credited to this field; 0.4000 AF (10%) stays in the basin."
-)
-CREDITED_POOL_SENTENCE = (
-    "3.6000 AF is credited to the zone's shared account, because this "
-    "field has no well to pump it back; 0.4000 AF (10%) stays in the basin."
+    "3.60 acre-feet of it is credited to this field; 0.40 acre-feet (10%) stays in the basin."
 )
 NAMED_LINE_SENTENCE = (
-    "Shown on the field's page as its own line. Not a credit and not charged."
+    "It is shown on the field's page as its own line, not a credit and not charged."
 )
 
 
@@ -76,13 +75,21 @@ def _run(
     leave_behind=None,
     pooled=False,
 ):
+    # A well month rain and canal water covered: crop 10.0000, rain 8.0000,
+    # canal water the crop could use 6.0000, well water 0, and 4.0000 of the
+    # canal water beyond what the crop could use.
     return CalculationRun.objects.create(
         parcel=parcel,
         period=period,
         gross_et_af=Decimal("10.0000"),
-        net_consumptive_use_af=Decimal("10.0000"),
-        effective_precip_af=Decimal("0.0000"),
-        final_af=Decimal("10.0000"),
+        net_consumptive_use_af=Decimal("2.0000"),
+        effective_precip_af=Decimal("8.0000"),
+        surface_delivered_af=Decimal("8.0000"),
+        surface_efficiency=Decimal("0.750"),
+        surface_water_af=Decimal("6.0000"),
+        final_af=Decimal("0.0000"),
+        gw_extracted_af=Decimal("0.0000"),
+        residual_disposition="groundwater",
         over_delivery_af=over_delivery_af,
         over_delivery_treatment=treatment,
         over_delivery_leave_behind=leave_behind,
@@ -111,15 +118,16 @@ def _field_page(parcel):
 
 
 class TestCalculationPageSentenceByStamp:
-    """One of the plan's four sentences, chosen by the run's own stamp."""
+    """The zero month's sentence, and what follows it by the run's own stamp."""
 
-    def test_not_credited(self):
+    def test_not_credited_says_nothing_more(self):
         parcel = ParcelFactory(parcel_number="R148-04-A")
         _run(parcel, "2026-08", treatment="not_credited")
         html = _calc_page(parcel, "2026-08")
-        assert CARD_LABEL in html
-        assert NOT_CREDITED_SENTENCE in html
-        assert "4.0000" in html
+        assert ZERO_SENTENCE in html
+        assert EXCESS_SENTENCE in html
+        assert "credited" not in html
+        assert "its own line" not in html
 
     def test_credited_to_the_field(self):
         parcel = ParcelFactory(parcel_number="R148-04-B")
@@ -128,49 +136,37 @@ class TestCalculationPageSentenceByStamp:
             credited_af=CREDITED, leave_behind=SHARE, pooled=False,
         )
         html = _calc_page(parcel, "2026-08")
-        assert CARD_LABEL in html
+        assert EXCESS_SENTENCE in html
         assert CREDITED_FIELD_SENTENCE in html
-
-    def test_credited_to_the_pool(self):
-        parcel = ParcelFactory(parcel_number="R148-04-C")
-        _run(
-            parcel, "2026-08", treatment="credited",
-            credited_af=CREDITED, leave_behind=SHARE, pooled=True,
-        )
-        html = _calc_page(parcel, "2026-08")
-        assert CARD_LABEL in html
-        assert CREDITED_POOL_SENTENCE in html
 
     def test_named_line(self):
         parcel = ParcelFactory(parcel_number="R148-04-D")
         _run(parcel, "2026-08", treatment="named_line")
         html = _calc_page(parcel, "2026-08")
-        assert CARD_LABEL in html
+        assert EXCESS_SENTENCE in html
         assert NAMED_LINE_SENTENCE in html
 
     def test_credited_with_nothing_actually_credited_reads_as_not_credited(self):
-        """A no-well field with no zone to hold its share: `treatment` stamps
-        "credited" but `over_delivery_credited_af` stays None (148-04 Task 2's
-        `_over_delivery_decision`, the "no zone to hold it" branch). Not one of
-        the plan's four named sentences; it must read the same as
-        not_credited honestly does, never crash and never claim a credit that
-        was not made."""
+        """`treatment` stamps "credited" but `over_delivery_credited_af` stays
+        None (148-04 Task 2's `_over_delivery_decision`, the "no zone to hold
+        it" branch). It must read the same as not_credited honestly does,
+        never crash and never claim a credit that was not made."""
         parcel = ParcelFactory(parcel_number="R148-04-K")
         _run(
             parcel, "2026-08", treatment="credited",
             credited_af=None, leave_behind=SHARE, pooled=False,
         )
         html = _calc_page(parcel, "2026-08")
-        assert CARD_LABEL in html
-        assert NOT_CREDITED_SENTENCE in html
-        assert CREDITED_FIELD_SENTENCE not in html
-        assert CREDITED_POOL_SENTENCE not in html
+        assert EXCESS_SENTENCE in html
+        assert "credited" not in html
 
-    def test_zero_over_delivery_renders_no_card(self):
+    def test_zero_over_delivery_says_nothing_about_canal_water_beyond_the_crop(self):
         parcel = ParcelFactory(parcel_number="R148-04-E")
         _run(parcel, "2026-08", over_delivery_af=Decimal("0.0000"), treatment="credited")
         html = _calc_page(parcel, "2026-08")
-        assert CARD_LABEL not in html
+        assert ZERO_SENTENCE in html
+        assert "more than the crop needed" not in html
+        assert "credited" not in html
 
 
 class TestSentenceIsTheRunsOwnStamp:
@@ -188,9 +184,8 @@ class TestSentenceIsTheRunsOwnStamp:
         config.save()
 
         html = _calc_page(parcel, "2026-08")
-        assert NOT_CREDITED_SENTENCE in html
-        assert CREDITED_FIELD_SENTENCE not in html
-        assert CREDITED_POOL_SENTENCE not in html
+        assert EXCESS_SENTENCE in html
+        assert "credited" not in html
 
 
 class TestFieldPageLine:
@@ -247,11 +242,11 @@ class TestNoRecharge:
         parcel = ParcelFactory(parcel_number="R148-04-I")
         _run(
             parcel, "2026-08", treatment="credited",
-            credited_af=CREDITED, leave_behind=SHARE, pooled=True,
+            credited_af=CREDITED, leave_behind=SHARE, pooled=False,
         )
         html = _calc_page(parcel, "2026-08")
-        assert CARD_LABEL in html
-        start = html.index(CARD_LABEL)
+        assert ZERO_SENTENCE in html
+        start = html.index(ZERO_SENTENCE)
         end = html.index("</p>", start)
         segment = html[start:end]
         assert "recharge" not in segment.lower()
