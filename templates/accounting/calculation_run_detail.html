@@ -50,7 +50,7 @@
 
   <!-- Header: parcel + period + honesty label -->
   <div class="card-raised">
-    <div class="row-between">
+    <div>
       <div>
         <h2 class="section-header" style="margin-bottom: var(--space-xs);">
           {{ parcel.parcel_number }} &middot; {{ period }}
@@ -65,23 +65,20 @@
              checkpoint). It stays on the model and in the JSON for engineers. {% endcomment %}
           Methodology: <span class="text-secondary">{{ methodology_plan_name|blank }}</span>
         </div>
-      </div>
-      {% comment %} 148-03: the header says what the field HAS, which is what
-         the ending depends on, and repeats no figure (the consumed figure used
-         to sit here at 1.5rem above a band restating it larger; two fresh
-         readers faulted the repeat, 2026-09-28). The page's one headline is the
-         result row at the foot. Keyed on the run's own stamped disposition. {% endcomment %}
-      <div style="text-align: right;">
-        {% if run.residual_disposition == "metered" %}
-        <div class="field-value" style="font-weight: 600;">Metered well</div>
-        <div class="field-label" style="margin-top: 2px;">Groundwater comes from the meter's reading.</div>
-        {% elif run.residual_disposition == "unmet_demand" %}
-        <div class="field-value" style="font-weight: 600;">No well</div>
-        <div class="field-label" style="margin-top: 2px;">The remainder is water use with no supply on record.</div>
-        {% else %}
-        <div class="field-value" style="font-weight: 600;">Well, no meter</div>
-        <div class="field-label" style="margin-top: 2px;">Groundwater comes out as the remainder.</div>
-        {% endif %}
+        {% comment %} 148-03: the card says what the field HAS, which is what the
+           ending depends on, and repeats no figure (the consumed figure used to
+           sit here above a band restating it; two fresh readers faulted the
+           repeat). It sits with the field's other facts: a right-hand block over
+           an empty middle read as stranded (two readers, 2026-09-28). {% endcomment %}
+        <div class="text-sm mt-xs">
+          {% if run.residual_disposition == "metered" %}
+          <strong>Metered well.</strong> <span class="text-secondary">Groundwater comes from the meter's reading.</span>
+          {% elif run.residual_disposition == "unmet_demand" %}
+          <strong>No well.</strong> <span class="text-secondary">The remainder is water use with no supply on record.</span>
+          {% else %}
+          <strong>Well, no meter.</strong> <span class="text-secondary">Groundwater comes out as the remainder.</span>
+          {% endif %}
+        </div>
       </div>
     </div>
 
