@@ -224,6 +224,9 @@ def test_a_viewer_can_edit_their_own_contact_details(viewer):
     assert (viewer.first_name, viewer.last_name) == ("Robin", "Vale")
 
 
+# Feedback is off unless a deployment turns it on (FEEDBACK_ENABLED defaults to
+# False), so the test turns it on itself rather than relying on a local .env.
+@override_settings(FEEDBACK_ENABLED=True)
 def test_a_viewer_reaches_the_feedback_intake(viewer):
     # The honeypot answer is the view's own ({"ok": true, "ref": null}) and
     # stores nothing, so it proves the request reached the view.
