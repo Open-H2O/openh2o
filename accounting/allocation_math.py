@@ -252,8 +252,7 @@ def apportion_shared_supply(members):
             weights = {key: Decimal("1") for key in fractions}  # RUNG 4: even
 
     # Total weight is only zero if rung 2 fractions are all 0 (deliberate, but
-    # un-normalizable) — fall back to an even split rather than divide by zero,
-    # mirroring _normalize_fractions' total>0 guard.
+    # un-normalizable) — fall back to an even split rather than divide by zero.
     total_weight = sum(weights.values(), Decimal("0"))
     if total_weight <= 0:
         weights = {key: Decimal("1") for key in fractions}

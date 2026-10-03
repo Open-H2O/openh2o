@@ -433,18 +433,6 @@ if is_enabled("reporting") and is_enabled("accounting"):
         _django_apps.get_model("reporting", "ReportTemplate").REPORT_TYPE_CHOICES
     )
 
-    class ReportingProfileFactory(factory.django.DjangoModelFactory):
-        class Meta:
-            model = "reporting.ReportingProfile"
-
-        legal_entity_name = factory.Sequence(lambda n: f"Test Agency {n}")
-        # The state-issued identity fields stay BLANK by default. They are values
-        # SWRCB mails to a real agency; a plausible-looking default would be a
-        # fabricated Correspondence ID sitting in a test fixture, and the model's
-        # own docstring is explicit that OpenH2O only stores what a human
-        # supplies. A test that needs one passes it.
-        boundary = None
-
     class ReportTemplateFactory(factory.django.DjangoModelFactory):
         class Meta:
             model = "reporting.ReportTemplate"

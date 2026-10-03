@@ -184,12 +184,6 @@ def period_for(date):
     ).first()
 
 
-def is_finalized_on(date):
-    """True when ``date`` falls inside a finalized reporting period."""
-    period = period_for(date)
-    return bool(period and period.is_finalized)
-
-
 def refuse_if_finalized(date, what=""):
     """Raise :class:`PeriodFinalized` when ``date`` is inside a finalized period."""
     period = period_for(date)

@@ -26,7 +26,7 @@ from core.csv_safe import safe_row
 from core.models import SiteConfig
 from core.modules import is_enabled
 from parcels.models import Parcel, ParcelLedger
-from wells.models import Well, WellIrrigatedParcel
+from wells.models import WellIrrigatedParcel
 
 
 # ISS-056 soft divergence flag: a parcel whose stored weight and ET-implied
@@ -90,27 +90,6 @@ def calwatrs_method_label(record):
     if record.method == "device" and record.device_id:
         label = f"{label}: {record.device.get_device_type_display()}"
     return label
-
-
-def _normalize_fractions(raw_by_group):
-    """Scale each group's fractions so they sum to 1.0.
-
-    Input:  ``{group_id: [(member, fraction), ...]}``
-    Output: ``{group_id: [(member, normalized_fraction), ...]}``
-
-    The single source of truth for the double-count guard on BOTH sides — the
-    well↔parcel map and the POD↔parcel map call it — so the GEARS and CalWATRS
-    files can never drift on how a multi-member share is split. A group whose
-    fractions sum to 0 collapses to 0 (no volume attributed) rather than dividing
-    by zero.
-    """
-    normalized = {}
-    for group_id, members in raw_by_group.items():
-        total = sum(frac for _, frac in members)
-        for member, frac in members:
-            norm = frac / total if total > 0 else Decimal("0")
-            normalized.setdefault(group_id, []).append((member, norm))
-    return normalized
 
 
 def _period_demand_by_parcel(reporting_period):

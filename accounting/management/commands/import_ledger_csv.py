@@ -141,13 +141,3 @@ class Command(BaseCommand):
                     f"    Row {row['row']}: {row['source_type']} "
                     f"{row['before']} -> {row['after']}"
                 )
-
-    @staticmethod
-    def _parse_date(date_str):
-        """Parse a date string in YYYY-MM-DD or MM/DD/YYYY format."""
-        for fmt in ("%Y-%m-%d", "%m/%d/%Y"):
-            try:
-                return datetime.strptime(date_str, fmt).date()
-            except ValueError:
-                continue
-        return None
