@@ -23,9 +23,11 @@ Everything else here proves the warning appears; only that one proves it is a
 distinction rather than a blanket "we can't be sure" disclaimer over every
 dashboard.
 """
-from datetime import date
+from datetime import date, datetime
+from datetime import timezone as dt_timezone
 from decimal import Decimal
 from io import StringIO
+from unittest import mock
 
 import factory
 import pytest
@@ -54,6 +56,9 @@ PERIOD_END = date(2026, 9, 30)
 BANNER = "Consumptive use has not been calculated for this period"
 ALL_CLEAR = "All clear"
 NOT_CALCULATED = "Not calculated"
+
+# A moment inside the fixture's water year (see the clock note in the render).
+INSIDE_THE_PERIOD = datetime(2026, 6, 15, 12, 0, tzinfo=dt_timezone.utc)
 
 
 class UserFactory(factory.django.DjangoModelFactory):
@@ -105,7 +110,11 @@ def _run(parcel, gross_et="12.0000", net="10.0000", period="2026-01"):
 def _dashboard(period):
     client = Client()
     client.force_login(UserFactory())
-    response = client.get(reverse("accounting:dashboard") + f"?period={period.pk}")
+    # Hold the dashboard's clock inside the fixture's water year. On any day
+    # after it ends (2026-09-30) the dashboard rightly lists it as a period to
+    # close, which is not what this test is about.
+    with mock.patch("accounting.views.timezone.now", return_value=INSIDE_THE_PERIOD):
+        response = client.get(reverse("accounting:dashboard") + f"?period={period.pk}")
     assert response.status_code == 200
     return response.content.decode()
 

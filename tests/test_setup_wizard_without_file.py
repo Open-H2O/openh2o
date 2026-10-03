@@ -243,6 +243,9 @@ class TestStepThreePicker:
         # Nothing was populated.
         assert Parcel.objects.count() == 0
 
+    # The kept step (basins) fetches from gis.water.ca.gov for real, so this
+    # test needs the internet and CI leaves it out (see pyproject markers).
+    @pytest.mark.network
     def test_posting_selected_steps_runs_only_those(self):
         boundary = _boundary()
         client = _admin_client()

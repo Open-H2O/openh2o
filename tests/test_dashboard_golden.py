@@ -19,9 +19,11 @@ As with the nav fixtures: if this fails, fix the template. Regenerating
 """
 import os
 import re
-from datetime import date
+from datetime import date, datetime
+from datetime import timezone as dt_timezone
 from decimal import Decimal
 from pathlib import Path
+from unittest import mock
 
 import factory
 import pytest
@@ -39,6 +41,9 @@ from tests.factories import (
     WaterTypeFactory,
     ZoneFactory,
 )
+
+# A moment inside the fixture's water year (see the clock note in the render).
+INSIDE_THE_PERIOD = datetime(2026, 6, 15, 12, 0, tzinfo=dt_timezone.utc)
 
 
 class UserFactory(factory.django.DjangoModelFactory):
@@ -111,7 +116,11 @@ def dashboard_html(db):
 
     client = Client()
     client.force_login(UserFactory())
-    response = client.get(reverse("accounting:dashboard") + f"?period={period.pk}")
+    # Hold the dashboard's clock inside the fixture's water year. On any day
+    # after it ends (2026-09-30) the dashboard rightly lists it as a period to
+    # close, which is not what this test is about.
+    with mock.patch("accounting.views.timezone.now", return_value=INSIDE_THE_PERIOD):
+        response = client.get(reverse("accounting:dashboard") + f"?period={period.pk}")
     assert response.status_code == 200
     return response.content.decode()
 

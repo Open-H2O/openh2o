@@ -1,0 +1,88 @@
+name: tests
+
+# Runs the lint check and the full pytest suite on every push and pull request.
+# The two jobs in clean-install.yml prove what a fresh install and the demo
+# contain; this workflow proves the code still does what its tests say.
+#
+# The suite runs inside the web image, against PostGIS, exactly as `make test`
+# runs it locally, so CI and a contributor's machine cannot disagree about the
+# environment.
+#
+# Tests marked `network` are left out here. They reach real public services
+# (state and federal GIS endpoints), and a gate that goes red because one of
+# those had a bad afternoon is a gate people learn to ignore. `make test` still
+# runs them.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # Pinned so a ruff release that adds or changes a rule cannot turn the
+      # build red without a commit here. The rule set lives in pyproject.toml.
+      - name: Install ruff
+        run: pip install ruff==0.16.10
+      - name: Lint
+        run: ruff check .
+
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60  # backstop: a hung run fails here instead of at the 6h runner limit
+    env:
+      # Throwaway values for CI only, not secrets. Same as clean-install.yml.
+      DJANGO_SETTINGS_MODULE: config.settings.local
+      SECRET_KEY: ci-tests-not-a-secret
+      POSTGRES_DB: openh2o
+      POSTGRES_USER: openh2o
+      POSTGRES_PASSWORD: openh2o
+    steps:
+      - uses: actions/checkout@v4
+
+      # docker-compose.yml's web service declares `env_file: .env`, which is
+      # gitignored and absent on a clean checkout. Same throwaway file as
+      # clean-install.yml.
+      - name: Write throwaway CI .env
+        run: |
+          cat > .env <<'EOF'
+          SECRET_KEY=ci-tests-not-a-secret
+          DJANGO_SETTINGS_MODULE=config.settings.local
+          POSTGRES_DB=openh2o
+          POSTGRES_USER=openh2o
+          POSTGRES_PASSWORD=openh2o
+          EOF
+
+      - name: Build web image
+        run: docker compose build web
+
+      # Starting web runs its normal boot (collectstatic, migrate) and waits for
+      # its health check, so a broken boot fails here with the boot's own error
+      # rather than as a wall of test failures.
+      - name: Start database and web
+        run: docker compose up -d --wait db web
+
+      - name: Run the test suite
+        run: >-
+          docker compose exec -T web
+          python -m pytest tests/
+          --ds=config.settings.local
+          -m "not network"
+          -p no:cacheprovider
+          -q
+
+      - name: Web log on failure
+        if: failure()
+        run: docker compose logs web --tail 200
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
