@@ -47,12 +47,16 @@ def source():
 
 def test_prunes_zero_and_one_record_stations(source):
     empty = _station(source, "EMPTY", "Empty Gauge")           # 0 records
-    thin = _station(source, "THIN", "Thin Gauge"); _publish(thin, 1)   # 1 record
-    rich = _station(source, "RICH", "Rich Gauge"); _publish(rich, 5)   # 5 records
+    thin = _station(source, "THIN", "Thin Gauge")
+    _publish(thin, 1)   # 1 record
+    rich = _station(source, "RICH", "Rich Gauge")
+    _publish(rich, 5)   # 5 records
 
     call_command("prune_dataless_stations", stdout=StringIO())
 
-    empty.refresh_from_db(); thin.refresh_from_db(); rich.refresh_from_db()
+    empty.refresh_from_db()
+    thin.refresh_from_db()
+    rich.refresh_from_db()
     assert empty.is_active is False
     assert thin.is_active is False
     assert rich.is_active is True
@@ -68,7 +72,8 @@ def test_dry_run_changes_nothing(source):
 
 
 def test_min_records_threshold(source):
-    two = _station(source, "TWO", "Two-record Gauge"); _publish(two, 2)
+    two = _station(source, "TWO", "Two-record Gauge")
+    _publish(two, 2)
 
     # Default min=2 keeps it; raising to 3 prunes it.
     call_command("prune_dataless_stations", stdout=StringIO())
@@ -96,7 +101,8 @@ def test_only_published_records_count(source):
 
 def test_delete_flag_removes_dataless_station(source):
     empty = _station(source, "EMPTY", "Empty Gauge")
-    rich = _station(source, "RICH", "Rich Gauge"); _publish(rich, 5)
+    rich = _station(source, "RICH", "Rich Gauge")
+    _publish(rich, 5)
 
     call_command("prune_dataless_stations", "--delete", stdout=StringIO())
 
@@ -105,8 +111,11 @@ def test_delete_flag_removes_dataless_station(source):
 
 
 def test_purge_inactive_deletes_inactive_keeps_active(source):
-    inactive = _station(source, "OLD", "Wide-net Gauge"); inactive.is_active = False; inactive.save()
-    rich = _station(source, "RICH", "Rich Gauge"); _publish(rich, 5)
+    inactive = _station(source, "OLD", "Wide-net Gauge")
+    inactive.is_active = False
+    inactive.save()
+    rich = _station(source, "RICH", "Rich Gauge")
+    _publish(rich, 5)
 
     call_command("prune_dataless_stations", "--purge-inactive", stdout=StringIO())
 
@@ -127,7 +136,8 @@ def test_chart_data_only_offers_measured_parameters(source):
     DataRecordStaging.objects.filter(station=s).update(parameter_code="15")
 
     user = User.objects.create_user("p", "p@example.com", "pw12345")
-    c = Client(); c.force_login(user)
+    c = Client()
+    c.force_login(user)
     resp = c.get(f"/datasync/stations/{s.pk}/chart-data/")
     codes = {p["code"] for p in resp.json()["parameters"]}
     assert "15" in codes
@@ -147,7 +157,8 @@ def test_station_detail_parameter_chips_are_deduped(source):
     _publish(s, 6)  # 6 readings, all parameter_code "20"
 
     user = User.objects.create_user("d", "d@example.com", "pw12345")
-    c = Client(); c.force_login(user)
+    c = Client()
+    c.force_login(user)
     resp = c.get(f"/datasync/stations/{s.pk}/")
     enriched = resp.context["enriched_parameters"]
     codes = [p["code"] for p in enriched]

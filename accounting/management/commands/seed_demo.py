@@ -70,7 +70,7 @@ class Command(BaseCommand):
                 defaults={
                     "geometry": make_box(cx, cy, size),
                     "zone_type": ztype,
-                    "description": f"Demo zone for testing",
+                    "description": "Demo zone for testing",
                 },
             )
             zones.append(z)
@@ -185,7 +185,7 @@ class Command(BaseCommand):
                         amount_acre_feet=supply,
                         water_type=gw,
                         source_type="meter_reading",
-                        description=f"Monthly groundwater extraction",
+                        description="Monthly groundwater extraction",
                         reporting_period=period,
                     ))
                     # Usage: crop ET (negative)
@@ -197,7 +197,7 @@ class Command(BaseCommand):
                         amount_acre_feet=-usage,
                         water_type=gw,
                         source_type="et_estimate",
-                        description=f"Monthly ET consumption estimate",
+                        description="Monthly ET consumption estimate",
                         reporting_period=period,
                     ))
 

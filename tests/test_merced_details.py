@@ -14,7 +14,7 @@ from accounting.models import WaterAccount
 from measurements.models import Meter
 from parcels.models import Parcel
 from surface.models import WaterRight
-from wells.models import Well, WellMeter
+from wells.models import WellMeter
 
 from tests.factories import (
     ParcelFactory,

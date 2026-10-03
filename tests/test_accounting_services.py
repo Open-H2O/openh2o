@@ -4,7 +4,6 @@ from datetime import date
 from decimal import Decimal
 
 import pytest
-from django.db import IntegrityError
 
 from accounting.models import AllocationCarryover
 from parcels.models import ParcelLedger
@@ -426,7 +425,7 @@ class TestParseLedgerCsv:
         return io.BytesIO(text.encode("utf-8"))
 
     def test_valid(self):
-        parcel = ParcelFactory(parcel_number="P-001")
+        ParcelFactory(parcel_number="P-001")
         csv_text = (
             "parcel_number,effective_date,amount_acre_feet,source_type\n"
             "P-001,2024-01-15,10.5,manual_entry\n"
@@ -646,7 +645,6 @@ class TestParseLedgerCsvSharedGuards:
 class TestParcelAreaAutoCalc:
     def test_auto_computes_area_from_geometry(self):
         """Parcel with geometry but no area_acres gets area auto-computed on save."""
-        from parcels.models import Parcel
 
         parcel = ParcelFactory(area_acres=None)
         # Refresh from DB to get the value set by the signal via queryset.update()
@@ -758,7 +756,6 @@ class TestGearsWellFractionNormalization:
 
         output = generate_gears_csv(period, method="by_well")
         content = output.read()
-        lines = [l for l in content.strip().split("\n") if well.name in l or (well.well_registration_id or "") in l]
 
         # Parse all volume values from matching rows
         # CSV: reg_id, name, lat, lon, month, volume, method
@@ -845,7 +842,7 @@ class TestNullWaterRightGuards:
         # Must not raise, and must emit header only — no blank-key data row.
         output = generate_calwatrs_csv(period, template_type="a1")
         content = output.read()
-        lines = [l for l in content.strip().split("\n") if l]
+        lines = [line for line in content.strip().split("\n") if line]
         assert len(lines) == 1  # header only; the blank-key row is withheld
 
 

@@ -31,12 +31,13 @@ from datasync.adapters.gee import (
     reduce_et_with_spread_by_parcel,
 )
 from datasync.adapters.openet import UNITLESS_VARIABLES, OpenETAdapter
+from datasync.freshness import EXPECTED_DATA_INTERVAL_HOURS
 
 
 def _spread_unit(variable):
     """Millimetres of water, except the model tally which counts models."""
     return "count" if variable in UNITLESS_VARIABLES else "mm"
-from datasync.freshness import EXPECTED_DATA_INTERVAL_HOURS
+
 
 logger = logging.getLogger(__name__)
 

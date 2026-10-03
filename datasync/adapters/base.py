@@ -22,7 +22,7 @@ import requests
 from django.conf import settings
 from django.utils import timezone
 
-from datasync.models import DataRecordStaging, DataSource, DataSyncLog, MonitoredStation
+from datasync.models import DataRecordStaging, DataSyncLog, MonitoredStation
 
 logger = logging.getLogger(__name__)
 

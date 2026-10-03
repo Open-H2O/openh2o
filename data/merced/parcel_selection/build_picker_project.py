@@ -18,7 +18,6 @@ import sys
 from qgis.core import (
     QgsApplication, QgsProject, QgsVectorLayer, QgsRasterLayer,
     QgsCoordinateReferenceSystem, QgsEditorWidgetSetup,
-    QgsSymbol, QgsRendererCategory, QgsCategorizedSymbolRenderer,
     QgsRuleBasedRenderer,
     QgsSingleSymbolRenderer, QgsPalLayerSettings, QgsTextFormat,
     QgsVectorLayerSimpleLabeling, QgsTextBufferSettings, QgsMarkerSymbol,
@@ -189,7 +188,7 @@ def main():
 
     proj.write(OUT)
     print(f"wrote {OUT}")
-    print(f"layers: {[l.name() for l in proj.mapLayers().values()]}")
+    print(f"layers: {[layer.name() for layer in proj.mapLayers().values()]}")
     app.exitQgis()
 
 

@@ -24,11 +24,10 @@ Diversion/recharge ledger integration utilities and balance calculations.
 #   Well.capacity_gpm                    max_digits=8,  decimal_places=2 → max 999,999 GPM
 #   PointOfDiversion.max_rate_cfs        max_digits=10, decimal_places=4 → max 999,999 CFS
 
-import csv
 import io
 import logging
 from datetime import datetime
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 
 from django.db import transaction
 from django.db.models import Case, DecimalField, F, OuterRef, Q, Subquery, Sum, When

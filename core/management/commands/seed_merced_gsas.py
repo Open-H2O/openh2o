@@ -150,7 +150,6 @@ class Command(BaseCommand):
                     best, best_iou = zone, iou
             if best is None or best_iou < SAME_ZONE_IOU:
                 continue
-            old = best.name
             best.name = name
             best.save(update_fields=["name"])
             stale.remove(best)

@@ -24,7 +24,6 @@ from django.core.management import call_command
 
 from core.management.commands import seed_merced_parcels_from_selection as seed_cmd
 from datasync.models import OpenETCache
-from geography.models import Zone
 from parcels.models import Parcel
 
 CMD = "seed_merced_parcels_from_selection"

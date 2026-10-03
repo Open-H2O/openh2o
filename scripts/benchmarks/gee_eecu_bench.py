@@ -30,7 +30,10 @@ A 50,000-parcel district at ~70-acre fields => ~0.63 EECU-hours/yr => ~$0.25/yr.
 Usage: gee_eecu_bench.py <label> <n_replicas> <filterbounds:0|1> [year]
   GEOM_MODE=real|tiny|big controls field size (isolates the area component).
 """
-import json, os, sys, time
+import json
+import os
+import sys
+import time
 import ee
 
 PROJECT = os.environ.get("GEE_PROJECT", "gis-pipeline-495516")

@@ -47,8 +47,6 @@ from django.contrib.auth.hashers import make_password
 from django.test import Client
 from django.urls import reverse
 
-from tests.factories import BoundaryFactory
-
 #: (path, the ``?type=`` values this page may offer, or None for "may offer neither")
 #:
 #: The rule is *offer only what you list*, so the allowed set is whatever the

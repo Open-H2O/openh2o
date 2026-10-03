@@ -13,7 +13,6 @@ harness would keep asking for a page the view had stopped serving, or worse,
 stop asking for one it still serves. These tests are the join.
 """
 import pytest
-from django.test import Client
 from django.urls import reverse
 
 from config.views import EXPLAINER_MODULES, explainer_is_available

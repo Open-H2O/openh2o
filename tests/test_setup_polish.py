@@ -196,7 +196,7 @@ def test_rerun_discovery_does_not_auto_enable(db):
     """The discovery step creates stations inactive; only the explicit enable
     step flips them. A re-discovery of an already-present station must not
     silently activate it."""
-    boundary = _boundary()
+    _boundary()
     wdl = _source()
     station = _station(wdl, "A1", -119.25, 36.25, active=False)
 

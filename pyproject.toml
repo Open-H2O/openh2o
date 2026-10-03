@@ -39,9 +39,60 @@ dev = [
     "pytest>=8.0",
     "pytest-django>=4.8",
     "factory-boy>=3.3",
+    "ruff>=0.16",
 ]
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings.local"
 python_files = ["tests.py", "test_*.py", "*_tests.py"]
 pythonpath = ["."]
+markers = [
+    "network: reaches a real public service over the internet; CI runs -m 'not network'",
+]
+
+[tool.ruff]
+# Deliberately small rule set (pycodestyle errors E4/E7/E9 and pyflakes F) and no
+# formatter configured: widen the set deliberately later, never with a reformat.
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+
+[tool.ruff.lint.per-file-ignores]
+# Adapters register themselves on import, after the helpers above them exist.
+"datasync/adapters/__init__.py" = ["E402"]
+# Fixtures imported from a shared module and then taken as test parameters (pytest idiom).
+"tests/**" = ["F811"]
+
+# Dead-code scan (`uvx vulture@2.16`, reads this table). The whitelist below names
+# Django, allauth and pytest hooks that are called by name, never from our own code.
+# Unused-variable and unused-attribute findings at 60% are mostly model and form
+# field declarations that Django reads by introspection, so they are not signal.
+[tool.vulture]
+paths = ["."]
+exclude = ["*/migrations/*", ".planning/*", "*/.planning/*", "node_modules/*", "*/node_modules/*", "staticfiles/*", "*/staticfiles/*", ".venv/*", "venv/*"]
+min_confidence = 60
+ignore_decorators = ["@admin.register", "@receiver", "@register.*", "@pytest.fixture"]
+ignore_names = [
+    # Management commands, app configs and middleware: Django calls these by name.
+    "add_arguments", "handle", "ready", "process_*", "*Config", "Meta",
+    "FinalizedPeriodMiddleware", "ReadOnlyMiddleware",
+    # django-allauth adapter (named in settings) and its hook.
+    "AccessControlledAccountAdapter", "is_open_for_signup",
+    # Admin permission hooks, form clean_<field> hooks, model natural keys.
+    "has_add_permission", "has_change_permission", "clean_*",
+    "natural_key", "get_by_natural_key",
+    # Context processors named in config/settings/base.py TEMPLATES.
+    "access_flags", "setup_status", "analytics", "feedback", "app_version", "google_sign_in",
+    # Model and form members read only from templates.
+    "over_delivery_options", "direct_season_display", "storage_season_display",
+    "evaporation_display", "seepage_display", "spill_display", "accuracy_display",
+    "is_partial_return", "method_display",
+    # html.parser.HTMLParser callbacks in test helpers.
+    "handle_starttag", "handle_endtag",
+    # Django system-check signature: checks receive app_configs whether they read it or not.
+    "app_configs",
+    # pytest fixture and mock parameters: a test names a fixture to run it, not to read it
+    # (vulture reports these at 100%), and a stub or patch must keep the real signature.
+    "epa", "two_populated_modules", "shape_2", "source_window", "placeholder_site",
+    "unmapped_system", "both_water_years", "seeded_with_basins", "facility_mix",
+    "gsa_zone", "one_system", "mock_budget", "django_db_setup", "self_inner", "reducer",
+]

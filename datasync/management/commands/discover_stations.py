@@ -68,10 +68,9 @@ class Command(BaseCommand):
 
         # Discover
         if options["mock"]:
-            # Load station list from fixture
-            mock_data = adapter.fetch_mock(None, None, None)
-            # Expect the fixture to have a "stations" key at the top level,
-            # but fetch_mock returns "records". Load stations directly.
+            # Load the station list from the fixture. The adapter's fetch_mock
+            # returns the fixture's "records" (readings); stations sit under a
+            # top-level "stations" key, so read the file directly.
             import json
             from pathlib import Path
             fixture_path = (

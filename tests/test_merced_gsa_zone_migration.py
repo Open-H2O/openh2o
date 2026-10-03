@@ -15,7 +15,7 @@ to migrate off them would put a real public agency straight back in the repo.
 import json
 
 import pytest
-from django.contrib.gis.geos import MultiPolygon, Point, Polygon
+from django.contrib.gis.geos import MultiPolygon, Polygon
 
 from core.management.commands.seed_merced_gsas import (
     BASIN_CODE,

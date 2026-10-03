@@ -65,10 +65,6 @@ def run_auto_populate_step(boundary: Boundary, step_name: str) -> tuple:
     code duplication. Uses a lightweight Command instance with a captured
     stdout buffer.
     """
-    import io
-
-    from django.core.management import call_command
-
     from geography.management.commands.auto_populate import Command
 
     class SilentCommand(Command):
@@ -106,7 +102,7 @@ def run_auto_populate_step(boundary: Boundary, step_name: str) -> tuple:
 # with the management command. The wizard iterates this one provider per HTMX
 # poll so a slow/failing provider is an isolated, short request (ISS-051).
 from geography.management.commands.auto_populate import (  # noqa: E402
-    STATION_SOURCE_CODES as STATION_PROVIDERS,
+    STATION_SOURCE_CODES as STATION_PROVIDERS,  # noqa: F401 (re-export: setup/views.py and tests import it from here)
 )
 
 # Friendly, plain-language messages for the non-failure skip outcomes, so the
@@ -163,7 +159,7 @@ def run_station_provider_step(boundary: Boundary, code: str) -> tuple:
     cmd = SilentCommand()
     try:
         count, status = cmd._discover_provider(boundary, code, dry_run=False)
-    except Exception as exc:
+    except Exception:
         # _discover_provider is fail-soft, but guard the wizard against any
         # unforeseen error so the poll always returns a renderable result.
         logger.exception("Provider '%s' discovery failed for boundary %s", code, boundary.pk)

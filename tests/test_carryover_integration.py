@@ -139,7 +139,7 @@ class TestUsageByType:
         assert buckets["GW"] == Decimal("42.0000")
 
     def test_calculated_row_suppresses_its_et_estimate_twin(self):
-        gw = gw_type()
+        gw_type()
         zone = ZoneFactory()
         parcel = ParcelFactory()
         ParcelZoneFactory(parcel=parcel, zone=zone)

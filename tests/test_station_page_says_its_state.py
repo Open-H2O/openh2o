@@ -10,7 +10,6 @@ telemetry axis for a station that had never published a reading.
 Every station and source name here is fictional (`Probe ...`), never a name
 from the session-scoped Merced seed, so this file cannot collide with it.
 """
-from datetime import timedelta
 from decimal import Decimal
 
 import pytest

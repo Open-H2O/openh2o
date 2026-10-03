@@ -327,7 +327,8 @@ def centroid_and_bbox(geometry):
     """Average-vertex centroid + [minLon, minLat, maxLon, maxLat] for a geometry dict."""
     xs, ys = [], []
     for lon, lat in ((p[0], p[1]) for p in _iter_positions(geometry.get("coordinates", []))):
-        xs.append(lon); ys.append(lat)
+        xs.append(lon)
+        ys.append(lat)
     if not xs:
         return None, None, None
     cx = sum(xs) / len(xs)
@@ -491,7 +492,6 @@ def build_bundle():
             well_members.setdefault(wg or f"solo-{seq}", []).append(number)
 
     # --- River Flood-MAR parcels (no well; surface over-delivery -> basin pool) ---
-    river_start = len(parcels)
     for j, feat in enumerate(river_fc["features"], start=1):
         p = feat["properties"]
         geom = feat["geometry"]

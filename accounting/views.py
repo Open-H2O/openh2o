@@ -13,7 +13,6 @@ that tune the calculation engine.
 from decimal import Decimal
 
 import csv as csv_module
-import io
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required

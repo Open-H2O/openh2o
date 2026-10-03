@@ -40,7 +40,7 @@ import pytest
 from django.contrib.gis.geos import MultiPolygon, Polygon
 from django.core.management import call_command
 
-from accounting.models import CalculationPlan, CalculationRun, ReportingPeriod
+from accounting.models import CalculationPlan, CalculationRun
 from accounting.services import et_mm_to_acre_feet
 from core.models import SiteConfig
 from parcels.models import CropType, Parcel, ParcelLedger, UsageLocation

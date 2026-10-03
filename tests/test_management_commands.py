@@ -140,7 +140,6 @@ class TestPruneOldData:
 
     def test_prune_dry_run_deletes_nothing(self):
         """Dry run should not delete any records."""
-        from datasync.models import DataSyncLog
         from health.models import HealthCheckResult
 
         # Create some health check results first

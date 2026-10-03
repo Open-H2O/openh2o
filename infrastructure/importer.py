@@ -33,9 +33,7 @@ from django.contrib.gis.gdal import DataSource, GDALException
 from django.contrib.gis.geos import (
     GEOSException,
     GEOSGeometry,
-    MultiPolygon,
     Point,
-    Polygon,
 )
 from django.db import transaction
 

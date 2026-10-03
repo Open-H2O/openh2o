@@ -21,14 +21,13 @@ What remains under test:
    or a count is MISSING — absent must stay distinguishable from zero.
 """
 
-from datetime import date, timedelta
+from datetime import date
 from unittest.mock import MagicMock, patch
 
 import pytest
 from django.contrib.gis.geos import MultiPolygon, Polygon
-from django.utils import timezone
 
-from accounting.confidence import EnsembleConfidence, parcel_ensemble_confidence
+from accounting.confidence import parcel_ensemble_confidence
 from datasync.adapters.openet import SPREAD_VARIABLES, OpenETAdapter
 from datasync.models import OpenETCache
 

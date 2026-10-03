@@ -155,7 +155,7 @@ def main():
 
     proj.write(OUT)
     print(f"wrote {OUT}")
-    print(f"layers: {[l.name() for l in proj.mapLayers().values()]}")
+    print(f"layers: {[layer.name() for layer in proj.mapLayers().values()]}")
     app.exitQgis()
 
 

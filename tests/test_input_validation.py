@@ -16,7 +16,6 @@ from django.test import Client
 from django.urls import reverse
 from django.utils.http import urlencode
 
-from parcels.models import Parcel
 from surface.models import PointOfDiversion
 from tests.factories import ParcelFactory, WellFactory
 from wells.models import Well

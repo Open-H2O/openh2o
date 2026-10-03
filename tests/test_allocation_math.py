@@ -179,7 +179,7 @@ def _raises(fn):
         fn()
     except ValueError:
         return True
-    except Exception as exc:  # noqa: BLE001 — wrong exception type is still a failure
+    except Exception:  # noqa: BLE001 — wrong exception type is still a failure
         return False
     return False
 

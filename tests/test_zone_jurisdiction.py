@@ -23,7 +23,6 @@ from django.core.exceptions import ValidationError
 from django.test import Client
 from django.urls import reverse
 
-from geography.models import Zone
 from tests.factories import ZoneFactory
 
 pytestmark = pytest.mark.django_db

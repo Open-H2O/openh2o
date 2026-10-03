@@ -330,7 +330,10 @@ def test_disabling_a_module_removes_only_its_own_nav():
     # Compare only module-owned labels on both sides; Home and the Help links
     # are hand-written and belong to neither module.
     survivors = {e.label for spec in enabled_modules(kept) for e in spec.nav}
-    keep_only = lambda html: [l for l in _labels_in_order(html) if l in survivors]
+
+    def keep_only(html):
+        return [label for label in _labels_in_order(html) if label in survivors]
+
     assert keep_only(trimmed) == keep_only(full)
 
 

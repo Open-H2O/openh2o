@@ -35,7 +35,6 @@ from django.test import Client
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
-from drinking.models import SampleResult
 from tests.factories import (
     AnalyteFactory,
     RegulatoryLimitFactory,

@@ -2,7 +2,7 @@
 """Forms for reporting periods, allocation plans, and water accounts."""
 from django import forms
 
-from accounting.models import AllocationPlan, ReportingPeriod, WaterAccount, WaterType
+from accounting.models import AllocationPlan, ReportingPeriod, WaterAccount
 from core.history import CHANGE_NOTE_HELP, NOTE_MAX_LENGTH
 from core.modules import is_enabled
 from parcels.models import ParcelLedger

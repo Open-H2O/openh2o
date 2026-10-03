@@ -19,7 +19,6 @@ from io import StringIO
 from types import SimpleNamespace
 
 import pytest
-import requests
 from django.core.management import call_command
 from django.core.management.base import CommandError
 

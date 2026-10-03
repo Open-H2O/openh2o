@@ -24,7 +24,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from PIL import Image
 
-from feedback.models import Feedback, FeedbackAttachment
+from feedback.models import Feedback
 
 User = get_user_model()
 SUBMIT_URL = reverse("feedback:submit")

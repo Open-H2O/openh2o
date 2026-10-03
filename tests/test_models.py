@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 from datetime import date
-from decimal import Decimal
 
 import pytest
 from django.db import IntegrityError
@@ -8,7 +7,6 @@ from django.db import IntegrityError
 from tests.factories import (
     DiversionRecordFactory,
     ParcelFactory,
-    ParcelZoneFactory,
     PointOfDiversionFactory,
     RechargeEventFactory,
     RechargeSiteFactory,

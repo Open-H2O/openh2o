@@ -413,7 +413,7 @@ class Command(BaseCommand):
         # 9. Reporting Periods (2 water years)
         # ----------------------------------------------------------------
         self.stdout.write("Creating reporting periods...")
-        wy2024 = ReportingPeriod.objects.create(
+        ReportingPeriod.objects.create(
             name="WY 2023-2024",
             start_date=date(2023, 10, 1),
             end_date=date(2024, 9, 30),

@@ -20,7 +20,11 @@ Usage (always pass --shape N first):
   walk.py --shape 1 shot /path /abs/out.png         [--full]
   walk.py --shape 1 js /path "document.title"
 """
-import argparse, json, os, sys, time
+import argparse
+import json
+import os
+import sys
+import time
 from playwright.sync_api import sync_playwright
 
 STATE_DIR = os.environ.get("OPENH2O_WALK_STATE", "/tmp/openh2o-walk-state")

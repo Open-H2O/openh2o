@@ -10,7 +10,9 @@ is the register's blast-radius source.
 Counts are grep counts over template SOURCE, not renders: they say which surfaces a
 reader should expect on the page, so a slice reader skips none. They are not verdicts.
 """
-import json, re, sys, os
+import json
+import re
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent

@@ -25,7 +25,6 @@ import urllib.parse
 import urllib.request
 
 import geopandas as gpd
-import pandas as pd
 from shapely.geometry import shape
 
 HERE = "/Users/slate/GitHub/openh2o/data/merced/basin_selection"

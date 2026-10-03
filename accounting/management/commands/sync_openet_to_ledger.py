@@ -21,7 +21,7 @@ Usage:
 """
 
 import logging
-from datetime import date, datetime
+from datetime import datetime
 from decimal import Decimal
 
 from django.core.management.base import BaseCommand, CommandError
@@ -30,7 +30,7 @@ from django.utils import timezone
 
 from accounting.services import et_mm_to_acre_feet
 from datasync.models import OpenETCache
-from parcels.models import Parcel, ParcelLedger
+from parcels.models import ParcelLedger
 
 logger = logging.getLogger(__name__)
 

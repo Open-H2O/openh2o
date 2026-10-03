@@ -12,12 +12,10 @@ import json
 import re
 from datetime import timedelta
 
-from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.gis.geos import Point
 from django.core.paginator import Paginator
-from django.core.serializers import serialize
-from django.db.models import Count, Q
+from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone

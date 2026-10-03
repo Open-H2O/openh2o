@@ -7,10 +7,10 @@ sync behavior, and budget enforcement.
 """
 
 from datetime import timedelta
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
-from django.contrib.gis.geos import MultiPolygon, Point, Polygon
+from django.contrib.gis.geos import MultiPolygon, Polygon
 from django.utils import timezone
 
 from datasync.adapters.openet import OpenETAdapter

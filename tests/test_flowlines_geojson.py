@@ -28,7 +28,6 @@ from django.core.cache import cache
 from django.test import Client, override_settings
 from django.urls import reverse
 
-from geography.models import Flowline
 from tests.factories import FlowlineFactory
 
 

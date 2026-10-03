@@ -270,7 +270,7 @@ def test_the_trend_column_never_prints_a_bare_dash_for_one_or_zero_readings():
         observation_date=timezone_now_utc(), parameter_code="flow",
         value="12.0000", unit="cfs", status="published",
     )
-    no_readings = MonitoredStation.objects.create(
+    MonitoredStation.objects.create(
         data_source=src, external_station_id="R075-NONE", station_name="R075 No Readings",
         location=Point(-119.6, 36.6), is_active=True,
     )

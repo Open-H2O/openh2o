@@ -807,7 +807,6 @@ class Command(BaseCommand):
         # Local import: `surface` is an optional module (Phase 87) — see `_flush`.
         from surface.models import (
             PointOfDiversion,
-            PointOfDiversionParcel,
             WaterRight,
             WaterRightType,
         )
