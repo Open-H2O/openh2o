@@ -36,7 +36,7 @@ from accounting.models import CalculationRequest
 from core.access import READ_ONLY_MESSAGE
 from core.models import SiteConfig
 from parcels.models import ParcelLedger
-from surface.models import DiversionRecord
+from surface.models import DiversionRecord, MeasuringDevice, PointOfDiversionDevice
 from tests.factories import ReportingPeriodFactory, WaterRightFactory
 from tests.test_run_accounting import (  # noqa: F401  (world is a fixture)
     FEB,
@@ -396,6 +396,15 @@ def test_deleting_a_diversion_record_clears_the_months_divided_up_rows(world, fu
     _run_months("2024-01")
     assert _split(JAN) == {"RA-B": Decimal("-10.0000"), "RA-C": Decimal("-10.0000")}
     record = DiversionRecord.objects.get(point_of_diversion=world.pod, month=JAN)
+    # A metered canal: without a meter, a month with no record left would get
+    # a delivery estimated from its fields' crop water use instead
+    # (tests/test_diversion_estimate.py).
+    PointOfDiversionDevice.objects.create(
+        point_of_diversion=world.pod,
+        device=MeasuringDevice.objects.create(
+            nickname="Gate meter", device_type="inline_flow_meter"
+        ),
+    )
 
     response = _client(operator).post(
         reverse("surface:diversion_record_delete", args=[world.pod.pk, record.pk])

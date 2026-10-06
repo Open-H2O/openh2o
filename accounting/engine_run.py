@@ -8,7 +8,10 @@ a saved diversion record and the command line all now run the SAME sequence
 through this module, one month at a time, oldest first:
 
   1. ``run_calculations`` for the month (never ``--force``);
-  2. only when the ``surface`` module is on, ``allocate_district_delivery`` for
+  2. only when the ``surface`` module is on, ``surface.estimate.estimate_month``
+     (a ditch with no meter and no typed volume gets its delivery estimated from
+     its fields' crop water use, capped at what its water right allows), then
+     ``allocate_district_delivery`` for
      every active point of diversion that has a record in the month or serves
      fields (canal losses come off the top, and seepage goes to the district's
      pool; a point whose loss shares leave nothing for the fields stops the
@@ -242,8 +245,12 @@ def run_month(month, *, request=None):
     with transaction.atomic():
         _engine(text, out)
         if is_enabled("surface"):
+            from surface.estimate import estimate_month
             from surface.services import allocate_district_delivery
 
+            # The estimate is written before the points are read and split, so
+            # an estimated point is divided among its fields in the same month.
+            estimate_month(first, raw)
             for pod in _points_of_diversion(first):
                 allocate_district_delivery(pod, None, months=[first], notes=raw)
             _engine(text, out)
@@ -274,6 +281,12 @@ def _note_sentences(raw):
     spill = Decimal("0")
     loss_points = set()
     no_zone = []
+    estimated_points = set()
+    estimated_months = set()
+    capped = []
+    no_right = set()
+    losses_too_large = set()
+    not_active = defaultdict(set)
     for note in raw:
         if note.get("kind") == "own_over_headgate":
             if Decimal(note.get("lost_af") or 0) > 0:
@@ -298,6 +311,17 @@ def _note_sentences(raw):
             loss_points.add(note["pod"])
         elif note.get("kind") == "seepage_no_zone":
             no_zone.append(note)
+        elif note.get("kind") == "estimate_written":
+            estimated_points.add(note["pod"])
+            estimated_months.add(note["month"])
+        elif note.get("kind") == "estimate_capped":
+            capped.append(note)
+        elif note.get("kind") == "estimate_no_right":
+            no_right.add(note["pod"])
+        elif note.get("kind") == "estimate_losses_too_large":
+            losses_too_large.add(note["pod"])
+        elif note.get("kind") == "estimate_right_not_active":
+            not_active[note["status"]].add(note["pod"])
     info = []
     if unexplained:
         # Brent's wording, 2026-10-06: the ruled phrase "canal water beyond
@@ -332,7 +356,56 @@ def _note_sentences(raw):
             f"Canal seepage of {_amount(note['amount_af'])} AF at {note['pod']} "
             f"in {month_label(note['month'])} has no district zone to go to."
         )
+    # Estimates for a ditch with no meter (149-02). Working copy for Brent's
+    # checkpoint. They keep a run green: an estimate is information, never a fault.
+    if estimated_points:
+        points, months = len(estimated_points), len(estimated_months)
+        info.append(
+            f"Estimated the delivery of {points} point{'s' if points != 1 else ''} "
+            f"with no meter for {months} month{'s' if months != 1 else ''}, from "
+            f"the fields' crop water use. These are estimates, not measurements."
+        )
+    for note in sorted(capped, key=lambda n: (n["month"], n["pod"])):
+        where = {
+            "groundwater": "groundwater",
+            "unmet": "water use recorded, no supply reported",
+            "mixed": (
+                "groundwater where a field has a well, otherwise as water use "
+                "recorded, no supply reported"
+            ),
+        }[note["residual"]]
+        info.append(
+            f"Estimated {_amount(note['estimate_af'])} AF at {note['pod']} for "
+            f"{month_label(note['month'])}; {_amount(note['above_af'])} AF of the "
+            f"fields' use is above what the water right allows this season and "
+            f"is counted as {where}."
+        )
+    if no_right:
+        info.append(
+            f"No delivery was estimated for {_names(no_right)}: "
+            f"{'each has' if len(no_right) > 1 else 'it has'} no water right linked."
+        )
+    for status, pods in sorted(not_active.items()):
+        info.append(
+            f"No delivery was estimated for {_names(pods)}: the water right is "
+            f"{status}."
+        )
+    if losses_too_large:
+        info.append(
+            f"No delivery was estimated for {_names(losses_too_large)}: "
+            f"{'their' if len(losses_too_large) > 1 else 'its'} canal losses add "
+            f"up to the whole of the water diverted."
+        )
     return attention, info
+
+
+def _names(pods):
+    """Point names, sorted, as one phrase: "A", "A and B", "A, B and C"."""
+    names = sorted(pods)
+    if len(names) == 1:
+        return names[0]
+    return ", ".join(names[:-1]) + f" and {names[-1]}"
+
 
 
 # --------------------------------------------------------------------------

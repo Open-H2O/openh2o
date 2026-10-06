@@ -80,6 +80,7 @@ from django.db import transaction
 from accounting.locks import finalized_message
 from accounting.models import ReportingPeriod
 from core.models import SiteConfig
+from surface.estimate import discard_estimate
 from surface.models import DiversionRecord, PointOfDiversion, WaterRight
 
 MAX_ROWS = 2000
@@ -765,8 +766,11 @@ def commit_rows(built, *, method="", data_state="provisional", dry_run=False):
     point_ids = {c["point"].pk for c in candidates}
     existing = set()
     if point_ids:
+        # An estimate (149-02) is not a person's record: a file's volume for
+        # that month replaces it, so it never counts as a duplicate.
         existing = set(
             DiversionRecord.objects.filter(point_of_diversion_id__in=point_ids)
+            .exclude(method="estimated_from_use")
             .values_list("point_of_diversion_id", "month", "diversion_type")
         )
 
@@ -822,12 +826,14 @@ def commit_rows(built, *, method="", data_state="provisional", dry_run=False):
             "skipped_duplicates": skipped_duplicates,
             "periods_attached": {},
             "months_created": [],
+            "replaced_estimates": [],
             "errors": errors,
         }
 
     created = 0
     periods_attached = {}
     months_created = set()
+    replaced_estimates = set()
     with transaction.atomic():
         for c, record in survivors:
             try:
@@ -836,6 +842,13 @@ def commit_rows(built, *, method="", data_state="provisional", dry_run=False):
                         start_date__lte=c["month"], end_date__gte=c["month"],
                     ).first()
                     record.reporting_period = period
+                    # 149-02: a volume a person supplies replaces the estimate
+                    # the platform made for that point and month.
+                    replaced = discard_estimate(
+                        c["point"], c["month"], c["diversion_type"]
+                    )
+                    if replaced is not None:
+                        replaced_estimates.add(f"{replaced:%B %Y}")
                     record.save()
                     created += 1
                     months_created.add(f"{c['month']:%Y-%m}")
@@ -852,6 +865,7 @@ def commit_rows(built, *, method="", data_state="provisional", dry_run=False):
         "skipped_duplicates": skipped_duplicates,
         "periods_attached": periods_attached,
         "months_created": sorted(months_created),
+        "replaced_estimates": sorted(replaced_estimates),
         "errors": errors,
     }
 
@@ -910,6 +924,7 @@ def import_diversion_rows(columns, rows, *, layout=None, whole_file_point=None,
         "settings": built["settings"],
         "periods_attached": committed["periods_attached"],
         "months_created": committed["months_created"],
+        "replaced_estimates": committed["replaced_estimates"],
         "total_af": built["total_af"],
         "dry_run": dry_run,
     }

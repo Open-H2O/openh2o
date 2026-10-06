@@ -741,7 +741,7 @@ class DiversionRecord(models.Model):
         ("apportioned", "Apportioned from a shared aggregate, 934(a)(8)"),
         ("below_threshold", "Under 10 acre-feet a year: no standard applies"),
         ("outage_estimate", "Estimated during a device outage, 937(b)(4)"),
-        ("estimated_from_use", "Estimated forward from use (Phase 149's estimator)"),
+        ("estimated_from_use", "Estimated from the fields' crop water use"),
     ]
     #: 931(s) and 931(j)(3): raw device output, provisional (not yet quality
     #: assured or apportioned), and non-provisional. Only non-provisional data

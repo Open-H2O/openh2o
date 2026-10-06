@@ -466,6 +466,9 @@ def calwatrs_worksheet(request, pk):
             "month": rec.month,
             "volume_af": rec.volume_acre_feet,
             "max_rate_cfs": rec.max_flow_rate_cfs,
+            # An estimate from the fields' crop water use is never shown as a
+            # measurement: the row says so beside its volume.
+            "estimated": rec.method == "estimated_from_use",
         })
 
     context = {

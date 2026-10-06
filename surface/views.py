@@ -26,6 +26,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.core.serializers import serialize
+from django.db import transaction
 from django.db.models import Count, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -46,6 +47,7 @@ from surface import importer
 from surface import diversion_import as diversion_import_service
 from surface.services import canal_water_by_month
 from surface.curtailments import orders_that_may_apply
+from surface.estimate import discard_estimate, replaced_sentence
 from surface.forms import (
     CurtailmentOrderForm,
     DiversionRecordForm,
@@ -512,6 +514,14 @@ def _recalculate_months(request, trigger, months):
     return recalculation_sentence(covered) if covered else ""
 
 
+def _with_replaced(replaced_month, line):
+    """The recalculation line, led by "This replaces the estimate for <Month>." when one gave way."""
+    if replaced_month is None:
+        return line
+    sentence = replaced_sentence(replaced_month)
+    return f"{sentence} {line}" if line else sentence
+
+
 def _render_diversion_records_section(
     request, pod, *, form=None, edit_record=None, edit_form=None, period_warning=None,
     recalculation_line="",
@@ -595,17 +605,26 @@ def diversion_record_create(request, pk):
         # unique_together check (which excludes fields absent from the form)
         # never runs it -- without this, a duplicate (POD, month, type) hit
         # the database's own constraint as a raw IntegrityError, a 500.
+        #
+        # 149-02: a month that holds an ESTIMATE for this point gives way to the
+        # volume a person types. The estimate is dated the 1st, as a typed
+        # record is, so it would collide; it is deleted inside the same
+        # transaction as the save, so a refused save keeps it.
+        replaced = None
         try:
             refuse_if_period_finalized(period)
-            record.validate_unique()
+            with transaction.atomic():
+                replaced = discard_estimate(pod, month, record.diversion_type)
+                record.validate_unique()
+                record.save()
         except PeriodFinalized as exc:
             form.add_error(None, str(exc))
         except ValidationError:
             form.add_error(None, _DUPLICATE_RECORD_ERROR)
         else:
-            record.save()
-            recalculation_line = _recalculate_months(
-                request, "diversion_saved", [month]
+            recalculation_line = _with_replaced(
+                replaced,
+                _recalculate_months(request, "diversion_saved", [month]),
             )
             if period is None:
                 # The record saved, but with no reporting period it is invisible to
@@ -667,18 +686,28 @@ def diversion_record_edit(request, pk, rpk):
             start_date__lte=month,
             end_date__gte=month,
         ).first()
+        replaced = None
         try:
             refuse_if_period_finalized(stored_period)
             refuse_if_period_finalized(updated.reporting_period)
-            updated.validate_unique()
+            with transaction.atomic():
+                # 149-02: an edit that moves a volume onto a month holding an
+                # estimate replaces the estimate, as a new record does.
+                replaced = discard_estimate(
+                    pod, month, updated.diversion_type, exclude_pk=updated.pk
+                )
+                updated.validate_unique()
+                updated.save()
         except PeriodFinalized as exc:
             form.add_error(None, str(exc))
         except ValidationError:
             form.add_error(None, _DUPLICATE_RECORD_ERROR)
         else:
-            updated.save()
-            line = _recalculate_months(
-                request, "diversion_saved", [stored_month, updated.month]
+            line = _with_replaced(
+                replaced,
+                _recalculate_months(
+                    request, "diversion_saved", [stored_month, updated.month]
+                ),
             )
             return _render_diversion_records_section(
                 request, pod, recalculation_line=line

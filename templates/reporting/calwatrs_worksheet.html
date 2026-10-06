@@ -76,7 +76,7 @@
         {% for row in block.rows %}
         <tr>
           <td>{{ row.month|date:"Y-m" }}</td>
-          <td style="text-align: right; font-variant-numeric: tabular-nums;">{{ row.volume_af|floatformat:2 }}</td>
+          <td style="text-align: right; font-variant-numeric: tabular-nums;">{{ row.volume_af|floatformat:2 }}{% if row.estimated %} <span class="badge badge-grey" title="Estimated from the fields' crop water use, not measured">Estimated</span>{% endif %}</td>
           <td style="text-align: right; font-variant-numeric: tabular-nums;">{% if row.max_rate_cfs %}{{ row.max_rate_cfs|floatformat:2 }}{% else %}—{% endif %}</td>
         </tr>
         {% endfor %}

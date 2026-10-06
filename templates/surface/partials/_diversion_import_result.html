@@ -26,6 +26,10 @@ and why.
     {% if not created and not skipped_duplicates and not errors and not unresolved_rows %}Nothing to import.{% endif %}
   </p>
 
+  {% if replaced_estimates %}
+  <p class="text-base text-secondary mt-sm" role="status">This replaces the estimate for {{ replaced_estimates|join:", " }}.</p>
+  {% endif %}
+
   {% if recalculation_line %}
   <p class="text-base text-secondary mt-sm" role="status">{{ recalculation_line }}</p>
   {% endif %}
