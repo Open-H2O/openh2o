@@ -38,6 +38,7 @@
 
 {% block content %}
 <div class="page-stack">
+  {% include "partials/_messages.html" %}
 
   {% comment %} Filters form (single source of truth: every control submits the whole
        filter+sort+paging state via hx-include="#ledger-filters", so adding a

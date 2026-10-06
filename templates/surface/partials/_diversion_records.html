@@ -34,6 +34,9 @@
 {% if period_warning %}
 <p class="text-sm mb-md text-deficit" role="alert" style="padding: 0 var(--space-lg);">{{ period_warning }}</p>
 {% endif %}
+{% if recalculation_line %}
+<p class="text-sm mb-md text-secondary" role="status" style="padding: 0 var(--space-lg);">{{ recalculation_line }}</p>
+{% endif %}
 {% if record_groups %}
 <div class="table-scroll">
 <table class="data-table text-sm data-table--grouped">

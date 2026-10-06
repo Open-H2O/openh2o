@@ -315,7 +315,18 @@ def import_ledger_rows(
             for i in range(0, len(survivors), batch_size):
                 ParcelLedger.objects.bulk_create(survivors[i : i + batch_size])
 
+    # 149-01: the months a hand-or-file delivery row landed in, so the screen
+    # that saved them can start the recalculation for exactly those months.
+    surface_months = sorted(
+        {
+            f"{entry.effective_date:%Y-%m}"
+            for entry in survivors
+            if entry.source_type == "surface_diversion"
+        }
+    )
+
     return {
+        "surface_diversion_months": surface_months,
         "created_count": len(survivors),
         "error_count": len(errors),
         "errors": errors,

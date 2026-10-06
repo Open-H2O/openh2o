@@ -821,11 +821,13 @@ def commit_rows(built, *, method="", data_state="provisional", dry_run=False):
             "created": len(survivors),
             "skipped_duplicates": skipped_duplicates,
             "periods_attached": {},
+            "months_created": [],
             "errors": errors,
         }
 
     created = 0
     periods_attached = {}
+    months_created = set()
     with transaction.atomic():
         for c, record in survivors:
             try:
@@ -836,6 +838,7 @@ def commit_rows(built, *, method="", data_state="provisional", dry_run=False):
                     record.reporting_period = period
                     record.save()
                     created += 1
+                    months_created.add(f"{c['month']:%Y-%m}")
                     period_name = period.name if period else "No water year assigned"
                     periods_attached[period_name] = periods_attached.get(period_name, 0) + 1
             except Exception as exc:
@@ -848,6 +851,7 @@ def commit_rows(built, *, method="", data_state="provisional", dry_run=False):
         "created": created,
         "skipped_duplicates": skipped_duplicates,
         "periods_attached": periods_attached,
+        "months_created": sorted(months_created),
         "errors": errors,
     }
 
@@ -905,6 +909,7 @@ def import_diversion_rows(columns, rows, *, layout=None, whole_file_point=None,
         "rule_sentence": built["rule_sentence"],
         "settings": built["settings"],
         "periods_attached": committed["periods_attached"],
+        "months_created": committed["months_created"],
         "total_af": built["total_af"],
         "dry_run": dry_run,
     }

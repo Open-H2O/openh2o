@@ -143,6 +143,27 @@
       {% endif %}
     </div>
 
+    {% comment %}149-01: the Calculation card. Same two-column shape as the finalize / reopen card below it (the `.period-close` grid): what it does and the one primary button on the left, what the last run said on the right. Operators and administrators get the button; a viewer, and any finalized year, see the last outcome and no button.{% endcomment %}
+    <div class="card-raised page-grid-account-full">
+      <div class="period-close">
+        <div>
+          <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">Calculation</h2>
+          {% if period.is_finalized %}
+          <p class="text-secondary text-base m-0">This water year is finalized, so its figures are not recalculated. An administrator can reopen it.</p>
+          {% else %}
+          <p class="text-secondary text-base m-0">Works out each month's figures for this water year, one month at a time, oldest first. It stops at the first month that fails and keeps the months before it. It never changes a finalized year.</p>
+          {% endif %}
+          {% if user_can_write and not period.is_finalized %}
+          <form method="post" action="{% url 'accounting:period_calculate' period.pk %}" style="margin-top: var(--space-md);">
+            {% csrf_token %}
+            <button type="submit" class="btn-primary">Run the calculation</button>
+          </form>
+          {% endif %}
+        </div>
+        {% include "accounting/partials/_calculation_status.html" %}
+      </div>
+    </div>
+
     {% if user_is_admin %}
     {% comment %}Finalize / reopen (Phase 75 made it prominent; 147-02: administrators only, and reopening asks for a reason, kept with the change history via core.history.change_note). Its own full-width card since 147-02's page verdict: inside Period information, the note box made that card twice the allocations card's natural height and stretched the figures beside it over blank fill (measured 511 against 255 px at 1,730).{% endcomment %}
     <div class="card-raised page-grid-account-full">

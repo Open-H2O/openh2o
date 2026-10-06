@@ -180,20 +180,6 @@ DELIVERY_SHARE_BY_USE = (
     "water use after rain"
 )
 
-#: The tail ``DELIVERY_SHARE_BY_USE`` carried before 2026-09-28. NEVER
-#: written. It is not a delete key either: ``surface_diversion`` rows are
-#: replaced by ``(parcel, effective_date, source_type)`` when a delivery is
-#: next allocated (``surface/services.py::allocate_district_delivery``), so
-#: a re-allocation replaces old-tail rows whatever their wording. It is kept
-#: for one reader only: the calculation page, which tells a split delivery
-#: from a field's own gate record by the tail its ledger row carries, and a
-#: deployment that has not re-allocated since the wording changed still
-#: holds rows with this one.
-LEGACY_DELIVERY_SHARE_BY_USE = (
-    "split among the use areas it serves by each one's estimated use for the "
-    "month"
-)
-
 #: The tail of a static-fraction delivery-share sentence: no served use area
 #: had an estimated use for the month, so the split fell back to the fixed
 #: share on file. The percentage and the "because no use area it serves has

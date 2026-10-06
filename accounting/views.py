@@ -22,15 +22,22 @@ from django.db.models import Count, Max, Q, Sum
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 
 from core.csv_safe import safe_row
 from core.history import change_note
 from datasync import freshness
 from datasync.models import MonitoredStation
 from accounting.calculation import evaluate_chain
+from accounting.engine_run import (
+    create_request,
+    recalculation_sentence,
+    request_for_months,
+    start_calculation,
+)
 from accounting.locks import (
     PeriodFinalized,
+    finalized_message,
     refuse_if_finalized,
     refuse_if_period_finalized,
 )
@@ -45,6 +52,7 @@ from accounting.forms import (
 from accounting.models import (
     AllocationPlan,
     CalculationPlan,
+    CalculationRequest,
     CalculationRun,
     CalculationStep,
     ReportingPeriod,
@@ -55,7 +63,6 @@ from accounting.models import (
 from accounting.ledger_words import (
     DELIVERY_SHARE_BY_FIXED,
     DELIVERY_SHARE_BY_USE,
-    LEGACY_DELIVERY_SHARE_BY_USE,
 )
 from accounting.precip_math import METHOD_LABELS
 from core.access import admin_required
@@ -536,6 +543,56 @@ def periods_list(request):
     return render(request, "accounting/periods_list.html", context)
 
 
+#: Who a finished calculation is credited to when no person pressed the button.
+_CALCULATION_WHO = {
+    "schedule": "the nightly schedule",
+    "diversion_saved": "a saved record",
+    "ledger_saved": "a saved record",
+    "command": "the command line",
+}
+
+#: What the card's badge says for each finished state (badge class, words).
+_CALCULATION_BADGE = {
+    "succeeded": ("badge-green", "Finished"),
+    "finished_with_notes": ("badge-amber", "Finished, with notes"),
+    "failed": ("badge-orange", "Stopped"),
+}
+
+
+def _calculation_card_context(period):
+    """What the period page's Calculation card shows: the latest run for this period.
+
+    149-01. ``error_detail`` is deliberately never put here: it is for an
+    administrator on Site Health, not for the period page's readers.
+    """
+    latest = (
+        CalculationRequest.objects.filter(reporting_period=period)
+        .select_related("requested_by")
+        .order_by("-requested_at", "-pk")
+        .first()
+    )
+    if latest is None:
+        return {"calculation": None, "calculation_active": False}
+    active = latest.status in ("queued", "running")
+    total = len(latest.months or [])
+    context = {
+        "calculation": latest,
+        "calculation_active": active,
+        "calculation_month_number": min(latest.months_done + 1, total) if total else 0,
+        "calculation_month_total": total,
+    }
+    if latest.trigger == "screen":
+        context["calculation_who"] = (
+            str(latest.requested_by) if latest.requested_by else "a person"
+        )
+    else:
+        context["calculation_who"] = _CALCULATION_WHO.get(latest.trigger, "")
+    badge = _CALCULATION_BADGE.get(latest.status)
+    if badge:
+        context["calculation_badge_class"], context["calculation_badge_text"] = badge
+    return context
+
+
 def _period_detail_context(period, finalize_form=None):
     """The period page's context, shared by ``period_detail`` and by
     ``period_finalize`` re-rendering the same page on a rejected note (147-02).
@@ -564,6 +621,7 @@ def _period_detail_context(period, finalize_form=None):
         "ledger_count": ledger_count,
         "finalize_form": finalize_form
         or PeriodFinalizeForm(reopening=period.is_finalized),
+        **_calculation_card_context(period),
     }
 
 
@@ -583,6 +641,46 @@ def period_detail(request, pk):
     period = get_object_or_404(ReportingPeriod, pk=pk)
     return render(
         request, "accounting/period_detail.html", _period_detail_context(period)
+    )
+
+
+@login_required
+@require_POST
+def period_calculate(request, pk):
+    """Start the calculation for an open reporting period (149-01).
+
+    Operators and administrators may press it; a viewer's POST never gets here
+    (``core.access.ReadOnlyMiddleware`` refuses every viewer write, whichever
+    way ``ACCESS_CONTROL_ENFORCED`` is set). A finalized period is refused
+    with the same sentence the other write screens use. While a calculation
+    for this period is waiting or running, pressing it again starts nothing:
+    the page shows the one already under way.
+    """
+    period = get_object_or_404(ReportingPeriod, pk=pk)
+    if period.is_finalized:
+        messages.error(request, finalized_message(period.name))
+        return redirect("accounting:period_detail", pk=period.pk)
+
+    under_way = CalculationRequest.objects.filter(
+        reporting_period=period, status__in=("queued", "running")
+    ).exists()
+    if not under_way:
+        calculation = create_request(
+            "screen", reporting_period=period, requested_by=request.user
+        )
+        start_calculation(calculation)
+    return redirect("accounting:period_detail", pk=period.pk)
+
+
+@login_required
+@require_GET
+def period_calculation_status(request, pk):
+    """The Calculation card's status block, re-fetched every 3 seconds while it runs."""
+    period = get_object_or_404(ReportingPeriod, pk=pk)
+    return render(
+        request,
+        "accounting/partials/_calculation_status.html",
+        {"period": period, **_calculation_card_context(period)},
     )
 
 
@@ -1610,6 +1708,19 @@ def ledger_list(request):
     return render(request, "accounting/ledger_list.html", context)
 
 
+def _recalculate_ledger_months(request, months):
+    """Start the calculation for the months a saved delivery row touches (149-01).
+
+    A field's own delivery record changes what is left of the canal total for
+    its neighbours, so the month is recalculated. Adds the one line beneath
+    the success message; a month inside a finalized water year is left alone.
+    """
+    started = request_for_months("ledger_saved", months, requested_by=request.user)
+    covered = sorted({m for r in started for m in r.months})
+    if covered:
+        messages.success(request, recalculation_sentence(covered))
+
+
 @login_required
 def ledger_create(request):
     """Create a single ParcelLedger entry."""
@@ -1625,6 +1736,11 @@ def ledger_create(request):
                 form.add_error("effective_date", str(exc))
             else:
                 entry.save()
+                messages.success(request, "Entry saved.")
+                if entry.source_type == "surface_diversion" and is_enabled("surface"):
+                    _recalculate_ledger_months(
+                        request, [f"{entry.effective_date:%Y-%m}"]
+                    )
                 return redirect("accounting:ledger_list")
     else:
         form = ParcelLedgerForm()
@@ -1651,6 +1767,14 @@ def csv_upload(request):
             dry_run = form.cleaned_data.get("dry_run", False)
             results = parse_ledger_csv(csv_file, reporting_period=period, dry_run=dry_run)
             context = {"form": form, "results": results, "dry_run": dry_run}
+            months = results.get("surface_diversion_months") or []
+            if months and not dry_run and is_enabled("surface"):
+                started = request_for_months(
+                    "ledger_saved", months, requested_by=request.user
+                )
+                covered = sorted({m for r in started for m in r.months})
+                if covered:
+                    context["recalculation_line"] = recalculation_sentence(covered)
             if request.headers.get("HX-Request"):
                 return render(request, "accounting/partials/_csv_upload_results.html", context)
             return render(request, "accounting/csv_upload.html", context)
@@ -1788,14 +1912,14 @@ def _delivery_split_kind(parcel, period):
     148-03: the calculation page's canal line says, in the ruled words, when
     the field's delivered figure was divided up from a headgate's canal total
     rather than read from the field's own gate record. The run stores no such
-    flag, so this reads the month's ``surface_diversion`` rows and looks for
-    the tail ``delivery_share_words`` writes: ``"use"`` for a share weighted
-    by crop water use (the current tail, or the one written before the
-    wording changed on 2026-09-28), ``"fixed"`` for the fixed share on file,
-    ``None`` when the rows carry neither (a field's own recorded delivery, or
-    no delivery at all). ``description__contains`` on purpose: the
-    fixed-share sentence carries its tail in the middle, followed by the
-    percentage and the "because" clause.
+    flag, so this reads the month's ``surface_diversion`` rows (149-01: the
+    ones the canal split wrote, ``divided_from_headgate``, no longer told
+    apart by the wording of their description). ``"fixed"`` when any of them
+    carries the fixed-share tail ``delivery_share_words`` writes (in the
+    middle of the sentence, followed by the percentage and the "because"
+    clause, hence ``description__contains``), ``"use"`` for any other split
+    row (a share weighted by crop water use), ``None`` when the field has no
+    split row (its own recorded delivery, or no delivery at all).
     """
     try:
         year, month = (int(part) for part in period.split("-")[:2])
@@ -1804,16 +1928,14 @@ def _delivery_split_kind(parcel, period):
     rows = ParcelLedger.objects.filter(
         parcel=parcel,
         source_type="surface_diversion",
+        divided_from_headgate=True,
         effective_date__year=year,
         effective_date__month=month,
     )
-    if rows.filter(
-        Q(description__contains=DELIVERY_SHARE_BY_USE)
-        | Q(description__contains=LEGACY_DELIVERY_SHARE_BY_USE)
-    ).exists():
-        return "use"
     if rows.filter(description__contains=DELIVERY_SHARE_BY_FIXED).exists():
         return "fixed"
+    if rows.exists():
+        return "use"
     return None
 
 

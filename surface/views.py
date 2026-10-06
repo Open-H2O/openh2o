@@ -33,6 +33,7 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from core.access import public_in_open_demo
 from core.map_labels import map_label
 
+from accounting.engine_run import recalculation_sentence, request_for_months
 from accounting.locks import PeriodFinalized, refuse_if_finalized, refuse_if_period_finalized
 from accounting.models import ReportingPeriod
 from accounting.services import current_period_id as compute_current_period_id
@@ -494,8 +495,24 @@ def device_mark_removed(request, pk):
     )
 
 
+def _recalculate_months(request, trigger, months):
+    """Start the calculation of ``months`` after a record saved; return the line to show.
+
+    149-01: a saved diversion record moves the fields its point of diversion
+    serves, so the month is recalculated by itself. Months in a finalized
+    water year are left alone (the save is refused there anyway). Returns ""
+    when the surface module is off or nothing was left to calculate.
+    """
+    if not is_enabled("surface"):
+        return ""
+    started = request_for_months(trigger, months, requested_by=request.user)
+    covered = sorted({m for r in started for m in r.months})
+    return recalculation_sentence(covered) if covered else ""
+
+
 def _render_diversion_records_section(
     request, pod, *, form=None, edit_record=None, edit_form=None, period_warning=None,
+    recalculation_line="",
 ):
     """Render ``_diversion_records.html`` for ``pod`` (146-02 Task 3).
 
@@ -539,6 +556,7 @@ def _render_diversion_records_section(
         "current_totals": current_totals,
         "form": form if form is not None else DiversionRecordForm(pod=pod),
         "period_warning": period_warning,
+        "recalculation_line": recalculation_line,
         "edit_record": edit_record,
         "edit_form": edit_form,
     })
@@ -557,6 +575,7 @@ def diversion_record_create(request, pk):
     pod = get_object_or_404(PointOfDiversion, pk=pk)
     form = DiversionRecordForm(request.POST, pod=pod)
     period_warning = None
+    recalculation_line = ""
 
     if form.is_valid():
         record = form.save(commit=False)
@@ -583,6 +602,9 @@ def diversion_record_create(request, pk):
             form.add_error(None, _DUPLICATE_RECORD_ERROR)
         else:
             record.save()
+            recalculation_line = _recalculate_months(
+                request, "diversion_saved", [month]
+            )
             if period is None:
                 # The record saved, but with no reporting period it is invisible to
                 # every period-scoped filing — say so now, not at filing time.
@@ -601,6 +623,7 @@ def diversion_record_create(request, pk):
     # failed save reads as a visible error rather than a silent reset.
     return _render_diversion_records_section(
         request, pod, form=form, period_warning=period_warning,
+        recalculation_line=recalculation_line,
     )
 
 
@@ -621,6 +644,7 @@ def diversion_record_edit(request, pk, rpk):
     """
     pod = get_object_or_404(PointOfDiversion, pk=pk)
     record = get_object_or_404(DiversionRecord, pk=rpk, point_of_diversion=pod)
+    stored_month = record.month  # before the form's values land on the instance
 
     if request.method == "GET":
         return _render_diversion_records_section(
@@ -651,7 +675,12 @@ def diversion_record_edit(request, pk, rpk):
             form.add_error(None, _DUPLICATE_RECORD_ERROR)
         else:
             updated.save()
-            return _render_diversion_records_section(request, pod)
+            line = _recalculate_months(
+                request, "diversion_saved", [stored_month, updated.month]
+            )
+            return _render_diversion_records_section(
+                request, pod, recalculation_line=line
+            )
 
     # Invalid, or a duplicate caught above: keep the row in edit mode so the
     # error and the user's typed values are visible, not silently discarded.
@@ -672,8 +701,10 @@ def diversion_record_delete(request, pk, rpk):
         return _render_diversion_records_section(
             request, pod, period_warning=f"Nothing was deleted. {exc}",
         )
+    month = record.month
     record.delete()
-    return _render_diversion_records_section(request, pod)
+    line = _recalculate_months(request, "diversion_saved", [month])
+    return _render_diversion_records_section(request, pod, recalculation_line=line)
 
 
 @login_required
@@ -1119,6 +1150,9 @@ def diversion_import_commit(request):
         site_config.diversion_use_type_rule = use_rule
         site_config.save(update_fields=["diversion_use_type_rule"])
     result["use_rule_saved"] = use_rule_saved
+    result["recalculation_line"] = _recalculate_months(
+        request, "diversion_saved", result.get("months_created", [])
+    ) if result.get("months_created") else ""
 
     return render(request, "surface/partials/_diversion_import_result.html", result)
 

@@ -821,8 +821,14 @@ The jobs in `crontab.txt`:
 |-----|----------|---------|
 | `run-sync.sh cdec usgs` | Hourly | Live stream / reservoir telemetry (near-real-time flow & stage) |
 | `run-sync.sh dwr_wdl dwr_sgma noaa` | Daily 2:00 AM | Slower sources — groundwater, climate. CNRFC and OpenET ship switched off; add them here if you turn them on. CIMIS ships switched **on** but syncs nothing until its key is set |
+| `run_accounting --open-periods --trigger schedule` | Daily 3:30 AM | Calculates every reporting period that is not finalized, month by month, after the 2:00 AM sync has brought in new data. A finalized period is never touched. Its record shows on each period's page and on Site Health |
 | `run_health_checks` | Every 6 hours | Check database, disk, SSL, migrations, sync freshness |
 | `prune_old_data --confirm` | 1st of month 3:00 AM | Delete old staging records and sync logs |
+
+The nightly calculation can also be run by hand, for one water year or one
+month, with `docker compose exec web python manage.py run_accounting --period "WY 2025-2026"`
+or `--month 2026-03`. Only one calculation runs at a time: a second one waits
+for the first.
 
 **`check_conformance` is deliberately not on that schedule, and that is a
 decision rather than an oversight.** It answers "is every measurement in here

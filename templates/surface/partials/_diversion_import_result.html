@@ -26,6 +26,10 @@ and why.
     {% if not created and not skipped_duplicates and not errors and not unresolved_rows %}Nothing to import.{% endif %}
   </p>
 
+  {% if recalculation_line %}
+  <p class="text-base text-secondary mt-sm" role="status">{{ recalculation_line }}</p>
+  {% endif %}
+
   {% if use_rule_saved %}
   <p class="text-base text-secondary mt-sm">Saved as this deployment's answer for next time.</p>
   {% endif %}

@@ -1,0 +1,26 @@
+{% comment %}
+  The Calculation card's status block (149-01). It polls itself every 3 seconds
+  ONLY while the latest calculation for this period is waiting or running; the
+  finished render carries no hx-trigger, so polling stops by itself. No hx-on
+  and no inline script (the content security policy allows neither). The
+  traceback in `error_detail` is for an administrator on Site Health and is
+  never rendered here.
+{% endcomment %}
+<div id="calculation-status"{% if calculation_active %} hx-get="{% url 'accounting:period_calculation_status' period.pk %}" hx-trigger="every 3s" hx-swap="outerHTML"{% endif %} aria-live="polite">
+  {% if not calculation %}
+  <p class="text-secondary text-base m-0">No calculation has been recorded for this water year yet.</p>
+  {% elif calculation.status == "queued" %}
+  <p class="text-base m-0">Waiting to start.</p>
+  {% elif calculation.status == "running" %}
+  <p class="text-base m-0">Running since {{ calculation.started_at|time:"g:i A" }}{% if calculation_month_total %}, month {{ calculation_month_number }} of {{ calculation_month_total }}{% endif %}.</p>
+  {% else %}
+  <div class="mb-sm"><span class="badge badge-pill {{ calculation_badge_class }}">{{ calculation_badge_text }}</span></div>
+  <p class="text-base m-0">{{ calculation.outcome }}</p>
+  <p class="text-tertiary text-sm" style="margin: var(--space-xs) 0 0;">{{ calculation.finished_at|date:"M j, Y, g:i A" }}, {{ calculation_who }}</p>
+  {% if calculation.notes %}
+  <ul class="concept-list text-secondary text-base mt-sm">
+    {% for note in calculation.notes %}<li>{{ note }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+  {% endif %}
+</div>

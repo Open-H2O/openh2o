@@ -14,6 +14,16 @@ urlpatterns = [
     path("reporting-periods/create/", views.period_create, name="period_create"),
     path("reporting-periods/<int:pk>/", views.period_detail, name="period_detail"),
     path(
+        "reporting-periods/<int:pk>/calculate/",
+        views.period_calculate,
+        name="period_calculate",
+    ),
+    path(
+        "reporting-periods/<int:pk>/calculation-status/",
+        views.period_calculation_status,
+        name="period_calculation_status",
+    ),
+    path(
         "reporting-periods/<int:pk>/finalize/",
         views.period_finalize,
         name="period_finalize",
