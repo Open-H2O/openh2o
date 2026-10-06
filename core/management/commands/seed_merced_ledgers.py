@@ -265,6 +265,14 @@ CURTAILED_OPEN_FRACTION = Decimal("0.1")    # curtailed district's current-year 
 # through the open year would be a different demonstration; it belongs to a
 # phase that decides to tell it, not to a constant that lapses by accident.
 CURTAILMENT_LAST_DELIVERY = date(2025, 6, 30)
+# The demo's one ditch with no meter (Brent, 2026-10-06: "Yes"). The seed types
+# no monthly volume for it; the platform estimates each month's delivery from
+# its fields' crop water use (surface.estimate), the same path a district's own
+# unmetered ditch takes, and the split divides that estimate. Its right
+# (MER-WR-004-DEMO, shared with Crocker-Huffman, face 120,000 AF) is kept.
+# Matched by its id prefix: the demo marker suffix ("-DEMO") is not on every
+# build's names.
+UNMETERED_POD_PREFIX = "MER-POD-004"
 # Phase 67-03 journey calendar, as MONTH NUMBERS so it reproduces in any water
 # year (133-02). June/July/August are drawn fully by the downstream re-diversion
 # (returned_af = 0, wholly consumptive); May is the one partially-returned month,
@@ -948,6 +956,7 @@ class Command(BaseCommand):
             PointOfDiversion,
             PointOfDiversionParcel,
         )
+        from surface.estimate import estimate_month
         from surface.services import allocate_district_delivery
 
         schedule = self._month_schedule(period)
@@ -964,8 +973,9 @@ class Command(BaseCommand):
             .order_by("name")
         )
 
-        written = []
         for pod_seq, pod in enumerate(pods):
+            if pod.name.startswith(UNMETERED_POD_PREFIX):
+                continue  # no meter: estimated below, never typed
             curtailed = (
                 pod.water_right is not None and pod.water_right.status == "curtailed"
             )
@@ -1021,9 +1031,19 @@ class Command(BaseCommand):
                     },
                 )
 
-            # Let the platform service split the recorded totals across parcels by
-            # ET demand (or the static fraction fallback) and write the negative
-            # surface_diversion rows. Same path the app uses.
+        # The ditch with no meter: estimated forward from its fields' crop water
+        # use, month by month, oldest first (the face-value cap reads earlier
+        # months). Run only after every metered point's typed volumes are in, so
+        # no metered point is mistaken for an unmetered one; the estimator skips
+        # any point with a typed record, a curtailed right or no right.
+        for month_date, _mn in schedule:
+            estimate_month(month_date.replace(day=1), [])
+
+        # Let the platform service split the recorded totals across parcels by
+        # ET demand (or the static fraction fallback) and write the negative
+        # surface_diversion rows. Same path the app uses.
+        written = []
+        for pod in pods:
             written.extend(allocate_district_delivery(pod, period))
 
         self.stdout.write(

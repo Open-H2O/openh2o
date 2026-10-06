@@ -63,6 +63,7 @@ from surface.models import (
 from surface.services import (
     _in_months,
     _month_demand,
+    _month_losses,
     _next_month,
     _own_magnitudes,
     _own_total_for_pod,
@@ -298,9 +299,16 @@ def estimate_month(first, notes):
         for field in free:
             efficiency = field_efficiency(field)[0]
             if efficiency and efficiency > 0:
-                need += _month_demand(field, first) / efficiency
-        field_need = need.quantize(_Q) + own_total
+                # Each field's cap to four places, as the split rounds it.
+                need += (_month_demand(field, first) / efficiency).quantize(_Q)
+        field_need = need + own_total
         headgate = (field_need / (1 - fractions)).quantize(_Q)
+        # The largest headgate figure whose water left after the canal's
+        # losses (rounded as the split rounds them) does not exceed what the
+        # fields need, so rounding never leaves 0.0001 AF beyond what the crops
+        # could use on the canal's page.
+        while headgate > 0 and _month_losses(point, first, headgate)["available_af"] > field_need:
+            headgate -= _Q
         if headgate == 0:
             # The fields used no water this month: the estimate is no delivery,
             # and a 0.00 AF record would only be noise on the canal's page.

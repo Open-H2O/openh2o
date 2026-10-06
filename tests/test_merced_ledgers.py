@@ -122,7 +122,7 @@ def _build_physical_merced():
         status="curtailed", source_name="El Nido Canal",
     )
     pod_normal = PointOfDiversion.objects.create(
-        water_right=normal, name="MER-POD-004 Atwater Canal Headgate",
+        water_right=normal, name="MER-POD-008 Crocker-Huffman River Diversion",
         location=Point(-120.66, 37.34), status="active")
     pod_curtailed = PointOfDiversion.objects.create(
         water_right=curtailed, name="MER-POD-007 Plainsburg El Nido Canal Headgate",
@@ -608,30 +608,49 @@ def test_seed_sets_agency_irrigation_efficiency_on_siteconfig(seeded):
 
 @pytest.mark.django_db
 def test_seed_surface_rows_sum_to_recorded_diversions_per_pod(seeded):
-    """The per-parcel surface_diversion magnitudes the service wrote sum (per POD,
-    per month) to the recorded DiversionRecord total — the demand-weighted /
-    fraction-split allocation conserves the metered district delivery."""
+    """Every direct-use record's water is accounted for, per POD and month.
+
+    The per-parcel surface_diversion magnitudes the service wrote, plus the
+    water beyond what the crops could use, equal what survived the canal
+    (``CanalMonthLoss.available_af``); and that plus the canal's three losses
+    equals the record's consumed volume. The split conserves the metered (or
+    estimated) district delivery after canal losses come off the top.
+    """
+    from surface.models import CanalMonthLoss, UnallocatedDelivery
+
     pods = PointOfDiversion.objects.filter(
         water_right__right_id__startswith="MER-WR-",
         pod_parcels__isnull=False,
     ).distinct()
     checked = 0
     for pod in pods:
-        served_ids = list(
-            PointOfDiversionParcel.objects.filter(point_of_diversion=pod)
-            .values_list("parcel_id", flat=True)
-        )
-        for rec in DiversionRecord.objects.filter(point_of_diversion=pod):
+        for rec in DiversionRecord.objects.filter(
+            point_of_diversion=pod, diversion_type="direct_use"
+        ):
+            first = rec.month.replace(day=1)
+            loss = CanalMonthLoss.objects.get(point_of_diversion=pod, month=first)
+            assert loss.diverted_af == rec.consumed_acre_feet(), (
+                f"{pod.name} {rec.month}: canal-loss row starts from "
+                f"{loss.diverted_af}, record consumed {rec.consumed_acre_feet()}")
+            assert (
+                loss.evaporation_af + loss.seepage_af + loss.spill_af
+                + loss.available_af
+            ) == loss.diverted_af
             delivered = ParcelLedger.objects.filter(
-                parcel_id__in=served_ids,
-                source_type="surface_diversion",
+                divided_from_headgate=True,
+                divided_from_point_pk=pod.pk,
                 effective_date=rec.month,
             )
-            # surface_diversion is stored NEGATIVE; magnitude = recorded total.
+            # surface_diversion is stored NEGATIVE; magnitude = delivered share.
             total = sum((abs(r.amount_acre_feet) for r in delivered), Decimal("0"))
-            assert abs(total - rec.volume_acre_feet) <= Decimal("0.001"), (
-                f"{pod.name} {rec.month}: split sums to {total}, "
-                f"recorded {rec.volume_acre_feet}")
+            beyond = sum(
+                (u.amount_acre_feet for u in UnallocatedDelivery.objects.filter(
+                    point_of_diversion=pod, month=rec.month)),
+                Decimal("0"),
+            )
+            assert abs(total + beyond + loss.own_af - loss.available_af) <= Decimal("0.001"), (
+                f"{pod.name} {rec.month}: split {total} + beyond {beyond} + own "
+                f"{loss.own_af}, after canal losses {loss.available_af}")
             checked += 1
     assert checked > 0, "expected at least one POD-month to verify"
 
@@ -690,6 +709,57 @@ def test_seed_surface_split_is_demand_weighted_when_calculations_exist(seeded):
 
     assert delivered(thirsty) > delivered(modest), (
         "demand-weighted split should give the thirstier parcel the larger share")
+
+
+@pytest.mark.django_db
+def test_the_ditch_with_no_meter_is_estimated_once_the_crops_water_use_is_known(seeded):
+    """With crop water use on record, the unmetered ditch's month is estimated.
+
+    Brent, 2026-10-06: the demo carries one ditch with no meter. The seed types
+    nothing for it; with each served field's use after rain on record for a
+    month, re-running the seed writes ONE estimated, provisional record for that
+    month and the split divides it, each field receiving its use over its own
+    efficiency (the estimate is grossed up for the canal's 1% evaporation, so
+    what survives the canal is exactly what the fields could use).
+    """
+    from accounting.locks import override
+    from accounting.models import CalculationRun
+    from core.management.commands.seed_merced_ledgers import UNMETERED_POD_PREFIX
+    from surface.services import field_efficiency
+
+    # The slice's metered point becomes the demo's ditch with no meter: the
+    # seed's flush takes its typed records and the seed types none for it.
+    pod = PointOfDiversion.objects.get(water_right__right_id=NORMAL_RIGHT)
+    pod.name = f"{UNMETERED_POD_PREFIX} Atwater Canal Headgate"
+    pod.save(update_fields=["name"])
+    fields = [
+        link.parcel
+        for link in PointOfDiversionParcel.objects.filter(
+            point_of_diversion=pod).select_related("parcel").order_by("id")
+    ]
+    month = "2025-06"
+    with override("test fixture: demand in the finalized year"):
+        for field in fields:
+            CalculationRun.objects.create(
+                parcel=field, period=month,
+                gross_et_af=Decimal("10"), net_consumptive_use_af=Decimal("10"),
+                final_af=Decimal("0"))
+
+    call_command("seed_merced_ledgers")
+
+    records = DiversionRecord.objects.filter(point_of_diversion=pod)
+    assert [(r.month, r.method, r.data_state) for r in records] == [
+        (date(2025, 6, 1), "estimated_from_use", "provisional")
+    ]
+    for field in fields:
+        share = abs(
+            ParcelLedger.objects.get(
+                parcel=field, source_type="surface_diversion",
+                divided_from_point_pk=pod.pk,
+            ).amount_acre_feet
+        )
+        expected = (Decimal("10") / field_efficiency(field)[0]).quantize(Decimal("0.0001"))
+        assert abs(share - expected) <= Decimal("0.0001"), (field.parcel_number, share, expected)
 
 
 # --------------------------------------------------------------------------
