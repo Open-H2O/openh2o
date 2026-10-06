@@ -135,6 +135,9 @@
               <p class="text-secondary text-sm m-0">Fixed on the host, not in the platform.</p>
               {% endif %}
             {% endif %}
+            {% if result.admin_detail %}
+            <p class="text-tertiary text-xs" style="margin: 0 0 var(--space-sm) 0;">Administrator detail: <code class="text-mono">{{ result.admin_detail }}</code></p>
+            {% endif %}
             <p class="text-tertiary text-xs m-0">
                 Checked {{ result.checked_at|timesince }} ago
             </p>

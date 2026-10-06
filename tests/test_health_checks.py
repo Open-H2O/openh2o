@@ -281,6 +281,7 @@ EXPECTED_CATEGORIES = {
     "unallocated_delivery",
     "period_alignment",
     "et_meter_agreement",
+    "calculation",
     "ssl",
     "docker",
     "migrations",
@@ -506,13 +507,13 @@ class TestSkippedChecksDoNotRaiseTheScore:
     @pytest.mark.django_db
     def test_reduced_deployment_counts_only_applicable_checks(self, client, operator):
         # The shape a nine-module drinking-water deployment actually produces:
-        # 4 green + 1 yellow applicable, 8 module-gated checks skipped.
-        _persist(["green"] * 4 + ["yellow"] + ["skipped"] * 8)
+        # 4 green + 1 yellow applicable, 9 module-gated checks skipped.
+        _persist(["green"] * 4 + ["yellow"] + ["skipped"] * 9)
         ctx = client.get(reverse("health:dashboard")).context
 
-        assert ctx["total"] == 13
+        assert ctx["total"] == 14
         assert ctx["applicable"] == 5
-        assert ctx["skipped"] == 8
+        assert ctx["skipped"] == 9
         assert ctx["green_count"] == 4
 
     @pytest.mark.django_db
@@ -525,13 +526,13 @@ class TestSkippedChecksDoNotRaiseTheScore:
         went UP as the platform went away. The denominator must be `applicable`,
         so the reduced fraction can only be lower.
         """
-        _persist(["green"] * 11 + ["yellow"] * 2)
+        _persist(["green"] * 12 + ["yellow"] * 2)
         full = client.get(reverse("health:dashboard")).context
         full_fraction = full["green_count"] / full["applicable"]
-        assert (full["green_count"], full["applicable"]) == (11, 13)
+        assert (full["green_count"], full["applicable"]) == (12, 14)
 
         HealthCheckResult.objects.all().delete()
-        _persist(["green"] * 4 + ["yellow"] + ["skipped"] * 8)
+        _persist(["green"] * 4 + ["yellow"] + ["skipped"] * 9)
         reduced = client.get(reverse("health:dashboard")).context
         reduced_fraction = reduced["green_count"] / reduced["applicable"]
         assert (reduced["green_count"], reduced["applicable"]) == (4, 5)
@@ -548,7 +549,7 @@ class TestSkippedChecksDoNotRaiseTheScore:
     def test_lone_yellow_still_degrades_a_mostly_skipped_deployment(
         self, client, operator
     ):
-        _persist(["green"] * 4 + ["yellow"] + ["skipped"] * 8)
+        _persist(["green"] * 4 + ["yellow"] + ["skipped"] * 9)
         assert client.get(reverse("health:dashboard")).context["overall_status"] == (
             "degraded"
         )
@@ -556,7 +557,7 @@ class TestSkippedChecksDoNotRaiseTheScore:
     @pytest.mark.django_db
     def test_skipped_rows_alongside_green_roll_up_healthy(self, client, operator):
         """Skipped checks do not block a healthy verdict — they simply do not vote."""
-        _persist(["green"] * 5 + ["skipped"] * 8)
+        _persist(["green"] * 5 + ["skipped"] * 9)
         assert client.get(reverse("health:dashboard")).context["overall_status"] == (
             "healthy"
         )
@@ -569,7 +570,7 @@ class TestSkippedChecksDoNotRaiseTheScore:
         module-gated — but the empty case has to be defined rather than falling
         through to "healthy".
         """
-        _persist(["skipped"] * 13)
+        _persist(["skipped"] * 14)
         assert client.get(reverse("health:dashboard")).context["overall_status"] == (
             "unknown"
         )
@@ -581,7 +582,7 @@ class TestHealthApiRollupExcludesSkipped:
 
     @pytest.mark.django_db
     def test_reduced_set_returns_degraded_200(self, client, operator):
-        _persist(["green"] * 4 + ["yellow"] + ["skipped"] * 8)
+        _persist(["green"] * 4 + ["yellow"] + ["skipped"] * 9)
         resp = client.get(reverse("health:api"))
         assert resp.status_code == 200
         assert json.loads(resp.content)["status"] == "degraded"
@@ -590,23 +591,23 @@ class TestHealthApiRollupExcludesSkipped:
     def test_skipped_rows_are_still_listed_for_authenticated_callers(
         self, client, operator
     ):
-        _persist(["green"] * 4 + ["yellow"] + ["skipped"] * 8)
+        _persist(["green"] * 4 + ["yellow"] + ["skipped"] * 9)
         checks = json.loads(client.get(reverse("health:api")).content)["checks"]
-        assert len(checks) == 13
-        assert sum(1 for c in checks if c["status"] == "skipped") == 8
+        assert len(checks) == 14
+        assert sum(1 for c in checks if c["status"] == "skipped") == 9
 
     @pytest.mark.django_db
     def test_green_plus_skipped_is_neither_degraded_nor_unhealthy(
         self, client, operator
     ):
-        _persist(["green"] * 5 + ["skipped"] * 8)
+        _persist(["green"] * 5 + ["skipped"] * 9)
         resp = client.get(reverse("health:api"))
         assert resp.status_code == 200
         assert json.loads(resp.content)["status"] == "healthy"
 
     @pytest.mark.django_db
     def test_all_skipped_is_unknown(self, client, operator):
-        _persist(["skipped"] * 13)
+        _persist(["skipped"] * 14)
         resp = client.get(reverse("health:api"))
         assert resp.status_code == 200
         assert json.loads(resp.content)["status"] == "unknown"
@@ -617,7 +618,7 @@ class TestCategoryCountIsRegistryDerived:
 
     @pytest.mark.django_db
     def test_total_equals_the_category_registry(self, client, operator):
-        _persist(["green"] * 13)
+        _persist(["green"] * 14)
         ctx = client.get(reverse("health:dashboard")).context
         assert ctx["total"] == len(HealthCheckResult.CATEGORY_CHOICES)
         assert ctx["total"] == len(EXPECTED_CATEGORIES)
@@ -633,11 +634,11 @@ class TestCategoryCountIsRegistryDerived:
         its own denominator — now live in the "This run" card and the panel,
         so this test follows them there instead of asserting stale text.
         """
-        _persist(["green"] * 4 + ["yellow"] + ["skipped"] * 8)
+        _persist(["green"] * 4 + ["yellow"] + ["skipped"] * 9)
         html = client.get(reverse("health:dashboard")).content.decode()
-        assert "across 13 categories" in html
+        assert "across 14 categories" in html
         assert "8 categories" not in html
-        assert "13: 5 applicable, 8 not applicable" in html
+        assert "14: 5 applicable, 9 not applicable" in html
         assert "of 5 applicable checks" in html
         assert '<div class="budget-seg-value">4</div>' in html
 
@@ -734,14 +735,14 @@ class TestCliSummaryDenominator:
 
         fake = [
             {"category": c, "status": s, "message": f"{c}", "details": {}}
-            for c, s in zip(ALL_CATEGORIES, ["green"] * 4 + ["yellow"] + ["skipped"] * 8)
+            for c, s in zip(ALL_CATEGORIES, ["green"] * 4 + ["yellow"] + ["skipped"] * 9)
         ]
         monkeypatch.setattr(cmd, "run_all_checks", lambda: fake)
         out = StringIO()
         call_command("run_health_checks", stdout=out)
         printed = out.getvalue()
 
-        assert "Summary: 4/5 healthy (5 applicable of 13, 8 skipped)" in printed
+        assert "Summary: 4/5 healthy (5 applicable of 14, 9 skipped)" in printed
         assert "12/13" not in printed
 
     @pytest.mark.django_db
@@ -752,14 +753,14 @@ class TestCliSummaryDenominator:
 
         fake = [
             {"category": c, "status": s, "message": f"{c}", "details": {}}
-            for c, s in zip(ALL_CATEGORIES, ["green"] * 11 + ["yellow"] * 2)
+            for c, s in zip(ALL_CATEGORIES, ["green"] * 12 + ["yellow"] * 2)
         ]
         monkeypatch.setattr(cmd, "run_all_checks", lambda: fake)
         out = StringIO()
         call_command("run_health_checks", stdout=out)
         printed = out.getvalue()
 
-        assert "Summary: 11/13 healthy (13 applicable of 13)" in printed
+        assert "Summary: 12/14 healthy (14 applicable of 14)" in printed
         assert "skipped" not in printed
 
     @pytest.mark.django_db
@@ -772,7 +773,7 @@ class TestCliSummaryDenominator:
 
         fake = [
             {"category": c, "status": s, "message": f"{c}", "details": {}}
-            for c, s in zip(ALL_CATEGORIES, ["green"] * 12 + ["skipped"])
+            for c, s in zip(ALL_CATEGORIES, ["green"] * 13 + ["skipped"])
         ]
         monkeypatch.setattr(cmd, "run_all_checks", lambda: fake)
         out = StringIO()

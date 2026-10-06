@@ -20,7 +20,8 @@ from django.conf import settings
 from django.db import connection
 from django.db.models import Count, Sum
 from django.core.management import call_command
-from django.utils import timezone
+from django.urls import reverse
+from django.utils import dateformat, timezone
 
 from core.modules import is_enabled
 
@@ -903,6 +904,126 @@ def check_et_meter_agreement():
     }
 
 
+def _when(dt):
+    """A moment in the site's local time, e.g. "October 6, 2026 at 4:51 AM"."""
+    return dateformat.format(timezone.localtime(dt), r"F j, Y \a\t g:i A")
+
+
+STUCK_RUNNING_AFTER = timedelta(hours=2)
+STUCK_QUEUED_AFTER = timedelta(minutes=15)
+
+
+def check_calculation():
+    """When the calculation last ran, and whether it worked (149-01 Task 4).
+
+    Precedence: a run that has been "running" for over two hours is marked
+    failed and reported red; a request waiting over fifteen minutes means the
+    program that runs it is not running (yellow); otherwise the latest
+    finished request decides; a site that has never run it is yellow.
+    ``details["error_detail"]`` is for administrators only; the dashboard view
+    removes it for everyone else.
+    """
+    if not is_enabled("accounting"):
+        return not_applicable("calculation", "accounting", "the calculation")
+
+    from accounting.models import CalculationRequest
+
+    now = timezone.now()
+
+    def details_for(req, **extra):
+        return {
+            "request_id": req.pk,
+            "reporting_period_id": req.reporting_period_id,
+            "error_detail": req.error_detail or "",
+            **extra,
+        }
+
+    def with_where(d, req):
+        if req.reporting_period_id:
+            d["where_href"] = reverse(
+                "accounting:period_detail", args=[req.reporting_period_id]
+            )
+        return d
+
+    stuck = (
+        CalculationRequest.objects.filter(
+            status="running", started_at__lt=now - STUCK_RUNNING_AFTER
+        )
+        .order_by("started_at")
+        .first()
+    )
+    if stuck:
+        sentence = (
+            "The calculation stopped without finishing, probably because the "
+            "server restarted. Run it again from the period's page."
+        )
+        CalculationRequest.objects.filter(
+            status="running", started_at__lt=now - STUCK_RUNNING_AFTER
+        ).update(status="failed", finished_at=now, outcome=sentence)
+        stuck.refresh_from_db()
+        return {
+            "category": "calculation",
+            "status": "red",
+            "message": sentence,
+            "details": with_where(details_for(stuck), stuck),
+        }
+
+    waiting = (
+        CalculationRequest.objects.filter(
+            status="queued", requested_at__lt=now - STUCK_QUEUED_AFTER
+        )
+        .order_by("requested_at")
+        .first()
+    )
+    if waiting:
+        return {
+            "category": "calculation",
+            "status": "yellow",
+            "message": (
+                f"A calculation has been waiting to start since "
+                f"{_when(waiting.requested_at)}. The program that runs it is "
+                f"not running; an administrator should check the server."
+            ),
+            "details": with_where(details_for(waiting), waiting),
+        }
+
+    last = (
+        CalculationRequest.objects.filter(finished_at__isnull=False)
+        .select_related("reporting_period")
+        .order_by("-finished_at", "-pk")
+        .first()
+    )
+    if last is None:
+        return {
+            "category": "calculation",
+            "status": "yellow",
+            "message": (
+                "The calculation has never run on this site. Run it from a "
+                "reporting period's page."
+            ),
+            "details": {},
+        }
+
+    months = len(last.months or [])
+    parts = [_when(last.finished_at)]
+    if last.reporting_period_id:
+        parts.append(last.reporting_period.name)
+    parts.append(f"{months} month{'' if months == 1 else 's'}")
+    summary = f"Last calculated {', '.join(parts)}."
+    d = details_for(last)
+    if last.status == "failed":
+        status, msg = "red", last.outcome
+        with_where(d, last)
+    elif last.status == "finished_with_notes":
+        notes = last.notes or []
+        status = "yellow"
+        msg = f"{summary} {notes[0]}" if notes else summary
+        with_where(d, last)
+    else:
+        status, msg = "green", summary
+    return {"category": "calculation", "status": status, "message": msg, "details": d}
+
+
 def run_all_checks():
     return [
         check_database(),
@@ -918,4 +1039,5 @@ def run_all_checks():
         check_ssl(),
         check_docker(),
         check_migrations(),
+        check_calculation(),
     ]

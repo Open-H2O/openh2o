@@ -13,6 +13,7 @@ from django.shortcuts import render
 from django.db.models import Max
 from django.urls import reverse
 
+from core.access import is_administrator
 from core.modules import is_enabled
 
 from .models import HealthCheckResult
@@ -67,6 +68,12 @@ WHERE_TO_LOOK = {
         None,
         "the surface diversions",
         "surface",
+    ),
+    "calculation": (
+        "accounting:periods_list",
+        None,
+        "the reporting periods",
+        "accounting",
     ),
 }
 
@@ -162,7 +169,12 @@ def health_dashboard(request):
     for r in results:
         r.where = None
         r.host_level = r.category in HOST_LEVEL_CATEGORIES
-        if r.status in ("yellow", "red") and r.category in WHERE_TO_LOOK:
+        # 149-01: a result may carry its own link (the calculation card points
+        # at the one period's page, not a list).
+        own_href = (r.details or {}).get("where_href")
+        if r.status in ("yellow", "red") and own_href and is_enabled("accounting"):
+            r.where = {"href": own_href, "label": "the reporting period's page"}
+        elif r.status in ("yellow", "red") and r.category in WHERE_TO_LOOK:
             url_name, query, label, module = WHERE_TO_LOOK[r.category]
             if is_enabled(module):
                 href = reverse(url_name)
@@ -181,6 +193,16 @@ def health_dashboard(request):
         overall_status = "degraded"
     else:
         overall_status = "healthy"
+
+    # 147-02 rule: operator detail is for signed-in staff, and the stored
+    # error text of a failed calculation is for administrators only.
+    show_admin_detail = is_administrator(request.user)
+    for r in results:
+        r.admin_detail = ""
+        if isinstance(r.details, dict) and "error_detail" in r.details:
+            if show_admin_detail and request.user.is_authenticated:
+                r.admin_detail = r.details.get("error_detail") or ""
+            r.details = {k: v for k, v in r.details.items() if k != "error_detail"}
 
     context = {
         "results": results,

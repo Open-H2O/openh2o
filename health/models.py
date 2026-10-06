@@ -36,6 +36,7 @@ class HealthCheckResult(models.Model):
         ("ssl", "SSL"),
         ("docker", "Docker"),
         ("migrations", "Migrations"),
+        ("calculation", "Calculation"),
     ]
     STATUS_CHOICES = [
         ("green", "Green"),
