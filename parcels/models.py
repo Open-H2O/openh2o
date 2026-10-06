@@ -108,6 +108,28 @@ class ParcelLedger(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
     )
     created_at = models.DateTimeField(auto_now_add=True)
+    divided_from_headgate = models.BooleanField(
+        default=False,
+        help_text=(
+            "Written by the canal split: this field's share of a headgate "
+            "total. Replaced whenever that headgate's month is recalculated. "
+            "Unticked rows are the field's own recorded delivery and are "
+            "never replaced by the split."
+        ),
+    )
+    # A plain number, not a foreign key: parcels is a module every deployment
+    # has and surface is optional, so a reference into surface would dangle
+    # when it is left out (the composition rule, tests/test_composition_rule.py).
+    divided_from_point_pk = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text=(
+            "On a canal split row, the point of diversion whose headgate total "
+            "it is a share of, so recalculating one point never replaces "
+            "another point's shares on a field both serve. Blank on a field's "
+            "own recorded delivery, and on split rows written before 149-01."
+        ),
+    )
 
     # Re-exported from module scope (see above ParcelLedger) so callers can say
     # ParcelLedger.POSITIVE_SOURCE_TYPES; Meta itself must use the module names,

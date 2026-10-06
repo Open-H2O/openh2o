@@ -25,10 +25,16 @@ Invariants honored (must agree with the calc engine + the Plan-01 kernel):
   FALL BACK to the static ``PointOfDiversionParcel.fraction`` split (the behavior
   of ``create_diversion_ledger_entries``), so a recorded delivery is never
   silently dropped.
-* Idempotent: this service OWNS the ``surface_diversion`` rows for its served
-  parcels in the months it touches. It deletes those rows up front, then writes
-  fresh ones, so a re-run is byte-identical — mirroring ``run_calculations`` /
-  ``rollover_allocations`` delete-then-insert.
+* Idempotent: this service OWNS the rows it writes, and only those. Every split
+  row carries ``ParcelLedger.divided_from_headgate=True`` (149-01); a re-run
+  deletes those rows for the served parcels in the months it touches, then
+  writes fresh ones, so a re-run is byte-identical — mirroring
+  ``run_calculations`` / ``rollover_allocations`` delete-then-insert. A
+  ``surface_diversion`` row with the flag False is a field's OWN recorded
+  delivery (typed on the ledger form, or imported): it is never edited or
+  deleted here, and the split divides only the REMAINDER of the headgate
+  total among the served fields that have none (see
+  ``allocate_district_delivery``).
 * ``dry_run=True`` returns the would-be rows (unsaved) and writes nothing.
 
 Efficiency is resolved PER PARCEL by ``field_efficiency`` (148-02, S1): a served
@@ -41,6 +47,7 @@ shared-POD apportionment is Phase 56, out of scope here.
 """
 
 import logging
+from datetime import date
 from decimal import Decimal
 
 from django.db import transaction
@@ -118,15 +125,28 @@ def _month_demand(parcel, month):
     return total
 
 
-def _records_for_period(point_of_diversion, reporting_period):
+def _records_for_period(point_of_diversion, reporting_period, months=None):
     """DiversionRecords on this POD that belong to the reporting period.
 
     The ``reporting_period`` FK on a record is nullable, so a record counts if
     EITHER its FK matches OR its ``month`` falls inside the period's date span —
     catching both seeded-with-FK and bare monthly records. ``reporting_period``
-    of ``None`` returns every record for the POD.
+    of ``None`` returns every record for the POD. ``months`` (an iterable of
+    first-of-month dates), when given, narrows the records to those months so
+    one month can be allocated alone.
     """
-    qs = DiversionRecord.objects.filter(point_of_diversion=point_of_diversion)
+    # Only water delivered for use is divided among fields. A "to storage"
+    # record is water put into a reservoir or a recharge basin: it reaches no
+    # field that month, and a basin fill is already credited through the
+    # recharge ledger, so dividing it onto fields would count it twice
+    # (seed_merced_ledgers._seed_recharge_diversion_records; found by 149-01
+    # re-running the demonstration year, where it put 85.22 AF of Bottomlands
+    # Riparian Take's February basin fill onto its ten fields).
+    qs = DiversionRecord.objects.filter(
+        point_of_diversion=point_of_diversion, diversion_type="direct_use"
+    )
+    if months is not None:
+        qs = qs.filter(_in_months("month", {_month_start(m) for m in months}))
     if reporting_period is not None:
         qs = qs.filter(
             Q(reporting_period=reporting_period)
@@ -151,12 +171,14 @@ def _demand_rows(record, shares, pod, sw_type):
             description=delivery_share_words(record, pod),
             reporting_period=record.reporting_period,
             water_type=sw_type,
+            divided_from_headgate=True,
+            divided_from_point_pk=pod.pk,
         )
         for parcel, share in shares.items()
     ]
 
 
-def _fraction_rows(record, served_links, pod, sw_type):
+def _fraction_rows(record, served_links, pod, sw_type, total=None):
     """Unsaved static-fraction fallback rows (NEGATIVE) — the no-ET-demand path.
 
     Builds unsaved instances rather than writing, so ``dry_run`` can preview it
@@ -183,7 +205,8 @@ def _fraction_rows(record, served_links, pod, sw_type):
     no-demand fallback, so the kernel's ladder resolves to hand-set fractions
     when the district set any, and an even split when they are untouched.
     """
-    total = record.consumed_acre_feet()
+    if total is None:
+        total = record.consumed_acre_feet()
     today = timezone.now().date()
 
     weights = apportion_shared_supply(
@@ -220,13 +243,101 @@ def _fraction_rows(record, served_links, pod, sw_type):
                 ),
                 reporting_period=record.reporting_period,
                 water_type=sw_type,
+                divided_from_headgate=True,
+                divided_from_point_pk=pod.pk,
             )
         )
     return rows
 
 
+def _next_month(month):
+    return date(month.year + (month.month == 12), month.month % 12 + 1, 1)
+
+
+def _month_start(day):
+    """The first of ``day``'s calendar month.
+
+    A month is a calendar month here, never one exact date: the demonstration
+    dates its diversion records and their ledger rows on the 15th, a person may
+    type the 1st or the 30th, and all of them are the same month's water.
+    """
+    return day.replace(day=1)
+
+
+def _in_months(field, starts):
+    """``Q`` matching ``field`` inside any of the calendar months ``starts``."""
+    q = Q(pk__in=[])
+    for start in starts:
+        q |= Q(**{f"{field}__gte": start, f"{field}__lt": _next_month(start)})
+    return q
+
+
+def _own_magnitudes(served, month):
+    """``{parcel_pk: AF}`` for served fields with a recorded delivery of their own.
+
+    A field's own delivery is any ``surface_diversion`` row for the month whose
+    ``divided_from_headgate`` is False (typed on the ledger form or imported).
+    The value is the magnitude of the field's own rows for the month, summed.
+    """
+    sums = {}
+    rows = ParcelLedger.objects.filter(
+        parcel__in=served,
+        source_type="surface_diversion",
+        divided_from_headgate=False,
+        effective_date__gte=month,
+        effective_date__lt=_next_month(month),
+    ).values_list("parcel_id", "amount_acre_feet")
+    for parcel_id, amount in rows:
+        sums[parcel_id] = sums.get(parcel_id, Decimal("0")) + amount
+    return {pk: abs(total) for pk, total in sums.items()}
+
+
+def _own_total_for_pod(pod, own, month):
+    """This point of diversion's share of its served fields' own deliveries (AF).
+
+    A field served by one point contributes its whole own delivery. A field
+    served by more than one point contributes to THIS point's total pro rata
+    by each serving point's recorded consumed total for the month (each
+    point's sum of ``DiversionRecord.consumed_acre_feet()``); when no serving
+    point recorded anything that month, the field is split evenly among its
+    serving points.
+    """
+    if not own:
+        return Decimal("0")
+    links = PointOfDiversionParcel.objects.filter(
+        parcel_id__in=list(own)
+    ).values_list("parcel_id", "point_of_diversion_id")
+    serving = {}
+    for parcel_id, pod_id in links:
+        serving.setdefault(parcel_id, set()).add(pod_id)
+    pod_ids = {pod_id for ids in serving.values() for pod_id in ids} | {pod.pk}
+    recorded = {pod_id: Decimal("0") for pod_id in pod_ids}
+    for record in DiversionRecord.objects.filter(
+        _in_months("month", [month]),
+        point_of_diversion_id__in=pod_ids,
+        diversion_type="direct_use",
+    ):
+        recorded[record.point_of_diversion_id] += record.consumed_acre_feet()
+    total = Decimal("0")
+    for parcel_id, magnitude in own.items():
+        ids = serving.get(parcel_id, {pod.pk})
+        recorded_sum = sum((recorded[i] for i in ids), Decimal("0"))
+        if recorded_sum > 0:
+            weight = recorded[pod.pk] / recorded_sum
+        else:
+            weight = Decimal("1") / len(ids)
+        total += magnitude * weight
+    return total.quantize(_Q)
+
+
 def allocate_district_delivery(
-    point_of_diversion, reporting_period, *, efficiency=None, dry_run=False
+    point_of_diversion,
+    reporting_period,
+    *,
+    efficiency=None,
+    dry_run=False,
+    months=None,
+    notes=None,
 ):
     """Allocate a POD's recorded diversions across served parcels by ET demand.
 
@@ -235,7 +346,24 @@ def allocate_district_delivery(
     parcel's measured net consumptive use for the record's month and capped at
     ``demand / efficiency`` (the Plan-01 kernel). Where no served parcel has ET
     demand that month, fall back to the static ``PointOfDiversionParcel.fraction``
-    split. Writes negative ``surface_diversion`` ``ParcelLedger`` rows.
+    split. Writes negative ``surface_diversion`` ``ParcelLedger`` rows, each
+    marked ``divided_from_headgate=True``.
+
+    **The remainder rule (149-01, Brent 2026-09-28).** A served field with a
+    recorded delivery of its own for the month (one or more ``surface_diversion``
+    rows with ``divided_from_headgate=False``) keeps it. The split divides only
+    the REMAINDER, ``max(0, headgate total - own_total)``, among the served
+    fields that have none; own fields get no split row, and an own row is never
+    edited or deleted. ``own_total`` is the sum of the own fields' magnitudes,
+    except that a field served by more than one point of diversion contributes
+    to THIS point's ``own_total`` pro rata by each serving point's recorded
+    consumed total for the month (each point's sum of
+    ``DiversionRecord.consumed_acre_feet()``), or evenly among its serving
+    points when none of them recorded anything that month. Two records on one
+    point in one month are treated together: the month's totals are summed, the
+    remainder is computed once, and each record takes its share of it in
+    proportion to its own consumed total. If ``own_total`` exceeds the headgate
+    total, no split rows are written for that month and the excess is reported.
 
     Args:
         point_of_diversion: a ``surface.models.PointOfDiversion``.
@@ -246,12 +374,24 @@ def allocate_district_delivery(
             ``field_efficiency`` (146-05's ``ParcelIrrigationMethod`` where set,
             else the agency-wide ``SiteConfig.default_irrigation_efficiency``).
         dry_run: when ``True``, return the would-be rows (unsaved) and write nothing.
+        months: optional iterable of dates narrowing the records to those
+            CALENDAR months (any day in the month names it), so one month can
+            be allocated alone. Every month named is cleared of this point's
+            split rows even when it has no record left.
+        notes: optional list; when given, dicts are appended to it for the
+            caller to turn into sentences: ``{"kind": "own_over_headgate",
+            "pod": name, "month": date, "excess_af": Decimal}`` (own deliveries
+            add up to more than the headgate recorded) and ``{"kind":
+            "unallocated", "pod": name, "month": date, "amount_af": Decimal}``
+            (headgate water no served field's crop use explains).
 
     Returns:
         the list of ``ParcelLedger`` rows written (or, for ``dry_run``, the
         unsaved instances that would have been written).
     """
     pod = point_of_diversion
+    if months is not None:
+        months = list(months)  # read twice below; a generator would be spent
 
     # Surface deliveries are, by definition, Surface Water. Resolve the type ONCE
     # and stamp it on every row so the ledger's Water Type column is populated for
@@ -273,26 +413,97 @@ def allocate_district_delivery(
     # each parcel's method do not change across a POD's diversion records.
     eff_by_parcel = {p: _resolve_efficiency(efficiency, p) for p in served}
 
-    records = list(_records_for_period(pod, reporting_period))
+    records = list(_records_for_period(pod, reporting_period, months))
+    by_month = {}
+    for record in records:
+        by_month.setdefault(_month_start(record.month), []).append(record)
 
     to_write = []
     unallocated = []
-    for record in records:
-        delivery_total = record.consumed_acre_feet()
-        demand_by_parcel = {p: _month_demand(p, record.month) for p in served}
-        shares = allocate_by_demand(delivery_total, demand_by_parcel, eff_by_parcel)
+    for month, month_records in by_month.items():
+        month_total = sum(
+            (r.consumed_acre_feet() for r in month_records), Decimal("0")
+        )
+        own = _own_magnitudes(served, month)
+        own_total = _own_total_for_pod(pod, own, month)
+        if own_total > month_total:
+            excess = own_total - month_total
+            if notes is not None:
+                notes.append(
+                    {
+                        "kind": "own_over_headgate",
+                        "pod": pod.name,
+                        "month": month,
+                        "excess_af": excess,
+                    }
+                )
+            logger.warning(
+                "allocate_district_delivery POD=%s month=%s: the fields' own "
+                "delivery records add up to %s AF, %s AF more than the headgate "
+                "recorded (%s AF). No split rows written for this month.",
+                pod.name,
+                month,
+                own_total,
+                excess,
+                month_total,
+            )
+            continue
 
-        if shares:
-            to_write.extend(_demand_rows(record, shares, pod, sw_type))
-            path = "demand-weighted"
+        free_links = [link for link in served_links if link.parcel.pk not in own]
+        free = [link.parcel for link in free_links]
 
-            # T4 (math eval 2026-07-18): in the AMPLE case the kernel hands out
-            # each parcel's cap and documents that the caller routes the leftover
-            # — and this, the only caller, never did. The surplus vanished: no
-            # row, no pool, no log, so the internal ledger silently disagreed
-            # with the DiversionRecord CalWATRS files from. Record it explicitly
-            # against the POD instead of dropping it or inventing a destination.
-            surplus = delivery_total - sum(shares.values(), Decimal("0"))
+        # Each record's part of the month's remainder. With no own records it
+        # is the record's whole consumed total (the pre-149 behavior, exactly).
+        remainders = {}
+        if own_total == 0:
+            for record in month_records:
+                remainders[record.pk] = record.consumed_acre_feet()
+        else:
+            remainder_total = month_total - own_total
+            running = Decimal("0")
+            for record in month_records[:-1]:
+                part = (
+                    remainder_total * record.consumed_acre_feet() / month_total
+                ).quantize(_Q)
+                remainders[record.pk] = part
+                running += part
+            remainders[month_records[-1].pk] = remainder_total - running
+
+        for record in month_records:
+            delivery_total = remainders[record.pk]
+            if own_total > 0 and delivery_total == 0:
+                continue  # the own records already account for the headgate
+            demand_by_parcel = {p: _month_demand(p, record.month) for p in free}
+            shares = allocate_by_demand(
+                delivery_total,
+                demand_by_parcel,
+                {p: eff_by_parcel[p] for p in free},
+            )
+
+            if shares:
+                to_write.extend(_demand_rows(record, shares, pod, sw_type))
+                path = "demand-weighted"
+
+                # T4 (math eval 2026-07-18): in the AMPLE case the kernel hands
+                # out each parcel's cap and documents that the caller routes the
+                # leftover — and this, the only caller, never did. The surplus
+                # vanished: no row, no pool, no log, so the internal ledger
+                # silently disagreed with the DiversionRecord CalWATRS files
+                # from. Record it explicitly against the POD instead of
+                # dropping it or inventing a destination. (149-01: against the
+                # remainder, the headgate water the own records do not cover.)
+                surplus = delivery_total - sum(shares.values(), Decimal("0"))
+            else:
+                to_write.extend(
+                    _fraction_rows(record, free_links, pod, sw_type, delivery_total)
+                )
+                path = "static-fraction fallback (no ET demand)"
+                # Every served field has its own record: nobody is left for the
+                # remainder to go to, so it is unexplained headgate water.
+                surplus = (
+                    delivery_total if served and not free else Decimal("0")
+                )
+
             if surplus > 0:
                 unallocated.append(
                     UnallocatedDelivery(
@@ -303,6 +514,15 @@ def allocate_district_delivery(
                         delivery_acre_feet=delivery_total,
                     )
                 )
+                if notes is not None:
+                    notes.append(
+                        {
+                            "kind": "unallocated",
+                            "pod": pod.name,
+                            "month": record.month,
+                            "amount_af": surplus,
+                        }
+                    )
                 logger.warning(
                     "allocate_district_delivery POD=%s month=%s: %s AF of %s AF "
                     "delivered is not explained by crop demand — recorded as "
@@ -313,39 +533,50 @@ def allocate_district_delivery(
                     surplus,
                     delivery_total,
                 )
-        else:
-            to_write.extend(_fraction_rows(record, served_links, pod, sw_type))
-            path = "static-fraction fallback (no ET demand)"
-        logger.info(
-            "allocate_district_delivery POD=%s month=%s: %s (%d parcels, %s AF)",
-            pod.name,
-            record.month,
-            path,
-            len(served),
-            delivery_total,
-        )
+            logger.info(
+                "allocate_district_delivery POD=%s month=%s: %s (%d parcels, %s AF)",
+                pod.name,
+                record.month,
+                path,
+                len(free),
+                delivery_total,
+            )
 
     if dry_run:
         return to_write
 
-    # Idempotency: this service owns the surface_diversion rows for its served
-    # parcels in the months it just allocated. Delete them up front (ONCE for the
-    # whole month set — not per record, so two records sharing a month don't
-    # clobber each other), then write fresh, mirroring run_calculations.
-    months = {record.month for record in records}
+    # Idempotency: this service owns the rows IT wrote (divided_from_headgate)
+    # for its served parcels in the months it just allocated. Delete them up
+    # front (ONCE for the whole month set — not per record, so two records
+    # sharing a month don't clobber each other), then write fresh, mirroring
+    # run_calculations. A field's own recorded delivery is never touched.
+    #
+    # Only THIS point's shares are replaced (``divided_from_point_pk``), so a
+    # field two points serve keeps the other point's share. A split row written
+    # before 149-01 carries no point and is replaced by whichever serving point
+    # runs first, as every split row was before.
+    #
+    # When ``months`` is given, every asked-for month is cleared even if the
+    # point has no record left in it: a deleted diversion record must take its
+    # shares with it, not leave them standing.
+    months_to_clear = {_month_start(record.month) for record in records}
+    if months is not None:
+        months_to_clear |= {_month_start(m) for m in months}
     with transaction.atomic():
-        if served and months:
+        if served and months_to_clear:
             ParcelLedger.objects.filter(
+                Q(divided_from_point_pk=pod.pk) | Q(divided_from_point_pk__isnull=True),
+                _in_months("effective_date", months_to_clear),
                 parcel__in=served,
-                effective_date__in=months,
                 source_type="surface_diversion",
+                divided_from_headgate=True,
             ).delete()
         # Unallocated surplus is owned by this service for the same POD-months,
         # and is cleared on every run so a re-allocation that now balances does
         # not leave a stale surplus behind.
-        if months:
+        if months_to_clear:
             UnallocatedDelivery.objects.filter(
-                point_of_diversion=pod, month__in=months
+                _in_months("month", months_to_clear), point_of_diversion=pod
             ).delete()
             if unallocated:
                 UnallocatedDelivery.objects.bulk_create(unallocated)

@@ -206,6 +206,7 @@ class TestTheReceipt:
             transaction_date=dt.date(2026, 6, 15),
             amount_acre_feet=Decimal("-5.3333"),
             description=f"Share of 100.00 AF delivered from a canal, {DELIVERY_SHARE_BY_USE}",
+            divided_from_headgate=True,  # 149-01: the split's rows say so in a column
         )
         html = _page(parcel, "2026-06")
         assert (

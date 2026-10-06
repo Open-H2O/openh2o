@@ -279,6 +279,16 @@ def subtract_surface_water(running_af, parcel, period, ctx, config):
         "consumed_af": str(consumed_af),
         "surface_water_af": str(consumed_af),
     }
+    # ISS-221 (149-01): the canal split sizes a field's share from its crop
+    # use as STORED, four decimals worked from rounded ET and rounded rain,
+    # while this chain carries the unrounded figure. The two can disagree by
+    # less than one unit in the fourth decimal, which then rounds to 0.0001 AF
+    # of "canal water beyond crop use" (or of groundwater) that is no water at
+    # all. A difference under the ledger's own resolution is the two roundings
+    # disagreeing, so it is zero; a real 0.0001 AF or more is left alone.
+    if consumed_af > 0 and new_running != 0 and abs(new_running) < quant:
+        detail["below_ledger_precision_af"] = str(new_running)
+        new_running = Decimal("0")
     return new_running, _record(
         "subtract_surface_water", running_af, new_running, detail
     )

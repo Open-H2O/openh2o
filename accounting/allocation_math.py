@@ -23,13 +23,16 @@ Three deliberate rules, each encoded below:
      needs a delivery of ``D / eff``. No parcel is ever allocated more than this
      ceiling — that ceiling is what kills the pre-052 over-delivery spikes.
 
-  2. AMPLE vs SHORT. When the recorded delivery covers every parcel's cap, each
+  2. AMPLE vs SHORT. (Caps are rounded DOWN to 4dp, ISS-221, so a cap times
+     its efficiency never exceeds the demand it was built from.) When the recorded delivery covers every parcel's cap, each
      parcel simply gets its cap and the leftover above ``sum(caps)`` is left for
      the caller to route (the recovery-horizon surplus of Plan 02/03) — so an
      ample result sums to ``sum(caps)``, NOT to ``delivery_total``. When the
-     delivery is SHORT, the WHOLE delivery is distributed by demand weight; each
-     parcel still lands at or below its cap (because ``total < sum(caps)``), and
-     the result sums EXACTLY to ``delivery_total``.
+     delivery is SHORT, the WHOLE delivery is distributed by demand weight,
+     water-filled against the caps (ISS-222): a parcel whose demand share would
+     pass its cap is held at the cap and the rest is re-divided by demand among
+     the others. Every parcel lands at or below its cap and the result sums
+     EXACTLY to ``delivery_total``.
 
   3. FAIL CLOSED. Garbage in — a negative delivery, a negative demand, an
      efficiency outside ``(0, 1]`` — raises rather than silently producing a
@@ -38,9 +41,10 @@ Three deliberate rules, each encoded below:
 Decimal throughout, quantized to 4 decimal places to match the ledger; a float
 anywhere reintroduces binary-float drift on water volumes. The short-delivery
 residual (delivery_total minus the sum of the rounded shares) is placed on the
-LAST parcel by deterministic ``str(key)`` order, mirroring the
-``create_diversion_ledger_entries`` last-parcel-residual convention so the two
-layers agree to the cent. Keys may be ints (parcel ids) or Parcel instances;
+parcel with the most headroom below its cap, ties by deterministic ``str(key)``
+order (the last of the tied keys, as the ``create_diversion_ledger_entries``
+last-parcel-residual convention would), so the two layers agree to the cent and
+no share is pushed above its cap. Keys may be ints (parcel ids) or Parcel instances;
 sorting by ``str(key)`` keeps the function agnostic to key type.
 
 ``apportion_shared_supply`` (Phase 56) is the sibling splitter: where
@@ -91,6 +95,37 @@ def _place_residual(shares, target):
     return shares
 
 
+def _place_residual_under_caps(shares, caps, target):
+    """Force ``shares`` to sum to EXACTLY ``target`` without crossing any cap.
+
+    The capped sibling of ``_place_residual`` (ISS-221). A positive residual
+    goes to the key with the most headroom below its cap (ties by sorted
+    ``str(key)``, last one wins, the same end ``_place_residual`` uses), and
+    spills to the next-most-headroom key if one key cannot take all of it. A
+    negative residual comes off in the same order, never below zero. Mutates
+    and returns ``shares``.
+    """
+    residual = _dec(target) - sum(shares.values(), Decimal("0"))
+    if residual == 0:
+        return shares
+    order = sorted(
+        shares,
+        key=lambda k: (caps[k] - shares[k], str(k)),
+        reverse=True,
+    )
+    for key in order:
+        if residual > 0:
+            move = min(residual, caps[key] - shares[key])
+        else:
+            move = -min(-residual, shares[key])
+        if move:
+            shares[key] = _q(shares[key] + move)
+            residual -= move
+        if residual == 0:
+            break
+    return shares
+
+
 def allocate_by_demand(delivery_total, demand_by_parcel, efficiency):
     """Split a recorded delivery total across parcels by ET demand, capped.
 
@@ -109,8 +144,9 @@ def allocate_by_demand(delivery_total, demand_by_parcel, efficiency):
         ``{parcel_key: delivery_af}`` quantized to 4dp. AMPLE: every parcel with
         positive demand mapped to its own cap ``demand/eff`` (sum == ``sum(caps)``).
         SHORT: the whole ``delivery_total`` split by demand weight ALONE, never by
-        cap weight (sum == ``delivery_total`` exactly); efficiency only sets the
-        ample/short boundary and the per-parcel ceiling, never the short split.
+        cap weight, water-filled so no parcel passes its cap (sum ==
+        ``delivery_total`` exactly); efficiency only sets the ample/short
+        boundary and the per-parcel ceiling, never the weights.
         ZERO total demand or empty input: ``{}``. ZERO ``delivery_total`` (with
         positive demand): every input parcel mapped to ``Decimal("0.0000")``, since
         a recorded zero-delivery month is real data, distinct from "no demand".
@@ -175,6 +211,15 @@ def allocate_by_demand(delivery_total, demand_by_parcel, efficiency):
     # ample/short boundary compares against the SAME 4dp sum we'd return — a raw
     # sum (e.g. 53.33333...) would make a delivery of exactly sum(caps) fall a
     # rounding-hair short and wrongly take the short branch.
+    #
+    # Rounded to the nearest, NOT down (149-01, measured on the demonstration):
+    # a cap within half a unit of demand / eff, multiplied back by eff (<= 1),
+    # lands within half a unit of demand, so the field's consumed figure at four
+    # decimals equals its demand exactly. Rounding down instead gave 0.0001 AF
+    # short on 87 field-months, trading ISS-221's 0.0001 AF of over-delivery for
+    # 0.0001 AF of groundwater. ISS-221 itself is the engine comparing this
+    # four-decimal figure with an unrounded one; accounting/steps.py
+    # (subtract_surface_water) settles it there.
     caps = {key: _q(d / _eff_for(key)) for key, d in demand.items() if d > 0}
     total_caps = sum(caps.values(), Decimal("0"))
 
@@ -188,11 +233,33 @@ def allocate_by_demand(delivery_total, demand_by_parcel, efficiency):
     # SHORT: distribute the whole delivery by DEMAND weight (demand_p / total_demand,
     # NOT the cap, and NOT efficiency-weighted even when efficiency is a mapping;
     # the ruling is explicit that a mixed-method headgate's short split stays a
-    # pure demand split). Each share is <= its cap because total < sum(caps).
-    # Quantize, then place the rounding residual on the last parcel by sorted
-    # str(key) so the result sums EXACTLY to delivery_total with no Decimal drift.
-    shares = {key: _q(total * (demand[key] / total_demand)) for key in caps}
-    return _place_residual(shares, total)
+    # pure demand split), WATER-FILLING against the caps (ISS-222). With one
+    # shared efficiency a demand share can never pass its cap when the total is
+    # short, but with mixed efficiencies it can: two fields of equal demand at
+    # efficiencies 0.95 and 0.60 have very different caps, and an even demand
+    # split hands the 0.95 field more than it can consume. So any field whose
+    # share passes its cap is held at its cap, removed, and the rest of the
+    # delivery is re-divided by demand among the fields still under theirs,
+    # repeating until none passes. The result still sums EXACTLY to
+    # delivery_total (total < sum(caps) on this branch, so there is always room).
+    # The 4dp rounding residual goes to the field with the most headroom below
+    # its cap, never above a cap.
+    raw = {}
+    active = set(caps)
+    remaining = total
+    while active:
+        active_demand = sum((demand[k] for k in active), Decimal("0"))
+        trial = {k: remaining * (demand[k] / active_demand) for k in active}
+        over = {k for k in active if trial[k] > caps[k]}
+        if not over:
+            raw.update(trial)
+            break
+        for k in over:
+            raw[k] = caps[k]
+            remaining -= caps[k]
+        active -= over
+    shares = {key: min(_q(raw[key]), caps[key]) for key in caps}
+    return _place_residual_under_caps(shares, caps, total)
 
 
 def apportion_shared_supply(members):
