@@ -297,15 +297,22 @@
           {% if not group.totals.adds_up %}<span class="badge badge-amber">Does not add up</span>{% endif %}
         </summary>
         <div class="table-scroll mt-sm">
-        <table class="data-table text-sm data-table--grouped">
+        <table class="data-table text-sm data-table--grouped data-table--canal-water">
+          {% comment %}Fixed widths: the three long headers get room to wrap to two or
+             three lines instead of one word per line beside a wide Month column.{% endcomment %}
+          <colgroup>
+            <col style="width: 10%"><col style="width: 12%">
+            <col style="width: 9%"><col style="width: 9%"><col style="width: 9%">
+            <col style="width: 13%"><col style="width: 19%"><col style="width: 19%">
+          </colgroup>
           <thead>
             <tr class="th-group">
               <th rowspan="2">Month</th>
               <th rowspan="2" class="th-right">Taken at the headgate</th>
               <th colspan="3" class="th-group-label col-sep">Canal losses</th>
-              <th rowspan="2" class="th-right"><span class="th-stack">Fields' own records</span></th>
-              <th rowspan="2" class="th-right"><span class="th-stack">Divided up among the other fields</span></th>
-              <th rowspan="2" class="th-right"><span class="th-stack">Beyond what the crops could use</span></th>
+              <th rowspan="2" class="th-right">Fields' own records</th>
+              <th rowspan="2" class="th-right">Divided up among the other fields</th>
+              <th rowspan="2" class="th-right">Beyond what the crops could use</th>
             </tr>
             <tr>
               <th class="th-right col-sep">Evaporation</th>

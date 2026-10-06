@@ -1378,6 +1378,14 @@ html { color-scheme: dark; }
     width: min-content;
     text-align: center;
 }
+/* A canal's month-by-month table (where the water went): fixed layout so its
+   colgroup widths hold, and long headers wrap within their own column. */
+.data-table--canal-water {
+    table-layout: fixed;
+}
+.data-table--canal-water th {
+    white-space: normal;
+}
 /* Plus the 2px collapsed border that sits BETWEEN the rows, outside the cell
    box: measured 2026-09-08, a 36px border-box row lands the next row at 38.25. */
 .data-table--grouped thead tr.th-group ~ tr th {
