@@ -261,6 +261,108 @@
       </div>
     </div>
 
+    {% comment %}
+      Where the water went, month by month (149-02 Task 2b, Brent 2026-10-06).
+      Read-only: every figure comes from stored rows through
+      surface.services.canal_water_by_month (CanalMonthLoss, the split's own
+      ledger rows, UnallocatedDelivery); nothing is recomputed here. One table
+      per reporting period, newest first; the open year is expanded and older
+      years sit in a native <details>. The section id is the anchor Site Health's
+      Unallocated Delivery card links to.
+
+      WORKING COPY for Brent's checkpoint: the section heading, the intro
+      sentence, the column labels ("Taken at the headgate", "Canal losses" with
+      Evaporation / Seepage / Spill, "Fields' own records", "Divided up among
+      the other fields", "Beyond what the crops could use" is Brent's ruled
+      phrase), the totals label and the "Not yet calculated" / "Does not add
+      up" flags. A month whose parts do not sum to the headgate figure is
+      flagged, never hidden.
+    {% endcomment %}
+    <div class="card-raised page-grid-account-full" id="where-the-water-went">
+      <h2 class="section-header mb-md">Where the water went</h2>
+      <p class="text-secondary text-sm mb-md">
+        Each month's water taken at the headgate adds up to what the canal lost,
+        the fields' own records, what was divided up among the other fields, and
+        what was left beyond what the crops could use. Acre-feet.
+      </p>
+      {% if canal_water %}
+      {% for group in canal_water %}
+      <details class="mb-md"{% if group.is_open %} open{% endif %}>
+        <summary class="row-start" style="cursor: pointer; list-style: none; gap: var(--space-sm); padding: var(--space-xs) 0;">
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-tertiary disclosure-mark">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+          <span class="field-value">{{ group.name }}</span>
+          <span class="text-tertiary text-sm">{{ group.totals.count }} month{{ group.totals.count|pluralize }}, {{ group.totals.headgate|floatformat:2|intcomma }} AF taken at the headgate</span>
+          {% if not group.totals.adds_up %}<span class="badge badge-amber">Does not add up</span>{% endif %}
+        </summary>
+        <div class="table-scroll mt-sm">
+        <table class="data-table text-sm data-table--grouped">
+          <thead>
+            <tr class="th-group">
+              <th rowspan="2">Month</th>
+              <th rowspan="2" class="th-right">Taken at the headgate</th>
+              <th colspan="3" class="th-group-label col-sep">Canal losses</th>
+              <th rowspan="2" class="th-right"><span class="th-stack">Fields' own records</span></th>
+              <th rowspan="2" class="th-right"><span class="th-stack">Divided up among the other fields</span></th>
+              <th rowspan="2" class="th-right"><span class="th-stack">Beyond what the crops could use</span></th>
+            </tr>
+            <tr>
+              <th class="th-right col-sep">Evaporation</th>
+              <th class="th-right">Seepage</th>
+              <th class="th-right">Spill</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in group.rows %}
+            <tr>
+              <td class="text-secondary">
+                {{ r.month|date:"M Y" }}
+                {% if r.estimated %}<span class="badge badge-grey" title="At least one diversion record this month is estimated from use, not measured.">Estimated</span>{% endif %}
+                {% if not r.calculated %}<span class="text-tertiary text-xs">Not yet calculated</span>{% endif %}
+                {% if not r.adds_up %}<span class="badge badge-amber" title="The four parts do not add up to the water taken at the headgate.">Does not add up</span>{% endif %}
+              </td>
+              <td class="td-num">{{ r.headgate|floatformat:2|intcomma }}</td>
+              {% if r.calculated %}
+              <td class="td-num text-secondary col-sep">{{ r.evaporation|floatformat:2|intcomma }}</td>
+              <td class="td-num text-secondary">{{ r.seepage|floatformat:2|intcomma }}</td>
+              <td class="td-num text-secondary">{{ r.spill|floatformat:2|intcomma }}</td>
+              <td class="td-num">{{ r.own|floatformat:2|intcomma }}</td>
+              <td class="td-num">{{ r.divided|floatformat:2|intcomma }}</td>
+              <td class="td-num">{{ r.beyond|floatformat:2|intcomma }}</td>
+              {% else %}
+              <td class="td-num text-tertiary col-sep">&mdash;</td>
+              <td class="td-num text-tertiary">&mdash;</td>
+              <td class="td-num text-tertiary">&mdash;</td>
+              <td class="td-num text-tertiary">&mdash;</td>
+              <td class="td-num text-tertiary">&mdash;</td>
+              <td class="td-num text-tertiary">&mdash;</td>
+              {% endif %}
+            </tr>
+            {% endfor %}
+            <tr class="row-subtotal">
+              <td class="tfoot-total">All {{ group.totals.count }} month{{ group.totals.count|pluralize }}</td>
+              <td class="td-num-bold td-total">{{ group.totals.headgate|floatformat:2|intcomma }}</td>
+              <td class="td-num-bold td-total col-sep">{{ group.totals.evaporation|floatformat:2|intcomma }}</td>
+              <td class="td-num-bold td-total">{{ group.totals.seepage|floatformat:2|intcomma }}</td>
+              <td class="td-num-bold td-total">{{ group.totals.spill|floatformat:2|intcomma }}</td>
+              <td class="td-num-bold td-total">{{ group.totals.own|floatformat:2|intcomma }}</td>
+              <td class="td-num-bold td-total">{{ group.totals.divided|floatformat:2|intcomma }}</td>
+              <td class="td-num-bold td-total">{{ group.totals.beyond|floatformat:2|intcomma }}</td>
+            </tr>
+          </tbody>
+        </table>
+        </div>
+        {% if group.totals.uncalculated %}
+        <p class="text-tertiary text-xs mt-sm">{{ group.totals.uncalculated }} month{{ group.totals.uncalculated|pluralize }} not yet calculated; the headgate total above includes {{ group.totals.uncalculated|pluralize:"it,them" }}, the other columns do not.</p>
+        {% endif %}
+      </details>
+      {% endfor %}
+      {% else %}
+      <p class="text-tertiary text-sm">No direct-use diversion records yet.</p>
+      {% endif %}
+    </div>
+
     <!-- Linked use areas + Recharge areas filled, side by side -->
     <div class="page-grid-2col page-grid-account-full">
 

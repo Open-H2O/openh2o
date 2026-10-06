@@ -80,7 +80,9 @@ def _row_subtotal_blocks(html):
 
 
 def _th_col_sep(html):
-    return re.findall(r'<th[^>]*\bcol-sep\b[^>]*>([^<]*)</th>', html)
+    # The records table's own header only: the canal's month-by-month table
+    # (where the water went) groups its loss columns with col-sep too.
+    return re.findall(r'<th[^>]*\bcol-sep\b[^>]*>([^<]*)</th>', _thead(html))
 
 
 def _thead(html):

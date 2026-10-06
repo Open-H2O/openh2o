@@ -130,6 +130,37 @@ def dbz(request):
     return HttpResponse("ok", content_type="text/plain")
 
 
+def _canal_with_most_leftover_water():
+    """The point of diversion with the most water beyond what the crops could use.
+
+    "Most" is the largest total of ``UnallocatedDelivery`` over the newest
+    reporting period that has any such row (149-02 Task 2b); ``None`` when
+    there is none, and the card keeps its link to the diversions list. A
+    period holds the months between its dates, so the sum is read by month
+    range, not by the row's nullable period link.
+    """
+    from django.db.models import Sum
+
+    from accounting.models import ReportingPeriod
+    from surface.models import PointOfDiversion, UnallocatedDelivery
+
+    for period in ReportingPeriod.objects.order_by("-start_date"):
+        top = (
+            UnallocatedDelivery.objects.filter(
+                month__gte=period.start_date.replace(day=1),
+                month__lte=period.end_date,
+                amount_acre_feet__gt=0,
+            )
+            .values("point_of_diversion")
+            .annotate(total=Sum("amount_acre_feet"))
+            .order_by("-total", "point_of_diversion")
+            .first()
+        )
+        if top is not None:
+            return PointOfDiversion.objects.filter(pk=top["point_of_diversion"]).first()
+    return None
+
+
 def health_dashboard(request):
     latest_ids = (
         HealthCheckResult.objects.values("category")
@@ -181,6 +212,14 @@ def health_dashboard(request):
                 if query:
                     href = f"{href}?{query}"
                 r.where = {"href": href, "label": label}
+                if r.category == "unallocated_delivery":
+                    canal = _canal_with_most_leftover_water()
+                    if canal is not None:
+                        r.where = {
+                            "href": f"{reverse('surface:pod_detail', args=[canal.pk])}"
+                            "#where-the-water-went",
+                            "label": f"{canal.name}, month by month",
+                        }
 
     if applicable == 0:
         # Nothing left to report on. Unreachable in practice — database, disk,

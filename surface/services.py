@@ -64,7 +64,7 @@ from django.utils import timezone
 from accounting.allocation_math import allocate_by_demand, apportion_shared_supply
 from accounting.carryover_math import water_year_of
 from accounting.ledger_words import delivery_share_words, percent_words
-from accounting.models import CalculationRun, WaterType
+from accounting.models import CalculationRun, ReportingPeriod, WaterType
 from accounting.services import (
     CONVEYANCE_SEEPAGE_POOL,
     deposit_to_basin_pool,
@@ -829,3 +829,151 @@ def allocate_district_delivery(
         for month in sorted(months_to_clear):
             _store_month_loss(pod, month, losses.get(month), seepage_zones.get(month))
         return list(ParcelLedger.objects.bulk_create(to_write))
+
+
+def canal_water_by_month(pod):
+    """Where one canal's water went, month by month (149-02 Task 2b). Read-only.
+
+    Returns one dict per reporting period that has a direct-use diversion
+    record on ``pod``, newest first (months that fall in no period close into
+    a last group with ``period`` of ``None``)::
+
+        {"period": ReportingPeriod | None, "name": str, "is_open": bool,
+         "rows": [row, ...], "totals": totals}
+
+    Each ``row`` is one calendar month with a direct-use record (oldest first,
+    so the year reads in order; a month with no record is no row and a
+    to-storage record never makes one)::
+
+        {"month": date, "headgate": Decimal, "evaporation", "seepage", "spill",
+         "losses" (their sum), "own", "divided", "beyond": Decimal | None,
+         "estimated": bool, "calculated": bool, "adds_up": bool}
+
+    Every figure is read from a stored row: the headgate figure and the three
+    losses from ``CanalMonthLoss``; ``divided`` is the magnitude of this
+    point's split rows on the ledger (stored negative); ``beyond`` is
+    ``UnallocatedDelivery``. Nothing is recomputed. ``adds_up`` says whether
+    headgate = losses + own + divided + beyond to 0.0001; a month where it
+    does not stays on the page so a reader sees it. A month with records but no
+    ``CanalMonthLoss`` row (it predates the canal-loss calculation) shows the
+    records' consumed total as ``headgate``, ``calculated`` False, the other
+    figures ``None`` and ``adds_up`` True (nothing was claimed).
+
+    ``totals`` carries the same keys summed over the period's rows (``None``
+    figures count as nothing), plus ``count``, ``uncalculated`` (months not yet
+    calculated) and ``adds_up`` over the calculated months only.
+    """
+    tolerance = Decimal("0.0001")
+    zero = Decimal("0")
+
+    records = list(
+        DiversionRecord.objects.filter(
+            point_of_diversion=pod, diversion_type="direct_use"
+        ).order_by("month")
+    )
+    if not records:
+        return []
+
+    by_month = {}
+    for record in records:
+        entry = by_month.setdefault(
+            _month_start(record.month),
+            {"consumed": zero, "estimated": False},
+        )
+        entry["consumed"] += record.consumed_acre_feet()
+        if record.method == "estimated_from_use":
+            entry["estimated"] = True
+
+    stored = {
+        loss.month: loss for loss in CanalMonthLoss.objects.filter(point_of_diversion=pod)
+    }
+    divided = {}
+    for amount, day in ParcelLedger.objects.filter(
+        divided_from_headgate=True,
+        divided_from_point_pk=pod.pk,
+        source_type="surface_diversion",
+    ).values_list("amount_acre_feet", "effective_date"):
+        key = _month_start(day)
+        divided[key] = divided.get(key, zero) + abs(amount)
+    beyond = {}
+    for amount, day in UnallocatedDelivery.objects.filter(
+        point_of_diversion=pod
+    ).values_list("amount_acre_feet", "month"):
+        key = _month_start(day)
+        beyond[key] = beyond.get(key, zero) + amount
+
+    periods = list(ReportingPeriod.objects.order_by("-start_date"))
+
+    def period_of(month):
+        month_end = date(month.year + (month.month == 12), month.month % 12 + 1, 1)
+        for period in periods:
+            if period.start_date < month_end and period.end_date >= month:
+                return period
+        return None
+
+    groups = {}
+    for month in sorted(by_month):
+        info = by_month[month]
+        loss = stored.get(month)
+        if loss is None:
+            row = {
+                "month": month,
+                "headgate": info["consumed"],
+                "evaporation": None,
+                "seepage": None,
+                "spill": None,
+                "losses": None,
+                "own": None,
+                "divided": None,
+                "beyond": None,
+                "calculated": False,
+                "adds_up": True,
+            }
+        else:
+            losses = loss.evaporation_af + loss.seepage_af + loss.spill_af
+            row = {
+                "month": month,
+                "headgate": loss.diverted_af,
+                "evaporation": loss.evaporation_af,
+                "seepage": loss.seepage_af,
+                "spill": loss.spill_af,
+                "losses": losses,
+                "own": loss.own_af,
+                "divided": divided.get(month, zero),
+                "beyond": beyond.get(month, zero),
+                "calculated": True,
+            }
+            parts = losses + row["own"] + row["divided"] + row["beyond"]
+            row["adds_up"] = abs(row["headgate"] - parts) <= tolerance
+        row["estimated"] = info["estimated"]
+        period = period_of(month)
+        group = groups.setdefault(
+            period.pk if period else None,
+            {
+                "period": period,
+                "name": period.name if period else "No water year assigned",
+                "is_open": bool(period and not period.is_finalized),
+                "rows": [],
+            },
+        )
+        group["rows"].append(row)
+
+    ordered = [groups[p.pk] for p in periods if p.pk in groups]
+    if None in groups:
+        ordered.append(groups[None])
+
+    figure_keys = (
+        "headgate", "evaporation", "seepage", "spill", "losses", "own",
+        "divided", "beyond",
+    )
+    for group in ordered:
+        rows = group["rows"]
+        totals = {key: sum((r[key] or zero for r in rows), zero) for key in figure_keys}
+        totals["count"] = len(rows)
+        totals["uncalculated"] = sum(1 for r in rows if not r["calculated"])
+        totals["estimated"] = any(r["estimated"] for r in rows)
+        totals["adds_up"] = all(r["adds_up"] for r in rows)
+        group["totals"] = totals
+    if ordered and not any(g["is_open"] for g in ordered):
+        ordered[0]["is_open"] = True  # nothing open: the newest year still opens
+    return ordered

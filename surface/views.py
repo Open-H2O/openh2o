@@ -44,6 +44,7 @@ from core.workspace import detail_response, list_response
 from parcels.models import Parcel
 from surface import importer
 from surface import diversion_import as diversion_import_service
+from surface.services import canal_water_by_month
 from surface.curtailments import orders_that_may_apply
 from surface.forms import (
     CurtailmentOrderForm,
@@ -326,6 +327,7 @@ def _pod_detail_context(pod):
         "all_water_rights": all_water_rights,
         "form": form,
         "geojson": geojson,
+        "canal_water": canal_water_by_month(pod),
         **_device_panel_context(pod),
     }
 
