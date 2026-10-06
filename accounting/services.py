@@ -61,6 +61,26 @@ logger = logging.getLogger(__name__)
 # reset its own slice idempotently; they are summed for display/recovery.
 BASIN_RECHARGE_POOL = "basin_recharge_pool"
 INCIDENTAL_RECHARGE_POOL = "incidental_recharge_pool"
+CONVEYANCE_SEEPAGE_POOL = "conveyance_seepage_pool"
+
+
+def parcel_pool_zone(parcel):
+    """The parcel's GSA management-area zone — where its basin pool lives (ISS-053).
+
+    A no-well parcel's incidental recharge is deposited to this zone's basin pool
+    rather than the parcel's own ledger. Mirrors the zone managed recharge pools
+    into (``seed_merced_recharge_events`` resolves the basin's management_area
+    zone the same way). Returns the first management-area zone, or None.
+
+    Lives here (moved from ``run_calculations`` in 149-02) so the canal split's
+    seepage pool resolves a field's zone with this same function.
+    """
+    pz = (
+        ParcelZone.objects.filter(parcel=parcel, zone__zone_type="management_area")
+        .select_related("zone")
+        .first()
+    )
+    return pz.zone if pz else None
 
 
 def deposit_to_basin_pool(

@@ -344,7 +344,7 @@ class PointOfDiversion(models.Model):
     )
 
     def clean(self):
-        """Reject canal losses that claim more than the whole diverted.
+        """Reject canal losses that claim the whole diverted or more.
 
         Model.save() never calls this (the form is the entry boundary and
         carries the same check as a readable field error), but a guard
@@ -361,10 +361,11 @@ class PointOfDiversion(models.Model):
             )
             if f is not None
         ]
-        if fractions and sum(fractions) > 1:
+        if fractions and sum(fractions) >= 1:
             raise ValidationError(
                 "Evaporation, seepage and spill together cannot exceed the "
-                "whole of what was diverted."
+                "whole of what was diverted, or equal it: some water has to "
+                "reach the fields."
             )
 
     def _loss_display(self, fraction, band_percent):
@@ -976,4 +977,88 @@ class UnallocatedDelivery(models.Model):
         return (
             f"{self.point_of_diversion} {self.month:%Y-%m}: "
             f"{self.amount_acre_feet} AF unallocated"
+        )
+
+
+@track_changes()
+class CanalMonthLoss(models.Model):
+    """What one point of diversion's canal lost in one month, and where it went.
+
+    Engine output, like ``UnallocatedDelivery``: ``allocate_district_delivery``
+    writes one row per point and calendar month that holds a direct-use diversion
+    record, and clears it when the month no longer does. It stores the figures the
+    split started from so the canal's own page can read them back, and so the
+    seepage pool deposit can be a signed change against what the last run put in
+    (a re-run never deposits twice).
+
+    ``diverted_af`` is the month's consumed total (volume less what was returned
+    to the stream). The three losses come off the top, each the point's own
+    fraction of that figure to four places, and ``available_af`` is what is left:
+    it takes the rounding residual, so the four parts add back to the diverted
+    figure exactly (the check constraint below says so). Evaporation and spill are
+    written off, credited to no one. Seepage is deposited to the district's pool in
+    ``seepage_zone`` for ``seepage_water_year``; both stay blank when no zone could
+    take it.
+    """
+
+    point_of_diversion = models.ForeignKey(
+        "surface.PointOfDiversion", on_delete=models.CASCADE
+    )
+    month = models.DateField(help_text="First of the calendar month.")
+    diverted_af = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        help_text="The month's direct-use total the split started from: volume "
+        "less returned to the stream.",
+    )
+    evaporation_af = models.DecimalField(max_digits=12, decimal_places=4)
+    seepage_af = models.DecimalField(max_digits=12, decimal_places=4)
+    spill_af = models.DecimalField(max_digits=12, decimal_places=4)
+    available_af = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        help_text="What is left for the fields after the three losses.",
+    )
+    own_af = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        default=Decimal("0"),
+        help_text="The served fields' own recorded deliveries for the month, "
+        "taken from what was left before the rest was divided up.",
+    )
+    seepage_zone = models.ForeignKey(
+        "geography.Zone",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        help_text="The zone whose seepage pool took this month's seepage; blank "
+        "when no zone could.",
+    )
+    seepage_water_year = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Which water year's seepage pool took it.",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-month", "point_of_diversion_id"]
+        unique_together = [("point_of_diversion", "month")]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(
+                    diverted_af=models.F("evaporation_af")
+                    + models.F("seepage_af")
+                    + models.F("spill_af")
+                    + models.F("available_af")
+                ),
+                name="canal_month_loss_parts_add_up",
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.point_of_diversion} {self.month:%Y-%m}: "
+            f"{self.available_af} AF of {self.diverted_af} AF reached the fields"
         )

@@ -10,7 +10,9 @@ through this module, one month at a time, oldest first:
   1. ``run_calculations`` for the month (never ``--force``);
   2. only when the ``surface`` module is on, ``allocate_district_delivery`` for
      every active point of diversion that has a record in the month or serves
-     fields;
+     fields (canal losses come off the top, and seepage goes to the district's
+     pool; a point whose loss shares leave nothing for the fields stops the
+     month with a sentence naming it);
   3. ``run_calculations`` again, against the canal rows step 2 wrote.
 
 Each month is ONE ``transaction.atomic()`` block, so a month that raises changes
@@ -261,18 +263,41 @@ def _note_sentences(raw):
     sentence. It is information, not a fault: Site Health's Unallocated
     Delivery card already reports it, and on a district that diverts more than
     its crops use it is true every month, so it must not turn every run yellow.
+
+    Two more information sentences came with canal losses (149-02): the
+    evaporation and spill every point wrote off this period, in ONE sentence,
+    and one sentence for each point-month whose seepage had no zone to go to.
     """
     attention = []
     unexplained = defaultdict(lambda: Decimal("0"))
+    evaporation = Decimal("0")
+    spill = Decimal("0")
+    loss_points = set()
+    no_zone = []
     for note in raw:
         if note.get("kind") == "own_over_headgate":
+            if Decimal(note.get("lost_af") or 0) > 0:
+                where = (
+                    f"more than reached the fields from the headgate after "
+                    f"canal losses in {month_label(note['month'])}."
+                )
+            else:
+                where = (
+                    f"more than the headgate recorded for "
+                    f"{month_label(note['month'])}."
+                )
             attention.append(
                 f"Fields' own delivery records at {note['pod']} add up to "
-                f"{_amount(note['excess_af'])} AF more than the headgate "
-                f"recorded for {month_label(note['month'])}."
+                f"{_amount(note['excess_af'])} AF {where}"
             )
         elif note.get("kind") == "unallocated":
             unexplained[note["pod"]] += Decimal(note["amount_af"])
+        elif note.get("kind") == "canal_losses":
+            evaporation += Decimal(note["evaporation_af"])
+            spill += Decimal(note["spill_af"])
+            loss_points.add(note["pod"])
+        elif note.get("kind") == "seepage_no_zone":
+            no_zone.append(note)
     info = []
     if unexplained:
         # Brent's wording, 2026-10-06: the ruled phrase "canal water beyond
@@ -287,6 +312,25 @@ def _note_sentences(raw):
             f"{_amount(total)} AF of canal water went beyond what the crops "
             f"could use ({each}). No field is charged for it. Site Health "
             f"lists it under Unallocated Delivery."
+        )
+    if loss_points:
+        # Working copy for Brent's checkpoint (149-02). Only the losses that
+        # are above zero are named.
+        parts = []
+        if evaporation > 0:
+            parts.append(f"evaporation {_amount(evaporation)} AF")
+        if spill > 0:
+            parts.append(f"spill {_amount(spill)} AF")
+        count = len(loss_points)
+        info.append(
+            f"Canal {' and '.join(parts)} across {count} "
+            f"point{'s' if count != 1 else ''} this period, not credited to "
+            f"anyone."
+        )
+    for note in sorted(no_zone, key=lambda n: (n["month"], n["pod"])):
+        info.append(
+            f"Canal seepage of {_amount(note['amount_af'])} AF at {note['pod']} "
+            f"in {month_label(note['month'])} has no district zone to go to."
         )
     return attention, info
 
@@ -349,6 +393,15 @@ def _explain_failure(exc, month):
     if locked is not None:
         return _Stopped(locked, f"{type(exc).__name__}: {exc}\nMonth: {month}")
     text = str(exc)
+    if is_enabled("surface"):
+        from surface.services import CanalLossesTooLarge
+
+        if isinstance(exc, CanalLossesTooLarge):
+            label = month_label(month)
+            return _Stopped(
+                f"{exc.sentence} Nothing in {label} was changed.",
+                f"{type(exc).__name__}: {exc}\nMonth: {month}",
+            )
     if isinstance(exc, ValueError) and "no active CalculationPlan" in text:
         return _Stopped(_NO_PLAN, f"{type(exc).__name__}: {exc}\nMonth: {month}")
     if isinstance(exc, CommandError) and "is finalized" in text:

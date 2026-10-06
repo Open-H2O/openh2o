@@ -80,7 +80,7 @@ def _split_by_parcel(month=JAN):
 def _one_pod_three_fields():
     """One headgate serving A, B and C; A will carry an own record."""
     rp = ReportingPeriodFactory()
-    pod = PointOfDiversionFactory()
+    pod = PointOfDiversionFactory(evaporation_fraction=Decimal("0"))
     a = ParcelFactory(parcel_number="APN-A")
     b = ParcelFactory(parcel_number="APN-B")
     c = ParcelFactory(parcel_number="APN-C")
@@ -167,6 +167,7 @@ def test_own_records_over_the_headgate_write_no_split_and_report_the_excess():
             "pod": pod.name,
             "month": JAN,
             "excess_af": Decimal("20.0000"),
+            "lost_af": Decimal("0.0000"),
         }
     ]
 
@@ -366,8 +367,8 @@ def test_field_served_by_two_points_contributes_to_each_pro_rata_by_recorded_tot
     its only other field, G, is 60 - 18 = 42 AF.
     """
     rp = ReportingPeriodFactory()
-    p1 = PointOfDiversionFactory()
-    p2 = PointOfDiversionFactory()
+    p1 = PointOfDiversionFactory(evaporation_fraction=Decimal("0"))
+    p2 = PointOfDiversionFactory(evaporation_fraction=Decimal("0"))
     f = ParcelFactory(parcel_number="APN-F")
     g = ParcelFactory(parcel_number="APN-G")
     for pod in (p1, p2):
@@ -394,8 +395,8 @@ def test_field_served_by_two_points_counts_wholly_against_the_one_that_recorded(
     """P2 recorded nothing and P1 recorded 60 AF, so F's 30 AF counts
     30 * 60/60 = 30 against P1 and the remainder for G is 30 AF."""
     rp = ReportingPeriodFactory()
-    p1 = PointOfDiversionFactory()
-    p2 = PointOfDiversionFactory()
+    p1 = PointOfDiversionFactory(evaporation_fraction=Decimal("0"))
+    p2 = PointOfDiversionFactory(evaporation_fraction=Decimal("0"))
     f = ParcelFactory(parcel_number="APN-F")
     g = ParcelFactory(parcel_number="APN-G")
     for pod in (p1, p2):
@@ -417,8 +418,8 @@ def test_field_served_by_two_points_splits_evenly_when_neither_recorded_anything
     """Both points recorded 0 AF, so F's 30 AF counts half (15 AF) against each
     point; against P1's 0 AF headgate that is 15 AF of excess."""
     rp = ReportingPeriodFactory()
-    p1 = PointOfDiversionFactory()
-    p2 = PointOfDiversionFactory()
+    p1 = PointOfDiversionFactory(evaporation_fraction=Decimal("0"))
+    p2 = PointOfDiversionFactory(evaporation_fraction=Decimal("0"))
     f = ParcelFactory(parcel_number="APN-F")
     for pod in (p1, p2):
         PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=f)
@@ -437,7 +438,7 @@ def test_field_served_by_two_points_splits_evenly_when_neither_recorded_anything
 
 def test_remainder_with_no_field_left_to_take_it_is_unallocated():
     rp = ReportingPeriodFactory()
-    pod = PointOfDiversionFactory()
+    pod = PointOfDiversionFactory(evaporation_fraction=Decimal("0"))
     a = ParcelFactory(parcel_number="APN-A")
     PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=a)
     _own(a, "-40")
@@ -464,7 +465,7 @@ def test_remainder_with_no_field_left_to_take_it_is_unallocated():
 
 def test_ample_remainder_reports_the_unallocated_surplus_in_notes():
     rp = ReportingPeriodFactory()
-    pod = PointOfDiversionFactory()
+    pod = PointOfDiversionFactory(evaporation_fraction=Decimal("0"))
     a = ParcelFactory(parcel_number="APN-A")
     b = ParcelFactory(parcel_number="APN-B")
     PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=a)
@@ -493,7 +494,7 @@ def test_ample_remainder_reports_the_unallocated_surplus_in_notes():
 
 def test_static_fraction_fallback_divides_the_remainder_among_fields_without_an_own_record():
     rp = ReportingPeriodFactory()
-    pod = PointOfDiversionFactory()
+    pod = PointOfDiversionFactory(evaporation_fraction=Decimal("0"))
     a = ParcelFactory(parcel_number="APN-A")
     b = ParcelFactory(parcel_number="APN-B")
     c = ParcelFactory(parcel_number="APN-C")
@@ -519,8 +520,8 @@ def test_static_fraction_fallback_divides_the_remainder_among_fields_without_an_
 
 def test_recalculating_one_point_keeps_another_points_share_on_a_shared_field():
     rp = ReportingPeriodFactory()
-    pod_a = PointOfDiversionFactory()
-    pod_b = PointOfDiversionFactory()
+    pod_a = PointOfDiversionFactory(evaporation_fraction=Decimal("0"))
+    pod_b = PointOfDiversionFactory(evaporation_fraction=Decimal("0"))
     shared = ParcelFactory(parcel_number="APN-SHARED")
     for pod in (pod_a, pod_b):
         PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=shared)

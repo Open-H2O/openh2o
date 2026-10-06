@@ -175,7 +175,8 @@ class PointOfDiversionForm(forms.ModelForm):
     page's own "Water right" panel and the map click that placed the point).
     The canal-loss fractions sit under the template's own "Canal losses"
     heading; ``clean()`` here is the operator's entry boundary rejecting a
-    fraction sum over 1 with a plain sentence, the same shape
+    fraction sum of 1 or more with a plain sentence (149-02: the canal split
+    refuses a month where nothing would reach the fields), the same shape
     ``DiversionRecordForm.clean_returned_af`` uses for its own model guard --
     kept at the form layer only (not duplicated on the model) so the error
     is never shown twice.
@@ -267,10 +268,11 @@ class PointOfDiversionForm(forms.ModelForm):
             for field in ("evaporation_fraction", "seepage_fraction", "spill_fraction")
         ]
         fractions = [f for f in fractions if f is not None]
-        if fractions and sum(fractions) > 1:
+        if fractions and sum(fractions) >= 1:
             raise forms.ValidationError(
                 "Evaporation, seepage and spill together cannot exceed the "
-                "whole of what was diverted."
+                "whole of what was diverted, or equal it: some water has to "
+                "reach the fields."
             )
         return cleaned
 

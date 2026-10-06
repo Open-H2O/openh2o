@@ -83,7 +83,7 @@ def world():
         _et_cache(parcel, period="2024-02", et_mm=ET_MM)
         w.fields.append(parcel)
     w.a, w.b, w.c = w.fields
-    w.pod = PointOfDiversionFactory(name="Test Canal Headgate")
+    w.pod = PointOfDiversionFactory(name="Test Canal Headgate", evaporation_fraction=Decimal("0"))
     for parcel, fraction in zip(w.fields, ("0.3333", "0.3333", "0.3334")):
         PointOfDiversionParcelFactory(
             point_of_diversion=w.pod, parcel=parcel, fraction=Decimal(fraction)

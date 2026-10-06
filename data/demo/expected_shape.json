@@ -458,6 +458,16 @@
       "tolerance": 0,
       "reason": "The other half of the same crosswalk, and the other half of the same defect -- 0 vs production's 26 until 7f121cc. Together with ObservedProperty this is the +43 rows that took the candidate from 32,275 to 32,318."
     },
+    "surface.CanalMonthLoss": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "NOT YET MEASURED. Added by Plan 149-02 Task 1 so every model is described; the real count is one row per point of diversion and calendar month that holds a direct-use diversion record, and Task 4's golden rebuild reads it off that build's manifest and pins it. Until then this 0 will fail gate 2 against a rebuilt candidate, which is the point of writing it down."
+    },
+    "surface.CanalMonthLossEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+    },
     "surface.CurtailmentOrder": {
       "expected": 1,
       "tolerance": 0,

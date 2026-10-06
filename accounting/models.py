@@ -433,16 +433,21 @@ class AllocationCarryover(models.Model):
     * ``incidental_recharge_pool`` — deep-percolation from surface over-delivery
       on a no-well parcel (the calc engine owns it: per-parcel-month delta so a
       re-run never double-increments).
+    * ``conveyance_seepage_pool`` — water a canal loses to seepage on its way to
+      the fields (149-02; the canal split owns it: a per point-and-month delta
+      against ``surface.CanalMonthLoss`` so a re-run never double-deposits).
 
-    The two pool origins are summed for display/recovery; keeping them as
-    separate rows is purely so re-seeding managed recharge can't wipe the
-    engine's incidental total (and vice-versa).
+    The pool origins are summed for display/recovery (``zone_carryover`` adds
+    every origin of a zone-year); keeping them as separate rows is purely so
+    re-seeding managed recharge can't wipe the engine's incidental total, or
+    either of them the canal's seepage (and vice-versa).
     """
 
     ORIGIN_CHOICES = [
         ("allocation_carryover", "Allocation carryover"),
         ("basin_recharge_pool", "Basin recharge pool (managed)"),
         ("incidental_recharge_pool", "Basin recharge pool (incidental)"),
+        ("conveyance_seepage_pool", "District seepage pool (canal)"),
     ]
 
     zone = models.ForeignKey("geography.Zone", on_delete=models.CASCADE)
@@ -482,7 +487,7 @@ class AllocationCarryover(models.Model):
         choices=ORIGIN_CHOICES,
         default="allocation_carryover",
         help_text="What kind of row this is: a year-end allocation carryover, or "
-        "a GSA basin recharge pool (managed / incidental).",
+        "a GSA basin recharge pool (managed / incidental) or a canal seepage pool.",
     )
     created_at = models.DateTimeField(auto_now_add=True)
 

@@ -72,7 +72,9 @@ def test_form_rejects_fraction_sum_over_one():
     )
 
 
-def test_form_accepts_a_fraction_sum_at_exactly_one():
+def test_form_rejects_a_fraction_sum_at_exactly_one():
+    # 149-02: three shares that take the whole diverted volume leave nothing for
+    # the fields, and the canal split refuses such a month, so the form does too.
     pod = PointOfDiversionFactory()
     form = PointOfDiversionForm(
         {
@@ -82,6 +84,24 @@ def test_form_accepts_a_fraction_sum_at_exactly_one():
             "evaporation_fraction": "0.50",
             "seepage_fraction": "0.30",
             "spill_fraction": "0.20",
+            "miners_inch_gpm": "11.22",
+        },
+        instance=pod,
+    )
+    assert not form.is_valid()
+    assert any("or equal it" in msg for msg in form.non_field_errors())
+
+
+def test_form_accepts_a_fraction_sum_just_under_one():
+    pod = PointOfDiversionFactory()
+    form = PointOfDiversionForm(
+        {
+            "name": pod.name,
+            "status": "active",
+            "loss_basis": "district_estimate",
+            "evaporation_fraction": "0.50",
+            "seepage_fraction": "0.30",
+            "spill_fraction": "0.1999",
             "miners_inch_gpm": "11.22",
         },
         instance=pod,

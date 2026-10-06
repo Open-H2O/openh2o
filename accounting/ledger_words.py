@@ -248,7 +248,16 @@ NO_PUMPING_DERIVED_WORDS = (
 )
 
 
-def delivery_share_words(record, pod, *, fixed_share=None):
+def percent_words(fraction):
+    """A fraction as a whole-number-or-decimal percent without trailing zeros.
+
+    ``Decimal("0.1500")`` -> ``"15"``, ``Decimal("0.0125")`` -> ``"1.25"``,
+    ``Decimal("1.0000")`` -> ``"100"``. The caller adds the percent sign.
+    """
+    return format((Decimal(fraction) * 100).normalize(), "f")
+
+
+def delivery_share_words(record, pod, *, fixed_share=None, loss_fraction=None):
     """The Description sentence for one surface-diversion allocation row.
 
     ``record`` is the ``surface.models.DiversionRecord`` the allocation was
@@ -257,6 +266,12 @@ def delivery_share_words(record, pod, *, fixed_share=None):
     to, not ``volume_acre_feet`` -- at the Amount column's two-decimal,
     thousands-separated precision (copy rule 9's spirit: the sentence is for
     a reader, not a debugger).
+
+    ``loss_fraction`` is the point's evaporation, seepage and spill shares added
+    together (149-02). When it is above zero the sentence says the share is
+    worked out after canal losses of that percent, so a reader knows the figure
+    is not the headgate's own recorded volume. Left out when there are no losses.
+    WORKING COPY: the clause is the one Brent reads at 149-02's checkpoint.
 
     ``fixed_share`` is the ``Decimal`` weight (4dp, from
     ``apportion_shared_supply``) this parcel received on the static-fraction
@@ -294,6 +309,9 @@ def delivery_share_words(record, pod, *, fixed_share=None):
             f", after {returned:,.2f} AF of the {volume:,.2f} AF diverted "
             f"was returned to the stream"
         )
+
+    if loss_fraction:
+        sentence += f", after canal losses of {percent_words(loss_fraction)}%"
 
     if fixed_share is not None:
         sentence += (

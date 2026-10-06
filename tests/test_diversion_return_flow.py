@@ -118,7 +118,7 @@ def test_single_parcel_path(returned, expected):
     """accounting/services.py:120 — explicit single-parcel entry."""
     rp = ReportingPeriodFactory()
     p = ParcelFactory()
-    pod = PointOfDiversionFactory()
+    pod = PointOfDiversionFactory(evaporation_fraction=Decimal("0"))
     record = DiversionRecordFactory(
         point_of_diversion=pod, reporting_period=rp, month=JAN,
         volume_acre_feet=VOL, returned_af=returned,
@@ -133,7 +133,7 @@ def test_apportioned_path(returned, expected):
     rp = ReportingPeriodFactory()
     a = ParcelFactory(parcel_number="APN-A")
     b = ParcelFactory(parcel_number="APN-B")
-    pod = PointOfDiversionFactory()
+    pod = PointOfDiversionFactory(evaporation_fraction=Decimal("0"))
     PointOfDiversionParcelFactory(
         point_of_diversion=pod, parcel=a, fraction=Decimal("0.5")
     )
@@ -153,7 +153,7 @@ def test_water_right_fallback_path(returned, expected):
     """accounting/services.py:186 — WaterRightParcel fallback (no POD links)."""
     rp = ReportingPeriodFactory()
     p = ParcelFactory()
-    pod = PointOfDiversionFactory()
+    pod = PointOfDiversionFactory(evaporation_fraction=Decimal("0"))
     WaterRightParcelFactory(water_right=pod.water_right, parcel=p)
     record = DiversionRecordFactory(
         point_of_diversion=pod, reporting_period=rp, month=JAN,
@@ -170,7 +170,7 @@ def test_demand_weighted_path(returned, expected):
     rp = ReportingPeriodFactory()
     a = ParcelFactory(parcel_number="APN-A")
     b = ParcelFactory(parcel_number="APN-B")
-    pod = PointOfDiversionFactory()
+    pod = PointOfDiversionFactory(evaporation_fraction=Decimal("0"))
     PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=a)
     PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=b)
     # demand 50+50 -> caps 66.67 each (sum 133); consumed (<=100) is SHORT, so the
@@ -198,7 +198,7 @@ def test_static_fraction_fallback_path(returned, expected):
     rp = ReportingPeriodFactory()
     a = ParcelFactory(parcel_number="APN-A")
     b = ParcelFactory(parcel_number="APN-B")
-    pod = PointOfDiversionFactory()
+    pod = PointOfDiversionFactory(evaporation_fraction=Decimal("0"))
     PointOfDiversionParcelFactory(
         point_of_diversion=pod, parcel=a, fraction=Decimal("0.6")
     )
@@ -219,15 +219,15 @@ def test_static_fraction_fallback_path(returned, expected):
 
 
 def test_rediverted_from_links_upstream_pod():
-    upstream = PointOfDiversionFactory()
-    downstream = PointOfDiversionFactory(rediverted_from=upstream)
+    upstream = PointOfDiversionFactory(evaporation_fraction=Decimal("0"))
+    downstream = PointOfDiversionFactory(rediverted_from=upstream, evaporation_fraction=Decimal("0"))
     downstream.refresh_from_db()
     assert downstream.rediverted_from_id == upstream.id
     assert list(upstream.rediversions.all()) == [downstream]
 
 
 def test_rediverted_from_defaults_none():
-    pod = PointOfDiversionFactory()
+    pod = PointOfDiversionFactory(evaporation_fraction=Decimal("0"))
     assert pod.rediverted_from is None
 
 
@@ -266,7 +266,7 @@ def _pod_pane(pod):
 
 def test_a_to_storage_record_renders_to_storage_and_never_consumptive_use():
     rp = ReportingPeriodFactory()
-    pod = PointOfDiversionFactory()
+    pod = PointOfDiversionFactory(evaporation_fraction=Decimal("0"))
     DiversionRecordFactory(
         point_of_diversion=pod, reporting_period=rp, month=JAN,
         volume_acre_feet=Decimal("877.4700"), returned_af=Decimal("0"),
@@ -287,7 +287,7 @@ def test_a_to_storage_record_renders_to_storage_and_never_consumptive_use():
 
 def test_a_direct_use_record_with_a_partial_return_still_says_partial_return():
     rp = ReportingPeriodFactory()
-    pod = PointOfDiversionFactory()
+    pod = PointOfDiversionFactory(evaporation_fraction=Decimal("0"))
     DiversionRecordFactory(
         point_of_diversion=pod, reporting_period=rp, month=JAN,
         volume_acre_feet=Decimal("100.0000"), returned_af=Decimal("40.0000"),

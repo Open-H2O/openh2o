@@ -83,9 +83,12 @@ from accounting.models import (
     WaterType,
 )
 from accounting.recharge_policy import recharge_routes_to_personal
-from accounting.services import INCIDENTAL_RECHARGE_POOL, deposit_to_basin_pool
+from accounting.services import (
+    INCIDENTAL_RECHARGE_POOL,
+    deposit_to_basin_pool,
+    parcel_pool_zone as _parcel_pool_zone,
+)
 from core.models import SiteConfig
-from geography.models import ParcelZone
 from parcels.models import Parcel, ParcelLedger
 
 # The reason recorded on every change a forced recompute of a finalized period
@@ -129,24 +132,6 @@ def _groundwater_extraction(final_af, groundwater_efficiency):
     extracted = (final_af / groundwater_efficiency).quantize(quant)
     deep_percolation = (extracted - final_af).quantize(quant)
     return extracted, deep_percolation
-
-
-def _parcel_pool_zone(parcel):
-    """The parcel's GSA management-area zone — where its basin pool lives (ISS-053).
-
-    A no-well parcel's incidental recharge is deposited to this zone's basin pool
-    rather than the parcel's own ledger. Mirrors the zone managed recharge pools
-    into (``seed_merced_recharge_events`` resolves the basin's management_area
-    zone the same way). Returns the first management-area zone, or None.
-    """
-    pz = (
-        ParcelZone.objects.filter(
-            parcel=parcel, zone__zone_type="management_area"
-        )
-        .select_related("zone")
-        .first()
-    )
-    return pz.zone if pz else None
 
 
 def _over_delivery_decision(over, treatment, leave_behind, *, routes_personal, pool_zone):
