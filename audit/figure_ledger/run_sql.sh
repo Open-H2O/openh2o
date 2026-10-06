@@ -38,5 +38,8 @@ if [ ! -f "$SQL_FILE" ]; then
   exit 2
 fi
 
+# LEDGER_DB names another database in the same container (default: openh2o).
+# A row pinned to a restored copy such as golden_after sets it, e.g.
+#     LEDGER_DB=golden_after bash audit/figure_ledger/run_sql.sh <file>.sql
 docker compose exec -T db \
-  psql -U openh2o -d openh2o -v ON_ERROR_STOP=1 --csv -f - < "$SQL_FILE"
+  psql -U openh2o -d "${LEDGER_DB:-openh2o}" -v ON_ERROR_STOP=1 --csv -f - < "$SQL_FILE"

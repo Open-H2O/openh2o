@@ -1609,6 +1609,171 @@
     "id": "FIG-surface-005",
     "app": "surface",
     "kind": "figure",
+    "template": "templates/surface/partials/_detail_pane.html",
+    "line": 296,
+    "column": 138,
+    "expression": "{{ group.totals.headgate|floatformat:2|intcomma }}",
+    "enclosing_loop": "group in canal_water",
+    "nearest_label": ", {{ group.totals.headgate|"
+  },
+  {
+    "id": "FIG-surface-006",
+    "app": "surface",
+    "kind": "figure",
+    "template": "templates/surface/partials/_detail_pane.html",
+    "line": 325,
+    "column": 48,
+    "expression": "{{ r.headgate|floatformat:2|intcomma }}",
+    "enclosing_loop": "r in group.rows",
+    "nearest_label": "{{ r.headgate|"
+  },
+  {
+    "id": "FIG-surface-007",
+    "app": "surface",
+    "kind": "figure",
+    "template": "templates/surface/partials/_detail_pane.html",
+    "line": 327,
+    "column": 74,
+    "expression": "{{ r.evaporation|floatformat:2|intcomma }}",
+    "enclosing_loop": "r in group.rows",
+    "nearest_label": "{{ r.evaporation|"
+  },
+  {
+    "id": "FIG-surface-008",
+    "app": "surface",
+    "kind": "figure",
+    "template": "templates/surface/partials/_detail_pane.html",
+    "line": 328,
+    "column": 62,
+    "expression": "{{ r.seepage|floatformat:2|intcomma }}",
+    "enclosing_loop": "r in group.rows",
+    "nearest_label": "{{ r.seepage|"
+  },
+  {
+    "id": "FIG-surface-009",
+    "app": "surface",
+    "kind": "figure",
+    "template": "templates/surface/partials/_detail_pane.html",
+    "line": 329,
+    "column": 60,
+    "expression": "{{ r.spill|floatformat:2|intcomma }}",
+    "enclosing_loop": "r in group.rows",
+    "nearest_label": "{{ r.spill|"
+  },
+  {
+    "id": "FIG-surface-010",
+    "app": "surface",
+    "kind": "figure",
+    "template": "templates/surface/partials/_detail_pane.html",
+    "line": 330,
+    "column": 43,
+    "expression": "{{ r.own|floatformat:2|intcomma }}",
+    "enclosing_loop": "r in group.rows",
+    "nearest_label": "{{ r.own|"
+  },
+  {
+    "id": "FIG-surface-011",
+    "app": "surface",
+    "kind": "figure",
+    "template": "templates/surface/partials/_detail_pane.html",
+    "line": 331,
+    "column": 47,
+    "expression": "{{ r.divided|floatformat:2|intcomma }}",
+    "enclosing_loop": "r in group.rows",
+    "nearest_label": "{{ r.divided|"
+  },
+  {
+    "id": "FIG-surface-012",
+    "app": "surface",
+    "kind": "figure",
+    "template": "templates/surface/partials/_detail_pane.html",
+    "line": 332,
+    "column": 46,
+    "expression": "{{ r.beyond|floatformat:2|intcomma }}",
+    "enclosing_loop": "r in group.rows",
+    "nearest_label": "{{ r.beyond|"
+  },
+  {
+    "id": "FIG-surface-013",
+    "app": "surface",
+    "kind": "figure",
+    "template": "templates/surface/partials/_detail_pane.html",
+    "line": 345,
+    "column": 73,
+    "expression": "{{ group.totals.headgate|floatformat:2|intcomma }}",
+    "enclosing_loop": "group in canal_water",
+    "nearest_label": "{{ group.totals.headgate|"
+  },
+  {
+    "id": "FIG-surface-014",
+    "app": "surface",
+    "kind": "figure",
+    "template": "templates/surface/partials/_detail_pane.html",
+    "line": 346,
+    "column": 84,
+    "expression": "{{ group.totals.evaporation|floatformat:2|intcomma }}",
+    "enclosing_loop": "group in canal_water",
+    "nearest_label": "{{ group.totals.evaporation|"
+  },
+  {
+    "id": "FIG-surface-015",
+    "app": "surface",
+    "kind": "figure",
+    "template": "templates/surface/partials/_detail_pane.html",
+    "line": 347,
+    "column": 72,
+    "expression": "{{ group.totals.seepage|floatformat:2|intcomma }}",
+    "enclosing_loop": "group in canal_water",
+    "nearest_label": "{{ group.totals.seepage|"
+  },
+  {
+    "id": "FIG-surface-016",
+    "app": "surface",
+    "kind": "figure",
+    "template": "templates/surface/partials/_detail_pane.html",
+    "line": 348,
+    "column": 70,
+    "expression": "{{ group.totals.spill|floatformat:2|intcomma }}",
+    "enclosing_loop": "group in canal_water",
+    "nearest_label": "{{ group.totals.spill|"
+  },
+  {
+    "id": "FIG-surface-017",
+    "app": "surface",
+    "kind": "figure",
+    "template": "templates/surface/partials/_detail_pane.html",
+    "line": 349,
+    "column": 68,
+    "expression": "{{ group.totals.own|floatformat:2|intcomma }}",
+    "enclosing_loop": "group in canal_water",
+    "nearest_label": "{{ group.totals.own|"
+  },
+  {
+    "id": "FIG-surface-018",
+    "app": "surface",
+    "kind": "figure",
+    "template": "templates/surface/partials/_detail_pane.html",
+    "line": 350,
+    "column": 72,
+    "expression": "{{ group.totals.divided|floatformat:2|intcomma }}",
+    "enclosing_loop": "group in canal_water",
+    "nearest_label": "{{ group.totals.divided|"
+  },
+  {
+    "id": "FIG-surface-019",
+    "app": "surface",
+    "kind": "figure",
+    "template": "templates/surface/partials/_detail_pane.html",
+    "line": 351,
+    "column": 71,
+    "expression": "{{ group.totals.beyond|floatformat:2|intcomma }}",
+    "enclosing_loop": "group in canal_water",
+    "nearest_label": "{{ group.totals.beyond|"
+  },
+  {
+    "id": "FIG-surface-020",
+    "app": "surface",
+    "kind": "figure",
     "template": "templates/surface/partials/_diversion_records.html",
     "line": 62,
     "column": 53,
@@ -1617,7 +1782,7 @@
     "nearest_label": "{{ record.volume_acre_feet|"
   },
   {
-    "id": "FIG-surface-006",
+    "id": "FIG-surface-021",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_diversion_records.html",
@@ -1628,7 +1793,7 @@
     "nearest_label": "{{ record.returned_af|"
   },
   {
-    "id": "FIG-surface-007",
+    "id": "FIG-surface-022",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_diversion_records.html",
@@ -1639,7 +1804,7 @@
     "nearest_label": "{{ record.consumed_acre_feet|"
   },
   {
-    "id": "FIG-surface-008",
+    "id": "FIG-surface-023",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_diversion_records.html",
@@ -1650,7 +1815,7 @@
     "nearest_label": "{{ group.diverted|"
   },
   {
-    "id": "FIG-surface-009",
+    "id": "FIG-surface-024",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_diversion_records.html",
@@ -1661,7 +1826,7 @@
     "nearest_label": "{{ group.returned|"
   },
   {
-    "id": "FIG-surface-010",
+    "id": "FIG-surface-025",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_diversion_records.html",
@@ -1672,7 +1837,7 @@
     "nearest_label": "{{ group.retained|"
   },
   {
-    "id": "FIG-surface-011",
+    "id": "FIG-surface-026",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_list_results.html",
@@ -1683,7 +1848,7 @@
     "nearest_label": "{{ right.face_value_acre_feet|"
   },
   {
-    "id": "FIG-surface-012",
+    "id": "FIG-surface-027",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_pod_parcel_share_value.html",
@@ -1694,7 +1859,7 @@
     "nearest_label": "share {{ pp.fraction|"
   },
   {
-    "id": "FIG-surface-013",
+    "id": "FIG-surface-028",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_pod_water_right_panel.html",
@@ -1705,7 +1870,7 @@
     "nearest_label": "{{ water_right.face_value_acre_feet|"
   },
   {
-    "id": "FIG-surface-014",
+    "id": "FIG-surface-029",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_water_right_detail_pane.html",
@@ -1716,7 +1881,7 @@
     "nearest_label": "{{ water_right.max_rate_cfs|"
   },
   {
-    "id": "FIG-surface-015",
+    "id": "FIG-surface-030",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_water_right_detail_pane.html",
@@ -1727,7 +1892,7 @@
     "nearest_label": "{{ water_right.net_acreage|"
   },
   {
-    "id": "FIG-surface-016",
+    "id": "FIG-surface-031",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_water_right_detail_pane.html",
@@ -1738,7 +1903,7 @@
     "nearest_label": "{{ water_right.face_value_acre_feet|"
   },
   {
-    "id": "FIG-surface-017",
+    "id": "FIG-surface-032",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_water_right_detail_pane.html",
@@ -1749,7 +1914,7 @@
     "nearest_label": "{{ water_right.face_value_acre_feet|"
   },
   {
-    "id": "FIG-surface-018",
+    "id": "FIG-surface-033",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_water_right_detail_pane.html",
@@ -1760,7 +1925,7 @@
     "nearest_label": "{{ current_totals.diverted|"
   },
   {
-    "id": "FIG-surface-019",
+    "id": "FIG-surface-034",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_water_right_detail_pane.html",
@@ -1771,7 +1936,7 @@
     "nearest_label": "{{ remaining|"
   },
   {
-    "id": "FIG-surface-020",
+    "id": "FIG-surface-035",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_water_right_detail_pane.html",
@@ -1782,7 +1947,7 @@
     "nearest_label": "{{ row.total|"
   },
   {
-    "id": "FIG-surface-021",
+    "id": "FIG-surface-036",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_water_right_detail_pane.html",
@@ -1793,7 +1958,7 @@
     "nearest_label": "{{ water_right.face_value_acre_feet|"
   },
   {
-    "id": "FIG-surface-022",
+    "id": "FIG-surface-037",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_water_right_detail_pane.html",
@@ -1804,7 +1969,7 @@
     "nearest_label": "{{ current_totals.diverted|"
   },
   {
-    "id": "FIG-surface-023",
+    "id": "FIG-surface-038",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_water_right_detail_pane.html",
@@ -1815,7 +1980,7 @@
     "nearest_label": "{{ record.volume_acre_feet|"
   },
   {
-    "id": "FIG-surface-024",
+    "id": "FIG-surface-039",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_water_right_detail_pane.html",
@@ -1826,7 +1991,7 @@
     "nearest_label": "{{ group.diverted|"
   },
   {
-    "id": "FIG-surface-025",
+    "id": "FIG-surface-040",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_water_right_detail_pane.html",
@@ -1837,7 +2002,7 @@
     "nearest_label": "Max rate: {{ pod.max_rate_cfs|"
   },
   {
-    "id": "FIG-surface-026",
+    "id": "FIG-surface-041",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_water_right_detail_pane.html",
