@@ -42,6 +42,12 @@ every named period's months inside ONE invocation, with exactly one pass 2
 between them. Phase 133-01 (2026-09-05) added the second water year and this is
 the constraint that shaped it.
 
+For the general sequence on any period (crop water use, canal division, crop
+water use again, month by month, recorded as a request) see ``run_accounting``
+(``accounting/engine_run.py``). This command keeps its own sequence because its
+pass 2 is ``seed_merced_ledgers``, the demo's self-flushing seed, which rebuilds
+every row it owns across every period.
+
 SCOPE — accounting layer ONLY. This command refreshes the engine output and the
 ledger re-allocation. It does NOT re-seed the physical/spatial layer (parcels,
 points of diversion, wells, boundaries) — those are stable and owned by

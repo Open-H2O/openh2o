@@ -784,3 +784,86 @@ class CalculationRun(models.Model):
 
     def __str__(self):
         return f"{self.parcel} {self.period} → {self.final_af} AF"
+
+
+class CalculationRequest(models.Model):
+    """One request to calculate some months, and what came of it (149-01).
+
+    The record the calculation leaves behind: who asked (a person pressing the
+    button, the nightly schedule, a saved diversion record, or a technician at
+    the command line), which months, and in plain words how it went. The period
+    page and Site Health read it; ``accounting.engine_run`` writes it.
+
+    Deliberately NOT tracked by the change history: it is itself the log of
+    what ran, and it is never part of a figure. ``error_detail`` is for an
+    administrator only and is never shown to a viewer.
+    """
+
+    TRIGGER_CHOICES = [
+        ("screen", "A person pressed the button"),
+        ("schedule", "The nightly schedule"),
+        ("diversion_saved", "A diversion record was saved"),
+        ("ledger_saved", "A delivery record was saved"),
+        ("command", "The command line"),
+    ]
+    STATUS_CHOICES = [
+        ("queued", "Waiting to start"),
+        ("running", "Running"),
+        ("succeeded", "Finished"),
+        ("finished_with_notes", "Finished, with notes"),
+        ("failed", "Stopped"),
+    ]
+
+    requested_at = models.DateTimeField(auto_now_add=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    trigger = models.CharField(max_length=20, choices=TRIGGER_CHOICES, default="command")
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    reporting_period = models.ForeignKey(
+        ReportingPeriod,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="calculation_requests",
+    )
+    months = models.JSONField(
+        default=list,
+        blank=True,
+        help_text='The months to calculate, oldest first, each as "YYYY-MM". '
+        "Rewritten to the months actually calculated when the request runs.",
+    )
+    months_done = models.PositiveIntegerField(
+        default=0,
+        help_text="How many of the months have been calculated and saved so far.",
+    )
+    status = models.CharField(max_length=24, choices=STATUS_CHOICES, default="queued")
+    outcome = models.TextField(
+        blank=True,
+        help_text="One or two plain sentences for a person: what happened.",
+    )
+    notes = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Plain sentences for a person reading the outcome, one per "
+        "thing worth knowing: months left out until their data arrives, own "
+        "delivery records that add up to more than the headgate, canal water "
+        "left over.",
+    )
+    error_detail = models.TextField(
+        blank=True,
+        help_text="Exception, month and the end of the traceback. For an "
+        "administrator only; never shown to a viewer.",
+    )
+
+    class Meta:
+        ordering = ["-requested_at", "-pk"]
+        indexes = [models.Index(fields=["status", "requested_at"])]
+
+    def __str__(self):
+        return f"Calculation request {self.pk}: {self.status}"

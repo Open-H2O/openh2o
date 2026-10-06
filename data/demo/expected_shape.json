@@ -43,6 +43,11 @@
       "tolerance": 0,
       "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
     },
+    "accounting.CalculationRequest": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "A run record: who asked for a calculation and how it went. The demonstration is built by refresh_merced_accounting, which creates no request, so a golden never carries one."
+    },
     "accounting.CalculationRun": {
       "expected": 1824,
       "tolerance": 0,
