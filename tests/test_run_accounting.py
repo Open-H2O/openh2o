@@ -507,3 +507,22 @@ def test_own_records_over_the_headgate_are_the_note_that_needs_attention(world):
         "Fields' own delivery records at Test Canal Headgate add up to 4.00 AF "
         "more than the headgate recorded for January 2024."
     )
+
+
+def test_canal_water_beyond_what_the_crops_could_use_is_one_plain_note(world):
+    # 300 AF into three fields that can use 10 AF each: an ample month.
+    from surface.models import DiversionRecord
+
+    DiversionRecord.objects.filter(point_of_diversion=world.pod, month=JAN).update(
+        volume_acre_feet=Decimal("300")
+    )
+
+    req = _run_months("2024-01")
+
+    assert req.status == "succeeded"  # information, not a fault
+    surplus = UnallocatedDelivery.objects.get(point_of_diversion=world.pod)
+    assert req.notes[-1] == (
+        f"{surplus.amount_acre_feet:,.2f} AF of canal water went beyond what the "
+        f"crops could use (Test Canal Headgate {surplus.amount_acre_feet:,.2f}). "
+        f"No field is charged for it. Site Health lists it under Unallocated Delivery."
+    )

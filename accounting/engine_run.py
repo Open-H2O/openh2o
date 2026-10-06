@@ -275,15 +275,17 @@ def _note_sentences(raw):
             unexplained[note["pod"]] += Decimal(note["amount_af"])
     info = []
     if unexplained:
+        # Brent's wording, 2026-10-06: the ruled phrase "canal water beyond
+        # what the crop could use", the canals named with their amounts,
+        # largest first, and what happens to it.
         total = sum(unexplained.values(), Decimal("0"))
-        where = (
-            f"at {next(iter(unexplained))}"
-            if len(unexplained) == 1
-            else f"at {len(unexplained)} points of diversion"
+        each = ", ".join(
+            f"{pod} {_amount(af)}"
+            for pod, af in sorted(unexplained.items(), key=lambda kv: (-kv[1], kv[0]))
         )
         info.append(
-            f"Canal water recorded {where} was more than the fields' crop water "
-            f"use could account for ({_amount(total)} AF in all). Site Health "
+            f"{_amount(total)} AF of canal water went beyond what the crops "
+            f"could use ({each}). No field is charged for it. Site Health "
             f"lists it under Unallocated Delivery."
         )
     return attention, info
