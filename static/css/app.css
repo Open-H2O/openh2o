@@ -1382,6 +1382,12 @@ html { color-scheme: dark; }
    colgroup widths hold, and long headers wrap within their own column. */
 .data-table--canal-water {
     table-layout: fixed;
+    /* Below this the fixed columns squeeze a figure across its divider; the
+       table scrolls inside its .table-scroll wrapper instead. */
+    min-width: 64rem;
+}
+.data-table--canal-water td {
+    white-space: nowrap;
 }
 .data-table--canal-water th {
     white-space: normal;
