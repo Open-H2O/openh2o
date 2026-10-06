@@ -370,8 +370,9 @@
       {% endif %}
     </div>
 
-    <!-- Linked use areas + Recharge areas filled, side by side -->
-    <div class="page-grid-2col page-grid-account-full">
+    {% comment %}Linked use areas + Recharge areas filled, side by side; the use
+       areas alone take the full width rather than half a row with nothing beside it.{% endcomment %}
+    <div class="{% if basin_links and 'recharge' in enabled_modules %}page-grid-2col {% endif %}page-grid-account-full">
 
       <!-- Linked Use Areas card -->
       <div class="card-raised">
