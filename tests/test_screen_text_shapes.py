@@ -41,7 +41,8 @@ reader graded reach only the Django admin.
 **Replayed before installing.** Over the 58 template commits between the 143.1
 rulings (2026-09-18) and 2026-10-03, this ratchet would have failed twice: 146-04
 added five em dashes to the new drinking-water production pages, and 148-03
-added the narrative verb on ``help/methods.html`` that ``BASELINE`` now holds.
+added the narrative verb on ``help/methods.html`` that ``BASELINE`` held until
+the 2026-10-06 revision of that page removed it.
 
 **Kill switch:** ``OPENH2O_SCREEN_TEXT_CHECK=0`` skips this module.
 """
@@ -124,9 +125,11 @@ def measured() -> dict:
 
 
 #: Ceilings on 2026-10-03: 122 em dashes in 50 templates, one narrative verb.
-#: Lower one when a template loses a shape; never raise one. ⚠ The one narrative
+#: Lower one when a template loses a shape; never raise one. The one narrative
 #: verb ("a field with no such zone has nowhere to credit it", help/methods.html)
-#: arrived with the 148-03 page Brent passed at its checkpoint; it is his to rule.
+#: arrived with the 148-03 page Brent passed at its checkpoint; the 2026-10-06
+#: plain-language revision of the two help pages removed it, along with the four
+#: em dashes on help/water_balances.html, so both entries came off the list.
 BASELINE: dict = {
     "em dash": {
         "templates/about.html": 10,
@@ -165,7 +168,6 @@ BASELINE: dict = {
         "templates/help/getting_started.html": 6,
         "templates/help/settings_explained.html": 8,
         "templates/help/surface_deliveries.html": 7,
-        "templates/help/water_balances.html": 4,
         "templates/infrastructure/partials/_import_mapping.html": 2,
         "templates/infrastructure/partials/_import_result.html": 1,
         "templates/partials/_demo_marker.html": 1,
@@ -180,9 +182,7 @@ BASELINE: dict = {
         "templates/setup/partials/_step_result.html": 1,
         "templates/surface/partials/_detail_pane.html": 3,
     },
-    "narrative verb": {
-        "templates/help/methods.html": 1,
-    },
+    "narrative verb": {},
     "contrast": {},
 }
 

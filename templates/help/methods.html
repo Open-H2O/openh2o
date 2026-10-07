@@ -12,7 +12,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Methods Behind the Numbers</span>
   </nav>
-  <p class="page-description">How a satellite estimate becomes a groundwater figure: the steps as they run, which figure the allocation is charged, and what is not built yet.</p>
+  <p class="page-description">How a satellite estimate becomes a groundwater figure: the steps in the order they run, the figure the allocation is charged, and what is not built yet.</p>
 </div>
 {% endblock %}
 
@@ -52,59 +52,59 @@
 
   <div class="card-raised">
     <h2 class="section-header">Step by step</h2>
-    <p class="text-secondary text-base">Every field runs through the same steps each month. Steps 1 to 4 are the calculation plan, the list an operator sees on Methodology Settings. Step 5 runs after the plan.</p>
+    <p class="text-secondary text-base">Every field goes through the same steps each month. Steps 1 to 4 make up the calculation plan, the list shown on Methodology Settings. Step 5 runs after the plan.</p>
 
     <div class="step-list mt-md">
       <div class="step-card step-card--inset">
         <div class="step-number">1</div>
         <div class="step-body">
           <strong>Crop water use for the month.</strong>
-          <p class="text-secondary text-base">The satellite estimate for this field, in acre-feet. It is the demand every supply is matched against, whatever the source, and it is an estimate, never a reading.</p>
+          <p class="text-secondary text-base">The satellite estimate of what the crop used this month, in acre-feet. Every supply, whatever its source, is matched against it.</p>
         </div>
       </div>
       <div class="step-card step-card--inset">
         <div class="step-number">2</div>
         <div class="step-body">
           <strong>Take off the rain the crop could use.</strong>
-          <p class="text-secondary text-base">Rain for the area comes from weather data, not a gauge on the field. The share of it the crop could use is worked out by the method set on Methodology Settings: all of the month's rain, a flat fraction of it, or the USDA-SCS soil-storage method, which is the default. What is left after this step is crop water use after rain, which the platform records as net consumptive use. It is also the figure the split of each headgate's total reads.</p>
+          <p class="text-secondary text-base">Rain for the area is estimated from weather data, not read from a gauge on the field. The share the crop could use depends on the method chosen on Methodology Settings: all of the month's rain, a fixed fraction of it, or the USDA-SCS soil-storage method, which is the default. What remains after this step is crop water use after rain. The calculation records it as net consumptive use and uses it to weight each field's share of a headgate's total.</p>
         </div>
       </div>
       <div class="step-card step-card--inset">
         <div class="step-number">3</div>
         <div class="step-body">
           <strong>Take off the canal water the crop could use.</strong>
-          <p class="text-secondary text-base">The delivery on record for the month, times the field's irrigation efficiency. Not all the canal water reaches the crop: some soaks past the roots and some runs off the end of the field. The efficiency is the field's own where one is set (the field's irrigation method, from a published table of eighteen methods, 60% for conventional furrow up to 95% for subsurface drip); otherwise the deployment's default on Delivery Settings, 75% unless changed. The month's calculation records the delivery, the efficiency it used and the result, so the figure can be read back later whatever the setting says by then.</p>
-          <p class="text-secondary text-base">The switch: whether this step applies the efficiency at all is a setting on the step itself in the calculation plan. On, only the canal water the crop could use comes off; off, the whole delivery comes off and the month's calculation records no separate delivered figure. A plan seeded on a new deployment has it on. The switch is not yet on the Methodology Settings screen; it is set in the plan directly.</p>
+          <p class="text-secondary text-base">The delivery on record for the month, multiplied by the field's irrigation efficiency. Not all the canal water reaches the crop: some soaks past the roots and some runs off the end of the field. The efficiency comes from the field's irrigation method where one is on file. The method table is published and has eighteen entries, from 60% for conventional furrow to 95% for subsurface drip. A field with no method on file uses the deployment's default on Delivery Settings, 75% unless changed. The month's calculation records the delivery, the efficiency it applied and the result, so the figure can be read back later even after the setting changes.</p>
+          <p class="text-secondary text-base">A switch on this step in the calculation plan turns the efficiency on or off. With the switch on, only the canal water the crop could use is subtracted. With it off, the whole delivery is subtracted and the month's calculation records no separate delivered figure. A plan seeded on a new deployment has the switch on. It is not yet shown on the Methodology Settings screen and is set in the plan directly.</p>
         </div>
       </div>
       <div class="step-card step-card--inset">
         <div class="step-number">4</div>
         <div class="step-body">
           <strong>What is left, by what the field has.</strong>
-          <p class="text-secondary text-base">Two plan steps, shown as two entries on Methodology Settings: a field with no crop on record is set to zero, and then the remainder is floored at zero. Where rain and canal water together came to more than the crop used, the remainder is zero and the excess is recorded on the month's calculation in two parts: rain the crop did not need, kept as information, and canal water beyond what the crop could use, which the next section covers. What a positive remainder becomes depends on the field: groundwater consumed on a field with a well and no meter reading for the month; water use recorded, no supply reported on a field with no well; and on a month with a meter reading on record, a figure kept for comparison only, because the reading stands and no groundwater row is written.</p>
+          <p class="text-secondary text-base">Two plan steps, shown as two entries on Methodology Settings. First, a field with no crop on record is set to zero. Then the remainder is floored at zero. Where rain and canal water together exceeded what the crop used, the remainder is zero. The month's calculation records the excess in two parts: rain the crop did not need, kept for information, and canal water beyond what the crop could use, which the next section covers. What a positive remainder becomes depends on the field. On a field with a well and no meter reading for the month, it is groundwater consumed. On a field with no well, it is water use recorded, no supply reported. On a month with a meter reading on record, it is kept for comparison only: the reading stands and no groundwater row is written.</p>
         </div>
       </div>
       <div class="step-card step-card--inset">
         <div class="step-number">5</div>
         <div class="step-body">
           <strong>From consumed to extracted.</strong>
-          <p class="text-secondary text-base">This step runs after the plan, in the calculation itself, and its value is on Delivery Settings, not Methodology Settings. On a field with a well and no meter reading for the month, groundwater consumed is divided by the share of pumped groundwater the crop consumes (80% unless changed). The result is groundwater extracted. A pump has to lift more water than the crop ends up using, because some water soaks past the roots. The difference between the two figures is recorded on the month's calculation as deep percolation. The groundwater allocation is charged groundwater extracted, at the figure stamped when the month was calculated. A change to the setting applies when a month is next calculated; a month already calculated keeps its stamped figure until it is re-run.</p>
+          <p class="text-secondary text-base">This step runs after the plan, as part of the calculation itself. Its setting is on Delivery Settings. On a field with a well and no meter reading for the month, groundwater consumed is divided by the share of pumped groundwater the crop consumes, 80% unless changed. The result is groundwater extracted. A pump has to lift more water than the crop ends up using, because some water soaks past the roots. The difference between the two figures is recorded on the month's calculation as deep percolation. The groundwater allocation is charged the groundwater extracted that was stamped when the month was calculated. A change to the setting takes effect the next time a month is calculated. A month already calculated keeps its stamped figure until it is re-run.</p>
         </div>
       </div>
     </div>
 
-    <p class="text-secondary text-base mt-md">The plan is not hard-coded. An operator reorders, switches and tunes steps 1 to 4 on the {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a>{% else %}Methodology Settings{% endif %} page (the rain method and the floor are editable there; the other steps have no knobs on that screen), and every month calculated after a change carries the plan it ran under.</p>
+    <p class="text-secondary text-base mt-md">The plan is editable. Steps 1 to 4 can be reordered, switched on or off and tuned on the {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a>{% else %}Methodology Settings{% endif %} page. The rain method and the floor have settings there; the other steps have none on that screen. Every month calculated after a change carries the plan it ran under.</p>
   </div>
 
   <div class="card-raised">
     <h2 class="section-header">Canal water beyond what the crop could use</h2>
-    <p class="text-secondary text-base">When rain and the canal water the crop could use add up to more than the crop used, the canal part of the excess is recorded on the month's calculation as canal water beyond what the crop could use. What happens to it is one setting on Delivery Settings. Every month's calculation records the value it ran under. A change applies when a month is next calculated; a month already calculated keeps what it recorded until it is re-run.</p>
+    <p class="text-secondary text-base">When rain and the canal water the crop could use add up to more than the crop used, the canal part of the excess is recorded on the month's calculation as canal water beyond what the crop could use. What happens to that amount is one setting on Delivery Settings, with three values. Each month's calculation records the value it ran under. A change takes effect the next time a month is calculated, and a month already calculated keeps what it recorded until it is re-run.</p>
     <ul class="concept-list text-secondary text-base mt-md">
-      <li><strong>Not credited.</strong> The default, and the demonstration's setting. The amount is recorded on the month's calculation and nothing else happens. It is nobody's credit and it is not charged.</li>
-      <li><strong>Credited to the landowner, less a share left in the basin.</strong> The share left in the basin is 10% unless changed. A field with a well gets the credited amount on its own ledger. A field with no well has no well to pump it back, so its credited amount goes to its management-area zone's shared account instead; a field with no such zone has nowhere to credit it, and nothing is credited.</li>
-      <li><strong>Its own line.</strong> The amount is shown on the field's page as its own line. It is not a credit and is not charged.</li>
+      <li><strong>Not credited.</strong> The default, and the demonstration's setting. The amount is recorded on the month's calculation and nothing further happens: no credit to anyone, and no charge.</li>
+      <li><strong>Credited to the landowner, less a share left in the basin.</strong> The share left in the basin is 10% unless changed. A field with a well receives the credited amount on its own ledger. A field with no well cannot pump a credit back, so its credited amount goes to the shared account of its management-area zone. A field with no such zone is credited nothing.</li>
+      <li><strong>Its own line.</strong> The amount appears on the field's page as a line of its own, neither credited nor charged.</li>
     </ul>
-    <p class="text-secondary text-base mt-md">Under every value the field's water balance reads the same; the setting changes what the amount is called and where a credit lands, not the balance.</p>
+    <p class="text-secondary text-base mt-md">The field's water balance is the same under all three values. The setting changes only what the amount is called and whether anyone is credited.</p>
   </div>
 
   <div class="card-raised">
@@ -112,30 +112,30 @@
     <div class="card-grid card-grid--3">
       <div class="concept-panel">
         <div class="concept-panel-title">A month with a meter reading</div>
-        <p class="text-secondary text-base">The reading is the month's groundwater record and the allocation is charged it as recorded. The calculation still runs and is kept on the month's page for comparison, but it writes no groundwater row and stamps no extracted figure, so nothing is double counted.</p>
+        <p class="text-secondary text-base">The reading is the month's groundwater record, and the allocation is charged the reading as recorded. The calculation still runs and is kept on the month's page for comparison. It writes no groundwater row and stamps no extracted figure, so nothing is counted twice.</p>
       </div>
       <div class="concept-panel">
         <div class="concept-panel-title">A well, no meter reading</div>
-        <p class="text-secondary text-base">The remainder is written to the field's ledger as groundwater consumed, with a sentence saying so. Groundwater extracted is stamped on the month's calculation beside it and is what the allocation is charged. A month where rain and canal water covered the crop writes a 0.00 acre-feet line and says that no groundwater extraction was derived.</p>
+        <p class="text-secondary text-base">The remainder goes on the field's ledger as groundwater consumed, with a note saying so. Groundwater extracted is stamped on the month's calculation beside it, and that is the figure the allocation is charged. A month in which rain and canal water covered the crop writes a line of 0.00 acre-feet and states that no groundwater extraction was derived.</p>
       </div>
       <div class="concept-panel">
         <div class="concept-panel-title">No well</div>
-        <p class="text-secondary text-base">Water use recorded, no supply reported. The remainder is stored on the month's calculation and shown on the field's page. It says the arithmetic did not close from the supplies on record and nothing about why. It is never written as pumping and it is never a finding about the grower.</p>
+        <p class="text-secondary text-base">The remainder is written as water use recorded, no supply reported. It is stored on the month's calculation and shown on the field's page. The label means only that the supplies on record did not account for crop water use; it says nothing about why. It is never written as pumping, and it is never a finding about the grower.</p>
       </div>
     </div>
   </div>
 
   <div class="card-raised">
     <h2 class="section-header">Sharing one canal total across many fields</h2>
-    <p class="text-secondary text-base">A district records what left each headgate, not what reached each field. The software first takes the canal's losses off each month's headgate total, using the shares for evaporation, seepage and spill on file for that point of diversion. Seepage is added to the district's seepage pool for the zone that holds the canal, and counts toward what that zone has available; evaporation and spill are credited to no one. A field with a delivery record of its own for the month keeps it, and what is left is divided among the other fields the headgate serves. When a headgate's canal total is less than its fields could use, it is divided up among them in proportion to each field's crop water use after rain. When it covers every field, each field gets what it could use (its crop water use after rain divided by its irrigation efficiency) and the rest is recorded against the headgate. Where no field the headgate serves has an estimated use on record for the month, which is also the case before the calculation first runs, the total is divided by the fixed share on file for each field instead. The ledger row for each field's share says which of the two it was.</p>
+    <p class="text-secondary text-base">A district records what left each headgate, not what reached each field. Each month the software splits each headgate's total among the fields it serves. It first takes off the canal's losses, using the evaporation, seepage and spill shares on file for that point of diversion. Seepage goes to the seepage pool of the management-area zone that holds the canal and counts toward that zone's available water; evaporation and spill are credited to no one. A field with its own delivery record for the month keeps that record. The rest is divided among the other fields the headgate serves. If it is less than those fields could use, each field's share is in proportion to its crop water use after rain. If it covers them all, each field receives what it could use (its crop water use after rain divided by its irrigation efficiency), and what is left over is recorded against the headgate. If no field on the headgate has an estimated use on record for the month, as is also the case before the calculation first runs, each field instead gets the fixed share on file for it. Each field's ledger row names the rule that produced its share.</p>
 
     <div class="callout-rule mt-md">
       <div class="concept-panel-title">The total is honored as recorded</div>
-      <p class="text-secondary text-base">The headgate's total is never changed. The split only decides how much of it each field is charged with. Anything left after every field has what it could use is recorded against the headgate, not dropped. Each canal's page shows every month's total in its parts: the canal's losses, the fields' own records, what was divided up, and what was beyond what the crops could use.</p>
+      <p class="text-secondary text-base">The headgate's total is never altered. The split decides only how much of it each field is charged with. Anything left after every field has what it could use is recorded against the headgate rather than dropped. Each canal's page shows every month's total in its parts: the canal's losses, the fields' own records, what was divided up among the other fields, and what was beyond what the crops could use.</p>
     </div>
 
     <h3 class="concept-panel-title mt-md">A diversion with no meter</h3>
-    <p class="text-secondary text-base">Where a point of diversion has no measuring device in service and no volume entered for a month, the software estimates the month's delivery from the crop water use of the fields it serves: each field's use after rain divided by its irrigation efficiency, grossed up for the canal's losses. The estimate is capped at what remains of the water right's face value for the water year, and is zero outside the right's direct season when one is recorded. Use above the cap is counted as groundwater where a field has a well, otherwise as water use recorded, no supply reported. The estimate is saved as a provisional record labeled as an estimate, and a volume entered for that month always replaces it. No estimate is made under a water right that is curtailed, or where no water right is linked.</p>
+    <p class="text-secondary text-base">Where a point of diversion has no measuring device in service and no volume entered for a month, the software estimates that month's delivery from the fields it serves. For each field it divides crop water use after rain by the field's irrigation efficiency, adds the results, and increases the sum to allow for the canal's losses. The estimate is capped at what remains of the water right's face value for the water year. Where the right has a direct season on record, the estimate is zero for any month outside it. Use above the cap counts as groundwater on a field with a well; on a field without one, it counts as water use recorded, no supply reported. The estimate is saved as a provisional record labeled as an estimate. A volume entered for that month replaces it. No estimate is made under a curtailed water right or where no water right is linked.</p>
 
     {% explainer_available "surface_deliveries" as show_surface_help %}{% if show_surface_help %}<p class="text-base mt-md"><a class="prose-link" href="{{ surface_url }}">Read the Surface Delivery Settings &rarr;</a></p>{% endif %}
   </div>
@@ -143,8 +143,8 @@
   <div class="card-raised">
     <h2 class="section-header">What this platform does not do yet</h2>
     <ul class="concept-list text-secondary text-base">
-      <li><strong>A flag when an estimate reaches the face value.</strong> An estimated diversion that reaches its water right's face value is capped today; a flag on the water right's page, for the district to look at, is next.</li>
-      <li><strong>A flat yearly rain allowance.</strong> Later. Rain is taken off month by month as described in step 2; a single yearly allowance is not built.</li>
+      <li><strong>A flag when an estimate reaches the face value.</strong> An estimated delivery that reaches the water right's face value is capped today. A flag on the water right's page, for the district to review, is not yet built.</li>
+      <li><strong>A flat yearly rain allowance.</strong> Rain is taken off month by month, as described in step 2. A single yearly allowance is not yet built.</li>
     </ul>
     <p class="text-secondary text-sm mt-md">This platform does not submit reports to the state.</p>
   </div>
@@ -155,7 +155,7 @@
     <div class="card-grid card-grid--fit mt-md">
       {% if show_water_balances %}<a href="{{ water_balances_url }}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>How Water Balances Work</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">The one idea underneath all of this: estimated use vs. supplies.</p>
+        <p class="text-secondary text-sm">The one idea under all of this: estimated use against supplies.</p>
       </a>{% endif %}
       {% if 'accounting' in enabled_modules %}<a href="{{ methodology_url }}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Methodology Settings</span><span class="text-accent">&rarr;</span></div>

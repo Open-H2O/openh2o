@@ -1116,10 +1116,10 @@
     "kind": "figure",
     "template": "templates/help/partials/_the_subtraction.html",
     "line": 82,
-    "column": 98,
+    "column": 106,
     "expression": "{{ irrigation_efficiency_pct|floatformat:0 }}",
     "enclosing_loop": null,
-    "nearest_label": "The delivery times the field's irrigation efficiency, {{ irrigation_efficiency_pct|"
+    "nearest_label": "The delivery multiplied by the field's irrigation efficiency, {{ irrigation_efficiency_pct|"
   },
   {
     "id": "FIG-help-006",
