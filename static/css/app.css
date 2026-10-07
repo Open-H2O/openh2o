@@ -2410,18 +2410,6 @@ html { color-scheme: dark; }
     width: 26%;
 }
 
-/* The wizard mark (Brent, 2026-10-07 10:21: no second table; the round-7
-   reader still wanted a per-step mark): one pill or nothing, one width. */
-.help-steps-table--setup .col-sure {
-    width: 1%;
-    white-space: nowrap;
-}
-
-.help-steps-table--setup .col-sure .badge {
-    min-width: 6em;
-    justify-content: center;
-}
-
 /* The worked example on Allocations & ceilings (149.1-03): the figure column
    holds one number each, kept on one line, so the "where it comes from"
    column takes the room. */
