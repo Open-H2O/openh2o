@@ -13,7 +13,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Import</span>
   </nav>
-  <p class="page-description">Upload the state's own rights LIST export (CSV), map its columns, preview, then create every valid right at once.</p>
+  <p class="page-description">Upload the state's rights LIST export (CSV), match its columns, then create one water right for each valid row.</p>
 </div>
 {% endblock %}
 
@@ -23,16 +23,9 @@
   <a href="{% url 'surface:water_rights_list' %}" class="back-link">&larr; Back to Water Rights</a>
 
   <div class="card-raised">
-    <h2 class="card-header-ruled">Water rights</h2>
-    <p class="text-base text-secondary mt-md">
-      Upload a <strong>CSV</strong> exported from the state's rights LIST (the same
-      columns eWRIMS publishes: Application Number, Water Right Type, Face Value,
-      Season, and the rest). We'll detect your columns and let you match them to
-      the right fields, show you a preview, then create every valid right. Rows
-      whose Application Number already exists are skipped, never overwritten.
-      This is different from <a href="{% url 'surface:water_right_create' %}">Add right</a>,
-      which creates one right at a time.
-    </p>
+    <h2 class="card-header-ruled">Rights LIST export</h2>
+    <p class="text-base text-secondary mt-md">A CSV from eWRIMS, the State Water Board's water rights database. Nothing is written until you match the columns, check the first rows and press Create.</p>
+    <p class="text-secondary text-sm mt-sm"><a href="{% url 'surface:water_right_create' %}">Add right</a> creates one right at a time.</p>
 
     <form class="mt-lg"
       id="right-import-upload-form"
@@ -66,8 +59,111 @@
     </form>
   </div>
 
-  <!-- Mapping UI and results are swapped in here by HTMX -->
+  {# Mapping UI and results are swapped in here by HTMX #}
   <div id="right-import-area"></div>
+
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Columns the file carries</h2>
+    <div class="table-scroll mt-md">
+      <table class="data-table help-cases-table">
+        <thead>
+          <tr>
+            <th>Column</th>
+            <th>Required</th>
+            <th>What it holds</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-name"><code>APPLICATION_NUMBER</code></td>
+            <td>Yes</td>
+            <td>Right ID; a row whose number is already on file is skipped, never overwritten</td>
+          </tr>
+          <tr>
+            <td class="col-name"><code>WATER_RIGHT_TYPE</code></td>
+            <td>Yes</td>
+            <td>Right type, matched by name to a type on file</td>
+          </tr>
+          <tr>
+            <td class="col-name"><code>PRIMARY_OWNER_NAME</code></td>
+            <td>Yes</td>
+            <td>Holder</td>
+          </tr>
+          <tr>
+            <td class="col-name"><code>WATER_RIGHT_STATUS</code></td>
+            <td>No</td>
+            <td>State status, as written</td>
+          </tr>
+          <tr>
+            <td class="col-name"><code>SOURCE_NAME</code></td>
+            <td>No</td>
+            <td>Source, as written</td>
+          </tr>
+          <tr>
+            <td class="col-name"><code>WATERSHED</code></td>
+            <td>No</td>
+            <td>Watershed, as written</td>
+          </tr>
+          <tr>
+            <td class="col-name"><code>FACE_VALUE_AMOUNT</code></td>
+            <td>No</td>
+            <td>Face value, acre-feet per year</td>
+          </tr>
+          <tr>
+            <td class="col-name"><code>FACE_VALUE_UNITS</code></td>
+            <td>No</td>
+            <td>Checked, never stored; a unit other than &ldquo;Acre-feet per Year&rdquo; skips the row</td>
+          </tr>
+          <tr>
+            <td class="col-name"><code>MAX_DD_APPL</code></td>
+            <td>No</td>
+            <td>Maximum rate, cfs</td>
+          </tr>
+          <tr>
+            <td class="col-name"><code>MAX_DD_UNITS</code></td>
+            <td>No</td>
+            <td>Checked, never stored; a unit other than &ldquo;Cubic Feet per Second&rdquo; skips the row</td>
+          </tr>
+          <tr>
+            <td class="col-name"><code>PRIORITY_DATE</code></td>
+            <td>No</td>
+            <td>Priority date, YYYY-MM-DD or M/D/YYYY</td>
+          </tr>
+          <tr>
+            <td class="col-name"><code>LICENSE_ID</code></td>
+            <td>No</td>
+            <td>License number</td>
+          </tr>
+          <tr>
+            <td class="col-name"><code>PERMIT_ID</code></td>
+            <td>No</td>
+            <td>Permit number</td>
+          </tr>
+          <tr>
+            <td class="col-name"><code>USE_CODE</code></td>
+            <td>No</td>
+            <td>Purpose of use</td>
+          </tr>
+          <tr>
+            <td class="col-name"><code>USE_NET_ACREAGE</code></td>
+            <td>No</td>
+            <td>Net acreage, acres</td>
+          </tr>
+          <tr>
+            <td class="col-name"><code>DIRECT_SEASON_START_MONTH_1</code><br><code>DIRECT_DIV_SEASON_START_DAY_1</code><br><code>DIRECT_DIV_SEASON_END_MONTH_1</code><br><code>DIRECT_DIV_SEASON_END_DAY_1</code></td>
+            <td>No</td>
+            <td>Direct diversion season, start and end month and day as numbers</td>
+          </tr>
+          <tr>
+            <td class="col-name"><code>STORAGE_SEASON_START_MONTH_1</code><br><code>STORAGE_SEASON_START_DAY_1</code><br><code>STORAGE_SEASON_END_MONTH_1</code><br><code>STORAGE_SEASON_END_DAY_1</code></td>
+            <td>No</td>
+            <td>Storage season, start and end month and day as numbers</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="text-secondary text-sm mt-md">Other columns in the export are not read. No unit is converted.</p>
+  </div>
 
 </div>
 

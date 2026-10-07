@@ -13,7 +13,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Import diversion records</span>
   </nav>
-  <p class="page-description">Upload a year of the state's own Water Use Reported figures, or a ditch tender's own book. We'll recognize the layout, show every conversion and every unresolved row before anything is written, then create every valid record at once.</p>
+  <p class="page-description">Upload the state's Water Use Reported export or a ditch tender's book (CSV), preview it, then import one record per point, month and type.</p>
 </div>
 {% endblock %}
 
@@ -24,15 +24,7 @@
 
   <div class="card-raised">
     <h2 class="card-header-ruled">Diversion volumes</h2>
-    <p class="text-base text-secondary mt-md">
-      Two layouts are recognized by their column headers: the state's own
-      Water Use Reported export (<code>APPL_ID</code>, <code>YEAR</code>,
-      <code>MONTH</code>, <code>DIVERSION_TYPE</code>, <code>AMOUNT</code>) and
-      an operator's own book (a headgate or point column, a date or month
-      column, and a volume). Any other header layout is refused, naming the
-      headers seen. A record for a (point, month, type) already on file is
-      skipped, never overwritten.
-    </p>
+    <p class="text-base text-secondary mt-md">Nothing is written until you press Import on the preview, which lists every conversion, combined month and unresolved row.</p>
 
     <form class="mt-lg"
       id="diversion-import-upload-form"
@@ -66,8 +58,115 @@
     </form>
   </div>
 
-  <!-- Mapping/settings, preview and results are swapped in here by HTMX -->
+  {# Mapping/settings, preview and results are swapped in here by HTMX #}
   <div id="diversion-import-area"></div>
+
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Columns each layout carries</h2>
+    <p class="text-secondary text-sm mt-md">The layout is recognized by its headers; a file with neither set is refused, naming the headers it found.</p>
+
+    <h3 class="section-header-sm help-subsection">The state's Water Use Reported export</h3>
+    <div class="table-scroll mt-md">
+      <table class="data-table help-cases-table">
+        <thead>
+          <tr>
+            <th>Column</th>
+            <th>Required</th>
+            <th>What it holds</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-name"><code>APPL_ID</code></td>
+            <td>Yes</td>
+            <td>Application Number of a water right on file; its point is used when the right has only one</td>
+          </tr>
+          <tr>
+            <td class="col-name"><code>YEAR</code></td>
+            <td>Yes</td>
+            <td>Report year</td>
+          </tr>
+          <tr>
+            <td class="col-name"><code>MONTH</code></td>
+            <td>Yes</td>
+            <td>Month number, 1 to 12, placed in a calendar month by the reporting-year setting on Delivery Settings</td>
+          </tr>
+          <tr>
+            <td class="col-name"><code>DIVERSION_TYPE</code></td>
+            <td>Yes</td>
+            <td>DIRECT or STORAGE; USE rows are settled on the preview; COMBINED is refused</td>
+          </tr>
+          <tr>
+            <td class="col-name"><code>AMOUNT</code></td>
+            <td>Yes</td>
+            <td>Acre-feet</td>
+          </tr>
+          <tr>
+            <td class="col-name"><code>APPL_POD</code></td>
+            <td>No</td>
+            <td>Point on file, by name; used before <code>APPL_ID</code></td>
+          </tr>
+          <tr>
+            <td class="col-name"><code>calendar_month</code></td>
+            <td>No</td>
+            <td>YYYY-MM; used in place of <code>YEAR</code> and <code>MONTH</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="section-header-sm help-subsection">A ditch tender's book</h3>
+    <div class="table-scroll mt-md">
+      <table class="data-table help-cases-table">
+        <thead>
+          <tr>
+            <th>Column</th>
+            <th>Required</th>
+            <th>What it holds</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-name"><code>local_name</code>, <code>headgate</code>, <code>point</code> or <code>name</code></td>
+            <td>Yes</td>
+            <td>Point on file, by its local name or its name</td>
+          </tr>
+          <tr>
+            <td class="col-name"><code>date</code> or <code>month</code></td>
+            <td>Yes</td>
+            <td>YYYY-MM-DD or YYYY-MM; the record's month</td>
+          </tr>
+          <tr>
+            <td class="col-name"><code>acre_feet</code> or <code>af</code></td>
+            <td>One of three</td>
+            <td>Acre-feet</td>
+          </tr>
+          <tr>
+            <td class="col-name"><code>volume</code> and <code>unit</code></td>
+            <td>One of three</td>
+            <td>Unit af, gallons, ccf, mg or cfs_hours; converted to acre-feet</td>
+          </tr>
+          <tr>
+            <td class="col-name"><code>flow_cfs</code> and <code>hours</code></td>
+            <td>One of three</td>
+            <td>Converted to acre-feet at 1.9835 acre-feet per cfs-day</td>
+          </tr>
+          <tr>
+            <td class="col-name"><code>type</code></td>
+            <td>No</td>
+            <td>direct, storage or use; blank reads as direct</td>
+          </tr>
+          <tr>
+            <td class="col-name"><code>returned</code></td>
+            <td>No</td>
+            <td>Returned to stream, acre-feet</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="text-secondary text-sm mt-md">A record already on file for the same point, month and type is skipped, never overwritten; one the platform estimated is replaced.</p>
+  </div>
 
 </div>
 

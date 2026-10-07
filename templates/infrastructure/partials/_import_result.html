@@ -17,10 +17,11 @@ Outcome of an import. Three shapes:
     <span class="badge badge-grey">{{ total }} row{{ total|pluralize }} total</span>
   </div>
 
-  <p class="text-base text-secondary mt-md">
-    {{ created }} {{ infra_label|lower }} record{{ created|pluralize }} created.
-    {% if skipped %}{{ skipped|length }} row{{ skipped|length|pluralize }} were skipped because of the problems below &mdash; fix them in your file and re-import just those.{% else %}Every row was valid.{% endif %}
-  </p>
+  {% if skipped %}
+  <p class="text-base text-secondary mt-md">{{ created }} {{ infra_label|lower }} record{{ created|pluralize }} created; {{ skipped|length }} row{{ skipped|length|pluralize }} skipped for the reasons below. Fix {{ skipped|length|pluralize:"it,them" }} in the file and import just {{ skipped|length|pluralize:"that row,those rows" }}.</p>
+  {% else %}
+  <p class="text-base text-secondary mt-md">{{ created }} {{ infra_label|lower }} record{{ created|pluralize }} created; every row was valid.</p>
+  {% endif %}
 
   {% if skipped %}
   <table class="data-table mt-md">

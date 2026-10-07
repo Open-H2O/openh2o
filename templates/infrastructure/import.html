@@ -11,7 +11,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Bulk Import</span>
   </nav>
-  <p class="page-description">Upload a file of many records, map your columns, preview, then create them all at once.</p>
+  <p class="page-description">Upload a CSV, shapefile (.zip), GeoJSON or KML of {{ infra_label|lower }} records; match its columns, then create one record per valid row.</p>
   {% if other_import_types %}
   <p class="text-secondary text-sm" style="margin: var(--space-xs) 0 0 0;">Importing something else? {% for t in other_import_types %}<a href="?type={{ t.value }}">{{ t.label|capfirst }}</a>{% if not forloop.last %} · {% endif %}{% endfor %}</p>
   {% endif %}
@@ -26,13 +26,14 @@
   <div class="card-raised">
     {% comment %} Was "Bulk import &mdash; {{ infra_label }}" under the title "Bulk import" (Phase 143-02, copy rule 13): the remainder is the type. {% endcomment %}
     <h2 class="card-header-ruled">{{ infra_label }}</h2>
-    <p class="text-base text-secondary mt-md">
-      Upload a <strong>CSV</strong>, <strong>shapefile (.zip)</strong>, <strong>GeoJSON</strong>, or <strong>KML</strong>
-      containing many {{ infra_label|lower }} records. We'll detect your columns and let you
-      match them to the right fields, show you a preview, then create every valid record.
-      This is different from <a href="{% url 'infrastructure:add' %}?type={{ infra_type }}">Add</a>,
-      which creates one record at a time.
-    </p>
+    <p class="text-base text-secondary mt-md">Nothing is written until you match the columns, check the first rows and press Create.</p>
+    <p class="text-secondary text-sm mt-sm">Each row needs a name, and a location as a geometry or as latitude and longitude.</p>
+    {% if infra_type == "well" %}
+    <p class="text-secondary text-sm mt-sm">A row whose registration ID is already on file is skipped, never overwritten.</p>
+    {% else %}
+    <p class="text-secondary text-sm mt-sm">Rows are not checked against records already on file; a file imported twice creates its records twice.</p>
+    {% endif %}
+    <p class="text-secondary text-sm mt-sm"><a href="{% url 'infrastructure:add' %}?type={{ infra_type }}">Add {{ infra_label|lower }}</a> creates one record at a time.</p>
 
     <form class="mt-lg"
       id="import-upload-form"
@@ -67,7 +68,7 @@
     </form>
   </div>
 
-  <!-- Mapping UI and results are swapped in here by HTMX -->
+  {# Mapping UI and results are swapped in here by HTMX #}
   <div id="import-area"></div>
 
 </div>

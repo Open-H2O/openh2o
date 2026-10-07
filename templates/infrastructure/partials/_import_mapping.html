@@ -15,12 +15,8 @@ pressed Create and got this same table back with no explanation at all).
 </div>
 {% endif %}
 <div class="card-raised">
-  <h2 class="card-header-ruled">Match your columns &mdash; {{ infra_label }}</h2>
-  <p class="text-base text-secondary mt-md">
-    Found <strong>{{ row_count }}</strong> record{{ row_count|pluralize }} and
-    <strong>{{ columns|length }}</strong> column{{ columns|pluralize }}. Each field below is
-    set to our best guess &mdash; change any that look wrong, then create the records.
-  </p>
+  <h2 class="card-header-ruled">Match your columns</h2>
+  <p class="text-base text-secondary mt-md">Found <strong>{{ row_count }}</strong> record{{ row_count|pluralize }} and <strong>{{ columns|length }}</strong> column{{ columns|pluralize }}. Each field shows its best match; change any that are wrong.</p>
 
   <form class="mt-lg"
     hx-post="{% url 'infrastructure:import_commit' %}"
@@ -43,7 +39,7 @@ pressed Create and got this same table back with no explanation at all).
           <td>{{ fr.label }}</td>
           <td>
             <select name="map:{{ fr.field }}" class="form-select">
-              <option value="">&mdash; not imported &mdash;</option>
+              <option value="">(not imported)</option>
               {% for col in columns %}
               <option value="{{ col }}"{% if fr.guess == col %} selected{% endif %}>{{ col }}</option>
               {% endfor %}

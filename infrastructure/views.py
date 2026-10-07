@@ -36,7 +36,7 @@ from wells.models import (
 
 # preselect type -> (list-view url name, breadcrumb/back label)
 ADD_TYPE_BACK = {
-    "well": ("wells:list", "Extraction Wells"),
+    "well": ("wells:list", "Wells"),
     "diversion": ("surface:pod_list", "Surface Diversions"),
     "storage": ("recharge:list", "Recharge Areas"),
     "recharge_site": ("recharge:list", "Recharge Areas"),
