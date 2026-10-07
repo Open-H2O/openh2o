@@ -2366,6 +2366,40 @@ html { color-scheme: dark; }
     width: 22%;
 }
 
+/* The glossary (149.1-04): the term column holds names up to seven words,
+   the pill column says whose word it is, and the Read more column is one
+   link or nothing, kept to the link's width so an empty cell leaves no
+   strip (two verdict readers named the wrapped terms and the empty column). */
+.help-cases-table--glossary .col-name {
+    width: 21%;
+}
+
+.help-cases-table--glossary .col-where {
+    width: 1%;
+    white-space: nowrap;
+}
+
+.help-cases-table--glossary .col-sure .badge {
+    min-width: 9.5em;
+}
+
+/* The setup steps on Getting started (149.1-04): the step column is a short
+   name and the Where column a section path plus a link, so the instruction
+   column takes the room (two verdict readers named the squeezed third column
+   and the one-digit number gutter against "10" and "11"). Scoped to the
+   modifier so Methods' steps table does not move. */
+.help-steps-table--setup .col-step {
+    width: 24%;
+}
+
+.help-steps-table--setup .col-where {
+    width: 22%;
+}
+
+.help-steps-table--setup .step-num {
+    min-width: 2.2em;
+}
+
 /* The worked example on Allocations & ceilings (149.1-03): the figure column
    holds one number each, kept on one line, so the "where it comes from"
    column takes the room. */
