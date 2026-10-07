@@ -319,10 +319,14 @@ GETTING_STARTED_STEPS = (
     ("reports", "reporting"),
 )
 
-#: The steps the Setup Wizard sentence cites, and the steps the accounting
-#: sentence cites as a range. Both live beside the step table so a change to one
-#: is made looking at the other.
-_WIZARD_CITED_STEPS = ("use_areas", "wells", "stations", "surface")
+#: The steps the Setup Wizard does, and the steps the accounting sentence cites
+#: as a range. Both live beside the step table so a change to one is made
+#: looking at the other. 149.1-04 (2026-10-07): wells and surface came OFF the
+#: wizard list because the wizard never did them: ``setup/services.py``
+#: ``WIZARD_STEPS`` imports basins (as zones), parcels (use areas), flowlines
+#: and monitoring stations, and no wells or recharge basins; the page's wizard
+#: table says so row by row, and this tuple is what ``wizard_cited_steps`` names.
+_WIZARD_CITED_STEPS = ("use_areas", "stations")
 _ACCOUNTING_CITED_STEPS = ("accounts", "water_year", "ceilings", "ledger")
 
 
@@ -520,6 +524,22 @@ def _without_unavailable_help_pointers(definition):
     return definition
 
 
+def _split_help_pointer(definition):
+    """Split a trailing " See Help > X." off a definition, for the Read more column.
+
+    Returns ``(text, page, url_name)``: the definition without its pointer, the
+    page's name as the pointer spells it, and the explainer's url name from
+    ``_GLOSSARY_HELP_POINTERS``. A definition that ends with no pointer, or whose
+    pointer ``_without_unavailable_help_pointers`` has already dropped, comes back
+    whole with ``(definition, None, None)``, and its Read more cell stays empty.
+    """
+    for page, key in _GLOSSARY_HELP_POINTERS.items():
+        pointer = f" See Help > {page}."
+        if definition.endswith(pointer):
+            return definition[: -len(pointer)], page, key
+    return definition, None, None
+
+
 @public_in_open_demo
 def glossary(request):
     """Glossary of the terms this platform uses, for the operator running it.
@@ -545,62 +565,73 @@ def glossary(request):
     ``_without_unavailable_help_pointers`` above — reword one and it stops being
     stripped, which sends a reduced-deployment reader at a 404 (the defect Plan
     89-02 fixed; ``tests/test_help_explainers.py`` guards it).
+
+    **The page is one table (149.1-04, 2026-10-07).** Each entry is a row: the
+    term, the definition with its pointer split off by ``_split_help_pointer``,
+    and the pointer as a link in the Read more column, empty where there is none.
+    The letter headings that a script used to insert into a ``<dl>`` are rows the
+    template renders where the first letter changes, so the jump nav's anchors
+    exist without JavaScript. The definitions were reworded to rule 12's names in
+    the same plan, membership unchanged: an old name says first which name the
+    screens use, and an entry says what the platform holds or does and stops.
     """
     terms = {
-        "Allocation Ceiling": "The total volume of water assigned to a zone for a reporting period, set per zone, water type, and period. It is the policy ceiling for a whole area. The platform divides it into per-account Allocations. See Help > Allocations & Ceilings.",
-        "Allocation": "A single account's share of a zone's Allocation Ceiling, pro-rated by how many parcels the account holds in the zone. Allocation minus groundwater use as charged gives the account's remaining water: a month's calculated row is charged at its stamped groundwater extracted, and every other usage row (a meter reading, an ET-based estimate row, a calculated row from before the extracted figure existed) at its recorded amount. A negative remaining is an overdraft. See Help > Allocations & Ceilings.",
-        "Apportionment": "Dividing a headgate's delivery among the fields it serves. When a headgate's canal total is less than its fields could use, it is divided up among them in proportion to each field's crop water use after rain. When it covers every field, each field gets what it could use (its crop water use after rain divided by its irrigation efficiency) and the rest is recorded against the headgate. See Help > Methods Behind the Numbers.",
-        "Usage": "Groundwater leaving a well (a meter reading, an ET-based estimate row, or the month's calculated row, which holds groundwater consumed) or surface water delivered, recorded as negative ledger entries. The allocation is charged a calculated row at the month's stamped groundwater extracted.",
-        "Canal Water the Crop Could Use": "One month's recorded canal delivery to a field, times the field's irrigation efficiency. This is the figure the calculation subtracts from crop water use; the rest of the delivery is not crop use and is not a credit. See Help > Methods Behind the Numbers.",
-        "Groundwater Consumed": "On a field with a well and no meter reading for the month, the remainder after rain and canal water the crop could use come off the month's crop water use. It is the engine's estimate of the crop's well water, written as the month's calculated ledger row. See Help > Methods Behind the Numbers.",
-        "Groundwater Extracted": "Groundwater consumed divided by the share of pumped groundwater the crop consumes (a Delivery Settings value, 80% unless changed), stamped on the month's calculation; on a month with a meter reading, the reading as recorded. This is the figure the groundwater allocation is charged. See Help > Methods Behind the Numbers.",
-        "Canal Water Beyond What the Crop Could Use": "When rain and canal water together came to more than the crop used in a month, the canal part of the excess is recorded on the month's calculation. A Delivery Settings value says what happens to it: not credited, credited to the landowner less a share left in the basin, or shown on the field's page as its own line. See Help > Methods Behind the Numbers.",
+        "Allocation Ceiling": "This platform's total for one zone, one water type and one reporting period, in acre-feet, set on the Allocations page; the platform divides it into each account's allocation. See Help > Allocations & Ceilings.",
+        "Allocation": "One account's share of a zone's Allocation Ceiling, pro-rated by the count of use areas the account holds in the zone. Remaining is the allocation plus any carry-over, less groundwater extracted (less water delivered, for a district's surface allocation); a negative remaining is an overdraft. See Help > Allocations & Ceilings.",
+        "Apportionment": "Another name for ET-Demand Allocation, the split of a headgate's recorded monthly total among the fields it serves, in proportion to each field's crop water use after rain. See Help > Methods Behind the Numbers.",
+        "Usage": "The ledger's word for a row that spends water, stored as a negative amount; a meter reading, the month's calculated row (groundwater consumed) or water delivered; a groundwater allocation is charged at groundwater extracted.",
+        "Canal Water the Crop Could Use": "One month's canal delivery to a field times the field's irrigation efficiency, from its irrigation method on file, else the share of delivered water the crop consumes on Delivery Settings, 75% unless changed. Subtracted from crop water use; the rest of the delivery is neither crop water use nor a credit. See Help > Methods Behind the Numbers.",
+        "Groundwater Consumed": "On a field with a well and no meter reading, what is left of the month's crop water use once rain the crop could use and canal water the crop could use are subtracted. The platform's estimate, written as the month's calculated ledger row. See Help > Methods Behind the Numbers.",
+        "Groundwater Extracted": "Groundwater consumed divided by the share of pumped groundwater the crop consumes (Delivery Settings, 80% unless changed), stamped on the month's calculation; with a meter reading, the reading as recorded. What a groundwater allocation is charged. See Help > Methods Behind the Numbers.",
+        "Canal Water Beyond What the Crop Could Use": "Canal water the crop could use beyond what was left of the month's crop water use after rain, recorded on the month's calculation. Delivery Settings decides what else happens to it: not credited (the default), credited to the landowner less the share left in the basin, or shown on the field's page as its own line. See Help > Methods Behind the Numbers.",
         "CalWATRS": "California Water Accounting, Tracking, and Reporting System: the State Water Board's surface-diversion reporting system (replaced eWRIMS).",
         "CDEC": "California Data Exchange Center, real-time hydrologic data from DWR.",
-        "CFS (Cubic Feet per Second)": "Rates on a point of diversion popup read like \"50.00 cfs.\" One CFS is about 1.9835 acre-feet per day.",
+        "CFS (Cubic Feet per Second)": "Rates on a point of diversion, a water right and a monthly diversion record, shown as \"50.00 cfs\"; one CFS is about 1.9835 acre-feet per day.",
         "CIMIS": "California Irrigation Management Information System, weather station data for agriculture.",
-        "Closing Balance": "The reconciliation of a use area's supplies (surface water delivered, groundwater extracted, rain the crop could use) against its uses for a period. A small residual is normal. See Help > How Water Balances Work.",
-        "Consumptive Use": "Estimated here from satellite ET, and treated as one input among many — district measurements are the primary record. Gross is total ET; net subtracts effective precipitation. See Help > How Water Balances Work.",
-        "Curtailment": "Held as an order — ID, title, effective date, priority-date cutoff — from the State Water Board. Each affected right shows its status on its own detail card.",
-        "Delivery Settings": "The agency-wide settings that shape how deliveries and pumping are counted: the default irrigation efficiency, what happens to canal water beyond what the crop could use, the share of pumped groundwater the crop consumes, what happens to a district's unused allotment at year-end, the rules for diversion records, and the addresses records carry. Set by an administrator on the Delivery Settings page. See Help > Surface Delivery Settings.",
-        "Data Source": "An external agency or API that provides hydrologic measurements.",
-        "ET (Evapotranspiration)": "Where meters are sparse, the methodology can use ET as one way to estimate groundwater use. (OpenET is the satellite data source; ET is the quantity it estimates.)",
-        "Effective Precipitation": "Rainfall the crops use, rather than running off or percolating away. The methodology subtracts it from gross ET to find the net consumptive demand that supplies must meet. See Help > Methods Behind the Numbers.",
-        "ET-Demand Allocation": "How a single recorded district delivery is split across the many fields one headgate serves. When a headgate's canal total is less than its fields could use, it is divided up among them in proportion to each field's crop water use after rain. When it covers every field, each field gets what it could use (its crop water use after rain divided by its irrigation efficiency) and the rest is recorded against the headgate. See Help > Methods Behind the Numbers.",
+        "Closing Balance": "This platform's water balance for one use area and period: supplies (water delivered, groundwater extracted, rain the crop could use) set against uses, and the difference is the residual. A small residual is normal. See Help > How Water Balances Work.",
+        "Consumptive Use": "Crop water use, under the dashboard's name; the satellite estimate from OpenET, gross. Net consumptive use subtracts rain the crop could use. See Help > How Water Balances Work.",
+        "Curtailment": "One record per State Water Board order, holding its order ID, title, effective and end dates, watershed and priority-date cutoff; each right it affects shows its status on its own detail card.",
+        "Delivery Settings": "The administrator's page for the agency-wide shares, canal water beyond what the crop could use, the year-end choice for unused allotment, the reporting year and record addresses. See Help > Surface Delivery Settings.",
+        "Data Source": "One record per outside agency or service the platform reads data from, holding its name, code, address, how often it is read and when it was last read.",
+        "ET (Evapotranspiration)": "Crop water use, as the screens call it; the quantity OpenET estimates from satellite data for every field. See Help > How Water Balances Work.",
+        "Effective Precipitation": "Rain the crop could use, as the screens call it; the share of rainfall the calculation subtracts from crop water use, by the rain method on Methodology Settings (all of it, a fixed fraction, or USDA-SCS soil storage, the default). See Help > Methods Behind the Numbers.",
+        "ET-Demand Allocation": "How this platform divides a headgate's recorded monthly total among the fields it serves, in proportion to each field's crop water use after rain and up to what each field could use; anything left over is recorded against the headgate. See Help > Methods Behind the Numbers.",
         "GEARS": "Groundwater Extraction Annual Reporting System, the State Water Board reporting format for per-well extraction.",
         "GSA": "Groundwater Sustainability Agency, the local agency responsible for managing groundwater under SGMA.",
         "GSP": "Groundwater Sustainability Plan, the 20-year plan each GSA must adopt.",
-        "Health Check": "Automated system diagnostic covering data freshness, connectivity, and configuration.",
-        "Ledger Entry": "A double-entry record: supply amounts are positive, usage amounts are negative.",
-        "Managed Aquifer Recharge (MAR)": "One record per site, holding its capacity in acre-feet, its zone, its geometry on the map and the points of diversion feeding it. Each event dated, with a volume and a water type.",
-        "Methodology / Calculation Plan": "The ordered, configurable chain of steps (crop water use, minus rain the crop could use, minus canal water the crop could use, a field with no crop on record set to zero, floored at zero) that the platform runs each month for each use area. What the remainder becomes depends on the field: groundwater consumed with a well and no meter reading, water use recorded, no supply reported with no well, a comparison figure only on a month with a meter reading. The division to groundwater extracted runs after the plan, with its value on Delivery Settings. Tune the steps on the Methodology Settings page.",
-        "Monitoring Station": "A curated external sensor (stream gauge, weather station, groundwater well) linked to a data source.",
+        "Health Check": "This platform's own diagnostics, each graded green, yellow or red with a message; they cover data freshness, ledger integrity, the calculation, the database and the server.",
+        "Ledger Entry": "One row on a use area's ledger, in acre-feet, with its date, water type and source. Water added to the allocation is positive and water taken against it is negative; an entered row or an adjustment carries the sign it is given.",
+        "Managed Aquifer Recharge (MAR)": "One record per site, holding its capacity in acre-feet, its zone, its location and outline on the map, the points of diversion feeding it, and its events, each with its dates, a volume in acre-feet and a water type.",
+        "Methodology / Calculation Plan": "This platform's monthly chain of steps for each use area, reordered and switched on or off on Methodology Settings (crop water use, less rain the crop could use, less canal water the crop could use, a field with no crop set to zero, floored at 0 acre-feet unless changed). What is left becomes groundwater consumed on a field with a well and no meter reading; water use recorded, no supply reported on a field with no well; a comparison figure only on a month with a meter reading. See Help > Methods Behind the Numbers.",
+        "Monitoring Station": "One record per outside station (a stream gauge, a weather station, a groundwater level well), holding its name, its ID at the data source, its location and the parameters it reports.",
         "OpenET": "Satellite-based evapotranspiration estimates, used to calculate crop water use.",
-        "Use Area": "A plot of land identified by an Assessor Parcel Number (APN), the basic unit of water accounting.",
+        "Use Area": "This platform's record of one field: its Assessor Parcel Number (APN), owner, area in acres and outline on the map. Every monthly figure is calculated per use area; all are listed on the Use Areas page.",
         "Point of Diversion (POD)": "One record per POD: its location, the right it draws under, its stream or flowline, its maximum rate in CFS, and the parcels it serves, with its monthly diversion records.",
-        "Sampling Schedule": "The operator's own checklist on a drinking-water deployment: one row per thing sampled on a cycle, with its frequency, the date it was last done and the date it is next due. Both dates are typed in; the platform never works a due date out from the frequency.",
-        "Recovery Horizon": "A per-district setting for what happens to a district's unused surface water at year-end: carry it forward to next year, or let it expire. A debt (an overdraw) always carries regardless. Set on the Delivery Settings page. See Help > Configs & Settings, explained.",
-        "Water Year": "A time window (usually October 1 through September 30) for water accounting and reporting.",
+        "Sampling Schedule": "The operator's own checklist on a drinking-water deployment, one row per thing sampled on a cycle, with its frequency, the date last done and the date next due. Both dates are typed in; the platform never works a due date out from the frequency.",
+        "Recovery Horizon": "Year-end unused water on a district's page under Zones, and \"When a district doesn't use its full allotment by the end of the water year\" on Delivery Settings, the agency default a district can differ from. The unused amount carries forward as a credit or expires; an overdraw always carries as a debt. See Help > Configs & Settings, explained.",
+        "Water Year": "One reporting period, usually October 1 through September 30, held on the Water Years page with its name and its start and end dates.",
         "SGMA": "Sustainable Groundwater Management Act (2014), the California law requiring groundwater management.",
-        "USGS": "United States Geological Survey, provides stream gauge and groundwater level data.",
-        "Water Account": "Groups use areas for accounting purposes, tracks supply and usage.",
-        "Water Right": "One record per right, holding its state ID, type, holder, priority date, face value in acre-feet, CalWATRS PIN and status, plus the parcels it covers. Issued by the State Water Board; the platform only keeps the record.",
-        "Zone / Management Zone": "A sub-area of the district that carries its own Allocation Ceiling. Each use area belongs to a zone, and a zone must exist before an Allocation Ceiling can be set for it. See Help > Allocations & Ceilings.",
+        "USGS": "United States Geological Survey, a federal source of stream gauge and groundwater level data.",
+        "Water Account": "This platform's record of one account: its name, account number, contact and status, and the use areas it holds. Its allocation and remaining water are worked out across those use areas.",
+        "Water Right": "One record per right, holding its state ID, type, holder, priority date, face value in acre-feet, CalWATRS PIN and status, plus its places of use, the use areas it serves. Issued by the State Water Board; the platform only keeps the record.",
+        "Zone / Management Zone": "This platform's record of one area that carries its own Allocation Ceiling: its name, its outline on the map, its type and the use areas assigned to it on its page. A surface district is its own zone, with its own year-end unused water choice. See Help > Allocations & Ceilings.",
         "Well": "One record per well, holding its state well number, WCR number and local ID, its meters, the parcels it irrigates, and its depth, casing and screen intervals.",
     }
-    sorted_terms = sorted(
-        (term, _without_unavailable_help_pointers(definition))
-        for term, definition in terms.items()
-    )
-    # Build list of unique first letters for the jump nav
-    seen = set()
-    letters = []
-    for term, _ in sorted_terms:
-        first = term[0].upper()
-        if first not in seen:
-            seen.add(first)
-            letters.append(first)
-    return render(request, "help/glossary.html", {"terms": sorted_terms, "letters": letters})
+    entries = []
+    for term, definition in sorted(terms.items(), key=lambda item: item[0].casefold()):
+        text, pointer_page, pointer_url = _split_help_pointer(
+            _without_unavailable_help_pointers(definition)
+        )
+        entries.append({
+            "term": term,
+            "letter": term[0].upper(),
+            "text": text,
+            "pointer_page": pointer_page,
+            "pointer_url": pointer_url,
+        })
+    # The jump nav's letters, in the order their group rows appear in the table.
+    letters = list(dict.fromkeys(entry["letter"] for entry in entries))
+    return render(request, "help/glossary.html", {"entries": entries, "letters": letters})
 
 
 @login_required

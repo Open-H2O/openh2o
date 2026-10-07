@@ -1,63 +1,94 @@
 {% extends "base.html" %}
+{% load nav %}
 
 {% block title %}Glossary - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Glossary{% endblock %}
-{% block page_head_class %}page-head--medium{% endblock %}
+{% block page_head_class %}page-head--help{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
-    <span>Help</span>
+    <a href="{% url 'getting_started' %}">Help</a>
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Glossary</span>
   </nav>
-  <p class="page-description">Water-data terms used throughout the platform.</p>
+  <p class="page-description">What this platform means by each term, and where to read more.</p>
 </div>
 {% endblock %}
 
 {% block content %}
-<div class="page-stack page-medium">
+{% comment %}
+  149.1-04 (2026-10-07): carried to the shape Brent approved on Methods
+  behind the numbers (149.1-01) and the pages after it, from the reader's
+  three questions outward (what the platform means by "allocation" and what
+  it holds against one; where "groundwater extracted" is explained in full;
+  which entries are the state's and the programs' names and which are this
+  platform's own). The whole page is one table: the term, what the platform
+  means by it, and the Help page that explains it, empty where there is none.
 
-  <!-- Alphabetical jump nav -->
-  <div class="card-raised" style="padding: var(--space-sm) var(--space-lg);">
-    <p class="text-tertiary text-xs" style="margin-bottom: var(--space-xs);">Jump to letter:</p>
-    <div class="jump-nav">
-      {% for letter in letters %}
-        <a href="#letter-{{ letter }}">{{ letter }}</a>
-      {% endfor %}
+  The letter headings are rows the template renders where the first letter
+  changes ({% templatetag openblock %} ifchanged {% templatetag closeblock %}),
+  so the jump nav's anchors exist without a script. The entries, their order
+  and their pointers come from config/views.py::glossary, which drops a
+  pointer to a page this deployment does not serve, so every link below is
+  to a page that is there. The link cards are guarded the same way.
+{% endcomment %}<div class="page-stack page-help help-page">
+
+  <div class="card-raised">
+    <h2 class="section-header">Words and names used on these screens, A to Z</h2>
+    <nav class="jump-nav mb-md" aria-label="Jump to a letter">
+      {% for letter in letters %}<a href="#letter-{{ letter }}">{{ letter }}</a>{% endfor %}
+    </nav>
+
+    <div class="table-scroll">
+      <table class="data-table help-cases-table help-cases-table--short-names">
+        <thead>
+          <tr>
+            <th>Term</th>
+            <th>What this platform means by it</th>
+            <th>Read more in Help</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for entry in entries %}{% ifchanged entry.letter %}<tr class="help-letter-row">
+            <th scope="rowgroup" colspan="3" id="letter-{{ entry.letter }}">{{ entry.letter }}</th>
+          </tr>{% endifchanged %}
+          <tr>
+            <td class="col-name">{{ entry.term }}</td>
+            <td>{{ entry.text }}</td>
+            <td class="col-where">{% if entry.pointer_url %}<a class="prose-link" href="{% url entry.pointer_url %}">{{ entry.pointer_page }}</a>{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
   </div>
 
   <div class="card-raised">
-    <dl class="m-0" id="glossary-list">
-      {% for term, definition in terms %}
-      <div class="glossary-entry" data-term="{{ term }}">
-        <dt class="glossary-term">{{ term }}</dt>
-        <dd class="glossary-def">{{ definition }}</dd>
-      </div>
-      {% endfor %}
-    </dl>
+    <h2 class="section-header">Where to go next</h2>
+    <div class="card-grid card-grid--fit mt-md">
+      {% explainer_available "water_balances" as show_water_balances %}{% if show_water_balances %}<a href="{% url 'water_balances' %}" class="card-raised card-link">
+        <div class="concept-panel-title" style="justify-content: space-between;"><span>How Water Balances Work</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm">The one idea under all of this: estimated use against supplies.</p>
+      </a>{% endif %}
+      {% explainer_available "methods" as show_methods %}{% if show_methods %}<a href="{% url 'methods' %}" class="card-raised card-link">
+        <div class="concept-panel-title" style="justify-content: space-between;"><span>Methods Behind the Numbers</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm">The steps as they run, the three endings, and what is not built yet.</p>
+      </a>{% endif %}
+      {% explainer_available "settings_explained" as show_settings_explained %}{% if show_settings_explained %}<a href="{% url 'settings_explained' %}" class="card-raised card-link">
+        <div class="concept-panel-title" style="justify-content: space-between;"><span>Configs &amp; Settings, explained</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm">Every agency-wide setting, what it decides, and where it is set.</p>
+      </a>{% endif %}
+      {% explainer_available "surface_deliveries" as show_surface_deliveries %}{% if show_surface_deliveries %}<a href="{% url 'surface_deliveries' %}" class="card-raised card-link">
+        <div class="concept-panel-title" style="justify-content: space-between;"><span>Surface Delivery Settings</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm">What each canal setting decides, and the year-end choice in full.</p>
+      </a>{% endif %}
+      {% explainer_available "budgets_allocations" as show_budgets_allocations %}{% if show_budgets_allocations %}<a href="{% url 'budgets_allocations' %}" class="card-raised card-link">
+        <div class="concept-panel-title" style="justify-content: space-between;"><span>Allocations &amp; Ceilings</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm">How a zone&rsquo;s ceiling becomes each account&rsquo;s allocation.</p>
+      </a>{% endif %}
+    </div>
   </div>
 
 </div>
-{% endblock %}
-
-{% block extra_scripts %}
-<script>
-(function() {
-  var seen = {};
-  document.querySelectorAll('#glossary-list .glossary-entry').forEach(function(el) {
-    var term = el.getAttribute('data-term') || '';
-    var letter = term[0] ? term[0].toUpperCase() : '';
-    if (letter && !seen[letter]) {
-      seen[letter] = true;
-      var heading = document.createElement('div');
-      heading.className = 'glossary-letter-heading';
-      heading.id = 'letter-' + letter;
-      heading.textContent = letter;
-      el.parentNode.insertBefore(heading, el);
-    }
-  });
-})();
-</script>
 {% endblock %}
