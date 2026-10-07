@@ -138,7 +138,7 @@
     {% if surface_delivered_af is not None and delivery_split != "fixed_share" %}
     <p class="text-secondary text-sm"><strong>Delivered to this field.</strong> A field with its own delivery record keeps it. What remains of the headgate total is divided among the other fields in proportion to crop water use after rain, up to what each could use. That share depends on the satellite estimate, so it is an estimate too.</p>
     {% endif %}
-    <p class="text-secondary text-sm">Groundwater consumed is what remains after the lines above it are subtracted, and groundwater extracted is that figure divided by the share the crop consumes, so both are only as good as the delivery record above them.</p>
+    <p class="text-secondary text-sm">Groundwater consumed is what remains after the lines above it are subtracted; groundwater extracted is that figure divided by the share the crop consumes, and it is the figure the groundwater allocation is charged. Both are only as good as the delivery record above them.</p>
   </div>
 
   {% else %}
