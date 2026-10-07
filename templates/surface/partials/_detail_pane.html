@@ -104,10 +104,7 @@
       {% endcomment %}
       {% if rediverted_from or rediversions %}
       <h2 class="section-header mt-lg">Water journey</h2>
-      <p class="text-secondary text-sm mb-md">
-        Water taken at one point can be partly or fully returned to the stream and
-        re-diverted further downstream. One hop per row below.
-      </p>
+      <p class="text-secondary text-sm mb-md">One hop per row below.</p>
 
       {% if rediverted_from %}
       <div class="field-group">
@@ -117,7 +114,7 @@
             {{ rediverted_from.name }}
           </a>
           {% if rediverted_from.stream_name %}
-          <span class="text-tertiary text-sm">&mdash; {{ rediverted_from.stream_name }}</span>
+          <span class="text-tertiary text-sm">&middot; {{ rediverted_from.stream_name }}</span>
           {% endif %}
         </div>
       </div>
@@ -132,7 +129,7 @@
             <li class="mt-xs">
               <a href="{% url 'surface:pod_detail' r.pk %}" class="data-table-link">{{ r.name }}</a>
               {% if r.stream_name %}
-              <span class="text-tertiary text-sm">&mdash; {{ r.stream_name }}</span>
+              <span class="text-tertiary text-sm">&middot; {{ r.stream_name }}</span>
               {% endif %}
             </li>
             {% endfor %}
@@ -233,9 +230,7 @@
     {% endcomment %}
     <div class="card-raised page-grid-account-full">
       <h2 class="section-header mb-md">Losses in the canal below this headgate</h2>
-      <p class="text-secondary text-sm mb-md">
-        The share of what this headgate diverts that is lost in the canal before it reaches a field. Each month these come off the headgate total before the rest is divided among the fields.
-      </p>
+      <p class="text-secondary text-sm mb-md">Shares of the water taken at the headgate each month, subtracted before the rest is divided among the fields.</p>
       <div class="field-grid-2">
         <div class="field-group">
           <div class="field-label">Evaporation</div>
@@ -274,16 +269,13 @@
       the other fields", "Beyond what the crops could use" is Brent's ruled
       phrase), the totals label and the "Not yet calculated" / "Does not add
       up" flags. A month whose parts do not sum to the headgate figure is
-      flagged, never hidden.
+      flagged, never hidden; 149.1-05 adds one line under the table, shown only
+      when a month is flagged, saying what the flag marks.
     {% endcomment %}
     <div class="card-raised page-grid-account-full" id="where-the-water-went">
       <h2 class="section-header mb-md">Where the water went</h2>
-      <p class="text-secondary text-sm mb-md">
-        Each month's water taken at the headgate adds up to what the canal lost,
-        the fields' own records, what was divided up among the other fields, and
-        what was left beyond what the crops could use. Acre-feet.
-      </p>
       {% if canal_water %}
+      <p class="text-secondary text-sm mb-md">Canal losses and the three columns after them add up to the water taken at the headgate; a month that does not is marked. Acre-feet.</p>
       {% for group in canal_water %}
       <details class="mb-md"{% if group.is_open %} open{% endif %}>
         <summary class="row-start" style="cursor: pointer; list-style: none; gap: var(--space-sm); padding: var(--space-xs) 0;">
@@ -325,7 +317,7 @@
                 {{ r.month|date:"M Y" }}
                 {% if r.estimated %}<span class="badge badge-grey" title="At least one diversion record this month is estimated from use, not measured.">Estimated</span>{% endif %}
                 {% if not r.calculated %}<span class="text-tertiary text-xs">Not yet calculated</span>{% endif %}
-                {% if not r.adds_up %}<span class="badge badge-amber" title="The four parts do not add up to the water taken at the headgate.">Does not add up</span>{% endif %}
+                {% if not r.adds_up %}<span class="badge badge-amber" title="Canal losses plus the three columns after them differ from the water taken at the headgate.">Does not add up</span>{% endif %}
               </td>
               <td class="td-num">{{ r.headgate|floatformat:2|intcomma }}</td>
               {% if r.calculated %}
@@ -358,6 +350,9 @@
           </tbody>
         </table>
         </div>
+        {% if not group.totals.adds_up %}
+        <p class="text-tertiary text-xs mt-sm"><span class="badge badge-amber">Does not add up</span> marks a month whose canal losses plus the three columns after them differ from the water taken at the headgate.</p>
+        {% endif %}
         {% if group.totals.uncalculated %}
         <p class="text-tertiary text-xs mt-sm">{{ group.totals.uncalculated }} month{{ group.totals.uncalculated|pluralize }} not yet calculated; the headgate total above includes {{ group.totals.uncalculated|pluralize:"it,them" }}, the other columns do not.</p>
         {% endif %}
@@ -383,7 +378,7 @@
               <th>Owner</th>
               <th class="th-right">
                 Share
-                {% include "partials/_help_tooltip.html" with label="Share" text="The share of this point's water this use area receives. Two use areas fed by two different points each carry their own fixed share -- this page does not sum them." %}
+                {% include "partials/_help_tooltip.html" with label="Share" text="This use area's share of the canal on file. It divides the canal total only in a month when no use area the canal serves has an estimated use. A use area fed by two points has a share on each." %}
               </th>
             </tr>
           </thead>
@@ -441,9 +436,6 @@
             {% endfor %}
           </tbody>
         </table>
-        <p class="text-tertiary text-xs mt-sm">
-          This diversion fills the recharge area(s) above &mdash; for dual-purpose cropland, during storm events.
-        </p>
       </div>
       {% endif %}
 
