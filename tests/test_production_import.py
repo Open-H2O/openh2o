@@ -449,7 +449,7 @@ def test_production_import_preview_shows_layout_and_totals(auth_client, le_grand
     resp = auth_client.post(reverse("drinking:production_import_preview"), {"file": upload})
     assert resp.status_code == 200
     body = resp.content.decode()
-    assert "ear" in body
+    assert "eAR export" in body  # 149.1-06: the preview heading names the layout in words
     assert "rows_json" in body
 
 

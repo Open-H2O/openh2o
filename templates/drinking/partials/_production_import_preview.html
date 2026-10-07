@@ -15,7 +15,7 @@ pressed.
 {% endif %}
 
 <div class="card-raised">
-  <h2 class="card-header-ruled">Match your settings: {{ row_count }} row{{ row_count|pluralize }}, {{ layout }} layout</h2>
+  <h2 class="card-header-ruled">Settings: {{ row_count }} row{{ row_count|pluralize }}{% if layout == "ear" %}, the state&rsquo;s eAR export{% elif layout == "operator_log" %}, the operator&rsquo;s monthly log{% endif %}</h2>
 
   <form id="production-import-mapping-form" class="mt-lg">
     {% csrf_token %}
@@ -25,7 +25,7 @@ pressed.
     <div class="form-group">
       <label class="form-label" for="production-unit-for-blank">Unit for rows with a blank unit</label>
       <select id="production-unit-for-blank" name="unit_for_blank" class="form-select">
-        <option value=""{% if not unit_for_blank %} selected{% endif %}>(none chosen &mdash; a blank-unit row is an error)</option>
+        <option value=""{% if not unit_for_blank %} selected{% endif %}>(none chosen; a blank-unit row is an error)</option>
         {% for value, label in unit_choices %}
         <option value="{{ value }}"{% if unit_for_blank == value %} selected{% endif %}>{{ label }}</option>
         {% endfor %}
@@ -46,7 +46,7 @@ pressed.
           <option value="{{ value }}"{% if operator_unit == value %} selected{% endif %}>{{ label }}</option>
           {% endfor %}
         </select>
-        <div class="form-help">Applied to every row &mdash; the log carries no per-row unit.</div>
+        <div class="form-help">Applied to every row; the log carries no per-row unit.</div>
       </div>
     </div>
     {% endif %}

@@ -20,11 +20,15 @@ and why.
     {% if errors %}<span class="badge badge-orange">Errors {{ errors|length }}</span>{% endif %}
   </div>
 
-  <p class="text-base text-secondary mt-md">
-    {{ created }} production record{{ created|pluralize }} created.
-    {% if skipped_duplicates %}{{ skipped_duplicates }} row{{ skipped_duplicates|pluralize }} matched a month and source already on file and were skipped, never overwritten.{% endif %}
-    {% if not created and not skipped_duplicates and not errors %}Nothing to import.{% endif %}
-  </p>
+  {% comment %}
+    149.1-06: one line with the counts, or "Nothing to import." when the
+    file gave nothing to create, skip or report; each arm its own <p>.
+  {% endcomment %}
+  {% if not created and not skipped_duplicates and not errors %}
+  <p class="text-base text-secondary mt-md">Nothing to import.</p>
+  {% else %}
+  <p class="text-base text-secondary mt-md">Created {{ created }} production record{{ created|pluralize }}{% if skipped_duplicates %}; {{ skipped_duplicates }} already on file, skipped, never overwritten{% endif %}.</p>
+  {% endif %}
 
   {% if skipped_rows %}
   <h3 class="section-header-sm mt-lg">Rows that are not a month</h3>

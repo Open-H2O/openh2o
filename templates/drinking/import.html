@@ -14,7 +14,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Import</span>
   </nav>
-  <p class="page-description">Upload a laboratory results file, review exactly what will and will not be created, then commit.</p>
+  <p class="page-description">Upload a lab results file, check the preview, then commit.</p>
 </div>
 {% endblock %}
 
@@ -39,27 +39,15 @@
     {% comment %} Was "Import lab results", the page title word for word (Phase 143-02,
          copy rule 13). The card is the file step; the header says so. {% endcomment %}
     <h2 class="card-header-ruled">Choose the file</h2>
-    <p class="text-base text-secondary mt-md">
-      {% comment %}
-        "or a CLIP lab submission" cut at the 101-02 checkpoint. CLIP is defined
-        nowhere in this repository — the only other mention is a comment in
-        drinking/views.py — so it was the one acronym the copy pass could not
-        expand without inventing an expansion. The clause named a second source
-        of the same column layout the sentence had already named, so cutting it
-        cost the reader nothing.
-      {% endcomment %}
-      Upload a <strong>CSV</strong> of laboratory findings in the state's own
-      SDWIS.CSV lab-results layout &mdash; the same columns a Division of
-      Drinking Water extract carries. Column headers are detected automatically,
-      so an unmodified export needs no mapping. Nothing is written until you
-      review the preview and confirm.
-    </p>
-
     {% comment %}
-      Two limits stated plainly and up front, because both are rejections at
-      upload time rather than warnings: an operator should learn the cap before
-      waiting on a parse that is going to fail.
+      "or a CLIP lab submission" cut at the 101-02 checkpoint: CLIP is defined
+      nowhere in this repository, and the clause named a second source of the
+      same column layout. 149.1-06: the card's first line says what file the
+      page takes, what the preview shows and what the commit writes; the
+      columns are the table below, read from drinking/importer.py.
     {% endcomment %}
+    <p class="text-base text-secondary mt-md">A CSV in the SDWIS.CSV lab-results layout the state's Division of Drinking Water publishes. The preview lists every row before anything is written; the commit writes sample events and results.</p>
+
     <p class="text-tertiary text-sm mt-sm">
       Up to {{ max_rows }} rows per file, 25 MB maximum.
     </p>
@@ -97,27 +85,161 @@
 
   <div class="card-raised">
     <h2 class="card-header-ruled">What the import will and will not create</h2>
-    <p class="text-base text-secondary mt-md">
-      Sample events and results are created from the file. Analytes the file
-      names that this system has not seen are added to the vocabulary; the
-      state's file is the authority. The preview lists each one before you
-      commit.
-    </p>
-    <p class="text-base text-secondary mt-sm">
-      Sampling points and facilities are <strong>never</strong> created. A PS
-      Code this system does not carry is reported as a row error, so a mistyped
-      code cannot silently invent a monitoring location. Add the facility and
-      sampling point first, then re-import.
-    </p>
-    <p class="text-base text-secondary mt-sm">
-      Re-importing a file you have already imported is safe. Results matching
-      one already recorded are flagged as duplicates in the preview and skipped
-      on commit.
-    </p>
+    <div class="table-scroll mt-md">
+      <table class="data-table help-cases-table">
+        <thead>
+          <tr>
+            <th>Case</th>
+            <th>What the commit does</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-name">Sample events and results</td>
+            <td>Created from every row the preview marks Will create</td>
+          </tr>
+          <tr>
+            <td class="col-name">New analytes</td>
+            <td>Analytes the file names that this system has not seen are added to the vocabulary; the state's file is the authority. The preview lists each one before you commit.</td>
+          </tr>
+          <tr>
+            <td class="col-name">Sampling points and facilities</td>
+            <td>Never created. A PS Code this system does not carry is a row error; add the facility and sampling point first, then import again.</td>
+          </tr>
+          <tr>
+            <td class="col-name">A result already recorded</td>
+            <td>Skipped, so importing the same file again is safe; one recorded before limits were kept gains this file's MCL and DLR</td>
+          </tr>
+          <tr>
+            <td class="col-name">A row with an error</td>
+            <td>Not written; the preview lists it with what is wrong</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   {% comment %}Preview and results are swapped in here by HTMX.{% endcomment %}
   <div id="import-area"></div>
+
+  {% comment %}
+    149.1-06: the columns the file carries, one row per field in
+    drinking/importer.py's ALIASES, the four REQUIRED_FIELDS first, each named
+    by the state file's own header. sampling_point_name is left out: it is
+    matched and never read. Never a sentence of names.
+  {% endcomment %}
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Columns the file carries</h2>
+    <p class="text-base text-secondary mt-md">Matched by header, so the state's own file needs no mapping. A file missing a required column is refused before the preview; other columns are ignored.</p>
+    <div class="table-scroll mt-md">
+      <table class="data-table help-cases-table">
+        <thead>
+          <tr>
+            <th>Column</th>
+            <th>Required</th>
+            <th>What it holds</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-name">PS Code</td>
+            <td class="col-sure">Yes</td>
+            <td>Sampling point the sample was taken at; the point must already be on file</td>
+          </tr>
+          <tr>
+            <td class="col-name">Sample Date</td>
+            <td class="col-sure">Yes</td>
+            <td>Date collected, YYYY-MM-DD or MM-DD-YYYY</td>
+          </tr>
+          <tr>
+            <td class="col-name">Analyte Name</td>
+            <td class="col-sure">Yes</td>
+            <td>Analyte, matched by Analyte Code first, then by name</td>
+          </tr>
+          <tr>
+            <td class="col-name">Result</td>
+            <td class="col-sure">Yes</td>
+            <td>A number; a value below the reporting level, such as &lt;0.005; or presence or absence, such as P or A. Blank only with Less Than Reporting Level Y and a Reporting Level.</td>
+          </tr>
+          <tr>
+            <td class="col-name">Sample Time</td>
+            <td class="col-sure">No</td>
+            <td>Time collected; an unreadable time is ignored and noted in the preview</td>
+          </tr>
+          <tr>
+            <td class="col-name">Sample Type</td>
+            <td class="col-sure">No</td>
+            <td>RT, RP, SP or TG (routine, repeat, special, triggered), or a type name such as Confirmation; blank is recorded as routine, any other value as routine with a note</td>
+          </tr>
+          <tr>
+            <td class="col-name">Analysis Date</td>
+            <td class="col-sure">No</td>
+            <td>Date analyzed</td>
+          </tr>
+          <tr>
+            <td class="col-name">ELAP Cert#</td>
+            <td class="col-sure">No</td>
+            <td>Laboratory's certificate number under the Environmental Laboratory Accreditation Program (ELAP)</td>
+          </tr>
+          <tr>
+            <td class="col-name">Lab Name</td>
+            <td class="col-sure">No</td>
+            <td>Laboratory name</td>
+          </tr>
+          <tr>
+            <td class="col-name">Analyte Code</td>
+            <td class="col-sure">No</td>
+            <td>State's analyte code; recorded on an analyte on file that has none</td>
+          </tr>
+          <tr>
+            <td class="col-name">Counting Error (&plusmn;)</td>
+            <td class="col-sure">No</td>
+            <td>Counting error, stored with the result</td>
+          </tr>
+          <tr>
+            <td class="col-name">Units of Measure</td>
+            <td class="col-sure">No</td>
+            <td>Unit of the result, stored as written, such as mg/L</td>
+          </tr>
+          <tr>
+            <td class="col-name">Less Than Reporting Level</td>
+            <td class="col-sure">No</td>
+            <td>Y marks a result below the reporting level</td>
+          </tr>
+          <tr>
+            <td class="col-name">Reporting Level</td>
+            <td class="col-sure">No</td>
+            <td>Reporting level, stored with a result below it</td>
+          </tr>
+          <tr>
+            <td class="col-name">Method</td>
+            <td class="col-sure">No</td>
+            <td>Analytical method</td>
+          </tr>
+          <tr>
+            <td class="col-name">Collector</td>
+            <td class="col-sure">No</td>
+            <td>Who collected the sample, stored on a new sample event</td>
+          </tr>
+          <tr>
+            <td class="col-name">Regulating Agency</td>
+            <td class="col-sure">No</td>
+            <td>Recorded on the water system when its own field is blank and every row names the same agency</td>
+          </tr>
+          <tr>
+            <td class="col-name">MCL</td>
+            <td class="col-sure">No</td>
+            <td>Maximum contaminant level the file carries, stored as reported and never compared with the result</td>
+          </tr>
+          <tr>
+            <td class="col-name">DLR</td>
+            <td class="col-sure">No</td>
+            <td>Detection limit for purposes of reporting the file carries, stored as reported</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
   {% endif %}
 
 </div>

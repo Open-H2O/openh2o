@@ -28,23 +28,17 @@
     <span class="badge badge-grey">{{ total }} row{{ total|pluralize }} total</span>
   </div>
 
-  <p class="text-base text-secondary mt-md">
-    {% if counts.results %}
-      Created {{ counts.results }} sample result{{ counts.results|pluralize }} across
-      {{ counts.events }} sample event{{ counts.events|pluralize }}.
-    {% else %}
-      No new results were created.
-    {% endif %}
-    {% if counts.duplicates %}
-      {{ counts.duplicates }} row{{ counts.duplicates|pluralize }} {{ counts.duplicates|pluralize:"was,were" }} already on file and {{ counts.duplicates|pluralize:"was,were" }} skipped.
-    {% endif %}
-    {% if counts.limits_filled %}
-      {{ counts.limits_filled }} result{{ counts.limits_filled|pluralize }} already on file gained the MCL and DLR this file carries.
-    {% endif %}
-    {% if counts.analytes %}
-      {{ counts.analytes }} analyte{{ counts.analytes|pluralize }} {{ counts.analytes|pluralize:"was,were" }} added to the vocabulary from this file.
-    {% endif %}
-  </p>
+  {% comment %}
+    149.1-06: one line with the counts; the limits and the new analytes each
+    their own line inside their own guard.
+  {% endcomment %}
+  <p class="text-base text-secondary mt-md">{% if counts.results %}Created {{ counts.results }} sample result{{ counts.results|pluralize }} across {{ counts.events }} sample event{{ counts.events|pluralize }}{% else %}No new sample results created{% endif %}{% if counts.duplicates %}; {{ counts.duplicates }} already recorded{% endif %}{% if counts.skipped %}; {{ counts.skipped }} row{{ counts.skipped|pluralize }} skipped, listed below{% endif %}.</p>
+  {% if counts.limits_filled %}
+  <p class="text-base text-secondary mt-sm">{{ counts.limits_filled }} result{{ counts.limits_filled|pluralize }} already on file gained the MCL and DLR this file carries.</p>
+  {% endif %}
+  {% if counts.analytes %}
+  <p class="text-base text-secondary mt-sm">{{ counts.analytes }} analyte{{ counts.analytes|pluralize }} {{ counts.analytes|pluralize:"was,were" }} added to the vocabulary from this file.</p>
+  {% endif %}
 
   {% comment %}
     146-04 Task 3: the regulating agency, read once off the file. Three
@@ -52,19 +46,17 @@
     renders when the file carries no Regulating Agency column.
   {% endcomment %}
   {% for a in agency %}
-  <p class="text-base text-secondary mt-sm">
     {% if a.outcome == "recorded" %}
-      Regulating agency recorded from the file: {{ a.value }}.
+  <p class="text-base text-secondary mt-sm">Regulating agency recorded from the file: {{ a.value }}.</p>
     {% elif a.outcome == "already_set" %}
       {% if a.existing == a.value %}
-        Regulating agency: the file's {{ a.value }} matches the one already recorded.
+  <p class="text-base text-secondary mt-sm">Regulating agency: the file's {{ a.value }} matches the one already recorded.</p>
       {% else %}
-        Regulating agency not recorded: the system already has one, {{ a.existing }}. The file says {{ a.value }}.
+  <p class="text-base text-secondary mt-sm">Regulating agency not recorded: the system already has one, {{ a.existing }}. The file says {{ a.value }}.</p>
       {% endif %}
     {% else %}
-      Regulating agency not recorded: the file names {{ a.values|length|apnumber }} ({{ a.values|join:", " }}), so it does not say which.
+  <p class="text-base text-secondary mt-sm">Regulating agency not recorded: the file names {{ a.values|length|apnumber }} ({{ a.values|join:", " }}), so it does not say which.</p>
     {% endif %}
-  </p>
   {% endfor %}
 
   {% if skipped %}

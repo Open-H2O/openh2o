@@ -13,7 +13,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Import production</span>
   </nav>
-  <p class="page-description">Upload a year of the state's own annual electronic report (eAR) production export, or the operator's own monthly log. We'll recognize the layout and show what would be created before anything is written.</p>
+  <p class="page-description">Upload a year of production by month and source, check the preview, then import.</p>
 </div>
 {% endblock %}
 
@@ -24,14 +24,13 @@
 
   <div class="card-raised">
     <h2 class="card-header-ruled">Production by month and source</h2>
-    <p class="text-base text-secondary mt-md">
-      Two layouts are recognized by their column headers: the state's own eAR
-      production export (<code>PWSID</code>, <code>Year</code>, <code>Month</code>,
-      <code>TypeCode</code>, <code>Quantity as in Units Reported</code>) and the
-      operator's own monthly log (a <code>Date/Month</code> column naming each
-      month, plus one column per source). A month and source already on file
-      is skipped, never overwritten.
-    </p>
+    {% comment %}
+      149.1-06: the first line says what file the page takes, what the preview
+      shows and what the import writes; the two layouts' columns are the
+      tables below, read from drinking/production_import.py.
+    {% endcomment %}
+    <p class="text-base text-secondary mt-md">A CSV of the state's annual electronic report (eAR) production export, or of the operator's own monthly log. The preview shows what would be created before anything is written; the import writes one production record per month and source.</p>
+    <p class="text-base text-secondary mt-sm">A month and source already on file is skipped, never overwritten.</p>
 
     <form class="mt-lg"
       id="production-import-upload-form"
@@ -65,8 +64,125 @@
     </form>
   </div>
 
-  <!-- Mapping/settings, preview and results are swapped in here by HTMX -->
+  {% comment %}Mapping/settings, preview and results are swapped in here by HTMX.{% endcomment %}
   <div id="production-import-area"></div>
+
+  {% comment %}
+    149.1-06: the columns each layout carries, from production_import.py:
+    _EAR_REQUIRED and _process_ear_row for the eAR export;
+    _OPERATOR_SOURCE_COLUMNS and _process_operator_log_row for the log, whose
+    "Total Amount of Potable Water" column is never read.
+  {% endcomment %}
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Columns each layout carries</h2>
+    <p class="text-base text-secondary mt-md">The layout is recognized by its headers; other columns are ignored.</p>
+
+    <h3 class="section-header-sm mt-lg">The state&rsquo;s eAR production export</h3>
+    <div class="table-scroll mt-sm">
+      <table class="data-table help-cases-table">
+        <thead>
+          <tr>
+            <th>Column</th>
+            <th>Required</th>
+            <th>What it holds</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-name">PWSID</td>
+            <td class="col-sure">Yes</td>
+            <td>Public Water System Identification number; must match the water system on file</td>
+          </tr>
+          <tr>
+            <td class="col-name">Year</td>
+            <td class="col-sure">Yes</td>
+            <td>Report year</td>
+          </tr>
+          <tr>
+            <td class="col-name">Month</td>
+            <td class="col-sure">Yes</td>
+            <td>Month name, January to December</td>
+          </tr>
+          <tr>
+            <td class="col-name">DateStartOfMonth</td>
+            <td class="col-sure">No</td>
+            <td>First day of the month, M/D/YYYY; read when Month is not a month name</td>
+          </tr>
+          <tr>
+            <td class="col-name">TypeCode</td>
+            <td class="col-sure">Yes</td>
+            <td>Source, one of the state&rsquo;s seven: GW, SW, Purchased, Sold, Recycled, NonPotable, NonPotableSold; any other code is a row error</td>
+          </tr>
+          <tr>
+            <td class="col-name">Units of Measure As Reported</td>
+            <td class="col-sure">No</td>
+            <td>G, MG, AF or CCF (gallons, million gallons, acre-feet, hundred cubic feet); a blank cell is a row error until a unit for blank rows is chosen on the preview</td>
+          </tr>
+          <tr>
+            <td class="col-name">Quantity as in Units Reported</td>
+            <td class="col-sure">Yes</td>
+            <td>The month&rsquo;s volume, in that unit</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="section-header-sm mt-lg">The operator&rsquo;s monthly log</h3>
+    <p class="text-base text-secondary mt-sm">One column per source; the report year and one unit for the whole file, gallons unless changed, are chosen on the preview.</p>
+    <div class="table-scroll mt-sm">
+      <table class="data-table help-cases-table">
+        <thead>
+          <tr>
+            <th>Column</th>
+            <th>Required</th>
+            <th>What it holds</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-name">Date/Month</td>
+            <td class="col-sure">Yes</td>
+            <td>Month name; a row that is not a month, such as Maximum Day, Annual Total or Percent Treated, is skipped and named</td>
+          </tr>
+          <tr>
+            <td class="col-name">Water Produced from Groundwater (Wells)</td>
+            <td class="col-sure">One source at least</td>
+            <td>Recorded as Groundwater</td>
+          </tr>
+          <tr>
+            <td class="col-name">Water Produced from Surface Water</td>
+            <td class="col-sure">One source at least</td>
+            <td>Recorded as Surface water</td>
+          </tr>
+          <tr>
+            <td class="col-name">Finished Water Purchased or Received from another PWS</td>
+            <td class="col-sure">One source at least</td>
+            <td>Recorded as Purchased</td>
+          </tr>
+          <tr>
+            <td class="col-name">Water Sold to Another PWS</td>
+            <td class="col-sure">One source at least</td>
+            <td>Recorded as Sold</td>
+          </tr>
+          <tr>
+            <td class="col-name">Non-potable (exclude recycled)</td>
+            <td class="col-sure">One source at least</td>
+            <td>Recorded as Non-potable</td>
+          </tr>
+          <tr>
+            <td class="col-name">Recycled</td>
+            <td class="col-sure">One source at least</td>
+            <td>Recorded as Recycled</td>
+          </tr>
+          <tr>
+            <td class="col-name">Total Amount of Potable Water</td>
+            <td class="col-sure">No</td>
+            <td>Never read; it totals the source columns above</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 
 </div>
 

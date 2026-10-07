@@ -29,26 +29,26 @@
     {% if new_analytes %}<span class="badge badge-blue">{{ new_analytes|length }} new analyte{{ new_analytes|length|pluralize }}</span>{% endif %}
   </div>
 
-  <p class="text-base text-secondary mt-md">
-    {% if committable %}
-      Committing will create <strong>{{ committable }}</strong> result{{ committable|pluralize }}.
-    {% else %}
-      Nothing here would be created.
-    {% endif %}
-    {% if duplicate_count %}
-      {{ duplicate_count }} row{{ duplicate_count|pluralize }} {{ duplicate_count|pluralize:"is,are" }} already recorded and will be skipped.
-    {% endif %}
-    {% if limits_fill_count %}
-      {{ limits_fill_count }} of {{ limits_fill_count|pluralize:"it was,them were" }} recorded before this platform kept the limits a laboratory file carries; committing adds this file&rsquo;s MCL and DLR to {{ limits_fill_count|pluralize:"it,them" }} and changes nothing else.
-    {% endif %}
-    {% if error_count %}
-      {{ error_count }} row{{ error_count|pluralize }} cannot be imported &mdash; fix {{ error_count|pluralize:"it,them" }} in your file and re-import.
-    {% endif %}
-  </p>
+  {% comment %}
+    149.1-06: the head line with the counts, then one line per reason a row
+    is not created, each its own <p> inside its own guard. Per-reason counts
+    of the error rows are not in the view's context; the error table below
+    names each row's reason.
+  {% endcomment %}
+  <p class="text-base text-secondary mt-md">{{ row_count }} row{{ row_count|pluralize }} read: <strong>{{ committable }}</strong> will be created{% if duplicate_count %}, {{ duplicate_count }} already recorded{% endif %}{% if error_count %}, {{ error_count }} cannot be imported{% endif %}.</p>
+  {% if duplicate_count %}
+  <p class="text-base text-secondary mt-sm">A row already recorded, or repeated in this file, is skipped and never written twice.</p>
+  {% endif %}
+  {% if limits_fill_count %}
+  <p class="text-base text-secondary mt-sm">Of these, {{ limits_fill_count }} {{ limits_fill_count|pluralize:"was,were" }} recorded before this platform kept the limits a laboratory file carries; committing adds this file&rsquo;s MCL and DLR to {{ limits_fill_count|pluralize:"it,them" }} and changes nothing else.</p>
+  {% endif %}
+  {% if error_count %}
+  <p class="text-base text-secondary mt-sm">Each row that cannot be imported is listed below with what is wrong; fix {{ error_count|pluralize:"it,them" }} in your file and import again.</p>
+  {% endif %}
 
   {% comment %}
-    A PS Code the deployment does not carry is the most likely real failure here
-    — a system whose sampling points were only partly walked. Without this the
+    A PS Code the deployment does not carry is the most likely real failure here:
+    a system whose sampling points were only partly walked. Without this the
     operator gets a row error naming a code and no way to act on it, which is a
     dead end rather than a diagnosis.
   {% endcomment %}
@@ -57,9 +57,7 @@
     <p class="text-base text-secondary" style="margin: 0 0 var(--space-sm) 0;">
       <strong>{{ unknown_ps_codes|length }} PS Code{{ unknown_ps_codes|length|pluralize }} in this file
       {{ unknown_ps_codes|length|pluralize:"is,are" }} not carried here.</strong>
-      A lab file never creates system structure, so these rows cannot be matched
-      to a monitoring location until the sampling point exists. Add the point and
-      re-import &mdash; nothing about the file needs to change.
+      Add the sampling point{{ unknown_ps_codes|length|pluralize }} where shown, then import the same file again.
     </p>
     <table class="data-table mt-sm">
       <thead>
@@ -74,14 +72,14 @@
               <a href="{% url 'drinking:onboard_points' route.pwsid %}">Add sampling points for {{ route.pwsid }}</a>
             {% elif route.pwsid %}
               <span class="text-secondary">
-                <span class="text-mono">{{ route.pwsid }}</span> is not onboarded yet &mdash;
-                <a href="{% url 'drinking:onboard' %}">look the system up first</a>.
+                <span class="text-mono">{{ route.pwsid }}</span> is not onboarded yet; start at
+                <a href="{% url 'drinking:onboard' %}">Onboard a water system</a>.
               </span>
             {% else %}
               <span class="text-secondary">
-                This is not a readable PS Code
-                (<span class="text-mono">{pwsid}_{facility}_{point}</span>) &mdash;
-                check the file rather than adding a point.
+                Not a readable PS Code
+                (<span class="text-mono">{pwsid}_{facility}_{point}</span>); check the file
+                rather than adding a point.
               </span>
             {% endif %}
           </td>
@@ -95,9 +93,7 @@
   {% if new_analytes %}
   <div class="card-inset mt-md">
     <p class="text-sm text-secondary m-0">
-      <strong>New analytes.</strong> These are named in your file but not yet in
-      this system's vocabulary. Committing adds them, using the name and code
-      the file itself carries:
+      <strong>New analytes, added on commit with the file&rsquo;s own name and code:</strong>
       <span class="text-mono">{{ new_analytes|join:", " }}</span>
     </p>
   </div>
