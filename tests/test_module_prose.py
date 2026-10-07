@@ -44,12 +44,12 @@ NINE_MODULE_DRINKING = [
 
 WITHOUT_DRINKING = [name for name in mod.ALL_MODULE_NAMES if name != "drinking"]
 
-# Each step card renders its eyebrow immediately above its heading, so one
-# pattern reads the whole numbered sequence off the page in page order — number,
-# title and position in a single assertion.
+# Each step is one row of the steps table (149.1-04, 2026-10-07: the eleven
+# step cards became rows), its number in a `.step-num` span beside its name, so
+# one pattern reads the whole numbered sequence off the page in page order:
+# number, title and position in a single assertion.
 STEP_CARD = re.compile(
-    r'step-eyebrow">Step (\d+)[^<]*</span>\s*'
-    r'<h2 class="section-header">([^<]+)</h2>'
+    r'<td class="col-step"><span class="step-num">(\d+)</span>([^<]+)</td>'
 )
 
 WIZARD_NOUNS = (
@@ -172,10 +172,12 @@ class TestRenderedPages:
 
     def test_getting_started_names_every_domain_on_a_full_deployment(self, admin_client):
         body = admin_client.get("/help/getting-started/").content.decode()
-        assert (
-            "populates your use areas, wells, recharge basins, and nearby "
-            "monitoring stations for you" in body
-        )
+        # 149.1-04: the enumerating wizard sentence became the wizard table,
+        # and the table tells the truth setup/services.py tells: use areas and
+        # stations are brought in, wells and recharge areas are not.
+        assert "Add surface diversions and recharge areas" in body
+        assert "Parcel boundaries from the statewide LightBox parcel layer" in body
+        assert "Importing them from CSV or Shapefile" in body
         assert (
             "generate GEARS CSV (per-well or by-ET extraction) and "
             "CalWATRS CSV (surface diversions) to check your own numbers" in body
@@ -206,12 +208,13 @@ class TestRenderedPages:
     ):
         settings.OPENH2O_MODULES = WITHOUT_SURFACE
         body = admin_client.get("/help/getting-started/").content.decode()
+        assert "recharge areas" not in body
         assert "recharge basins" not in body
         assert "CalWATRS" not in body
-        assert (
-            "populates your use areas, wells, and nearby monitoring stations"
-            in body
-        ), "The wizard sentence lost a noun but did not repair its grammar."
+        assert "Surface diversions" not in body
+        assert "Parcel boundaries from the statewide LightBox parcel layer" in body, (
+            "The wizard table lost the surface row and took the use areas row with it."
+        )
 
     def test_the_drinking_deployment_opens_with_the_pwsid_card(
         self, admin_client, settings

@@ -125,7 +125,11 @@ class TestGettingStartedNumbering:
 
         result = _getting_started_numbering()
         assert sorted(result["steps"].values()) == list(range(1, 12))
-        assert result["wizard_cited_steps"] == "2, 3, 9, and 10"
+        # 149.1-04 (2026-10-07): the wizard citation lost wells and surface.
+        # setup/services.py WIZARD_STEPS imports use areas (parcels) and
+        # monitoring stations, and no wells or recharge basins, so the view's
+        # list says so; "2, 3, 9, and 10" was a false cross-reference.
+        assert result["wizard_cited_steps"] == "2 and 9"
         assert result["accounting_step_range"] == "4 through 8"
 
     def test_the_citations_only_ever_name_steps_that_render(self, monkeypatch):

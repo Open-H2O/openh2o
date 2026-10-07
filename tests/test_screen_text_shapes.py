@@ -164,7 +164,6 @@ BASELINE: dict = {
         "templates/drinking/production_form.html": 1,
         "templates/drinking/result_detail.html": 4,
         "templates/drinking/sampling_point_detail.html": 1,
-        "templates/help/getting_started.html": 6,
         "templates/infrastructure/partials/_import_mapping.html": 2,
         "templates/infrastructure/partials/_import_result.html": 1,
         "templates/partials/_demo_marker.html": 1,

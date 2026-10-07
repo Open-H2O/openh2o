@@ -33,15 +33,16 @@ ENFORCED: list = [
     "templates/help/settings_explained.html",
     "templates/help/surface_deliveries.html",
     "templates/help/water_balances.html",
+    "templates/help/getting_started.html",
+    "templates/help/glossary.html",
     "templates/help/partials/_the_subtraction.html",
     "templates/help/partials/_canal_split_diagram.html",
 ]
 
 #: Files not yet under the gate, with (longest, share) as measured; the test fails if either rises.
-PENDING = {
-    "templates/help/getting_started.html": (105, 0.74),
-    "templates/help/glossary.html": (6, 0.42),
-}
+#: Empty since 149.1-04 (2026-10-07): every help page is in ENFORCED. A new help page
+#: starts here at its measured numbers and moves up when Brent approves it.
+PENDING: dict = {}
 
 
 def _load():
@@ -76,7 +77,10 @@ def test_enforced_pages_hold_the_shape(rel):
     )
 
 
-@pytest.mark.parametrize("rel", sorted(PENDING))
+@pytest.mark.parametrize(
+    "rel",
+    sorted(PENDING) or [pytest.param(None, marks=pytest.mark.skip(reason="PENDING is empty"))],
+)
 def test_pending_pages_do_not_get_worse(rel):
     longest, share = PENDING[rel]
     row = shape.measure(REPO_ROOT / rel)

@@ -4,7 +4,7 @@
 
 {% block title %}Getting started - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Getting started{% endblock %}
-{% block page_head_class %}page-head--medium{% endblock %}
+{% block page_head_class %}page-head--help{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -13,362 +13,254 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Getting Started</span>
   </nav>
-  <p class="page-description">A step-by-step guide to setting up your water-data platform.</p>
+  <p class="page-description">The setup steps in order and where each is done, which ones the Setup Wizard does, and what is left after it.</p>
 </div>
 {% endblock %}
 
 {% block content %}
-<div class="page-stack page-medium">
+{% comment %}
+  149.1-04 (2026-10-07): carried to the shape Brent approved on Methods
+  behind the numbers (149.1-01) and How water balances work (149.1-02),
+  from the reader's three questions outward (in what order is the platform
+  set up, and where is each step done; which steps the Setup Wizard does;
+  what is left after it). The eleven step cards became the rows of one
+  steps table, the wizard card a ruled sub-section holding a second table,
+  and the concept card and the two pointer cards folded into Where to go
+  next. The shape check tests/test_help_shape.py holds this file at 60
+  words a block and half a page in prose.
 
-  {% comment %}89-02: the whole card is an on-ramp to help/water_balances.html,
-  which is hidden when the deployment does not run the domains it explains. Its
-  own sentence names surface deliveries and groundwater, so it is dishonest in
-  the same configuration in which its only action leads to a 404 — one guard
-  settles both. The predicate is the page's, read from the same place the view
-  reads it.{% endcomment %}{% explainer_available "water_balances" as show_water_balances %}{% if show_water_balances %}<div class="card-raised">
-    <h2 class="section-header">Start with the concept</h2>
-    <p class="text-secondary text-base">The platform estimates the water your crops consumed, from satellite, and reconciles it against the supplies: surface deliveries, groundwater and rain.</p>
-    <a href="{% url 'water_balances' %}" class="text-sm text-accent">Read: How Water Balances Work &rarr;</a>
-  </div>{% endif %}
+  Every row keeps the guard its card had, predicate unchanged: a row whose
+  only link is a page this deployment does not have is an instruction to
+  visit it. Step numbers come from `steps.<key>`
+  (config/views.py::_getting_started_numbering), never typed.
+
+  The Where column names the sidebar section and entry as core/modules.py
+  declares them (NAV_SECTIONS, each NavEntry's `section=` and `label=`).
+{% endcomment %}<div class="page-stack page-help help-page">
 
   <div class="card-raised">
-    <h2 class="section-header">The fast way: the Setup Wizard</h2>
-    {% comment %}
-      This sentence enumerates, so it cannot go module-neutral without going
-      vague — "it populates your data" tells an operator nothing (ISS-082). Each
-      noun is gated on the module that earns it instead, and the nouns live here
-      beside the sentence rather than in a view, because this is where someone
-      editing the copy will look for them. The Oxford join reproduces the
-      hardcoded wording exactly on a full deployment.
+    <h2 class="section-header">Setting up the platform, in order</h2>
 
-      88-03: the STEP NUMBERS needed the same treatment and had been left
-      hardcoded, so a deployment without Wells and Data Sync still read "that's
-      Steps 1, 2, 8, and 9" while neither Step 2 nor Step 8 was on the page — a
-      cross-reference to steps that do not exist, which is a worse defect than
-      the numbering gap Phase 87 knowingly accepted. Same tag, same join: with
-      every module on it renders "1, 2, 8, and 9" byte-for-byte. The owners are
-      Step 1 parcels, Step 2 wells, Step 8 datasync, Step 9 surface (the whole
-      Step 9 card is gated on surface; recharge only varies its eyebrow).
-
-      89-01 answers 88-03's warning, left here for this phase: "Steps 3 through
-      7" was hardcoded and correct only while `parcels` and `accounting` were
-      undroppable, and a RANGE cannot be expressed with `module_nouns`.
-
-      The answer is that the range never needed to be computed — it needed to be
-      gated on the thing it describes. Steps 3, 4, 6 and 7 are all Accounting;
-      Step 5 (zones) is `geography` and always present. So whenever this clause
-      renders at all, every step in "3 through 7" is on the page, and when
-      Accounting is off the clause is not there to be wrong.
-
-      The import sentence gets the same treatment one level up, via
-      `any_module_enabled`: with `parcels` off the whole closure goes, both
-      `module_nouns` calls resolve to nothing, and the sentence would read "it
-      populates your  for you — that's Steps ." A sentence left naming nothing
-      is precisely what that tag was added for.
-    {% endcomment %}<p class="text-secondary text-base">{% any_module_enabled "parcels" "wells" "recharge" "datasync" as wizard_imports_something %}{% if wizard_imports_something %}You don&rsquo;t have to do the import steps below by hand. Give the Setup Wizard your district boundary and it populates your {% module_nouns "parcels:use areas" "wells:wells" "recharge:recharge basins" "datasync:nearby monitoring stations" %} for you &mdash; that&rsquo;s Steps {{ wizard_cited_steps }}. {% else %}{% comment %}ISS-093 (P3): on a drinking-only deployment the wizard imports nothing, so the enumerating sentence above gates off and the card would collapse to the "Read this page&hellip;" tail alone. Option (b) of the two ISS-093 named: keep the card and name the one thing the wizard still does here &mdash; draw the Boundary polygon the map and every geography query are built on &mdash; rather than hide it (option a). Gated on `setup` so it only claims something a linkable wizard actually does; confined to this `else` branch so a full deployment (where `wizard_imports_something` is True) renders byte-identically.{% endcomment %}{% if 'setup' in enabled_modules %}The Setup Wizard draws your district boundary, which every other page uses; start there.{% endif %}{% endif %}{% if 'accounting' in enabled_modules %}What it can&rsquo;t do is the accounting setup, because those are your agency&rsquo;s policy choices: water accounts, your water year, management zones, allocation ceilings, and your ledger data (Steps {{ accounting_step_range }}). So run the wizard first, then come back and work the accounting steps. {% endif %}This page is the manual route, and a list of what the wizard did and what is left.</p>
-    {% if 'setup' in enabled_modules and user_can_write %}<a href="{% url 'setup:wizard' %}" class="text-sm text-accent">Run the Setup Wizard &rarr;</a>{% endif %}
-  </div>
-
-  {% comment %}92-01 (ISS-092): the drinking-water door, and the FIRST card on
-  the page — identity before geography (Brent, 2026-07-22). The whole card is
-  guarded, not just the link, for the Phase 89 reason: a card whose only action
-  is a 404 is an instruction to visit a page this deployment does not have. The
-  eyebrow carries no "the Setup Wizard can do this for you" suffix because the
-  wizard genuinely cannot do this one, and no "start here" because on a full
-  deployment a groundwater agency reads this card first and "start here" would
-  be wrong for them.{% endcomment %}{% if 'drinking' in enabled_modules %}<div class="card-raised step-card">
-    <span class="step-number">
-      {% include "partials/icons/_onboard.html" %}
-    </span>
-    <div class="step-body">
-      <span class="step-eyebrow">Step {{ steps.pwsid }}</span>
-      <h2 class="section-header">Onboard your water system</h2>
-      <p class="text-secondary text-base">Enter your PWSID &mdash; the identifier the regulator carries for a public water system &mdash; and OpenH2O looks it up in EPA&rsquo;s Envirofacts record: the regulatory details, the facilities, and the sampling points. Nothing is written until you review the results and confirm.</p>
-      {% if user_can_write %}<a href="{% url 'drinking:onboard' %}" class="text-sm text-accent">Go to Onboard System &rarr;</a>{% endif %}
+    <div class="table-scroll">
+      <table class="data-table help-steps-table">
+        <thead>
+          <tr>
+            <th>Step</th>
+            <th>Where</th>
+            <th>What to do</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% comment %}92-01 (ISS-092): the drinking-water door, and the FIRST row,
+          identity before geography (Brent, 2026-07-22). The whole row is
+          guarded, not just the link, for the Phase 89 reason: a row whose only
+          action is a 404 is an instruction to visit a page this deployment does
+          not have. No "start here" on it, because on a full deployment a
+          groundwater agency reads this row first and "start here" would be
+          wrong for them; the wizard cannot do this step.{% endcomment %}{% if 'drinking' in enabled_modules %}<tr>
+            <td class="col-step"><span class="step-num">{{ steps.pwsid }}</span>Onboard your water system</td>
+            <td class="col-setting">Water Data &gt; Onboard System{% if user_can_write %}<br><a href="{% url 'drinking:onboard' %}" class="text-sm text-accent">Go to Onboard System &rarr;</a>{% endif %}</td>
+            <td>Enter your Public Water System ID (PWSID) and OpenH2O looks up EPA&rsquo;s Envirofacts record for it: the regulatory details, the facilities and the sampling points. Nothing is written until you review the results and confirm.</td>
+          </tr>{% endif %}
+          {% comment %}Phase 89: each row is guarded whole, not just its link. The
+          numbering gaps a dropped module would leave are closed by the view
+          (89-02, ISS-088).{% endcomment %}{% if 'parcels' in enabled_modules %}<tr>
+            <td class="col-step"><span class="step-num">{{ steps.use_areas }}</span>Import your use areas</td>
+            <td class="col-setting">Water Data &gt; Use Areas<br><a href="{% url 'parcels:list' %}" class="text-sm text-accent">Go to Use Areas &rarr;</a></td>
+            <td>Upload use area boundaries from your county GIS department as GeoJSON or Shapefile; each needs an Assessor Parcel Number (APN).</td>
+          </tr>{% endif %}
+          {% if 'wells' in enabled_modules %}<tr>
+            <td class="col-step"><span class="step-num">{{ steps.wells }}</span>Import your wells</td>
+            <td class="col-setting">Water Data &gt; Wells<br><a href="{% url 'wells:list' %}" class="text-sm text-accent">Go to Wells &rarr;</a></td>
+            <td>Upload well locations from CSV or Shapefile, each with coordinates and a state well number or local ID.</td>
+          </tr>{% endif %}
+          {% if 'accounting' in enabled_modules %}<tr>
+            <td class="col-step"><span class="step-num">{{ steps.accounts }}</span>Set up water accounts</td>
+            <td class="col-setting">Administration &gt; Accounts<br><a href="{% url 'accounting:accounts_list' %}" class="text-sm text-accent">Go to Water Accounts &rarr;</a></td>
+            <td>Create a water account for each farm, ranch or other unit you track, to group its use areas.</td>
+          </tr>{% endif %}
+          {% if 'accounting' in enabled_modules %}<tr>
+            <td class="col-step"><span class="step-num">{{ steps.water_year }}</span>Create a water year</td>
+            <td class="col-setting">Administration &gt; Water Years<br><a href="{% url 'accounting:periods_list' %}" class="text-sm text-accent">Go to Water Years &rarr;</a></td>
+            <td>Set the window the accounts run over; most agencies use October 1 through September 30.</td>
+          </tr>{% endif %}
+          {% comment %}Phase 89: this row belongs to `geography` and stays in every
+          configuration, so the clauses that name another module are guarded
+          rather than the sentence rewritten. 89-02: the allocation clauses are
+          Accounting claims, and the second one ("at least one zone must exist")
+          points forward at the ceilings row, which is not on the page when
+          Accounting is off: a reference to a missing item is a wrong
+          instruction.{% endcomment %}<tr>
+            <td class="col-step"><span class="step-num">{{ steps.zones }}</span>Define management zones</td>
+            <td class="col-setting">Administration &gt; Zones<br><a href="{% url 'geography:zone_list' %}" class="text-sm text-accent">Go to Zones &rarr;</a></td>
+            <td>Create the sub-areas of your district{% if 'accounting' in enabled_modules %}, each with its own allocation{% endif %}{% if 'parcels' in enabled_modules %}, and put each use area in one{% endif %}{% if 'accounting' in enabled_modules %}; at least one zone must exist before you can allocate water{% endif %}.</td>
+          </tr>
+          {% if 'accounting' in enabled_modules %}<tr>
+            <td class="col-step"><span class="step-num">{{ steps.ceilings }}</span>Set allocation ceilings</td>
+            <td class="col-setting">Administration &gt; Allocations<br><a href="{% url 'accounting:allocations_list' %}" class="text-sm text-accent">Go to Allocations &rarr;</a></td>
+            <td>An allocation ceiling is the total volume assigned to a zone for a reporting period. Set one for each zone, water type and period.</td>
+          </tr>{% endif %}
+          {% if 'accounting' in enabled_modules %}<tr>
+            <td class="col-step"><span class="step-num">{{ steps.ledger }}</span>Enter use ledger data</td>
+            <td class="col-setting">Water Data &gt; Use Ledger<br><a href="{% url 'accounting:ledger_list' %}" class="text-sm text-accent">Go to Use Ledger &rarr;</a><br><a href="{% url 'accounting:methodology_settings' %}" class="text-sm text-accent">View the Methodology &rarr;</a></td>
+            <td>Record supply (positive) and usage (negative) for each use area, by hand or from a CSV; usage can also be estimated from satellite evapotranspiration (ET), as set on Administration &gt; Methodology.</td>
+          </tr>{% endif %}
+          {% if 'datasync' in enabled_modules %}<tr>
+            <td class="col-step"><span class="step-num">{{ steps.stations }}</span>Connect monitoring stations</td>
+            <td class="col-setting">Water Data &gt; Monitoring Stations<br><a href="{% url 'datasync:station_list' %}" class="text-sm text-accent">Go to Monitoring Stations &rarr;</a></td>
+            <td>Switch on Syncing for the stations you want, or link a CDEC, USGS or CIMIS station yourself with Add station; readings are then pulled automatically.</td>
+          </tr>{% endif %}
+          {% comment %}Phase 87: the WHOLE row is guarded on `surface`, unlike the
+          piece-by-piece recharge guards inside it. `recharge.requires` contains
+          `surface`, so with surface off this step has no subject left. The inner
+          recharge guards still matter: recharge can be dropped on its own, and
+          then the surface onboarding must survive.{% endcomment %}{% if 'surface' in enabled_modules %}<tr>
+            <td class="col-step"><span class="step-num">{{ steps.surface }}</span>{% if 'recharge' in enabled_modules %}Add surface diversions and recharge areas{% else %}Add surface diversions{% endif %}</td>
+            <td class="col-setting">Water Data &gt; Surface Diversions<br><a href="{% url 'surface:pod_list' %}" class="text-sm text-accent">Go to Surface Diversions &rarr;</a>{% if 'recharge' in enabled_modules %}<br>Water Data &gt; Recharge Areas<br><a href="{% url 'recharge:list' %}" class="text-sm text-accent">Go to Recharge Areas &rarr;</a>{% endif %}</td>
+            <td>Record surface water rights with their points of diversion{% if 'recharge' in enabled_modules %}, and managed aquifer recharge events at spreading basins or injection sites{% endif %}.</td>
+          </tr>{% endif %}
+          {% comment %}The reports row names two filing families, and each belongs
+          to the module whose water it reports: GEARS is groundwater (`wells`),
+          CalWATRS is surface diversion (`surface`). ISS-082. The whole row is
+          guarded: a report step in a deployment that can file nothing, or that
+          does not carry `reporting`, onboards the operator into something that
+          is not there.{% endcomment %}{% any_module_enabled "wells" "surface" as can_file_a_report %}{% if 'reporting' in enabled_modules and can_file_a_report %}<tr>
+            <td class="col-step"><span class="step-num">{{ steps.reports }}</span>Work out your state report figures</td>
+            <td class="col-setting">Reporting &gt; Reports<br><a href="{% url 'reporting:report_list' %}" class="text-sm text-accent">Go to Reports &rarr;</a></td>
+            <td>When your reporting period is complete, generate {% module_nouns "wells:GEARS CSV (per-well or by-ET extraction)" "surface:CalWATRS CSV (surface diversions)" %} to check your own numbers.</td>
+          </tr>{% endif %}
+        </tbody>
+      </table>
     </div>
-  </div>{% endif %}
 
-  {% comment %}
-    Phase 89: the whole step card is guarded, not just its link. A step card
-    whose only action is "Go to Use Areas" is an instruction to visit a page
-    this deployment does not have. The step NUMERALS are left alone on purpose
-    — the gaps they leave are ISS-088's, which Brent looked at on staging in
-    88-03 and asked to revisit at the end of the enhancements, not here.
-  {% endcomment %}{% if 'parcels' in enabled_modules %}<div class="card-raised step-card">
-    <span class="step-number">
-      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="2"/>
-        <line x1="3" y1="9" x2="21" y2="9"/>
-        <line x1="9" y1="3" x2="9" y2="21"/>
-      </svg>
-    </span>
-    <div class="step-body">
-      <span class="step-eyebrow">Step {{ steps.use_areas }} &middot; the Setup Wizard can do this for you</span>
-      <h2 class="section-header">Import your use areas</h2>
-      <p class="text-secondary text-base">Upload use area boundaries from your county GIS department as GeoJSON or Shapefile. Navigate to Use Areas and use the import command. Each use area needs an Assessor Parcel Number (APN).</p>
-      <a href="{% url 'parcels:list' %}" class="text-sm text-accent">Go to Use Areas &rarr;</a>
+    <div class="help-table-notes mt-md">
+      {% if 'reporting' in enabled_modules and can_file_a_report %}<p class="text-secondary text-sm">This platform does not submit anything to the Water Board, and neither of those state systems can currently accept a file produced here. Filing is still yours to do, by whatever route the Board has given your agency.</p>{% endif %}
+      <p class="text-secondary text-sm">A step whose module this deployment does not run is left out, and the numbers close up.</p>
     </div>
-  </div>{% endif %}
 
-  {% if 'wells' in enabled_modules %}<div class="card-raised step-card">
-    <span class="step-number">
-      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="3"/>
-        <path d="M12 2v4"/>
-        <path d="M12 18v4"/>
-        <path d="M4.93 4.93l2.83 2.83"/>
-        <path d="M16.24 16.24l2.83 2.83"/>
-        <path d="M2 12h4"/>
-        <path d="M18 12h4"/>
-      </svg>
-    </span>
-    <div class="step-body">
-      <span class="step-eyebrow">Step {{ steps.wells }} &middot; the Setup Wizard can do this for you</span>
-      <h2 class="section-header">Import your wells</h2>
-      <p class="text-secondary text-base">Upload well locations from CSV or Shapefile. Each well needs coordinates and a state well number or local ID. Wells appear on the map and can be linked to use areas.</p>
-      <a href="{% url 'wells:list' %}" class="text-sm text-accent">Go to Wells &rarr;</a>
-    </div>
-  </div>{% endif %}
-
-  {% if 'accounting' in enabled_modules %}<div class="card-raised step-card">
-    <span class="step-number">
-      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="2" y="4" width="20" height="16" rx="2"/>
-        <path d="M2 10h20"/>
-        <path d="M6 16h4"/>
-      </svg>
-    </span>
-    <div class="step-body">
-      <span class="step-eyebrow">Step {{ steps.accounts }}</span>
-      <h2 class="section-header">Set up water accounts</h2>
-      <p class="text-secondary text-base">Create water accounts to group use areas for tracking. Go to Administration &gt; Accounts and create accounts for each management unit (farm, ranch, district zone).</p>
-      <a href="{% url 'accounting:accounts_list' %}" class="text-sm text-accent">Go to Water Accounts &rarr;</a>
-    </div>
-  </div>{% endif %}
-
-  {% if 'accounting' in enabled_modules %}<div class="card-raised step-card">
-    <span class="step-number">
-      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="4" width="18" height="18" rx="2"/>
-        <line x1="16" y1="2" x2="16" y2="6"/>
-        <line x1="8" y1="2" x2="8" y2="6"/>
-        <line x1="3" y1="10" x2="21" y2="10"/>
-      </svg>
-    </span>
-    <div class="step-body">
-      <span class="step-eyebrow">Step {{ steps.water_year }}</span>
-      <h2 class="section-header">Create a water year</h2>
-      <p class="text-secondary text-base">Define the time window for accounting. Go to Compliance &gt; Water Years. Most agencies use the water year (October 1 through September 30).</p>
-      <a href="{% url 'accounting:periods_list' %}" class="text-sm text-accent">Go to Water Years &rarr;</a>
-    </div>
-  </div>{% endif %}
-
-  <div class="card-raised step-card">
-    <span class="step-number">
-      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-        <circle cx="12" cy="10" r="3"/>
-      </svg>
-    </span>
-    <div class="step-body">
-      <span class="step-eyebrow">Step {{ steps.zones }}</span>
-      <h2 class="section-header">Define management zones</h2>
-      {% comment %}Phase 89: Step 5 belongs to `geography` and stays in every
-      configuration, but two of its clauses name use areas. The clauses are
-      GUARDED rather than the sentence rewritten — byte-identical wherever
-      `parcels` is present, and it leaves 89-02 free to decide what this step
-      should say without colliding with a rewrite made here. Note for 89-02:
-      "carries its own allocation" and "before you can allocate water" are
-      Accounting claims that survive this guard, and the vocabulary table cannot
-      see them because its `accounting` row is deliberately narrow
-      ("allocation ceiling" only).
-
-      89-02 takes that note up. Both allocation clauses are now gated, and the
-      second one carried a defect the first did not: "Zones are a prerequisite
-      for THE NEXT STEP" is a cross-reference, and with Steps 6 and 7 gone there
-      is no next step for it to point at. 88-03 drew that distinction when it
-      fixed the wizard card — a numbering gap is a missing item, a reference to a
-      missing item is a wrong instruction.{% endcomment %}<p class="text-secondary text-base">A management zone is a sub-area of your district{% if 'accounting' in enabled_modules %} that carries its own allocation{% endif %}{% if 'parcels' in enabled_modules %} &mdash; each use area belongs to a zone{% endif %}.{% if 'accounting' in enabled_modules %} Zones are a prerequisite for the next step: an allocation is set per zone, so at least one zone must exist before you can allocate water.{% endif %} Go to Administration &gt; Zones and create your zones{% if 'parcels' in enabled_modules %}, then assign use areas to each{% endif %}.</p>
-      <a href="{% url 'geography:zone_list' %}" class="text-sm text-accent">Go to Zones &rarr;</a>
-    </div>
-  </div>
-
-  {% if 'accounting' in enabled_modules %}<div class="card-raised step-card">
-    <span class="step-number">
-      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"/>
-        <path d="M12 2a10 10 0 0 1 0 20"/>
-        <path d="M12 2v20"/>
-        <path d="M2 12h10"/>
-      </svg>
-    </span>
-    <div class="step-body">
-      <span class="step-eyebrow">Step {{ steps.ceilings }}</span>
-      <h2 class="section-header">Set allocation ceilings</h2>
-      <p class="text-secondary text-base">An allocation ceiling is the total volume assigned to a zone for a reporting period. The platform then divides it into per-account allocations, pro-rated by how many use areas each account holds in the zone. Set a ceiling for each zone, water type, and period. New to the difference between a ceiling and an account&rsquo;s allocation? See the short guide linked at the bottom of this page.</p>
-      <a href="{% url 'accounting:allocations_list' %}" class="text-sm text-accent">Go to Allocations &rarr;</a>
-    </div>
-  </div>{% endif %}
-
-  {% if 'accounting' in enabled_modules %}<div class="card-raised step-card">
-    <span class="step-number">
-      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-        <polyline points="14 2 14 8 20 8"/>
-        <line x1="16" y1="13" x2="8" y2="13"/>
-        <line x1="16" y1="17" x2="8" y2="17"/>
-        <line x1="10" y1="9" x2="8" y2="9"/>
-      </svg>
-    </span>
-    <div class="step-body">
-      <span class="step-eyebrow">Step {{ steps.ledger }}</span>
-      <h2 class="section-header">Enter use ledger data</h2>
-      <p class="text-secondary text-base">Record water supply (positive) and usage (negative) for each use area. Enter manually or import via CSV. Usage can also be derived from satellite evapotranspiration (ET) &mdash; how that calculation works is configured on your Methodology page. The use ledger is the core record of your water data.</p>
-      <a href="{% url 'accounting:ledger_list' %}" class="text-sm text-accent">Go to Use Ledger &rarr;</a>
-      <span class="text-tertiary text-sm" style="margin: 0 var(--space-xs);">|</span>
-      <a href="{% url 'accounting:methodology_settings' %}" class="text-sm text-accent">View the Methodology &rarr;</a>
-    </div>
-  </div>{% endif %}
-
-  {% if 'datasync' in enabled_modules %}<div class="card-raised step-card">
-    <span class="step-number">
-      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="3"/>
-        <path d="M3 12h3"/>
-        <path d="M18 12h3"/>
-        <path d="M12 3v3"/>
-        <path d="M12 18v3"/>
-        <path d="M5.64 5.64l2.12 2.12"/>
-        <path d="M16.24 16.24l2.12 2.12"/>
-        <path d="M5.64 18.36l2.12-2.12"/>
-        <path d="M16.24 7.76l2.12-2.12"/>
-      </svg>
-    </span>
-    <div class="step-body">
-      <span class="step-eyebrow">Step {{ steps.stations }} &middot; the Setup Wizard can do this for you</span>
-      <h2 class="section-header">Connect monitoring stations</h2>
-      <p class="text-secondary text-base">Link external data sources (CDEC stream gauges, USGS groundwater sites, CIMIS weather stations) to automatically pull measurements. Go to Monitoring Stations &gt; Add Station.</p>
-      <a href="{% url 'datasync:station_list' %}" class="text-sm text-accent">Go to Monitoring Stations &rarr;</a>
-    </div>
-  </div>{% endif %}
-
-  {% comment %}
-    Phase 87: the WHOLE card is guarded on `surface`, unlike the piece-by-piece
-    recharge guard inside it. `recharge.requires` contains `surface`, so with
-    surface off recharge is off too and this step has no subject left — an
-    unguarded card would onboard the operator into a module the deployment does
-    not have. The cost is a visible Step 8 → Step 10 gap, which is the better
-    of the two defects. The inner recharge guard still matters: recharge can be
-    dropped on its own, and then the surface onboarding must survive.
-  {% endcomment %}
-  {% if 'surface' in enabled_modules %}
-  <div class="card-raised step-card">
-    <span class="step-number">
-      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
-      </svg>
-    </span>
-    <div class="step-body">
+    <div class="help-subsection">
+      <h3 class="concept-panel-title">What the Setup Wizard does, and what is left</h3>
       {% comment %}
-        This step serves TWO modules, so it is guarded piece by piece rather than
-        as a whole card: dropping `recharge` must not also delete the surface
-        diversion onboarding.
-      {% endcomment %}
-      {% if 'recharge' in enabled_modules %}
-      <span class="step-eyebrow">Step {{ steps.surface }} &middot; the Setup Wizard imports recharge basins for you</span>
-      <h2 class="section-header">Add surface diversions and recharge areas</h2>
-      <p class="text-secondary text-base">Record surface water rights with their points of diversion. Track managed aquifer recharge events at spreading basins or injection sites.</p>
-      {% else %}
-      <span class="step-eyebrow">Step {{ steps.surface }}</span>
-      <h2 class="section-header">Add surface diversions</h2>
-      <p class="text-secondary text-base">Record surface water rights with their points of diversion.</p>
-      {% endif %}
-      <a href="{% url 'surface:pod_list' %}" class="text-sm text-accent">Go to Surface Diversions &rarr;</a>
-      {% if 'recharge' in enabled_modules %}
-      <span class="text-tertiary text-sm" style="margin: 0 var(--space-xs);">|</span>
-      <a href="{% url 'recharge:list' %}" class="text-sm text-accent">Go to Recharge Areas &rarr;</a>
-      {% endif %}
+        This was one enumerating sentence until 2026-10-07 and is this table
+        from 149.1-04, because the sentence was false: it said the wizard
+        imports wells and recharge basins, and setup/services.py WIZARD_STEPS
+        runs four steps from the district boundary (Bulletin 118 subbasins as
+        zones, parcel boundaries as use areas, flowlines, and stations added
+        switched off) and imports no wells and no recharge basins.
+
+        ISS-082: each row is gated on the module that earns it. 88-03: a
+        cross-reference to a step that is not on the page is a wrong
+        instruction, so every number here comes from `steps.<key>` inside the
+        guard of the row it names, and the accounting range is cited only
+        inside the `accounting` guard.
+
+        ISS-093 (P3), option (b): on a deployment where `wizard_imports_something`
+        is False the table gates off, and the `else` branch names the one thing
+        the wizard still does there, draw the Boundary polygon the map and every
+        geography query are built on, gated on `setup` so it only claims
+        something a linkable wizard does.
+      {% endcomment %}{% any_module_enabled "parcels" "wells" "recharge" "datasync" as wizard_imports_something %}{% if wizard_imports_something %}<div class="table-scroll mt-md">
+        <table class="data-table help-cases-table">
+          <thead>
+            <tr>
+              <th>Step</th>
+              <th>Done for you</th>
+              <th>Brought in</th>
+              <th>Still yours</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if 'parcels' in enabled_modules %}<tr>
+              <td class="col-name">Use areas<br><span class="text-sm text-secondary">Step {{ steps.use_areas }}</span></td>
+              <td class="col-sure"><span class="badge badge-pill badge-blue">Yes</span></td>
+              <td>Parcel boundaries from the statewide LightBox parcel layer that fall within or cross your district boundary</td>
+              <td>Assigning them to water accounts and zones</td>
+            </tr>{% endif %}
+            <tr>
+              <td class="col-name">Zones<br><span class="text-sm text-secondary">Step {{ steps.zones }}</span></td>
+              <td class="col-sure"><span class="badge badge-pill badge-gold">Partly</span></td>
+              <td>DWR Bulletin 118 subbasins that cross your district boundary, each added as a zone</td>
+              <td>Your own management zones{% if 'parcels' in enabled_modules %}, and putting each use area in one{% endif %}</td>
+            </tr>
+            {% if 'datasync' in enabled_modules %}<tr>
+              <td class="col-name">Monitoring stations<br><span class="text-sm text-secondary">Step {{ steps.stations }}</span></td>
+              <td class="col-sure"><span class="badge badge-pill badge-blue">Yes</span></td>
+              <td>Stations from USGS, CDEC, DWR and other public sources near your district boundary, added with Syncing switched off</td>
+              <td>Switching on Syncing for the ones you want</td>
+            </tr>{% endif %}
+            {% if 'wells' in enabled_modules %}<tr>
+              <td class="col-name">Wells<br><span class="text-sm text-secondary">Step {{ steps.wells }}</span></td>
+              <td class="col-sure"><span class="badge badge-pill badge-grey">No</span></td>
+              <td>Nothing</td>
+              <td>Importing them from CSV or Shapefile</td>
+            </tr>{% endif %}
+            {% if 'surface' in enabled_modules %}<tr>
+              <td class="col-name">{% if 'recharge' in enabled_modules %}Surface diversions and recharge areas{% else %}Surface diversions{% endif %}<br><span class="text-sm text-secondary">Step {{ steps.surface }}</span></td>
+              <td class="col-sure"><span class="badge badge-pill badge-grey">No</span></td>
+              <td>Nothing; the flowlines it draws on the map are not diversions</td>
+              <td>Adding them yourself</td>
+            </tr>{% endif %}
+            {% if 'accounting' in enabled_modules %}<tr>
+              <td class="col-name">Water accounts, water year, allocation ceilings and use ledger<br><span class="text-sm text-secondary">Steps {{ steps.accounts }}, {{ steps.water_year }}, {{ steps.ceilings }} and {{ steps.ledger }}</span></td>
+              <td class="col-sure"><span class="badge badge-pill badge-grey">No</span></td>
+              <td>Nothing</td>
+              <td>All four, set by your agency&rsquo;s policy</td>
+            </tr>{% endif %}
+            {% if 'reporting' in enabled_modules and can_file_a_report %}<tr>
+              <td class="col-name">State report figures<br><span class="text-sm text-secondary">Step {{ steps.reports }}</span></td>
+              <td class="col-sure"><span class="badge badge-pill badge-grey">No</span></td>
+              <td>Nothing</td>
+              <td>Generating them when a period is complete</td>
+            </tr>{% endif %}
+            {% if 'drinking' in enabled_modules %}<tr>
+              <td class="col-name">Your water system<br><span class="text-sm text-secondary">Step {{ steps.pwsid }}</span></td>
+              <td class="col-sure"><span class="badge badge-pill badge-grey">No</span></td>
+              <td>Nothing; it cannot look up a PWSID</td>
+              <td>Onboarding the system from its PWSID</td>
+            </tr>{% endif %}
+          </tbody>
+        </table>
+      </div>{% else %}{% if 'setup' in enabled_modules %}<p class="text-secondary text-base">The Setup Wizard draws your district boundary, which every other page uses; start there.</p>{% endif %}{% endif %}
+
+      <div class="help-table-notes mt-md">
+        {% if 'accounting' in enabled_modules %}<p class="text-secondary text-sm">Run the wizard first, then work Steps {{ accounting_step_range }} yourself; apart from the subbasin zones, the wizard does none of them.</p>{% endif %}
+        <p class="text-secondary text-sm">This page is the manual route, and a list of what the wizard did and what is left.</p>
+      </div>
+      {% if 'setup' in enabled_modules and user_can_write %}<p class="text-secondary text-sm mt-md">Under Administration &gt; Setup Wizard: <a href="{% url 'setup:wizard' %}" class="prose-link">Run the Setup Wizard &rarr;</a></p>{% endif %}
     </div>
   </div>
-  {% endif %}
 
-  {% comment %}
-    Step 10 names two filing families, and each belongs to the module whose
-    water it reports: GEARS is groundwater (`wells`), CalWATRS is surface
-    diversion (`surface`). ISS-082.
-
-    The whole card is guarded rather than just its sentence — a "Generate State
-    Reports" step in a deployment that can file nothing, or that does not carry
-    `reporting` at all, onboards the operator into something that is not there.
-    Same shape as the Step 9 guard above.
-
-    The guard tags share the line with the `<div>` they open, and this comment
-    closes on that line too. A tag or a comment alone on a line still emits that
-    line's newline, and the milestone constraint is that a full deployment
-    renders byte-identically — not merely equivalently. Every condition here is
-    True when every module is enabled.
-  {% endcomment %}{% any_module_enabled "wells" "surface" as can_file_a_report %}{% if 'reporting' in enabled_modules and can_file_a_report %}<div class="card-raised step-card">
-    <span class="step-number">
-      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-        <polyline points="14 2 14 8 20 8"/>
-        <line x1="9" y1="15" x2="15" y2="15"/>
-        <line x1="9" y1="11" x2="13" y2="11"/>
-      </svg>
-    </span>
-    <div class="step-body">
-      <span class="step-eyebrow">Step {{ steps.reports }}</span>
-      <h2 class="section-header">Work out your state report figures</h2>
-      <p class="text-secondary text-base">When your reporting period is complete, generate {% module_nouns "wells:GEARS CSV (per-well or by-ET extraction)" "surface:CalWATRS CSV (surface diversions)" %} to check your own numbers. Go to Reports &gt; Generate.</p>
-      <p class="text-tertiary text-sm">This platform does not submit anything to the Water Board, and neither of those state systems can currently accept a file produced here. Filing is still yours to do, by whatever route the Board has given your agency.</p>
-      <a href="{% url 'reporting:report_list' %}" class="text-sm text-accent">Go to Reports &rarr;</a>
-    </div>
-  </div>{% endif %}
-
-  {% comment %}Phase 89: two whole cards whose entire subject is a switchable
-  domain, each pointing at a Help page about that domain. Guarding the card is a
-  card decision, not a prose one — not a word inside them changes. The surface
-  one is guarded to match: it is in the same drop closure and has the identical
-  shape, and the vocabulary gate is blind to it only because "canal deliveries"
-  is not in `surface`'s forbidden list.{% endcomment %}{% comment %}89-03: gate the CARD, not the link. Its entire body is a promise
-  about "this short guide" — with the guide hidden, dropping only the link
-  leaves a card advertising something that is not there. That is 89-02's own
-  argument for the three-card grid below, applied to the two single-card
-  pointers it did not reach.{% endcomment %}{% explainer_available "budgets_allocations" as show_budgets %}{% if 'accounting' in enabled_modules and show_budgets %}<div class="card-raised">
-    <h2 class="section-header">New to allocations and ceilings?</h2>
-    <p class="text-secondary text-base">How the platform turns a zone&rsquo;s allocation ceiling into an account&rsquo;s allocation, with a worked example.</p>
-    <a href="{% url 'budgets_allocations' %}" class="text-sm text-accent">Read: Allocations &amp; Ceilings &rarr;</a>
-  </div>{% endif %}
-
-  {% explainer_available "surface_deliveries" as show_surface_help %}{% if 'surface' in enabled_modules and show_surface_help %}<div class="card-raised">
-    <h2 class="section-header">Setting up surface deliveries?</h2>
-    <p class="text-secondary text-base">Two agency-wide settings shape how the platform counts canal deliveries: how much of a delivery the crop uses, and what happens to a district&rsquo;s unused water at year-end. This guide explains both in plain language and shows how one district can differ from the agency default.</p>
-    <a href="{% url 'surface_deliveries' %}" class="text-sm text-accent">Read: Surface Delivery Settings &rarr;</a>
-  </div>{% endif %}
-
-  {% comment %}89-02: all three cards in this grid open explainer pages that are
-  hidden when their domains are gone, and the sentence above them counts them
-  ("These three guides"). Guarding the cards one by one would leave a heading
-  over an empty grid and a sentence claiming three of something — the exact
-  shape 89-01 guarded whole sections to avoid. The card goes as a unit, and on
-  ALL three rather than any: a card that says "these three guides" over two of
-  them is a smaller lie, not a fixed one. Every page it opens is still reachable
-  from the Help section of the sidebar when it is served at all.{% endcomment %}{% explainer_available "methods" as show_methods %}{% explainer_available "settings_explained" as show_settings %}{% if show_water_balances and show_methods and show_settings %}<div class="card-raised">
-    <h2 class="section-header">Learn how it works</h2>
-    <p class="text-secondary text-base">The platform measures the water your crops consumed and reconciles it against the water that supplied them. These three guides explain the idea, the arithmetic, and every setting that shapes the numbers &mdash; one click each.</p>
-    <div class="card-grid">
-      <a href="{% url 'water_balances' %}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>How Water Balances Work</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm m-0">The one idea underneath all of this: estimated use vs. supplies.</p>
+  {% comment %}89-02 and 89-03: every card in this grid opens an explainer page
+  that is hidden when its domains are gone, so each card is guarded on its own
+  page's availability, never on the link alone (a card advertising a guide
+  that is not there). The three concept cards go as a unit, on ALL three: they
+  need the same domains (config/views.py EXPLAINER_MODULES), and the concept
+  line above them is guarded on the same page it introduces. The card itself
+  renders when any of its links can. Every page it opens is still reachable
+  from the Help section of the sidebar when it is served at all.{% endcomment %}{% explainer_available "water_balances" as show_water_balances %}{% explainer_available "methods" as show_methods %}{% explainer_available "settings_explained" as show_settings %}{% explainer_available "budgets_allocations" as show_budgets %}{% explainer_available "surface_deliveries" as show_surface_help %}{% if show_water_balances or show_budgets or show_surface_help %}<div class="card-raised">
+    <h2 class="section-header">Where to go next</h2>
+    {% if show_water_balances %}<p class="text-secondary text-base">The platform estimates the water your crops consumed, from satellite, and reconciles it against the supplies: surface deliveries, groundwater and rain.</p>{% endif %}
+    <div class="card-grid card-grid--fit mt-md">
+      {% if show_water_balances and show_methods and show_settings %}<a href="{% url 'water_balances' %}" class="card-raised card-link">
+        <div class="concept-panel-title" style="justify-content: space-between;"><span>How Water Balances Work</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm">The one idea under all of this: estimated use against supplies.</p>
       </a>
       <a href="{% url 'methods' %}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Methods Behind the Numbers</span><span class="text-accent">&rarr;</span></div>
-        {% any_module_enabled "surface" "wells" as has_shared_sources %}<p class="text-secondary text-sm m-0">The calculation chain{% if has_shared_sources %} and how shared {% module_nouns "surface:deliveries" "wells:wells" %} are split{% endif %}.</p>
+        <div class="concept-panel-title" style="justify-content: space-between;"><span>Methods Behind the Numbers</span><span class="text-accent">&rarr;</span></div>
+        {% any_module_enabled "surface" "wells" as has_shared_sources %}<p class="text-secondary text-sm">The calculation chain{% if has_shared_sources %} and how shared {% module_nouns "surface:deliveries" "wells:wells" %} are split{% endif %}.</p>
       </a>
       <a href="{% url 'settings_explained' %}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Configs &amp; Settings, explained</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm m-0">Every agency-wide knob: what it does, who sets it, when to change it.</p>
-      </a>
+        <div class="concept-panel-title" style="justify-content: space-between;"><span>Configs &amp; Settings, explained</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm">Which settings change a figure, where each is set, and what a change does to months already calculated.</p>
+      </a>{% endif %}
+      {% if 'accounting' in enabled_modules and show_budgets %}<a href="{% url 'budgets_allocations' %}" class="card-raised card-link">
+        <div class="concept-panel-title" style="justify-content: space-between;"><span>Allocations &amp; Ceilings</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm">How the platform turns a zone&rsquo;s allocation ceiling into an account&rsquo;s allocation, with a worked example.</p>
+      </a>{% endif %}
+      {% if 'surface' in enabled_modules and show_surface_help %}<a href="{% url 'surface_deliveries' %}" class="card-raised card-link">
+        <div class="concept-panel-title" style="justify-content: space-between;"><span>Surface Delivery Settings</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm">Two agency-wide settings: how much of a delivery the crop uses, and what happens to a district&rsquo;s unused water at year-end.</p>
+      </a>{% endif %}
     </div>
   </div>{% endif %}
 
