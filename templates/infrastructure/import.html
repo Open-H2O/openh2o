@@ -27,13 +27,44 @@
     {% comment %} Was "Bulk import &mdash; {{ infra_label }}" under the title "Bulk import" (Phase 143-02, copy rule 13): the remainder is the type. {% endcomment %}
     <h2 class="card-header-ruled">{{ infra_label }}</h2>
     <p class="text-base text-secondary mt-md">Nothing is written until you match the columns, check the first rows and press Create.</p>
-    <p class="text-secondary text-sm mt-sm">Each row needs a name, and a location as a geometry or as latitude and longitude.</p>
-    {% if infra_type == "well" %}
-    <p class="text-secondary text-sm mt-sm">A row whose registration ID is already on file is skipped, never overwritten.</p>
-    {% else %}
-    <p class="text-secondary text-sm mt-sm">Rows are not checked against records already on file; a file imported twice creates its records twice.</p>
-    {% endif %}
     <p class="text-secondary text-sm mt-sm"><a href="{% url 'infrastructure:add' %}?type={{ infra_type }}">Add {{ infra_label|lower }}</a> creates one record at a time.</p>
+    {% comment %}149.1-06: what every type's file must carry, from infrastructure/importer.py
+    (name; a geometry or latitude and longitude inside California; the well registration
+    ID check). The per-type field list is the mapping step's; the page cannot reach it
+    without a view change (ISS-228).{% endcomment %}
+    <div class="table-scroll mt-md">
+      <table class="data-table help-cases-table">
+        <thead>
+          <tr>
+            <th>Column</th>
+            <th>Required</th>
+            <th>What it holds</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-name">Name</td>
+            <td>Yes</td>
+            <td>The record's name</td>
+          </tr>
+          <tr>
+            <td class="col-name">Latitude and longitude, or a geometry</td>
+            <td>Yes</td>
+            <td>Decimal degrees inside California, or the shapefile, GeoJSON or KML geometry</td>
+          </tr>
+          <tr>
+            <td class="col-name">The other {{ infra_label|lower }} columns</td>
+            <td>No</td>
+            <td>Matched to their fields on the next step, one row per field</td>
+          </tr>
+          <tr>
+            <td class="col-name">A row already on file</td>
+            <td></td>
+            <td>{% if infra_type == "well" %}Skipped, never overwritten, when its registration ID is already on file or repeated in the file{% else %}Not checked; a file imported twice creates its records twice{% endif %}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <form class="mt-lg"
       id="import-upload-form"

@@ -48,9 +48,6 @@
     {% endcomment %}
     <p class="text-base text-secondary mt-md">A CSV in the SDWIS.CSV lab-results layout the state's Division of Drinking Water publishes. The preview lists every row before anything is written; the commit writes sample events and results.</p>
 
-    <p class="text-tertiary text-sm mt-sm">
-      Up to {{ max_rows }} rows per file, 25 MB maximum.
-    </p>
 
     <form class="mt-lg"
       id="drinking-import-form"
@@ -64,7 +61,7 @@
       {% csrf_token %}
 
       <div class="form-group">
-        <label class="form-label" for="import-file">Lab results file <span class="required-mark">*</span></label>
+        <label class="form-label" for="import-file">Lab results file: the SDWIS.CSV export from the Division of Drinking Water <span class="required-mark">*</span></label>
         <div class="file-picker">
           <label class="btn-secondary file-picker-button">
             Choose file
@@ -73,7 +70,7 @@
           </label>
           <span class="file-picker-name text-tertiary text-sm" id="import-file-name">No file chosen</span>
         </div>
-        <div class="form-help">CSV only.</div>
+        <div class="form-help">CSV, as the state publishes it; up to {{ max_rows }} rows, 25 MB.</div>
       </div>
 
       <div class="row-start pt-sm">

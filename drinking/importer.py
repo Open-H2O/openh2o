@@ -708,7 +708,7 @@ def validate_rows(rows, mapping):
         elif ps_code not in known_points:
             errors.append(
                 f"PS Code '{ps_code}' is not a known sampling point. Add the "
-                "facility and sampling point first — a lab file does not create "
+                "facility and sampling point first; a lab file does not create "
                 "system structure."
             )
         else:
