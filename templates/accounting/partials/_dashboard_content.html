@@ -337,7 +337,7 @@
 <div class="card-raised" id="unmet-demand">
   <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
     <h2 class="section-header-flush">Fields with water use recorded and no supply reported</h2>
-    <span class="text-tertiary text-xs">{{ selected_period.name }}{% include "partials/_explainer_popout.html" with title="How a row is counted" text="One row per field: the part of its consumptive use that no supply on record met, as the calculation run stored it. The column adds." link=wb_help_url link_label="How water balances work" %} · All figures in acre-feet (AF).</span>
+    <span class="text-tertiary text-xs">{{ selected_period.name }}{% include "partials/_explainer_popout.html" with title="How a row is counted" text="One row per field, the figure as the calculation run stored it. The column adds." link=wb_help_url link_label="How water balances work" %} · All figures in acre-feet (AF).</span>
   </div>
   {% if unmet_demand_rows %}
   <div class="table-scroll">

@@ -275,7 +275,7 @@
     <div class="card-raised page-grid-account-full" id="where-the-water-went">
       <h2 class="section-header mb-md">Where the water went</h2>
       {% if canal_water %}
-      <p class="text-secondary text-sm mb-md">Canal losses and the three columns after them add up to the water taken at the headgate; a month that does not is marked. Acre-feet.</p>
+      <p class="text-secondary text-sm mb-md">Canal losses and the three columns after them add up to the water taken at the headgate; a month that does not is marked Does not add up. Acre-feet.</p>
       {% for group in canal_water %}
       <details class="mb-md"{% if group.is_open %} open{% endif %}>
         <summary class="row-start" style="cursor: pointer; list-style: none; gap: var(--space-sm); padding: var(--space-xs) 0;">

@@ -280,12 +280,19 @@
           {% comment %} 149.1-05: Brent's question at the 143.1-01 checkpoint
                (2026-09-17 08:31, "is this saying the residual does not include
                losses?") answered as two labelled lines, one per kind of loss,
-               each saying where that loss is counted and that it is not here.
-               A fresh reader read the two sentences as one paragraph (round 1). {% endcomment %}
-          {% if 'surface' in enabled_modules %}
-          <p class="text-tertiary">Canal losses come off the headgate total before it is divided up, so they are not in this residual.</p>
-          {% endif %}
-          <p class="text-tertiary">Deep percolation counts under Uses, so it is not in this residual.</p>
+               each saying where that loss is counted instead; the panel's own
+               breakdown rows, because two fresh readers read the sentences as a
+               paragraph (rounds 1 and 2). {% endcomment %}
+          </div>
+          {% comment %} The group is a direct child of the segment so the panel's
+               own row rules apply (`.budget-seg > .budget-breakdown-group`);
+               inside .budget-seg-notes the rows ran together (round 3). {% endcomment %}
+          <div class="budget-breakdown-group">
+            <div class="budget-breakdown-title">Not in this residual</div>
+            {% if 'surface' in enabled_modules %}
+            <div class="budget-breakdown-row"><span>Canal losses</span><b>taken off the headgate total</b></div>
+            {% endif %}
+            <div class="budget-breakdown-row"><span>Deep percolation</span><b>counted under Uses</b></div>
           </div>
         </div>
       </div>
