@@ -97,9 +97,12 @@ class TestDeliveryShareWordsTail:
         sentence = delivery_share_words(
             record, _pod("Plain Canal Headgate"), fixed_share=Decimal("0.2000")
         )
-        assert f": 20%, {DELIVERY_SHARE_BY_FIXED}" in sentence
+        # 149.1-05: no colon (the domain gate read "Headgate: 20%" as a
+        # definition); the share is named as the thing it is, then its figure.
+        assert f", divided up from the canal total by {DELIVERY_SHARE_BY_FIXED}, 20%, " in sentence
+        assert "fixed share" not in sentence
         assert sentence.endswith(
-            "because no use area it serves has an estimated use for the month"
+            "because no use area the canal serves has an estimated use for the month"
         )
 
 

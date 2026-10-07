@@ -248,8 +248,8 @@ def test_surface_step_summary_names_delivered_and_what_the_crop_could_use():
     )
     assert _step_detail_summary(step, delivery_split="fixed") == (
         "92.3827 AF the crop could use, of 123.1769 AF delivered, divided up "
-        "from the canal total by the fixed share on file; irrigation "
-        "efficiency 0.75 (the deployment's default)"
+        "from the canal total by this use area's share of the canal on file; "
+        "irrigation efficiency 0.75 (the deployment's default)"
     )
     by_method = {"step_type": "subtract_surface_water", "detail": dict(step["detail"], efficiency_source="method")}
     assert _step_detail_summary(by_method).endswith("(the field's irrigation method)")

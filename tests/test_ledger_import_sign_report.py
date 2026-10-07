@@ -220,6 +220,13 @@ def test_shape_6_ledger_page_footer_sums_debits_and_credits_separately():
     assert resp.status_code == 200
     body = resp.content.decode("utf-8")
 
-    assert sign_rule_sentence() in body
+    # 149.1-05 (R-014): the list page states its sign rule once, in the
+    # results head directly above the table, in the facts line's words; the
+    # `sign_rule_sentence` tag stays for the import doors (the CLI report,
+    # the upload preview, docs/DATA-IMPORT.md) and no longer prints here.
+    assert sign_rule_sentence() not in body
+    assert body.count(
+        "Negative amounts are water delivered or pumped; positive amounts are credits."
+    ) == 1
     assert "6,326.01" in body
     assert "+0.00" in body

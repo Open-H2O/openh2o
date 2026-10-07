@@ -13,7 +13,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">New Entry</span>
   </nav>
-  <p class="page-description">One row of the use ledger: a volume on one use area on one date. By the ledger's convention, water that left a canal or a well for the field is entered negative, and an allocation or recharge credit positive. Pick the water year the row counts in.</p>
+  <p class="page-description">One row of the use ledger: a volume on one use area on one date. Pick the water year it counts in.</p>
 </div>
 {% endblock %}
 
@@ -42,6 +42,12 @@
         {% if field.help_text %}
         <div class="form-help">{{ field.help_text }}</div>
         {% endif %}
+        {% comment %} 149.1-05 (R-014, R-044): the one sign rule, beside the box
+             it governs, in the same words as the Use Ledger's results head (the
+             unit is already in the field's own label, so it is not said again). {% endcomment %}
+        {% if field.name == "amount_acre_feet" %}
+        <div class="form-help">Negative amounts are water delivered or pumped; positive amounts are credits.</div>
+        {% endif %}
       </div>
       {% endfor %}
 
@@ -50,13 +56,6 @@
         <a href="{% url 'accounting:ledger_list' %}" class="btn-secondary">Cancel</a>
       </div>
     </form>
-  </div>
-
-  <div class="card-raised card-inset">
-    <p class="text-tertiary text-sm m-0">
-      <strong class="text-secondary">Sign convention:</strong>
-      Positive amounts represent supply (recharge, allocation). Negative amounts represent usage (diversions, extractions).
-    </p>
   </div>
 
 </div>

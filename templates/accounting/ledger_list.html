@@ -23,16 +23,12 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Use Ledger</span>
   </nav>
-  {% comment %} "and recharge" drops on a deployment without the recharge
-       module (recharge_enabled, from core.modules.is_enabled) — the sentence
-       still reads as one clause either way (rule 11; ISS-082 module-vocabulary
-       guard). {% endcomment %}
-  <p class="page-description">Every entry the platform holds against a use area for the period: water delivered or pumped, and credits for allocations{% if recharge_enabled %} and recharge{% endif %}. Download CSV writes out the rows the filters select, Upload CSV adds entries from a file, and New entry records one by hand.</p>
-  {% comment %} ISS-196: one sign rule, said the same way at every door
-       (`accounting/ledger_words.py::sign_rule_sentence`). Sits under the page
-       description so a reader meets it before the table and the footer
-       below. {% endcomment %}
-  <p class="page-description">{% sign_rule_sentence recharge_enabled surface_enabled %}</p>
+  {% comment %} 149.1-05 (R-014): one line, what the page shows and what its
+       buttons do. The two write buttons are named only for a reader who sees
+       them (user_can_write, the page_actions guard above). The sign rule is
+       stated once on this page, in the results head directly above the table
+       (`_ledger_list_results.html`), not repeated here. {% endcomment %}
+  <p class="page-description">Every use area's entries for the period. Download CSV writes the filtered rows.{% if user_can_write %} Upload CSV adds a file's rows, and New entry adds one.{% endif %}</p>
 </div>
 {% endblock %}
 

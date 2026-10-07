@@ -181,11 +181,19 @@ DELIVERY_SHARE_BY_USE = (
 )
 
 #: The tail of a static-fraction delivery-share sentence: no served use area
-#: had an estimated use for the month, so the split fell back to the fixed
-#: share on file. The percentage and the "because no use area it serves has
-#: an estimated use for the month" clause are composed by
-#: ``delivery_share_words`` below, not part of this constant.
-DELIVERY_SHARE_BY_FIXED = "the fixed share on file"
+#: had an estimated use for the month, so the split fell back to each use
+#: area's share of the canal on file (``PointOfDiversionParcel.fraction``,
+#: normalized by ``apportion_shared_supply``). 149.1-05: reworded from "the
+#: fixed share on file" under Brent's ruling of 2026-09-17 08:31 PDT ("What
+#: is a fixed share?"). ``delivery_share_words`` below prints it after
+#: "divided up from the canal total by", the same words the calculation
+#: page's canal line puts before it (``accounting/views.py``), so it stays a
+#: noun phrase; the percentage and the "because no use area the canal serves
+#: has an estimated use for the month" clause follow it there and are not
+#: part of this constant. The colon the sentence used to carry ("...Canal
+#: Headgate: 20%, ...") read as a definition under the domain gate's copular
+#: shape (`tests/test_domain_vocabulary.py::scan`), so it went.
+DELIVERY_SHARE_BY_FIXED = "this use area's share of the canal on file"
 
 #: A recharge row credited to a use area (or the basin pool) for canal water
 #: delivered beyond what the month's estimated use called for.
@@ -277,8 +285,9 @@ def delivery_share_words(record, pod, *, fixed_share=None, loss_fraction=None):
     ``apportion_shared_supply``) this parcel received on the static-fraction
     fallback path; pass it only from ``_fraction_rows``. When omitted, the
     sentence closes with ``DELIVERY_SHARE_BY_USE``; when given, it closes with
-    a colon, the percentage, ``DELIVERY_SHARE_BY_FIXED``, and the "because no
-    use area it serves has an estimated use for the month" tail.
+    "divided up from the canal total by", ``DELIVERY_SHARE_BY_FIXED``, the
+    percentage, and the "because no use area the canal serves has an estimated
+    use for the month" tail.
 
     The verb phrase is "delivered from" for a `direct_use` record and "taken
     to storage from" otherwise (a to-storage record reaching this path is
@@ -315,8 +324,9 @@ def delivery_share_words(record, pod, *, fixed_share=None, loss_fraction=None):
 
     if fixed_share is not None:
         sentence += (
-            f": {fixed_share:.0%}, {DELIVERY_SHARE_BY_FIXED}, because no use "
-            f"area it serves has an estimated use for the month"
+            f", divided up from the canal total by {DELIVERY_SHARE_BY_FIXED}, "
+            f"{fixed_share:.0%}, because no use area the canal serves has an "
+            f"estimated use for the month"
         )
     else:
         sentence += ", " + DELIVERY_SHARE_BY_USE

@@ -585,8 +585,9 @@ file: a share of a headgate's delivery split by estimated use ("Share of 214.58 
 Diversion Canal Headgate, divided up from the canal total in proportion to each field's crop water use after
 rain" (reworded 2026-09-28 under the ISS-218 ruling, Brent 2026-09-25: every description of a demand-weighted
 split says it in those words; the weight is each field's net consumptive use));
-the same split by the fixed share on file ("…: 20%, the fixed share on file, because no use area it serves
-has an estimated use for the month" (reworded 2026-09-17, 143.1-01)); the incidental credit ("Credit for canal water delivered beyond the use area's
+the same split by each use area's share of the canal on file ("…, divided up from the canal total by this use
+area's share of the canal on file, 20%, because no use area the canal serves has an estimated use for the
+month" (reworded 2026-10-07, 149.1-05, under Brent's 2026-09-17 08:31 ruling "What is a fixed share?")); the incidental credit ("Credit for canal water delivered beyond the use area's
 estimated use for the month"); the pumping estimate ("Estimated pumping: the month's estimated use, less
 rainfall and canal water delivered"); and the month with none ("No groundwater extraction was derived for
 this month; rainfall and delivered surface water covered the estimated use."). The guards:
