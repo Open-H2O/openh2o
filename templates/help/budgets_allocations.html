@@ -124,7 +124,7 @@
         <tbody>
           <tr>
             <td class="col-name">Groundwater</td>
-            <td>Groundwater extracted, metered and calculated alike (the meter reading, or the division for a well with no meter)</td>
+            <td>Groundwater extracted, metered and calculated alike (the meter reading, or the division{% if 'wells' in enabled_modules %} for a well with no meter{% endif %})</td>
             <td>Allocation plus any carry-over, minus groundwater extracted</td>
           </tr>
           <tr>

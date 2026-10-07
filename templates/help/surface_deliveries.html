@@ -92,7 +92,7 @@
           <tr>
             <td class="col-name">Credited to the landowner, less a share left in the basin</td>
             <td>The amount, and the landowner's share of it after &ldquo;Share left in the basin&rdquo; is subtracted, 10% unless changed</td>
-            <td>Fields with a well, the landowner, on the field's own ledger; fields with no well, the zone's shared account, or no one where the zone has none</td>
+            <td>{% if 'wells' in enabled_modules %}Fields with a well, the landowner, on the field's own ledger; fields with no well, the zone's shared account, or no one where the zone has none{% else %}The zone's shared account, or no one where the zone has none{% endif %}</td>
           </tr>
           <tr>
             <td class="col-name">Its own line, not a credit</td>
