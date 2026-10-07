@@ -178,10 +178,8 @@ class TestRenderedPages:
         assert "Add surface diversions and recharge areas" in body
         assert "Parcel boundaries from the statewide LightBox parcel layer" in body
         assert "Importing them from CSV or Shapefile" in body
-        assert (
-            "generate GEARS CSV (per-well or by-ET extraction) and "
-            "CalWATRS CSV (surface diversions) to check your own numbers" in body
-        )
+        # The state-report step (GEARS / CalWATRS) came off the page 2026-10-07.
+        assert "Work out your state report figures" not in body
 
     def test_the_home_map_sublabel_no_longer_enumerates(self, admin_client):
         body = admin_client.get("/").content.decode()

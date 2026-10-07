@@ -316,7 +316,6 @@ GETTING_STARTED_STEPS = (
     ("ledger", "accounting"),
     ("stations", "datasync"),
     ("surface", "surface"),
-    ("reports", "reporting"),
 )
 
 #: The steps the Setup Wizard does, and the steps the accounting sentence cites
@@ -333,10 +332,9 @@ _ACCOUNTING_CITED_STEPS = ("accounts", "water_year", "ceilings", "ledger")
 def _getting_started_numbering():
     """``{step key: rendered number}`` plus the two cross-reference strings.
 
-    The Step 10 card carries a second condition beyond its module — ``reporting``
-    can be installed while neither family it files (GEARS/CalWATRS) has a module
-    — so it is special-cased here rather than given a second column that only one
-    row would ever use.
+    The state-report step (``reporting``, with a second condition on ``wells`` or
+    ``surface``) came off the page on 2026-10-07 at Brent's word (149.1-04: the
+    module is not fully developed), so no row needs a second condition now.
 
     The accounting range is emitted as "N through M" rather than a list because
     the cards it names are always contiguous: Step 5 (zones) is ``geography`` and
@@ -346,12 +344,7 @@ def _getting_started_numbering():
     numbers = {}
     n = 0
     for key, module in GETTING_STARTED_STEPS:
-        if key == "reports":
-            shown = is_enabled("reporting") and (
-                is_enabled("wells") or is_enabled("surface")
-            )
-        else:
-            shown = module is None or is_enabled(module)
+        shown = module is None or is_enabled(module)
         if shown:
             n += 1
             numbers[key] = n

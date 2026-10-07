@@ -124,7 +124,9 @@ class TestGettingStartedNumbering:
         from config.views import _getting_started_numbering
 
         result = _getting_started_numbering()
-        assert sorted(result["steps"].values()) == list(range(1, 12))
+        # 149.1-04 (2026-10-07): the state-report step came off the page at
+        # Brent's word, so a full deployment numbers 1 through 10.
+        assert sorted(result["steps"].values()) == list(range(1, 11))
         # 149.1-04 (2026-10-07): the wizard citation lost wells and surface.
         # setup/services.py WIZARD_STEPS imports use areas (parcels) and
         # monitoring stations, and no wells or recharge basins, so the view's

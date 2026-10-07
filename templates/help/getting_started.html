@@ -128,22 +128,11 @@
             <td class="col-where">Water Data &gt; Surface Diversions{% if 'recharge' in enabled_modules %} and Recharge Areas{% endif %}<br><a href="{% url 'surface:pod_list' %}" class="text-sm text-accent">Go to Surface Diversions &rarr;</a>{% if 'recharge' in enabled_modules %}<br><a href="{% url 'recharge:list' %}" class="text-sm text-accent">Go to Recharge Areas &rarr;</a>{% endif %}</td>
             <td>Record surface water rights with their points of diversion{% if 'recharge' in enabled_modules %}, and each event at your recharge areas{% endif %}.</td>
           </tr>{% endif %}
-          {% comment %}The reports row names two filing families, and each belongs
-          to the module whose water it reports: GEARS is groundwater (`wells`),
-          CalWATRS is surface diversion (`surface`). ISS-082. The whole row is
-          guarded: a report step in a deployment that can file nothing, or that
-          does not carry `reporting`, onboards the operator into something that
-          is not there.{% endcomment %}{% any_module_enabled "wells" "surface" as can_file_a_report %}{% if 'reporting' in enabled_modules and can_file_a_report %}<tr>
-            <td class="col-step"><span class="step-num">{{ steps.reports }}</span>Work out your state report figures</td>
-            <td class="col-where">Reporting &gt; Reports<br><a href="{% url 'reporting:report_list' %}" class="text-sm text-accent">Go to Reports &rarr;</a></td>
-            <td>When your reporting period is complete, generate {% module_nouns "wells:GEARS CSV (per-well or by-ET extraction)" "surface:CalWATRS CSV (surface diversions)" %} to check your own numbers.</td>
-          </tr>{% endif %}
         </tbody>
       </table>
     </div>
 
     <div class="help-table-notes mt-md">
-      {% if 'reporting' in enabled_modules and can_file_a_report %}<p class="text-secondary text-sm">This platform does not submit anything to the Water Board, and neither of those state systems can currently accept a file produced here. Filing is still yours to do, by whatever route the Board has given your agency.</p>{% endif %}
       <p class="text-secondary text-sm">A step whose module this deployment does not run is left out, and the numbers close up.</p>
     </div>
 
@@ -238,12 +227,6 @@
               <td class="col-sure"><span class="badge badge-pill badge-grey">No</span></td>
               <td>Nothing; the flowlines it draws on the map are not diversions</td>
               <td>Adding them yourself</td>
-            </tr>{% endif %}
-            {% if 'reporting' in enabled_modules and can_file_a_report %}<tr>
-              <td class="col-name">State report figures<br><span class="text-sm text-secondary">Step {{ steps.reports }}</span></td>
-              <td class="col-sure"><span class="badge badge-pill badge-grey">No</span></td>
-              <td>Nothing</td>
-              <td>Generating them when a period is complete</td>
             </tr>{% endif %}
           </tbody>
         </table>
