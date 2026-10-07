@@ -19,7 +19,9 @@ description as the only content on the page. Promising counts and management
 pages over a page that has neither is the ISS-082 class in its quietest form:
 no forbidden noun appears, so no word list can see it. This is the PUBLIC
 landing page, which is the half of `/` the harness could not read at all
-before 88-01.{% endcomment %}{% any_module_enabled "parcels" "wells" "surface" "recharge" "accounting" "datasync" as has_entity_cards %}<p class="page-description">Overview of your water data.{% if has_entity_cards %} Each card counts one kind of record and links to where you manage it.{% endif %}</p>
+before 88-01. 149.1-06 (R-139): only a visitor who is not signed in sees this
+page, so it says what the site is and that the records open after logging in,
+never "your water data".{% endcomment %}{% any_module_enabled "parcels" "wells" "surface" "recharge" "accounting" "datasync" as has_entity_cards %}<p class="page-description">OpenH2O, open-source water accounting for districts and agencies.{% if has_entity_cards %} Log in to open the records each card counts.{% endif %}</p>
 
 {% comment %}143-09 (R-138, R-140): the two entity sections used to split
 "Water data" from "Accounting & monitoring" over two separate grids, which
@@ -32,7 +34,7 @@ fit at that floor, a fourth does not), so all six cards this deployment
 allows resolve to two rows of three rather than four across the top and two
 stranded below. The guard shares a line with the markup because a tag alone
 on a line still emits that line's newline, and the milestone's deliverable is
-a byte-identical full render.{% endcomment %}{% if 'parcels' in enabled_modules or 'wells' in enabled_modules or 'surface' in enabled_modules or 'recharge' in enabled_modules or 'accounting' in enabled_modules or 'datasync' in enabled_modules %}<h2 class="content-section-label">Your data</h2>
+a byte-identical full render.{% endcomment %}{% if 'parcels' in enabled_modules or 'wells' in enabled_modules or 'surface' in enabled_modules or 'recharge' in enabled_modules or 'accounting' in enabled_modules or 'datasync' in enabled_modules %}<h2 class="content-section-label">Records on this site</h2>
 <div class="dashboard-grid dashboard-grid--counts">
     {% if 'parcels' in enabled_modules %}<a href="{% url 'parcels:list' %}" class="dashboard-card">
         <div class="dashboard-card-label">Use areas</div>
@@ -78,4 +80,5 @@ this template ONLY to anonymous visitors (a signed-in user gets home.html),
 so the card was dead markup nobody could ever see rendered. The "Signed in
 as" branch a few lines below the old System status card was dead for the
 same reason and went with it.{% endcomment %}
+<p class="text-secondary text-sm mt-md">To run OpenH2O for your own district or agency, start from <a href="https://github.com/Open-H2O/openh2o" class="text-link" target="_blank" rel="noopener noreferrer">the repository</a> and its <a href="https://github.com/Open-H2O/openh2o/blob/main/docs/AI-OPERATOR-GUIDE.md" class="text-link" target="_blank" rel="noopener noreferrer">operator guide</a>.</p>
 {% endblock %}

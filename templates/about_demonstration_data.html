@@ -28,14 +28,14 @@
     <p class="about-purpose">
       Some of what you see is genuine public record, carried unchanged from
       whoever published it. The rest is invented to show how the accounting
-      works &mdash; no agency's real ledgers are ours to publish. The tables
+      works, since no agency's real ledgers are ours to publish. The tables
       below say which is which.
     </p>
     {% comment %}
       One sentence, in the existing prose voice, no new panel and no coloured
       callout. It exists because this page and the per-screen labels are now two
       statements of the same fact, and a reader who arrives here should learn
-      that the answer is also available where the data is — otherwise the labels
+      that the answer is also available where the data is; otherwise the labels
       are a feature only someone who already knows about them will find.
     {% endcomment %}
     <p class="about-purpose">
@@ -48,9 +48,9 @@
     Every publisher named in this table uses the EXACT wording of its constant in
     `drinking/provenance.py`, and `tests/test_drinking_provenance.py` asserts
     that. Before Phase 101 this page carried three different shapes for the same
-    two publishers — "EPA Envirofacts (SDWIS), PWSID CA2410009", "State Water
+    two publishers ("EPA Envirofacts (SDWIS), PWSID CA2410009", "State Water
     Board Division of Drinking Water, and GAMA" and "Division of Drinking Water,
-    SDWIS4 export from the EDT Library" — which is exactly the drift a summary
+    SDWIS4 export from the EDT Library"), which is exactly the drift a summary
     page and eight screens produce when nobody owns the words.
 
     This template deliberately does NOT `{% load drinking_display %}`: `drinking`
@@ -102,7 +102,7 @@
             <td>State Water Board Division of Drinking Water, and the State Water Board GAMA Program</td>
           </tr>
           <tr>
-            <td>Every drinking-water laboratory result, 2023&ndash;2026</td>
+            <td>Its laboratory results, 2023&ndash;2026, unedited: none added, removed, rounded or adjusted</td>
             <td>State Water Board Division of Drinking Water, SDWIS4 export from the EDT Library</td>
           </tr>
           <tr>
@@ -112,22 +112,19 @@
         </tbody>
       </table>
     </div>
-    <p class="text-secondary text-sm mt-md">
-      The laboratory results are filtered to one water system and to a
-      three-year window, and are otherwise the state's own file, unedited. No
-      result has been added, removed, rounded or adjusted.
-    </p>
   </div>
 
   <div class="card-raised">
     <h2 class="section-header">Invented sample data</h2>
     <p class="about-purpose">
-      Built to demonstrate the accounting. Every district, agency, farm and well
-      owner in it is invented, so the groundwater side of this demonstration
-      names no real water district at all. The drinking-water side is
-      deliberately the opposite: genuine published laboratory results under the
-      City of Merced's real name. Even there, the accounting figures on this site
-      are not the city's, and are not what it pumps, owns or owes.
+      Built to demonstrate the accounting. Every district, agency, farm and
+      owner in it is invented, so the groundwater side
+      names no real water district.
+    </p>
+    <p class="about-purpose">
+      The drinking-water side carries real published laboratory results under
+      the City of Merced's real name. The accounting figures on this site are
+      not the city's, and are not what it pumps, owns or owes.
     </p>
     <div class="table-scroll">
       <table class="data-table">
@@ -144,7 +141,7 @@
           </tr>
           <tr>
             <td>The names of the agencies and districts</td>
-            <td>Real boundaries, invented agencies &mdash; the accounting inside them is invented, so no real agency is named as its author</td>
+            <td>Real boundaries, invented agencies: the accounting inside them is invented, so no real agency is named as its author</td>
           </tr>
           <tr>
             <td>Water rights, points of diversion and deliveries</td>
@@ -152,7 +149,7 @@
           </tr>
           <tr>
             <td>Parcel owner names and addresses</td>
-            <td>Real shapes, invented owners &mdash; the shapes are public, the people are not</td>
+            <td>Real shapes, invented owners: the shapes are public, the people are not</td>
           </tr>
           <tr>
             <td>Crop land use on the irrigated parcels</td>
@@ -179,16 +176,14 @@
     <h2 class="section-header">One clarification</h2>
     <p class="about-purpose">
       The drinking-water section names a real utility and shows its real
-      laboratory results, including detections. That is deliberate: a
-      demonstration built on invented chemistry would prove nothing about
-      whether this platform can handle a real state data file.
+      laboratory results, detections included, so the demonstration shows the
+      platform reading a real state data file.
     </p>
     <p class="about-purpose">
       It is not a compliance assessment. This platform records what a result
       was and, separately, what a limit is; it does not compare them and does
       not publish a verdict. Judging a water system against a standard is the
-      regulator's job, and nothing on these screens should be read as that
-      judgement having been made.
+      regulator's job, and no screen here makes that judgement.
     </p>
   </div>
 

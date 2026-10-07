@@ -4383,7 +4383,7 @@ details[open] > summary .disclosure-mark {
     color: var(--color-text-secondary);
     line-height: 1.65;
     text-align: left;
-    margin: 0;
+    margin: var(--space-md) 0 0;
 }
 
 .about-credits p {
