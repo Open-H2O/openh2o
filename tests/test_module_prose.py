@@ -176,8 +176,8 @@ class TestRenderedPages:
         # and the table tells the truth setup/services.py tells: use areas and
         # stations are brought in, wells and recharge areas are not.
         assert "Add surface diversions and recharge areas" in body
-        assert "Parcel boundaries from the statewide LightBox parcel layer" in body
-        assert "Importing them from CSV or Shapefile" in body
+        assert "The wizard brings them in from the statewide parcel layer" in body
+        assert "Upload well locations from CSV or Shapefile" in body
         # The state-report step (GEARS / CalWATRS) came off the page 2026-10-07.
         assert "Work out your state report figures" not in body
 
@@ -210,8 +210,8 @@ class TestRenderedPages:
         assert "recharge basins" not in body
         assert "CalWATRS" not in body
         assert "Surface diversions" not in body
-        assert "Parcel boundaries from the statewide LightBox parcel layer" in body, (
-            "The wizard table lost the surface row and took the use areas row with it."
+        assert "The wizard brings them in from the statewide parcel layer" in body, (
+            "The use-areas row lost its wizard clause when surface went."
         )
 
     def test_the_drinking_deployment_opens_with_the_pwsid_card(
@@ -252,7 +252,7 @@ class TestRenderedPages:
 
         numbered = STEP_CARD.findall(body)
         assert [int(n) for n, _ in numbered] == list(range(1, len(numbered) + 1))
-        assert numbered[0] == ("1", "Import your use areas")
+        assert numbered[0] == ("1", "Define management zones")
 
     def test_the_drinking_wizard_card_names_the_boundary(
         self, admin_client, settings

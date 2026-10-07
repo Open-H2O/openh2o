@@ -131,8 +131,12 @@ class TestGettingStartedNumbering:
         # setup/services.py WIZARD_STEPS imports use areas (parcels) and
         # monitoring stations, and no wells or recharge basins, so the view's
         # list says so; "2, 3, 9, and 10" was a false cross-reference.
-        assert result["wizard_cited_steps"] == "2 and 9"
-        assert result["accounting_step_range"] == "4 through 8"
+        # 2026-10-07 10:21, Brent: the order follows what depends on what
+        # (pwsid, zones, use areas, wells, surface, stations, then the four
+        # accounting steps), so the wizard's steps are 3 and 6 and the
+        # accounting run is the last four.
+        assert result["wizard_cited_steps"] == "3 and 6"
+        assert result["accounting_step_range"] == "7 through 10"
 
     def test_the_citations_only_ever_name_steps_that_render(self, monkeypatch):
         """Every number cited has to be a number on the page.

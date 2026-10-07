@@ -305,17 +305,23 @@ def demonstration_data(request):
 #: 1-11, and both cross-reference strings moved with them). That cost was
 #: accepted knowingly: it is the price of one page that is honest in both
 #: configurations rather than one that is honest in the larger of them.
+#: Brent, 2026-10-07 10:21 PDT (149.1-04): the order follows what depends on
+#: what. Identity first (92-01), then the zones the records sit in, then the
+#: records (use areas, the wells and diversions that attach to them, the
+#: stations), then the accounting setup, and the ledger last because it is data
+#: entry, not setup. The Phase 12 order had been the order the modules were
+#: built, with later steps appended.
 GETTING_STARTED_STEPS = (
     ("pwsid", "drinking"),
+    ("zones", None),
     ("use_areas", "parcels"),
     ("wells", "wells"),
+    ("surface", "surface"),
+    ("stations", "datasync"),
     ("accounts", "accounting"),
     ("water_year", "accounting"),
-    ("zones", None),
     ("ceilings", "accounting"),
     ("ledger", "accounting"),
-    ("stations", "datasync"),
-    ("surface", "surface"),
 )
 
 #: The steps the Setup Wizard does, and the steps the accounting sentence cites
@@ -337,9 +343,9 @@ def _getting_started_numbering():
     module is not fully developed), so no row needs a second condition now.
 
     The accounting range is emitted as "N through M" rather than a list because
-    the cards it names are always contiguous: Step 5 (zones) is ``geography`` and
-    renders in every configuration, and it sits between the accounting cards, so
-    the run cannot break in the middle.
+    the rows it names are the last four and contiguous (since 2026-10-07; before
+    that Step 5, zones, sat between them and rendered in every configuration,
+    so the run could not break in the middle either).
     """
     numbers = {}
     n = 0
