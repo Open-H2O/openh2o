@@ -3,7 +3,7 @@
 
 {% block title %}Allocations & ceilings - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Allocations & ceilings{% endblock %}
-{% block page_head_class %}page-head--medium{% endblock %}
+{% block page_head_class %}page-head--help{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -12,92 +12,146 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Allocations &amp; Ceilings</span>
   </nav>
-  <p class="page-description">How the platform turns a zone-wide cap into each account's individual limit.</p>
+  <p class="page-description">How a zone&rsquo;s ceiling becomes each account&rsquo;s allocation, what spends an allocation, and what a blank allocation means.</p>
 </div>
 {% endblock %}
 
 {% block content %}
 {% comment %}
-  Phase 89. Link guards ONLY — every word on this page is left exactly as it
-  was, deliberately. This page is *about* the switched-off domain, so a guard
-  makes it render without making it honest; whether it should be reachable at
-  all in a deployment with no Accounting is 89-02's call, and it is recorded
-  there rather than answered here.
+  149.1-03 (2026-10-07): carried to the shape Brent approved on Methods
+  behind the numbers (149.1-01) and How water balances work (149.1-02),
+  from the reader's three questions outward (the ceiling against the
+  allocation, and who sets which; how one account's allocation is worked
+  out from the zone's ceiling; what spends a groundwater allocation, and
+  what a blank means). Each card is one table with a line or two under it;
+  the three inset formula boxes became the worked example's rows. The shape
+  check tests/test_help_shape.py holds this file at 60 words a block and
+  half a page in prose.
 
   Unlike settings_explained.html and methods.html, this page uses the BARE
   `{% templatetag openblock %} url {% templatetag closeblock %}` form, which
-  really does raise NoReverseMatch. These guards close a 500, not a dead link.
-{% endcomment %}<div class="page-stack page-medium">
+  really does raise NoReverseMatch. The guards below close a 500, not a dead
+  link.
+{% endcomment %}<div class="page-stack page-help help-page">
 
   <div class="card-raised">
-    <h2 class="section-header">The short version</h2>
-    <p class="text-secondary text-base">An <strong>allocation ceiling</strong> is the total volume assigned to a management zone for a reporting period. An <strong>allocation</strong> is one account's share of it, by the land the account holds in the zone. Set the ceiling at the top; the platform divides it into allocations underneath.</p>
+    <h2 class="section-header">The ceiling and the allocation</h2>
+    <p class="text-secondary text-base">An <strong>allocation ceiling</strong> is the total volume assigned to a management zone for a reporting period. An <strong>allocation</strong> is one account&rsquo;s share of it, by the land the account holds in the zone.</p>
 
-    <div class="stat-grid-2col" style="margin: var(--space-md) 0 var(--space-xs);">
-      <div class="concept-panel concept-panel-supply">
-        <div class="concept-panel-title">Allocation ceiling <span class="badge badge-pill badge-green">you set this</span></div>
-        <p class="text-secondary text-base m-0">The total volume assigned to a zone for a period. One policy ceiling for a whole area, set at the top.</p>
-      </div>
-      <div class="concept-panel">
-        <div class="concept-panel-title">Allocation <span class="badge badge-pill badge-grey">derived</span></div>
-        <p class="text-secondary text-base m-0">One account&rsquo;s share: the ceiling pro-rated by the use areas the account holds in the zone.</p>
-      </div>
+    <div class="table-scroll mt-md">
+      <table class="data-table help-cases-table">
+        <thead>
+          <tr>
+            <th>Figure</th>
+            <th>What it is</th>
+            <th>Who sets it</th>
+            <th>One per</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-name">Allocation ceiling</td>
+            <td>The total volume assigned to a zone for a period.</td>
+            <td>You, on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{% url 'accounting:allocations_list' %}">Allocations</a>{% else %}Allocations{% endif %}</td>
+            <td>Zone, water type and reporting period</td>
+          </tr>
+          <tr>
+            <td class="col-name">Allocation</td>
+            <td>One account&rsquo;s share: the ceiling pro-rated by the use areas the account holds in the zone.</td>
+            <td>The platform</td>
+            <td>Account, from the groundwater ceiling of every zone it holds use areas in</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
   <div class="card-raised">
-    <h2 class="section-header">Allocation ceiling &mdash; the cap you set</h2>
-    <p class="text-secondary text-base">The allocation ceiling is the top-down decision. Your agency declares, for example, &ldquo;this zone gets 12,000 acre-feet of groundwater this water year.&rdquo; You set one ceiling per <strong>zone</strong>, per <strong>water type</strong> (groundwater, surface water, and so on), per <strong>reporting period</strong>. It is the policy ceiling for a whole area &mdash; the total volume available before anyone&rsquo;s individual share is worked out.</p>
+    <h2 class="section-header">How an account&rsquo;s allocation is worked out</h2>
+
+    <div class="table-scroll">
+      <table class="data-table help-steps-table">
+        <thead>
+          <tr>
+            <th>Step</th>
+            <th>Figure in the example</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-step"><span class="step-num">1</span>Zone ceiling for the year</td>
+            <td>12,000 acre-feet</td>
+          </tr>
+          <tr>
+            <td class="col-step"><span class="step-num">2</span>Use areas in the zone</td>
+            <td>600</td>
+          </tr>
+          <tr>
+            <td class="col-step"><span class="step-num">3</span>The account&rsquo;s use areas in the zone</td>
+            <td>30</td>
+          </tr>
+          <tr>
+            <td class="col-step"><span class="step-num">4</span>The account&rsquo;s allocation</td>
+            <td>12,000 &times; 30 / 600 = 600 acre-feet</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="help-table-notes mt-md">
+      <p class="text-secondary text-sm">A landowner&rsquo;s figure is the account&rsquo;s allocation, not the zone&rsquo;s 12,000 acre-feet.</p>
+      <p class="text-secondary text-sm">The count of use areas is used, not their acreage, because area data is often incomplete and counts are always available.</p>
+    </div>
   </div>
 
   <div class="card-raised">
-    <h2 class="section-header">Allocation &mdash; each account's share</h2>
-    <p class="text-secondary text-base">A landowner's figure is the account's allocation, not the zone's 12,000 acre-feet. The platform calculates each account&rsquo;s allocation by pro-rating the zone ceiling according to how many parcels (use areas) that account holds in the zone:</p>
-    <div style="background: var(--color-inset); border-radius: var(--radius-md); padding: var(--space-md) var(--space-lg); margin: var(--space-md) 0; text-align: center;">
-      <p class="text-primary text-base m-0">
-        account allocation = zone ceiling &times; (account&rsquo;s parcels in zone &divide; total parcels in zone)
-      </p>
-    </div>
-    <p class="text-secondary text-base">Parcel <em>count</em> is used &mdash; not parcel acreage &mdash; on purpose: parcel-area data is often incomplete, and counts are always available.</p>
-  </div>
+    <h2 class="section-header">What spends it, and what is left</h2>
 
-  <div class="card-raised">
-    <h2 class="section-header">A worked example</h2>
-    <p class="text-secondary text-base">Say a zone has an allocation ceiling of <strong>12,000 acre-feet</strong> for the year, and contains <strong>600 parcels</strong> in total. Your account holds <strong>30</strong> of those parcels. Your allocation is:</p>
-    <div style="background: var(--color-inset); border-radius: var(--radius-md); padding: var(--space-md) var(--space-lg); margin: var(--space-md) 0; text-align: center;">
-      <p class="text-primary text-base m-0">
-        12,000 &times; (30 &divide; 600) = <strong>600 acre-feet</strong>
-      </p>
+    <div class="table-scroll">
+      <table class="data-table help-cases-table">
+        <thead>
+          <tr>
+            <th>Allocation</th>
+            <th>Spent by</th>
+            <th>Remaining</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-name">Groundwater allocation</td>
+            <td>Groundwater extracted, metered and calculated alike (the meter reading, or the division for a well with no meter)</td>
+            <td>Allocation plus any carry-over, minus groundwater extracted</td>
+          </tr>
+          <tr>
+            <td class="col-name">Surface allocation</td>
+            <td>Water delivered</td>
+            <td>Allocation minus delivered</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-    <p class="text-secondary text-base">The platform then subtracts the account&rsquo;s <strong>groundwater use</strong>, its metered and calculated pumping for the period, to show what is left. Surface deliveries and recharge credits are not subtracted, because pumping alone spends a groundwater allocation.</p>
-    <div style="background: var(--color-inset); border-radius: var(--radius-md); padding: var(--space-md) var(--space-lg); margin: var(--space-md) 0; text-align: center;">
-      <p class="text-primary text-base m-0">
-        remaining = allocation &minus; groundwater use
-      </p>
-    </div>
-    <p class="text-secondary text-base">That &ldquo;remaining&rdquo; figure is what turns a row red on the dashboard. When an account pumps past its allocation, remaining goes negative: an overdraft, the one figure the platform colors red.</p>
-  </div>
 
-  <div class="card-raised">
-    <h2 class="section-header">One thing worth knowing</h2>
-    <p class="text-secondary text-base" style="margin-bottom: 0;">If no allocation ceiling has been set for a zone in a given period, every account&rsquo;s allocation shows as <strong>blank</strong> &mdash; not zero. &ldquo;No ceiling defined&rdquo; and &ldquo;a ceiling of zero&rdquo; are different: a blank is not a limit. To start enforcing allocations, set a ceiling for the zone and period first on the {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{% url 'accounting:allocations_list' %}">Allocations</a>{% else %}Allocations{% endif %} page.</p>
+    <div class="help-table-notes mt-md">
+      <p class="text-secondary text-sm">When an account pumps past its allocation, remaining goes negative: an overdraft, the one figure the platform colors red.</p>
+      <p class="text-secondary text-sm">With no ceiling set for a zone and period, every account&rsquo;s allocation shows blank, not zero. &ldquo;No ceiling defined&rdquo; and &ldquo;a ceiling of zero&rdquo; are different: a blank is not a limit.</p>
+      <p class="text-secondary text-sm">To start enforcing allocations, set a ceiling for the zone and period on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{% url 'accounting:allocations_list' %}">Allocations</a>{% else %}Allocations{% endif %} first.</p>
+    </div>
   </div>
 
   <div class="card-raised">
     <h2 class="section-header">Where to go next</h2>
-    <p class="text-secondary text-base">Set the numbers, or read the idea and arithmetic behind them &mdash; one click each.</p>
-    <div class="card-grid">
+    <div class="card-grid mt-md">
       {% if 'accounting' in enabled_modules %}<a href="{% url 'accounting:allocations_list' %}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Allocations</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm m-0">The live page where a zone&rsquo;s ceiling is set and allocations are derived.</p>
+        <div class="concept-panel-title" style="justify-content: space-between;"><span>Allocations</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm">The live page where a zone&rsquo;s ceiling is set and allocations are derived.</p>
       </a>{% endif %}
       {% explainer_available 'water_balances' as show_water_balances %}{% if show_water_balances %}<a href="{% url 'water_balances' %}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>How Water Balances Work</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm m-0">The one idea underneath all of this: estimated use vs. supplies.</p>
+        <div class="concept-panel-title" style="justify-content: space-between;"><span>How Water Balances Work</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm">The one idea under all of this: estimated use against supplies.</p>
       </a>{% endif %}
       {% explainer_available 'methods' as show_methods %}{% if show_methods %}<a href="{% url 'methods' %}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Methods Behind the Numbers</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm m-0">The calculation chain that produces each account&rsquo;s usage.</p>
+        <div class="concept-panel-title" style="justify-content: space-between;"><span>Methods Behind the Numbers</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm">The steps as they run, the three endings, and what is not built yet.</p>
       </a>{% endif %}
     </div>
   </div>
