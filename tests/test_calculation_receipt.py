@@ -185,7 +185,7 @@ class TestTheReceipt:
         ) in html
         assert "The district's delivery record, <span" in html
         assert ">5.33</span> acre-feet" in html
-        assert "times the field's irrigation efficiency, 75% (the deployment's default on Delivery Settings)." in html
+        assert "Times the field's irrigation efficiency, 75% (the deployment's default on Delivery Settings)." in html
         # 149.1-05: the notes are the table's third column; the setting is
         # named with its page and its live label (Delivery Settings).
         assert (
@@ -215,7 +215,7 @@ class TestTheReceipt:
         html = _page(parcel, "2026-06")
         assert (
             "divided up from the canal total in proportion to each field's crop "
-            "water use after rain, times the field's irrigation efficiency, 75%"
+            "water use after rain. Times the field's irrigation efficiency, 75%"
         ) in html
 
     def test_the_rejected_words_are_gone(self):
@@ -270,7 +270,10 @@ class TestAZeroMonth:
         assert (
             "Rain and canal water covered the crop this month, so nothing was pumped."
         ) in html
-        assert ">4.00</span> acre-feet of the canal water was more than the crop needed." in html
+        # 149.1-05: the figure is a row of the table, its figure beside its name.
+        assert "Canal water beyond what the crop could use" in html
+        assert 'title="4.0000 acre-feet">4.00</td>' in html
+        assert "More than the crop needed this month." in html
         # Nothing to divide, so no division line and no 80% note.
         assert "divided by" not in html
         assert "= pumped" not in html

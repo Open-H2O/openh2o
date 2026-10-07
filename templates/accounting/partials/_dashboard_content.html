@@ -123,26 +123,27 @@
   no-allocations line beneath it, deliberately: both say "a setup step has not
   happened yet", and the same idea must look the same (DESIGN.md).
 
-  149.1-05: one line, what is missing in bold and the one thing to do first.
+  149.1-05: the empty-state pattern (the first-run block's), the period named,
+  the one action as the button (a fresh reader needed the period named and the
+  action out of the sentence; 2026-10-07 12:25 PDT). The button is a write
+  action, so it sits behind user_can_write like the first-run block's.
   Two branches because the order matters and the failure is otherwise cryptic:
   without an active calculation plan `run_calculations` does not quietly
   produce nothing, it raises `ValueError: no active CalculationPlan`. With a
   plan, the next step is "Run the calculation" on the period's own page
   (`period_detail`, its page title is the period's name).
 {% endcomment %}
-<div class="card-raised">
-  <p class="text-secondary text-sm m-0">
-    <strong class="text-primary">Consumptive use has not been calculated for this period.</strong>
+<div class="card-raised empty-state">
+  <p class="empty-state-text text-secondary m-0"><strong class="text-primary">Consumptive use has not been calculated for {{ selected_period.name }}.</strong>{% if not has_calculation_plan %} There is no calculation plan yet.{% endif %}</p>
+  {% if user_can_write %}
+  <div class="form-footer" style="justify-content: center; margin-top: var(--space-md);">
     {% if not has_calculation_plan %}
-    Start by setting up a calculation plan on
-    <a href="{% url 'accounting:methodology_settings' %}" class="link-accent">Methodology Settings</a>,
-    then run the calculation.
+    <a href="{% url 'accounting:methodology_settings' %}" class="btn-primary">Set up a calculation plan</a>
     {% else %}
-    A calculation plan is set up; run the calculation on the
-    <a href="{% url 'accounting:period_detail' selected_period.pk %}" class="link-accent">{{ selected_period.name }}</a>
-    page under Water Years.
+    <a href="{% url 'accounting:period_detail' selected_period.pk %}" class="btn-primary">Run the calculation</a>
     {% endif %}
-  </p>
+  </div>
+  {% endif %}
 </div>
 {% endif %}
 
@@ -336,7 +337,7 @@
 <div class="card-raised" id="unmet-demand">
   <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
     <h2 class="section-header-flush">Fields with water use recorded and no supply reported</h2>
-    <span class="text-tertiary text-xs">{{ selected_period.name }}{% include "partials/_explainer_popout.html" with title="Fields with water use recorded and no supply reported" text="One row per field: the part of its consumptive use that no supply on record met, as the calculation run stored it. The column adds." link=wb_help_url link_label="How water balances work" %} · All figures in acre-feet (AF).</span>
+    <span class="text-tertiary text-xs">{{ selected_period.name }}{% include "partials/_explainer_popout.html" with title="How a row is counted" text="One row per field: the part of its consumptive use that no supply on record met, as the calculation run stored it. The column adds." link=wb_help_url link_label="How water balances work" %} · All figures in acre-feet (AF).</span>
   </div>
   {% if unmet_demand_rows %}
   <div class="table-scroll">

@@ -53,7 +53,7 @@ pytestmark = pytest.mark.django_db
 PERIOD_START = date(2025, 10, 1)
 PERIOD_END = date(2026, 9, 30)
 
-BANNER = "Consumptive use has not been calculated for this period"
+BANNER = "Consumptive use has not been calculated for"
 ALL_CLEAR = "All clear"
 NOT_CALCULATED = "Not calculated"
 
@@ -224,7 +224,8 @@ def test_the_banner_names_the_methodology_step_first_when_no_plan_exists():
 
     html = _dashboard(period)
 
-    assert "Start by setting up a calculation plan" in html
+    assert "There is no calculation plan yet." in html
+    assert "Set up a calculation plan" in html
 
 
 # ---------------------------------------------------------------------------

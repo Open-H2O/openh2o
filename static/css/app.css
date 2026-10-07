@@ -2530,7 +2530,9 @@ html { color-scheme: dark; }
 }
 
 .receipt-table .col-name {
-    width: 30%;
+    /* Narrow enough that a figure sits near its name (two verdict readers,
+       2026-10-07), wide enough that the longest name keeps to two lines. */
+    width: 24%;
     font-weight: 500;
 }
 

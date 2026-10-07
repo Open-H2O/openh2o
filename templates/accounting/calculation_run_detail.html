@@ -97,7 +97,31 @@
         <tr>
           <td class="col-name">minus canal water the crop could use</td>
           <td class="col-amount td-num" title="{{ run.surface_water_af }} acre-feet">{{ run.surface_water_af|floatformat:2|intcomma }}</td>
-          <td>{% if run.surface_delivered_af %}The district's delivery record, <span title="{{ run.surface_delivered_af }} acre-feet">{{ run.surface_delivered_af|floatformat:2|intcomma }}</span> acre-feet{% if delivery_split == "use" %}, divided up from the canal total in proportion to each field's crop water use after rain{% elif delivery_split == "fixed" %}, divided up from the canal total by each field's share of the canal on file{% endif %}{% if irrigation_efficiency_pct is not None %}, times the field's irrigation efficiency, {{ irrigation_efficiency_pct|floatformat:0 }}% ({% if irrigation_efficiency_source == "method" %}{% if irrigation_method_name %}the field's irrigation method on file, {{ irrigation_method_name }}{% else %}the field's irrigation method on file{% endif %}{% else %}the deployment's default on Delivery Settings{% endif %}){% endif %}.{% elif run.surface_water_af %}The whole delivery on the district's record; this deployment's calculation plan applies no irrigation efficiency.{% else %}No canal delivery on record for this field this month.{% endif %}</td>
+          <td>{% if run.surface_delivered_af %}The district's delivery record, <span title="{{ run.surface_delivered_af }} acre-feet">{{ run.surface_delivered_af|floatformat:2|intcomma }}</span> acre-feet{% if delivery_split == "use" %}, divided up from the canal total in proportion to each field's crop water use after rain{% elif delivery_split == "fixed" %}, divided up from the canal total by each field's share of the canal on file{% endif %}{% if irrigation_efficiency_pct is not None %}. Times the field's irrigation efficiency, {{ irrigation_efficiency_pct|floatformat:0 }}% ({% if irrigation_efficiency_source == "method" %}{% if irrigation_method_name %}the field's irrigation method on file, {{ irrigation_method_name }}{% else %}the field's irrigation method on file{% endif %}{% else %}the deployment's default on Delivery Settings{% endif %}){% endif %}.{% elif run.surface_water_af %}The whole delivery on the district's record; this deployment's calculation plan applies no irrigation efficiency.{% else %}No canal delivery on record for this field this month.{% endif %}</td>
+        </tr>
+        {% endif %}
+        {% if run.final_af == 0 and run.over_delivery_af > 0 %}
+        {% comment %} 149.1-05: on a zero month the canal water beyond what the
+             crop could use is a row, its figure beside its name; what became
+             of it is said in the third cell off the run's own stamp. Under
+             the default (not credited) the figure stands and nothing more is
+             said; the word "credited" may not appear on that page. {% endcomment %}
+        <tr>
+          <td class="col-name">Canal water beyond what the crop could use</td>
+          <td class="col-amount td-num" title="{{ run.over_delivery_af }} acre-feet">{{ run.over_delivery_af|floatformat:2|intcomma }}</td>
+          <td>More than the crop needed this month.{% if run.over_delivery_treatment == "credited" and over_delivery_left_af is not None %} {{ run.over_delivery_credited_af|floatformat:2|intcomma }} acre-feet of it is credited to this field; {{ over_delivery_left_af|floatformat:2|intcomma }} acre-feet ({{ over_delivery_share_pct|floatformat:0 }}%) stays in the basin.{% elif run.over_delivery_treatment == "named_line" %} It is shown on the field's page as its own line, not a credit and not charged.{% endif %}</td>
+        </tr>
+        {% endif %}
+        {% if run.surface_water_af and run.final_af > 0 %}
+        {% comment %} 149.1-05: a month that still needed well water had no
+             canal water beyond what the crop could use, by arithmetic; said
+             as a row with no figure (the stored figure is 0.0000 and prints
+             only on a zero month below), so the reader's third question has
+             its answer on every receipt. {% endcomment %}
+        <tr>
+          <td class="col-name">Canal water beyond what the crop could use</td>
+          <td class="col-amount td-num">None</td>
+          <td>Nothing was left beyond what the crop could use; the crop used all its canal water and still needed well water.</td>
         </tr>
         {% endif %}
         <tr class="receipt-total">
@@ -128,23 +152,12 @@
 
     {% if run.final_af == 0 %}
     {% comment %} A well month where rain and canal water covered the crop,
-       in the month's own numbers: the one line under the table. What
-       happened to the canal water beyond what the crop could use is said
-       only under the credited or named-line setting, off the run's own
-       stamp, as a second line that renders under those two settings alone;
-       under the default (not credited) the figure stands and nothing more
-       is said. The fixed noun for that figure stays on every other page;
-       these sentences describe it in the month's own words and name
-       nothing new. {% endcomment %}
+       in the month's own numbers: the one line under the table. The canal
+       water beyond what the crop could use, if any, is a row in the table
+       above (149.1-05). {% endcomment %}
     <p class="text-secondary receipt-zero">
       {% if covered_by %}{{ covered_by }} covered the crop this month{% else %}No crop on record for this field this month{% endif %}, so nothing was pumped.
-      {% if run.over_delivery_af > 0 %}<span title="{{ run.over_delivery_af }} acre-feet">{{ run.over_delivery_af|floatformat:2|intcomma }}</span> acre-feet of the canal water was more than the crop needed.{% endif %}
     </p>
-    {% if run.over_delivery_af > 0 %}{% if run.over_delivery_treatment == "credited" and over_delivery_left_af is not None %}
-    <p class="text-secondary receipt-zero">{{ run.over_delivery_credited_af|floatformat:2|intcomma }} acre-feet of it is credited to this field; {{ over_delivery_left_af|floatformat:2|intcomma }} acre-feet ({{ over_delivery_share_pct|floatformat:0 }}%) stays in the basin.</p>
-    {% elif run.over_delivery_treatment == "named_line" %}
-    <p class="text-secondary receipt-zero">It is shown on the field's page as its own line, not a credit and not charged.</p>
-    {% endif %}{% endif %}
     {% endif %}
 
     {% else %}

@@ -34,7 +34,7 @@ pytestmark = pytest.mark.django_db
 # (not credited) the figure stands and nothing more is said. The field page's
 # own line keeps the fixed noun's short form.
 ZERO_SENTENCE = "Rain and canal water covered the crop this month, so nothing was pumped."
-EXCESS_SENTENCE = ">4.00</span> acre-feet of the canal water was more than the crop needed."
+EXCESS_SENTENCE = 'title="4.0000 acre-feet">4.00</td>'  # 149.1-05: a row of the receipt table
 FIELD_LABEL = "Canal water beyond crop use:"
 
 OVER = Decimal("4.0000")
