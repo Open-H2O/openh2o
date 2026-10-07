@@ -134,7 +134,6 @@ BASELINE: dict = {
     "em dash": {
         "templates/about.html": 10,
         "templates/about_demonstration_data.html": 3,
-        "templates/accounting/dashboard.html": 1,
         "templates/accounting/methodology_settings.html": 2,
         "templates/accounting/partials/_methodology_preview.html": 1,
         "templates/accounting/partials/_needs_attention.html": 1,

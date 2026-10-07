@@ -1,8 +1,8 @@
 {% load static humanize %}
 {% if not selected_period %}
-<!-- No reporting periods exist yet -->
+{% comment %} No reporting periods exist yet. {% endcomment %}
 <div class="empty-state">
-  <p class="empty-state-text text-secondary">No reporting periods found. Create your first period to see your data.</p>
+  <p class="empty-state-text text-secondary">No reporting periods yet.</p>
   <a href="{% url 'accounting:period_create' %}" class="btn-primary">
     + Create a reporting period
   </a>
@@ -33,7 +33,7 @@
 <div class="page-grid-dashboard-top">
 <div class="budget-panel budget-panel--centered">
   <div class="budget-panel-head">
-    <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">District water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Consumptive use, estimated here from satellite evapotranspiration, is the demand. Surface deliveries, groundwater, and rainfall are the supplies counted against it: water that arrived, delivered, pumped or rain, never allocation paper. This panel shows the demand, the supplies, and the gap between them." link=wb_help_url link_label="How water balances work" %}</span>
+    <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">District water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Supplies come from the period's ledger rows, surface and groundwater by source; rain and consumptive use come from its calculation runs." link=wb_help_url link_label="How water balances work" %}</span>
     <span class="budget-panel-period">{{ selected_period.name }}</span>
   </div>
   <div class="budget-panel-body">
@@ -118,39 +118,39 @@
 
 {% if engine_has_never_run %}
 {% comment %}
-  ISS-099 — the engine has produced nothing for this period, so every demand
+  ISS-099: the engine has produced nothing for this period, so every demand
   figure above and below is absent rather than zero. Same shape as the
-  no-allocations banner beneath it, deliberately: both say "a setup step has not
+  no-allocations line beneath it, deliberately: both say "a setup step has not
   happened yet", and the same idea must look the same (DESIGN.md).
 
-  Two branches because the order matters and the failure is otherwise cryptic —
-  without an active methodology plan `run_calculations` does not quietly produce
-  nothing, it raises `ValueError: no active CalculationPlan`.
+  149.1-05: one line, what is missing in bold and the one thing to do first.
+  Two branches because the order matters and the failure is otherwise cryptic:
+  without an active calculation plan `run_calculations` does not quietly
+  produce nothing, it raises `ValueError: no active CalculationPlan`. With a
+  plan, the next step is "Run the calculation" on the period's own page
+  (`period_detail`, its page title is the period's name).
 {% endcomment %}
-<div class="card-raised" style="border-left: 3px solid var(--color-accent); padding: var(--space-md);">
+<div class="card-raised">
   <p class="text-secondary text-sm m-0">
     <strong class="text-primary">Consumptive use has not been calculated for this period.</strong>
-    The figures above show the supplies on record; the water actually consumed has not been
-    estimated yet, so the balance cannot be worked out. A missing step, not a finding: water may
-    still have been consumed.
     {% if not has_calculation_plan %}
-    Start by setting up a calculation method on the
-    <a href="{% url 'accounting:methodology_settings' %}" class="link-accent">Methodology</a>
-    page, then run the calculation engine.
+    Start by setting up a calculation plan on
+    <a href="{% url 'accounting:methodology_settings' %}" class="link-accent">Methodology Settings</a>,
+    then run the calculation.
     {% else %}
-    A calculation method is set up on the
-    <a href="{% url 'accounting:methodology_settings' %}" class="link-accent">Methodology</a>
-    page; the engine has not been run against it yet.
+    A calculation plan is set up; run the calculation on the
+    <a href="{% url 'accounting:period_detail' selected_period.pk %}" class="link-accent">{{ selected_period.name }}</a>
+    page under Water Years.
     {% endif %}
   </p>
 </div>
 {% endif %}
 
 {% if not has_allocations %}
-<!-- Info banner: no allocations for this period -->
-<div class="card-raised" style="border-left: 3px solid var(--color-accent); padding: var(--space-md);">
+{% comment %} No allocations for this period: the fact and the one action. {% endcomment %}
+<div class="card-raised">
   <p class="text-secondary text-sm m-0">
-    {% if user_can_write %}No allocations set for this period. <a href="{% url 'accounting:allocation_create' %}" class="link-accent">Create an allocation</a> to enable allocation tracking.{% else %}No allocations set for this period.{% endif %}
+    {% if user_can_write %}No allocations set for this period. <a href="{% url 'accounting:allocation_create' %}" class="link-accent">Create an allocation</a>.{% else %}No allocations set for this period.{% endif %}
   </p>
 </div>
 {% endif %}
@@ -183,7 +183,7 @@
 <div class="card-raised" id="active-accounts">
   <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
     <h2 class="section-header-flush">Active water accounts</h2>
-    <span class="text-tertiary text-xs">One row per active water account, {{ selected_period.name }}. All figures in acre-feet (AF).</span>
+    <span class="text-tertiary text-xs">One row per active water account, {{ selected_period.name }}; select an account number to open it. All figures in acre-feet (AF).</span>
   </div>
   {% include "accounting/partials/_active_accounts_table.html" %}
 </div>
@@ -336,7 +336,7 @@
 <div class="card-raised" id="unmet-demand">
   <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
     <h2 class="section-header-flush">Fields with water use recorded and no supply reported</h2>
-    <span class="text-tertiary text-xs">{{ selected_period.name }}{% include "partials/_explainer_popout.html" with title="Fields with water use recorded and no supply reported" text="Each row is one field, for the period shown. The platform subtracts the deliveries, pumping and rainfall on record from the consumptive use it estimated, and stores whatever is left over as a figure on that field. Every row is the same stored quantity in acre-feet from a single field, so the column adds." link=wb_help_url link_label="How water balances work" %} · All figures in acre-feet (AF).</span>
+    <span class="text-tertiary text-xs">{{ selected_period.name }}{% include "partials/_explainer_popout.html" with title="Fields with water use recorded and no supply reported" text="One row per field: the part of its consumptive use that no supply on record met, as the calculation run stored it. The column adds." link=wb_help_url link_label="How water balances work" %} · All figures in acre-feet (AF).</span>
   </div>
   {% if unmet_demand_rows %}
   <div class="table-scroll">

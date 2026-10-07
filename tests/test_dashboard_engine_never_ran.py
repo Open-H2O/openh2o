@@ -224,7 +224,7 @@ def test_the_banner_names_the_methodology_step_first_when_no_plan_exists():
 
     html = _dashboard(period)
 
-    assert "Start by setting up a calculation method" in html
+    assert "Start by setting up a calculation plan" in html
 
 
 # ---------------------------------------------------------------------------

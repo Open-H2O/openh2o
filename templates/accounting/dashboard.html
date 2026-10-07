@@ -23,7 +23,7 @@
        stations) before the manual accounting onboarding below. Gated by the
        needs_setup context flag, which only fires for viewers who can run setup. {% endcomment %}
   <div class="card-raised empty-state">
-    <h2 class="section-header-flush mb-sm">Start here — set up your watershed</h2>
+    <h2 class="section-header-flush mb-sm">Start here. Set up your watershed</h2>
     <p class="empty-state-text" style="max-width: 540px; margin-left: auto; margin-right: auto;">
       This deployment has no watershed yet. Set one up to import parcels{% if 'wells' in enabled_modules %}, wells{% endif %},
       groundwater basins{% if 'datasync' in enabled_modules %}, and the monitoring stations near your district{% endif %}.
@@ -38,7 +38,7 @@
 
   {% if not periods.exists %}
   {% if not needs_setup %}
-  <!-- Empty state: guide the user (skipped when the Start-here CTA already shows) -->
+  {% comment %} Empty state: guide the user (skipped when the Start-here CTA already shows). {% endcomment %}
   <div class="card-raised empty-state">
     <h2 class="section-header-flush mb-sm">Welcome to OpenH2O</h2>
     <p class="text-secondary text-sm mb-lg" style="max-width: 500px; margin-left: auto; margin-right: auto;">
@@ -69,7 +69,7 @@
     so the page no longer opens on a band with a pill at one end and a
     control at the other.
   {% endcomment %}
-  <!-- HTMX-swappable content area -->
+  {% comment %} HTMX-swappable content area. {% endcomment %}
   <div id="dashboard-content">
     {% include "accounting/partials/_dashboard_content.html" %}
   </div>
