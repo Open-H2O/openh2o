@@ -3,7 +3,7 @@
 
 {% block title %}Surface delivery settings - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Surface delivery settings{% endblock %}
-{% block page_head_class %}page-head--medium{% endblock %}
+{% block page_head_class %}page-head--help{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -12,81 +12,142 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Surface Delivery Settings</span>
   </nav>
-  <p class="page-description">Two agency-wide settings that shape how surface-water deliveries are counted. Set once, by the analyst.</p>
+  <p class="page-description">What three settings on Delivery Settings decide, for the share of a delivery the crop could use, canal water beyond it, and unused allotment at year-end.</p>
 </div>
 {% endblock %}
 
 {% block content %}
 {% comment %}
-  Phase 89. Link guards ONLY — every word on this page is left exactly as it
-  was, deliberately. This page is *about* the switched-off domain, so a guard
-  makes it render without making it honest; whether it should be reachable at
-  all in a deployment with no Accounting is 89-02's call, and it is recorded
-  there rather than answered here.
+  149.1-03 (2026-10-07): carried to the shape Brent approved on Methods
+  behind the numbers (149.1-01) and How water balances work (149.1-02), from
+  the reader's three questions outward (what share of a canal delivery
+  counts as water the crop could use, and what happens to the rest; what
+  happens to canal water beyond what the crop could use, and which choice is
+  the default; what happens to an unused allotment at the end of the water
+  year, and whether one district can differ). Each card is one table with a
+  line or two under it; the shape check tests/test_help_shape.py holds this
+  file at 60 words a block and half a page in prose.
 
-  Unlike settings_explained.html and methods.html, this page uses the BARE
-  `{% templatetag openblock %} url {% templatetag closeblock %}` form, which
-  really does raise NoReverseMatch. These guards close a 500, not a dead link.
-{% endcomment %}<div class="page-stack page-medium">
-
-  <div class="card-raised">
-    <h2 class="section-header">The short version</h2>
-    <p class="text-secondary text-base">When a district delivers canal water to its farms, two questions decide how the platform books that water. First, what share of a delivery the crop consumes. Second, whether a district's unused surface water carries into the next year or expires. You answer both once, on the {% if 'accounting' in enabled_modules %}<a href="{% url 'accounting:delivery_settings' %}" class="prose-link">Delivery Settings page</a>{% else %}Delivery Settings page{% endif %}, and they apply to every district.</p>
-  </div>
-
-  <div class="card-raised">
-    <h2 class="section-header">Setting 1 &mdash; how much of a delivery the crop uses</h2>
-    <p class="text-secondary text-base">This setting is the share of a delivery the crop consumes; the rest is counted as recharge. A typical figure is <strong>75%</strong>, meaning three-quarters is taken up by the plants and the remaining quarter returns to the groundwater as recharge.</p>
-    <p class="text-secondary text-base">Why it matters: a district's monthly delivery is divided up from the canal total in proportion to each field's crop water use after rain, so a summer crop takes a larger share than a fallow field. This percentage caps how much any one field can be credited with using, so a delivery is shared sensibly instead of split evenly regardless of what&rsquo;s growing.</p>
-  </div>
+  This page uses the BARE url tag, which raises NoReverseMatch on a missing
+  route, so the guards below close a 500, not a dead link: every
+  accounting:delivery_settings link is behind the accounting module, and
+  the two sibling explainer cards behind explainer_available.
+{% endcomment %}<div class="page-stack page-help help-page">
 
   <div class="card-raised">
-    <h2 class="section-header">Setting 2 &mdash; what happens to unused water at year-end</h2>
-    <p class="text-secondary text-base">A district has a surface-water allotment for the water year. If it doesn&rsquo;t use the whole thing by the time the year closes, you choose what the platform does with the leftover:</p>
+    <h2 class="section-header">The share of a delivery the crop could use</h2>
 
-    <div class="stat-grid-2col" style="margin: var(--space-md) 0;">
-      <div class="concept-panel concept-panel-supply">
-        <div class="concept-panel-title">Carry it forward <span class="badge badge-pill badge-green">default</span></div>
-        <p class="text-secondary text-base m-0">The unused amount carries into next year as a credit.</p>
-      </div>
-      <div class="concept-panel concept-panel-use">
-        <div class="concept-panel-title">Let it expire <span class="badge badge-pill badge-grey">use-it-or-lose-it</span></div>
-        <p class="text-secondary text-base m-0">The leftover expires at year-end; next year starts at zero.</p>
-      </div>
+    <div class="table-scroll mt-md">
+      <table class="data-table help-cases-table">
+        <thead>
+          <tr>
+            <th>Amount</th>
+            <th>How it is found</th>
+            <th>Where it goes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-name">Canal water the crop could use</td>
+            <td>Delivered, multiplied by the field's irrigation efficiency, from its irrigation method on file, else the agency default on Delivery Settings, 75% unless changed</td>
+            <td>Subtracted from crop water use after rain</td>
+          </tr>
+          <tr>
+            <td class="col-name">The rest of the delivery</td>
+            <td>Delivered minus canal water the crop could use</td>
+            <td>Recorded as deep percolation on the field's water balance; not crop use, not a credit, not charged</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
-    <div class="callout-rule">
-      <div class="concept-panel-title" style="margin-bottom: var(--space-xs);">A debt always carries</div>
-      <p class="text-secondary text-base m-0">If a district <em>overdraws</em> &mdash; uses more than its allotment &mdash; that shortfall always carries into next year as an obligation, no matter which choice above is set. An overdraw is a real debt; only a surplus is governed by the carry-forward-or-expire choice.</p>
+    <p class="text-secondary text-sm mt-md">An administrator sets the agency default on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{% url 'accounting:delivery_settings' %}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}, as &ldquo;Share of delivered water the crop consumes&rdquo;; a field's irrigation method, set on the field's own page, takes its place for that field.</p>
+  </div>
+
+  <div class="card-raised">
+    <h2 class="section-header">Canal water beyond what the crop could use</h2>
+
+    <div class="table-scroll mt-md">
+      <table class="data-table help-cases-table">
+        <thead>
+          <tr>
+            <th>Choice on Delivery Settings</th>
+            <th>What is recorded</th>
+            <th>Who is credited</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-name">Not credited, the default</td>
+            <td>The amount is recorded with the month's figures and nothing else happens.</td>
+            <td>No one</td>
+          </tr>
+          <tr>
+            <td class="col-name">Credited to the landowner, less a share left in the basin</td>
+            <td>The amount, and the landowner's share of it after &ldquo;Share left in the basin&rdquo; is taken off, 10% unless changed</td>
+            <td>Fields with a well, the landowner, on the field's own ledger; fields with no well, the zone's shared account, or no one where the zone has none</td>
+          </tr>
+          <tr>
+            <td class="col-name">Its own line, not a credit</td>
+            <td>The amount, as a line of its own on the field's page</td>
+            <td>No one, and nothing is charged; the field's water balance reads the same as under the other two choices</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
+
+    <p class="text-secondary text-sm mt-md">Each month keeps the choice and the share it was calculated under; a change applies to months calculated after it.</p>
   </div>
 
   <div class="card-raised">
-    <h2 class="section-header">Who sets these &mdash; and when</h2>
-    <p class="text-secondary text-base">These are agency policy, not farmer entry. An analyst or administrator sets them once during setup and revisits them rarely &mdash; for example, if the agency adopts a different efficiency assumption, or its board changes the year-end rule. A farmer never touches them. They enter every future delivery calculation; change them the way you would the methodology.</p>
-  </div>
+    <h2 class="section-header">Unused allotment at the end of the water year</h2>
 
-  <div class="card-raised">
-    <h2 class="section-header">When one district needs to differ</h2>
-    <p class="text-secondary text-base">The year-end rule is set agency-wide, but a single district can be flipped to a different choice without changing everyone else. Open that district&rsquo;s page and use the <strong>Year-end unused water</strong> control: leave it on &ldquo;Use agency default&rdquo; for the common case, or set it to carry-forward or expire just for that district. Switching it back to the agency default means that district will follow along automatically if you later change the agency-wide rule.</p>
-    <p class="text-secondary text-base" style="margin-bottom: 0;">Set it per district under <a class="prose-link" href="{% url 'geography:zone_list' %}">Zones</a>, or change the agency-wide defaults on the {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{% url 'accounting:delivery_settings' %}">Delivery Settings</a>{% else %}Delivery Settings{% endif %} page.</p>
+    <div class="table-scroll mt-md">
+      <table class="data-table help-cases-table">
+        <thead>
+          <tr>
+            <th>Choice</th>
+            <th>What happens to unused water</th>
+            <th>What happens to an overdraw</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-name">Carry it forward as a credit toward next year, the default</td>
+            <td>The unused amount carries into next year as a credit.</td>
+            <td>Carried into next year as a debt</td>
+          </tr>
+          <tr>
+            <td class="col-name">Let it expire (use-it-or-lose-it)</td>
+            <td>The leftover expires at year-end; next year starts at zero.</td>
+            <td>Carried into next year as a debt, whichever choice is set</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="text-secondary text-sm mt-md">An administrator sets the agency's choice on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{% url 'accounting:delivery_settings' %}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}, as &ldquo;When a district doesn't use its full allotment by the end of the water year&rdquo;.</p>
+
+    <div class="help-subsection">
+      <h3 class="concept-panel-title">One district can differ</h3>
+      <p class="text-secondary text-sm mt-md">Each district's own page under <a class="prose-link" href="{% url 'geography:zone_list' %}">Zones</a> carries a &ldquo;Year-end unused water&rdquo; control with &ldquo;Use agency default&rdquo;, carry forward and expire; a district left on &ldquo;Use agency default&rdquo; follows a later agency-wide change.</p>
+    </div>
   </div>
 
   <div class="card-raised">
     <h2 class="section-header">Where to go next</h2>
-    <p class="text-secondary text-base">The live setting, the arithmetic it drives, and the full settings reference &mdash; one click each.</p>
-    <div class="card-grid">
+    <div class="card-grid mt-md">
       {% if 'accounting' in enabled_modules %}<a href="{% url 'accounting:delivery_settings' %}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Delivery Settings</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm m-0">The live page where the crop-use share and year-end rule are set.</p>
+        <div class="concept-panel-title" style="justify-content: space-between;"><span>Delivery Settings</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm">The live page where these three settings are set.</p>
       </a>{% endif %}
       {% explainer_available 'methods' as show_methods %}{% if show_methods %}<a href="{% url 'methods' %}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Methods Behind the Numbers</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm m-0">How a district&rsquo;s delivery is shared fairly across many fields.</p>
+        <div class="concept-panel-title" style="justify-content: space-between;"><span>Methods Behind the Numbers</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm">The steps these settings feed, and how one headgate total is shared.</p>
       </a>{% endif %}
       {% explainer_available 'settings_explained' as show_settings %}{% if show_settings %}<a href="{% url 'settings_explained' %}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Configs &amp; Settings, explained</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm m-0">Every agency-wide knob in one reference.</p>
+        <div class="concept-panel-title" style="justify-content: space-between;"><span>Configs &amp; Settings, explained</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm">Every agency-wide setting, what it decides, and where it is set.</p>
       </a>{% endif %}
     </div>
   </div>
