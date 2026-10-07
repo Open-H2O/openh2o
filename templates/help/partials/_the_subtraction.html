@@ -23,7 +23,12 @@
   own right-aligned column under the same bracketed "Number" header as its
   name, the pill is one line with the full phrase in its title, and the
   split explanation that made the Delivered cell an eight-line paragraph is
-  the first note under the table, in the same words.
+  the first note under the table.
+
+  149.1-01 (2026-10-06): the two notes under the table are under 60 words
+  each and the words-only variant is a numbered list, so this partial holds
+  the shape check (tests/test_help_shape.py) on both pages that include it;
+  the verb is "subtract", never "take off" (Brent, 2026-10-06 18:00 PDT).
 {% endcomment %}<div class="help-subsection">
   <h3 class="concept-panel-title">Where this field's water came from</h3>
 
@@ -98,7 +103,7 @@
             {% if surface_water_af is not None %}
             Crop water use minus the rain and canal water lines above. This month has no meter reading on record, so this line is a calculated remainder.
             {% else %}
-            What is left of crop water use after the rain is taken off. This deployment's calculation plan has no canal step.
+            What is left of crop water use after the rain is subtracted. This deployment's calculation plan has no canal step.
             {% endif %}
           </td>
           <td class="col-sure"><span class="badge badge-pill badge-grey" title="Estimated by subtraction">By subtraction</span></td>
@@ -131,13 +136,20 @@
 
   <div class="help-table-notes mt-md">
     {% if surface_delivered_af is not None and delivery_split != "fixed_share" %}
-    <p class="text-secondary text-sm"><strong>Delivered to this field.</strong> When a headgate total is less than its fields could use, it is divided among them in proportion to each field's crop water use after rain. When it covers every field, each field gets what it could use (its crop water use after rain divided by its irrigation efficiency) and the rest is recorded against the headgate. Either way, the delivery shown depends on the satellite estimate of crop water use, so it is an estimate too.</p>
+    <p class="text-secondary text-sm"><strong>Delivered to this field.</strong> A field with its own delivery record keeps it. What remains of the headgate total is divided among the other fields in proportion to crop water use after rain, up to what each could use. That share depends on the satellite estimate, so it is an estimate too.</p>
     {% endif %}
-    <p class="text-secondary text-sm">Groundwater consumed is what remains after the lines above it are taken off, and groundwater extracted is that figure divided by the share the crop consumes. Both are only as good as the delivery record above them.</p>
+    <p class="text-secondary text-sm">Groundwater consumed is what remains after the lines above it are subtracted, and groundwater extracted is that figure divided by the share the crop consumes, so both are only as good as the delivery record above them.</p>
   </div>
 
   {% else %}
   <p class="text-secondary text-base">Once a month has been calculated for a field with a well and no meter reading, this page works through that field's numbers. Until then, here is the arithmetic in words.</p>
-  <p class="text-secondary text-base mt-sm">Start with crop water use for the month, a satellite estimate in acre-feet. Take off the rain the crop could use, estimated from weather data for the area. Take off the canal water the crop could use: the delivery on record multiplied by the field's irrigation efficiency. What is left is groundwater consumed. Divide that by the share of pumped groundwater the crop consumes (80% unless changed on Delivery Settings) and the result is groundwater extracted, which is what the groundwater allocation is charged. In a month with a meter reading on record, the reading stands. The same arithmetic still runs for comparison, but it writes no groundwater row and no groundwater extracted.</p>
+  <ol class="concept-list text-secondary text-base mt-sm">
+    <li>Start with crop water use for the month, a satellite estimate in acre-feet.</li>
+    <li>Subtract the rain the crop could use, estimated from weather data for the area.</li>
+    <li>Subtract the canal water the crop could use: the delivery on record multiplied by the field's irrigation efficiency.</li>
+    <li>What is left is groundwater consumed.</li>
+    <li>Divide it by the share of pumped groundwater the crop consumes, 80% unless changed on Delivery Settings; the result is groundwater extracted, which the groundwater allocation is charged.</li>
+    <li>In a month with a meter reading on record, the reading stands; the same arithmetic runs for comparison but writes no groundwater row and no extracted figure.</li>
+  </ol>
   {% endif %}
 </div>

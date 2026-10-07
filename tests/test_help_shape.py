@@ -26,16 +26,18 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 HELP_DIR = REPO_ROOT / "templates" / "help"
 SCRIPT = REPO_ROOT / "scripts" / "help_shape.py"
 
-#: Files under the gate: each fails if longest > 60 or share > 0.50. Empty until a page passes.
-ENFORCED: list = []
+#: Files under the gate: each fails if longest > 60 or share > 0.50. A page joins when Brent approves it.
+ENFORCED: list = [
+    "templates/help/methods.html",
+    "templates/help/partials/_the_subtraction.html",
+    "templates/help/partials/_canal_split_diagram.html",
+]
 
 #: Files not yet under the gate, with (longest, share) as measured; the test fails if either rises.
 PENDING = {
     "templates/help/budgets_allocations.html": (63, 0.88),
     "templates/help/getting_started.html": (105, 0.74),
     "templates/help/glossary.html": (6, 0.42),
-    "templates/help/methods.html": (201, 0.93),
-    "templates/help/partials/_the_subtraction.html": (113, 0.44),
     "templates/help/settings_explained.html": (64, 0.85),
     "templates/help/surface_deliveries.html": (74, 0.85),
     "templates/help/water_balances.html": (158, 0.85),

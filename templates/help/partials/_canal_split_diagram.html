@@ -1,0 +1,65 @@
+{% comment %}
+  149.1-01 (2026-10-06): how one headgate total is shared, drawn once. Included
+  by help/methods.html "How one headgate total is shared". Real <text> so a
+  reader can select and search the labels; the viewBox scales it from a 1,024
+  to a 1,730 px window; every colour is a token in app.css (.canal-split-diagram).
+  The rule it draws is surface/services.py::allocate_district_delivery: canal
+  losses off the top, a field's own record kept, the remainder divided among the
+  other fields in proportion to crop water use after rain and capped at what
+  each could use, the leftover recorded against the headgate.
+{% endcomment %}<figure class="canal-split-diagram">
+  <svg viewBox="0 0 760 474" role="img" aria-label="How one headgate total is shared. Canal losses are subtracted first. A field with its own delivery record keeps it. The remainder is shared among the other fields in proportion to crop water use after rain. What is left over is recorded against the headgate.">
+    <defs>
+      <marker id="canal-split-arrow-flow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" class="arrow-flow"/>
+      </marker>
+      <marker id="canal-split-arrow-loss" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" class="arrow-loss"/>
+      </marker>
+    </defs>
+
+    <rect class="box" x="200" y="10" width="360" height="56" rx="6"/>
+    <text class="label" x="380" y="34" text-anchor="middle">Headgate total for the month</text>
+    <text class="muted" x="380" y="54" text-anchor="middle">From a meter or the ditch tender's estimate</text>
+
+    <line class="flow" x1="380" y1="66" x2="380" y2="212" marker-end="url(#canal-split-arrow-flow)"/>
+
+    <rect class="box" x="20" y="100" width="290" height="92" rx="6"/>
+    <text class="label" x="36" y="124">Canal losses, subtracted first</text>
+    <text class="muted" x="36" y="148">Evaporation, written off</text>
+    <text class="muted" x="36" y="168">Seepage, to the zone's seepage pool</text>
+    <text class="muted" x="36" y="188">Spill, written off</text>
+    <line class="loss" x1="380" y1="146" x2="312" y2="146" marker-end="url(#canal-split-arrow-loss)"/>
+
+    <rect class="box" x="270" y="212" width="220" height="40" rx="6"/>
+    <text class="label" x="380" y="237" text-anchor="middle">What reaches the fields</text>
+
+    <line class="flow" x1="380" y1="252" x2="380" y2="282"/>
+    <line class="flow" x1="132" y1="282" x2="628" y2="282"/>
+    <line class="flow" x1="132" y1="282" x2="132" y2="312" marker-end="url(#canal-split-arrow-flow)"/>
+    <line class="flow" x1="380" y1="282" x2="380" y2="312" marker-end="url(#canal-split-arrow-flow)"/>
+    <line class="flow" x1="628" y1="282" x2="628" y2="312" marker-end="url(#canal-split-arrow-flow)"/>
+
+    <rect class="box" x="14" y="312" width="236" height="60" rx="6"/>
+    <text class="label" x="132" y="336" text-anchor="middle">Field with its own record</text>
+    <text class="muted" x="132" y="357" text-anchor="middle">Kept as recorded</text>
+
+    <rect class="box" x="262" y="312" width="236" height="60" rx="6"/>
+    <text class="label" x="380" y="336" text-anchor="middle">Field with no record</text>
+    <text class="muted" x="380" y="357" text-anchor="middle">A share of the remainder</text>
+
+    <rect class="box" x="510" y="312" width="236" height="60" rx="6"/>
+    <text class="label" x="628" y="336" text-anchor="middle">Field with no record</text>
+    <text class="muted" x="628" y="357" text-anchor="middle">A share of the remainder</text>
+
+    <line class="flow" x1="380" y1="372" x2="380" y2="392"/>
+    <line class="flow" x1="628" y1="372" x2="628" y2="392"/>
+    <line class="flow" x1="380" y1="392" x2="628" y2="392"/>
+    <line class="flow" x1="504" y1="392" x2="504" y2="412" marker-end="url(#canal-split-arrow-flow)"/>
+
+    <rect class="box" x="262" y="412" width="484" height="52" rx="6"/>
+    <text class="label" x="504" y="435" text-anchor="middle">Left over after every field has what it could use</text>
+    <text class="muted" x="504" y="455" text-anchor="middle">Recorded against the headgate</text>
+  </svg>
+  <figcaption class="text-secondary text-sm">Nothing changes the headgate's total; the split decides only each field's share, in proportion to crop water use after rain and up to what each field could use.</figcaption>
+</figure>

@@ -2249,8 +2249,10 @@ html { color-scheme: dark; }
 .how-sure-table {
     /* Four columns, one of them a sentence: below this the table scrolls
        inside `.table-scroll` instead of squeezing the sentence to one word a
-       line (the 390px render). */
-    min-width: 40rem;
+       line (the 390px render). 38rem, not 40: at a 1,024 px window the
+       card's inner width is 630 px, and 40rem scrolled the table 10 px
+       (149.1-01 collision sweep). */
+    min-width: 38rem;
 }
 
 .how-sure-table td {
@@ -2292,6 +2294,109 @@ html { color-scheme: dark; }
    against the last row. */
 .help-table-notes p + p {
     margin-top: var(--space-sm);
+}
+
+/* The Methods page's step tables (149.1-01): the step column is a short verb
+   phrase and the setting column a short link, so the sentence column takes
+   the room; the same shape as `.how-sure-table` above. */
+.help-steps-table {
+    min-width: 38rem;
+}
+
+.help-steps-table td {
+    vertical-align: top;
+}
+
+.help-steps-table .col-step {
+    width: 30%;
+    font-weight: 600;
+}
+
+.help-steps-table .col-setting {
+    width: 26%;
+}
+
+.help-steps-table .step-num {
+    display: inline-block;
+    min-width: 1.6em;
+    color: var(--color-accent);
+    font-variant-numeric: tabular-nums;
+}
+
+/* The month-ends table and the canal-water-beyond table: a bold name column,
+   then the cases read across as one row. */
+.help-cases-table {
+    min-width: 38rem;
+}
+
+.help-cases-table td {
+    vertical-align: top;
+}
+
+.help-cases-table .col-name {
+    width: 24%;
+    font-weight: 600;
+}
+
+/* The canal split diagram (help/partials/_canal_split_diagram.html): inline
+   SVG scaled by its viewBox, so the 16-unit labels still render at 13 px or
+   more in a 1,024 px window. Boxes on the inset surface, the flow in teal,
+   the losses in the tertiary text colour, dashed; tokens only. */
+.canal-split-diagram {
+    margin: var(--space-md) 0 0;
+    max-width: 760px;
+}
+
+.canal-split-diagram svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    font-size: 16px;
+}
+
+.canal-split-diagram .box {
+    fill: var(--color-inset);
+    stroke: var(--color-border);
+    stroke-width: 1;
+}
+
+.canal-split-diagram .flow {
+    fill: none;
+    stroke: var(--color-accent);
+    stroke-width: 1.5;
+}
+
+.canal-split-diagram .loss {
+    fill: none;
+    stroke: var(--color-text-tertiary);
+    stroke-width: 1.5;
+    stroke-dasharray: 4 3;
+}
+
+.canal-split-diagram .arrow-flow {
+    fill: var(--color-accent);
+}
+
+.canal-split-diagram .arrow-loss {
+    fill: var(--color-text-tertiary);
+}
+
+.canal-split-diagram text {
+    fill: var(--color-text-primary);
+}
+
+.canal-split-diagram .label {
+    font-weight: 600;
+}
+
+.canal-split-diagram .muted {
+    fill: var(--color-text-secondary);
+    font-size: 15px;
+}
+
+.canal-split-diagram figcaption {
+    margin-top: var(--space-sm);
+    max-width: 75ch;
 }
 
 /* The calculation page as a receipt (148-03, 2026-09-28): the answer first,
@@ -2414,23 +2519,8 @@ html { color-scheme: dark; }
     }
 }
 
-/* The Methods page's five steps: inset panels inside one card, stacked with a
-   small gap. Was five copies of the same inline style. */
-.step-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-sm);
-}
-
-.step-card--inset {
-    background: var(--color-inset);
-    border-radius: var(--radius-md);
-    padding: var(--space-md) var(--space-lg);
-}
-
-.step-card--inset .step-body p {
-    margin-top: var(--space-xs);
-}
+/* `.step-list` and `.step-card--inset` (the Methods page's five step panels)
+   were removed in 149.1-01: the page is tables now and no other template used them. */
 
 .glossary-letter-heading {
     font-size: 1.25rem;
