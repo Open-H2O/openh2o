@@ -3,7 +3,7 @@
 
 {% block title %}Methods behind the numbers - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Methods behind the numbers{% endblock %}
-{% block page_head_class %}page-head--medium{% endblock %}
+{% block page_head_class %}page-head--help{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -37,10 +37,10 @@
 {% url 'surface_deliveries' as surface_url %}
 {% url 'water_balances' as water_balances_url %}
 {% url 'glossary' as glossary_url %}
-<div class="page-stack page-medium help-page">
+<div class="page-stack page-help help-page">
 
   <div class="card-raised">
-    <h2 class="section-header">How the groundwater figure is worked out</h2>
+    <h2 class="section-header">How the two groundwater figures are worked out</h2>
     {% explainer_available "water_balances" as show_water_balances %}<p class="text-secondary text-base">One subtraction per supply, then one division. {% if show_water_balances %}If &ldquo;estimated use against supplies&rdquo; is new, start with <a class="prose-link" href="{{ water_balances_url }}">How Water Balances Work</a>; this page gives the arithmetic.{% endif %}</p>
 
     {% include "help/partials/_the_subtraction.html" %}
@@ -54,7 +54,7 @@
       <table class="data-table help-steps-table">
         <thead>
           <tr>
-            <th>Step</th>
+            <th>Action</th>
             <th>Where the number comes from</th>
             <th>Setting that changes it</th>
           </tr>
@@ -94,6 +94,7 @@
       <p class="text-secondary text-sm">Step 3 has a switch in the plan, on unless changed. When it is off, the whole delivery is subtracted. The switch is not yet on the Methodology Settings screen.</p>
       <p class="text-secondary text-sm">A pump has to lift more water than the crop ends up using, because some water soaks past the roots. Step 5 allows for that, and the difference is recorded on the month's calculation as deep percolation.</p>
       <p class="text-secondary text-sm">Every month calculated carries the plan and the settings it ran under, so a changed setting moves no month already run.</p>
+      <p class="text-secondary text-sm">Methodology Settings opens from the links in this table and from the Dashboard; Delivery Settings opens from the links in this table.</p>
     </div>
   </div>
 
@@ -112,15 +113,15 @@
         </thead>
         <tbody>
           <tr>
-            <td class="col-name">Groundwater figure for the month</td>
+            <td class="col-name">Groundwater consumed</td>
             <td>The reading, as recorded</td>
-            <td>What is left after step 4, as groundwater consumed; 0.00 acre-feet where rain and canal water covered the crop</td>
+            <td>What is left after step 4; 0.00 acre-feet where rain and canal water covered the crop</td>
             <td>None</td>
           </tr>
           <tr>
-            <td class="col-name">What the groundwater allocation is charged</td>
+            <td class="col-name">Groundwater extracted, the figure the groundwater allocation is charged</td>
             <td>The reading</td>
-            <td>Groundwater extracted, from step 5</td>
+            <td>Groundwater consumed divided by the share the crop consumes, from step 5</td>
             <td>Nothing</td>
           </tr>
           <tr>
@@ -151,25 +152,24 @@
         </thead>
         <tbody>
           <tr>
-            <td class="col-name">The part of the delivery the crop could not use</td>
-            <td>Delivered minus canal water the crop could use; 25% of the delivery at a 75% irrigation efficiency</td>
+            <td class="col-name">Lost to irrigation efficiency</td>
+            <td>Delivered minus canal water the crop could use; 25% of the delivery at a 75% efficiency</td>
             <td>Recorded as deep percolation on the field's water balance; not crop use, not a credit, and not charged to anyone</td>
           </tr>
           <tr>
             <td class="col-name">Canal water beyond what the crop could use</td>
             <td>Canal water the crop could use that went past what was left of crop water use after rain</td>
-            <td>One setting on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %} decides, with the three values below</td>
+            <td>One setting on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %} decides, with the three values in the next table</td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <h3 class="concept-panel-title mt-md">The three values on Delivery Settings</h3>
-    <div class="table-scroll mt-sm">
+    <div class="table-scroll mt-md">
       <table class="data-table help-cases-table">
         <thead>
           <tr>
-            <th>Value</th>
+            <th>Value on Delivery Settings</th>
             <th>What is recorded</th>
             <th>Who is credited</th>
           </tr>
@@ -203,7 +203,7 @@
 
     {% include "help/partials/_canal_split_diagram.html" %}
 
-    <p class="text-secondary text-sm mt-md">When no field on the headgate has a use on record for the month, each field gets the fixed share on file for it instead. Every field's ledger row names the rule that set its share.</p>
+    <p class="text-secondary text-sm mt-md">When no field on the headgate has crop water use after rain on record for the month, each field gets the fixed share on file for it instead. Every field's ledger row names the rule that set its share.</p>
 
     <h3 class="concept-panel-title mt-md">A diversion with no meter</h3>
     <p class="text-secondary text-base">Where a point of diversion has no meter in service and no volume entered for the month, the software estimates that month's delivery.</p>
@@ -235,7 +235,7 @@
 
     <div class="help-table-notes mt-md">
       <p class="text-secondary text-sm">No estimate is made under a curtailed water right or where no water right is linked.</p>
-      <p class="text-secondary text-sm">Crop water use above the cap stays in the field's remainder and ends the way the table above says: groundwater on a field with a well, water use recorded, no supply reported on a field without one.</p>
+      <p class="text-secondary text-sm">Crop water use above the cap stays in the field's remainder and ends the way the table above says: on a field with a well it is groundwater, and on a field without one it is water use recorded, no supply reported.</p>
     </div>
 
     {% explainer_available "surface_deliveries" as show_surface_help %}{% if show_surface_help %}<p class="text-base mt-md"><a class="prose-link" href="{{ surface_url }}">Read the Surface Delivery Settings &rarr;</a></p>{% endif %}

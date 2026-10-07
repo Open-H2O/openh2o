@@ -1760,6 +1760,8 @@ html { color-scheme: dark; }
 .page-head--narrow .breadcrumb-bar > * { width: 100%; max-width: calc(640px * 1.0625); margin-inline: auto; }
 .page-head--medium > *,
 .page-head--medium .breadcrumb-bar > * { width: 100%; max-width: calc(800px * 1.0625); margin-inline: auto; }
+.page-head--help > *,
+.page-head--help .breadcrumb-bar > * { width: 100%; max-width: calc(1100px * 1.0625); margin-inline: auto; }
 
 /* -- The feedback trigger in the sidebar (Phase 143-02, R-024) ---------------- */
 /* A .sidebar-link that is a <button>: same row, same type, no button chrome.
@@ -2344,14 +2346,19 @@ html { color-scheme: dark; }
    the losses in the tertiary text colour, dashed; tokens only. */
 .canal-split-diagram {
     margin: var(--space-md) 0 0;
-    max-width: 760px;
 }
 
+/* The SVG is drawn at 760 units and never scaled up (labels at 15 units
+   render at body-text size, 20 px at 900 wide read as pasted in; page-verdict
+   reader, 2026-10-06 19:18); it is centred in the card and the caption runs
+   full width under it, on the body text's own left edge. */
 .canal-split-diagram svg {
     display: block;
     width: 100%;
+    max-width: 760px;
     height: auto;
-    font-size: 16px;
+    margin-inline: auto;
+    font-size: 15px;
 }
 
 .canal-split-diagram .box {
@@ -2391,7 +2398,6 @@ html { color-scheme: dark; }
 
 .canal-split-diagram .muted {
     fill: var(--color-text-secondary);
-    font-size: 15px;
 }
 
 .canal-split-diagram figcaption {
@@ -4245,6 +4251,16 @@ details[open] > summary .disclosure-mark {
 
 .page-narrow { max-width: 640px; margin-inline: auto; }
 .page-medium { max-width: 800px; margin-inline: auto; }
+/* A help page whose content is tables and a diagram, not prose (149.1-01).
+   Two page-verdict readers, on the viewport and on the full page, named the
+   same worst fault for Methods behind the numbers at 800px: a card about
+   850px wide in a 1,450px content area, "a small panel lost in a large empty
+   field". Prose inside it still runs at 75ch (`.help-page p`). */
+.page-help   { max-width: 1100px; margin-inline: auto; }
+/* The demonstration banner sits inside <main> above the content, full width
+   on every page. On the 1,100 px help column it followed none of the edges
+   below it (page-verdict, 2026-10-06 19:16), so there it takes the column. */
+.app-content:has(.page-help) > .demo-notice { max-width: 1100px; margin-inline: auto; }
 .page-wide   { max-width: 1400px; margin-inline: auto; }
 
 /* -- Utility: toolbar flex row ------------------------------------------ */
