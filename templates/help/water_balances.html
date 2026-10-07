@@ -3,7 +3,7 @@
 
 {% block title %}How water balances work - Open Water Accounting Platform{% endblock %}
 {% block page_title %}How water balances work{% endblock %}
-{% block page_head_class %}page-head--medium{% endblock %}
+{% block page_head_class %}page-head--help{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -12,94 +12,178 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">How Water Balances Work</span>
   </nav>
-  <p class="page-description">One idea behind every number here: estimate what the crop used, then match it against the water that reached the field.</p>
+  <p class="page-description">One number estimated by satellite for every field, three sources of water and how each is known, and the remainder's name on a field with no well.</p>
 </div>
 {% endblock %}
 
 {% block content %}
 {% comment %}
-  148-03 (revision 3): rebuilt around the picture Brent approved
-  (the-subtraction.html / picture-two.html, 2026-09-24). Link guards stay:
-  this page names `accounting`, `parcels`, `surface` and `wells` as its
+  149.1-02 (2026-10-06): carried to the shape Brent approved on Methods
+  behind the numbers (149.1-01, 19:50 PDT), from the reader's three
+  questions outward (which one number is estimated for every field, and how;
+  which three sources of water are counted, and how each is known; what the
+  remainder is called on a field with no well). Each card is one table with
+  a line or two under it; the shape check tests/test_help_shape.py holds
+  this file at 60 words a block and half a page in prose.
+
+  This page names `accounting`, `parcels`, `surface` and `wells` as its
   subject (config/views.py EXPLAINER_MODULES), so it is 404'd rather than
   served wherever any one of them is off; the guards below are only for the
-  CARDS this page links OUT to, which each gate on their own narrower module
-  set.
-
-  Layout (2026-09-28): one frame per section. The ledger partial and the
-  demonstration note are ruled sub-sections of "The short version", not
-  cards inside it; the three-up rows are `.card-grid--3` so no panel is
-  orphaned on a row of its own; spacing inside a card is the mt-* utilities
-  and nothing inline. The rules are the `.help-page` block in app.css.
-{% endcomment %}{% url 'glossary' as glossary_url %}
-<div class="page-stack page-medium help-page">
+  CARDS and links this page points OUT to, which each gate on their own
+  narrower module set.
+{% endcomment %}<div class="page-stack page-help help-page">
 
   <div class="card-raised">
-    <h2 class="section-header">The short version</h2>
-    <p class="text-secondary text-base">Few fields are metered. One number can be estimated for every field, whatever its water source: how much water the crop used in the month. Plants give off water as they grow, and satellites can pick that up. Every other figure on this platform is a supply, matched against that estimate.</p>
+    <h2 class="section-header">One number for every field</h2>
+    <p class="text-secondary text-base">Few fields are metered. One number can be estimated for every field, whatever its water source: how much water the crop used in the month. Plants give off water as they grow, and satellites can pick that up.</p>
 
     {% include "help/partials/_the_subtraction.html" %}
 
     {% if demonstration %}
     <div class="help-subsection">
       <h3 class="concept-panel-title">What this demonstration cannot show</h3>
-      <p class="text-secondary text-base">This demonstration has no delivery records for any field's own gate. Each headgate's monthly total is built from the crop water use after rain of the fields it serves, and the software then divides that total back among the same fields on the same basis. On a canal-served field here, canal water therefore covers all or nearly all of crop water use after rain (never less than 85% in this demonstration), and groundwater consumed is the small remainder. A district's own gate records would change that: a field with a recorded delivery of its own keeps it, and only what is left is divided among the other fields.</p>
+
+      <div class="table-scroll mt-md">
+        <table class="data-table help-cases-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>In this demonstration</th>
+              <th>With a district's own gate records</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="col-name">Delivery records at a field's own gate</td>
+              <td>None</td>
+              <td>Kept as recorded</td>
+            </tr>
+            <tr>
+              <td class="col-name">Each headgate's monthly total</td>
+              <td>Built from the crop water use after rain of the fields it serves, then divided back among them on the same basis</td>
+              <td>From a meter or the ditch tender's estimate</td>
+            </tr>
+            <tr>
+              <td class="col-name">Canal water on a canal-served field</td>
+              <td>All or nearly all of crop water use after rain, never under 85% here, so groundwater consumed is the small remainder</td>
+              <td>Whatever the record says; the remainder follows</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
     {% endif %}
   </div>
 
   <div class="card-raised">
     <h2 class="section-header">Three sources, and how each is known</h2>
-    <div class="card-grid card-grid--3">
-      <div class="concept-panel">
-        <div class="concept-panel-title">Rain</div>
-        <p class="text-secondary text-base">Rain that fell on the field, and the share of it the crop could use.</p>
-        <div class="concept-panel-foot">Estimated from weather data for the area</div>
-      </div>
-      <div class="concept-panel">
-        <div class="concept-panel-title">Canal water</div>
-        <p class="text-secondary text-base">Water the district let onto the field from its canal.</p>
-        <div class="concept-panel-foot">Recorded by the district at the headgate, from a meter or the ditch tender's estimate, then divided up among the fields it serves</div>
-      </div>
-      <div class="concept-panel">
-        <div class="concept-panel-title">Well water</div>
-        <p class="text-secondary text-base">Water pumped from a well on the field.</p>
-        <div class="concept-panel-foot">Known only when the month has a meter reading on record</div>
-      </div>
+
+    <div class="table-scroll">
+      <table class="data-table help-cases-table">
+        <thead>
+          <tr>
+            <th>Water</th>
+            <th>What it is</th>
+            <th>Where the figure comes from</th>
+            <th>How sure</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-name">Rain</td>
+            <td>Rain that fell on the field, and the share of it the crop could use</td>
+            <td>Estimated from weather data for the area</td>
+            <td><span class="badge badge-pill badge-grey">Estimated</span></td>
+          </tr>
+          <tr>
+            <td class="col-name">Canal water</td>
+            <td>Water the district let onto the field from its canal</td>
+            <td>Recorded by the district at the headgate, from a meter or the ditch tender's estimate, then divided among the fields it serves</td>
+            <td><span class="badge badge-pill badge-gold" title="Divided up by the software">Divided up</span></td>
+          </tr>
+          <tr>
+            <td class="col-name">Well water</td>
+            <td>Water pumped from a well on the field</td>
+            <td>The month's meter reading, where there is one</td>
+            <td>A meter reading, or <span class="badge badge-pill badge-grey" title="Estimated by subtraction">By subtraction</span> where there is no meter</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-    <p class="text-secondary text-base mt-md">Rain and canal water are subtracted from crop water use first, and what is left is the remainder. Its name depends on the field: groundwater consumed where there is a well and no meter reading, and water use recorded, no supply reported where there is no well. No device measures it; it comes from the subtraction. The Methods page explains each step.</p>
+
+    <p class="text-secondary text-sm mt-md">Rain and canal water the crop could use are subtracted from crop water use first, and what is left is the remainder. What it is called depends on what the field has, in the next table.</p>
   </div>
 
   <div class="card-raised">
-    <h2 class="section-header">The ending depends on what the field has</h2>
-    <div class="callout-rule">
-      <div class="concept-panel-title">Where the remainder goes</div>
-      <p class="text-secondary text-base">Only a field with a well has its remainder written as groundwater. On a field with no well, the remainder is written as water use recorded, no supply reported, and nothing else is written. A missing meter never becomes a pumping figure.</p>
+    <h2 class="section-header">What the remainder is called, by what the field has</h2>
+
+    <div class="table-scroll">
+      <table class="data-table help-cases-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>A meter reading</th>
+            <th>A well, no meter</th>
+            <th>No well</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-name">Written as</td>
+            <td>Kept beside the reading for comparison; nothing written from it</td>
+            <td>Groundwater consumed, and groundwater extracted after the division</td>
+            <td>Water use recorded, no supply reported</td>
+          </tr>
+          <tr>
+            <td class="col-name">What the groundwater allocation is charged</td>
+            <td>The reading</td>
+            <td>Groundwater extracted</td>
+            <td>Nothing</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-    <div class="card-grid card-grid--3 mt-md">
-      <div class="concept-panel">
-        <div class="concept-panel-title">A month with a meter reading</div>
-        <p class="text-secondary text-base">The meter reading stands as groundwater extracted, and the allocation is charged the recorded reading. The calculation still runs and is kept beside the reading for comparison, but it writes no groundwater row and no groundwater extracted of its own.</p>
-      </div>
-      <div class="concept-panel">
-        <div class="concept-panel-title">A well, no meter reading</div>
-        <p class="text-secondary text-base">The remainder is groundwater consumed. Dividing it by the share of pumped groundwater the crop consumes gives groundwater extracted, which is what the allocation is charged.</p>
-      </div>
-      <div class="concept-panel">
-        <div class="concept-panel-title">No well</div>
-        <p class="text-secondary text-base">The remainder is written as water use recorded, no supply reported. This means only that the supplies on record did not account for crop water use; it says nothing about why. It is never written as pumping.</p>
-      </div>
-    </div>
+
+    <p class="text-secondary text-sm mt-md">A missing meter never becomes a pumping figure. Water use recorded, no supply reported says only that the supplies on record did not cover crop water use; it is never written as pumping, and it is never a finding about the grower.</p>
   </div>
 
   <div class="card-raised">
     <h2 class="section-header">A district with no wells</h2>
-    <p class="text-secondary text-base">The same steps run on every field. With no well, a field's remainder is written as water use recorded, no supply reported, and nothing is written as pumping, so the well lines on this page stay empty. The platform keeps the district's diversion and delivery records month by month against its water right. The satellite estimate still does three jobs. First, it sets each field's share of a headgate's total: when the total is less than the fields could use, it is divided in proportion to each field's crop water use after rain; when it covers every field, each field gets what it could use (its crop water use after rain divided by its irrigation efficiency) and the rest is recorded against the headgate. Second, each field's remainder is worked out from it. Third, it supplies the estimated delivery for a point of diversion with no meter, from the fields that point serves. The Methods page says how.</p>
+    <p class="text-secondary text-base">The same steps run; with no well, the remainder is water use recorded, no supply reported, and the well lines stay empty.</p>
+
+    <h3 class="concept-panel-title mt-lg">What the satellite estimate still does</h3>
+
+    <div class="table-scroll mt-md">
+      <table class="data-table help-steps-table">
+        <thead>
+          <tr>
+            <th>Job</th>
+            <th>Rule</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-step"><span class="step-num">1</span>Sets each field's share of a headgate total</td>
+            <td>In proportion to crop water use after rain, up to what each field could use.</td>
+          </tr>
+          <tr>
+            <td class="col-step"><span class="step-num">2</span>Works out each field's remainder</td>
+            <td>Crop water use minus rain and canal water the crop could use.</td>
+          </tr>
+          <tr>
+            <td class="col-step"><span class="step-num">3</span>Estimates the delivery of a diversion with no meter</td>
+            <td>From the fields it serves, capped at what is left of the water right's face value.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    {% explainer_available "methods" as show_methods %}{% if show_methods %}<p class="text-base mt-md">The steps, the split and the estimate, line by line: <a class="prose-link" href="{% url 'methods' %}">Methods behind the numbers</a>.</p>{% endif %}
   </div>
 
   <div class="card-raised">
     <h2 class="section-header">Why satellites</h2>
-    <p class="text-secondary text-base">Most water diversions in California are not metered, and for most fields nobody knows the volume delivered. A satellite estimate of crop water use covers the fields no meter does. <a class="prose-link" href="https://openetdata.org/" target="_blank" rel="noopener">OpenET</a> turns satellite imagery into a crop water use estimate for any field. It is a public-private effort led by NASA, the Desert Research Institute, the Environmental Defense Fund and Google Earth Engine. This platform labels it as an estimate.</p>
+    <p class="text-secondary text-base">Most water diversions in California are not metered, and for most fields nobody knows the volume delivered. Satellite estimates of crop water use cover the fields no meter does. <a class="prose-link" href="https://openetdata.org/" target="_blank" rel="noopener">OpenET</a> turns satellite imagery into a crop water use estimate for any field. This platform labels it as an estimate.</p>
 
     <div class="concept-panel mt-md">
       <div class="concept-panel-title">Go deeper</div>

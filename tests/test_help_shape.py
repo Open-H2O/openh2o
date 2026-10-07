@@ -29,6 +29,7 @@ SCRIPT = REPO_ROOT / "scripts" / "help_shape.py"
 #: Files under the gate: each fails if longest > 60 or share > 0.50. A page joins when Brent approves it.
 ENFORCED: list = [
     "templates/help/methods.html",
+    "templates/help/water_balances.html",
     "templates/help/partials/_the_subtraction.html",
     "templates/help/partials/_canal_split_diagram.html",
 ]
@@ -40,7 +41,6 @@ PENDING = {
     "templates/help/glossary.html": (6, 0.42),
     "templates/help/settings_explained.html": (64, 0.85),
     "templates/help/surface_deliveries.html": (74, 0.85),
-    "templates/help/water_balances.html": (158, 0.85),
 }
 
 
