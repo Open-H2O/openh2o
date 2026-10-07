@@ -39,7 +39,7 @@
     <p class="text-secondary text-base">An <strong>allocation ceiling</strong> is the total volume assigned to a management zone for a reporting period. An <strong>allocation</strong> is one account&rsquo;s share of it, by the land the account holds in the zone.</p>
 
     <div class="table-scroll mt-md">
-      <table class="data-table help-cases-table">
+      <table class="data-table help-cases-table help-cases-table--short-names">
         <thead>
           <tr>
             <th>Figure</th>
@@ -52,13 +52,13 @@
           <tr>
             <td class="col-name">Allocation ceiling</td>
             <td>The total volume assigned to a zone for a period.</td>
-            <td>You, on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{% url 'accounting:allocations_list' %}">Allocations</a>{% else %}Allocations{% endif %}</td>
+            <td class="col-where">You, on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{% url 'accounting:allocations_list' %}">Allocations</a>{% else %}Allocations{% endif %}</td>
             <td>Zone, water type and reporting period</td>
           </tr>
           <tr>
             <td class="col-name">Allocation</td>
-            <td>One account&rsquo;s share: the ceiling pro-rated by the use areas the account holds in the zone.</td>
-            <td>The platform</td>
+            <td>One account&rsquo;s share: the ceiling pro-rated by the use areas the account holds in the zone. Use areas are the fields on the Use Areas page.</td>
+            <td class="col-where">The platform</td>
             <td>Account, from the groundwater ceiling of every zone it holds use areas in</td>
           </tr>
         </tbody>
@@ -75,24 +75,29 @@
           <tr>
             <th>Step</th>
             <th>Figure in the example</th>
+            <th>Where the figure comes from</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td class="col-step"><span class="step-num">1</span>Zone ceiling for the year</td>
-            <td>12,000 acre-feet</td>
+            <td class="col-figure">12,000 acre-feet</td>
+            <td>Set on Allocations for the zone, its groundwater type and the period</td>
           </tr>
           <tr>
             <td class="col-step"><span class="step-num">2</span>Use areas in the zone</td>
-            <td>600</td>
+            <td class="col-figure">600</td>
+            <td>Counted on the Use Areas page, one per field in the zone; the count, not the acreage</td>
           </tr>
           <tr>
             <td class="col-step"><span class="step-num">3</span>The account&rsquo;s use areas in the zone</td>
-            <td>30</td>
+            <td class="col-figure">30</td>
+            <td>Counted the same way, for the fields the account holds in the zone</td>
           </tr>
           <tr>
             <td class="col-step"><span class="step-num">4</span>The account&rsquo;s allocation</td>
-            <td>12,000 &times; 30 / 600 = 600 acre-feet</td>
+            <td class="col-figure">12,000 &times; 30 / 600 = 600 acre-feet</td>
+            <td>Step 1 times step 3, divided by step 2; added up over every zone the account holds use areas in</td>
           </tr>
         </tbody>
       </table>
@@ -118,14 +123,19 @@
         </thead>
         <tbody>
           <tr>
-            <td class="col-name">Groundwater allocation</td>
+            <td class="col-name">Groundwater</td>
             <td>Groundwater extracted, metered and calculated alike (the meter reading, or the division for a well with no meter)</td>
             <td>Allocation plus any carry-over, minus groundwater extracted</td>
           </tr>
           <tr>
-            <td class="col-name">Surface allocation</td>
-            <td>Water delivered</td>
+            <td class="col-name">Surface, a district&rsquo;s own</td>
+            <td>Delivered, added up over the fields in the district; a surface ceiling is not divided among accounts</td>
             <td>Allocation minus delivered</td>
+          </tr>
+          <tr>
+            <td class="col-name">Blank, no ceiling set</td>
+            <td>Nothing; no ceiling is set for the zone and period, so every account&rsquo;s allocation shows blank, not zero</td>
+            <td>Blank; not a limit</td>
           </tr>
         </tbody>
       </table>
@@ -133,7 +143,7 @@
 
     <div class="help-table-notes mt-md">
       <p class="text-secondary text-sm">When an account pumps past its allocation, remaining goes negative: an overdraft, the one figure the platform colors red.</p>
-      <p class="text-secondary text-sm">With no ceiling set for a zone and period, every account&rsquo;s allocation shows blank, not zero. &ldquo;No ceiling defined&rdquo; and &ldquo;a ceiling of zero&rdquo; are different: a blank is not a limit.</p>
+      <p class="text-secondary text-sm">&ldquo;No ceiling defined&rdquo; and &ldquo;a ceiling of zero&rdquo; are different: a blank is not a limit.</p>
       <p class="text-secondary text-sm">To start enforcing allocations, set a ceiling for the zone and period on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{% url 'accounting:allocations_list' %}">Allocations</a>{% else %}Allocations{% endif %} first.</p>
     </div>
   </div>

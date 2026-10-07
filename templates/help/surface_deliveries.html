@@ -12,7 +12,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Surface Delivery Settings</span>
   </nav>
-  <p class="page-description">What three settings on Delivery Settings decide, for the share of a delivery the crop could use, canal water beyond it, and unused allotment at year-end.</p>
+  <p class="page-description">What three settings on Delivery Settings decide, for the share of a delivery the crop could use, canal water beyond what the crop could use, and unused allotment at year-end.</p>
 </div>
 {% endblock %}
 
@@ -35,7 +35,7 @@
 {% endcomment %}<div class="page-stack page-help help-page">
 
   <div class="card-raised">
-    <h2 class="section-header">The share of a delivery the crop could use</h2>
+    <h2 class="section-header">The share of a delivery the crop could use, and two amounts beyond it</h2>
 
     <div class="table-scroll mt-md">
       <table class="data-table help-cases-table">
@@ -53,15 +53,22 @@
             <td>Subtracted from crop water use after rain</td>
           </tr>
           <tr>
-            <td class="col-name">The rest of the delivery</td>
+            <td class="col-name">The rest of the delivery, lost to irrigation efficiency</td>
             <td>Delivered minus canal water the crop could use</td>
-            <td>Recorded as deep percolation on the field's water balance; not crop use, not a credit, not charged</td>
+            <td>Recorded as deep percolation on the field's water balance; not crop water use, not a credit, not charged</td>
+          </tr>
+          <tr>
+            <td class="col-name">Canal water beyond what the crop could use</td>
+            <td>Canal water the crop could use that went past what was left of crop water use after rain</td>
+            <td>By the choice in the next table</td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <p class="text-secondary text-sm mt-md">An administrator sets the agency default on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{% url 'accounting:delivery_settings' %}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}, as &ldquo;Share of delivered water the crop consumes&rdquo;; a field's irrigation method, set on the field's own page, takes its place for that field.</p>
+    <div class="help-table-notes mt-md">
+      <p class="text-secondary text-sm">An administrator sets the agency default on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{% url 'accounting:delivery_settings' %}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}, as &ldquo;Share of delivered water the crop consumes&rdquo;; a field's irrigation method, set on the field's own page, takes its place for that field.</p>
+    </div>
   </div>
 
   <div class="card-raised">
@@ -84,7 +91,7 @@
           </tr>
           <tr>
             <td class="col-name">Credited to the landowner, less a share left in the basin</td>
-            <td>The amount, and the landowner's share of it after &ldquo;Share left in the basin&rdquo; is taken off, 10% unless changed</td>
+            <td>The amount, and the landowner's share of it after &ldquo;Share left in the basin&rdquo; is subtracted, 10% unless changed</td>
             <td>Fields with a well, the landowner, on the field's own ledger; fields with no well, the zone's shared account, or no one where the zone has none</td>
           </tr>
           <tr>
@@ -107,7 +114,7 @@
         <thead>
           <tr>
             <th>Choice</th>
-            <th>What happens to unused water</th>
+            <th>What happens to the unused amount</th>
             <th>What happens to an overdraw</th>
           </tr>
         </thead>
@@ -130,7 +137,31 @@
 
     <div class="help-subsection">
       <h3 class="concept-panel-title">One district can differ</h3>
-      <p class="text-secondary text-sm mt-md">Each district's own page under <a class="prose-link" href="{% url 'geography:zone_list' %}">Zones</a> carries a &ldquo;Year-end unused water&rdquo; control with &ldquo;Use agency default&rdquo;, carry forward and expire; a district left on &ldquo;Use agency default&rdquo; follows a later agency-wide change.</p>
+
+      <div class="table-scroll mt-md">
+        <table class="data-table help-cases-table">
+          <thead>
+            <tr>
+              <th>&ldquo;Year-end unused water&rdquo; on the district&rsquo;s page under <a class="prose-link" href="{% url 'geography:zone_list' %}">Zones</a></th>
+              <th>What that district follows</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="col-name">Use agency default</td>
+              <td>The agency&rsquo;s choice on Delivery Settings, and any later change to it</td>
+            </tr>
+            <tr>
+              <td class="col-name">Carry it forward as a credit</td>
+              <td>Carried forward for this district only, whatever the agency&rsquo;s choice</td>
+            </tr>
+            <tr>
+              <td class="col-name">Let it expire (use-it-or-lose-it)</td>
+              <td>Expires for this district only, whatever the agency&rsquo;s choice</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 

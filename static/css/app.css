@@ -2359,6 +2359,21 @@ html { color-scheme: dark; }
     white-space: nowrap;
 }
 
+/* The settings table on Configs & settings (149.1-03): its third column is one
+   page name per row, so it takes 18% and the "What it decides" column the rest
+   (a page-verdict reader named the squeezed second column the worst fault). */
+.help-cases-table .col-where {
+    width: 22%;
+}
+
+/* The worked example on Allocations & ceilings (149.1-03): the figure column
+   holds one number each, kept on one line, so the "where it comes from"
+   column takes the room. */
+.help-steps-table .col-figure {
+    width: 1%;
+    white-space: nowrap;
+}
+
 /* The canal split diagram (help/partials/_canal_split_diagram.html): inline
    SVG scaled by its viewBox, so the 16-unit labels still render at 13 px or
    more in a 1,024 px window. Boxes on the inset surface, the flow in teal,

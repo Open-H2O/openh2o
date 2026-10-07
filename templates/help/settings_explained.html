@@ -12,7 +12,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Configs &amp; Settings, explained</span>
   </nav>
-  <p class="page-description">Which settings change a number and where each is set, who sets the share of a delivery the crop could use, and what a change does to months already calculated.</p>
+  <p class="page-description">Which settings change a figure and where each is set, who sets the share of delivered water the crop consumes, and what a change does to months already calculated.</p>
 </div>
 {% endblock %}
 
@@ -43,7 +43,7 @@
 <div class="page-stack page-help help-page">
 
   <div class="card-raised">
-    <h2 class="section-header">Every setting, and where it lives</h2>
+    <h2 class="section-header">Every setting that changes a figure</h2>
 
     <div class="table-scroll">
       <table class="data-table help-cases-table">
@@ -59,56 +59,75 @@
           <tr>
             <td class="col-name">Calculation plan</td>
             <td>Order of the steps, each step on or off, the rain method (all of it, a fixed fraction, or USDA-SCS soil storage, the default) and its fraction, and the floor, 0 acre-feet unless changed</td>
-            <td>{% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a>{% else %}Methodology Settings{% endif %}</td>
+            <td class="col-where">{% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a>{% else %}Methodology Settings{% endif %}</td>
             <td class="col-sure"><span class="badge badge-pill badge-blue">Administrator</span></td>
           </tr>
           <tr>
             <td class="col-name">Share of delivered water the crop consumes</td>
             <td>Share of a delivery counted as canal water the crop could use, 75% unless changed; a field's own irrigation method on file overrides it</td>
-            <td>{% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}</td>
+            <td class="col-where">{% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}</td>
             <td class="col-sure"><span class="badge badge-pill badge-blue">Administrator</span></td>
           </tr>
           <tr>
             <td class="col-name">Canal water beyond what the crop could use<br><span class="text-sm text-secondary">Share left in the basin</span></td>
             <td>Whether that amount is not credited, the default; credited to the landowner, less the share left in the basin, 10% unless changed; or shown as its own line, not a credit</td>
-            <td>{% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}</td>
+            <td class="col-where">{% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}</td>
             <td class="col-sure"><span class="badge badge-pill badge-blue">Administrator</span></td>
           </tr>
           {% if 'wells' in enabled_modules %}<tr>
             <td class="col-name">Share of pumped groundwater the crop consumes</td>
             <td>Divides groundwater consumed to give groundwater extracted, 80% unless changed; a meter reading is used as recorded</td>
-            <td>{% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}</td>
+            <td class="col-where">{% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}</td>
             <td class="col-sure"><span class="badge badge-pill badge-blue">Administrator</span></td>
           </tr>{% endif %}
           <tr>
             <td class="col-name">When a district doesn&rsquo;t use its full allotment by the end of the water year</td>
             <td>&ldquo;Carry it forward as a credit toward next year&rdquo;, the default, or &ldquo;Let it expire (use-it-or-lose-it)&rdquo;</td>
-            <td>{% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %} for the agency; a district's own page under <a class="prose-link" href="{{ zones_url }}">Zones</a> to differ</td>
+            <td class="col-where">{% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %} for the agency; a district's own page under <a class="prose-link" href="{{ zones_url }}">Zones</a> to differ</td>
             <td class="col-sure"><span class="badge badge-pill badge-blue">Administrator</span></td>
           </tr>
           <tr>
             <td class="col-name">Which months does a reporting year cover?<br><span class="text-sm text-secondary">If the report year above is a season, which month does it start?</span></td>
             <td>Water year, October to September, the default; calendar year, January to December; or a season from its first month; read when an imported file gives a year and a month but no date</td>
-            <td>{% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}</td>
+            <td class="col-where">{% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}</td>
             <td class="col-sure"><span class="badge badge-pill badge-blue">Administrator</span></td>
-          </tr>
-          <tr>
-            <td class="col-name">Where your record addresses are published</td>
-            <td>Web address each record's permanent address is published under; left blank, this site's own address</td>
-            <td>{% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}</td>
-            <td class="col-sure"><span class="badge badge-pill badge-blue">Administrator</span></td>
-          </tr>
-          <tr>
-            <td class="col-name">Sign-in required</td>
-            <td>Whether public sign-up is closed and administrator screens are for administrators only; on for an agency deployment unless changed, off on an open demonstration</td>
-            <td>By whoever operates the deployment, in its configuration, not on any screen</td>
-            <td class="col-sure"><span class="badge badge-pill badge-grey">System</span></td>
           </tr>
         </tbody>
       </table>
     </div>
 
     <p class="text-secondary text-sm mt-md">These settings are agency policy, set once during setup and revisited rarely; a farmer never touches them. This page explains each one and changes nothing.</p>
+
+    <div class="help-subsection">
+      <h3 class="concept-panel-title">Two settings that change no figure</h3>
+
+      <div class="table-scroll mt-md">
+        <table class="data-table help-cases-table">
+          <thead>
+            <tr>
+              <th>Setting</th>
+              <th>What it decides</th>
+              <th>Where it is set</th>
+              <th>Who sets it</th>
+            </tr>
+          </thead>
+          <tbody>
+          <tr>
+            <td class="col-name">Where your record addresses are published</td>
+            <td>Web address each record's permanent address is published under; left blank, this site's own address</td>
+            <td class="col-where">{% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}</td>
+            <td class="col-sure"><span class="badge badge-pill badge-blue">Administrator</span></td>
+          </tr>
+          <tr>
+            <td class="col-name">Sign-in required</td>
+            <td>Whether public sign-up is closed and administrator screens are for administrators only; on for an agency deployment unless changed, off on an open demonstration</td>
+            <td class="col-where">By whoever operates the deployment, in its configuration, not on any screen</td>
+            <td class="col-sure"><span class="badge badge-pill badge-grey">System</span></td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <div class="card-raised">
@@ -126,7 +145,7 @@
         <tbody>
           <tr>
             <td class="col-name">Calculation plan; Share of delivered water the crop consumes{% if 'wells' in enabled_modules %}; Share of pumped groundwater the crop consumes{% endif %}</td>
-            <td>Keeps the figures it was calculated under until it is calculated again</td>
+            <td>Keeps the figures it was calculated under until it is calculated again, by the nightly run or by &ldquo;Run the calculation&rdquo; on the reporting period&rsquo;s page under Water Years</td>
             <td>Uses the settings as they stand, and so does a month calculated again</td>
           </tr>
           <tr>
@@ -137,12 +156,17 @@
           <tr>
             <td class="col-name">When a district doesn&rsquo;t use its full allotment by the end of the water year</td>
             <td>Its figures stay; the choice acts at the year-end roll-over of each district's allocation, never on a month</td>
-            <td>Same; at the roll-over an expiring surplus is not carried, and a debt is always carried</td>
+            <td>Same; at the roll-over the unused amount is carried or expires by the choice, and an overdraw is always carried as a debt</td>
           </tr>
           <tr>
             <td class="col-name">Which months does a reporting year cover?</td>
             <td>Records already imported keep their dates</td>
             <td>Applied when a file is imported</td>
+          </tr>
+          <tr>
+            <td class="col-name">Where your record addresses are published</td>
+            <td>No figure changes</td>
+            <td>No figure changes; every record&rsquo;s address reads the new host at once</td>
           </tr>
           <tr>
             <td class="col-name">Sign-in required</td>
@@ -156,7 +180,7 @@
 
   <div class="card-raised">
     <h2 class="section-header">Where to go next</h2>
-    <div class="card-grid mt-md">
+    <div class="card-grid card-grid--fit mt-md">
       {% if 'accounting' in enabled_modules %}<a href="{{ methodology_url }}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Methodology Settings</span><span class="text-accent">&rarr;</span></div>
         <p class="text-secondary text-sm">Where the calculation plan's steps are reordered and tuned.</p>
@@ -167,7 +191,7 @@
       </a>{% endif %}
       <a href="{{ zones_url }}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Zones</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">A district's own page, where its year-end unused water can differ from the agency's.</p>
+        <p class="text-secondary text-sm">A district&rsquo;s own page, where its year-end choice can differ from the agency&rsquo;s.</p>
       </a>
       {% explainer_available "surface_deliveries" as show_surface_help %}{% if show_surface_help %}<a href="{{ surface_help_url }}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Surface Delivery Settings</span><span class="text-accent">&rarr;</span></div>
