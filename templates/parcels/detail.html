@@ -24,7 +24,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">{{ parcel.parcel_number }}</span>
   </nav>
-  <p class="page-description">Use area details and related data.{% if user_can_write %} Click any editable field to update it.{% endif %}</p>
+  <p class="page-description">One use area's map and record, with its water balance and ledger entries for the chosen period.{% if user_can_write %} Edit a field with its pencil.{% endif %}</p>
 </div>
 {% endblock %}
 
@@ -38,7 +38,7 @@
   <div>
     <a href="{% url 'parcels:list' %}" class="back-link">&larr; Back to Use Areas</a>
   </div>
-  <!-- Persistent map host (the shared body partial builds the map into this). -->
+  {# Persistent map host (the shared body partial builds the map into this). #}
   <div id="detail-map-card" class="card-raised" style="padding: 0; overflow: hidden; display: none;">
     <div id="detail-map" class="map-embed" style="height: 380px; position: relative; overflow: hidden; background: var(--color-base);"></div>
   </div>
@@ -51,7 +51,7 @@
 
 {% block map_scripts %}
 {% if geojson %}
-<!-- Libraries only; the map is built by the guarded init inside _detail_pane. -->
+{# Libraries only; the map is built by the guarded init inside _detail_pane. #}
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="{% static 'js/map-core.js' %}"></script>
 {% endif %}

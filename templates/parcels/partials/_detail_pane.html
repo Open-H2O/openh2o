@@ -8,7 +8,7 @@
 {% endcomment %}
 
 {% if not on_full_page %}
-<!-- Pane header: which parcel you're looking at (the workspace has no breadcrumb). -->
+{# Pane header: which parcel you're looking at (the workspace has no breadcrumb). #}
 <div class="pane-header">
   <div>
     <div class="pane-header-title">{{ parcel.parcel_number }}</div>
@@ -32,7 +32,7 @@
 
 <div class="pane-stack">
 
-  <!-- Water balance: ONE statement, stated once — the parcel MASS balance. -->
+  {# Water balance: ONE statement, stated once: the parcel MASS balance. #}
   {% url 'methods' as methods_help_url %}
   {% url 'water_balances' as wb_help_url %}
   <div class="card-raised">
@@ -62,7 +62,7 @@
     {% endcomment %}
     <div class="budget-panel">
       <div class="budget-panel-head">
-        <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Supplies are water that reached the field: canal water delivered, groundwater extracted (the meter's reading, or the engine's estimate), and effective rain. Uses are the crop's consumptive use, deep percolation (the part of the canal water and of the pumped water the crop could not use), managed recharge recorded from this field, and the change in banked storage. The residual is what is left; within a quarter of consumptive use it is shown as small, beyond that as large." link=methods_help_url link_label="Methods behind the numbers" %}</span>
+        <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Surface, groundwater extracted and managed recharge come from the period's ledger rows; rain, consumptive use, deep percolation and storage change come from its calculation runs. Residual is supplies minus uses; a Residual badge is green within a quarter of consumptive use, orange beyond it." link=methods_help_url link_label="Methods behind the numbers" %}</span>
         {% include "parcels/partials/_period_control.html" %}
       </div>
       {% comment %}
@@ -203,6 +203,17 @@
             that used to sit at the foot of this block (on-farm loss, deficit
             irrigation, ditch seepage, a curtailment shortfall) explained the
             water (DESIGN.md copy rule 11) and are gone.
+
+            149.1-05 (Brent, 2026-09-17 08:31: "is this saying the residual
+            does not include losses?"). Case B's two figure lines say in their
+            LABEL how each sits in the residual (added, subtracted), never that
+            it equals the residual: measured 2026-10-07 on the local demo, the
+            residual equals minus the unmet-demand figure on 45 of the 87
+            field-periods carrying one and differs on 42 (a canal figure in the
+            same period). The last line, under every case, says where losses
+            are: canal losses come off the headgate total before it is divided
+            (surface/services.py::_month_losses), and the field's deep
+            percolation is a Use, so neither is in the residual.
           {% endcomment %}
           {% if mass_balance.band_status == "closes" and mass_balance.gw_is_estimated and not mass_balance.gw_is_metered %}
           <p class="text-tertiary">
@@ -214,7 +225,7 @@
           </p>
           {% elif over_delivery_total_af > 0 %}
           <p class="text-secondary">
-            <strong>Canal water beyond what the crop could use:</strong>
+            <strong>Canal water beyond what the crop could use (added in the residual above):</strong>
             <span class="td-num">{{ over_delivery_total_af|floatformat:2|intcomma }}</span> AF
           </p>
           {% endif %}
@@ -240,7 +251,7 @@
           {% if unmet_demand_af > 0 %}
           <p class="text-secondary">
             <strong>Water use recorded, no supply reported:</strong>
-            <span class="td-num">{{ unmet_demand_af|floatformat:2|intcomma }}</span> AF{% include "partials/_explainer_popout.html" with title="Water use recorded, no supply reported" text="On a field with no well, the platform records the part of consumptive use that no delivery, no pumping and no rainfall on record explains. It is stored as a figure, not booked as pumping." link=wb_help_url link_label="How water balances work" %}
+            <span class="td-num">{{ unmet_demand_af|floatformat:2|intcomma }}</span> AF, subtracted in the residual above{% include "partials/_explainer_popout.html" with title="Water use recorded, no supply reported" text="The part of consumptive use that no supply on record met, on a field with no well, summed from this period's calculation runs. It is never booked as pumping." link=wb_help_url link_label="How water balances work" %}
           </p>
           {% endif %}
 
@@ -262,9 +273,19 @@
 
           {% if not mass_balance.gw_is_metered and mass_balance.band_status != "closes" and mass_balance.is_surplus and mass_balance.residual_af > over_delivery_total_af %}
           <p class="text-tertiary">
-            The rest is rain beyond the crop's water use.
+            The rest of the residual is rain beyond consumptive use.
           </p>
           {% endif %}
+
+          {% comment %} 149.1-05: Brent's question at the 143.1-01 checkpoint
+               (2026-09-17 08:31, "is this saying the residual does not include
+               losses?") answered as two labelled lines, one per kind of loss,
+               each saying where that loss is counted and that it is not here.
+               A fresh reader read the two sentences as one paragraph (round 1). {% endcomment %}
+          {% if 'surface' in enabled_modules %}
+          <p class="text-tertiary">Canal losses come off the headgate total before it is divided up, so they are not in this residual.</p>
+          {% endif %}
+          <p class="text-tertiary">Deep percolation counts under Uses, so it is not in this residual.</p>
           </div>
         </div>
       </div>
@@ -289,27 +310,24 @@
     {% endif %}
     {% else %}
     <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-      <h2 class="section-header-flush" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Supplies are water that reached the field: canal water delivered, groundwater extracted (the meter's reading, or the engine's estimate), and effective rain. Uses are the crop's consumptive use, deep percolation (the part of the canal water and of the pumped water the crop could not use), managed recharge recorded from this field, and the change in banked storage. The residual is what is left; within a quarter of consumptive use it is shown as small, beyond that as large." link=methods_help_url link_label="Methods behind the numbers" %}</h2>
+      <h2 class="section-header-flush" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Surface, groundwater extracted and managed recharge come from the period's ledger rows; rain, consumptive use, deep percolation and storage change come from its calculation runs. Residual is supplies minus uses; a Residual badge is green within a quarter of consumptive use, orange beyond it." link=methods_help_url link_label="Methods behind the numbers" %}</h2>
       {% include "parcels/partials/_period_control.html" %}
     </div>
     <div class="alert-warning">
-      ET has not been computed for this use area yet, so the closing balance
-      can't be drawn. It will close once the accounting engine runs for it
-      (Phase 58). Recorded supplies so far:
+      ET has not been computed for this use area in this period, so there is no balance yet. Recorded supplies:
       <span class="text-supply">surface {{ consumptive_balance.supplies.surface|floatformat:2 }}</span> &middot;
-      <span class="text-supply">groundwater {{ consumptive_balance.supplies.groundwater|floatformat:2 }}</span> AF
-      (what the field used; in the ledger these are the negative rows).
+      <span class="text-supply">groundwater {{ consumptive_balance.supplies.groundwater|floatformat:2 }}</span> AF.
     </div>
     {% endif %}
   </div>
 
-  <!-- SUPPORTING INFO: parcel attributes (left) + ledger (right). -->
+  {# SUPPORTING INFO: parcel attributes (left) + ledger (right). #}
   <div class="page-grid-2col">
 
-    <!-- Left column: Parcel attributes & relationships -->
+    {# Left column: Parcel attributes & relationships #}
     <div class="page-stack">
 
-      <!-- Parcel Info card -->
+      {# Parcel Info card #}
       <div class="card-raised">
         <h2 class="section-header">
           Parcel information {% include "partials/_demo_marker.html" %}
@@ -329,9 +347,9 @@
             {% if ef.name == "status" %}
               {% include "partials/_help_tooltip.html" with label="Status" text="Active use areas are included in your water data and reports. Inactive use areas are excluded." %}
             {% elif ef.name == "area_acres" %}
-              {% include "partials/_help_tooltip.html" with label="Area (acres)" text="Calculated from the parcel geometry. Used for per-acre allocation calculations." %}
+              {% include "partials/_help_tooltip.html" with label="Area (acres)" text="Calculated from the parcel boundary when no figure is entered. It turns the satellite estimate of consumptive use, and rain, into acre-feet; no allocation is worked out from it." %}
             {% elif ef.name == "irrigation_method" %}
-              {% include "partials/_help_tooltip.html" with label="Irrigation method" text="The methods and their percentages are East Turlock Subbasin GSA's published table. Recorded only, for now: every use area's calculation still uses the one agency-wide percentage on Delivery Settings." %}
+              {% include "partials/_help_tooltip.html" with label="Irrigation method" text="The methods and their percentages are East Turlock Subbasin GSA's published table. The method's share is used in this field's calculation in place of the agency default on Delivery Settings." %}
             {% endif %}
           </div>
           <div id="field-{{ ef.name }}" class="field-row">
@@ -341,7 +359,7 @@
               {% elif ef.type == "number" %}
                 {% if ef.value is not None %}{{ ef.value|floatformat:2 }}{% else %}—{% endif %}
               {% elif ef.name == "irrigation_method" %}
-                {{ ef.display|blank }}
+                {{ ef.display|blank }}{% if ef.value %} <span class="text-tertiary text-xs">used in this field's calculation in place of the agency default</span>{% else %} <span class="text-tertiary text-xs">the agency default on Delivery Settings is used</span>{% endif %}
               {% else %}
                 {{ ef.value|blank }}
               {% endif %}
@@ -365,7 +383,7 @@
         </div>
       </div>
 
-      <!-- Zone Memberships card -->
+      {# Zone Memberships card #}
       <div class="card-raised">
         <h2 class="section-header mb-md">Zone memberships</h2>
         {% if zone_memberships %}
@@ -382,7 +400,7 @@
         {% endif %}
       </div>
 
-      {% if 'wells' in enabled_modules %}<!-- Related Wells card -->
+      {% if 'wells' in enabled_modules %}{# Related Wells card #}
       <div class="card-raised">
         <h2 class="section-header mb-md">Related wells</h2>
         {% if related_wells %}
@@ -401,7 +419,7 @@
 
     </div>
 
-    <!-- Right column: ledger activity -->
+    {# Right column: ledger activity #}
     <div class="page-stack">
 
       <div class="card-raised">
@@ -410,7 +428,7 @@
           <div class="row-start">
             <a href="{% url 'accounting:ledger_list' %}?q={{ parcel.parcel_number }}"
                class="text-tertiary back-link text-xs">
-              View All
+              View all
             </a>
             {% if user_can_write %}<a href="{% url 'accounting:ledger_create' %}?parcel={{ parcel.pk }}"
                class="btn-primary btn-sm">
