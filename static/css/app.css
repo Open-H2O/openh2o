@@ -2483,14 +2483,13 @@ html { color-scheme: dark; }
     max-width: 75ch;
 }
 
-/* The calculation page as a receipt (148-03, 2026-09-28): the answer first,
-   then a two-column subtraction in the finish of the help-page table above
-   (the same .data-table rules, the name column weighted the same, the figure
-   in its own right-aligned column), then the notes. Two columns need no
-   minimum width, so the table never scrolls at phone width; it is capped at
-   the prose measure so the name and its figure sit together instead of a
-   label far left and a number far right (the fault two fresh readers named
-   on the result bands this page used to end with). */
+/* The calculation page as a receipt (148-03, 2026-09-28; one table since
+   149.1-05, 2026-10-07): the answer first, then ONE three-column table in the
+   finish of the help-page tables (the same .data-table rules, the name column
+   weighted the same, the figure in its own right-aligned column, and a third
+   column saying where each figure comes from). The notes that stood beside the
+   table are that third column; the table scrolls inside `.table-scroll` below
+   38rem instead of wrapping one word per line. */
 .receipt-facts {
     margin-bottom: var(--space-sm);
 }
@@ -2514,9 +2513,10 @@ html { color-scheme: dark; }
 }
 
 .receipt-table {
-    width: auto;
-    min-width: min(100%, 28rem);
-    max-width: 44rem;
+    /* 149.1-05: three columns, the third a sentence on where each figure
+       comes from, so the table takes the card's width like the help pages'
+       tables and below 38rem scrolls inside `.table-scroll`. */
+    min-width: 38rem;
 }
 
 .receipt-table td {
@@ -2530,6 +2530,7 @@ html { color-scheme: dark; }
 }
 
 .receipt-table .col-name {
+    width: 30%;
     font-weight: 500;
 }
 
@@ -2547,6 +2548,12 @@ html { color-scheme: dark; }
     border-top: 2px solid var(--color-accent-muted);
 }
 
+/* Its "Where it comes from" cell stays at body weight: the rule and the bold
+   mark the figure and its name, not the sentence beside them (149.1-05). */
+.receipt-table tr.receipt-total td:last-child {
+    font-weight: 400;
+}
+
 /* The short page (a month with nothing estimated): one sentence, so the card
    is as wide as what it holds and closes evenly under it. */
 .receipt-short {
@@ -2561,46 +2568,6 @@ html { color-scheme: dark; }
 .receipt-zero {
     margin: var(--space-md) 0 0;
     max-width: 70ch;
-}
-
-.receipt-notes p {
-    max-width: 70ch;
-}
-
-.receipt-notes {
-    margin-top: var(--space-md);
-}
-
-.receipt-notes-title {
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--color-text-tertiary);
-    margin: 0 0 var(--space-sm);
-}
-
-/* On a wide screen the notes sit beside the table they explain, so the card
-   is filled by the receipt itself rather than by a hollow strip to the right
-   of a narrow table (two fresh readers, 2026-09-29). Below 1,400 px they
-   stack under it, in the same reading order. */
-@media (min-width: 1400px) {
-    .receipt-body {
-        display: grid;
-        grid-template-columns: minmax(0, 40rem) minmax(20rem, 1fr);
-        gap: var(--space-xl);
-        align-items: start;
-    }
-
-    .receipt-body .receipt-table {
-        width: 100%;
-    }
-
-    .receipt-notes {
-        margin-top: 0;
-        padding-left: var(--space-xl);
-        border-left: 1px solid var(--color-border);
-    }
 }
 
 /* `.step-list` and `.step-card--inset` (the Methods page's five step panels)

@@ -15,12 +15,14 @@
   A metered or no-well month reached by a direct URL gets the short page at
   the foot of this file: one plain sentence and a link back to the field.
 
-  Answer first (the headline), then the subtraction as a two-column table in
-  the finish of the approved help-page table (`.how-sure-table`), then one
-  line per figure on where it comes from. No Amount / Left columns, no step
-  numbers, no methodology step names. Two decimals here; the run's own
-  four-decimal value sits in each figure's title attribute, printed as the
-  stored Decimal so it adds no figure site of its own.
+  Answer first (the headline), then ONE receipt table in the step order
+  the plan runs (149.1-05, 2026-10-07): Figure / Acre-feet / Where it comes
+  from, each row naming where its figure came from and the setting it used
+  with its page, in one phrase or one sentence. The four notes that stood
+  beside the table moved into its third column; the meter case is the last
+  row. No step numbers, no methodology step names. Two decimals here; the
+  run's own four-decimal value is in each figure's title attribute,
+  printed as the stored Decimal so it adds no figure site of its own.
 
   Every figure is the run's own stamped column, and both percentages are
   read back off the run (the view's docstring says how), never off the live
@@ -69,88 +71,81 @@
     </h2>
     <p class="text-secondary receipt-lead">This field's well has no meter, so the pumping is worked out from what the crop used.</p>
 
-    <div class="receipt-body">
-    <div class="receipt-main">
+    <div class="table-scroll">
     <table class="data-table receipt-table">
       <thead>
         <tr>
-          <th><span class="sr-only">Figure</span></th>
-          <th class="th-right">acre-feet</th>
+          <th>Figure</th>
+          <th class="th-right">Acre-feet</th>
+          <th>Where it comes from</th>
         </tr>
       </thead>
       <tbody>
         <tr>
           <td class="col-name">Water the crop used (satellite estimate)</td>
           <td class="col-amount td-num" title="{{ run.gross_et_af }} acre-feet">{{ run.gross_et_af|floatformat:2|intcomma }}</td>
+          <td>A satellite estimate for this field, this month.</td>
         </tr>
         {% if run.effective_precip_af is not None %}
         <tr>
           <td class="col-name">minus rain the crop could use</td>
           <td class="col-amount td-num" title="{{ run.effective_precip_af }} acre-feet">{{ run.effective_precip_af|floatformat:2|intcomma }}</td>
+          <td>Weather data for the area, then the share the crop could use by the method set on Methodology Settings.</td>
         </tr>
         {% endif %}
         {% if run.surface_water_af is not None %}
         <tr>
           <td class="col-name">minus canal water the crop could use</td>
           <td class="col-amount td-num" title="{{ run.surface_water_af }} acre-feet">{{ run.surface_water_af|floatformat:2|intcomma }}</td>
+          <td>{% if run.surface_delivered_af %}The district's delivery record, <span title="{{ run.surface_delivered_af }} acre-feet">{{ run.surface_delivered_af|floatformat:2|intcomma }}</span> acre-feet{% if delivery_split == "use" %}, divided up from the canal total in proportion to each field's crop water use after rain{% elif delivery_split == "fixed" %}, divided up from the canal total by each field's share of the canal on file{% endif %}{% if irrigation_efficiency_pct is not None %}, times the field's irrigation efficiency, {{ irrigation_efficiency_pct|floatformat:0 }}% ({% if irrigation_efficiency_source == "method" %}{% if irrigation_method_name %}the field's irrigation method on file, {{ irrigation_method_name }}{% else %}the field's irrigation method on file{% endif %}{% else %}the deployment's default on Delivery Settings{% endif %}){% endif %}.{% elif run.surface_water_af %}The whole delivery on the district's record; this deployment's calculation plan applies no irrigation efficiency.{% else %}No canal delivery on record for this field this month.{% endif %}</td>
         </tr>
         {% endif %}
         <tr class="receipt-total">
           <td class="col-name">= well water the crop used</td>
           <td class="col-amount td-num" title="{{ run.final_af }} acre-feet">{{ run.final_af|floatformat:2|intcomma }}</td>
+          <td>The lines above subtracted; the floor on Methodology Settings keeps it at zero or more.</td>
         </tr>
         {% if gw_efficiency_pct is not None %}
         <tr>
           <td class="col-name">divided by {{ gw_efficiency_pct|floatformat:0 }}%, because a pump lifts more than the crop uses</td>
           <td class="col-amount td-num"></td>
+          <td>Share of pumped groundwater the crop consumes, {{ gw_efficiency_pct|floatformat:0 }}%, on Delivery Settings; stamped on this month when it was calculated.</td>
         </tr>
         <tr class="receipt-total">
           <td class="col-name">= pumped, charged to the groundwater budget</td>
           <td class="col-amount td-num" title="{{ run.gw_extracted_af }} acre-feet">{{ run.gw_extracted_af|floatformat:2|intcomma }}</td>
+          <td>Well water the crop used, divided by that share.</td>
         </tr>
         {% endif %}
+        <tr>
+          <td class="col-name">Meter reading</td>
+          <td class="col-amount td-num">None</td>
+          <td>With a meter on this well, its reading would replace the estimate.</td>
+        </tr>
       </tbody>
     </table>
+    </div>
 
     {% if run.final_af == 0 %}
     {% comment %} A well month where rain and canal water covered the crop,
-       in the month's own numbers. What happened to the canal water beyond
-       what the crop could use is said only under the credited or named-line
-       setting, off the run's own stamp; under the default (not credited)
-       the figure stands and nothing more is said. The fixed noun for that
-       figure stays on every other page; this sentence describes it in the
-       month's own words and names nothing new. {% endcomment %}
+       in the month's own numbers: the one line under the table. What
+       happened to the canal water beyond what the crop could use is said
+       only under the credited or named-line setting, off the run's own
+       stamp, as a second line that renders under those two settings alone;
+       under the default (not credited) the figure stands and nothing more
+       is said. The fixed noun for that figure stays on every other page;
+       these sentences describe it in the month's own words and name
+       nothing new. {% endcomment %}
     <p class="text-secondary receipt-zero">
-      {% if covered_by %}{{ covered_by }} covered the crop this month, so nothing was pumped.{% else %}No crop on record for this field this month, so nothing was pumped.{% endif %}
-      {% if run.over_delivery_af > 0 %}<span title="{{ run.over_delivery_af }} acre-feet">{{ run.over_delivery_af|floatformat:2|intcomma }}</span> acre-feet of the canal water was more than the crop needed.{% if run.over_delivery_treatment == "credited" and over_delivery_left_af is not None %} {{ run.over_delivery_credited_af|floatformat:2|intcomma }} acre-feet of it is credited to this field; {{ over_delivery_left_af|floatformat:2|intcomma }} acre-feet ({{ over_delivery_share_pct|floatformat:0 }}%) stays in the basin.{% elif run.over_delivery_treatment == "named_line" %} It is shown on the field's page as its own line, not a credit and not charged.{% endif %}{% endif %}
+      {% if covered_by %}{{ covered_by }} covered the crop this month{% else %}No crop on record for this field this month{% endif %}, so nothing was pumped.
+      {% if run.over_delivery_af > 0 %}<span title="{{ run.over_delivery_af }} acre-feet">{{ run.over_delivery_af|floatformat:2|intcomma }}</span> acre-feet of the canal water was more than the crop needed.{% endif %}
     </p>
+    {% if run.over_delivery_af > 0 %}{% if run.over_delivery_treatment == "credited" and over_delivery_left_af is not None %}
+    <p class="text-secondary receipt-zero">{{ run.over_delivery_credited_af|floatformat:2|intcomma }} acre-feet of it is credited to this field; {{ over_delivery_left_af|floatformat:2|intcomma }} acre-feet ({{ over_delivery_share_pct|floatformat:0 }}%) stays in the basin.</p>
+    {% elif run.over_delivery_treatment == "named_line" %}
+    <p class="text-secondary receipt-zero">It is shown on the field's page as its own line, not a credit and not charged.</p>
+    {% endif %}{% endif %}
     {% endif %}
-
-    </div>
-
-    <div class="help-table-notes receipt-notes">
-      <h3 class="receipt-notes-title">Where each figure comes from</h3>
-      <p class="text-secondary text-sm"><strong>Water the crop used.</strong> A satellite estimate for this field, this month.</p>
-      {% if run.effective_precip_af is not None %}
-      <p class="text-secondary text-sm"><strong>Rain the crop could use.</strong> Weather data for the area, then the share of it the crop could use by the method set on Methodology Settings. Not a gauge on this field.</p>
-      {% endif %}
-      {% if run.surface_water_af is not None %}
-      <p class="text-secondary text-sm"><strong>Canal water the crop could use.</strong>
-        {% if run.surface_delivered_af %}
-        The district's delivery record, <span title="{{ run.surface_delivered_af }} acre-feet">{{ run.surface_delivered_af|floatformat:2|intcomma }}</span> acre-feet{% if delivery_split == "use" %}, divided up from the canal total in proportion to each field's crop water use after rain{% elif delivery_split == "fixed" %}, divided up from the canal total by the fixed share on file{% endif %}{% if irrigation_efficiency_pct is not None %}, times the field's irrigation efficiency, {{ irrigation_efficiency_pct|floatformat:0 }}% ({% if irrigation_efficiency_source == "method" %}{% if irrigation_method_name %}from the field's irrigation method on file, {{ irrigation_method_name }}{% else %}from the field's irrigation method on file{% endif %}{% else %}the deployment's default on Delivery Settings{% endif %}){% endif %}.
-        {% elif run.surface_water_af %}
-        The whole delivery on the district's record, because this deployment's calculation plan applies no irrigation efficiency.
-        {% else %}
-        No canal delivery on record for this field this month.
-        {% endif %}
-      </p>
-      {% endif %}
-      {% if gw_efficiency_pct is not None %}
-      <p class="text-secondary text-sm"><strong>The {{ gw_efficiency_pct|floatformat:0 }}%.</strong> A Delivery Settings value, stamped on this month when it was calculated, so a later change to the setting leaves this month as it was.</p>
-      {% endif %}
-      <p class="text-secondary text-sm">With a meter on this well, its reading would replace the estimate.</p>
-    </div>
-    </div>
 
     {% else %}
     {% comment %} The short page: a month with nothing to estimate, reached by

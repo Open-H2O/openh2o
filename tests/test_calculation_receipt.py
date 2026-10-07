@@ -180,16 +180,20 @@ class TestTheReceipt:
         html = _page(parcel, "2026-06")
         assert "A satellite estimate for this field, this month." in html
         assert (
-            "Weather data for the area, then the share of it the crop could use "
-            "by the method set on Methodology Settings. Not a gauge on this field."
+            "Weather data for the area, then the share the crop could use by the "
+            "method set on Methodology Settings."
         ) in html
         assert "The district's delivery record, <span" in html
         assert ">5.33</span> acre-feet" in html
         assert "times the field's irrigation efficiency, 75% (the deployment's default on Delivery Settings)." in html
+        # 149.1-05: the notes are the table's third column; the setting is
+        # named with its page and its live label (Delivery Settings).
         assert (
-            "A Delivery Settings value, stamped on this month when it was "
-            "calculated, so a later change to the setting leaves this month as it was."
+            "Share of pumped groundwater the crop consumes, 80%, on Delivery "
+            "Settings; stamped on this month when it was calculated."
         ) in html
+        assert "Where it comes from" in html
+        assert "With a meter on this well, its reading would replace the estimate." in html
         # A field's own delivery (no split sentence on the ledger row) says
         # nothing about a split.
         assert "divided up from the canal total" not in html
@@ -242,7 +246,7 @@ class TestTheReceipt:
         assert "divided by 70%, because a pump lifts more than the crop uses" in html
         assert "irrigation efficiency, 90%" in html
         assert "divided by 50%" not in html
-        assert "The 70%." in html
+        assert "Share of pumped groundwater the crop consumes, 70%, on Delivery Settings" in html
 
     def test_a_run_from_before_pumping_was_stamped_stops_at_the_well_water(self):
         parcel = ParcelFactory(parcel_number="RCPT-APN-006")
