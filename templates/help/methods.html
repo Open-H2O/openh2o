@@ -40,7 +40,7 @@
 <div class="page-stack page-medium help-page">
 
   <div class="card-raised">
-    <h2 class="section-header">Where a field's groundwater figure comes from</h2>
+    <h2 class="section-header">How the groundwater figure is worked out</h2>
     {% explainer_available "water_balances" as show_water_balances %}<p class="text-secondary text-base">One subtraction per supply, then one division. {% if show_water_balances %}If &ldquo;estimated use against supplies&rdquo; is new, start with <a class="prose-link" href="{{ water_balances_url }}">How Water Balances Work</a>; this page gives the arithmetic.{% endif %}</p>
 
     {% include "help/partials/_the_subtraction.html" %}
@@ -48,7 +48,7 @@
 
   <div class="card-raised">
     <h2 class="section-header">The steps, in the order they run</h2>
-    <p class="text-secondary text-base">Every field goes through the same five steps each month, in acre-feet.</p>
+    <p class="text-secondary text-base">Every field goes through the same five steps each month, and every figure is in acre-feet.</p>
 
     <div class="table-scroll mt-md">
       <table class="data-table help-steps-table">
@@ -91,7 +91,7 @@
 
     <div class="help-table-notes mt-md">
       <p class="text-secondary text-sm">Steps 1 to 4 are the calculation plan on Methodology Settings, where they can be reordered and switched on or off; step 5 runs after the plan.</p>
-      <p class="text-secondary text-sm">Step 3 has a switch in the plan, on unless changed; off, the whole delivery is subtracted, and the switch is set in the plan rather than on the screen.</p>
+      <p class="text-secondary text-sm">Step 3 has a switch in the plan, on unless changed. When it is off, the whole delivery is subtracted. The switch is not yet on the Methodology Settings screen.</p>
       <p class="text-secondary text-sm">A pump has to lift more water than the crop ends up using, because some water soaks past the roots. Step 5 allows for that, and the difference is recorded on the month's calculation as deep percolation.</p>
       <p class="text-secondary text-sm">Every month calculated carries the plan and the settings it ran under, so a changed setting moves no month already run.</p>
     </div>
@@ -137,14 +137,39 @@
   </div>
 
   <div class="card-raised">
-    <h2 class="section-header">Canal water beyond what the crop could use</h2>
-    <p class="text-secondary text-base">Canal water the crop could use that went past what was left after rain is recorded on the month's calculation under this name. What else happens to it is one setting on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}, with three values.</p>
+    <h2 class="section-header">Canal water the crops did not use</h2>
+    <p class="text-secondary text-base">Two different amounts, each recorded on the month's calculation.</p>
 
     <div class="table-scroll mt-md">
       <table class="data-table help-cases-table">
         <thead>
           <tr>
-            <th>Setting</th>
+            <th>Amount</th>
+            <th>How it is found</th>
+            <th>What happens to it</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-name">The part of the delivery the crop could not use</td>
+            <td>Delivered minus canal water the crop could use; 25% of the delivery at a 75% irrigation efficiency</td>
+            <td>Recorded as deep percolation on the field's water balance; not crop use, not a credit, and not charged to anyone</td>
+          </tr>
+          <tr>
+            <td class="col-name">Canal water beyond what the crop could use</td>
+            <td>Canal water the crop could use that went past what was left of crop water use after rain</td>
+            <td>One setting on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %} decides, with the three values below</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="concept-panel-title mt-md">The three values on Delivery Settings</h3>
+    <div class="table-scroll mt-sm">
+      <table class="data-table help-cases-table">
+        <thead>
+          <tr>
+            <th>Value</th>
             <th>What is recorded</th>
             <th>Who is credited</th>
           </tr>
@@ -169,7 +194,7 @@
       </table>
     </div>
 
-    <p class="text-secondary text-sm mt-md">The field's water balance reads the same under all three, and each month keeps the value it was calculated under.</p>
+    <p class="text-secondary text-sm mt-md">The field's water balance reads the same under all three values, and each month keeps the value it was calculated under.</p>
   </div>
 
   <div class="card-raised">
@@ -202,7 +227,7 @@
           </tr>
           <tr>
             <td class="col-step"><span class="step-num">3</span>Record it as an estimate</td>
-            <td>A provisional record, labelled an estimate on the canal's page; a volume entered for the month replaces it.</td>
+            <td>A provisional record, labeled an estimate on the canal's page; a volume entered for the month replaces it.</td>
           </tr>
         </tbody>
       </table>
