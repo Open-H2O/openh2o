@@ -2371,12 +2371,11 @@ html { color-scheme: dark; }
    link or nothing, kept to the link's width so an empty cell leaves no
    strip (two verdict readers named the wrapped terms and the empty column). */
 .help-cases-table--glossary .col-name {
-    width: 21%;
+    width: 19%;
 }
 
 .help-cases-table--glossary .col-where {
-    width: 1%;
-    white-space: nowrap;
+    width: 18%;
 }
 
 .help-cases-table--glossary .col-sure .badge {
@@ -2389,11 +2388,13 @@ html { color-scheme: dark; }
    and the one-digit number gutter against "10" and "11"). Scoped to the
    modifier so Methods' steps table does not move. */
 .help-steps-table--setup .col-step {
-    width: 24%;
+    width: 22%;
+    padding-left: calc(var(--space-md) + 2.2em);
+    text-indent: -2.2em;
 }
 
 .help-steps-table--setup .col-where {
-    width: 22%;
+    width: 26%;
 }
 
 .help-steps-table--setup .step-num {

@@ -531,6 +531,9 @@ def _without_unavailable_help_pointers(definition):
 _GLOSSARY_OUTSIDE_NAMES = frozenset({
     "CalWATRS", "CDEC", "CIMIS", "GEARS", "GSA", "GSP", "OpenET", "SGMA", "USGS",
 })
+#: Neither the state's nor this platform's: a unit of measure (the round-2 reader
+#: saw CFS tagged as this platform's own and called it wrong).
+_GLOSSARY_UNITS = frozenset({"CFS (Cubic Feet per Second)"})
 
 
 def _split_help_pointer(definition):
@@ -622,7 +625,7 @@ def glossary(request):
         "SGMA": "Sustainable Groundwater Management Act (2014), the California law requiring groundwater management.",
         "USGS": "United States Geological Survey, a federal source of stream gauge and groundwater level data.",
         "Water Account": "This platform's record of one account: its name, account number, contact and status, and the use areas it holds. Its allocation and remaining water are worked out across those use areas.",
-        "Water Right": "One record per right, holding its state ID, type, holder, priority date, face value in acre-feet, CalWATRS PIN and status, plus its places of use, the use areas it serves. Issued by the State Water Board; the platform only keeps the record.",
+        "Water Right": "One record per right, holding its state ID, type, holder, priority date, face value in acre-feet, CalWATRS PIN and status, plus its places of use, the use areas it serves. The platform only keeps the record; it never issues or changes a right.",
         "Zone / Management Zone": "Zone, as the screens call it; this platform's record of one area that carries its own Allocation Ceiling, holding its name, its outline on the map, its type and the use areas assigned to it on its page under Administration > Zones. A surface district is its own zone, with its own year-end unused water choice. See Help > Allocations & Ceilings.",
         "Well": "One record per well, holding its state well number, WCR number and local ID, its meters, the parcels it irrigates, and its depth, casing and screen intervals.",
     }
@@ -634,7 +637,11 @@ def glossary(request):
         entries.append({
             "term": term,
             "letter": term[0].upper(),
-            "outside_name": term in _GLOSSARY_OUTSIDE_NAMES,
+            "kind": (
+                "outside" if term in _GLOSSARY_OUTSIDE_NAMES
+                else "unit" if term in _GLOSSARY_UNITS
+                else "platform"
+            ),
             "text": text,
             "pointer_page": pointer_page,
             "pointer_url": pointer_url,

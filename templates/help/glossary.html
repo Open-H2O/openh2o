@@ -47,7 +47,7 @@
             <th>Term</th>
             <th>Named by</th>
             <th>What this platform means by it</th>
-            <th>Read more in Help</th>
+            <th>Explained in full</th>
           </tr>
         </thead>
         <tbody>
@@ -56,7 +56,7 @@
           </tr>{% endifchanged %}
           <tr>
             <td class="col-name">{{ entry.term }}</td>
-            <td class="col-sure">{% if entry.outside_name %}<span class="badge badge-pill badge-grey">State or program</span>{% else %}<span class="badge badge-pill badge-blue">This platform</span>{% endif %}</td>
+            <td class="col-sure">{% if entry.kind == "outside" %}<span class="badge badge-pill badge-grey">State or program</span>{% elif entry.kind == "unit" %}<span class="badge badge-pill badge-grey">Unit of measure</span>{% else %}<span class="badge badge-pill badge-blue">This platform</span>{% endif %}</td>
             <td>{{ entry.text }}</td>
             <td class="col-where">{% if entry.pointer_url %}<a class="prose-link" href="{% url entry.pointer_url %}">{{ entry.pointer_page }}</a>{% endif %}</td>
           </tr>
