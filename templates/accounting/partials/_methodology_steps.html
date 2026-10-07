@@ -7,13 +7,15 @@ list re-renders in place. Loaded by methodology_settings.html via {% include %}.
   {% for step in steps %}
   <div class="methodology-step{% if not step.enabled %} methodology-step--off{% endif %}">
 
-    <!-- Header row: number badge, label, type, status, reorder + enable controls -->
+    {% comment %} Header row: number badge, the step's name, status, reorder and
+         enable controls. 149.1-05 (R-049): the name is the live label, printed
+         once; the bracketed step-type duplicate is gone, and the box that
+         edits the name is labelled "Step name". {% endcomment %}
     <div class="row-between" style="align-items: flex-start;">
       <div class="flex" style="align-items: center; gap: var(--space-sm);">
         <span class="methodology-step-num">{{ step.order }}</span>
         <span>
           <strong style="color: var(--color-text-primary);">{{ step.label }}</strong>
-          <span class="text-tertiary text-sm">({{ step.get_step_type_display }})</span>
           {% if not step.enabled %}<span class="badge badge-pill badge-grey" style="margin-left: var(--space-xs);">Disabled</span>{% endif %}
         </span>
       </div>
@@ -51,7 +53,7 @@ list re-renders in place. Loaded by methodology_settings.html via {% include %}.
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: var(--space-md); align-items: end;">
 
         <div class="field-group mb-0">
-          <label class="form-label">Label</label>
+          <label class="form-label">Step name</label>
           <input type="text" name="label" value="{{ step.label }}" class="form-input" style="width: 100%;">
         </div>
 

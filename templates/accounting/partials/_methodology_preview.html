@@ -16,28 +16,20 @@ nothing. Reuses the gross→net waterfall shape from calculation_run_detail.html
     <p class="text-secondary text-sm m-0">{{ error }}</p>
   {% else %}
 
-    <!-- Header: parcel + period + the final number -->
+    {% comment %} Header: parcel, period and the final number. 149.1-05: the
+         saved-plan line and the honesty box are one line under the heading,
+         in rule-12 words. {% endcomment %}
     <div class="row-between mb-md" style="align-items: flex-start;">
       <div>
         <h2 class="section-header" style="margin-bottom: var(--space-xs);">
           Preview &middot; {{ parcel.parcel_number }} &middot; {{ period }}
         </h2>
-        <div class="text-tertiary text-sm">
-          Uses the currently-saved methodology. This writes no data.
-        </div>
+        <div class="text-tertiary text-sm">Estimated from crop water use by the saved plan; nothing is written.</div>
       </div>
       <div class="td-num-bold" style="font-size: 1.5rem; color: var(--color-text-primary); text-align: right;">
         {{ final_af|floatformat:4 }} AF
         <div class="field-label" style="text-align: right;">Groundwater consumed</div>
       </div>
-    </div>
-
-    <!-- Honesty label -->
-    <div class="card-raised card-inset honesty-note" style="margin-bottom: var(--space-md);">
-      <p class="text-sm" style="margin: 0; color: var(--color-text-secondary);">
-        <strong>Estimated, not measured.</strong>
-        Computed from satellite evapotranspiration via the saved chain below.
-      </p>
     </div>
 
     {% if steps %}
@@ -65,7 +57,7 @@ nothing. Reuses the gross→net waterfall shape from calculation_run_detail.html
     </table>
     {% else %}
     <p class="text-tertiary text-sm m-0">
-      No enabled steps produced a breakdown for this parcel-month — final {{ final_af|floatformat:4 }} AF.
+      No enabled step gave a breakdown for this parcel and month; groundwater consumed {{ final_af|floatformat:4 }} AF.
     </p>
     {% endif %}
 

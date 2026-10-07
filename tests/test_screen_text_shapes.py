@@ -134,8 +134,6 @@ BASELINE: dict = {
     "em dash": {
         "templates/about.html": 10,
         "templates/about_demonstration_data.html": 3,
-        "templates/accounting/methodology_settings.html": 2,
-        "templates/accounting/partials/_methodology_preview.html": 1,
         "templates/accounting/partials/_needs_attention.html": 1,
         "templates/allauth/layouts/base.html": 1,
         "templates/base.html": 1,
@@ -175,7 +173,6 @@ BASELINE: dict = {
         "templates/setup/partials/_progress.html": 5,
         "templates/setup/partials/_station_review.html": 1,
         "templates/setup/partials/_step_result.html": 1,
-        "templates/surface/partials/_detail_pane.html": 3,
     },
     "narrative verb": {},
     "contrast": {},

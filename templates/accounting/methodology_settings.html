@@ -1,7 +1,8 @@
 {% extends "base.html" %}
+{% load nav %}
 
-{% block title %}Methodology - Open Water Accounting Platform{% endblock %}
-{% block page_title %}Methodology{% endblock %}
+{% block title %}Methodology Settings - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Methodology Settings{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -10,61 +11,43 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Methodology Settings</span>
   </nav>
-  <p class="page-description">Tune how the satellite estimate of crop water use becomes the groundwater figure. Changes here drive every future calculation.</p>
+  {% comment %} 149.1-05: one line, in Configs & settings explained's words for
+       the calculation plan (its "What it decides" cell). What a change does to
+       a month already calculated is said once, under the steps card's heading,
+       beside the Save step buttons it governs. {% endcomment %}
+  <p class="page-description">The calculation plan: the order of the steps, each step on or off, the rain method and its fraction, and the floor.</p>
 </div>
 {% endblock %}
 
 {% block content %}
 <div class="page-stack">
 
-  <!-- Honesty banner -->
-  <div class="card-raised card-inset honesty-note">
-    <p class="text-sm" style="margin: 0; color: var(--color-text-secondary);">
-      <strong>Changes affect every future calculation.</strong>
-      The result is a derived extraction estimate, not measured pumping.{% if user_can_write %} Edit a step, save, then preview a sample parcel to see the effect before committing to a billing run.{% endif %}
-    </p>
-  </div>
-
-  <!-- What is a methodology? help block -->
-  <div class="card-raised">
-    <h2 class="section-header mb-md">What is a methodology?</h2>
-    <p class="text-secondary text-base">A <strong>methodology</strong> (or calculation plan) is the ordered, configurable chain of <strong>steps</strong> the platform applies to turn the satellite estimate into the groundwater figure for each use area: gross ET, minus effective precipitation, minus surface water deliveries, minus edge cases. Each step below is one operation in that chain{% if user_can_write %}: reorder, enable or disable, and set its parameters; then preview a sample parcel{% endif %}.</p>
-    <a href="{% url 'glossary' %}" class="text-sm text-accent">Glossary &rarr;</a>
-    <span class="text-tertiary text-sm" style="margin: 0 var(--space-xs);">|</span>
-    <a href="{% url 'getting_started' %}" class="text-sm text-accent">Getting Started &rarr;</a>
-    <span class="text-tertiary text-sm" style="margin: 0 var(--space-xs);">|</span>
-    <a href="https://github.com/Open-H2O/satellite-et-research" target="_blank" rel="noopener noreferrer" class="text-sm text-accent">Why satellite ET? &rarr;</a>
-  </div>
-
+  {% comment %} 149.1-05: the 34-word honesty banner is now the one line under
+       the steps card's heading, and the "What is a methodology?" card (62
+       words, rule 11) is gone; Configs & settings explained says it. Its links
+       are the two help pages at the end of that line; "Why satellite ET?"
+       pointed off the platform and is dropped. {% endcomment %}
   {% if plan is None %}
-  <!-- Empty state: no active plan -->
   <div class="card-raised">
     <h2 class="section-header mb-md">No active methodology</h2>
-    <p class="text-secondary text-sm m-0">
-      There is no active calculation plan to tune yet. Whoever operates your deployment
-      can load the default methodology with the <code>seed_calculation_plan</code> setup
-      command — then reload this page.
-    </p>
+    <p class="text-secondary text-sm m-0">No calculation plan is active. Whoever operates your deployment loads the default with the <code>seed_calculation_plan</code> command; then reload this page.</p>
   </div>
   {% else %}
 
-  <!-- Steps editor -->
   <div class="card-raised">
-    <div class="row-between mb-md">
+    <div class="row-between mb-sm">
       <h2 class="section-header m-0">{{ plan.name }}</h2>
       <span class="text-tertiary text-sm">{{ steps|length }} step{{ steps|length|pluralize }}{% if user_can_write %}: reorder, enable or disable, and set each step's parameters{% endif %}</span>
     </div>
+    {% explainer_available "settings_explained" as show_settings_help %}<p class="text-secondary text-sm mb-md">A change applies to months calculated after it; a month already calculated keeps its figures until it is calculated again.{% if show_settings_help %} <a href="{% url 'settings_explained' %}" class="text-sm text-accent">Configs &amp; settings explained &rarr;</a> &middot;{% endif %} <a href="{% url 'glossary' %}" class="text-sm text-accent">Glossary &rarr;</a></p>
 
     {% include "accounting/partials/_methodology_steps.html" %}
   </div>
 
   {% if user_can_write %}
-  <!-- Live preview picker -->
   <div class="card-raised">
     <h2 class="section-header mb-md">Preview on a sample parcel</h2>
-    <p class="text-tertiary text-sm" style="margin-top: calc(-1 * var(--space-sm)); margin-bottom: var(--space-md);">
-      Edit a step above and <strong>Save</strong> it, then preview here to see the effect before any billing run. The preview writes nothing.
-    </p>
+    <p class="text-tertiary text-sm" style="margin-top: calc(-1 * var(--space-sm)); margin-bottom: var(--space-md);">Runs the saved plan on one parcel for one month and writes nothing; a step's change shows here once saved.</p>
     <form hx-post="{% url 'accounting:methodology_preview' %}"
           hx-target="#preview-pane" hx-swap="innerHTML"
           style="display: flex; flex-wrap: wrap; gap: var(--space-md); align-items: flex-end;">
@@ -72,7 +55,7 @@
         <label class="form-label" for="preview-parcel">Parcel</label>
         <select name="parcel_id" id="preview-parcel" class="form-select">
           {% for p in parcels %}
-          <option value="{{ p.id }}">{{ p.parcel_number }}{% if p.owner_name %} — {{ p.owner_name }}{% endif %}</option>
+          <option value="{{ p.id }}">{{ p.parcel_number }}{% if p.owner_name %} &middot; {{ p.owner_name }}{% endif %}</option>
           {% endfor %}
         </select>
       </div>
@@ -85,7 +68,6 @@
     </form>
   </div>
 
-  <!-- Live preview output swaps in here -->
   <div id="preview-pane"></div>
   {% endif %}
 
