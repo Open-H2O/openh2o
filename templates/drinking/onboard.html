@@ -12,7 +12,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Onboard</span>
   </nav>
-  <p class="page-description">Enter a PWSID, review everything EPA's federal record holds for that system, then decide whether to write it.</p>
+  <p class="page-description">Brings a public water system and its facilities in from EPA's federal record. Enter its PWSID, review the record, then confirm.</p>
 </div>
 {% endblock %}
 
@@ -42,10 +42,7 @@
   <div class="card-raised">
     <h2 class="card-header-ruled">Look up a public water system</h2>
     <p class="text-base text-secondary mt-md">
-      A <strong>PWSID</strong>, or Public Water System Identification number, is
-      the identifier the regulator carries for a public water system &mdash;
-      <span class="text-mono">CA1010001</span>, for example. Enter it and this
-      looks the system up in EPA's Envirofacts copy of the Safe Drinking Water
+      The lookup reads EPA's Envirofacts copy of the Safe Drinking Water
       Information System (SDWIS). Nothing is written until you review the
       results and confirm.
     </p>
@@ -71,7 +68,7 @@
           pattern would reject valid tribal and territory identifiers. The API's
           own empty answer is the authority on whether an id exists.
         {% endcomment %}
-        <div class="form-help">The identifier as the regulator publishes it. Case does not matter.</div>
+        <div class="form-help">Public Water System Identification number, as the regulator publishes it. Case does not matter.</div>
       </div>
 
       <div class="row-start pt-sm">
@@ -81,35 +78,68 @@
     </form>
   </div>
 
+  {% comment %}
+    149.1-06 (2026-10-07): the four "It does / It does not" paragraphs became
+    one cases table, What / Brought in from EPA / Left for you, from the reader's
+    question "what does onboarding bring in, and what is left for me to add?".
+    Each row says what drinking/envirofacts_mapping.py::commit_system writes:
+    _SYSTEM_REFRESHABLE_FIELDS (EPA's two totals among them, beside the eight
+    breakdown fields it never fills), and a facility only where EPA carries a
+    state facility ID (UnmappableFacility). Sampling points are created only on
+    the builder (views.py::onboard_points_add).
+
+    89-02: the third drinking-water page to name wells on a deployment that has
+    none, after the two 88-03 fixed, and the third with no row in the
+    droppability harness's page table, which is why the gate stayed green
+    through all three. A "does not do X" row about a join that cannot exist
+    here is not reassurance, it is a claim that the platform meters wells, so
+    the well row keeps its guard.
+  {% endcomment %}
   <div class="card-raised">
     <h2 class="card-header-ruled">What onboarding does and does not do</h2>
-    <p class="text-base text-secondary mt-md">
-      It creates the water system and its facilities from EPA's federal record,
-      and re-running it against a system you already carry refreshes those same
-      fields from EPA.
-    </p>
-    <p class="text-base text-secondary mt-sm">
-      It does <strong>not</strong> determine compliance. EPA's SDWIS extract is a
-      federal copy, not the primacy agency's authoritative file, and nothing here
-      compares a system against a requirement.
-    </p>
-    {% comment %}89-02: the third drinking-water page to name wells on a
-    deployment that has none, after the two 88-03 fixed — and the third with no
-    row in the droppability harness's page table, which is why the gate stayed
-    green through all three. A "does not do X" disclaimer about a join that
-    cannot exist here is not reassurance, it is a claim that the platform meters
-    wells.{% endcomment %}{% if 'wells' in enabled_modules %}<p class="text-base text-secondary mt-sm">
-      It does <strong>not</strong> link facilities to the wells this platform
-      meters. That join is a deliberate operator act, made in the Django admin,
-      and an onboarding refresh never touches a link you have already made.
-    </p>{% endif %}
-    <p class="text-base text-secondary mt-sm">
-      It does <strong>not</strong> fill in the population and service-connection
-      breakdowns. EPA sends one total for each; splitting a total into
-      residential, non-transient and transient shares would be inventing
-      numbers, so those fields stay empty until a source that breaks
-      them down is imported.
-    </p>
+    <div class="table-scroll mt-md">
+      <table class="data-table help-cases-table">
+        <thead>
+          <tr>
+            <th>What</th>
+            <th>Brought in from EPA</th>
+            <th>Left for you</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-name">Water system</td>
+            <td>Name, status, system type, owner type, primary source and mailing address; a second lookup refreshes them</td>
+            <td>State classification and regulating agency; a lab import fills the agency</td>
+          </tr>
+          <tr>
+            <td class="col-name">Facilities</td>
+            <td>Each facility EPA carries with a state-assigned facility ID</td>
+            <td>Nothing; a facility without that ID is left out, and the review names it</td>
+          </tr>
+          <tr>
+            <td class="col-name">Sampling points</td>
+            <td>None; EPA's record carries none</td>
+            <td>Each point your lab file names, added after you confirm</td>
+          </tr>
+          <tr>
+            <td class="col-name">Population and service connections</td>
+            <td>EPA's total for each</td>
+            <td>The breakdowns by category. EPA sends one total for each, so those fields stay empty until a source that breaks them down is imported.</td>
+          </tr>
+          <tr>
+            <td class="col-name">Compliance</td>
+            <td>Nothing; EPA's SDWIS extract is a federal copy, not the primacy agency's authoritative file</td>
+            <td>Not determined here; nothing compares a system against a requirement</td>
+          </tr>
+          {% if 'wells' in enabled_modules %}<tr>
+            <td class="col-name">Links to wells</td>
+            <td>None</td>
+            <td>Made in the Django admin; a second lookup never changes a link already made</td>
+          </tr>{% endif %}
+        </tbody>
+      </table>
+    </div>
   </div>
 
   {% comment %}Review and result are swapped in here by HTMX.{% endcomment %}

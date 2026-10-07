@@ -51,7 +51,7 @@
 <div class="card-raised">
   <div class="onboard-status onboard-status--saved">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
-    <span>Saved &mdash; written to this instance.</span>
+    <span>Saved to this deployment</span>
   </div>
   <h2 class="card-header-ruled">
     {% if result.created %}System created{% else %}System refreshed{% endif %}
@@ -75,10 +75,8 @@
     {% if result.created %}is now carried here{% else %}was already carried here and its EPA-derived fields were refreshed{% endif %}.
     Of the {{ epa_facility_count }} facilit{{ epa_facility_count|pluralize:"y,ies" }} EPA sent,
     {{ result.facilities_created }} {{ result.facilities_created|pluralize:"was,were" }} created and
-    {{ result.facilities_updated }} {{ result.facilities_updated|pluralize:"was,were" }} refreshed.
-    {% if result.skipped %}
-      {{ result.skipped|length }} could not be written &mdash; listed below.
-    {% endif %}
+    {{ result.facilities_updated }} {{ result.facilities_updated|pluralize:"was,were" }} refreshed{% if result.skipped %};
+      {{ result.skipped|length }} could not be written, listed below{% endif %}.
   </p>
 
   {% if result.skipped %}
@@ -113,13 +111,16 @@
     The next step, stated plainly, because a system with facilities and no
     sampling points looks finished and is not: the lab import matches rows on PS
     Code, and a PS Code lives on a sampling point.
+
+    149.1-06 (2026-10-07): one line, and the one action is the Add sampling
+    points button under it. The sentence "This system has its facilities but no
+    sampling points" (S-0753) left: this partial also renders after a refresh,
+    when the system may already carry points (commit_system never deletes one),
+    and the line cannot see the count.
   {% endcomment %}
   <div class="card-inset mt-lg">
     <p class="text-base text-secondary m-0">
-      <strong>Next: sampling points.</strong> This system has its facilities but
-      no sampling points. Lab results cannot be imported until it has them: every
-      result row is matched to a point by its PS Code. Add, under each facility,
-      the points your lab file names.
+      <strong>Next, on Sampling points for {{ result.system.name|default:pwsid }}:</strong> Add, under each facility, the points your lab file names.
     </p>
   </div>
 

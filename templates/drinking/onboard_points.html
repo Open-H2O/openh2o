@@ -14,7 +14,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Sampling Points</span>
   </nav>
-  <p class="page-description">List the sampling points {{ system.name|default:system.pwsid }} reports against, so lab results can be matched to them on import.</p>
+  <p class="page-description">A sampling point record is one PS Code: PWSID, facility ID and point number. Add the points your lab file names.</p>
 </div>
 {% endblock %}
 
@@ -63,23 +63,14 @@
     add-a-point form's five-column grid and the grouped table below need that
     width; only the prose was over-wide, measured at 127ch on staging before
     this pass.
+
+    149.1-06 (2026-10-07): the "What this page is for" card's three paragraphs
+    left. What a sampling point record is, and where its PS Code comes from, is
+    the page description; the code's last segment is the Point number box's
+    help and its first two the "Codes here begin" line under the facility box
+    (_onboard_points_form.html); the unmatched-row rule is the Sampling points
+    card's head (_onboard_points_listed.html).
   {% endcomment %}
-  <div class="card-raised">
-    <h2 class="card-header-ruled">What this page is for</h2>
-    <p class="text-base text-secondary mt-md" style="max-width: 75ch;">
-      A lab file names a PS Code on every line. The importer matches that code
-      against the sampling points listed here.
-    </p>
-    <p class="text-base text-secondary mt-sm" style="max-width: 75ch;">
-      A row naming a code you have not listed is reported and skipped, never
-      guessed at.
-    </p>
-    <p class="text-base text-secondary mt-sm" style="max-width: 75ch;">
-      A PS Code is three parts &mdash; PWSID, facility ID, and a number or short
-      label. You supply only the last part; the first two come from the system
-      and the facility.
-    </p>
-  </div>
 
   {% comment %}
     143-08 Task 4 (R-073, design A, ruled by Brent 2026-09-15 12:09 PDT). One
@@ -105,8 +96,7 @@
   <div class="card-raised">
     <h2 class="card-header-ruled">What the abbreviations mean</h2>
     <p class="text-base text-secondary mt-md" style="max-width: 75ch;">
-      These come from EPA's own records and are shown exactly as EPA writes them.
-      Only the ones appearing on this page are listed.
+      EPA's codes in the names on this page, as EPA writes them.
     </p>
     <table class="data-table mt-md">
       <thead>
@@ -126,21 +116,19 @@
 
   <div class="card-raised">
     <h2 class="card-header-ruled">Before importing</h2>
+    {% if point_count %}
     <p class="text-base text-secondary mt-md" style="max-width: 75ch;">
-      {% if point_count %}
-        {{ point_count }} sampling point{{ point_count|pluralize }} listed. A lab file naming
-        {{ point_count|pluralize:"it,any of them" }} will import. The list does not have to be
-        complete first &mdash; unmatched rows are reported and skipped, and you
-        can add the points afterwards.
-      {% else %}
-        No sampling points are listed yet, so every row of a lab file would come
-        back unmatched. Add at least the points your file names before importing.
-      {% endif %}
+      The list need not be complete first: import now, then import the file again after adding a point it names.
     </p>
+    {% else %}
+    <p class="text-base text-secondary mt-md" style="max-width: 75ch;">
+      No sampling points listed yet, so every row of a lab file would be skipped; add the points it names first.
+    </p>
+    {% endif %}
     <div class="row-start" style="margin-top: var(--space-lg); gap: var(--space-sm);">
       <a href="{% url 'drinking:import' %}" class="btn-primary">Import lab results</a>
       {% comment %}
-        The label names the DESTINATION, which is the Sampling Points page — so
+        The label names the DESTINATION, which is the Sampling Points page, so
         it says "points" even though this builder's teaching prose deliberately
         says "places" (80-03's plain-English rewrite, kept). A control that
         navigates to a named page carries that page's name; DESIGN.md rule 4.

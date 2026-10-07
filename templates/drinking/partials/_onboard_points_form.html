@@ -45,7 +45,7 @@
       <select id="point-facility" name="facility" class="form-input" required>
         {% for facility in facilities %}
         <option value="{{ facility.pk }}" data-prefix="{{ system.pwsid }}_{{ facility.facility_id }}_">
-          {% if facility.facility_type %}{{ facility.get_facility_type_display }}{% else %}Facility{% endif %}{% if facility.name and not facility.name_adds_nothing %} &mdash; {{ facility.name }}{% endif %} ({{ facility.facility_id }})
+          {% if facility.facility_type %}{{ facility.get_facility_type_display }}{% else %}Facility{% endif %}{% if facility.name and not facility.name_adds_nothing %}, {{ facility.name }}{% endif %} ({{ facility.facility_id }})
         </option>
         {% endfor %}
       </select>

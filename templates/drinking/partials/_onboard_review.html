@@ -23,22 +23,28 @@
     {% else %}Nothing to look up{% endif %}
   </h2>
 
+  {% if error_kind == "not_found" %}
   <p class="text-base text-secondary mt-md">
-    {% if error_kind == "not_found" %}
-      EPA's Envirofacts record has no water system with the identifier
-      <span class="text-mono">{{ pwsid }}</span>. Check the ID against the
-      regulator's listing and try again. EPA answered; the ID was not found.
-    {% elif error_kind == "unavailable" %}
-      EPA's Envirofacts service was too slow or could not be reached. Your PWSID
-      may be correct; this service is routinely slow, and a lookup taking
-      15 to 30 seconds is normal for it. Try again in a few minutes.
-    {% elif error_kind == "service_error" %}
-      EPA's service answered, but not with a record we can read. Nothing about
-      the identifier you entered is necessarily wrong. What EPA reported:
-    {% else %}
-      Enter a PWSID and look it up.
-    {% endif %}
+    EPA's Envirofacts record has no water system with the identifier
+    <span class="text-mono">{{ pwsid }}</span>. Check the ID against the
+    regulator's listing and try again. EPA answered; the ID was not found.
   </p>
+  {% elif error_kind == "unavailable" %}
+  <p class="text-base text-secondary mt-md">
+    EPA's Envirofacts service was too slow or could not be reached. Your PWSID
+    may be correct; this service is routinely slow, and a lookup taking
+    15 to 30 seconds is normal for it. Try again in a few minutes.
+  </p>
+  {% elif error_kind == "service_error" %}
+  <p class="text-base text-secondary mt-md">
+    EPA's service answered, but not with a record we can read. Nothing about
+    the identifier you entered is necessarily wrong. What EPA reported:
+  </p>
+  {% else %}
+  <p class="text-base text-secondary mt-md">
+    Enter a PWSID and look it up.
+  </p>
+  {% endif %}
 
   {% if error_kind == "service_error" or error_kind == "unavailable" %}
   <div class="card-inset mt-md">
@@ -54,7 +60,7 @@
 {% comment %}
   Rewritten 2026-07-20 after review. Everything below was present before and was
   still missed, because the page gave the same visual weight to the heading, the
-  address, the population figures, the skip notice and a 35-row table — so
+  address, the population figures, the skip notice and a 35-row table, so
   nothing stood out. Two things now lead the page, at a size the table cannot
   compete with: that NOTHING HAS BEEN SAVED, and what will be left out.
 
@@ -62,35 +68,31 @@
   fetch a pile of real records, so the screen legitimately feels like something
   happened. Saying "review before committing" was not enough to counter that.
 {% endcomment %}
+{% comment %}
+  149.1-06 (2026-10-07): the lead and the "would create" paragraph became the
+  table below, Record / Written when you press the button / Not written, from
+  the reader's question "what will be written when I commit, and what will
+  not?". Each row is what drinking/envirofacts_mapping.py::commit_system does:
+  update_or_create on the system (so a second lookup updates, never copies),
+  a facility only where EPA carries a state facility ID, EPA's two totals
+  written (_SYSTEM_REFRESHABLE_FIELDS) and the eight breakdown fields never,
+  no sampling point, and SystemFacility.well never touched. The well row keeps
+  the module guard the onboarding page's own well row carries (89-02).
+{% endcomment %}
 <div class="card-raised">
   <div class="onboard-status onboard-status--preview">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-    <span>Preview &mdash; read from EPA. Nothing has been saved yet.</span>
+    <span>Preview, read from EPA</span>
   </div>
   <h2 class="card-header-ruled">Nothing has been saved yet</h2>
 
   <p class="text-base" style="margin-top: var(--space-md); font-size: 1.05rem;">
-    This is what EPA holds for <span class="text-mono">{{ pwsid }}</span>. It has
-    been read and shown to you &mdash; <strong>nothing has been written to this
-    system</strong>. Close this page and nothing will have changed.
-  </p>
-
-  <p class="text-base text-secondary mt-md">
-    {% if already_onboarded %}
-      You already carry this system, with {{ existing_facility_count }}
-      facilit{{ existing_facility_count|pluralize:"y,ies" }}. The button at the
-      bottom <strong>updates</strong> it from EPA's current record rather than
-      creating a second copy. Any well links you have made are left alone.
-    {% else %}
-      The button at the bottom of this page is what saves it. It would create the
-      water system and {{ facility_count }} of its
-      facilit{{ epa_facility_count|pluralize:"y,ies" }}.
-    {% endif %}
+    EPA's record for <span class="text-mono">{{ pwsid }}</span>. Close this page and nothing changes.
   </p>
 
   <div class="row-start" style="gap: var(--space-sm); margin-top: var(--space-md); flex-wrap: wrap;">
     {% if already_onboarded %}
-      <span class="badge badge-blue">Already carried &mdash; would refresh</span>
+      <span class="badge badge-blue">Already carried, would refresh</span>
     {% else %}
       <span class="badge badge-green">New system</span>
     {% endif %}
@@ -98,6 +100,45 @@
     <span class="badge badge-green">{{ facility_count }} would be saved</span>
     {% if skipped %}<span class="badge badge-orange">{{ skipped|length }} would be left out</span>{% endif %}
     {% if warnings %}<span class="badge badge-orange">{{ warnings|length }} note{{ warnings|length|pluralize }}</span>{% endif %}
+  </div>
+
+  <div class="table-scroll mt-md">
+    <table class="data-table help-cases-table">
+      <thead>
+        <tr>
+          <th>Record</th>
+          <th>Written when you press {% if already_onboarded %}Refresh{% else %}Create{% endif %}</th>
+          <th>Not written</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="col-name">Water system</td>
+          <td>{% if already_onboarded %}Updated from EPA's current record, never copied; you carry it with {{ existing_facility_count }} facilit{{ existing_facility_count|pluralize:"y,ies" }}{% else %}Created, with its name, status, types, primary source and mailing address{% endif %}</td>
+          <td>State classification and regulating agency; a lab import fills the agency</td>
+        </tr>
+        <tr>
+          <td class="col-name">Facilities</td>
+          <td>{{ facility_count }} of EPA's {{ epa_facility_count }}</td>
+          <td>{% if skipped %}{{ skipped|length }} with no state-assigned facility ID, listed below{% else %}None{% endif %}</td>
+        </tr>
+        <tr>
+          <td class="col-name">Population and service connections</td>
+          <td>EPA's total for each</td>
+          <td>The breakdowns by category. EPA sends one total for each, so those fields stay empty until a source that breaks them down is imported.</td>
+        </tr>
+        <tr>
+          <td class="col-name">Sampling points</td>
+          <td>None</td>
+          <td>The points your lab file names; you add them after this step</td>
+        </tr>
+        {% if 'wells' in enabled_modules %}<tr>
+          <td class="col-name">Links to wells</td>
+          <td>None</td>
+          <td>Made in the Django admin; a link already made is left alone</td>
+        </tr>{% endif %}
+      </tbody>
+    </table>
   </div>
 </div>
 
@@ -111,10 +152,8 @@
 <div class="card-raised">
   <h2 class="card-header-ruled">{{ skipped|length }} of EPA's {{ epa_facility_count }} facilities will be left out</h2>
   <p class="text-base" style="margin-top: var(--space-md); font-size: 1.05rem;">
-    EPA sent {{ epa_facility_count }} facilities. <strong>{{ facility_count }} will be
-    saved and {{ skipped|length }} will not.</strong> This is not an error &mdash; the
-    facilities below are missing the state-assigned ID that sample codes are
-    built from, so no lab result could ever be filed against them.
+    <strong>{{ facility_count }} will be saved and {{ skipped|length }} will not.</strong>
+    Each row below names the facility and why.
   </p>
   <table class="data-table mt-md">
     <thead>
@@ -176,8 +215,7 @@
     {{ mailing.mailing_city }}{% if mailing.mailing_state %}, {{ mailing.mailing_state }}{% endif %} {{ mailing.mailing_zip }}
   </p>
   <p class="text-tertiary text-sm mt-xs">
-    This is the address EPA carries for the system's administrative contact. It
-    is not a statement about which agency regulates the system.
+    EPA's address for the system's administrative contact, not the agency that regulates it.
   </p>
 
   <h3 class="section-header mt-lg">What EPA reports for size</h3>
@@ -191,16 +229,10 @@
       <div class="field-value-mono">{{ epa_service_connections|default_if_none:"—" }}</div>
     </div>
   </div>
-  <p class="text-tertiary text-sm mt-sm">
-    Shown, not written. This platform records population across three categories
-    and connections across five; EPA sends one total for each. Dividing a total
-    into shares would be inventing numbers, so those fields stay empty until a
-    source that breaks them down is imported.
-  </p>
 
   {% comment %}
     The skipped facilities used to be listed here. They now lead the page as
-    their own panel — see the top of this template. Listing them twice would
+    their own panel (see the top of this template). Listing them twice would
     make the page longer without making it clearer.
   {% endcomment %}
 
@@ -247,8 +279,7 @@
     </table>
   </div>
   <p class="text-tertiary text-sm mt-sm">
-    Facility ID is the <strong>state's</strong> key, which is the segment a PS
-    Code is built from. EPA's own key is kept alongside it for provenance.
+    Facility ID is the <strong>state's</strong> key, the segment a PS Code is built from; EPA ID is EPA's own key, kept for provenance.
   </p>
   {% else %}
   <p class="text-secondary text-sm mt-sm">

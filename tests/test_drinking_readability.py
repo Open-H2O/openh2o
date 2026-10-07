@@ -154,7 +154,9 @@ class TestBuilderIsUsable:
         body = client_logged_in.get(
             reverse("drinking:onboard_points", args=[PWSID])
         ).content.decode()
-        assert "What this page is for" in body
+        # 149.1-06 (2026-10-07): the "What this page is for" card left; the
+        # description says what a sampling point record is and the one action.
+        assert "A sampling point record is one PS Code" in body
         assert "lab file" in body.lower()
         assert "PS Code" in body
 

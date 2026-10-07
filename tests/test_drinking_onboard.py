@@ -199,14 +199,23 @@ class TestLookupReview:
         assert "New system" in body
         assert "Create" in body
 
-    def test_epa_totals_are_shown_but_not_written(self, client_in, epa):
-        """The aggregate is a fact worth showing; splitting it would be invention."""
+    def test_epa_totals_are_written_and_the_breakdowns_are_left_empty(self, client_in, epa):
+        """The aggregate is a fact worth writing; splitting it would be invention.
+
+        149.1-06 (2026-10-07): the review's size note said "Shown, not written",
+        which was false: ``commit_system`` writes EPA's two totals
+        (``_SYSTEM_REFRESHABLE_FIELDS``) and never the eight breakdown fields.
+        The review now says so in its Record table, in the settled words of
+        S-0789 = S-0639.
+        """
         body = client_in.post(
             reverse("drinking:onboard_lookup"), {"pwsid": PWSID}
         ).content.decode()
 
         assert "Population served (EPA total)" in body
-        assert "Shown, not written" in body
+        assert "EPA&#x27;s total for each" in body or "EPA's total for each" in body
+        assert "stay empty until a source that breaks them down is imported" in body
+        assert "Shown, not written" not in body
 
     def test_the_mailing_state_is_never_called_the_regulating_state(self, client_in, epa):
         body = client_in.post(

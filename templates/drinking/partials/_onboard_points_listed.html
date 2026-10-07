@@ -31,12 +31,12 @@
   {% endif %}
   {% if added %}
   <div class="alert-success">
-    Added <span class="text-mono">{{ added.ps_code }}</span>{% if added.name %} &mdash; {{ added.name }}{% endif %}.
+    Added <span class="text-mono">{{ added.ps_code }}</span>{% if added.name %} ({{ added.name }}){% endif %}.
   </div>
   {% endif %}
   {% if duplicate %}
   <div class="alert-warning">
-    <span class="text-mono">{{ duplicate.ps_code }}</span> is already listed &mdash; nothing was
+    <span class="text-mono">{{ duplicate.ps_code }}</span> is already listed; nothing was
     changed. A partly finished system can be resumed; this is not an error.
   </div>
   {% endif %}
@@ -58,7 +58,7 @@
         {% for group in point_groups %}
         <tr class="row-group">
           <td colspan="3">
-            {% if group.facility.facility_type %}{{ group.facility.get_facility_type_display }}{% else %}Facility{% endif %}{% if group.facility.name and not group.facility.name_adds_nothing %} &mdash; {{ group.facility.name }}{% endif %}
+            {% if group.facility.facility_type %}{{ group.facility.get_facility_type_display }}{% else %}Facility{% endif %}{% if group.facility.name and not group.facility.name_adds_nothing %}, {{ group.facility.name }}{% endif %}
             {% if group.facility.is_source %}<span class="badge badge-blue">Source</span>{% endif %}
             <span class="text-tertiary">&middot; Codes begin <span class="text-mono">{{ pwsid }}_{{ group.facility.facility_id }}_</span></span>
           </td>
