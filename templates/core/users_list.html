@@ -105,6 +105,7 @@
   {% else %}
   <div class="card-raised empty-state">
     <p class="empty-state-text">No users yet.</p>
+    {% if user_can_write %}<a href="{% url 'core:user_create' %}" class="btn-primary btn-sm mt-sm">+ Add user</a>{% endif %}
   </div>
   {% endif %}
 

@@ -177,7 +177,7 @@ class TestPagesRender:
         # empty state still says what it says.
         text = _squash(response.content.decode())
         if url_name == "drinking:results":
-            assert "Django admin" in text
+            assert "Import lab results" in text  # 149.1-06: the import door, not the admin
         else:
             assert "Onboard a water system" in text
         assert "next update" not in text, (
@@ -629,7 +629,7 @@ class TestResultFilters:
         html = client_in.get(
             reverse("drinking:results"), {"date_from": "2099-01-01"}
         ).content.decode()
-        assert "No sample results match these filters." in html
+        assert "No sample result matches these filters." in html
         assert "next update" not in html
 
 

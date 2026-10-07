@@ -91,6 +91,10 @@
       <polyline points="14 2 14 8 20 8"/>
     </svg>
   </div>
-  <p class="empty-state-text">No reports yet{% if q %} matching "{{ q }}"{% endif %}{% if status %} with that status{% endif %}. Start one from the actions above.</p>
+  {% if q or status %}
+  <p class="empty-state-text">No report{% if q %} matches &ldquo;{{ q }}&rdquo;{% endif %}{% if status %}{% for value, label in status_choices %}{% if value == status %} with status &ldquo;{{ label }}&rdquo;{% endif %}{% endfor %}{% endif %}.</p>
+  {% else %}
+  <p class="empty-state-text">No reports yet{% if gears_available or calwatrs_available %}; generate one under Start a filing, above{% endif %}.</p>
+  {% endif %}
 </div>
 {% endif %}

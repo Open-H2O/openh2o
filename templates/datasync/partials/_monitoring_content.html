@@ -47,10 +47,10 @@
         {% if info.status_code == "needs_key" %}
         <p class="text-tertiary text-xs m-0">Add the API credential on the server to enable this source.</p>
         {% elif info.status_code == "no_stations" %}
-        <p class="text-tertiary text-xs m-0">No stations wired yet &mdash; run station discovery for this source.</p>
+        <p class="text-tertiary text-xs m-0">No stations wired yet; run station discovery for this source.</p>
         {% elif info.status_code == "none_activated" %}
         <p class="text-tertiary text-xs m-0">
-          {{ info.total }} station{{ info.total|pluralize }} known here, none switched on. Discovery adds stations dormant &mdash; open one and activate it to start syncing.
+          {{ info.total }} station{{ info.total|pluralize }} known here, none switched on. Discovery adds stations dormant; open one and activate it to start syncing.
         </p>
         {% elif info.status_code == "never" %}
         <p class="text-tertiary text-xs m-0">This deployment has not run a sync against {{ info.display }} yet; the readings it holds were loaded, not synced.</p>
@@ -65,7 +65,7 @@
     </div>
     {% else %}
     <div class="card-raised empty-state">
-      <p class="empty-state-text text-secondary">No active data sources configured yet.</p>
+      <p class="empty-state-text text-secondary">No active data sources yet.</p>
     </div>
     {% endif %}
   </div>
@@ -139,7 +139,7 @@
     </div>
     {% else %}
     <div class="card-raised empty-state">
-      <p class="empty-state-text text-secondary">No active stations. Activate stations from the <a href="{% url 'datasync:station_list' %}" class="text-gold">Stations</a> page.</p>
+      <p class="empty-state-text text-secondary">No active station is up to date or slightly behind; switch stations on from <a href="{% url 'datasync:station_list' %}" class="text-gold">Monitoring stations</a>.</p>
     </div>
     {% endif %}
   </div>

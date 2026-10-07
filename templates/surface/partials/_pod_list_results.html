@@ -73,6 +73,14 @@ OH2O.followResults reads them after every swap and filters the map to them.
       <line x1="16" y1="17" x2="8" y2="17"/>
     </svg>
   </div>
-  <p class="empty-state-text">No diversion points found{% if q %} matching "{{ q }}"{% endif %}{% if status %} with status "{{ status }}"{% endif %}.</p>
+  {% if q or status %}
+  <p class="empty-state-text">No diversion point{% if q %} matches &ldquo;{{ q }}&rdquo;{% endif %}{% if filter_words %} {{ filter_words }}{% endif %}.</p>
+  {% else %}
+  <p class="empty-state-text">No diversion points yet.</p>
+  {% if user_can_write and 'infrastructure' in enabled_modules %}
+  <a href="{% url 'infrastructure:add' %}?type=diversion" class="btn-primary btn-sm mt-sm">+ Add diversion</a>
+  <a href="{% url 'infrastructure:import' %}?type=diversion" class="btn-secondary btn-sm mt-sm">Import</a>
+  {% endif %}
+  {% endif %}
 </div>
 {% endif %}

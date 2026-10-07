@@ -141,6 +141,13 @@ OH2O.followResults reads them after every swap and filters the map to them.
       <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
     </svg>
   </div>
-  <p class="empty-state-text">No stations found{% if q %} matching "{{ q }}"{% endif %}{% if source %} for source "{{ source }}"{% endif %}.</p>
+  {% if q or source %}
+  <p class="empty-state-text">No station{% if q %} matches &ldquo;{{ q }}&rdquo;{% endif %}{% if source %} from {{ source }}{% endif %}.</p>
+  {% elif active or reporting %}
+  <p class="empty-state-text">No station matches these filters.</p>
+  {% else %}
+  <p class="empty-state-text">No syncing stations yet.</p>
+  {% if user_can_write %}<a href="{% url 'datasync:station_add' %}" class="btn-primary btn-sm mt-sm">+ Add station</a>{% endif %}
+  {% endif %}
 </div>
 {% endif %}

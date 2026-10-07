@@ -28,12 +28,10 @@
 
     {% if total == 0 %}
     <div class="card-raised empty-state">
-        <p class="empty-state-text text-secondary">No health checks have been run yet.</p>
+        <p class="empty-state-text text-secondary">No health checks yet.</p>
         <p class="text-tertiary text-base">
-            Run the management command to populate health data:<br>
-            <code style="font-family: var(--font-mono); background: var(--color-base); padding: var(--space-xs) var(--space-sm); border-radius: var(--radius-sm); margin-top: var(--space-xs); display: inline-block;">
-                python manage.py run_health_checks
-            </code>
+            Run them with
+            <code style="font-family: var(--font-mono); background: var(--color-base); padding: var(--space-xs) var(--space-sm); border-radius: var(--radius-sm); margin-top: var(--space-xs); display: inline-block;">python manage.py run_health_checks</code>.
         </p>
     </div>
     {% elif show_detail %}

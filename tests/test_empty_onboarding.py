@@ -62,10 +62,10 @@ def test_configured_empty_list_offers_add_and_import():
     BoundaryFactory()  # boundary present → not a fresh instance → needs_setup False
     resp = _list_partial(_client())
     body = resp.content.decode()
-    assert "+ Add Well" in body
+    assert "+ Add well" in body
     assert reverse("infrastructure:add") + "?type=well" in body
     assert reverse("infrastructure:import") + "?type=well" in body
-    assert "groundwater extraction points" in body  # the plain-English description
+    assert "No wells yet." in body  # 149.1-06: one line, never the water
     assert "Set up your watershed" not in body
 
 
@@ -92,7 +92,7 @@ def test_fresh_instance_defers_to_setup_wizard():
     body = resp.content.decode()
     assert "Set up your watershed" in body
     assert reverse("setup:wizard") in body
-    assert "+ Add Well" not in body
+    assert "+ Add well" not in body
 
 
 @pytest.mark.django_db
@@ -100,6 +100,6 @@ def test_search_miss_keeps_plain_no_match():
     """An empty result from a *search* is not an onboarding moment."""
     resp = _list_partial(_client(), q="zzznomatch")
     body = resp.content.decode()
-    assert "No wells found matching" in body
-    assert "+ Add Well" not in body
+    assert "No well matches" in body  # 149.1-06: "No <singular> matches <filter>."
+    assert "+ Add well" not in body
     assert "Set up your watershed" not in body

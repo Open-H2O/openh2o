@@ -206,7 +206,7 @@ class TestAllocationsFooter:
         assert response.context["allocation_subtotals"] == []
         html = response.content.decode()
         assert "<tfoot>" not in html
-        assert "No allocations found" in html
+        assert "No allocations in WY 2026-2027 yet." in html  # 149.1-06
 
 
 #: ISS-164's own shape: one zone, one surface plan of 108,000.00 AF, entered

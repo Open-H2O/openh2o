@@ -73,7 +73,7 @@ gate fails a kept page that names a domain the deployment does not have.
           page already uses for its own Facility field); the name stays
           plain, beside it.
         {% endcomment %}
-        <td class="text-secondary text-sm"><a href="{% url 'drinking:facility_detail' point.facility.pk %}" class="data-table-link">{{ point.facility.facility_id }}</a>{% if point.facility.name %} — {{ point.facility.name }}{% endif %}</td>
+        <td class="text-secondary text-sm"><a href="{% url 'drinking:facility_detail' point.facility.pk %}" class="data-table-link">{{ point.facility.facility_id }}</a>{% if point.facility.name %} ({{ point.facility.name }}){% endif %}</td>
         <td class="text-secondary text-sm">{{ point.get_point_type_display|blank }}</td>
         <td class="text-secondary text-sm tabular-nums">{{ point.latest_sample_date|date:"Y-m-d"|blank }}</td>
         <td class="text-secondary text-sm tabular-nums">
@@ -119,7 +119,7 @@ gate fails a kept page that names a domain the deployment does not have.
   has data, just not this slice — so say so and leave the toolbar alone.
 {% endcomment %}
 <div class="card-raised empty-state">
-  <p class="empty-state-text">No sampling points found{% if q %} matching "{{ q }}"{% endif %}{% if point_type %} of that point type{% endif %}.</p>
+  <p class="empty-state-text">No sampling point{% if q %} matches &ldquo;{{ q }}&rdquo;{% endif %}{% if point_type %}{% for value, label in point_type_choices %}{% if value == point_type %} of type &ldquo;{{ label }}&rdquo;{% endif %}{% endfor %}{% endif %}.</p>
 </div>
 
 {% else %}
@@ -131,5 +131,5 @@ gate fails a kept page that names a domain the deployment does not have.
   routes the partial's own fallback to onboarding. Before this, both branches
   landed on the Django-admin dead end.
 {% endcomment %}
-{% include "drinking/partials/_empty_drinking.html" with what="A sampling point is where a sample is physically drawn — a source, an entry point, a distribution location or a tap — identified by its state-published PS Code." points_link=True points_pwsid=points_pwsid %}
+{% include "drinking/partials/_empty_drinking.html" with what="No sampling points yet." points_link=True points_pwsid=points_pwsid %}
 {% endif %}

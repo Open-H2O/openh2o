@@ -211,12 +211,12 @@ class TestBothEmptyStates:
             reverse("drinking:facilities"), {"q": "nothing-matches-this"}
         )
         html = response.content.decode()
-        assert "No facilities found" in html
-        assert "A facility is a physical part" not in html
+        assert "No facility matches" in html  # 149.1-06
+        assert "No facilities yet." not in html
 
     def test_nothing_onboarded_offers_the_domain_explainer(self, client_in):
         html = client_in.get(reverse("drinking:facilities")).content.decode()
-        assert "A facility is a physical part" in html
+        assert "No facilities yet." in html  # 149.1-06: one line and the onboarding door, never a definition
         # 123-02 REVERSES the onboarding half of this assertion, and the reason
         # the old one gave is the reason it had to go: "onboarding belongs to
         # the overview" is true of where the link lives and false of where the

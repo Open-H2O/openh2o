@@ -37,11 +37,15 @@ filtered" clause, which was true before this plan and is not true after it.
   {{ total_facility_count|intcomma }} facilit{{ total_facility_count|pluralize:"y,ies" }}
   in this inventory. The state&rsquo;s Groundwater Ambient Monitoring and
   Assessment Program (GAMA) publishes coordinates for groundwater sources only,
-  so the treatment plants and the distribution system are not on it.{% if q or facility_type or activity_status %}
+  so the treatment plants and the distribution system are not on it.
+</p>
+{% if q or facility_type or activity_status %}
+<p class="page-description">
   The map follows the list: showing {{ total_count|intcomma }}
   facilit{{ total_count|pluralize:"y,ies" }}{% if q %} matching &ldquo;{{ q }}&rdquo;{% endif %}{% if facility_type %} of that type{% endif %}{% if activity_status %} with that status{% endif %},
-  {% if result_located_count == total_count %}all{% elif result_located_count %}{{ result_located_count|intcomma }} of them{% else %}none of them{% endif %} with a location.{% endif %}
+  {% if result_located_count == total_count %}all{% elif result_located_count %}{{ result_located_count|intcomma }} of them{% else %}none of them{% endif %} with a location.
 </p>
+{% endif %}
 {% else %}
 <p class="page-description">
   No facility in this inventory has a published location, so there is no map
@@ -176,7 +180,7 @@ filtered" clause, which was true before this plan and is not true after it.
   has facilities, just not this slice — so say so and leave the toolbar alone.
 {% endcomment %}
 <div class="card-raised empty-state">
-  <p class="empty-state-text">No facilities found{% if q %} matching "{{ q }}"{% endif %}{% if facility_type %} of that type{% endif %}{% if activity_status %} with that status{% endif %}.</p>
+  <p class="empty-state-text">No facility{% if q %} matches &ldquo;{{ q }}&rdquo;{% endif %}{% if filter_words %} {{ filter_words }}{% endif %}.</p>
 </div>
 
 {% else %}
@@ -192,5 +196,5 @@ filtered" clause, which was true before this plan and is not true after it.
   from EPA's record. Still no `import_link` — a lab file creates results, never
   structure.
 {% endcomment %}
-{% include "drinking/partials/_empty_drinking.html" with what="A facility is a physical part of the water system — a source, a treatment plant or a distribution point — as the federal record enumerates it." onboard_link=True %}
+{% include "drinking/partials/_empty_drinking.html" with what="No facilities yet." onboard_link=True %}
 {% endif %}

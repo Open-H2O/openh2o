@@ -70,7 +70,8 @@
         <line x1="3" y1="10" x2="21" y2="10"/>
       </svg>
     </div>
-    <p class="empty-state-text">No curtailment orders on record. Add one.</p>
+    <p class="empty-state-text">No curtailment orders yet.</p>
+    {% if user_can_write %}<a href="{% url 'surface:curtailment_create' %}" class="btn-primary btn-sm mt-sm">+ Add order</a>{% endif %}
   </div>
   {% endif %}
 
