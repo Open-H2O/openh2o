@@ -2371,11 +2371,15 @@ html { color-scheme: dark; }
    link or nothing, kept to the link's width so an empty cell leaves no
    strip (two verdict readers named the wrapped terms and the empty column). */
 .help-cases-table--glossary .col-name {
-    width: 19%;
+    width: 17%;
 }
 
 .help-cases-table--glossary .col-where {
-    width: 18%;
+    width: 16%;
+}
+
+.help-cases-table--glossary td:not(.col-sure) {
+    line-height: 1.5;
 }
 
 .help-cases-table--glossary .col-sure .badge {
@@ -2389,16 +2393,21 @@ html { color-scheme: dark; }
    modifier so Methods' steps table does not move. */
 .help-steps-table--setup .col-step {
     width: 22%;
-    padding-left: calc(var(--space-md) + 2.2em);
-    text-indent: -2.2em;
+    position: relative;
+    padding-left: calc(var(--space-md) + 2.4em);
+}
+
+/* The number sits in the cell's left padding and the name hangs beside it,
+   so a two-line name never wraps back under the number (the round-2 verdict
+   readers' second fault; a negative text-indent put the numbers outside the
+   scroll box, which the round-3 readers saw as no numbers at all). */
+.help-steps-table--setup .col-step .step-num {
+    position: absolute;
+    left: var(--space-md);
 }
 
 .help-steps-table--setup .col-where {
     width: 26%;
-}
-
-.help-steps-table--setup .step-num {
-    min-width: 2.2em;
 }
 
 /* The worked example on Allocations & ceilings (149.1-03): the figure column

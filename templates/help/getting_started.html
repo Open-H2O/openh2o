@@ -76,7 +76,7 @@
           (89-02, ISS-088).{% endcomment %}{% if 'parcels' in enabled_modules %}<tr>
             <td class="col-step"><span class="step-num">{{ steps.use_areas }}</span>Import your use areas</td>
             <td class="col-where">Water Data &gt; Use Areas<br><a href="{% url 'parcels:list' %}" class="text-sm text-accent">Go to Use Areas &rarr;</a></td>
-            <td>Upload use area boundaries from your county GIS department as GeoJSON or Shapefile; each needs an Assessor Parcel Number (APN).</td>
+            <td>{% if 'setup' in enabled_modules %}The wizard brings them in from the statewide parcel layer; to use your own, upload{% else %}Upload{% endif %} use area boundaries from your county GIS department as GeoJSON or Shapefile. Each needs an Assessor Parcel Number (APN).</td>
           </tr>{% endif %}
           {% if 'wells' in enabled_modules %}<tr>
             <td class="col-step"><span class="step-num">{{ steps.wells }}</span>Import your wells</td>
@@ -112,7 +112,7 @@
           {% if 'accounting' in enabled_modules %}<tr>
             <td class="col-step"><span class="step-num">{{ steps.ledger }}</span>Enter use ledger data</td>
             <td class="col-where">Water Data &gt; Use Ledger<br><a href="{% url 'accounting:ledger_list' %}" class="text-sm text-accent">Go to Use Ledger &rarr;</a><br><a href="{% url 'accounting:methodology_settings' %}" class="text-sm text-accent">View the Methodology &rarr;</a></td>
-            <td>Record each use area&rsquo;s rows, by hand or from a CSV; a delivery, a meter reading or an estimate is a usage row (negative), a credit is positive. Usage can also be estimated from satellite evapotranspiration (ET), as set on Administration &gt; Methodology.</td>
+            <td>Record each use area&rsquo;s rows, by hand or from a CSV; a delivery, a meter reading or an estimate is a usage row (negative), a credit is positive. The platform can also write an estimated usage row from satellite evapotranspiration (ET), as set on Administration &gt; Methodology.</td>
           </tr>{% endif %}
           {% if 'datasync' in enabled_modules %}<tr>
             <td class="col-step"><span class="step-num">{{ steps.stations }}</span>Connect monitoring stations</td>

@@ -534,6 +534,15 @@ _GLOSSARY_OUTSIDE_NAMES = frozenset({
 #: Neither the state's nor this platform's: a unit of measure (the round-2 reader
 #: saw CFS tagged as this platform's own and called it wrong).
 _GLOSSARY_UNITS = frozenset({"CFS (Cubic Feet per Second)"})
+#: The profession's own words, which this platform keeps a record or a figure
+#: for and never coined (the round-4 reader: "An engineer knows the State Water
+#: Board and the profession named those terms, not this software"). Everything
+#: not in these three sets is this platform's own term.
+_GLOSSARY_WATER_TERMS = frozenset({
+    "Apportionment", "Consumptive Use", "Curtailment", "Effective Precipitation",
+    "ET (Evapotranspiration)", "Managed Aquifer Recharge (MAR)",
+    "Point of Diversion (POD)", "Water Right", "Water Year", "Well",
+})
 
 
 def _split_help_pointer(definition):
@@ -589,7 +598,7 @@ def glossary(request):
     """
     terms = {
         "Allocation Ceiling": "This platform's total for one zone, one water type and one reporting period, in acre-feet, set on the Allocations page; the platform divides it into each account's allocation. See Help > Allocations & Ceilings.",
-        "Allocation": "One account's share of a zone's Allocation Ceiling, pro-rated by the count of use areas the account holds in the zone; charged at groundwater extracted (a surface allocation at water delivered). Remaining is the allocation plus any carry-over less what was charged; a negative remaining is an overdraft. See Help > Allocations & Ceilings.",
+        "Allocation": "One account's share of a zone's Allocation Ceiling, charged at groundwater extracted (a surface allocation at water delivered). The share is pro-rated by the count of use areas the account holds in the zone. Remaining is the allocation plus any carry-over less what was charged; a negative remaining is an overdraft. See Help > Allocations & Ceilings.",
         "Apportionment": "Another name for ET-Demand Allocation, the split of a headgate's recorded monthly total among the fields it serves in proportion to each field's crop water use after rain; a field's ledger row says divided up from the canal total. See Help > Methods Behind the Numbers.",
         "Usage": "The ledger's word for a row that spends water, stored as a negative amount; a meter reading, the month's calculated row (groundwater consumed) or water delivered; a groundwater allocation is charged at groundwater extracted.",
         "Canal Water the Crop Could Use": "One month's canal delivery to a field times the field's irrigation efficiency, from its irrigation method on file, else the share of delivered water the crop consumes on Delivery Settings, 75% unless changed. Subtracted from crop water use; the rest of the delivery is neither crop water use nor a credit. See Help > Methods Behind the Numbers.",
@@ -640,6 +649,7 @@ def glossary(request):
             "kind": (
                 "outside" if term in _GLOSSARY_OUTSIDE_NAMES
                 else "unit" if term in _GLOSSARY_UNITS
+                else "water" if term in _GLOSSARY_WATER_TERMS
                 else "platform"
             ),
             "text": text,
