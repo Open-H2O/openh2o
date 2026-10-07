@@ -2340,6 +2340,25 @@ html { color-scheme: dark; }
     font-weight: 600;
 }
 
+/* The sources table on How water balances work (149.1-02): its names are one
+   or two words, so the sentence columns take the room a 24% name column wasted. */
+.help-cases-table--short-names .col-name {
+    width: 14%;
+}
+
+/* Its How sure column holds the same pills as `.how-sure-table`, one line,
+   one width, never a pill broken across two lines. */
+.help-cases-table .col-sure {
+    width: 1%;
+    white-space: nowrap;
+}
+
+.help-cases-table .col-sure .badge {
+    min-width: 10em;
+    justify-content: center;
+    white-space: nowrap;
+}
+
 /* The canal split diagram (help/partials/_canal_split_diagram.html): inline
    SVG scaled by its viewBox, so the 16-unit labels still render at 13 px or
    more in a 1,024 px window. Boxes on the inset surface, the flow in teal,

@@ -12,7 +12,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">How Water Balances Work</span>
   </nav>
-  <p class="page-description">One number estimated by satellite for every field, three sources of water and how each is known, and the remainder's name on a field with no well.</p>
+  <p class="page-description">Crop water use, the one number estimated by satellite for every field; three sources of water and how each is known; the remainder's name on a field with no well.</p>
 </div>
 {% endblock %}
 
@@ -34,7 +34,7 @@
 {% endcomment %}<div class="page-stack page-help help-page">
 
   <div class="card-raised">
-    <h2 class="section-header">One number for every field</h2>
+    <h2 class="section-header">Crop water use, the one number for every field</h2>
     <p class="text-secondary text-base">Few fields are metered. One number can be estimated for every field, whatever its water source: how much water the crop used in the month. Plants give off water as they grow, and satellites can pick that up.</p>
 
     {% include "help/partials/_the_subtraction.html" %}
@@ -47,8 +47,8 @@
         <table class="data-table help-cases-table">
           <thead>
             <tr>
-              <th></th>
-              <th>In this demonstration</th>
+              <th>Record</th>
+              <th>Here</th>
               <th>With a district's own gate records</th>
             </tr>
           </thead>
@@ -64,7 +64,7 @@
               <td>From a meter or the ditch tender's estimate</td>
             </tr>
             <tr>
-              <td class="col-name">Canal water on a canal-served field</td>
+              <td class="col-name">Canal water the crop could use, on a canal-served field</td>
               <td>All or nearly all of crop water use after rain, never under 85% here, so groundwater consumed is the small remainder</td>
               <td>Whatever the record says; the remainder follows</td>
             </tr>
@@ -79,7 +79,7 @@
     <h2 class="section-header">Three sources, and how each is known</h2>
 
     <div class="table-scroll">
-      <table class="data-table help-cases-table">
+      <table class="data-table help-cases-table help-cases-table--short-names">
         <thead>
           <tr>
             <th>Water</th>
@@ -93,19 +93,19 @@
             <td class="col-name">Rain</td>
             <td>Rain that fell on the field, and the share of it the crop could use</td>
             <td>Estimated from weather data for the area</td>
-            <td><span class="badge badge-pill badge-grey">Estimated</span></td>
+            <td class="col-sure"><span class="badge badge-pill badge-grey">Estimated</span></td>
           </tr>
           <tr>
             <td class="col-name">Canal water</td>
             <td>Water the district let onto the field from its canal</td>
             <td>Recorded by the district at the headgate, from a meter or the ditch tender's estimate, then divided among the fields it serves</td>
-            <td><span class="badge badge-pill badge-gold" title="Divided up by the software">Divided up</span></td>
+            <td class="col-sure"><span class="badge badge-pill badge-gold" title="Divided up by the software">Divided up</span></td>
           </tr>
           <tr>
             <td class="col-name">Well water</td>
             <td>Water pumped from a well on the field</td>
-            <td>The month's meter reading, where there is one</td>
-            <td>A meter reading, or <span class="badge badge-pill badge-grey" title="Estimated by subtraction">By subtraction</span> where there is no meter</td>
+            <td>A meter reading on record for the month; without one, by subtraction from crop water use, as the next table shows</td>
+            <td class="col-sure"><span class="badge badge-pill badge-grey" title="Estimated by subtraction">By subtraction</span><br><span class="text-sm text-secondary">or a meter reading</span></td>
           </tr>
         </tbody>
       </table>
@@ -121,7 +121,7 @@
       <table class="data-table help-cases-table">
         <thead>
           <tr>
-            <th></th>
+            <th>Outcome</th>
             <th>A meter reading</th>
             <th>A well, no meter</th>
             <th>No well</th>
@@ -129,10 +129,10 @@
         </thead>
         <tbody>
           <tr>
-            <td class="col-name">Written as</td>
+            <td class="col-name">After the subtraction</td>
             <td>Kept beside the reading for comparison; nothing written from it</td>
             <td>Groundwater consumed, and groundwater extracted after the division</td>
-            <td>Water use recorded, no supply reported</td>
+            <td>Water use recorded, no supply reported, never as pumping</td>
           </tr>
           <tr>
             <td class="col-name">What the groundwater allocation is charged</td>
@@ -144,14 +144,15 @@
       </table>
     </div>
 
-    <p class="text-secondary text-sm mt-md">A missing meter never becomes a pumping figure. Water use recorded, no supply reported says only that the supplies on record did not cover crop water use; it is never written as pumping, and it is never a finding about the grower.</p>
+    <p class="text-secondary text-sm mt-md">Water use recorded, no supply reported says only that the supplies on record did not cover crop water use; it is never written as pumping, and it is never a finding about the grower.</p>
   </div>
 
   <div class="card-raised">
     <h2 class="section-header">A district with no wells</h2>
     <p class="text-secondary text-base">The same steps run; with no well, the remainder is water use recorded, no supply reported, and the well lines stay empty.</p>
 
-    <h3 class="concept-panel-title mt-lg">What the satellite estimate still does</h3>
+    <div class="help-subsection">
+    <h3 class="concept-panel-title">What the satellite estimate still does</h3>
 
     <div class="table-scroll mt-md">
       <table class="data-table help-steps-table">
@@ -179,6 +180,7 @@
     </div>
 
     {% explainer_available "methods" as show_methods %}{% if show_methods %}<p class="text-base mt-md">The steps, the split and the estimate, line by line: <a class="prose-link" href="{% url 'methods' %}">Methods behind the numbers</a>.</p>{% endif %}
+    </div>
   </div>
 
   <div class="card-raised">
