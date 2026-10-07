@@ -57,9 +57,9 @@ SESSION_KEY_SELECTED_STEPS = "setup_wizard_selected_steps"
 # Plain-language note shown for a provider's clean (non-failure) skip outcomes.
 # created/timed_out/failed are NOT here — they render via count / the error row.
 PROVIDER_SKIP_NOTES = {
-    "skipped_no_key": "Skipped — no API key configured. You can add one later.",
-    "skipped_no_source": "Skipped — this data source isn't configured.",
-    "skipped_no_adapter": "Skipped — no connector available for this provider.",
+    "skipped_no_key": "Skipped: no API key configured. You can add one later.",
+    "skipped_no_source": "Skipped: this data source is not configured.",
+    "skipped_no_adapter": "Skipped: no connector available for this provider.",
 }
 
 

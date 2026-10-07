@@ -1,20 +1,20 @@
 {% extends "base.html" %}
 
-{% block title %}Running setup - Open Water Accounting Platform{% endblock %}
-{% block page_title %}Running setup{% endblock %}
+{% block title %}Setup wizard: Populate - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Setup wizard: Populate{% endblock %}
 {% block page_head_class %}page-head--medium{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a href="{% url 'setup:wizard' %}">Setup</a>
+    <a href="{% url 'setup:wizard' %}">Setup Wizard</a>
     <span class="breadcrumb-separator">/</span>
-    <span class="breadcrumb-current">{% if picking %}Choose what to run{% else %}Running{% endif %}</span>
+    <span class="breadcrumb-current">Populate</span>
   </nav>
   {% if picking %}
-  <p class="page-description">Choose what to populate for <strong>{{ boundary.name }}</strong>. Nothing runs until you press Run setup below.</p>
+  <p class="page-description">Choose what Populate brings in for <strong>{{ boundary.name }}</strong>. Nothing runs until you press Run setup.</p>
   {% else %}
-  <p class="page-description">Populating geographic data for <strong>{{ boundary.name }}</strong>. This may take a few minutes per step.</p>
+  <p class="page-description">Populate for <strong>{{ boundary.name }}</strong>: each checked step runs in turn, and a step can take a few minutes.</p>
   {% endif %}
 </div>
 {% endblock %}
@@ -22,7 +22,7 @@
 {% block content %}
 <div class="page-stack page-medium">
 
-  <!-- Step indicator -->
+  {% comment %}Step indicator: the wizard's step names (R-053).{% endcomment %}
   <div class="row-start" style="gap: var(--space-lg);">
     <div class="row-start">
       <span class="step-badge" style="background: var(--forest-400); color: var(--color-base); border-color: var(--forest-400);">✓</span>
@@ -68,12 +68,7 @@
   </div>
 
   <div class="card-raised card-inset">
-    <p class="text-tertiary text-sm m-0">
-      Every box is checked by default. Uncheck the steps you don't want, or
-      press "I have my own data" to uncheck all of them. A step nobody chose
-      never runs, and the next screen names it "skipped: your choice", not an
-      error.
-    </p>
+    <p class="text-tertiary text-sm m-0">Every box starts checked; &ldquo;I have my own data&rdquo; unchecks them all, and an unchecked step is skipped.</p>
   </div>
 
   <script>
@@ -85,9 +80,9 @@
   </script>
 
   {% else %}
-  <!-- Progress area driven by HTMX -->
+  {% comment %}Progress area driven by HTMX{% endcomment %}
   <div class="card-raised">
-    <h2 class="card-header-ruled">Population progress</h2>
+    <h2 class="card-header-ruled">Progress</h2>
     <div
       id="progress-area"
       hx-post="{% url 'setup:progress' %}"
@@ -95,7 +90,7 @@
       hx-target="#progress-area"
       hx-swap="outerHTML"
     >
-      <!-- Initial loading state -->
+      {% comment %}Initial loading state{% endcomment %}
       <div class="row-start" style="padding: var(--space-md) 0;">
         <span class="spinner-sm"></span>
         <span class="text-secondary text-sm">Starting first step&hellip;</span>
@@ -104,10 +99,7 @@
   </div>
 
   <div class="card-raised card-inset">
-    <p class="text-tertiary text-sm m-0">
-      Each step calls a public API to fetch geographic data within your boundary.
-      Re-running a step is safe: records already present are skipped.
-    </p>
+    <p class="text-tertiary text-sm m-0">Re-running a step is safe: records already present are skipped.</p>
   </div>
   {% endif %}
 

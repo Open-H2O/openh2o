@@ -14,7 +14,7 @@ clean per-provider skip).
   <div class="wizard-step-body">
     <div class="wizard-step-name">{{ result.label }}</div>
     <div class="wizard-step-count">
-      {% if result.note %}{{ result.note }}{% elif result.count %}{{ result.count }} record{{ result.count|pluralize }} created{% else %}None found for this boundary — you can add these later.{% endif %}
+      {% if result.note %}{{ result.note }}{% elif result.count %}{{ result.count }} record{{ result.count|pluralize }} created{% else %}None found for this boundary; you can add these later.{% endif %}
     </div>
   </div>
 </div>

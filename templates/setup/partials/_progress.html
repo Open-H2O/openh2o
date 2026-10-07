@@ -1,5 +1,5 @@
 {% if all_done %}
-<!-- All steps complete -->
+{% comment %}All steps complete{% endcomment %}
 <div id="progress-area">
   <div class="wizard-step-list" style="margin-bottom: var(--space-lg);">
     {% for result in results %}
@@ -10,59 +10,22 @@
   {# In-flow station review: enable the monitoring stations just discovered. Module-guarded — its rows include a datasync partial that reverses datasync:station_toggle. #}
   {% if 'datasync' in enabled_modules %}{% include "setup/partials/_station_review.html" %}{% endif %}
 
+  {% comment %}149.1-06 (flow D): the finish screen's one action is Getting
+  started, and the line names the step that comes after the wizard there
+  (config/views.py GETTING_STARTED_STEPS: the wizard row runs before zones,
+  which every configuration carries). The hand-numbered four-step list it
+  replaces put zones last, against Getting started's order.{% endcomment %}
   <div class="card-raised" style="background: oklch(0.49 0.11 145 / 0.08); border-color: var(--forest-400);">
-    <p class="section-header-flush mb-sm">Setup complete — what's next</p>
-    <p class="text-secondary text-sm" style="margin: 0 0 var(--space-md);">
-      Geographic data is populated for {{ boundary.name }}. Here's the rest of
-      first-time setup, in order:
-    </p>
-    {% comment %}
-      Phase 89. The badge numerals stay hand-written, and they stay CORRECT —
-      not merely gap-free-looking — because the requires graph leaves only three
-      reachable configurations for these four rows, not eight:
-
-        `wells` requires `parcels`, and `parcels` and `accounting` require each
-        other, so the three either arrive together or leave together. Wells is
-        the one that can be absent on its own.
-
-          A. parcels + wells + accounting  -> 1, 2, 3, 4
-          B. parcels + accounting, no wells -> 1, 2, 3
-          C. none of the three              -> zones alone, numbered 1
-
-      So only the zones badge needed a new branch. ISS-088 tracks the general
-      class — a hand-numbered checklist whose numerals drift out of step with
-      what renders — and it is deliberately NOT being re-litigated here; this
-      list simply does not have that defect, because the closure removed the
-      partial states that would cause it. If a later phase breaks the
-      `wells`->`parcels` edge, this comment is the thing that stops being true
-      first.
-    {% endcomment %}
-    <div class="onboarding-steps">
-      {% if 'parcels' in enabled_modules %}<div class="onboarding-step">
-        <span class="step-badge step-badge-active">1</span>
-        <span class="text-sm"><a href="{% url 'parcels:list' %}" class="link-accent">Review imported parcels</a> — confirm the use areas for your watershed</span>
-      </div>{% endif %}
-      {% if 'wells' in enabled_modules %}<div class="onboarding-step">
-        <span class="step-badge">2</span>
-        <span class="text-secondary text-sm"><a href="{% url 'wells:list' %}" class="link-accent">Add wells</a> — your district's groundwater sources</span>
-      </div>{% endif %}
-      {% if 'accounting' in enabled_modules %}<div class="onboarding-step">
-        <span class="step-badge">{% if 'wells' in enabled_modules %}3{% else %}2{% endif %}</span>
-        <span class="text-secondary text-sm"><a href="{% url 'accounting:accounts_list' %}" class="link-accent">Set up water accounts</a> — group parcels into the accounts you'll track</span>
-      </div>{% endif %}
-      <div class="onboarding-step">
-        <span class="step-badge">{% if 'parcels' not in enabled_modules %}1{% elif 'wells' in enabled_modules %}4{% else %}3{% endif %}</span>
-        <span class="text-secondary text-sm"><a href="{% url 'geography:zone_list' %}" class="link-accent">Define management zones</a> — the areas an allocation applies to</span>
-      </div>
-    </div>
+    <p class="section-header-flush mb-sm">Setup complete: what's next</p>
+    <p class="text-secondary text-sm">Next in Getting started: Define management zones, on Administration &gt; Zones.</p>
     <div class="form-footer mt-md">
-      <a href="{% url 'getting_started' %}" class="btn-primary">Open the Getting Started guide →</a>
+      <a href="{% url 'getting_started' %}" class="btn-primary">Open Getting started →</a>
     </div>
   </div>
 </div>
 
 {% else %}
-<!-- Steps in progress -->
+{% comment %}Steps in progress{% endcomment %}
 <div
   id="progress-area"
   hx-post="{% url 'setup:progress' %}"

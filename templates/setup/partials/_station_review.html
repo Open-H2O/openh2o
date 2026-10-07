@@ -12,9 +12,7 @@ discovered — the next-steps panel still renders below.
       <div>
         <p class="section-header-flush mb-sm">Monitoring stations</p>
         <p class="text-secondary text-sm" style="margin: 0; max-width: 460px;">
-          {{ review_total }} station{{ review_total|pluralize }} found in your watershed —
-          {{ review_active }} active, {{ review_inactive }} off. Discovered stations
-          start switched off; enable the ones you want to track.
+          {{ review_total }} station{{ review_total|pluralize }} inside this boundary, {{ review_active }} switched on{% if review_inactive %}; switch on the ones to sync, or Enable all{% endif %}.
         </p>
       </div>
       {% if review_inactive %}

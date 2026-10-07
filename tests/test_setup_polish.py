@@ -385,7 +385,7 @@ def test_step_result_skip_note_is_a_clean_row_not_an_error(db):
         "success": True,
         "count": 0,
         "errors": [],
-        "note": "Skipped — no API key configured. You can add one later.",
+        "note": "Skipped: no API key configured. You can add one later.",
     }
     html = render_to_string("setup/partials/_step_result.html", {"result": skipped})
     assert "wizard-step--complete" in html
@@ -413,14 +413,15 @@ def test_completion_panel_routes_to_next_steps(db):
     }
     html = render_to_string("setup/partials/_progress.html", ctx)
     assert "what's next" in html.lower()
-    # Routes into the Getting Started walkthrough + the four ordered next actions.
+    # 149.1-06 (2026-10-07): the finish screen's one action is Getting started,
+    # and one line names the step that comes next there (zones), in its order.
+    # The four hand-numbered links left with the list.
     assert reverse("getting_started") in html
-    assert reverse("parcels:list") in html
-    assert reverse("wells:list") in html
-    assert reverse("accounting:accounts_list") in html
-    assert reverse("geography:zone_list") in html
+    assert "Define management zones" in html
+    assert reverse("parcels:list") not in html
     # The old single-link dead-end to the station list is gone from the panel.
     assert "Go to Stations" not in html
+
 
 
 # --------------------------------------------------------------------------

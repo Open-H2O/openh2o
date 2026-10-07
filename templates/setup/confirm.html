@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static prose %}
 
-{% block title %}Confirm boundary - Open Water Accounting Platform{% endblock %}
-{% block page_title %}Confirm boundary{% endblock %}
+{% block title %}Setup wizard: Confirm - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Setup wizard: Confirm{% endblock %}
 {% block page_head_class %}page-head--medium{% endblock %}
 
 {% block map_styles %}
@@ -13,18 +13,18 @@
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a href="{% url 'setup:wizard' %}">Setup</a>
+    <a href="{% url 'setup:wizard' %}">Setup Wizard</a>
     <span class="breadcrumb-separator">/</span>
-    <span class="breadcrumb-current">Confirm Boundary</span>
+    <span class="breadcrumb-current">Confirm</span>
   </nav>
-  <p class="page-description">Review your boundary on the map, then begin auto-population of geographic data.</p>
+  <p class="page-description">Check the boundary on the map and what Populate brings in, then continue to Populate.</p>
 </div>
 {% endblock %}
 
 {% block content %}
 <div class="page-stack page-medium">
 
-  <!-- Step indicator -->
+  {% comment %}Step indicator: the wizard's step names (R-053).{% endcomment %}
   <div class="row-start" style="gap: var(--space-lg);">
     <div class="row-start">
       <span class="step-badge" style="background: var(--forest-400); color: var(--color-base); border-color: var(--forest-400);">✓</span>
@@ -42,12 +42,12 @@
     </div>
   </div>
 
-  <!-- Map preview -->
+  {% comment %}Map preview{% endcomment %}
   <div class="card-raised" style="padding: 0; overflow: hidden;">
     <div id="boundary-map" style="height: 360px; width: 100%;"></div>
   </div>
 
-  <!-- Stats card -->
+  {% comment %}Stats card{% endcomment %}
   <div class="card-raised">
     <h2 class="card-header-ruled">{{ boundary.name }}</h2>
     {% comment %}
@@ -65,7 +65,7 @@
       <div class="inset-card">
         <div class="stat-card-label">Already inside this boundary</div>
         <div class="stat-card-value-sm">{{ existing_basins }} basin{{ existing_basins|pluralize }} &middot; {{ existing_flowlines }} flowline{{ existing_flowlines|pluralize }}</div>
-        <div class="stat-card-unit">left alone by auto-population</div>
+        <div class="stat-card-unit">skipped by Populate</div>
       </div>
       {% if boundary.huc %}
       <div class="inset-card">
@@ -76,19 +76,58 @@
       {% endif %}
     </div>
 
-    <div class="card-raised card-inset" style="margin-bottom: var(--space-lg);">
-      <p class="text-secondary text-sm m-0">
-        Auto-population will fetch from public APIs:
-        Department of Water Resources Bulletin 118 basins, LightBox parcels, USGS 3DHP flowlines{% if 'datasync' in enabled_modules %}, and
-        CDEC/USGS/CIMIS monitoring stations{% endif %}. Records that are already here are left alone, so nothing is duplicated.
-      </p>
+    {% comment %}149.1-06 (flow D): what step 3 brings in, one row per populate
+    step in setup/services.py wizard_steps() order, each row behind the module
+    its step fills (_STEP_MODULE: parcels -> 'parcels', stations -> 'datasync';
+    basins and flowlines are geography's and always run). The What column is the
+    step label the picker and the progress rows print; the Written as column is
+    the sidebar's or the map's name for what the step creates
+    (geography/management/commands/auto_populate.py: Zone zone_type='subbasin',
+    Parcel by APN, Flowline, MonitoredStation with is_active=False). What it
+    does not bring in agrees with Getting started (149.1-04): no wells, no
+    recharge areas, and a use-area file of the district's own is uploaded on Use
+    Areas.{% endcomment %}
+    <h3 class="section-header-flush mb-sm">What Populate brings in</h3>
+    <div class="table-scroll mb-md">
+      <table class="data-table help-cases-table">
+        <thead>
+          <tr>
+            <th>What</th>
+            <th>From</th>
+            <th>Written as</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-name">Groundwater Basins</td>
+            <td>Department of Water Resources (DWR) Bulletin 118 subbasins that cross this boundary</td>
+            <td>Zones, one per subbasin</td>
+          </tr>
+          {% if 'parcels' in enabled_modules %}<tr>
+            <td class="col-name">Parcel Boundaries</td>
+            <td>LightBox statewide parcel layer</td>
+            <td>Use areas, one per Assessor Parcel Number (APN)</td>
+          </tr>{% endif %}
+          <tr>
+            <td class="col-name">Flowlines</td>
+            <td>USGS 3D Hydrography Program (3DHP)</td>
+            <td>Two layers on the Map, Rivers &amp; Streams and Canals &amp; Ditches</td>
+          </tr>
+          {% if 'datasync' in enabled_modules %}<tr>
+            <td class="col-name">Monitoring Stations</td>
+            <td>USGS, CDEC, DWR, CIMIS and NOAA station lists near this boundary; CIMIS and NOAA need an API key</td>
+            <td>Monitoring stations, switched off until you switch them on</td>
+          </tr>{% endif %}
+        </tbody>
+      </table>
     </div>
+    {% any_module_enabled "wells" "recharge" "parcels" as leaves_some_out %}{% if leaves_some_out %}<p class="text-secondary text-sm mb-md">Populate does not bring in {% module_nouns "wells:wells" "recharge:recharge areas" "parcels:your own use area boundaries" conjunction="or" %}.</p>{% endif %}
 
     <form method="post">
       {% csrf_token %}
       <div class="form-footer-ruled">
-        <a href="{% url 'setup:wizard' %}" class="btn-secondary">← Back</a>
-        <button type="submit" class="btn-primary">Begin population →</button>
+        <a href="{% url 'setup:wizard' %}" class="btn-secondary">← Back to Boundary</a>
+        <button type="submit" class="btn-primary">Continue to Populate →</button>
       </div>
     </form>
   </div>
