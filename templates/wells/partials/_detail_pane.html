@@ -76,7 +76,7 @@
         <!-- Static field: well_registration_id (local registry id) -->
         <div class="field-group">
           <div class="field-label field-row">
-            Registration ID
+            Registration ID (this agency)
             {% include "partials/_help_tooltip.html" with label="Registration ID" text="This agency's local registry identifier for the well. The statewide DWR identifier is the State Well Number field below." %}
             {% comment %}
               Row-level, and only on a well whose section claims a publisher —
@@ -108,9 +108,9 @@
       </div>
 
       <!-- ── State Reporting (GEARS) ── -->
-      <h2 class="section-header mt-lg">State reporting (GEARS)</h2>
+      <h2 class="section-header mt-lg">State reporting (GEARS, State Water Board)</h2>
       <p class="text-tertiary text-xs" style="margin-bottom: var(--space-sm);">
-        These fields feed the extraction report filed in GEARS, the State Water Board's Groundwater Extraction Annual Reporting System; the three method fields follow the Department of Water Resources (DWR) annual report table.
+        GEARS is the Groundwater Extraction Annual Reporting System; the three method fields follow the Department of Water Resources (DWR) annual report table.
       </p>
 
       {% comment %}

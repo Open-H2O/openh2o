@@ -157,6 +157,21 @@
         <div class="field-value-mono">{{ facility.epa_facility_id }}</div>
       </div>
       {% endif %}
+      {% if not geojson %}
+      {% comment %}
+        149.1-07 (R-065), round 2: the no-map fact is a row of the record (a
+        fact beside the thing it governs), not a line under the card; the fresh
+        reader found the line under the card and called it a paragraph.
+      {% endcomment %}
+      <div class="field-group">
+        <div class="field-label">Map</div>
+        <div class="field-value">None, no published coordinate for this facility</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Positions from</div>
+        <div class="field-value">The state's Groundwater Ambient Monitoring and Assessment Program (GAMA), for groundwater sources only</div>
+      </div>
+      {% endif %}
       {% comment %}
         143-08 Task 3 (R-064). "Water system" folded in here: it is the SAME
         publisher (EPA_SDWIS) as every field above it, so a second heading and
@@ -219,9 +234,6 @@
     expansion keeps the program's own name, as on the sampling point page
     (tests/test_drinking_readability.py REQUIRED_EXPANSIONS).
   {% endcomment %}
-  {% if not geojson %}
-  <p class="text-secondary text-sm">No published coordinate for this facility, so there is no map; positions come from the state's Groundwater Ambient Monitoring and Assessment Program (GAMA), which publishes them for groundwater sources only.</p>
-  {% endif %}
 
   <div class="card-raised" style="padding: 0;">
     <div class="ledger-card-head">

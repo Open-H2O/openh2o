@@ -282,7 +282,7 @@ def validate_report(reporting_period, report_type):
                 "level": "warning",
                 "message": (
                     f"{orphans_elsewhere} diversion record(s) outside this period belong to "
-                    "no water year at all; they will never appear in any filing "
+                    "no water year; they will never appear in any filing "
                     "until a period covering their month exists."
                 ),
             })

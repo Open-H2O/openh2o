@@ -879,27 +879,27 @@ def check_et_meter_agreement():
     if comparable_parcels < ET_METER_MIN_SAMPLE:
         status = "green"
         msg = (
-            f"Satellite ET is {pct}% of measured supply ({band}), but only "
+            f"Satellite ET is {pct}% of the supplies on record ({band}), but only "
             f"{_metered_use_areas(comparable_parcels)}, counted once per water "
             f"year; too small to judge"
         )
     elif aggregate < ET_METER_RED_LOW or aggregate > ET_METER_RED_HIGH:
         status = "red"
         msg = (
-            f"Satellite ET is {pct}% of measured supply, outside anything "
+            f"Satellite ET is {pct}% of the supplies on record, outside anything "
             f"irrigation efficiency explains ({band}); check ET magnitude and "
             f"meter readings before filing"
         )
     elif aggregate < ET_METER_GREEN_LOW or aggregate > ET_METER_GREEN_HIGH:
         status = "yellow"
         msg = (
-            f"Satellite ET is {pct}% of measured supply, outside the usual "
+            f"Satellite ET is {pct}% of the supplies on record, outside the usual "
             f"{band}"
         )
     elif out_of_band:
         status = "yellow"
         msg = (
-            f"Satellite ET is {pct}% of measured supply overall ({band}), but "
+            f"Satellite ET is {pct}% of the supplies on record overall ({band}), but "
             f"{len(out_of_band)} of {_metered_use_areas(comparable_parcels)}, "
             f"counted once per water year, "
             f"{'falls' if len(out_of_band) == 1 else 'fall'} outside that range"
@@ -907,7 +907,7 @@ def check_et_meter_agreement():
     else:
         status = "green"
         msg = (
-            f"Satellite ET is {pct}% of measured supply across "
+            f"Satellite ET is {pct}% of the supplies on record across "
             f"{_metered_use_areas(comparable_parcels)}, counted once per water "
             f"year ({band})"
         )

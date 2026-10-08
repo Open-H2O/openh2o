@@ -221,7 +221,7 @@ ALIASES = {
 FIELD_LABELS = {
     "name": "Name",
     "well_registration_id": "Registration ID (local)",
-    "wcr_number": "Well Completion Report (WCR) number",
+    "wcr_number": "WCR number (DWR)",
     "state_well_number": "State Well Number (DWR)",
     "capacity_gpm": "Capacity (gpm)",
     "tested_yield_gpm": "Tested Yield (gpm)",

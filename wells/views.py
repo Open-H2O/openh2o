@@ -38,7 +38,7 @@ from wells.models import (
 EDITABLE_FIELDS = {
     "name": {"label": "Name", "type": "text", "max_length": 200},
     "owner_name": {"label": "Owner Name", "type": "text", "max_length": 200},
-    "wcr_number": {"label": "Well Completion Report (WCR) number", "type": "text", "max_length": 50},
+    "wcr_number": {"label": "WCR number (DWR)", "type": "text", "max_length": 50},
     "state_well_number": {"label": "State Well Number (DWR)", "type": "text", "max_length": 50},
     "status": {"label": "Status", "type": "select", "choices": Well.STATUS_CHOICES},
     "capacity_gpm": {"label": "Capacity (gpm)", "type": "number", "step": "0.01", "min_value": 0},
