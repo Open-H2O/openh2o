@@ -46,7 +46,7 @@
       page takes, what the preview shows and what the commit writes; the
       columns are the table below, read from drinking/importer.py.
     {% endcomment %}
-    <p class="text-base text-secondary mt-md">A CSV in the SDWIS.CSV lab-results layout the state's Division of Drinking Water publishes. The preview lists every row before anything is written; the commit writes sample events and results.</p>
+    <p class="text-base text-secondary mt-md">The preview lists every row before anything is written; the commit writes sample events and results.</p>
 
 
     <form class="mt-lg"
@@ -70,7 +70,7 @@
           </label>
           <span class="file-picker-name text-tertiary text-sm" id="import-file-name">No file chosen</span>
         </div>
-        <div class="form-help">CSV, as the state publishes it; up to {{ max_rows }} rows, 25 MB.</div>
+        <div class="form-help">Up to {{ max_rows }} rows, 25 MB.</div>
       </div>
 
       <div class="row-start pt-sm">

@@ -30,9 +30,9 @@
 {% if needs_setup %}
   {% if 'setup' in enabled_modules %}
   <p class="text-tertiary text-sm mt-sm">
-    The Setup Wizard brings in use areas, the DWR Bulletin 118 subbasins as
-    zones{% if 'datasync' in enabled_modules %} and the monitoring stations near
-    your boundary{% endif %}; {% if 'wells' in enabled_modules %}wells{% endif %}{% if 'wells' in enabled_modules and 'recharge' in enabled_modules %} and {% endif %}{% if 'recharge' in enabled_modules %}recharge sites{% endif %} are added after it.
+    Run the Setup Wizard first; it brings in use areas, the DWR Bulletin 118
+    subbasins as zones{% if 'datasync' in enabled_modules %} and the monitoring
+    stations near your boundary{% endif %}. Add and Import fill this list afterwards.
   </p>
   {% endif %}
   <div class="form-footer" style="justify-content: center; margin-top: var(--space-md);">
