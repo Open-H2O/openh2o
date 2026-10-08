@@ -400,10 +400,12 @@ def report_transition(request, pk):
 def calwatrs_worksheet(request, pk):
     """A per-POD transcription worksheet for CalWATRS.
 
-    CalWATRS has no upload — the user types each Point of Diversion's monthly
-    values into the state web form by hand. This view lays the same numbers the
-    CSV generator produces out as one block per POD, in a top-to-bottom order
-    that mirrors the portal, with each right's CalWATRS PIN beside it.
+    OpenH2O does not submit reports to the state (CLAUDE.md, Brent 2026-08-05),
+    so the user enters each Point of Diversion's monthly values in CalWATRS
+    themselves. This view lays the same numbers the CSV generator produces out
+    as one block per POD, with each right's CalWATRS PIN beside it. It makes no
+    claim about what CalWATRS accepts or in what order it asks (Brent,
+    2026-10-08 16:43: the old "CalWATRS has no upload" line was never his).
     """
     submission = get_object_or_404(
         ReportSubmission.objects.select_related("report_template", "reporting_period"),
