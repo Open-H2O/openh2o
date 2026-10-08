@@ -111,7 +111,7 @@
                 <path d="M19 7l-3 6a3 3 0 0 0 6 0z"/>
                 <path d="M8 21h8"/>
             </svg>
-            <span class="sidebar-link-text">Water Balance Info</span>
+            <span class="sidebar-link-text">How water balances work</span>
         </a>{% endif %}
         {% explainer_available "methods" as show_methods %}{% if show_methods %}<a href="{% url 'methods' %}"
            class="sidebar-link{% if request.path == '/help/methods/' %} active{% endif %}">
@@ -123,7 +123,7 @@
                 <line x1="3" y1="12" x2="3.01" y2="12"/>
                 <line x1="3" y1="18" x2="3.01" y2="18"/>
             </svg>
-            <span class="sidebar-link-text">Methods</span>
+            <span class="sidebar-link-text">Methods behind the numbers</span>
         </a>{% endif %}
         {% explainer_available "settings_explained" as show_settings %}{% if show_settings %}<a href="{% url 'settings_explained' %}"
            class="sidebar-link{% if request.path == '/help/settings/' %} active{% endif %}">
@@ -131,7 +131,7 @@
                 <circle cx="12" cy="12" r="3"/>
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
             </svg>
-            <span class="sidebar-link-text">Configs Explained</span>
+            <span class="sidebar-link-text">Configs &amp; settings, explained</span>
         </a>{% endif %}
         <a href="{% url 'glossary' %}"
            class="sidebar-link{% if request.path == '/help/glossary/' %} active{% endif %}">

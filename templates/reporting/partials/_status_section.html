@@ -1,8 +1,7 @@
 <div class="card-raised">
   <h3 class="section-header-sm">Internal status</h3>
   <p class="text-tertiary text-xs mb-md">
-    These steps track your agency's own progress toward filing. None of them sends
-    anything to the State Water Board — you file in the state portal yourself.
+    These steps track your agency's own progress toward filing in the state portal.
   </p>
 
   <div class="row-start mb-md">
@@ -27,7 +26,6 @@
   {% if submission.status == "filed" %}
   <p class="text-tertiary text-xs mb-md">
     Self-reported: the agency recorded filing and certifying this in the state portal.
-    OpenH2O did not submit anything to the State Water Board.
   </p>
   {% endif %}
 
@@ -57,7 +55,7 @@
     <div class="form-group mb-0">
       <label class="form-label" for="id_internal_notes">Internal approval notes (optional)</label>
       <p class="text-tertiary text-xs" style="margin: 0 0 var(--space-xs);">
-        Your agency's sign-off before filing — not a State Water Board review.
+        Your agency's sign-off before filing.
       </p>
       <textarea id="id_internal_notes" name="internal_notes" rows="2" class="form-textarea" style="min-height: 0;"
                 placeholder="Who approved this, and any internal notes (the state never sees this)..."></textarea>

@@ -67,7 +67,7 @@
       <h2 class="section-header" style="margin-top: 0;">The analysis {% source_label "DDW_LAB" %}</h2>
       <div class="field-grid-2">
         <div class="field-group">
-          <div class="field-label">Analysis date</div>
+          <div class="field-label">Date</div>
           <div class="field-value-mono">{{ result.analysis_date|date:"Y-m-d"|blank }}</div>
         </div>
         <div class="field-group">
@@ -94,7 +94,7 @@
         {% endif %}
       </div>
       <p class="text-sm text-tertiary" style="margin-top: var(--space-xs); max-width: 75ch;">
-        ELAP is California's Environmental Laboratory Accreditation Program — the certification a laboratory holds to run this analysis for regulatory purposes.
+        ELAP is California's Environmental Laboratory Accreditation Program, the certification a laboratory holds to run this analysis for regulatory purposes.
       </p>
 
       <h2 class="section-header mt-lg">The sample it came from {% source_label "DDW_LAB" %}</h2>
@@ -221,13 +221,13 @@
         <div class="field-group">
           <div class="field-label">Sampling point {% source_label "PS_CODE_COMPOSED" %}</div>
           <div class="field-value">
-            <a href="{% url 'drinking:sampling_point_detail' point.pk %}" class="data-table-link text-mono">{{ point.ps_code }}</a>{% if point.name %} — {{ point.name }}{% endif %}
+            <a href="{% url 'drinking:sampling_point_detail' point.pk %}" class="data-table-link text-mono">{{ point.ps_code }}</a>{% if point.name %} ({{ point.name }}){% endif %}
           </div>
         </div>
         <div class="field-group">
           <div class="field-label">Facility</div>
           <div class="field-value">
-            <a href="{% url 'drinking:facility_detail' facility.pk %}" class="data-table-link">{{ facility.facility_id }}</a>{% if facility.name %} — {{ facility.name }}{% endif %}
+            <a href="{% url 'drinking:facility_detail' facility.pk %}" class="data-table-link">{{ facility.facility_id }}</a>{% if facility.name %} ({{ facility.name }}){% endif %}
           </div>
         </div>
         <div class="field-group">
@@ -258,8 +258,8 @@
       {% endcomment %}
       <h2 class="section-header mt-lg">Published report {% source_label "CCR_SYSTEM" %}</h2>
       <p class="text-base text-secondary" style="max-width: 75ch;">
-        <a href="{{ ccr_url }}" target="_blank" rel="noopener" class="data-table-link">{{ system.name }}'s {{ ccr_year }} Consumer Confidence Report</a>
-        — the annual water-quality report this system published for the year this
+        <a href="{{ ccr_url }}" target="_blank" rel="noopener" class="data-table-link">{{ system.name }}'s {{ ccr_year }} Consumer Confidence Report</a>,
+        the annual water-quality report this system published for the year this
         sample was taken. It is the system's report for the whole year, not this
         sample's own laboratory sheet.
       </p>

@@ -132,7 +132,7 @@
       <div class="field-group">
         <div class="field-label">Facility {% source_label "EPA_SDWIS" %}</div>
         <div class="field-value">
-          <a href="{% url 'drinking:facility_detail' point.facility.pk %}" class="data-table-link">{{ point.facility.facility_id }}</a>{% if point.facility.name %} — {{ point.facility.name }}{% endif %}
+          <a href="{% url 'drinking:facility_detail' point.facility.pk %}" class="data-table-link">{{ point.facility.facility_id }}</a>{% if point.facility.name %} ({{ point.facility.name }}){% endif %}
         </div>
       </div>
       <div class="field-group">
@@ -181,7 +181,7 @@
   <div class="card-raised" style="padding: 0;">
     <div class="ledger-card-head">
       <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">Sample results {% source_label "DDW_LAB" %}</h2>
-      <div class="text-secondary text-base">{{ result_count|intcomma }} sample results &middot; {{ analyte_count }} analytes &middot; sampled {{ first_sample|date:"Y-m-d" }} to {{ latest_sample|date:"Y-m-d" }}</div>
+      <div class="text-secondary text-base">{{ result_count|intcomma }} sample results &middot; {{ analyte_count }} analytes &middot; sampled {{ first_sample|date:"Y-m-d" }} to {{ latest_sample|date:"Y-m-d" }}{% if result_groups %} &middot; A value with &lt; is one the laboratory reported below its reporting level, not a measured quantity.{% endif %}</div>
       {% if is_truncated %}
       <div class="text-secondary text-base">The {{ shown_limit }} most recent are below; the full log is at Sample results.</div>
       {% endif %}

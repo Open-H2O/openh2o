@@ -1841,7 +1841,7 @@
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_list_results.html",
-    "line": 30,
+    "line": 33,
     "column": 122,
     "expression": "{{ right.face_value_acre_feet|floatformat:0 }}",
     "enclosing_loop": "right in page_obj",

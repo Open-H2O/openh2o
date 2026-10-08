@@ -91,23 +91,6 @@
       {% source_label "GAMA" detail="EPA publishes no facility coordinates" %}
     </p>
   </div>
-  {% else %}
-  {% comment %}
-    Measured on staging 2026-07-29 before this sentence was written: of the 40
-    unlocated facilities, 29 are treatment plants, 1 is the distribution system
-    — and 10 ARE groundwater sources. So the sentence may NOT say "this is a
-    treatment plant, which is why". It states the fact and then says where
-    coordinates come from; it never asserts a cause it cannot see.
-  {% endcomment %}
-  <div class="card-raised">
-    <p class="text-secondary text-base" style="max-width: 70ch; margin: 0;">
-      No published coordinate for this facility, so there is no map to show.
-      Positions come from the state's Groundwater Ambient Monitoring and Assessment
-      Program (GAMA), which publishes them for groundwater sources only, and not
-      for every one. EPA's record, which onboarding reads, carries no
-      coordinates.
-    </p>
-  </div>
   {% endif %}
 
   <div class="card-raised">
@@ -124,7 +107,7 @@
       publisher for three.
     {% endcomment %}
     <h2 class="section-header" style="margin-top: 0;">
-      {% if facility.facility_type %}{{ facility.get_facility_type_display }}{% else %}Facility{% endif %}{% if facility.name and not facility.name_adds_nothing %} &mdash; <span class="text-secondary">{{ facility.name }}</span>{% endif %} {% if facility.added_by_hand %}{% source_label "OPERATOR_ENTERED" %}{% else %}{% source_label "EPA_SDWIS" %}{% endif %}
+      {% if facility.facility_type %}{{ facility.get_facility_type_display }}{% else %}Facility{% endif %}{% if facility.name and not facility.name_adds_nothing %}: <span class="text-secondary">{{ facility.name }}</span>{% endif %} {% if facility.added_by_hand %}{% source_label "OPERATOR_ENTERED" %}{% else %}{% source_label "EPA_SDWIS" %}{% endif %}
     </h2>
     {% comment %}
       146-04 Task 3 (D9). A facility typed in on this deployment's form is the
@@ -166,7 +149,7 @@
       </div>
       <div class="field-group">
         <div class="field-label">Source facility</div>
-        <div class="field-value">{% if facility.is_source %}Yes — water enters the system here{% else %}No{% endif %}</div>
+        <div class="field-value">{% if facility.is_source %}Yes, water enters the system here{% else %}No{% endif %}</div>
       </div>
       {% if facility.epa_facility_id %}
       <div class="field-group">
@@ -223,6 +206,22 @@
       every row.
     {% endcomment %}
   </div>
+
+  {% comment %}
+    149.1-07 (R-065). The no-map fact, one line in the map's place after the
+    record, so the identity card leads; it was a four-line panel above it. Only
+    an unlocated facility shows it: a located one has the map card above.
+    Measured on staging 2026-07-29 before this sentence was written: of the 40
+    unlocated facilities, 29 are treatment plants, 1 is the distribution system,
+    and 10 ARE groundwater sources. So the line may NOT say "this is a
+    treatment plant, which is why". It states the fact and then says where
+    coordinates come from; it never asserts a cause it cannot see. The GAMA
+    expansion keeps the program's own name, as on the sampling point page
+    (tests/test_drinking_readability.py REQUIRED_EXPANSIONS).
+  {% endcomment %}
+  {% if not geojson %}
+  <p class="text-secondary text-sm">No published coordinate for this facility, so there is no map; positions come from the state's Groundwater Ambient Monitoring and Assessment Program (GAMA), which publishes them for groundwater sources only.</p>
+  {% endif %}
 
   <div class="card-raised" style="padding: 0;">
     <div class="ledger-card-head">
