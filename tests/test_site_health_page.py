@@ -96,7 +96,7 @@ class TestThePanelLeadsWithTheHealthyCount:
     def test_the_info_card_reads_last_run(self):
         _persist_fixture()
         html = _client_in().get(reverse("health:dashboard")).content.decode()
-        assert "Last run" in html
+        assert "When" in html
 
     def test_no_row_end_chip_remains(self):
         _persist_fixture()

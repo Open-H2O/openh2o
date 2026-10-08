@@ -23,7 +23,7 @@ import pytest
 from django.test import Client
 from django.urls import reverse
 
-from infrastructure.views import ADD_TYPE_LONG_LABEL, supported_add_types
+from infrastructure.views import supported_add_types
 
 # Each list page's primary add button, and the type it must land on.
 ADD_ENTRY_POINTS = [
@@ -71,7 +71,7 @@ def test_the_page_describes_the_type_it_is_adding(client_admin, infra_type):
     thing and the sentence under it said another.
     """
     body = client_admin.get(f"/infrastructure/add/?type={infra_type}").content.decode()
-    assert f"Add a {ADD_TYPE_LONG_LABEL[infra_type]} and place it on the map." in body
+    assert "Name it and place it on the map." in body
     assert "Add a single well, diversion, storage, or recharge site" not in body
 
 

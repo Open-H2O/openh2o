@@ -296,7 +296,7 @@ class DeliverySettingsForm(forms.Form):
         # surface-only in the first place. Rewritten module-neutrally rather than
         # guarded, because the sentence survives it (89-02's rule).
         label=(
-            "When a district doesn't use its full allotment by the end of the "
+            "When a zone doesn't use its full allocation by the end of the "
             "water year:"
         ),
         widget=forms.RadioSelect,

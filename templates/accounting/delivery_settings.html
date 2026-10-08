@@ -15,7 +15,7 @@
   {% comment %}90-02: the description promised "surface deliveries" on deployments
   with no Surface module — the page had no `_PAGES` row until this plan, so no
   assertion had ever read it. The sharing half of the sentence goes with the
-  setting it describes.{% endcomment %}<p class="page-description">{% if 'surface' in enabled_modules %}How the platform shares surface deliveries across farms, and what{% else %}What{% endif %} happens to a district's unused water at year-end. Set once for the whole agency.</p>
+  setting it describes.{% endcomment %}<p class="page-description">{% if 'surface' in enabled_modules %}How the platform shares surface deliveries across farms, and what{% else %}What{% endif %} happens to a zone's unused water at year-end. Set once for the whole agency.</p>
 </div>
 {% endblock %}
 
@@ -30,7 +30,7 @@
     shown, and the Learn-more link pointed at an explainer that 404s when the
     deployment does not run every domain it explains — a live dead link, found
     the moment this page got a `_PAGES` row. The predicate is the same one the
-    view and the sidebar read.{% endcomment %}{% explainer_available "surface_deliveries" as show_delivery_help %}<p class="text-secondary text-base m-0">These settings apply to every district. An analyst sets them once; a single district can differ from the default where it needs to (set that on the district's own page).{% if show_delivery_help %} <a href="{% url 'surface_deliveries' %}" class="text-sm text-accent">Learn more &rarr;</a>{% endif %}</p>
+    view and the sidebar read.{% endcomment %}{% explainer_available "surface_deliveries" as show_delivery_help %}<p class="text-secondary text-base m-0">These settings apply to the whole agency. An analyst sets them once; the year-end choice alone can differ for a single zone (set that on the zone's own page).{% if show_delivery_help %} <a href="{% url 'surface_deliveries' %}" class="text-sm text-accent">Learn more &rarr;</a>{% endif %}</p>
   </div>
 
   {% if user_can_write %}

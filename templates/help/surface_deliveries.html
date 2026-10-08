@@ -133,7 +133,7 @@
       </table>
     </div>
 
-    <p class="text-secondary text-sm mt-md">An administrator sets the agency's choice on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{% url 'accounting:delivery_settings' %}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}, as &ldquo;When a district doesn't use its full allotment by the end of the water year&rdquo;.</p>
+    <p class="text-secondary text-sm mt-md">An administrator sets the agency's choice on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{% url 'accounting:delivery_settings' %}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}, as &ldquo;When a zone doesn't use its full allocation by the end of the water year&rdquo;.</p>
 
     <div class="help-subsection">
       <h3 class="concept-panel-title">One district can differ</h3>
@@ -153,11 +153,11 @@
             </tr>
             <tr>
               <td class="col-name">Carry it forward as a credit</td>
-              <td>Carried forward for this district only, whatever the agency&rsquo;s choice</td>
+              <td>Carried forward for this zone only, whatever the agency&rsquo;s choice</td>
             </tr>
             <tr>
               <td class="col-name">Let it expire (use-it-or-lose-it)</td>
-              <td>Expires for this district only, whatever the agency&rsquo;s choice</td>
+              <td>Expires for this zone only, whatever the agency&rsquo;s choice</td>
             </tr>
           </tbody>
         </table>

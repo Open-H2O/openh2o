@@ -204,7 +204,7 @@ def health_dashboard(request):
         # at the one period's page, not a list).
         own_href = (r.details or {}).get("where_href")
         if r.status in ("yellow", "red") and own_href and is_enabled("accounting"):
-            r.where = {"href": own_href, "label": "the reporting period's page"}
+            r.where = {"href": own_href, "label": "the water year's page"}
         elif r.status in ("yellow", "red") and r.category in WHERE_TO_LOOK:
             url_name, query, label, module = WHERE_TO_LOOK[r.category]
             if is_enabled(module):

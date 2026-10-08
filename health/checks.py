@@ -679,14 +679,16 @@ def check_period_month_alignment():
 
     if offenders:
         status = "yellow"
+        n = len(offenders)
         msg = (
-            f"{len(offenders)} reporting period(s) start or end mid-month; monthly "
-            f"calculation runs are counted whole, so those periods include more "
-            f"days than they state"
+            f"{n} water year{'s' if n != 1 else ''} start{'' if n != 1 else 's'} or "
+            f"end{'' if n != 1 else 's'} mid-month; monthly calculation runs are "
+            f"counted whole, so {'those water years include' if n != 1 else 'that water year includes'} "
+            f"more days than {'they state' if n != 1 else 'it states'}"
         )
     else:
         status = "green"
-        msg = "All reporting periods are month-aligned"
+        msg = "All water years are month-aligned"
 
     return {
         "category": "period_alignment",
@@ -694,6 +696,16 @@ def check_period_month_alignment():
         "message": msg,
         "details": details,
     }
+
+
+def _metered_use_areas(n: int) -> str:
+    """"1 metered use area" / "22 metered use areas": a real plural, never "(s)".
+
+    The check counts one use area once per water year it has a meter or a
+    delivery and an estimated use, so the caller says "counted once per water
+    year" beside the number (149.1-07, R-057).
+    """
+    return f"{n} metered use area{'' if n == 1 else 's'}"
 
 
 def check_et_meter_agreement():
@@ -868,12 +880,13 @@ def check_et_meter_agreement():
         status = "green"
         msg = (
             f"Satellite ET is {pct}% of measured supply ({band}), but only "
-            f"{comparable_parcels} metered parcel-period(s) — too small to judge"
+            f"{_metered_use_areas(comparable_parcels)}, counted once per water "
+            f"year; too small to judge"
         )
     elif aggregate < ET_METER_RED_LOW or aggregate > ET_METER_RED_HIGH:
         status = "red"
         msg = (
-            f"Satellite ET is {pct}% of measured supply — outside anything "
+            f"Satellite ET is {pct}% of measured supply, outside anything "
             f"irrigation efficiency explains ({band}); check ET magnitude and "
             f"meter readings before filing"
         )
@@ -887,13 +900,16 @@ def check_et_meter_agreement():
         status = "yellow"
         msg = (
             f"Satellite ET is {pct}% of measured supply overall ({band}), but "
-            f"{len(out_of_band)} parcel-period(s) fall outside that range"
+            f"{len(out_of_band)} of {_metered_use_areas(comparable_parcels)}, "
+            f"counted once per water year, "
+            f"{'falls' if len(out_of_band) == 1 else 'fall'} outside that range"
         )
     else:
         status = "green"
         msg = (
             f"Satellite ET is {pct}% of measured supply across "
-            f"{comparable_parcels} metered parcel-period(s) ({band})"
+            f"{_metered_use_areas(comparable_parcels)}, counted once per water "
+            f"year ({band})"
         )
 
     return {
@@ -999,7 +1015,7 @@ def check_calculation():
             "status": "yellow",
             "message": (
                 "The calculation has never run on this site. Run it from a "
-                "reporting period's page."
+                "water year's page."
             ),
             "details": {},
         }

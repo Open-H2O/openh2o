@@ -15,7 +15,7 @@
      third sentence that used to close this paragraph (which checks are left out of the
      score, and why) now sits under the "This run" card's field grid instead, next to the
      Not applicable field it explains (143-09). {% endcomment %}
-  <p class="page-description">Site health checks across {{ total }} categories. Green means healthy, yellow means attention needed, red means action required.</p>
+  <p class="page-description">{{ total }} categories checked. Green means healthy, yellow means attention needed, red means action required.</p>
 </div>
 {% endblock %}
 
@@ -48,7 +48,7 @@
         <h2 class="section-header" style="margin-top: 0;">This run</h2>
         <div class="field-grid-2">
           <div class="field-group">
-            <div class="field-label">Last run</div>
+            <div class="field-label">When</div>
             <div class="field-value">{{ last_checked|date:"M j, Y H:i" }}</div>
           </div>
           <div class="field-group">

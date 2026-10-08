@@ -20,7 +20,7 @@ WIZARD_STEPS = [
     ("basins", "Groundwater Basins", "DWR Bulletin 118 subbasins"),
     ("parcels", "Parcel Boundaries", "LightBox statewide parcels"),
     ("flowlines", "Flowlines", "USGS 3DHP hydrography"),
-    ("stations", "Monitoring Stations", "Federal and state gauges, wells, and weather stations near your watershed"),
+    ("stations", "Monitoring Stations", "USGS, CDEC, DWR, CIMIS and NOAA station lists near your boundary"),
 ]
 
 #: Which module each wizard step fills, declared rather than derived — the same

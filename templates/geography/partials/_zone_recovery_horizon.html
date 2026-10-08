@@ -9,13 +9,13 @@ highlighted; "Use agency default" clears the override to NULL.
   <p class="text-secondary text-base" style="margin: 0 0 var(--space-sm) 0;">
     Year-end unused water:
     {% if rh_override %}
-      <strong style="color: var(--color-text-primary);">Set for this district ({{ rh_effective_phrase }})</strong>
+      <strong style="color: var(--color-text-primary);">Set for this zone ({{ rh_effective_phrase }})</strong>
     {% else %}
       <strong style="color: var(--color-text-primary);">Using agency default ({{ rh_agency_phrase }})</strong>
     {% endif %}
   </p>
   <p class="text-tertiary text-sm" style="margin: 0 0 var(--space-sm) 0;">
-    What happens to this district's unused surface-water allotment at the end of the water year. Change it just for this district, or leave it on the agency default.
+    What happens to this zone's unused surface allocation at the end of the water year. Change it for this zone only, or leave it on the agency default.
   </p>
   <div class="flex" style="gap: var(--space-xs); flex-wrap: wrap;">
     <button type="button"

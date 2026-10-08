@@ -51,7 +51,7 @@ class TestStates:
         assert r["status"] == "yellow"
         assert r["message"] == (
             "The calculation has never run on this site. Run it from a "
-            "reporting period's page."
+            "water year's page."
         )
 
     def test_succeeded_is_green(self):

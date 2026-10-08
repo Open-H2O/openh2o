@@ -19,7 +19,7 @@
   gated on its own membership with `any_module_enabled`, the tag Phase 88 added
   for exactly a sentence that would otherwise be left naming nothing. The two
   sentences that survive still describe the map correctly: the agency boundary
-  and its zones are `geography` and are always there.{% endcomment %}{% any_module_enabled "parcels" "wells" "surface" "recharge" "drinking" as map_has_features %}<p class="page-description">{% if map_has_features %}Interactive map showing {% module_nouns "parcels:use areas" "wells:wells" "surface:points of diversion" "recharge:recharge sites" "drinking:drinking-water facilities" %}. {% endif %}Toggle layers with the controls panel. Click features for details.</p>
+  and its zones are `geography` and are always there.{% endcomment %}{% any_module_enabled "parcels" "wells" "surface" "recharge" "drinking" as map_has_features %}<p class="page-description">{% if map_has_features %}{% module_nouns "parcels:use areas" "wells:wells" "surface:points of diversion" "recharge:recharge sites" "drinking:drinking-water facilities" as map_nouns %}{{ map_nouns|capfirst }}, each a layer in the Layers panel. Click a feature for its record.{% else %}Toggle layers with the controls panel. Click features for details.{% endif %}</p>
 </div>
 {% endblock %}
 
@@ -302,7 +302,7 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
           empties the Land Use section entirely, which is what removes the
           heading.{% endcomment %}{% if 'parcels' in enabled_modules %}{
             id: 'parcels-fill', type: 'fill', source: 'parcels',
-            label: 'Parcels', group: 'parcels', section: 'Land Use',
+            label: 'Use Areas', group: 'parcels', section: 'Land Use',
             paint: { 'fill-color': OH2O.colors.blue, 'fill-opacity': ['interpolate', ['linear'], ['zoom'], 11, 0.10, 15, 0.22] },
             swatch: 'fill', swatchColor: OH2O.colors.blue
         },
@@ -458,12 +458,12 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
         },
         {% if 'wells' in enabled_modules %}'gw-tie-lines': function(p) {
             var pct = Math.round((p.fraction || 0) * 100);
-            return '<strong>Well ' + (p.source_name || '—') + ' → Parcel ' + (p.parcel_number || '—') + '</strong><br>' +
+            return '<strong>Well ' + (p.source_name || '—') + ' → Use area ' + (p.parcel_number || '—') + '</strong><br>' +
                    'Fraction: ' + pct + '%';
         },{% endif %}
         'sw-tie-lines': function(p) {
             var pct = Math.round((p.fraction || 0) * 100);
-            return '<strong>POD ' + (p.source_name || '—') + ' → Parcel ' + (p.parcel_number || '—') + '</strong><br>' +
+            return '<strong>Point of diversion ' + (p.source_name || '—') + ' → Use area ' + (p.parcel_number || '—') + '</strong><br>' +
                    'Fraction: ' + pct + '%';
         },
         'boundary-outline': function(p) {
@@ -517,7 +517,7 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
         },{% endif %}
         {% if 'surface' in enabled_modules %}
         'pods-points': function(p) {
-            return '<strong>' + (p.name || 'Unknown POD') + '</strong><br>' +
+            return '<strong>' + (p.name || 'Unknown point of diversion') + '</strong><br>' +
                    'Stream: ' + (p.stream_name || '—') + '<br>' +
                    'Max rate: ' + (p.max_rate_cfs ? parseFloat(p.max_rate_cfs).toFixed(2) + ' cfs' : '—') + '<br>' +
                    '<a href="/surface/diversion/' + p.pk + '/" style="color:'+OH2O.colors.gold+'">View details →</a>';

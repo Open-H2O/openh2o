@@ -636,7 +636,7 @@ class TestCategoryCountIsRegistryDerived:
         """
         _persist(["green"] * 4 + ["yellow"] + ["skipped"] * 9)
         html = client.get(reverse("health:dashboard")).content.decode()
-        assert "across 14 categories" in html
+        assert "14 categories checked" in html
         assert "8 categories" not in html
         assert "14: 5 applicable, 9 not applicable" in html
         assert "of 5 applicable checks" in html

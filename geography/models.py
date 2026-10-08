@@ -75,9 +75,9 @@ class Boundary(models.Model):
 @track_changes()
 class Zone(models.Model):
     ZONE_TYPE_CHOICES = [
-        ("management_area", "Management Area"),
+        ("management_area", "Management area"),
         ("subbasin", "Subbasin"),
-        ("custom", "Custom"),
+        ("custom", "Agency-drawn"),
     ]
 
     name = models.CharField(max_length=200)
