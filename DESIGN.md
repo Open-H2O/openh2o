@@ -601,3 +601,37 @@ thousands separator), never the four decimals the model stores. And a re-run on 
 wording change must replace them, not double them: the old string stays in the module as a legacy prefix
 matched on delete and never written (`LEGACY_INCIDENTAL_RECHARGE_WORDS`; the ISS-052 contract). Identifiers
 follow the 143-07 map-card ruling (table rule 19, `core.map_labels.map_label`): the headgate's name, never its `MER-POD-…` code.
+
+### 15. Explanatory prose is short, complete sentences
+
+Brent, 2026-10-08 15:46 PDT, reading the facility page after three plans of word work: "One facility
+of CITY OF MERCED, and the sampling points on it." Nobody writes like this. A noun-phrase fragment
+presented as a statement is the shape this platform's prose fell into most often: a reviewer with no
+project history flagged 43 of the 77 page descriptions for it the same hour, and none of the rules above
+names it, so none of the checks caught it.
+
+**The rule, in one sentence: a page description, a card intro, a help line, an instruction or an
+empty-state line is one or more short, complete sentences, each with a subject and a finite verb.**
+
+Three shapes are faults:
+
+1. **A noun phrase presented as a statement.** "Well details, linked meters, and measurement history."
+   says nothing has happened to anything. "This page holds the well's record, the meters linked to it and
+   its measurement history." is the sentence.
+2. **Coordinated noun phrases joined by a comma.** "the record, and its map" takes no comma; "One
+   facility of X, and the sampling points on it." fails twice.
+3. **A relationship left to "of", "on it", "with", "beside it" or a colon-list** where a verb would say
+   it. "the sampling points on it" becomes "the table below lists its sampling points"; "Your sampling
+   checklist: what is sampled, how often, ..." becomes "This checklist shows what you sample, how often,
+   when you last sampled it and when it is next due."
+
+What is not a fault: a complete imperative ("Pick a zone from the list."); a label of one to three words;
+a column header, a map or legend label, a quantity's own name (rules 1 and 12); a colon that introduces
+a genuine list after a complete clause ("The file needs three columns: name, date and value."); a
+heading. Rule 7 still holds: short does not mean padded, and a sentence that only restates its heading
+is rule 13's fault, not this rule's cure.
+
+The guard is a reviewer reading against this rule's text (the plain-language pass, 149.1-07 onward), not
+a regex: a fragment is a sentence with no finite verb, and telling one from a heading needs a reader. A
+prose instruction to the writer measured as no help (the writing-layer trial, 2026-09-10 to 09-21); the
+check at write time is what works.
