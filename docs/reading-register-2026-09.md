@@ -1324,6 +1324,21 @@ Prose, the wording of descriptions and names, and the sidebar. Independent of 14
 
 R-006 was taken by 142-01 (2026-09-08): the inset is deleted, and its two claims live in the panel's segment captions and the tables' group headers. Nothing remains for Phase 144 on this row.
 
+Phase 149.1 (2026-10-07 to 2026-10-08) took the words rows, one plan per group, each checked on the
+rendered page before the edit. 149.1-05 (the six data screens, approved 2026-10-07 13:52 PDT) and
+149.1-06 (the first hour, approved 2026-10-08 06:57 PDT) closed R-128 (the crumb says Wells), R-139 and
+R-136 (the signed-out front page and the demonstration page), R-053 (the wizard's step names), the 22
+empty states and the five import doors. 149.1-07 (one name per thing) checked the rest live on
+2026-10-08: R-120 GONE (the right's table heads "Point of diversion"; grep finds no POD header); R-097
+CHANGED on the list (use areas throughout) and LIVE on the map (the Layers panel now says Use Areas, the
+popups say use area and point of diversion); R-029, R-116, R-119, R-057, R-113, R-099, R-104, R-127,
+R-048, R-065, R-086, R-059, R-092, R-146 LIVE and changed, each row's before and after in
+`.planning/phases/149.1-plain-words-and-clear-screens/page-verdict/CHANGES-2026-10-08.md` and the
+record of the reads in `READER-TASKS-2026-10-08.md`. ISS-168 ran as one sweep with
+`scripts/label_repeats.py`: 30 candidates in 245 templates, 14 labels restating their heading fixed,
+16 standing (a quantity's own name, a column that must name its column, a publisher's field name).
+Six Phase 150 rows (R-028, R-145, R-012, R-013, R-098, R-072) and About stay with Phase 150.
+
 | 35 | R-104 | c43 | The zone's year-end setting calls the zone 'this district' and describes its unused surface-water allotment, while the head calls the same thing a Management Area and the only table on the page shows groundwater, so a reader cannot say what the setting acts on. |
 | 38 | R-109 | c45 | The same 330.37 AF appears twice within a hand's width on the use-area page, once as the Residual marked Deficit and once as 'Water use recorded, no supply reported', and nothing says the two are one quantity, so a reader may read the shortfall as counted twice. (A reading finding, not ISS-158's data question: the arithmetic is right and the screen is what misleads.) |
 | 43 | R-127 | c53 | The recharge basin's Site information card says the basin is filled by a canal intake while every row of Event history is labelled Water type 'Groundwater', and nothing on the page says which sense of the phrase is meant, so a reader cannot say where the water in those events came from. |
