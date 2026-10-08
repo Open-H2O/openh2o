@@ -18,7 +18,7 @@
 {% if all_periods|length > 1 %}
 <select name="period"
         class="form-select"
-        aria-label="Reporting period"
+        aria-label="Water year"
         hx-get="{% url 'parcels:detail' parcel.pk %}"
         hx-target="#detail-body"
         hx-trigger="change"

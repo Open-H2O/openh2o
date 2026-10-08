@@ -342,7 +342,7 @@ class TestLedgerSubtitle:
         resp = auth_client.get(_ledger_url(period=""))
         assert resp.status_code == 200
         region = _results_region(resp.content.decode())
-        assert "All periods" in region
+        assert "All water years" in region
 
     def test_subtitle_names_the_zone_when_a_zone_is_set(self, auth_client):
         period = ReportingPeriodFactory()

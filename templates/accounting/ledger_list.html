@@ -28,7 +28,7 @@
        them (user_can_write, the page_actions guard above). The sign rule is
        stated once on this page, in the results head directly above the table
        (`_ledger_list_results.html`), not repeated here. {% endcomment %}
-  <p class="page-description">Every use area's entries for the period. Download CSV writes the filtered rows.{% if user_can_write %} Upload CSV adds a file's rows, and New entry adds one.{% endif %}</p>
+  <p class="page-description">Every use area's entries for the water year. Download CSV writes the filtered rows.{% if user_can_write %} Upload CSV adds a file's rows; New entry adds one.{% endif %}</p>
 </div>
 {% endblock %}
 
@@ -48,9 +48,9 @@
   <form id="ledger-filters" class="ledger-filters-sticky" onsubmit="return false;">
     <div class="card-raised">
       <div class="ledger-bar">
-        <!-- Reporting Period -->
+        <!-- Water year -->
         <div style="width: 200px;">
-          <label class="form-label" for="filter-period">Period</label>
+          <label class="form-label" for="filter-period">Water year</label>
           <select id="filter-period" name="period"
                   hx-get="{% url 'accounting:ledger_list' %}"
                   hx-target="#ledger-results"
@@ -58,7 +58,7 @@
                   hx-include="#ledger-filters"
                   hx-push-url="true"
                   class="form-select">
-            <option value="">All Periods</option>
+            <option value="">All water years</option>
             {% for p in periods %}
             <option value="{{ p.pk }}" {% if period_id == p.pk|stringformat:"d" %}selected{% endif %}>{{ p.name }}</option>
             {% endfor %}

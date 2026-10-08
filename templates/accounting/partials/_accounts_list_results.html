@@ -13,7 +13,7 @@ current.
       {% if not q %}{{ total_count|intcomma }} active account{{ total_count|pluralize }}{% elif matched_count %}{{ matched_count|intcomma }} of {{ total_count|intcomma }} active accounts match{{ matched_count|pluralize:"es," }} &ldquo;{{ q }}&rdquo;{% else %}No active account matches &ldquo;{{ q }}&rdquo;{% endif %}
     </div>
     <div class="text-secondary text-base">
-      One row per active water account, {{ selected_period.name|default:"All periods" }}. All figures in acre-feet (AF).
+      One row per active water account, {{ selected_period.name|default:"All water years" }}. All figures in acre-feet (AF).
     </div>
   </div>
   {% include "accounting/partials/_active_accounts_table.html" %}

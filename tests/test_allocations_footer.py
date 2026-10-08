@@ -355,4 +355,4 @@ class TestAllocationsLandingDefault:
     def test_explicit_empty_period_renders_all_periods(self, auth_client, one_allocation_row):
         response = auth_client.get(f"{reverse('accounting:allocations_list')}?period=")
         assert response.status_code == 200
-        assert "All periods" in response.content.decode()
+        assert "All water years" in response.content.decode()

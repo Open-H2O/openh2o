@@ -1,10 +1,10 @@
 {% load static humanize %}
 {% if not selected_period %}
-{% comment %} No reporting periods exist yet. {% endcomment %}
+{% comment %} No water years exist yet. {% endcomment %}
 <div class="empty-state">
-  <p class="empty-state-text text-secondary">No reporting periods yet.</p>
+  <p class="empty-state-text text-secondary">No water years yet.</p>
   <a href="{% url 'accounting:period_create' %}" class="btn-primary">
-    + Create a reporting period
+    + New water year
   </a>
 </div>
 {% else %}

@@ -700,7 +700,7 @@ def period_create(request):
             counts = attach_orphans_to_period(period)
             messages.success(
                 request,
-                f"Reporting period created. {counts['diversion_records']} "
+                f"Water year created. {counts['diversion_records']} "
                 f"diversion records, {counts['ledger_rows']} ledger rows attached.",
             )
             return redirect("accounting:period_detail", pk=period.pk)
@@ -872,7 +872,7 @@ def allocations_list(request):
 
     periods = ReportingPeriod.objects.order_by("-start_date")
 
-    period_name = "All periods"
+    period_name = "All water years"
     if period_id:
         period_name = next(
             (p.name for p in periods if str(p.pk) == period_id), period_name
@@ -1629,7 +1629,7 @@ def ledger_list(request):
     # OTHER facet currently narrowing the set, in filter-bar order, so
     # "filtered: Zone Halvern, Active use areas" always names what changed.
     source_type_choices = ledger_source_type_choices()
-    period_name = "All periods"
+    period_name = "All water years"
     if period_id:
         period_name = next(
             (p.name for p in periods if str(p.pk) == period_id), period_name

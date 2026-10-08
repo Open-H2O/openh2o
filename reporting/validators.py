@@ -31,7 +31,7 @@ def validate_report(reporting_period, report_type):
         warnings.append({
             "level": "warning",
             "message": (
-                f"Period '{reporting_period.name}' is not finalized — finalize it so the "
+                f"Water year '{reporting_period.name}' is not finalized; finalize it so the "
                 "numbers can't change after you certify the filing."
             ),
         })
@@ -263,7 +263,7 @@ def validate_report(reporting_period, report_type):
                 "level": "error",
                 "message": (
                     f"{orphans_in_range} diversion record(s) dated inside this period are "
-                    "attached to NO reporting period — they would be silently missing from "
+                    "attached to no water year; they would be silently missing from "
                     "this CalWATRS filing. Create or edit the water year that covers these "
                     "months; records attach when the year is saved, or open each record "
                     "and save it."
@@ -282,7 +282,7 @@ def validate_report(reporting_period, report_type):
                 "level": "warning",
                 "message": (
                     f"{orphans_elsewhere} diversion record(s) outside this period belong to "
-                    "NO reporting period at all — they will never appear in any filing "
+                    "no water year at all; they will never appear in any filing "
                     "until a period covering their month exists."
                 ),
             })

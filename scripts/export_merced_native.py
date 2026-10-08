@@ -742,7 +742,7 @@ def build_bundle():
                  "label": "Subtract Effective Precip",
                  "config": {"method": "usda_scs", "fraction": 0.70, "soil_storage_in": 3.0}},
                 {"order": 3, "stepType": "subtract_surface_water",
-                 "label": "Subtract Surface Water", "config": {}},
+                 "label": "Subtract canal water the crop could use", "config": {}},
                 {"order": 4, "stepType": "clamp_floor", "label": "Floor & Bank Surplus",
                  "config": {"floor": 0, "bank": True,
                             "depreciation_rate": 0.10, "expiry_months": 24}},

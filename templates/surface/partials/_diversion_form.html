@@ -17,7 +17,7 @@
       {% if form.month.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ form.month.errors|join:", " }}</span>{% endif %}
     </div>
     <div class="form-group">
-      <label class="field-label" for="id_volume_acre_feet">Volume (AF)</label>
+      <label class="field-label" for="id_volume_acre_feet">Diverted (AF)</label>
       {{ form.volume_acre_feet }}
       {% if form.volume_acre_feet.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ form.volume_acre_feet.errors|join:", " }}</span>{% endif %}
     </div>
@@ -26,7 +26,7 @@
     <label class="field-label" for="id_returned_af">Returned to stream (AF)</label>
     {{ form.returned_af }}
     {% if form.returned_af.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ form.returned_af.errors|join:", " }}</span>{% endif %}
-    <span class="text-xs text-tertiary">Leave blank if fully consumed. Set equal to the volume for hydropower / non-consumptive passthrough.</span>
+    <span class="text-xs text-tertiary">Leave blank if none returned. Equal to the diverted volume for hydropower or other non-consumptive passthrough.</span>
   </div>
   <div class="form-row-2col">
     <div class="form-group">

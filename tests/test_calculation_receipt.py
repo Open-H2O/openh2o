@@ -79,7 +79,7 @@ def _client():
 def _canal_step(delivered="5.3333", efficiency_source="agency"):
     return {
         "step_type": "subtract_surface_water",
-        "label": "Subtract surface water delivered",
+        "label": "Subtract canal water the crop could use",
         "detail": {
             "delivered_af": delivered,
             "efficiency": "0.750",

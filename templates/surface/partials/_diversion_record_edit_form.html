@@ -29,7 +29,7 @@
       {% if edit_form.month.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ edit_form.month.errors|join:", " }}</span>{% endif %}
     </div>
     <div class="form-group">
-      <label class="field-label" for="{{ edit_form.volume_acre_feet.id_for_label }}">Volume (AF)</label>
+      <label class="field-label" for="{{ edit_form.volume_acre_feet.id_for_label }}">Diverted (AF)</label>
       {{ edit_form.volume_acre_feet }}
       {% if edit_form.volume_acre_feet.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ edit_form.volume_acre_feet.errors|join:", " }}</span>{% endif %}
     </div>

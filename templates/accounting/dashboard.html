@@ -47,11 +47,11 @@
     <div class="onboarding-steps">
       <div class="onboarding-step">
         <span class="step-badge step-badge-active">1</span>
-        <span class="text-sm">{% if user_can_write %}<a href="{% url 'accounting:period_create' %}" class="link-accent">Create a reporting period</a>{% else %}Create a reporting period{% endif %} (e.g., Water Year 2024-2025)</span>
+        <span class="text-sm">{% if user_can_write %}<a href="{% url 'accounting:period_create' %}" class="link-accent">Create a water year</a>{% else %}Create a water year{% endif %} (e.g., WY 2024-2025)</span>
       </div>
       <div class="onboarding-step">
         <span class="step-badge">2</span>
-        <span class="text-secondary text-sm">Create water accounts and assign parcels to them</span>
+        <span class="text-secondary text-sm">Create water accounts and assign use areas to them</span>
       </div>
       <div class="onboarding-step">
         <span class="step-badge">3</span>

@@ -20,7 +20,7 @@
     lists the plans and nothing else. The comparison lives on the dashboard's
     zone table, so the sentence now says where instead of promising it here.
   {% endcomment %}
-  <p class="page-description">Allocations set the volume of water assigned per zone and water type for a period. Use against each zone's allocation is on the <a href="{% url 'accounting:dashboard' %}" class="prose-link">dashboard</a>.</p>
+  <p class="page-description">Allocations set the volume of water assigned per zone and water type for a water year. Use against each zone's allocation is on the <a href="{% url 'accounting:dashboard' %}" class="prose-link">dashboard</a>.</p>
 </div>
 {% endblock %}
 
@@ -36,7 +36,7 @@
   <div class="card-raised toolbar-row">
     <!-- Period filter -->
     <div style="width: 220px;">
-      <label class="form-label" for="filter-period">Period</label>
+      <label class="form-label" for="filter-period">Water year</label>
       <select
         id="filter-period" name="period"
         hx-get="{% url 'accounting:allocations_list' %}"
@@ -45,7 +45,7 @@
         hx-include="[name='q']"
         class="form-select"
       >
-        <option value="" {% if not period_id %}selected{% endif %}>All Periods</option>
+        <option value="" {% if not period_id %}selected{% endif %}>All water years</option>
         {% for p in periods %}
           <option value="{{ p.pk }}" {% if period_id == p.pk|stringformat:"d" %}selected{% endif %}>{{ p.name }}</option>
         {% endfor %}

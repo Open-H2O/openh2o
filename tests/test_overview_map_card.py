@@ -155,7 +155,7 @@ def _pods_full_line():
     from surface.models import PointOfDiversion
 
     count = PointOfDiversion.objects.count()
-    noun = "diversion point" if count == 1 else "diversion points"
+    noun = "point of diversion" if count == 1 else "points of diversion"
     return f"{count:,} {noun}, all on the map"
 
 
@@ -324,9 +324,9 @@ class TestSurfaceDiversionsCard:
         PointOfDiversionFactory(name="Card Weir Three")
 
         body = auth_client.get(reverse("surface:pod_list")).content.decode()
-        assert "3 diversion points, all on the map" in body
+        assert "3 points of diversion, all on the map" in body
         assert 'class="swatch-dot"' in body
-        assert "Diversion point" in body
+        assert "Point of diversion" in body
 
     def test_the_map_partial_declares_an_always_on_label_layer(self, auth_client):
         from django.template.loader import render_to_string

@@ -54,7 +54,7 @@ DEFAULT_STEPS = [
         # crop could use is subtracted; the rest is deep percolation, named
         # on the parcel's balance, never crop use and never a credit.
         "config": {"apply_efficiency": True},
-        "label": "Subtract surface water delivered",
+        "label": "Subtract canal water the crop could use",
     },
     {
         "order": 4,

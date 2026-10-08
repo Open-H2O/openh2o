@@ -13,7 +13,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">CSV Upload</span>
   </nav>
-  <p class="page-description">Bulk-import use ledger entries from CSV. Download the template, fill in your data, then upload. Use dry-run mode to validate before committing.</p>
+  <p class="page-description">Download the template, fill it in, then upload it; a dry run checks the file and writes nothing.</p>
 </div>
 {% endblock %}
 
@@ -58,14 +58,14 @@
         {% endif %}
       </div>
 
-      <!-- Reporting Period -->
+      <!-- Water year -->
       <div class="form-group">
-        <label class="form-label" for="{{ form.reporting_period.id_for_label }}">Reporting period</label>
+        <label class="form-label" for="{{ form.reporting_period.id_for_label }}">Water year</label>
         {{ form.reporting_period }}
         {% if form.reporting_period.errors %}
         <div class="form-help text-furnace">{{ form.reporting_period.errors|join:", " }}</div>
         {% endif %}
-        <div class="form-help">All imported entries will be assigned to this period.</div>
+        <div class="form-help">All imported entries will be assigned to this water year.</div>
       </div>
 
       <!-- Dry Run -->
@@ -102,7 +102,7 @@
         <tr>
           <td class="text-mono">parcel_number</td>
           <td><span class="badge badge-pill badge-green">Yes</span></td>
-          <td class="text-secondary">Must match an existing parcel record</td>
+          <td class="text-secondary">Must match an existing use area number</td>
         </tr>
         <tr>
           <td class="text-mono">effective_date</td>

@@ -43,7 +43,7 @@ budget); a unit stated once in the caller's own subtitle, never on a column.
       <th class="th-right">Rain</th>
       <th class="th-right">Total</th>
       {% if has_allocations %}
-      <th class="th-right col-sep">Allocation{% include "partials/_explainer_popout.html" with title="GW allocation" text="This account's share of the period's groundwater allocation, pro-rated by how many of its parcels fall in each groundwater zone. Surface-water allocation is a separate budget and is not counted here." link=budgets_help_url link_label="How budgets & allocations work" %}</th>
+      <th class="th-right col-sep">Allocation{% include "partials/_explainer_popout.html" with title="GW allocation" text="This account's share of the water year's groundwater allocation, pro-rated by how many of its use areas fall in each groundwater zone. Surface-water allocation is a separate budget and is not counted here." link=budgets_help_url link_label="How budgets & allocations work" %}</th>
       <th class="th-right">Remaining{% include "partials/_explainer_popout.html" with title="GW remaining" text="Groundwater allocation minus groundwater use (metered or calculated pumping). A negative number means the account has pumped past its groundwater allocation for the period." link=budgets_help_url link_label="How budgets & allocations work" %}</th>
       {% endif %}
     </tr>
@@ -122,8 +122,8 @@ budget); a unit stated once in the caller's own subtitle, never on a column.
 </table>
 </div>
 {% elif q %}
-<p class="text-tertiary text-sm mb-sm">No active accounts found matching &ldquo;{{ q }}&rdquo;.</p>
+<p class="text-tertiary text-sm mb-sm">No active account matches &ldquo;{{ q }}&rdquo;.</p>
 {% else %}
 <p class="text-tertiary text-sm mb-sm">No active accounts yet.</p>
-<a href="{% url 'accounting:account_create' %}" class="link-accent text-sm">+ Create a water account</a>
+<a href="{% url 'accounting:account_create' %}" class="link-accent text-sm">+ New account</a>
 {% endif %}

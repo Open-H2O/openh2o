@@ -286,7 +286,7 @@ class CalculationStep(models.Model):
     STEP_TYPE_CHOICES = [
         ("et_gross", "Gross ET"),
         ("subtract_effective_precip", "Subtract effective precipitation"),
-        ("subtract_surface_water", "Subtract surface water delivered"),
+        ("subtract_surface_water", "Subtract canal water the crop could use"),
         ("facility_only_zero", "Zero out facility-only parcels"),
         ("clamp_floor", "Clamp at floor"),
     ]

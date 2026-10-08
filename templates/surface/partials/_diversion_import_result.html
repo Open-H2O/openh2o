@@ -40,7 +40,7 @@ and why.
 
   {% if periods_attached %}
   <table class="data-table mt-md">
-    <thead><tr><th>Reporting period</th><th>Records attached</th></tr></thead>
+    <thead><tr><th>Water year</th><th>Records attached</th></tr></thead>
     <tbody>
       {% for name, count in periods_attached.items %}
       <tr><td>{{ name }}</td><td class="text-mono">{{ count }}</td></tr>

@@ -51,7 +51,7 @@
       <h2 class="section-header" style="margin-top: 0;">The check</h2>
       <form method="get" class="field-grid-2">
         <div class="field-group">
-          <label class="field-label" for="period">Reporting period</label>
+          <label class="field-label" for="period">Water year</label>
           <select id="period" name="period" onchange="this.form.submit()" class="form-select">
             {% for p in periods %}
             <option value="{{ p.pk }}" {% if selected_period and p.pk == selected_period.pk %}selected{% endif %}>{{ p.name }}</option>
@@ -78,7 +78,7 @@
     <div class="card-raised page-grid-account-balance">
       <div class="page-grid-account-head mb-md">
         <h2 class="section-header-flush">Flagged this period</h2>
-        <div class="text-secondary text-base">{{ selected_period.name }} &middot; shared wells and diversion points with a hand-set split</div>
+        <div class="text-secondary text-base">{{ selected_period.name }} &middot; shared wells and points of diversion with a hand-set split</div>
       </div>
       <div class="budget-panel">
         <div class="budget-panel-body">

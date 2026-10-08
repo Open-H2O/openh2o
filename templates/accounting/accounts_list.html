@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}Water accounts - Open Water Accounting Platform{% endblock %}
-{% block page_title %}Water accounts{% endblock %}
+{% block title %}Accounts - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Accounts{% endblock %}
 
 {% block page_actions %}
 {% if user_can_write %}<a href="{% url 'accounting:account_create' %}" class="btn-primary btn-sm">+ New account</a>{% endif %}
@@ -14,7 +14,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Accounts</span>
   </nav>
-  <p class="page-description">Water accounts tracked in the system. Search or filter the list; a row opens the account's balance and use areas.</p>
+  <p class="page-description">Search or filter the list; a row opens the account's balance and use areas.</p>
 </div>
 {% endblock %}
 
@@ -29,7 +29,7 @@
   {% endcomment %}
   <div class="card-raised toolbar-row">
     <div style="width: 200px;">
-      <label class="form-label" for="filter-period">Period</label>
+      <label class="form-label" for="filter-period">Water year</label>
       <select
         id="filter-period" name="period"
         hx-get="{% url 'accounting:accounts_list' %}"
@@ -39,7 +39,7 @@
         hx-push-url="true"
         class="form-select"
       >
-        <option value="">All periods</option>
+        <option value="">All water years</option>
         {% for p in periods %}
           <option value="{{ p.pk }}" {% if selected_period.pk == p.pk %}selected{% endif %}>{{ p.name }}</option>
         {% endfor %}

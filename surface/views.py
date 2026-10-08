@@ -630,7 +630,7 @@ def diversion_record_create(request, pk):
                 # The record saved, but with no reporting period it is invisible to
                 # every period-scoped filing — say so now, not at filing time.
                 period_warning = (
-                    f"Saved, but no reporting period covers {month:%B %Y} — this "
+                    f"Saved, but no water year covers {month:%B %Y}; this "
                     "record will not appear in any CalWATRS filing until a period "
                     "covering that month exists. It attaches automatically once "
                     "such a period is created, or you can open and save it "
