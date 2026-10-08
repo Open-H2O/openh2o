@@ -68,7 +68,7 @@
           wrong for them; the wizard cannot do this step.{% endcomment %}{% if 'drinking' in enabled_modules %}<tr>
             <td class="col-step"><span class="step-num">{{ steps.pwsid }}</span>Onboard your water system</td>
             <td class="col-where">Water Data &gt; Onboard System{% if user_can_write %}<br><a href="{% url 'drinking:onboard' %}" class="text-sm text-accent">Go to Onboard System &rarr;</a>{% endif %}</td>
-            <td>Enter your Public Water System ID (PWSID) and OpenH2O looks up EPA&rsquo;s Envirofacts record for it: the regulatory details, the facilities and the sampling points. Nothing is written until you review the results and confirm.</td>
+            <td>Enter your Public Water System ID (PWSID) and OpenH2O looks up EPA&rsquo;s Envirofacts record for it: the regulatory details and the facilities. Nothing is written until you review the results and confirm.</td>
           </tr>{% endif %}
           {% comment %}The wizard's place in the order, as a row without a number
           (two fresh readers could not place it from a note): it runs before
