@@ -77,6 +77,9 @@
     <!-- Explainer pop-out positioning (escapes the content scroll box) -->
     <script src="{% static 'js/explainer-popout.js' %}?v=1" defer></script>
 
+    <!-- A table wrapper scrolls only when its table overflows it; otherwise the header pins to the document (150-04, ISS-167) -->
+    <script src="{% static 'js/table-scroll.js' %}?v=1" defer></script>
+
     {# Umami analytics: renders only when UMAMI_WEBSITE_ID is set (self-host clones leave it blank). #}
     {% if umami_website_id %}
     <script defer src="{{ umami_script_url }}" data-website-id="{{ umami_website_id }}"></script>

@@ -197,7 +197,18 @@ html { color-scheme: dark; }
 .app-content {
     flex: 1;
     padding: var(--space-lg);
-    overflow-y: auto;
+    /* 150-04 (ISS-167): the pane is NOT a scroll container. `overflow-y: auto`
+       stood here from Phase 75, when the pane stopped scrolling internally and
+       the document took over; measured 2026-10-09 on the dashboard, the ledger
+       and two list pages at 1440 and 1730, its scrollHeight equalled its
+       clientHeight on every one, so the only thing the value did was give
+       `.data-table thead th { position: sticky }` a pinning box that never
+       moves. `clip` on the inline axis keeps a too-wide table from widening the
+       page (it scrolls inside its `.table-scroll` instead, see that rule) and,
+       unlike `hidden`, makes no scroll container, so a sticky header pins to the
+       document. The map page overrides this block in its own style element. */
+    overflow-x: clip;
+    overflow-y: visible;
     /* Phase 64: enlarge ONLY the information pane (a first real user had to
        browser-zoom to 150% to read it). Every font-size in this file is rem
        (root-relative), so a container font-size does nothing and an html bump
@@ -332,6 +343,16 @@ html { color-scheme: dark; }
 .sidebar[data-collapsed="true"] .sidebar-link-text {
     opacity: 0;
     width: 0;
+}
+
+/* 150-04: a label longer than the rail wraps to a second line instead of being
+   cut by the sidebar's `overflow: hidden` ("Methods behind the number", two
+   fresh readers in 150-03). The link keeps `nowrap` so the icon and the text
+   stay on one row; only the text may break. */
+.sidebar-link-text {
+    white-space: normal;
+    line-height: 1.25;
+    min-width: 0;
 }
 
 /* -- Header -------------------------------------------------------------- */
@@ -742,7 +763,11 @@ html { color-scheme: dark; }
    icon + label + sublabel. The most-common action carries a gold edge. */
 .home-task-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    /* 150-04 (ISS-201): a 240px floor lets five task tiles share one row in
+       the 1,439px content width at 1,730 (260px put the fifth alone on row two
+       on shapes 1 and 2); auto-fit so fewer tiles widen rather than leave an
+       empty track. */
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: var(--space-md);
 }
 
@@ -1504,9 +1529,6 @@ html { color-scheme: dark; }
    the JS that set --ledger-header-offset was removed in 143-05 (dead since
    this phase). */
 
-.app-content:has(#ledger-filters) > .page-stack {
-    padding-top: var(--space-lg);
-}
 
 .back-link:focus-visible,
 .breadcrumb a:focus-visible {
@@ -2691,9 +2713,11 @@ html { color-scheme: dark; }
     color: var(--color-deficit);
 }
 
+/* 150-04: the error token, not a literal (the one hard-coded colour the
+   badge system still carried; CLAUDE.md "never hardcode a colour"). */
 .badge-red {
-    background-color: oklch(0.45 0.12 25 / 0.2);
-    color: oklch(0.65 0.20 25);
+    background-color: color-mix(in srgb, var(--color-error) 18%, transparent);
+    color: var(--color-error);
 }
 
 .badge-blue {
@@ -2707,7 +2731,7 @@ html { color-scheme: dark; }
 }
 
 .badge-grey {
-    background-color: rgba(148, 163, 184, 0.12);
+    background-color: color-mix(in srgb, var(--color-muted) 14%, transparent);
     color: var(--color-text-secondary);
 }
 
@@ -2726,7 +2750,7 @@ html { color-scheme: dark; }
 }
 
 .badge-pill.badge-red {
-    border-color: oklch(0.45 0.12 25 / 0.35);
+    border-color: color-mix(in srgb, var(--color-error) 35%, transparent);
 }
 
 .badge-pill.badge-blue {
@@ -2734,7 +2758,7 @@ html { color-scheme: dark; }
 }
 
 .badge-pill.badge-grey {
-    border-color: rgba(148, 163, 184, 0.2);
+    border-color: color-mix(in srgb, var(--color-muted) 25%, transparent);
 }
 
 .badge-pill.badge-gold {
@@ -3576,6 +3600,10 @@ html { color-scheme: dark; }
 .text-mono {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
+    /* 150-04: a code string has no spaces to break at; without this it crossed
+       its card's edge at 1,024 and 1,153 on Site health (`python manage.py
+       run_health_checks`). */
+    overflow-wrap: anywhere;
 }
 
 /* An empty field, wherever one renders. Emitted by the `blank` template filter
@@ -5841,4 +5869,181 @@ details[open] > summary .disclosure-mark {
         grid-column: 1;
         grid-row: 2;
     }
+}
+
+/* ======================================================================
+   150-04: the layout pass. Six shared rules, each designed on one page and
+   proven by a fresh read before it was applied (page-verdict/LAYOUT-INVENTORY-150-04.md).
+   ====================================================================== */
+
+/* -- A. Small pages: what was tried and what stands --------------------- */
+/* Rule A as designed ("the main column ends at its content and the footer
+   rides it") was mocked on four short pages and read by a fresh reader on
+   2026-10-09: the rights list SHIP 4 with the floating footer as its worst
+   fault, the home page (shape 1), the empty use-areas list and the signed-out
+   front page DO NOT SHIP 3 on "the footer floating mid-page". The pinned footer
+   had read DO NOT SHIP 3 on the same pages for "the dead void between the cards
+   and the footer" (ISS-201, 149.1-06). Two readers contradict each other on a
+   void that a four-row page has either way, so the shell stays as approved and
+   the finding is recorded (LAYOUT-INVENTORY-150-04.md, VERDICTS-150-04.md).
+   The same contradiction holds for a panel beside a taller card: stretched it
+   is "mostly an empty dark box" (recharge, 149.1-08), at its content's height
+   it "leaves a large dead gap under the stats panel" (the mock read). What
+   stands from this class: the home page's task tiles share one row (above),
+   the well page's Construction section balances its right column, and an
+   EMPTY card beside a table ends at its content (`.page-grid-2col--align-start`,
+   already defined). */
+
+/* -- B. Forms: a grouped grid ----------------------------------------- */
+/* Every input is its container's width (`.form-input`, `.form-select`), so a
+   form in one column was "one monotonous column of oversized bars with no
+   grouping" (149.1-05 on the ledger's create form). On the grid a field takes
+   one of two tracks and sits beside the field that goes with it (the two dates;
+   the amount and its water type); a field whose value is a sentence spans both.
+   Form pages sit at the medium measure (`.page-medium`, `page-head--medium`)
+   so two tracks have room; below 640px the grid is one column. */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--space-lg);
+    align-items: start;
+}
+.form-grid > * {
+    min-width: 0;
+}
+.form-grid > .form-span-2,
+.form-grid > .form-footer,
+.form-grid > .form-footer-ruled,
+.form-grid > .form-error-box {
+    grid-column: 1 / -1;
+}
+/* A one-line form: a label-and-input beside a line of text and its button, all
+   on the baseline (the methodology step with no options; 149.1-05: "Steps with
+   no options waste a full card of vertical space"). */
+.form-grid--row {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr) auto;
+    align-items: end;
+    column-gap: var(--space-md);
+}
+.form-grid--row > .form-footer-ruled {
+    grid-column: auto;
+    border-top: none;
+    margin-top: 0;
+    padding-top: 0;
+}
+@media (max-width: 640px) {
+    .form-grid,
+    .form-grid--row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* B2. Cards two or three across, each ending at its content: the settings
+   pages' one-control cards (146-03's "boxed into a narrow center-left column")
+   and the wizard's two boundary choices, which stacked put the second below
+   a 1,000px fold. 380px is the floor the home page's count cards use. */
+.card-columns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: var(--space-lg);
+    align-items: start;
+}
+.card-columns > .card-columns-span {
+    grid-column: 1 / -1;
+}
+
+/* -- C. Tables ---------------------------------------------------------- */
+/* C1. A footer's figures wrap as a row of parts. A `nowrap` sentence in a
+   `colspan` cell set a floor under three columns at once: on the ledger at
+   1,024 the table was 830px in a 722px card and the Description column ran
+   past the card's edge (437 crossings in the sweep). */
+.tfoot-figures {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-xs) var(--space-md);
+    white-space: normal;
+}
+
+/* C2 and C4. The wrapper scrolls only when its table is wider than it is, and
+   the header pins to the document scroll everywhere else.
+   `static/js/table-scroll.js` marks each `.table-scroll` with
+   data-overflow="true|false" on load, on resize and after every HTMX swap
+   (ResizeObserver per wrapper). Without the script the wrapper behaves as it
+   did (always a scroll box, no pinned header). Fitting: overflow visible, so
+   the wrapper is not a scroll container and `.data-table thead th`'s sticky
+   position pins to the document (ISS-167, dead since Phase 75). Overflowing:
+   the table scrolls inside its card, never the page, and its first column
+   stays put so a row keeps its name while the figures scroll (the dashboard's
+   two grouped tables below 1,330 and 1,435px; the canal tables below 1,440). */
+.table-scroll[data-overflow="false"] {
+    overflow-x: visible;
+}
+.table-scroll[data-overflow="true"] .data-table th:first-child,
+.table-scroll[data-overflow="true"] .data-table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background-color: var(--color-card);
+}
+.table-scroll[data-overflow="true"] .data-table thead th:first-child {
+    z-index: 11;
+    background-color: color-mix(in srgb, var(--color-accent) 7%, var(--color-card));
+}
+.table-scroll[data-overflow="true"] .data-table tbody tr:nth-child(even) td:first-child {
+    background-color: color-mix(in srgb, var(--color-elevated) 45%, var(--color-card));
+}
+.table-scroll[data-overflow="true"] .data-table tbody tr:hover td:first-child {
+    background-color: color-mix(in srgb, var(--color-accent) 8%, var(--color-card));
+}
+.table-scroll[data-overflow="true"] .data-table tfoot td:first-child,
+.table-scroll[data-overflow="true"] .data-table tr.row-group td:first-child {
+    background-color: color-mix(in srgb, var(--color-elevated) 85%, var(--color-card));
+}
+/* The canal tables need 1,024px and had 1,021 at a 1,440 viewport: a pixel of
+   padding each side is the difference between fitting and scrolling there. */
+.data-table--canal-water td,
+.data-table--canal-water th {
+    padding-left: calc(var(--space-md) - 2px);
+    padding-right: calc(var(--space-md) - 2px);
+}
+
+/* C3. A cases table whose other columns are sentences shares the width left by
+   the name column equally (the onboarding review's "uneven columns"). */
+.help-cases-table--even {
+    table-layout: fixed;
+    width: 100%;
+}
+
+/* -- D. Weight and position --------------------------------------------- */
+/* D1. A reference row on the receipt (the meter reading that would replace the
+   estimate) is secondary to the calculation rows above it. */
+.receipt-table tr.receipt-aside td {
+    color: var(--color-text-secondary);
+}
+/* D7. The health cards' status badges at the pill's size: at the badge's 12px
+   they were "tiny" and the card's state could not be scanned (149.1-08). */
+.health-grid .badge {
+    font-size: 0.8125rem;
+    padding: 4px 10px;
+}
+/* D8. A counter on the home page reads as the link it is: an arrow after its
+   label, and the label lights with the figure on hover (six of six readers in
+   150-01 did not take the counters for links). */
+.home-stat-label::after {
+    content: " \2192";
+}
+.home-stat:hover .home-stat-label {
+    color: var(--color-accent);
+}
+
+/* -- E. The four classes templates named that nothing defined (ISS-166) --- */
+.font-semibold {
+    font-weight: 600;
+}
+.text-primary {
+    color: var(--color-text-primary);
+}
+.row-clickable {
+    cursor: pointer;
 }
