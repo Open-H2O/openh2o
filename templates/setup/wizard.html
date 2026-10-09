@@ -124,8 +124,9 @@
           style="display: none;"
           onchange="updateZoneLabel(this.files[0])"
         >
+        <p class="form-help">When the file holds several polygons, OpenH2O combines them into one boundary.</p>
         <p class="form-help">This is one shape drawn on a map: the outline of the area this deployment covers. A GIS consultant, or whoever handles the district's mapping, can export one, and can fix a file rejected here.</p>
-        <p class="form-help">OpenH2O reads a shapefile's projection from the .prj file in its zip and converts the coordinates to WGS84 longitude and latitude when needed; a KML or GeoJSON file is read as WGS84. When the file holds several polygons, OpenH2O combines them into one boundary.</p>
+        <p class="form-help">OpenH2O reads a shapefile's projection from the .prj file in its zip and converts the coordinates to WGS84 longitude and latitude when needed. A KML or GeoJSON file is read as WGS84.</p>
       </div>
 
       <div class="form-footer">
