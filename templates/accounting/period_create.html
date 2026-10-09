@@ -2,7 +2,7 @@
 
 {% block title %}New water year - Open Water Accounting Platform{% endblock %}
 {% block page_title %}New water year{% endblock %}
-{% block page_head_class %}page-head--narrow{% endblock %}
+{% block page_head_class %}page-head--medium{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -18,7 +18,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-stack page-narrow">
+<div class="page-stack page-medium">
 
   <!-- Back link -->
   <a href="{% url 'accounting:periods_list' %}" class="back-link">&larr; Back to Water Years</a>
@@ -39,10 +39,12 @@
     </div>
     {% endif %}
 
-    <form method="post">
+    {% comment %} 150-04 (rule B): a two-track grid; the two dates share a row,
+         the name and the notes span both tracks. {% endcomment %}
+    <form method="post" class="form-grid">
       {% csrf_token %}
       {% for field in form %}
-      <div class="form-group">
+      <div class="form-group{% if field.name == "name" or field.name == "notes" %} form-span-2{% endif %}">
         <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
         {{ field }}
       </div>

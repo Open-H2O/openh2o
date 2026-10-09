@@ -2,7 +2,7 @@
 
 {% block title %}Edit {{ account.name }} - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Edit {{ account.name }}{% endblock %}
-{% block page_head_class %}page-head--narrow{% endblock %}
+{% block page_head_class %}page-head--medium{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -19,7 +19,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-stack page-narrow">
+<div class="page-stack page-medium">
 
   <!-- Back link -->
   <a href="{% url 'accounting:account_detail' account.pk %}" class="back-link">&larr; Back to {{ account.account_number }}</a>
@@ -37,15 +37,34 @@
     </div>
     {% endif %}
 
-    <form method="post">
+    {% comment %} 150-04 (S4, rule B): a two-track grid. The number beside the
+         name, the status beside the unit kind, the two contact fields, then the
+         two delivery links (a well or a point of diversion, whichever modules
+         this deployment runs) on one row; the notes span both tracks. Three
+         passes over the form keep that order whichever delivery fields exist. {% endcomment %}
+    <form method="post" class="form-grid">
       {% csrf_token %}
-      {% for field in form %}
+      {% for field in form %}{% if field.name != "delivery_well" and field.name != "delivery_pod" and field.name != "notes" %}
       <div class="form-group">
         <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
         {{ field }}
         {% if field.help_text %}<p class="text-tertiary text-xs">{{ field.help_text }}</p>{% endif %}
       </div>
-      {% endfor %}
+      {% endif %}{% endfor %}
+      {% for field in form %}{% if field.name == "delivery_well" or field.name == "delivery_pod" %}
+      <div class="form-group">
+        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<p class="text-tertiary text-xs">{{ field.help_text }}</p>{% endif %}
+      </div>
+      {% endif %}{% endfor %}
+      {% for field in form %}{% if field.name == "notes" %}
+      <div class="form-group form-span-2">
+        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<p class="text-tertiary text-xs">{{ field.help_text }}</p>{% endif %}
+      </div>
+      {% endif %}{% endfor %}
       <div class="form-footer">
         <button type="submit" class="btn-primary">Save changes</button>
         <a href="{% url 'accounting:account_detail' account.pk %}" class="btn-secondary">Cancel</a>

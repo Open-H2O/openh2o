@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Your profile - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Your profile{% endblock %}
-{% block page_head_class %}page-head--narrow{% endblock %}
+{% block page_head_class %}page-head--medium{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -14,7 +14,7 @@
 </div>
 {% endblock %}
 {% block content %}
-<div class="page-narrow">
+<div class="page-medium">
 
     <div class="card-raised">
         {% comment %} Was "Profile" under the title "Your profile" (Phase 143-02, copy rule 13). {% endcomment %}
@@ -29,7 +29,9 @@
         </div>
         {% endif %}
 
-        <form method="post">
+        {% comment %} 150-04 (rule B): a two-track grid, the two names on one row
+             and the title beside the phone. {% endcomment %}
+        <form method="post" class="form-grid">
             {% csrf_token %}
             <div class="form-group">
                 <label class="form-label" for="{{ form.first_name.id_for_label }}">First name</label>
@@ -51,7 +53,9 @@
                 {{ form.phone }}
                 {% if form.phone.errors %}<p class="text-sm text-furnace">{{ form.phone.errors|striptags }}</p>{% endif %}
             </div>
-            <button type="submit" class="btn-primary">Save changes</button>
+            <div class="form-span-2">
+                <button type="submit" class="btn-primary">Save changes</button>
+            </div>
         </form>
     </div>
 

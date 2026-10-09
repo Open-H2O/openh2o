@@ -2,7 +2,7 @@
 
 {% block title %}Add user - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Add user{% endblock %}
-{% block page_head_class %}page-head--narrow{% endblock %}
+{% block page_head_class %}page-head--medium{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -18,7 +18,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-stack page-narrow">
+<div class="page-stack page-medium">
 
   <a href="{% url 'core:users_list' %}" class="back-link">&larr; Back to Users</a>
 
@@ -37,10 +37,13 @@
     </div>
     {% endif %}
 
-    <form method="post">
+    {% comment %} 150-04 (rule B): a two-track grid. The email and the title span
+         both tracks; the two names share a row, and so do the starting password
+         and the role. {% endcomment %}
+    <form method="post" class="form-grid">
       {% csrf_token %}
 
-      <div class="form-group">
+      <div class="form-group form-span-2">
         <label class="form-label" for="{{ form.email.id_for_label }}">Email</label>
         {{ form.email }}
         {% if form.email.errors %}<p class="form-error-text">{{ form.email.errors|striptags }}</p>{% endif %}
@@ -58,7 +61,7 @@
         {% if form.last_name.errors %}<p class="form-error-text">{{ form.last_name.errors|striptags }}</p>{% endif %}
       </div>
 
-      <div class="form-group">
+      <div class="form-group form-span-2">
         <label class="form-label" for="{{ form.title.id_for_label }}">Title</label>
         {{ form.title }}
         {% if form.title.errors %}<p class="form-error-text">{{ form.title.errors|striptags }}</p>{% endif %}

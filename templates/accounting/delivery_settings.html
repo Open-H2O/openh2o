@@ -3,7 +3,6 @@
 
 {% block title %}Delivery settings - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Delivery settings{% endblock %}
-{% block page_head_class %}page-head--medium{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -20,7 +19,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-stack page-medium">
+<div class="page-stack page-wide">
 
   {% include "partials/_messages.html" %}
 
@@ -34,11 +33,15 @@
   </div>
 
   {% if user_can_write %}
-  <form method="post" class="page-stack">
+  {% comment %} 150-04 (S5, rule B2): the setting cards two or three across at
+       the wide measure, each ending at its content (146-03: "boxed into a
+       narrow center-left column"). The error box and the Save row span every
+       column. {% endcomment %}
+  <form method="post" class="card-columns">
     {% csrf_token %}
 
     {% if form.non_field_errors %}
-    <div class="form-error-box mb-md">
+    <div class="form-error-box mb-md card-columns-span">
       <p class="text-sm text-furnace">{{ form.non_field_errors|striptags }}</p>
     </div>
     {% endif %}
@@ -188,7 +191,7 @@
       </div>
     </div>
 
-    <div class="row-start">
+    <div class="row-start card-columns-span">
       <button type="submit" class="btn-primary">Save settings</button>
     </div>
   </form>

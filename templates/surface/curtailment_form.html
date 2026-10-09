@@ -2,7 +2,7 @@
 
 {% block title %}{% if order %}Edit curtailment order{% else %}New curtailment order{% endif %} - Open Water Accounting Platform{% endblock %}
 {% block page_title %}{% if order %}Edit curtailment order {{ order.order_id }}{% else %}New curtailment order{% endif %}{% endblock %}
-{% block page_head_class %}page-head--narrow{% endblock %}
+{% block page_head_class %}page-head--medium{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -18,7 +18,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-stack page-narrow">
+<div class="page-stack page-medium">
 
   <a href="{% url 'surface:curtailments_list' %}" class="back-link">&larr; Back to Curtailment Orders</a>
 
@@ -31,52 +31,48 @@
     </div>
     {% endif %}
 
-    <form method="post">
+    {% comment %} 150-04 (rule B): one two-track grid; the title
+         and the notes span both tracks. {% endcomment %}
+    <form method="post" class="form-grid">
       {% csrf_token %}
 
-      <div class="form-row-2col">
-        <div class="form-group">
-          <label class="form-label" for="{{ form.order_id.id_for_label }}">{{ form.order_id.label }}</label>
-          {{ form.order_id }}
-          {% for error in form.order_id.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="{{ form.status.id_for_label }}">{{ form.status.label }}</label>
-          {{ form.status }}
-        </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.order_id.id_for_label }}">{{ form.order_id.label }}</label>
+        {{ form.order_id }}
+        {% for error in form.order_id.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.status.id_for_label }}">{{ form.status.label }}</label>
+        {{ form.status }}
       </div>
 
-      <div class="form-group">
+      <div class="form-group form-span-2">
         <label class="form-label" for="{{ form.title.id_for_label }}">{{ form.title.label }}</label>
         {{ form.title }}
         {% for error in form.title.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
       </div>
 
-      <div class="form-row-2col">
-        <div class="form-group">
-          <label class="form-label" for="{{ form.effective_date.id_for_label }}">{{ form.effective_date.label }}</label>
-          {{ form.effective_date }}
-          {% for error in form.effective_date.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="{{ form.end_date.id_for_label }}">{{ form.end_date.label }}</label>
-          {{ form.end_date }}
-        </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.effective_date.id_for_label }}">{{ form.effective_date.label }}</label>
+        {{ form.effective_date }}
+        {% for error in form.effective_date.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
       </div>
-
-      <div class="form-row-2col">
-        <div class="form-group">
-          <label class="form-label" for="{{ form.watershed.id_for_label }}">{{ form.watershed.label }}</label>
-          {{ form.watershed }}
-          <div class="form-help">{{ form.watershed.help_text }}</div>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="{{ form.priority_date_cutoff.id_for_label }}">{{ form.priority_date_cutoff.label }}</label>
-          {{ form.priority_date_cutoff }}
-        </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.end_date.id_for_label }}">{{ form.end_date.label }}</label>
+        {{ form.end_date }}
       </div>
 
       <div class="form-group">
+        <label class="form-label" for="{{ form.watershed.id_for_label }}">{{ form.watershed.label }}</label>
+        {{ form.watershed }}
+        <div class="form-help">{{ form.watershed.help_text }}</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.priority_date_cutoff.id_for_label }}">{{ form.priority_date_cutoff.label }}</label>
+        {{ form.priority_date_cutoff }}
+      </div>
+
+      <div class="form-group form-span-2">
         <label class="form-label" for="{{ form.notes.id_for_label }}">{{ form.notes.label }}</label>
         {{ form.notes }}
       </div>

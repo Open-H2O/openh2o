@@ -13,63 +13,49 @@
   150-02 (ISS-226): an estimate's form says in one line what saving it does
   (surface/views.py::diversion_record_edit turns a changed volume into a
   typed record, so the next run leaves it).
+
+  150-04 (F7, ISS-201, rule B): the same two-track grid and field pairs as
+  _diversion_form.html, at the records card's full width.
 {% endcomment %}
 <form hx-post="{% url 'surface:diversion_record_edit' pod.pk edit_record.pk %}"
       hx-target="#diversion-records-section"
       hx-swap="innerHTML"
-      class="form-stack"
+      class="form-grid"
       style="padding: var(--space-md) 0; border-top: 1px solid var(--color-border);">
   {% csrf_token %}
-  <div class="row-between" style="align-items: flex-start;">
+  <div class="row-between form-span-2" style="align-items: flex-start;">
     <h3 class="text-sm font-semibold text-secondary m-0">Edit diversion record: {{ edit_record.month|date:"M Y" }}</h3>
   </div>
   {% if edit_record.method == "estimated_from_use" %}
-  <p class="text-xs text-secondary m-0">This record is the platform's estimate. Save it with a changed volume and it becomes a typed record; save it unchanged and it stays an estimate.</p>
+  <p class="text-xs text-secondary m-0 form-span-2">This record is the platform's estimate. Save it with a changed volume and it becomes a typed record; save it unchanged and it stays an estimate.</p>
   {% endif %}
   {% if edit_form.non_field_errors %}
-  <div class="text-xs" style="color: var(--furnace-400);">{{ edit_form.non_field_errors|join:", " }}</div>
+  <div class="text-xs form-span-2" style="color: var(--furnace-400);">{{ edit_form.non_field_errors|join:", " }}</div>
   {% endif %}
-  <div class="form-row-2col">
-    <div class="form-group">
-      <label class="field-label" for="{{ edit_form.month.id_for_label }}">Month (pick any day in it)</label>
-      {{ edit_form.month }}
-      {% if edit_form.month.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ edit_form.month.errors|join:", " }}</span>{% endif %}
-    </div>
-    <div class="form-group">
-      <label class="field-label" for="{{ edit_form.volume_acre_feet.id_for_label }}">Diverted (AF)</label>
-      {{ edit_form.volume_acre_feet }}
-      {% if edit_form.volume_acre_feet.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ edit_form.volume_acre_feet.errors|join:", " }}</span>{% endif %}
-    </div>
+  <div class="form-group">
+    <label class="field-label" for="{{ edit_form.month.id_for_label }}">Month (pick any day in it)</label>
+    {{ edit_form.month }}
+    {% if edit_form.month.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ edit_form.month.errors|join:", " }}</span>{% endif %}
+  </div>
+  <div class="form-group">
+    <label class="field-label" for="{{ edit_form.volume_acre_feet.id_for_label }}">Diverted (AF)</label>
+    {{ edit_form.volume_acre_feet }}
+    {% if edit_form.volume_acre_feet.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ edit_form.volume_acre_feet.errors|join:", " }}</span>{% endif %}
   </div>
   <div class="form-group">
     <label class="field-label" for="{{ edit_form.returned_af.id_for_label }}">Returned to stream (AF)</label>
     {{ edit_form.returned_af }}
     {% if edit_form.returned_af.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ edit_form.returned_af.errors|join:", " }}</span>{% endif %}
   </div>
-  <div class="form-row-2col">
-    <div class="form-group">
-      <label class="field-label" for="{{ edit_form.max_flow_rate_cfs.id_for_label }}">Max flow rate (CFS)</label>
-      {{ edit_form.max_flow_rate_cfs }}
-      {% if edit_form.max_flow_rate_cfs.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ edit_form.max_flow_rate_cfs.errors|join:", " }}</span>{% endif %}
-    </div>
-    <div class="form-group">
-      <label class="field-label" for="{{ edit_form.diversion_type.id_for_label }}">Diversion type</label>
-      {{ edit_form.diversion_type }}
-      {% if edit_form.diversion_type.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ edit_form.diversion_type.errors|join:", " }}</span>{% endif %}
-    </div>
+  <div class="form-group">
+    <label class="field-label" for="{{ edit_form.max_flow_rate_cfs.id_for_label }}">Max flow rate (CFS)</label>
+    {{ edit_form.max_flow_rate_cfs }}
+    {% if edit_form.max_flow_rate_cfs.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ edit_form.max_flow_rate_cfs.errors|join:", " }}</span>{% endif %}
   </div>
-  <div class="form-row-2col">
-    <div class="form-group">
-      <label class="field-label" for="{{ edit_form.method.id_for_label }}">How known</label>
-      {{ edit_form.method }}
-      {% if edit_form.method.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ edit_form.method.errors|join:", " }}</span>{% endif %}
-      <span class="text-xs text-tertiary">Leave blank if not stated.</span>
-    </div>
-    <div class="form-group">
-      <label class="field-label" for="{{ edit_form.device.id_for_label }}">Device</label>
-      {{ edit_form.device }}
-      {% if edit_form.device.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ edit_form.device.errors|join:", " }}</span>{% endif %}
-    </div>
+  <div class="form-group">
+    <label class="field-label" for="{{ edit_form.diversion_type.id_for_label }}">Diversion type</label>
+    {{ edit_form.diversion_type }}
+    {% if edit_form.diversion_type.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ edit_form.diversion_type.errors|join:", " }}</span>{% endif %}
   </div>
   <div class="form-group">
     <label class="field-label" for="{{ edit_form.data_state.id_for_label }}">Data state</label>
@@ -78,10 +64,21 @@
     <span class="text-xs text-tertiary">Only non-provisional data goes in an annual report.</span>
   </div>
   <div class="form-group">
+    <label class="field-label" for="{{ edit_form.method.id_for_label }}">How known</label>
+    {{ edit_form.method }}
+    {% if edit_form.method.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ edit_form.method.errors|join:", " }}</span>{% endif %}
+    <span class="text-xs text-tertiary">Leave blank if not stated.</span>
+  </div>
+  <div class="form-group">
+    <label class="field-label" for="{{ edit_form.device.id_for_label }}">Device</label>
+    {{ edit_form.device }}
+    {% if edit_form.device.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ edit_form.device.errors|join:", " }}</span>{% endif %}
+  </div>
+  <div class="form-group form-span-2">
     <label class="field-label" for="{{ edit_form.notes.id_for_label }}">Notes</label>
     {{ edit_form.notes }}
   </div>
-  <div class="row-end" style="gap: var(--space-sm);">
+  <div class="row-end form-span-2" style="gap: var(--space-sm);">
     <a href="{% url 'surface:pod_detail' pod.pk %}" class="btn-secondary btn-sm">Cancel</a>
     <button type="submit" class="btn-primary btn-sm">Save</button>
   </div>

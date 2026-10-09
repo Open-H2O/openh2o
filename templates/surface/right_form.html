@@ -2,7 +2,7 @@
 
 {% block title %}{% if water_right %}Edit water right{% else %}New water right{% endif %} - Open Water Accounting Platform{% endblock %}
 {% block page_title %}{% if water_right %}Edit water right {{ water_right.right_id }}{% else %}New water right{% endif %}{% endblock %}
-{% block page_head_class %}page-head--narrow{% endblock %}
+{% block page_head_class %}page-head--medium{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -18,7 +18,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-stack page-narrow">
+<div class="page-stack page-medium">
 
   <a href="{% url 'surface:water_rights_list' %}" class="back-link">&larr; Back to Water Rights</a>
 
@@ -31,94 +31,92 @@
     </div>
     {% endif %}
 
-    <form method="post">
+    {% comment %} 150-04 (S4, rule B): one two-track grid in
+         place of the old paired rows. The holder, the two seasons and the
+         notes span both tracks; the CalWATRS PIN moved up beside the maximum
+         rate so neither sits alone at half width. {% endcomment %}
+    <form method="post" class="form-grid">
       {% csrf_token %}
 
-      <div class="form-row-2col">
-        <div class="form-group">
-          <label class="form-label" for="{{ form.right_id.id_for_label }}">{{ form.right_id.label }}</label>
-          {{ form.right_id }}
-          {% for error in form.right_id.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="{{ form.right_type.id_for_label }}">{{ form.right_type.label }}</label>
-          {{ form.right_type }}
-          <div class="form-help">"Appropriative, Licensed" is this field plus State Status below: there is no separate seeded type for it.</div>
-          {% for error in form.right_type.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
-        </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.right_id.id_for_label }}">{{ form.right_id.label }}</label>
+        {{ form.right_id }}
+        {% for error in form.right_id.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.right_type.id_for_label }}">{{ form.right_type.label }}</label>
+        {{ form.right_type }}
+        <div class="form-help">"Appropriative, Licensed" is this field plus State Status below: there is no separate seeded type for it.</div>
+        {% for error in form.right_type.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
       </div>
 
-      <div class="form-group">
+      <div class="form-group form-span-2">
         <label class="form-label" for="{{ form.holder_name.id_for_label }}">{{ form.holder_name.label }}</label>
         {{ form.holder_name }}
         {% for error in form.holder_name.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
       </div>
 
-      <div class="form-row-2col">
-        <div class="form-group">
-          <label class="form-label" for="{{ form.status.id_for_label }}">{{ form.status.label }}</label>
-          {{ form.status }}
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="{{ form.state_status.id_for_label }}">{{ form.state_status.label }}</label>
-          {{ form.state_status }}
-          <div class="form-help">{{ form.state_status.help_text }}</div>
-        </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.status.id_for_label }}">{{ form.status.label }}</label>
+        {{ form.status }}
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.state_status.id_for_label }}">{{ form.state_status.label }}</label>
+        {{ form.state_status }}
+        <div class="form-help">{{ form.state_status.help_text }}</div>
       </div>
 
-      <div class="form-row-2col">
-        <div class="form-group">
-          <label class="form-label" for="{{ form.priority_date.id_for_label }}">{{ form.priority_date.label }}</label>
-          {{ form.priority_date }}
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="{{ form.face_value_acre_feet.id_for_label }}">{{ form.face_value_acre_feet.label }} (AF)</label>
-          {{ form.face_value_acre_feet }}
-        </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.priority_date.id_for_label }}">{{ form.priority_date.label }}</label>
+        {{ form.priority_date }}
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.face_value_acre_feet.id_for_label }}">{{ form.face_value_acre_feet.label }} (AF)</label>
+        {{ form.face_value_acre_feet }}
       </div>
 
-      <div class="form-row-2col">
-        <div class="form-group">
-          <label class="form-label" for="{{ form.source_name.id_for_label }}">{{ form.source_name.label }}</label>
-          {{ form.source_name }}
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="{{ form.watershed.id_for_label }}">{{ form.watershed.label }}</label>
-          {{ form.watershed }}
-          <div class="form-help">{{ form.watershed.help_text }}</div>
-        </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.source_name.id_for_label }}">{{ form.source_name.label }}</label>
+        {{ form.source_name }}
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.watershed.id_for_label }}">{{ form.watershed.label }}</label>
+        {{ form.watershed }}
+        <div class="form-help">{{ form.watershed.help_text }}</div>
       </div>
 
-      <div class="form-row-2col">
-        <div class="form-group">
-          <label class="form-label" for="{{ form.permit_number.id_for_label }}">{{ form.permit_number.label }}</label>
-          {{ form.permit_number }}
-          <div class="form-help">{{ form.permit_number.help_text }}</div>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="{{ form.license_number.id_for_label }}">{{ form.license_number.label }}</label>
-          {{ form.license_number }}
-          <div class="form-help">{{ form.license_number.help_text }}</div>
-        </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.permit_number.id_for_label }}">{{ form.permit_number.label }}</label>
+        {{ form.permit_number }}
+        <div class="form-help">{{ form.permit_number.help_text }}</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.license_number.id_for_label }}">{{ form.license_number.label }}</label>
+        {{ form.license_number }}
+        <div class="form-help">{{ form.license_number.help_text }}</div>
       </div>
 
-      <div class="form-row-2col">
-        <div class="form-group">
-          <label class="form-label" for="{{ form.purpose_of_use.id_for_label }}">{{ form.purpose_of_use.label }}</label>
-          {{ form.purpose_of_use }}
-          <div class="form-help">{{ form.purpose_of_use.help_text }}</div>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="{{ form.net_acreage.id_for_label }}">{{ form.net_acreage.label }}</label>
-          {{ form.net_acreage }}
-          <div class="form-help">{{ form.net_acreage.help_text }}</div>
-        </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.purpose_of_use.id_for_label }}">{{ form.purpose_of_use.label }}</label>
+        {{ form.purpose_of_use }}
+        <div class="form-help">{{ form.purpose_of_use.help_text }}</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.net_acreage.id_for_label }}">{{ form.net_acreage.label }}</label>
+        {{ form.net_acreage }}
+        <div class="form-help">{{ form.net_acreage.help_text }}</div>
       </div>
 
       <div class="form-group">
         <label class="form-label" for="{{ form.max_rate_cfs.id_for_label }}">{{ form.max_rate_cfs.label }} (cfs)</label>
         {{ form.max_rate_cfs }}
         <div class="form-help">{{ form.max_rate_cfs.help_text }}</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.calwatrs_pin.id_for_label }}">{{ form.calwatrs_pin.label }}</label>
+        {{ form.calwatrs_pin }}
+        <div class="form-help">{{ form.calwatrs_pin.help_text }}</div>
       </div>
 
       {% comment %}
@@ -128,7 +126,7 @@
         copy rule 11 -- this describes the software's fields, never what a
         diversion or a storage season means.
       {% endcomment %}
-      <div class="form-group">
+      <div class="form-group form-span-2">
         <label class="form-label">Direct diversion season</label>
         <div class="row-start" style="gap: var(--space-sm); align-items: flex-start; flex-wrap: wrap;">
           <span class="text-secondary text-sm" style="padding-top: 8px;">from</span>
@@ -145,7 +143,7 @@
         {% for error in form.direct_season_end_day.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
       </div>
 
-      <div class="form-group">
+      <div class="form-group form-span-2">
         <label class="form-label">Storage season</label>
         <div class="row-start" style="gap: var(--space-sm); align-items: flex-start; flex-wrap: wrap;">
           <span class="text-secondary text-sm" style="padding-top: 8px;">from</span>
@@ -162,13 +160,7 @@
         {% for error in form.storage_season_end_day.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
       </div>
 
-      <div class="form-group">
-        <label class="form-label" for="{{ form.calwatrs_pin.id_for_label }}">{{ form.calwatrs_pin.label }}</label>
-        {{ form.calwatrs_pin }}
-        <div class="form-help">{{ form.calwatrs_pin.help_text }}</div>
-      </div>
-
-      <div class="form-group">
+      <div class="form-group form-span-2">
         <label class="form-label" for="{{ form.notes.id_for_label }}">{{ form.notes.label }}</label>
         {{ form.notes }}
       </div>

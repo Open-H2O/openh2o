@@ -10,7 +10,7 @@
 
 {% block title %}Edit {{ zone.name }} - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Edit {{ zone.name }}{% endblock %}
-{% block page_head_class %}page-head--narrow{% endblock %}
+{% block page_head_class %}page-head--medium{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -27,7 +27,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-stack page-narrow">
+<div class="page-stack page-medium">
 
   <a href="{% url 'geography:zone_detail' zone.pk %}" class="back-link">&larr; Back to {{ zone.name }}</a>
 
@@ -44,7 +44,10 @@
     </div>
     {% endif %}
 
-    <form method="post">
+    {% comment %} 150-04 (rule B): a two-track grid. The name beside the zone
+         type; the description, the Delta-case sentence and the legal basis span
+         both tracks. {% endcomment %}
+    <form method="post" class="form-grid">
       {% csrf_token %}
       <div class="form-group">
         <label class="form-label" for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
@@ -54,18 +57,18 @@
         <label class="form-label" for="{{ form.zone_type.id_for_label }}">{{ form.zone_type.label }}</label>
         {{ form.zone_type }}
       </div>
-      <div class="form-group">
+      <div class="form-group form-span-2">
         <label class="form-label" for="{{ form.description.id_for_label }}">{{ form.description.label }}</label>
         {{ form.description }}
       </div>
-      <div class="form-group">
+      <div class="form-group form-span-2">
         <label class="form-label" for="{{ form.subsurface_supply_is_diversion.id_for_label }}">
           {{ form.subsurface_supply_is_diversion }}
           In this zone, water reaching a crop from below is a diversion under
           a stated legal basis (the Delta case)
         </label>
       </div>
-      <div class="form-group">
+      <div class="form-group form-span-2">
         <label class="form-label" for="{{ form.legal_basis.id_for_label }}">Legal basis</label>
         {{ form.legal_basis }}
       </div>

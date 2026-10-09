@@ -2,7 +2,7 @@
 
 {% block title %}New use ledger entry - Open Water Accounting Platform{% endblock %}
 {% block page_title %}New use ledger entry{% endblock %}
-{% block page_head_class %}page-head--narrow{% endblock %}
+{% block page_head_class %}page-head--medium{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -18,7 +18,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-stack page-narrow">
+<div class="page-stack page-medium">
 
   <!-- Back link -->
   <a href="{% url 'accounting:ledger_list' %}" class="back-link">&larr; Back to Use Ledger</a>
@@ -27,11 +27,16 @@
     {% comment %} Was "Create ledger entry", the page title said again in other words (Phase 143-02, copy rule 13: a label under a heading says the remainder). {% endcomment %}
     <h2 class="card-header-ruled">Details</h2>
 
-    <form method="post">
+    {% comment %} 150-04 (F1, rule B): the form is a two-track grid. The use area
+         and the description span both tracks; the two dates, the amount and its
+         water type, and the source type and its water year each share a row.
+         The description is rendered after the loop so Source type and Water
+         year sit side by side (149.1-05's last fault on this page). {% endcomment %}
+    <form method="post" class="form-grid">
       {% csrf_token %}
 
-      {% for field in form %}
-      <div class="form-group">
+      {% for field in form %}{% if field.name != "description" %}
+      <div class="form-group{% if field.name == "parcel" %} form-span-2{% endif %}">
         <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
         {{ field }}
         {% if field.errors %}
@@ -49,7 +54,20 @@
         <div class="form-help">Negative amounts are water delivered or pumped; positive amounts are credits.</div>
         {% endif %}
       </div>
-      {% endfor %}
+      {% endif %}{% endfor %}
+
+      <div class="form-group form-span-2">
+        <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
+        {{ form.description }}
+        {% if form.description.errors %}
+        <div class="form-help text-furnace">
+          {% for error in form.description.errors %}{{ error }}{% endfor %}
+        </div>
+        {% endif %}
+        {% if form.description.help_text %}
+        <div class="form-help">{{ form.description.help_text }}</div>
+        {% endif %}
+      </div>
 
       <div class="form-footer">
         <button type="submit" class="btn-primary">Create entry</button>

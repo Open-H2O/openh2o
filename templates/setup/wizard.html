@@ -54,6 +54,11 @@
   </div>
   {% endif %}
 
+  {% comment %}150-04 (S16, rule B2): the two boundary choices, pick one on
+  file or upload a file, sit side by side at wide widths so the upload card is
+  no longer below the first fold. The step row above and the extent and skip
+  cards below stay full width.{% endcomment %}
+  <div class="card-columns">
   {% comment %}ISS-178: this card always renders. With nothing on file the
   control is disabled and says so (Brent, 2026-09-21: "disabled with a none
   yet note"), so a new user sees where an existing boundary would be chosen
@@ -126,7 +131,7 @@
           style="display: none;"
           onchange="updateZoneLabel(this.files[0])"
         >
-        <p class="form-help">When the file holds several polygons, OpenH2O combines them into one boundary.</p>
+        <p class="text-base text-secondary mt-xs">When the file holds several polygons, OpenH2O combines them into one boundary.</p>
         <p class="form-help">This is one shape drawn on a map: the outline of the area this deployment covers. A GIS consultant, or whoever handles the district's mapping, can export one, and can fix a file rejected here.</p>
         <p class="form-help">OpenH2O reads a shapefile's projection from the .prj file in its zip and converts the coordinates to WGS84 longitude and latitude when needed. A KML or GeoJSON file is read as WGS84.</p>
       </div>
@@ -137,6 +142,7 @@
         </button>
       </div>
     </form>
+  </div>
   </div>
 
   {% comment %}2. Type an extent{% endcomment %}

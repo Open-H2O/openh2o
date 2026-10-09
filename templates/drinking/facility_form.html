@@ -13,7 +13,7 @@
 
 {% block title %}{% if facility %}Edit facility {{ facility.facility_id }}{% else %}Add facility{% endif %} - Open Water Accounting Platform{% endblock %}
 {% block page_title %}{% if facility %}Edit facility {{ facility.facility_id }}{% else %}Add facility{% endif %}{% endblock %}
-{% block page_head_class %}page-head--narrow{% endblock %}
+{% block page_head_class %}page-head--medium{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -41,7 +41,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-stack page-narrow">
+<div class="page-stack page-medium">
 
   {% if facility %}
   <a href="{% url 'drinking:facility_detail' facility.pk %}" class="back-link">&larr; Back to facility {{ facility.facility_id }}</a>
@@ -72,24 +72,26 @@
     </div>
     {% endif %}
 
-    <form method="post">
+    {% comment %} 150-04 (rule B): one two-track grid. The ID
+         beside the type, the status beside the water type; the state's name, the
+         local name, the source checkbox and the well (a list of long names) span
+         both tracks. {% endcomment %}
+    <form method="post" class="form-grid">
       {% csrf_token %}
 
       {% if form.facility_id %}
-      <div class="form-row-2col">
-        <div class="form-group">
-          <label class="form-label" for="{{ form.facility_id.id_for_label }}">{{ form.facility_id.label }}</label>
-          {{ form.facility_id }}
-          <div class="form-help">The state assigns this ID within {{ system.name }}. Enter it as the district engineer gave it to you. A lab file names the facility by it.</div>
-          {% for error in form.facility_id.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="{{ form.facility_type.id_for_label }}">{{ form.facility_type.label }}</label>
-          {{ form.facility_type }}
-        </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.facility_id.id_for_label }}">{{ form.facility_id.label }}</label>
+        {{ form.facility_id }}
+        <div class="form-help">The state assigns this ID within {{ system.name }}. Enter it as the district engineer gave it to you. A lab file names the facility by it.</div>
+        {% for error in form.facility_id.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.facility_type.id_for_label }}">{{ form.facility_type.label }}</label>
+        {{ form.facility_type }}
       </div>
 
-      <div class="form-group">
+      <div class="form-group form-span-2">
         <label class="form-label" for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
         {{ form.name }}
         <div class="form-help">Enter the name as the state writes it, when you have it. Leave it blank if the state has not named it yet.</div>
@@ -97,7 +99,7 @@
       </div>
       {% endif %}
 
-      <div class="form-group">
+      <div class="form-group form-span-2">
         <label class="form-label" for="{{ form.local_name.id_for_label }}">{{ form.local_name.label }}</label>
         {{ form.local_name }}
         <div class="form-help">Enter your own name for the facility. It appears beside the state's name and never replaces it.</div>
@@ -105,18 +107,16 @@
       </div>
 
       {% if form.activity_status %}
-      <div class="form-row-2col">
-        <div class="form-group">
-          <label class="form-label" for="{{ form.activity_status.id_for_label }}">{{ form.activity_status.label }}</label>
-          {{ form.activity_status }}
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="{{ form.water_type.id_for_label }}">{{ form.water_type.label }}</label>
-          {{ form.water_type }}
-        </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.activity_status.id_for_label }}">{{ form.activity_status.label }}</label>
+        {{ form.activity_status }}
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.water_type.id_for_label }}">{{ form.water_type.label }}</label>
+        {{ form.water_type }}
       </div>
 
-      <div class="form-group">
+      <div class="form-group form-span-2">
         <label class="row-start text-base" style="gap: var(--space-sm);">
           {{ form.is_source }} <span>{{ form.is_source.label }}</span>
         </label>
@@ -124,7 +124,7 @@
       {% endif %}
 
       {% if form.well %}
-      <div class="form-group">
+      <div class="form-group form-span-2">
         <label class="form-label" for="{{ form.well.id_for_label }}">{{ form.well.label }}</label>
         {{ form.well }}
         <div class="form-help">Optional. This links the facility to its record in Wells.</div>

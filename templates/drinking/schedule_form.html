@@ -7,7 +7,7 @@
 
 {% block title %}{% if row %}Edit schedule row{% else %}Add to schedule{% endif %} - Open Water Accounting Platform{% endblock %}
 {% block page_title %}{% if row %}Edit schedule row{% else %}Add to schedule{% endif %}{% endblock %}
-{% block page_head_class %}page-head--narrow{% endblock %}
+{% block page_head_class %}page-head--medium{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -25,7 +25,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-stack page-narrow">
+<div class="page-stack page-medium">
 
   <a href="{% url 'drinking:schedule' %}" class="back-link">&larr; Back to Schedule</a>
 
@@ -52,49 +52,45 @@
     </div>
     {% endif %}
 
-    <form method="post">
+    {% comment %} 150-04 (rule B): one two-track grid; the two
+         dates share a row and the notes span both tracks. {% endcomment %}
+    <form method="post" class="form-grid">
       {% csrf_token %}
 
-      <div class="form-row-2col">
-        <div class="form-group">
-          <label class="form-label" for="{{ form.group_label.id_for_label }}">{{ form.group_label.label }}</label>
-          {{ form.group_label }}
-          <div class="form-help">Enter the name your checklist uses, such as coliform, nitrate or a siting plan.</div>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="{{ form.analyte.id_for_label }}">{{ form.analyte.label }}</label>
-          {{ form.analyte }}
-        </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.group_label.id_for_label }}">{{ form.group_label.label }}</label>
+        {{ form.group_label }}
+        <div class="form-help">Enter the name your checklist uses, such as coliform, nitrate or a siting plan.</div>
       </div>
-
-      <div class="form-row-2col">
-        <div class="form-group">
-          <label class="form-label" for="{{ form.frequency.id_for_label }}">{{ form.frequency.label }}</label>
-          {{ form.frequency }}
-          {% for error in form.frequency.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="{{ form.sampling_point.id_for_label }}">{{ form.sampling_point.label }}</label>
-          {{ form.sampling_point }}
-          <div class="form-help">Optional.</div>
-        </div>
-      </div>
-
-      <div class="form-row-2col">
-        <div class="form-group">
-          <label class="form-label" for="{{ form.last_done.id_for_label }}">{{ form.last_done.label }}</label>
-          {{ form.last_done }}
-          {% for error in form.last_done.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="{{ form.next_due.id_for_label }}">{{ form.next_due.label }}</label>
-          {{ form.next_due }}
-          <div class="form-help">Enter the date from your checklist. The platform does not work it out from the frequency.</div>
-          {% for error in form.next_due.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
-        </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.analyte.id_for_label }}">{{ form.analyte.label }}</label>
+        {{ form.analyte }}
       </div>
 
       <div class="form-group">
+        <label class="form-label" for="{{ form.frequency.id_for_label }}">{{ form.frequency.label }}</label>
+        {{ form.frequency }}
+        {% for error in form.frequency.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.sampling_point.id_for_label }}">{{ form.sampling_point.label }}</label>
+        {{ form.sampling_point }}
+        <div class="form-help">Optional.</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.last_done.id_for_label }}">{{ form.last_done.label }}</label>
+        {{ form.last_done }}
+        {% for error in form.last_done.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.next_due.id_for_label }}">{{ form.next_due.label }}</label>
+        {{ form.next_due }}
+        <div class="form-help">Enter the date from your checklist. The platform does not work it out from the frequency.</div>
+        {% for error in form.next_due.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
+      </div>
+
+      <div class="form-group form-span-2">
         <label class="form-label" for="{{ form.notes.id_for_label }}">Notes</label>
         {{ form.notes }}
       </div>

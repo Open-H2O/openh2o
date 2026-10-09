@@ -2,7 +2,7 @@
 
 {% block title %}Add monitoring station - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Add monitoring station{% endblock %}
-{% block page_head_class %}page-head--narrow{% endblock %}
+{% block page_head_class %}page-head--medium{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -18,7 +18,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-stack page-narrow">
+<div class="page-stack page-medium">
 
   <!-- Back link -->
   <a href="{% url 'datasync:station_list' %}" class="back-link">&larr; Back to Monitoring Stations</a>
@@ -37,11 +37,14 @@
       Station details
     </h2>
 
-    <form method="post" class="page-stack">
+    {% comment %} 150-04 (rule B): a two-track grid. The data source (a select of
+         long names) spans both tracks; the external ID beside the station name,
+         the latitude beside the longitude. {% endcomment %}
+    <form method="post" class="form-grid">
       {% csrf_token %}
 
       <!-- Data Source -->
-      <div class="form-group">
+      <div class="form-group form-span-2">
         <label class="form-label" for="id_data_source">Data source <span class="required-mark">*</span></label>
         <select id="id_data_source" name="data_source" required class="form-select">
           <option value="">Select a data source...</option>
@@ -81,35 +84,33 @@
       </div>
 
       <!-- Latitude / Longitude -->
-      <div class="form-grid-2col">
-        <div class="form-group">
-          <label class="form-label" for="id_lat">Latitude <span class="required-mark">*</span></label>
-          <input
-            type="number"
-            id="id_lat" name="lat"
-            value="{{ form_data.lat|default:'' }}"
-            placeholder="37.5000"
-            step="0.000001"
-            min="-90"
-            max="90"
-            required
-            class="form-input text-mono"
-          >
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="id_lng">Longitude <span class="required-mark">*</span></label>
-          <input
-            type="number"
-            id="id_lng" name="lng"
-            value="{{ form_data.lng|default:'' }}"
-            placeholder="-119.5000"
-            step="0.000001"
-            min="-180"
-            max="180"
-            required
-            class="form-input text-mono"
-          >
-        </div>
+      <div class="form-group">
+        <label class="form-label" for="id_lat">Latitude <span class="required-mark">*</span></label>
+        <input
+          type="number"
+          id="id_lat" name="lat"
+          value="{{ form_data.lat|default:'' }}"
+          placeholder="37.5000"
+          step="0.000001"
+          min="-90"
+          max="90"
+          required
+          class="form-input text-mono"
+        >
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="id_lng">Longitude <span class="required-mark">*</span></label>
+        <input
+          type="number"
+          id="id_lng" name="lng"
+          value="{{ form_data.lng|default:'' }}"
+          placeholder="-119.5000"
+          step="0.000001"
+          min="-180"
+          max="180"
+          required
+          class="form-input text-mono"
+        >
       </div>
 
       <!-- Submit -->
