@@ -203,3 +203,137 @@ class TestEngineSentenceLivesOnlyInTheEngine:
             "a template names the old engine shorthand instead of printing "
             f"the stored description: {engine_hits}"
         )
+
+
+# -- Every class a template names is a class something defines (ISS-166) ------
+
+CLASS_SOURCES = (
+    ROOT / "static/css/app.css",
+    ROOT / "static/css/tokens.css",
+    ROOT / "static/css/map-engine.css",
+    ROOT / "static/css/input.css",
+)
+
+# Prefixes that name a behaviour, not a look: a script finds the element by it,
+# and no stylesheet is meant to.
+UNDEFINED_CLASS_PREFIXES = (
+    "js-",  # script hooks (e.g. js-precip-field, js-precip-method on the methodology step)
+    "maplibregl-",  # MapLibre GL's own control classes
+    "htmx-",  # HTMX's request-state classes
+)
+
+# Every class a template names today that none of CLASS_SOURCES defines, each
+# with what it is. Built by running this file's own scan on 2026-10-09 (150-04).
+# A class lands here only with a reason; a new undefined class fails the test.
+UNDEFINED_CLASS_ALLOWLIST = {
+    # Tailwind v4 utilities. static/css/input.css holds only the @tailwind
+    # directives, and the built static/css/output.css is not in the repository;
+    # each of these five is in the output.css staging served on 2026-10-09.
+    "block": "Tailwind utility in output.css",
+    "flex": "Tailwind utility in output.css",
+    "tabular-nums": "Tailwind utility in output.css",
+    "text-center": "Tailwind utility in output.css",
+    "w-full": "Tailwind utility in output.css",
+    # Script state classes, styled inline beside them.
+    "chart-range-btn": "script hook: the range buttons in datasync/partials/_station_detail_pane.html",
+    "active-range": "script state: the selected range button, same pane, toggled by its script",
+    # The feedback widget styles itself in its own <style> block
+    # (templates/partials/_feedback_widget.html), not in a stylesheet.
+    "oh2o-fb-attach": "feedback widget, its own <style> block",
+    "oh2o-fb-cat": "feedback widget, its own <style> block",
+    "oh2o-fb-cats": "feedback widget, its own <style> block",
+    "oh2o-fb-head": "feedback widget, its own <style> block",
+    "oh2o-fb-hint": "feedback widget, its own <style> block",
+    "oh2o-fb-hp": "feedback widget, its own <style> block",
+    "oh2o-fb-panel": "feedback widget, its own <style> block",
+    "oh2o-fb-send": "feedback widget, its own <style> block",
+    "oh2o-fb-sub": "feedback widget, its own <style> block",
+    "oh2o-fb-thumbs": "feedback widget, its own <style> block",
+    "oh2o-fb-x": "feedback widget, its own <style> block",
+    "sel": "feedback widget state: the chosen category, its own <style> block and script",
+    # No rule anywhere: these do nothing today. Recorded, not fixed, in 150-04
+    # (that plan adds no CSS rule beyond its own block).
+    "deep-dive-label": "no rule: partials/_deep_dive.html summary label",
+    "help-letter-row": "no rule: help/glossary.html letter divider row",
+    "receipt": "no rule: accounting/calculation_run_detail.html card (receipt-short and receipt-table are defined)",
+    "search-results-inner": "no rule: partials/_search_results.html list wrapper",
+    "mb-lg": "no rule: accounting/dashboard.html; mb-sm and mb-md exist, mb-lg does not",
+    "mb-xs": "no rule: geography/partials/_zone_detail_pane.html; mb-sm and mb-md exist, mb-xs does not",
+}
+
+_CLASS_ATTR = re.compile(r"""(?<![\w:-])class\s*=\s*(?:"([^"]*)"|'([^']*)')""")
+_CLASS_NAME = re.compile(r"^-?[_a-zA-Z][\w-]*$")
+_DYNAMIC = "\x00"
+
+
+def _defined_classes():
+    """Every class a selector in CLASS_SOURCES names. Comments go first, as
+    blocks, so a class quoted in a note does not count as defined."""
+    found = set()
+    for path in CLASS_SOURCES:
+        source = re.sub(r"/\*.*?\*/", "", path.read_text(), flags=re.S)
+        for prelude in re.findall(r"([^{};]*)\{", source):
+            found.update(re.findall(r"\.(-?[_a-zA-Z][\w-]*)", prelude))
+    return found
+
+
+def _template_classes():
+    """{class: {template, ...}} for every class named in a ``class="..."``.
+
+    Developer notes are stripped first. A ``{% if %}`` inside the attribute
+    contributes the classes it can add; a class built from ``{{ }}`` (e.g.
+    ``freshness-dot--{{ item.freshness }}``) is dynamic and is skipped, since
+    no static scan can name it.
+    """
+    uses = {}
+    for path in _templates():
+        text = path.read_text()
+        text = re.sub(r"\{%\s*comment\s*%\}.*?\{%\s*endcomment\s*%\}", "", text, flags=re.S)
+        text = re.sub(r"\{#.*?#\}", "", text)
+        text = re.sub(r"<!--.*?-->", "", text, flags=re.S)
+        text = re.sub(r"\{\{.*?\}\}", _DYNAMIC, text, flags=re.S)
+        text = re.sub(r"\{%.*?%\}", " ", text, flags=re.S)
+        for match in _CLASS_ATTR.finditer(text):
+            value = match.group(1) if match.group(1) is not None else match.group(2)
+            for token in value.split():
+                if _DYNAMIC in token or not _CLASS_NAME.match(token):
+                    continue
+                uses.setdefault(token, set()).add(str(path.relative_to(ROOT)))
+    return uses
+
+
+class TestEveryTemplateClassIsDefined:
+    """ISS-166: four classes (`font-semibold`, `text-primary`, `row-clickable`,
+    `form-stack`) were named in eighteen templates and defined nowhere, so each
+    did nothing and the page looked as though it did. 150-04 defined the first
+    three and removed the fourth. This guard fails on the next one: a class in a
+    template's ``class`` attribute must be defined in a stylesheet, carry a
+    behaviour prefix, or sit in the allowlist above with its reason.
+    """
+
+    def test_no_template_names_an_undefined_class(self):
+        defined = _defined_classes()
+        offenders = {
+            name: sorted(paths)
+            for name, paths in _template_classes().items()
+            if name not in defined
+            and name not in UNDEFINED_CLASS_ALLOWLIST
+            and not name.startswith(UNDEFINED_CLASS_PREFIXES)
+        }
+        assert not offenders, (
+            "these classes are named in a template and defined in no stylesheet, "
+            "so they do nothing; define them in static/css/app.css, use a class "
+            "that exists, or allowlist them with a reason: "
+            f"{offenders}"
+        )
+
+    def test_the_allowlist_holds_only_live_undefined_classes(self):
+        """An entry whose class is now defined, or no longer used, is stale; a
+        stale allowlist stops saying what is actually undefined."""
+        defined = _defined_classes()
+        used = _template_classes()
+        stale = sorted(
+            name for name in UNDEFINED_CLASS_ALLOWLIST
+            if name in defined or name not in used
+        )
+        assert not stale, f"remove these allowlist entries: {stale}"

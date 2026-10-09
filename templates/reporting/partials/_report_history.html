@@ -23,7 +23,7 @@
     </thead>
     <tbody>
       {% for sub in page_obj %}
-      <tr class="row-clickable" style="cursor: pointer;"
+      <tr class="row-clickable"
           onclick="if(!event.target.closest('a')){window.location='{% url 'reporting:report_detail' pk=sub.pk %}';}">
         <td>
           <a href="{% url 'reporting:report_detail' pk=sub.pk %}" class="data-table-link">

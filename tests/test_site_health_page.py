@@ -105,6 +105,35 @@ class TestThePanelLeadsWithTheHealthyCount:
 
 
 @pytest.mark.django_db
+class TestOneSetOfWordsAcrossBadgesAndPanel:
+    """150-04 W10: the page description and the panel say healthy / attention
+    needed / action required; the card badges said Healthy / Warning /
+    Critical. The badges now carry the page's own three words, and the panel's
+    captions name the badge they count."""
+
+    def test_the_badges_read_the_panels_words(self):
+        """RED before: the amber badge read Warning and the red one Critical."""
+        _persist_fixture()
+        html = _client_in().get(reverse("health:dashboard")).content.decode()
+        grid = html[html.index('class="health-grid"'):]
+        assert '<span class="badge badge-dot badge-amber">Attention needed</span>' in grid
+        assert '<span class="badge badge-dot badge-red">Action required</span>' in grid
+        assert '<span class="badge badge-dot badge-green">Healthy</span>' in grid
+        assert '<span class="badge badge-grey">Not applicable</span>' in grid
+        assert "Warning" not in grid
+        assert "Critical" not in grid
+
+    def test_the_captions_name_the_badge_they_count(self):
+        """RED before: the captions read "check reading Warning" / "check reading Critical"."""
+        _persist_fixture()
+        html = _client_in().get(reverse("health:dashboard")).content.decode()
+        assert '<div class="budget-seg-caption">check marked Attention needed</div>' in html
+        assert '<div class="budget-seg-caption">check marked Action required</div>' in html
+        assert "reading Warning" not in html
+        assert "reading Critical" not in html
+
+
+@pytest.mark.django_db
 class TestSignedOutGetsNoPanel:
     def test_anonymous_reader_sees_the_aggregate_only(self):
         _persist_fixture()

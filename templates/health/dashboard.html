@@ -86,7 +86,7 @@
               <div class="budget-seg">
                 <div class="budget-seg-label">Attention needed</div>
                 <div class="budget-seg-value{% if yellow_count %} text-deficit{% endif %}">{{ yellow_count }}</div>
-                <div class="budget-seg-caption">check{{ yellow_count|pluralize }} reading Warning</div>
+                <div class="budget-seg-caption">check{{ yellow_count|pluralize }} marked Attention needed</div>
               </div>
               <div class="budget-op"></div>
               <div class="budget-seg">
@@ -97,7 +97,7 @@
                    and uses that. {% endcomment %}
                 <div class="budget-seg-label">Action required</div>
                 <div class="budget-seg-value{% if red_count %} text-error{% endif %}">{{ red_count }}</div>
-                <div class="budget-seg-caption">check{{ red_count|pluralize }} reading Critical</div>
+                <div class="budget-seg-caption">check{{ red_count|pluralize }} marked Action required</div>
               </div>
             </div>
           </div>
@@ -118,9 +118,9 @@
                 {% elif result.status == 'green' %}
                 <span class="badge badge-dot badge-green">Healthy</span>
                 {% elif result.status == 'yellow' %}
-                <span class="badge badge-dot badge-amber">Warning</span>
+                <span class="badge badge-dot badge-amber">Attention needed</span>
                 {% else %}
-                <span class="badge badge-dot badge-red">Critical</span>
+                <span class="badge badge-dot badge-red">Action required</span>
                 {% endif %}
             </div>
             <p class="text-secondary text-sm" style="margin: 0 0 var(--space-sm) 0; line-height: 1.4;">
