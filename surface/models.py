@@ -53,6 +53,7 @@ class WaterRight(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
     source_name = models.CharField(max_length=200, blank=True)
     calwatrs_pin = models.CharField(
+        "CalWATRS PIN",
         max_length=50,
         blank=True,
         help_text="CalWATRS PIN mailed by SWRCB for this water right. The state "
@@ -88,6 +89,7 @@ class WaterRight(models.Model):
         help_text="USE_NET_ACREAGE in the state's rights list, in acres.",
     )
     max_rate_cfs = models.DecimalField(
+        "Max rate",
         max_digits=10,
         decimal_places=4,
         null=True,
@@ -229,7 +231,7 @@ class PointOfDiversion(models.Model):
         "stream_name stays the human-readable eWRIMS label.",
     )
     max_rate_cfs = models.DecimalField(
-        max_digits=10, decimal_places=4, null=True, blank=True
+        "Max rate", max_digits=10, decimal_places=4, null=True, blank=True
     )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
     notes = models.TextField(blank=True)
