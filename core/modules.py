@@ -850,14 +850,15 @@ MODULE_REGISTRY: dict = {
         url_order=110,
         nav=(
             # 150-03: the add and import pages lit nothing until this entry
-            # existed. It opens the bulk import, the door Getting Started
-            # sends a new agency through; the add page is under the same
-            # prefix and lights it too. Hidden in the sidebar for a read-only
+            # existed. It opens the add page, which carries the type cards (a
+            # link into the importer with no ?type= would silently serve the
+            # first type, the defect tests/test_page_offers_what_it_lists.py
+            # names); the import page is under the same prefix and lights it too. Hidden in the sidebar for a read-only
             # account (a write page; _sidebar.html), and absent on a
             # deployment that runs none of the three types it imports, where
             # the page has nothing to offer (`requires_any_module`).
             NavEntry(
-                url_name="infrastructure:import",
+                url_name="infrastructure:add",
                 label="Infrastructure",
                 icon="infrastructure",
                 section=SECTION_WATER_DATA,

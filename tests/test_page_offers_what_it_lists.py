@@ -135,7 +135,10 @@ def test_page_offers_only_what_it_lists(path, may_offer, render):
     assert resp.status_code == 200, (
         f"{path} ({render}) returned {resp.status_code}, so this row proved nothing."
     )
-    hrefs = _infrastructure_hrefs(resp.content.decode())
+    # 150-03: the sidebar carries an Infrastructure entry on every page (the
+    # add page with its type cards, no ?type=). It is the deployment's door,
+    # not this list page's offer, so the rule reads the page below the sidebar.
+    hrefs = _infrastructure_hrefs(resp.content.decode().split("</aside>", 1)[-1])
 
     add_url = reverse("infrastructure:add")
     import_url = reverse("infrastructure:import")

@@ -82,7 +82,7 @@
         <!-- {{ section.label|upper }}{% if section.requires_admin_mode %} (Admin view only){% endif %} -->{% endif %}{% if not section.requires_admin_mode or nav_mode == 'admin' %}{% if section.label %}
         <div class="sidebar-section">
             <span class="sidebar-link-text sidebar-section-label">{{ section.label }}</span>
-        </div>{% endif %}{% for entry in section.entries %}{% if entry.visibility == 'agency_admin' and not user_is_admin %}{% elif entry.visibility == 'setup_gate' and access_enforced and not user_is_admin %}{% elif entry.url_name == 'setup:wizard' and user_can_write == False %}{% elif entry.url_name == 'drinking:onboard' and user_can_write == False %}{% elif entry.url_name == 'infrastructure:import' and user_can_write == False %}{% else %}{% if entry.starts_group and not forloop.first %}
+        </div>{% endif %}{% for entry in section.entries %}{% if entry.visibility == 'agency_admin' and not user_is_admin %}{% elif entry.visibility == 'setup_gate' and access_enforced and not user_is_admin %}{% elif entry.url_name == 'setup:wizard' and user_can_write == False %}{% elif entry.url_name == 'drinking:onboard' and user_can_write == False %}{% elif entry.url_name == 'infrastructure:add' and user_can_write == False %}{% else %}{% if entry.starts_group and not forloop.first %}
         <hr class="sidebar-divider">{% endif %}
         <a href="{% url entry.url_name %}"
            class="sidebar-link{% if entry|nav_active:nav_lit %} active{% endif %}">
