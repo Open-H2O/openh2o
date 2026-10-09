@@ -14,8 +14,8 @@ the pages the layout inventory named carry them:
 - F7: the two diversion record forms are on the grid, the undefined
   `form-stack` class is gone, and their wrapper no longer caps them at 640 px.
 - F2, F3: the methodology step forms (a step with no options is one row).
-- S16: the wizard's two boundary cards sit in one `.card-columns`.
-- S5: the delivery setting cards are in a `.card-columns` form at the wide measure.
+- S16: the wizard's two boundary cards were paired and then unpaired on the read (stacked).
+- S5: the delivery setting cards were tried in columns and stay one column (the read).
 
 It pins CLASSES and element ids, never a reader-facing string (the ISS-129
 line: a test may not mandate words). Every test was RED against the pre-change
@@ -274,34 +274,20 @@ def test_methodology_step_forms_are_on_the_grid():
 
 
 @pytest.mark.django_db
-def test_wizard_boundary_cards_share_one_row():
-    """S16: the select and upload cards are the two children of one
-    `.card-columns`; the extent and skip cards stay outside it. RED before:
-    no `.card-columns` on the page (root_tag was None)."""
+def test_wizard_boundary_cards_stay_stacked():
+    """S16, after the read: side by side the two cards read DO NOT SHIP 3 on their
+    mismatched heights, so they stack as before (VERDICTS-150-04.md). Pins the
+    absence of the `.card-columns` wrapper and the several-polygons line on the page."""
     html = _superuser_client().get(reverse("setup:wizard")).content.decode()
-    columns = _region(html, "card-columns")
-    assert columns.root_tag == "div"
-    assert [classes for tag, classes in columns.children] == [{"card-raised"}, {"card-raised"}]
-    assert {"btn-select", "btn-upload"} <= columns.ids
-    assert not {"btn-extent", "btn-skip"} & columns.ids
-    for outside in ("btn-extent", "btn-skip"):
-        assert f'id="{outside}"' in html
+    assert "card-columns" not in html
+    assert "When the file holds several polygons" in html
 
 
 @pytest.mark.django_db
-def test_delivery_setting_cards_are_in_columns_at_the_wide_measure():
-    """S5: the setting cards are direct children of a `.card-columns` form, the
-    Save row spans every column, the page is at the wide measure and the head
-    has no measure class. RED before: the form was `.page-stack` (root_tag
-    None) and the page `.page-medium`."""
+def test_delivery_settings_stay_one_column_at_the_medium_measure():
+    """S5, after the read: three across read DO NOT SHIP 2 on unequal heights; the
+    single column at the medium measure stays."""
     html = _superuser_client().get(reverse("accounting:delivery_settings")).content.decode()
-    form = _region(html, "card-columns")
-    assert form.root_tag == "form"
-    cards = [classes for tag, classes in form.children if "card-raised" in classes]
-    assert len(cards) >= 3
-    assert any(
-        "card-columns-span" in classes and "row-start" in classes
-        for tag, classes in form.children
-    )
-    assert 'class="page-stack page-wide"' in html
-    assert "page-head--medium" not in html
+    assert "card-columns" not in html
+    assert 'class="page-stack page-medium"' in html
+    assert "page-head--medium" in html

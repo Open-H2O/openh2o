@@ -2,6 +2,7 @@
 {% load nav %}
 
 {% block title %}Delivery settings - Open Water Accounting Platform{% endblock %}
+{% block page_head_class %}page-head--medium{% endblock %}
 {% block page_title %}Delivery settings{% endblock %}
 
 {% block breadcrumbs %}
@@ -19,7 +20,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-stack page-wide">
+<div class="page-stack page-medium">
 
   {% include "partials/_messages.html" %}
 
@@ -33,15 +34,14 @@
   </div>
 
   {% if user_can_write %}
-  {% comment %} 150-04 (S5, rule B2): the setting cards two or three across at
-       the wide measure, each ending at its content (146-03: "boxed into a
-       narrow center-left column"). The error box and the Save row span every
-       column. {% endcomment %}
-  <form method="post" class="card-columns">
+  {% comment %} 150-04 (S5): the cards were tried two and three across at the wide
+       measure (rule B2) and read DO NOT SHIP 2 on their unequal heights, worse than the
+       single column's DO NOT SHIP 3 on its margins (VERDICTS-150-04.md); the column stays. {% endcomment %}
+  <form method="post" class="page-stack">
     {% csrf_token %}
 
     {% if form.non_field_errors %}
-    <div class="form-error-box mb-md card-columns-span">
+    <div class="form-error-box mb-md">
       <p class="text-sm text-furnace">{{ form.non_field_errors|striptags }}</p>
     </div>
     {% endif %}
@@ -191,7 +191,7 @@
       </div>
     </div>
 
-    <div class="row-start card-columns-span">
+    <div class="row-start">
       <button type="submit" class="btn-primary">Save settings</button>
     </div>
   </form>

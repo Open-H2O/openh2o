@@ -118,7 +118,7 @@
     {% endcomment %}
     <p class="mt-sm" style="margin-bottom: 0;"><a href="{% url 'drinking:facility_edit' facility.pk %}" class="btn-secondary btn-sm">{% if facility.added_by_hand %}Edit facility{% else %}Edit local name{% endif %}</a></p>
 
-    <div class="form-grid-2col mt-md">
+    <div class="field-grid-auto mt-md">
       {% if not geojson %}
       {% comment %}
         149.1-07 (R-065), round 2: the no-map fact is a row of the record (a

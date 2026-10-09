@@ -197,8 +197,12 @@ Every fault a fresh reader named during the words phase (149.1) and on the small
 - **A form is a grid, not a column of bars.** `.form-grid` lays field groups in two tracks; a field
   whose value is a sentence or a name spans both (`.form-span-2`); a one-line form (a step with no
   options) is `.form-grid--row`. Form pages sit at `.page-medium` with `page-head--medium`; the 640 px
-  measure is for a page of one or two fields. One-control cards (a settings page, the wizard's two
-  boundary choices) sit in `.card-columns`, two or three across, each ending at its content.
+  measure is for a page of one or two fields. `.card-columns` (one-control cards two or three
+  across, each ending at its content) exists and was tried on the settings page and the wizard's
+  two boundary cards; both read DO NOT SHIP on the cards' unequal heights, worse than the single
+  column, so neither uses it; it stays for a set of cards of one height.
+- **A record's fields across a wide card** sit on `.field-grid-auto` (as many 280 px tracks as
+  fit), never two columns 700 px apart (the facility page).
 - **A footer's figures wrap.** `.tfoot-figures` on a footer cell that holds several figures; a
   `nowrap` sentence in a `colspan` cell sets a floor under every column it spans (the ledger at
   1,024 was 830 px wide in a 722 px card for that reason alone).
