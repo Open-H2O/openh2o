@@ -33,7 +33,7 @@ pressed.
           </option>
           {% endfor %}
         </select>
-        <div class="form-help">Used only for a row that names no point of its own.</div>
+        <div class="form-help">This point is used only for a row that names no point of its own.</div>
       </div>
       <div class="form-group">
         <label class="form-label" for="diversion-import-method">Method</label>
@@ -43,7 +43,7 @@ pressed.
           <option value="{{ value }}"{% if method == value %} selected{% endif %}>{{ label }}</option>
           {% endfor %}
         </select>
-        <div class="form-help">Applied to every record this file creates.</div>
+        <div class="form-help">This method applies to every record this file creates.</div>
       </div>
     </div>
 

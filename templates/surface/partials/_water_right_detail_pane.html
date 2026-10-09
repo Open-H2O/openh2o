@@ -61,7 +61,7 @@
         <div class="field-group">
           <div class="field-label field-row">
             Direct diversion season
-            {% include "partials/_help_tooltip.html" with label="Direct Diversion Season" text="DIRECT_SEASON_START_MONTH_1 / _DAY_1 and DIRECT_DIV_SEASON_END_MONTH_1 / _DAY_1 in the state's rights list." %}
+            {% include "partials/_help_tooltip.html" with label="Direct Diversion Season" text="These are the DIRECT_SEASON_START_MONTH_1 / _DAY_1 and DIRECT_DIV_SEASON_END_MONTH_1 / _DAY_1 columns in the state's rights list." %}
           </div>
           <div class="field-value">{{ water_right.direct_season_display|blank }}</div>
         </div>
@@ -69,7 +69,7 @@
         <div class="field-group">
           <div class="field-label field-row">
             Storage season
-            {% include "partials/_help_tooltip.html" with label="Storage Season" text="STORAGE_SEASON_START_MONTH_1 / _DAY_1 and STORAGE_SEASON_END_MONTH_1 / _DAY_1 in the state's rights list." %}
+            {% include "partials/_help_tooltip.html" with label="Storage Season" text="These are the STORAGE_SEASON_START_MONTH_1 / _DAY_1 and STORAGE_SEASON_END_MONTH_1 / _DAY_1 columns in the state's rights list." %}
           </div>
           <div class="field-value">{{ water_right.storage_season_display|blank }}</div>
         </div>
@@ -77,7 +77,7 @@
         <div class="field-group">
           <div class="field-label field-row">
             Max rate (cfs)
-            {% include "partials/_help_tooltip.html" with label="Max Rate" text="MAX_DD_APPL in the state's rights list, in cubic feet per second." %}
+            {% include "partials/_help_tooltip.html" with label="Max Rate" text="This is the MAX_DD_APPL column in the state's rights list, in cubic feet per second." %}
           </div>
           <div class="field-value">{% if water_right.max_rate_cfs %}{{ water_right.max_rate_cfs|floatformat:2 }} cfs{% else %}{{ ""|blank }}{% endif %}</div>
         </div>
@@ -95,7 +95,7 @@
         <div class="field-group">
           <div class="field-label field-row">
             Net acreage
-            {% include "partials/_help_tooltip.html" with label="Net Acreage" text="USE_NET_ACREAGE in the state's rights list, in acres." %}
+            {% include "partials/_help_tooltip.html" with label="Net Acreage" text="This is the USE_NET_ACREAGE column in the state's rights list, in acres." %}
           </div>
           <div class="field-value">{% if water_right.net_acreage %}{{ water_right.net_acreage|floatformat:2|intcomma }}{% else %}{{ ""|blank }}{% endif %}</div>
         </div>
@@ -333,7 +333,7 @@
           </div>
           {% endfor %}
         {% else %}
-          <p class="text-tertiary text-base">No points of diversion recorded.</p>
+          <p class="text-tertiary text-base">No point of diversion is recorded.</p>
         {% endif %}
       </div>
 
@@ -399,7 +399,7 @@
         </div>
         {% endfor %}
       {% else %}
-        <p class="text-tertiary text-base">No points of diversion recorded.</p>
+        <p class="text-tertiary text-base">No point of diversion is recorded.</p>
       {% endif %}
     </div>
     {% endif %}

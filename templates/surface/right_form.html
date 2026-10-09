@@ -13,7 +13,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">{% if water_right %}Edit{% else %}New{% endif %}</span>
   </nav>
-  <p class="page-description">A right's application number, holder, priority date and the numbers the state's rights list carries beside it: face value, maximum rate, season, permit and license number, and use.</p>
+  <p class="page-description">Enter the right's application number, holder, priority date and the state's rights-list fields: face value, maximum rate, season, permit number, license number and use.</p>
 </div>
 {% endblock %}
 
@@ -138,7 +138,7 @@
           {{ form.direct_season_end_month }}
           {{ form.direct_season_end_day }}
         </div>
-        <div class="form-help">DIRECT_SEASON_START_MONTH_1 / _DAY_1 and DIRECT_DIV_SEASON_END_MONTH_1 / _DAY_1 in the state's rights list.</div>
+        <div class="form-help">These are the DIRECT_SEASON_START_MONTH_1 / _DAY_1 and DIRECT_DIV_SEASON_END_MONTH_1 / _DAY_1 columns in the state's rights list.</div>
         {% for error in form.direct_season_start_month.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
         {% for error in form.direct_season_start_day.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
         {% for error in form.direct_season_end_month.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
@@ -155,7 +155,7 @@
           {{ form.storage_season_end_month }}
           {{ form.storage_season_end_day }}
         </div>
-        <div class="form-help">STORAGE_SEASON_START_MONTH_1 / _DAY_1 and STORAGE_SEASON_END_MONTH_1 / _DAY_1 in the state's rights list.</div>
+        <div class="form-help">These are the STORAGE_SEASON_START_MONTH_1 / _DAY_1 and STORAGE_SEASON_END_MONTH_1 / _DAY_1 columns in the state's rights list.</div>
         {% for error in form.storage_season_start_month.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
         {% for error in form.storage_season_start_day.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
         {% for error in form.storage_season_end_month.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}

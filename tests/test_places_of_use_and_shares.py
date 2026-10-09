@@ -98,7 +98,7 @@ def test_remove_place_of_use_deletes_the_row(auth_client):
 
     assert resp.status_code == 200
     assert not WaterRightParcel.objects.filter(pk=wrp.pk).exists()
-    assert b"No places of use assigned to this right." in resp.content
+    assert b"No place of use is assigned to this right." in resp.content
 
 
 def test_search_places_of_use_excludes_already_assigned(auth_client):

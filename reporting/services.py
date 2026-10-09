@@ -39,7 +39,7 @@ from reporting.generators import (
 # The provenance label that MUST appear on every pre-filled value. Tested for
 # exact-string equality (tests/test_reporting_prefill.py) because it is the
 # correctness-critical guard that keeps the perjury certification honest.
-OPENET_PREFILL_LABEL = "OpenET consumptive-use estimate — not metered pumping"
+OPENET_PREFILL_LABEL = "OpenET consumptive-use estimate, not metered pumping"
 
 # report_template.report_type → pre-fill grouping method.
 PREFILL_METHOD_BY_REPORT_TYPE = {

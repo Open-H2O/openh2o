@@ -35,7 +35,7 @@
       <span style="font-weight: 600; font-size: 1.0625rem;">GEARS</span>
     </div>
     <p class="text-secondary text-sm" style="margin: 0; flex: 1;">
-      Groundwater extraction reporting for the state.
+      This report lays out monthly groundwater extraction in the GEARS layout, by well or by ET.
     </p>
     <div class="row-between" style="align-items: center; gap: var(--space-sm);">
       <span class="text-tertiary text-xs">{{ gears_count }} generated</span>
@@ -52,7 +52,7 @@
       <span style="font-weight: 600; font-size: 1.0625rem;">CalWATRS</span>
     </div>
     <p class="text-secondary text-sm" style="margin: 0; flex: 1;">
-      Surface-water diversion &amp; use reporting for the state.
+      This report lays out monthly surface-water diversion and use in the CalWATRS layout.
     </p>
     <div class="row-between" style="align-items: center; gap: var(--space-sm);">
       <span class="text-tertiary text-xs">{{ calwatrs_count }} generated</span>
@@ -70,8 +70,8 @@
       <span class="badge badge-grey">A check, not a filing</span>
     </div>
     <p class="text-secondary text-sm" style="margin: 0; flex: 1;">
-      Before a filing: compares each hand-entered share of a shared water source with the
-      share its estimated crop-water use implies.
+      This check compares each hand-entered share of a shared water source with the share
+      the field's estimated crop-water use implies. Run it before a filing.
     </p>
     <div class="row-end">
       <a href="{% url 'reporting:shared_supply_check' %}" class="btn-secondary btn-sm" style="text-decoration: none;">Run check &rarr;</a>

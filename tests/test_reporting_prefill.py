@@ -35,7 +35,7 @@ from tests.factories import (
 # The literal is hardcoded here (not referenced via the constant) on purpose:
 # this is the user-facing string that keeps the perjury certification honest, so
 # the test must fail if anyone edits either the constant or the rendered value.
-EXPECTED_LABEL = "OpenET consumptive-use estimate — not metered pumping"
+EXPECTED_LABEL = "OpenET consumptive-use estimate, not metered pumping"
 
 
 def _et_entry(parcel, month, af):

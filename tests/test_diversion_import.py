@@ -421,7 +421,7 @@ def test_commit_with_a_different_use_rule_saves_it_back_to_site_config(auth_clie
 
     assert resp.status_code == 200
     body = resp.content.decode()
-    assert "Saved as this deployment's answer for next time." in body
+    assert "Your answer is saved as this deployment's default for next time." in body
     config.refresh_from_db()
     assert config.diversion_use_type_rule == "as_direct"
 
@@ -440,7 +440,7 @@ def test_commit_with_the_same_use_rule_as_stored_does_not_say_it_saved(auth_clie
 
     assert resp.status_code == 200
     body = resp.content.decode()
-    assert "Saved as this deployment's answer for next time." not in body
+    assert "Your answer is saved as this deployment's default for next time." not in body
     config.refresh_from_db()
     assert config.diversion_use_type_rule == "as_direct"
 

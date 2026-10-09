@@ -63,7 +63,7 @@ def test_link_right_sets_fk_and_renders_link(auth_client):
     pod.refresh_from_db()
     assert pod.water_right_id == right.pk
     assert b"A001885" in resp.content
-    assert b"No water right linked." not in resp.content
+    assert b"No water right is linked." not in resp.content
 
 
 def test_unlink_right_clears_fk_and_renders_no_right(auth_client):
@@ -78,7 +78,7 @@ def test_unlink_right_clears_fk_and_renders_no_right(auth_client):
     assert resp.status_code == 200
     pod.refresh_from_db()
     assert pod.water_right_id is None
-    assert b"No water right linked." in resp.content
+    assert b"No water right is linked." in resp.content
 
 
 def test_link_right_a_bare_get_is_405(auth_client):

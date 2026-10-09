@@ -19,8 +19,8 @@
     metered pumping or diversion. Review and adjust each value, then certify your own figures in the state portal.
   </p>
   <p class="text-tertiary text-xs m-0">
-    Every value below: <em>{{ prefill.label }}</em>. Editing here saves to this
-    report only — it never changes your water-use ledger.
+    Every value below is labeled <em>{{ prefill.label }}</em>. An edit here saves to
+    this report only. It never changes your water-use ledger.
   </p>
 </div>
 
@@ -40,7 +40,7 @@
       {% endif %}
     </div>
     <p class="text-tertiary text-xs mb-md" style="margin-top: 0;">
-      OpenET consumptive-use estimate — not metered pumping. Adjust to your own records.
+      These values are OpenET consumptive-use estimates, not metered pumping. Adjust them to your own records.
     </p>
 
     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--space-md);">
@@ -56,7 +56,7 @@
           {% if mv.modified %}
           <span class="badge badge-gold">Modified</span>
           {% endif %}
-          <span class="badge badge-blue" title="OpenET consumptive-use estimate — not metered pumping">
+          <span class="badge badge-blue" title="OpenET consumptive-use estimate, not metered pumping">
             OpenET · not pumping
           </span>
         </div>
