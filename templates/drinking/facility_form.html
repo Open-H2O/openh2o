@@ -35,7 +35,7 @@
   {% if facility and not facility.added_by_hand %}
   <p class="page-description">This facility came from EPA's record when the system was onboarded, so its ID, name, type and status stay as published. What you call it, and the well it draws from, are yours to set.</p>
   {% else %}
-  <p class="page-description">A source, treatment plant or other part of the system, typed in by hand. Use the facility ID the state gave the system for it; the local name is what you call it.</p>
+  <p class="page-description">Sources, treatment plants and other facilities are entered here by hand. Use the facility ID the state assigned. The local name is yours to choose.</p>
   {% endif %}
 </div>
 {% endblock %}
@@ -80,7 +80,7 @@
         <div class="form-group">
           <label class="form-label" for="{{ form.facility_id.id_for_label }}">{{ form.facility_id.label }}</label>
           {{ form.facility_id }}
-          <div class="form-help">The ID the state scopes to {{ system.name }}, as the district engineer gave it to you. A lab file names the facility by it.</div>
+          <div class="form-help">The state assigns this ID within {{ system.name }}. Enter it as the district engineer gave it to you. A lab file names the facility by it.</div>
           {% for error in form.facility_id.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
         </div>
         <div class="form-group">
@@ -92,7 +92,7 @@
       <div class="form-group">
         <label class="form-label" for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
         {{ form.name }}
-        <div class="form-help">As the state writes it, when you have it. Leave it blank if the state has not named it yet.</div>
+        <div class="form-help">Enter the name as the state writes it, when you have it. Leave it blank if the state has not named it yet.</div>
         {% for error in form.name.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
       </div>
       {% endif %}
@@ -100,7 +100,7 @@
       <div class="form-group">
         <label class="form-label" for="{{ form.local_name.id_for_label }}">{{ form.local_name.label }}</label>
         {{ form.local_name }}
-        <div class="form-help">What you call it. Shown beside the state's name, never in place of it.</div>
+        <div class="form-help">Enter your own name for the facility. It appears beside the state's name and never replaces it.</div>
         {% for error in form.local_name.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
       </div>
 
@@ -127,7 +127,7 @@
       <div class="form-group">
         <label class="form-label" for="{{ form.well.id_for_label }}">{{ form.well.label }}</label>
         {{ form.well }}
-        <div class="form-help">Optional. Links this facility to its record in Wells.</div>
+        <div class="form-help">Optional. This links the facility to its record in Wells.</div>
       </div>
       {% endif %}
 

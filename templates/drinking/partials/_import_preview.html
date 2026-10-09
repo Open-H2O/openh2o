@@ -35,7 +35,7 @@
     of the error rows are not in the view's context; the error table below
     names each row's reason.
   {% endcomment %}
-  <p class="text-base text-secondary mt-md">{{ row_count }} row{{ row_count|pluralize }} read: <strong>{{ committable }}</strong> will be created{% if duplicate_count %}, {{ duplicate_count }} already recorded{% endif %}{% if error_count %}, {{ error_count }} cannot be imported{% endif %}.</p>
+  <p class="text-base text-secondary mt-md">{{ row_count }} row{{ row_count|pluralize }} {{ row_count|pluralize:"was,were" }} read: <strong>{{ committable }}</strong> will be created{% if duplicate_count %}, {{ duplicate_count }} already recorded{% endif %}{% if error_count %}, {{ error_count }} cannot be imported{% endif %}.</p>
   {% if duplicate_count %}
   <p class="text-base text-secondary mt-sm">A row already recorded, or repeated in this file, is skipped and never written twice.</p>
   {% endif %}
@@ -93,7 +93,7 @@
   {% if new_analytes %}
   <div class="card-inset mt-md">
     <p class="text-sm text-secondary m-0">
-      <strong>New analytes, added on commit with the file&rsquo;s own name and code:</strong>
+      <strong>Committing adds these new analytes under the file&rsquo;s own name and code:</strong>
       <span class="text-mono">{{ new_analytes|join:", " }}</span>
     </p>
   </div>

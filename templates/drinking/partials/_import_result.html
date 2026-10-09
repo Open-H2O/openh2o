@@ -47,15 +47,15 @@
   {% endcomment %}
   {% for a in agency %}
     {% if a.outcome == "recorded" %}
-  <p class="text-base text-secondary mt-sm">Regulating agency recorded from the file: {{ a.value }}.</p>
+  <p class="text-base text-secondary mt-sm">The regulating agency was recorded from the file as {{ a.value }}.</p>
     {% elif a.outcome == "already_set" %}
       {% if a.existing == a.value %}
   <p class="text-base text-secondary mt-sm">Regulating agency: the file's {{ a.value }} matches the one already recorded.</p>
       {% else %}
-  <p class="text-base text-secondary mt-sm">Regulating agency not recorded: the system already has one, {{ a.existing }}. The file says {{ a.value }}.</p>
+  <p class="text-base text-secondary mt-sm">The regulating agency was not recorded: the system already has one, {{ a.existing }}. The file says {{ a.value }}.</p>
       {% endif %}
     {% else %}
-  <p class="text-base text-secondary mt-sm">Regulating agency not recorded: the file names {{ a.values|length|apnumber }} ({{ a.values|join:", " }}), so it does not say which.</p>
+  <p class="text-base text-secondary mt-sm">The regulating agency was not recorded: the file names {{ a.values|length|apnumber }} ({{ a.values|join:", " }}), so it does not say which.</p>
     {% endif %}
   {% endfor %}
 

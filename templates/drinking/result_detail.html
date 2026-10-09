@@ -37,7 +37,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">{{ result.analyte.name }} {{ event.sample_date|date:"Y-m-d" }}</span>
   </nav>
-  <p class="page-description">One analyte's finding in one sample: what was measured, who measured it, and where the water came from.</p>
+  <p class="page-description">This page shows one analyte's finding in one sample. It records what was measured, who measured it and where the water came from.</p>
 </div>
 {% endblock %}
 
@@ -258,8 +258,8 @@
       {% endcomment %}
       <h2 class="section-header mt-lg">Published report {% source_label "CCR_SYSTEM" %}</h2>
       <p class="text-base text-secondary" style="max-width: 75ch;">
-        <a href="{{ ccr_url }}" target="_blank" rel="noopener" class="data-table-link">{{ system.name }}'s {{ ccr_year }} Consumer Confidence Report</a>,
-        the annual water-quality report this system published for the year this
+        <a href="{{ ccr_url }}" target="_blank" rel="noopener" class="data-table-link">{{ system.name }}'s {{ ccr_year }} Consumer Confidence Report</a>
+        is the annual water-quality report this system published for the year this
         sample was taken. It is the system's report for the whole year, not this
         sample's own laboratory sheet.
       </p>

@@ -20,7 +20,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">{% if row %}Edit{% else %}Add row{% endif %}</span>
   </nav>
-  <p class="page-description">One thing you sample on a cycle. Name it in your own words or choose an analyte; the dates are the ones on your checklist.</p>
+  <p class="page-description">Each row is something sampled on a cycle. Name it in your own words or choose an analyte. Type the dates from your checklist.</p>
 </div>
 {% endblock %}
 
@@ -59,7 +59,7 @@
         <div class="form-group">
           <label class="form-label" for="{{ form.group_label.id_for_label }}">{{ form.group_label.label }}</label>
           {{ form.group_label }}
-          <div class="form-help">Coliform, nitrate, a siting plan: whatever your checklist calls it.</div>
+          <div class="form-help">Enter the name your checklist uses, such as coliform, nitrate or a siting plan.</div>
         </div>
         <div class="form-group">
           <label class="form-label" for="{{ form.analyte.id_for_label }}">{{ form.analyte.label }}</label>
@@ -89,7 +89,7 @@
         <div class="form-group">
           <label class="form-label" for="{{ form.next_due.id_for_label }}">{{ form.next_due.label }}</label>
           {{ form.next_due }}
-          <div class="form-help">The date on your checklist. Nothing is worked out from the frequency.</div>
+          <div class="form-help">Enter the date from your checklist. The platform does not work it out from the frequency.</div>
           {% for error in form.next_due.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
         </div>
       </div>

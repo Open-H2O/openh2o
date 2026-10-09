@@ -1292,7 +1292,7 @@ class TestRegulatingAgency:
         system["system"].refresh_from_db()
         assert system["system"].regulating_agency == "District 99"
         assert (
-            "Regulating agency recorded from the file: District 99"
+            "The regulating agency was recorded from the file as District 99."
             in response.content.decode()
         )
 
@@ -1306,7 +1306,7 @@ class TestRegulatingAgency:
         ws.refresh_from_db()
         assert ws.regulating_agency == "DISTRICT 11 - MERCED"
         body = response.content.decode()
-        assert "Regulating agency not recorded: the system already has one" in body
+        assert "The regulating agency was not recorded: the system already has one" in body
         assert "DISTRICT 11 - MERCED" in body
 
     def test_a_file_that_disagrees_with_itself_writes_nothing(
@@ -1318,7 +1318,7 @@ class TestRegulatingAgency:
         system["system"].refresh_from_db()
         assert system["system"].regulating_agency == ""
         body = response.content.decode()
-        assert "Regulating agency not recorded: the file names two" in body
+        assert "The regulating agency was not recorded: the file names two" in body
         assert "District 98" in body and "District 99" in body
 
     def test_a_file_without_the_column_says_nothing_about_it(

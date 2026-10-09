@@ -41,7 +41,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">{{ point.ps_code }}</span>
   </nav>
-  <p class="page-description">The sampling point's location and the measurements taken there.</p>
+  <p class="page-description">This page shows the sampling point's location and the measurements taken there.</p>
 </div>
 {% endblock %}
 
@@ -86,7 +86,7 @@
       who lands there.
     {% endcomment %}
     <p class="text-secondary text-sm" style="margin: 0; padding: var(--space-sm) var(--space-md); max-width: 75ch;">
-      Drawn at the location published for facility {{ point.facility.facility_id }}.
+      The dot is drawn at the location published for facility {{ point.facility.facility_id }}.
       {% source_label "GAMA" detail="the facility's coordinate, not this point's" %}
     </p>
   </div>
