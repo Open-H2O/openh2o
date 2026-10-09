@@ -139,7 +139,7 @@
         {% endif %}
         <div class="budget-panel-note">The Use ledger holds <a href="{% url 'accounting:ledger_list' %}?period={{ period.pk }}" class="prose-link">{{ ledger_count|intcomma }} entr{{ ledger_count|pluralize:"y,ies" }}</a> for this water year.</div>
       {% else %}
-      <p class="text-tertiary text-base">No allocations for this period.</p>
+      <p class="text-tertiary text-base">No allocation is set for this water year.</p>
       {% endif %}
     </div>
 
@@ -242,7 +242,7 @@
       {% else %}
       <div style="padding: var(--space-lg);">
         <h2 class="section-header mb-md">Allocations</h2>
-        <p class="text-tertiary text-base">No allocations for this period.</p>
+        <p class="text-tertiary text-base">No allocation is set for this water year.</p>
       </div>
       {% endif %}
     </div>

@@ -732,7 +732,7 @@ def test_parcel_pane_panel_reads_a_flood_mar_field_as_a_deficit():
         "a metered field printed a badge word; its residual is a difference "
         "between records and the number stands with its colour (148-03)"
     )
-    assert "Supplies from the meter and the district's record, against the satellite estimate of consumptive use." in residual
+    assert "This balance compares supplies from the meter and the district's record with the satellite estimate of consumptive use." in residual
 
     assert "<span>Managed recharge</span><b>20.00</b>" in html, (
         "the uses breakdown does not show the 20.00 AF that left this field for the "

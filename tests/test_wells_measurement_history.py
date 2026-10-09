@@ -53,7 +53,7 @@ from wells.models import WellMeter
 pytestmark = pytest.mark.django_db
 
 SECTION_HEADING = "Measurement history"
-EMPTY_SENTENCE = "No meter reads or water-level readings recorded for this well."
+EMPTY_SENTENCE = "No meter read or water-level reading is recorded for this well."
 
 
 def _login():
@@ -236,7 +236,7 @@ def test_a_well_with_nothing_recorded_renders_the_empty_sentence_and_no_table():
 def test_the_page_description_sentence_is_unchanged():
     """The promise at detail.html:23 is kept by rendering, never by rewording."""
     html = _page(_metered_well())
-    assert "Well details, linked meters, and measurement history." in html
+    assert "This page holds the well's record, the meters linked to it and its measurement history." in html
 
 
 # ---------------------------------------------------------------------------

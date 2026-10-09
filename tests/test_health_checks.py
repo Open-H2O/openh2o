@@ -700,7 +700,7 @@ class TestWhereToLookLinksAreModuleGated:
     ):
         _persist(["yellow" if c == "ssl" else "green" for c in ALL_CATEGORIES])
         html = client.get(reverse("health:dashboard")).content.decode()
-        assert "Fixed on the host, not in the platform." in html
+        assert "This is fixed on the host, not in the platform." in html
         assert "text-link" not in html
 
     @pytest.mark.django_db

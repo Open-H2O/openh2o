@@ -151,7 +151,7 @@
 {% comment %} No allocations for this period: the fact and the one action. {% endcomment %}
 <div class="card-raised">
   <p class="text-secondary text-sm m-0">
-    {% if user_can_write %}No allocations set for this period. <a href="{% url 'accounting:allocation_create' %}" class="link-accent">Create an allocation</a>.{% else %}No allocations set for this period.{% endif %}
+    {% if user_can_write %}No allocation is set for this water year. <a href="{% url 'accounting:allocation_create' %}" class="link-accent">Create an allocation</a>.{% else %}No allocation is set for this water year.{% endif %}
   </p>
 </div>
 {% endif %}
@@ -297,7 +297,7 @@
   </table>
   </div>
   {% else %}
-  <p class="text-tertiary text-sm">No zones configured yet.</p>
+  <p class="text-tertiary text-sm">No zone is configured yet.</p>
   {% endif %}
 </div>
 

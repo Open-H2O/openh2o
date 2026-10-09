@@ -75,7 +75,7 @@ class TestThePanelLeadsWithTheHealthyCount:
     def test_the_red_host_level_card_reads_fixed_on_the_host(self):
         _persist_fixture()
         html = _client_in().get(reverse("health:dashboard")).content.decode()
-        assert "Fixed on the host, not in the platform." in html
+        assert "This is fixed on the host, not in the platform." in html
 
     def test_a_green_card_carries_no_link(self):
         _persist_fixture()

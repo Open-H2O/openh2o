@@ -194,7 +194,7 @@
             </div>
             {% endfor %}
           {% else %}
-            <p class="text-tertiary text-base">No active meters on this well.</p>
+            <p class="text-tertiary text-base">This well has no active meter.</p>
           {% endif %}
         </div>
 
@@ -227,7 +227,7 @@
             </div>
             {% endfor %}
           {% else %}
-            <p class="text-tertiary text-base">No parcels linked to this well.</p>
+            <p class="text-tertiary text-base">No use area is linked to this well.</p>
           {% endif %}
         </div>
 
@@ -285,7 +285,7 @@
     {% endcomment %}
     <div class="card-raised page-grid-account-full">
       <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">Measurement history</h2>
-      <p class="text-secondary text-base" style="margin: 0 0 var(--space-md) 0;">Meter reads and depth to water, by water year.</p>
+      <p class="text-secondary text-base" style="margin: 0 0 var(--space-md) 0;">Meter reads and depth to water are grouped by water year.</p>
       {% if meter_history or water_levels %}
       {# .history-grid: each column is a subgrid of two rows (facts line, table), so the two tables' heads sit on one line even when one facts line wraps and the other does not (Brent's screenshot, 2026-09-13 11:02). A second meter's facts line and table follow in the left column's implicit rows. #}
       <div class="page-grid-2col history-grid">
@@ -330,7 +330,7 @@
             </div>
           {% endfor %}
           {% if not meter_history %}
-          <p class="text-tertiary text-base">No meter reads recorded for this well.</p>
+          <p class="text-tertiary text-base">No meter read is recorded for this well.</p>
           {% endif %}
         </div>
 
@@ -370,13 +370,13 @@
           </table>
           </div>
           {% else %}
-          <p class="text-tertiary text-base">No water-level readings recorded for this well.</p>
+          <p class="text-tertiary text-base">No water-level reading is recorded for this well.</p>
           {% endif %}
         </div>
 
       </div>
       {% else %}
-      <p class="text-tertiary text-base">No meter reads or water-level readings recorded for this well.</p>
+      <p class="text-tertiary text-base">No meter read or water-level reading is recorded for this well.</p>
       {% endif %}
     </div>
 

@@ -98,7 +98,7 @@ class TestOnlyTheLiveFieldRenders:
         assert "display: none" in soil_tag
         raw_tag = _opening_tag(body, 'data-precip-method="raw"')
         assert "display: none" not in raw_tag
-        assert "No settings for this method." in body
+        assert "This method has no settings." in body
 
 
 @pytest.mark.django_db

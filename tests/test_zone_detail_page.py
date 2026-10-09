@@ -123,7 +123,7 @@ class TestZoneUseAreasFooter:
         assert response.status_code == 200
         html = response.content.decode()
 
-        assert "No parcels assigned to this zone." in html
+        assert "No use area is assigned to this zone." in html
         assert "tfoot-total" not in html
 
 

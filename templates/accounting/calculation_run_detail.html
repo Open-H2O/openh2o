@@ -40,7 +40,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">{{ parcel.parcel_number }} &middot; {{ month_label }}</span>
   </nav>
-  <p class="page-description">{% if receipt %}Where this field's estimated pumping for {{ month_label }} came from, one figure at a time.{% else %}Nothing was estimated for this field in {{ month_label }}.{% endif %}</p>
+  <p class="page-description">{% if receipt %}This page shows where this field's estimated pumping for {{ month_label }} came from, one figure at a time.{% else %}Nothing was estimated for this field in {{ month_label }}.{% endif %}</p>
 </div>
 {% endblock %}
 
@@ -156,7 +156,7 @@
        water beyond what the crop could use, if any, is a row in the table
        above (149.1-05). {% endcomment %}
     <p class="text-secondary receipt-zero">
-      {% if covered_by %}{{ covered_by }} covered the crop this month{% else %}No crop on record for this field this month{% endif %}, so nothing was pumped.
+      {% if covered_by %}{{ covered_by }} covered the crop this month{% else %}No crop is on record for this field this month{% endif %}, so nothing was pumped.
     </p>
     {% endif %}
 

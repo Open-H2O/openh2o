@@ -88,7 +88,7 @@ list re-renders in place. Loaded by methodology_settings.html via {% include %}.
                    value="{{ step.config.soil_storage_in|default:'3.0' }}" class="form-input" style="width: 7rem;">
           </div>
           <p class="text-tertiary text-sm mb-0 js-precip-field" data-precip-method="raw"
-             style="grid-column: 1 / -1; align-self: center;{% if current_method != 'raw' %} display: none;{% endif %}">No settings for this method.</p>
+             style="grid-column: 1 / -1; align-self: center;{% if current_method != 'raw' %} display: none;{% endif %}">This method has no settings.</p>
           {% endwith %}
 
         {% elif step.step_type == 'clamp_floor' %}
@@ -99,7 +99,7 @@ list re-renders in place. Loaded by methodology_settings.html via {% include %}.
           </div>
 
         {% else %}
-          <p class="text-tertiary text-sm mb-0" style="grid-column: 1 / -1; align-self: center;">No configurable options for this step.</p>
+          <p class="text-tertiary text-sm mb-0" style="grid-column: 1 / -1; align-self: center;">This step has no options.</p>
         {% endif %}
 
       </div>
