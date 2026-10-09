@@ -288,6 +288,10 @@ def station_list(request):
         enriched_stations.append({
             "station": s,
             "freshness": station_freshness.get(s.pk, "dead"),
+            # ISS-183: the Reporting cell's tooltip states this source's limits.
+            "freshness_thresholds": freshness.freshness_thresholds(
+                s.data_source.code, s.data_source.name
+            ),
             "sparkline_points": sparklines.get(s.pk),
             "latest_tooltip": tooltip,
             "reading_count": reading_counts.get(s.pk, 0),
@@ -422,6 +426,11 @@ def _station_detail_context(station):
         "recent_logs": recent_logs,
         "geojson": geojson,
         "station_freshness": station_freshness,
+        # ISS-183: the badge's tooltip states the limits for this station's
+        # source, read from datasync/freshness.py, never typed in the template.
+        "freshness_thresholds": freshness.freshness_thresholds(
+            source_code, station.data_source.name
+        ),
         "chart_data_url": f"/datasync/stations/{station.pk}/chart-data/",
         "enriched_parameters": enriched_parameters,
     }

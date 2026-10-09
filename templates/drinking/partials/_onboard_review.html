@@ -135,7 +135,7 @@
         {% if 'wells' in enabled_modules %}<tr>
           <td class="col-name">Links to wells</td>
           <td>None</td>
-          <td>Made in the Django admin; a link already made is left alone</td>
+          <td>Set afterwards on each facility's page under <a href="{% url 'drinking:facilities' %}" class="data-table-link">Facilities</a>, with Edit local name; a link already made is left alone</td>
         </tr>{% endif %}
       </tbody>
     </table>

@@ -1,0 +1,11 @@
+{% comment %}
+  150-03 (ISS-182): the one line a record page's lead panel shows when no
+  water year exists, naming the place a water year is kept and linking it.
+  Included by the water right, the point of diversion and the recharge site
+  panes. Every module that includes it requires `accounting`, which owns both
+  addresses, so neither link can be dead.
+
+  The create form is linked only for an account that can write (a Viewer is
+  refused on it, core/access.py); a Viewer reads where water years are kept
+  and gets the list, which it may open.
+{% endcomment %}No water year on record. {% if user_can_write %}<a href="{% url 'accounting:period_create' %}" class="text-accent">Add one</a> under Administration &gt; <a href="{% url 'accounting:periods_list' %}" class="text-accent">Water Years</a>.{% else %}Water years are kept under Administration &gt; <a href="{% url 'accounting:periods_list' %}" class="text-accent">Water Years</a>.{% endif %}

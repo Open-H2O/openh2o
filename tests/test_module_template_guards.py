@@ -76,6 +76,12 @@ EXEMPT = {
     # `{% if 'surface' in enabled_modules %}` here would be dead code: the
     # branch cannot be False by the time this template renders.
     ("surface", "reporting/calwatrs_worksheet.html"),
+    # 150-03 (ISS-182). The "No water year on record." line names and links
+    # Administration > Water Years. Its only call sites are the water right and
+    # point of diversion panes (surface.requires names accounting) and the
+    # recharge site pane (recharge.requires names accounting), so a guard here
+    # could never be False.
+    ("accounting", "partials/_no_water_year.html"),
 }
 
 

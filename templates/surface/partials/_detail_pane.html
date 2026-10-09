@@ -156,7 +156,7 @@
           {% if current_period %}
             {% if current_totals %}{{ current_period.name }} &middot; {{ current_totals.count }} record{{ current_totals.count|pluralize }} &middot; Retained is the diverted volume less the return flow.{% else %}No records in {{ current_period.name }}.{% endif %}
           {% else %}
-            No water year on record.
+            {% include "partials/_no_water_year.html" %}
           {% endif %}
         </div>
       </div>

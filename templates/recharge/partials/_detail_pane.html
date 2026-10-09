@@ -127,7 +127,7 @@
           {% if current_period %}
             {% if current_totals %}{{ current_period.name }}{% if site.capacity_acre_feet %} &middot; capacity per fill {{ site.capacity_acre_feet|floatformat:2|intcomma }} AF{% endif %}.{% else %}{{ current_period.name }} &middot; no events recorded this water year.{% endif %}
           {% else %}
-            No water year on record.
+            {% include "partials/_no_water_year.html" %}
           {% endif %}
         </div>
       </div>

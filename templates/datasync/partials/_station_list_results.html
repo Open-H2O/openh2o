@@ -26,7 +26,7 @@ OH2O.followResults reads them after every swap and filters the map to them.
       {% for item in enriched_stations %}
       <tr class="row-clickable" style="cursor: pointer;"
           onclick="if(!event.target.closest('a')){window.location='{% url 'datasync:station_detail' item.station.pk %}';}">
-        <td class="text-secondary text-sm" style="white-space: nowrap;">
+        <td class="text-secondary text-sm" style="white-space: nowrap;" title="{{ item.freshness_thresholds }}">
           <span class="freshness-dot freshness-dot--{{ item.freshness }}"></span>
           {% if item.freshness == "fresh" %}Up to date{% elif item.freshness == "stale" %}Slightly behind{% else %}Dormant{% endif %}
         </td>

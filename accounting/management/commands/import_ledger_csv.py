@@ -14,6 +14,7 @@ period, and stdout formatting.
 import os
 
 from django.core.management.base import BaseCommand, CommandError
+from django.urls import reverse
 
 from accounting.ledger_import import import_ledger_rows
 from accounting.models import ReportingPeriod
@@ -66,8 +67,13 @@ class Command(BaseCommand):
             try:
                 reporting_period = ReportingPeriod.objects.get(name=period_name)
             except ReportingPeriod.DoesNotExist:
+                # 150-03 (ISS-182): name the place a water year is created. A
+                # command line has no link, so the path is the place.
                 raise CommandError(
-                    f"Reporting period not found: {period_name}"
+                    f"Water year not found: {period_name}. Create it first under "
+                    "Administration > Water Years "
+                    f"({reverse('accounting:period_create')}), or pass an "
+                    "existing water year's name."
                 )
 
         # ISS-029 finalized-period write guard. A finalized ReportingPeriod is a

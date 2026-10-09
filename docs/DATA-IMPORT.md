@@ -168,6 +168,8 @@ The importer corrects a mismatched sign for you and reports every row it changed
 | `adjustment` | either |
 | `calculated` | negative |
 
+The water year named by `--reporting-period` must already exist: create it under Administration > Water Years (`/accounting/reporting-periods/create/`) first, and pass its name exactly as it appears there.
+
 ```bash
 docker compose cp ledger.csv web:/tmp/
 docker compose exec web python manage.py import_ledger_csv /tmp/ledger.csv \

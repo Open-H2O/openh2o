@@ -175,7 +175,7 @@
             {% if current_period %}
               {% if current_totals %}{{ current_period.name }} &middot; {{ current_totals.count }} record{{ current_totals.count|pluralize }} &middot; Remaining is the face value less the volume recorded. Every water year on record is compared below.{% else %}No records in {{ current_period.name }}.{% endif %}
             {% else %}
-              No water year on record.
+              {% include "partials/_no_water_year.html" %}
             {% endif %}
           {% else %}
             No face value is on record for this right.

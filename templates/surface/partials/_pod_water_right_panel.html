@@ -10,6 +10,11 @@
   HTMX target -- this whole card, id="pod-water-right-panel" -- has a single
   home the link/unlink view can re-render without also rebuilding the rest of
   the POD page.
+
+  150-03: with no right linked, the line names where rights are kept and
+  links the list (ISS-182; the list is readable by every account, so the link
+  needs no write gate). The CalWATRS line shows only where the reporting
+  module is on (ISS-194): a deployment without it files nothing to CalWATRS.
 {% endcomment %}
 <div class="card-raised page-grid-account-full" id="pod-water-right-panel">
   <h2 class="section-header">Water right</h2>
@@ -56,7 +61,7 @@
   {% elif basin_links %}
     <p class="text-secondary text-sm">Recharge diversion. It feeds a recharge basin rather than a consumptive use, and no water right is linked.</p>
   {% else %}
-    <p class="text-secondary text-sm">No water right is linked.</p>
+    <p class="text-secondary text-sm">No water right is linked. Rights are kept under Administration &gt; <a href="{% url 'surface:water_rights_list' %}" class="text-accent">Water Rights</a>.</p>
   {% endif %}
 
   {% if user_can_write %}
@@ -74,7 +79,7 @@
       {% endfor %}
     </select>
     <button type="submit" class="btn-secondary btn-sm">Save</button>
-    {% if not water_right and not basin_links %}
+    {% if not water_right and not basin_links and 'reporting' in enabled_modules %}
     <span class="text-tertiary text-xs">CalWATRS reports will flag this diversion as [INCOMPLETE].</span>
     {% endif %}
   </form>

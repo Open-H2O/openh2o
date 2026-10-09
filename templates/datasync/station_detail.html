@@ -18,14 +18,16 @@
   dormant station said nothing anywhere on the page. The badge here is the
   same three words the station list uses (rule 6: Up to date / Slightly
   behind / Dormant, never "On schedule" / "Behind").
+  150-03 (ISS-183): each badge's title states this station's own limits,
+  built from datasync/freshness.py by the view (freshness_thresholds).
 {% endcomment %}
 {% block page_meta %}
 {% if station_freshness == "fresh" %}
-<span class="badge badge-dot badge-green" title="How recently the station published, judged against its own source's cadence. A station can be syncing and still dormant.">Up to date</span>
+<span class="badge badge-dot badge-green" title="{{ freshness_thresholds }}">Up to date</span>
 {% elif station_freshness == "stale" %}
-<span class="badge badge-dot badge-amber" title="How recently the station published, judged against its own source's cadence. A station can be syncing and still dormant.">Slightly behind</span>
+<span class="badge badge-dot badge-amber" title="{{ freshness_thresholds }}">Slightly behind</span>
 {% else %}
-<span class="badge badge-grey" title="How recently the station published, judged against its own source's cadence. A station can be syncing and still dormant.">Dormant</span>
+<span class="badge badge-grey" title="{{ freshness_thresholds }}">Dormant</span>
 {% endif %}
 {% endblock %}
 

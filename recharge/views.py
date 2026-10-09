@@ -361,9 +361,14 @@ def recharge_event_create(request, pk):
                 "site's zone."
             )
     except ValueError:
+        # 150-03 (ISS-182): a message that names a requirement names the place.
+        # No screen sets a recharge site's zone (RechargeSite.zone is written
+        # only by the seed commands and the Django admin; the Add Infrastructure
+        # form and the Zones pages never touch it), so the sentence says so
+        # rather than sending the reader to a page that cannot do it.
         ledger_msg = (
-            "Event saved. No zone assigned to this site, so no ledger entries "
-            "were generated — assign a zone to auto-distribute recharge."
+            "Event saved. This site has no zone, so no ledger entries were "
+            "written. No screen sets a recharge site's zone yet."
         )
 
     events = list(

@@ -47,11 +47,16 @@ class TestDormantStationSaysWhyItIsEmpty:
         resp = auth_client.get(reverse("datasync:station_detail", args=[station.pk]))
         body = resp.content.decode()
         assert resp.status_code == 200
+        # 150-03 (ISS-183): the tooltip states this source's own limits. An
+        # unlisted source is judged on DEFAULT_INTERVAL_HOURS (24): Up to date
+        # within 36 hours (1.5 x 24), Slightly behind within 4 days (4 x 24).
         assert (
             '<span class="badge badge-grey" '
-            'title="How recently the station published, judged against its '
-            "own source's cadence. A station can be syncing and still "
-            'dormant.">Dormant</span>' in body
+            'title="A station is Up to date when its latest reading is at most '
+            "36 hours old, Slightly behind at most 4 days old, and Dormant after "
+            "that or with no reading. Those limits are 1.5 and 4 times how often "
+            "Probe Dormant Source usually publishes, every day. A station can be "
+            'syncing and still dormant.">Dormant</span>' in body
         )
 
     def test_no_chart_for_a_station_that_has_never_published(self, auth_client):

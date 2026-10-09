@@ -555,6 +555,9 @@ def _without_unavailable_help_pointers(definition):
 #: every definition. Membership is still ISS-085's 40; this only labels them.
 _GLOSSARY_OUTSIDE_NAMES = frozenset({
     "CalWATRS", "CDEC", "CIMIS", "GEARS", "GSA", "GSP", "OpenET", "SGMA", "USGS",
+    # 150-03 (ISS-183): the drinking-water words, each the state's or its lab
+    # file's own (Reporting Level is the SDWIS layout's column name).
+    "Analyte", "DLR", "ELAP", "MCL", "PS Code", "PWSID", "Reporting Level",
 })
 #: Neither the state's nor this platform's: a unit of measure (the round-2 reader
 #: saw CFS tagged as this platform's own and called it wrong).
@@ -606,8 +609,9 @@ def glossary(request):
     **Membership never changes, only wording (ISS-085, decided).** 36 entries in
     and 40 entries out (148-03 Task 2 added Canal Water the Crop Could Use,
     Groundwater Consumed, Groundwater Extracted and Canal Water Beyond What the
-    Crop Could Use); a reduced deployment narrows the *pointers*, not the
-    dictionary. And the ``See Help > X.`` sentences are matched byte-for-byte by
+    Crop Could Use; 150-03 Task 5 added nine more for ISS-183, the drinking-water
+    words and the station list's freshness words, for 49); a reduced deployment
+    narrows the *pointers*, not the dictionary. And the ``See Help > X.`` sentences are matched byte-for-byte by
     ``_without_unavailable_help_pointers`` above — reword one and it stops being
     stripped, which sends a reduced-deployment reader at a 404 (the defect Plan
     89-02 fixed; ``tests/test_help_explainers.py`` guards it).
@@ -630,6 +634,7 @@ def glossary(request):
         "Groundwater Consumed": "On a field with a well and no meter reading, what is left of the month's crop water use once rain the crop could use and canal water the crop could use are subtracted. The platform's estimate, written as the month's calculated ledger row. See Help > Methods Behind the Numbers.",
         "Groundwater Extracted": "Groundwater consumed divided by the share of pumped groundwater the crop consumes (Delivery Settings, 80% unless changed), stamped on the month's calculation; with a meter reading, the reading as recorded. What a groundwater allocation is charged. See Help > Methods Behind the Numbers.",
         "Canal Water Beyond What the Crop Could Use": "Canal water the crop could use beyond what was left of the month's crop water use after rain, recorded on the month's calculation. Delivery Settings decides what else happens to it: not credited (the default), credited to the landowner less the share left in the basin, or shown on the field's page as its own line. See Help > Methods Behind the Numbers.",
+        "Analyte": "This platform keeps one row per substance a lab result reports, under its name and, when known, DDW's four-digit analyte code. A lab import adds a row for any analyte its file names that the platform does not yet hold.",
         "CalWATRS": "California Water Accounting, Tracking, and Reporting System: the State Water Board's surface-diversion reporting system (replaced eWRIMS).",
         "CDEC": "California Data Exchange Center, real-time hydrologic data from DWR.",
         "CFS (Cubic Feet per Second)": "Rates on a point of diversion, a water right and a monthly diversion record, shown as \"50.00 cfs\".",
@@ -637,8 +642,10 @@ def glossary(request):
         "Closing Balance": "This platform's water balance for one use area and period: supplies (water delivered, groundwater extracted, rain the crop could use) set against uses, and the difference is the residual. A small residual is normal. See Help > How Water Balances Work.",
         "Consumptive Use": "Crop water use, under the dashboard's name; the satellite estimate from OpenET, gross. Net consumptive use subtracts rain the crop could use. See Help > How Water Balances Work.",
         "Curtailment": "One record per State Water Board order, holding its order ID, title, effective and end dates, watershed and priority-date cutoff; each right it affects shows its status on its own detail card.",
+        "DLR": "Detection Limit for purposes of Reporting. The platform stores the DLR a laboratory's file carries on each result row exactly as reported, in the row's own units, and shows it under Limit (file) on the result's page.",
         "Delivery Settings": "The administrator's page for the agency-wide shares, canal water beyond what the crop could use, the year-end choice for unused allotment, the reporting year and record addresses. See Help > Surface Delivery Settings.",
         "Data Source": "One record per outside agency or service the platform reads data from, holding its name, code, address, how often it is read and when it was last read.",
+        "ELAP": "Environmental Laboratory Accreditation Program, California's accreditation of laboratories. Each result holds the ELAP certification number of the laboratory that ran it, shown on the result's page.",
         "ET (Evapotranspiration)": "Crop water use, as the screens call it; the quantity OpenET estimates from satellite data for every field. See Help > How Water Balances Work.",
         "Effective Precipitation": "Rain the crop could use, as the screens call it; the share of rainfall the calculation subtracts from crop water use, by the rain method on Methodology Settings (all of it, a fixed fraction, or USDA-SCS soil storage, the default). See Help > Methods Behind the Numbers.",
         "ET-Demand Allocation": "On the screens, a delivery divided up from the canal total; how this platform divides a headgate's recorded monthly total among the fields it serves, in proportion to each field's crop water use after rain and up to what each field could use. Anything left over is recorded against the headgate. See Help > Methods Behind the Numbers.",
@@ -648,15 +655,21 @@ def glossary(request):
         "Health Check": "This platform's own diagnostics, each graded green, yellow or red with a message; they cover data freshness, ledger integrity, the calculation, the database and the server.",
         "Ledger Entry": "One row on a use area's ledger, in acre-feet, with its date, water type and source. Water added to the allocation is positive and water taken against it is negative; an entered row or an adjustment carries the sign it is given.",
         "Managed Aquifer Recharge (MAR)": "One record per site, holding its capacity in acre-feet, its zone, its location and outline on the map, the points of diversion feeding it, and its events, each with its dates, a volume in acre-feet and a water type.",
+        "MCL": "Maximum Contaminant Level. The platform stores the MCL a laboratory's file carries on each result row exactly as reported, in the row's own units, and shows it in the Limit (file) column and beside the finding on the result's page. It never compares a finding with it.",
         "Methodology / Calculation Plan": "Methodology, as the screens call it, under Administration > Methodology; this platform's monthly chain of steps for each use area, reordered and switched on or off there (crop water use, less rain the crop could use, less canal water the crop could use, a field with no crop set to zero, floored at 0 acre-feet unless changed). What is left becomes groundwater consumed on a field with a well and no meter reading; water use recorded, no supply reported on a field with no well; a comparison figure only on a month with a meter reading. See Help > Methods Behind the Numbers.",
         "Monitoring Station": "One record per outside station (a stream gauge, a weather station, a groundwater level well), holding its name, its ID at the data source, its location and the parameters it reports.",
         "OpenET": "OpenET's satellite evapotranspiration data is the source of this platform's crop water use estimate, read for every field each month.",
         "Use Area": "This platform's record of one field: its Assessor Parcel Number (APN), owner, area in acres and outline on the map. Every monthly figure is calculated per use area; all are listed on the Use Areas page.",
+        "PS Code": "Primary Station Code, written as the state writes it: the PWSID, the state's facility ID and the point number, joined by underscores. Each sampling point holds one, and a lab import files each result under the sampling point its PS Code names; a row naming a PS Code the platform does not hold is refused.",
+        "PWSID": "Public Water System Identification number. Add a water system creates this platform's water system record from a PWSID, reading the system and its facilities from EPA's federal record, and every PS Code begins with it.",
         "Point of Diversion (POD)": "One record per POD: its location, the right it draws under, its stream or flowline, its maximum rate in CFS, and the parcels it serves, with its monthly diversion records.",
         "Sampling Schedule": "The operator's own checklist on a drinking-water deployment, one row per thing sampled on a cycle, with its frequency, the date last done and the date next due. Both dates are typed in; the platform never works a due date out from the frequency.",
+        "Reporting Level": "Each result holds the reporting level its lab file gives. A result the file marks Less Than Reporting Level is shown as < and that level, such as < 0.005 mg/L, never as a measured quantity; with no level given, it shows < RL.",
         "Recovery Horizon": "Year-end unused water on a zone's page under Zones, and \"When a zone doesn't use its full allocation by the end of the water year\" on Delivery Settings, the agency default a zone can differ from. The unused amount carries forward as a credit or expires; an overdraw always carries as a debt. See Help > Configs & Settings, explained.",
         "Water Year": "One reporting period, held on the Water Years page with its name and its start and end dates.",
+        "Sampling Point": "This platform's record of one place a sample is taken on a facility, holding its PS Code, a name and a point type. Points are added by hand after Add a water system, never by a lab import, and each imported result is filed under the point its PS Code names.",
         "SGMA": "Sustainable Groundwater Management Act (2014), the California law requiring groundwater management.",
+        "Up to date / Slightly behind / Dormant": "The Monitoring Stations list shows one of these three words for each station, judging its latest reading against how often its source usually publishes (CDEC and CNRFC 36 hours; USGS and CIMIS 2 days; NOAA 3 days; OpenET 45 days; DWR-WDL and DWR-SGMA 120 days; any other source 1 day). A station is Up to date within 1.5 times its source's interval, Slightly behind within 4 times, and Dormant after that or with no reading at all.",
         "USGS": "United States Geological Survey, a federal source of stream gauge and groundwater level data.",
         "Water Account": "This platform's record of one account: its name, account number, contact and status, and the use areas it holds. Its allocation and remaining water are worked out across those use areas.",
         "Water Right": "One record per right, holding its state ID, type, holder, priority date, face value in acre-feet, CalWATRS PIN and status, plus its places of use, the use areas it serves. The platform only keeps the record; it never issues or changes a right.",

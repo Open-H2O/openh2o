@@ -115,6 +115,41 @@ def source_display(source_code):
     return SOURCE_DISPLAY.get(source_code, (source_code or "").upper())
 
 
+def format_hours(hours):
+    """A span of hours as a reader says it: "36 hours", "2 days", "67.5 days".
+
+    Whole days when 24 divides it evenly; hours below three days; otherwise
+    days to one decimal, so OpenET's 1,620-hour window reads "67.5 days".
+    """
+    hours = float(hours)
+    if hours >= 24 and hours % 24 == 0:
+        days = int(hours // 24)
+        return f"{days} day{'' if days == 1 else 's'}"
+    if hours < 72:
+        return f"{hours:g} hours"
+    return f"{round(hours / 24, 1):g} days"
+
+
+def freshness_thresholds(source_code, source_name=None):
+    """The three freshness words' limits for one source, as one tooltip.
+
+    Every number is read from the constants above (ISS-183): the source's
+    expected interval times ``FRESH_MULTIPLIER`` and ``STALE_MULTIPLIER``, the
+    same arithmetic ``classify_freshness`` applies.
+    """
+    interval = expected_interval_hours(source_code)
+    name = source_name or source_display(source_code)
+    every = "every day" if interval == 24 else f"every {format_hours(interval)}"
+    return (
+        "A station is Up to date when its latest reading is at most "
+        f"{format_hours(interval * FRESH_MULTIPLIER)} old, Slightly behind at most "
+        f"{format_hours(interval * STALE_MULTIPLIER)} old, and Dormant after that "
+        f"or with no reading. Those limits are {FRESH_MULTIPLIER:g} and "
+        f"{STALE_MULTIPLIER:g} times how often {name} usually publishes, {every}. "
+        "A station can be syncing and still dormant."
+    )
+
+
 def classify_freshness(source_code, last_data_at, now=None):
     """
     Return 'fresh' | 'stale' | 'dead' for a station, judged against its
