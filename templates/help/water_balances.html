@@ -12,7 +12,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">How Water Balances Work</span>
   </nav>
-  <p class="page-description">Crop water use, the one number estimated by satellite for every field; three sources of water and how each is known; the remainder's name on a field with no well.</p>
+  <p class="page-description">Satellite estimates crop water use for every field. This page shows how three sources are known and names the remainder for fields without wells.</p>
 </div>
 {% endblock %}
 
@@ -179,7 +179,7 @@
       </table>
     </div>
 
-    {% explainer_available "methods" as show_methods %}{% if show_methods %}<p class="text-base mt-md">The steps, the split and the estimate, line by line: <a class="prose-link" href="{% url 'methods' %}">Methods behind the numbers</a>.</p>{% endif %}
+    {% explainer_available "methods" as show_methods %}{% if show_methods %}<p class="text-base mt-md"><a class="prose-link" href="{% url 'methods' %}">Methods behind the numbers</a> sets out the steps, the split and the estimate line by line.</p>{% endif %}
     </div>
   </div>
 
@@ -190,16 +190,16 @@
     <div class="concept-panel mt-md">
       <div class="concept-panel-title">Go deeper</div>
       <ul class="concept-list text-secondary text-base">
-        <li><a class="prose-link" href="https://etdata.org/openet-data-explorer/" target="_blank" rel="noopener">OpenET Data Explorer</a>: the estimate for any field, on a map.</li>
-        <li><a class="prose-link" href="https://www.usgs.gov/water-science-school/science/evapotranspiration-and-water-cycle" target="_blank" rel="noopener">USGS: Evapotranspiration and the water cycle</a>, the science behind the estimate.</li>
-        <li><a class="prose-link" href="{% url 'glossary' %}">Glossary</a>: every term used here.</li>
+        <li><a class="prose-link" href="https://etdata.org/openet-data-explorer/" target="_blank" rel="noopener">OpenET Data Explorer</a> shows the estimate for any field on a map.</li>
+        <li><a class="prose-link" href="https://www.usgs.gov/water-science-school/science/evapotranspiration-and-water-cycle" target="_blank" rel="noopener">USGS: Evapotranspiration and the water cycle</a> explains the science behind the estimate.</li>
+        <li>The <a class="prose-link" href="{% url 'glossary' %}">Glossary</a> defines every term used here.</li>
       </ul>
     </div>
   </div>
 
   <div class="card-raised">
     <h2 class="section-header">See it in action</h2>
-    <p class="text-secondary text-base">Where to see it applied, and where to read more.</p>
+    <p class="text-secondary text-base">The dashboard shows it applied; the other pages explain more.</p>
     <div class="card-grid mt-md">
       {% if 'accounting' in enabled_modules %}<a href="{% url 'accounting:dashboard' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Dashboard</span><span class="text-accent">&rarr;</span></div>
@@ -207,15 +207,15 @@
       </a>{% endif %}
       <a href="{% url 'glossary' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Glossary</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">Plain-language definitions for every term on this page.</p>
+        <p class="text-secondary text-sm">The glossary defines every term on this page in plain language.</p>
       </a>
       {% explainer_available "methods" as show_methods %}{% if show_methods %}<a href="{% url 'methods' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Methods Behind the Numbers</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">The steps as they run, the three endings, and what is not built yet.</p>
+        <p class="text-secondary text-sm">See the steps as they run, the three endings and what is not built yet.</p>
       </a>{% endif %}
       {% explainer_available "settings_explained" as show_settings %}{% if show_settings %}<a href="{% url 'settings_explained' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Configs &amp; Settings</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">Every agency-wide setting that shapes these numbers: what it does and when to change it.</p>
+        <p class="text-secondary text-sm">See what each agency-wide setting behind these numbers does and when to change it.</p>
       </a>{% endif %}
     </div>
   </div>

@@ -12,7 +12,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Configs &amp; Settings, explained</span>
   </nav>
-  <p class="page-description">Which settings change a figure and where each is set, who sets the share of delivered water the crop consumes, and what a change does to months already calculated.</p>
+  <p class="page-description">This page shows each setting that changes a figure, where and by whom it is set, and what a change does to calculated months.</p>
 </div>
 {% endblock %}
 
@@ -83,7 +83,7 @@
           <tr>
             <td class="col-name">When a zone doesn&rsquo;t use its full allocation by the end of the water year</td>
             <td>&ldquo;Carry it forward as a credit toward next year&rdquo;, the default, or &ldquo;Let it expire (use-it-or-lose-it)&rdquo;</td>
-            <td class="col-where">{% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %} for the agency; a district's own page under <a class="prose-link" href="{{ zones_url }}">Zones</a> to differ</td>
+            <td class="col-where">{% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %} for the agency; a zone's own page under <a class="prose-link" href="{{ zones_url }}">Zones</a> to differ</td>
             <td class="col-sure"><span class="badge badge-pill badge-blue">Administrator</span></td>
           </tr>
           <tr>
@@ -155,7 +155,7 @@
           </tr>
           <tr>
             <td class="col-name">When a zone doesn&rsquo;t use its full allocation by the end of the water year</td>
-            <td>Its figures stay; the choice acts at the year-end roll-over of each district's allocation, never on a month</td>
+            <td>Its figures stay; the choice acts at the year-end roll-over of each zone's allocation, never on a month</td>
             <td>Same; at the roll-over the unused amount is carried or expires by the choice, and an overdraw is always carried as a debt</td>
           </tr>
           <tr>
@@ -183,19 +183,19 @@
     <div class="card-grid card-grid--fit mt-md">
       {% if 'accounting' in enabled_modules %}<a href="{{ methodology_url }}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Methodology Settings</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">Where the calculation plan's steps are reordered and tuned.</p>
+        <p class="text-secondary text-sm">Reorder and tune the calculation plan's steps here.</p>
       </a>
       <a href="{{ delivery_url }}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Delivery Settings</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">Where the shares, the year-end choice, the reporting year and record addresses are set.</p>
+        <p class="text-secondary text-sm">Set the shares, the year-end choice, the reporting year and record addresses here.</p>
       </a>{% endif %}
       <a href="{{ zones_url }}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Zones</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">A district&rsquo;s own page, where its year-end choice can differ from the agency&rsquo;s.</p>
+        <p class="text-secondary text-sm">A zone&rsquo;s own page is where its year-end choice can differ from the agency&rsquo;s.</p>
       </a>
       {% explainer_available "surface_deliveries" as show_surface_help %}{% if show_surface_help %}<a href="{{ surface_help_url }}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Surface Delivery Settings</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">What each canal setting decides, and the year-end choice in full.</p>
+        <p class="text-secondary text-sm">See what each canal setting decides and the full year-end choice.</p>
       </a>{% endif %}
     </div>
   </div>

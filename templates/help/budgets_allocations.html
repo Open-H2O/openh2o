@@ -12,7 +12,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Allocations &amp; Ceilings</span>
   </nav>
-  <p class="page-description">How a zone&rsquo;s ceiling becomes each account&rsquo;s allocation, what spends an allocation, and what a blank allocation means.</p>
+  <p class="page-description">This page explains how a zone&rsquo;s ceiling becomes each account&rsquo;s allocation, what spends an allocation and what a blank allocation means.</p>
 </div>
 {% endblock %}
 
@@ -128,8 +128,8 @@
             <td>Allocation plus any carry-over, minus groundwater extracted</td>
           </tr>
           <tr>
-            <td class="col-name">Surface, a district&rsquo;s own</td>
-            <td>Delivered, added up over the fields in the district; a surface ceiling is not divided among accounts</td>
+            <td class="col-name">Surface, a zone&rsquo;s own</td>
+            <td>Delivered, added up over the fields in the zone; a surface ceiling is not divided among accounts</td>
             <td>Allocation minus delivered</td>
           </tr>
           <tr>
@@ -153,15 +153,15 @@
     <div class="card-grid mt-md">
       {% if 'accounting' in enabled_modules %}<a href="{% url 'accounting:allocations_list' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Allocations</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">The live page where a zone&rsquo;s ceiling is set and allocations are derived.</p>
+        <p class="text-secondary text-sm">Set a zone&rsquo;s ceiling on the live page; allocations are derived from it.</p>
       </a>{% endif %}
       {% explainer_available 'water_balances' as show_water_balances %}{% if show_water_balances %}<a href="{% url 'water_balances' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>How Water Balances Work</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">The one idea under all of this: estimated use against supplies.</p>
+        <p class="text-secondary text-sm">Everything rests on one idea: estimated use is set against supplies.</p>
       </a>{% endif %}
       {% explainer_available 'methods' as show_methods %}{% if show_methods %}<a href="{% url 'methods' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Methods Behind the Numbers</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">The steps as they run, the three endings, and what is not built yet.</p>
+        <p class="text-secondary text-sm">See the steps as they run, the three endings and what is not built yet.</p>
       </a>{% endif %}
     </div>
   </div>

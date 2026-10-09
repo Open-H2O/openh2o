@@ -13,7 +13,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Getting Started</span>
   </nav>
-  <p class="page-description">The setup steps in order, where each is done, and which ones the Setup Wizard does for you.</p>
+  <p class="page-description">This page lists the setup steps in order, where each is done and which ones the Setup Wizard does.</p>
 </div>
 {% endblock %}
 
@@ -165,23 +165,23 @@
     <div class="card-grid card-grid--fit mt-md">
       {% if show_water_balances and show_methods and show_settings %}<a href="{% url 'water_balances' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>How Water Balances Work</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">The one idea under all of this: estimated use against supplies.</p>
+        <p class="text-secondary text-sm">Everything rests on one idea: estimated use is set against supplies.</p>
       </a>
       <a href="{% url 'methods' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Methods Behind the Numbers</span><span class="text-accent">&rarr;</span></div>
-        {% any_module_enabled "surface" "wells" as has_shared_sources %}<p class="text-secondary text-sm">The calculation chain{% if has_shared_sources %} and how shared {% module_nouns "surface:deliveries" "wells:wells" %} are split{% endif %}.</p>
+        {% any_module_enabled "surface" "wells" as has_shared_sources %}<p class="text-secondary text-sm">See the calculation chain{% if has_shared_sources %} and how shared {% module_nouns "surface:deliveries" "wells:wells" %} are split{% endif %}.</p>
       </a>
       <a href="{% url 'settings_explained' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Configs &amp; Settings, explained</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">Which settings change a figure, where each is set, and what a change does to months already calculated.</p>
+        <p class="text-secondary text-sm">See which settings change a figure, where each is set and what a change does to months already calculated.</p>
       </a>{% endif %}
       {% if 'accounting' in enabled_modules and show_budgets %}<a href="{% url 'budgets_allocations' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Allocations &amp; Ceilings</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">How the platform turns a zone&rsquo;s allocation ceiling into an account&rsquo;s allocation, with a worked example.</p>
+        <p class="text-secondary text-sm">A worked example shows how the platform turns a zone&rsquo;s allocation ceiling into an account&rsquo;s allocation.</p>
       </a>{% endif %}
       {% if 'surface' in enabled_modules and show_surface_help %}<a href="{% url 'surface_deliveries' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Surface Delivery Settings</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">Two agency-wide settings: how much of a delivery the crop uses, and what happens to a district&rsquo;s unused allotment at year-end.</p>
+        <p class="text-secondary text-sm">Two agency-wide settings decide how much of a delivery the crop uses and what happens to a zone&rsquo;s unused allotment at year-end.</p>
       </a>{% endif %}
     </div>
   </div>{% endif %}
