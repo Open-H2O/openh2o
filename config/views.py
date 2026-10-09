@@ -16,7 +16,7 @@ from datasync.models import DataSyncLog, MonitoredStation
 from geography.models import Zone
 from parcels.models import Parcel
 from wells.models import Well
-from accounting.models import WaterAccount
+from accounting.models import ReportingPeriod, WaterAccount
 from core.models import SiteConfig
 from core.modules import is_enabled
 from core.templatetags.prose import oxford_join
@@ -29,6 +29,10 @@ def index(request):
     Console layout: a status hero (who/where + live data health), the primary
     task cards, and the counts demoted to an at-a-glance stat bar. The public
     landing shows the same counts as the demo's headline numbers.
+
+    150-01: the signed-in page also counts water rights, water systems and
+    sample results, and asks whether a water year exists. Those are built
+    after the anonymous return, so the public landing's queries do not grow.
     """
     context = {}
     # Phase 89 puts `parcels` and `accounting` on the same footing as the four
@@ -98,6 +102,28 @@ def index(request):
             DataSyncLog.objects.filter(status__in=["success", "partial"]).first()
         )
         context["last_sync_time"] = last_sync.started_at if last_sync else None
+    # 150-01 (Brent, 2026-10-08): records decide what the home page offers.
+    # Module flags cannot: `surface` and `datasync` both pull the
+    # parcels/accounting pair on, so accounting can be running with no use
+    # area to log against and no water year to balance. "Log water use" reads
+    # `parcel_count`, built above; "Water balance" reads this.
+    if is_enabled("accounting"):
+        context["has_water_year"] = ReportingPeriod.objects.exists()
+    # The counters only the signed-in page shows. Monitoring stations reuse
+    # `station_count`, built above for the public landing, rather than count
+    # the same table twice. `surface` and `drinking` are truly removable, so
+    # their models are imported here, inside the guard, never at module scope
+    # (89-03: a module-scope import of an absent app kills the boot); the key
+    # is absent, not zero, when the module is off.
+    if is_enabled("surface"):
+        from surface.models import WaterRight
+
+        context["water_right_count"] = WaterRight.objects.count()
+    if is_enabled("drinking"):
+        from drinking.models import SampleResult, WaterSystem
+
+        context["water_system_count"] = WaterSystem.objects.count()
+        context["sample_result_count"] = SampleResult.objects.count()
     return render(request, "home.html", context)
 
 
