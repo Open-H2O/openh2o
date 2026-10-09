@@ -7,7 +7,7 @@ head once itself, so it is included here only on an htmx request (hx_request,
 from the view). The pks below are the WHOLE filtered queryset's, before
 pagination: OH2O.followResults reads them after every swap and filters the
 map to them.
-{% endcomment %}{% if hx_request %}{% include "partials/_map_card_head.html" with head_id="parcels-overview-map-head" title="Use areas" noun="use area" noun_plural="use areas" key_label="Use area" swatch="fill" swatch_token="blue" oob=True %}{% endif %}
+{% endcomment %}{% if hx_request and all_count %}{% include "partials/_map_card_head.html" with head_id="parcels-overview-map-head" title="Use areas" noun="use area" noun_plural="use areas" key_label="Use area" swatch="fill" swatch_token="blue" oob=True %}{% endif %}
 {{ result_pks|json_script:"results-map-pks" }}
 
 {% if page_obj.object_list %}
@@ -26,7 +26,7 @@ map to them.
     </thead>
     <tbody>
       {% for parcel in page_obj %}
-      <tr class="row-clickable" style="cursor: pointer;"
+      <tr class="row-clickable"
           onclick="if(!event.target.closest('a')){window.location='{% url 'parcels:detail' parcel.pk %}';}">
         <td>
           <a href="{% url 'parcels:detail' parcel.pk %}" class="data-table-link">
@@ -84,6 +84,7 @@ map to them.
   </div>
   {% if q or status %}
   <p class="empty-state-text">No use area{% if q %} matches &ldquo;{{ q }}&rdquo;{% endif %}{% if filter_words %} {{ filter_words }}{% endif %}.</p>
+  <a href="{% url 'parcels:list' %}" class="btn-secondary btn-sm mt-sm">Clear the search</a>
   {% else %}
   {% comment %}
     Deliberately NOT the shared actionable empty state in `templates/partials/`,

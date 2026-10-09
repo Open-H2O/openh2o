@@ -1612,21 +1612,27 @@ def ledger_list(request):
 
     # Two subtotals over the WHOLE filtered set (every matching row, not just the
     # visible page), named by kind and never netted (136-01, ISS-155). Credits
-    # are the non-negative rows: allocation and recharge entries, paper or
-    # banked water. The water figure is the negative rows: canal deliveries and
-    # pumping, stored negative by the ledger's convention and handed to the
-    # template as a positive magnitude. The two are not addable, so there is no
-    # net: this footer used to print one, and it stated WY 2025-2026 at
+    # are the allocation and recharge rows, paper or banked water (DESIGN.md
+    # rule 12, "Credit"). The water figure is every other source type: canal
+    # deliveries, pumping and the corrections an operator makes to them,
+    # stored negative by the ledger's convention and handed to the template as
+    # a positive magnitude. 150-04 V10: the two are told apart by SOURCE TYPE,
+    # never by sign. Splitting on the sign put a positive manual correction
+    # under Credits; manual entries, CSV imports and adjustments are
+    # deliberately unconstrained in sign (parcels/models.py), so a sign says
+    # nothing about which kind a row is. The two are not addable, so there is
+    # no net: this footer used to print one, and it stated WY 2025-2026 at
     # -1,504.32 AF while the dashboard read the same 1,130 rows as +1,249.07 AF,
     # because the dashboard calls a delivery a supply and this footer called it
     # a debit (DESIGN.md rule 12, review question 3). Re-filter by PK to drop
     # the zone M2M join, whose row duplication (a parcel in N zones) would
     # otherwise multiply amounts in SUM.
+    credit_rows = Q(source_type__in=ParcelLedger.POSITIVE_SOURCE_TYPES)
     ledger_totals = ParcelLedger.objects.filter(
         pk__in=queryset.values("pk")
     ).aggregate(
-        credits=Sum("amount_acre_feet", filter=Q(amount_acre_feet__gte=0)),
-        water=Sum("amount_acre_feet", filter=Q(amount_acre_feet__lt=0)),
+        credits=Sum("amount_acre_feet", filter=credit_rows),
+        water=Sum("amount_acre_feet", filter=~credit_rows),
     )
 
     paginator = Paginator(queryset, page_size)

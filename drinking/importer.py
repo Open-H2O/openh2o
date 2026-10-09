@@ -1047,28 +1047,14 @@ AGENCY_ALREADY_SET = "already_set"
 AGENCY_FILE_DISAGREES = "file_disagrees"
 
 
-def record_regulating_agency(rows, mapping, validated):
-    """Fill a blank ``WaterSystem.regulating_agency`` from the lab file, once.
+def regulating_agency_outcomes(rows, mapping, validated):
+    """What :func:`record_regulating_agency` would record, writing nothing.
 
-    The state's lab layout carries ``Regulating Agency`` on every row (Le
-    Grand's 160 rows all say ``DISTRICT 11 - MERCED``), while a system
-    onboarded from EPA's record shows it as "Not recorded". The file is the
-    better source for this one field, so the import writes it, under three
-    rules:
-
-    * the system is the one the file's rows resolved to (through their PS
-      Codes); rows that reached no known sampling point say nothing about a
-      system, so a file that reaches none writes nothing;
-    * the system's field is blank. A value already there, whoever wrote it,
-      is never overwritten;
-    * the file agrees with itself: every non-blank ``Regulating Agency`` cell
-      carries the same value. Two values means the file does not say which,
-      and neither is written.
-
-    Returns ``None`` when the file carries no such column or no value in it
-    (the report then says nothing about the agency), else a dict:
-    ``{"outcome", "value", "values", "existing"}``, one per system the rows
-    reached, as a list.
+    The read-only half (150-04 V3): the preview calls it to say beforehand the
+    one line the commit will say, and the commit calls it through
+    :func:`record_regulating_agency`, so the two can never disagree. An
+    ``AGENCY_RECORDED`` outcome here means "would be recorded"; the system row
+    is not touched. Same return shape and the same three rules as the commit.
     """
     column = mapping.get("regulating_agency")
     if not column:
@@ -1098,8 +1084,6 @@ def record_regulating_agency(rows, mapping, validated):
         elif existing:
             outcome = AGENCY_ALREADY_SET
         else:
-            system.regulating_agency = values[0]
-            system.save(update_fields=["regulating_agency"])
             outcome = AGENCY_RECORDED
         outcomes.append({
             "system": system,
@@ -1109,3 +1093,39 @@ def record_regulating_agency(rows, mapping, validated):
             "existing": existing,
         })
     return outcomes or None
+
+
+def record_regulating_agency(rows, mapping, validated):
+    """Fill a blank ``WaterSystem.regulating_agency`` from the lab file, once.
+
+    The state's lab layout carries ``Regulating Agency`` on every row (Le
+    Grand's 160 rows all say ``DISTRICT 11 - MERCED``), while a system
+    onboarded from EPA's record shows it as "Not recorded". The file is the
+    better source for this one field, so the import writes it, under three
+    rules:
+
+    * the system is the one the file's rows resolved to (through their PS
+      Codes); rows that reached no known sampling point say nothing about a
+      system, so a file that reaches none writes nothing;
+    * the system's field is blank. A value already there, whoever wrote it,
+      is never overwritten;
+    * the file agrees with itself: every non-blank ``Regulating Agency`` cell
+      carries the same value. Two values means the file does not say which,
+      and neither is written.
+
+    Returns ``None`` when the file carries no such column or no value in it
+    (the report then says nothing about the agency), else a dict:
+    ``{"outcome", "value", "values", "existing"}``, one per system the rows
+    reached, as a list.
+
+    The decision is :func:`regulating_agency_outcomes`'s (the preview shows the
+    same outcomes before the commit, 150-04 V3); this function only writes the
+    ``AGENCY_RECORDED`` ones.
+    """
+    outcomes = regulating_agency_outcomes(rows, mapping, validated)
+    for entry in outcomes or ():
+        if entry["outcome"] == AGENCY_RECORDED:
+            system = entry["system"]
+            system.regulating_agency = entry["value"]
+            system.save(update_fields=["regulating_agency"])
+    return outcomes

@@ -62,8 +62,12 @@ def test_an_em_dash_name_keeps_a_plain_leading_word():
     would risk cutting the first word off an ordinary name elsewhere in the
     corpus. Task 5 owns the service-area label's own wording and may still
     call this helper as one step in a longer rewrite.
+
+    150-04 V11: the seed now writes the name with a colon where it wrote an
+    em dash (``seed_merced_ledgers.district_zone_name``), so the case is held
+    in that form; the rule it proves is the same.
     """
     assert (
-        map_label("MER Surface Service Area — Halvern Irrigation District (MER-WR-004-DEMO)")
-        == "MER Surface Service Area — Halvern Irrigation District"
+        map_label("MER Surface Service Area: Halvern Irrigation District (MER-WR-004-DEMO)")
+        == "MER Surface Service Area: Halvern Irrigation District"
     )

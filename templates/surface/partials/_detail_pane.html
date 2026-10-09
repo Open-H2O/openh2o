@@ -272,9 +272,10 @@
       flagged, never hidden; 149.1-05 adds one line under the table, shown only
       when a month is flagged, saying what the flag marks.
     {% endcomment %}
+    {% comment %} 150-04 V9: the card is rendered only for a point with a direct-use record (canal_water is empty otherwise); a recharge-only point gets none. {% endcomment %}
+    {% if canal_water %}
     <div class="card-raised page-grid-account-full" id="where-the-water-went">
       <h2 class="section-header mb-md">Where the water went</h2>
-      {% if canal_water %}
       <p class="text-secondary text-sm mb-md">Canal losses and the three columns after them add up to the water taken at the headgate; a month that does not is marked Does not add up. Acre-feet.</p>
       {% for group in canal_water %}
       <details class="mb-md"{% if group.is_open %} open{% endif %}>
@@ -358,14 +359,14 @@
         {% endif %}
       </details>
       {% endfor %}
-      {% else %}
-      <p class="text-tertiary text-sm">No direct-use diversion records yet.</p>
-      {% endif %}
     </div>
+    {% endif %}
 
     {% comment %}Linked use areas + Recharge areas filled, side by side; the use
-       areas alone take the full width rather than half a row with nothing beside it.{% endcomment %}
-    <div class="{% if basin_links and 'recharge' in enabled_modules %}page-grid-2col {% endif %}page-grid-account-full">
+       areas alone take the full width rather than half a row with nothing beside it.
+       150-04 (W5, rule A1): side by side, each card ends at its content, so an
+       empty "Linked use areas" card is not stretched to the table beside it.{% endcomment %}
+    <div class="{% if basin_links and 'recharge' in enabled_modules %}page-grid-2col page-grid-2col--align-start {% endif %}page-grid-account-full">
 
       <!-- Linked Use Areas card -->
       <div class="card-raised">

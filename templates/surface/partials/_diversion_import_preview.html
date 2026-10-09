@@ -159,8 +159,9 @@ pressed.
   <table class="data-table mt-md">
     <thead><tr><th style="width: 6rem;">Row</th><th>Problem</th></tr></thead>
     <tbody>
-      {% for err in errors %}
-      <tr><td class="text-mono">{{ err.line }}</td><td class="text-furnace">{{ err.message }}</td></tr>
+      {% comment %} 150-04 V1: one row per distinct message (surface/views.py::_group_row_errors), its row count and first rows; `errors` itself still goes to the commit unchanged. {% endcomment %}
+      {% for group in error_groups %}
+      <tr><td class="text-mono">{% if group.count == 1 %}{{ group.first_rows.0 }}{% else %}{{ group.count }} rows: {{ group.first_rows|join:", " }}{% if group.more %} ...{% endif %}{% endif %}</td><td class="text-furnace">{{ group.message }}</td></tr>
       {% endfor %}
     </tbody>
   </table>

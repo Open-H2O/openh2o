@@ -46,12 +46,14 @@
        located the card is its head alone: no map host, no map built. The head
        is OUTSIDE #results, and the results partial rewrites it out of band,
        so this is the page's only count line. {% endcomment %}
+  {% comment %} 150-04 V6: no records at all, no map card: its head would only say nothing has a location. {% endcomment %}{% if all_count %}
   <div class="card-raised" style="padding: 0; overflow: hidden;">
     {% include "partials/_map_card_head.html" with head_id="zones-overview-map-head" title="Zones" noun="zone" noun_plural="zones" key_label="Zone boundary" swatch="fill" swatch_token="green" %}
     {% if located_count %}
     <div id="zones-overview-map" style="height: 380px; width: 100%;"></div>
     {% endif %}
   </div>
+  {% endif %}
 
   {% comment %} Toolbar: search + type filter. Zones are bounded and few, so the whole
        list is on one page and search is a live filter, not a way to page. {% endcomment %}

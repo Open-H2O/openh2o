@@ -970,9 +970,18 @@ def zone_labels_geojson(request):
     drop, so ``short_label`` equals ``label`` there. The district map's
     service-area label layer reads ``short_label``; the GSA label layer and
     the Zones overview map both keep reading ``label``, unchanged.
+
+    150-04 V11: the seed now composes those names with a colon
+    ("MER Surface Service Area: Halvern Irrigation District"), and geography
+    migration 0009 renamed the rows already stored, so ``short_label`` drops
+    everything up to and including the last colon-and-space as well. An
+    em dash name (a row that predates the migration) still shortens the same way.
     """
     def _short_label(label):
-        return label.rsplit(" — ", 1)[-1] if " — " in label else label
+        for separator in (" \u2014 ", ": "):
+            if separator in label:
+                return label.rsplit(separator, 1)[-1]
+        return label
 
     features = [
         {

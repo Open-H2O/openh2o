@@ -1053,6 +1053,41 @@ def _posted_use_rule(request):
     return value or None
 
 
+#: How many row numbers one grouped row error names before " ..." (150-04 V1).
+ROW_ERROR_FIRST_ROWS = 3
+
+
+def _group_row_errors(errors):
+    """The preview's row errors, one entry per distinct message (150-04 V1).
+
+    Twelve months refused for one finalized year are one cause, not twelve
+    lines. Each entry is ``{"message", "count", "first_rows", "more"}``: the
+    count is the number of file rows behind the message (an error on months
+    combined from several rows names each of them, "3, 4"), ``first_rows``
+    the lowest row numbers, ``more`` whether any were left out. Messages keep
+    the order they were first met. ``errors`` itself is not changed.
+    """
+    groups = {}
+    for err in errors:
+        rows = groups.setdefault(err["message"], [])
+        for part in str(err["line"]).split(","):
+            part = part.strip()
+            if part:
+                rows.append(int(part) if part.isdigit() else part)
+    grouped = []
+    for message, rows in groups.items():
+        rows = sorted(r for r in rows if isinstance(r, int)) + [
+            r for r in rows if not isinstance(r, int)
+        ]
+        grouped.append({
+            "message": message,
+            "count": len(rows),
+            "first_rows": rows[:ROW_ERROR_FIRST_ROWS],
+            "more": len(rows) > ROW_ERROR_FIRST_ROWS,
+        })
+    return grouped
+
+
 @login_required
 @require_GET
 def diversion_import(request):
@@ -1141,6 +1176,7 @@ def diversion_import_preview(request):
     # or the deployment's remembered default on first preview) -- never the
     # raw POST, which is blank until the operator picks one (146-03 Task 6).
     context["use_rule"] = result["settings"]["diversion_use_type_rule"]
+    context["error_groups"] = _group_row_errors(result["errors"])
     context["rows_json"] = json.dumps(rows)
     context["row_count"] = len(rows)
     return render(request, "surface/partials/_diversion_import_preview.html", context)

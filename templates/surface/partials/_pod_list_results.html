@@ -6,7 +6,7 @@ the map being torn down. On a full page render the page includes the head once
 itself, so it is included here only on an htmx request (hx_request, from the
 view). The pks below are the WHOLE filtered queryset's, before pagination:
 OH2O.followResults reads them after every swap and filters the map to them.
-{% endcomment %}{% if hx_request %}{% include "partials/_map_card_head.html" with head_id="pods-overview-map-head" title="Points of diversion" noun="point of diversion" noun_plural="points of diversion" key_label="Point of diversion" swatch="dot" swatch_token="teal" oob=True %}{% endif %}
+{% endcomment %}{% if hx_request and all_count %}{% include "partials/_map_card_head.html" with head_id="pods-overview-map-head" title="Points of diversion" noun="point of diversion" noun_plural="points of diversion" key_label="Point of diversion" swatch="dot" swatch_token="teal" oob=True %}{% endif %}
 {{ result_pks|json_script:"results-map-pks" }}
 
 {% if page_obj.object_list %}
@@ -22,7 +22,7 @@ OH2O.followResults reads them after every swap and filters the map to them.
     </thead>
     <tbody>
       {% for pod in page_obj %}
-      <tr class="row-clickable" style="cursor: pointer;"
+      <tr class="row-clickable"
           onclick="if(!event.target.closest('a')){window.location='{% url 'surface:pod_detail' pod.pk %}';}">
         <td>
           <a href="{% url 'surface:pod_detail' pod.pk %}" class="data-table-link">
@@ -75,6 +75,7 @@ OH2O.followResults reads them after every swap and filters the map to them.
   </div>
   {% if q or status %}
   <p class="empty-state-text">No point of diversion{% if q %} matches &ldquo;{{ q }}&rdquo;{% endif %}{% if filter_words %} {{ filter_words }}{% endif %}.</p>
+  <a href="{% url 'surface:pod_list' %}" class="btn-secondary btn-sm mt-sm">Clear the search</a>
   {% else %}
   <p class="empty-state-text">No points of diversion yet.</p>
   {% if user_can_write and 'infrastructure' in enabled_modules %}

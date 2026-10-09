@@ -1,4 +1,4 @@
-{% load placeholders %}{% comment %}
+{% load humanize placeholders %}{% comment %}
   The preview: what a commit WOULD do, before anything is written.
 
   The whole point of this screen is that an operator can see the consequences
@@ -15,7 +15,8 @@
   results.
 
   Caller supplies: recognised, preview_rows, error_rows, warning_rows,
-  row_count, error_count, duplicate_count, new_analytes, committable, rows_json.
+  row_count, error_count, duplicate_count, new_analytes, committable, rows_json,
+  agency (150-04 V3).
 {% endcomment %}
 <div class="card-raised">
   <h2 class="card-header-ruled">Preview</h2>
@@ -45,6 +46,27 @@
   {% if error_count %}
   <p class="text-base text-secondary mt-sm">Each row that cannot be imported is listed below with what is wrong; fix {{ error_count|pluralize:"it,them" }} in your file and import again.</p>
   {% endif %}
+
+  {% comment %}
+    150-04 V3: the regulating-agency line, decided before the commit by
+    drinking/importer.py::regulating_agency_outcomes, the function the commit
+    itself calls. The words are the commit report's own
+    (_import_result.html), copied unchanged; nothing renders when the file
+    carries no Regulating Agency column.
+  {% endcomment %}
+  {% for a in agency %}
+    {% if a.outcome == "recorded" %}
+  <p class="text-base text-secondary mt-sm">The regulating agency will be recorded from the file as {{ a.value }}.</p>
+    {% elif a.outcome == "already_set" %}
+      {% if a.existing == a.value %}
+  <p class="text-base text-secondary mt-sm">Regulating agency: the file's {{ a.value }} matches the one already recorded.</p>
+      {% else %}
+  <p class="text-base text-secondary mt-sm">The regulating agency will not be recorded: the system already has one, {{ a.existing }}. The file says {{ a.value }}.</p>
+      {% endif %}
+    {% else %}
+  <p class="text-base text-secondary mt-sm">The regulating agency will not be recorded: the file names {{ a.values|length|apnumber }} ({{ a.values|join:", " }}), so it does not say which.</p>
+    {% endif %}
+  {% endfor %}
 
   {% comment %}
     A PS Code the deployment does not carry is the most likely real failure here:

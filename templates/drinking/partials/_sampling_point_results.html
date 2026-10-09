@@ -7,7 +7,7 @@ itself, so it is included here only on an htmx request (hx_request, from the
 view). The pks below are the WHOLE filtered queryset's distinct FACILITY ids
 (before pagination): the map draws facilities, not points, so that is what
 OH2O.followResults needs to filter it.
-{% endcomment %}{% if hx_request %}{% include "partials/_map_card_head.html" with head_id="sampling-points-map-head" title="Sampling points" noun="sampling point" noun_plural="sampling points" key_label="Facility with sampling points" swatch="dot" swatch_token="blue-bright" line=line oob=True %}{% endif %}
+{% endcomment %}{% if hx_request and all_count %}{% include "partials/_map_card_head.html" with head_id="sampling-points-map-head" title="Sampling points" noun="sampling point" noun_plural="sampling points" key_label="Facility with sampling points" swatch="dot" swatch_token="blue-bright" line=line oob=True %}{% endif %}
 {{ result_pks|json_script:"results-map-pks" }}
 
 {% comment %}
@@ -120,6 +120,7 @@ gate fails a kept page that names a domain the deployment does not have.
 {% endcomment %}
 <div class="card-raised empty-state">
   <p class="empty-state-text">No sampling point{% if q %} matches &ldquo;{{ q }}&rdquo;{% endif %}{% if point_type %}{% for value, label in point_type_choices %}{% if value == point_type %} of type &ldquo;{{ label }}&rdquo;{% endif %}{% endfor %}{% endif %}.</p>
+  <a href="{% url 'drinking:sampling_points' %}" class="btn-secondary btn-sm mt-sm">Clear the search</a>
 </div>
 
 {% else %}

@@ -43,12 +43,14 @@
        same, and the map follows it (OH2O.followResults, rule 19). With
        nothing located the card is its head alone: no map host, no map
        built. {% endcomment %}
+  {% comment %} 150-04 V6: no records at all, no map card: its head would only say nothing has a location. {% endcomment %}{% if all_count %}
   <div class="card-raised" style="padding: 0; overflow: hidden;">
     {% include "partials/_map_card_head.html" with head_id="wells-overview-map-head" title="Wells" noun="well" noun_plural="wells" key_label="Well" swatch="dot" swatch_token="gold" %}
     {% if located_count %}
     <div id="wells-overview-map" style="height: 380px; width: 100%;"></div>
     {% endif %}
   </div>
+  {% endif %}
 
   {% comment %} Toolbar: search + status filter, one row (143-05's shape). {% endcomment %}
   <div class="card-raised toolbar-row">

@@ -149,11 +149,14 @@
         <td colspan="2" class="text-secondary" style="font-weight: 600; white-space: nowrap;">
           All {{ total_count|intcomma }} entr{{ total_count|pluralize:"y,ies" }}
         </td>
-        <td colspan="3" class="text-xs" style="white-space: nowrap;">
+        <td colspan="3" class="text-xs">
+          {% comment %} 150-04 T1 (rule C1): the figures wrap as a row of parts. The flex row is a div inside the cell, not the cell itself: a td set to display:flex stops being a table cell, and its colspan with it. {% endcomment %}
+          <div class="tfoot-figures">
           <span class="text-secondary">Credits</span> <span class="text-tertiary">(allocation and recharge entries)</span>
           <span class="td-num-bold text-supply">+{{ ledger_total_credits|floatformat:2|intcomma }}</span>
           &middot; <span class="text-secondary">Delivered and pumped</span>
           <span class="td-num-bold">{{ ledger_total_water|floatformat:2|intcomma }}</span>
+          </div>
         </td>
       </tr>
     </tfoot>

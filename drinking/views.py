@@ -1204,6 +1204,9 @@ def import_preview(request):
             "committable": committable,
             "limits_fill_count": limits_fill_count,
             "unknown_ps_codes": _unknown_ps_code_routes(validated),
+            # 150-04 V3: the regulating-agency line the commit will print,
+            # decided by the same function the commit calls; nothing written.
+            "agency": importer.regulating_agency_outcomes(rows, mapping, validated),
             "rows_json": json.dumps(rows),
             # Carried to the commit so each result can say which file the
             # limits it carries arrived in (ISS-140, "beside").
@@ -1949,6 +1952,10 @@ def production_import_page(request):
     )
 
 
+#: The production preview lists at most this many of the file's rows (150-04 V2).
+PRODUCTION_PREVIEW_ROW_LIMIT = 50
+
+
 def _production_import_settings_context(*, unit_for_blank="", operator_year="",
                                           operator_unit="G"):
     return {
@@ -2047,6 +2054,12 @@ def production_import_preview(request):
     context.update(result)
     context["rows_json"] = json.dumps(rows)
     context["row_count"] = len(rows)
+    # 150-04 V2: the file's own rows under its own column names, bounded.
+    context["preview_columns"] = columns
+    context["preview_rows"] = [
+        [row.get(column, "") for column in columns]
+        for row in rows[:PRODUCTION_PREVIEW_ROW_LIMIT]
+    ]
     return render(
         request, "drinking/partials/_production_import_preview.html", context
     )

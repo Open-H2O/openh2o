@@ -6,7 +6,7 @@ the map being torn down. On a full page render the page includes the head once
 itself, so it is included here only on an htmx request (hx_request, from the
 view). The pks below are the WHOLE filtered queryset's, before pagination:
 OH2O.followResults reads them after every swap and filters the map to them.
-{% endcomment %}{% if hx_request %}{% include "partials/_map_card_head.html" with head_id="zones-overview-map-head" title="Zones" noun="zone" noun_plural="zones" key_label="Zone boundary" swatch="fill" swatch_token="green" oob=True %}{% endif %}
+{% endcomment %}{% if hx_request and all_count %}{% include "partials/_map_card_head.html" with head_id="zones-overview-map-head" title="Zones" noun="zone" noun_plural="zones" key_label="Zone boundary" swatch="fill" swatch_token="green" oob=True %}{% endif %}
 {{ result_pks|json_script:"results-map-pks" }}
 
 {% if page_obj.object_list %}
@@ -21,7 +21,7 @@ OH2O.followResults reads them after every swap and filters the map to them.
     </thead>
     <tbody>
       {% for zone in page_obj %}
-      <tr class="row-clickable" style="cursor: pointer;"
+      <tr class="row-clickable"
           onclick="if(!event.target.closest('a')){window.location='{% url 'geography:zone_detail' zone.pk %}';}">
         <td>
           <a href="{% url 'geography:zone_detail' zone.pk %}" class="data-table-link">

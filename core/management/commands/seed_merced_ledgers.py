@@ -139,6 +139,16 @@ DEMO_PERIOD_NAMES = ("WY 2024-2025", "WY 2025-2026")
 GSA_BASIN_CODE = "5-022.04"
 DISTRICT_ZONE_PREFIX = "MER Surface Service Area"
 
+
+def district_zone_name(holder_name, right_id):
+    """A surface district's zone name: the prefix, a colon, the holder, the right.
+
+    150-04 V11: a colon, never an em dash ("MER Surface Service Area:
+    Ashvale-Dunmoor Water District (MER-WR-005-DEMO)"). Rows seeded before
+    then are renamed by geography migration 0009.
+    """
+    return f"{DISTRICT_ZONE_PREFIX}: {holder_name} ({right_id})"
+
 # 58-03: DELIVERED supply (surface deliveries + meter readings) is no longer sized
 # from these flat rates — it tracks each parcel's MEASURED net ET demand (see the
 # module docstring), because the flat rates undersupply measured ET (ISS-057). The
@@ -621,7 +631,7 @@ class Command(BaseCommand):
                 union = union.union(g)
             if union.geom_type == "Polygon":
                 union = MultiPolygon(union)
-            name = f"{DISTRICT_ZONE_PREFIX} — {right.holder_name} ({right.right_id})"
+            name = district_zone_name(right.holder_name, right.right_id)
             zone, _ = Zone.objects.update_or_create(
                 name=name,
                 defaults={

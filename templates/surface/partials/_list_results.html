@@ -22,7 +22,7 @@
     </thead>
     <tbody>
       {% for right in page_obj %}
-      <tr class="row-clickable" style="cursor: pointer;"
+      <tr class="row-clickable"
           onclick="if(!event.target.closest('a')){window.location='{% url 'surface:detail' right.pk %}';}">
         <td>
           <a href="{% url 'surface:detail' right.pk %}" class="data-table-link text-mono">
@@ -80,6 +80,7 @@
   </div>
   {% if q or status %}
   <p class="empty-state-text">No water right{% if q %} matches &ldquo;{{ q }}&rdquo;{% endif %}{% if status %}{% for value, label in status_choices %}{% if value == status %} with status &ldquo;{{ label }}&rdquo;{% endif %}{% endfor %}{% endif %}.</p>
+  <a href="{% url 'surface:water_rights_list' %}" class="btn-secondary btn-sm mt-sm">Clear the search</a>
   {% else %}
   {% comment %}
     Deliberately NOT the shared actionable empty state in `templates/partials/`,
