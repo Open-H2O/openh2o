@@ -21,9 +21,10 @@ from core.access import admin_required
 from core.modules import is_enabled
 from datasync.models import MonitoredStation
 from geography.models import Boundary
+from core.geofiles import THREE_FORMATS
 from setup.boundaries import (
     boundary_from_extent,
-    boundary_from_geojson_text,
+    boundary_from_upload,
     parse_extent_bounds,
 )
 from setup.services import (
@@ -47,6 +48,19 @@ SESSION_KEY_PROVIDER_INDEX = "setup_wizard_provider_index"
 # whether to show the picker or the HTMX progress poll, and how a fresh
 # confirm() always re-asks rather than silently re-running the last choice.
 SESSION_KEY_SELECTED_STEPS = "setup_wizard_selected_steps"
+# 150-03 (ISS-200): how many polygons an uploaded file's boundary combined. Set
+# by an upload, removed by a select or a typed extent, so the confirm step only
+# says "N polygons combined" about the file that was just read.
+SESSION_KEY_POLYGON_COUNT = "setup_wizard_polygon_count"
+
+# The upload card's refusals that name the three formats (150-03).
+UPLOAD_NO_FILE = f"Please choose a boundary file to upload: {THREE_FORMATS}."
+UPLOAD_NOT_TEXT = (
+    f"That file could not be read as text, so it is not GeoJSON. Upload {THREE_FORMATS}."
+)
+UPLOAD_NOT_JSON = (
+    f"The file is not valid JSON, so it is not GeoJSON. Upload {THREE_FORMATS}."
+)
 
 # The step list is resolved per request via `wizard_steps()`, not frozen into a
 # module constant: `datasync` is demotable from Phase 88, and a deployment that
@@ -66,7 +80,7 @@ PROVIDER_SKIP_NOTES = {
 @admin_required
 @login_required
 def setup_wizard(request):
-    """Step 1: Boundary selection — select existing or upload GeoJSON."""
+    """Step 1: Boundary selection: select existing, upload a map file, or type an extent."""
     errors = []
 
     if request.method == "POST":
@@ -80,18 +94,21 @@ def setup_wizard(request):
                 try:
                     boundary = Boundary.objects.get(pk=int(boundary_id))
                     request.session[SESSION_KEY_BOUNDARY] = boundary.pk
+                    request.session.pop(SESSION_KEY_POLYGON_COUNT, None)
                     return redirect("setup:confirm")
                 except (Boundary.DoesNotExist, ValueError):
                     errors.append("Selected boundary does not exist.")
 
         elif action == "upload":
+            # The input keeps its old name, geojson_file; it now takes a
+            # zipped shapefile, a KML or a GeoJSON file (150-03, ISS-200).
             uploaded = request.FILES.get("geojson_file")
             if not uploaded:
-                errors.append("Please choose a GeoJSON file to upload.")
+                errors.append(UPLOAD_NO_FILE)
             else:
                 try:
-                    name, geom, attrs = boundary_from_geojson_text(
-                        uploaded.read(),
+                    name, geom, attrs, polygon_count = boundary_from_upload(
+                        uploaded,
                         fallback_name=uploaded.name.rsplit(".", 1)[0],
                     )
                     boundary = Boundary.objects.create(
@@ -100,24 +117,20 @@ def setup_wizard(request):
                         **attrs,
                     )
                     request.session[SESSION_KEY_BOUNDARY] = boundary.pk
+                    request.session[SESSION_KEY_POLYGON_COUNT] = polygon_count
                     return redirect("setup:confirm")
                 except UnicodeDecodeError:
-                    errors.append(
-                        "That file couldn't be read as text. A GeoJSON file is a "
-                        "plain-text file — make sure you exported GeoJSON, not a "
-                        "shapefile or a zip archive."
-                    )
+                    errors.append(UPLOAD_NOT_TEXT)
                 except json.JSONDecodeError:
-                    errors.append(
-                        "The file isn't valid JSON. A GeoJSON file is text that "
-                        "starts with '{' — check you exported GeoJSON (not a "
-                        "shapefile, KML, or zip)."
-                    )
-                except ValueError as exc:
-                    # Specific, plain-language reason from parse_geojson_boundary.
+                    errors.append(UPLOAD_NOT_JSON)
+                except (ValueError, ImportError) as exc:
+                    # A plain-language reason: parse_geojson_boundary's for a
+                    # GeoJSON file, boundary_from_upload's or core.geofiles' for
+                    # any file (ValueError), or the archive guards' (ImportError:
+                    # unsafe path, zip bomb, upload cap, no .shp).
                     errors.append(str(exc))
                 except Exception as exc:
-                    logger.exception("GeoJSON upload failed")
+                    logger.exception("Boundary file upload failed")
                     errors.append(f"Upload failed: {exc}")
 
         elif action == "extent":
@@ -142,6 +155,7 @@ def setup_wizard(request):
                     **attrs,
                 )
                 request.session[SESSION_KEY_BOUNDARY] = boundary.pk
+                request.session.pop(SESSION_KEY_POLYGON_COUNT, None)
                 return redirect("setup:confirm")
 
     boundaries = Boundary.objects.all().order_by("name")
@@ -187,6 +201,8 @@ def setup_confirm(request):
         return redirect("setup:run")
 
     preview = get_boundary_preview_data(boundary)
+    # 150-03: the template says "N polygons combined" only when N > 1.
+    preview["polygon_count"] = request.session.get(SESSION_KEY_POLYGON_COUNT)
     return render(request, "setup/confirm.html", preview)
 
 

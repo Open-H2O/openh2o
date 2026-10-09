@@ -10,8 +10,9 @@ Four UI-independent functions the import views are thin glue over:
                                         -> [{index, data, errors, warnings}]
   commit_rows(valid_results, infra_type) -> int  (number created)
 
-The GDAL/GeoJSON/shapefile/KML parser helpers live here as the single parser
-home; infrastructure.views imports them back. CSV is added via stdlib csv.
+The GDAL/GeoJSON/shapefile/KML parser helpers live in core/geofiles.py
+(150-03), shared with the Setup Wizard, and are re-exported here under their
+old names. CSV is added via stdlib csv.
 
 Each parsed row is a flat dict of source-column -> string value. Spatial
 formats synthesize a `__geometry__` column holding the feature geometry as a
@@ -23,13 +24,9 @@ import csv
 import io
 import json
 import math
-import os
-import shutil
-import tempfile
-import zipfile
 from decimal import Decimal, InvalidOperation
 
-from django.contrib.gis.gdal import DataSource, GDALException
+from django.contrib.gis.gdal import GDALException
 from django.contrib.gis.geos import (
     GEOSException,
     GEOSGeometry,
@@ -37,6 +34,15 @@ from django.contrib.gis.geos import (
 )
 from django.db import transaction
 
+from core.geofiles import (  # noqa: F401  re-exported under their old names (150-03)
+    MAX_EXTRACTED_BYTES,
+    MAX_UPLOAD_BYTES,
+    _extract_features_from_datasource,
+    _parse_geojson_file,
+    _parse_kml_file,
+    _parse_shapefile_zip,
+    _validate_zip_entries,
+)
 from core.modules import is_enabled
 from parcels.models import Parcel
 from wells.models import MEASUREMENT_METHOD_CHOICES, PUMP_TYPE_CHOICES
@@ -47,13 +53,11 @@ GEOMETRY_COL = "__geometry__"
 # Hard cap on a single import (preserved from the old infrastructure_upload).
 MAX_ROWS = 500
 
-# Hard byte ceilings so an oversized or zip-bomb upload can't exhaust the small
-# VPS (2-4GB) before MAX_ROWS is even reached — MAX_ROWS is checked only AFTER a
-# full parse, so it is no defense against a 5GB file. MAX_UPLOAD_BYTES bounds the
-# raw uploaded file; MAX_EXTRACTED_BYTES bounds the total uncompressed bytes a
-# zip is allowed to expand to (a small zip can decompress to gigabytes).
-MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MB raw upload
-MAX_EXTRACTED_BYTES = 50 * 1024 * 1024  # 50 MB total extracted from a zip
+# The byte ceilings (25 MB raw upload, 50 MB extracted from a zip) live in
+# core/geofiles.py beside the readers that enforce them (150-03). Both names
+# stay importable from here: parse_upload checks MAX_UPLOAD_BYTES below, and
+# callers read importer.MAX_UPLOAD_BYTES. The archive readers read the caps
+# from core.geofiles, so a test that shrinks one patches it there.
 
 
 # ---------------------------------------------------------------------------
@@ -667,120 +671,10 @@ def commit_rows(valid_results, infra_type):
 
 
 # ---------------------------------------------------------------------------
-# GDAL / spatial parser helpers (single home; views.py imports these)
+# GDAL / spatial parser helpers
 # ---------------------------------------------------------------------------
-
-
-def _parse_geojson_file(uploaded):
-    content = json.loads(uploaded.read().decode("utf-8"))
-    if content.get("type") == "FeatureCollection":
-        raw_features = content.get("features", [])
-    elif content.get("type") == "Feature":
-        raw_features = [content]
-    else:
-        raw_features = [{"type": "Feature", "geometry": content, "properties": {}}]
-
-    features = []
-    for feat in raw_features:
-        features.append(
-            {
-                "geometry": feat.get("geometry"),
-                "properties": feat.get("properties", {}),
-            }
-        )
-    return features
-
-
-def _validate_zip_entries(zf, dest_dir):
-    """Reject path-traversal entries and enforce a total uncompressed-size cap
-    before extracting (zip-slip + zip-bomb defense).
-
-    Modern CPython's extractall already sanitizes `..`/absolute names (so this
-    was downgraded P1->P2), but we validate explicitly for defense-in-depth and
-    refactor-safety, and so a zip bomb is refused before any bytes hit disk.
-    """
-    dest_root = os.path.realpath(dest_dir)
-    total = 0
-    for info in zf.infolist():
-        name = info.filename
-        parts = name.replace("\\", "/").split("/")
-        if os.path.isabs(name) or ".." in parts:
-            raise ImportError(f"Unsafe path in archive: '{name}'.")
-        resolved = os.path.realpath(os.path.join(dest_dir, name))
-        if resolved != dest_root and not resolved.startswith(dest_root + os.sep):
-            raise ImportError(f"Archive entry escapes the extract directory: '{name}'.")
-        total += info.file_size
-        if total > MAX_EXTRACTED_BYTES:
-            raise ImportError(
-                f"Archive expands to more than {MAX_EXTRACTED_BYTES // (1024 * 1024)} "
-                "MB; refusing to extract (possible zip bomb)."
-            )
-
-
-def _parse_shapefile_zip(uploaded):
-    tmp_dir = tempfile.mkdtemp()
-    try:
-        zip_path = os.path.join(tmp_dir, "upload.zip")
-        written = 0
-        with open(zip_path, "wb") as f:
-            for chunk in uploaded.chunks():
-                written += len(chunk)
-                if written > MAX_UPLOAD_BYTES:
-                    raise ImportError(
-                        f"Archive exceeds the {MAX_UPLOAD_BYTES // (1024 * 1024)} MB "
-                        "upload cap."
-                    )
-                f.write(chunk)
-
-        with zipfile.ZipFile(zip_path, "r") as zf:
-            _validate_zip_entries(zf, tmp_dir)
-            zf.extractall(tmp_dir)
-
-        # Deterministic pick: the first .shp by sorted full path (os.walk order
-        # is filesystem-dependent and was effectively arbitrary before).
-        shp_files = sorted(
-            os.path.join(root, fn)
-            for root, _dirs, files in os.walk(tmp_dir)
-            for fn in files
-            if fn.lower().endswith(".shp")
-        )
-        if not shp_files:
-            raise ImportError("No .shp file found in archive.")
-
-        return _extract_features_from_datasource(shp_files[0])
-    finally:
-        shutil.rmtree(tmp_dir, ignore_errors=True)
-
-
-def _parse_kml_file(uploaded):
-    tmp_dir = tempfile.mkdtemp()
-    try:
-        kml_path = os.path.join(tmp_dir, "upload.kml")
-        with open(kml_path, "wb") as f:
-            for chunk in uploaded.chunks():
-                f.write(chunk)
-        return _extract_features_from_datasource(kml_path)
-    finally:
-        shutil.rmtree(tmp_dir, ignore_errors=True)
-
-
-def _extract_features_from_datasource(path):
-    ds = DataSource(path)
-    features = []
-    for layer in ds:
-        for feat in layer:
-            geom = feat.geom
-            if geom.srid and geom.srid != 4326:
-                geom.transform(4326)
-            properties = {}
-            for field_name in feat.fields:
-                val = feat.get(field_name)
-                if val is not None:
-                    properties[field_name] = str(val)
-            features.append(
-                {
-                    "geometry": json.loads(geom.geojson),
-                    "properties": properties,
-                }
-            )
-    return features
+# The readers moved to core/geofiles.py (150-03, ISS-200) so the Setup Wizard,
+# a module every deployment gets, can read a shapefile or KML without
+# depending on this optional module. They are imported above and kept under
+# their old names here, so parse_upload and every caller of
+# infrastructure.importer._parse_* behave exactly as before.

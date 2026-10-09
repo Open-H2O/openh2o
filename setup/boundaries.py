@@ -11,13 +11,33 @@ operator (no browser, SSH only) following ``docs/AI-OPERATOR-GUIDE.md``'s own
 one implementation the wizard (``setup/views.py``) and the new
 ``import_boundary`` management command both call, so a file behaves
 identically no matter which path loads it.
+
+Since 150-03 (ISS-200) the wizard reads a file through ``boundary_from_upload``,
+which takes a zipped shapefile or a KML as well as GeoJSON (the readers live in
+``core/geofiles.py``); a GeoJSON file still goes through
+``boundary_from_geojson_text``, which ``import_boundary`` keeps calling.
 """
 
 import json
 import logging
 import math
 
-from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Polygon
+from django.contrib.gis.gdal import GDALException
+from django.contrib.gis.geos import (
+    GeometryCollection,
+    GEOSException,
+    GEOSGeometry,
+    MultiPolygon,
+    Polygon,
+)
+
+from core.geofiles import (
+    GEOJSON_EXTENSIONS,
+    THREE_FORMATS,
+    check_upload_size,
+    extension,
+    features_from_upload,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -277,6 +297,137 @@ def boundary_from_geojson_text(raw_text, *, fallback_name):
         or fallback_name
     )
     return name or "Uploaded Boundary", geom, boundary_attrs_from_properties(properties)
+
+
+NO_POLYGON_SENTENCE = (
+    "That file holds no polygon, only points or lines. The boundary must be an "
+    f"area outline, in {THREE_FORMATS}."
+)
+
+
+def _two_dimensional(coordinates):
+    """``coordinates`` with every position cut to longitude and latitude.
+
+    GDAL reads a KML position as (lon, lat, altitude), and ``Boundary.geometry``
+    is a 2D column, so the altitude is dropped before GEOS ever sees it.
+    """
+    if coordinates and isinstance(coordinates[0], (int, float)):
+        return list(coordinates[:2])
+    return [_two_dimensional(part) for part in coordinates]
+
+
+def _feature_name(properties) -> str:
+    """The feature's own name, whatever the case of its key (KML writes ``Name``)."""
+    if not isinstance(properties, dict):
+        return ""
+    value = _normalise_property_keys(properties).get("name")
+    return value.strip() if isinstance(value, str) else ""
+
+
+def _polygons_of(geom_dict):
+    """The Polygon parts of one feature geometry, 2D, each repaired if invalid."""
+    flat = dict(geom_dict, coordinates=_two_dimensional(geom_dict.get("coordinates") or []))
+    try:
+        geos = GEOSGeometry(json.dumps(flat), srid=4326)
+    except (GDALException, GEOSException, ValueError, TypeError):
+        logger.exception("GEOSGeometry parse failed")
+        raise ValueError(
+            "A polygon in the file could not be read. Check that the file opens "
+            "in a GIS program, then upload it again."
+        )
+    parts = [geos] if isinstance(geos, Polygon) else list(geos)
+    repaired = []
+    for part in parts:
+        if not part.valid:
+            part = part.buffer(0)
+        repaired.append(part)
+    return parts, repaired
+
+
+def _within_longitude_latitude(geom) -> bool:
+    xmin, ymin, xmax, ymax = geom.extent
+    return -180 <= xmin <= xmax <= 180 and -90 <= ymin <= ymax <= 90
+
+
+def boundary_from_upload(uploaded_file, *, fallback_name):
+    """Build a boundary from an uploaded map file: (name, geometry, attrs, polygon_count).
+
+    The Setup Wizard's one door for a file (150-03, ISS-200). A GeoJSON file
+    (``.geojson`` / ``.json``) goes through ``boundary_from_geojson_text``
+    exactly as it always has, so its name, geometry, attrs and error sentences
+    are unchanged; its ``polygon_count`` is the number of polygons in the
+    boundary it gives.
+
+    A zipped shapefile or a KML is read by ``core.geofiles.features_from_upload``
+    (the bulk importer's own readers, with their size and archive guards).
+    Every Polygon and MultiPolygon is kept and every point and line dropped;
+    the reader has already reprojected a layer whose .prj names another
+    projection to EPSG:4326. The boundary is the dissolved union of every
+    polygon, one MultiPolygon in srid 4326, repaired with ``buffer(0)`` as
+    ``parse_geojson_boundary`` repairs; ``polygon_count`` is the number of
+    polygons combined. The name is the first polygon feature's name, else
+    ``fallback_name``; attrs come from that feature's properties.
+
+    Raises ``ValueError`` (plain words) or ``ImportError`` (the archive
+    guards' own sentence); the GeoJSON path also lets ``UnicodeDecodeError``
+    and ``json.JSONDecodeError`` through for the caller to word.
+    """
+    if extension(getattr(uploaded_file, "name", "")) in GEOJSON_EXTENSIONS:
+        check_upload_size(uploaded_file)
+        name, geom, attrs = boundary_from_geojson_text(
+            uploaded_file.read(), fallback_name=fallback_name,
+        )
+        return name, geom, attrs, geom.num_geom
+
+    features = features_from_upload(uploaded_file)
+
+    first_properties = None
+    polygon_count = 0
+    parts = []
+    for feature in features:
+        geom_dict = feature.get("geometry")
+        if not isinstance(geom_dict, dict):
+            continue
+        if geom_dict.get("type") not in ("Polygon", "MultiPolygon"):
+            continue
+        originals, repaired = _polygons_of(geom_dict)
+        polygon_count += len(originals)
+        parts.extend(repaired)
+        if first_properties is None:
+            first_properties = feature.get("properties") or {}
+
+    if not parts:
+        raise ValueError(NO_POLYGON_SENTENCE)
+
+    try:
+        union = GeometryCollection(*parts, srid=4326).unary_union
+    except GEOSException:
+        logger.exception("Polygon union failed")
+        raise ValueError(
+            "The polygons in the file could not be combined into one boundary. "
+            "Check that the file opens in a GIS program, then upload it again."
+        )
+
+    if union.empty or union.geom_type not in ("Polygon", "MultiPolygon"):
+        raise ValueError(NO_POLYGON_SENTENCE)
+    if union.geom_type == "Polygon":
+        union = MultiPolygon(union, srid=4326)
+    if not union.valid:
+        union = union.buffer(0)
+        if union.geom_type == "Polygon":
+            union = MultiPolygon(union)
+    union.srid = 4326
+
+    if not _within_longitude_latitude(union):
+        raise ValueError(
+            "The coordinates in this file are not longitude and latitude, and "
+            "the file does not say which projection they are in. For a "
+            "shapefile, include its .prj file in the zip."
+        )
+
+    name = _feature_name(first_properties) or fallback_name
+    attrs = boundary_attrs_from_properties(first_properties)
+    return name or "Uploaded Boundary", union, attrs, polygon_count
 
 
 def parse_extent_bounds(north, south, east, west):

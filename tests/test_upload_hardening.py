@@ -50,7 +50,9 @@ def test_oversize_upload_rejected_before_parse():
 
 def test_zip_bomb_rejected_before_extract(monkeypatch):
     # Shrink the ceiling so a tiny zip trips it (no need to build 50 MB on disk).
-    monkeypatch.setattr(importer, "MAX_EXTRACTED_BYTES", 10)
+    # 150-03: the zip reader moved to core/geofiles.py and reads the cap there,
+    # so the patch goes on that module; importer only re-exports the name.
+    monkeypatch.setattr("core.geofiles.MAX_EXTRACTED_BYTES", 10)
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w") as zf:
         zf.writestr("layer.shp", b"x" * 100)  # 100 uncompressed bytes > 10

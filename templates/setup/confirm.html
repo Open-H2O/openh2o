@@ -50,6 +50,11 @@
   {% comment %}Stats card{% endcomment %}
   <div class="card-raised">
     <h2 class="card-header-ruled">{{ boundary.name }}</h2>
+    {% comment %}150-03 (ISS-200): an uploaded shapefile or KML with several
+    polygons becomes one dissolved boundary; say so beside its name.{% endcomment %}
+    {% if polygon_count and polygon_count > 1 %}
+    <p class="text-secondary text-sm mb-md">The map shows {{ polygon_count }} polygons combined into one boundary.</p>
+    {% endif %}
     {% comment %}
       Every figure here is the district's own: it comes from the uploaded
       file's properties, never from a calculation over the geometry. When the

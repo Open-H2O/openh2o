@@ -98,7 +98,7 @@
       <input type="hidden" name="action" value="upload">
 
       <div class="form-group">
-        <label class="form-label" for="geojson_file">Boundary map file (GeoJSON)</label>
+        <label class="form-label" for="geojson_file">Boundary map file</label>
         <div
           class="upload-zone"
           id="upload-zone"
@@ -113,19 +113,19 @@
             <line x1="12" y1="3" x2="12" y2="15"/>
           </svg>
           <p id="zone-label" style="margin: 0; font-size: 0.875rem;">
-            Drag and drop a <strong>.geojson</strong> or <strong>.json</strong> file here, or click to browse
+            Drag and drop a zipped shapefile (<strong>.zip</strong>), a KML (<strong>.kml</strong>) or a GeoJSON (<strong>.geojson</strong> or <strong>.json</strong>) file here, or click to browse.
           </p>
         </div>
         <input
           type="file"
           name="geojson_file"
           id="geojson_file"
-          accept=".geojson,.json"
+          accept=".geojson,.json,.zip,.kml"
           style="display: none;"
           onchange="updateZoneLabel(this.files[0])"
         >
         <p class="form-help">This is one shape drawn on a map: the outline of the area this deployment covers. A GIS consultant, or whoever handles the district's mapping, can export one, and can fix a file rejected here.</p>
-        <p class="form-help">Whoever prepares the file needs a GeoJSON Feature or FeatureCollection whose geometry is a Polygon or MultiPolygon, in WGS84 (EPSG:4326).</p>
+        <p class="form-help">OpenH2O reads a shapefile's projection from the .prj file in its zip and converts the coordinates to WGS84 longitude and latitude when needed; a KML or GeoJSON file is read as WGS84. When the file holds several polygons, OpenH2O combines them into one boundary.</p>
       </div>
 
       <div class="form-footer">
