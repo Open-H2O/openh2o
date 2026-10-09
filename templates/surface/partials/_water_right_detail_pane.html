@@ -22,11 +22,6 @@
 </div>
 {% endif %}
 
-{% if user_can_write %}
-<div class="row-start" style="gap: var(--space-sm); margin-bottom: var(--space-md);">
-  <a href="{% url 'surface:water_right_edit' water_right.pk %}" class="btn-secondary btn-sm">Edit right</a>
-</div>
-{% endif %}
 
 {% comment %}
   143-10 (R-121, R-122, R-055). Composed as a page at 1,730 CSS px, reusing
@@ -40,7 +35,11 @@
 
     <!-- Right Info card -->
     <div class="card-raised page-grid-account-info">
-      <h2 class="section-header">Right information</h2>
+      {# 150-02: the Edit link sits in the card's head, as the account card's does; a button floating between the map and the cards read as orphaned (page verdict, round 1). #}
+      <div class="row-between">
+        <h2 class="section-header">Right information</h2>
+        {% if user_can_write %}<a href="{% url 'surface:water_right_edit' water_right.pk %}" class="text-tertiary text-xs">Edit</a>{% endif %}
+      </div>
 
       <div class="field-grid-2">
         <div class="field-group">
@@ -269,6 +268,10 @@
         those groups, so the two never disagree). Total is the group's own
         sum; a year past the face value leads with the amount over it, in
         deficit orange; a right with no face value leaves the last cell empty.
+        150-02 round 1: a reader found "Recorded" meaning two things (the
+        equation's Recorded, which holds the estimates, and a table column
+        that did not), so the table carries Total and Of it estimated only;
+        the typed part is the difference and gets no column of its own.
       {% endcomment %}
       <div class="row-between" style="margin-top: var(--space-lg); margin-bottom: var(--space-xs);">
         <h3 class="text-sm font-semibold text-secondary m-0">By water year</h3>
@@ -279,9 +282,8 @@
         <thead>
           <tr>
             <th>Water year</th>
-            <th class="th-right">Recorded</th>
-            <th class="th-right">Estimated</th>
             <th class="th-right">Total</th>
+            <th class="th-right">Of it estimated</th>
             <th>Against the face value</th>
           </tr>
         </thead>
@@ -289,9 +291,8 @@
           {% for year in face_value_years %}
           <tr>
             <td class="text-secondary">{{ year.period_name }}</td>
-            <td class="td-num">{{ year.recorded_af|floatformat:2|intcomma }}</td>
-            <td class="td-num">{{ year.estimated_af|floatformat:2|intcomma }}{% if year.months_estimated %}<div class="text-tertiary text-xs">{{ year.months_estimated }} of {{ year.months }} month{{ year.months|pluralize }}</div>{% endif %}</td>
             <td class="td-num">{{ year.total_af|floatformat:2|intcomma }}</td>
+            <td class="td-num">{{ year.estimated_af|floatformat:2|intcomma }}{% if year.months_estimated %}<div class="text-tertiary text-xs">{{ year.months_estimated }} of {{ year.months }} month{{ year.months|pluralize }}</div>{% endif %}</td>
             <td>{% if year.over_by_af is not None %}<b class="text-deficit">{{ year.over_by_af|floatformat:2|intcomma }} AF</b> over its face value{% elif year.remaining_af is not None %}<span class="text-secondary">{{ year.remaining_af|floatformat:2|intcomma }} AF remaining</span>{% endif %}</td>
           </tr>
           {% endfor %}
