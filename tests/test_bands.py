@@ -143,10 +143,10 @@ def test_device_with_no_stated_accuracy_has_no_band():
 # 9. the tooltip's words, the percent without trailing zeros
 def test_band_words_name_the_devices_stated_accuracy():
     assert band_words(Decimal("5.00")) == (
-        "From the measuring device's stated accuracy (±5%)"
+        "The band comes from the measuring device's stated accuracy (±5%)."
     )
     assert band_words(Decimal("2.50")) == (
-        "From the measuring device's stated accuracy (±2.5%)"
+        "The band comes from the measuring device's stated accuracy (±2.5%)."
     )
 
 

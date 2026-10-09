@@ -75,7 +75,7 @@
           <td class="col-amount td-num">{{ surface_delivered_af|floatformat:2|intcomma }}</td>
           <td>
             {% if delivery_split == "own" %}
-            This field's own delivery record, typed on its ledger or imported.
+            This is the field's own delivery record, typed on its ledger or imported.
             {% elif delivery_split == "fixed_share" %}
             This district's record is a headgate total, from a meter or the ditch tender's estimate. No field on this headgate has an estimated use on record for the month, so the total was divided by each field's fixed share on file.
             {% else %}

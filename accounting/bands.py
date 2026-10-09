@@ -155,7 +155,7 @@ def share_bands(records, share):
 def band_words(percent):
     """The tooltip's source line, the percent without trailing zeros."""
     shown = format(Decimal(percent).normalize(), "f")
-    return f"From the measuring device's stated accuracy (±{shown}%)"
+    return f"The band comes from the measuring device's stated accuracy (±{shown}%)."
 
 
 def month_bounds(first):

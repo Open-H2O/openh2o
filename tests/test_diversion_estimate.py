@@ -897,7 +897,7 @@ def test_an_edited_estimate_at_a_point_with_a_device_in_service_becomes_a_device
     assert response.status_code == 200
     record.refresh_from_db()
     assert record.method == "device"
-    assert "Saved as a measuring device." in response.content.decode()
+    assert "Its method is now a measuring device." in response.content.decode()
 
 
 def test_an_estimate_saved_unchanged_stays_an_estimate():
@@ -911,7 +911,7 @@ def test_an_estimate_saved_unchanged_stays_an_estimate():
     record.refresh_from_db()
     assert record.method == ESTIMATE
     assert record.volume_acre_feet == Decimal("98.0392")
-    assert "Saved as" not in response.content.decode()
+    assert "Its method is now" not in response.content.decode()
 
 
 def test_an_estimate_saved_with_another_method_keeps_the_method_posted():
@@ -944,7 +944,7 @@ def test_the_edit_form_says_what_saving_an_estimate_does_and_the_save_says_which
 
     assert estimate_form.count(ESTIMATE_LINE) == 1
     assert ESTIMATE_LINE not in typed_form
-    assert "Saved as a measurement methodology on file." in saved
+    assert "Its method is now a measurement methodology on file." in saved
 
 
 def test_a_device_link_that_is_not_current_does_not_count():

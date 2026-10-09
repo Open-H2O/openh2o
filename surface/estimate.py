@@ -140,7 +140,7 @@ def typed_method_for(point, month):
 def saved_as_sentence(method):
     """The line the edit page adds when an estimate became a typed record."""
     label = dict(DiversionRecord.METHOD_CHOICES)[method]
-    return f"Saved as {label[0].lower()}{label[1:]}."
+    return f"Its method is now {label[0].lower()}{label[1:]}."
 
 
 # --------------------------------------------------------------------------
