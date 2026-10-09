@@ -130,7 +130,7 @@ def test_w3_on_a_facility_with_no_location_the_map_row_is_the_first_field_group(
     resp = _client().get(reverse("drinking:facility_detail", args=[facility.pk]))
     assert resp.status_code == 200
     html = resp.content.decode()
-    grid = html.split('<div class="form-grid-2col mt-md">', 1)[1]
+    grid = html.split('<div class="field-grid-auto mt-md">', 1)[1]
     first_group = grid.split('<div class="field-group', 2)[1]
     first_label = first_group.split('<div class="field-label">', 1)[1].split("</div>", 1)[0]
     # RED before: the first field group was Facility ID; Map was the tenth.
@@ -154,7 +154,7 @@ def test_w3_a_located_facility_has_no_map_row():
     ).content.decode()
     assert "No published coordinate for this facility" not in html
     # The map card leads instead, and the record grid starts at Facility ID.
-    grid = html.split('<div class="form-grid-2col mt-md">', 1)[1]
+    grid = html.split('<div class="field-grid-auto mt-md">', 1)[1]
     first_group = grid.split('<div class="field-group', 2)[1]
     assert first_group.split('<div class="field-label">', 1)[1].startswith("Facility ID</div>")
 
