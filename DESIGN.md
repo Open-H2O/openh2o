@@ -188,6 +188,49 @@ the same idea always looks the same. All live in `static/css/app.css`.
 - `.data-table.waterfall` — calculation-run tables shaded by step type
   (reduction = furnace, addition = forest, start/pass-through = neutral).
 
+### The layout rules of the layout pass (Phase 150-04, 2026-10-09)
+
+Every fault a fresh reader named during the words phase (149.1) and on the small-dataset instance
+(ISS-201) was measured live and fixed at its shared cause where one existed. The rules, each in
+`static/css/app.css` under "150-04":
+
+- **A form is a grid, not a column of bars.** `.form-grid` lays field groups in two tracks; a field
+  whose value is a sentence or a name spans both (`.form-span-2`); a one-line form (a step with no
+  options) is `.form-grid--row`. Form pages sit at `.page-medium` with `page-head--medium`; the 640 px
+  measure is for a page of one or two fields. One-control cards (a settings page, the wizard's two
+  boundary choices) sit in `.card-columns`, two or three across, each ending at its content.
+- **A footer's figures wrap.** `.tfoot-figures` on a footer cell that holds several figures; a
+  `nowrap` sentence in a `colspan` cell sets a floor under every column it spans (the ledger at
+  1,024 was 830 px wide in a 722 px card for that reason alone).
+- **The header of a table pins to the document, and a table wider than its card scrolls inside the
+  card, never the page.** `.app-content` is not a scroll container (`overflow-x: clip; overflow-y:
+  visible`); `static/js/table-scroll.js` marks each `.table-scroll` wrapper `data-overflow`: a
+  fitting wrapper is `overflow-x: visible`, so `.data-table thead th { position: sticky }` pins to
+  the document scroll (dead since Phase 75, ISS-167); an overflowing one scrolls and its first column
+  stays put. The dashboard's two grouped tables do this below 1,330 and 1,435 px (150-01's option 1
+  for fault 4); the canal tables fit at 1,440 and scroll below.
+- **A reference row is secondary** (`tr.receipt-aside` on the receipt's meter row); **a block's title
+  carries the head's weight** above its fields (the worksheet); **the primary action sits after the
+  statement that qualifies it** (the report's Download beside the no-filing sentence, not above it);
+  **a detail map's one mark is sized for its band**, not the overview's zoom ramp.
+- **A sidebar label wraps** rather than clipping at the rail (`.sidebar-link-text`); **a code string
+  wraps** (`.text-mono { overflow-wrap: anywhere }`); **the health cards' badges are the pill size**
+  and every badge colour is a token (`--color-muted` joined `tokens.css`; the last hard-coded badge
+  colour went).
+- **A class a template names is defined** (`.font-semibold`, `.text-primary`, `.row-clickable`;
+  ISS-166), and a hygiene test keeps the list from growing back.
+
+What was tried and withdrawn, so it is not tried again: **a short page's void has no layout fix.**
+With the footer pinned to the frame (the shell since Phase 75), a four-row list, the home page on a
+small instance and the signed-out front page read DO NOT SHIP for "the dead void between the cards
+and the footer"; with the footer riding the content, the same pages read DO NOT SHIP for "the footer
+floating mid-page" (one read SHIP 4 with that as its worst fault). The same reader faulted a panel
+beside a taller card both stretched ("mostly an empty dark box") and at its content's height ("a
+large dead gap under the stats panel"). Two readers contradicting each other on one element is the
+stop rule: the shell and the 143-03 matched row stay, and the one shape that fills the gap, the
+field page's balance-beside-map grid (150-02), is Brent's ruling. The reads are in
+`.planning/phases/150-water-first-screens/page-verdict/VERDICTS-150-04.md`.
+
 ### Casing convention
 
 UI labels, eyebrows, section headers, and disclosure triggers are **sentence
