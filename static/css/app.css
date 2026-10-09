@@ -1429,8 +1429,11 @@ html { color-scheme: dark; }
 .data-table--canal-water {
     table-layout: fixed;
     /* Below this the fixed columns squeeze a figure across its divider; the
-       table scrolls inside its .table-scroll wrapper instead. */
-    min-width: 64rem;
+       table scrolls inside its .table-scroll wrapper instead. 150-04: 63.5rem,
+       not 64: at a 1,440 viewport the card holds 1,021px and 64rem is 1,024,
+       so the table scrolled by three pixels at Brent's common width; the
+       sweep at 1,440 shows 0 crossings at 63.5rem with the 2px tighter cells. */
+    min-width: 63.5rem;
 }
 .data-table--canal-water td {
     white-space: nowrap;
