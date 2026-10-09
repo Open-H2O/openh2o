@@ -54,18 +54,27 @@
     DEMONSTRATION-NOT-SUBMITTABLE in its name and header.
   {% endcomment %}
   {# What this file is, and that there is no filing path: CLAUDE.md, guarded by tests/test_no_filing_path_claim.py #}
-  <div class="card-raised" style="border-left: 3px solid var(--color-accent);">
+  {% comment %}
+    150-04 (W4, rule D4): Download CSV sits in this box's row, after the
+    statement that qualifies it (text left, button right, the shape of the
+    "Save typing" card below). It was on the title line (R-087), above the
+    sentence that says the state system will not take the file.
+  {% endcomment %}
+  <div class="card-raised row-between" style="border-left: 3px solid var(--color-accent);">
     <p class="text-secondary text-sm m-0">
       <strong style="color: var(--color-text-primary);">OpenH2O does not submit reports to the state.</strong>
       This file contains your figures in the state system's format, but that system does
       not currently accept files from OpenH2O. No data is sent to the Water Board.
     </p>
+    {% if submission.generated_file %}
+    <a class="btn-primary" href="{% url 'reporting:report_download' pk=submission.pk %}">Download CSV</a>
+    {% endif %}
   </div>
 
   {% comment %}
     Metadata: Report type and Period moved out (the head says both once,
-    R-088); Download moved to the title-line button (R-087), so this card
-    carries only when the file was made and what it is.
+    R-088); Download moved out (R-087; now in the no-filing box above, 150-04),
+    so this card carries only when the file was made and what it is.
   {% endcomment %}
   <!-- Metadata -->
   <div class="card-raised">

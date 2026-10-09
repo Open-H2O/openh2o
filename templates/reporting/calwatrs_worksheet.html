@@ -37,11 +37,13 @@
 
   {% for block in blocks %}
   <div class="card-raised">
+    {% comment %} 150-04 (W2, rule D2): the block's title is its head, at the card
+       head's weight above the fields, not a fifth equal field among them. The
+       name joins the title the way the facility page's head joins its name
+       (a colon, the name in the secondary colour). An h2: the page's h1 is the
+       only heading above it. {% endcomment %}
+    <h2 class="section-header-sm">Point of diversion {{ forloop.counter }} of {{ blocks|length }}: <span class="text-secondary">{{ block.pod_name }}</span>{% if block.stream_name %} <span class="text-tertiary">({{ block.stream_name }})</span>{% endif %}</h2>
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--space-md); margin-bottom: var(--space-md);">
-      <div class="field-group mb-0">
-        <div class="field-label">Point of diversion {{ forloop.counter }} of {{ blocks|length }}</div>
-        <div class="field-value-sm">{{ block.pod_name }}{% if block.stream_name %} <span class="text-tertiary">({{ block.stream_name }})</span>{% endif %}</div>
-      </div>
       <div class="field-group mb-0">
         <div class="field-label">Water right</div>
         <div class="field-value-sm">

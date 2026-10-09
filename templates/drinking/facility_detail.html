@@ -119,6 +119,26 @@
     <p class="mt-sm" style="margin-bottom: 0;"><a href="{% url 'drinking:facility_edit' facility.pk %}" class="btn-secondary btn-sm">{% if facility.added_by_hand %}Edit facility{% else %}Edit local name{% endif %}</a></p>
 
     <div class="form-grid-2col mt-md">
+      {% if not geojson %}
+      {% comment %}
+        149.1-07 (R-065), round 2: the no-map fact is a row of the record (a
+        fact beside the thing it governs), not a line under the card; the fresh
+        reader found the line under the card and called it a paragraph.
+        150-04 (W3, rule D3): the two rows lead the grid and span its width,
+        where the map card stands on a located facility; as the tenth field of
+        a two-column grid the Map row was "in the right-hand column, easy to
+        miss". `.field-grid-2-span` is `grid-column: 1 / -1`, unscoped, so it
+        spans this grid too.
+      {% endcomment %}
+      <div class="field-group field-grid-2-span">
+        <div class="field-label">Map</div>
+        <div class="field-value">None. No published coordinate for this facility</div>
+      </div>
+      <div class="field-group field-grid-2-span">
+        <div class="field-label">Positions from</div>
+        <div class="field-value">The state's Groundwater Ambient Monitoring and Assessment Program (GAMA), for groundwater sources only</div>
+      </div>
+      {% endif %}
       <div class="field-group">
         <div class="field-label">Facility ID</div>
         <div class="field-value-mono">{{ facility.facility_id }}</div>
@@ -155,21 +175,6 @@
       <div class="field-group">
         <div class="field-label">EPA facility ID</div>
         <div class="field-value-mono">{{ facility.epa_facility_id }}</div>
-      </div>
-      {% endif %}
-      {% if not geojson %}
-      {% comment %}
-        149.1-07 (R-065), round 2: the no-map fact is a row of the record (a
-        fact beside the thing it governs), not a line under the card; the fresh
-        reader found the line under the card and called it a paragraph.
-      {% endcomment %}
-      <div class="field-group">
-        <div class="field-label">Map</div>
-        <div class="field-value">None. No published coordinate for this facility</div>
-      </div>
-      <div class="field-group">
-        <div class="field-label">Positions from</div>
-        <div class="field-value">The state's Groundwater Ambient Monitoring and Assessment Program (GAMA), for groundwater sources only</div>
       </div>
       {% endif %}
       {% comment %}

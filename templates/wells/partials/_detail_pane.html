@@ -43,7 +43,7 @@
 <div class="pane-stack">
   <div class="page-grid-account page-grid-account--source-order">
 
-    <!-- Identification, State reporting (GEARS), Construction -->
+    <!-- Identification, State reporting (GEARS); Construction is the right column's last card -->
     <div class="card-raised page-grid-account-info">
 
       {% comment %}
@@ -154,21 +154,6 @@
         {% include "wells/partials/_editable_field.html" with ef=ef.accuracy_band %}
       </div>
 
-      <!-- ── Construction (DWR Well Completion Report) ── -->
-      <h2 class="section-header mt-lg">Construction (DWR Well Completion Report)</h2>
-
-      <div class="field-grid-2">
-        {% include "wells/partials/_editable_field.html" with ef=ef.depth_ft %}
-        {% include "wells/partials/_editable_field.html" with ef=ef.casing_diameter_in %}
-        {% include "wells/partials/_editable_field.html" with ef=ef.casing_material %}
-        {% include "wells/partials/_editable_field.html" with ef=ef.screen_top_ft %}
-        {% include "wells/partials/_editable_field.html" with ef=ef.screen_bottom_ft %}
-        {% include "wells/partials/_editable_field.html" with ef=ef.tested_yield_gpm %}
-        {% include "wells/partials/_editable_field.html" with ef=ef.pump_type %}
-        {# Notes spans both columns: a long note wraps mid-token in a half-width column and Notes is the one field here without a fixed shape. #}
-        {% include "wells/partials/_editable_field.html" with ef=ef.notes extra_class="field-grid-2-span" %}
-      </div>
-
       <div class="border-separator">
         <div class="text-tertiary text-xs">
           Created {{ well.created_at|date:"M d, Y" }} &middot; Updated {{ well.updated_at|date:"M d, Y" }}
@@ -265,6 +250,32 @@
           </div>
         </div>
         {% endif %}
+
+        {% comment %}
+          150-04 (S6, rule A3): Construction was the third section of the
+          Identification card, which ran to y≈1,880 while this column ended at
+          Monitoring data (y≈1,140 on /wells/10/). As this column's last card
+          the two columns reach about one height. Each editable field swaps
+          into its own `#field-<name>` target (_editable_field.html,
+          _field_edit.html, wells/views.py::well_edit_field), so the card that
+          holds a field does not matter to its editor.
+        {% endcomment %}
+        <!-- Construction card -->
+        <div class="card-raised">
+          <h2 class="section-header">Construction (DWR Well Completion Report)</h2>
+
+          <div class="field-grid-2">
+            {% include "wells/partials/_editable_field.html" with ef=ef.depth_ft %}
+            {% include "wells/partials/_editable_field.html" with ef=ef.casing_diameter_in %}
+            {% include "wells/partials/_editable_field.html" with ef=ef.casing_material %}
+            {% include "wells/partials/_editable_field.html" with ef=ef.screen_top_ft %}
+            {% include "wells/partials/_editable_field.html" with ef=ef.screen_bottom_ft %}
+            {% include "wells/partials/_editable_field.html" with ef=ef.tested_yield_gpm %}
+            {% include "wells/partials/_editable_field.html" with ef=ef.pump_type %}
+            {# Notes spans both columns: a long note wraps mid-token in a half-width column and Notes is the one field here without a fixed shape. #}
+            {% include "wells/partials/_editable_field.html" with ef=ef.notes extra_class="field-grid-2-span" %}
+          </div>
+        </div>
 
       </div>
     </div>

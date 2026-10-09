@@ -478,13 +478,23 @@ OH2O._frameBounds = function (map, bounds) {
                older cached response, or a caller that never asked for this).
      geojson   the FeatureCollection just loaded into `src`, read for the
                `label_point` properties above; ignored when isPoint. */
+/* 150-04 (W6, rule D6): a detail map's one mark is sized for its band, not
+   the overview's zoom ramp. The detail map frames a single point at zoom 14,
+   where ramp(3.5, 8.5) gives a radius under 7, and the mark sat as "a tiny
+   dot" in a 1,430 x 380 band. Here it is 9 px at every zoom, with the glow
+   halo at the ratio glowPaint keeps to the ramp's top (2.1x). Only
+   _addDetailLayers reads these; the overview maps keep pointPaint's ramp. */
+OH2O.DETAIL_POINT_RADIUS = 9;
+OH2O.DETAIL_GLOW_RADIUS = OH2O.DETAIL_POINT_RADIUS * 2.1;
+
 OH2O._addDetailLayers = function (map, src, key, isPoint, popup, opts) {
     opts = opts || {};
     var color = (OH2O.entities[key] || {}).color || OH2O.colors.blue;
     if (isPoint) {
-        map.addLayer({ id: src + '-glow', type: 'circle', source: src, paint: OH2O.glowPaint(key) });
+        map.addLayer({ id: src + '-glow', type: 'circle', source: src,
+            paint: Object.assign(OH2O.glowPaint(key), { 'circle-radius': OH2O.DETAIL_GLOW_RADIUS }) });
         map.addLayer({ id: src + '-point', type: 'circle', source: src,
-            paint: OH2O.pointPaint(key, { 'circle-stroke-width': 2 }) });
+            paint: OH2O.pointPaint(key, { 'circle-stroke-width': 2, 'circle-radius': OH2O.DETAIL_POINT_RADIUS }) });
         OH2O.addDetailLabel(map, src, key, { id: src + '-label' });
         if (popup) OH2O.attachPopup(map, src + '-point', popup);
     } else {

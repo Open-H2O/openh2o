@@ -4,6 +4,7 @@ chosen boundary, grouped by provider (friendly DataSource.name). Each row reuses
 datasync:station_toggle (swaps its own button); "Enable all" posts to
 setup:activate_stations and swaps this whole block. Empty when no stations were
 discovered — the next-steps panel still renders below.
+150-04 (F6): the panel's one action also sits in this card's head row.
 {% endcomment %}
 <div id="station-review">
   {% if review_total %}
@@ -15,15 +16,25 @@ discovered — the next-steps panel still renders below.
           {{ review_total }} station{{ review_total|pluralize }} inside this boundary, {{ review_active }} switched on{% if review_inactive %}; switch on the ones to sync, or Enable all{% endif %}.
         </p>
       </div>
-      {% if review_inactive %}
-      <button
-        hx-post="{% url 'setup:activate_stations' %}"
-        hx-target="#station-review"
-        hx-swap="outerHTML"
-        class="btn-primary"
-        style="white-space: nowrap; align-self: flex-start;"
-      >Enable all {{ review_inactive }} →</button>
-      {% endif %}
+      {% comment %} 150-04 (F6, rule D4): the finish panel's one action
+         (_progress.html, "Open Getting started") also sits here beside
+         "Enable all", so the finish is not below the station list. Same
+         markup as the panel's; this partial re-renders alone after Enable all
+         (setup_activate_stations) and the link survives that swap. `.row-end`
+         wraps, so the two buttons stack under each other at a narrow width
+         rather than pushing the row past the card. {% endcomment %}
+      <div class="row-end">
+        {% if review_inactive %}
+        <button
+          hx-post="{% url 'setup:activate_stations' %}"
+          hx-target="#station-review"
+          hx-swap="outerHTML"
+          class="btn-primary"
+          style="white-space: nowrap; align-self: flex-start;"
+        >Enable all {{ review_inactive }} →</button>
+        {% endif %}
+        <a href="{% url 'getting_started' %}" class="btn-primary">Open Getting started →</a>
+      </div>
     </div>
 
     {% for group in review_groups %}

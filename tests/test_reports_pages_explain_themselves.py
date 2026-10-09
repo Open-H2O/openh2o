@@ -5,8 +5,10 @@ themselves instead of repeating themselves or leaving a blocker unfixable.
 R-084/R-085: the shared-supply card says it is a check, not a filing, and a
 search box no longer renders over an empty history.
 R-087/R-088: the download link (the one thing the report page produces) is
-the page's one primary action, on the title line, and the report's type and
-period print once in the head rather than three times before any figure.
+the page's one primary action (on the title line until 150-04 moved it into
+the no-filing box's row, after the statement that qualifies it), and the
+report's type and period print once in the head rather than three times
+before any figure.
 R-093: the worksheet's two blockers link to the record the reader must go
 fix, rather than naming it and leaving them to find it themselves.
 
@@ -71,7 +73,7 @@ class TestReportsPageEmptyHistoryHidesItsToolbar:
 
 
 class TestReportPageLeadsWithItsDownload:
-    def test_a_submission_with_a_file_shows_one_download_button_on_the_title_line(
+    def test_a_submission_with_a_file_shows_one_download_button_after_the_no_filing_statement(
         self, auth_client
     ):
         template, _ = ReportTemplate.objects.get_or_create(
@@ -85,10 +87,17 @@ class TestReportPageLeadsWithItsDownload:
         resp = auth_client.get(reverse("reporting:report_detail", args=[sub.pk]))
         body = resp.content.decode()
         assert resp.status_code == 200
+        # 150-04 (W4, rule D4): the button left the title line (R-087) for the
+        # no-filing box's row, after the sentence that qualifies it. The title
+        # line carries no action now; the box carries exactly one.
         actions = body.split('class="page-head-actions"')[1].split("</div>", 1)[0]
-        assert actions.count('class="btn-primary"') == 1
-        assert "Download CSV" in actions
-        assert reverse("reporting:report_download", args=[sub.pk]) in actions
+        assert actions.count('class="btn-primary"') == 0
+        box = body.split('class="card-raised row-between"', 1)[1].split("</div>", 1)[0]
+        assert box.count('class="btn-primary"') == 1
+        assert "Download CSV" in box
+        assert reverse("reporting:report_download", args=[sub.pk]) in box
+        assert box.index("No data is sent to the Water Board.") < box.index("Download CSV")
+        assert body.count("Download CSV") == 1
         # The template name printed three times before this plan (the
         # breadcrumb, the pane-header title and subtitle standing in for the
         # crumb row, and the metadata card's first field) and now prints only
