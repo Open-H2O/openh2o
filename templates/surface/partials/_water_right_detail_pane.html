@@ -161,14 +161,20 @@
       current_totals, the SAME group _water_right_detail_context builds the
       table from below -- no second query. Without a face value, the period
       page's shape: one --result (Recorded alone), no operators.
+
+      150-02 Task 5: under the panel, every water year on record is set
+      against the face value (surface/face_value.py, face_value_years), and
+      the card is its content's height (ISS-201): the modifier drops the
+      stretch to the information card's height that left the panel centred
+      in blank fill, on this page only.
     {% endcomment %}
-    <div class="card-raised page-grid-account-balance">
+    <div class="card-raised page-grid-account-balance page-grid-account-balance--content-height">
       <div class="page-grid-account-head mb-md">
         <h2 class="section-header-flush">Face value against records</h2>
         <div class="text-secondary text-base">
           {% if water_right.face_value_acre_feet %}
             {% if current_period %}
-              {% if current_totals %}{{ current_period.name }} &middot; {{ current_totals.count }} record{{ current_totals.count|pluralize }} &middot; Remaining is the face value less the volume recorded.{% else %}No records in {{ current_period.name }}.{% endif %}
+              {% if current_totals %}{{ current_period.name }} &middot; {{ current_totals.count }} record{{ current_totals.count|pluralize }} &middot; Remaining is the face value less the volume recorded. Every water year on record is compared below.{% else %}No records in {{ current_period.name }}.{% endif %}
             {% else %}
               No water year on record.
             {% endif %}
@@ -192,7 +198,7 @@
               <div class="budget-seg">
                 <div class="budget-seg-label">Recorded</div>
                 <div class="budget-seg-value">{{ current_totals.diverted|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
-                <div class="budget-seg-caption">diverted at {{ pod_breakdown|length }} point{{ pod_breakdown|length|pluralize }}, {{ current_period.name }}</div>
+                <div class="budget-seg-caption">{% if current_holds_estimate %}recorded and estimated, {% endif %}diverted at {{ pod_breakdown|length }} point{{ pod_breakdown|length|pluralize }}, {{ current_period.name }}</div>
               </div>
               <div class="budget-op">&equals;</div>
               <div class="budget-seg budget-seg--result">
@@ -246,13 +252,51 @@
               <div class="budget-seg-label">Recorded</div>
               {% if current_totals %}
               <div class="budget-seg-value">{{ current_totals.diverted|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
-              <div class="budget-seg-caption">diverted at {{ pod_breakdown|length }} point{{ pod_breakdown|length|pluralize }}, {{ current_period.name }}</div>
+              <div class="budget-seg-caption">{% if current_holds_estimate %}recorded and estimated, {% endif %}diverted at {{ pod_breakdown|length }} point{{ pod_breakdown|length|pluralize }}, {{ current_period.name }}</div>
               {% else %}
               <div class="budget-seg-value text-tertiary">&mdash;</div>
               {% endif %}
             </div>
           </div>
         </div>
+      </div>
+      {% endif %}
+
+      {% if face_value_years %}
+      {% comment %}
+        Every water year on record against the face value, newest first, one
+        row per group of the records table below (surface/face_value.py reads
+        those groups, so the two never disagree). Total is the group's own
+        sum; a year past the face value leads with the amount over it, in
+        deficit orange; a right with no face value leaves the last cell empty.
+      {% endcomment %}
+      <div class="row-between" style="margin-top: var(--space-lg); margin-bottom: var(--space-xs);">
+        <h3 class="text-sm font-semibold text-secondary m-0">By water year</h3>
+        <span class="text-tertiary text-xs">Acre-feet</span>
+      </div>
+      <div class="table-scroll">
+      <table class="data-table text-sm">
+        <thead>
+          <tr>
+            <th>Water year</th>
+            <th class="th-right">Recorded</th>
+            <th class="th-right">Estimated</th>
+            <th class="th-right">Total</th>
+            <th>Against the face value</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for year in face_value_years %}
+          <tr>
+            <td class="text-secondary">{{ year.period_name }}</td>
+            <td class="td-num">{{ year.recorded_af|floatformat:2|intcomma }}</td>
+            <td class="td-num">{{ year.estimated_af|floatformat:2|intcomma }}{% if year.months_estimated %}<div class="text-tertiary text-xs">{{ year.months_estimated }} of {{ year.months }} month{{ year.months|pluralize }}</div>{% endif %}</td>
+            <td class="td-num">{{ year.total_af|floatformat:2|intcomma }}</td>
+            <td>{% if year.over_by_af is not None %}<b class="text-deficit">{{ year.over_by_af|floatformat:2|intcomma }} AF</b> over its face value{% elif year.remaining_af is not None %}<span class="text-secondary">{{ year.remaining_af|floatformat:2|intcomma }} AF remaining</span>{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
       </div>
       {% endif %}
     </div>
@@ -283,11 +327,14 @@
         <tbody>
           {% for group in record_groups %}
           <tr class="row-group">
-            <td colspan="4">{{ group.period_name }} &middot; {{ group.count }} record{{ group.count|pluralize }}</td>
+            <td colspan="4">{{ group.period_name }} &middot; {{ group.count }} record{{ group.count|pluralize }}{% if group.against_face_value.months_estimated %} &middot; {{ group.against_face_value.months_estimated }} of {{ group.against_face_value.months }} month{{ group.against_face_value.months|pluralize }} estimated{% endif %}</td>
           </tr>
           {% for record in group.rows %}
           <tr>
-            <td class="text-secondary">{{ record.month|date:"M Y" }}</td>
+            <td class="text-secondary">
+              {{ record.month|date:"M Y" }}
+              {% if record.method == "estimated_from_use" %}<span class="badge badge-grey" title="At least one diversion record this month is estimated from use, not measured.">Estimated</span>{% endif %}
+            </td>
             <td class="text-secondary">{{ record.point_of_diversion.name }}</td>
             <td class="td-num">{{ record.volume_acre_feet|floatformat:2|intcomma }}</td>
             <td class="text-tertiary">{{ record.get_diversion_type_display }}</td>
@@ -311,10 +358,11 @@
       Points of diversion + Active curtailments, side by side when an order
       may apply or a right could not be matched for want of a date;
       otherwise Points of diversion spans full width rather than sitting
-      alone in a half-width column beside nothing.
+      alone in a half-width column beside nothing. 150-02 (ISS-201): each
+      card is its content's height, not stretched to its neighbour's.
     {% endcomment %}
     {% if active_curtailments or unmatched_curtailments %}
-    <div class="page-grid-2col page-grid-account-full">
+    <div class="page-grid-2col page-grid-2col--align-start page-grid-account-full">
       <div class="card-raised">
         <h2 class="section-header mb-md">Points of diversion</h2>
         {% if pods %}

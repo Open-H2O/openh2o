@@ -47,7 +47,14 @@ from surface import importer
 from surface import diversion_import as diversion_import_service
 from surface.services import canal_water_by_month
 from surface.curtailments import orders_that_may_apply
-from surface.estimate import discard_estimate, replaced_sentence
+from surface.estimate import (
+    ESTIMATE_METHOD,
+    discard_estimate,
+    replaced_sentence,
+    saved_as_sentence,
+    typed_method_for,
+)
+from surface.face_value import years_against_face_value
 from surface.forms import (
     CurtailmentOrderForm,
     DiversionRecordForm,
@@ -665,7 +672,10 @@ def diversion_record_edit(request, pk, rpk):
     """
     pod = get_object_or_404(PointOfDiversion, pk=pk)
     record = get_object_or_404(DiversionRecord, pk=rpk, point_of_diversion=pod)
-    stored_month = record.month  # before the form's values land on the instance
+    # Before the form's values land on the instance.
+    stored_month = record.month
+    stored_method = record.method
+    stored_volume = record.volume_acre_feet
 
     if request.method == "GET":
         return _render_diversion_records_section(
@@ -686,6 +696,21 @@ def diversion_record_edit(request, pk, rpk):
             start_date__lte=month,
             end_date__gte=month,
         ).first()
+        # 150-02 (ISS-226 edge 1): an estimate saved with a changed volume
+        # becomes a typed record, so the next run's estimator (which touches
+        # only its own method) leaves the person's figure alone. The method is
+        # a measuring device when one is in service for the month, else a
+        # measurement methodology. Saved unchanged, it stays an estimate; a
+        # method the person picked is kept as posted. Set only once the save
+        # is past its refusals, so a refused save re-renders the estimate's
+        # form as it was.
+        typed_as = None
+        if (
+            stored_method == ESTIMATE_METHOD
+            and updated.volume_acre_feet != stored_volume
+            and updated.method in (ESTIMATE_METHOD, "")
+        ):
+            typed_as = typed_method_for(pod, month)
         replaced = None
         try:
             refuse_if_period_finalized(stored_period)
@@ -697,6 +722,8 @@ def diversion_record_edit(request, pk, rpk):
                     pod, month, updated.diversion_type, exclude_pk=updated.pk
                 )
                 updated.validate_unique()
+                if typed_as is not None:
+                    updated.method = typed_as
                 updated.save()
         except PeriodFinalized as exc:
             form.add_error(None, str(exc))
@@ -709,6 +736,9 @@ def diversion_record_edit(request, pk, rpk):
                     request, "diversion_saved", [stored_month, updated.month]
                 ),
             )
+            if typed_as is not None:
+                saved = saved_as_sentence(typed_as)
+                line = f"{saved} {line}" if line else saved
             return _render_diversion_records_section(
                 request, pod, recalculation_line=line
             )
@@ -1232,6 +1262,19 @@ def _water_right_detail_context(water_right):
         diverted_so_far = current_totals["diverted"] if current_totals else Decimal("0")
         remaining = water_right.face_value_acre_feet - diverted_so_far
 
+    # 150-02 Task 5: every water year on record against the face value, one
+    # row per group above (surface/face_value.py reads the SAME groups, so
+    # the "By water year" table can never disagree with the records table).
+    # Each group carries its row so the records table's divider can say how
+    # many of its months were estimated; the current year's row says whether
+    # the equation's Recorded caption names the estimate.
+    face_value_years = years_against_face_value(water_right, record_groups)
+    for group, year in zip(record_groups, face_value_years):
+        group["against_face_value"] = year
+    current_holds_estimate = bool(
+        current_totals and current_totals["against_face_value"]["months_estimated"]
+    )
+
     # "By point of diversion": the current period's rows broken down by the
     # POD that recorded them, so the panel's Recorded segment can show where
     # the sum came from without a second query against the database.
@@ -1282,6 +1325,8 @@ def _water_right_detail_context(water_right):
         "current_period": current_period,
         "current_totals": current_totals,
         "remaining": remaining,
+        "face_value_years": face_value_years,
+        "current_holds_estimate": current_holds_estimate,
         "pod_breakdown": pod_breakdown,
         "active_curtailments": active_curtailments,
         "unmatched_curtailments": unmatched_curtailments,

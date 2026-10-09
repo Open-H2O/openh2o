@@ -9,6 +9,10 @@
   _render_diversion_records_section), since an edit can move the record into
   a different water year. Cancel is a plain link back to the POD page: one
   row's edit is not worth a second HTMX route just to back out of it.
+
+  150-02 (ISS-226): an estimate's form says in one line what saving it does
+  (surface/views.py::diversion_record_edit turns a changed volume into a
+  typed record, so the next run leaves it).
 {% endcomment %}
 <form hx-post="{% url 'surface:diversion_record_edit' pod.pk edit_record.pk %}"
       hx-target="#diversion-records-section"
@@ -19,6 +23,9 @@
   <div class="row-between" style="align-items: flex-start;">
     <h3 class="text-sm font-semibold text-secondary m-0">Edit diversion record: {{ edit_record.month|date:"M Y" }}</h3>
   </div>
+  {% if edit_record.method == "estimated_from_use" %}
+  <p class="text-xs text-secondary m-0">This record is the platform's estimate. Save it with a changed volume and it becomes a typed record; save it unchanged and it stays an estimate.</p>
+  {% endif %}
   {% if edit_form.non_field_errors %}
   <div class="text-xs" style="color: var(--furnace-400);">{{ edit_form.non_field_errors|join:", " }}</div>
   {% endif %}

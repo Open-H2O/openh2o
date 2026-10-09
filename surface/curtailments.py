@@ -31,6 +31,12 @@ A right with no priority date on record can never be tested against (c), so
 it is never silently dropped: it is returned separately, under every order
 that passes (a) and (b), so the panel can say plainly that the right cannot be
 matched for want of a date.
+
+`orders_covering_month` (150-02, ISS-226) is the same rule with (a) read for a
+calendar month instead of today: the order covers the month when its
+`effective_date` is on or before the month's last day and its `end_date` is
+null or on or after the month's first day. The estimator calls it to decide
+whether a right is curtailed in the month it is estimating.
 """
 from datetime import date
 
@@ -57,6 +63,30 @@ def orders_that_may_apply(water_right, today=None):
         .order_by("-effective_date")
     )
 
+    return _match(water_right, candidates)
+
+
+def orders_covering_month(water_right, first, last):
+    """Return the active orders that curtail `water_right` in the month `first`..`last`.
+
+    Rule (a) becomes the month overlap: an active order whose
+    `effective_date` is on or before `last` and whose `end_date` is null or
+    on or after `first`. Rules (b) and (c) are unchanged. A right with no
+    priority date is "unmatched" (it cannot be tested against a cutoff) and
+    is NOT curtailed for the estimate: the list is empty for it, as it is
+    for a right no order reaches. Newest effective date first.
+    """
+    candidates = (
+        CurtailmentOrder.objects.filter(status="active", effective_date__lte=last)
+        .filter(Q(end_date__isnull=True) | Q(end_date__gte=first))
+        .order_by("-effective_date")
+    )
+    matched, _unmatched = _match(water_right, candidates)
+    return matched
+
+
+def _match(water_right, candidates):
+    """Rules (b) and (c) over `candidates`: `(matched, unmatched_for_want_of_a_date)`."""
     right_watershed = (water_right.watershed or "").strip().lower()
     right_source = (water_right.source_name or "").strip().lower()
 

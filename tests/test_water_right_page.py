@@ -136,3 +136,127 @@ class TestWaterRightRecordOrder:
             assert "Merced Falls" in row, (
                 f"expected Merced Falls's row before Snelling's for {month_label}"
             )
+
+
+# ---------------------------------------------------------------------------
+# 150-02 Task 5: the page by water year. Face value 100.00; WY 2023-2024 holds
+# 70.00 typed (January) and 50.00 estimated (February), 120.00 in all, 20.00
+# over its face value; WY 2024-2025 holds 80.00 typed, 20.00 remaining. The
+# newer year is the current one (the most recent period, nothing on the
+# ledger), so the equation row reads 100.00 - 80.00 = 20.00.
+# ---------------------------------------------------------------------------
+ESTIMATED_BADGE = (
+    '<span class="badge badge-grey" title="At least one diversion record this '
+    'month is estimated from use, not measured.">Estimated</span>'
+)
+
+
+def _two_year_right(face_value=Decimal("100.0000"), *, estimate_in_current=False):
+    right = WaterRightFactory(face_value_acre_feet=face_value)
+    pod = PointOfDiversionFactory(water_right=right, name="Alder Ditch Headgate")
+    wy2024 = ReportingPeriodFactory(
+        name="WY 2023-2024", start_date=date(2023, 10, 1), end_date=date(2024, 9, 30)
+    )
+    wy2025 = ReportingPeriodFactory(
+        name="WY 2024-2025", start_date=date(2024, 10, 1), end_date=date(2025, 9, 30)
+    )
+    DiversionRecordFactory(
+        point_of_diversion=pod, reporting_period=wy2024, month=date(2024, 1, 1),
+        volume_acre_feet=Decimal("70.0000"), method="methodology",
+    )
+    DiversionRecordFactory(
+        point_of_diversion=pod, reporting_period=wy2024, month=date(2024, 2, 1),
+        volume_acre_feet=Decimal("50.0000"), method="estimated_from_use",
+    )
+    DiversionRecordFactory(
+        point_of_diversion=pod, reporting_period=wy2025, month=date(2025, 1, 1),
+        volume_acre_feet=Decimal("80.0000"),
+        method="estimated_from_use" if estimate_in_current else "",
+    )
+    return right
+
+
+class TestWaterRightByWaterYear:
+    """Every water year on record is set against the face value."""
+
+    def test_the_year_past_its_face_value_is_flagged_once_by_the_amount_over(self):
+        html = _right_page(_two_year_right())
+
+        assert '<b class="text-deficit">20.00 AF</b> over its face value' in html
+        assert html.count("over its face value") == 1
+        assert '<span class="text-secondary">20.00 AF remaining</span>' in html
+        assert "violation" not in html.lower()
+
+    def test_the_head_line_says_every_year_is_compared_below(self):
+        html = _right_page(_two_year_right())
+
+        assert (
+            "Remaining is the face value less the volume recorded. Every water "
+            "year on record is compared below."
+        ) in html
+
+    def test_the_year_with_an_estimate_says_how_many_of_its_months_were_estimated(self):
+        html = _right_page(_two_year_right())
+
+        assert (
+            '<td colspan="4">WY 2023-2024 &middot; 2 records &middot; '
+            "1 of 2 months estimated</td>"
+        ) in html
+        assert '<td colspan="4">WY 2024-2025 &middot; 1 record</td>' in html
+        assert html.count(ESTIMATED_BADGE) == 1
+        assert '<div class="text-tertiary text-xs">1 of 2 months</div>' in html
+
+    def test_the_equation_still_reads_the_current_year(self):
+        html = _right_page(_two_year_right())
+
+        assert _result_segment_values(html) == ["20.00"]
+        assert "diverted at 1 point, WY 2024-2025" in html
+        assert "recorded and estimated" not in html
+
+    def test_the_recorded_caption_names_the_estimate_when_the_current_year_holds_one(self):
+        html = _right_page(_two_year_right(estimate_in_current=True))
+
+        assert "recorded and estimated, diverted at 1 point, WY 2024-2025" in html
+
+    def test_a_right_with_no_face_value_lists_its_years_with_nothing_set_against_them(self):
+        html = _right_page(_two_year_right(face_value=None))
+
+        assert "No face value is on record for this right." in html
+        assert "By water year" in html
+        assert "120.00" in html
+        assert "over its face value" not in html
+        assert "AF remaining" not in html
+
+
+class TestWaterRightCardsTakeTheirContentsHeight:
+    """ISS-201 on this page: the face-value card and the curtailment card are
+    each their content's height, by modifiers this page alone carries, so the
+    account page's balance cell (the same grid) keeps its stretch."""
+
+    def test_the_page_carries_both_modifiers_and_the_stylesheet_defines_them(self):
+        from pathlib import Path
+
+        from surface.models import CurtailmentOrder
+
+        right = WaterRightFactory(
+            face_value_acre_feet=Decimal("100.0000"),
+            priority_date=date(1962, 5, 5),
+            source_name="El Nido Canal",
+        )
+        CurtailmentOrder.objects.create(
+            order_id="TEST-CURT-PAGE", title="Test order",
+            effective_date=date(2020, 1, 1), watershed="El Nido Canal",
+            priority_date_cutoff=date(1962, 5, 5),
+        )
+        html = _right_page(right)
+        css = (Path(__file__).resolve().parent.parent / "static/css/app.css").read_text()
+
+        assert (
+            'class="card-raised page-grid-account-balance '
+            'page-grid-account-balance--content-height"'
+        ) in html
+        assert 'class="page-grid-2col page-grid-2col--align-start page-grid-account-full"' in html
+        assert re.search(
+            r"\.page-grid-account-balance--content-height\s*\{\s*align-self:\s*start;\s*\}", css
+        )
+        assert re.search(r"\.page-grid-2col--align-start\s*\{\s*align-items:\s*start;\s*\}", css)

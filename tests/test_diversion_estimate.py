@@ -32,6 +32,7 @@ from parcels.models import ParcelLedger
 from surface.diversion_import import commit_rows
 from surface.estimate import estimate_month
 from surface.models import (
+    CurtailmentOrder,
     DiversionRecord,
     IrrigationMethod,
     MeasuringDevice,
@@ -522,6 +523,26 @@ def test_an_estimate_on_another_day_of_the_month_is_updated_in_place():
 # (e) no right, a right that is not active ------------------------------------
 
 
+def _junior_right(*, status="curtailed", priority_date=date(1962, 5, 5)):
+    """A right on El Nido Canal, junior to the cutoff ``_order`` carries."""
+    return WaterRightFactory(
+        status=status, priority_date=priority_date, source_name="El Nido Canal"
+    )
+
+
+def _order(*, effective, end=None, watershed="El Nido Canal", status="active"):
+    """A curtailment order on El Nido Canal, cutoff 1962-05-05."""
+    return CurtailmentOrder.objects.create(
+        order_id=f"TEST-CURT-{CurtailmentOrder.objects.count() + 1:03d}",
+        title="Test curtailment order",
+        effective_date=effective,
+        end_date=end,
+        watershed=watershed,
+        priority_date_cutoff=date(1962, 5, 5),
+        status=status,
+    )
+
+
 def test_points_with_no_water_right_get_no_estimate_and_one_listing_note():
     _rp, first, _f1 = _ditch(name="Beta Gate")
     _rp, second, _f2 = _ditch(name="Alpha Gate")
@@ -539,12 +560,15 @@ def test_points_with_no_water_right_get_no_estimate_and_one_listing_note():
 
 
 def test_a_curtailed_right_gets_no_estimate_and_loses_the_one_it_held():
-    right = WaterRightFactory(status="active")
+    # 150-02 (ISS-226 edge 3): the curtailment is read off an order covering
+    # the month, not the right's status alone, so this right carries one.
+    right = _junior_right(status="active")
     _rp, pod, _fields = _ditch(name="El Nido Ditch", right=right)
     _run()
     assert _estimates(pod).count() == 1
     right.status = "curtailed"
     right.save()
+    _order(effective=date(2023, 12, 1))
 
     notes = _run()
 
@@ -555,8 +579,11 @@ def test_a_curtailed_right_gets_no_estimate_and_loses_the_one_it_held():
 
 
 def test_points_are_grouped_by_the_status_of_their_right():
-    _rp, a, _f1 = _ditch(name="A Gate", right=WaterRightFactory(status="curtailed"))
-    _rp, b, _f2 = _ditch(name="B Gate", right=WaterRightFactory(status="curtailed"))
+    # 150-02 (ISS-226 edge 3): A and B are curtailed by an order covering
+    # January; C's status alone stops it.
+    _order(effective=date(2023, 12, 1))
+    _rp, a, _f1 = _ditch(name="A Gate", right=_junior_right())
+    _rp, b, _f2 = _ditch(name="B Gate", right=_junior_right())
     _rp, c, _f3 = _ditch(name="C Gate", right=WaterRightFactory(status="inactive"))
 
     notes = _run()
@@ -600,6 +627,12 @@ def test_the_run_says_once_how_many_points_and_months_were_estimated():
 
 
 def _user():
+    # One operator per test: a test that signs in once and then posts through
+    # ``_edit`` (which signs in again) would otherwise create the same
+    # username twice.
+    existing = get_user_model().objects.filter(username="estimate-operator").first()
+    if existing is not None:
+        return existing
     return get_user_model().objects.create_user(
         username="estimate-operator",
         email="estimate-operator@example.org",
@@ -801,3 +834,222 @@ def test_the_calwatrs_worksheet_marks_an_estimated_month():
     ).content.decode()
     assert "12.50" in html
     assert "Estimated</span>" in html
+
+
+# (i) ISS-226: three edges of the estimate (150-02 Task 5) --------------------
+#
+# Edge 1: an estimate a person edits. Saved with a changed volume it becomes a
+# typed record, so the next run leaves it; saved unchanged it stays an
+# estimate. Edge 2: only a CURRENT link to an ACTIVE device is a device in
+# service. Edge 3: a right's curtailment is read off the orders covering the
+# month, so an order stops the months it covers and no others.
+
+ESTIMATE_LINE = (
+    "This record is the platform's estimate. Save it with a changed volume and "
+    "it becomes a typed record; save it unchanged and it stays an estimate."
+)
+
+
+def _edit(pod, record, volume, method=ESTIMATE):
+    return _signed_in().post(
+        reverse("surface:diversion_record_edit", args=[pod.pk, record.pk]),
+        {
+            "month": "2024-01-01",
+            "volume_acre_feet": volume,
+            "returned_af": "0",
+            "diversion_type": "direct_use",
+            "method": method,
+            "data_state": "provisional",
+        },
+    )
+
+
+@pytest.mark.parametrize("posted_method", [ESTIMATE, ""])
+def test_an_estimate_saved_with_a_changed_volume_becomes_a_typed_record(posted_method):
+    _rp, pod, _fields = _ditch()
+    _run()
+    record = _estimate_of(pod)
+
+    response = _edit(pod, record, "60", method=posted_method)
+
+    assert response.status_code == 200
+    record.refresh_from_db()
+    assert record.method == "methodology"
+    assert record.volume_acre_feet == Decimal("60.0000")
+
+    notes = _run()
+
+    record.refresh_from_db()
+    assert record.method == "methodology"
+    assert record.volume_acre_feet == Decimal("60.0000")
+    assert _estimates(pod).count() == 0
+    assert notes == []
+
+
+def test_an_edited_estimate_at_a_point_with_a_device_in_service_becomes_a_device_record():
+    _rp, pod, _fields = _ditch()
+    _run()
+    record = _estimate_of(pod)
+    _device(pod)  # arrived after the estimate was written
+
+    response = _edit(pod, record, "60")
+
+    assert response.status_code == 200
+    record.refresh_from_db()
+    assert record.method == "device"
+    assert "Saved as a measuring device." in response.content.decode()
+
+
+def test_an_estimate_saved_unchanged_stays_an_estimate():
+    _rp, pod, _fields = _ditch()
+    _run()
+    record = _estimate_of(pod)
+
+    response = _edit(pod, record, "98.0392")
+
+    assert response.status_code == 200
+    record.refresh_from_db()
+    assert record.method == ESTIMATE
+    assert record.volume_acre_feet == Decimal("98.0392")
+    assert "Saved as" not in response.content.decode()
+
+
+def test_an_estimate_saved_with_another_method_keeps_the_method_posted():
+    _rp, pod, _fields = _ditch()
+    _run()
+    record = _estimate_of(pod)
+
+    _edit(pod, record, "60", method="outage_estimate")
+
+    record.refresh_from_db()
+    assert record.method == "outage_estimate"
+
+
+def test_the_edit_form_says_what_saving_an_estimate_does_and_the_save_says_which_method():
+    _rp, pod, _fields = _ditch()
+    _run()
+    record = _estimate_of(pod)
+    typed = DiversionRecordFactory(
+        point_of_diversion=pod, month=FEB, volume_acre_feet=Decimal("7")
+    )
+    client = _signed_in()
+
+    estimate_form = client.get(
+        reverse("surface:diversion_record_edit", args=[pod.pk, record.pk])
+    ).content.decode()
+    typed_form = client.get(
+        reverse("surface:diversion_record_edit", args=[pod.pk, typed.pk])
+    ).content.decode()
+    saved = _edit(pod, record, "60").content.decode()
+
+    assert estimate_form.count(ESTIMATE_LINE) == 1
+    assert ESTIMATE_LINE not in typed_form
+    assert "Saved as a measurement methodology on file." in saved
+
+
+def test_a_device_link_that_is_not_current_does_not_count():
+    _rp, pod, _fields = _ditch()
+    link = _device(pod, installed_on=date(2023, 6, 1))
+    link.is_current = False
+    link.save()
+
+    _run()
+
+    assert _estimate_of(pod).volume_acre_feet == Decimal("98.0392")
+
+
+def test_a_removed_device_does_not_count():
+    _rp, pod, _fields = _ditch()
+    link = _device(pod, installed_on=date(2023, 6, 1))
+    link.device.status = "removed"
+    link.device.save()
+
+    _run()
+
+    assert _estimate_of(pod).volume_acre_feet == Decimal("98.0392")
+
+
+def test_an_order_effective_mid_year_stops_the_months_it_covers_and_not_the_one_before():
+    _rp, pod, _fields = _ditch(
+        name="El Nido Ditch",
+        right=_junior_right(),
+        months=("2024-01", "2024-02", "2024-03"),
+    )
+    _order(effective=date(2024, 2, 15))
+
+    _run(JAN)
+    feb_notes = _run(FEB)
+    mar_notes = _run(MAR)
+
+    assert _estimate_of(pod, JAN).volume_acre_feet == Decimal("98.0392")
+    assert _estimates(pod).count() == 1
+    curtailed = [
+        "No delivery was estimated for El Nido Ditch: the water right is curtailed."
+    ]
+    assert _sentences(feb_notes) == curtailed
+    assert _sentences(mar_notes) == curtailed
+
+
+def test_an_order_that_ended_before_the_month_does_not_stop_it():
+    _rp, pod, _fields = _ditch(right=_junior_right())
+    _order(effective=date(2023, 6, 1), end=date(2023, 12, 31))
+
+    _run()
+
+    assert _estimate_of(pod).volume_acre_feet == Decimal("98.0392")
+
+
+def test_an_order_that_is_not_active_does_not_stop_it():
+    _rp, pod, _fields = _ditch(right=_junior_right())
+    _order(effective=date(2023, 12, 1), status="rescinded")
+
+    _run()
+
+    assert _estimate_of(pod).volume_acre_feet == Decimal("98.0392")
+
+
+def test_an_order_on_another_watershed_does_not_stop_it():
+    _rp, pod, _fields = _ditch(right=_junior_right())
+    _order(effective=date(2023, 12, 1), watershed="Merced River")
+
+    _run()
+
+    assert _estimate_of(pod).volume_acre_feet == Decimal("98.0392")
+
+
+def test_a_right_senior_to_the_cutoff_is_not_stopped():
+    _rp, pod, _fields = _ditch(right=_junior_right(priority_date=date(1930, 4, 10)))
+    _order(effective=date(2023, 12, 1))
+
+    _run()
+
+    assert _estimate_of(pod).volume_acre_feet == Decimal("98.0392")
+
+
+def test_a_curtailed_right_with_no_order_covering_the_month_is_estimated():
+    _rp, pod, _fields = _ditch(right=_junior_right(status="curtailed"))
+
+    notes = _run()
+
+    assert _estimate_of(pod).volume_acre_feet == Decimal("98.0392")
+    assert [n["kind"] for n in notes] == ["estimate_written"]
+
+
+def test_a_right_with_no_priority_date_is_not_curtailed_for_the_estimate():
+    _rp, pod, _fields = _ditch(right=_junior_right(priority_date=None))
+    _order(effective=date(2023, 12, 1))
+
+    _run()
+
+    assert _estimate_of(pod).volume_acre_feet == Decimal("98.0392")
+
+
+def test_a_revoked_right_still_gets_no_estimate():
+    _rp, pod, _fields = _ditch(name="Revoked Gate", right=_junior_right(status="revoked"))
+
+    notes = _run()
+
+    assert _estimates(pod).count() == 0
+    assert _sentences(notes) == [
+        "No delivery was estimated for Revoked Gate: the water right is revoked."
+    ]

@@ -1721,26 +1721,27 @@ def _subtraction_context(run):
         gw_efficiency_is_live_setting = True
     gw_efficiency_pct = gw_efficiency * 100 if gw_efficiency is not None else None
 
-    # `delivery_split` (words-help-pages.md A.2, revision 3): no live writer
-    # records a delivery against a field's own gate -- `create_diversion_
-    # ledger_entries` is a deprecated alias no live path calls -- so this is
-    # a two-way split, never a third "recorded at this field" case.
-    # "fixed_share" only when this parcel's own surface_diversion ledger row
-    # for the month carries the fallback sentence (`DELIVERY_SHARE_BY_FIXED`,
-    # "the fixed share on file"); otherwise "by_use", the demand-weighted
-    # split, which is also the correct default when no ledger row matches at
-    # all.
+    # `delivery_split` (words-help-pages.md A.2, revision 3; ISS-225, 150-02).
+    # "fixed_share" when this parcel's surface_diversion ledger row for the
+    # month carries the fallback sentence (`DELIVERY_SHARE_BY_FIXED`, "the
+    # fixed share on file"); else "own" when the month's rows include the
+    # field's own recorded delivery (149-01: a row the canal split did not
+    # write, `divided_from_headgate` False, typed on the ledger or imported;
+    # the split then divides only the remainder among the other fields);
+    # otherwise "by_use", the demand-weighted split, which is also the
+    # default when no ledger row matches at all.
     delivery_split = "by_use"
     if run.surface_delivered_af and run.period_start is not None:
-        fixed_share = ParcelLedger.objects.filter(
+        month_rows = ParcelLedger.objects.filter(
             parcel=run.parcel,
             source_type="surface_diversion",
             effective_date__year=run.period_start.year,
             effective_date__month=run.period_start.month,
-            description__contains=DELIVERY_SHARE_BY_FIXED,
-        ).exists()
-        if fixed_share:
+        )
+        if month_rows.filter(description__contains=DELIVERY_SHARE_BY_FIXED).exists():
             delivery_split = "fixed_share"
+        elif month_rows.filter(divided_from_headgate=False).exists():
+            delivery_split = "own"
 
     site_config = SiteConfig.objects.first()
 

@@ -34,11 +34,16 @@ for each point, crop water use again (``accounting.engine_run.run_month``).
 4. The record is written, or replaced, only when a value changed, so a re-run
    leaves the same row and adds no change history.
 
-A point whose right is not active (curtailed, say) gets no estimate and loses
-any it held: an estimate there would invent water the curtailment stopped. A
-point with no right gets none either (an estimate needs a right to cap
-against). The estimator only ever touches records whose method is
-``estimated_from_use``.
+A point whose right is revoked or inactive gets no estimate and loses any it
+held, and so does a point whose right a curtailment order covers for the month
+(``surface.curtailments.orders_covering_month``): an estimate there would
+invent water the curtailment stopped. A right whose status reads "curtailed"
+with no order covering the month IS estimated, because the status alone
+carries no date (150-02, ISS-226). A point with no right gets none either (an
+estimate needs a right to cap against). The estimator only ever touches
+records whose method is ``estimated_from_use``; a person who edits an estimate
+and changes its volume turns it into a typed record (``typed_method_for``), so
+the next run leaves it.
 
 **Nothing here recalculates anything.** The save hook that recalculates a month
 when a diversion record is saved lives in the views (``surface.views``,
@@ -54,6 +59,7 @@ from django.db.models import Q
 from accounting.carryover_math import water_year_of
 from accounting.models import CalculationRun, ReportingPeriod
 from accounting.recharge_policy import recharge_routes_to_personal
+from surface.curtailments import orders_covering_month
 from surface.models import (
     DiversionRecord,
     PointOfDiversion,
@@ -118,17 +124,43 @@ def replaced_sentence(month):
     return f"This replaces the estimate for {month:%B %Y}."
 
 
+def typed_method_for(point, month):
+    """The method an edited estimate takes once a person changes its volume (ISS-226).
+
+    "device" when a measuring device is in service at the point for the
+    month (``_device_in_service``), else "methodology". Either is a typed
+    method, so the estimator, which touches only its own records, leaves the
+    person's figure alone on the next run.
+    """
+    first = month.replace(day=1)
+    last = _next_month(first) - timedelta(days=1)
+    return "device" if _device_in_service(point, first, last) else "methodology"
+
+
+def saved_as_sentence(method):
+    """The line the edit page adds when an estimate became a typed record."""
+    label = dict(DiversionRecord.METHOD_CHOICES)[method]
+    return f"Saved as {label[0].lower()}{label[1:]}."
+
+
 # --------------------------------------------------------------------------
 # The estimate
 # --------------------------------------------------------------------------
 
 
 def _device_in_service(point, first, last):
-    """True when a device link covers any part of the month, or carries no dates."""
+    """True when a current link to an active device covers any part of the month.
+
+    A link with no dates covers every month. A link that is no longer
+    current, or a device whose own status is "removed", does not count
+    (150-02, ISS-226): either way the point has no device in service to read.
+    """
     return PointOfDiversionDevice.objects.filter(
         Q(installed_on__isnull=True) | Q(installed_on__lte=last),
         Q(removed_on__isnull=True) | Q(removed_on__gte=first),
         point_of_diversion=point,
+        is_current=True,
+        device__status="active",
     ).exists()
 
 
@@ -265,13 +297,25 @@ def estimate_month(first, notes):
             _drop(point, first)
             notes.append({"kind": "estimate_no_right", "pod": point.name})
             continue
-        if right.status != "active":
+        if right.status in ("revoked", "inactive"):
             _drop(point, first)
             notes.append(
                 {
                     "kind": "estimate_right_not_active",
                     "pod": point.name,
                     "status": right.get_status_display().lower(),
+                }
+            )
+            continue
+        if orders_covering_month(right, first, last):
+            # The right is curtailed for this month by an order that covers
+            # it; a month the order does not reach is estimated as usual.
+            _drop(point, first)
+            notes.append(
+                {
+                    "kind": "estimate_right_not_active",
+                    "pod": point.name,
+                    "status": "curtailed",
                 }
             )
             continue

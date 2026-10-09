@@ -10,9 +10,10 @@
   guards); the words-only variant below (A.4) covers that case so the page
   still teaches the arithmetic with no figures in it.
 
-  Pill colours: grey for an estimate, gold for a delivery the software
-  divided up from a headgate total (the only kind there is -- no live writer
-  records a delivery against a field's own gate), and the existing orange
+  Pill colours: grey for an estimate and for a field's own delivery record
+  (150-02, ISS-225: delivery_split "own", a row the canal split did not
+  write), gold for a delivery the software divided up from a headgate total,
+  and the existing orange
   pill (already the platform's "Deficit"/"Residual" tone) for the two
   assumed-share lines -- the picture's own four-colour mapping, carried onto
   the badge tokens that exist.
@@ -73,13 +74,15 @@
           <td class="col-name">Delivered to this field</td>
           <td class="col-amount td-num">{{ surface_delivered_af|floatformat:2|intcomma }}</td>
           <td>
-            {% if delivery_split == "fixed_share" %}
+            {% if delivery_split == "own" %}
+            This field's own delivery record, typed on its ledger or imported.
+            {% elif delivery_split == "fixed_share" %}
             This district's record is a headgate total, from a meter or the ditch tender's estimate. No field on this headgate has an estimated use on record for the month, so the total was divided by each field's fixed share on file.
             {% else %}
             This district's record is a headgate total, from a meter or the ditch tender's estimate.
             {% endif %}
           </td>
-          <td class="col-sure"><span class="badge badge-pill badge-gold" title="Divided up by the software">Divided up</span></td>
+          <td class="col-sure">{% if delivery_split == "own" %}<span class="badge badge-pill badge-grey">Recorded</span>{% else %}<span class="badge badge-pill badge-gold" title="Divided up by the software">Divided up</span>{% endif %}</td>
         </tr>
         <tr>
           <td class="col-name">Canal water the crop could use</td>
@@ -92,7 +95,7 @@
           <td class="col-name">Canal water subtracted</td>
           <td class="col-amount td-num">{{ surface_water_af|floatformat:2|intcomma }}</td>
           <td>The whole delivery, because this deployment's calculation plan does not apply an irrigation efficiency.</td>
-          <td class="col-sure"><span class="badge badge-pill badge-gold" title="Divided up by the software">Divided up</span></td>
+          <td class="col-sure">{% if delivery_split == "own" %}<span class="badge badge-pill badge-grey">Recorded</span>{% else %}<span class="badge badge-pill badge-gold" title="Divided up by the software">Divided up</span>{% endif %}</td>
         </tr>
         {% endif %}
 
@@ -135,7 +138,7 @@
   </div>
 
   <div class="help-table-notes mt-md">
-    {% if surface_delivered_af is not None and delivery_split != "fixed_share" %}
+    {% if surface_delivered_af is not None and delivery_split == "by_use" %}
     <p class="text-secondary text-sm"><strong>Delivered to this field.</strong> A field with its own delivery record keeps it. What remains of the headgate total is divided among the other fields in proportion to crop water use after rain, up to what each could use. That share depends on the satellite estimate, so it is an estimate too.</p>
     {% endif %}
     <p class="text-secondary text-sm">Groundwater consumed is what remains after the lines above it are subtracted; groundwater extracted is that figure divided by the share the crop consumes, and it is the figure the groundwater allocation is charged. Both are only as good as the delivery record above them.</p>

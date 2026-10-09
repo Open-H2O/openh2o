@@ -292,3 +292,81 @@ class TestHelpPagesPublicAndClean:
             main = content[main_start:]
             assert "recharge" not in main.lower(), f"{name} still says 'recharge'"
             assert "Billable" not in main, f"{name} still says 'Billable'"
+
+
+class TestDeliverySplitOwnRecord:
+    """ISS-225 (150-02 Task 5): a field whose canal water is its own recorded
+    delivery (a ``surface_diversion`` row the canal split did not write,
+    ``divided_from_headgate`` False) reads as "own", and the help page's
+    Delivered row says so instead of "Divided up"."""
+
+    OWN_SENTENCE = "This field's own delivery record, typed on its ledger or imported."
+
+    def _field_month(self, *, divided_from_headgate, description):
+        parcel = ParcelFactory(parcel_number="TEST-APN-OWN")
+        run = _run(
+            parcel, "2025-07",
+            delivered=Decimal("50.0000"),
+            efficiency=Decimal("0.750"),
+            final=Decimal("2.0000"),
+            gw_extracted=Decimal("2.5000"),
+        )
+        ParcelLedger.objects.create(
+            parcel=parcel,
+            transaction_date=datetime.date(2025, 7, 15),
+            effective_date=datetime.date(2025, 7, 15),
+            amount_acre_feet=Decimal("-50.0000"),
+            source_type="surface_diversion",
+            divided_from_headgate=divided_from_headgate,
+            description=description,
+        )
+        return run
+
+    def test_delivery_split_is_own_for_the_fields_own_delivery_record(self):
+        run = self._field_month(
+            divided_from_headgate=False, description="Turnout reading, July 2025"
+        )
+
+        result = example_field_month()
+
+        assert result["example"] == run
+        assert result["delivery_split"] == "own"
+
+    def test_delivery_split_stays_by_use_on_a_row_the_split_wrote(self):
+        self._field_month(
+            divided_from_headgate=True,
+            description="Share of 50.00 AF delivered from Test POD Headgate",
+        )
+
+        assert example_field_month()["delivery_split"] == "by_use"
+
+    def test_the_delivered_row_says_own_record_and_carries_the_recorded_badge(self):
+        self._field_month(
+            divided_from_headgate=False, description="Turnout reading, July 2025"
+        )
+
+        html = render_to_string(
+            "help/partials/_the_subtraction.html", example_field_month()
+        )
+        start = html.index("Delivered to this field")
+        row = html[start:html.index("</tr>", start)]
+
+        assert self.OWN_SENTENCE in row
+        assert '<span class="badge badge-pill badge-grey">Recorded</span>' in row
+        assert "Divided up" not in row
+        assert "headgate total" not in row
+
+    def test_the_delivered_row_on_a_split_row_still_says_divided_up(self):
+        self._field_month(
+            divided_from_headgate=True,
+            description="Share of 50.00 AF delivered from Test POD Headgate",
+        )
+
+        html = render_to_string(
+            "help/partials/_the_subtraction.html", example_field_month()
+        )
+        start = html.index("Delivered to this field")
+        row = html[start:html.index("</tr>", start)]
+
+        assert self.OWN_SENTENCE not in row
+        assert ">Divided up</span>" in row
