@@ -990,7 +990,9 @@ def parcel_mass_balance(parcel, reporting_period=None):
         deep_percolation_surface_af, deep_percolation_gw_af},
         "outputs_total": Decimal, "residual_af": Decimal, "closes": bool}``.
         ``residual_af = inputs_total − outputs_total``; ``closes`` iff
-        ``abs(residual_af) <= MASS_BALANCE_TOLERANCE``.
+        ``abs(residual_af) <= MASS_BALANCE_TOLERANCE``. Also, for the panel
+        only and outside the identity (150-02 Task 3): ``surface_usable_af``
+        and ``surface_efficiency_percent``.
     """
     # Ledger-sourced terms, on the SAME billable basis as parcel_balance_breakdown.
     qs = ParcelLedger.objects.filter(parcel=parcel)
@@ -1027,7 +1029,15 @@ def parcel_mass_balance(parcel, reporting_period=None):
     delta_storage = Decimal("0")
     deep_percolation_surface = Decimal("0")
     deep_percolation_gw = Decimal("0")
+    # 150-02 Task 3: two figures the panel prints and the identity does not
+    # read: the canal water the crop could use (the runs' own column, summed)
+    # and the efficiencies that made it, one per delivered month.
+    surface_usable = Decimal("0")
+    efficiencies = set()
     for run in _calculation_runs_for_period(parcel, reporting_period):
+        surface_usable += run.surface_water_af or Decimal("0")
+        if run.surface_delivered_af:
+            efficiencies.add(run.surface_efficiency)
         et += run.gross_et_af or Decimal("0")
         precip += run.effective_precip_af or Decimal("0")
         delta_storage += (run.banked_af or Decimal("0")) - (
@@ -1098,6 +1108,20 @@ def parcel_mass_balance(parcel, reporting_period=None):
         # panel lists, so the rows under Uses add up to Uses. Kept outside
         # `outputs` so outputs_total does not count it twice.
         "deep_percolation_af": deep_percolation_surface + deep_percolation_gw,
+        # 150-02 Task 3: the panel's "the crop could use" row under Surface,
+        # the sum of the period's CalculationRun.surface_water_af. Not an
+        # input or an output: it is a part of `surface`, and the rest of that
+        # delivery is `deep_percolation_surface_af` above.
+        "surface_usable_af": surface_usable,
+        # The one irrigation efficiency, as a percent (0.750 -> 75.0), that
+        # every month with a delivery ran at; None when the months ran at
+        # different ones (the month table then carries each month's), when
+        # one ran with none stamped, or when nothing was delivered.
+        "surface_efficiency_percent": (
+            next(iter(efficiencies)) * 100
+            if len(efficiencies) == 1 and None not in efficiencies
+            else None
+        ),
         "residual_af": residual,
         "closes": closes,
         # 58-03: presentation classification — "closes" / "realistic" / "large".

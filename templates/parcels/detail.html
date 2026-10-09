@@ -38,13 +38,23 @@
   <div>
     <a href="{% url 'parcels:list' %}" class="back-link">&larr; Back to Use Areas</a>
   </div>
-  {# Persistent map host (the shared body partial builds the map into this). #}
-  <div id="detail-map-card" class="card-raised" style="padding: 0; overflow: hidden; display: none;">
-    <div id="detail-map" class="map-embed" style="height: 380px; position: relative; overflow: hidden; background: var(--color-base);"></div>
-  </div>
-  <div id="detail-body">
-    {# R-035 (same fault, found by this plan's probe on /parcels/11/): this IS the full page. #}
-    {% include "parcels/partials/_detail_pane.html" with on_full_page=True %}
+  {% comment %}
+    150-02 Task 3: the top of the page is a grid, the water balance card (two
+    parts) beside the map card (one part), so the balance is in the first
+    viewport. The map card stays OUTSIDE #detail-body because the period
+    control swaps the body; `.page-grid-field` (app.css) lets the body's cards
+    take grid cells of their own. A use area with no geometry has no map
+    card to show, so its grid is one column.
+  {% endcomment %}
+  <div class="page-grid-field{% if not geojson %} page-grid-field--no-map{% endif %}">
+    {# Persistent map host (the shared body partial builds the map into this). #}
+    <div id="detail-map-card" class="card-raised" style="padding: 0; overflow: hidden; display: none;">
+      <div id="detail-map" class="map-embed" style="height: 380px; position: relative; overflow: hidden; background: var(--color-base);"></div>
+    </div>
+    <div id="detail-body">
+      {# R-035 (same fault, found by this plan's probe on /parcels/11/): this IS the full page. #}
+      {% include "parcels/partials/_detail_pane.html" with on_full_page=True %}
+    </div>
   </div>
 </div>
 {% endblock %}

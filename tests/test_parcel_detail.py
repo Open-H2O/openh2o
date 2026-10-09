@@ -196,3 +196,30 @@ def test_the_amount_column_says_what_a_negative_means(field_with_two_years):
     assert (
         "Water leaving a canal or a well is stored as a negative entry." not in html
     ), "the old 30-word sentence should be gone, not merely duplicated (143-05)"
+
+
+def test_the_record_card_and_its_labels_use_the_platforms_words(field_with_two_years):
+    """ISS-169 (150-02 Task 3): the card is "Use area", the labels "Owner" and
+    "Area (acres)". "Parcel number" stays: it is the number's own name."""
+    import re
+
+    from parcels.views import EDITABLE_FIELDS
+
+    assert EDITABLE_FIELDS["owner_name"]["label"] == "Owner"
+    assert EDITABLE_FIELDS["area_acres"]["label"] == "Area (acres)"
+
+    parcel, older, _newer, _empty = field_with_two_years
+    client = Client()
+    client.force_login(_user())
+    html = client.get(
+        reverse("parcels:detail", args=[parcel.pk]),
+        {"period": str(older.pk)},
+        HTTP_HX_REQUEST="true",
+    ).content.decode()
+
+    assert re.search(r'<h2 class="section-header">\s*Use area\b', html)
+    assert "Parcel information" not in html
+    assert "Owner Name" not in html
+    assert "Area (Acres)" not in html
+    assert "Area (acres)" in html
+    assert "Parcel number" in html

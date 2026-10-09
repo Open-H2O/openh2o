@@ -5771,3 +5771,70 @@ details[open] > summary .disclosure-mark {
 .change-table td {
     vertical-align: top;
 }
+
+/* -- The field page's top grid and its month table (150-02 Task 3) -------- */
+/* The standalone use-area page (`parcels/detail.html`): the water balance
+   card (two parts) beside the map card (one part), so the balance is in the
+   first viewport at 1,730 x 1,000. The map card lives OUTSIDE #detail-body,
+   because the period control swaps the body, so the body and its
+   `.pane-stack` take `display: contents` and their cards become this grid's
+   own items: the balance card (the stack's first card) at column 1, row 1;
+   the map card pinned to column 2, row 1; everything after them (Month by
+   month, then the lower two-column grid) across both columns. Every rule is
+   scoped under `.page-grid-field`, so the same partial swapped in anywhere
+   else keeps its own shape. */
+.page-stack:has(> .page-grid-field) {
+    container-type: inline-size;
+}
+.page-grid-field {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: var(--space-lg);
+    align-items: start;
+}
+.page-grid-field > #detail-body,
+.page-grid-field .pane-stack {
+    display: contents;
+}
+/* A box-less stack cannot be a query container; the page-stack above is the
+   one these rules answer to. */
+.page-grid-field .pane-stack {
+    container-type: normal;
+}
+.page-grid-field > #detail-map-card {
+    grid-column: 2;
+    grid-row: 1;
+}
+.page-grid-field .pane-stack > * {
+    grid-column: 1 / -1;
+    min-width: 0;
+}
+.page-grid-field .pane-stack > .card-raised:first-child {
+    grid-column: 1;
+}
+/* A use area with no geometry has no map: one column, the balance full width. */
+.page-grid-field--no-map {
+    grid-template-columns: minmax(0, 1fr);
+}
+/* The account grid's breakpoint (`.page-grid-account`, above): below a
+   1,150px container the balance card's three cells no longer fit two thirds
+   of the row, so the grid is one column, the balance first and the map
+   second. */
+@container (max-width: 1150px) {
+    .page-grid-field {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .page-grid-field > #detail-map-card {
+        grid-column: 1;
+        grid-row: 2;
+    }
+}
+/* Month by month: the card carries no padding (the table fills it, the
+   ledger's own shape), so the edge cells restore the card's inset. */
+.field-months-table tr.th-group > th:first-child,
+.field-months-table tbody td:first-child {
+    padding-left: var(--space-lg);
+}
+.field-months-table tr:not(.th-group) > :last-child {
+    padding-right: var(--space-lg);
+}
