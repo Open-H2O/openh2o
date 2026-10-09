@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}Onboard a Water System - Open Water Accounting Platform{% endblock %}
-{% block page_title %}Onboard a water system{% endblock %}
+{% block title %}Add a water system - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Add a water system{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -10,7 +10,7 @@
     <span class="breadcrumb-separator">/</span>
     <a href="{% url 'drinking:overview' %}">Drinking Water</a>
     <span class="breadcrumb-separator">/</span>
-    <span class="breadcrumb-current">Onboard</span>
+    <span class="breadcrumb-current">Add a water system</span>
   </nav>
   <p class="page-description">Brings a public water system and its facilities in from EPA's federal record. Enter its PWSID, review the record, then confirm.</p>
 </div>
@@ -135,7 +135,7 @@
           {% if 'wells' in enabled_modules %}<tr>
             <td class="col-name">Links to wells</td>
             <td>None</td>
-            <td>Made in the Django admin; a second lookup never changes a link already made</td>
+            <td>Set on each facility's page under <a href="{% url 'drinking:facilities' %}" class="data-table-link">Facilities</a>, with Edit local name; a second lookup never changes a link already made</td>
           </tr>{% endif %}
         </tbody>
       </table>

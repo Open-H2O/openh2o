@@ -158,7 +158,7 @@ class _AnchorAudit(HTMLParser):
         self.anchors = []
         #: (href, {classes}) for every anchor, so an assertion can be scoped to
         #: the element it is actually about. This is load-bearing: the sidebar
-        #: registers an "Onboard System" nav entry (core/modules.py:856), so a
+        #: registers an "Add a water system" nav entry (core/modules.py), so a
         #: bare `reverse("drinking:onboard") in html` is satisfied by the NAV on
         #: every drinking page and proves nothing about an empty state. Three
         #: assertions here passed against the pre-change tree for exactly that
@@ -476,7 +476,7 @@ class TestTheMapIsUnfilteredAndSaysSo:
 
 
 class TestTheStepSequence:
-    STEPS = ("Onboard a water system", "Build its sampling points", "Import lab results")
+    STEPS = ("Add a water system", "Build its sampling points", "Import lab results")
 
     def test_the_three_steps_render_in_order(self, client_in, mapped_system):
         html = _get(client_in, "drinking:overview")
@@ -595,7 +595,7 @@ class TestTheEmptyStateDoorsOpen:
         """No honest default with two, and picking the first is silently wrong.
 
         Scoped to `btn-primary` — the empty state's own button. Unscoped, the
-        sidebar's "Onboard System" entry satisfies this on any drinking page,
+        sidebar's "Add a water system" entry satisfies this on any drinking page,
         which is precisely how this assertion passed against the pre-change
         tree that had no door here at all.
         """

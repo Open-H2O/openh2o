@@ -276,7 +276,7 @@
     </span>
     <div class="step-body">
       <span class="step-eyebrow">Step 1 &middot; done{% if system.facility_count %} &mdash; {{ system.facility_count|intcomma }} facilit{{ system.facility_count|pluralize:"y,ies" }}{% endif %}</span>
-      <h2 class="section-header">Onboard a water system</h2>
+      <h2 class="section-header">Add a water system</h2>
       <p class="text-secondary text-base">Enter a PWSID and OpenH2O looks the system up in EPA&rsquo;s Envirofacts record &mdash; the regulatory details and the facilities. Nothing is written until you have reviewed what came back. Run it again to add a second system this agency operates.</p>
       {% if user_can_write %}<a href="{% url 'drinking:onboard' %}" class="text-sm text-accent">Onboard another system &rarr;</a>{% endif %}
     </div>

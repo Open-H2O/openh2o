@@ -46,10 +46,39 @@ def nav_mode(request):
     survives logout without needing a DB migration; unknown values fall back to
     the safe default.
     """
-    mode = request.COOKIES.get("nav_mode", "operations")
-    if mode not in ("operations", "admin"):
-        mode = "operations"
-    return {"nav_mode": mode}
+    stored = request.COOKIES.get("nav_mode", "operations")
+    if stored not in ("operations", "admin"):
+        stored = "operations"
+    # 150-03 (R-028, ISS-182): a page whose lit entry lives in a section
+    # Operations hides (Administration: water rights, accounts, water years)
+    # renders the sidebar in Admin mode, for this request only. The cookie is
+    # never written here, so the next page is back in the stored mode.
+    # `nav_mode_stored` is what the person chose; the header's "Admin mode"
+    # badge reads it, so it never offers to leave a mode they did not pick.
+    mode = stored
+    lit = _lit_entry(request)
+    if stored == "operations" and lit is not None:
+        from core.modules import section_requires_admin_mode
+
+        if section_requires_admin_mode(lit.section):
+            mode = "admin"
+    return {"nav_mode": mode, "nav_mode_stored": stored}
+
+
+def _lit_entry(request):
+    """The one sidebar entry this request's page lights, or None (150-03).
+
+    Computed once per request and kept on it, because two processors read it:
+    ``nav_mode`` (the per-page Admin override) and ``modules`` (the sidebar's
+    active link and the body's section class).
+    """
+    if not hasattr(request, "_openh2o_nav_lit"):
+        from core.modules import enabled_modules, lit_entry, sidebar_entries
+
+        request._openh2o_nav_lit = lit_entry(
+            getattr(request, "path", "") or "", sidebar_entries(enabled_modules())
+        )
+    return request._openh2o_nav_lit
 
 
 def modules(request):
@@ -71,30 +100,37 @@ def modules(request):
 
     specs = enabled_modules()
     sections = nav_sections_for(specs)
+    lit = _lit_entry(request)
     return {
         "enabled_modules": [spec.name for spec in specs],
         "nav_sections": sections,
         "module_dashboard_cards": dashboard_cards_for(specs),
-        "page_section": _page_section(sections, request.path),
+        # 150-03: the url_name of the one entry this page lights, and its
+        # section key; `_sidebar.html` marks that link active and opens Help
+        # when it is one of Help's own.
+        "nav_lit": lit.url_name if lit is not None else None,
+        "nav_lit_section": lit.section if lit is not None else "",
+        "page_section": _page_section(lit),
     }
 
 
-def _page_section(sections, path):
-    """The nav section key this path belongs to, or "" when it belongs to none.
+def _page_section(lit):
+    """The nav section key this page belongs to, or "" when it belongs to none.
 
-    Walks the sections the deployment actually composed — not the static
-    registry — so a dropped module can never name a section that has no sidebar.
-    First match wins; pure string work, no reverse() and no query.
+    The section of the entry the page lights, when that entry is a module's
+    (the composed deployment's own, so a dropped module never names a section
+    with no sidebar). Home and the Help pages light fixed entries, and their
+    pages carry no section class, as before 150-03.
 
     Visibility predicates are applied in the template, not here, so an entry
-    hidden from THIS viewer still matches. That is deliberate: the value
+    hidden from THIS viewer still counts. That is deliberate: the value
     describes the page, not the sidebar the viewer happens to see.
     """
-    for section in sections:
-        for entry in section.entries:
-            if entry.is_active(path):
-                return entry.section
-    return ""
+    from core.modules import FIXED_NAV_ENTRIES
+
+    if lit is None or lit in FIXED_NAV_ENTRIES:
+        return ""
+    return lit.section
 
 
 def setup_status(request):

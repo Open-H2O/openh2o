@@ -179,11 +179,15 @@ class TestPagesRender:
         if url_name == "drinking:results":
             assert "Import lab results" in text  # 149.1-06: the import door, not the admin
         else:
-            assert "Onboard a water system" in text
+            assert "Add a water system" in text
         assert "next update" not in text, (
             "The empty state still promises an import that has already shipped"
         )
-        assert "infrastructure/import" not in text, (
+        # 150-03: the sidebar now carries an Infrastructure entry on every page
+        # (its href is the bulk importer), so the assertion reads the page BELOW
+        # the sidebar: the empty state itself must never route there.
+        content = text.split("</aside>", 1)[-1]
+        assert "infrastructure/import" not in content, (
             "The drinking empty state must never route to infrastructure's import"
         )
 

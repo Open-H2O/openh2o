@@ -532,10 +532,11 @@ class TestNavResolution:
         # 146-04 Task 2's Production under Drinking Water, and 146-04 Task 4's
         # Schedule after it. 147-01 added a Change History entry under
         # Overview; 147-02 (Brent's checkpoint ruling) removed it from the
-        # sidebar, so the count is back to 27.
+        # sidebar, so the count is back to 27. 150-03 added Infrastructure
+        # under Water Data (the add and import pages lit nothing): 28.
         # The sidebar also renders `index`, the nav-mode toggle and six static
         # help/about pages, none of which are module-owned.
-        assert len(entries) == 27
+        assert len(entries) == 28
 
     def test_icon_keys_are_unique(self):
         icons = [e.icon for s in mod.enabled_modules() for e in s.nav]

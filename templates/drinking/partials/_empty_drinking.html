@@ -21,9 +21,11 @@
   deliberately never creates a sampling point.
 
   123-02 adds the third door, and closes the two wrong ones. The `{% else %}`
-  branch below sends an operator to the Django admin — a screen that is not the
-  answer and that most operators cannot reach — and BOTH the facilities page and
-  the sampling-points page were landing on it. The facilities page is a flag
+  branch below used to send an operator to the Django admin, a screen that is
+  not the answer and that most operators cannot reach, and BOTH the facilities
+  page and the sampling-points page were landing on it. 150-03 (ISS-183): no
+  caller reaches that branch today (each sets one of the three flags), and it
+  now says plainly that no screen adds the record rather than naming the admin. The facilities page is a flag
   flip: onboarding is what writes a system AND its facilities, so it gets
   `onboard_link`.
 
@@ -69,7 +71,7 @@
     Onboarding reads a water system and its facilities from EPA's federal record by PWSID; nothing is written until you review it.
   </p>
   <div class="form-footer" style="justify-content: center; margin-top: var(--space-md);">
-    <a href="{% url 'drinking:onboard' %}" class="btn-primary">Onboard a water system</a>
+    <a href="{% url 'drinking:onboard' %}" class="btn-primary">Add a water system</a>
   </div>
   {% elif points_link %}
     {% if points_pwsid %}
@@ -84,12 +86,12 @@
     No water system yet. Onboard one from EPA&rsquo;s federal record first; the builder then opens on that system and its facilities.
   </p>
   <div class="form-footer" style="justify-content: center; margin-top: var(--space-md);">
-    <a href="{% url 'drinking:onboard' %}" class="btn-primary">Onboard a water system</a>
+    <a href="{% url 'drinking:onboard' %}" class="btn-primary">Add a water system</a>
   </div>
     {% endif %}
   {% else %}
   <p class="text-tertiary text-sm" style="max-width: 460px; margin: var(--space-sm) auto 0 auto;">
-    Add it in the Django admin.
+    No screen adds one of these yet.
   </p>
   {% endif %}
 </div>

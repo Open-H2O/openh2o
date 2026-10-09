@@ -22,6 +22,16 @@
   toggle, the mobile-collapse script — is not module-owned and stays written out
   longhand.
 
+  150-03: which ONE link is lit is decided once per request, for every link
+  including Home and Help, by `core.modules.lit_entry` (the longest owning
+  prefix wins; Home and the Help pages are `FIXED_NAV_ENTRIES` there). It
+  arrives as `nav_lit`, the winner's url_name, with `nav_lit_section`; no link
+  here tests the path itself. On a page whose lit entry is in Administration
+  the `nav_mode` processor sets `nav_mode` to 'admin' for that request only,
+  so the section shows with its entry lit; the stored cookie is untouched.
+  The Infrastructure entry is hidden from a read-only account, like the two
+  write flows below (it opens a write page).
+
   The hairline `<hr>` inside a section comes from the same place: an entry
   carrying `starts_group` opens a new visual block. It is suppressed on the
   first entry of a section so a reduced deployment cannot end up with a rule
@@ -44,7 +54,7 @@
   suite tells you exactly which permutation moved.
 
   147-02: two entries in the loop below open a write flow rather than a page,
-  Setup Wizard (`setup:wizard`) and Onboard System (`drinking:onboard`), and
+  Setup Wizard (`setup:wizard`) and Add a water system (`drinking:onboard`), and
   neither carries a `visibility` predicate a viewer's read-only role can use.
   They are named by `url_name` rather than given a new `visibility` value,
   because the registry has no per-entry "this is a write flow" flag today and
@@ -61,7 +71,7 @@
 {% endcomment %}
         <!-- OVERVIEW (no label) -->
         <a href="{% url 'index' %}"
-           class="sidebar-link{% if request.path == '/' %} active{% endif %}">
+           class="sidebar-link{% if nav_lit == 'index' %} active{% endif %}">
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                 <polyline points="9 22 9 12 15 12 15 22"/>
@@ -72,16 +82,16 @@
         <!-- {{ section.label|upper }}{% if section.requires_admin_mode %} (Admin view only){% endif %} -->{% endif %}{% if not section.requires_admin_mode or nav_mode == 'admin' %}{% if section.label %}
         <div class="sidebar-section">
             <span class="sidebar-link-text sidebar-section-label">{{ section.label }}</span>
-        </div>{% endif %}{% for entry in section.entries %}{% if entry.visibility == 'agency_admin' and not user_is_admin %}{% elif entry.visibility == 'setup_gate' and access_enforced and not user_is_admin %}{% elif entry.url_name == 'setup:wizard' and user_can_write == False %}{% elif entry.url_name == 'drinking:onboard' and user_can_write == False %}{% else %}{% if entry.starts_group and not forloop.first %}
+        </div>{% endif %}{% for entry in section.entries %}{% if entry.visibility == 'agency_admin' and not user_is_admin %}{% elif entry.visibility == 'setup_gate' and access_enforced and not user_is_admin %}{% elif entry.url_name == 'setup:wizard' and user_can_write == False %}{% elif entry.url_name == 'drinking:onboard' and user_can_write == False %}{% elif entry.url_name == 'infrastructure:import' and user_can_write == False %}{% else %}{% if entry.starts_group and not forloop.first %}
         <hr class="sidebar-divider">{% endif %}
         <a href="{% url entry.url_name %}"
-           class="sidebar-link{% if entry|nav_active:request.path %} active{% endif %}">
+           class="sidebar-link{% if entry|nav_active:nav_lit %} active{% endif %}">
             {% include "partials/_nav_icon.html" with icon_key=entry.icon %}
             <span class="sidebar-link-text">{{ entry.label }}</span>
         </a>{% endif %}{% endfor %}{% endif %}{% endfor %}
 
-        <!-- HELP (collapsed by default; auto-opens on a help/about page) -->
-        <details class="sidebar-collapsible"{% if '/help/' in request.path or request.path == '/about/' %} open{% endif %}>
+        <!-- HELP (collapsed by default; auto-opens when the lit entry is one of its own) -->
+        <details class="sidebar-collapsible"{% if nav_lit_section == 'help' %} open{% endif %}>
         <summary class="sidebar-section sidebar-collapsible-summary">
             <span class="sidebar-link-text sidebar-section-label">Help</span>
             <svg class="sidebar-collapsible-chevron" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -89,7 +99,7 @@
             </svg>
         </summary>
         <a href="{% url 'getting_started' %}"
-           class="sidebar-link{% if request.path == '/help/getting-started/' %} active{% endif %}">
+           class="sidebar-link{% if nav_lit == 'getting_started' %} active{% endif %}">
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
                 <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
@@ -103,7 +113,7 @@
         the LABEL matters as much as the href: "Water Balance Info" puts an
         accounting noun in the sidebar of every page in the
         deployment.{% endcomment %}{% explainer_available "water_balances" as show_water_balances %}{% if show_water_balances %}<a href="{% url 'water_balances' %}"
-           class="sidebar-link{% if request.path == '/help/water-balances/' %} active{% endif %}">
+           class="sidebar-link{% if nav_lit == 'water_balances' %} active{% endif %}">
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 3v18"/>
                 <path d="M5 7h14"/>
@@ -114,7 +124,7 @@
             <span class="sidebar-link-text">How water balances work</span>
         </a>{% endif %}
         {% explainer_available "methods" as show_methods %}{% if show_methods %}<a href="{% url 'methods' %}"
-           class="sidebar-link{% if request.path == '/help/methods/' %} active{% endif %}">
+           class="sidebar-link{% if nav_lit == 'methods' %} active{% endif %}">
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="8" y1="6" x2="21" y2="6"/>
                 <line x1="8" y1="12" x2="21" y2="12"/>
@@ -126,7 +136,7 @@
             <span class="sidebar-link-text">Methods behind the numbers</span>
         </a>{% endif %}
         {% explainer_available "settings_explained" as show_settings %}{% if show_settings %}<a href="{% url 'settings_explained' %}"
-           class="sidebar-link{% if request.path == '/help/settings/' %} active{% endif %}">
+           class="sidebar-link{% if nav_lit == 'settings_explained' %} active{% endif %}">
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="3"/>
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
@@ -134,7 +144,7 @@
             <span class="sidebar-link-text">Configs &amp; settings, explained</span>
         </a>{% endif %}
         <a href="{% url 'glossary' %}"
-           class="sidebar-link{% if request.path == '/help/glossary/' %} active{% endif %}">
+           class="sidebar-link{% if nav_lit == 'glossary' %} active{% endif %}">
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="4" y1="6" x2="20" y2="6"/>
                 <line x1="4" y1="12" x2="14" y2="12"/>
@@ -143,7 +153,7 @@
             <span class="sidebar-link-text">Glossary</span>
         </a>
         <a href="{% url 'about' %}"
-           class="sidebar-link{% if request.path == '/about/' %} active{% endif %}">
+           class="sidebar-link{% if nav_lit == 'about' %} active{% endif %}">
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10"/>
                 <line x1="12" y1="16" x2="12" y2="12"/>

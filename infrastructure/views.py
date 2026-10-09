@@ -38,8 +38,8 @@ from wells.models import (
 ADD_TYPE_BACK = {
     "well": ("wells:list", "Wells"),
     "diversion": ("surface:pod_list", "Surface Diversions"),
-    "storage": ("recharge:list", "Recharge Areas"),
-    "recharge_site": ("recharge:list", "Recharge Areas"),
+    "storage": ("recharge:list", "Recharge sites"),
+    "recharge_site": ("recharge:list", "Recharge sites"),
 }
 ADD_TYPE_LABEL = {
     "well": "Well",

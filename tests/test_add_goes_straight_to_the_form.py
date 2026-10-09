@@ -13,7 +13,7 @@ doing it.
 `storage` had no "+ Add" button anywhere in the application. The four-card
 picker was its ONLY route in, so deleting the picker without giving storage a
 front door would have made a whole infrastructure type unreachable. It now has
-a button on Recharge Areas, which is the page that already lists it
+a button on Recharge sites, which is the page that already lists it
 (`ADD_TYPE_BACK["storage"]` points there, and `recharge_sites_list` filters on
 nothing).
 """

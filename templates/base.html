@@ -191,6 +191,11 @@
             sidebar.setAttribute('data-collapsed', 'true');
         }
 
+        // 150-03 (R-145): the lit entry can sit below the sidebar's fold.
+        // Only when the sidebar is open: on a phone it starts collapsed off screen.
+        var lit = sidebar.querySelector('.sidebar-link.active');
+        if (lit && sidebar.getAttribute('data-collapsed') !== 'true') lit.scrollIntoView({block: 'nearest'});
+
         toggle.addEventListener('click', function() {
             var isCollapsed = sidebar.getAttribute('data-collapsed') === 'true';
             sidebar.setAttribute('data-collapsed', isCollapsed ? 'false' : 'true');

@@ -67,7 +67,7 @@
           groundwater agency reads this row first and "start here" would be
           wrong for them; the wizard cannot do this step.{% endcomment %}{% if 'drinking' in enabled_modules %}<tr>
             <td class="col-step"><span class="step-num">{{ steps.pwsid }}</span>Onboard your water system</td>
-            <td class="col-where">Water Data &gt; Onboard System{% if user_can_write %}<br><a href="{% url 'drinking:onboard' %}" class="text-sm text-accent">Go to Onboard System &rarr;</a>{% endif %}</td>
+            <td class="col-where">Water Data &gt; Add a water system{% if user_can_write %}<br><a href="{% url 'drinking:onboard' %}" class="text-sm text-accent">Go to Add a water system &rarr;</a>{% endif %}</td>
             <td>Enter your Public Water System ID (PWSID) and OpenH2O looks up EPA&rsquo;s Envirofacts record for it: the regulatory details and the facilities. Nothing is written until you review the results and confirm.</td>
           </tr>{% endif %}
           {% comment %}The wizard's place in the order, as a row without a number
@@ -108,7 +108,7 @@
           recharge guards still matter: recharge can be dropped on its own, and
           then the surface onboarding must survive.{% endcomment %}{% if 'surface' in enabled_modules %}<tr>
             <td class="col-step"><span class="step-num">{{ steps.surface }}</span>{% if 'recharge' in enabled_modules %}Add surface diversions and recharge areas{% else %}Add surface diversions{% endif %}</td>
-            <td class="col-where">Water Data &gt; Surface Diversions{% if 'recharge' in enabled_modules %} and Recharge Areas{% endif %}<br><a href="{% url 'surface:pod_list' %}" class="text-sm text-accent">Go to Surface Diversions &rarr;</a>{% if 'recharge' in enabled_modules %}<br><a href="{% url 'recharge:list' %}" class="text-sm text-accent">Go to Recharge Areas &rarr;</a>{% endif %}</td>
+            <td class="col-where">Water Data &gt; Surface Diversions{% if 'recharge' in enabled_modules %} and Recharge sites{% endif %}<br><a href="{% url 'surface:pod_list' %}" class="text-sm text-accent">Go to Surface Diversions &rarr;</a>{% if 'recharge' in enabled_modules %}<br><a href="{% url 'recharge:list' %}" class="text-sm text-accent">Go to Recharge sites &rarr;</a>{% endif %}</td>
             <td>Record surface water rights with their points of diversion{% if 'recharge' in enabled_modules %}, and each event at your recharge areas{% endif %}.</td>
           </tr>{% endif %}
           {% if 'datasync' in enabled_modules %}<tr>

@@ -401,7 +401,7 @@ class TestReachable:
     def test_the_empty_system_page_offers_onboarding(self, client_in):
         body = client_in.get(reverse("drinking:overview")).content.decode()
 
-        assert "Onboard a water system" in body
+        assert "Add a water system" in body
         assert reverse("drinking:onboard") in body
 
     def test_the_empty_sampling_point_page_offers_onboarding_only_with_no_system(
@@ -420,17 +420,19 @@ class TestReachable:
         build on, and onboarding is the honest first step. This test pins both
         directions of that condition.
         """
+        # 150-03: the sidebar names the onboarding page on every drinking page,
+        # so both reads look below the sidebar, at the empty state itself.
         no_system = client_in.get(
             reverse("drinking:sampling_points")
-        ).content.decode()
-        assert "Onboard a water system" in no_system
+        ).content.decode().split("</aside>", 1)[-1]
+        assert "Add a water system" in no_system
 
         WaterSystem.objects.create(pwsid=PWSID, name="Bakman Water Company")
         with_system = client_in.get(
             reverse("drinking:sampling_points")
-        ).content.decode()
+        ).content.decode().split("</aside>", 1)[-1]
         assert "Build sampling points" in with_system
-        assert "Onboard a water system" not in with_system
+        assert "Add a water system" not in with_system
 
     def test_the_wizard_has_a_nav_entry(self):
         from core.modules import MODULE_REGISTRY

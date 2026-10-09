@@ -3,7 +3,7 @@
 map follows the list.
 
 Task 2 designed the card on Surface Diversions and Task 4 copied it, class for
-class, to Recharge Areas, Zones, Sampling Points, Facilities and Monitoring
+class, to Recharge sites, Zones, Sampling Points, Facilities and Monitoring
 Stations. 143-13 copied it again to Use Areas and Wells, when candidate A (the
 list is the page) closed the workspace FRAME ruling. This file is the guard
 for the pattern itself, closing five of the plan's twelve register rows:
@@ -19,7 +19,7 @@ for the pattern itself, closing five of the plan's twelve register rows:
          head out of band (`hx-swap-oob="true"`) rather than losing it.
   R-022  the Surface Diversions card: a count line and a key on one row, an
          always-on label layer on the pods source.
-  R-124  the Recharge Areas card: a second `-labels` source (one label per
+  R-124  the Recharge sites card: a second `-labels` source (one label per
          SITE, not per polygon ring) and the paint values that make a small
          basin (33-263 e-6 deg^2) read as a shape rather than two smudges.
 
@@ -341,7 +341,7 @@ class TestSurfaceDiversionsCard:
 
 
 # ---------------------------------------------------------------------------
-# R-124: the Recharge Areas card (label-per-site source, the fill/outline
+# R-124: the Recharge sites card (label-per-site source, the fill/outline
 # strengthened so a small basin reads at the fitted zoom).
 # ---------------------------------------------------------------------------
 

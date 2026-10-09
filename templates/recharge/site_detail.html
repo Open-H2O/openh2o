@@ -21,7 +21,7 @@
   <nav class="breadcrumb" aria-label="Breadcrumb">
     <a href="{% url 'recharge:list' %}">Water Data</a>
     <span class="breadcrumb-separator">/</span>
-    <a href="{% url 'recharge:list' %}">Recharge Areas</a>
+    <a href="{% url 'recharge:list' %}">Recharge sites</a>
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">{{ site.name }}</span>
   </nav>
@@ -37,7 +37,7 @@
 {% block content %}
 <div class="page-stack">
   <div>
-    <a href="{% url 'recharge:list' %}" class="back-link">&larr; Back to Recharge Areas</a>
+    <a href="{% url 'recharge:list' %}" class="back-link">&larr; Back to Recharge sites</a>
   </div>
   <!-- Persistent map host (the shared body partial builds the map into this). -->
   <div id="detail-map-card" class="card-raised" style="padding: 0; overflow: hidden; display: none;">

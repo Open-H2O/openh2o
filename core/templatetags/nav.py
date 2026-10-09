@@ -2,14 +2,13 @@
 """
 Sidebar helpers.
 
-One filter, existing for one reason: a nav entry can carry MORE THAN ONE
-active-state exclusion, and Django's template language cannot express "none of
-these substrings appear in the path". A ``{% for %}`` cannot AND its iterations
-together, so the check has to happen in Python.
-
-The decision itself lives on ``NavEntry.is_active`` — pure string work, unit
-testable without rendering anything. This module is only the bridge that lets a
-template pass ``request.path`` into it.
+``nav_active`` marks the one lit link. Since 150-03 the decision is made once
+per request, for the whole sidebar, by ``core.modules.lit_entry`` (the longest
+owning prefix wins), and reaches templates as ``nav_lit``, the winning entry's
+url_name, from the ``modules`` context processor. Deciding per entry, as
+``NavEntry.is_active`` did, let two entries light at once (Map and Zones on
+``/map/zones/``, R-098) and left pages with no entry of their own dark (R-028).
+This module is only the bridge that lets a template ask "is this the one".
 """
 from django import template
 
@@ -17,9 +16,9 @@ register = template.Library()
 
 
 @register.filter
-def nav_active(entry, path):
-    """``{% if entry|nav_active:request.path %}`` — is this the active link?"""
-    return entry.is_active(path or "")
+def nav_active(entry, lit):
+    """``{% if entry|nav_active:nav_lit %}``: is this entry the page's lit one?"""
+    return bool(lit) and entry.url_name == lit
 
 
 @register.simple_tag

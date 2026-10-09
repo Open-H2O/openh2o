@@ -36,7 +36,13 @@ import pytest
 from django.template.loader import render_to_string
 from django.test import RequestFactory
 
-from core.modules import SECTION_WATER_DATA, enabled_modules, nav_sections_for
+from core.modules import (
+    SECTION_WATER_DATA,
+    enabled_modules,
+    lit_entry,
+    nav_sections_for,
+    sidebar_entries,
+)
 
 GOLDEN_DIR = Path(__file__).parent / "golden"
 
@@ -74,6 +80,9 @@ VISIBILITY_CASES = [
 ACTIVE_PATHS = [
     "/",
     "/accounting/dashboard/",
+    # 150-03: the calculation receipt has no entry of its own and lights
+    # Dashboard through `also_matches`.
+    "/accounting/calculation-run/1/2024-06/",
     "/map/",
     "/accounting/ledger/",
     "/parcels/",
@@ -102,6 +111,9 @@ ACTIVE_PATHS = [
     # 146-04 Task 4's schedule door, and the same trap once more.
     "/drinking/schedule/",
     "/datasync/stations/",
+    # 150-03's Infrastructure entry, and its add page under the same prefix.
+    "/infrastructure/import/",
+    "/infrastructure/add/",
     "/accounting/accounts/",
     "/accounting/reporting-periods/",
     "/accounting/allocations/",
@@ -126,8 +138,15 @@ def render_sidebar(path="/", nav_mode="operations", user_is_admin=False,
     the processors happen to supply that day. `nav_sections` and
     `enabled_modules` are passed from the start so this helper is unchanged
     before and after the registry rewrite.
+
+    150-03: the lit link is decided once per request by `lit_entry`, which the
+    `modules` processor runs; it is computed here from the same entries and
+    passed as `nav_lit` / `nav_lit_section`, the two values the template reads.
+    `nav_mode` is passed as given: the per-request Admin override belongs to
+    the `nav_mode` processor and `tests/test_sidebar_lighting.py` tests it.
     """
     specs = enabled_modules(module_names)
+    lit = lit_entry(path, sidebar_entries(specs))
     return render_to_string(
         SIDEBAR,
         {
@@ -137,6 +156,8 @@ def render_sidebar(path="/", nav_mode="operations", user_is_admin=False,
             "access_enforced": access_enforced,
             "enabled_modules": [spec.name for spec in specs],
             "nav_sections": nav_sections_for(specs),
+            "nav_lit": lit.url_name if lit is not None else None,
+            "nav_lit_section": lit.section if lit is not None else "",
         },
     )
 
@@ -360,23 +381,24 @@ def test_every_registry_icon_key_has_a_partial():
 
 
 def test_every_nav_entry_is_rendered():
-    """All 27 module-owned entries appear when every gate is open.
+    """All 28 module-owned entries appear when every gate is open.
 
     Guards the failure mode a byte-diff cannot: if the registry loop silently
     drops an entry AND the fixture were regenerated, this still fails.
 
     19 through Phase 77; 78-02 adds Drinking Water, Sampling Points and Sample
-    Results to the Water Data section, 80-02 adds Onboard System, and 100-01
+    Results to the Water Data section, 80-02 adds the onboarding wizard (now
+    "Add a water system"), and 100-01
     adds Facilities. 146-02 Task 4 adds Curtailment Orders beside Water Rights.
     146-04 Task 2 adds Production beside the other drinking-water sub-pages,
     and 146-04 Task 4 adds Schedule after it. 147-01 added Change History to
     Overview; 147-02 removed it from the sidebar (Brent's checkpoint ruling),
-    so the count is back to 27.
+    so the count is back to 27. 150-03 adds Infrastructure under Water Data: 28.
     """
     html = render_sidebar(path="/", nav_mode="admin", user_is_admin=True,
                           access_enforced=False)
     expected = [e for spec in enabled_modules() for e in spec.nav]
-    assert len(expected) == 27
+    assert len(expected) == 28
     for entry in expected:
         assert f">{entry.label}</span>" in html, (
             f"Nav entry {entry.url_name!r} ({entry.label}) is missing from the sidebar"

@@ -1972,7 +1972,7 @@ def production_import_preview(request):
         return render(
             request,
             "drinking/partials/_production_import_result.html",
-            {"error": "Onboard a water system first."},
+            {"error": "Add a water system first."},
         )
 
     uploaded = request.FILES.get("file")
@@ -2061,7 +2061,7 @@ def production_import_commit(request):
         return render(
             request,
             "drinking/partials/_production_import_result.html",
-            {"error": "Onboard a water system first."},
+            {"error": "Add a water system first."},
         )
 
     try:

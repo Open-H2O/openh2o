@@ -8,7 +8,7 @@
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a href="{% url 'index' %}">Home</a>
+    <span>Administration</span>
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Delivery Settings</span>
   </nav>
@@ -173,10 +173,13 @@
     {% comment %} Setting: record addresses (146-06 Task 1, ISS-019). `core` owns
          SiteConfig.identifier_host, so this card is shown on every deployment.
          The addresses themselves are derived (core/identifiers.py); this is the
-         one stored piece. {% endcomment %}
+         one stored piece. 150-03 (ISS-224): titled by what the setting is for,
+         read from its own help text, which already says what it does and that
+         it matters before registering with Geoconnex, so no second line restates
+         it. {% endcomment %}
     <div class="card-raised">
       <span class="step-eyebrow">Setting {{ identifier_number }} of {{ settings_total }}</span>
-      <h2 class="section-header">Record addresses</h2>
+      <h2 class="section-header">Web addresses for your records</h2>
       <div class="field-group mt-sm mb-0">
         <label class="form-label" for="{{ form.identifier_host.id_for_label }}">{{ form.identifier_host.label }}</label>
         {{ form.identifier_host }}

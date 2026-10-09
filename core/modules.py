@@ -234,6 +234,37 @@ class NavEntry:
     active_excludes: tuple = ()
     visibility: str = VISIBILITY_ALWAYS
     starts_group: bool = False
+    #: Further path prefixes this entry owns besides `active_match` (150-03).
+    #: A page with no entry of its own names the entry it is reached from here,
+    #: so it lights that one: the calculation receipt lights Dashboard, the
+    #: monitoring page lights Monitoring Stations.
+    also_matches: tuple = ()
+    #: Module names of which at least one must be enabled for this entry to
+    #: exist at all (150-03). Empty means no condition. Applied where the
+    #: sidebar is composed (`nav_sections_for`, `sidebar_entries`) rather
+    #: than in the template, because an entry hidden in the template still
+    #: counts as the first of its section and would draw a `starts_group`
+    #: rule directly under the section label.
+    requires_any_module: tuple = ()
+
+    def owned_prefix_length(self, path: str) -> int:
+        """Length of the longest prefix of `path` this entry owns, or -1.
+
+        The lighting rule (Plan 150-03): an entry owns its `active_match` and
+        every `also_matches` prefix, except where one of its `active_excludes`
+        is a prefix of the path. `"/"` is owned exactly, never as a prefix of
+        everything. `lit_entry` picks the entry with the longest owned prefix.
+        """
+        if any(path.startswith(exclude) for exclude in self.active_excludes):
+            return -1
+        best = -1
+        for prefix in (self.active_match, *self.also_matches):
+            if prefix == "/":
+                if path == "/":
+                    best = max(best, 1)
+            elif path.startswith(prefix):
+                best = max(best, len(prefix))
+        return best
 
     def is_active(self, path: str) -> bool:
         """Whether this entry should render as the active link for `path`.
@@ -246,6 +277,28 @@ class NavEntry:
         if self.active_match not in path:
             return False
         return not any(exclude in path for exclude in self.active_excludes)
+
+
+def lit_entry(path: str, entries) -> Optional[NavEntry]:
+    """The ONE sidebar entry a page at `path` lights, or None (Plan 150-03).
+
+    The entry owning the longest prefix of `path` wins (see
+    `NavEntry.owned_prefix_length`), so `/map/zones/4/` lights Zones and not
+    Map, and `/surface/rights/` lights Water Rights and not Surface
+    Diversions. The result does not depend on the order of `entries`: two
+    entries owning the same prefix are a registry fault
+    (`tests/test_sidebar_lighting.py` holds the registry to none), and the
+    url_name breaks such a tie only so that the answer is stable.
+    """
+    best, best_key = None, None
+    for entry in entries:
+        length = entry.owned_prefix_length(path)
+        if length < 0:
+            continue
+        key = (length, entry.url_name)
+        if best_key is None or key > best_key:
+            best, best_key = entry, key
+    return best
 
 
 @dataclass(frozen=True)
@@ -535,6 +588,9 @@ MODULE_REGISTRY: dict = {
                 section=SECTION_OVERVIEW,
                 order=20,
                 active_match="/accounting/dashboard",
+                # 150-03: the calculation receipt is reached from the
+                # dashboard's figures and has no entry of its own.
+                also_matches=("/accounting/calculation-run/",),
             ),
             NavEntry(
                 url_name="accounting:ledger_list",
@@ -671,7 +727,9 @@ MODULE_REGISTRY: dict = {
         nav=(
             NavEntry(
                 url_name="recharge:list",
-                label="Recharge Areas",
+                # 150-03: one name for the record, the one the detail page,
+                # the counts, the map card and the popup already use.
+                label="Recharge sites",
                 icon="recharge",
                 section=SECTION_WATER_DATA,
                 order=50,
@@ -705,6 +763,8 @@ MODULE_REGISTRY: dict = {
                 section=SECTION_WATER_DATA,
                 order=60,
                 active_match="/datasync/stations",
+                # 150-03: the station-health page is the stations' own.
+                also_matches=("/datasync/monitoring/",),
             ),
         ),
         seed_commands=("seed_data_sources",),
@@ -788,7 +848,26 @@ MODULE_REGISTRY: dict = {
         url_prefix="infrastructure/",
         url_module="infrastructure.urls",
         url_order=110,
-        # Has views (bulk import) but no sidebar entry today.
+        nav=(
+            # 150-03: the add and import pages lit nothing until this entry
+            # existed. It opens the bulk import, the door Getting Started
+            # sends a new agency through; the add page is under the same
+            # prefix and lights it too. Hidden in the sidebar for a read-only
+            # account (a write page; _sidebar.html), and absent on a
+            # deployment that runs none of the three types it imports, where
+            # the page has nothing to offer (`requires_any_module`).
+            NavEntry(
+                url_name="infrastructure:import",
+                label="Infrastructure",
+                icon="infrastructure",
+                section=SECTION_WATER_DATA,
+                # 65: after Monitoring Stations (60), before the drinking
+                # water block (70).
+                order=65,
+                active_match="/infrastructure/",
+                requires_any_module=("wells", "surface", "recharge"),
+            ),
+        ),
     ),
     "feedback": ModuleSpec(
         name="feedback",
@@ -881,7 +960,7 @@ MODULE_REGISTRY: dict = {
                 # month figure is the whole point of the page it opens.
                 icon="production",
                 section=SECTION_WATER_DATA,
-                # 95: between Sample Results (90) and Onboard System (100) --
+                # 95: between Sample Results (90) and Add a water system (100) --
                 # 146-04 Task 2 (D7) added this after the module's original
                 # four sub-pages.
                 order=95,
@@ -894,14 +973,15 @@ MODULE_REGISTRY: dict = {
                 # with one ticked line, the operator's checklist.
                 icon="schedule",
                 section=SECTION_WATER_DATA,
-                # 97: after Production (95), before Onboard System (100);
+                # 97: after Production (95), before Add a water system (100);
                 # 146-04 Task 4 (D8).
                 order=97,
                 active_match="/drinking/schedule",
             ),
             NavEntry(
                 url_name="drinking:onboard",
-                label="Onboard System",
+                # 150-03 (R-013): the entry says what the page does.
+                label="Add a water system",
                 # Its own icon key, not a reuse: `test_icon_keys_are_unique`
                 # holds one glyph to one destination, so a shared icon would
                 # make two different nav rows look like the same place.
@@ -1320,6 +1400,68 @@ def dashboard_cards_for(modules) -> list:
     return cards
 
 
+#: The sidebar links that belong to no module: Home, and the Help section's
+#: pages. `_sidebar.html` writes them out longhand (their icons and the
+#: explainer gates live there); they are listed here only so that one
+#: resolver, `lit_entry`, decides what lights on every page (150-03), never a
+#: second matching mechanism in the template. `icon` is empty because the
+#: template draws these icons inline.
+FIXED_NAV_ENTRIES: tuple = (
+    NavEntry(
+        url_name="index", label="Home", icon="", section=SECTION_OVERVIEW,
+        order=0, active_match="/",
+    ),
+    NavEntry(
+        url_name="getting_started", label="Getting Started", icon="",
+        section=SECTION_HELP, order=10, active_match="/help/getting-started/",
+    ),
+    NavEntry(
+        url_name="water_balances", label="How water balances work", icon="",
+        section=SECTION_HELP, order=20, active_match="/help/water-balances/",
+    ),
+    NavEntry(
+        url_name="methods", label="Methods behind the numbers", icon="",
+        section=SECTION_HELP, order=30, active_match="/help/methods/",
+    ),
+    NavEntry(
+        url_name="settings_explained", label="Configs & settings, explained",
+        icon="", section=SECTION_HELP, order=40, active_match="/help/settings/",
+        # The two help pages with no entry of their own, both linked from it.
+        also_matches=("/help/budgets-allocations/", "/help/surface-deliveries/"),
+    ),
+    NavEntry(
+        url_name="glossary", label="Glossary", icon="", section=SECTION_HELP,
+        order=50, active_match="/help/glossary/",
+    ),
+    NavEntry(
+        # Owns /about/demonstration-data/ too, by prefix.
+        url_name="about", label="About", icon="", section=SECTION_HELP,
+        order=60, active_match="/about/",
+    ),
+)
+
+
+def _entry_exists(entry, module_names) -> bool:
+    """Whether an entry's `requires_any_module` condition holds."""
+    if not entry.requires_any_module:
+        return True
+    return any(name in module_names for name in entry.requires_any_module)
+
+
+def sidebar_entries(modules) -> list:
+    """Every link the sidebar can light: the modules' entries and the fixed ones."""
+    names = {spec.name for spec in modules}
+    module_entries = [
+        entry for spec in modules for entry in spec.nav if _entry_exists(entry, names)
+    ]
+    return module_entries + list(FIXED_NAV_ENTRIES)
+
+
+def section_requires_admin_mode(section_key: str) -> bool:
+    """Whether the sidebar hides this section in Operations mode."""
+    return any(s.key == section_key and s.requires_admin_mode for s in NAV_SECTIONS)
+
+
 def nav_sections_for(modules) -> list:
     """Sidebar sections in display order, each carrying its ordered entries.
 
@@ -1327,10 +1469,12 @@ def nav_sections_for(modules) -> list:
     each entry carries its predicate key and the template applies it, which
     keeps this file free of any request or Django-model dependency.
     """
+    names = {spec.name for spec in modules}
     by_section: dict = {}
     for spec in modules:
         for entry in spec.nav:
-            by_section.setdefault(entry.section, []).append(entry)
+            if _entry_exists(entry, names):
+                by_section.setdefault(entry.section, []).append(entry)
 
     sections = []
     for section in NAV_SECTIONS:

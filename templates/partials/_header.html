@@ -69,7 +69,10 @@
 
     <!-- User menu -->
     <div class="app-header-user">
-        {% if nav_mode == 'admin' %}
+        {% comment %}150-03: the STORED mode, not the displayed one: an
+        Administration page shows that section in Operations for its own
+        request only, and the person has not chosen Admin mode.{% endcomment %}
+        {% if nav_mode_stored == 'admin' %}
             <a href="{% url 'set_nav_mode' %}?mode=operations" class="header-mode-badge"
                title="You are in Admin mode — click to return to Operations">Admin mode</a>
         {% endif %}

@@ -233,7 +233,7 @@ class TestBothEmptyStates:
         # nav rather than about this empty state. (The same trap caught three
         # assertions in tests/test_drinking_module_shows_what_to_do.py during
         # its red run; that file scopes by CSS class instead.)
-        assert "Onboard a water system" in html
+        assert "Add a water system" in html
         assert "Import lab results" not in html
 
 

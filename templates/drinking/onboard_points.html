@@ -10,9 +10,9 @@
     <span class="breadcrumb-separator">/</span>
     <a href="{% url 'drinking:overview' %}">Drinking Water</a>
     <span class="breadcrumb-separator">/</span>
-    <a href="{% url 'drinking:onboard' %}">Onboard</a>
+    <a href="{% url 'drinking:onboard' %}">Add a water system</a>
     <span class="breadcrumb-separator">/</span>
-    <span class="breadcrumb-current">Sampling Points</span>
+    <span class="breadcrumb-current">Sampling points</span>
   </nav>
   <p class="page-description">A sampling point record is one PS Code: PWSID, facility ID and point number. Add the points your lab file names.</p>
 </div>
@@ -38,7 +38,7 @@
 {% block content %}
 <div class="page-stack page-wide">
 
-  <a href="{% url 'drinking:onboard' %}" class="back-link">&larr; Back to Onboard</a>
+  <a href="{% url 'drinking:onboard' %}" class="back-link">&larr; Back to Add a water system</a>
 
   {% comment %}
     The operator's own system comes first. Landing on three paragraphs of
