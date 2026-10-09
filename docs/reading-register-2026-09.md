@@ -1338,6 +1338,13 @@ record of the reads in `READER-TASKS-2026-10-08.md`. ISS-168 ran as one sweep wi
 `scripts/label_repeats.py`: 30 candidates in 245 templates, 14 labels restating their heading fixed,
 16 standing (a quantity's own name, a column that must name its column, a publisher's field name).
 Six Phase 150 rows (R-028, R-145, R-012, R-013, R-098, R-072) and About stay with Phase 150.
+149.1-08 (complete sentences, approved 2026-10-08 18:50 PDT) swept every explanatory line on every
+screen under copy rule 15 (DESIGN.md, written the same day from Brent's facility-page case): 271
+flagged blocks read against the rule's text, 161 rewritten (117 screen, 44 on the seven approved help
+pages, in by his call), 110 standing with a reason each; the Page / Before / After table in
+`.planning/phases/149.1-plain-words-and-clear-screens/page-verdict/CHANGES-08-2026-10-08.md`, the
+plain-language pass, sixteen fresh reads and the collision sweep in `READER-TASKS-2026-10-08b.md`.
+Phase 149.1 closed with it; the register's Phase 144 queue holds nothing for a words phase now.
 
 | 35 | R-104 | c43 | The zone's year-end setting calls the zone 'this district' and describes its unused surface-water allotment, while the head calls the same thing a Management Area and the only table on the page shows groundwater, so a reader cannot say what the setting acts on. |
 | 38 | R-109 | c45 | The same 330.37 AF appears twice within a hand's width on the use-area page, once as the Residual marked Deficit and once as 'Water use recorded, no supply reported', and nothing says the two are one quantity, so a reader may read the shortfall as counted twice. (A reading finding, not ISS-158's data question: the arithmetic is right and the screen is what misleads.) |
