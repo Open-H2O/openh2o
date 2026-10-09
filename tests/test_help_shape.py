@@ -37,6 +37,9 @@ ENFORCED: list = [
     "templates/help/glossary.html",
     "templates/help/partials/_the_subtraction.html",
     "templates/help/partials/_canal_split_diagram.html",
+    # 150-03 (2026-10-09): About carried to the help-page shape; measured 18 blocks,
+    # longest 43, share 0.35 on the day it joined.
+    "templates/about.html",
 ]
 
 #: Files not yet under the gate, with (longest, share) as measured; the test fails if either rises.
@@ -124,7 +127,12 @@ def test_every_help_file_is_in_exactly_one_list():
     on_disk = {str(p.relative_to(REPO_ROOT)) for p in HELP_DIR.rglob("*.html")}
     listed = list(ENFORCED) + list(PENDING)
     assert len(listed) == len(set(listed)), "a help file is in both lists or twice in one"
-    assert set(listed) == on_disk, (
-        f"unlisted: {sorted(on_disk - set(listed))}; missing on disk: "
-        f"{sorted(set(listed) - on_disk)}"
+    # A page outside templates/help/ may join ENFORCED (About did, 150-03); the
+    # completeness check is over the help folder only.
+    listed_help = {rel for rel in listed if rel.startswith("templates/help/")}
+    assert listed_help == on_disk, (
+        f"unlisted: {sorted(on_disk - listed_help)}; missing on disk: "
+        f"{sorted(listed_help - on_disk)}"
     )
+    for rel in listed:
+        assert (REPO_ROOT / rel).exists(), f"{rel} is listed but not on disk"

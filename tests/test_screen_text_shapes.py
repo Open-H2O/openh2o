@@ -125,6 +125,8 @@ def measured() -> dict:
 
 
 #: Ceilings on 2026-10-03: 122 em dashes in 50 templates, one narrative verb.
+#: 150-03 (2026-10-09): about.html rebuilt at the help-page shape with none, so
+#: its entry (8) came off.
 #: Lower one when a template loses a shape; never raise one. The one narrative
 #: verb ("a field with no such zone has nowhere to credit it", help/methods.html)
 #: arrived with the 148-03 page Brent passed at its checkpoint; the 2026-10-06
@@ -132,7 +134,6 @@ def measured() -> dict:
 #: em dashes on help/water_balances.html, so both entries came off the list.
 BASELINE: dict = {
     "em dash": {
-        "templates/about.html": 8,
         "templates/accounting/partials/_needs_attention.html": 1,
         "templates/allauth/layouts/base.html": 1,
         "templates/base.html": 1,
