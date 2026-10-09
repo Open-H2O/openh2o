@@ -113,7 +113,7 @@
                  month table below carries each month's. Omitted with no
                  delivery (0.00 says nothing, rule 8). {% endcomment %}
             {% if mass_balance.inputs.surface %}
-            <div class="budget-breakdown-row"><span>the crop could use{% if mass_balance.surface_efficiency_percent is not None %}, at {{ mass_balance.surface_efficiency_percent|floatformat }}%{% endif %}</span><b>{{ mass_balance.surface_usable_af|floatformat:2|intcomma }}</b></div>
+            <div class="budget-breakdown-row"><span>the crop could use{% if mass_balance.surface_efficiency_percent is not None %} ({{ mass_balance.surface_efficiency_percent|floatformat }}%){% endif %}</span><b>{{ mass_balance.surface_usable_af|floatformat:2|intcomma }}</b></div>
             {% endif %}
             <div class="budget-breakdown-row"><span>Groundwater extracted{% if mass_balance.gw_is_estimated %}<span class="budget-breakdown-note">estimated</span>{% endif %}</span><b>{{ mass_balance.inputs.gw_recovered|floatformat:2|intcomma }}</b></div>
             <div class="budget-breakdown-row"><span>Rain</span><b>{{ mass_balance.inputs.precip|floatformat:2|intcomma }}</b></div>

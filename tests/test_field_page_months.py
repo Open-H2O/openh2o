@@ -191,7 +191,7 @@ def test_the_panel_states_the_canal_water_the_crop_could_use():
     parcel, period = _well_field("TST-MONTHS-003")
     html = _pane(parcel, period)
 
-    assert "<span>the crop could use, at 75%</span><b>80.90</b>" in html
+    assert "<span>the crop could use (75%)</span><b>80.90</b>" in html
 
 
 def test_a_one_run_period_reads_the_same_on_the_panel_and_the_receipt():
@@ -199,7 +199,7 @@ def test_a_one_run_period_reads_the_same_on_the_panel_and_the_receipt():
     parcel, period = _well_field("TST-MONTHS-004", july=False)
     html = _pane(parcel, period)
     assert "<span>Surface</span><b>107.86</b>" in html
-    assert "<span>the crop could use, at 75%</span><b>80.90</b>" in html
+    assert "<span>the crop could use (75%)</span><b>80.90</b>" in html
 
     receipt = _client().get(
         reverse(

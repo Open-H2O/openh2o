@@ -5790,7 +5790,20 @@ details[open] > summary .disclosure-mark {
     display: grid;
     grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
     gap: var(--space-lg);
-    align-items: start;
+    align-items: stretch;
+}
+/* The map card takes the balance card's height (the row's), and the map
+   fills it: at 380px beside a taller balance card the map ended in a
+   hanging gap under it (page verdict, 150-02 round 2). The host's inline
+   380px stays the floor for the one-column layout below. */
+.page-grid-field > #detail-map-card {
+    display: flex;
+    flex-direction: column;
+}
+.page-grid-field > #detail-map-card > #detail-map {
+    height: auto !important;
+    min-height: 380px;
+    flex: 1 1 auto;
 }
 .page-grid-field > #detail-body,
 .page-grid-field .pane-stack {
