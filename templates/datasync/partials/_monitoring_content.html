@@ -47,7 +47,7 @@
         {% if info.status_code == "needs_key" %}
         <p class="text-tertiary text-xs m-0">Add the API credential on the server to enable this source.</p>
         {% elif info.status_code == "no_stations" %}
-        <p class="text-tertiary text-xs m-0">No stations wired yet; run station discovery for this source.</p>
+        <p class="text-tertiary text-xs m-0">No station is wired yet. Run station discovery for this source.</p>
         {% elif info.status_code == "none_activated" %}
         <p class="text-tertiary text-xs m-0">
           {{ info.total }} station{{ info.total|pluralize }} known here, none switched on. Discovery adds stations dormant; open one and activate it to start syncing.
@@ -74,7 +74,7 @@
   <div>
     <h2 class="section-header">Active stations</h2>
     <p class="text-secondary text-base mb-md">
-      {{ shown }} of the {{ total_active }} active stations: the ones up to date or slightly behind. The {{ dead_count }} dormant are on the <a class="text-link" href="{% url 'datasync:station_list' %}?reporting=dead">station list</a>.
+      The cards below show the {{ shown }} of {{ total_active }} active stations that are up to date or slightly behind. The {{ dead_count }} dormant station{{ dead_count|pluralize }} {{ dead_count|pluralize:"is,are" }} on the <a class="text-link" href="{% url 'datasync:station_list' %}?reporting=dead">station list</a>.
     </p>
     {% if station_list %}
     <div class="station-card-grid">

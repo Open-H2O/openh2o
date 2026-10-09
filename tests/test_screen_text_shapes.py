@@ -132,13 +132,12 @@ def measured() -> dict:
 #: em dashes on help/water_balances.html, so both entries came off the list.
 BASELINE: dict = {
     "em dash": {
-        "templates/about.html": 10,
+        "templates/about.html": 8,
         "templates/accounting/partials/_needs_attention.html": 1,
         "templates/allauth/layouts/base.html": 1,
         "templates/base.html": 1,
         "templates/base_auth.html": 1,
         "templates/core/user_form.html": 1,
-        "templates/datasync/monitoring_dashboard.html": 1,
         "templates/datasync/station_add.html": 1,
         "templates/drinking/overview.html": 4,
         "templates/drinking/production.html": 1,

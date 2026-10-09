@@ -191,7 +191,7 @@ def test_the_empty_page_says_so(operator):
     # demonstration's golden build does.
     call_command("clear_change_history", "--golden-build")
     html = _client(operator).get(reverse("change_history")).content.decode()
-    assert "No changes recorded yet." in html
+    assert "No change is recorded yet." in html
     assert "0 changes, newest first" in html
 
 

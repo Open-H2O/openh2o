@@ -66,9 +66,9 @@
     <div style="position: relative; height: 300px;">
       <canvas id="telemetry-chart"></canvas>
     </div>
-    <p id="chart-empty" class="text-tertiary text-base" style="display: none; margin-top: var(--space-sm);">No published data for this period.</p>
+    <p id="chart-empty" class="text-tertiary text-base" style="display: none; margin-top: var(--space-sm);">This station has no published data for this period.</p>
     {% else %}
-    <p class="text-secondary text-base">No published readings from this station.{% if not station.is_active %} Syncing is switched off for it.{% endif %}</p>
+    <p class="text-secondary text-base">This station has no published readings.{% if not station.is_active %} Syncing is switched off for it.{% endif %}</p>
     {% endif %}
   </div>
 
@@ -305,7 +305,7 @@
   {% else %}
   <div class="card-raised">
     <h2 class="section-header-flush">Sync history</h2>
-    <p class="text-tertiary text-base">No sync runs for {{ station.data_source.name }} and no data records for this station yet.</p>
+    <p class="text-tertiary text-base">{{ station.data_source.name }} has no sync runs yet. This station has no data records yet.</p>
   </div>
   {% endif %}
 </div>

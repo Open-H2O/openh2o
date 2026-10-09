@@ -22,8 +22,8 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Monitoring Dashboard</span>
   </nav>
-  <p class="page-description">Station health, data freshness, and sync status across all active data sources. Refreshes every 60 seconds.</p>
-  {% if boundary_name %}<p class="text-secondary text-sm" style="margin-top: 0;">{{ boundary_name }} &mdash; including reservoirs and upstream gauges outside the agency boundary.</p>{% endif %}
+  <p class="page-description">This dashboard shows station health, data freshness and sync status for all active data sources. It refreshes every 60 seconds.</p>
+  {% if boundary_name %}<p class="text-secondary text-sm" style="margin-top: 0;">The agency boundary is {{ boundary_name }}. The stations here include reservoirs and upstream gauges outside it.</p>{% endif %}
 </div>
 {% endblock %}
 

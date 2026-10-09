@@ -70,7 +70,7 @@ class TestDormantStationSaysWhyItIsEmpty:
         # partial, so a substring check would pass even with no canvas.
         assert body.count('id="telemetry-chart"') == 0
         assert body.count('<button class="chart-range-btn"') == 0
-        assert "No published readings from this station." in body
+        assert "This station has no published readings." in body
         assert "Syncing is switched off for it." in body
 
     def test_no_current_readings_card_and_one_merged_sync_history_card(self, auth_client):
@@ -86,8 +86,8 @@ class TestDormantStationSaysWhyItIsEmpty:
         body = resp.content.decode()
         assert "No published readings yet." not in body
         assert (
-            "No sync runs for Probe Dormant Source Three and no data records "
-            "for this station yet." in body
+            "Probe Dormant Source Three has no sync runs yet. This station has "
+            "no data records yet." in body
         )
         # rule 6: the dashboard's old vocabulary never appears on this page.
         assert "On schedule" not in body

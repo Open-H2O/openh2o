@@ -11,7 +11,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Change History</span>
   </nav>
-  <p class="page-description">Every change to a figure, or to a link that moves one, with who made it and its value before and after.</p>
+  <p class="page-description">Every change to a figure or a link that moves one is listed. Each row shows its author and the value before and after.</p>
 </div>
 {% endblock %}
 
@@ -65,7 +65,7 @@
     {% include "partials/_change_rows.html" with rows=page_obj.object_list show_record=True %}
     {% else %}
     <p class="text-tertiary" style="padding: var(--space-lg) var(--space-md); margin: 0; text-align: center;">
-      {% if querystring %}No changes match these filters.{% else %}No changes recorded yet.{% endif %}
+      {% if querystring %}No changes match these filters.{% else %}No change is recorded yet.{% endif %}
     </p>
     {% endif %}
   </div>

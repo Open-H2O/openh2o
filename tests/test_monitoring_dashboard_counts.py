@@ -123,8 +123,8 @@ class TestActiveStationsSectionSaysWhichOnesAndWhy:
         resp = auth_client.get(reverse("datasync:monitoring_dashboard"))
         body = resp.content.decode()
         assert (
-            "1 of the 3 active stations: the ones up to date or slightly "
-            "behind. The 2 dormant are on the "
+            "The cards below show the 1 of 3 active stations that are up to date or "
+            "slightly behind. The 2 dormant stations are on the "
             '<a class="text-link" href="/datasync/stations/?reporting=dead">'
             "station list</a>." in body
         )
