@@ -21,6 +21,14 @@
   says so, which read as reassurance on staging for two days. It now stands down
   entirely and lets the banner below explain why, rather than certifying a basin
   nobody has measured.
+
+  150-01 (2026-10-08): a reader with no project history could not tell what
+  "1 period to close", "25 stations down" or "37 fields ..." counted. Each row
+  now says, in one sentence under its words, the rule the view counts by, and
+  links to the list it counts: the water years list, the station list
+  filtered to the stations the view calls down (`?reporting=dead`, the same
+  freshness classifier), and the two tables below. Each sentence is checked
+  against the view's own predicate in accounting/views.py::dashboard.
 {% endcomment %}
 {% if attention_total or not engine_has_never_run %}
 {% if attention_total %}
@@ -30,21 +38,21 @@
   {% if periods_to_close %}
   <a href="{% url 'accounting:periods_list' %}" class="attention-row">
     <span class="attention-count attention-count--warn">{{ periods_to_close }}</span>
-    <span class="attention-row-text">period{{ periods_to_close|pluralize }} to close</span>
+    <span class="attention-row-text">period{{ periods_to_close|pluralize }} to close<span class="block text-tertiary text-xs">This counts each water year whose end date has passed and that is not yet finalized.</span></span>
   </a>
   {% endif %}
 
   {% if stations_down and 'datasync' in enabled_modules %}
-  <a href="{% url 'datasync:station_list' %}" class="attention-row">
+  <a href="{% url 'datasync:station_list' %}?reporting=dead" class="attention-row">
     <span class="attention-count attention-count--down">{{ stations_down }}</span>
-    <span class="attention-row-text">station{{ stations_down|pluralize }} down</span>
+    <span class="attention-row-text">station{{ stations_down|pluralize }} down<span class="block text-tertiary text-xs">This counts each syncing station that has published nothing for four times its source's usual interval.</span></span>
   </a>
   {% endif %}
 
   {% if accounts_over_budget %}
   <a href="#active-accounts" class="attention-row">
     <span class="attention-count attention-count--over">{{ accounts_over_budget }}</span>
-    <span class="attention-row-text">account{{ accounts_over_budget|pluralize }} over groundwater budget</span>
+    <span class="attention-row-text">account{{ accounts_over_budget|pluralize }} over groundwater budget<span class="block text-tertiary text-xs">This counts each active account whose groundwater use this water year has passed its groundwater allocation.</span></span>
   </a>
   {% endif %}
 
@@ -56,7 +64,7 @@
   {% if unmet_demand_count %}
   <a href="#unmet-demand" class="attention-row">
     <span class="attention-count attention-count--over">{{ unmet_demand_count }}</span>
-    <span class="attention-row-text">field{{ unmet_demand_count|pluralize }} with water use recorded, no supply reported</span>
+    <span class="attention-row-text">field{{ unmet_demand_count|pluralize }} with water use recorded, no supply reported<span class="block text-tertiary text-xs">This counts each field whose water use in a month was more than the water on its record.</span></span>
   </a>
   {% endif %}
 

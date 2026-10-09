@@ -3178,8 +3178,17 @@ html { color-scheme: dark; }
    blocks of ~330px, so ~300px of nothing collected in its last cell. The
    period card beside it gives the panel the width the component was built
    for (~1,020px), the way the account page pairs Account information with
-   Account balance. The card sets the row's height; the panel seats its body
-   in the middle, the same rule as `.page-grid-account-balance`. */
+   Account balance.
+
+   150-01 (2026-10-08): the panel's height is its own content's. It used to
+   stretch to the period card and centre its body in the stretched height,
+   so at 1,730 the figures stood 76px below the head's rule and 76px above
+   the note's (26px of that is the body's padding; measured 2026-10-08);
+   two readers with no project history named those bands first. The panel now starts at the top of the row and ends at its
+   note. The card still stretches, so where the stacked panel is the taller
+   of the two (1,265 and 1,440) the card runs down to the panel's foot as
+   before, and where the card is taller (1,730) the space is under the
+   panel, not inside it. */
 .page-grid-dashboard-top {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 360px;
@@ -3192,27 +3201,33 @@ html { color-scheme: dark; }
     }
 }
 .page-grid-dashboard-top > .budget-panel {
-    display: flex;
-    flex-direction: column;
-}
-.page-grid-dashboard-top > .budget-panel > .budget-panel-body {
-    flex: 1 1 auto;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+    align-self: start;
 }
 /* Brent's ruling on the mock-up (12:54 PDT): "the District water balance
    should still maintain our centered look so that it's actually balanced
    and not left justified." Three equal cells, each figure block centred in
    its cell, the block itself left-aligned so the parts still read as a list.
    Inside the same container query as the row layout so the sub-700px stack
-   above keeps winning. */
+   above keeps winning.
+
+   150-01 (2026-10-08), "unevenly spaced": the cells were equal, but each
+   block was centred at its OWN width, so the three labels stood 47, 18 and
+   51px into their cells at 1,730 and 30, 17 and 23px at 1,153. Every block
+   is now ONE width, 88% of its cell (or its content, where that is wider),
+   centred, so all three stand the same distance into their cells at every
+   width the row renders. 88%: the widest block, Consumptive use with
+   "Accounts with estimates 11 of 11", is 249px of a 285px cell at 1,730
+   and 195px of a 229px cell at 1,153 (85 to 87%). `minmax(0, 1fr)` holds
+   the three tracks equal even where one cell's content is the wider. This
+   query is the only row template the centred panel ever takes: at 700px
+   and under the stack above applies, so the base `1.3fr` row never does. */
 @container (min-width: 700px) {
     .budget-panel--centered .budget-panel-body .budget-panel-row {
-        grid-template-columns: 1fr auto 1fr auto 1fr;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
     }
     .budget-panel--centered .budget-panel-body .budget-seg {
         display: grid;
+        grid-template-columns: minmax(88%, max-content);
         justify-content: center;
         padding-right: 0;
     }
