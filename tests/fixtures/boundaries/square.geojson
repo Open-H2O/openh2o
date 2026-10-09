@@ -1,0 +1,1 @@
+{"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {"name": "Merced Test Square"}, "geometry": {"type": "Polygon", "coordinates": [[[-120.6, 37.2], [-120.5, 37.2], [-120.5, 37.3], [-120.6, 37.3], [-120.6, 37.2]]]}}]}

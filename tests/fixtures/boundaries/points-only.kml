@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>points-only</name>
+    <Placemark>
+      <name>Well A</name>
+      <Point>
+        <coordinates>-120.55,37.25,0</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Well B</name>
+      <Point>
+        <coordinates>-120.52,37.22,0</coordinates>
+      </Point>
+    </Placemark>
+  </Document>
+</kml>
