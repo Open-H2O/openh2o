@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% comment %}
   Standalone page for a single water account. The body is the shared
@@ -6,7 +7,27 @@
   #detail-body), so the page and the in-pane view never drift. This page is the
   deep-link / direct-URL target and the "open full page" escape from the
   accounts workspace at accounting:accounts_list.
+
+  The account's map (ISS-175, 150-02): the pane draws the use-area card on this
+  page only, so the map library, map-core.js and the map CSS load here, with
+  the same includes as the Use Areas list, and only when one of the account's
+  use areas has a location. The map script is the shared overview partial,
+  fetching parcels:geojson?account=<pk> and framing every use area it loads.
 {% endcomment %}
+
+{% block map_styles %}
+{% if 'parcels' in enabled_modules and use_areas_located_count %}
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/map-engine.css' %}">
+{% endif %}
+{% endblock %}
+
+{% block map_scripts %}
+{% if 'parcels' in enabled_modules and use_areas_located_count %}
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="{% static 'js/map-core.js' %}"></script>
+{% endif %}
+{% endblock %}
 
 {% block title %}{{ account.name }} - Open Water Accounting Platform{% endblock %}
 {% block page_title %}{{ account.name }}{% endblock %}
@@ -47,4 +68,12 @@
     {% include "accounting/partials/_account_detail_pane.html" with on_full_page=True %}
   </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+{% if 'parcels' in enabled_modules and use_areas_located_count %}
+{% url "parcels:geojson" as parcels_geojson_url %}{% with account_pk=account.pk|stringformat:"d" %}
+{% include "parcels/partials/_parcels_overview_map.html" with map_id="account-use-areas-map" geojson_url=parcels_geojson_url|add:"?account="|add:account_pk follow_results=False %}
+{% endwith %}
+{% endif %}
 {% endblock %}

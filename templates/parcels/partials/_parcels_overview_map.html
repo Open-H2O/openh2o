@@ -13,7 +13,7 @@ The overview map card (143-07). Three things beyond the fill:
   * The map FOLLOWS THE LIST. The results partial emits the whole filtered
     queryset's pks as json_script#results-map-pks, and OH2O.followResults
     filters every layer here to those pks and re-frames on first paint and
-    after every htmx swap of #results. The geojson endpoint takes NO
+    after every htmx swap of #results. The list's fetch passes NO
     parameter: one fetch per page load, one source, filtered client-side.
   * The card's head (partials/_map_card_head.html) carries the count line and
     the key; the map itself says nothing in words.
@@ -24,8 +24,18 @@ includes this partial only when something has a location (located_count):
 with nothing to draw the card is its head alone and no map is built.
 
 Variables:
-  map_id  - ID of the existing <div> container on the page (required)
-{% endcomment %}
+  map_id          - ID of the existing <div> container on the page (required)
+  geojson_url     - optional: the URL to fetch instead of parcels:geojson with
+                    no parameter. The account page (ISS-175, 150-02) passes
+                    parcels:geojson?account=<pk>, so the one source holds only
+                    that account's use areas.
+  follow_results  - optional, on unless passed False: OH2O.followResults ties
+                    the map to the list's #results-map-pks. The account page
+                    has no list to follow and passes False; the map then
+                    frames every feature it loaded, once, with the same
+                    padding and zoom ceiling.
+The Use Areas list passes neither, so its map is the one described above.
+{% endcomment %}{% url "parcels:geojson" as parcels_geojson_url %}
 <script>
 (function() {
   // MapLibre loads in the map_scripts block, which renders AFTER page content,
@@ -58,7 +68,7 @@ Variables:
     var detailUrl = '{% url "parcels:detail" 0 %}';
 
     map.on('load', function() {
-      fetch('{% url "parcels:geojson" %}')
+      fetch('{{ geojson_url|default:parcels_geojson_url }}')
         .then(function(r) { return r.json(); })
         .then(function(data) {
           if (!data.features || !data.features.length) return;
@@ -89,6 +99,13 @@ Variables:
             }
           });
 
+{% if follow_results is False %}
+          // No list to follow: frame every feature the source holds, once.
+          var bounds = OH2O._geojsonBounds(data);
+          if (bounds) {
+            map.fitBounds(bounds, { padding: { top: 64, bottom: 64, left: 40, right: 40 }, maxZoom: 13 });
+          }
+{% else %}
           // Filter to the list's pks and frame them: now, and after every swap
           // of #results.
           OH2O.followResults(map, {
@@ -101,6 +118,7 @@ Variables:
             maxZoom: 13,
             singleZoom: 11
           });
+{% endif %}
 
           map.on('click', '{{ map_id }}-fill', function(e) {
             var p = e.features[0].properties;

@@ -1188,6 +1188,16 @@ def _account_detail_context(account, period_param=None):
     use_areas_in_surplus = sum(1 for pb in parcel_balances if pb["net_vs_supply"] >= 0)
     use_areas_in_deficit = len(parcel_balances) - use_areas_in_surplus
 
+    # The account's map card (ISS-175, 150-02): the head's two counts, read off
+    # the rows the loop above already fetched (select_related parcel, so no
+    # query). Counted by use area, not by row, because the map draws each use
+    # area once; `?account=` on parcels:geojson selects the same active rows.
+    assigned_parcels = {a.parcel_id: a.parcel for a in assignments}
+    use_areas_all_count = len(assigned_parcels)
+    use_areas_located_count = sum(
+        1 for p in assigned_parcels.values() if p.geometry is not None
+    )
+
     # Curtailment narrative (ISS / Phase 52-02): surface the cut as a story, not
     # just lower numbers. An account is "curtailed" when any of its parcels is
     # served by a water right under a curtailment order. Match the active order to
@@ -1227,6 +1237,8 @@ def _account_detail_context(account, period_param=None):
         "use_areas_estimated": use_areas_estimated,
         "use_areas_in_surplus": use_areas_in_surplus,
         "use_areas_in_deficit": use_areas_in_deficit,
+        "use_areas_all_count": use_areas_all_count,
+        "use_areas_located_count": use_areas_located_count,
         "periods": periods,
         "selected_period": selected_period,
         "is_curtailed": is_curtailed,

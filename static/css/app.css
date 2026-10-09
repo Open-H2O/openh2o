@@ -899,6 +899,11 @@ html { color-scheme: dark; }
 .page-grid-2col > * {
     min-width: 0;
 }
+/* Each card its content's height (150-02, ISS-201): the water right's
+   curtailment card was stretched to the points-of-diversion list beside it. */
+.page-grid-2col--align-start {
+    align-items: start;
+}
 
 /* The well's Measurement history: meter reads beside the depth digest, each
    column a facts line over a table. Subgrid puts both facts lines in one row
@@ -980,8 +985,24 @@ html { color-scheme: dark; }
     flex-direction: column;
     justify-content: center;
 }
+/* The water right's face-value card (150-02, ISS-201) is its content's
+   height. Its "By water year" table makes it taller than the information card
+   on one right and shorter on another; stretched to the row, the panel sat
+   centred in a band of blank fill. A modifier on this page's cell only, so the
+   account page's balance card (the same grid) keeps the stretch above. */
+.page-grid-account-balance--content-height {
+    align-self: start;
+}
 .page-grid-account-full {
     grid-column: 1 / -1;
+}
+/* The account's use-area map (ISS-175, 150-02) sits on row 2: under
+   Account information and Account balance, above the breakdown table that the
+   balance partial renders next to the balance card. Stacked (the container
+   query below), row 2 is under the balance card, so the map still sits
+   between the balance and its table. */
+.page-grid-account-map {
+    grid-row: 2;
 }
 /* A water year's finalize / reopen card (147-02): what finalizing does on the
    left, the note and the button on the right, one row at a desktop width so

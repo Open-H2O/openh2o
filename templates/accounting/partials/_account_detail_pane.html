@@ -4,9 +4,6 @@
   the in-pane view and the full page never drift. Bucket 1 — a heavy, interactive
   detail, so it keeps an "open full page" escape (docs/2.0-UX-PATTERN-SPEC.md).
 
-  Water accounts have NO geometry of their own (they group use areas), so there
-  is no map in this pane; the workspace's map slot just stays hidden.
-
   The three live workflows keep their element IDs so they work the same in-pane
   as on the full page:
     #balance-section      the period selector swaps the balance here
@@ -166,6 +163,30 @@
     <div id="balance-section" class="page-grid-account-flow">
       {% include "accounting/partials/_account_balances.html" %}
     </div>
+
+    {% comment %}
+      ISS-175 (150-02): the account's use areas on the overview map card
+      (143-07), the head then the 380 px map. Full width, set on grid row 2
+      (app.css `.page-grid-account-map`) so it sits under Account information
+      and Account balance and above the breakdown table, which the swapped
+      partial above renders. The map script is the shared
+      parcels/partials/_parcels_overview_map.html, included by
+      account_detail.html with `?account=<pk>` and no list to follow.
+
+      Standalone page only (`on_full_page`): the accounts workspace swaps this
+      same fragment into its pane, and that page loads no map library, so
+      there the card is left out and the workspace's map slot stays hidden
+      (143-13). An account with no use area assigned has nothing to map, and
+      the assignment card below already says so.
+    {% endcomment %}
+    {% if on_full_page and 'parcels' in enabled_modules and use_areas_all_count %}
+    <div class="card-raised page-grid-account-full page-grid-account-map" style="padding: 0; overflow: hidden;">
+      {% include "partials/_map_card_head.html" with head_id="account-use-areas-map-head" title="Use areas" noun="use area" noun_plural="use areas" key_label="Use area" swatch="fill" swatch_token="blue" all_count=use_areas_all_count located_count=use_areas_located_count %}
+      {% if use_areas_located_count %}
+      <div id="account-use-areas-map" style="height: 380px; width: 100%;"></div>
+      {% endif %}
+    </div>
+    {% endif %}
 
     {% comment %}
       One card for the assignment workflow, not two, and no toolbar band: the

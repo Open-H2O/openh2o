@@ -449,10 +449,40 @@ def parcel_edit_field(request, pk):
 
 @public_in_open_demo
 def parcels_geojson(request):
-    """Return all parcels as a GeoJSON FeatureCollection."""
+    """Return the located parcels as a GeoJSON FeatureCollection.
+
+    With no parameter: every parcel that has a geometry (the overview map's one
+    unfiltered source, filtered client-side by ``OH2O.followResults``).
+
+    ``?account=<id>`` (ISS-175, 150-02): only the parcels that water account
+    holds now, through its active ``accounting.WaterAccountParcel`` rows
+    (``removed_date`` empty, the same rows the account page counts), in ONE
+    query. An integer that names no account, or an account with no located
+    parcel, gives the empty FeatureCollection with 200, the house answer on
+    the map endpoints for "nothing matches". A value that is not an integer
+    gives 400 with a one-line body: it is a malformed request, not an empty
+    result. With the ``accounting`` module off the parameter is ignored and the
+    response is the unfiltered one.
+    """
+    parcels = Parcel.objects.filter(geometry__isnull=False)
+    account_param = request.GET.get("account")
+    if account_param is not None and is_enabled("accounting"):
+        try:
+            account_id = int(account_param)
+        except ValueError:
+            return HttpResponseBadRequest("The account parameter must be an integer id.")
+        # Function scope and guarded: `accounting` is schema-resident, so with it
+        # off this module must not reach into it (CLAUDE.md, the composition rule).
+        from accounting.models import WaterAccountParcel
+
+        parcels = parcels.filter(
+            pk__in=WaterAccountParcel.objects.filter(
+                water_account_id=account_id, removed_date__isnull=True
+            ).values("parcel_id")
+        )
     raw = serialize(
         "geojson",
-        Parcel.objects.filter(geometry__isnull=False),
+        parcels,
         geometry_field="geometry",
         fields=["parcel_number", "owner_name", "area_acres", "status"],
     )
