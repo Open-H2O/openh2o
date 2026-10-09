@@ -763,11 +763,13 @@ html { color-scheme: dark; }
    icon + label + sublabel. The most-common action carries a gold edge. */
 .home-task-grid {
     display: grid;
-    /* 150-04 (ISS-201): a 220px floor lets six task tiles share one row in
-       the 1,439px content width at 1,730 (260px put the fifth alone on row two
-       on shapes 1 and 2; 240px put the demonstration's sixth alone, the reader
-       said so); auto-fit so fewer tiles widen rather than leave an empty track. */
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    /* 150-04 (ISS-201): a 200px floor lets six task tiles share one row at
+       1,730: the pane is zoomed 1.0625, so the 1,439px content width is 1,354
+       grid px, and six tracks with five 16px gaps need 6 x 212 at most (260px
+       put the fifth alone on row two on shapes 1 and 2; 240 and 220 put the
+       demonstration's sixth alone, the reader said so twice); auto-fit so fewer
+       tiles widen rather than leave an empty track. */
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: var(--space-md);
 }
 
