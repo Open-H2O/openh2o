@@ -21,13 +21,7 @@ from django.views.decorators.http import require_http_methods
 from core.access import public_in_open_demo
 from core.workspace import list_response, redirect_to_selected
 
-from accounting.bands import (
-    band_words,
-    field_month_delivery_band,
-    field_month_meter_band,
-    month_bounds,
-)
-from accounting.models import CalculationRun, ReportingPeriod
+from accounting.models import ReportingPeriod
 from accounting.services import (
     parcel_consumptive_balance,
     parcel_mass_balance,
@@ -36,7 +30,6 @@ from accounting.services import (
     parcel_receipt_periods,
     parcel_run_periods,
     parcel_unmet_demand,
-    runs_in_period,
 )
 from core.modules import is_enabled
 from core.validation import FieldValidationError, coerce_decimal, coerce_int
@@ -186,117 +179,6 @@ def parcels_list(request):
 
 
 #: The month table's figure columns, in the order of its `All N months` row.
-_MONTH_SUM_KEYS = (
-    "delivered", "usable", "deep_canal", "beyond",
-    "extracted", "consumed", "deep_gw",
-)
-
-
-def _band_cell(band, percent):
-    """``{"band", "words"}`` for a figure's band, or None when it has none."""
-    if band is None:
-        return None
-    return {"band": band, "words": band_words(percent) if percent is not None else ""}
-
-
-def _field_months(parcel, balance_period, wells):
-    """The field page's "Month by month" card: one row per run in the period.
-
-    150-02 Task 3. Every figure is the run's own stored column (or, on a
-    metered month, the month's meter readings), never re-derived: the row
-    shows what the calculation stored. Reads three things: the period's runs
-    (one query), the period's ledger rows (one query, the same rows by the
-    same ``reporting_period`` filter the balance panel reads), and, inside
-    ``accounting.bands``, a point's diversion records for a month only where
-    a split row exists.
-
-    Returns None when the card has nothing to show: no run in the period, or
-    a field with neither a delivery in the period nor a well. Otherwise
-    ``{"rows", "totals", "count", "show_canal", "show_groundwater"}``; rows
-    newest month first. A cell with nothing to say is None, which the
-    template prints as a dash, never 0.00.
-    """
-    runs = list(
-        runs_in_period(CalculationRun.objects.filter(parcel=parcel), balance_period)
-        .order_by("-period_start", "-created_at")
-    )
-    if not runs:
-        return None
-
-    ledger = ParcelLedger.objects.filter(
-        parcel=parcel,
-        source_type__in=("surface_diversion", "meter_reading", "calculated"),
-    )
-    if balance_period is not None:
-        ledger = ledger.filter(reporting_period=balance_period)
-    ledger = list(ledger)
-
-    show_canal = any(run.surface_delivered_af for run in runs)
-    show_groundwater = bool(wells) or any(
-        row.source_type in ("calculated", "meter_reading") for row in ledger
-    )
-    if not (show_canal or show_groundwater):
-        return None
-
-    rows = []
-    for run in runs:
-        first, last = month_bounds(run.period_start)
-        row = {key: None for key in _MONTH_SUM_KEYS}
-        row.update(
-            month=run.period_start,
-            delivered_band=None,
-            extracted_kind=None,
-            extracted_band=None,
-        )
-        if run.surface_delivered_af:
-            row["delivered"] = run.surface_delivered_af
-            row["usable"] = run.surface_water_af
-            row["deep_canal"] = run.surface_delivered_af - (
-                run.surface_water_af or 0
-            )
-            if run.over_delivery_af > 0:
-                row["beyond"] = run.over_delivery_af
-            row["delivered_band"] = _band_cell(
-                *field_month_delivery_band(parcel, first, last, rows=ledger)
-            )
-        if run.residual_disposition == "metered":
-            readings = [
-                abs(entry.amount_acre_feet)
-                for entry in ledger
-                if entry.source_type == "meter_reading"
-                and first <= entry.effective_date <= last
-            ]
-            if readings:
-                row["extracted"] = sum(readings)
-                row["extracted_kind"] = "Metered"
-                row["extracted_band"] = _band_cell(
-                    *field_month_meter_band(
-                        parcel, first, last, rows=ledger, wells=wells
-                    )
-                )
-            row["deep_gw"] = run.deep_percolation_gw_af
-        elif run.residual_disposition == "groundwater":
-            if run.gw_extracted_af is not None:
-                row["extracted"] = run.gw_extracted_af
-                row["extracted_kind"] = "Estimated"
-            row["consumed"] = run.final_af
-            row["deep_gw"] = run.deep_percolation_gw_af
-        rows.append(row)
-
-    totals = {}
-    for key in _MONTH_SUM_KEYS:
-        values = [row[key] for row in rows if row[key] is not None]
-        totals[key] = sum(values) if values else None
-
-    return {
-        "rows": rows,
-        "totals": totals,
-        "count": len(rows),
-        "show_canal": show_canal,
-        "show_groundwater": show_groundwater,
-    }
-
-
 def _parcel_detail_context(parcel, period_id=None):
     """Build the per-parcel water-balance context.
 
@@ -406,11 +288,6 @@ def _parcel_detail_context(parcel, period_id=None):
         recent_ledger = recent_ledger.filter(reporting_period=balance_period)
     recent_ledger = recent_ledger.order_by("-effective_date", "-created_at")[:10]
 
-    # 150-02 Task 3: the "Month by month" card. `related_wells` is evaluated
-    # here once; the template's Related wells card reads the same cache.
-    field_months = _field_months(
-        parcel, balance_period, [link.well for link in related_wells]
-    )
 
     geojson = None
     if parcel.geometry:
@@ -452,7 +329,6 @@ def _parcel_detail_context(parcel, period_id=None):
         "unmet_demand_af": unmet_demand_af,
         "over_delivery_shown_af": over_delivery_shown_af,
         "over_delivery_total_af": over_delivery_total_af,
-        "field_months": field_months,
         "editable_fields": editable_fields,
         "editable_fields_with_values": editable_fields_with_values,
         # Pass the Python object (or None); the template escapes it via

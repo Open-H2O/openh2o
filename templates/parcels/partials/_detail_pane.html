@@ -113,7 +113,6 @@
                  month table below carries each month's. Omitted with no
                  delivery (0.00 says nothing, rule 8). {% endcomment %}
             {% if mass_balance.inputs.surface %}
-            <div class="budget-breakdown-row"><span>the crop could use{% if mass_balance.surface_efficiency_percent is not None %} ({{ mass_balance.surface_efficiency_percent|floatformat }}%){% endif %}</span><b>{{ mass_balance.surface_usable_af|floatformat:2|intcomma }}</b></div>
             {% endif %}
             <div class="budget-breakdown-row"><span>Groundwater extracted{% if mass_balance.gw_is_estimated %}<span class="budget-breakdown-note">estimated</span>{% endif %}</span><b>{{ mass_balance.inputs.gw_recovered|floatformat:2|intcomma }}</b></div>
             <div class="budget-breakdown-row"><span>Rain</span><b>{{ mass_balance.inputs.precip|floatformat:2|intcomma }}</b></div>
@@ -130,10 +129,8 @@
             {% comment %} 150-02 Task 3: the two parts of the row above, each
                  printed only when it is not zero (rule 8). {% endcomment %}
             {% if mass_balance.outputs.deep_percolation_surface_af %}
-            <div class="budget-breakdown-row"><span>from canal water</span><b>{{ mass_balance.outputs.deep_percolation_surface_af|floatformat:2|intcomma }}</b></div>
             {% endif %}
             {% if mass_balance.outputs.deep_percolation_gw_af %}
-            <div class="budget-breakdown-row"><span>from groundwater</span><b>{{ mass_balance.outputs.deep_percolation_gw_af|floatformat:2|intcomma }}</b></div>
             {% endif %}
             <div class="budget-breakdown-row"><span>Managed recharge</span><b>{{ mass_balance.outputs.recharge|floatformat:2|intcomma }}</b></div>
             <div class="budget-breakdown-row"><span>Storage change</span><b>{{ mass_balance.outputs.delta_storage|floatformat:2|intcomma }}</b></div>
@@ -343,84 +340,6 @@
     </div>
     {% endif %}
   </div>
-
-  {% comment %}
-    150-02 Task 3: Month by month. One row per calculation run in the period,
-    newest first, each figure the run's own stored column (on a metered month,
-    the month's meter readings): the page carries what the run stores.
-    `field_months` is parcels/views.py::_field_months; None (no card) when the
-    period has no run, or the field had neither a delivery nor a well. The
-    Canal water group renders only with a delivery in the period, the
-    Groundwater group only on a field with a well. A cell with nothing to say
-    is a dash, never 0.00. A band (accounting/bands.py) follows a figure only
-    where every record summed into it states an accuracy; otherwise nothing.
-    On the standalone page this card spans the top grid's two columns
-    (`.page-grid-field`, app.css).
-  {% endcomment %}
-  {% if field_months %}
-  <div class="card-raised field-months-card" style="padding: 0;">
-    <div class="ledger-card-head">
-      <h2 class="section-header-flush">Month by month</h2>
-      <p class="text-secondary text-base" style="margin: var(--space-xs) 0 0;">{% if balance_period %}{{ balance_period.name }}. {% endif %}Each month's figures are as its calculation run stored them.{% if field_months.show_groundwater %} A meter reading replaces the estimate on the months that have one.{% endif %} Acre-feet.</p>
-    </div>
-    <div class="table-scroll">
-    <table class="data-table text-sm data-table--grouped field-months-table">
-      <thead>
-        <tr class="th-group">
-          <th rowspan="2">Month</th>
-          {% if field_months.show_canal %}<th colspan="4" class="th-group-label col-sep">Canal water</th>{% endif %}
-          {% if field_months.show_groundwater %}<th colspan="3" class="th-group-label col-sep">Groundwater</th>{% endif %}
-        </tr>
-        <tr>
-          {% if field_months.show_canal %}
-          <th class="th-right col-sep">Delivered</th>
-          <th class="th-right">The crop could use</th>
-          <th class="th-right">Deep percolation</th>
-          <th class="th-right">Beyond what the crop could use</th>
-          {% endif %}
-          {% if field_months.show_groundwater %}
-          <th class="th-right col-sep">Extracted</th>
-          <th class="th-right">The crop consumed</th>
-          <th class="th-right">Deep percolation</th>
-          {% endif %}
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in field_months.rows %}
-        <tr>
-          <td class="text-secondary">{{ r.month|date:"M Y" }}</td>
-          {% if field_months.show_canal %}
-          <td class="td-num col-sep">{% if r.delivered is not None %}{{ r.delivered|floatformat:2|intcomma }}{% if r.delivered_band %}<span class="text-secondary"> ± {{ r.delivered_band.band|floatformat:2 }}</span>{% if r.delivered_band.words %}{% include "partials/_help_tooltip.html" with label="Stated accuracy" text=r.delivered_band.words %}{% endif %}{% endif %}{% else %}<span class="text-tertiary">&mdash;</span>{% endif %}</td>
-          <td class="td-num">{% if r.usable is not None %}{{ r.usable|floatformat:2|intcomma }}{% else %}<span class="text-tertiary">&mdash;</span>{% endif %}</td>
-          <td class="td-num text-secondary">{% if r.deep_canal is not None %}{{ r.deep_canal|floatformat:2|intcomma }}{% else %}<span class="text-tertiary">&mdash;</span>{% endif %}</td>
-          <td class="td-num">{% if r.beyond is not None %}{{ r.beyond|floatformat:2|intcomma }}{% else %}<span class="text-tertiary">&mdash;</span>{% endif %}</td>
-          {% endif %}
-          {% if field_months.show_groundwater %}
-          <td class="td-num col-sep">{% if r.extracted is not None %}{{ r.extracted|floatformat:2|intcomma }}{% if r.extracted_band %}<span class="text-secondary"> ± {{ r.extracted_band.band|floatformat:2 }}</span>{% if r.extracted_band.words %}{% include "partials/_help_tooltip.html" with label="Stated accuracy" text=r.extracted_band.words %}{% endif %}{% endif %} <span class="badge badge-grey">{{ r.extracted_kind }}</span>{% else %}<span class="text-tertiary">&mdash;</span>{% endif %}</td>
-          <td class="td-num">{% if r.consumed is not None %}{{ r.consumed|floatformat:2|intcomma }}{% else %}<span class="text-tertiary">&mdash;</span>{% endif %}</td>
-          <td class="td-num text-secondary">{% if r.deep_gw is not None %}{{ r.deep_gw|floatformat:2|intcomma }}{% else %}<span class="text-tertiary">&mdash;</span>{% endif %}</td>
-          {% endif %}
-        </tr>
-        {% endfor %}
-        <tr class="row-subtotal">
-          <td class="tfoot-total">All {{ field_months.count }} month{{ field_months.count|pluralize }}</td>
-          {% if field_months.show_canal %}
-          <td class="td-num-bold td-total col-sep">{% if field_months.totals.delivered is not None %}{{ field_months.totals.delivered|floatformat:2|intcomma }}{% else %}<span class="text-tertiary">&mdash;</span>{% endif %}</td>
-          <td class="td-num-bold td-total">{% if field_months.totals.usable is not None %}{{ field_months.totals.usable|floatformat:2|intcomma }}{% else %}<span class="text-tertiary">&mdash;</span>{% endif %}</td>
-          <td class="td-num-bold td-total">{% if field_months.totals.deep_canal is not None %}{{ field_months.totals.deep_canal|floatformat:2|intcomma }}{% else %}<span class="text-tertiary">&mdash;</span>{% endif %}</td>
-          <td class="td-num-bold td-total">{% if field_months.totals.beyond is not None %}{{ field_months.totals.beyond|floatformat:2|intcomma }}{% else %}<span class="text-tertiary">&mdash;</span>{% endif %}</td>
-          {% endif %}
-          {% if field_months.show_groundwater %}
-          <td class="td-num-bold td-total col-sep">{% if field_months.totals.extracted is not None %}{{ field_months.totals.extracted|floatformat:2|intcomma }}{% else %}<span class="text-tertiary">&mdash;</span>{% endif %}</td>
-          <td class="td-num-bold td-total">{% if field_months.totals.consumed is not None %}{{ field_months.totals.consumed|floatformat:2|intcomma }}{% else %}<span class="text-tertiary">&mdash;</span>{% endif %}</td>
-          <td class="td-num-bold td-total">{% if field_months.totals.deep_gw is not None %}{{ field_months.totals.deep_gw|floatformat:2|intcomma }}{% else %}<span class="text-tertiary">&mdash;</span>{% endif %}</td>
-          {% endif %}
-        </tr>
-      </tbody>
-    </table>
-    </div>
-  </div>
-  {% endif %}
 
   {# SUPPORTING INFO: parcel attributes (left) + ledger (right). #}
   <div class="page-grid-2col">

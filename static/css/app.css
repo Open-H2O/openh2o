@@ -5842,12 +5842,3 @@ details[open] > summary .disclosure-mark {
         grid-row: 2;
     }
 }
-/* Month by month: the card carries no padding (the table fills it, the
-   ledger's own shape), so the edge cells restore the card's inset. */
-.field-months-table tr.th-group > th:first-child,
-.field-months-table tbody td:first-child {
-    padding-left: var(--space-lg);
-}
-.field-months-table tr:not(.th-group) > :last-child {
-    padding-right: var(--space-lg);
-}
