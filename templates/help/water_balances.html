@@ -12,188 +12,114 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">How Water Balances Work</span>
   </nav>
-  <p class="page-description">Crop water use is estimated from satellite data for every field. This page shows where each supply's figure comes from and what the platform calls the crop water use left after rain and canal water.</p>
+  <p class="page-description">This page explains how OpenH2O works out each field's water for a month.</p>
 </div>
 {% endblock %}
 
 {% block content %}
 {% comment %}
-  149.1-02 (2026-10-06): carried to the shape Brent approved on Methods
-  behind the numbers (149.1-01, 19:50 PDT), from the reader's three
-  questions outward (which one number is estimated for every field, and how;
-  which three sources of water are counted, and how each is known; what the
-  remainder is called on a field with no well). Each card is one table with
-  a line or two under it; the shape check tests/test_help_shape.py holds
-  this file at 60 words a block and half a page in prose.
+  2026-10-10: rebuilt from twelve facts Brent approved at 05:00 PDT ("they
+  are right"), each checked against the calculation code (accounting/
+  engine_run.py, accounting/models.py residual_disposition, surface/
+  estimate.py). The page says those twelve things and nothing else; the
+  worked example below is shared with Methods behind the numbers.
 
   This page names `accounting`, `parcels`, `surface` and `wells` as its
   subject (config/views.py EXPLAINER_MODULES), so it is 404'd rather than
   served wherever any one of them is off; the guards below are only for the
-  CARDS and links this page points OUT to, which each gate on their own
-  narrower module set.
+  cards this page points out to, which each gate on their own module set.
 {% endcomment %}<div class="page-stack page-help help-page">
 
   <div class="card-raised">
-    <h2 class="section-header">Crop water use is estimated for every field</h2>
-    <p class="text-secondary text-base">Few fields are metered. One number can be estimated for every field, whatever its water source: how much water the crop used in the month.</p>
-
-    {% include "help/partials/_the_subtraction.html" %}
-
-    {% if demonstration %}
-    <div class="help-subsection">
-      <h3 class="concept-panel-title">What this demonstration cannot show</h3>
-
-      <div class="table-scroll mt-md">
-        <table class="data-table help-cases-table">
-          <thead>
-            <tr>
-              <th>Record</th>
-              <th>Here</th>
-              <th>With a district's own gate records</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="col-name">Delivery records at a field's own gate</td>
-              <td>None</td>
-              <td>Kept as recorded</td>
-            </tr>
-            <tr>
-              <td class="col-name">Each headgate's monthly total</td>
-              <td>Built from the crop water use after rain of the fields it serves, then divided back among them on the same basis</td>
-              <td>From a meter or the ditch tender's estimate</td>
-            </tr>
-            <tr>
-              <td class="col-name">Canal water the crop could use on a canal-served field</td>
-              <td>All or nearly all of crop water use after rain, never under 85% here, so groundwater consumed is the small remainder</td>
-              <td>This figure is worked out from the district's recorded delivery to the field. Groundwater consumed is the crop water use left after rain and this figure.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-    {% endif %}
-  </div>
-
-  <div class="card-raised">
-    <h2 class="section-header">Where each supply's figure comes from</h2>
-
-    <div class="table-scroll">
-      <table class="data-table help-cases-table help-cases-table--short-names">
-        <thead>
-          <tr>
-            <th>Water</th>
-            <th>What it is</th>
-            <th>Where the figure comes from</th>
-            <th>How sure</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="col-name">Rain</td>
-            <td>Rain that fell on the field, and the share of it the crop could use</td>
-            <td>Estimated from weather data for the area</td>
-            <td class="col-sure"><span class="badge badge-pill badge-grey">Estimated</span></td>
-          </tr>
-          <tr>
-            <td class="col-name">Canal water</td>
-            <td>Water the district let onto the field from its canal</td>
-            <td>Recorded by the district at the headgate, from a meter or the ditch tender's estimate, then divided among the fields it serves</td>
-            <td class="col-sure"><span class="badge badge-pill badge-gold" title="Divided up by the software">Divided up</span></td>
-          </tr>
-          <tr>
-            <td class="col-name">Well water</td>
-            <td>Water pumped from a well on the field</td>
-            <td>A meter reading on record for the month; without one, by subtraction from crop water use, as the next table shows</td>
-            <td class="col-sure"><span class="badge badge-pill badge-grey" title="Estimated by subtraction">By subtraction</span><br><span class="text-sm text-secondary">or a meter reading</span></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <p class="text-secondary text-sm mt-md">Rain and canal water the crop could use are subtracted from crop water use first, and what is left is the remainder. The next table shows what the remainder is called on each kind of field.</p>
-  </div>
-
-  <div class="card-raised">
-    <h2 class="section-header">What the remainder is called on each kind of field</h2>
-
+    <h2 class="section-header">How a month is calculated</h2>
     <div class="table-scroll">
       <table class="data-table help-cases-table">
         <thead>
           <tr>
-            <th>Outcome</th>
-            <th>A meter reading</th>
-            <th>A well, no meter</th>
-            <th>No well</th>
+            <th>Step</th>
+            <th>What OpenH2O does</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td class="col-name">After the subtraction</td>
-            <td>Kept beside the reading for comparison; nothing written from it</td>
-            <td>Groundwater consumed, and groundwater extracted after the division</td>
-            <td>Water use recorded, no supply reported, never as pumping</td>
+            <td class="col-name">1</td>
+            <td>For each field and month, OpenH2O starts with OpenET's satellite estimate of the crop's water use.</td>
           </tr>
           <tr>
-            <td class="col-name">What the groundwater allocation is charged</td>
-            <td>The reading</td>
-            <td>Groundwater extracted</td>
-            <td>Nothing</td>
+            <td class="col-name">2</td>
+            <td>It subtracts the rain the crop could use, which is estimated from weather data.</td>
+          </tr>
+          <tr>
+            <td class="col-name">3</td>
+            <td>It subtracts the canal water the crop could use: the field's delivery multiplied by its irrigation efficiency.</td>
+          </tr>
+          <tr>
+            <td class="col-name">4</td>
+            <td>What is left after those subtractions is the remainder.</td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <p class="text-secondary text-sm mt-md">Water use recorded, no supply reported says only that the supplies on record did not cover crop water use; it is never written as pumping, and it is never a finding about the grower.</p>
+    {% include "help/partials/_the_subtraction.html" %}
   </div>
 
   <div class="card-raised">
-    <h2 class="section-header">A district with no wells</h2>
-    <p class="text-secondary text-base">The same steps run; with no well, the remainder is water use recorded, no supply reported, and the well lines stay empty.</p>
-
-    <div class="help-subsection">
-    <h3 class="concept-panel-title">Where the satellite estimate is still used</h3>
-
-    <div class="table-scroll mt-md">
-      <table class="data-table help-steps-table">
+    <h2 class="section-header">What the remainder becomes</h2>
+    <div class="table-scroll">
+      <table class="data-table help-cases-table">
         <thead>
           <tr>
-            <th>Job</th>
-            <th>Rule</th>
+            <th>The field has</th>
+            <th>What happens</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td class="col-step"><span class="step-num">1</span>Sets each field's share of a headgate total</td>
-            <td>In proportion to crop water use after rain, up to what each field could use.</td>
+            <td class="col-name">A well and no meter reading</td>
+            <td>The remainder is groundwater consumed. Groundwater consumed divided by the share of pumped water the crop consumes gives groundwater extracted, which is charged against the groundwater allocation.</td>
           </tr>
           <tr>
-            <td class="col-step"><span class="step-num">2</span>Works out each field's remainder</td>
-            <td>Crop water use minus rain and canal water the crop could use.</td>
+            <td class="col-name">A meter reading</td>
+            <td>OpenH2O uses the reading and keeps its own calculation beside it for comparison.</td>
           </tr>
           <tr>
-            <td class="col-step"><span class="step-num">3</span>Estimates the delivery of a diversion with no meter</td>
-            <td>From the fields it serves, capped at what is left of the water right's face value.</td>
+            <td class="col-name">No well</td>
+            <td>The remainder is shown as "water use recorded, no supply reported" and is never recorded as pumping.</td>
           </tr>
         </tbody>
       </table>
     </div>
-
-    {% explainer_available "methods" as show_methods %}{% if show_methods %}<p class="text-base mt-md"><a class="prose-link" href="{% url 'methods' %}">Methods behind the numbers</a> sets out the steps, the split and the estimate line by line.</p>{% endif %}
-    </div>
   </div>
 
   <div class="card-raised">
-    <h2 class="section-header">Why satellites</h2>
-    <p class="text-secondary text-base">Most water diversions in California are not metered, and for most fields nobody knows the volume delivered. Satellite estimates of crop water use cover the fields no meter does. <a class="prose-link" href="https://openetdata.org/" target="_blank" rel="noopener">OpenET</a> turns satellite imagery into a crop water use estimate for any field. This platform labels it as an estimate.</p>
-
-    <div class="concept-panel mt-md">
-      <div class="concept-panel-title">Go deeper</div>
-      <ul class="concept-list text-secondary text-base">
-        <li><a class="prose-link" href="https://etdata.org/openet-data-explorer/" target="_blank" rel="noopener">OpenET Data Explorer</a> shows the estimate for any field on a map.</li>
-        <li><a class="prose-link" href="https://www.usgs.gov/water-science-school/science/evapotranspiration-and-water-cycle" target="_blank" rel="noopener">USGS: Evapotranspiration and the water cycle</a> explains the science behind the estimate.</li>
-        <li>The <a class="prose-link" href="{% url 'glossary' %}">Glossary</a> defines every term used here.</li>
-      </ul>
+    <h2 class="section-header">How canal deliveries are divided</h2>
+    <div class="table-scroll">
+      <table class="data-table help-cases-table">
+        <thead>
+          <tr>
+            <th>Case</th>
+            <th>What OpenH2O does</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-name">A headgate total</td>
+            <td>A district records each headgate's delivery as one monthly total, and OpenH2O divides that total among the fields the headgate serves in proportion to each field's crop water use after rain.</td>
+          </tr>
+          <tr>
+            <td class="col-name">A field's own record</td>
+            <td>A field with its own delivery record keeps that record instead.</td>
+          </tr>
+          <tr>
+            <td class="col-name">A diversion with no meter</td>
+            <td>When a diversion has no meter and no volume entered for the month, OpenH2O estimates the delivery from the fields it serves, up to what is left of the water right's face value.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="help-table-notes mt-md">
+      <p class="text-secondary text-sm">Every figure that comes from the satellite estimate is labeled as an estimate.</p>
     </div>
   </div>
 
@@ -202,19 +128,19 @@
     <div class="card-grid mt-md">
       {% if 'accounting' in enabled_modules %}<a href="{% url 'accounting:dashboard' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Dashboard</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">The dashboard shows each field's balance on this deployment's data.</p>
+        <p class="text-secondary text-sm">The dashboard shows each field's water balance.</p>
       </a>{% endif %}
       <a href="{% url 'glossary' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Glossary</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">The glossary defines every term on this page in plain language.</p>
+        <p class="text-secondary text-sm">This page explains the words used on these screens.</p>
       </a>
       {% explainer_available "methods" as show_methods %}{% if show_methods %}<a href="{% url 'methods' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Methods Behind the Numbers</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">See the steps as they run, the three endings and what is not built yet.</p>
+        <p class="text-secondary text-sm">This page shows each step of the calculation and the setting that changes it.</p>
       </a>{% endif %}
       {% explainer_available "settings_explained" as show_settings %}{% if show_settings %}<a href="{% url 'settings_explained' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Settings explained</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">See what each agency-wide setting behind these numbers does and when to change it.</p>
+        <p class="text-secondary text-sm">This page explains each setting that changes a figure.</p>
       </a>{% endif %}
     </div>
   </div>
