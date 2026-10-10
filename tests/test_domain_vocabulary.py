@@ -419,7 +419,9 @@ BASELINE: dict = {
     #   at 20:29 PDT. The scanner reads "The ... headgate" as opening a
     #   definition of a headgate. It is a sentence about how the software
     #   divides a recorded total, a false positive.
-    "templates/**/*.html": 12,
+    #   2026-10-10: back to 11. That note was removed from the worked example
+    #   (it repeated the page's own section on how deliveries are divided).
+    "templates/**/*.html": 11,
     "help_text=": 4,
 }
 

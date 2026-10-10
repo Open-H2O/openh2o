@@ -62,7 +62,6 @@ shapes = _load()
 #: button took the wording Brent approved at 20:29 PDT, and their six entries
 #: came off. 2026-10-10: the "stand-in" shape joined at its counts that day.
 BASELINE: dict = {
-    "templates/help/partials/_the_subtraction.html": {"stand-in": 1},
     "templates/drinking/partials/_onboard_result.html": {"stand-in": 1},
     "templates/drinking/partials/_empty_drinking.html": {"stand-in": 1},
     "templates/accounting/partials/_account_balances.html": {"em dash": 1},

@@ -137,12 +137,6 @@
     </table>
   </div>
 
-  <div class="help-table-notes mt-md">
-    {% if surface_delivered_af is not None and delivery_split == "by_use" %}
-    <p class="text-secondary text-sm">When a field has its own delivery record, that record is its "Delivered to this field" figure. The rest of the headgate total is divided among the other fields in proportion to crop water use after rain. No field gets more than its crop could use. Each share depends on the satellite estimate, so it is an estimate too.</p>
-    {% endif %}
-    <p class="text-secondary text-sm">Groundwater consumed is what remains after the lines above it are subtracted; groundwater extracted is that figure divided by the share the crop consumes, and it is the figure the groundwater allocation is charged. Both are only as good as the delivery record above them.</p>
-  </div>
 
   {% else %}
   <p class="text-secondary text-base">Once a month has been calculated for a field with a well and no meter reading, this page works through that field's numbers. Until then, here is the arithmetic in words.</p>
