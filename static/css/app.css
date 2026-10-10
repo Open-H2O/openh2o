@@ -4432,6 +4432,9 @@ details[open] > summary .disclosure-mark {
     height: auto;
     border-radius: var(--radius-lg);
     margin-bottom: var(--space-lg);
+    /* logo.png is opaque, its background a shade off the page's, so it showed
+       as a faint square; lighten lets the page show through the dark field. */
+    mix-blend-mode: lighten;
 }
 
 .about-title {
