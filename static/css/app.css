@@ -2265,6 +2265,14 @@ html { color-scheme: dark; }
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 }
 
+/* Getting started links five help pages; at 1,730 px the help column is
+   1,050 px wide, and five 200 px tracks plus gaps need 1,064, so the fifth card
+   sat alone on a second row (150.1, 2026-10-10). A 180 px floor keeps a help
+   page's link cards on one row. */
+.help-page .card-grid.card-grid--fit {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
 /* A panel whose last line says how its figure is known ("Estimated from
    weather data for the area"): the panel is a column and the foot sits at the
    bottom, ruled off, so the three lines sit level across the row whatever the
