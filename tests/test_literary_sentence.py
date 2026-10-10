@@ -1,51 +1,33 @@
-"""The literary sentence, pinned: Phase 143.1 plan 01, ruled by Brent 2026-09-17.
+"""The sentences Brent struck stay struck.
 
-Brent, 2026-09-13, at the 143-10 checkpoint: "We have the strange AI language
-issue going on. It's something we have to correct periodically. Instead of
-speaking clearly, using short phrases that have a lot of meaning, the phrasing
-becomes literary and conversational." His fix, the well page's Measurement
-history subtitle, is the standard every row here was judged against:
+On 2026-09-17 Brent ruled on sentences across the screens. Each row below
+holds a struck sentence, where it lived, and the sentence he accepted in its
+place (or none, when he struck it outright). The table is the record of those
+rulings, and new rows are added only with a ruling and its date.
 
-    before  What came through the meter, and what the water table did beneath it
-    after   Meter reads and depth to water, by water year.
+This module holds one test. It proves that the words of each struck sentence
+are gone from the product, meaning the templates and the Python that writes
+onto a screen, so a struck sentence cannot come back by accident. A row whose
+page was later rewritten under a newer ruling (``retired``) is still tested:
+moving on from a page does not un-strike the words.
 
-DESIGN.md copy rule 15 states the rule. This module is its guard: 126 rulings
-(accept-all, 2026-09-17 06:57 PDT, `.planning/phases/143.1-literary-sentence/
-143.1-01-RULINGS.md`) as a table of (path, struck, settled). Three tests,
-parametrised by row so a failure names the sentence:
-
-1. the settled sentence is in its file;
-2. the struck sentence is gone from the product (templates and product Python);
-3. the settled sentence scans clean under copy rule 11
-   (`tests.test_domain_vocabulary.scan`).
-
-RULE 8 OF THE HOUSE (ISS-129): this table mandates WORDS Brent ruled, never a
-domain description. A row is added only with a ruling and its date; a row is
-changed only the same way. Four rows carry words that differ from the
-candidates file he ruled on, each recorded in 143.1-01-SUMMARY.md: S-1154 and
-S-1058 (the droppability gate forbids the noun "recharge" on a page a
-recharge-less deployment still serves; "deep percolation" / "goes to the
-aquifer" carry the fact), S-0669 (the candidates row misquoted the sentence;
-the settled first sentence stands and the second stays), S-0639 (its address
-was `onboard.html`, not `overview.html`).
-
-A row whose PAGE was rewritten wholesale under a later, dated ruling is marked
-`retired`, never deleted: `Row.retired` names that ruling and its date, and a
-retired row skips test 1 (the settled sentence is present) and test 3 (it
-scans clean), because the settled sentence Brent ruled on 2026-09-17 is
-genuinely gone, on purpose, under separate authority -- not a defect this
-suite should keep reporting. Test 2 (the struck sentence stays gone) still
-runs for a retired row: retiring it is not un-ruling the words it replaced, so
-the old, struck wording must still never reappear. 32 rows on
-templates/help/water_balances.html, templates/help/methods.html and
-config/views.py's glossary were retired 2026-09-28 this way, under 148-01's
-"picture two" ruling (Brent, 2026-09-24 07:52 PDT) as carried to its final
-wording at the 148-03 checkpoint.
+The accepted sentences are a record of what Brent approved on that date. They
+are not pinned. Until 2026-10-09 a second test required each accepted sentence
+to stay in its file word for word, so any rewrite turned the suite red while a
+new sentence written in a struck shape passed. On 2026-10-09 at 18:45 PDT
+Brent ruled that the shapes he has struck are to be fixed everywhere,
+including in wording he approved earlier, so that test was removed. A third
+test scanned the accepted sentences for water explanations (copy rule 11);
+it went too, because ``tests/test_domain_vocabulary.py`` scans the templates
+and the glossary themselves, which is where the rule has to hold.
+``tests/test_writing_shapes.py`` now guards the shapes a machine can see in
+new text.
 
 Comparison is on collapsed text: whitespace collapsed, HTML entities
-unescaped, curly quotes straightened, Django tags and `{{ }}` figures removed
-(a `<x>` in a settled sentence stands for a figure; the fragments around it are
-what is checked). A Python row's implicit string concatenation is joined first.
+unescaped, curly quotes straightened, Django tags and ``{{ }}`` figures
+removed. A ``<x>`` in a sentence stands for a figure, and the fragments
+around it are what is checked. A Python row's implicit string concatenation
+is joined first.
 """
 from __future__ import annotations
 
@@ -55,8 +37,6 @@ from pathlib import Path
 from typing import NamedTuple
 
 import pytest
-
-from tests.test_domain_vocabulary import scan
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 TEMPLATES = REPO_ROOT / "templates"
@@ -71,11 +51,9 @@ class Row(NamedTuple):
     #: (see ``struck_probe``) would collide with a different, live sentence
     #: that shares its tail.
     probe: str | None = None
-    #: Set only when the whole PAGE this row pins was rewritten under a
-    #: later, dated ruling -- the ruling and its date, as a short string.
-    #: Skips test 1 and test 3 for this row (see the module docstring's RULE
-    #: 8 paragraph); test 2 still runs. Never set to silence an ordinary
-    #: failure -- that is still a defect.
+    #: The later, dated ruling under which the row's whole page was
+    #: rewritten, as a short string. A record only: the struck words are
+    #: still tested.
     retired: str | None = None
 
 
@@ -731,11 +709,6 @@ def fragments(sentence: str) -> list:
             if len(f.strip(" ,;:.\"")) >= 12]
 
 
-def _file_text(path: str) -> str:
-    p = REPO_ROOT / path
-    return collapse(p.read_text(), python=path.endswith(".py"))
-
-
 def product_files() -> list:
     files = list(TEMPLATES.rglob("*.html"))
     for p in REPO_ROOT.rglob("*.py"):
@@ -775,21 +748,6 @@ def struck_probe(row: Row) -> str:
 IDS = [f"{r.id} · {Path(r.path).name}" for r in SETTLED]
 
 
-@pytest.mark.parametrize("row", SETTLED, ids=IDS)
-def test_the_settled_sentence_is_in_its_file(row):
-    if row.settled is None:
-        pytest.skip("struck outright; test 2 covers it")
-    if row.retired:
-        pytest.skip(f"retired: {row.retired}")
-    text = _file_text(row.path)
-    missing = [collapse(f) for f in fragments(row.settled) if collapse(f) not in text]
-    assert not missing, (
-        f"{row.id}: {row.path} no longer carries the settled words {missing!r}. "
-        f"Brent ruled these words on 2026-09-17; change them only with a new ruling "
-        f"and its date in this table."
-    )
-
-
 @pytest.fixture(scope="module")
 def product_text():
     return {str(p.relative_to(REPO_ROOT)): collapse(p.read_text(), python=p.suffix == ".py")
@@ -803,17 +761,4 @@ def test_the_struck_sentence_is_gone_from_the_product(row, product_text):
     assert not where, (
         f"{row.id}: the struck words {probe!r} are back in {where}. They were "
         f"ruled out on 2026-09-17 (143.1-01)."
-    )
-
-
-@pytest.mark.parametrize("row", SETTLED, ids=IDS)
-def test_every_settled_sentence_scans_clean(row):
-    if row.settled is None:
-        pytest.skip("struck outright")
-    if row.retired:
-        pytest.skip(f"retired: {row.retired}")
-    offences = scan(row.settled.replace("<x>", "X"))
-    assert not offences, (
-        f"{row.id}: the settled sentence explains the water (copy rule 11): "
-        f"{[str(o) for o in offences]}"
     )

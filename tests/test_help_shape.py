@@ -7,6 +7,11 @@ paragraphs is the fault. Every file under ``templates/help/`` is in exactly one
 of two lists below: ``ENFORCED`` is held to the thresholds, ``PENDING`` is held
 to the numbers it had when this file was written and may only get better.
 
+The cap limits length and says nothing about the shape of a sentence: a
+60-word paragraph can still be written in a shape Brent has struck. That is
+checked by ``tests/test_writing_shapes.py`` and by a reader. Brent kept the
+cap on 2026-10-09 at 20:03 PDT.
+
 **Kill switch:** ``OPENH2O_HELP_SHAPE_CHECK=0`` skips this module.
 """
 from __future__ import annotations
