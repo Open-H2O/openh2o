@@ -411,7 +411,12 @@ BASELINE: dict = {
     #   opening a definition of groundwater. It is a sentence about what the
     #   software imports, a false positive (same shape as the 2026-10-09 20:45
     #   headgate entry below).
-    "templates/help/*.html": 3,
+    #   2026-10-10 13:18 PDT: 3 -> 4 for help/budgets_allocations.html, "...
+    #   groundwater extracted: the meter reading where a well is metered, ...",
+    #   approved by Brent. The scanner reads the colon as opening an appositive
+    #   definition of a well; the clause names which figure is charged, a false
+    #   positive.
+    "templates/help/*.html": 4,
     #   2026-10-09: 10 -> 11 because the surface now reads the words passed
     #   into included partials, not because a definition was added. The one
     #   new location is reporting/partials/_report_detail_pane.html, whose

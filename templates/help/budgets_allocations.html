@@ -12,156 +12,145 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Allocations &amp; Ceilings</span>
   </nav>
-  <p class="page-description">This page explains how a zone&rsquo;s ceiling becomes each account&rsquo;s allocation, how an allocation is spent and what a blank allocation means.</p>
+  <p class="page-description">This page explains how OpenH2O divides a zone&rsquo;s allocation ceiling among the accounts in the zone.</p>
 </div>
 {% endblock %}
 
 {% block content %}
 {% comment %}
-  149.1-03 (2026-10-07): carried to the shape Brent approved on Methods
-  behind the numbers (149.1-01) and How water balances work (149.1-02),
-  from the reader's three questions outward (the ceiling against the
-  allocation, and who sets which; how one account's allocation is worked
-  out from the zone's ceiling; what spends a groundwater allocation, and
-  what a blank means). Each card is one table with a line or two under it;
-  the three inset formula boxes became the worked example's rows. The shape
-  check tests/test_help_shape.py holds this file at 60 words a block and
-  half a page in prose.
+  2026-10-10 (150.1): rebuilt from nine facts Brent approved at 13:18 PDT
+  ("yes, approved"), each checked against the code: the per-account share
+  (accounting/views.py _account_summary_row: groundwater plans only, the
+  count of the account's use areas in the zone over the count of all use
+  areas in the zone, summed over zones), the zone's budget with carry-over
+  (accounting/services.py zone_groundwater_budget; an account's remaining has
+  no carry-over), and the surface comparison on the zone page (geography/
+  views.py, delivered rows only). Two old lines were false: an account's
+  remaining included carry-over, and an overdraft was "the one figure the
+  platform colors red" (it is text-deficit, burnt orange).
 
-  Unlike settings_explained.html and methods.html, this page uses the BARE
-  `{% templatetag openblock %} url {% templatetag closeblock %}` form, which
-  really does raise NoReverseMatch. The guards below close a 500, not a dead
-  link.
+  The page names `accounting`, `parcels`, `surface` and `recharge` as its
+  subject (config/views.py EXPLAINER_MODULES), so it is 404'd wherever any of
+  them is off. `wells` is not among them, so the metered and unmetered well
+  sentence is guarded on it (tests/droppability/checks.py refuses "well"
+  without it). The bare `url` tags below raise NoReverseMatch, so their guards
+  close a 500, not a dead link.
 {% endcomment %}<div class="page-stack page-help help-page">
 
   <div class="card-raised">
-    <h2 class="section-header">The ceiling and the allocation</h2>
-    <p class="text-secondary text-base">An <strong>allocation ceiling</strong> is the total volume assigned to a management zone for a reporting period. An <strong>allocation</strong> is one account&rsquo;s share of it, by the land the account holds in the zone.</p>
-
-    <div class="table-scroll mt-md">
-      <table class="data-table help-cases-table help-cases-table--short-names">
-        <thead>
-          <tr>
-            <th>Figure</th>
-            <th>What it is</th>
-            <th>Who sets it</th>
-            <th>One per</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="col-name">Allocation ceiling</td>
-            <td>The total volume assigned to a zone for a period.</td>
-            <td class="col-where">You, on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{% url 'accounting:allocations_list' %}">Allocations</a>{% else %}Allocations{% endif %}</td>
-            <td>Zone, water type and reporting period</td>
-          </tr>
-          <tr>
-            <td class="col-name">Allocation</td>
-            <td>One account&rsquo;s share: the ceiling pro-rated by the use areas the account holds in the zone. Use areas are the fields on the Use Areas page.</td>
-            <td class="col-where">The platform</td>
-            <td>Account, from the groundwater ceiling of every zone it holds use areas in</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="card-raised">
-    <h2 class="section-header">How an account&rsquo;s allocation is worked out</h2>
-
-    <div class="table-scroll">
-      <table class="data-table help-steps-table">
-        <thead>
-          <tr>
-            <th>Step</th>
-            <th>Figure in the example</th>
-            <th>Where the figure comes from</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="col-step"><span class="step-num">1</span>Zone ceiling for the year</td>
-            <td class="col-figure">12,000 acre-feet</td>
-            <td>Set on Allocations for the zone, its groundwater type and the period</td>
-          </tr>
-          <tr>
-            <td class="col-step"><span class="step-num">2</span>Use areas in the zone</td>
-            <td class="col-figure">600</td>
-            <td>Counted on the Use Areas page, one per field in the zone; the count, not the acreage</td>
-          </tr>
-          <tr>
-            <td class="col-step"><span class="step-num">3</span>The account&rsquo;s use areas in the zone</td>
-            <td class="col-figure">30</td>
-            <td>Counted the same way, for the fields the account holds in the zone</td>
-          </tr>
-          <tr>
-            <td class="col-step"><span class="step-num">4</span>The account&rsquo;s allocation</td>
-            <td class="col-figure">12,000 &times; 30 / 600 = 600 acre-feet</td>
-            <td>Step 1 times step 3, divided by step 2; added up over every zone the account holds use areas in</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="help-table-notes mt-md">
-      <p class="text-secondary text-sm">A landowner&rsquo;s figure is the account&rsquo;s allocation, not the zone&rsquo;s 12,000 acre-feet.</p>
-      <p class="text-secondary text-sm">The count of use areas is used, not their acreage, because area data is often incomplete and counts are always available.</p>
-    </div>
-  </div>
-
-  <div class="card-raised">
-    <h2 class="section-header">How an allocation is spent</h2>
-
+    <h2 class="section-header">How ceilings are set and divided</h2>
     <div class="table-scroll">
       <table class="data-table help-cases-table">
         <thead>
           <tr>
-            <th>Allocation</th>
-            <th>Spent by</th>
-            <th>Remaining</th>
+            <th>Topic</th>
+            <th>How it works</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td class="col-name">Groundwater</td>
-            <td>Groundwater extracted, metered and calculated alike (the meter reading, or the division{% if 'wells' in enabled_modules %} for a well with no meter{% endif %})</td>
-            <td>Allocation plus any carry-over, minus groundwater extracted</td>
+            <td class="col-name">Ceilings</td>
+            <td>A district sets an allocation ceiling on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{% url 'accounting:allocations_list' %}">Allocations</a>{% else %}Allocations{% endif %} for each zone, water type and water year.</td>
           </tr>
           <tr>
-            <td class="col-name">Surface (one per zone)</td>
-            <td>Delivered, added up over the fields in the zone; a surface ceiling is not divided among accounts</td>
-            <td>Allocation minus delivered</td>
+            <td class="col-name">An account&rsquo;s share</td>
+            <td>OpenH2O calculates an account&rsquo;s groundwater allocation in a zone by multiplying the zone&rsquo;s groundwater ceiling by the number of the account&rsquo;s use areas in the zone and dividing by the number of all use areas in the zone.</td>
           </tr>
           <tr>
-            <td class="col-name">Blank, no ceiling set</td>
-            <td>Nothing; no ceiling is set for the zone and period, so every account&rsquo;s allocation shows blank, not zero</td>
-            <td>Blank; not a limit</td>
+            <td class="col-name">More than one zone</td>
+            <td>An account with use areas in more than one zone receives the sum of its allocations from each zone.</td>
+          </tr>
+          <tr>
+            <td class="col-name">Surface water</td>
+            <td>OpenH2O does not divide a surface water ceiling among accounts. The zone&rsquo;s page compares that ceiling with the deliveries recorded on the zone&rsquo;s use areas for the water year.</td>
           </tr>
         </tbody>
       </table>
     </div>
+  </div>
 
-    <div class="help-table-notes mt-md">
-      <p class="text-secondary text-sm">When an account pumps past its allocation, remaining goes negative: an overdraft, the one figure the platform colors red.</p>
-      <p class="text-secondary text-sm">&ldquo;No ceiling defined&rdquo; and &ldquo;a ceiling of zero&rdquo; are different: a blank is not a limit.</p>
-      <p class="text-secondary text-sm">To start enforcing allocations, set a ceiling for the zone and period on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{% url 'accounting:allocations_list' %}">Allocations</a>{% else %}Allocations{% endif %} first.</p>
+  <div class="card-raised">
+    <h2 class="section-header">Worked example</h2>
+    <div class="table-scroll">
+      <table class="data-table help-cases-table">
+        <thead>
+          <tr>
+            <th>Figure</th>
+            <th>In the example</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-name">The zone&rsquo;s groundwater ceiling</td>
+            <td class="col-figure">12,000 acre-feet</td>
+          </tr>
+          <tr>
+            <td class="col-name">Use areas in the zone</td>
+            <td class="col-figure">600</td>
+          </tr>
+          <tr>
+            <td class="col-name">The account&rsquo;s use areas in the zone</td>
+            <td class="col-figure">30</td>
+          </tr>
+          <tr>
+            <td class="col-name">The account&rsquo;s groundwater allocation</td>
+            <td class="col-figure">12,000 &times; 30 / 600 = 600 acre-feet</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card-raised">
+    <h2 class="section-header">What an allocation is charged with</h2>
+    <div class="table-scroll">
+      <table class="data-table help-cases-table">
+        <thead>
+          <tr>
+            <th>Topic</th>
+            <th>How it works</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if 'wells' in enabled_modules %}<tr>
+            <td class="col-name">Groundwater extracted</td>
+            <td>OpenH2O charges a groundwater allocation with groundwater extracted: the meter reading where a well is metered, and the figure OpenH2O calculates where a well has no meter.</td>
+          </tr>{% endif %}
+          <tr>
+            <td class="col-name">Canal deliveries</td>
+            <td>OpenH2O never charges canal deliveries against a groundwater allocation.</td>
+          </tr>
+          <tr>
+            <td class="col-name">Remaining allocation</td>
+            <td>An account&rsquo;s remaining allocation is its allocation minus the groundwater extracted on its use areas. A negative remaining allocation means the account has extracted more than its allocation.</td>
+          </tr>
+          <tr>
+            <td class="col-name">Carry-over</td>
+            <td>A zone&rsquo;s remaining groundwater allocation includes the carry-over from the previous water year, but an account&rsquo;s remaining allocation does not.</td>
+          </tr>
+          <tr>
+            <td class="col-name">No ceiling</td>
+            <td>Where a zone has no groundwater ceiling for the water year, OpenH2O shows its accounts&rsquo; allocations as a dash, not as zero.</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
   <div class="card-raised">
     <h2 class="section-header">Where to go next</h2>
-    <div class="card-grid mt-md">
+    <div class="card-grid card-grid--fit mt-md">
       {% if 'accounting' in enabled_modules %}<a href="{% url 'accounting:allocations_list' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Allocations</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">Set a zone&rsquo;s ceiling on the live page; allocations are derived from it.</p>
+        <p class="text-secondary text-sm">This page holds each zone&rsquo;s allocation ceilings.</p>
       </a>{% endif %}
       {% explainer_available 'water_balances' as show_water_balances %}{% if show_water_balances %}<a href="{% url 'water_balances' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>How Water Balances Work</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">See how the platform sets each field's estimated water use against its supplies.</p>
+        <p class="text-secondary text-sm">This page works through one field&rsquo;s month with real figures.</p>
       </a>{% endif %}
       {% explainer_available 'methods' as show_methods %}{% if show_methods %}<a href="{% url 'methods' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Methods Behind the Numbers</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">See the steps as they run, the three endings and what is not built yet.</p>
+        <p class="text-secondary text-sm">This page explains the settings behind each figure and how OpenH2O divides and estimates canal deliveries.</p>
       </a>{% endif %}
     </div>
   </div>
