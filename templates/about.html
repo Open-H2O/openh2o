@@ -14,29 +14,24 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">About</span>
   </nav>
-  <p class="page-description">This page describes who OpenH2O is for, how it relates to the Groundwater Accounting Platform, and who made it.</p>
+  <p class="page-description">This page explains what OpenH2O is, who it is for, where its accounting method comes from and who made it.</p>
 </div>
 {% endblock %}
 
 {% block content %}
 {% comment %}
-  150-03 (2026-10-09): carried to the shape Brent approved on Methods behind the
-  numbers (149.1-01, 2026-10-06 19:50 PDT) and the help pages after it, from the
-  visitor's three questions outward (what OpenH2O is and who it is for; what it
-  owes to the Groundwater Accounting Platform and what is its own; who made it
-  and where the code is). Each card is one question answered by a table with a
-  line or two under it; tests/test_help_shape.py holds this file at 60 words a
-  block and half a page in prose. The sentences Brent settled on 2026-09-17
-  (tests/test_literary_sentence.py rows S-0225, S-0227, S-0228 to S-0231,
-  S-0233, S-0242) stay on the page word for word.
+  2026-10-10: rewritten from a list of checked facts after Brent struck the
+  previous wording (a "Who stands behind it" row that implied sponsors, and
+  sentences that said little). Each sentence states one fact that NOTICE,
+  README.md or the code supports; the history timeline was removed rather
+  than kept unchecked. tests/test_help_shape.py holds this file at 60 words a
+  block and half a page in prose.
 
   Every noun that names a domain this deployment may not run is gated on its
   module (ISS-082; tests/droppability/checks.py's forbidden vocabulary reads
-  this page on every reduced deployment). The lineage row and the 2014 to 2025
-  timeline are about the project's history and are not gated: switching a
-  module off does not change what happened in 2018. NOTICE's claim is kept
-  exact: the methodology is independently reimplemented and none of the
-  Groundwater Accounting Platform's source code is copied.
+  this page on every reduced deployment). NOTICE's claim is kept exact: the
+  methodology is independently reimplemented and none of the Groundwater
+  Accounting Platform's source code is copied.
 {% endcomment %}<div class="page-stack page-help help-page">
 
   <section class="about-hero">
@@ -47,9 +42,9 @@
        (Phase 143-02). {% endcomment %}
     <p class="about-title">OpenH2O</p>
     {% module_nouns "measurements:measurements" "accounting:deliveries" "wells:wells" "surface:surface diversions" "recharge:managed aquifer recharge" "accounting:mixed-use accounting" as data_nouns %}<p class="about-purpose card-raised">
-      OpenH2O is an open-source water-data platform for California's Groundwater Sustainability Agencies and water districts.
-      It keeps an agency's {{ data_nouns }} in one system the agency owns.
-      It runs on a $15-a-month server, and an AI coding assistant can deploy it from <a href="https://github.com/Open-H2O/openh2o" class="text-link" target="_blank" rel="noopener noreferrer">this repository</a>.
+      OpenH2O is open-source software for California water agencies.
+      It keeps an agency's {{ data_nouns }} in one system that the agency runs and owns.
+      An agency can install it on its own computer or server, and an AI coding assistant can do the installation from <a href="https://github.com/Open-H2O/openh2o" class="text-link" target="_blank" rel="noopener noreferrer">the code on GitHub</a>.
     </p>
   </section>
 
@@ -60,179 +55,96 @@
         <thead>
           <tr>
             <th>Who</th>
-            <th>What they keep here</th>
+            <th>What OpenH2O does for them</th>
           </tr>
         </thead>
         <tbody>
           {% if 'accounting' in enabled_modules %}<tr>
             <td class="col-name">A groundwater agency or an irrigation district</td>
-            <td>It keeps its {% module_nouns "parcels:use areas" "wells:wells" "accounting:water accounts" %} on a map and records each month's volumes on a ledger. The platform works out a water balance for each field and water year.</td>
+            <td>OpenH2O maps its {% module_nouns "parcels:use areas" "wells:wells" "accounting:water accounts" %}, keeps a monthly ledger and works out a water balance for each field.</td>
           </tr>{% endif %}
           {% if 'surface' in enabled_modules %}<tr>
             <td class="col-name">A ditch company or a surface-water diverter</td>
-            <td>It keeps its water rights, points of diversion and monthly diversion records. The platform writes them out in the state's report layout.</td>
+            <td>OpenH2O keeps its water rights, points of diversion and monthly diversion records, and writes them in the state's report layout.</td>
           </tr>{% endif %}
           {% if 'drinking' in enabled_modules %}<tr>
             <td class="col-name">A small public water system</td>
-            <td>It keeps its facilities, sampling points, lab results and production in the state's own record layout.</td>
+            <td>OpenH2O keeps its facilities, sampling points, lab results and production records.</td>
           </tr>{% endif %}
           {% if 'datasync' in enabled_modules %}<tr>
             <td class="col-name">An agency that watches public gauges</td>
-            <td>It follows monitoring stations that publish to public feeds. The platform shows when each station last reported.</td>
+            <td>OpenH2O reads public monitoring stations and shows when each one last reported.</td>
           </tr>{% endif %}
           {% if 'recharge' in enabled_modules %}<tr>
             <td class="col-name">A recharge operator</td>
-            <td>It keeps its recharge sites, the events at each site and their measurements.</td>
+            <td>OpenH2O keeps its recharge sites, each recharge event and its measurements.</td>
           </tr>{% endif %}
-          <tr>
-            <td class="col-name">Anyone standing it up</td>
-            <td>It needs a copy of the OpenH2O code, a computer to run it on (an office computer or a $15-a-month rented server), and an AI coding assistant to help with setup. The Getting Started page lists the setup steps.</td>
-          </tr>
         </tbody>
       </table>
     </div>
     <div class="help-table-notes mt-md">
-      <p class="text-secondary text-sm">OpenH2O does not submit reports to the state. It writes the figures out in the state's layouts, and the agency files them.</p>
+      <p class="text-secondary text-sm">OpenH2O does not submit reports to the state. It writes the figures in the state's layouts, and the agency files them.</p>
     </div>
   </div>
 
   <div class="card-raised">
-    <h2 class="section-header">How OpenH2O relates to the Groundwater Accounting Platform</h2>
-    <p class="text-secondary text-base">OpenH2O exists because the Groundwater Accounting Platform (GAP) proved that public agencies, a nonprofit and private firms could build and sustain shared, open-source infrastructure for water management, to a high standard.</p>
-    <div class="table-scroll mt-md">
-      <table class="data-table help-cases-table">
-        <thead>
-          <tr>
-            <th>What</th>
-            <th>From the Groundwater Accounting Platform</th>
-            <th>OpenH2O's own</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="col-name">The accounting method</td>
-            <td>It gave the idea and the methodology: an agency's water is accounted month by month from satellite estimates, meters and its own records.</td>
-            <td>OpenH2O reimplements that methodology independently. None of the platform's source code is copied.</td>
-          </tr>
-          <tr>
-            <td class="col-name">The code</td>
-            <td>Sitka Technology Group, now Environmental Science Associates (ESA), wrote it in its own language and stack. The Qanat community platform is the release OpenH2O's design most closely parallels.</td>
-            <td>OpenH2O is written in Python with Django and GeoDjango, and it runs on PostgreSQL and PostGIS in Docker.</td>
-          </tr>
-          <tr>
-            <td class="col-name">The scope</td>
-            <td>It covers groundwater and SGMA.</td>
-            <td>OpenH2O covers all of water: surface water, groundwater{% if 'drinking' in enabled_modules %}, the water a public water system delivers{% endif %} and the reporting the state requires.</td>
-          </tr>
-          <tr>
-            <td class="col-name">The license</td>
-            <td>It is released under the GNU Affero General Public License, version 3.</td>
-            <td>OpenH2O is released under the same license.</td>
-          </tr>
-          <tr>
-            <td class="col-name">Who stands behind it</td>
-            <td>The Environmental Defense Fund originated it in 2018 with the Rosedale-Rio Bravo Water Storage District, Sitka Technology Group engineered it, and the California Water Data Consortium opened and scaled it to agencies statewide.</td>
-            <td>One maintainer and the agencies that run it stand behind OpenH2O.</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="help-table-notes mt-md">
-      <p class="text-secondary text-sm">OpenH2O follows GAP's example. Its code is written separately and uses only open-source software.</p>
-      <p class="text-secondary text-sm">GAP also showed that most of the work comes after the software is running: training, outreach and support until an agency relies on it.</p>
-    </div>
-
-    <div class="help-subsection">
-      <h3 class="concept-panel-title">The policy behind it</h3>
-      <div class="timeline mt-md">
-        <div class="timeline-entry">
-          <span class="timeline-year">2014</span>
-          <div class="timeline-content">
-            <strong>SGMA signed</strong>
-            <p>The Sustainable Groundwater Management Act requires roughly 200 new local agencies to bring 94 critically overdrafted basins into balance.</p>
-          </div>
-        </div>
-        <div class="timeline-entry">
-          <span class="timeline-year">2016</span>
-          <div class="timeline-content">
-            <strong>AB 1755 passed</strong>
-            <p>The Open and Transparent Water Data Act directs the state to make its water data public and interoperable.</p>
-          </div>
-        </div>
-        <div class="timeline-entry">
-          <span class="timeline-year">2019</span>
-          <div class="timeline-content">
-            <strong>Water Data Consortium founded</strong>
-            <p>An independent nonprofit forms to carry out AB 1755 and steward California's open-source water data tools.</p>
-          </div>
-        </div>
-        <div class="timeline-entry">
-          <span class="timeline-year">2021</span>
-          <div class="timeline-content">
-            <strong>Accounting platform made available</strong>
-            <p>Proven first at the Rosedale-Rio Bravo Water Storage District and in Nebraska, the Groundwater Accounting Platform is made available to California agencies through a partnership of the Consortium, the Department of Water Resources, the State Water Board and the Environmental Defense Fund.</p>
-          </div>
-        </div>
-        <div class="timeline-entry">
-          <span class="timeline-year">2024</span>
-          <div class="timeline-content">
-            <strong>OpenET operational</strong>
-            <p>Satellite evapotranspiration data becomes production-ready as a district data feed.</p>
-          </div>
-        </div>
-        <div class="timeline-entry">
-          <span class="timeline-year">2025</span>
-          <div class="timeline-content">
-            <strong>Source code published</strong>
-            <p>The Environmental Defense Fund and Environmental Science Associates publish the platform's full source code on GitHub (the Qanat project), so any agency can download and run it.</p>
-          </div>
-        </div>
-        <div class="timeline-entry">
-          <span class="timeline-year">2026</span>
-          <div class="timeline-content">
-            <strong>OpenH2O</strong>
-            {% comment %}
-              Gated like the lead paragraph: this is the deployment's About page, so
-              the capabilities it lists are the ones this install has. The whole
-              clause is conditional, so with every listed module off the sentence
-              still reads whole.
-            {% endcomment %}{% module_nouns "surface:surface water" "recharge:managed aquifer recharge" "datasync:live OpenET integration" "reporting:California reporting formats" as extensions %}<p>OpenH2O extends the open accounting model beyond groundwater on a fully open stack an agency can host itself{% if extensions %}, adding {{ extensions }}{% endif %}.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="card-raised about-credits">
-    <h2 class="section-header">Where OpenH2O comes from</h2>
+    <h2 class="section-header">Where the accounting method comes from</h2>
     <div class="table-scroll">
       <table class="data-table help-cases-table">
         <thead>
           <tr>
             <th>What</th>
-            <th>Where</th>
+            <th>The fact</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td class="col-name">Who made it</td>
-            <td>Brent Vanderburgh wrote OpenH2O and maintains it. The copyright is his, and the license lets anyone run, change and share the code.</td>
+            <td class="col-name">The method</td>
+            <td>OpenH2O uses the accounting method of the Groundwater Accounting Platform, an open-source system built by ESA (formerly Sitka Technology Group) and stewarded by the California Water Data Consortium.</td>
           </tr>
           <tr>
-            <td class="col-name">The source code</td>
-            <td>The code lives at <a href="https://github.com/Open-H2O/openh2o" class="text-link" target="_blank" rel="noopener noreferrer">github.com/Open-H2O/openh2o</a> under the GNU Affero General Public License v3. Anyone who modifies and hosts it must offer its users the source.</td>
+            <td class="col-name">The code</td>
+            <td>OpenH2O is separate code, written in Python. None of the Groundwater Accounting Platform's code is copied into it.</td>
           </tr>
           <tr>
-            <td class="col-name">The technology</td>
-            <td>OpenH2O is built from open-source components an agency can run, inspect and own outright: Django, PostGIS, MapLibre GL JS, HTMX and Docker. There is no proprietary platform and no vendor lock-in.</td>
+            <td class="col-name">The license</td>
+            <td>Both are released under the GNU Affero General Public License, version 3.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card-raised about-credits">
+    <h2 class="section-header">Who made OpenH2O</h2>
+    <div class="table-scroll">
+      <table class="data-table help-cases-table">
+        <thead>
+          <tr>
+            <th>What</th>
+            <th>The fact</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-name">Author</td>
+            <td>Brent Vanderburgh wrote OpenH2O and maintains it.</td>
+          </tr>
+          <tr>
+            <td class="col-name">Source code</td>
+            <td>The code is at <a href="https://github.com/Open-H2O/openh2o" class="text-link" target="_blank" rel="noopener noreferrer">github.com/Open-H2O/openh2o</a>. Under its license, anyone who changes the code and runs it for other people must give those people the changed code.</td>
+          </tr>
+          <tr>
+            <td class="col-name">Built with</td>
+            <td>Django, PostGIS, MapLibre GL JS, HTMX and Docker, all open source</td>
           </tr>
           <tr>
             <td class="col-name">Third-party licenses</td>
-            <td><a href="https://github.com/Open-H2O/openh2o/blob/main/THIRD-PARTY-NOTICES.md" class="text-link" target="_blank" rel="noopener noreferrer">Third-party licenses and notices</a> lists every library OpenH2O depends on and its license.</td>
+            <td><a href="https://github.com/Open-H2O/openh2o/blob/main/THIRD-PARTY-NOTICES.md" class="text-link" target="_blank" rel="noopener noreferrer">Third-party licenses and notices</a> lists each library OpenH2O uses and its license.</td>
           </tr>
           <tr>
-            <td class="col-name">The demonstration data</td>
-            <td><a href="{% url 'demonstration_data' %}" class="text-link">What is real in this demonstration</a> says, source by source, which records are published public record and which are invented.</td>
+            <td class="col-name">Demonstration data</td>
+            <td><a href="{% url 'demonstration_data' %}" class="text-link">What is real in this demonstration</a> lists which records are public and which are invented.</td>
           </tr>
         </tbody>
       </table>
@@ -250,20 +162,16 @@
           </thead>
           <tbody>
             <tr>
-              <td class="col-name">California Water Data Consortium</td>
-              <td>The Consortium is the independent nonprofit founded in 2019 to carry out California's Open and Transparent Water Data Act (AB 1755). It is the neutral table where state agencies, local agencies, Tribes, academia and NGOs make the state's water data open and interoperable, and it opened the Groundwater Accounting Platform to agencies statewide.</td>
+              <td class="col-name">The Groundwater Accounting Platform: ESA (formerly Sitka Technology Group) and the California Water Data Consortium</td>
+              <td>The accounting method OpenH2O uses</td>
             </tr>
             <tr>
               <td class="col-name">Rosedale-Rio Bravo Water Storage District and Nebraska's Natural Resources Districts</td>
-              <td>These local agencies first ran a water-data platform in-house and proved it could be done. OpenH2O independently reimplements that approach so any agency can do the same.</td>
+              <td>The earlier versions of that platform, built for these agencies, which OpenH2O's design also draws on</td>
             </tr>
             <tr>
-              <td class="col-name">Environmental Science Associates (formerly Sitka Technology Group)</td>
-              <td>ESA publishes the open-source Qanat platform, which OpenH2O studied as prior art under its AGPL license. OpenH2O's design most closely parallels it; the methodology was independently reimplemented in a different language and stack, with none of their source code copied.</td>
-            </tr>
-            <tr>
-              <td class="col-name">OpenET (NASA, USGS, the Desert Research Institute and the Environmental Defense Fund), the California Data Exchange Center (CDEC), and the USGS National Water Information System</td>
-              <td>These public data services put satellite and sensor measurements within reach of any agency.</td>
+              <td class="col-name">OpenET, the California Data Exchange Center (CDEC) and the USGS National Water Information System</td>
+              <td>The satellite and gauge data OpenH2O reads</td>
             </tr>
           </tbody>
         </table>
@@ -277,11 +185,11 @@
     <div class="card-grid card-grid--fit mt-md">
       <a href="{% url 'getting_started' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Getting Started</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">This page walks a new administrator through the setup, step by step.</p>
+        <p class="text-secondary text-sm">This page lists the setup steps in order.</p>
       </a>
       <a href="{% url 'glossary' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Glossary</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">This page explains each word and name used on these screens. The words are listed alphabetically.</p>
+        <p class="text-secondary text-sm">This page explains the words used on these screens.</p>
       </a>
       {% comment %}89-02: the whole card goes with the page it opens. The
       water-balance explainer is hidden when the deployment does not run the
@@ -289,7 +197,7 @@
       a 404 is worse than no card. The predicate is read from the same place
       the view reads it, so the link and the page cannot disagree.{% endcomment %}{% explainer_available "water_balances" as show_water_balances %}{% if show_water_balances %}<a href="{% url 'water_balances' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>How Water Balances Work</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">This page explains, in plain language, what the platform computes.</p>
+        <p class="text-secondary text-sm">This page explains how each field's crop water use is set against its supplies.</p>
       </a>{% endif %}
     </div>
   </div>

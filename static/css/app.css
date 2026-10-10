@@ -4441,18 +4441,15 @@ details[open] > summary .disclosure-mark {
     margin: 0 0 var(--space-xs) 0;
 }
 
-.about-tagline {
-    font-size: 1.125rem;
-    color: var(--color-text-secondary);
-    margin: 0 0 var(--space-lg) 0;
-}
-
 .about-purpose {
     font-size: 1rem;
     color: var(--color-text-secondary);
     line-height: 1.65;
     text-align: left;
-    margin: var(--space-md) 0 0;
+    /* Centred under the logo and wordmark: the box is narrower than the page
+       (it holds the prose measure), and a zero inline margin left it hanging
+       off the logo's axis (Brent, 2026-10-10 04:12 PDT: "off center"). */
+    margin: var(--space-md) auto 0;
 }
 
 .about-credits p {
