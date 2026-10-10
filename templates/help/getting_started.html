@@ -105,7 +105,7 @@
           <tr>
             <td class="col-step"><span class="step-num">{{ steps.ledger }}</span>Record water use</td>
             <td class="col-where">Water Data &gt; Use Ledger<br><a href="{% url 'accounting:ledger_list' %}" class="text-sm text-accent">Go to Use Ledger &rarr;</a></td>
-            <td>Record meter readings, deliveries and adjustments one at a time with New entry, or many at once with Upload CSV. OpenH2O calculates each month&rsquo;s figures for a water year when you press Run the calculation on that water year&rsquo;s page, and every night when your server&rsquo;s scheduled jobs are installed.{% if 'wells' in enabled_modules %} OpenH2O records on the Use Ledger the groundwater extracted that it calculates for each use area with a well and no meter.{% endif %}</td>
+            <td>Record meter readings, deliveries and adjustments one at a time with New entry, or many at once with Upload CSV. OpenH2O calculates each month&rsquo;s figures for a water year when you press Run the calculation on that water year&rsquo;s page, and every night when your server&rsquo;s scheduled jobs are installed.{% if 'wells' in enabled_modules %} OpenH2O records on the Use Ledger the groundwater consumed that it calculates for each use area with a well and no meter.{% endif %}</td>
           </tr>{% endif %}
         </tbody>
       </table>

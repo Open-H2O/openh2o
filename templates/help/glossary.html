@@ -12,12 +12,17 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Glossary</span>
   </nav>
-  <p class="page-description">Entries say what each term means here and where to read more.</p>
+  <p class="page-description">This page explains the words used on these screens.</p>
 </div>
 {% endblock %}
 
 {% block content %}
 {% comment %}
+  2026-10-10 (150.1): twenty definitions in config/views.py::glossary were
+  rewritten in two batches Brent approved at 15:02 and 15:27 PDT ("yes,
+  proceed", "yes"); the description and the card lines are sentences he
+  approved on the other help pages. Membership is unchanged.
+
   149.1-04 (2026-10-07): carried to the shape Brent approved on Methods
   behind the numbers (149.1-01) and the pages after it, from the reader's
   three questions outward (what the platform means by "allocation" and what
@@ -71,23 +76,23 @@
     <div class="card-grid card-grid--fit mt-md">
       {% explainer_available "water_balances" as show_water_balances %}{% if show_water_balances %}<a href="{% url 'water_balances' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>How Water Balances Work</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">See how the platform sets each field's estimated water use against its supplies.</p>
+        <p class="text-secondary text-sm">This page works through one field&rsquo;s month with real figures.</p>
       </a>{% endif %}
       {% explainer_available "methods" as show_methods %}{% if show_methods %}<a href="{% url 'methods' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Methods Behind the Numbers</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">See the steps as they run, the three endings and what is not built yet.</p>
+        <p class="text-secondary text-sm">This page explains the settings behind each figure and how OpenH2O divides and estimates canal deliveries.</p>
       </a>{% endif %}
       {% explainer_available "settings_explained" as show_settings_explained %}{% if show_settings_explained %}<a href="{% url 'settings_explained' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Settings explained</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">See what each agency-wide setting decides and where it is set.</p>
+        <p class="text-secondary text-sm">This page explains each setting that changes a figure.</p>
       </a>{% endif %}
       {% explainer_available "surface_deliveries" as show_surface_deliveries %}{% if show_surface_deliveries %}<a href="{% url 'surface_deliveries' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Surface Delivery Settings</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">See what each canal setting decides and the full year-end choice.</p>
+        <p class="text-secondary text-sm">This page explains the canal delivery settings on Delivery Settings.</p>
       </a>{% endif %}
       {% explainer_available "budgets_allocations" as show_budgets_allocations %}{% if show_budgets_allocations %}<a href="{% url 'budgets_allocations' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Allocations &amp; Ceilings</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">See how a zone&rsquo;s ceiling becomes each account&rsquo;s allocation.</p>
+        <p class="text-secondary text-sm">This page explains how OpenH2O divides a zone&rsquo;s allocation ceiling among the accounts in the zone.</p>
       </a>{% endif %}
     </div>
   </div>

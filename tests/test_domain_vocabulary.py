@@ -404,7 +404,16 @@ BASELINE: dict = {
     #                expansions
     #   help_text= : 3 false positives naming a relation or a foreign key, plus
     #                core/forms.py:160, which explains what a SETTING means
-    "config/views.py::glossary": 2,
+    #   2026-10-10 15:27 PDT: 2 -> 6 (it had fallen to 0) for twenty
+    #   definitions Brent approved in two batches. All six are the scanner's
+    #   shapes, not water lectures: "One record per well: its state well
+    #   number, ..." and the same for a point of diversion name the record's
+    #   fields (the software-glossary form this rule asks for); "A month's
+    #   canal delivery ...", "The part of the canal water ...", "The
+    #   dashboard's name for crop water use ..." and "A groundwater allocation
+    #   is charged with ..." open with an article before a term and define
+    #   platform figures and screen names.
+    "config/views.py::glossary": 6,
     #   2026-10-10 12:49 PDT: 2 -> 3 for help/getting_started.html, whose wizard
     #   row reads "The wizard then brings in the groundwater subbasins, ...", in
     #   the words Brent approved. The scanner reads "The ... groundwater" as
