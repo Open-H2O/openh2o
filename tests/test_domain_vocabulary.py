@@ -416,7 +416,12 @@ BASELINE: dict = {
     #   approved by Brent. The scanner reads the colon as opening an appositive
     #   definition of a well; the clause names which figure is charged, a false
     #   positive.
-    "templates/help/*.html": 4,
+    #   2026-10-10 14:10 PDT: 4 -> 5 for help/surface_deliveries.html, which
+    #   reuses six Methods sentences Brent approved at 11:07 word for word. Its
+    #   two flags ("The canal part" row label, "A field without a well has the
+    #   credit added ...") are the same two false positives methods.html already
+    #   carries in this count.
+    "templates/help/*.html": 5,
     #   2026-10-09: 10 -> 11 because the surface now reads the words passed
     #   into included partials, not because a definition was added. The one
     #   new location is reporting/partials/_report_detail_pane.html, whose

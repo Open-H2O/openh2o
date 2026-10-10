@@ -12,173 +12,117 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Surface Delivery Settings</span>
   </nav>
-  <p class="page-description">Three settings on Delivery Settings govern canal water the crop could use, canal water beyond what the crop could use and year-end unused allotment.</p>
+  <p class="page-description">This page explains what each setting on Delivery Settings does to canal deliveries and to unused allocation at the end of the water year.</p>
 </div>
 {% endblock %}
 
 {% block content %}
 {% comment %}
-  149.1-03 (2026-10-07): carried to the shape Brent approved on Methods
-  behind the numbers (149.1-01) and How water balances work (149.1-02), from
-  the reader's three questions outward (what share of a canal delivery
-  counts as water the crop could use, and what happens to the rest; what
-  happens to canal water beyond what the crop could use, and which choice is
-  the default; what happens to an unused allotment at the end of the water
-  year, and whether one district can differ). Each card is one table with a
-  line or two under it; the shape check tests/test_help_shape.py holds this
-  file at 60 words a block and half a page in prose.
+  2026-10-10 (150.1): rebuilt from facts Brent approved at 14:10 PDT
+  ("approved"): the page description and four sentences on unused allocation
+  at year-end, each checked against the code (accounting/management/commands/
+  rollover_allocations.py: a surplus is skipped where the zone's resolved
+  choice is to expire, a debt is always written; geography Zone.
+  recovery_horizon overrides SiteConfig.default_recovery_horizon; nothing on a
+  screen or in crontab.txt runs the command). The canal-water rows are six of
+  the thirteen sentences he approved for Methods behind the numbers at 11:07
+  PDT, word for word. ISS-234 (a surface carry-over summed into the zone's
+  groundwater remaining) was found checking these and is logged, not written
+  around.
 
-  This page uses the BARE url tag, which raises NoReverseMatch on a missing
-  route, so the guards below close a 500, not a dead link: every
-  accounting:delivery_settings link is behind the accounting module, and
-  the two sibling explainer cards behind explainer_available.
+  The page names `accounting`, `surface` and `recharge` as its subject
+  (config/views.py EXPLAINER_MODULES), so it is 404'd wherever any of them is
+  off. `wells` is not among them, so the row naming fields with and without a
+  well is guarded on it. The bare `url` tags raise NoReverseMatch, so their
+  guards close a 500, not a dead link.
 {% endcomment %}<div class="page-stack page-help help-page">
 
   <div class="card-raised">
-    <h2 class="section-header">How a delivery is counted</h2>
-
-    <div class="table-scroll mt-md">
+    <h2 class="section-header">Canal water</h2>
+    <div class="table-scroll">
       <table class="data-table help-cases-table">
         <thead>
           <tr>
-            <th>Amount</th>
-            <th>How it is found</th>
-            <th>Where it goes</th>
+            <th>Topic</th>
+            <th>How it works</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td class="col-name">Canal water the crop could use</td>
-            <td>Delivered, multiplied by the field's irrigation efficiency, from its irrigation method on file, else the agency default on Delivery Settings, 75% unless changed</td>
-            <td>Subtracted from crop water use after rain</td>
+            <td class="col-name">Irrigation efficiency</td>
+            <td>Each field&rsquo;s irrigation efficiency comes from its irrigation method on file. A field with no irrigation method on file uses the default efficiency on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{% url 'accounting:delivery_settings' %}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}, 75 percent unless the district changes it.</td>
           </tr>
           <tr>
-            <td class="col-name">The rest of the delivery, lost to irrigation efficiency</td>
-            <td>Delivered minus canal water the crop could use</td>
-            <td>Recorded as deep percolation on the field's water balance; not crop water use, not a credit, not charged</td>
+            <td class="col-name">Canal water lost to efficiency</td>
+            <td>OpenH2O records the share of a canal delivery lost to irrigation efficiency as deep percolation and does not charge or credit any account for it.</td>
           </tr>
           <tr>
-            <td class="col-name">Canal water beyond what the crop could use</td>
-            <td>Canal water the crop could use that went past what was left of crop water use after rain</td>
-            <td>By the choice in the next table</td>
+            <td class="col-name">The surplus</td>
+            <td>When rain and canal water together exceed crop water use, OpenH2O sets the remainder to zero and records the surplus in two parts: rain and canal water.</td>
+          </tr>
+          <tr>
+            <td class="col-name">The canal part</td>
+            <td>A setting on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{% url 'accounting:delivery_settings' %}">Delivery Settings</a>{% else %}Delivery Settings{% endif %} determines how OpenH2O treats the canal part of that surplus. By default, OpenH2O credits it to no one. A district can instead credit it to the landowner, less a share left in the basin (10 percent by default), or show it as a separate line on the field&rsquo;s page without crediting it.</td>
+          </tr>
+          {% if 'wells' in enabled_modules %}<tr>
+            <td class="col-name">Where a credit goes</td>
+            <td>When the surplus is credited, a field with a well receives the credit on its own ledger. A field without a well has the credit added to its zone&rsquo;s shared account.</td>
+          </tr>{% endif %}
+          <tr>
+            <td class="col-name">Past months</td>
+            <td>Each calculated month stores the settings it was calculated with. A changed setting affects a past month only when that month is recalculated.</td>
           </tr>
         </tbody>
       </table>
-    </div>
-
-    <div class="help-table-notes mt-md">
-      <p class="text-secondary text-sm">An administrator sets the agency default on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{% url 'accounting:delivery_settings' %}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}, as &ldquo;Share of delivered water the crop consumes&rdquo;; a field's irrigation method, set on the field's own page, takes its place for that field.</p>
     </div>
   </div>
 
   <div class="card-raised">
-    <h2 class="section-header">Canal water beyond what the crop could use</h2>
-
-    <div class="table-scroll mt-md">
+    <h2 class="section-header">Unused allocation at the end of the water year</h2>
+    <div class="table-scroll">
       <table class="data-table help-cases-table">
         <thead>
           <tr>
-            <th>Choice on Delivery Settings</th>
-            <th>What is recorded</th>
-            <th>Who is credited</th>
+            <th>Topic</th>
+            <th>How it works</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td class="col-name">Not credited, the default</td>
-            <td>The amount is recorded with the month's figures and nothing else happens.</td>
-            <td>No one</td>
+            <td class="col-name">Unused allocation</td>
+            <td>At the end of a water year, OpenH2O carries each zone&rsquo;s unused allocation into the next water year as a credit, unless {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{% url 'accounting:delivery_settings' %}">Delivery Settings</a>{% else %}Delivery Settings{% endif %} is set to let unused allocation expire.</td>
           </tr>
           <tr>
-            <td class="col-name">Credited to the landowner, less a share left in the basin</td>
-            <td>The amount, and the landowner's share of it after &ldquo;Share left in the basin&rdquo; is subtracted, 10% unless changed</td>
-            <td>{% if 'wells' in enabled_modules %}Fields with a well, the landowner, on the field's own ledger; fields with no well, the zone's shared account, or no one where the zone has none{% else %}The zone's shared account, or no one where the zone has none{% endif %}</td>
+            <td class="col-name">Overdrawn allocation</td>
+            <td>OpenH2O always carries an overdrawn allocation into the next water year as a debt, whichever choice is set.</td>
           </tr>
           <tr>
-            <td class="col-name">Its own line, not a credit</td>
-            <td>The amount, as a line of its own on the field's page</td>
-            <td>No one, and nothing is charged; the field's water balance reads the same as under the other two choices</td>
+            <td class="col-name">One zone</td>
+            <td>A district can set a different choice for one zone on that zone&rsquo;s page.</td>
+          </tr>
+          <tr>
+            <td class="col-name">When it is written</td>
+            <td>OpenH2O writes the carry-over when the rollover_allocations command is run for the water year that closed.</td>
           </tr>
         </tbody>
       </table>
-    </div>
-
-    <p class="text-secondary text-sm mt-md">Each month keeps the choice and the share it was calculated under; a change applies to months calculated after it.</p>
-  </div>
-
-  <div class="card-raised">
-    <h2 class="section-header">Unused allotment at the end of the water year</h2>
-
-    <div class="table-scroll mt-md">
-      <table class="data-table help-cases-table">
-        <thead>
-          <tr>
-            <th>Choice</th>
-            <th>What happens to the unused amount</th>
-            <th>What happens to an overdraw</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="col-name">Carry it forward as a credit toward next year, the default</td>
-            <td>The unused amount carries into next year as a credit.</td>
-            <td>Carried into next year as a debt</td>
-          </tr>
-          <tr>
-            <td class="col-name">Let it expire (use-it-or-lose-it)</td>
-            <td>The leftover expires at year-end; next year starts at zero.</td>
-            <td>Carried into next year as a debt, whichever choice is set</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <p class="text-secondary text-sm mt-md">An administrator sets the agency's choice on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{% url 'accounting:delivery_settings' %}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}, as &ldquo;When a zone doesn't use its full allocation by the end of the water year&rdquo;.</p>
-
-    <div class="help-subsection">
-      <h3 class="concept-panel-title">One zone can differ</h3>
-
-      <div class="table-scroll mt-md">
-        <table class="data-table help-cases-table">
-          <thead>
-            <tr>
-              <th>&ldquo;Year-end unused water&rdquo; on the zone&rsquo;s page under <a class="prose-link" href="{% url 'geography:zone_list' %}">Zones</a></th>
-              <th>What that zone follows</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="col-name">Use agency default</td>
-              <td>The agency&rsquo;s choice on Delivery Settings, and any later change to it</td>
-            </tr>
-            <tr>
-              <td class="col-name">Carry it forward as a credit</td>
-              <td>Carried forward for this zone only, whatever the agency&rsquo;s choice</td>
-            </tr>
-            <tr>
-              <td class="col-name">Let it expire (use-it-or-lose-it)</td>
-              <td>Expires for this zone only, whatever the agency&rsquo;s choice</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
     </div>
   </div>
 
   <div class="card-raised">
     <h2 class="section-header">Where to go next</h2>
-    <div class="card-grid mt-md">
+    <div class="card-grid card-grid--fit mt-md">
       {% if 'accounting' in enabled_modules %}<a href="{% url 'accounting:delivery_settings' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Delivery Settings</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">Set these three settings on the live page.</p>
+        <p class="text-secondary text-sm">This page holds the efficiencies and the treatment of surplus canal water.</p>
       </a>{% endif %}
       {% explainer_available 'methods' as show_methods %}{% if show_methods %}<a href="{% url 'methods' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Methods Behind the Numbers</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">See the steps these settings feed and how one headgate total is shared.</p>
+        <p class="text-secondary text-sm">This page explains the settings behind each figure and how OpenH2O divides and estimates canal deliveries.</p>
       </a>{% endif %}
       {% explainer_available 'settings_explained' as show_settings %}{% if show_settings %}<a href="{% url 'settings_explained' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Settings explained</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">See what each agency-wide setting decides and where it is set.</p>
+        <p class="text-secondary text-sm">This page explains each setting that changes a figure.</p>
       </a>{% endif %}
     </div>
   </div>
