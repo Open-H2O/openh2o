@@ -52,6 +52,13 @@ surface has. Stripping template syntax is still right — it removed 20 of 32
 flags on the template surface — but it is a real blind spot, not a rounding
 error.
 
+Closed 2026-10-09: ``_scannable_prose`` now appends the words passed into
+included partials (``text=``, ``title=``, ``label=``, ``link_label=`` and the
+rest), read by ``include_arguments`` in ``scripts/writing_shapes.py``, and a
+template whose only prose is in such arguments is on the surface too.
+``test_the_gate_reads_the_words_passed_into_an_included_partial`` plants a
+definition in one and demands it be reported.
+
 **Why the fixture controls exist.** A scorer that never fails is not a
 measurement. One plants a water definition and demands it be reported. The other
 proves the scanner stays silent on all three legitimate constructions — an
@@ -66,6 +73,7 @@ the gate proves nothing.
 """
 
 import ast
+import importlib.util
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -238,12 +246,28 @@ _TEMPLATE_SYNTAX = (
 )
 
 
+def _load_writing_shapes():
+    spec = importlib.util.spec_from_file_location(
+        "writing_shapes_for_vocabulary", REPO_ROOT / "scripts" / "writing_shapes.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+#: Stripping ``{% %}`` hides the words passed into included partials
+#: (``text="..."`` and the rest), so they are read with the same function the
+#: writing-shapes guard uses.
+_include_arguments = _load_writing_shapes().include_arguments
+
+
 def _scannable_prose(path: Path) -> str:
-    """A template reduced to the words a reader actually sees."""
+    """A template reduced to the words a reader actually sees, including the
+    words it passes into included partials."""
     text = template_prose(path)
     for pattern in _TEMPLATE_SYNTAX:
         text = pattern.sub(" ", text)
-    return text
+    arguments = _include_arguments(path.read_text())
+    return "\n".join([text, *arguments])
 
 
 #: Every prose-bearing template. ``page-description`` and ``text-secondary`` are
@@ -264,7 +288,8 @@ def _prose_templates() -> list:
     return sorted(
         path for path in TEMPLATES.rglob("*.html")
         if path not in help_pages
-        and any(marker in path.read_text() for marker in _PROSE_MARKERS)
+        and (any(marker in path.read_text() for marker in _PROSE_MARKERS)
+             or _include_arguments(path.read_text()))
     )
 
 
@@ -381,7 +406,14 @@ BASELINE: dict = {
     #                core/forms.py:160, which explains what a SETTING means
     "config/views.py::glossary": 2,
     "templates/help/*.html": 2,
-    "templates/**/*.html": 10,
+    #   2026-10-09: 10 -> 11 because the surface now reads the words passed
+    #   into included partials, not because a definition was added. The one
+    #   new location is reporting/partials/_report_detail_pane.html, whose
+    #   pop-out says the values are estimated from OpenET, then an em dash,
+    #   then "not what you pumped or diverted". The scanner reads the dash as
+    #   opening a definition of "diversion"; it is a false positive, and the
+    #   dash itself is on the writing work's list.
+    "templates/**/*.html": 11,
     "help_text=": 4,
 }
 
@@ -462,6 +494,21 @@ def test_the_gate_reports_a_planted_water_definition():
     assert "well" in slugs, (
         "the scanner missed 'A drilled well.' — the exact string ISS-129 was "
         f"filed over. It reported {sorted(slugs)}"
+    )
+
+
+def test_the_gate_reads_the_words_passed_into_an_included_partial(tmp_path):
+    """A water definition inside ``{% include ... with text="..." %}`` is found."""
+    template = tmp_path / "planted.html"
+    template.write_text(
+        '<p class="text-secondary">Monthly figures.</p>\n'
+        '{% include "partials/_explainer_popout.html" with '
+        'text="A drilled well. Water comes up out of the ground here." %}\n'
+    )
+    slugs = {offence.slug for offence in scan(_scannable_prose(template))}
+    assert "well" in slugs, (
+        "the include argument was not read; the scanner reported "
+        f"{sorted(slugs)}"
     )
 
 
