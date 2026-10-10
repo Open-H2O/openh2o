@@ -660,25 +660,48 @@ names it, so none of the checks caught it.
 **The rule, in one sentence: a page description, a card intro, a help line, an instruction or an
 empty-state line is one or more short, complete sentences, each with a subject and a finite verb.**
 
-Three shapes are faults:
+Brent, 2026-10-09 18:45 PDT, after the About page shipped the heading "What it owes to the Groundwater
+Accounting Platform, and what is its own": "I didn't mean to accept the similar headings, I want the weird
+shape fixed everywhere." A heading is held to this rule too, and so is wording approved before that date.
 
-1. **A noun phrase presented as a statement.** "Well details, linked meters, and measurement history."
-   says nothing has happened to anything. "This page holds the well's record, the meters linked to it and
-   its measurement history." is the sentence.
-2. **Coordinated noun phrases joined by a comma.** "the record, and its map" takes no comma; "One
-   facility of X, and the sampling points on it." fails twice.
-3. **A relationship left to "of", "on it", "with", "beside it" or a colon-list** where a verb would say
-   it. "the sampling points on it" becomes "the table below lists its sampling points"; "Your sampling
-   checklist: what is sampled, how often, ..." becomes "This checklist shows what you sample, how often,
-   when you last sampled it and when it is next due."
+Seven shapes are faults, in any heading or sentence a reader sees:
+
+1. **Two clauses joined by a comma and posing as one heading or sentence.** "Who made it, and where the
+   code is" becomes "Who made OpenH2O" or "Where to find the code". "Three sources, and how each is
+   known" fails the same way.
+2. **A trailing clause tacked on with a comma.** "How the month ends, by what the field has" becomes
+   "How a month's figures depend on the field's supplies". "Setting up the platform, in order" fails the
+   same way.
+3. **A noun phrase presented as a statement.** "One facility of CITY OF MERCED, and the sampling points
+   on it." says nothing has happened to anything. "This page holds the facility's record and lists its
+   sampling points." is the sentence. A relationship left to "of", "on it", "with" or a colon-list where a
+   verb would say it is the same fault.
+4. **An em dash in running text.** It becomes a colon, a comma, a full stop or parentheses. A double
+   hyphen used as a dash is the same fault.
+5. **A filler word:** actually, genuinely, really, simply. It comes out.
+6. **A thing acting like a person.** A page does not notice, a record does not arrive with anything, and
+   software is not glad to keep learning. The sentence names who does it, or says what the software does.
+7. **A slogan or a clever pairing.** "OpenH2O treats that work as the work." and "Real shapes, invented
+   owners" are slogans. The plain statement of the fact replaces them.
 
 What is not a fault: a complete imperative ("Pick a zone from the list."); a label of one to three words;
 a column header, a map or legend label, a quantity's own name (rules 1 and 12); a colon that introduces
-a genuine list after a complete clause ("The file needs three columns: name, date and value."); a
-heading. Rule 7 still holds: short does not mean padded, and a sentence that only restates its heading
-is rule 13's fault, not this rule's cure.
+a genuine list after a complete clause ("The file needs three columns: name, date and value."). A heading
+may be a plain question ("Who made OpenH2O?") or a plain statement; it may not be two clauses joined by a
+comma. Rule 7 still holds: short does not mean padded, and a sentence that only restates its heading is
+rule 13's fault, not this rule's cure.
 
-The guard is a reviewer reading against this rule's text (the plain-language pass, 149.1-07 onward), not
-a regex: a fragment is a sentence with no finite verb, and telling one from a heading needs a reader. A
-prose instruction to the writer measured as no help (the writing-layer trial, 2026-09-10 to 09-21); the
-check at write time is what works.
+**A table cell that ends with a full stop is a statement, and it has to be a sentence.** A cell with no
+full stop is a label, and only shapes 4 to 7 apply to it.
+
+**A definition may stay in dictionary form.** A short line that says what one field or one glossary word
+means ("The date establishing seniority.") is a definition, not a statement, and may keep that form
+(Brent, 2026-10-09 20:03 PDT). It still carries no em dash.
+
+**The guards.** `tests/test_writing_shapes.py` counts the shapes a pattern can find, in every template,
+in the Python that writes onto a screen and in the public guides: an em dash or double hyphen between two
+words, the four filler words, a heading of two clauses joined by ", and what" (or who, how, where, why,
+when, which), and a heading ending in ", by what". Each file's count may only fall. The other shapes (a
+noun phrase posing as a statement, a thing acting like a person, a slogan, and pairs the pattern misses)
+need a reader with no project history, reading against this rule's text. A prose instruction to the writer
+measured as no help (the writing-layer trial, 2026-09-10 to 09-21); the check at write time is what works.
