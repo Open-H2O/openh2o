@@ -1425,7 +1425,7 @@ FIXED_NAV_ENTRIES: tuple = (
         section=SECTION_HELP, order=30, active_match="/help/methods/",
     ),
     NavEntry(
-        url_name="settings_explained", label="Configs & settings, explained",
+        url_name="settings_explained", label="Settings explained",
         icon="", section=SECTION_HELP, order=40, active_match="/help/settings/",
         # The two help pages with no entry of their own, both linked from it.
         also_matches=("/help/budgets-allocations/", "/help/surface-deliveries/"),

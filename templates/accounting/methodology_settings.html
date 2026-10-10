@@ -39,7 +39,7 @@
       <h2 class="section-header m-0">{{ plan.name }}</h2>
       <span class="text-tertiary text-sm">{{ steps|length }} step{{ steps|length|pluralize }}{% if user_can_write %}: reorder, enable or disable, and set each step's parameters{% endif %}</span>
     </div>
-    {% explainer_available "settings_explained" as show_settings_help %}<p class="text-secondary text-sm mb-md">A change applies to months calculated after it; a month already calculated keeps its figures until it is calculated again.{% if show_settings_help %} <a href="{% url 'settings_explained' %}" class="text-sm text-accent">Configs &amp; settings explained &rarr;</a> &middot;{% endif %} <a href="{% url 'glossary' %}" class="text-sm text-accent">Glossary &rarr;</a></p>
+    {% explainer_available "settings_explained" as show_settings_help %}<p class="text-secondary text-sm mb-md">A change applies to months calculated after it; a month already calculated keeps its figures until it is calculated again.{% if show_settings_help %} <a href="{% url 'settings_explained' %}" class="text-sm text-accent">Settings explained &rarr;</a> &middot;{% endif %} <a href="{% url 'glossary' %}" class="text-sm text-accent">Glossary &rarr;</a></p>
 
     {% include "accounting/partials/_methodology_steps.html" %}
   </div>

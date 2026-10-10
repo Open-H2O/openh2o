@@ -533,7 +533,7 @@ _GLOSSARY_HELP_POINTERS = {
     "Methods Behind the Numbers": "methods",
     "How Water Balances Work": "water_balances",
     "Surface Delivery Settings": "surface_deliveries",
-    "Configs & Settings, explained": "settings_explained",
+    "Settings explained": "settings_explained",
 }
 
 
@@ -665,7 +665,7 @@ def glossary(request):
         "Point of Diversion (POD)": "One record per POD: its location, the right it draws under, its stream or flowline, its maximum rate in CFS, and the parcels it serves, with its monthly diversion records.",
         "Sampling Schedule": "The operator's own checklist on a drinking-water deployment, one row per thing sampled on a cycle, with its frequency, the date last done and the date next due. Both dates are typed in; the platform never works a due date out from the frequency.",
         "Reporting Level": "Each result holds the reporting level its lab file gives. A result the file marks Less Than Reporting Level is shown as < and that level, such as < 0.005 mg/L, never as a measured quantity; with no level given, it shows < RL.",
-        "Recovery Horizon": "Year-end unused water on a zone's page under Zones, and \"When a zone doesn't use its full allocation by the end of the water year\" on Delivery Settings, the agency default a zone can differ from. The unused amount carries forward as a credit or expires; an overdraw always carries as a debt. See Help > Configs & Settings, explained.",
+        "Recovery Horizon": "Year-end unused water on a zone's page under Zones, and \"When a zone doesn't use its full allocation by the end of the water year\" on Delivery Settings, the agency default a zone can differ from. The unused amount carries forward as a credit or expires; an overdraw always carries as a debt. See Help > Settings explained.",
         "Water Year": "One reporting period, held on the Water Years page with its name and its start and end dates.",
         "Sampling Point": "This platform's record of one place a sample is taken on a facility, holding its PS Code, a name and a point type. Points are added by hand after Add a water system, never by a lab import, and each imported result is filed under the point its PS Code names.",
         "SGMA": "Sustainable Groundwater Management Act (2014), the California law requiring groundwater management.",

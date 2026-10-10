@@ -62,22 +62,22 @@
         <tbody>
           <tr>
             <td class="col-step"><span class="step-num">1</span>Start from crop water use</td>
-            <td>The satellite estimate of what the crop used this month.</td>
+            <td>The figure is the satellite estimate of what the crop used this month.</td>
             <td class="col-setting">None</td>
           </tr>
           <tr>
             <td class="col-step"><span class="step-num">2</span>Subtract the rain the crop could use</td>
-            <td>Rain estimated from weather data for the area, then the share the crop could use by the method chosen: all of it, a fixed fraction of it, or the USDA-SCS soil-storage method, the default.</td>
+            <td>Rain is estimated from weather data for the area. The method chosen sets the share the crop could use: all of it, a fixed fraction of it, or the USDA-SCS soil-storage method, which is the default.</td>
             <td class="col-setting">{% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a>{% else %}Methodology Settings{% endif %}, the rain method</td>
           </tr>
           <tr>
             <td class="col-step"><span class="step-num">3</span>Subtract the canal water the crop could use</td>
-            <td>The delivery on record times the field's irrigation efficiency, because not all the canal water reaches the crop: some soaks past the roots and some runs off the end of the field.</td>
+            <td>The delivery on record is multiplied by the field's irrigation efficiency.</td>
             <td class="col-setting">{% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}, the default irrigation efficiency (75% unless changed) for a field with no irrigation method on file</td>
           </tr>
           <tr>
             <td class="col-step"><span class="step-num">4</span>Set what is left to zero where it is below zero, and to zero on a field with no crop</td>
-            <td>Two plan steps. Where rain and canal water together exceed crop water use, the excess is recorded in two parts: rain the crop did not need, and canal water beyond what the crop could use.</td>
+            <td>These are two steps in the calculation plan. Where rain and canal water together exceed crop water use, the excess is recorded in two parts: rain the crop did not need, and canal water beyond what the crop could use.</td>
             <td class="col-setting">{% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a>{% else %}Methodology Settings{% endif %}, the floor</td>
           </tr>
           <tr>
@@ -92,14 +92,14 @@
     <div class="help-table-notes mt-md">
       <p class="text-secondary text-sm">Steps 1 to 4 are the calculation plan on Methodology Settings, where they can be reordered and switched on or off; step 5 runs after the plan.</p>
       <p class="text-secondary text-sm">Step 3 has a switch in the plan, on unless changed. When it is off, the whole delivery is subtracted. The switch is not yet on the Methodology Settings screen.</p>
-      <p class="text-secondary text-sm">A pump has to lift more water than the crop ends up using, because some water soaks past the roots. Step 5 allows for that, and the difference is recorded on the month's calculation as deep percolation.</p>
+      <p class="text-secondary text-sm">Step 5 divides groundwater consumed by the share of pumped groundwater the crop consumes. The month's calculation records the extra volume pumped as deep percolation.</p>
       <p class="text-secondary text-sm">Every month calculated carries the plan and the settings it ran under, so a changed setting moves no month already run.</p>
       <p class="text-secondary text-sm">Methodology Settings opens from the links in this table and from the Dashboard; Delivery Settings opens from the links in this table.</p>
     </div>
   </div>
 
   <div class="card-raised">
-    <h2 class="section-header">How the month ends, by what the field has</h2>
+    <h2 class="section-header">How a month's figures depend on the field's supplies</h2>
 
     <div class="table-scroll">
       <table class="data-table help-cases-table">
@@ -219,7 +219,7 @@
         <tbody>
           <tr>
             <td class="col-step"><span class="step-num">1</span>Estimate the delivery from the fields</td>
-            <td>Each field's crop water use after rain divided by its irrigation efficiency, added up, then increased to allow for the canal's losses.</td>
+            <td>Each field's crop water use after rain is divided by its irrigation efficiency. The results are added up, then increased to allow for the canal's losses.</td>
           </tr>
           <tr>
             <td class="col-step"><span class="step-num">2</span>Cap it</td>
@@ -227,7 +227,7 @@
           </tr>
           <tr>
             <td class="col-step"><span class="step-num">3</span>Record it as an estimate</td>
-            <td>A provisional record, labeled an estimate on the canal's page; a volume entered for the month replaces it.</td>
+            <td>The software records the delivery as provisional and labels it an estimate on the canal's page. A volume entered for the month replaces it.</td>
           </tr>
         </tbody>
       </table>
@@ -256,7 +256,7 @@
     <div class="card-grid card-grid--fit mt-md">
       {% if show_water_balances %}<a href="{{ water_balances_url }}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>How Water Balances Work</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">Everything rests on one idea: estimated use is set against supplies.</p>
+        <p class="text-secondary text-sm">See how the platform sets each field's estimated water use against its supplies.</p>
       </a>{% endif %}
       {% if 'accounting' in enabled_modules %}<a href="{{ methodology_url }}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Methodology Settings</span><span class="text-accent">&rarr;</span></div>

@@ -14,7 +14,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">About</span>
   </nav>
-  <p class="page-description">This page says what OpenH2O is and who it is for, what it owes to the Groundwater Accounting Platform, and who made it and where its code is.</p>
+  <p class="page-description">This page describes who OpenH2O is for, how it relates to the Groundwater Accounting Platform, and who made it.</p>
 </div>
 {% endblock %}
 
@@ -46,7 +46,6 @@
     {% comment %} The wordmark, not the page's title: the page head carries the one h1
        (Phase 143-02). {% endcomment %}
     <p class="about-title">OpenH2O</p>
-    <p class="about-tagline">Open-source water-data management for California</p>
     {% module_nouns "measurements:measurements" "accounting:deliveries" "wells:wells" "surface:surface diversions" "recharge:managed aquifer recharge" "accounting:mixed-use accounting" as data_nouns %}<p class="about-purpose card-raised">
       OpenH2O is an open-source water-data platform for California's Groundwater Sustainability Agencies and water districts.
       It keeps an agency's {{ data_nouns }} in one system the agency owns.
@@ -55,7 +54,7 @@
   </section>
 
   <div class="card-raised">
-    <h2 class="section-header">What OpenH2O is, and who it is for</h2>
+    <h2 class="section-header">Who OpenH2O is for</h2>
     <div class="table-scroll">
       <table class="data-table help-cases-table">
         <thead>
@@ -67,27 +66,27 @@
         <tbody>
           {% if 'accounting' in enabled_modules %}<tr>
             <td class="col-name">A groundwater agency or an irrigation district</td>
-            <td>Its {% module_nouns "parcels:use areas" "wells:wells" "accounting:water accounts" %} on a map, every month's water on a ledger, and a water balance for each field and water year.</td>
+            <td>It keeps its {% module_nouns "parcels:use areas" "wells:wells" "accounting:water accounts" %} on a map and records each month's volumes on a ledger. The platform works out a water balance for each field and water year.</td>
           </tr>{% endif %}
           {% if 'surface' in enabled_modules %}<tr>
             <td class="col-name">A ditch company or a surface-water diverter</td>
-            <td>Its water rights, points of diversion and monthly diversion records, with the state's report layout written out from them.</td>
+            <td>It keeps its water rights, points of diversion and monthly diversion records. The platform writes them out in the state's report layout.</td>
           </tr>{% endif %}
           {% if 'drinking' in enabled_modules %}<tr>
             <td class="col-name">A small public water system</td>
-            <td>Its facilities, sampling points, lab results and production, carried on the state's own record layout.</td>
+            <td>It keeps its facilities, sampling points, lab results and production in the state's own record layout.</td>
           </tr>{% endif %}
           {% if 'datasync' in enabled_modules %}<tr>
             <td class="col-name">An agency that watches public gauges</td>
-            <td>Monitoring stations read from public feeds, each with how recently it published.</td>
+            <td>It follows monitoring stations that publish to public feeds. The platform shows when each station last reported.</td>
           </tr>{% endif %}
           {% if 'recharge' in enabled_modules %}<tr>
             <td class="col-name">A recharge operator</td>
-            <td>Its recharge sites, the events at each and their measurements.</td>
+            <td>It keeps its recharge sites, the events at each site and their measurements.</td>
           </tr>{% endif %}
           <tr>
             <td class="col-name">Anyone standing it up</td>
-            <td>The repository, a $15-a-month server or an office computer, and an AI coding assistant. The Getting Started page walks through the setup.</td>
+            <td>It needs a copy of the OpenH2O code, a computer to run it on (an office computer or a $15-a-month rented server), and an AI coding assistant to help with setup. The Getting Started page lists the setup steps.</td>
           </tr>
         </tbody>
       </table>
@@ -98,7 +97,7 @@
   </div>
 
   <div class="card-raised">
-    <h2 class="section-header">What it owes to the Groundwater Accounting Platform, and what is its own</h2>
+    <h2 class="section-header">How OpenH2O relates to the Groundwater Accounting Platform</h2>
     <p class="text-secondary text-base">OpenH2O exists because the Groundwater Accounting Platform (GAP) proved that public agencies, a nonprofit and private firms could build and sustain shared, open-source infrastructure for water management, to a high standard.</p>
     <div class="table-scroll mt-md">
       <table class="data-table help-cases-table">
@@ -122,7 +121,7 @@
           </tr>
           <tr>
             <td class="col-name">The scope</td>
-            <td>It covers groundwater and SGMA, by design.</td>
+            <td>It covers groundwater and SGMA.</td>
             <td>OpenH2O covers all of water: surface water, groundwater{% if 'drinking' in enabled_modules %}, the water a public water system delivers{% endif %} and the reporting the state requires.</td>
           </tr>
           <tr>
@@ -139,8 +138,8 @@
       </table>
     </div>
     <div class="help-table-notes mt-md">
-      <p class="text-secondary text-sm">OpenH2O is built on that work. OpenH2O is an independent reimplementation on an open stack, built on GAP's example.</p>
-      <p class="text-secondary text-sm">GAP also showed where the work is: not in standing up the software, but in training, outreach and support until an agency relies on it. OpenH2O treats that work as the work.</p>
+      <p class="text-secondary text-sm">OpenH2O follows GAP's example. Its code is written separately and uses only open-source software.</p>
+      <p class="text-secondary text-sm">GAP also showed that most of the work comes after the software is running: training, outreach and support until an agency relies on it.</p>
     </div>
 
     <div class="help-subsection">
@@ -205,7 +204,7 @@
   </div>
 
   <div class="card-raised about-credits">
-    <h2 class="section-header">Who made it, and where the code is</h2>
+    <h2 class="section-header">Where OpenH2O comes from</h2>
     <div class="table-scroll">
       <table class="data-table help-cases-table">
         <thead>
@@ -255,7 +254,7 @@
               <td>The Consortium is the independent nonprofit founded in 2019 to carry out California's Open and Transparent Water Data Act (AB 1755). It is the neutral table where state agencies, local agencies, Tribes, academia and NGOs make the state's water data open and interoperable, and it opened the Groundwater Accounting Platform to agencies statewide.</td>
             </tr>
             <tr>
-              <td class="col-name">Rosedale-Rio Bravo Water Storage District, and Nebraska's Natural Resources Districts</td>
+              <td class="col-name">Rosedale-Rio Bravo Water Storage District and Nebraska's Natural Resources Districts</td>
               <td>These local agencies first ran a water-data platform in-house and proved it could be done. OpenH2O independently reimplements that approach so any agency can do the same.</td>
             </tr>
             <tr>
@@ -282,7 +281,7 @@
       </a>
       <a href="{% url 'glossary' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Glossary</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">This page defines the words and names used on these screens, A to Z.</p>
+        <p class="text-secondary text-sm">This page explains each word and name used on these screens. The words are listed alphabetically.</p>
       </a>
       {% comment %}89-02: the whole card goes with the page it opens. The
       water-balance explainer is hidden when the deployment does not run the

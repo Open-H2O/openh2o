@@ -12,7 +12,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">How Water Balances Work</span>
   </nav>
-  <p class="page-description">Satellite estimates crop water use for every field. This page shows how three sources are known and names the remainder for fields without wells.</p>
+  <p class="page-description">Crop water use is estimated from satellite data for every field. This page shows where each supply's figure comes from and what the platform calls the crop water use left after rain and canal water.</p>
 </div>
 {% endblock %}
 
@@ -34,8 +34,8 @@
 {% endcomment %}<div class="page-stack page-help help-page">
 
   <div class="card-raised">
-    <h2 class="section-header">Crop water use, the one number for every field</h2>
-    <p class="text-secondary text-base">Few fields are metered. One number can be estimated for every field, whatever its water source: how much water the crop used in the month. Plants give off water as they grow, and satellites can pick that up.</p>
+    <h2 class="section-header">Crop water use is estimated for every field</h2>
+    <p class="text-secondary text-base">Few fields are metered. One number can be estimated for every field, whatever its water source: how much water the crop used in the month.</p>
 
     {% include "help/partials/_the_subtraction.html" %}
 
@@ -64,9 +64,9 @@
               <td>From a meter or the ditch tender's estimate</td>
             </tr>
             <tr>
-              <td class="col-name">Canal water the crop could use, on a canal-served field</td>
+              <td class="col-name">Canal water the crop could use on a canal-served field</td>
               <td>All or nearly all of crop water use after rain, never under 85% here, so groundwater consumed is the small remainder</td>
-              <td>Whatever the record says; the remainder follows</td>
+              <td>This figure is worked out from the district's recorded delivery to the field. Groundwater consumed is the crop water use left after rain and this figure.</td>
             </tr>
           </tbody>
         </table>
@@ -76,7 +76,7 @@
   </div>
 
   <div class="card-raised">
-    <h2 class="section-header">Three sources, and how each is known</h2>
+    <h2 class="section-header">Where each supply's figure comes from</h2>
 
     <div class="table-scroll">
       <table class="data-table help-cases-table help-cases-table--short-names">
@@ -111,11 +111,11 @@
       </table>
     </div>
 
-    <p class="text-secondary text-sm mt-md">Rain and canal water the crop could use are subtracted from crop water use first, and what is left is the remainder. What it is called depends on what the field has, in the next table.</p>
+    <p class="text-secondary text-sm mt-md">Rain and canal water the crop could use are subtracted from crop water use first, and what is left is the remainder. The next table shows what the remainder is called on each kind of field.</p>
   </div>
 
   <div class="card-raised">
-    <h2 class="section-header">What the remainder is called, by what the field has</h2>
+    <h2 class="section-header">What the remainder is called on each kind of field</h2>
 
     <div class="table-scroll">
       <table class="data-table help-cases-table">
@@ -152,7 +152,7 @@
     <p class="text-secondary text-base">The same steps run; with no well, the remainder is water use recorded, no supply reported, and the well lines stay empty.</p>
 
     <div class="help-subsection">
-    <h3 class="concept-panel-title">What the satellite estimate still does</h3>
+    <h3 class="concept-panel-title">Where the satellite estimate is still used</h3>
 
     <div class="table-scroll mt-md">
       <table class="data-table help-steps-table">
@@ -198,12 +198,11 @@
   </div>
 
   <div class="card-raised">
-    <h2 class="section-header">See it in action</h2>
-    <p class="text-secondary text-base">The dashboard shows it applied; the other pages explain more.</p>
+    <h2 class="section-header">Where to go next</h2>
     <div class="card-grid mt-md">
       {% if 'accounting' in enabled_modules %}<a href="{% url 'accounting:dashboard' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Dashboard</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">Watch the balance close, field by field, on this deployment's data.</p>
+        <p class="text-secondary text-sm">The dashboard shows each field's balance on this deployment's data.</p>
       </a>{% endif %}
       <a href="{% url 'glossary' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Glossary</span><span class="text-accent">&rarr;</span></div>
@@ -214,7 +213,7 @@
         <p class="text-secondary text-sm">See the steps as they run, the three endings and what is not built yet.</p>
       </a>{% endif %}
       {% explainer_available "settings_explained" as show_settings %}{% if show_settings %}<a href="{% url 'settings_explained' %}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between;"><span>Configs &amp; Settings</span><span class="text-accent">&rarr;</span></div>
+        <div class="concept-panel-title" style="justify-content: space-between;"><span>Settings explained</span><span class="text-accent">&rarr;</span></div>
         <p class="text-secondary text-sm">See what each agency-wide setting behind these numbers does and when to change it.</p>
       </a>{% endif %}
     </div>

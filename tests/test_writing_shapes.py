@@ -55,22 +55,19 @@ shapes = _load()
 
 #: Counts on 2026-10-09, measured on the working tree at the start of the
 #: writing work. Lower an entry when its file loses a shape; never raise one.
+#: Later the same evening About, the help pages, the footer and the Admin mode
+#: button took the wording Brent approved at 20:29 PDT, and their six entries
+#: came off.
 BASELINE: dict = {
-    "templates/about.html": {"paired heading": 3},
     "templates/accounting/partials/_account_balances.html": {"em dash": 1},
     "templates/accounting/partials/_needs_attention.html": {"em dash": 1},
     "templates/allauth/layouts/base.html": {"em dash": 1},
-    "templates/base.html": {"em dash": 1},
     "templates/base_auth.html": {"em dash": 1},
     "templates/core/user_form.html": {"em dash": 1},
     "templates/datasync/station_add.html": {"em dash": 1},
     "templates/drinking/overview.html": {"em dash": 4},
     "templates/drinking/production.html": {"em dash": 1},
-    "templates/help/budgets_allocations.html": {"paired heading": 1},
-    "templates/help/methods.html": {"trailing heading": 1},
-    "templates/help/water_balances.html": {"paired heading": 1, "trailing heading": 1},
     "templates/partials/_demo_marker.html": {"em dash": 1},
-    "templates/partials/_header.html": {"em dash": 1},
     "templates/reporting/partials/_openet_prefill.html": {"em dash": 1},
     "templates/reporting/partials/_report_detail_pane.html": {"em dash": 1},
     "templates/reporting/report_list.html": {"em dash": 1},

@@ -1116,10 +1116,10 @@
     "kind": "figure",
     "template": "templates/help/partials/_the_subtraction.html",
     "line": 90,
-    "column": 106,
+    "column": 123,
     "expression": "{{ irrigation_efficiency_pct|floatformat:0 }}",
     "enclosing_loop": null,
-    "nearest_label": "The delivery multiplied by the field's irrigation efficiency, {{ irrigation_efficiency_pct|"
+    "nearest_label": "This is the delivery multiplied by the field's irrigation efficiency, which is {{ irrigation_efficiency_pct|"
   },
   {
     "id": "FIG-help-006",
@@ -1171,10 +1171,10 @@
     "kind": "figure",
     "template": "templates/help/partials/_the_subtraction.html",
     "line": 131,
-    "column": 66,
+    "column": 74,
     "expression": "{{ gw_efficiency_pct|floatformat:0 }}",
     "enclosing_loop": null,
-    "nearest_label": "Groundwater consumed divided by {{ gw_efficiency_pct|"
+    "nearest_label": "This is groundwater consumed divided by {{ gw_efficiency_pct|"
   },
   {
     "id": "FIG-parcels-001",

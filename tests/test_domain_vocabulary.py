@@ -413,7 +413,13 @@ BASELINE: dict = {
     #   then "not what you pumped or diverted". The scanner reads the dash as
     #   opening a definition of "diversion"; it is a false positive, and the
     #   dash itself is on the writing work's list.
-    "templates/**/*.html": 11,
+    #   2026-10-09 20:45 PDT: 11 -> 12 for help/partials/_the_subtraction.html,
+    #   whose note under the worked example now reads "The rest of the headgate
+    #   total is divided among the other fields", in the words Brent approved
+    #   at 20:29 PDT. The scanner reads "The ... headgate" as opening a
+    #   definition of a headgate. It is a sentence about how the software
+    #   divides a recorded total, a false positive.
+    "templates/**/*.html": 12,
     "help_text=": 4,
 }
 

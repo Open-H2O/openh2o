@@ -34,7 +34,7 @@
   <h3 class="concept-panel-title">Where this field's water came from</h3>
 
   {% if example %}
-  <p class="text-secondary text-base">The example follows one field in this deployment, {{ field_label }}, in {{ month_label }}. Figures are in acre-feet. An acre-foot is enough water to cover a football field about a foot deep.</p>
+  <p class="text-secondary text-base">The example follows one field in this deployment, {{ field_label }}, in {{ month_label }}. Figures are in acre-feet.</p>
 
   <div class="table-scroll mt-md">
     <table class="data-table how-sure-table">
@@ -49,7 +49,7 @@
         <tr>
           <td class="col-name">Crop water use</td>
           <td class="col-amount td-num">{{ gross_et_af|floatformat:2|intcomma }}</td>
-          <td>Satellite estimate for this field, this month.</td>
+          <td>This is the satellite estimate for this field and month.</td>
           <td class="col-sure"><span class="badge badge-pill badge-grey">Estimated</span></td>
         </tr>
 
@@ -57,7 +57,7 @@
         <tr>
           <td class="col-name">Rain the crop could use</td>
           <td class="col-amount td-num">{{ effective_precip_af|floatformat:2|intcomma }}</td>
-          <td>Estimated from weather data for the area, then reduced to the share the crop could use by the method set on Methodology Settings. Not read from a gauge on this field.</td>
+          <td>This is estimated from weather data for the area, then reduced to the share the crop could use by the method set on Methodology Settings. It is not read from a gauge on this field.</td>
           <td class="col-sure"><span class="badge badge-pill badge-grey">Estimated</span></td>
         </tr>
         {% else %}
@@ -87,14 +87,14 @@
         <tr>
           <td class="col-name">Canal water the crop could use</td>
           <td class="col-amount td-num">{{ surface_water_af|floatformat:2|intcomma }}</td>
-          <td>The delivery multiplied by the field's irrigation efficiency, {{ irrigation_efficiency_pct|floatformat:0 }}% here ({% if irrigation_efficiency_source == "method" %}{% if irrigation_method_name %}from the field's irrigation method on file, {{ irrigation_method_name }}{% else %}from the field's irrigation method{% endif %}{% else %}the deployment's default on Delivery Settings{% endif %}).</td>
+          <td>This is the delivery multiplied by the field's irrigation efficiency, which is {{ irrigation_efficiency_pct|floatformat:0 }}% here ({% if irrigation_efficiency_source == "method" %}{% if irrigation_method_name %}from the field's irrigation method on file, {{ irrigation_method_name }}{% else %}from the field's irrigation method{% endif %}{% else %}the deployment's default on Delivery Settings{% endif %}).</td>
           <td class="col-sure"><span class="badge badge-pill badge-orange">Rule of thumb</span></td>
         </tr>
         {% elif surface_water_af is not None %}
         <tr>
           <td class="col-name">Canal water subtracted</td>
           <td class="col-amount td-num">{{ surface_water_af|floatformat:2|intcomma }}</td>
-          <td>The whole delivery, because this deployment's calculation plan does not apply an irrigation efficiency.</td>
+          <td>This is the whole delivery, because this deployment's calculation plan does not apply an irrigation efficiency.</td>
           <td class="col-sure">{% if delivery_split == "own" %}<span class="badge badge-pill badge-grey">Recorded</span>{% else %}<span class="badge badge-pill badge-gold" title="Divided up by the software">Divided up</span>{% endif %}</td>
         </tr>
         {% endif %}
@@ -104,9 +104,9 @@
           <td class="col-amount td-num">{{ final_af|floatformat:2|intcomma }}</td>
           <td>
             {% if surface_water_af is not None %}
-            Crop water use minus the rain and canal water lines above. This month has no meter reading on record, so this line is a calculated remainder.
+            This is crop water use minus the rain and canal water lines above. This month has no meter reading on record, so this line is a calculated remainder.
             {% else %}
-            What is left of crop water use after the rain is subtracted. This deployment's calculation plan has no canal step.
+            This is what is left of crop water use after the rain is subtracted. This deployment's calculation plan has no canal step.
             {% endif %}
           </td>
           <td class="col-sure"><span class="badge badge-pill badge-grey" title="Estimated by subtraction">By subtraction</span></td>
@@ -126,9 +126,9 @@
           <td class="col-amount td-num">{{ extracted_af|floatformat:2|intcomma }}</td>
           <td>
             {% if extracted_af == 0 %}
-            Nothing to divide this month.
+            Groundwater consumed is zero this month, so groundwater extracted is zero too.
             {% else %}
-            Groundwater consumed divided by {{ gw_efficiency_pct|floatformat:0 }}%, the share of pumped groundwater the crop consumes{% if gw_efficiency_is_live_setting %} (the deployment's current setting){% else %} (set on Delivery Settings){% endif %}. This volume is what the groundwater allocation is charged.
+            This is groundwater consumed divided by {{ gw_efficiency_pct|floatformat:0 }}%, the share of pumped groundwater the crop consumes{% if gw_efficiency_is_live_setting %} (the deployment's current setting){% else %} (set on Delivery Settings){% endif %}. This volume is charged against the groundwater allocation.
             {% endif %}
           </td>
           <td class="col-sure"><span class="badge badge-pill badge-orange">Assumed share</span></td>
@@ -139,7 +139,7 @@
 
   <div class="help-table-notes mt-md">
     {% if surface_delivered_af is not None and delivery_split == "by_use" %}
-    <p class="text-secondary text-sm"><strong>Delivered to this field.</strong> A field with its own delivery record keeps it. What remains of the headgate total is divided among the other fields in proportion to crop water use after rain, up to what each could use. That share depends on the satellite estimate, so it is an estimate too.</p>
+    <p class="text-secondary text-sm">When a field has its own delivery record, that record is its "Delivered to this field" figure. The rest of the headgate total is divided among the other fields in proportion to crop water use after rain. No field gets more than its crop could use. Each share depends on the satellite estimate, so it is an estimate too.</p>
     {% endif %}
     <p class="text-secondary text-sm">Groundwater consumed is what remains after the lines above it are subtracted; groundwater extracted is that figure divided by the share the crop consumes, and it is the figure the groundwater allocation is charged. Both are only as good as the delivery record above them.</p>
   </div>

@@ -113,12 +113,12 @@ EXPECTED_LIT = {
     "/drinking/schedule/<int:pk>/edit/": "Schedule",
     "/drinking/schedule/add/": "Schedule",
     "/health/": "Site Health",
-    "/help/budgets-allocations/": "Configs & settings, explained",
+    "/help/budgets-allocations/": "Settings explained",
     "/help/getting-started/": "Getting Started",
     "/help/glossary/": "Glossary",
     "/help/methods/": "Methods behind the numbers",
-    "/help/settings/": "Configs & settings, explained",
-    "/help/surface-deliveries/": "Configs & settings, explained",
+    "/help/settings/": "Settings explained",
+    "/help/surface-deliveries/": "Settings explained",
     "/help/water-balances/": "How water balances work",
     "/infrastructure/add/": "Infrastructure",
     "/infrastructure/import/": "Infrastructure",
@@ -224,7 +224,7 @@ SECTION_OF = {
     "Getting Started": "Help",
     "How water balances work": "Help",
     "Methods behind the numbers": "Help",
-    "Configs & settings, explained": "Help",
+    "Settings explained": "Help",
     "Glossary": "Help",
     "About": "Help",
 }
@@ -654,7 +654,7 @@ def test_the_crumb_starts_with_the_sidebar_word_for_the_page(walk, pattern):
 
 
 def test_the_lit_entry_is_scrolled_into_view_on_load(walk):
-    """R-145: on Getting Started, Configs & settings, Glossary and About the lit
+    """R-145: on Getting Started, Settings explained, Glossary and About the lit
     entry sat below the sidebar's visible box at 1,440 x 900 and nothing
     scrolled it up."""
     _client, _response, html = sidebar_page(walk, "/help/glossary/", "admin")

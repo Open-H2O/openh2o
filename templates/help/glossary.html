@@ -35,7 +35,7 @@
 {% endcomment %}<div class="page-stack page-help help-page">
 
   <div class="card-raised">
-    <h2 class="section-header">Words and names used on these screens, A to Z</h2>
+    <h2 class="section-header">What the words on these screens mean</h2>
     <nav class="jump-nav mb-md" aria-label="Jump to a letter">
       {% for letter in letters %}<a href="#letter-{{ letter }}">{{ letter }}</a>{% endfor %}
     </nav>
@@ -71,14 +71,14 @@
     <div class="card-grid card-grid--fit mt-md">
       {% explainer_available "water_balances" as show_water_balances %}{% if show_water_balances %}<a href="{% url 'water_balances' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>How Water Balances Work</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">Everything rests on one idea: estimated use is set against supplies.</p>
+        <p class="text-secondary text-sm">See how the platform sets each field's estimated water use against its supplies.</p>
       </a>{% endif %}
       {% explainer_available "methods" as show_methods %}{% if show_methods %}<a href="{% url 'methods' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Methods Behind the Numbers</span><span class="text-accent">&rarr;</span></div>
         <p class="text-secondary text-sm">See the steps as they run, the three endings and what is not built yet.</p>
       </a>{% endif %}
       {% explainer_available "settings_explained" as show_settings_explained %}{% if show_settings_explained %}<a href="{% url 'settings_explained' %}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between;"><span>Configs &amp; Settings, explained</span><span class="text-accent">&rarr;</span></div>
+        <div class="concept-panel-title" style="justify-content: space-between;"><span>Settings explained</span><span class="text-accent">&rarr;</span></div>
         <p class="text-secondary text-sm">See what each agency-wide setting decides and where it is set.</p>
       </a>{% endif %}
       {% explainer_available "surface_deliveries" as show_surface_deliveries %}{% if show_surface_deliveries %}<a href="{% url 'surface_deliveries' %}" class="card-raised card-link">

@@ -47,7 +47,7 @@
 {% endcomment %}<div class="page-stack page-help help-page">
 
   <div class="card-raised">
-    <h2 class="section-header">Setting up the platform, in order</h2>
+    <h2 class="section-header">How to set up the platform</h2>
 
     <div class="table-scroll">
       <table class="data-table help-steps-table help-steps-table--setup">
@@ -165,14 +165,14 @@
     <div class="card-grid card-grid--fit mt-md">
       {% if show_water_balances and show_methods and show_settings %}<a href="{% url 'water_balances' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>How Water Balances Work</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">Everything rests on one idea: estimated use is set against supplies.</p>
+        <p class="text-secondary text-sm">See how the platform sets each field's estimated water use against its supplies.</p>
       </a>
       <a href="{% url 'methods' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Methods Behind the Numbers</span><span class="text-accent">&rarr;</span></div>
         {% any_module_enabled "surface" "wells" as has_shared_sources %}<p class="text-secondary text-sm">See the calculation chain{% if has_shared_sources %} and how shared {% module_nouns "surface:deliveries" "wells:wells" %} are split{% endif %}.</p>
       </a>
       <a href="{% url 'settings_explained' %}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between;"><span>Configs &amp; Settings, explained</span><span class="text-accent">&rarr;</span></div>
+        <div class="concept-panel-title" style="justify-content: space-between;"><span>Settings explained</span><span class="text-accent">&rarr;</span></div>
         <p class="text-secondary text-sm">See which settings change a figure, where each is set and what a change does to months already calculated.</p>
       </a>{% endif %}
       {% if 'accounting' in enabled_modules and show_budgets %}<a href="{% url 'budgets_allocations' %}" class="card-raised card-link">
