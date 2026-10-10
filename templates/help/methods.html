@@ -12,259 +12,168 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Methods Behind the Numbers</span>
   </nav>
-  <p class="page-description">This page explains a field's groundwater figure, what happens to canal water the crops did not use and which setting changes which number.</p>
+  <p class="page-description">This page explains the settings behind each figure and how OpenH2O divides and estimates canal deliveries.</p>
 </div>
 {% endblock %}
 
 {% block content %}
 {% comment %}
-  149.1-01 (2026-10-06): rebuilt from the reader's three questions outward
-  (where this field's groundwater figure came from; what happens to canal
-  water the crops did not use; which setting changes which number). Each
-  card is one table or one diagram with a line or two under it; the shape
-  check tests/test_help_shape.py holds this file at 60 words a block and
-  half a page in prose.
+  2026-10-10: rebuilt from thirteen facts Brent approved at 11:07 PDT ("These
+  13 look great, approved"), each checked against the code: the calculation
+  plan and its step knobs (accounting/models.py CalculationStep, accounting/
+  steps.py, accounting/views.py methodology_step_*), the delivery settings
+  (core/models.py SiteConfig), over-delivery credit routing (accounting/
+  management/commands/run_calculations.py _over_delivery_decision), the canal
+  split (surface/services.py allocate_district_delivery) and the unmetered
+  estimate (surface/estimate.py). The page says those thirteen things and
+  nothing else; the worked example lives on How water balances work.
 
-  This page is *about* accounting, parcels, surface and wells
-  (config/views.py EXPLAINER_MODULES), so it 404s rather than renders
-  wherever any one of them is off; the guards below are only for the cards
-  and links it points OUT to. The `{% templatetag openblock %} url ... as var
-  {% templatetag closeblock %}` form fails silently to the empty string
-  rather than raising, so the defect those guards close is a dead link
-  (href=""), not a 500.
+  This page names `accounting`, `parcels`, `surface` and `wells` as its
+  subject (config/views.py EXPLAINER_MODULES), so it is 404'd rather than
+  served wherever any one of them is off; the guards below are only for the
+  links and cards it points out to. The `{% templatetag openblock %} url ...
+  as var {% templatetag closeblock %}` form fails silently to the empty
+  string, so the defect those guards close is a dead link, not a 500.
 {% endcomment %}{% url 'accounting:methodology_settings' as methodology_url %}
 {% url 'accounting:delivery_settings' as delivery_url %}
-{% url 'surface_deliveries' as surface_url %}
 {% url 'water_balances' as water_balances_url %}
 {% url 'glossary' as glossary_url %}
 <div class="page-stack page-help help-page">
 
   <div class="card-raised">
-    <h2 class="section-header">How the two groundwater figures are worked out</h2>
-    {% explainer_available "water_balances" as show_water_balances %}<p class="text-secondary text-base">The calculation subtracts each supply in turn and then divides once. {% if show_water_balances %}If &ldquo;estimated use against supplies&rdquo; is new, start with <a class="prose-link" href="{{ water_balances_url }}">How Water Balances Work</a>; this page gives the arithmetic.{% endif %}</p>
-
-    {% include "help/partials/_the_subtraction.html" %}
-  </div>
-
-  <div class="card-raised">
-    <h2 class="section-header">The steps, in the order they run</h2>
-    <p class="text-secondary text-base">Every field goes through the same five steps each month, and every figure is in acre-feet.</p>
-
-    <div class="table-scroll mt-md">
-      <table class="data-table help-steps-table">
-        <thead>
-          <tr>
-            <th>Action</th>
-            <th>Where the number comes from</th>
-            <th>Setting that changes it</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="col-step"><span class="step-num">1</span>Start from crop water use</td>
-            <td>The figure is the satellite estimate of what the crop used this month.</td>
-            <td class="col-setting">None</td>
-          </tr>
-          <tr>
-            <td class="col-step"><span class="step-num">2</span>Subtract the rain the crop could use</td>
-            <td>Rain is estimated from weather data for the area. The method chosen sets the share the crop could use: all of it, a fixed fraction of it, or the USDA-SCS soil-storage method, which is the default.</td>
-            <td class="col-setting">{% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a>{% else %}Methodology Settings{% endif %}, the rain method</td>
-          </tr>
-          <tr>
-            <td class="col-step"><span class="step-num">3</span>Subtract the canal water the crop could use</td>
-            <td>The delivery on record is multiplied by the field's irrigation efficiency.</td>
-            <td class="col-setting">{% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}, the default irrigation efficiency (75% unless changed) for a field with no irrigation method on file</td>
-          </tr>
-          <tr>
-            <td class="col-step"><span class="step-num">4</span>Set what is left to zero where it is below zero, and to zero on a field with no crop</td>
-            <td>These are two steps in the calculation plan. Where rain and canal water together exceed crop water use, the excess is recorded in two parts: rain the crop did not need, and canal water beyond what the crop could use.</td>
-            <td class="col-setting">{% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a>{% else %}Methodology Settings{% endif %}, the floor</td>
-          </tr>
-          <tr>
-            <td class="col-step"><span class="step-num">5</span>Divide groundwater consumed by the share of pumped groundwater the crop consumes</td>
-            <td>What is left after step 4 is groundwater consumed; divided by the share, 80% unless changed, it is groundwater extracted, the figure the groundwater allocation is charged.</td>
-            <td class="col-setting">{% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}, the share of pumped groundwater the crop consumes</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="help-table-notes mt-md">
-      <p class="text-secondary text-sm">Steps 1 to 4 are the calculation plan on Methodology Settings, where they can be reordered and switched on or off; step 5 runs after the plan.</p>
-      <p class="text-secondary text-sm">Step 3 has a switch in the plan, on unless changed. When it is off, the whole delivery is subtracted. The switch is not yet on the Methodology Settings screen.</p>
-      <p class="text-secondary text-sm">Step 5 divides groundwater consumed by the share of pumped groundwater the crop consumes. The month's calculation records the extra volume pumped as deep percolation.</p>
-      <p class="text-secondary text-sm">Every month calculated carries the plan and the settings it ran under, so a changed setting moves no month already run.</p>
-      <p class="text-secondary text-sm">Methodology Settings opens from the links in this table and from the Dashboard; Delivery Settings opens from the links in this table.</p>
-    </div>
-  </div>
-
-  <div class="card-raised">
-    <h2 class="section-header">How a month's figures depend on the field's supplies</h2>
-
+    <h2 class="section-header">The settings behind each figure</h2>
     <div class="table-scroll">
       <table class="data-table help-cases-table">
         <thead>
           <tr>
-            <th>Outcome</th>
-            <th>A meter reading</th>
-            <th>A well, no meter</th>
-            <th>No well</th>
+            <th>Topic</th>
+            <th>How it works</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td class="col-name">Groundwater consumed</td>
-            <td>The reading, as recorded</td>
-            <td>What is left after step 4; 0.00 acre-feet where rain and canal water covered the crop</td>
-            <td>None</td>
+            <td class="col-name">Calculation steps</td>
+            <td>OpenH2O calculates each month's figures by following the steps listed on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a>{% else %}Methodology Settings{% endif %}. A district can reorder those steps or switch any of them off.</td>
           </tr>
           <tr>
-            <td class="col-name">Groundwater extracted, the figure the groundwater allocation is charged</td>
-            <td>The reading</td>
-            <td>Groundwater consumed divided by the share the crop consumes, from step 5</td>
-            <td>Nothing</td>
+            <td class="col-name">Rain</td>
+            <td>{% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a>{% else %}Methodology Settings{% endif %} also sets the method for estimating the rain the crop could use: all of the month's rain, a fixed percentage of it, or the USDA-SCS soil-storage method, which is the default.</td>
           </tr>
           <tr>
-            <td class="col-name">What the field's page shows</td>
-            <td>The reading, with the calculation kept beside it for comparison</td>
-            <td>The month's calculation, line by line</td>
-            <td>Water use recorded, no supply reported</td>
+            <td class="col-name">Irrigation efficiency</td>
+            <td>Each field's irrigation efficiency comes from its irrigation method on file. A field with no irrigation method on file uses the default efficiency on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}, 75 percent unless the district changes it.</td>
+          </tr>
+          <tr>
+            <td class="col-name">Canal water lost to efficiency</td>
+            <td>OpenH2O records the share of a canal delivery lost to irrigation efficiency as deep percolation and does not charge or credit any account for it.</td>
+          </tr>
+          <tr>
+            <td class="col-name">Groundwater extracted</td>
+            <td>OpenH2O calculates groundwater extracted by dividing groundwater consumed by the share of pumped water the crop consumes. That share is set on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}, at 80 percent by default. OpenH2O records the difference as deep percolation.</td>
+          </tr>
+          <tr>
+            <td class="col-name">Past months</td>
+            <td>Each calculated month stores the settings it was calculated with. A changed setting affects a past month only when that month is recalculated.</td>
           </tr>
         </tbody>
       </table>
     </div>
-
-    <p class="text-secondary text-sm mt-md">Water use recorded, no supply reported says only that the supplies on record did not cover crop water use; it is never written as pumping, and it is never a finding about the grower.</p>
   </div>
 
   <div class="card-raised">
-    <h2 class="section-header">Canal water the crops did not use</h2>
-    <p class="text-secondary text-base">The month's calculation records two different amounts.</p>
-
-    <div class="table-scroll mt-md">
+    <h2 class="section-header">When rain and canal water exceed crop water use</h2>
+    <div class="table-scroll">
       <table class="data-table help-cases-table">
         <thead>
           <tr>
-            <th>Amount</th>
-            <th>How it is found</th>
-            <th>What happens to it</th>
+            <th>Topic</th>
+            <th>How it works</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td class="col-name">Lost to irrigation efficiency</td>
-            <td>Delivered minus canal water the crop could use; 25% of the delivery at a 75% efficiency</td>
-            <td>Recorded as deep percolation on the field's water balance; not crop use, not a credit, and not charged to anyone</td>
+            <td class="col-name">The remainder</td>
+            <td>When rain and canal water together exceed crop water use, OpenH2O sets the remainder to zero and records the surplus in two parts: rain and canal water.</td>
           </tr>
           <tr>
-            <td class="col-name">Canal water beyond what the crop could use</td>
-            <td>Canal water the crop could use that went past what was left of crop water use after rain</td>
-            <td>One setting on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %} decides, with the three values in the next table</td>
+            <td class="col-name">The canal part</td>
+            <td>A setting on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %} determines how OpenH2O treats the canal part of that surplus. By default, OpenH2O credits it to no one. A district can instead credit it to the landowner, less a share left in the basin (10 percent by default), or show it as a separate line on the field's page without crediting it.</td>
+          </tr>
+          <tr>
+            <td class="col-name">Where a credit goes</td>
+            <td>When the surplus is credited, a field with a well receives the credit on its own ledger. A field without a well has the credit added to its zone's shared account.</td>
           </tr>
         </tbody>
       </table>
     </div>
+  </div>
 
-    <div class="table-scroll mt-md">
+  <div class="card-raised">
+    <h2 class="section-header">How a headgate total is divided</h2>
+    <div class="table-scroll">
       <table class="data-table help-cases-table">
         <thead>
           <tr>
-            <th>Value on Delivery Settings</th>
-            <th>What is recorded</th>
-            <th>Who is credited</th>
+            <th>Topic</th>
+            <th>How it works</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td class="col-name">Not credited, the default</td>
-            <td>The amount, on the month's calculation</td>
-            <td>No one</td>
+            <td class="col-name">Canal losses</td>
+            <td>Before dividing a headgate total among the fields it serves, OpenH2O deducts the canal's losses. Evaporation and spill are written off, and seepage goes to the zone's seepage pool.</td>
           </tr>
           <tr>
-            <td class="col-name">Credited to the landowner, less a share left in the basin</td>
-            <td>The amount, and the share credited after 10% (unless changed) is left in the basin</td>
-            <td>A field with a well, on its own ledger; a field with no well, its zone's shared account; a field with no such zone, no one</td>
-          </tr>
-          <tr>
-            <td class="col-name">Its own line</td>
-            <td>The amount, as a line of its own on the field's page</td>
-            <td>No one, and nothing is charged</td>
+            <td class="col-name">Fixed shares</td>
+            <td>In a month when no field on the headgate has crop water use remaining after rain, OpenH2O divides the total by each field's fixed share on file.</td>
           </tr>
         </tbody>
       </table>
     </div>
-
-    <p class="text-secondary text-sm mt-md">The field's water balance reads the same under all three values, and each month keeps the value it was calculated under.</p>
   </div>
 
   <div class="card-raised">
-    <h2 class="section-header">How one headgate total is shared</h2>
-    <p class="text-secondary text-base">A district records what left each headgate, not what reached each field, so each month the software divides every headgate total among the fields it serves.</p>
-
-    {% include "help/partials/_canal_split_diagram.html" %}
-
-    <p class="text-secondary text-sm mt-md">When no field on the headgate has crop water use after rain on record for the month, each field gets the fixed share on file for it instead. Every field's ledger row names the rule that set its share.</p>
-
-    <h3 class="concept-panel-title mt-lg">A diversion with no meter</h3>
-    <p class="text-secondary text-base">Where a point of diversion has no meter in service and no volume entered for the month, the software estimates that month's delivery.</p>
-
-    <div class="table-scroll mt-md">
-      <table class="data-table help-steps-table">
+    <h2 class="section-header">Diversions with no meter</h2>
+    <div class="table-scroll">
+      <table class="data-table help-cases-table">
         <thead>
           <tr>
-            <th>Step</th>
-            <th>Rule</th>
+            <th>Topic</th>
+            <th>How it works</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td class="col-step"><span class="step-num">1</span>Estimate the delivery from the fields</td>
-            <td>Each field's crop water use after rain is divided by its irrigation efficiency. The results are added up, then increased to allow for the canal's losses.</td>
+            <td class="col-name">The estimate</td>
+            <td>For an unmetered diversion, OpenH2O estimates the month's delivery from the crop water use of the fields it serves, adds the canal's losses, and caps the estimate at the water right's remaining face value for the water year.</td>
           </tr>
           <tr>
-            <td class="col-step"><span class="step-num">2</span>Cap it</td>
-            <td>At what is left of the water right's face value for the water year; zero in a month outside the right's season.</td>
-          </tr>
-          <tr>
-            <td class="col-step"><span class="step-num">3</span>Record it as an estimate</td>
-            <td>The software records the delivery as provisional and labels it an estimate on the canal's page. A volume entered for the month replaces it.</td>
+            <td class="col-name">When there is no estimate</td>
+            <td>OpenH2O estimates a delivery only when the diversion is linked to an active or curtailed water right, and never for a month covered by a curtailment order.</td>
           </tr>
         </tbody>
       </table>
     </div>
-
-    <div class="help-table-notes mt-md">
-      <p class="text-secondary text-sm">No estimate is made under a curtailed water right or where no water right is linked.</p>
-      <p class="text-secondary text-sm">Crop water use above the cap stays in the field's remainder and ends the way the table above says: on a field with a well it is groundwater consumed, and on a field without one it is water use recorded, no supply reported.</p>
-    </div>
-
-    {% explainer_available "surface_deliveries" as show_surface_help %}{% if show_surface_help %}<p class="text-base mt-md"><a class="prose-link" href="{{ surface_url }}">Read the Surface Delivery Settings &rarr;</a></p>{% endif %}
-  </div>
-
-  <div class="card-raised">
-    <h2 class="section-header">What this platform does not do yet</h2>
-    <ul class="concept-list text-secondary text-base">
-      <li><strong>Nothing flags an estimate that reaches the face value yet.</strong> The estimate is capped today; a flag on the water right's page, for the district to review, is not yet built.</li>
-      <li><strong>No flat yearly rain allowance exists yet.</strong> Rain is subtracted month by month, as in step 2; a single yearly allowance is not yet built.</li>
-    </ul>
-    <p class="text-secondary text-sm mt-md">OpenH2O does not submit reports to the state.</p>
   </div>
 
   <div class="card-raised">
     <h2 class="section-header">Where to go next</h2>
-    <p class="text-secondary text-base"><a class="prose-link" href="https://github.com/Open-H2O/openh2o/blob/main/docs/water-budget-terms.md" target="_blank" rel="noopener noreferrer">How these terms line up with the state's water-budget terms</a> is set out in the project's documentation.</p>
     <div class="card-grid card-grid--fit mt-md">
-      {% if show_water_balances %}<a href="{{ water_balances_url }}" class="card-raised card-link">
+      {% explainer_available "water_balances" as show_water_balances %}{% if show_water_balances %}<a href="{{ water_balances_url }}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>How Water Balances Work</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">See how the platform sets each field's estimated water use against its supplies.</p>
+        <p class="text-secondary text-sm">This page works through one field's month with real figures.</p>
       </a>{% endif %}
       {% if 'accounting' in enabled_modules %}<a href="{{ methodology_url }}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Methodology Settings</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">Reorder and tune the calculation plan's steps here.</p>
+        <p class="text-secondary text-sm">This page holds the calculation steps and the rain method.</p>
+      </a>
+      <a href="{{ delivery_url }}" class="card-raised card-link">
+        <div class="concept-panel-title" style="justify-content: space-between;"><span>Delivery Settings</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm">This page holds the efficiencies and the treatment of surplus canal water.</p>
       </a>{% endif %}
       <a href="{{ glossary_url }}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Glossary</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">The glossary defines every term used here in plain language.</p>
+        <p class="text-secondary text-sm">This page explains the words used on these screens.</p>
       </a>
     </div>
   </div>

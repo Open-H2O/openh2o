@@ -468,9 +468,8 @@ def water_balances(request):
     """Conceptual explainer: crop water use as estimated demand, matched against supplies.
 
     148-03: leads with the picture's own worked field-month
-    (``accounting.services.example_field_month``), shared with ``methods``
-    below through ``help/partials/_the_subtraction.html`` so the two pages
-    can never show two different examples for the same deployment.
+    (``accounting.services.example_field_month``) through
+    ``help/partials/_the_subtraction.html``.
     """
     from accounting.services import example_field_month
 
@@ -481,16 +480,12 @@ def water_balances(request):
 
 @public_in_open_demo
 def methods(request):
-    """Explainer: the five-step calculation chain and how one canal total is shared.
+    """Explainer: the settings behind each figure, the canal split and the unmetered estimate.
 
-    148-03: leads with the same worked field-month as ``water_balances``
-    above; see that view's docstring.
+    2026-10-10: built from thirteen facts Brent approved; the worked
+    field-month moved off this page and lives on ``water_balances`` alone.
     """
-    from accounting.services import example_field_month
-
-    context = example_field_month() or {}
-    context.setdefault("demonstration", _demonstration_mode())
-    return _explainer(request, "methods", "help/methods.html", context)
+    return _explainer(request, "methods", "help/methods.html")
 
 
 def _demonstration_mode():

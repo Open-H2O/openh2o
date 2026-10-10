@@ -41,7 +41,6 @@ ENFORCED: list = [
     "templates/help/getting_started.html",
     "templates/help/glossary.html",
     "templates/help/partials/_the_subtraction.html",
-    "templates/help/partials/_canal_split_diagram.html",
     # 150-03 (2026-10-09): About carried to the help-page shape; measured 18 blocks,
     # longest 43, share 0.35 on the day it joined.
     "templates/about.html",
