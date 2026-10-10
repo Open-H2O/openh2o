@@ -42,9 +42,8 @@
        (Phase 143-02). {% endcomment %}
     <p class="about-title">OpenH2O</p>
     {% module_nouns "measurements:measurements" "accounting:deliveries" "wells:wells" "surface:surface diversions" "recharge:managed aquifer recharge" "accounting:mixed-use accounting" as data_nouns %}<p class="about-purpose card-raised">
-      OpenH2O is open-source software for California water agencies.
-      It keeps an agency's {{ data_nouns }} in one system that the agency runs and owns.
-      An agency can install it on its own computer or server, and an AI coding assistant can do the installation from <a href="https://github.com/Open-H2O/openh2o" class="text-link" target="_blank" rel="noopener noreferrer">the code on GitHub</a>.
+      OpenH2O is open-source software that keeps a California water agency's {{ data_nouns }} in one system the agency runs itself.
+      An AI coding assistant can install it on an office computer or a server from <a href="https://github.com/Open-H2O/openh2o" class="text-link" target="_blank" rel="noopener noreferrer">the code on GitHub</a>.
     </p>
   </section>
 
@@ -61,23 +60,23 @@
         <tbody>
           {% if 'accounting' in enabled_modules %}<tr>
             <td class="col-name">A groundwater agency or an irrigation district</td>
-            <td>OpenH2O maps its {% module_nouns "parcels:use areas" "wells:wells" "accounting:water accounts" %}, keeps a monthly ledger and works out a water balance for each field.</td>
+            <td>Maps its {% module_nouns "parcels:use areas" "wells:wells" "accounting:water accounts" %}, keeps a monthly ledger and works out a water balance for each field</td>
           </tr>{% endif %}
           {% if 'surface' in enabled_modules %}<tr>
             <td class="col-name">A ditch company or a surface-water diverter</td>
-            <td>OpenH2O keeps its water rights, points of diversion and monthly diversion records, and writes them in the state's report layout.</td>
+            <td>Keeps its water rights, points of diversion and monthly diversion records, and writes them in the state's report layout</td>
           </tr>{% endif %}
           {% if 'drinking' in enabled_modules %}<tr>
             <td class="col-name">A small public water system</td>
-            <td>OpenH2O keeps its facilities, sampling points, lab results and production records.</td>
+            <td>Keeps its facilities, sampling points, lab results and production records</td>
           </tr>{% endif %}
           {% if 'datasync' in enabled_modules %}<tr>
             <td class="col-name">An agency that watches public gauges</td>
-            <td>OpenH2O reads public monitoring stations and shows when each one last reported.</td>
+            <td>Reads public monitoring stations and shows when each one last reported</td>
           </tr>{% endif %}
           {% if 'recharge' in enabled_modules %}<tr>
             <td class="col-name">A recharge operator</td>
-            <td>OpenH2O keeps its recharge sites, each recharge event and its measurements.</td>
+            <td>Keeps its recharge sites, each recharge event and its measurements</td>
           </tr>{% endif %}
         </tbody>
       </table>
@@ -89,30 +88,8 @@
 
   <div class="card-raised">
     <h2 class="section-header">Where the accounting method comes from</h2>
-    <div class="table-scroll">
-      <table class="data-table help-cases-table">
-        <thead>
-          <tr>
-            <th>What</th>
-            <th>The fact</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="col-name">The method</td>
-            <td>OpenH2O uses the accounting method of the Groundwater Accounting Platform, an open-source system built by ESA (formerly Sitka Technology Group) and stewarded by the California Water Data Consortium.</td>
-          </tr>
-          <tr>
-            <td class="col-name">The code</td>
-            <td>OpenH2O is separate code, written in Python. None of the Groundwater Accounting Platform's code is copied into it.</td>
-          </tr>
-          <tr>
-            <td class="col-name">The license</td>
-            <td>Both are released under the GNU Affero General Public License, version 3.</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <p class="text-secondary text-base">OpenH2O's water accounting is based on the method of the Groundwater Accounting Platform, which ESA (formerly Sitka Technology Group) develops and the California Water Data Consortium oversees.</p>
+    <p class="text-secondary text-base">OpenH2O was written from scratch in Python and does not use any of that platform's code.</p>
   </div>
 
   <div class="card-raised about-credits">
@@ -132,7 +109,7 @@
           </tr>
           <tr>
             <td class="col-name">Source code</td>
-            <td>The code is at <a href="https://github.com/Open-H2O/openh2o" class="text-link" target="_blank" rel="noopener noreferrer">github.com/Open-H2O/openh2o</a>. Under its license, anyone who changes the code and runs it for other people must give those people the changed code.</td>
+            <td><a href="https://github.com/Open-H2O/openh2o" class="text-link" target="_blank" rel="noopener noreferrer">github.com/Open-H2O/openh2o</a>, under the GNU Affero General Public License, version 3</td>
           </tr>
           <tr>
             <td class="col-name">Built with</td>
@@ -163,7 +140,7 @@
           <tbody>
             <tr>
               <td class="col-name">Groundwater Accounting Platform</td>
-              <td>The accounting method OpenH2O uses</td>
+              <td>The accounting method OpenH2O is based on</td>
             </tr>
             <tr>
               <td class="col-name">Rosedale-Rio Bravo Water Storage District and Nebraska's Natural Resources Districts</td>
