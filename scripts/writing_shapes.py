@@ -9,7 +9,9 @@ them can be found by pattern, and this script counts those four:
 - the filler words actually, genuinely, really and simply;
 - a heading made of two clauses joined by ", and what" (or who, how, where,
   why, when, which);
-- a heading that ends in a trailing clause, ", by what" or ", by which".
+- a heading that ends in a trailing clause, ", by what" or ", by which";
+- a stand-in the reader has to resolve ("that platform", "both are", "the
+  former") where the name itself should be repeated.
 
 A phrase posing as a statement, a thing acting like a person and a slogan need
 a reader. This script does not try to find them.
@@ -91,8 +93,18 @@ DOUBLE_HYPHEN = re.compile(r"\w[^\S\n]+--[^\S\n]+(?=\w)")
 FILLER = re.compile(r"\b(?:actually|genuinely|really|simply)\b", re.I)
 PAIRED_HEADING = re.compile(r",\s+and\s+(?:what|who|how|where|why|when|which)\b", re.I)
 TRAILING_HEADING = re.compile(r",\s+by\s+(?:what|which)\b", re.I)
+#: A stand-in for a name the reader has to resolve: "that platform", "both
+#: are", "the former". Brent struck "that platform's code" and "Both are
+#: released under..." on About (2026-10-10 04:40 and 04:53 PDT): name the
+#: thing again instead. Replayed before installing: it flags both struck
+#: lines in About's history. Some hits are plain English ("two reasons, and
+#: both are good ones"), so a hit is a line to read, not an automatic fault.
+STAND_IN = re.compile(
+    r"\b(?:that|those|said) (?:platform|system|software|project|tool|method|code|program"
+    r"|agency|page)s?\b|\bboth (?:are|were|use|run|have)\b|\bthe (?:former|latter)\b", re.I)
 
-SHAPES: tuple = ("em dash", "double hyphen", "filler", "paired heading", "trailing heading")
+SHAPES: tuple = ("em dash", "double hyphen", "filler", "paired heading", "trailing heading",
+                 "stand-in")
 
 
 # -- Templates ----------------------------------------------------------------
@@ -252,6 +264,7 @@ def count(runs: list, headings: list) -> dict:
         "filler": len(FILLER.findall(text)),
         "paired heading": sum(1 for h in headings if PAIRED_HEADING.search(h)),
         "trailing heading": sum(1 for h in headings if TRAILING_HEADING.search(h)),
+        "stand-in": len(STAND_IN.findall(text)),
     }
 
 

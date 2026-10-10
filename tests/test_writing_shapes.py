@@ -18,7 +18,10 @@ Before it was installed the scanner was run against the history: the About
 page at the commit before d247786 counts no paired heading, and at d247786 it
 counts three ("What OpenH2O is, and who it is for"; "What it owes to the
 Groundwater Accounting Platform, and what is its own"; "Who made it, and where
-the code is"), the headings that started this work.
+the code is"), the headings that started this work. The stand-in shape ("that platform",
+"both are") was replayed the same way on 2026-10-10: About counts 0 at
+3cbe34c, 2 at 017c89d and at fbe4f47 (the two versions Brent struck for it)
+and 0 after his sentence went in.
 
 The other three shapes (a phrase posing as a statement, a thing acting like a
 person, a slogan) need a reader and are not counted here.
@@ -57,8 +60,11 @@ shapes = _load()
 #: writing work. Lower an entry when its file loses a shape; never raise one.
 #: Later the same evening About, the help pages, the footer and the Admin mode
 #: button took the wording Brent approved at 20:29 PDT, and their six entries
-#: came off.
+#: came off. 2026-10-10: the "stand-in" shape joined at its counts that day.
 BASELINE: dict = {
+    "templates/help/partials/_the_subtraction.html": {"stand-in": 1},
+    "templates/drinking/partials/_onboard_result.html": {"stand-in": 1},
+    "templates/drinking/partials/_empty_drinking.html": {"stand-in": 1},
     "templates/accounting/partials/_account_balances.html": {"em dash": 1},
     "templates/accounting/partials/_needs_attention.html": {"em dash": 1},
     "templates/allauth/layouts/base.html": {"em dash": 1},
@@ -69,7 +75,7 @@ BASELINE: dict = {
     "templates/drinking/production.html": {"em dash": 1},
     "templates/partials/_demo_marker.html": {"em dash": 1},
     "templates/reporting/partials/_openet_prefill.html": {"em dash": 1},
-    "templates/reporting/partials/_report_detail_pane.html": {"em dash": 1},
+    "templates/reporting/partials/_report_detail_pane.html": {"em dash": 1, "stand-in": 1},
     "templates/reporting/report_list.html": {"em dash": 1},
     "templates/reporting/report_prefill.html": {"em dash": 2},
     "templates/wells/partials/_detail_pane.html": {"double hyphen": 1},
@@ -88,14 +94,14 @@ BASELINE: dict = {
     "setup/boundaries.py": {"em dash": 3},
     "surface/views.py": {"double hyphen": 3},
     "CONTRIBUTING.md": {"em dash": 10},
-    "DEPLOY.md": {"em dash": 124, "filler": 22},
+    "DEPLOY.md": {"em dash": 124, "filler": 22, "stand-in": 3},
     "MAINTAINER.md": {"em dash": 10},
-    "README.md": {"em dash": 49, "filler": 3},
+    "README.md": {"em dash": 49, "filler": 3, "stand-in": 4},
     "SECURITY.md": {"em dash": 3},
-    "docs/AI-OPERATOR-GUIDE.md": {"filler": 11, "paired heading": 1},
-    "docs/DATA-IMPORT.md": {"double hyphen": 8, "filler": 2},
-    "docs/DATA-STANDARDS.md": {"em dash": 13, "filler": 1},
-    "docs/INSTALL-WITHOUT-DOCKER.md": {"em dash": 41, "filler": 7, "paired heading": 3},
+    "docs/AI-OPERATOR-GUIDE.md": {"filler": 11, "paired heading": 1, "stand-in": 1},
+    "docs/DATA-IMPORT.md": {"double hyphen": 8, "filler": 2, "stand-in": 1},
+    "docs/DATA-STANDARDS.md": {"em dash": 13, "filler": 1, "stand-in": 1},
+    "docs/INSTALL-WITHOUT-DOCKER.md": {"em dash": 41, "filler": 7, "paired heading": 3, "stand-in": 3},
     "docs/README.md": {"em dash": 4},
     "docs/ROADMAP.md": {"em dash": 14, "filler": 3},
     "docs/earth-engine-tier-setup.md": {"em dash": 3, "filler": 5},
@@ -178,6 +184,16 @@ def test_a_planted_em_dash_is_caught_on_every_surface():
     assert shapes.count_file("planted.py", python)["em dash"] == 1
     guide = "The setting is read once\n— at start-up — and kept.\n"
     assert shapes.count_file("planted.md", guide)["em dash"] == 2
+
+
+def test_a_stand_in_for_a_name_is_caught():
+    """The two lines Brent struck on About on 2026-10-10, as they read."""
+    source = (
+        "<p>OpenH2O was written from scratch in Python and does not use any of "
+        "that platform's code.</p>"
+        "<td>Both are released under the GNU Affero General Public License.</td>"
+    )
+    assert _template(source)["stand-in"] == 2
 
 
 def test_a_planted_double_hyphen_and_filler_word_are_caught():
