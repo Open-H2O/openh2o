@@ -421,7 +421,12 @@ BASELINE: dict = {
     #   two flags ("The canal part" row label, "A field without a well has the
     #   credit added ...") are the same two false positives methods.html already
     #   carries in this count.
-    "templates/help/*.html": 5,
+    #   2026-10-10 14:22 PDT: 5 -> 6 for help/settings_explained.html: the
+    #   reused "The canal part" row (same false positive as methods.html) and
+    #   "...belongs to: a water year starting in October, ...", approved by
+    #   Brent, which the scanner reads as an appositive definition of a water
+    #   year; it names a setting's three choices, a false positive.
+    "templates/help/*.html": 6,
     #   2026-10-09: 10 -> 11 because the surface now reads the words passed
     #   into included partials, not because a definition was added. The one
     #   new location is reporting/partials/_report_detail_pane.html, whose
