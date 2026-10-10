@@ -172,12 +172,12 @@ class TestRenderedPages:
 
     def test_getting_started_names_every_domain_on_a_full_deployment(self, admin_client):
         body = admin_client.get("/help/getting-started/").content.decode()
-        # 149.1-04: the enumerating wizard sentence became the wizard table,
-        # and the table tells the truth setup/services.py tells: use areas and
-        # stations are brought in, wells and recharge areas are not.
-        assert "Add surface diversions and recharge areas" in body
-        assert "The wizard brings them in from the statewide parcel layer" in body
-        assert "Upload well locations from CSV or Shapefile" in body
+        # 150.1 (2026-10-10): rebuilt from the facts Brent approved; the
+        # table tells the truth setup/services.py tells: use areas and
+        # stations are brought in, wells and recharge sites are not.
+        assert "Add surface diversions and recharge sites" in body
+        assert "The Setup Wizard brings in each parcel that overlaps your boundary" in body
+        assert "Each well needs a name and a location." in body
         # The state-report step (GEARS / CalWATRS) came off the page 2026-10-07.
         assert "Work out your state report figures" not in body
 
@@ -210,7 +210,7 @@ class TestRenderedPages:
         assert "recharge basins" not in body
         assert "CalWATRS" not in body
         assert "Surface diversions" not in body
-        assert "The wizard brings them in from the statewide parcel layer" in body, (
+        assert "The Setup Wizard brings in each parcel that overlaps your boundary" in body, (
             "The use-areas row lost its wizard clause when surface went."
         )
 
@@ -226,11 +226,11 @@ class TestRenderedPages:
         settings.OPENH2O_MODULES = NINE_MODULE_DRINKING
         body = admin_client.get("/help/getting-started/").content.decode()
 
-        assert "Onboard your water system" in body
+        assert "Add your water system" in body
         assert reverse("drinking:onboard") in body
         assert STEP_CARD.findall(body) == [
-            ("1", "Onboard your water system"),
-            ("2", "Define management zones"),
+            ("1", "Add your water system"),
+            ("2", "Create management zones"),
         ]
 
     def test_the_pwsid_card_is_gone_when_drinking_is_off(
@@ -248,40 +248,35 @@ class TestRenderedPages:
         body = admin_client.get("/help/getting-started/").content.decode()
 
         assert "PWSID" not in body
-        assert "Onboard your water system" not in body
+        assert "Add your water system" not in body
 
         numbered = STEP_CARD.findall(body)
         assert [int(n) for n, _ in numbered] == list(range(1, len(numbered) + 1))
-        assert numbered[0] == ("1", "Define management zones")
+        assert numbered[0] == ("1", "Create management zones")
 
-    def test_the_drinking_wizard_card_names_the_boundary(
+    def test_the_drinking_wizard_row_names_only_what_it_brings_in(
         self, admin_client, settings
     ):
-        """ISS-093, pinned on BOTH branches.
+        """ISS-093, carried into the 150.1 rebuild (2026-10-10).
 
-        On a drinking-only deployment the Setup Wizard imports nothing, so the
-        enumerating sentence gates off. Option (b): the surviving card names the
-        one thing the wizard still does there — it draws the `Boundary` polygon
-        the map and every geography query hang off — rather than collapsing to
-        the "Read this page…" tail alone.
-
-        The negative assertion on the full set is the load-bearing half: it is
-        what keeps 92-01's byte-identical full render enforceable in CI. A future
-        edit that leaked the clause out of the `else` branch onto the full page
-        would move that baseline and fail HERE, rather than slip through green on
-        a test that only checked the drinking branch.
+        The wizard's basins step adds zones on every deployment, so the wizard
+        row now renders wherever the Setup Wizard does, and the old fallback
+        line ("draws your district boundary") went with the note it lived in.
+        On a drinking-only deployment the row must name only what the wizard
+        brings in there and cite only the zones step.
         """
         compose_urlconf_under_the_full_module_set()
 
         settings.OPENH2O_MODULES = NINE_MODULE_DRINKING
         drinking = admin_client.get("/help/getting-started/").content.decode()
-        assert "draws your district boundary" in drinking, (
-            "The drinking-only Setup Wizard card no longer names the boundary."
-        )
+        assert "Give the Setup Wizard your district&rsquo;s boundary" in drinking
+        assert "brings in the groundwater subbasins and streams in and around" in drinking
+        assert "Run the Setup Wizard before Step 2, because the wizard does part of the work in it." in drinking
 
         settings.OPENH2O_MODULES = list(mod.ALL_MODULE_NAMES)
         full = admin_client.get("/help/getting-started/").content.decode()
-        assert "draws your district boundary" not in full, (
-            "The ISS-093 clause leaked out of the else branch onto the full "
-            "deployment — the byte-identical full render is broken."
+        assert (
+            "brings in the groundwater subbasins, parcels, streams and monitoring stations"
+            in full
         )
+        assert "Run the Setup Wizard before Steps 2, 3 and 6, because the wizard does part of the work in each." in full

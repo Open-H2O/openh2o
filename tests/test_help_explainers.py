@@ -135,8 +135,10 @@ class TestGettingStartedNumbering:
         # (pwsid, zones, use areas, wells, surface, stations, then the four
         # accounting steps), so the wizard's steps are 3 and 6 and the
         # accounting run is the last four.
-        assert result["wizard_cited_steps"] == "3 and 6"
-        assert result["accounting_step_range"] == "7 through 10"
+        # 150.1 (2026-10-10): zones joined the citation, because the wizard's
+        # basins step adds zones; the accounting range left with its note.
+        assert result["wizard_cited_steps"] == "2, 3 and 6"
+        assert result["wizard_cited_count"] == 3
 
     def test_the_citations_only_ever_name_steps_that_render(self, monkeypatch):
         """Every number cited has to be a number on the page.
@@ -180,9 +182,6 @@ class TestGettingStartedNumbering:
                 f"With {dropped} dropped the wizard sentence cites {cited} but "
                 f"only {sorted(rendered)} render."
             )
-            if result["accounting_step_range"]:
-                low, high = result["accounting_step_range"].split(" through ")
-                assert int(low) in rendered and int(high) in rendered
 
     def test_the_drinking_deployment_opens_with_the_pwsid_step(self, monkeypatch):
         """ISS-092 in its smallest form.

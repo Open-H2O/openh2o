@@ -19,7 +19,6 @@ from wells.models import Well
 from accounting.models import ReportingPeriod, WaterAccount
 from core.models import SiteConfig
 from core.modules import is_enabled
-from core.templatetags.prose import oxford_join
 
 
 def index(request):
@@ -350,28 +349,24 @@ GETTING_STARTED_STEPS = (
     ("ledger", "accounting"),
 )
 
-#: The steps the Setup Wizard does, and the steps the accounting sentence cites
-#: as a range. Both live beside the step table so a change to one is made
-#: looking at the other. 149.1-04 (2026-10-07): wells and surface came OFF the
-#: wizard list because the wizard never did them: ``setup/services.py``
-#: ``WIZARD_STEPS`` imports basins (as zones), parcels (use areas), flowlines
-#: and monitoring stations, and no wells or recharge basins; the page's wizard
-#: table says so row by row, and this tuple is what ``wizard_cited_steps`` names.
-_WIZARD_CITED_STEPS = ("use_areas", "stations")
-_ACCOUNTING_CITED_STEPS = ("accounts", "water_year", "ceilings", "ledger")
+#: The steps the Setup Wizard does part of. 149.1-04 (2026-10-07): wells and
+#: surface came OFF this list because the wizard never did them:
+#: ``setup/services.py`` ``WIZARD_STEPS`` imports basins (as zones), parcels
+#: (use areas), flowlines and monitoring stations, and no wells or recharge
+#: basins. 150.1 (2026-10-10): zones joined it, because the basins step adds
+#: zones, so the one sentence "Run the Setup Wizard before Steps 2, 3 and 6"
+#: replaces the old "does Steps 3 and 6 and part of Step 2", and the accounting
+#: range ("Steps 7 through 10 are your agency's policy choices") left the page
+#: with the note that used it.
+_WIZARD_CITED_STEPS = ("zones", "use_areas", "stations")
 
 
 def _getting_started_numbering():
-    """``{step key: rendered number}`` plus the two cross-reference strings.
+    """``{step key: rendered number}`` plus the wizard's step citation and its count.
 
     The state-report step (``reporting``, with a second condition on ``wells`` or
     ``surface``) came off the page on 2026-10-07 at Brent's word (149.1-04: the
     module is not fully developed), so no row needs a second condition now.
-
-    The accounting range is emitted as "N through M" rather than a list because
-    the rows it names are the last four and contiguous (since 2026-10-07; before
-    that Step 5, zones, sat between them and rendered in every configuration,
-    so the run could not break in the middle either).
     """
     numbers = {}
     n = 0
@@ -382,13 +377,14 @@ def _getting_started_numbering():
             numbers[key] = n
 
     cited = [str(numbers[k]) for k in _WIZARD_CITED_STEPS if k in numbers]
-    accounting = [numbers[k] for k in _ACCOUNTING_CITED_STEPS if k in numbers]
     return {
         "steps": numbers,
-        "wizard_cited_steps": oxford_join(cited),
-        "accounting_step_range": (
-            f"{min(accounting)} through {max(accounting)}" if accounting else ""
+        # No serial comma: the sentence Brent approved reads "Steps 2, 3 and 6".
+        "wizard_cited_steps": (
+            f"{', '.join(cited[:-1])} and {cited[-1]}" if len(cited) > 1
+            else "".join(cited)
         ),
+        "wizard_cited_count": len(cited),
     }
 
 

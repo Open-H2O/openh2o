@@ -257,7 +257,20 @@ _TAG = re.compile(r"<[^>]+>")
 _H1 = re.compile(r'<h1 class="page-title">(.*?)</h1>', re.S)
 _TITLE = re.compile(r"<title>(.*?)</title>", re.S)
 _SCRIPT = re.compile(r"<script[^>]*>(.*?)</script>", re.S)
-_WHERE_CELL = re.compile(r'<td class="col-where">(.*?)(?:<br|</td>)', re.S)
+# 150.1 (2026-10-10): a Where cell may name entries in two sections (the
+# surface row names Administration > Water Rights and Water Data > Surface
+# Diversions), one "<section> > <entry>" line each, separated by <br> and the
+# "Go to" links; every such line is read, not only the first.
+_WHERE_CELL = re.compile(r'<td class="col-where">(.*?)</td>', re.S)
+
+
+def _where_lines(html):
+    lines = []
+    for cell in _WHERE_CELL.findall(html):
+        for part in re.split(r"<br\s*/?>", cell):
+            if "<a " not in part and _text(part):
+                lines.append(_text(part))
+    return lines
 
 
 def _text(fragment):
@@ -716,7 +729,7 @@ def test_getting_started_points_at_entries_the_sidebar_shows(walk):
     follows a rename instead of pointing at a word that is gone."""
     _client, _response, html = sidebar_page(walk, "/help/getting-started/", "admin")
     shown = {(section, label) for section, label, _active in sidebar_links(html)}
-    cells = [_text(cell) for cell in _WHERE_CELL.findall(html)]
+    cells = _where_lines(html)
     assert cells, "Getting Started has no Where cells"
     wrong = []
     for cell in cells:

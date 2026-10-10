@@ -417,7 +417,7 @@ def test_completion_panel_routes_to_next_steps(db):
     # and one line names the step that comes next there (zones), in its order.
     # The four hand-numbered links left with the list.
     assert reverse("getting_started") in html
-    assert "Define management zones" in html
+    assert "Create management zones" in html
     assert reverse("parcels:list") not in html
     # The old single-link dead-end to the station list is gone from the panel.
     assert "Go to Stations" not in html

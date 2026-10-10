@@ -405,7 +405,13 @@ BASELINE: dict = {
     #   help_text= : 3 false positives naming a relation or a foreign key, plus
     #                core/forms.py:160, which explains what a SETTING means
     "config/views.py::glossary": 2,
-    "templates/help/*.html": 2,
+    #   2026-10-10 12:49 PDT: 2 -> 3 for help/getting_started.html, whose wizard
+    #   row reads "The wizard then brings in the groundwater subbasins, ...", in
+    #   the words Brent approved. The scanner reads "The ... groundwater" as
+    #   opening a definition of groundwater. It is a sentence about what the
+    #   software imports, a false positive (same shape as the 2026-10-09 20:45
+    #   headgate entry below).
+    "templates/help/*.html": 3,
     #   2026-10-09: 10 -> 11 because the surface now reads the words passed
     #   into included partials, not because a definition was added. The one
     #   new location is reporting/partials/_report_detail_pane.html, whose
