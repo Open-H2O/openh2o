@@ -2434,12 +2434,8 @@ html { color-scheme: dark; }
     width: 16%;
 }
 
-.help-cases-table--glossary td:not(.col-sure) {
+.help-cases-table--glossary td {
     line-height: 1.5;
-}
-
-.help-cases-table--glossary .col-sure .badge {
-    min-width: 9.5em;
 }
 
 /* The setup steps on Getting started (149.1-04): the step column is a short

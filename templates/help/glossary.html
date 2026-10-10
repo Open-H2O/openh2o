@@ -21,7 +21,8 @@
   2026-10-10 (150.1): twenty definitions in config/views.py::glossary were
   rewritten in two batches Brent approved at 15:02 and 15:27 PDT ("yes,
   proceed", "yes"); the description and the card lines are sentences he
-  approved on the other help pages. Membership is unchanged.
+  approved on the other help pages. Membership is unchanged. At 15:52 he
+  struck the "Whose word" column: "pointless and distracting, lets remove it".
 
   149.1-04 (2026-10-07): carried to the shape Brent approved on Methods
   behind the numbers (149.1-01) and the pages after it, from the reader's
@@ -50,18 +51,16 @@
         <thead>
           <tr>
             <th>Term</th>
-            <th>Whose word</th>
             <th>What this platform means by it</th>
             <th>Explained in full</th>
           </tr>
         </thead>
         <tbody>
           {% for entry in entries %}{% ifchanged entry.letter %}<tr class="help-letter-row">
-            <th scope="rowgroup" colspan="4" id="letter-{{ entry.letter }}">{{ entry.letter }}</th>
+            <th scope="rowgroup" colspan="3" id="letter-{{ entry.letter }}">{{ entry.letter }}</th>
           </tr>{% endifchanged %}
           <tr>
             <td class="col-name">{{ entry.term }}</td>
-            <td class="col-sure">{% if entry.kind == "outside" %}<span class="badge badge-pill badge-grey">State or program</span>{% elif entry.kind == "unit" %}<span class="badge badge-pill badge-grey">Unit of measure</span>{% elif entry.kind == "water" %}<span class="badge badge-pill badge-grey">Water term</span>{% else %}<span class="badge badge-pill badge-blue">This platform&rsquo;s</span>{% endif %}</td>
             <td>{{ entry.text }}</td>
             <td class="col-where">{% if entry.pointer_url %}<a class="prose-link" href="{% url entry.pointer_url %}">{{ entry.pointer_page }}</a>{% endif %}</td>
           </tr>

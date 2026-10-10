@@ -4,7 +4,7 @@
 Nine entries joined ``/help/glossary/``: the drinking-water words a lab file and
 the state's records carry (MCL, DLR, PWSID, PS Code, Analyte, Sampling Point,
 Reporting Level, ELAP) and the station list's three freshness words as one
-entry. Each is asserted present, labelled with whose word it is, and clean
+entry. Each is asserted present and clean
 under copy rule 11 (``tests.test_domain_vocabulary.scan``) and the rule-12 table
 (``tests.test_water_vocabulary.scan``), the same two scanners the glossary's
 surface gates call.
@@ -30,17 +30,10 @@ from tests.test_water_vocabulary import scan as rule_12_scan
 
 pytestmark = pytest.mark.django_db
 
-NEW_TERMS = {
-    "Analyte": "outside",
-    "DLR": "outside",
-    "ELAP": "outside",
-    "MCL": "outside",
-    "PS Code": "outside",
-    "PWSID": "outside",
-    "Reporting Level": "outside",
-    "Sampling Point": "platform",
-    "Up to date / Slightly behind / Dormant": "platform",
-}
+NEW_TERMS = (
+    "Analyte", "DLR", "ELAP", "MCL", "PS Code", "PWSID", "Reporting Level",
+    "Sampling Point", "Up to date / Slightly behind / Dormant",
+)
 
 FRESHNESS_TERM = "Up to date / Slightly behind / Dormant"
 
@@ -53,10 +46,11 @@ def entries(admin_client):
 
 
 class TestTheNewEntries:
-    def test_each_new_term_is_served_with_whose_word_it_is(self, entries):
+    def test_each_new_term_is_served(self, entries):
+        # 2026-10-10 15:52 PDT: Brent struck the "Whose word" column ("pointless
+        # and distracting"), so an entry no longer carries a kind to assert.
         missing = [term for term in NEW_TERMS if term not in entries]
         assert missing == []
-        assert {term: entries[term]["kind"] for term in NEW_TERMS} == NEW_TERMS
 
     def test_the_page_lists_them_in_casefold_order(self, entries):
         terms = list(entries)

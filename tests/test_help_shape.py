@@ -39,7 +39,12 @@ ENFORCED: list = [
     "templates/help/surface_deliveries.html",
     "templates/help/water_balances.html",
     "templates/help/getting_started.html",
-    "templates/help/glossary.html",
+    # glossary.html is measured as it renders, in
+    # test_the_glossary_holds_the_shape_as_it_renders below: its 49 definitions
+    # come from config/views.py into table cells, so the template source holds
+    # almost no table words. When Brent struck the "Whose word" badges
+    # (2026-10-10 15:52 PDT) the source's share rose to 0.53 from words that
+    # were never prose.
     "templates/help/partials/_the_subtraction.html",
     # 150-03 (2026-10-09): About carried to the help-page shape; measured 18 blocks,
     # longest 43, share 0.35 on the day it joined.
@@ -134,9 +139,24 @@ def test_every_help_file_is_in_exactly_one_list():
     # A page outside templates/help/ may join ENFORCED (About did, 150-03); the
     # completeness check is over the help folder only.
     listed_help = {rel for rel in listed if rel.startswith("templates/help/")}
+    # Measured as rendered instead (test_the_glossary_holds_the_shape_as_it_renders).
+    listed_help.add("templates/help/glossary.html")
     assert listed_help == on_disk, (
         f"unlisted: {sorted(on_disk - listed_help)}; missing on disk: "
         f"{sorted(listed_help - on_disk)}"
     )
     for rel in listed:
         assert (REPO_ROOT / rel).exists(), f"{rel} is listed but not on disk"
+
+
+@pytest.mark.django_db
+def test_the_glossary_holds_the_shape_as_it_renders(admin_client, tmp_path):
+    """The glossary's definitions are table cells rendered from the view, so the
+    page is measured as the reader gets it, against the same two thresholds."""
+    response = admin_client.get("/help/glossary/")
+    assert response.status_code == 200
+    page = tmp_path / "glossary.html"
+    page.write_text(response.content.decode())
+    row = shape.measure(page)
+    assert row["longest"] <= shape.MAX_BLOCK_WORDS, row
+    assert row["share"] <= shape.MAX_PROSE_SHARE, row

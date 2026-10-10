@@ -540,30 +540,6 @@ def _without_unavailable_help_pointers(definition):
     return definition
 
 
-#: The entries that are the state's and the programs' names rather than this
-#: platform's own words: the page marks each row with which it is, because a
-#: fresh reader (149.1-04, round 1) could not tell them apart without reading
-#: every definition. Membership is still ISS-085's 40; this only labels them.
-_GLOSSARY_OUTSIDE_NAMES = frozenset({
-    "CalWATRS", "CDEC", "CIMIS", "GEARS", "GSA", "GSP", "OpenET", "SGMA", "USGS",
-    # 150-03 (ISS-183): the drinking-water words, each the state's or its lab
-    # file's own (Reporting Level is the SDWIS layout's column name).
-    "Analyte", "DLR", "ELAP", "MCL", "PS Code", "PWSID", "Reporting Level",
-})
-#: Neither the state's nor this platform's: a unit of measure (the round-2 reader
-#: saw CFS tagged as this platform's own and called it wrong).
-_GLOSSARY_UNITS = frozenset({"CFS (Cubic Feet per Second)"})
-#: The profession's own words, which this platform keeps a record or a figure
-#: for and never coined (the round-4 reader: "An engineer knows the State Water
-#: Board and the profession named those terms, not this software"). Everything
-#: not in these three sets is this platform's own term.
-_GLOSSARY_WATER_TERMS = frozenset({
-    "Apportionment", "Consumptive Use", "Curtailment", "Effective Precipitation",
-    "ET (Evapotranspiration)", "Managed Aquifer Recharge (MAR)",
-    "Point of Diversion (POD)", "Water Right", "Water Year", "Well",
-})
-
-
 def _split_help_pointer(definition):
     """Split a trailing " See Help > X." off a definition, for the Read more column.
 
@@ -675,12 +651,6 @@ def glossary(request):
         entries.append({
             "term": term,
             "letter": term[0].upper(),
-            "kind": (
-                "outside" if term in _GLOSSARY_OUTSIDE_NAMES
-                else "unit" if term in _GLOSSARY_UNITS
-                else "water" if term in _GLOSSARY_WATER_TERMS
-                else "platform"
-            ),
             "text": text,
             "pointer_page": pointer_page,
             "pointer_url": pointer_url,
