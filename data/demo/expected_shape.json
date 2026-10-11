@@ -488,12 +488,12 @@
       "tolerance": 0,
       "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
     },
-    "surface.IrrigationMethod": {
+    "parcels.IrrigationMethod": {
       "expected": 18,
       "tolerance": 0,
-      "reason": "East Turlock Subbasin GSA's published irrigation-efficiency table (Rules and Regulations Phase 2 Final, 2025-08-28, Section 4.05, citing Zaccaria 2018, ANR Publication 8570): 18 method rows, counted off the PDF on 2026-09-23 by Plan 146-05. Seeded by the data migration surface/0016_seed_irrigation_methods, not by any seed command, so every deployment and every golden rebuild carries the same 18 after migrate. Moves only if that migration's row list moves."
+      "reason": "East Turlock Subbasin GSA's published irrigation-efficiency table (Rules and Regulations Phase 2 Final, 2025-08-28, Section 4.05, citing Zaccaria 2018, ANR Publication 8570): 18 method rows, counted off the PDF on 2026-09-23 by Plan 146-05. Seeded by a data migration, not by any seed command (surface/0016_seed_irrigation_methods first; since 150.2-01, parcels/0013_irrigation_method, which renames an existing table into parcels with its rows and seeds only an empty one), so every deployment and every golden rebuild carries the same 18 after migrate. Moves only if that migration's row list moves."
     },
-    "surface.IrrigationMethodEvent": {
+    "parcels.IrrigationMethodEvent": {
       "expected": 0,
       "tolerance": 0,
       "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
@@ -508,12 +508,12 @@
       "tolerance": 0,
       "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
     },
-    "surface.ParcelIrrigationMethod": {
+    "parcels.ParcelIrrigationMethod": {
       "expected": 9,
       "tolerance": 0,
-      "reason": "Which irrigation method a use area records (146-05 Task 1). MOVED 0 -> 9 by the 146-05 checkpoint (Brent's ruling 1, 2026-09-23): MER-APN-001 through 009 are visibly center-pivot fields on the aerial map, and seed_merced_pivot_irrigation now sets each of those nine to the seeded Center Pivot row by outline shape (ST_Area(g_3310) / ST_Area(ST_MinimumBoundingCircle(g_3310)) >= 0.90, g_3310 the geometry transformed to EPSG:3310) -- measured on staging at 0.968-0.984 for exactly those nine of the demonstration's 76 use areas and at most 0.656 for every other one, and reproduced by a fresh run of the command against the local demo (146-05-EVIDENCE.md). Every other use area is left unset; nothing in the engine reads any of this yet until Phase 148 decides what it does."
+      "reason": "Which irrigation method a use area records (146-05 Task 1). MOVED 0 -> 9 by the 146-05 checkpoint (Brent's ruling 1, 2026-09-23): MER-APN-001 through 009 are visibly center-pivot fields on the aerial map, and seed_merced_pivot_irrigation now sets each of those nine to the seeded Center Pivot row by outline shape (ST_Area(g_3310) / ST_Area(ST_MinimumBoundingCircle(g_3310)) >= 0.90, g_3310 the geometry transformed to EPSG:3310) -- measured on staging at 0.968-0.984 for exactly those nine of the demonstration's 76 use areas and at most 0.656 for every other one, and reproduced by a fresh run of the command against the local demo (146-05-EVIDENCE.md). Every other use area is left unset. Moved from surface to parcels with its pks by 150.2-01 (parcels/0013_irrigation_method)."
     },
-    "surface.ParcelIrrigationMethodEvent": {
+    "parcels.ParcelIrrigationMethodEvent": {
       "expected": 0,
       "tolerance": 0,
       "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."

@@ -200,3 +200,80 @@ class UsageLocation(models.Model):
 
     def __str__(self):
         return self.name
+
+
+@track_changes()
+class IrrigationMethod(models.Model):
+    """One row of a published irrigation-efficiency table (146-05 Task 1, S1).
+
+    Seeded by a data migration, not a seed command, so every deployment
+    carries the same rows after ``migrate``: East Turlock Subbasin GSA's
+    Section 4.05 table, 18 rows counted off the PDF on 2026-09-23. Seeded first
+    by ``surface/0016_seed_irrigation_methods``; since 150.2-01 by
+    ``parcels/0013_irrigation_method``, which also adopts the rows a deployment
+    already had.
+
+    Lives in ``parcels`` since 150.2-01 (Brent, 2026-10-11: "we need this
+    software to help groundwater-only growers and water managers"). It began in
+    ``surface`` on the reasoning that nothing read an efficiency where there
+    was no canal; a field irrigated from a well has an irrigation method too,
+    and a groundwater-only deployment runs without ``surface``.
+    ``parcels.services.field_efficiency`` reads a field's assigned row here,
+    falling back to the agency-wide default when the field has none.
+    """
+
+    name = models.CharField(max_length=100, unique=True)
+    assigned_efficiency = models.DecimalField(
+        max_digits=4,
+        decimal_places=3,
+        help_text="The share of applied water the table assigns this method, "
+        "as a fraction (0.600 is 60%).",
+    )
+    range_low = models.DecimalField(
+        max_digits=4,
+        decimal_places=3,
+        help_text="Low end of the table's published range, as a fraction.",
+    )
+    range_high = models.DecimalField(
+        max_digits=4,
+        decimal_places=3,
+        help_text="High end of the table's published range, as a fraction.",
+    )
+    source = models.CharField(
+        max_length=300,
+        help_text="The published table this row is copied from.",
+    )
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["sort_order", "name"]
+
+    def percent(self):
+        """The assigned efficiency as a whole percent: 0.600 -> 60."""
+        return int((self.assigned_efficiency * 100).to_integral_value())
+
+    def __str__(self):
+        return f"{self.name}, {self.percent()}%"
+
+
+@track_changes()
+class ParcelIrrigationMethod(models.Model):
+    """How one use area is irrigated (146-05 Task 1, S1); no row means not set.
+
+    A row of its own rather than a ``Parcel.irrigation_method`` column, which
+    is how it was built in ``surface`` (where a ``Parcel`` column pointing into
+    ``surface`` would have dangled without it, rule 1 of the composition rule,
+    ``core/modules.py``). Both ends now live in ``parcels`` (150.2-01), so the
+    row is kept as it was rather than reshaped: every reader goes through the
+    ``irrigation`` accessor, and the move carried each row across with its pk.
+    """
+
+    parcel = models.OneToOneField(
+        Parcel, on_delete=models.CASCADE, related_name="irrigation"
+    )
+    method = models.ForeignKey(
+        IrrigationMethod, on_delete=models.PROTECT, related_name="use_areas"
+    )
+
+    def __str__(self):
+        return f"{self.parcel} → {self.method}"

@@ -493,10 +493,10 @@ class Command(BaseCommand):
 
         # 148-02 Task 4 (Q2): the agency-wide extraction-efficiency setting,
         # read ONCE for the whole run -- identical for every parcel (it is one
-        # SiteConfig row, not per-parcel like surface's field_efficiency), and
+        # SiteConfig row, not per-parcel like parcels' field_efficiency), and
         # deliberately not re-read per parcel so a setting edit mid-run cannot
         # tear. `SiteConfig.objects.first() or SiteConfig()` is the established
-        # idiom (`surface/services.py::field_efficiency`): reads safely before
+        # idiom (`parcels/services.py::field_efficiency`): reads safely before
         # a row exists, falling back to the field's own class default (0.800).
         # 148-04: the over-delivery treatment and leave-behind share are read
         # from this SAME SiteConfig object, once, for the same reason —

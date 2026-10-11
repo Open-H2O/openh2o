@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
-Set surface.ParcelIrrigationMethod to the seeded "Center Pivot" row on every
+Set parcels.ParcelIrrigationMethod to the seeded "Center Pivot" row on every
 use area whose outline is visibly a circle (146-05 checkpoint, Brent's
 ruling 1, 2026-09-23).
 
@@ -20,16 +20,14 @@ comfortably above every other shape.
 This is DEMO data: the classification is derived from the real DWR-surveyed
 field outline's SHAPE (`seed_merced_parcels_from_selection` reads real
 crop-field polygons), never a claim about how the underlying farm is actually
-irrigated. Nothing in the engine reads `ParcelIrrigationMethod` this phase --
-Phase 148 decides what it does with it.
+irrigated. Phase 148 made the engine read it (`parcels.services.field_efficiency`).
 
 Idempotent: a re-run changes nothing, because it is keyed by parcel and NEVER
 overwrites a use area that already carries a method -- an operator's choice,
 or an earlier run of this same command, stands. Skipped cleanly (no error, no
-rows written) when `surface` is off: `ParcelIrrigationMethod` lives in
-`surface` and truly leaves with it when the module is dropped (composition
-rule 1, `core/modules.py`), so it cannot even be imported with the app
-uninstalled.
+rows written) when `parcels` is off. Until 150.2-01 it was skipped when
+`surface` was off, because `ParcelIrrigationMethod` lived there; it lives in
+`parcels` now, so a groundwater-only demonstration gets its pivots too.
 
 Not `MER-`-restricted: the test is purely geometric (this use area's own
 shape against its own bounding circle), so it runs over every use area with
@@ -48,48 +46,43 @@ from django.core.management.base import BaseCommand
 from django.db import connection
 
 from core.modules import is_enabled
-from parcels.models import Parcel
+from parcels.models import IrrigationMethod, Parcel, ParcelIrrigationMethod
 
 #: Comfortably below the 9 real pivots (0.968-0.984, measured on staging) and
 #: comfortably above every other shape (squares near 0.637, everything else
 #: at or under 0.656). 146-05-EVIDENCE.md has the full measurement.
 CIRCULARITY_THRESHOLD = 0.90
 
-#: The name a data migration (surface/0016_seed_irrigation_methods) seeds
+#: The name a data migration (parcels/0013_irrigation_method) seeds
 #: this row under, verbatim from East Turlock Subbasin GSA's table.
 CENTER_PIVOT = "Center Pivot"
 
 
 class Command(BaseCommand):
     help = (
-        "Set surface.ParcelIrrigationMethod to 'Center Pivot' on every use "
+        "Set parcels.ParcelIrrigationMethod to 'Center Pivot' on every use "
         "area whose outline fills at least 90% of its minimum bounding "
         "circle. Idempotent; never overwrites a method already set; no-op "
-        "when the surface module is off."
+        "when the parcels module is off."
     )
 
     def handle(self, *args, **options):
-        if not is_enabled("surface"):
+        if not is_enabled("parcels"):
             self.stdout.write(
                 self.style.WARNING(
-                    "surface module is off -- ParcelIrrigationMethod does not "
-                    "exist in this deployment. Skipping pivot classification."
+                    "parcels module is off -- this deployment keeps no use "
+                    "areas. Skipping pivot classification."
                 )
             )
             return
-
-        # Local import: `surface` is truly optional (Phase 87), so importing
-        # its models with the app uninstalled raises RuntimeError. The guard
-        # above has already returned before this line can run in that case.
-        from surface.models import IrrigationMethod, ParcelIrrigationMethod
 
         try:
             center_pivot = IrrigationMethod.objects.get(name=CENTER_PIVOT)
         except IrrigationMethod.DoesNotExist:
             self.stdout.write(
                 self.style.WARNING(
-                    f"No '{CENTER_PIVOT}' row in surface.IrrigationMethod -- "
-                    "has migration 0016_seed_irrigation_methods run? Skipping."
+                    f"No '{CENTER_PIVOT}' row in parcels.IrrigationMethod -- "
+                    "has migration parcels 0013_irrigation_method run? Skipping."
                 )
             )
             return

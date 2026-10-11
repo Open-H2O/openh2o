@@ -227,7 +227,7 @@ def subtract_surface_water(running_af, parcel, period, ctx, config):
     ``detail["surface_water_af"]`` is that delivered figure. ``True``: only the
     part of the delivery the crop could actually use is subtracted:
     ``consumed = delivered x efficiency``, where efficiency is this parcel's
-    OWN ``surface.services.field_efficiency`` (a method's assigned efficiency,
+    OWN ``parcels.services.field_efficiency`` (a method's assigned efficiency,
     or the agency-wide default). ``detail`` then also carries ``delivered_af``,
     ``efficiency``, ``efficiency_source`` and ``consumed_af``; ``surface_water_af``
     keeps its key but becomes the consumed figure, so an old reader of that key
@@ -262,11 +262,10 @@ def subtract_surface_water(running_af, parcel, period, ctx, config):
         efficiency_source = None
         consumed_af = Decimal("0.0000")
     else:
-        # Imported lazily: subtract_surface_water must not force a load-time
-        # dependency on surface, and delivered==0 skips this import entirely
-        # (the check above), so a deployment without the surface module never
-        # touches surface tables through this step.
-        from surface.services import field_efficiency
+        # Imported lazily, as it was while the lookup lived in `surface`;
+        # since 150.2-01 it reads `parcels` tables only, which every
+        # deployment with accounting has.
+        from parcels.services import field_efficiency
 
         efficiency, efficiency_source = field_efficiency(parcel)
         consumed_af = (delivered_af * efficiency).quantize(quant)

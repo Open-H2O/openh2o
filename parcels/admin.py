@@ -2,7 +2,15 @@
 """Django admin registrations for the parcels app models."""
 from django.contrib import admin
 
-from .models import CropType, Parcel, ParcelLedger, ParcelStaging, UsageLocation
+from .models import (
+    CropType,
+    IrrigationMethod,
+    Parcel,
+    ParcelIrrigationMethod,
+    ParcelLedger,
+    ParcelStaging,
+    UsageLocation,
+)
 
 
 @admin.register(CropType)
@@ -37,4 +45,16 @@ class ParcelStagingAdmin(admin.ModelAdmin):
 class UsageLocationAdmin(admin.ModelAdmin):
     list_display = ["name", "parcel", "crop_type", "area_acres"]
     list_filter = ["crop_type"]
+    raw_id_fields = ["parcel"]
+
+
+@admin.register(IrrigationMethod)
+class IrrigationMethodAdmin(admin.ModelAdmin):
+    list_display = ["name", "assigned_efficiency", "range_low", "range_high", "sort_order"]
+    search_fields = ["name"]
+
+
+@admin.register(ParcelIrrigationMethod)
+class ParcelIrrigationMethodAdmin(admin.ModelAdmin):
+    list_display = ["parcel", "method"]
     raw_id_fields = ["parcel"]

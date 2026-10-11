@@ -10,9 +10,9 @@ returned_af that distinguishes diverted from actually consumed water.
 CurtailmentOrder records when a right is curtailed. MeasuringDevice is the
 23 CCR 934(b)(1) device registry (146-03 Task 1), linked to a point of
 diversion through PointOfDiversionDevice the way wells.WellMeter links a meter
-to a well. IrrigationMethod is East Turlock Subbasin GSA's published
-efficiency table, seeded by migration, and ParcelIrrigationMethod records which
-method a use area uses (146-05 Task 1); nothing in the engine reads either yet.
+to a well. The irrigation-method table and each use area's method began here
+(146-05) and moved to ``parcels`` in 150.2-01, so a deployment without canals
+records them too.
 """
 from datetime import date
 from decimal import Decimal
@@ -418,88 +418,13 @@ class PointOfDiversionParcel(models.Model):
 
 
 @track_changes()
-class IrrigationMethod(models.Model):
-    """One row of a published irrigation-efficiency table (146-05 Task 1, S1).
-
-    Seeded by a data migration (``0016_seed_irrigation_methods``), not a seed
-    command, so every deployment carries the same rows after ``migrate``: East
-    Turlock Subbasin GSA's Section 4.05 table, 18 rows counted off the PDF on
-    2026-09-23. It lives in ``surface`` for the reason the agency-wide
-    efficiency does: nothing reads an efficiency where there is no canal.
-    148-02 wires it in: ``surface.services.field_efficiency`` reads a parcel's
-    assigned row here (falling back to the agency-wide default when the
-    parcel has none), and that same figure caps the demand-weighted canal
-    split and drives the engine's ``subtract_surface_water`` consumption math.
-    """
-
-    name = models.CharField(max_length=100, unique=True)
-    assigned_efficiency = models.DecimalField(
-        max_digits=4,
-        decimal_places=3,
-        help_text="The share of applied water the table assigns this method, "
-        "as a fraction (0.600 is 60%).",
-    )
-    range_low = models.DecimalField(
-        max_digits=4,
-        decimal_places=3,
-        help_text="Low end of the table's published range, as a fraction.",
-    )
-    range_high = models.DecimalField(
-        max_digits=4,
-        decimal_places=3,
-        help_text="High end of the table's published range, as a fraction.",
-    )
-    source = models.CharField(
-        max_length=300,
-        help_text="The published table this row is copied from.",
-    )
-    sort_order = models.PositiveIntegerField(default=0)
-
-    class Meta:
-        ordering = ["sort_order", "name"]
-
-    def percent(self):
-        """The assigned efficiency as a whole percent: 0.600 -> 60."""
-        return int((self.assigned_efficiency * 100).to_integral_value())
-
-    def __str__(self):
-        return f"{self.name}, {self.percent()}%"
-
-
-@track_changes()
-class ParcelIrrigationMethod(models.Model):
-    """How one use area is irrigated (146-05 Task 1, S1); no row means not set.
-
-    A ``surface`` row rather than a ``Parcel.irrigation_method`` column, which
-    is what the plan named: ``parcels`` stays installed when ``surface`` is
-    dropped, and a column there pointing into ``surface`` would leave a
-    dangling reference that stops ``migrate`` on every deployment without it
-    (rule 1 of the composition rule, ``core/modules.py``). Pointing this way,
-    the row leaves with ``surface``, like ``WaterRightParcel`` above.
-    ``surface.services.field_efficiency`` reads it (148-02): a parcel with a
-    row here is capped and consumed at its method's assigned efficiency; a
-    parcel with none falls back to the agency-wide default via the ``related_name``
-    ``irrigation`` accessed from this model's ``parcel`` field.
-    """
-
-    parcel = models.OneToOneField(
-        "parcels.Parcel", on_delete=models.CASCADE, related_name="irrigation"
-    )
-    method = models.ForeignKey(
-        IrrigationMethod, on_delete=models.PROTECT, related_name="use_areas"
-    )
-
-    def __str__(self):
-        return f"{self.parcel} → {self.method}"
-
-
-@track_changes()
 class WaterAccountDeliveryPoint(models.Model):
     """Which point of diversion delivers to an account (146-05 Task 3, Q8).
 
     A ``surface`` row rather than a ``delivery_pod`` column on
-    ``accounting.WaterAccount``, for the same reason ``ParcelIrrigationMethod``
-    is a `surface` row rather than a `Parcel` column (146-05 Task 1):
+    ``accounting.WaterAccount``, for the reason ``ParcelIrrigationMethod``
+    was built as a `surface` row rather than a `Parcel` column (146-05 Task 1;
+    it moved to ``parcels`` in 150.2-01):
     ``accounting`` is schema-resident and ``surface`` is truly removable, so a
     column on ``WaterAccount`` pointing into ``surface`` would dangle on every
     deployment without `surface` (rule 1, `core/modules.py`) and

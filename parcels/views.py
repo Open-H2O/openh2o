@@ -65,7 +65,7 @@ def _editable_fields():
     if is_enabled("surface"):
         # Local import: `surface` is truly optional (Phase 87); importing its
         # models with the app uninstalled raises RuntimeError.
-        from surface.models import IrrigationMethod
+        from parcels.models import IrrigationMethod
 
         fields[IRRIGATION_METHOD] = {
             "label": "Irrigation method",
@@ -84,7 +84,7 @@ def _field_value(parcel, field):
     method's pk and whose display is "<name>, <n>%" (blank when not set).
     """
     if field == IRRIGATION_METHOD:
-        from surface.models import ParcelIrrigationMethod
+        from parcels.models import ParcelIrrigationMethod
 
         link = (
             ParcelIrrigationMethod.objects.filter(parcel=parcel)
@@ -100,7 +100,7 @@ def _field_value(parcel, field):
 
 def _save_irrigation_method(parcel, method_pk):
     """Set the use area's method, or clear it when ``method_pk`` is blank."""
-    from surface.models import ParcelIrrigationMethod
+    from parcels.models import ParcelIrrigationMethod
 
     if method_pk:
         ParcelIrrigationMethod.objects.update_or_create(

@@ -20,7 +20,7 @@ Proven here, each RED against the unfixed tree (quotes in 146-05-EVIDENCE.md):
      the truly-uninstalled case. Same reasoning as
      ``tests/test_delivery_settings_surface_fields.py``.
   4. 148-02 wires the method into the engine: ``allocate_district_delivery``
-     caps each served parcel at ITS OWN ``surface.services.field_efficiency``
+     caps each served parcel at ITS OWN ``parcels.services.field_efficiency``
      (the method's assigned efficiency, or the agency-wide ``SiteConfig``
      default with no method set), and ``subtract_surface_water`` consumes the
      same per-parcel figure when its ``apply_efficiency`` knob is on. A
@@ -114,13 +114,13 @@ def auth_client():
 
 
 def _method(name):
-    from surface.models import IrrigationMethod
+    from parcels.models import IrrigationMethod
 
     return IrrigationMethod.objects.get(name=name)
 
 
 def _link_for(parcel):
-    from surface.models import ParcelIrrigationMethod
+    from parcels.models import ParcelIrrigationMethod
 
     return ParcelIrrigationMethod.objects.filter(parcel=parcel).first()
 
@@ -141,7 +141,7 @@ def _patch(client, parcel, value):
 
 
 def test_the_migration_seeds_east_turlocks_eighteen_rows_in_order():
-    from surface.models import IrrigationMethod
+    from parcels.models import IrrigationMethod
 
     rows = list(IrrigationMethod.objects.order_by("sort_order"))
     assert len(rows) == 18
@@ -157,7 +157,7 @@ def test_the_migration_seeds_east_turlocks_eighteen_rows_in_order():
 
 
 def test_every_seeded_row_names_its_source():
-    from surface.models import IrrigationMethod
+    from parcels.models import IrrigationMethod
 
     assert set(IrrigationMethod.objects.values_list("source", flat=True)) == {SOURCE}
 
