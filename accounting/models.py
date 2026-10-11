@@ -688,12 +688,37 @@ class CalculationRun(models.Model):
         null=True,
         blank=True,
         help_text="148-02 Task 4 (Q2): the estimated field's pumped magnitude -- "
-        "final_af divided by SiteConfig.groundwater_efficiency AT COMPUTE TIME "
-        "(read once when this run was written, never re-derived from a setting "
-        "that may have moved since — a finalized period's billable groundwater "
-        "must not move when someone tunes the setting, ISS-177). Null on a "
-        "metered run (the meter is the number) or a no-well run (unmet demand, "
-        "never a phantom extraction). 0 on a zero-residual estimated month.",
+        "final_af divided by groundwater_application_efficiency, the field's own "
+        "irrigation efficiency AT COMPUTE TIME (150.2-02; stamped beside this "
+        "figure, never re-derived from a setting that may have moved since — a "
+        "finalized period's billable groundwater must not move when someone tunes "
+        "the setting, ISS-177). Null on a metered run (the meter is the number) "
+        "or a no-well run (unmet demand, never a phantom extraction). 0 on a "
+        "zero-residual estimated month.",
+    )
+    groundwater_application_efficiency = models.DecimalField(
+        max_digits=4,
+        decimal_places=3,
+        null=True,
+        blank=True,
+        help_text="150.2-02: the field's irrigation efficiency this run divided "
+        "ETAW met by groundwater by (its irrigation method's, else the Delivery "
+        "Settings default, read when the run was computed). The same figure the "
+        "field's canal water is multiplied by: one field, one irrigation system. "
+        "Null on a metered or no-well run, and on a run from before 150.2-02.",
+    )
+    groundwater_efficiency_source = models.CharField(
+        max_length=10,
+        blank=True,
+        default="",
+        choices=[
+            ("method", "The field's irrigation method"),
+            ("agency", "Delivery Settings default"),
+        ],
+        help_text="150.2-02: where groundwater_application_efficiency came from "
+        "when this run was computed, the same 'method' / 'agency' values the "
+        "surface step records as its efficiency_source. Blank wherever that "
+        "stamp is null.",
     )
     deep_percolation_gw_af = models.DecimalField(
         max_digits=12,

@@ -3,13 +3,17 @@
 
 An estimated field's calculated row keeps the CONSUMED magnitude (what the
 crop actually used); the run also stamps an EXTRACTED figure (what the pump
-had to lift to deliver it) and a DEEP PERCOLATION figure (the difference),
-both read off `SiteConfig.groundwater_efficiency` once, at compute time. A
-metered field never divides -- the meter is the number.
+had to lift to deliver it) and a DEEP PERCOLATION figure (the difference).
+150.2-02 (Brent, 2026-10-11 11:16 PDT: "one irrigation efficiency per
+field"): the division is by the FIELD'S OWN irrigation efficiency
+(`parcels.services.field_efficiency`: its irrigation method's, else the
+Delivery Settings default), read when the run is computed and stamped on it
+as `groundwater_application_efficiency`. The flat agency-wide groundwater
+setting is retired. A metered field never divides -- the meter is the number.
 
 **The budget spends extraction, not consumption** (the main session's
-decision, deviating from the plan's "amount / groundwater_efficiency"
-wording on purpose): a `calculated` row's charged magnitude is the run's
+decision, deviating from the 148-02 plan's "amount / efficiency" wording
+on purpose): a `calculated` row's charged magnitude is the run's
 STAMPED `gw_extracted_af`, never the ledger amount re-divided by whatever the
 setting holds NOW -- a finalized period's billable groundwater must not move
 because someone tuned a setting afterwards (ISS-177). An old run with no
@@ -20,8 +24,8 @@ These tests cover the pieces `tests/test_zone_budget_shared.py`,
 `tests/test_mass_balance.py`, `tests/test_consumptive_use_balance.py`,
 `tests/test_calculation_run.py` and `tests/test_delivery_settings_surface_fields.py`
 already prove correct in every OTHER dimension: the extraction split itself,
-the charged-vs-consumed divergence, the setting-change lock, the Groundwater
-Delivery Settings gate, and the change-history module mapping.
+the charged-vs-consumed divergence, the per-field efficiency and its stamp,
+and the setting-change lock.
 """
 import datetime as dt
 from decimal import Decimal
@@ -69,18 +73,19 @@ _WITHOUT_WELLS = tuple(n for n in ALL_MODULE_NAMES if n != "wells")
 
 
 def test_the_extraction_split_divides_by_efficiency():
-    """0.88 consumed / 0.80 = 1.10 extracted, 0.22 deep percolation -- the
-    plan's own worked example."""
+    """1.22 ETAW met by groundwater / 0.750 = 1.6267 extracted (4dp), 0.4067
+    deep percolation -- 150.2-02's worked example (MER-APN-032, September
+    2026, at the 75 percent default)."""
     extracted, deep_percolation = _groundwater_extraction(
-        Decimal("0.8800"), Decimal("0.800")
+        Decimal("1.2200"), Decimal("0.750")
     )
-    assert extracted == Decimal("1.1000")
-    assert deep_percolation == Decimal("0.2200")
+    assert extracted == Decimal("1.6267")
+    assert deep_percolation == Decimal("0.4067")
 
 
 def test_a_zero_month_divides_to_zero_and_zero():
     extracted, deep_percolation = _groundwater_extraction(
-        Decimal("0.0000"), Decimal("0.800")
+        Decimal("0.0000"), Decimal("0.750")
     )
     assert extracted == Decimal("0.0000")
     assert deep_percolation == Decimal("0.0000")
@@ -100,12 +105,16 @@ def _square(x=0.0):
     return MultiPolygon(poly, srid=4326)
 
 
+#: 37.1856 mm over 10 acres = 1.2200 AF exactly (ET mm x acres / 304.8).
+ET_1_22 = "37.1856"
+
+
 def _et_only_parcel(number, period, et_mm, acres="10"):
     """A has-well, ET-only field: no precip cache, no surface delivery, so the
     chain's residual equals the gross-ET magnitude exactly -- the same shape
     `tests/test_calculation_run.py::_seed_finalized_parcel` uses, without the
     finalized period. `et_mm` is chosen so the residual quantizes to a clean
-    literal (26.8224 mm over 10 acres = 0.8800 AF, exactly)."""
+    literal (ET_1_22: 1.2200 AF, exactly)."""
     from datasync.models import OpenETCache
     from parcels.models import Parcel
 
@@ -127,34 +136,63 @@ def _et_only_parcel(number, period, et_mm, acres="10"):
     return parcel
 
 
-def test_estimated_field_month_stamps_consumed_extracted_and_deep_percolation():
-    """The plan's worked example, run through the real engine: a field whose
-    gross ET nets to 0.8800 AF consumed stamps 1.1000 AF extracted and 0.2200
-    AF deep percolation at the model default 0.800 efficiency."""
+def test_a_field_with_no_method_divides_by_the_default_and_stamps_it():
+    """150.2-02's worked example through the real engine: a field with no
+    irrigation method on file, at the 0.750 default, whose ETAW met by
+    groundwater is 1.2200 AF, stamps 1.6267 AF extracted, 0.4067 AF deep
+    percolation, and the 0.750 it divided by."""
     period = "2025-05"
-    parcel = _et_only_parcel("GWX-ESTIMATED", period, et_mm="26.8224")
+    parcel = _et_only_parcel("GWX-ESTIMATED", period, et_mm=ET_1_22)
     call_command("seed_calculation_plan")
 
     call_command("run_calculations", "--period", period)
 
     run = CalculationRun.objects.get(parcel=parcel, period=period)
     assert run.residual_disposition == "groundwater"
-    assert run.final_af == Decimal("0.8800")
-    assert run.gw_extracted_af == Decimal("1.1000")
-    assert run.deep_percolation_gw_af == Decimal("0.2200")
+    assert run.final_af == Decimal("1.2200")
+    assert run.gw_extracted_af == Decimal("1.6267")
+    assert run.deep_percolation_gw_af == Decimal("0.4067")
+    assert run.groundwater_application_efficiency == Decimal("0.750")
+    assert run.groundwater_efficiency_source == "agency"
 
     row = ParcelLedger.objects.get(
         parcel=parcel, effective_date=dt.date(2025, 5, 1), source_type="calculated"
     )
     # The ledger row keeps the CONSUMED amount, stored negative (usage) --
     # unchanged by this task.
-    assert row.amount_acre_feet == Decimal("-0.8800")
+    assert row.amount_acre_feet == Decimal("-1.2200")
+
+
+def test_a_field_with_a_method_divides_by_the_methods_efficiency():
+    """The same field on a 0.900 irrigation method: 1.2200 / 0.900 = 1.3556
+    extracted (4dp), and the run stamps 0.900, not the default."""
+    from parcels.models import IrrigationMethod, ParcelIrrigationMethod
+
+    period = "2025-05"
+    parcel = _et_only_parcel("GWX-METHOD", period, et_mm=ET_1_22)
+    method = IrrigationMethod.objects.create(
+        name="GWX test drip",
+        assigned_efficiency=Decimal("0.900"),
+        range_low=Decimal("0.850"),
+        range_high=Decimal("0.950"),
+    )
+    ParcelIrrigationMethod.objects.create(parcel=parcel, method=method)
+    call_command("seed_calculation_plan")
+
+    call_command("run_calculations", "--period", period)
+
+    run = CalculationRun.objects.get(parcel=parcel, period=period)
+    assert run.gw_extracted_af == Decimal("1.3556")
+    assert run.deep_percolation_gw_af == Decimal("0.1356")
+    assert run.groundwater_application_efficiency == Decimal("0.900")
+    assert run.groundwater_efficiency_source == "method"
 
 
 def test_metered_field_has_no_extraction_estimate():
-    """A metered run's meter IS the number -- both new columns stay null."""
+    """A metered run's meter IS the number -- the extraction columns and the
+    efficiency stamp all stay null."""
     period = "2025-05"
-    parcel = _et_only_parcel("GWX-METERED", period, et_mm="26.8224")
+    parcel = _et_only_parcel("GWX-METERED", period, et_mm=ET_1_22)
     ParcelLedger.objects.create(
         parcel=parcel,
         transaction_date=dt.date(2025, 5, 1),
@@ -170,6 +208,8 @@ def test_metered_field_has_no_extraction_estimate():
     assert run.residual_disposition == "metered"
     assert run.gw_extracted_af is None
     assert run.deep_percolation_gw_af is None
+    assert run.groundwater_application_efficiency is None
+    assert run.groundwater_efficiency_source == ""
 
 
 def test_no_well_field_has_no_extraction_estimate():
@@ -189,7 +229,7 @@ def test_no_well_field_has_no_extraction_estimate():
         end_date=dt.date(2025, 5, 28),
         variable="ET",
         model_name="Ensemble",
-        et_data=[{"et": "26.8224", "date": period, "unit": "mm"}],
+        et_data=[{"et": ET_1_22, "date": period, "unit": "mm"}],
     )
     call_command("seed_calculation_plan")
 
@@ -199,6 +239,8 @@ def test_no_well_field_has_no_extraction_estimate():
     assert run.residual_disposition == "unmet_demand"
     assert run.gw_extracted_af is None
     assert run.deep_percolation_gw_af is None
+    assert run.groundwater_application_efficiency is None
+    assert run.groundwater_efficiency_source == ""
 
 
 # ---------------------------------------------------------------------------
@@ -208,24 +250,27 @@ def test_no_well_field_has_no_extraction_estimate():
 
 def test_a_setting_change_after_a_run_does_not_move_the_charged_figure():
     """ISS-177: a finalized period's billable groundwater must not move when
-    someone tunes the setting. Change the setting AFTER the run and read the
-    charged figure again without recomputing -- it stays at the run's
-    stamped 1.1000 AF, not a re-division by the new 0.500."""
+    someone tunes the setting. Change the default irrigation efficiency AFTER
+    the run and read the charged figure and the stamp again without
+    recomputing -- they stay at 1.6267 AF and 0.750, not a re-division by the
+    new 0.500."""
     period = "2025-05"
-    parcel = _et_only_parcel("GWX-SETTING", period, et_mm="26.8224")
+    parcel = _et_only_parcel("GWX-SETTING", period, et_mm=ET_1_22)
     call_command("seed_calculation_plan")
     call_command("run_calculations", "--period", period)
 
     run = CalculationRun.objects.get(parcel=parcel, period=period)
-    assert run.gw_extracted_af == Decimal("1.1000")
+    assert run.gw_extracted_af == Decimal("1.6267")
 
     config, _ = SiteConfig.objects.get_or_create(defaults={"agency_name": "Agency"})
     SiteConfig.objects.filter(pk=config.pk).update(
-        groundwater_efficiency=Decimal("0.500")
+        default_irrigation_efficiency=Decimal("0.500")
     )
 
     qs = ParcelLedger.objects.filter(parcel=parcel, source_type="calculated")
-    assert charged_groundwater(qs) == Decimal("1.1000")
+    assert charged_groundwater(qs) == Decimal("1.6267")
+    run = CalculationRun.objects.get(parcel=parcel, period=period)
+    assert run.groundwater_application_efficiency == Decimal("0.750")
 
     # Recomputing the run DOES pick up the new setting -- the setting moves
     # a figure only when a run actually reads it. run_calculations
@@ -233,14 +278,15 @@ def test_a_setting_change_after_a_run_does_not_move_the_charged_figure():
     # refresh_from_db() the old instance.
     call_command("run_calculations", "--period", period)
     run = CalculationRun.objects.get(parcel=parcel, period=period)
-    assert run.gw_extracted_af == Decimal("1.7600")  # 0.8800 / 0.500
+    assert run.gw_extracted_af == Decimal("2.4400")  # 1.2200 / 0.500
+    assert run.groundwater_application_efficiency == Decimal("0.500")
 
 
 def test_an_old_run_with_no_stamped_extraction_is_charged_as_recorded():
     """A `calculated` row whose run predates 148-02 Task 4 (gw_extracted_af
     null) falls back to its recorded amount -- today's behaviour, unchanged."""
     period = "2025-05"
-    parcel = _et_only_parcel("GWX-OLDRUN", period, et_mm="26.8224")
+    parcel = _et_only_parcel("GWX-OLDRUN", period, et_mm=ET_1_22)
     call_command("seed_calculation_plan")
     call_command("run_calculations", "--period", period)
 
@@ -251,7 +297,7 @@ def test_an_old_run_with_no_stamped_extraction_is_charged_as_recorded():
     )
 
     qs = ParcelLedger.objects.filter(parcel=parcel, source_type="calculated")
-    assert charged_groundwater(qs) == Decimal("0.8800")  # the recorded amount
+    assert charged_groundwater(qs) == Decimal("1.2200")  # the recorded amount
 
 
 def test_meter_reading_is_always_charged_as_recorded():
@@ -274,9 +320,9 @@ def test_meter_reading_is_always_charged_as_recorded():
 
 def test_zone_groundwater_budget_remaining_moves_by_the_extraction():
     """A zone with one estimated field: allocation 500, the field's run
-    stamped 1.1000 AF extracted from 0.8800 AF consumed. Before this task
-    the budget would have spent 0.8800 (remaining 499.1200); it now spends
-    1.1000 (remaining 498.9000) -- the division moved the remaining figure."""
+    stamped 1.6267 AF extracted from 1.2200 AF ETAW met by groundwater. The
+    budget spends 1.6267 (remaining 498.3733), not 1.2200 (remaining
+    499.1200) -- the division moved the remaining figure."""
     period = "2025-05"
     # The ReportingPeriod must exist BEFORE the run: run_calculations
     # resolves and stamps it onto the calculated ledger row at write time
@@ -285,7 +331,7 @@ def test_zone_groundwater_budget_remaining_moves_by_the_extraction():
     rp = ReportingPeriodFactory(
         name="WY-GWX", start_date=dt.date(2025, 5, 1), end_date=dt.date(2025, 5, 31)
     )
-    parcel = _et_only_parcel("GWX-ZONEBUDGET", period, et_mm="26.8224")
+    parcel = _et_only_parcel("GWX-ZONEBUDGET", period, et_mm=ET_1_22)
     call_command("seed_calculation_plan")
     call_command("run_calculations", "--period", period)
 
@@ -308,8 +354,8 @@ def test_zone_groundwater_budget_remaining_moves_by_the_extraction():
 
     budget = zone_groundwater_budget(zone, rp)
 
-    assert budget["used"] == Decimal("1.1000")
-    assert budget["remaining"] == Decimal("498.9000")
+    assert budget["used"] == Decimal("1.6267")
+    assert budget["remaining"] == Decimal("498.3733")
 
 
 # ---------------------------------------------------------------------------
@@ -420,19 +466,19 @@ def test_change_history_shows_groundwater_efficiency_when_wells_is_on():
 
 
 def test_estimated_field_month_closes_with_deep_percolation_gw_af():
-    """`gw_recovered` now reads the EXTRACTED figure (1.1000), so the balance
-    only closes once `deep_percolation_gw_af` (0.2200) is counted as an
+    """`gw_recovered` now reads the EXTRACTED figure (1.6267), so the balance
+    only closes once `deep_percolation_gw_af` (0.4067) is counted as an
     output -- physically: pumped water in, the crop's share to ET, the rest
     back to the aquifer."""
     period = "2025-05"
-    parcel = _et_only_parcel("GWX-CLOSURE", period, et_mm="26.8224")
+    parcel = _et_only_parcel("GWX-CLOSURE", period, et_mm=ET_1_22)
     call_command("seed_calculation_plan")
     call_command("run_calculations", "--period", period)
 
     result = parcel_mass_balance(parcel, reporting_period=None)
 
-    assert result["inputs"]["gw_recovered"] == Decimal("1.1000")
-    assert result["outputs"]["deep_percolation_gw_af"] == Decimal("0.2200")
+    assert result["inputs"]["gw_recovered"] == Decimal("1.6267")
+    assert result["outputs"]["deep_percolation_gw_af"] == Decimal("0.4067")
     assert abs(result["residual_af"]) <= Decimal("0.01")
     assert result["closes"] is True
 
@@ -441,9 +487,9 @@ def test_the_calculation_page_names_consumed_and_charges_extracted(admin_client)
     """148-02: the page calls the chain's result what it is (groundwater
     consumed) and shows the extracted figure the allocation is charged, with
     the divisor read back off the run itself. Before this, the page called
-    0.88 "billable" while the budget charged 1.10."""
+    the chain's result "billable" while the budget charged the extraction."""
     period = "2025-05"
-    parcel = _et_only_parcel("GWX-PAGE", period, et_mm="26.8224")
+    parcel = _et_only_parcel("GWX-PAGE", period, et_mm=ET_1_22)
     call_command("seed_calculation_plan")
     call_command("run_calculations", "--period", period)
 
@@ -453,22 +499,20 @@ def test_the_calculation_page_names_consumed_and_charges_extracted(admin_client)
 
     assert "Billable groundwater" not in html
     # 150.1-02 (2026-10-11): the page is the equation panel. ETAW met by
-    # groundwater, divided by the groundwater irrigation efficiency read back
-    # off the run's own two figures (0.8800 / 1.1000 = 80%), never the live
-    # setting, is the groundwater extraction (estimated) the allocation is
-    # charged.
+    # groundwater, divided by the field's irrigation efficiency the run
+    # stamped (150.2-02: 75%, the default; never the live setting), is the
+    # groundwater extraction (estimated) the allocation is charged.
     assert '<div class="budget-seg-label">ETAW met by groundwater</div>' in html
-    assert ">0.88<" in html
-    assert '<div class="budget-seg-label">Groundwater irrigation efficiency</div>' in html
-    assert ">80%<" in html
+    assert ">1.22<" in html
+    assert ">75%<" in html
     assert '<div class="budget-seg-label">Groundwater extraction (estimated)</div>' in html
-    assert 'title="1.1000 acre-feet">1.10<' in html
+    assert 'title="1.6267 acre-feet">1.63<' in html
     assert "Groundwater consumed" not in html
 
 
 def test_a_metered_calculation_page_shows_no_extracted_figure(admin_client):
     period = "2025-05"
-    parcel = _et_only_parcel("GWX-PAGE-METERED", period, et_mm="26.8224")
+    parcel = _et_only_parcel("GWX-PAGE-METERED", period, et_mm=ET_1_22)
     ParcelLedger.objects.create(
         parcel=parcel,
         transaction_date=dt.date(2025, 5, 1),
@@ -499,7 +543,7 @@ def test_the_balance_panel_rows_add_up_to_uses(admin_client):
     lists them as one row; without it the rows under Uses fell short of the
     Uses total by exactly that amount (MER-APN-032, WY 2025-2026: 181.25)."""
     period = "2025-05"
-    parcel = _et_only_parcel("GWX-PANEL", period, et_mm="26.8224")
+    parcel = _et_only_parcel("GWX-PANEL", period, et_mm=ET_1_22)
     call_command("seed_calculation_plan")
     call_command("run_calculations", "--period", period)
 
@@ -508,7 +552,7 @@ def test_the_balance_panel_rows_add_up_to_uses(admin_client):
     assert result["deep_percolation_af"] == (
         outputs["deep_percolation_surface_af"] + outputs["deep_percolation_gw_af"]
     )
-    assert result["deep_percolation_af"] == Decimal("0.2200")
+    assert result["deep_percolation_af"] == Decimal("0.4067")
     listed = (
         outputs["et"]
         + outputs["recharge"]
