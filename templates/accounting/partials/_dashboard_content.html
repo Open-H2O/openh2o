@@ -134,7 +134,7 @@
   (`period_detail`, its page title is the period's name).
 {% endcomment %}
 <div class="card-raised empty-state">
-  <p class="empty-state-text text-secondary m-0"><strong class="text-primary">No month of {{ selected_period.name }} has been calculated yet.</strong>{% if not has_calculation_plan %} There is no calculation plan yet.{% endif %}</p>
+  <p class="empty-state-text text-secondary m-0"><strong class="text-primary">Crop ET has not been calculated for {{ selected_period.name }}.</strong>{% if not has_calculation_plan %} There is no calculation plan yet.{% endif %}</p>
   {% if user_can_write %}
   <div class="form-footer" style="justify-content: center; margin-top: var(--space-md);">
     {% if not has_calculation_plan %}

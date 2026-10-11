@@ -64,7 +64,6 @@ shapes = _load()
 BASELINE: dict = {
     "templates/drinking/partials/_onboard_result.html": {"stand-in": 1},
     "templates/drinking/partials/_empty_drinking.html": {"stand-in": 1},
-    "templates/accounting/partials/_account_balances.html": {"em dash": 1},
     "templates/accounting/partials/_needs_attention.html": {"em dash": 1},
     "templates/allauth/layouts/base.html": {"em dash": 1},
     "templates/base_auth.html": {"em dash": 1},
@@ -104,7 +103,7 @@ BASELINE: dict = {
     "docs/README.md": {"em dash": 4},
     "docs/ROADMAP.md": {"em dash": 14, "filler": 3},
     "docs/earth-engine-tier-setup.md": {"em dash": 3, "filler": 5},
-    "docs/water-budget-terms.md": {"filler": 2},
+    "docs/water-budget-terms.md": {"filler": 1},
 }
 
 _ADVICE = (

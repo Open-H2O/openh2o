@@ -305,7 +305,7 @@ def test_the_accounts_table_reads_as_the_equation():
     table = _accounts_table(_dashboard(period).content.decode())
 
     assert _header_rows(table) == [
-        ["Account", "Supplies", "Consumptive use", "Balance", "Groundwater budget"],
+        ["Account", "Supplies", "Crop ET", "Balance", "Groundwater budget"],
         ["Surface", "Groundwater", "Rain", "Total", "Allocation", "Remaining"],
     ]
     assert 'colspan="4"' in table
@@ -319,7 +319,7 @@ def test_the_zones_table_spans_three_budget_columns():
     table = _zones_table(_dashboard(period).content.decode())
 
     assert _header_rows(table) == [
-        ["Zone", "Supplies", "Consumptive use", "Balance", "Groundwater budget"],
+        ["Zone", "Supplies", "Crop ET", "Balance", "Groundwater budget"],
         ["Surface", "Groundwater", "Rain", "Total", "Allocation", "Carried fwd", "Remaining"],
     ]
     assert 'colspan="3"' in table

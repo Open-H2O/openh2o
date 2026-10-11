@@ -120,10 +120,10 @@
             <td class="col-name">Surface water deliveries</td>
             <td>OpenH2O never charges surface water deliveries against a groundwater allocation.</td>
           </tr>
-          <tr>
+          {% if 'wells' in enabled_modules %}<tr>
             <td class="col-name">Remaining allocation</td>
-            <td>An account&rsquo;s remaining allocation is its allocation minus the groundwater extraction on its use areas. A negative remaining allocation means the account's groundwater extraction has exceeded its allocation.</td>
-          </tr>
+            <td>An account&rsquo;s remaining allocation is its allocation minus the groundwater extraction on its use areas. A negative remaining allocation means the account has extracted more than its allocation.</td>
+          </tr>{% endif %}
           <tr>
             <td class="col-name">Carry-over</td>
             <td>A zone&rsquo;s remaining groundwater allocation includes the carry-over from the previous water year, but an account&rsquo;s remaining allocation does not.</td>

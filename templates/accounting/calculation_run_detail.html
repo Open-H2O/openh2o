@@ -199,7 +199,7 @@
       {% endif %}
 
     </div>
-    <div class="budget-panel-note">Methodology: {{ methodology_plan_name|blank }}. Calculated {{ run.created_at|date:"F j, Y, g:i A" }}. A changed setting affects a past month only when that month is recalculated. A meter reading for {{ month_label }} would replace this estimate.</div>
+    <div class="budget-panel-note">Methodology: {{ methodology_plan_name|blank }}. Calculated {{ run.created_at|date:"F j, Y, g:i A" }}. A changed setting affects a past month only when that month is recalculated. A meter reading for {{ month_label }} would replace this estimate. Figures are rounded to two decimals. OpenH2O calculates from the unrounded values.</div>
   </div>
 
   {% else %}

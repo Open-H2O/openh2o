@@ -314,7 +314,7 @@ def test_preview_writes_zero_rows_but_renders_the_final_number():
     )
     assert resp.status_code == 200
     # The success path (not the error message) rendered the waterfall + final AF.
-    assert b"Groundwater consumed" in resp.content
+    assert b"ETAW met by groundwater" in resp.content
 
     # The whole point of evaluate_chain being side-effect-free: nothing persisted.
     assert CalculationRun.objects.count() == runs_before
