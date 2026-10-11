@@ -107,7 +107,7 @@ RECORD_TYPE_NAMES = {
     "wells.WellIrrigatedParcel": "Well use area share",
     "surface.PointOfDiversionParcel": "Point of diversion use area share",
     "surface.WaterRightParcel": "Water right place of use",
-    "surface.ParcelIrrigationMethod": "Use area irrigation method",
+    "parcels.ParcelIrrigationMethod": "Use area irrigation method",
     "core.SiteConfig": "Site settings",
     "drinking.SamplingSchedule": "Sampling schedule row",
 }
@@ -126,7 +126,7 @@ RELATED_RECORDS = {
         ("wells.WellIrrigatedParcel", "parcel"),
         ("surface.PointOfDiversionParcel", "parcel"),
         ("surface.WaterRightParcel", "parcel"),
-        ("surface.ParcelIrrigationMethod", "parcel"),
+        ("parcels.ParcelIrrigationMethod", "parcel"),
         ("geography.ParcelZone", "parcel"),
         ("accounting.WaterAccountParcel", "parcel"),
     ),
@@ -197,11 +197,12 @@ def record_types():
 
 
 # Fields that belong to a module other than their model's own. `core.SiteConfig`
-# is required, but these settings exist for `surface` alone (DeliverySettingsForm
-# hides them without it), so a deployment without `surface` never shows their
-# history either.
+# is required, but these settings exist for one module alone (DeliverySettingsForm
+# hides them without it), so a deployment without that module never shows their
+# history either. The default irrigation efficiency belongs to `parcels` since
+# 150.2-01: every field has an irrigation method, canal or well.
 FIELD_MODULES = {
-    "core.SiteConfig.default_irrigation_efficiency": "surface",
+    "core.SiteConfig.default_irrigation_efficiency": "parcels",
     "core.SiteConfig.groundwater_efficiency": "wells",
     "core.SiteConfig.diversion_use_type_rule": "surface",
     "core.SiteConfig.diversion_report_year_rule": "surface",

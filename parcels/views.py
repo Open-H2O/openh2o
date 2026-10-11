@@ -33,7 +33,7 @@ from accounting.services import (
 )
 from core.modules import is_enabled
 from core.validation import FieldValidationError, coerce_decimal, coerce_int
-from parcels.models import Parcel, ParcelLedger
+from parcels.models import IrrigationMethod, Parcel, ParcelIrrigationMethod, ParcelLedger
 
 
 EDITABLE_FIELDS = {
@@ -48,31 +48,25 @@ EDITABLE_FIELDS = {
 }
 
 #: 146-05 Task 1 (S1). Not a Parcel column, so not in EDITABLE_FIELDS: the
-#: method is a `surface` row (surface.ParcelIrrigationMethod), because
-#: `parcels` stays installed when `surface` is dropped and may not point into
-#: it (the composition rule, core/modules.py). Offered only while `surface`
-#: is enabled; `_editable_fields` adds it.
+#: method is its own row (parcels.ParcelIrrigationMethod). Offered on every
+#: deployment since 150.2-01, when the row moved here from `surface`: a field
+#: watered from a well has an irrigation method too (Brent, 2026-10-11).
 IRRIGATION_METHOD = "irrigation_method"
 
 
 def _editable_fields():
-    """EDITABLE_FIELDS, plus the irrigation method while `surface` is enabled.
+    """EDITABLE_FIELDS, plus the irrigation method.
 
     The select's choices are read per call: the table is data, seeded by
     migration, and an agency may edit it.
     """
     fields = dict(EDITABLE_FIELDS)
-    if is_enabled("surface"):
-        # Local import: `surface` is truly optional (Phase 87); importing its
-        # models with the app uninstalled raises RuntimeError.
-        from surface.models import IrrigationMethod
-
-        fields[IRRIGATION_METHOD] = {
-            "label": "Irrigation method",
-            "type": "select",
-            "choices": [("", "Not set")]
-            + [(str(m.pk), str(m)) for m in IrrigationMethod.objects.all()],
-        }
+    fields[IRRIGATION_METHOD] = {
+        "label": "Irrigation method",
+        "type": "select",
+        "choices": [("", "Not set")]
+        + [(str(m.pk), str(m)) for m in IrrigationMethod.objects.all()],
+    }
     return fields
 
 
@@ -84,8 +78,6 @@ def _field_value(parcel, field):
     method's pk and whose display is "<name>, <n>%" (blank when not set).
     """
     if field == IRRIGATION_METHOD:
-        from surface.models import ParcelIrrigationMethod
-
         link = (
             ParcelIrrigationMethod.objects.filter(parcel=parcel)
             .select_related("method")
@@ -100,8 +92,6 @@ def _field_value(parcel, field):
 
 def _save_irrigation_method(parcel, method_pk):
     """Set the use area's method, or clear it when ``method_pk`` is blank."""
-    from surface.models import ParcelIrrigationMethod
-
     if method_pk:
         ParcelIrrigationMethod.objects.update_or_create(
             parcel=parcel, defaults={"method_id": int(method_pk)}

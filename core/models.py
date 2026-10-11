@@ -134,9 +134,9 @@ class SiteConfig(models.Model):
 
     # 148-04 Task 1 (Brent's Q1 ruling, 2026-09-20): what a canal delivery that
     # went beyond what its field's crop could use does to the numbers. Belongs
-    # to `surface` exactly as default_irrigation_efficiency does -- only canal
-    # water can be over-delivered, so DeliverySettingsForm shows and saves both
-    # fields under the same `shows_efficiency` gate. `run_calculations` (148-04
+    # to `surface` -- only canal water can be over-delivered, so
+    # DeliverySettingsForm shows and saves both fields under its
+    # `shows_surface_settings` gate. `run_calculations` (148-04
     # Task 2) is the one reader; nothing here reaches the engine directly.
     OVER_DELIVERY_TREATMENT_CHOICES = [
         ("not_credited", "Not credited"),
@@ -163,7 +163,7 @@ class SiteConfig(models.Model):
     )
 
     # 148-02 Task 4 (Q2): the groundwater sibling of default_irrigation_efficiency,
-    # belonging to `wells` exactly as that field belongs to `surface`
+    # belonging to `wells` as that field belonged to `surface` until 150.2-01
     # (DeliverySettingsForm hides it without the module; core/changes.py maps it
     # the same way). run_calculations reads it once per run to split an estimated
     # field's residual into what the crop consumed and what the pump had to lift

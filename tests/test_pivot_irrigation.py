@@ -3,7 +3,7 @@
 146-05 checkpoint, Brent's ruling 1 (2026-09-23): the demo's round use areas
 say Center Pivot.
 
-`seed_merced_pivot_irrigation` sets `surface.ParcelIrrigationMethod` to the
+`seed_merced_pivot_irrigation` sets `parcels.ParcelIrrigationMethod` to the
 seeded "Center Pivot" row on every use area whose outline fills at least 90%
 of its own minimum bounding circle -- the same test measured on staging:
 
@@ -16,8 +16,8 @@ SRID 4326 near the Merced demonstration's own coordinates (-119.5, 36.5) so
 the ST_Transform to EPSG:3310 the command runs behaves the way it does on
 real data, not at some distorting edge of the projection.
 
-`surface.IrrigationMethod` is seeded by a data migration
-(`surface/0016_seed_irrigation_methods`), so "Center Pivot" already exists in
+`parcels.IrrigationMethod` is seeded by a data migration
+(`parcels/0013_irrigation_method` since 150.2-01), so "Center Pivot" already exists in
 the test database once migrations have run -- no fixture needed here.
 """
 from io import StringIO
@@ -79,7 +79,7 @@ def _run():
 
 
 def test_a_circular_use_area_gets_center_pivot():
-    from surface.models import ParcelIrrigationMethod
+    from parcels.models import ParcelIrrigationMethod
 
     parcel = ParcelFactory(geometry=_circle())
 
@@ -90,7 +90,7 @@ def test_a_circular_use_area_gets_center_pivot():
 
 
 def test_a_square_use_area_does_not():
-    from surface.models import ParcelIrrigationMethod
+    from parcels.models import ParcelIrrigationMethod
 
     parcel = ParcelFactory(geometry=_square())
 
@@ -100,7 +100,7 @@ def test_a_square_use_area_does_not():
 
 
 def test_an_existing_method_is_never_overwritten():
-    from surface.models import IrrigationMethod, ParcelIrrigationMethod
+    from parcels.models import IrrigationMethod, ParcelIrrigationMethod
 
     parcel = ParcelFactory(geometry=_circle())
     furrow = IrrigationMethod.objects.get(name="Furrow (Conventional)")
@@ -113,7 +113,7 @@ def test_an_existing_method_is_never_overwritten():
 
 
 def test_a_rerun_changes_nothing():
-    from surface.models import ParcelIrrigationMethod
+    from parcels.models import ParcelIrrigationMethod
 
     parcel = ParcelFactory(geometry=_circle())
 
@@ -126,17 +126,19 @@ def test_a_rerun_changes_nothing():
 
 
 @override_settings(OPENH2O_MODULES=_SHAPE_4)
-def test_skipped_cleanly_when_surface_is_off():
-    """`override_settings` cannot uninstall `surface` mid-run (its table
-    stays), but it does change what `core.modules.is_enabled` returns, which
-    is the boolean the command branches on -- same reasoning as
-    `tests/test_irrigation_method.py`'s shape-4 tests. A truly-uninstalled
-    `surface` (where `ParcelIrrigationMethod` cannot even be imported) is the
-    droppability harness's job, not this test's."""
+def test_a_deployment_without_surface_gets_its_pivots_too():
+    """150.2-01: the method lives in `parcels` now, so a groundwater-only
+    deployment classifies its round fields like any other. Until then this
+    test asserted the command skipped (the method lived in `surface`).
+    `override_settings` changes what `core.modules.is_enabled` returns, which
+    is the boolean the command used to branch on; a truly-uninstalled
+    `surface` is the droppability harness's job and
+    tests/test_irrigation_method_move.py's."""
     parcel = ParcelFactory(geometry=_circle())
 
-    _run()  # must not raise
+    _run()
 
-    from surface.models import ParcelIrrigationMethod
+    from parcels.models import ParcelIrrigationMethod
 
-    assert not ParcelIrrigationMethod.objects.filter(parcel=parcel).exists()
+    link = ParcelIrrigationMethod.objects.get(parcel=parcel)
+    assert link.method.name == "Center Pivot"

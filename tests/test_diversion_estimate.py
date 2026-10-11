@@ -31,12 +31,11 @@ from accounting.models import CalculationRun
 from parcels.models import ParcelLedger
 from surface.diversion_import import commit_rows
 from surface.estimate import estimate_month
+from parcels.models import IrrigationMethod, ParcelIrrigationMethod
 from surface.models import (
     CurtailmentOrder,
     DiversionRecord,
-    IrrigationMethod,
     MeasuringDevice,
-    ParcelIrrigationMethod,
     PointOfDiversionDevice,
 )
 from tests.factories import (

@@ -2250,8 +2250,8 @@ def delivery_settings(request):
         form = DeliverySettingsForm(instance=config)
 
     # The eyebrows count what is rendered, not what the form class declares:
-    # `efficiency_percent` belongs to `surface` and is gone when that module is
-    # (see DeliverySettingsForm). A hardcoded "of 2" is the 88-03 defect.
+    # the surface cards are gone when that module is (see
+    # DeliverySettingsForm). A hardcoded "of 2" is the 88-03 defect.
     #
     # 146-03 Task 3 adds a third possible card ("Diversion records", the same
     # `surface` gate) after "efficiency" and "recovery horizon" -- each
@@ -2261,10 +2261,10 @@ def delivery_settings(request):
     if form.shows_efficiency:
         position += 1
     efficiency_number = position or None
-    # 148-04: the over-delivery card follows the efficiency card, same
+    # 148-04: the over-delivery card follows the efficiency card, behind the
     # `surface` gate (only canal water can be over-delivered).
     over_delivery_number = None
-    if form.shows_efficiency:
+    if form.shows_surface_settings:
         position += 1
         over_delivery_number = position
     # 148-02 Task 4 (Q2): the groundwater card sits beside the surface one it

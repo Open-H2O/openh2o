@@ -16,7 +16,7 @@ for each point, crop water use again (``accounting.engine_run.run_month``).
 
 1. ``field_need`` is, for every served field WITHOUT a delivery record of its
    own that month, its ``CalculationRun.net_consumptive_use_af`` (use after
-   rain) divided by ``surface.services.field_efficiency``, plus the fields' own
+   rain) divided by ``parcels.services.field_efficiency``, plus the fields' own
    recorded deliveries (``_own_total_for_pod``), because the split takes those
    out of what reaches the fields before it divides the rest. Quantized to four
    places once, at the end of the step.
@@ -59,6 +59,7 @@ from django.db.models import Q
 from accounting.carryover_math import water_year_of
 from accounting.models import CalculationRun, ReportingPeriod
 from accounting.recharge_policy import recharge_routes_to_personal
+from parcels.services import field_efficiency
 from surface.curtailments import orders_covering_month
 from surface.models import (
     DiversionRecord,
@@ -73,7 +74,6 @@ from surface.services import (
     _next_month,
     _own_magnitudes,
     _own_total_for_pod,
-    field_efficiency,
 )
 
 _Q = Decimal("0.0001")

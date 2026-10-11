@@ -993,6 +993,21 @@ def test_schema_resident_module_keeps_its_app(name):
     )
 
 
+#: Reference tables a schema-resident module's own MIGRATION fills, so every
+#: deployment has the rows after `migrate` whether or not the module is on.
+#: Rows there are the platform's, not the agency's, and say nothing about the
+#: module being used; every other table of a switched-off module stays empty.
+#: Keep this to tables filled by a migration: a seed command filling a
+#: disabled module is exactly the defect the emptiness check exists to catch.
+MIGRATION_SEEDED_TABLES = {
+    # 150.2-01: East Turlock Subbasin GSA's irrigation-efficiency table, moved
+    # from `surface` (truly removable, so the question never arose there) and
+    # seeded by parcels/0013_irrigation_method. Each use area's method,
+    # parcels_parcelirrigationmethod, is agency data and is NOT listed.
+    "parcels_irrigationmethod",
+}
+
+
 @pytest.mark.parametrize("name", DROPPED_RESIDENT_NAMES)
 def test_schema_resident_module_tables_are_present_and_empty(name):
     """Present, because the schema stays. Empty, because the module is off.
@@ -1023,6 +1038,8 @@ def test_schema_resident_module_tables_are_present_and_empty(name):
 
         populated = []
         for table in tables:
+            if table in MIGRATION_SEEDED_TABLES:
+                continue
             cursor.execute(f'SELECT EXISTS (SELECT 1 FROM "{table}")')
             if cursor.fetchone()[0]:
                 populated.append(table)

@@ -26,7 +26,7 @@ Order matters:
                               River dual-purpose parcels). Needs PODs (4), GSAs
                               (3), and data/merced/selected_parcels.geojson.
   6. seed_merced_pivot_irrigation — 146-05 checkpoint, Brent's ruling 1: sets
-                              surface.ParcelIrrigationMethod to "Center Pivot"
+                              parcels.ParcelIrrigationMethod to "Center Pivot"
                               on every use area whose outline fills at least
                               90% of its minimum bounding circle (MER-APN-001
                               through 009, visibly round on the aerial map).
@@ -130,7 +130,7 @@ SEQUENCE = [
     # 146-05 checkpoint, Brent's ruling 1 (2026-09-23): the nine round use
     # areas (MER-APN-001 through 009) are visibly center-pivot fields on the
     # aerial map, and the platform now has a place to say so
-    # (surface.ParcelIrrigationMethod, 146-05 Task 1). Runs right after
+    # (parcels.ParcelIrrigationMethod, 146-05 Task 1). Runs right after
     # parcels exist and before anything else touches them, is purely
     # geometric (no dependency on any later step), and never overwrites a
     # method a use area already carries.

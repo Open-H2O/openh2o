@@ -11,26 +11,26 @@ Proven here, each RED against the unfixed tree (quotes in 146-05-EVIDENCE.md):
   2. The use-area page's inline editor offers the methods labelled
      "<name>, <n>%", sets one, clears it, and refuses a method that does not
      exist.
-  3. The use-area page shows the row while `surface` is enabled and not at all
-     on the shape-4 configuration (`parcels` on, `surface` off), where the
-     editor also refuses the field. ``override_settings`` cannot uninstall
-     `surface` mid-run (its table stays), but it does change what
-     ``core.modules.is_enabled`` returns, which is the boolean the view
-     branches on; the subprocess harness in ``tests/droppability/`` covers
-     the truly-uninstalled case. Same reasoning as
-     ``tests/test_delivery_settings_surface_fields.py``.
+  3. Since 150.2-01 the use-area page shows the row, and the editor sets it,
+     on the shape-4 configuration too (`parcels` on, `surface` off): a
+     groundwater-only district's fields have irrigation methods (Brent,
+     2026-10-11). Until then this section proved the opposite.
+     ``override_settings`` cannot uninstall `surface` mid-run, but it does
+     change what ``core.modules.is_enabled`` returns; a truly-uninstalled
+     `surface` is ``tests/test_irrigation_method_move.py``'s and the
+     droppability harness's.
   4. 148-02 wires the method into the engine: ``allocate_district_delivery``
-     caps each served parcel at ITS OWN ``surface.services.field_efficiency``
+     caps each served parcel at ITS OWN ``parcels.services.field_efficiency``
      (the method's assigned efficiency, or the agency-wide ``SiteConfig``
      default with no method set), and ``subtract_surface_water`` consumes the
      same per-parcel figure when its ``apply_efficiency`` knob is on. A
      mixed-method headgate's two parcels get different caps and different
      consumed parts from the same delivery.
 
-The method lives on a `surface` row (``ParcelIrrigationMethod``), not a
-``Parcel`` column: `parcels` stays installed when `surface` is dropped, and a
-column there pointing into `surface` would break `migrate` on every
-deployment without it (the composition rule, ``core/modules.py``).
+The method lives on its own row (``parcels.ParcelIrrigationMethod``), not a
+``Parcel`` column: it was built in `surface`, where a column on ``Parcel``
+pointing into `surface` would have broken `migrate` without it, and moved to
+`parcels` unchanged in 150.2-01.
 
 Models are imported inside each test, so a missing model fails that test
 alone rather than the whole file at collection.
@@ -114,13 +114,13 @@ def auth_client():
 
 
 def _method(name):
-    from surface.models import IrrigationMethod
+    from parcels.models import IrrigationMethod
 
     return IrrigationMethod.objects.get(name=name)
 
 
 def _link_for(parcel):
-    from surface.models import ParcelIrrigationMethod
+    from parcels.models import ParcelIrrigationMethod
 
     return ParcelIrrigationMethod.objects.filter(parcel=parcel).first()
 
@@ -141,7 +141,7 @@ def _patch(client, parcel, value):
 
 
 def test_the_migration_seeds_east_turlocks_eighteen_rows_in_order():
-    from surface.models import IrrigationMethod
+    from parcels.models import IrrigationMethod
 
     rows = list(IrrigationMethod.objects.order_by("sort_order"))
     assert len(rows) == 18
@@ -157,7 +157,7 @@ def test_the_migration_seeds_east_turlocks_eighteen_rows_in_order():
 
 
 def test_every_seeded_row_names_its_source():
-    from surface.models import IrrigationMethod
+    from parcels.models import IrrigationMethod
 
     assert set(IrrigationMethod.objects.values_list("source", flat=True)) == {SOURCE}
 
@@ -236,26 +236,33 @@ def test_use_area_page_shows_the_method_when_set(auth_client):
 
 
 @override_settings(OPENH2O_MODULES=_SHAPE_4)
-def test_shape_4_use_area_page_renders_without_the_row(auth_client):
+def test_shape_4_use_area_page_shows_the_row(auth_client):
     parcel = ParcelFactory()
     resp = auth_client.get(reverse("parcels:detail", args=[parcel.pk]))
     assert resp.status_code == 200
     body = resp.content.decode()
-    assert "Irrigation method" not in body
-    assert "field-irrigation_method" not in body
-    # The page's own editable fields are unaffected.
+    assert "Irrigation method" in body
+    assert 'id="field-irrigation_method"' in body
+    # No method on file: the approved empty value (2026-10-11 11:16).
+    assert "The default irrigation efficiency on Delivery Settings applies." in body
     assert 'id="field-owner_name"' in body
 
 
 @override_settings(OPENH2O_MODULES=_SHAPE_4)
-def test_shape_4_editor_refuses_the_field(auth_client):
+def test_shape_4_editor_sets_and_clears_the_method(auth_client):
     parcel = ParcelFactory()
     get = auth_client.get(
         reverse("parcels:edit_field", args=[parcel.pk]),
         {"field": "irrigation_method"},
     )
-    assert get.status_code == 400
-    assert _patch(auth_client, parcel, "1").status_code == 400
+    assert get.status_code == 200
+    assert "Subsurface Drip, 95%" in get.content.decode()
+
+    drip = _method("Subsurface Drip")
+    assert _patch(auth_client, parcel, str(drip.pk)).status_code == 200
+    assert _link_for(parcel).method == drip
+
+    assert _patch(auth_client, parcel, "").status_code == 200
     assert _link_for(parcel) is None
 
 

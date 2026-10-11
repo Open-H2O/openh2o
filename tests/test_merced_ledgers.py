@@ -725,7 +725,7 @@ def test_the_ditch_with_no_meter_is_estimated_once_the_crops_water_use_is_known(
     from accounting.locks import override
     from accounting.models import CalculationRun
     from core.management.commands.seed_merced_ledgers import UNMETERED_POD_PREFIX
-    from surface.services import field_efficiency
+    from parcels.services import field_efficiency
 
     # The slice's metered point becomes the demo's ditch with no meter: the
     # seed's flush takes its typed records and the seed types none for it.

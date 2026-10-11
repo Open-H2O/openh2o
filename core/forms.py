@@ -181,13 +181,13 @@ class DeliverySettingsForm(forms.Form):
     SiteConfig is a singleton; the view loads the one row and passes it in as
     ``instance``. The form never creates a second row.
 
-    **The efficiency field belongs to ``surface`` and disappears with it (90-02).**
-    ``default_irrigation_efficiency`` has exactly one consumer —
-    ``surface/services.py``, which apportions a delivery between what the crop
-    consumed and what returned to the aquifer. On a deployment with no Surface
-    module nothing reads the number, so offering the control invites an analyst
-    to tune a knob connected to nothing. ``default_recovery_horizon`` is the
-    opposite case and stays: ``accounting.services.resolve_recovery_horizon`` and
+    **The efficiency field belongs to ``parcels`` (150.2-01).** From 90-02 it
+    belonged to ``surface`` and disappeared with it, because its one consumer
+    then apportioned canal deliveries. It is a field's irrigation efficiency
+    wherever no irrigation method is on file (``parcels.services.field_efficiency``),
+    and a groundwater-only district has fields too (Brent, 2026-10-11), so it is
+    shown whenever ``parcels`` runs. ``default_recovery_horizon`` stays for the
+    same reason: ``accounting.services.resolve_recovery_horizon`` and
     ``rollover_allocations`` read it for any zone's unused allocation, surface or
     not.
 
@@ -196,20 +196,20 @@ class DeliverySettingsForm(forms.Form):
     ``run_calculations``, which splits an estimated field's residual into what
     the crop consumed and what the pump had to extract to deliver it. A
     deployment with no Wells module has no well to pump, so the field is shown
-    and saved under the same ``shows_groundwater_efficiency`` gate, mirroring
-    ``shows_efficiency``'s percent display/entry convention (75 shown, 0.750
+    and saved under its own ``shows_groundwater_efficiency`` gate, mirroring
+    the efficiency field's percent display/entry convention (75 shown, 0.750
     stored).
 
     **The over-delivery treatment belongs to ``surface`` the same way (148-04
     Task 1, Brent's Q1 ruling 2026-09-20).** ``over_delivery_treatment`` and
     ``over_delivery_leave_behind`` are read once per run by
     ``run_calculations`` (148-04 Task 2); only canal water can be
-    over-delivered, so both fields are shown and saved under the same
-    ``shows_efficiency`` gate. Both fields are ``required=False`` at the
+    over-delivered, so both fields are shown and saved under the
+    ``shows_surface_settings`` gate. Both fields are ``required=False`` at the
     Django level so a caller that does not offer them (an old test, or a
     deployment with ``surface`` off) leaves the stored values exactly as
     they were rather than writing a value nobody was offered -- the same
-    "leave it alone" outcome ``shows_efficiency`` gives every other field
+    "leave it alone" outcome a module gate gives every other field
     here, reached a different way because this pair shares one card with a
     conditional second field (the percent only applies to "credited").
 
@@ -217,7 +217,7 @@ class DeliverySettingsForm(forms.Form):
     (146-03 Task 3).** It is the 145-01 memo's crosswalk layer for a bulk
     diversion import a later plan adds; on a deployment with no Surface
     module there is no diversion file to read, so it is shown and saved
-    under exactly the same ``shows_efficiency`` gate -- kept as its own name
+    under exactly the same ``shows_surface_settings`` gate -- kept as its own name
     (``shows_diversion_settings``) so the template reads for what it shows,
     not why.
 
@@ -358,13 +358,19 @@ class DeliverySettingsForm(forms.Form):
         from core.modules import is_enabled
 
         self.instance = instance
-        self.shows_efficiency = is_enabled("surface")
-        # Same gate as efficiency (see the class docstring), named for what
-        # it shows rather than for the reason both happen to share.
-        self.shows_diversion_settings = self.shows_efficiency
+        # 150.2-01: the default irrigation efficiency belongs to `parcels`,
+        # which every deployment that reaches this page runs (the page is
+        # `accounting`'s, and the two are an inseparable pair).
+        self.shows_efficiency = is_enabled("parcels")
+        # The cards only a canal district has: surface water in excess of
+        # ETAW and the reporting-year rule. This was `shows_efficiency` until
+        # 150.2-01 moved the efficiency off `surface`.
+        self.shows_surface_settings = is_enabled("surface")
+        # Same gate as the surface settings, named for what it shows.
+        self.shows_diversion_settings = self.shows_surface_settings
         # 148-02 Task 4 (Q2): groundwater_efficiency's own gate, `wells` rather
         # than `surface` -- a deployment can run either module without the
-        # other, so this is intentionally independent of shows_efficiency.
+        # other, so this is intentionally independent of shows_surface_settings.
         self.shows_groundwater_efficiency = is_enabled("wells")
         if instance is not None and "initial" not in kwargs:
             initial = {
@@ -380,7 +386,7 @@ class DeliverySettingsForm(forms.Form):
                 initial["groundwater_efficiency_percent"] = int(
                     (instance.groundwater_efficiency * 100).to_integral_value()
                 )
-            if self.shows_efficiency:
+            if self.shows_surface_settings:
                 initial["over_delivery_treatment"] = instance.over_delivery_treatment
                 initial["over_delivery_leave_behind_percent"] = int(
                     (instance.over_delivery_leave_behind * 100).to_integral_value()
@@ -394,7 +400,7 @@ class DeliverySettingsForm(forms.Form):
             del self.fields["efficiency_percent"]
         if not self.shows_groundwater_efficiency:
             del self.fields["groundwater_efficiency_percent"]
-        if not self.shows_efficiency:
+        if not self.shows_surface_settings:
             del self.fields["over_delivery_treatment"]
             del self.fields["over_delivery_leave_behind_percent"]
         if not self.shows_diversion_settings:
@@ -406,7 +412,7 @@ class DeliverySettingsForm(forms.Form):
             ("carry_forward", "Carry it forward as a credit toward next year"),
             ("same_water_year", "Let it expire (use-it-or-lose-it)"),
         ]
-        if self.shows_efficiency:
+        if self.shows_surface_settings:
             # The settled words (148-03, 2026-09-28): the radio's label is the
             # choice, one line; what it does is the description the template
             # prints under it (`over_delivery_options`). No "recharge": this
@@ -434,7 +440,7 @@ class DeliverySettingsForm(forms.Form):
         so the words that describe a choice sit with the choice. Empty when
         the field is not shown (no ``surface`` module).
         """
-        if not self.shows_efficiency:
+        if not self.shows_surface_settings:
             return []
         if self.shows_groundwater_efficiency:
             credited = (
@@ -501,7 +507,7 @@ class DeliverySettingsForm(forms.Form):
 
     def clean(self):
         cleaned = super().clean()
-        if self.shows_efficiency:
+        if self.shows_surface_settings:
             treatment = cleaned.get("over_delivery_treatment")
             leave_behind = cleaned.get("over_delivery_leave_behind_percent")
             if treatment == "credited" and leave_behind is None:
@@ -516,9 +522,9 @@ class DeliverySettingsForm(forms.Form):
         """Write the shown fields back onto the singleton SiteConfig instance.
 
         ``update_fields`` is built from what the form actually rendered, so a
-        deployment with no Surface module leaves ``default_irrigation_efficiency``
-        (and the reporting-year setting) exactly as they were rather than
-        writing a value nobody was offered.
+        deployment with no Surface module leaves the surface settings (and the
+        reporting-year setting) exactly as they were rather than writing a
+        value nobody was offered.
         """
         config = self.instance
         updated = ["default_recovery_horizon", "identifier_host"]
@@ -534,7 +540,7 @@ class DeliverySettingsForm(forms.Form):
                 "groundwater_efficiency_percent"
             ]
             updated.append("groundwater_efficiency")
-        if self.shows_efficiency:
+        if self.shows_surface_settings:
             # 148-04 Task 1: a submission that omits the treatment (nobody
             # was offered it, e.g. a caller built before this plan) leaves
             # both stored values exactly as they were. A submitted treatment

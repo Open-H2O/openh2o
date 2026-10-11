@@ -44,8 +44,9 @@ Invariants honored (must agree with the calc engine + the Plan-01 kernel):
   against the last run's deposit, so a re-run never deposits twice. Each
   point-month's figures are stored on ``CanalMonthLoss`` for the canal's page.
 
-Efficiency is resolved PER PARCEL by ``field_efficiency`` (148-02, S1): a served
-parcel with a recorded ``surface.ParcelIrrigationMethod`` (146-05) is capped at
+Efficiency is resolved PER PARCEL by ``parcels.services.field_efficiency``
+(148-02, S1; it moved to ``parcels`` in 150.2-01): a served
+parcel with a recorded ``parcels.ParcelIrrigationMethod`` (146-05) is capped at
 its own method's assigned efficiency; a parcel with no method falls back to the
 agency-wide ``SiteConfig.default_irrigation_efficiency`` (55-02). An explicit
 ``efficiency=`` override on this call still wins for every served parcel, so
@@ -71,6 +72,7 @@ from accounting.services import (
     parcel_pool_zone,
 )
 from parcels.models import ParcelLedger
+from parcels.services import field_efficiency
 from surface.models import (
     CanalMonthLoss,
     DiversionRecord,
@@ -81,36 +83,6 @@ from surface.models import (
 logger = logging.getLogger(__name__)
 
 _Q = Decimal("0.0001")
-
-
-def field_efficiency(parcel):
-    """One parcel's own field efficiency, and where it came from (148-02, S1).
-
-    Returns ``(Decimal, source)``. ``source`` is ``"method"`` when the parcel
-    carries a ``ParcelIrrigationMethod`` (146-05's one-to-one, related_name
-    ``irrigation``), which gives the assigned efficiency off that method's
-    row. Otherwise ``"agency"``, the deployment-wide
-    ``SiteConfig.default_irrigation_efficiency``.
-
-    This is the SAME figure ``allocate_district_delivery``'s per-parcel cap and
-    ``subtract_surface_water``'s consumption math both read, so the split and
-    the subtraction can never drift apart on a mixed-method headgate (a center
-    pivot and a furrow field sharing one point of diversion must not share one
-    cap; the 146-05 carry).
-
-    ``SiteConfig.objects.first() or SiteConfig()`` rather than ``.get()``
-    (the established idiom, ``surface/diversion_import.py``): a real deployment
-    always carries exactly one row, but this reads safely before one exists,
-    falling back to the field's own class default (0.750) instead of raising.
-    """
-    # Imported lazily so this module has no load-time dependency on core.
-    from core.models import SiteConfig
-
-    link = getattr(parcel, "irrigation", None)
-    if link is not None:
-        return link.method.assigned_efficiency, "method"
-    config = SiteConfig.objects.first() or SiteConfig()
-    return config.default_irrigation_efficiency, "agency"
 
 
 def _resolve_efficiency(efficiency, parcel):

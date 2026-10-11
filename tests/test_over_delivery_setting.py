@@ -203,11 +203,13 @@ def test_saving_with_surface_disabled_leaves_stored_values_untouched(admin_clien
     assert config.over_delivery_leave_behind == Decimal("0.100")
 
     # `_WITHOUT_SURFACE` drops `surface` (and `recharge`) but leaves `wells`
-    # on, so only the surface-gated fields are absent from this POST.
+    # on, so only the surface-gated fields are absent from this POST. The
+    # default irrigation efficiency belongs to `parcels` since 150.2-01.
     resp = admin_client.post(
         reverse("accounting:delivery_settings"),
         {
             "recovery_horizon": "same_water_year",
+            "efficiency_percent": "75",
             "groundwater_efficiency_percent": "80",
         },
     )
