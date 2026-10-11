@@ -457,9 +457,9 @@ def test_the_calculation_page_names_consumed_and_charges_extracted(admin_client)
     assert ">1.10 acre-feet</span>" in html
     assert "= well water the crop used" in html
     assert ">0.88<" in html
-    assert "divided by 80%, the share of pumped water the crop consumes" in html
-    assert "= estimated pumping, charged to the groundwater allocation" in html
-    assert "This field has a well and no meter reading for May 2025, so OpenH2O calculates the pumping from the crop's water use." in html
+    assert "&divide; 80%, the share of pumped water the crop consumes" in html
+    assert "= estimated pumping" in html
+    assert "This field has a well and no meter reading for May 2025, so OpenH2O estimates the pumping from the crop's water use." in html
     assert "Groundwater consumed" not in html
 
 

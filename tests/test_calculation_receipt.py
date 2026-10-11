@@ -29,15 +29,15 @@ User = get_user_model()
 pytestmark = pytest.mark.django_db
 
 HEADLINE = "Estimated pumping, June 2026:"
-LEAD = "This field has a well and no meter reading for June 2026, so OpenH2O calculates the pumping from the crop's water use."
-METER_LINE = "If this field had a meter reading for the month, OpenH2O would use the reading in place of this estimate."
+LEAD = "This field has a well and no meter reading for June 2026, so OpenH2O estimates the pumping from the crop's water use."
+METER_LINE = "A meter reading for June 2026 would replace this estimate."
 LINES = (
-    "Water the crop used (satellite estimate)",
+    "Crop water use",
     "minus rain the crop could use",
     "minus canal water the crop could use",
     "= well water the crop used",
-    "divided by 80%, the share of pumped water the crop consumes",
-    "= estimated pumping, charged to the groundwater allocation",
+    "&divide; 80%, the share of pumped water the crop consumes",
+    "= estimated pumping",
 )
 #: Words the owner rejected on this page, 2026-09-28, never to return.
 REJECTED = (
@@ -178,25 +178,27 @@ class TestTheReceipt:
         parcel = ParcelFactory(parcel_number="RCPT-APN-002")
         _well_run(parcel)
         html = _page(parcel, "2026-06")
-        assert "OpenET estimates this field's crop water use for the month from satellite data." in html
+        assert "OpenET's satellite estimate for this field and month." in html
         assert (
-            "The month's rain comes from gridMET weather data. Methodology Settings "
-            "sets the method for estimating how much of that rain the crop could use."
+            "The month's rainfall from gridMET, counted by the method set on "
+            "Methodology Settings."
         ) in html
-        assert "The district recorded a delivery to this field of <span" in html
+        assert "This field's delivery this month was <span" in html
         assert ">5.33</span> acre-feet" in html
-        assert "This field has no irrigation method on file, so its irrigation efficiency is the default on Delivery Settings, 75 percent." in html
+        assert "acre-feet, and OpenH2O counts 75 percent of it toward the crop. The 75 percent is the default irrigation efficiency on Delivery Settings, because the field has no irrigation method on file." in html
+        # 2026-10-10 20:16: the well-water row shows the subtraction itself.
+        assert "Crop water use &minus; rain and canal water</td>" in html
+        assert "10.00 &minus;" not in html
         # 149.1-05: the notes are the table's third column; the setting is
         # named with its page and its live label (Delivery Settings).
         assert (
-            "Delivery Settings sets this share. A later change to the share does not "
-            "alter this month until OpenH2O recalculates the month."
+            "The share set on Delivery Settings when this month was calculated."
         ) in html
         assert "Where it comes from" in html
-        assert "If this field had a meter reading for the month, OpenH2O would use the reading in place of this estimate." in html
+        assert METER_LINE in html
         # A field's own delivery (no split sentence on the ledger row) says
         # nothing about a split.
-        assert "divided the headgate's monthly total" not in html
+        assert "share of its headgate" not in html
 
     def test_a_delivery_divided_up_by_crop_water_use_says_so_in_the_ruled_words(self):
         from accounting.ledger_words import DELIVERY_SHARE_BY_USE
@@ -214,9 +216,7 @@ class TestTheReceipt:
         )
         html = _page(parcel, "2026-06")
         assert (
-            "OpenH2O divided the headgate's monthly total among its fields in "
-            "proportion to each field's crop water use after rain, and this field "
-            "received <span"
+            "This field's share of its headgate's delivery this month was <span"
         ) in html
 
     def test_the_rejected_words_are_gone(self):
@@ -244,18 +244,18 @@ class TestTheReceipt:
         config.default_irrigation_efficiency = Decimal("0.600")
         config.save()
         html = _page(parcel, "2026-06")
-        assert "divided by 70%, the share of pumped water the crop consumes" in html
-        assert "irrigation efficiency is the default on Delivery Settings, 90 percent" in html
-        assert "divided by 50%" not in html
-        assert "divided by 70%, the share of pumped water the crop consumes" in html
+        assert "&divide; 70%, the share of pumped water the crop consumes" in html
+        assert "OpenH2O counts 90 percent of it toward the crop" in html
+        assert "&divide; 50%" not in html
+        assert "&divide; 70%, the share of pumped water the crop consumes" in html
 
     def test_a_run_from_before_pumping_was_stamped_stops_at_the_well_water(self):
         parcel = ParcelFactory(parcel_number="RCPT-APN-006")
         _well_run(parcel, gw_extracted_af=None)
         html = _page(parcel, "2026-06")
         assert "Estimated well water, June 2026:" in html
-        assert "divided by" not in html
-        assert "= pumped" not in html
+        assert "&divide;" not in html
+        assert "= estimated pumping" not in html
         assert "= well water the crop used" in html
 
 
@@ -269,19 +269,21 @@ class TestAZeroMonth:
         assert "Estimated pumping, December 2025:" in html
         assert ">0.00 acre-feet</span>" in html
         assert (
-            "Rain and canal water covered the crop water use this month, so OpenH2O estimates no pumping."
+            "Rain covered the crop's water use this month, so OpenH2O estimates no pumping."
         ) in html
         # 149.1-05: the figure is a row of the table, its figure beside its name.
-        assert "Canal water beyond what the crop could use" in html
+        assert "Canal water left over" in html
         assert 'title="4.0000 acre-feet">4.00</td>' in html
-        assert "This much of the canal water the crop could use exceeded the month's crop water use after rain." in html
+        assert "Canal water left over" in html
+        assert "None of the canal water was needed this month." in html
+        assert "8.00 &minus; 8.00 &minus; 4.00 is less than zero, so OpenH2O records 0.00, the lowest value Methodology Settings allows." in html
         # Nothing to divide, so no division line and no 80% note.
-        assert "divided by" not in html
-        assert "= pumped" not in html
+        assert "&divide;" not in html
+        assert "= estimated pumping" not in html
         # The default treatment (not credited) says nothing more.
         assert "credited" not in html
         assert "its own line" not in html
-        assert METER_LINE in html
+        assert "A meter reading for December 2025 would replace this estimate." in html
 
     def test_names_only_the_water_that_covered_the_crop(self):
         parcel = ParcelFactory(parcel_number="RCPT-APN-011")
@@ -292,7 +294,7 @@ class TestAZeroMonth:
             over_delivery_af=Decimal("0.0000"),
         )
         html = _page(parcel, "2025-11")
-        assert "Canal water covered the crop water use this month, so OpenH2O estimates no pumping." in html
+        assert "Canal water covered the crop's water use this month, so OpenH2O estimates no pumping." in html
         assert "more than the crop needed" not in html
         _zero_run(
             parcel, "2025-10",
@@ -301,7 +303,7 @@ class TestAZeroMonth:
             over_delivery_af=Decimal("0.0000"),
         )
         html = _page(parcel, "2025-10")
-        assert "Rain covered the crop water use this month, so OpenH2O estimates no pumping." in html
+        assert "Rain covered the crop's water use this month, so OpenH2O estimates no pumping." in html
         assert "No canal delivery on record for this field this month." in html
 
     def test_under_the_credited_setting_one_sentence_says_what_happened(self):

@@ -2090,14 +2090,30 @@ def _receipt_context(parcel, run, period):
     # sentence names only water that was there.
     rain = run.effective_precip_af or Decimal("0")
     canal = run.surface_water_af or Decimal("0")
+    gross = run.gross_et_af or Decimal("0")
     covered_by = None
     if run.final_af == 0:
-        if rain > 0 and canal > 0:
+        # Rain that met the crop's whole water use covered it on its own, even
+        # when canal water was delivered too (Brent approved 2026-10-10 20:16:
+        # "Rain covered the crop's water use this month").
+        if rain > 0 and rain >= gross:
+            covered_by = "Rain"
+        elif rain > 0 and canal > 0:
             covered_by = "Rain and canal water"
         elif rain > 0:
             covered_by = "Rain"
         elif canal > 0:
             covered_by = "Canal water"
+
+    # 150.1-02 (Brent approved 2026-10-10 20:16 PDT): the receipt shows its
+    # subtraction with the month's own figures. ``raw_af`` is the subtraction
+    # before the floor; ``canal_need_af`` is how much of the canal water the
+    # crop still needed after rain (crop water use minus rain, never below 0),
+    # which is what the left-over row compares the canal water with.
+    raw_af = gross - rain - canal
+    canal_need_af = gross - rain
+    if canal_need_af < 0:
+        canal_need_af = Decimal("0")
 
     return {
         "receipt": True,
@@ -2119,6 +2135,8 @@ def _receipt_context(parcel, run, period):
         # no split flag), for the ruled words on the canal line.
         "delivery_split": _delivery_split_kind(parcel, period),
         "covered_by": covered_by,
+        "raw_af": raw_af,
+        "canal_need_af": canal_need_af,
         # 148-04: what happened to canal water beyond what the crop could use,
         # by the run's own stamp. None whenever nothing was credited.
         "over_delivery_left_af": _over_delivery_left_af(run),

@@ -33,7 +33,10 @@ pytestmark = pytest.mark.django_db
 # sentence under the credited or named-line setting only; under the default
 # (not credited) the figure stands and nothing more is said. The field page's
 # own line keeps the fixed noun's short form.
-ZERO_SENTENCE = "Rain and canal water covered the crop water use this month, so OpenH2O estimates no pumping."
+ZERO_SENTENCE = "Rain and canal water covered the crop's water use this month, so OpenH2O estimates no pumping."
+#: 2026-10-10 20:16 (Brent approved): rain 8 against crop 10 leaves the crop
+#: needing 2 of the 6 acre-feet of canal water, so 4 is left over.
+NEED_SENTENCE = "The crop needed 2.00 of the 6.00 acre-feet of canal water."
 EXCESS_SENTENCE = 'title="4.0000 acre-feet">4.00</td>'  # 149.1-05: a row of the receipt table
 FIELD_LABEL = "Canal water beyond crop use:"
 
@@ -128,6 +131,7 @@ class TestCalculationPageSentenceByStamp:
         assert EXCESS_SENTENCE in html
         assert "credited" not in html
         assert "its own line" not in html
+        assert NEED_SENTENCE in html
 
     def test_credited_to_the_field(self):
         parcel = ParcelFactory(parcel_number="R148-04-B")
