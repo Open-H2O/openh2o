@@ -56,8 +56,10 @@
 -- other columns than the ones they are printed from: delivered times the
 -- stored efficiency, the delivery against the field's own surface_diversion
 -- ledger row (a different table), the remainder from the three figures above
--- it floored at zero, and pumped from the remainder and the deployment's
--- core_siteconfig.groundwater_efficiency. Block C does the same for the zero
+-- it floored at zero, and pumped from the remainder and the field's own
+-- irrigation efficiency, looked up from its irrigation method or else the
+-- deployment's default (150.2-02 retired core_siteconfig.groundwater_efficiency).
+-- Block C does the same for the zero
 -- month and the canal water beyond what the crop could use.
 
 \set ON_ERROR_STOP on
@@ -102,7 +104,7 @@ SELECT rd.parcel_number, rd.month_label,
  ORDER BY rd.parcel_number;
 
 \echo ''
-\echo '== B. The receipt, MER-APN-039 2026-08. FIG-002/008 pumped, 005 canal, 006 well water, 007/015 the divisor percent, 013 delivered, 014 the efficiency percent. Each rebuilt from other columns than the one it prints. Expect delivered 53.6978 = the ledger row; canal 40.2734; well water 4.7743; pumped 5.9679; 80; 75. =='
+\echo '== B. The receipt, MER-APN-039 2026-08. FIG-002/008 pumped, 005 canal, 006 well water, 007/015 the divisor percent, 013 delivered, 014 the efficiency percent. Each rebuilt from other columns than the one it prints. Expect (150.2-02, 2026-10-11) delivered 53.1608 = the ledger row; canal 39.8706; well water 5.1771; pumped 6.9028; 75 stamped = 75 looked up; 75. =='
 
 SELECT p.parcel_number, cr.period, cr.residual_disposition,
        round(cr.surface_delivered_af, 4)                                 AS "FIG-013 stored delivered_af",
@@ -118,13 +120,22 @@ SELECT p.parcel_number, cr.period, cr.residual_disposition,
        round(GREATEST(cr.gross_et_af - cr.effective_precip_af - cr.surface_water_af, 0), 4)
                                                                          AS "FIG-006 rebuilt well_water_af",
        round(cr.final_af, 4)                                             AS stored_final_af,
-       round(cr.final_af / sc.groundwater_efficiency, 4)                 AS "FIG-002/008 rebuilt pumped_af",
+       round(cr.final_af / COALESCE((SELECT m.assigned_efficiency
+                    FROM parcels_parcelirrigationmethod pim
+                    JOIN parcels_irrigationmethod m ON m.id = pim.method_id
+                   WHERE pim.parcel_id = cr.parcel_id),
+                 (SELECT default_irrigation_efficiency FROM core_siteconfig LIMIT 1)), 4)
+                                                                         AS "FIG-002/008 rebuilt pumped_af",
        round(cr.gw_extracted_af, 4)                                      AS stored_gw_extracted_af,
-       round(cr.final_af / cr.gw_extracted_af * 100, 0)                  AS "FIG-007/015 gw_efficiency_pct",
-       round(sc.groundwater_efficiency * 100, 0)                         AS siteconfig_groundwater_efficiency_pct
+       round(cr.groundwater_application_efficiency * 100, 0)             AS "FIG-007/015 gw_efficiency_pct (stamped)",
+       round(COALESCE((SELECT m.assigned_efficiency
+                    FROM parcels_parcelirrigationmethod pim
+                    JOIN parcels_irrigationmethod m ON m.id = pim.method_id
+                   WHERE pim.parcel_id = cr.parcel_id),
+                 (SELECT default_irrigation_efficiency FROM core_siteconfig LIMIT 1)) * 100, 0)
+                                                                         AS field_efficiency_pct_looked_up
   FROM accounting_calculationrun cr
   JOIN parcels_parcel p ON p.id = cr.parcel_id
- CROSS JOIN (SELECT groundwater_efficiency FROM core_siteconfig LIMIT 1) sc
  WHERE p.parcel_number = 'MER-APN-039' AND cr.period = '2026-08';
 
 \echo ''
@@ -163,7 +174,7 @@ SELECT residual_disposition, count(*) FROM accounting_calculationrun GROUP BY 1 
 -- the derived column the page prints.
 --   Crop ET - Effective precipitation = ETAW
 --   ETAW - ETAW met by surface water = ETAW met by groundwater
---   ETAW met by groundwater / groundwater irrigation efficiency
+--   ETAW met by groundwater / the field's irrigation efficiency (150.2-02)
 --     = groundwater extraction (estimated)
 -- Pins: MER-APN-039, August 2026 (parcel 39) and MER-APN-016, December 2024
 -- (parcel 16, a month with no ETAW met by groundwater).
@@ -181,10 +192,52 @@ SELECT p.parcel_number,
          - least(r.surface_water_af,
                  greatest(r.gross_et_af - r.effective_precip_af, 0)) AS surface_water_in_excess_of_etaw,
        greatest(r.gross_et_af - r.effective_precip_af - r.surface_water_af, 0) AS etaw_met_by_groundwater,
-       r.final_af / nullif(r.gw_extracted_af, 0) AS groundwater_irrigation_efficiency,
-       r.final_af / c.groundwater_efficiency AS groundwater_extraction_estimated
+       r.groundwater_application_efficiency AS field_irrigation_efficiency_stamped,
+       r.final_af / COALESCE((SELECT m.assigned_efficiency
+                    FROM parcels_parcelirrigationmethod pim
+                    JOIN parcels_irrigationmethod m ON m.id = pim.method_id
+                   WHERE pim.parcel_id = r.parcel_id),
+                 (SELECT default_irrigation_efficiency FROM core_siteconfig LIMIT 1)) AS groundwater_extraction_estimated
   FROM accounting_calculationrun r
   JOIN parcels_parcel p ON p.id = r.parcel_id
- CROSS JOIN core_siteconfig c
  WHERE (r.parcel_id = 39 AND r.period = '2026-08')
     OR (r.parcel_id = 16 AND r.period = '2024-12');
+
+-- ---------------------------------------------------------------------------
+-- Block E, 150.2-02 (2026-10-11): one irrigation efficiency per field.
+-- Every estimated run's stamped efficiency is held against the field's
+-- efficiency looked up from the tables (its irrigation method's, else the
+-- deployment default), and every stamped extraction against ETAW met by
+-- groundwater divided by that looked-up figure, rounded to the ledger's four
+-- places. Expect 0 mismatches of either kind; the pins are MER-APN-039 August
+-- 2026 and MER-APN-032 September 2026 (1.2221 / 0.750 = 1.6295).
+\echo ''
+\echo '== E. Stamped efficiency and extraction against the field efficiency looked up from the tables, every estimated run. Expect 0 and 0. =='
+
+SELECT count(*) AS estimated_runs,
+       count(*) FILTER (WHERE r.groundwater_application_efficiency
+                              IS DISTINCT FROM COALESCE((SELECT m.assigned_efficiency
+                    FROM parcels_parcelirrigationmethod pim
+                    JOIN parcels_irrigationmethod m ON m.id = pim.method_id
+                   WHERE pim.parcel_id = r.parcel_id),
+                 (SELECT default_irrigation_efficiency FROM core_siteconfig LIMIT 1))) AS efficiency_mismatches,
+       count(*) FILTER (WHERE r.gw_extracted_af
+                              IS DISTINCT FROM round(r.final_af / COALESCE((SELECT m.assigned_efficiency
+                    FROM parcels_parcelirrigationmethod pim
+                    JOIN parcels_irrigationmethod m ON m.id = pim.method_id
+                   WHERE pim.parcel_id = r.parcel_id),
+                 (SELECT default_irrigation_efficiency FROM core_siteconfig LIMIT 1)), 4)) AS extraction_mismatches,
+       count(*) FILTER (WHERE r.groundwater_efficiency_source = 'method') AS from_method,
+       count(*) FILTER (WHERE r.groundwater_efficiency_source = 'agency') AS from_default
+  FROM accounting_calculationrun r
+ WHERE r.residual_disposition = 'groundwater';
+
+SELECT p.parcel_number, r.period, r.final_af,
+       r.groundwater_application_efficiency, r.groundwater_efficiency_source,
+       round(r.final_af / r.groundwater_application_efficiency, 4) AS rebuilt_extraction,
+       r.gw_extracted_af AS stored_extraction
+  FROM accounting_calculationrun r
+  JOIN parcels_parcel p ON p.id = r.parcel_id
+ WHERE (p.parcel_number = 'MER-APN-039' AND r.period = '2026-08')
+    OR (p.parcel_number = 'MER-APN-032' AND r.period = '2026-09')
+ ORDER BY p.parcel_number;
