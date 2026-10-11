@@ -2,9 +2,11 @@
 """
 146-03 Task 3: the diversion-record setting on Delivery Settings.
 
-``diversion_report_year_rule`` belongs to ``surface`` exactly as
-``default_irrigation_efficiency`` does (``core/forms.py::DeliverySettingsForm``)
--- shown and saved only when ``surface`` is enabled. No existing test
+``diversion_report_year_rule`` belongs to ``surface``
+(``core/forms.py::DeliverySettingsForm``) -- shown and saved only when
+``surface`` is enabled. ``default_irrigation_efficiency`` was gated the same
+way until 150.2-01; it belongs to ``parcels`` now and is shown either way
+(section 3 below). No existing test
 exercised the *content* of this page under a reduced module set (only the
 subprocess crawl in ``tests/test_droppability_acceptance.py`` renders it at
 all, and only to confirm 200 with an empty database); this file is the
@@ -147,8 +149,13 @@ def test_saving_on_a_drinking_only_configuration_leaves_diversion_fields_untouch
         reverse("accounting:delivery_settings"),
         # 148-02 Task 4: `_WITHOUT_SURFACE` drops surface (and recharge) but
         # leaves `wells` on, so groundwater_efficiency_percent is still a
-        # required field on this POST even though efficiency_percent is not.
-        {"recovery_horizon": "same_water_year", "groundwater_efficiency_percent": "80"},
+        # required field on this POST; since 150.2-01 efficiency_percent is
+        # too (it belongs to `parcels`).
+        {
+            "recovery_horizon": "same_water_year",
+            "efficiency_percent": "75",
+            "groundwater_efficiency_percent": "80",
+        },
     )
     assert resp.status_code == 302
     config.refresh_from_db()
@@ -156,3 +163,33 @@ def test_saving_on_a_drinking_only_configuration_leaves_diversion_fields_untouch
     # Nobody was offered the diversion fields, so they stay at the default.
     assert config.diversion_use_type_rule == "drop"
     assert config.diversion_report_year_rule == "water_year"
+
+
+# ---------------------------------------------------------------------------
+# 3. The default irrigation efficiency without `surface` (150.2-01)
+# ---------------------------------------------------------------------------
+
+
+@override_settings(OPENH2O_MODULES=_WITHOUT_SURFACE)
+def test_default_efficiency_card_shows_without_surface(admin_client):
+    body = admin_client.get(reverse("accounting:delivery_settings")).content.decode()
+    assert "Default irrigation efficiency" in body
+    assert 'name="efficiency_percent"' in body
+    # The canal-only card stays behind `surface`.
+    assert 'name="over_delivery_treatment"' not in body
+
+
+@override_settings(OPENH2O_MODULES=_WITHOUT_SURFACE)
+def test_default_efficiency_saves_without_surface(admin_client):
+    config, _ = SiteConfig.objects.get_or_create(defaults={"agency_name": "Agency"})
+    resp = admin_client.post(
+        reverse("accounting:delivery_settings"),
+        {
+            "recovery_horizon": "carry_forward",
+            "efficiency_percent": "68",
+            "groundwater_efficiency_percent": "80",
+        },
+    )
+    assert resp.status_code == 302
+    config.refresh_from_db()
+    assert str(config.default_irrigation_efficiency) == "0.680"

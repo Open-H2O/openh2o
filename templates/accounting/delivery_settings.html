@@ -46,7 +46,7 @@
     </div>
     {% endif %}
 
-    {% comment %} Setting: efficiency. `surface` owns it (see DeliverySettingsForm) and
+    {% comment %} Setting: efficiency. `parcels` owns it since 150.2-01 (see DeliverySettingsForm) and
          the numbering follows the fields that are actually shown — the 88-03
          defect was a step eyebrow that kept counting a step nobody could see.
          146-03 Task 3: card position is computed in the view now that a third
@@ -68,15 +68,15 @@
 
     {% comment %} Setting: surface water in excess of ETAW (148-04,
          Brent's Q1 ruling 2026-09-20, built 2026-09-28; the words settled by
-         148-03 the same day). `surface` owns both fields, same gate as
-         efficiency: only canal water can be over-delivered. Its position is
+         148-03 the same day). `surface` owns both fields
+         (`shows_surface_settings`): only canal water can be over-delivered. Its position is
          computed in the view like every other optional card. Each choice is a
          label line with what it does on a quieter line under it
          (`form.over_delivery_options`), so the three radios line up instead of
          wrapping to three different lengths. The sentence about a field with
          no well lives in the credited choice's description, behind the
          `wells` gate, and is said once. {% endcomment %}
-    {% if form.shows_efficiency %}
+    {% if form.shows_surface_settings %}
     <div class="card-raised">
       <span class="step-eyebrow">Setting {{ over_delivery_number }} of {{ settings_total }}</span>
       <h2 class="section-header">{{ form.over_delivery_treatment.label }}</h2>
@@ -142,8 +142,8 @@
       {% if form.recovery_horizon.errors %}<p class="text-sm text-furnace">{{ form.recovery_horizon.errors|striptags }}</p>{% endif %}
     </div>
 
-    {% comment %} Setting: diversion records. `surface` owns this field, same gate as
-         efficiency (146-03 Task 3, the 145-01 memo's crosswalk layer). The
+    {% comment %} Setting: diversion records. `surface` owns this field, same gate as the
+         surface settings (146-03 Task 3, the 145-01 memo's crosswalk layer). The
          USE-row question that used to sit here moved to the import screen,
          shown only when an uploaded file actually has USE rows (146-03
          Task 6, Brent's 2026-09-22 checkpoint ruling). {% endcomment %}
