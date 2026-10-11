@@ -580,7 +580,9 @@ def glossary(request):
     coined calculation terms and Consumptive Use gave way to the engineer's
     terms: ETAW, ETAW Met by Surface Water, ETAW Met by Groundwater,
     Groundwater Irrigation Efficiency, Groundwater Extraction and Surface Water
-    in Excess of ETAW, and ET became Crop ET, for 50); a reduced deployment
+    in Excess of ETAW, and ET became Crop ET, for 50; 150.2-02 removed
+    Groundwater Irrigation Efficiency with the setting it named, for 49, at
+    Brent's "one irrigation efficiency per field"); a reduced deployment
     narrows the *pointers*, not the dictionary. And the ``See Help > X.`` sentences are matched byte-for-byte by
     ``_without_unavailable_help_pointers`` above — reword one and it stops being
     stripped, which sends a reduced-deployment reader at a 404 (the defect Plan
@@ -603,8 +605,7 @@ def glossary(request):
         "ETAW (Evapotranspiration of Applied Water)": "Crop ET minus effective precipitation, for one field and month. OpenH2O assigns a field's ETAW first to surface water, up to the delivery times the field's irrigation efficiency, and the rest to groundwater. See Help > Methods Behind the Numbers.",
         "ETAW Met by Surface Water": "The part of a field's ETAW that OpenH2O assigns to surface water: the month's delivery times the field's irrigation efficiency, up to the month's ETAW. See Help > Methods Behind the Numbers.",
         "ETAW Met by Groundwater": "The part of a field's ETAW that surface water does not meet, on a field with a well. OpenH2O records this figure on the Use Ledger as the month's calculated row. See Help > Methods Behind the Numbers.",
-        "Groundwater Irrigation Efficiency": "The share of pumped groundwater that OpenH2O counts toward ETAW, set on Delivery Settings, 80 percent unless the district changes it. See Help > Methods Behind the Numbers.",
-        "Groundwater Extraction": "The groundwater a well pumped in a month: the meter reading where the well has one, and otherwise ETAW met by groundwater divided by the groundwater irrigation efficiency. OpenH2O charges a groundwater allocation with groundwater extraction. See Help > Methods Behind the Numbers.",
+        "Groundwater Extraction": "The groundwater a well pumped in a month: the meter reading where the well has one, and otherwise ETAW met by groundwater divided by the field's irrigation efficiency. OpenH2O charges a groundwater allocation with groundwater extraction. See Help > Methods Behind the Numbers.",
         "Surface Water in Excess of ETAW": "The part of a month's delivery times the field's irrigation efficiency that exceeds the field's ETAW. A setting on Delivery Settings decides whether OpenH2O credits this water to no one, credits it to the landowner or shows it as a separate line. See Help > Methods Behind the Numbers.",
         "Analyte": "This platform keeps one row per substance a lab result reports, under its name and, when known, DDW's four-digit analyte code. A lab import adds a row for any analyte its file names that the platform does not yet hold.",
         "CalWATRS": "California Water Accounting, Tracking, and Reporting System: the State Water Board's surface-diversion reporting system (replaced eWRIMS).",
@@ -614,7 +615,7 @@ def glossary(request):
         "Closing Balance": "OpenH2O's water balance for one use area and water year, with supplies on one side, uses on the other and the residual between them. See Help > How Water Balances Work.",
         "Curtailment": "One record per State Water Board order, holding its order ID, title, effective and end dates, watershed and priority-date cutoff; each right it affects shows its status on its own detail card.",
         "DLR": "Detection Limit for purposes of Reporting. The platform stores the DLR a laboratory's file carries on each result row exactly as reported, in the row's own units, and shows it under Limit (file) on the result's page.",
-        "Delivery Settings": "The administrator's page for irrigation efficiency, groundwater irrigation efficiency, surface water in excess of ETAW, the year-end choice, the reporting year and record addresses. See Help > Surface Delivery Settings.",
+        "Delivery Settings": "The administrator's page for irrigation efficiency, surface water in excess of ETAW, the year-end choice, the reporting year and record addresses. See Help > Surface Delivery Settings.",
         "Data Source": "One record per outside agency or service the platform reads data from, holding its name, code, address, how often it is read and when it was last read.",
         "ELAP": "Environmental Laboratory Accreditation Program, California's accreditation of laboratories. Each result holds the ELAP certification number of the laboratory that ran it, shown on the result's page.",
         "Crop ET (Evapotranspiration)": "The figure OpenET estimates from satellite data for each field and month. See Help > How Water Balances Work.",

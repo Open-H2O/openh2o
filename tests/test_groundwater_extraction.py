@@ -371,7 +371,9 @@ def test_the_groundwater_disposition_label_says_etaw_met_by_groundwater():
 
 
 # ---------------------------------------------------------------------------
-# 6. Delivery Settings: the Groundwater card is gated on `wells`
+# 6. Delivery Settings: one default irrigation efficiency, no groundwater card
+#    (150.2-02 retired the 148-02 Groundwater card and its tests with it:
+#    "one irrigation efficiency per field", Brent, 2026-10-11)
 # ---------------------------------------------------------------------------
 
 
@@ -393,70 +395,38 @@ def admin_client():
     return c
 
 
-def test_groundwater_efficiency_shown_when_wells_is_enabled(admin_client):
+_WITHOUT_SURFACE = tuple(
+    n for n in ALL_MODULE_NAMES if n not in ("surface", "recharge")
+)
+
+
+def test_delivery_settings_offers_no_separate_groundwater_efficiency(admin_client):
     resp = admin_client.get(reverse("accounting:delivery_settings"))
     body = resp.content.decode()
     assert resp.status_code == 200
-    assert "Groundwater" in body
-    assert "Groundwater irrigation efficiency" in body
-
-
-@override_settings(OPENH2O_MODULES=_WITHOUT_WELLS)
-def test_groundwater_efficiency_absent_when_wells_is_disabled(admin_client):
-    resp = admin_client.get(reverse("accounting:delivery_settings"))
-    assert resp.status_code == 200
-    body = resp.content.decode()
     assert "Groundwater irrigation efficiency" not in body
     assert 'name="groundwater_efficiency_percent"' not in body
+    assert (
+        "Typical: 75%. OpenH2O uses this efficiency for every field with no "
+        "irrigation method on file."
+    ) in body
 
 
-def test_saving_with_wells_disabled_leaves_groundwater_efficiency_untouched(admin_client):
-    config, _ = SiteConfig.objects.get_or_create(defaults={"agency_name": "Agency"})
-    assert config.groundwater_efficiency == Decimal("0.800")  # the model default
-
-    with override_settings(OPENH2O_MODULES=_WITHOUT_WELLS):
-        # `_WITHOUT_WELLS` leaves `surface` on, so efficiency_percent is
-        # still a required field on this POST -- only groundwater_efficiency_percent
-        # is the one nobody was offered.
-        resp = admin_client.post(
-            reverse("accounting:delivery_settings"),
-            {
-                "recovery_horizon": "same_water_year",
-                "efficiency_percent": "75",
-                "diversion_report_year_rule": "water_year",
-            },
-        )
-    assert resp.status_code == 302
-    config.refresh_from_db()
-    assert config.groundwater_efficiency == Decimal("0.800")
-
-
-# ---------------------------------------------------------------------------
-# 7. The change record maps the field to `wells`
-# ---------------------------------------------------------------------------
-
-
-def test_change_history_maps_groundwater_efficiency_to_wells():
-    from core.changes import FIELD_MODULES
-
-    assert FIELD_MODULES["core.SiteConfig.groundwater_efficiency"] == "wells"
-
-
-@override_settings(OPENH2O_MODULES=_WITHOUT_WELLS)
-def test_change_history_drops_groundwater_efficiency_when_wells_is_off():
+@pytest.mark.parametrize("modules", [_WITHOUT_WELLS, _WITHOUT_SURFACE])
+def test_the_default_efficiency_card_and_its_history_stay_without_either_module(
+    admin_client, modules
+):
+    """The default divides pumped groundwater and multiplies canal water, so
+    it is shown, and its change history kept, whichever of the two a
+    deployment leaves out."""
     from core.changes import tracked_fields
     from core.models import SiteConfigEvent
 
-    names = [f.name for f in tracked_fields(SiteConfigEvent)]
-    assert "groundwater_efficiency" not in names
-
-
-def test_change_history_shows_groundwater_efficiency_when_wells_is_on():
-    from core.changes import tracked_fields
-    from core.models import SiteConfigEvent
-
-    names = [f.name for f in tracked_fields(SiteConfigEvent)]
-    assert "groundwater_efficiency" in names
+    with override_settings(OPENH2O_MODULES=modules):
+        body = admin_client.get(reverse("accounting:delivery_settings")).content.decode()
+        names = [f.name for f in tracked_fields(SiteConfigEvent)]
+    assert 'name="efficiency_percent"' in body
+    assert "default_irrigation_efficiency" in names
 
 
 # ---------------------------------------------------------------------------

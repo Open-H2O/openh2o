@@ -134,7 +134,7 @@
             {% if extracted_af == 0 %}
             ETAW met by groundwater is zero this month, so the estimated groundwater extraction is zero too.
             {% else %}
-            ETAW met by groundwater divided by {{ gw_efficiency_pct|floatformat:0 }}%, the groundwater irrigation efficiency{% if gw_efficiency_is_live_setting %} (the deployment's current setting){% else %} (set on Delivery Settings){% endif %}. OpenH2O charges this volume against the groundwater allocation.
+            ETAW met by groundwater divided by {{ gw_efficiency_pct|floatformat:0 }}%, the field's irrigation efficiency. OpenH2O charges this volume against the groundwater allocation.
             {% endif %}
           </td>
           <td class="col-sure"><span class="badge badge-pill badge-orange">Assumed share</span></td>
@@ -150,7 +150,7 @@
     <li>Start with crop ET for the month, OpenET's satellite estimate in acre-feet.</li>
     <li>Subtract effective precipitation, estimated from gridMET rainfall. The result is ETAW.</li>
     <li>Subtract the delivery on record times the field's irrigation efficiency. What is left is ETAW met by groundwater.</li>
-    <li>Divide ETAW met by groundwater by the groundwater irrigation efficiency, 80% unless changed on Delivery Settings. The result is the estimated groundwater extraction, which OpenH2O charges against the groundwater allocation.</li>
+    <li>Divide ETAW met by groundwater by the field's irrigation efficiency. The result is the estimated groundwater extraction, which OpenH2O charges against the groundwater allocation.</li>
     <li>In a month with a meter reading on record, the reading stands. The same arithmetic runs for comparison but writes no groundwater row and no estimated extraction.</li>
   </ol>
   {% endif %}

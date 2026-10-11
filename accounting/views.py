@@ -2068,12 +2068,13 @@ def _receipt_context(parcel, run, period):
     150.1-02 (2026-10-11): the page is rebuilt as three equations in the
     engineer's terms Brent approved at 05:41 and 05:48 PDT (crop ET, effective
     precipitation, ETAW, ETAW met by surface water, ETAW met by groundwater,
-    groundwater irrigation efficiency, groundwater extraction (estimated),
+    groundwater irrigation efficiency (retired by 150.2-02 for the field's
+    irrigation efficiency), groundwater extraction (estimated),
     surface water in excess of ETAW):
 
         Crop ET - Effective precipitation = ETAW
         ETAW - ETAW met by surface water = ETAW met by groundwater
-        ETAW met by groundwater / groundwater irrigation efficiency
+        ETAW met by groundwater / the field's irrigation efficiency
             = groundwater extraction (estimated)
 
     Every figure is the run's own stamped column or is worked from them; the
@@ -2278,12 +2279,6 @@ def delivery_settings(request):
     if form.shows_surface_settings:
         position += 1
         over_delivery_number = position
-    # 148-02 Task 4 (Q2): the groundwater card sits beside the surface one it
-    # mirrors, before the always-shown cards -- its own `wells` gate, computed
-    # the same DISPLAY-order way as every other optional card here.
-    if form.shows_groundwater_efficiency:
-        position += 1
-    groundwater_number = position if form.shows_groundwater_efficiency else None
     position += 1
     recovery_number = position
     diversion_number = None
@@ -2304,7 +2299,6 @@ def delivery_settings(request):
             "settings_total": settings_total,
             "efficiency_number": efficiency_number,
             "over_delivery_number": over_delivery_number,
-            "groundwater_number": groundwater_number,
             "recovery_number": recovery_number,
             "diversion_number": diversion_number,
             "identifier_number": identifier_number,

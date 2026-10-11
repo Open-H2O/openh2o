@@ -5,7 +5,7 @@ The page answers one question, where this field's groundwater extraction
 (estimated) for the month came from, and only a month on a field with a well
 and no meter reading has that question. These tests build every ``CalculationRun`` directly with
 the ORM and type the expected figures in by hand (10.0000 less 1.0000 less
-4.0000 is 5.0000; 5.0000 divided by 0.8 is 6.2500), so a page-level
+4.0000 is 5.0000; 5.0000 divided by 0.75 is 6.6667), so a page-level
 regression can never be confused with the engine's own arithmetic.
 
 Parcel numbers here are fictional so the session-scoped Merced seed cannot
@@ -37,7 +37,7 @@ LABELS = (
     "ETAW",
     "ETAW met by surface water",
     "ETAW met by groundwater",
-    "Groundwater irrigation efficiency",
+    "Irrigation efficiency",
     "Groundwater extraction (estimated)",
 )
 METER_LINE = "A meter reading for June 2026 would replace this estimate."
@@ -108,7 +108,8 @@ def _canal_step(delivered="5.3333", efficiency_source="agency"):
 
 def _well_run(parcel, period="2026-06", **overrides):
     """The hand-built receipt: crop 10.0000, rain 1.0000, canal 4.0000 (a
-    5.3333 delivery times 0.75), well water 5.0000, pumped 6.2500 at 80%."""
+    5.3333 delivery times 0.75), well water 5.0000, pumped 6.6667 at the
+    same 75%, the Delivery Settings default the run stamped (150.2-02)."""
     fields = dict(
         parcel=parcel,
         period=period,
@@ -119,7 +120,9 @@ def _well_run(parcel, period="2026-06", **overrides):
         surface_efficiency=Decimal("0.750"),
         surface_water_af=Decimal("4.0000"),
         final_af=Decimal("5.0000"),
-        gw_extracted_af=Decimal("6.2500"),
+        gw_extracted_af=Decimal("6.6667"),
+        groundwater_application_efficiency=Decimal("0.750"),
+        groundwater_efficiency_source="agency",
         over_delivery_af=Decimal("0.0000"),
         residual_disposition="groundwater",
         breakdown=[_canal_step()],
@@ -174,14 +177,14 @@ class TestTheReceipt:
         # The labels in the order the three equations run.
         positions = [html.index(f'<div class="budget-seg-label">{label}</div>') for label in LABELS]
         assert positions == sorted(positions)
-        # 10 - 1 = 9; 9 - 4 = 5; 5 / 80% = 6.25.
-        for figure in ("10.00", "1.00", "9.00", "4.00", "5.00", "80%", "6.25"):
+        # 10 - 1 = 9; 9 - 4 = 5; 5 / 75% = 6.67.
+        for figure in ("10.00", "1.00", "9.00", "4.00", "5.00", "75%", "6.67"):
             assert f">{figure}<" in html, figure
         assert html.count("&minus;</div>") == 2
         assert html.count("&divide;</div>") == 1
         assert html.count("&equals;</div>") == 3
         # Two decimals; the run's own four-decimal value rides in the title.
-        assert 'title="6.2500 acre-feet"' in html
+        assert 'title="6.6667 acre-feet"' in html
         assert 'title="5.0000 acre-feet"' in html
         assert 'title="9.0000 acre-feet"' in html
         assert METER_LINE in html
@@ -200,7 +203,9 @@ class TestTheReceipt:
         assert ">5.33</b>" in html
         assert "Irrigation efficiency<span class=\"budget-breakdown-note\">Delivery Settings default</span>" in html
         assert "<b>75%</b>" in html
-        assert "set on Delivery Settings when this month was calculated" in html
+        # 150.2-02: the divisor names its source the same way the canal row does.
+        assert '<div class="budget-seg-caption">Delivery Settings default</div>' in html
+        assert "set on Delivery Settings when this month was calculated" not in html
         assert "charged to the groundwater allocation" in html
         assert "recorded on the field's ledger" in html
         # A field's own delivery (no split row on the ledger) says nothing
@@ -237,25 +242,63 @@ class TestTheReceipt:
         assert "measured" not in html.lower()
 
     def test_the_percentages_are_the_runs_own_and_not_the_live_setting(self):
-        """ISS-177's rule: the 80% is read back off final_af / gw_extracted_af,
-        the 75% off the run's stamped efficiency, so a change to Delivery
-        Settings after the run moves nothing the page says."""
+        """ISS-177's rule: both percentages are the run's own stamps (the 90%
+        its canal water was multiplied by, the 70% its groundwater was divided
+        by), so a change to Delivery Settings after the run moves nothing the
+        page says."""
         parcel = ParcelFactory(parcel_number="RCPT-APN-005")
         _well_run(
             parcel,
             surface_efficiency=Decimal("0.900"),
             final_af=Decimal("7.0000"),
             gw_extracted_af=Decimal("10.0000"),
+            groundwater_application_efficiency=Decimal("0.700"),
         )
         config, _ = SiteConfig.objects.get_or_create(defaults={"agency_name": "Receipt Test Agency"})
-        config.groundwater_efficiency = Decimal("0.500")
         config.default_irrigation_efficiency = Decimal("0.600")
         config.save()
         html = _page(parcel, "2026-06")
         assert ">70%<" in html
         assert "<b>90%</b>" in html
-        assert ">50%<" not in html
-        assert "<b>60%</b>" not in html
+        assert "60%" not in html
+
+    def test_a_run_from_before_the_stamp_reads_its_efficiency_back(self):
+        """No stamp: final_af / gw_extracted_af, 5.0000 / 6.2500 = 80%."""
+        parcel = ParcelFactory(parcel_number="RCPT-APN-005B")
+        _well_run(
+            parcel,
+            gw_extracted_af=Decimal("6.2500"),
+            groundwater_application_efficiency=None,
+            groundwater_efficiency_source="",
+        )
+        html = _page(parcel, "2026-06")
+        assert ">80%<" in html
+        assert "Delivery Settings default</div>" not in html
+
+    def test_the_efficiency_names_where_it_came_from(self):
+        from parcels.models import IrrigationMethod, ParcelIrrigationMethod
+
+        parcel = ParcelFactory(parcel_number="RCPT-APN-005C")
+        _well_run(parcel)
+        html = _page(parcel, "2026-06")
+        assert '<div class="budget-seg-caption">Delivery Settings default</div>' in html
+
+        method = IrrigationMethod.objects.create(
+            name="Receipt test pivot", assigned_efficiency=Decimal("0.850"),
+            range_low=Decimal("0.800"), range_high=Decimal("0.900"),
+        )
+        ParcelIrrigationMethod.objects.create(parcel=parcel, method=method)
+        _well_run(
+            parcel, "2026-07",
+            gw_extracted_af=Decimal("5.8824"),
+            groundwater_application_efficiency=Decimal("0.850"),
+            groundwater_efficiency_source="method",
+        )
+        html = _page(parcel, "2026-07")
+        assert (
+            '<div class="budget-seg-caption">Receipt test pivot, '
+            "the field's irrigation method</div>"
+        ) in html
 
     def test_a_run_from_before_extraction_was_stamped_stops_at_etaw_met_by_groundwater(self):
         parcel = ParcelFactory(parcel_number="RCPT-APN-006")
@@ -312,10 +355,11 @@ class TestAZeroMonth:
         assert 'title="0.0000 acre-feet">0.00<' in html
         assert "Surface water in excess of ETAW" in html
         assert 'title="4.0000 acre-feet">4.00</b>' in html
-        # Nothing was divided, so the run holds no groundwater irrigation
-        # efficiency to show; the live setting is never shown in its place.
-        assert "not applied this month" in html
-        assert ">80%<" not in html
+        # 150.2-02: the run stamped the field's efficiency even though there
+        # was nothing to divide, so the zero month shows it, not a dash.
+        assert "not applied this month" not in html
+        assert ">75%<" in html
+        assert '<div class="budget-seg-caption">Delivery Settings default</div>' in html
         # The default treatment (not credited) says nothing more.
         assert "Credited to this field" not in html
         assert "its own line" not in html

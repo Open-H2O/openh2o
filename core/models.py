@@ -162,23 +162,10 @@ class SiteConfig(models.Model):
         "above is credited. Default 10%, the Lower Tule convention.",
     )
 
-    # 148-02 Task 4 (Q2): the groundwater sibling of default_irrigation_efficiency,
-    # belonging to `wells` as that field belonged to `surface` until 150.2-01
-    # (DeliverySettingsForm hides it without the module; core/changes.py maps it
-    # the same way). run_calculations reads it once per run to split an estimated
-    # field's residual into what the crop consumed and what the pump had to lift
-    # to deliver it; a metered field never reads it (the meter is the number).
-    groundwater_efficiency = models.DecimalField(
-        max_digits=4,
-        decimal_places=3,
-        default=Decimal("0.800"),
-        help_text="Divides a field's ETAW met by groundwater to give its "
-        "groundwater extraction (estimated), which is what the allocation is "
-        "charged; the difference is recorded as deep percolation. 0.80 is the figure the "
-        "Groundwater Accounting Platform's older Merced Irrigation-Urban flow "
-        "hard-codes; a 2022 Madera verification measured an area-weighted 0.86 "
-        "over the crops it compared, 0.46 to 1.59 by unit.",
-    )
+    # 150.2-02: `groundwater_efficiency` (a flat 80% for pumped groundwater,
+    # 148-02) was removed. Brent, 2026-10-11: "one irrigation efficiency per
+    # field"; run_calculations divides by parcels.services.field_efficiency,
+    # which falls back to default_irrigation_efficiency above.
     # The agency-wide default for what happens to an unused allocation at
     # year-end. A district may override it on its Zone; this default must always
     # resolve to a concrete value (never null), so existing rollover behavior is
