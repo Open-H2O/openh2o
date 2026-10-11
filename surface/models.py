@@ -201,6 +201,32 @@ class WaterRightParcel(models.Model):
         return f"{self.water_right} → {self.parcel}"
 
 
+# Default seepage share by the canal's lining (150.3-01; Brent 2026-10-11
+# 11:50 PDT approved the lining choice on these three figures). Unlined 25
+# percent: Merced Irrigation District's 2020 Agricultural Water Management Plan
+# puts distribution seepage at 25.9 to 43.1 percent of its Merced River
+# diversion, 2016-2020 (Tables 18 and 22; seepage is the plan's closure term),
+# and FAO Irrigation and Drainage Paper 61, Table 10 (from USBR 1978), gives
+# unlined canals 20 to 30 percent of canal flow. Lined 5 percent: the mostly
+# lined Modesto and Turlock Irrigation Districts report channel seepage of 4.2
+# percent (MID 2025 plan, Table 47) and 6.4 percent (TID 2012 plan, Table 4.8)
+# of supply. Pipe 0: FAO Paper 61, Table 10, "Pipelines 0".
+UNLINED_DEFAULT_SEEPAGE = Decimal("0.2500")
+LINED_DEFAULT_SEEPAGE = Decimal("0.0500")
+PIPE_DEFAULT_SEEPAGE = Decimal("0")
+
+_DEFAULT_SEEPAGE_BY_LINING = {
+    "unlined": UNLINED_DEFAULT_SEEPAGE,
+    "lined": LINED_DEFAULT_SEEPAGE,
+    "pipe": PIPE_DEFAULT_SEEPAGE,
+}
+
+
+def default_seepage_fraction(lining):
+    """The platform's default seepage share for a lining; None when not stated."""
+    return _DEFAULT_SEEPAGE_BY_LINING.get(lining)
+
+
 @track_changes()
 class PointOfDiversion(models.Model):
     STATUS_CHOICES = [
@@ -248,6 +274,11 @@ class PointOfDiversion(models.Model):
         ("measured", "Measured"),
         ("district_estimate", "District estimate"),
         ("default", "Default (not district-specific)"),
+    ]
+    LINING_CHOICES = [
+        ("unlined", "Unlined"),
+        ("lined", "Lined"),
+        ("pipe", "Pipe"),
     ]
     CONTRACT_UNIT_CHOICES = [
         ("cfs", "Cubic feet per second (cfs)"),
@@ -310,6 +341,18 @@ class PointOfDiversion(models.Model):
         help_text="How the three shares above were set: measured on this "
         "canal, a district estimate, or this platform's own default.",
     )
+    # 150.3-01: blank means not stated, so a point nobody has described keeps
+    # the seepage it holds. While loss_basis is "default", save() sets the
+    # seepage share from this (default_seepage_fraction); a measured or
+    # district figure is never overwritten.
+    lining = models.CharField(
+        max_length=10,
+        choices=LINING_CHOICES,
+        null=True,
+        blank=True,
+        help_text="Whether the canal is unlined, lined or pipe. While the "
+        "shares are the platform's default, this sets the seepage share.",
+    )
     spill_device = models.ForeignKey(
         "MeasuringDevice",
         on_delete=models.SET_NULL,
@@ -351,9 +394,11 @@ class PointOfDiversion(models.Model):
         Model.save() never calls this (the form is the entry boundary and
         carries the same check as a readable field error), but a guard
         belongs on the model too -- any future caller that builds a POD
-        outside the form gets the same protection.
+        outside the form gets the same protection. The check runs on the
+        seepage the lining sets, since that is what save() will store.
         """
         super().clean()
+        self.apply_lining_default()
         fractions = [
             f
             for f in (
@@ -369,6 +414,25 @@ class PointOfDiversion(models.Model):
                 "whole of what was diverted, or equal it: some water has to "
                 "reach the fields."
             )
+
+    def apply_lining_default(self):
+        """Set the seepage share from the lining while the basis is the default.
+
+        A measured or district-estimate basis, or a lining not stated, leaves
+        the seepage share as entered.
+        """
+        if self.loss_basis != "default":
+            return
+        seepage = default_seepage_fraction(self.lining)
+        if seepage is not None:
+            self.seepage_fraction = seepage
+
+    def save(self, *args, **kwargs):
+        self.apply_lining_default()
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None and {"lining", "loss_basis"} & set(update_fields):
+            kwargs["update_fields"] = set(update_fields) | {"seepage_fraction"}
+        super().save(*args, **kwargs)
 
     def _loss_display(self, fraction, band_percent):
         """'12.00%' or '12.00% ±35%' -- convention 11: the band is the
