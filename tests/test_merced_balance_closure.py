@@ -854,7 +854,7 @@ def test_a_plugged_figure_says_it_is_an_estimate():
     # by arithmetic, and the badge says so in one word.
     plugged_residual = budget_segment(plugged_html, "Residual")
     assert '<span class="badge badge-grey">Estimated</span>' in plugged_residual
-    assert "Groundwater here came out as the remainder, so this balance closes by arithmetic. A meter reading would replace the estimate." in plugged_residual
+    assert "This field has no meter readings for the water year, so OpenH2O estimated its groundwater extraction from its ETAW met by groundwater, and this balance closes at zero by arithmetic. A meter reading would replace the estimate." in plugged_residual
 
     # A meter owns this one: the engine had nothing to solve for.
     metered = ParcelFactory()

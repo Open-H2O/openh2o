@@ -282,9 +282,11 @@ class DeliverySettingsForm(forms.Form):
         # 148-04: the sentence about fields without a well is in the
         # template, behind the `wells` gate: a kept page may not name a
         # dropped module's noun (tests/droppability).
-        help_text="Applies to the credited choice. 10% unless you change it. "
-        "A change applies to months calculated after it; a month already "
-        "calculated keeps the share it ran under.",
+        help_text="Under the credited choice, OpenH2O leaves this share of the "
+        "surface water in excess of ETAW in the basin, credited to no one, and "
+        "credits the rest to the landowner. 10 percent unless the district "
+        "changes it. A changed setting affects a past month only when that "
+        "month is recalculated.",
         widget=forms.NumberInput(
             attrs={"class": "form-input", "style": "width: 6rem;", "step": "1"}
         ),
