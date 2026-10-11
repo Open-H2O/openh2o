@@ -33,7 +33,7 @@ pytestmark = pytest.mark.django_db
 # sentence under the credited or named-line setting only; under the default
 # (not credited) the figure stands and nothing more is said. The field page's
 # own line keeps the fixed noun's short form.
-ZERO_SENTENCE = "Rain and canal water covered the crop this month, so nothing was pumped."
+ZERO_SENTENCE = "Rain and canal water covered the crop water use this month, so OpenH2O estimates no pumping."
 EXCESS_SENTENCE = 'title="4.0000 acre-feet">4.00</td>'  # 149.1-05: a row of the receipt table
 FIELD_LABEL = "Canal water beyond crop use:"
 

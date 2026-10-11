@@ -451,7 +451,12 @@ BASELINE: dict = {
     #   divides a recorded total, a false positive.
     #   2026-10-10: back to 11. That note was removed from the worked example
     #   (it repeated the page's own section on how deliveries are divided).
-    "templates/**/*.html": 11,
+    #   2026-10-10 19:35 PDT: 11 -> 12 for accounting/calculation_run_detail.html,
+    #   whose row reads "The crop used all of the canal water it could use and
+    #   still needed well water.", in the words Brent approved at 19:19 PDT. The
+    #   scanner reads "The crop used all of the canal" as opening a definition of
+    #   canal water. It says what this month's figures did, a false positive.
+    "templates/**/*.html": 12,
     "help_text=": 4,
 }
 

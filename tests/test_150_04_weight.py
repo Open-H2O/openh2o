@@ -76,7 +76,7 @@ def test_w1_the_meter_reading_row_is_the_receipts_aside_row():
     assert html.startswith('<tr class="receipt-aside">', row_start)
     # Only the reference row is secondary; the calculation rows keep the body weight.
     assert html.count("receipt-aside") == 1
-    assert "With a meter on this well, its reading would replace the estimate." in html
+    assert "If this field had a meter reading for the month, OpenH2O would use the reading in place of this estimate." in html
 
 
 # -- W2: the worksheet block's head ----------------------------------------

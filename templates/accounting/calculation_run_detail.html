@@ -27,6 +27,18 @@
   Every figure is the run's own stamped column, and both percentages are
   read back off the run (the view's docstring says how), never off the live
   Delivery Settings value.
+
+  2026-10-10 (150.1-02, screen 1): every sentence in the third column, the
+  two row labels that carried a reason ("because a pump lifts ...") and a
+  ledger word ("budget"), the lead, the zero-month line and the metered short
+  page were rewritten from twelve rows Brent approved at 19:19 PDT ("yes"),
+  each checked against the code. The lead was false: the receipt runs when a
+  well has no meter READING for the month (run_calculations.py, metered = a
+  meter_reading ledger row in the month), not when the well has no meter.
+  Rain is gridMET's (steps.py subtract_effective_precip); crop water use is
+  OpenET's (steps.py et_gross). Not rewritten (not sent): the old-run canal
+  line, "No canal delivery on record ...", the credited and named-line tails
+  and the no-well short page.
 {% endcomment %}
 {% block title %}How was this calculated? - Open Water Accounting Platform{% endblock %}
 {% block page_title %}How was this calculated?{% endblock %}
@@ -67,7 +79,7 @@
       {% if run.gw_extracted_af is not None %}Estimated pumping{% else %}Estimated well water{% endif %}, {{ month_label }}:
       <span class="receipt-headline-figure" title="{{ headline_af }} acre-feet">{{ headline_af|floatformat:2|intcomma }} acre-feet</span>
     </h2>
-    <p class="text-secondary receipt-lead">This field's well has no meter, so the pumping is worked out from what the crop used.</p>
+    <p class="text-secondary receipt-lead">This field has a well and no meter reading for {{ month_label }}, so OpenH2O calculates the pumping from the crop's water use.</p>
 
     <div class="table-scroll">
     <table class="data-table receipt-table">
@@ -82,20 +94,20 @@
         <tr>
           <td class="col-name">Water the crop used (satellite estimate)</td>
           <td class="col-amount td-num" title="{{ run.gross_et_af }} acre-feet">{{ run.gross_et_af|floatformat:2|intcomma }}</td>
-          <td>A satellite estimate for this field, this month.</td>
+          <td>OpenET estimates this field's crop water use for the month from satellite data.</td>
         </tr>
         {% if run.effective_precip_af is not None %}
         <tr>
           <td class="col-name">minus rain the crop could use</td>
           <td class="col-amount td-num" title="{{ run.effective_precip_af }} acre-feet">{{ run.effective_precip_af|floatformat:2|intcomma }}</td>
-          <td>Weather data for the area, then the share the crop could use by the method set on Methodology Settings.</td>
+          <td>The month's rain comes from gridMET weather data. Methodology Settings sets the method for estimating how much of that rain the crop could use.</td>
         </tr>
         {% endif %}
         {% if run.surface_water_af is not None %}
         <tr>
           <td class="col-name">minus canal water the crop could use</td>
           <td class="col-amount td-num" title="{{ run.surface_water_af }} acre-feet">{{ run.surface_water_af|floatformat:2|intcomma }}</td>
-          <td>{% if run.surface_delivered_af %}The district's delivery record, <span title="{{ run.surface_delivered_af }} acre-feet">{{ run.surface_delivered_af|floatformat:2|intcomma }}</span> acre-feet{% if delivery_split == "use" %}, divided up from the canal total in proportion to each field's crop water use after rain{% elif delivery_split == "fixed" %}, divided up from the canal total by each field's share of the canal on file{% endif %}{% if irrigation_efficiency_pct is not None %}. Times the field's irrigation efficiency, {{ irrigation_efficiency_pct|floatformat:0 }}% ({% if irrigation_efficiency_source == "method" %}{% if irrigation_method_name %}the field's irrigation method on file, {{ irrigation_method_name }}{% else %}the field's irrigation method on file{% endif %}{% else %}the deployment's default on Delivery Settings{% endif %}){% endif %}.{% elif run.surface_water_af %}The whole delivery on the district's record; this deployment's calculation plan applies no irrigation efficiency.{% else %}No canal delivery on record for this field this month.{% endif %}</td>
+          <td>{% if run.surface_delivered_af %}{% if delivery_split == "use" %}OpenH2O divided the headgate's monthly total among its fields in proportion to each field's crop water use after rain, and this field received{% elif delivery_split == "fixed" %}OpenH2O divided the headgate's monthly total among its fields by each field's fixed share on file, and this field received{% else %}The district recorded a delivery to this field of{% endif %} <span title="{{ run.surface_delivered_af }} acre-feet">{{ run.surface_delivered_af|floatformat:2|intcomma }}</span> acre-feet.{% if irrigation_efficiency_pct is not None %} {% if irrigation_efficiency_source == "method" %}{% if irrigation_method_name %}This field's irrigation method on file is {{ irrigation_method_name }}, so its irrigation efficiency is {{ irrigation_efficiency_pct|floatformat:0 }} percent.{% else %}This field's irrigation efficiency comes from its irrigation method on file, {{ irrigation_efficiency_pct|floatformat:0 }} percent.{% endif %}{% else %}This field has no irrigation method on file, so its irrigation efficiency is the default on Delivery Settings, {{ irrigation_efficiency_pct|floatformat:0 }} percent.{% endif %}{% endif %}{% elif run.surface_water_af %}The whole delivery on the district's record; this deployment's calculation plan applies no irrigation efficiency.{% else %}No canal delivery on record for this field this month.{% endif %}</td>
         </tr>
         {% endif %}
         {% if run.final_af == 0 and run.over_delivery_af > 0 %}
@@ -107,7 +119,7 @@
         <tr>
           <td class="col-name">Canal water beyond what the crop could use</td>
           <td class="col-amount td-num" title="{{ run.over_delivery_af }} acre-feet">{{ run.over_delivery_af|floatformat:2|intcomma }}</td>
-          <td>More than the crop needed this month.{% if run.over_delivery_treatment == "credited" and over_delivery_left_af is not None %} {{ run.over_delivery_credited_af|floatformat:2|intcomma }} acre-feet of it is credited to this field; {{ over_delivery_left_af|floatformat:2|intcomma }} acre-feet ({{ over_delivery_share_pct|floatformat:0 }}%) stays in the basin.{% elif run.over_delivery_treatment == "named_line" %} It is shown on the field's page as its own line, not a credit and not charged.{% endif %}</td>
+          <td>This much of the canal water the crop could use exceeded the month's crop water use after rain.{% if run.over_delivery_treatment == "credited" and over_delivery_left_af is not None %} {{ run.over_delivery_credited_af|floatformat:2|intcomma }} acre-feet of it is credited to this field; {{ over_delivery_left_af|floatformat:2|intcomma }} acre-feet ({{ over_delivery_share_pct|floatformat:0 }}%) stays in the basin.{% elif run.over_delivery_treatment == "named_line" %} It is shown on the field's page as its own line, not a credit and not charged.{% endif %}</td>
         </tr>
         {% endif %}
         {% if run.surface_water_af and run.final_af > 0 %}
@@ -119,30 +131,30 @@
         <tr>
           <td class="col-name">Canal water beyond what the crop could use</td>
           <td class="col-amount td-num">None</td>
-          <td>Nothing was left beyond what the crop could use; the crop used all its canal water and still needed well water.</td>
+          <td>The crop used all of the canal water it could use and still needed well water.</td>
         </tr>
         {% endif %}
         <tr class="receipt-total">
           <td class="col-name">= well water the crop used</td>
           <td class="col-amount td-num" title="{{ run.final_af }} acre-feet">{{ run.final_af|floatformat:2|intcomma }}</td>
-          <td>The lines above subtracted; the floor on Methodology Settings keeps it at zero or more.</td>
+          <td>This is the crop water use left after the rain and canal water above. A step on Methodology Settings sets the lowest value this figure can fall to, zero acre-feet unless the district changes it.</td>
         </tr>
         {% if gw_efficiency_pct is not None %}
         <tr>
-          <td class="col-name">divided by {{ gw_efficiency_pct|floatformat:0 }}%, because a pump lifts more than the crop uses</td>
+          <td class="col-name">divided by {{ gw_efficiency_pct|floatformat:0 }}%, the share of pumped water the crop consumes</td>
           <td class="col-amount td-num"></td>
-          <td>Share of pumped groundwater the crop consumes, {{ gw_efficiency_pct|floatformat:0 }}%, on Delivery Settings; stamped on this month when it was calculated.</td>
+          <td>Delivery Settings sets this share. A later change to the share does not alter this month until OpenH2O recalculates the month.</td>
         </tr>
         <tr class="receipt-total">
-          <td class="col-name">= pumped, charged to the groundwater budget</td>
+          <td class="col-name">= estimated pumping, charged to the groundwater allocation</td>
           <td class="col-amount td-num" title="{{ run.gw_extracted_af }} acre-feet">{{ run.gw_extracted_af|floatformat:2|intcomma }}</td>
-          <td>Well water the crop used, divided by that share.</td>
+          <td>OpenH2O charges this figure against the groundwater allocation.</td>
         </tr>
         {% endif %}
         <tr class="receipt-aside">
           <td class="col-name">Meter reading</td>
           <td class="col-amount td-num">None</td>
-          <td>With a meter on this well, its reading would replace the estimate.</td>
+          <td>If this field had a meter reading for the month, OpenH2O would use the reading in place of this estimate.</td>
         </tr>
       </tbody>
     </table>
@@ -154,7 +166,7 @@
        water beyond what the crop could use, if any, is a row in the table
        above (149.1-05). {% endcomment %}
     <p class="text-secondary receipt-zero">
-      {% if covered_by %}{{ covered_by }} covered the crop this month{% else %}No crop is on record for this field this month{% endif %}, so nothing was pumped.
+      {% if covered_by %}{{ covered_by }} covered the crop water use this month{% else %}No crop is on record for this field this month{% endif %}, so OpenH2O estimates no pumping.
     </p>
     {% endif %}
 
@@ -165,7 +177,7 @@
     <h2 class="receipt-headline">No estimated pumping for {{ month_label }}</h2>
     <p class="text-secondary receipt-lead">
       {% if run.residual_disposition == "metered" %}
-      This field's well has a meter, so the pumping is the meter's reading and nothing is estimated.
+      This field has a meter reading for {{ month_label }}, so the pumping is the reading and OpenH2O estimates nothing.
       {% else %}
       This field has no well on record, so there is no pumping to estimate.
       {% endif %}
