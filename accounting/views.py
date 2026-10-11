@@ -1996,7 +1996,7 @@ def _step_detail_summary(step, *, delivery_split=None):
         )
     if step_type == "subtract_surface_water":
         # 148-02: with the field's efficiency applied, the subtracted figure is
-        # the part the crop could use, not the delivery; say both. 148-03: a
+        # the delivery times the efficiency, not the delivery; say both. 148-03: a
         # delivery that was a share of a headgate total says how the share
         # was made, in the ruled words (`delivery_split`, read off the month's
         # ledger rows by `_delivery_split_kind`; the run stores no split flag).
@@ -2006,16 +2006,18 @@ def _step_detail_summary(step, *, delivery_split=None):
                 if detail.get("efficiency_source") == "method"
                 else "the deployment's default"
             )
+            # 150.1-02 (2026-10-11): written as the formula with its real
+            # signs, in Brent's terms; "the crop could use" is gone.
             if delivery_split == "use":
-                split = f", {DELIVERY_SHARE_BY_USE}"
+                split = f", {DELIVERY_SHARE_BY_USE},"
             elif delivery_split == "fixed":
-                split = f", divided up from the canal total by {DELIVERY_SHARE_BY_FIXED}"
+                split = f", divided up from the canal total by {DELIVERY_SHARE_BY_FIXED},"
             else:
                 split = ""
             return (
-                f"{_fmt(detail.get('consumed_af'))} AF the crop could use, of "
-                f"{_fmt(detail.get('delivered_af'))} AF delivered{split}; "
-                f"irrigation efficiency {_fmt(detail.get('efficiency'), 2)} ({whose})"
+                f"{_fmt(detail.get('delivered_af'))} AF delivered{split} \u00d7 "
+                f"irrigation efficiency {_fmt(detail.get('efficiency'), 2)} ({whose}) "
+                f"= {_fmt(detail.get('consumed_af'))} AF"
             )
         return f"{_fmt(detail.get('surface_water_af'))} AF delivered, all of it taken off"
     if step_type == "facility_only_zero":
@@ -2061,68 +2063,93 @@ def _over_delivery_share_pct(run):
 
 
 def _receipt_context(parcel, run, period):
-    """The receipt's own words for one run with a well and no meter.
+    """The equation panel's figures for one run with a well and no meter reading.
 
-    148-03 (Brent approved the design 2026-09-28 20:12): the page answers one
-    question, where this field's estimated pumping for the month came from,
-    as a subtraction the reader can follow line by line. Every figure is the
-    run's own stamped column; the two percentages are read back off the run
-    (the irrigation efficiency it stored; the groundwater efficiency as
-    final_af / gw_extracted_af), never off the live setting, so a change to
-    Delivery Settings moves nothing a month already run says about itself.
+    150.1-02 (2026-10-11): the page is rebuilt as three equations in the
+    engineer's terms Brent approved at 05:41 and 05:48 PDT (crop ET, effective
+    precipitation, ETAW, ETAW met by surface water, ETAW met by groundwater,
+    groundwater irrigation efficiency, groundwater extraction (estimated),
+    surface water in excess of ETAW):
+
+        Crop ET - Effective precipitation = ETAW
+        ETAW - ETAW met by surface water = ETAW met by groundwater
+        ETAW met by groundwater / groundwater irrigation efficiency
+            = groundwater extraction (estimated)
+
+    Every figure is the run's own stamped column or is worked from them; the
+    two percentages are read back off the run (the irrigation efficiency it
+    stored; the groundwater irrigation efficiency as final_af /
+    gw_extracted_af), never off the live setting, so a change to Delivery
+    Settings moves nothing a month already run says about itself.
+
+    ``surface_water_af`` is the delivery times the irrigation efficiency, NOT
+    capped at ETAW (accounting/steps.py::subtract_surface_water); ETAW met by
+    surface water is that figure up to ETAW, and the part above ETAW is the
+    run's own ``over_delivery_af`` (the floor step's incidental_recharge_af).
     """
     irrigation_efficiency_source = None
+    precip_method = None
+    rainfall_mm = None
+    area_acres = None
+    floor = None
     for step in run.breakdown:
-        if step.get("step_type") == "subtract_surface_water":
-            irrigation_efficiency_source = (step.get("detail") or {}).get(
-                "efficiency_source"
-            )
-            break
+        detail = step.get("detail") or {}
+        step_type = step.get("step_type")
+        if step_type == "subtract_surface_water" and irrigation_efficiency_source is None:
+            irrigation_efficiency_source = detail.get("efficiency_source")
+        elif step_type == "subtract_effective_precip":
+            precip_method = detail.get("method", "usda_scs")
+            rainfall_mm = detail.get("precip_mm")
+        elif step_type == "clamp_floor":
+            floor = detail.get("floor")
+        elif step_type == "et_gross":
+            area_acres = detail.get("area_acres")
     irrigation_method_name = None
     if irrigation_efficiency_source == "method":
         link = getattr(parcel, "irrigation", None)
         if link is not None:
             irrigation_method_name = link.method.name
 
-    # A zero month: rain and canal water (one or both) covered the crop, or a
-    # field with no crop on record was set to 0 by the plan. Which of the two
-    # supplies did the covering is read off the run's own figures, so the
-    # sentence names only water that was there.
-    rain = run.effective_precip_af or Decimal("0")
-    canal = run.surface_water_af or Decimal("0")
-    gross = run.gross_et_af or Decimal("0")
-    covered_by = None
-    if run.final_af == 0:
-        # Rain that met the crop's whole water use covered it on its own, even
-        # when canal water was delivered too (Brent approved 2026-10-10 20:16:
-        # "Rain covered the crop's water use this month").
-        if rain > 0 and rain >= gross:
-            covered_by = "Rain"
-        elif rain > 0 and canal > 0:
-            covered_by = "Rain and canal water"
-        elif rain > 0:
-            covered_by = "Rain"
-        elif canal > 0:
-            covered_by = "Canal water"
+    zero = Decimal("0")
+    etaw = run.net_consumptive_use_af
+    surface = run.surface_water_af or zero
+    etaw_met_by_surface = min(surface, max(etaw, zero))
+    # ETAW met by groundwater before the floor step is never below zero here,
+    # since ETAW met by surface water never exceeds ETAW. The floor raises
+    # final_af above it only where a district set a floor above zero; the
+    # panel then names the floor. Compared with the floor itself, not by
+    # difference: the stored ETAW and final_af are rounded separately and
+    # can differ by 0.0001 AF with no floor involved (41 of 439 demo runs).
+    floor_value = Decimal(str(floor)) if floor is not None else zero
+    floor_raised = (
+        floor_value > zero
+        and run.final_af == floor_value
+        and etaw - etaw_met_by_surface < floor_value
+    )
 
-    # 150.1-02 (Brent approved 2026-10-10 20:16 PDT): the receipt shows its
-    # subtraction with the month's own figures. ``raw_af`` is the subtraction
-    # before the floor; ``canal_need_af`` is how much of the canal water the
-    # crop still needed after rain (crop water use minus rain, never below 0),
-    # which is what the left-over row compares the canal water with.
-    raw_af = gross - rain - canal
-    canal_need_af = gross - rain
-    if canal_need_af < 0:
-        canal_need_af = Decimal("0")
+    # The month's gridMET rainfall in acre-feet over the field, by the same
+    # conversion and the same area the run used for crop ET, so it reads
+    # beside effective precipitation in one unit.
+    rainfall_af = None
+    if rainfall_mm is not None and area_acres is not None:
+        from accounting.services import et_mm_to_acre_feet
+
+        rainfall_af = abs(
+            et_mm_to_acre_feet(Decimal(str(rainfall_mm)), Decimal(str(area_acres)))
+        )
 
     return {
         "receipt": True,
-        # The headline figure: pumped where the run stamped it; on a run from
-        # before pumping was stamped, the well water itself, and the template
-        # names it as such.
-        "headline_af": (
-            run.gw_extracted_af if run.gw_extracted_af is not None else run.final_af
+        "etaw_af": etaw,
+        "etaw_met_by_surface_af": etaw_met_by_surface,
+        "floor_raised": floor_raised,
+        "floor_af": floor_value,
+        "precip_method_label": (
+            METHOD_LABELS.get(precip_method, "Method not recorded")
+            if precip_method
+            else None
         ),
+        "rainfall_af": rainfall_af,
         "gw_efficiency_pct": (
             run.final_af / run.gw_extracted_af * 100 if run.gw_extracted_af else None
         ),
@@ -2132,13 +2159,10 @@ def _receipt_context(parcel, run, period):
         "irrigation_efficiency_source": irrigation_efficiency_source,
         "irrigation_method_name": irrigation_method_name,
         # "use" / "fixed" / None, off the month's ledger rows (the run stores
-        # no split flag), for the ruled words on the canal line.
+        # no split flag): whether the delivery was a share of a headgate total.
         "delivery_split": _delivery_split_kind(parcel, period),
-        "covered_by": covered_by,
-        "raw_af": raw_af,
-        "canal_need_af": canal_need_af,
-        # 148-04: what happened to canal water beyond what the crop could use,
-        # by the run's own stamp. None whenever nothing was credited.
+        # 148-04: what happened to surface water in excess of ETAW, by the
+        # run's own stamp. None whenever nothing was credited.
         "over_delivery_left_af": _over_delivery_left_af(run),
         "over_delivery_share_pct": _over_delivery_share_pct(run),
     }

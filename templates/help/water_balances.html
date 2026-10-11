@@ -43,19 +43,19 @@
         <tbody>
           <tr>
             <td class="col-name">1</td>
-            <td>For each field and month, OpenH2O starts with OpenET's satellite estimate of the crop's water use.</td>
+            <td>For each field and month, OpenH2O starts with OpenET's satellite estimate of crop ET.</td>
           </tr>
           <tr>
             <td class="col-name">2</td>
-            <td>It subtracts the rain the crop could use, which is estimated from weather data.</td>
+            <td>OpenH2O subtracts effective precipitation, estimated from gridMET rainfall. The result is ETAW.</td>
           </tr>
           <tr>
             <td class="col-name">3</td>
-            <td>It subtracts the canal water the crop could use: the field's delivery multiplied by its irrigation efficiency.</td>
+            <td>OpenH2O assigns ETAW first to surface water, up to the field's delivery times its irrigation efficiency.</td>
           </tr>
           <tr>
             <td class="col-name">4</td>
-            <td>What is left after those subtractions is the remainder.</td>
+            <td>The ETAW that surface water does not meet is the remainder.</td>
           </tr>
         </tbody>
       </table>
@@ -77,7 +77,7 @@
         <tbody>
           <tr>
             <td class="col-name">A well and no meter reading</td>
-            <td>The remainder is groundwater consumed. Groundwater consumed divided by the share of pumped water the crop consumes gives groundwater extracted, which is charged against the groundwater allocation.</td>
+            <td>The remainder is ETAW met by groundwater. OpenH2O divides ETAW met by groundwater by the groundwater irrigation efficiency to estimate groundwater extraction, and charges that extraction against the groundwater allocation.</td>
           </tr>
           <tr>
             <td class="col-name">A meter reading</td>
@@ -93,7 +93,7 @@
   </div>
 
   <div class="card-raised">
-    <h2 class="section-header">How canal deliveries are divided</h2>
+    <h2 class="section-header">How surface water deliveries are divided</h2>
     <div class="table-scroll">
       <table class="data-table help-cases-table">
         <thead>
@@ -105,7 +105,7 @@
         <tbody>
           <tr>
             <td class="col-name">A headgate total</td>
-            <td>A district records each headgate's delivery as one monthly total, and OpenH2O divides that total among the fields the headgate serves in proportion to each field's crop water use after rain.</td>
+            <td>A district records each headgate's delivery as one monthly total, and OpenH2O divides that total among the fields the headgate serves in proportion to each field's ETAW.</td>
           </tr>
           <tr>
             <td class="col-name">A field's own record</td>

@@ -349,21 +349,15 @@ class TestHealthDemoMode:
         """143-05 (R-043, second half): Site Health and the Use Ledger must
         tell the same story about a zero-amount calculated row, not two
         different words for the same fact. The ledger's Description cell
-        says 'No groundwater extraction was derived for this month; rainfall
-        and the canal water the crop could use covered the estimated use.'
-        (148-02 Task 3 reworded it from "delivered surface water" once
-        delivered and consumed became two different numbers); this message
-        carries the same claim (no extraction derived, floor hit by rainfall
-        and the canal water the crop could use), not the old bare 'calculated
-        rows have zero amount' framing."""
+        says 'No ETAW met by groundwater this month, so OpenH2O estimates no
+        groundwater extraction.' (150.1-02, Brent's terms, 2026-10-11); this
+        message carries the same claim, not the old bare 'calculated rows have
+        zero amount' framing."""
         ParcelLedgerFactory(amount_acre_feet=Decimal("0"), source_type="calculated")
         result = check_ledger_integrity()
         message = result["message"]
-        assert "no groundwater extraction was derived" in message.lower()
-        assert (
-            "rainfall and the canal water the crop could use covered the "
-            "estimated use"
-        ) in message.lower()
+        assert "no etaw met by groundwater" in message.lower()
+        assert "no groundwater extraction estimated" in message.lower()
 
 
 # ---------------------------------------------------------------------------

@@ -57,7 +57,10 @@ def _squash(html):
 # -- W1: the receipt's reference row ---------------------------------------
 
 
-def test_w1_the_meter_reading_row_is_the_receipts_aside_row():
+def test_w1_the_meter_reading_line_is_the_panels_quiet_note():
+    """150.1-02 (2026-10-11): the receipt table is gone; the reference line
+    about a meter reading sits in the equation panel's note, the quiet line
+    under the figures, not among them."""
     from tests.test_calculation_receipt import _well_run
     from tests.factories import ParcelFactory
 
@@ -71,12 +74,10 @@ def test_w1_the_meter_reading_row_is_the_receipts_aside_row():
     )
     assert resp.status_code == 200
     html = resp.content.decode()
-    row_start = html.rindex("<tr", 0, html.index('<td class="col-name">Meter reading</td>'))
-    # RED before: the row opened as a bare `<tr>`.
-    assert html.startswith('<tr class="receipt-aside">', row_start)
-    # Only the reference row is secondary; the calculation rows keep the body weight.
-    assert html.count("receipt-aside") == 1
-    assert "A meter reading for June 2026 would replace this estimate." in html
+    note_start = html.index('<div class="budget-panel-note">')
+    note_end = html.index("</div>", note_start)
+    assert "A meter reading for June 2026 would replace this estimate." in html[note_start:note_end]
+    assert "receipt-aside" not in html
 
 
 # -- W2: the worksheet block's head ----------------------------------------

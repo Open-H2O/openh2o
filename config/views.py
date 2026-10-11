@@ -574,10 +574,13 @@ def glossary(request):
     Use Area, Ledger Entry).
 
     **Membership never changes, only wording (ISS-085, decided).** 36 entries in
-    and 40 entries out (148-03 Task 2 added Canal Water the Crop Could Use,
-    Groundwater Consumed, Groundwater Extracted and Canal Water Beyond What the
-    Crop Could Use; 150-03 Task 5 added nine more for ISS-183, the drinking-water
-    words and the station list's freshness words, for 49); a reduced deployment
+    and 40 entries out (148-03 Task 2 added four calculation terms; 150-03 Task
+    5 added nine more for ISS-183, the drinking-water words and the station
+    list's freshness words, for 49; 2026-10-11, at Brent's word, the four
+    coined calculation terms and Consumptive Use gave way to the engineer's
+    terms: ETAW, ETAW Met by Surface Water, ETAW Met by Groundwater,
+    Groundwater Irrigation Efficiency, Groundwater Extraction and Surface Water
+    in Excess of ETAW, and ET became Crop ET, for 50); a reduced deployment
     narrows the *pointers*, not the dictionary. And the ``See Help > X.`` sentences are matched byte-for-byte by
     ``_without_unavailable_help_pointers`` above — reword one and it stops being
     stripped, which sends a reduced-deployment reader at a 404 (the defect Plan
@@ -596,26 +599,27 @@ def glossary(request):
         "Allocation Ceiling": "The total volume in acre-feet that a district sets on Allocations for one zone, one water type and one water year. See Help > Allocations & Ceilings.",
         "Allocation": "One account's share of a zone's groundwater Allocation Ceiling, in proportion to the number of use areas the account holds in the zone. An account with use areas in several zones holds the sum of its shares. See Help > Allocations & Ceilings.",
         "Apportionment": "Another name for ET-Demand Allocation. See Help > Methods Behind the Numbers.",
-        "Usage": "A ledger row that draws water against an allocation, stored as a negative amount. Meter readings, deliveries and the month's calculated groundwater consumed are usage rows.",
-        "Canal Water the Crop Could Use": "A month's canal delivery to a field multiplied by the field's irrigation efficiency. OpenH2O subtracts this amount from the month's crop water use. See Help > Methods Behind the Numbers.",
-        "Groundwater Consumed": "What is left of a month's crop water use on a field with a well and no meter reading, after rain the crop could use and canal water the crop could use are subtracted. OpenH2O records this figure on the Use Ledger as the month's calculated row. See Help > Methods Behind the Numbers.",
-        "Groundwater Extracted": "Groundwater consumed divided by the share of pumped water the crop consumes, which is 80 percent unless the district changes it on Delivery Settings. Where a well has a meter reading, groundwater extracted is the reading. A groundwater allocation is charged with groundwater extracted. See Help > Methods Behind the Numbers.",
-        "Canal Water Beyond What the Crop Could Use": "The part of the canal water the crop could use that exceeds the month's crop water use after rain. A setting on Delivery Settings decides whether OpenH2O credits this water to no one, credits it to the landowner or shows it as a separate line. See Help > Methods Behind the Numbers.",
+        "Usage": "A ledger row that draws water against an allocation, stored as a negative amount. Meter readings, deliveries and the month's calculated ETAW met by groundwater are usage rows.",
+        "ETAW (Evapotranspiration of Applied Water)": "Crop ET minus effective precipitation, for one field and month. OpenH2O assigns a field's ETAW first to surface water, up to the delivery times the field's irrigation efficiency, and the rest to groundwater. See Help > Methods Behind the Numbers.",
+        "ETAW Met by Surface Water": "The part of a field's ETAW that OpenH2O assigns to surface water: the month's delivery times the field's irrigation efficiency, up to the month's ETAW. See Help > Methods Behind the Numbers.",
+        "ETAW Met by Groundwater": "The part of a field's ETAW that surface water does not meet, on a field with a well. OpenH2O records this figure on the Use Ledger as the month's calculated row. See Help > Methods Behind the Numbers.",
+        "Groundwater Irrigation Efficiency": "The share of pumped groundwater that OpenH2O counts toward ETAW, set on Delivery Settings, 80 percent unless the district changes it. See Help > Methods Behind the Numbers.",
+        "Groundwater Extraction": "The groundwater a well pumped in a month: the meter reading where the well has one, and otherwise ETAW met by groundwater divided by the groundwater irrigation efficiency. OpenH2O charges a groundwater allocation with groundwater extraction. See Help > Methods Behind the Numbers.",
+        "Surface Water in Excess of ETAW": "The part of a month's delivery times the field's irrigation efficiency that exceeds the field's ETAW. A setting on Delivery Settings decides whether OpenH2O credits this water to no one, credits it to the landowner or shows it as a separate line. See Help > Methods Behind the Numbers.",
         "Analyte": "This platform keeps one row per substance a lab result reports, under its name and, when known, DDW's four-digit analyte code. A lab import adds a row for any analyte its file names that the platform does not yet hold.",
         "CalWATRS": "California Water Accounting, Tracking, and Reporting System: the State Water Board's surface-diversion reporting system (replaced eWRIMS).",
         "CDEC": "California Data Exchange Center, real-time hydrologic data from DWR.",
         "CFS (Cubic Feet per Second)": "Rates on a point of diversion, a water right and a monthly diversion record, shown as \"50.00 cfs\".",
         "CIMIS": "California Irrigation Management Information System, weather station data for agriculture.",
         "Closing Balance": "OpenH2O's water balance for one use area and water year, with supplies on one side, uses on the other and the residual between them. See Help > How Water Balances Work.",
-        "Consumptive Use": "The dashboard's name for crop water use, the gross estimate from OpenET. Net consumptive use is crop water use minus rain the crop could use. See Help > How Water Balances Work.",
         "Curtailment": "One record per State Water Board order, holding its order ID, title, effective and end dates, watershed and priority-date cutoff; each right it affects shows its status on its own detail card.",
         "DLR": "Detection Limit for purposes of Reporting. The platform stores the DLR a laboratory's file carries on each result row exactly as reported, in the row's own units, and shows it under Limit (file) on the result's page.",
-        "Delivery Settings": "The administrator's page for irrigation efficiency, the share of pumped water the crop consumes, canal water beyond what the crop could use, the year-end choice, the reporting year and record addresses. See Help > Surface Delivery Settings.",
+        "Delivery Settings": "The administrator's page for irrigation efficiency, groundwater irrigation efficiency, surface water in excess of ETAW, the year-end choice, the reporting year and record addresses. See Help > Surface Delivery Settings.",
         "Data Source": "One record per outside agency or service the platform reads data from, holding its name, code, address, how often it is read and when it was last read.",
         "ELAP": "Environmental Laboratory Accreditation Program, California's accreditation of laboratories. Each result holds the ELAP certification number of the laboratory that ran it, shown on the result's page.",
-        "ET (Evapotranspiration)": "Shown on the screens as crop water use, the figure OpenET estimates from satellite data for each field and month. See Help > How Water Balances Work.",
-        "Effective Precipitation": "The older name for rain the crop could use. Methodology Settings sets the method OpenH2O uses to estimate this rain. See Help > Methods Behind the Numbers.",
-        "ET-Demand Allocation": "OpenH2O's division of a headgate's monthly total among the fields the headgate serves, in proportion to each field's crop water use after rain. No field receives more canal water than its crop could use, and OpenH2O records any water left over against the headgate. See Help > Methods Behind the Numbers.",
+        "Crop ET (Evapotranspiration)": "The figure OpenET estimates from satellite data for each field and month. See Help > How Water Balances Work.",
+        "Effective Precipitation": "OpenH2O estimates effective precipitation for each field and month from gridMET rainfall, by the method set on Methodology Settings. See Help > Methods Behind the Numbers.",
+        "ET-Demand Allocation": "OpenH2O's division of a headgate's monthly total among the fields the headgate serves, in proportion to each field's ETAW. No field receives more surface water than its ETAW requires at the field's irrigation efficiency, and OpenH2O records any water left over against the headgate. See Help > Methods Behind the Numbers.",
         "GEARS": "Groundwater Extraction Annual Reporting System, the State Water Board reporting format for per-well extraction.",
         "GSA": "Groundwater Sustainability Agency, the local agency responsible for managing groundwater under SGMA.",
         "GSP": "Groundwater Sustainability Plan, the 20-year plan each GSA must adopt.",
@@ -625,7 +629,7 @@ def glossary(request):
         "MCL": "Maximum Contaminant Level. The platform stores the MCL a laboratory's file carries on each result row exactly as reported, in the row's own units, and shows it in the Limit (file) column and beside the finding on the result's page. It never compares a finding with it.",
         "Methodology / Calculation Plan": "The list of steps OpenH2O follows to calculate each use area's month, set on Methodology Settings. A district can reorder those steps or switch any of them off. See Help > Methods Behind the Numbers.",
         "Monitoring Station": "One record per outside station (a stream gauge, a weather station, a groundwater level well), holding its name, its ID at the data source, its location and the parameters it reports.",
-        "OpenET": "OpenET's satellite evapotranspiration data is the source of this platform's crop water use estimate, read for every field each month.",
+        "OpenET": "OpenET's satellite evapotranspiration data is the source of OpenH2O's crop ET, read for every field each month.",
         "Use Area": "This platform's record of one field: its Assessor Parcel Number (APN), owner, area in acres and outline on the map. Every monthly figure is calculated per use area; all are listed on the Use Areas page.",
         "PS Code": "Primary Station Code, written as the state writes it: the PWSID, the state's facility ID and the point number, joined by underscores. Each sampling point holds one, and a lab import files each result under the sampling point its PS Code names; a row naming a PS Code the platform does not hold is refused.",
         "PWSID": "Public Water System Identification number. Add a water system creates this platform's water system record from a PWSID, reading the system and its facilities from EPA's federal record, and every PS Code begins with it.",

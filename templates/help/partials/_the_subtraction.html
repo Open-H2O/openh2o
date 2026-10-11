@@ -47,22 +47,28 @@
       </thead>
       <tbody>
         <tr>
-          <td class="col-name">Crop water use</td>
+          <td class="col-name">Crop ET</td>
           <td class="col-amount td-num">{{ gross_et_af|floatformat:2|intcomma }}</td>
-          <td>This is the satellite estimate for this field and month.</td>
+          <td>OpenET's satellite estimate for this field and month.</td>
           <td class="col-sure"><span class="badge badge-pill badge-grey">Estimated</span></td>
         </tr>
 
         {% if effective_precip_af is not None %}
         <tr>
-          <td class="col-name">Rain the crop could use</td>
+          <td class="col-name">Effective precipitation</td>
           <td class="col-amount td-num">{{ effective_precip_af|floatformat:2|intcomma }}</td>
-          <td>This is estimated from weather data for the area, then reduced to the share the crop could use by the method set on Methodology Settings. It is not read from a gauge on this field.</td>
+          <td>OpenH2O estimates effective precipitation from gridMET rainfall, by the method set on Methodology Settings, not from a gauge on this field.</td>
           <td class="col-sure"><span class="badge badge-pill badge-grey">Estimated</span></td>
+        </tr>
+        <tr>
+          <td class="col-name">ETAW</td>
+          <td class="col-amount td-num">{{ etaw_af|floatformat:2|intcomma }}</td>
+          <td>Crop ET minus effective precipitation.</td>
+          <td class="col-sure"><span class="badge badge-pill badge-grey" title="Estimated by subtraction">By subtraction</span></td>
         </tr>
         {% else %}
         <tr>
-          <td class="col-name">Rain the crop could use</td>
+          <td class="col-name">Effective precipitation</td>
           <td class="col-amount td-num value-empty">Not in this deployment's steps</td>
           <td>This deployment's calculation plan has no rain step.</td>
           <td class="col-sure"></td>
@@ -85,14 +91,14 @@
           <td class="col-sure">{% if delivery_split == "own" %}<span class="badge badge-pill badge-grey">Recorded</span>{% else %}<span class="badge badge-pill badge-gold" title="Divided up by the software">Divided up</span>{% endif %}</td>
         </tr>
         <tr>
-          <td class="col-name">Canal water the crop could use</td>
+          <td class="col-name">Delivery &times; irrigation efficiency</td>
           <td class="col-amount td-num">{{ surface_water_af|floatformat:2|intcomma }}</td>
-          <td>This is the delivery multiplied by the field's irrigation efficiency, which is {{ irrigation_efficiency_pct|floatformat:0 }}% here ({% if irrigation_efficiency_source == "method" %}{% if irrigation_method_name %}from the field's irrigation method on file, {{ irrigation_method_name }}{% else %}from the field's irrigation method{% endif %}{% else %}the deployment's default on Delivery Settings{% endif %}).</td>
+          <td>The field's irrigation efficiency is {{ irrigation_efficiency_pct|floatformat:0 }}%, {% if irrigation_efficiency_source == "method" %}{% if irrigation_method_name %}from its irrigation method on file, {{ irrigation_method_name }}{% else %}from its irrigation method on file{% endif %}{% else %}the default on Delivery Settings{% endif %}.</td>
           <td class="col-sure"><span class="badge badge-pill badge-orange">Rule of thumb</span></td>
         </tr>
         {% elif surface_water_af is not None %}
         <tr>
-          <td class="col-name">Canal water subtracted</td>
+          <td class="col-name">Delivery subtracted</td>
           <td class="col-amount td-num">{{ surface_water_af|floatformat:2|intcomma }}</td>
           <td>This is the whole delivery, because this deployment's calculation plan does not apply an irrigation efficiency.</td>
           <td class="col-sure">{% if delivery_split == "own" %}<span class="badge badge-pill badge-grey">Recorded</span>{% else %}<span class="badge badge-pill badge-gold" title="Divided up by the software">Divided up</span>{% endif %}</td>
@@ -100,13 +106,13 @@
         {% endif %}
 
         <tr>
-          <td class="col-name">Groundwater consumed</td>
+          <td class="col-name">ETAW met by groundwater</td>
           <td class="col-amount td-num">{{ final_af|floatformat:2|intcomma }}</td>
           <td>
             {% if surface_water_af is not None %}
-            This is crop water use minus the rain and canal water lines above. This month has no meter reading on record, so this line is a calculated remainder.
+            ETAW minus the delivery times irrigation efficiency. This month has no meter reading on record, so this line is a calculated remainder.
             {% else %}
-            This is what is left of crop water use after the rain is subtracted. This deployment's calculation plan has no canal step.
+            All of ETAW, because this deployment's calculation plan has no surface water step. This month has no meter reading on record, so this line is a calculated remainder.
             {% endif %}
           </td>
           <td class="col-sure"><span class="badge badge-pill badge-grey" title="Estimated by subtraction">By subtraction</span></td>
@@ -114,21 +120,21 @@
 
         {% if over_delivery_af > 0 %}
         <tr>
-          <td class="col-name">Canal water beyond what the crop could use</td>
+          <td class="col-name">Surface water in excess of ETAW</td>
           <td class="col-amount td-num">{{ over_delivery_af|floatformat:2|intcomma }}</td>
-          <td>Rain and canal water together exceeded crop water use, so the remainder is 0.00 acre-feet. This line is the canal part of the excess. A setting on Delivery Settings decides what happens to it, and each month keeps the choice it was calculated under.</td>
+          <td>Effective precipitation and the delivery times irrigation efficiency together exceeded crop ET, so ETAW met by groundwater is 0.00 acre-feet. A setting on Delivery Settings decides what happens to surface water in excess of ETAW, and each month keeps the choice it was calculated under.</td>
           <td class="col-sure"><span class="badge badge-pill badge-grey" title="Estimated by subtraction">By subtraction</span></td>
         </tr>
         {% endif %}
 
         <tr>
-          <td class="col-name">Groundwater extracted</td>
+          <td class="col-name">Groundwater extraction (estimated)</td>
           <td class="col-amount td-num">{{ extracted_af|floatformat:2|intcomma }}</td>
           <td>
             {% if extracted_af == 0 %}
-            Groundwater consumed is zero this month, so groundwater extracted is zero too.
+            ETAW met by groundwater is zero this month, so the estimated groundwater extraction is zero too.
             {% else %}
-            This is groundwater consumed divided by {{ gw_efficiency_pct|floatformat:0 }}%, the share of pumped groundwater the crop consumes{% if gw_efficiency_is_live_setting %} (the deployment's current setting){% else %} (set on Delivery Settings){% endif %}. This volume is charged against the groundwater allocation.
+            ETAW met by groundwater divided by {{ gw_efficiency_pct|floatformat:0 }}%, the groundwater irrigation efficiency{% if gw_efficiency_is_live_setting %} (the deployment's current setting){% else %} (set on Delivery Settings){% endif %}. OpenH2O charges this volume against the groundwater allocation.
             {% endif %}
           </td>
           <td class="col-sure"><span class="badge badge-pill badge-orange">Assumed share</span></td>
@@ -141,12 +147,11 @@
   {% else %}
   <p class="text-secondary text-base">Once a month has been calculated for a field with a well and no meter reading, this page works through that field's numbers. Until then, here is the arithmetic in words.</p>
   <ol class="concept-list text-secondary text-base mt-sm">
-    <li>Start with crop water use for the month, a satellite estimate in acre-feet.</li>
-    <li>Subtract the rain the crop could use, estimated from weather data for the area.</li>
-    <li>Subtract the canal water the crop could use: the delivery on record multiplied by the field's irrigation efficiency.</li>
-    <li>What is left is groundwater consumed.</li>
-    <li>Divide it by the share of pumped groundwater the crop consumes, 80% unless changed on Delivery Settings; the result is groundwater extracted, which the groundwater allocation is charged.</li>
-    <li>In a month with a meter reading on record, the reading stands; the same arithmetic runs for comparison but writes no groundwater row and no extracted figure.</li>
+    <li>Start with crop ET for the month, OpenET's satellite estimate in acre-feet.</li>
+    <li>Subtract effective precipitation, estimated from gridMET rainfall. The result is ETAW.</li>
+    <li>Subtract the delivery on record times the field's irrigation efficiency. What is left is ETAW met by groundwater.</li>
+    <li>Divide ETAW met by groundwater by the groundwater irrigation efficiency, 80% unless changed on Delivery Settings. The result is the estimated groundwater extraction, which OpenH2O charges against the groundwater allocation.</li>
+    <li>In a month with a meter reading on record, the reading stands. The same arithmetic runs for comparison but writes no groundwater row and no estimated extraction.</li>
   </ol>
   {% endif %}
 </div>

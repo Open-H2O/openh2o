@@ -2470,13 +2470,9 @@ html { color-scheme: dark; }
     white-space: nowrap;
 }
 
-/* The calculation page as a receipt (148-03, 2026-09-28; one table since
-   149.1-05, 2026-10-07): the answer first, then ONE three-column table in the
-   finish of the help-page tables (the same .data-table rules, the name column
-   weighted the same, the figure in its own right-aligned column, and a third
-   column saying where each figure comes from). The notes that stood beside the
-   table are that third column; the table scrolls inside `.table-scroll` below
-   38rem instead of wrapping one word per line. */
+/* The calculation page's short page (a month with nothing estimated). The
+   receipt table that stood here (148-03 to 150.1-02) is gone: since
+   2026-10-11 the page is the equation panel (`.receipt-panel`, below). */
 .receipt-facts {
     margin-bottom: var(--space-sm);
 }
@@ -2489,58 +2485,9 @@ html { color-scheme: dark; }
     margin: 0 0 var(--space-xs);
 }
 
-.receipt-headline-figure {
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-}
-
 .receipt-lead {
     margin: 0 0 var(--space-md);
     max-width: 70ch;
-}
-
-.receipt-table {
-    /* 149.1-05: three columns, the third a sentence on where each figure
-       comes from, so the table takes the card's width like the help pages'
-       tables and below 38rem scrolls inside `.table-scroll`. */
-    min-width: 38rem;
-}
-
-.receipt-table td {
-    vertical-align: top;
-}
-
-/* The unit header sits on one line over its column (it is the 1%-wide
-   figure column, which would otherwise break "acre-feet" in two). */
-.receipt-table th {
-    white-space: nowrap;
-}
-
-.receipt-table .col-name {
-    /* Narrow enough that a figure sits near its name (two verdict readers,
-       2026-10-07), wide enough that the longest name keeps to two lines. */
-    width: 24%;
-    font-weight: 500;
-}
-
-.receipt-table .col-amount {
-    width: 1%;
-    white-space: nowrap;
-    min-width: 6em;
-}
-
-/* The two "=" lines: what the subtraction comes to, and what is charged.
-   Ruled off above with the header's own accent, bolder than the lines that
-   make them up, no new colour. */
-.receipt-table tr.receipt-total td {
-    font-weight: 700;
-    border-top: 2px solid var(--color-accent-muted);
-}
-
-/* Its "Where it comes from" cell stays at body weight: the rule and the bold
-   mark the figure and its name, not the sentence beside them (149.1-05). */
-.receipt-table tr.receipt-total td:last-child {
-    font-weight: 400;
 }
 
 /* The short page (a month with nothing estimated): one sentence, so the card
@@ -2554,10 +2501,6 @@ html { color-scheme: dark; }
     margin-bottom: 0;
 }
 
-.receipt-zero {
-    margin: var(--space-md) 0 0;
-    max-width: 70ch;
-}
 
 /* `.step-list` and `.step-card--inset` (the Methods page's five step panels)
    were removed in 149.1-01: the page is tables now and no other template used them. */
@@ -5970,11 +5913,6 @@ details[open] > summary .disclosure-mark {
 }
 
 /* -- D. Weight and position --------------------------------------------- */
-/* D1. A reference row on the receipt (the meter reading that would replace the
-   estimate) is secondary to the calculation rows above it. */
-.receipt-table tr.receipt-aside td {
-    color: var(--color-text-secondary);
-}
 /* D7. The health cards' status badges at the pill's size: at the badge's 12px
    they were "tiny" and the card's state could not be scanned (149.1-08). */
 .health-grid .badge {
@@ -6000,4 +5938,13 @@ details[open] > summary .disclosure-mark {
 }
 .row-clickable {
     cursor: pointer;
+}
+
+/* 150.1-02 (2026-10-11): the Estimated pumping page as three equations in
+   one panel, each row the dashboard's centred figure row. A rule and space
+   between the rows so each reads as its own line of working. */
+.receipt-panel .budget-panel-body > .budget-panel-row + .budget-panel-row {
+    margin-top: var(--space-lg);
+    padding-top: var(--space-lg);
+    border-top: 1px solid var(--color-border);
 }

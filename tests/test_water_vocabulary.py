@@ -291,7 +291,7 @@ CSS_TOKEN_ONLY = """\
 """
 
 CORRECT_NET_POPOUT = """\
-<th class="th-right">Net (AF){% include "partials/_explainer_popout.html" with title="Net" text="Supplies minus estimated consumptive use for this account" link=wb_help_url %}</th>
+<th class="th-right">Net (AF){% include "partials/_explainer_popout.html" with title="Net" text="Supplies minus crop ET for this account" link=wb_help_url %}</th>
 """
 
 EMPTY_TABLE = """\

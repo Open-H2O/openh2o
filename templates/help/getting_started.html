@@ -105,7 +105,7 @@
           <tr>
             <td class="col-step"><span class="step-num">{{ steps.ledger }}</span>Record water use</td>
             <td class="col-where">Water Data &gt; Use Ledger<br><a href="{% url 'accounting:ledger_list' %}" class="text-sm text-accent">Go to Use Ledger &rarr;</a></td>
-            <td>Record meter readings, deliveries and adjustments one at a time with New entry, or many at once with Upload CSV. OpenH2O calculates each month&rsquo;s figures for a water year when you press Run the calculation on that water year&rsquo;s page, and every night when your server&rsquo;s scheduled jobs are installed.{% if 'wells' in enabled_modules %} OpenH2O records on the Use Ledger the groundwater consumed that it calculates for each use area with a well and no meter.{% endif %}</td>
+            <td>Record meter readings, deliveries and adjustments one at a time with New entry, or many at once with Upload CSV. OpenH2O calculates each month&rsquo;s figures for a water year when you press Run the calculation on that water year&rsquo;s page, and every night when your server&rsquo;s scheduled jobs are installed.{% if 'wells' in enabled_modules %} OpenH2O records on the Use Ledger the ETAW met by groundwater that it calculates for each use area with a well and no meter reading.{% endif %}</td>
           </tr>{% endif %}
         </tbody>
       </table>
@@ -124,7 +124,7 @@
       </a>{% endif %}
       {% if show_methods %}<a href="{% url 'methods' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Methods Behind the Numbers</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">This page explains the settings behind each figure and how OpenH2O divides and estimates canal deliveries.</p>
+        <p class="text-secondary text-sm">This page explains the settings behind each figure and how OpenH2O divides and estimates surface water deliveries.</p>
       </a>{% endif %}
       {% if show_settings %}<a href="{% url 'settings_explained' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Settings explained</span><span class="text-accent">&rarr;</span></div>
@@ -136,7 +136,7 @@
       </a>{% endif %}
       {% if show_surface_help %}<a href="{% url 'surface_deliveries' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Surface Delivery Settings</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">This page explains the canal delivery settings on Delivery Settings.</p>
+        <p class="text-secondary text-sm">This page explains the surface water delivery settings on Delivery Settings.</p>
       </a>{% endif %}
     </div>
   </div>{% endif %}

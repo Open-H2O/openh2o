@@ -162,7 +162,7 @@ def test_the_leaf_headers_run_in_equation_order(page):
     assert header_cells == [
         "Use area",
         "Supplies",
-        "Consumptive use",
+        "Crop ET",
         "Balance",
         "Surface",
         "Groundwater",

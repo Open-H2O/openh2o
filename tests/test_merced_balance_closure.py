@@ -732,7 +732,7 @@ def test_parcel_pane_panel_reads_a_flood_mar_field_as_a_deficit():
         "a metered field printed a badge word; its residual is a difference "
         "between records and the number stands with its colour (148-03)"
     )
-    assert "This balance compares supplies from the meter and the district's record with the satellite estimate of consumptive use." in residual
+    assert "This balance compares supplies from the meter and the district's record with the satellite estimate of crop ET." in residual
 
     assert "<span>Managed recharge</span><b>20.00</b>" in html, (
         "the uses breakdown does not show the 20.00 AF that left this field for the "
@@ -848,7 +848,7 @@ def test_a_plugged_figure_says_it_is_an_estimate():
     # name and the number in the row's own <b>.
     plugged_html = render(plugged)
     assert (
-        '<span>Groundwater extracted<span class="budget-breakdown-note">estimated</span></span><b>100.00</b>'
+        '<span>Groundwater extraction<span class="budget-breakdown-note">estimated</span></span><b>100.00</b>'
     ) in plugged_html
     # 148-03, case A: 100 in (the engine's own row) against 100 of ET closes
     # by arithmetic, and the badge says so in one word.
@@ -865,7 +865,7 @@ def test_a_plugged_figure_says_it_is_an_estimate():
     )
     run_for(metered)
     metered_html = render(metered)
-    assert "<span>Groundwater extracted</span><b>110.00</b>" in metered_html, (
+    assert "<span>Groundwater extraction</span><b>110.00</b>" in metered_html, (
         "a metered groundwater figure is a recorded measurement and must not be "
         "labelled an estimate"
     )

@@ -286,7 +286,7 @@ class CalculationStep(models.Model):
     STEP_TYPE_CHOICES = [
         ("et_gross", "Gross ET"),
         ("subtract_effective_precip", "Subtract effective precipitation"),
-        ("subtract_surface_water", "Subtract canal water the crop could use"),
+        ("subtract_surface_water", "Subtract delivery × irrigation efficiency"),
         ("facility_only_zero", "Zero out facility-only parcels"),
         ("clamp_floor", "Clamp at floor"),
     ]
@@ -671,7 +671,7 @@ class CalculationRun(models.Model):
             # is a separate, derived figure. "(estimated)" names what the two
             # groundwater fields on this run both are: an ET-based estimate,
             # not a meter.
-            ("groundwater", "Groundwater consumed (estimated)"),
+            ("groundwater", "ETAW met by groundwater (estimated)"),
             ("unmet_demand", "Unmet demand / unallocated"),
             ("metered", "Metered extraction (authoritative)"),
         ],

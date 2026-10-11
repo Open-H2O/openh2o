@@ -53,7 +53,7 @@ pytestmark = pytest.mark.django_db
 PERIOD_START = date(2025, 10, 1)
 PERIOD_END = date(2026, 9, 30)
 
-BANNER = "Consumptive use has not been calculated for"
+BANNER = "Crop ET has not been calculated for"
 ALL_CLEAR = "All clear"
 NOT_CALCULATED = "Not calculated"
 
