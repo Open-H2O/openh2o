@@ -114,7 +114,7 @@
     <div class="card-grid card-grid--fit mt-md">
       {% if 'accounting' in enabled_modules %}<a href="{% url 'accounting:delivery_settings' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Delivery Settings</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">This page holds the efficiencies and the treatment of surface water in excess of ETAW.</p>
+        <p class="text-secondary text-sm">This page holds the default irrigation efficiency and the treatment of surface water in excess of ETAW.</p>
       </a>{% endif %}
       {% explainer_available 'methods' as show_methods %}{% if show_methods %}<a href="{% url 'methods' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Methods Behind the Numbers</span><span class="text-accent">&rarr;</span></div>
