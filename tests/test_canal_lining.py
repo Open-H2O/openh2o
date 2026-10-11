@@ -13,11 +13,19 @@ from decimal import Decimal
 
 import pytest
 
+from django.contrib.auth.hashers import make_password
+from django.test import Client
+from django.urls import reverse
+
+from surface.forms import PointOfDiversionForm
 from surface.models import (
     LINED_DEFAULT_SEEPAGE,
+    OPEN_CANAL_DEFAULT_EVAPORATION,
+    PIPE_DEFAULT_EVAPORATION,
     PIPE_DEFAULT_SEEPAGE,
     UNLINED_DEFAULT_SEEPAGE,
     PointOfDiversion,
+    default_evaporation_fraction,
     default_seepage_fraction,
 )
 from tests.factories import PointOfDiversionFactory
@@ -34,6 +42,12 @@ def test_the_three_defaults():
     assert default_seepage_fraction("pipe") == Decimal("0")
     assert default_seepage_fraction(None) is None
     assert default_seepage_fraction("") is None
+    assert OPEN_CANAL_DEFAULT_EVAPORATION == Decimal("0.0100")
+    assert PIPE_DEFAULT_EVAPORATION == Decimal("0")
+    assert default_evaporation_fraction("unlined") == Decimal("0.0100")
+    assert default_evaporation_fraction("lined") == Decimal("0.0100")
+    assert default_evaporation_fraction("pipe") == Decimal("0")
+    assert default_evaporation_fraction(None) is None
 
 
 @pytest.mark.parametrize(
@@ -123,3 +137,132 @@ def test_lining_choices():
     field = PointOfDiversion._meta.get_field("lining")
     assert [value for value, _ in field.choices] == ["unlined", "lined", "pipe"]
     assert field.null and field.blank
+
+
+# ---------------------------------------------------------------------------
+# Task 3: a pipe's default evaporation is 0 (Brent 2026-10-11 16:40 PDT)
+# ---------------------------------------------------------------------------
+
+
+def test_pipe_default_has_no_evaporation_and_an_open_canal_gets_it_back():
+    pod = PointOfDiversionFactory(lining="pipe", loss_basis="default")
+    pod.refresh_from_db()
+    assert pod.evaporation_fraction == Decimal("0")
+    pod.lining = "unlined"
+    pod.save()
+    pod.refresh_from_db()
+    assert pod.evaporation_fraction == Decimal("0.0100")
+    assert pod.seepage_fraction == Decimal("0.2500")
+
+
+def test_district_estimate_pipe_keeps_its_own_evaporation():
+    pod = PointOfDiversionFactory(
+        lining="pipe", loss_basis="district_estimate", evaporation_fraction=Decimal("0.0040")
+    )
+    pod.refresh_from_db()
+    assert pod.evaporation_fraction == Decimal("0.0040")
+
+
+# ---------------------------------------------------------------------------
+# The form and the page
+# ---------------------------------------------------------------------------
+
+
+def _form_data(pod, **overrides):
+    data = {
+        "name": pod.name,
+        "status": "active",
+        "loss_basis": "default",
+        "lining": "",
+        "evaporation_fraction": "0.0100",
+        "seepage_fraction": "0",
+        "spill_fraction": "0",
+        "miners_inch_gpm": "11.22",
+    }
+    data.update(overrides)
+    return data
+
+
+def test_form_blank_lining_saves_as_not_stated():
+    pod = PointOfDiversionFactory()
+    form = PointOfDiversionForm(_form_data(pod), instance=pod)
+    assert form.is_valid(), form.errors
+    assert form.save().lining is None
+    assert form.fields["lining"].choices[0] == ("", "Not stated")
+
+
+def test_form_lined_default_replaces_the_typed_seepage():
+    pod = PointOfDiversionFactory()
+    form = PointOfDiversionForm(
+        _form_data(pod, lining="lined", seepage_fraction="0.3000"), instance=pod
+    )
+    assert form.is_valid(), form.errors
+    saved = form.save()
+    saved.refresh_from_db()
+    assert saved.seepage_fraction == Decimal("0.0500")
+
+
+def test_form_checks_the_sum_on_the_lining_default():
+    """Typed shares sum to 0.75; with the unlined default they sum to 1.00."""
+    pod = PointOfDiversionFactory()
+    form = PointOfDiversionForm(
+        _form_data(pod, lining="unlined", spill_fraction="0.7400"), instance=pod
+    )
+    assert not form.is_valid()
+    messages = form.non_field_errors()
+    assert sum("cannot exceed the whole" in m for m in messages) == 1
+
+
+class _UserFactory:
+    @staticmethod
+    def create():
+        from core.models import User
+
+        return User.objects.create(
+            username="liningviewer",
+            email="liningviewer@example.com",
+            password=make_password("testpass123"),
+            is_active=True,
+        )
+
+
+@pytest.fixture
+def auth_client(db):
+    c = Client()
+    c.force_login(_UserFactory.create())
+    return c
+
+
+def test_page_shows_the_lining_and_where_the_default_comes_from(auth_client):
+    pod = PointOfDiversionFactory(lining="unlined", loss_basis="default")
+    html = auth_client.get(reverse("surface:pod_detail", args=[pod.pk])).content.decode()
+    assert "Lining" in html and "Unlined" in html
+    assert "25.00%" in html
+    assert "Merced Irrigation District&#x27;s 2020 Agricultural Water Management Plan" in html
+    assert "SacWAM" in html
+    assert "Spill depends on how the canal is operated" in html
+
+
+def test_page_shows_no_default_note_for_a_district_estimate(auth_client):
+    pod = PointOfDiversionFactory(
+        lining="unlined", loss_basis="district_estimate", seepage_fraction=Decimal("0.1200")
+    )
+    html = auth_client.get(reverse("surface:pod_detail", args=[pod.pk])).content.decode()
+    assert "12.00%" in html
+    assert "Default for" not in html
+    assert "No default." not in html
+
+
+def test_page_says_not_stated_when_no_lining(auth_client):
+    pod = PointOfDiversionFactory()
+    html = auth_client.get(reverse("surface:pod_detail", args=[pod.pk])).content.decode()
+    assert "Not stated" in html
+    assert "Default with no lining stated." in html
+
+
+def test_page_pipe_notes(auth_client):
+    pod = PointOfDiversionFactory(lining="pipe", loss_basis="default")
+    html = auth_client.get(reverse("surface:pod_detail", args=[pod.pk])).content.decode()
+    assert "gives pipelines no seepage" in html
+    assert "Westlands Water District reports" in html
+    assert "Default for an open canal" not in html

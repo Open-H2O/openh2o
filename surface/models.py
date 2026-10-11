@@ -211,9 +211,19 @@ class WaterRightParcel(models.Model):
 # lined Modesto and Turlock Irrigation Districts report channel seepage of 4.2
 # percent (MID 2025 plan, Table 47) and 6.4 percent (TID 2012 plan, Table 4.8)
 # of supply. Pipe 0: FAO Paper 61, Table 10, "Pipelines 0".
+#
+# Evaporation stays 1 percent for an open canal (SacWAM's evaporative loss
+# factor, 0.01 for every non-Delta demand unit; Modesto, Turlock and Imperial
+# Irrigation Districts report 0.3 to 1 percent) and is 0 for a pipe (Brent,
+# 2026-10-11 16:40 PDT, approving the recommended yes; Westlands Water
+# District's plan says its pipe system delivers "with virtually no losses to
+# seepage, evaporation, and spills"). Spill is not tied to lining by any source
+# read, so the lining never sets it.
 UNLINED_DEFAULT_SEEPAGE = Decimal("0.2500")
 LINED_DEFAULT_SEEPAGE = Decimal("0.0500")
 PIPE_DEFAULT_SEEPAGE = Decimal("0")
+OPEN_CANAL_DEFAULT_EVAPORATION = Decimal("0.0100")
+PIPE_DEFAULT_EVAPORATION = Decimal("0")
 
 _DEFAULT_SEEPAGE_BY_LINING = {
     "unlined": UNLINED_DEFAULT_SEEPAGE,
@@ -222,9 +232,21 @@ _DEFAULT_SEEPAGE_BY_LINING = {
 }
 
 
+_DEFAULT_EVAPORATION_BY_LINING = {
+    "unlined": OPEN_CANAL_DEFAULT_EVAPORATION,
+    "lined": OPEN_CANAL_DEFAULT_EVAPORATION,
+    "pipe": PIPE_DEFAULT_EVAPORATION,
+}
+
+
 def default_seepage_fraction(lining):
     """The platform's default seepage share for a lining; None when not stated."""
     return _DEFAULT_SEEPAGE_BY_LINING.get(lining)
+
+
+def default_evaporation_fraction(lining):
+    """The platform's default evaporation share for a lining; None when not stated."""
+    return _DEFAULT_EVAPORATION_BY_LINING.get(lining)
 
 
 @track_changes()
@@ -416,23 +438,76 @@ class PointOfDiversion(models.Model):
             )
 
     def apply_lining_default(self):
-        """Set the seepage share from the lining while the basis is the default.
+        """Set the seepage and evaporation shares from the lining while the
 
-        A measured or district-estimate basis, or a lining not stated, leaves
-        the seepage share as entered.
+        basis is the default. A measured or district-estimate basis, or a
+        lining not stated, leaves both shares as entered.
         """
-        if self.loss_basis != "default":
+        if self.loss_basis != "default" or not self.lining:
             return
-        seepage = default_seepage_fraction(self.lining)
-        if seepage is not None:
-            self.seepage_fraction = seepage
+        self.seepage_fraction = default_seepage_fraction(self.lining)
+        self.evaporation_fraction = default_evaporation_fraction(self.lining)
 
     def save(self, *args, **kwargs):
         self.apply_lining_default()
         update_fields = kwargs.get("update_fields")
         if update_fields is not None and {"lining", "loss_basis"} & set(update_fields):
-            kwargs["update_fields"] = set(update_fields) | {"seepage_fraction"}
+            kwargs["update_fields"] = set(update_fields) | {
+                "seepage_fraction",
+                "evaporation_fraction",
+            }
         super().save(*args, **kwargs)
+
+    # The notes under each loss on the point's page (150.3-01, Brent
+    # 2026-10-11 16:40 PDT: "approved"). Each names where a default figure
+    # comes from, and is empty unless the basis is the platform's default.
+    _SEEPAGE_DEFAULT_NOTES = {
+        "unlined": "Default for an unlined canal. Merced Irrigation District's "
+        "2020 Agricultural Water Management Plan reports distribution system "
+        "seepage of 26 to 43 percent of its Merced River diversion, and FAO "
+        "Irrigation and Drainage Paper 61 gives 20 to 30 percent for unlined "
+        "canals.",
+        "lined": "Default for a lined canal. Modesto and Turlock Irrigation "
+        "Districts, whose canals are about 90 percent lined, report canal "
+        "seepage of about 4 and 6 percent in their Agricultural Water "
+        "Management Plans.",
+        "pipe": "Default for a pipe. FAO Irrigation and Drainage Paper 61 gives "
+        "pipelines no seepage.",
+    }
+    _SEEPAGE_NOTE_NO_LINING = (
+        "Default with no lining stated. Set the lining to give this point a "
+        "default seepage share."
+    )
+    _EVAPORATION_NOTE_OPEN_CANAL = (
+        "Default for an open canal. The State Water Board's SacWAM model uses "
+        "1 percent of the diversion for canal evaporation, and Modesto, Turlock "
+        "and Imperial Irrigation Districts report 0.3 to 1 percent."
+    )
+    _EVAPORATION_NOTE_PIPE = (
+        "Default for a pipe. Westlands Water District reports that its pipe "
+        "system loses virtually no water to evaporation."
+    )
+    _SPILL_NOTE = (
+        "No default. Spill depends on how the canal is operated, so OpenH2O "
+        "uses none until the district enters its own figure."
+    )
+
+    def seepage_default_note(self):
+        if self.loss_basis != "default":
+            return ""
+        return self._SEEPAGE_DEFAULT_NOTES.get(self.lining, self._SEEPAGE_NOTE_NO_LINING)
+
+    def evaporation_default_note(self):
+        if self.loss_basis != "default":
+            return ""
+        if self.lining == "pipe":
+            return self._EVAPORATION_NOTE_PIPE
+        return self._EVAPORATION_NOTE_OPEN_CANAL
+
+    def spill_default_note(self):
+        if self.loss_basis != "default" or self.spill_fraction:
+            return ""
+        return self._SPILL_NOTE
 
     def _loss_display(self, fraction, band_percent):
         """'12.00%' or '12.00% ±35%' -- convention 11: the band is the
