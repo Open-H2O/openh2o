@@ -129,7 +129,7 @@ class SiteConfig(models.Model):
         max_digits=4,
         decimal_places=3,
         default=Decimal("0.750"),
-        help_text="Share of delivered water the crop consumes.",
+        help_text="The default irrigation efficiency, for a field with no irrigation method on file.",
     )
 
     # 148-04 Task 1 (Brent's Q1 ruling, 2026-09-20): what a canal delivery that
@@ -147,11 +147,10 @@ class SiteConfig(models.Model):
         max_length=20,
         choices=OVER_DELIVERY_TREATMENT_CHOICES,
         default="not_credited",
-        help_text="What happens to the amount a canal delivery went beyond "
-        "what its field's crop could use, on the month's calculation: not "
-        "credited to anyone (today's behavior), credited to the landowner "
-        "with a share left in the basin, or shown as its own line that is "
-        "not a credit.",
+        help_text="What happens to surface water in excess of ETAW on the "
+        "month's calculation: not credited to anyone (the default), credited "
+        "to the landowner with a share left in the basin, or shown as its own "
+        "line that is not a credit.",
     )
     over_delivery_leave_behind = models.DecimalField(
         max_digits=4,
@@ -173,8 +172,8 @@ class SiteConfig(models.Model):
         max_digits=4,
         decimal_places=3,
         default=Decimal("0.800"),
-        help_text="Divides a field's estimated groundwater consumed to give "
-        "its estimated groundwater extracted, which is what the allocation is "
+        help_text="Divides a field's ETAW met by groundwater to give its "
+        "groundwater extraction (estimated), which is what the allocation is "
         "charged; the difference is recorded as deep percolation. 0.80 is the figure the "
         "Groundwater Accounting Platform's older Merced Irrigation-Urban flow "
         "hard-codes; a 2022 Madera verification measured an area-weighted 0.86 "

@@ -44,6 +44,7 @@ from accounting.ledger_import import import_ledger_rows
 from accounting.ledger_words import (
     INCIDENTAL_RECHARGE_WORDS,
     LEGACY_INCIDENTAL_RECHARGE_WORDS,
+    LEGACY_CANAL_CREDIT_WORDS,
 )
 from accounting.models import (
     AllocationCarryover,
@@ -1018,6 +1019,7 @@ def parcel_mass_balance(parcel, reporting_period=None):
         .exclude(
             Q(description__startswith=INCIDENTAL_RECHARGE_WORDS)
             | Q(description__startswith=LEGACY_INCIDENTAL_RECHARGE_WORDS)
+            | Q(description__startswith=LEGACY_CANAL_CREDIT_WORDS)
         )
         .aggregate(s=Sum("amount_acre_feet"))["s"]
         or Decimal("0")

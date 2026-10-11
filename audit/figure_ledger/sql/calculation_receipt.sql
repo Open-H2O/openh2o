@@ -153,3 +153,38 @@ SELECT p.parcel_number, cr.period, cr.residual_disposition,
 \echo '== D. Who gets the receipt: the disposition mix, so the short page (no figure) is the answer on 1,385 of 1,824 months and the receipt on 439. =='
 
 SELECT residual_disposition, count(*) FROM accounting_calculationrun GROUP BY 1 ORDER BY 1;
+
+-- ---------------------------------------------------------------------------
+-- Block D, 150.1-02 (2026-10-11): the page rebuilt as the equation panel.
+-- The ids above are the 148-03 receipt's and no longer match the template;
+-- the ledger's FIG-accounting-001..019 rows name the panel's sites. Each
+-- figure is recomputed here from the run's own columns (and, for rainfall,
+-- the breakdown's precip_mm over the parcel table's area), never by reading
+-- the derived column the page prints.
+--   Crop ET - Effective precipitation = ETAW
+--   ETAW - ETAW met by surface water = ETAW met by groundwater
+--   ETAW met by groundwater / groundwater irrigation efficiency
+--     = groundwater extraction (estimated)
+-- Pins: MER-APN-039, August 2026 (parcel 39) and MER-APN-016, December 2024
+-- (parcel 16, a month with no ETAW met by groundwater).
+SELECT p.parcel_number,
+       r.period,
+       r.gross_et_af,
+       r.effective_precip_af,
+       (SELECT (s->'detail'->>'precip_mm')::numeric * p.area_acres / 304.8
+          FROM jsonb_array_elements(r.breakdown::jsonb) s
+         WHERE s->>'step_type' = 'subtract_effective_precip') AS rainfall_af,
+       r.gross_et_af - r.effective_precip_af AS etaw,
+       least(r.surface_water_af,
+             greatest(r.gross_et_af - r.effective_precip_af, 0)) AS etaw_met_by_surface_water,
+       r.surface_water_af
+         - least(r.surface_water_af,
+                 greatest(r.gross_et_af - r.effective_precip_af, 0)) AS surface_water_in_excess_of_etaw,
+       greatest(r.gross_et_af - r.effective_precip_af - r.surface_water_af, 0) AS etaw_met_by_groundwater,
+       r.final_af / nullif(r.gw_extracted_af, 0) AS groundwater_irrigation_efficiency,
+       r.final_af / c.groundwater_efficiency AS groundwater_extraction_estimated
+  FROM accounting_calculationrun r
+  JOIN parcels_parcel p ON p.id = r.parcel_id
+ CROSS JOIN core_siteconfig c
+ WHERE (r.parcel_id = 39 AND r.period = '2026-08')
+    OR (r.parcel_id = 16 AND r.period = '2024-12');

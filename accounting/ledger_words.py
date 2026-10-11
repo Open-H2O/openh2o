@@ -175,9 +175,12 @@ def ledger_row_words(entry):
 #: read by ``surface.services._month_demand``). Composed by
 #: ``delivery_share_words`` below, and printed again, in the same words, on
 #: the calculation page's canal line (``accounting/views.py``).
+#:
+#: 150.1-02 (Brent's terms, 2026-10-11 05:41 and 05:48 PDT): "crop water use
+#: after rain" is ETAW. The rows written before are reworded by
+#: parcels/migrations/0012.
 DELIVERY_SHARE_BY_USE = (
-    "divided up from the canal total in proportion to each field's crop "
-    "water use after rain"
+    "divided up from the canal total in proportion to each field's ETAW"
 )
 
 #: The tail of a static-fraction delivery-share sentence: no served use area
@@ -207,7 +210,17 @@ DELIVERY_SHARE_BY_FIXED = "this use area's share of the canal on file"
 #: rows and a "credited"-treatment row read the same way, and so
 #: `run_calculations`'s delete-by-prefix (which runs every time, on every
 #: treatment) still matches it.
-INCIDENTAL_RECHARGE_WORDS = (
+#:
+#: 150.1-02 (2026-10-11): reworded in Brent's term, surface water in excess
+#: of ETAW. The words before are kept below as
+#: `LEGACY_CANAL_CREDIT_WORDS` for the delete-by-prefix.
+INCIDENTAL_RECHARGE_WORDS = "Credit for surface water in excess of ETAW"
+
+#: The prefix every credit row carried from 143-11 to 150.1-02. Matched on
+#: delete, like `LEGACY_INCIDENTAL_RECHARGE_WORDS` below, so a re-run on a
+#: database whose rows were not reworded replaces them instead of doubling
+#: them. Never written by new code.
+LEGACY_CANAL_CREDIT_WORDS = (
     "Credit for canal water delivered beyond the use area's estimated use "
     "for the month"
 )
@@ -236,9 +249,12 @@ LEGACY_INCIDENTAL_RECHARGE_WORDS = (
 #: which of the two the row means. "canal water delivered" -> "the canal
 #: water the crop could use", the same Task 1 fix Task 3 already made to
 #: NO_PUMPING_DERIVED_WORDS below.
+#:
+#: 150.1-02 (2026-10-11): the row's amount is ETAW met by groundwater, Brent's
+#: term ("Groundwater consumed" is no California engineer's term, 05:39 PDT),
+#: written as the formula with its real sign.
 PUMPING_ESTIMATE_WORDS = (
-    "Estimated groundwater consumed: the month's estimated use, less "
-    "rainfall and the canal water the crop could use."
+    "ETAW met by groundwater (estimated): ETAW \u2212 ETAW met by surface water."
 )
 
 #: The 143-05 zero-row sentence, moved into the engine verbatim (byte for
@@ -250,9 +266,13 @@ PUMPING_ESTIMATE_WORDS = (
 #: magnitude and what the crop could use are no longer the same number, and
 #: this sentence describes what actually closed the month out (rule 14: no
 #: "recharge", no "credit").
+#:
+#: 150.1-02 (2026-10-11): in Brent's terms. It names no supply: on 41 of the
+#: demo's 117 zero months effective precipitation alone met crop ET, so a
+#: sentence naming surface water would be false there.
 NO_PUMPING_DERIVED_WORDS = (
-    "No groundwater extraction was derived for this month; rainfall and "
-    "the canal water the crop could use covered the estimated use."
+    "No ETAW met by groundwater this month, so OpenH2O estimates no "
+    "groundwater extraction."
 )
 
 

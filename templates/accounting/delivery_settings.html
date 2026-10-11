@@ -66,7 +66,7 @@
     </div>
     {% endif %}
 
-    {% comment %} Setting: canal water beyond what the crop could use (148-04,
+    {% comment %} Setting: surface water in excess of ETAW (148-04,
          Brent's Q1 ruling 2026-09-20, built 2026-09-28; the words settled by
          148-03 the same day). `surface` owns both fields, same gate as
          efficiency: only canal water can be over-delivered. Its position is
@@ -80,7 +80,7 @@
     <div class="card-raised">
       <span class="step-eyebrow">Setting {{ over_delivery_number }} of {{ settings_total }}</span>
       <h2 class="section-header">{{ form.over_delivery_treatment.label }}</h2>
-      <p class="text-secondary text-sm" style="margin-bottom: var(--space-md);">Some months a field is delivered more canal water than its crop could use; the amount is recorded with that month's figures, and this setting says what else happens to it.</p>
+      <p class="text-secondary text-sm" style="margin-bottom: var(--space-md);">In some months a field's delivery times its irrigation efficiency exceeds its ETAW. OpenH2O records the surface water in excess of ETAW with the month's figures, and this setting determines what else happens to it.</p>
       <div class="field-group mt-sm">
         {% for radio, description in form.over_delivery_options %}
         <label class="radio-option">

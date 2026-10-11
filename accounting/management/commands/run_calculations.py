@@ -70,6 +70,7 @@ from accounting.locks import override
 from accounting.ledger_words import (
     INCIDENTAL_RECHARGE_WORDS,
     LEGACY_INCIDENTAL_RECHARGE_WORDS,
+    LEGACY_CANAL_CREDIT_WORDS,
     NO_PUMPING_DERIVED_WORDS,
     PUMPING_ESTIMATE_WORDS,
     over_delivery_credit_words,
@@ -751,7 +752,8 @@ class Command(BaseCommand):
                 # to write a fresh one.
                 ParcelLedger.objects.filter(
                     Q(description__startswith=INCIDENTAL_RECHARGE_WORDS)
-                    | Q(description__startswith=LEGACY_INCIDENTAL_RECHARGE_WORDS),
+                    | Q(description__startswith=LEGACY_INCIDENTAL_RECHARGE_WORDS)
+                    | Q(description__startswith=LEGACY_CANAL_CREDIT_WORDS),
                     parcel=parcel,
                     effective_date=eff_date,
                     source_type="recharge",

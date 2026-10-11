@@ -220,7 +220,7 @@ class TestOneListOfMethodNames:
             assert f">{label}<" in body
 
 
-def test_surface_step_summary_names_delivered_and_what_the_crop_could_use():
+def test_surface_step_summary_writes_delivery_times_efficiency():
     """148-02: the subtracted figure is the crop's part, so the line says both.
 
     148-03: a delivery that was a share of a headgate total says how the share
@@ -237,22 +237,23 @@ def test_surface_step_summary_names_delivered_and_what_the_crop_could_use():
             "surface_water_af": "92.3827",
         },
     }
+    # 150.1-02 (2026-10-11): the formula with its real signs.
     assert _step_detail_summary(step) == (
-        "92.3827 AF the crop could use, of 123.1769 AF delivered; "
-        "irrigation efficiency 0.75 (the deployment's default)"
+        "123.1769 AF delivered × irrigation efficiency 0.75 "
+        "(the deployment's default) = 92.3827 AF"
     )
     assert _step_detail_summary(step, delivery_split="use") == (
-        "92.3827 AF the crop could use, of 123.1769 AF delivered, divided up "
-        "from the canal total in proportion to each field's crop water use "
-        "after rain; irrigation efficiency 0.75 (the deployment's default)"
+        "123.1769 AF delivered, divided up from the canal total in proportion "
+        "to each field's ETAW, × irrigation efficiency 0.75 "
+        "(the deployment's default) = 92.3827 AF"
     )
     assert _step_detail_summary(step, delivery_split="fixed") == (
-        "92.3827 AF the crop could use, of 123.1769 AF delivered, divided up "
-        "from the canal total by this use area's share of the canal on file; "
-        "irrigation efficiency 0.75 (the deployment's default)"
+        "123.1769 AF delivered, divided up from the canal total by this use "
+        "area's share of the canal on file, × irrigation efficiency 0.75 "
+        "(the deployment's default) = 92.3827 AF"
     )
     by_method = {"step_type": "subtract_surface_water", "detail": dict(step["detail"], efficiency_source="method")}
-    assert _step_detail_summary(by_method).endswith("(the field's irrigation method)")
+    assert _step_detail_summary(by_method).endswith("(the field's irrigation method) = 92.3827 AF")
     old = {"step_type": "subtract_surface_water", "detail": {"surface_water_af": "5"}}
     assert _step_detail_summary(old) == "5.0000 AF delivered, all of it taken off"
 

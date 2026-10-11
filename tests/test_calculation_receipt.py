@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""The calculation page as a receipt (148-03, design approved 2026-09-28).
+"""The calculation page (148-03; rebuilt as the equation panel 2026-10-11).
 
-The page answers one question, where this field's estimated pumping for the
-month came from, and only a month on a field with a well and no meter reading
-has that question. These tests build every ``CalculationRun`` directly with
+The page answers one question, where this field's groundwater extraction
+(estimated) for the month came from, and only a month on a field with a well
+and no meter reading has that question. These tests build every ``CalculationRun`` directly with
 the ORM and type the expected figures in by hand (10.0000 less 1.0000 less
 4.0000 is 5.0000; 5.0000 divided by 0.8 is 6.2500), so a page-level
 regression can never be confused with the engine's own arithmetic.
@@ -28,18 +28,21 @@ User = get_user_model()
 
 pytestmark = pytest.mark.django_db
 
-HEADLINE = "Estimated pumping, June 2026:"
-LEAD = "This field has a well and no meter reading for June 2026, so OpenH2O estimates the pumping from the crop's water use."
-METER_LINE = "A meter reading for June 2026 would replace this estimate."
-LINES = (
-    "Crop water use",
-    "minus rain the crop could use",
-    "minus canal water the crop could use",
-    "= well water the crop used",
-    "&divide; 80%, the share of pumped water the crop consumes",
-    "= estimated pumping",
+#: 150.1-02 (2026-10-11): the page is three equations in the engineer's terms
+#: Brent approved at 05:41 and 05:48 PDT. Each label sits directly above its
+#: figure (`.budget-seg-label`), in the order the equations run.
+LABELS = (
+    "Crop ET",
+    "Effective precipitation",
+    "ETAW",
+    "ETAW met by surface water",
+    "ETAW met by groundwater",
+    "Groundwater irrigation efficiency",
+    "Groundwater extraction (estimated)",
 )
-#: Words the owner rejected on this page, 2026-09-28, never to return.
+METER_LINE = "A meter reading for June 2026 would replace this estimate."
+#: Words the owner rejected on this page, never to return (2026-09-28 to
+#: 2026-10-11: the step table, the receipt table, the coined terms).
 REJECTED = (
     "Calculation steps",
     "In (AF)",
@@ -51,13 +54,24 @@ REJECTED = (
     "facility-only",
     "Zero out",
     "Groundwater consumed",
+    "groundwater consumed",
     "no supply on record",
     "Canal water the crop did not need",
+    "Crop water use",
+    "rain the crop could use",
+    "canal water the crop could use",
+    "well water the crop used",
+    "share of pumped water",
+    "Where it comes from",
+    "How was this calculated?",
 )
-NO_WELL_SENTENCE = "This field has no well on record, so there is no pumping to estimate."
+NO_WELL_SENTENCE = (
+    "This field has no well on record, so there is no groundwater extraction "
+    "to estimate."
+)
 METERED_SENTENCE = (
-    "This field has a meter reading for {month}, so the pumping is the reading "
-    "and OpenH2O estimates nothing."
+    "This field has a meter reading for {month}, so the groundwater extraction "
+    "is the reading and OpenH2O estimates nothing."
 )
 
 
@@ -79,7 +93,7 @@ def _client():
 def _canal_step(delivered="5.3333", efficiency_source="agency"):
     return {
         "step_type": "subtract_surface_water",
-        "label": "Subtract canal water the crop could use",
+        "label": "Subtract delivery × irrigation efficiency",
         "detail": {
             "delivered_af": delivered,
             "efficiency": "0.750",
@@ -152,55 +166,51 @@ def _field_page(parcel, period_id=None):
 
 
 class TestTheReceipt:
-    def test_answer_first_then_the_subtraction_in_hand_figures(self):
+    def test_three_equations_in_hand_figures(self):
         parcel = ParcelFactory(parcel_number="RCPT-APN-001", area_acres=Decimal("12.00"))
         _well_run(parcel)
         html = _page(parcel, "2026-06")
-        assert HEADLINE in html
-        assert LEAD in html
-        # The headline figure, the pumped line, and the answer before the
-        # table: the headline sits above the first line of the subtraction.
-        assert html.index(HEADLINE) < html.index(LINES[0])
-        for line in LINES:
-            assert line in html, line
-        for figure in ("10.00", "1.00", "4.00", "5.00", "6.25"):
+        assert "<title>Groundwater extraction (estimated), RCPT-APN-001, June 2026" in html
+        # The labels in the order the three equations run.
+        positions = [html.index(f'<div class="budget-seg-label">{label}</div>') for label in LABELS]
+        assert positions == sorted(positions)
+        # 10 - 1 = 9; 9 - 4 = 5; 5 / 80% = 6.25.
+        for figure in ("10.00", "1.00", "9.00", "4.00", "5.00", "80%", "6.25"):
             assert f">{figure}<" in html, figure
-        # Two decimals on the receipt; the run's own four-decimal value rides
-        # in the title attribute.
+        assert html.count("&minus;</div>") == 2
+        assert html.count("&divide;</div>") == 1
+        assert html.count("&equals;</div>") == 3
+        # Two decimals; the run's own four-decimal value rides in the title.
         assert 'title="6.2500 acre-feet"' in html
         assert 'title="5.0000 acre-feet"' in html
+        assert 'title="9.0000 acre-feet"' in html
         assert METER_LINE in html
-        assert "Methodology:" in html
-        assert "Default Methodology" in html
+        assert "Methodology: Default Methodology." in html
         assert "12.00 acres" in html
+        assert "June 2026" in html
 
-    def test_the_notes_say_where_each_figure_comes_from(self):
+    def test_each_figure_names_its_source_and_setting(self):
         parcel = ParcelFactory(parcel_number="RCPT-APN-002")
         _well_run(parcel)
         html = _page(parcel, "2026-06")
-        assert "OpenET's satellite estimate for this field and month." in html
-        assert (
-            "The month's rainfall from gridMET, counted by the method set on "
-            "Methodology Settings."
-        ) in html
-        assert "This field's delivery this month was <span" in html
-        assert ">5.33</span> acre-feet" in html
-        assert "acre-feet, and OpenH2O counts 75 percent of it toward the crop. The 75 percent is the default irrigation efficiency on Delivery Settings, because the field has no irrigation method on file." in html
-        # 2026-10-10 20:16: the well-water row shows the subtraction itself.
-        assert "Crop water use &minus; rain and canal water</td>" in html
+        assert "OpenET satellite estimate" in html
+        assert "crop ET minus effective precipitation" in html
+        assert "delivery &times; irrigation efficiency, up to ETAW" in html
+        assert "<span>Delivered</span><b" in html
+        assert ">5.33</b>" in html
+        assert "Irrigation efficiency<span class=\"budget-breakdown-note\">Delivery Settings default</span>" in html
+        assert "<b>75%</b>" in html
+        assert "set on Delivery Settings when this month was calculated" in html
+        assert "charged to the groundwater allocation" in html
+        assert "recorded on the field's ledger" in html
+        # A field's own delivery (no split row on the ledger) says nothing
+        # about a split; no excess, no excess row.
+        assert "share of the headgate total" not in html
+        assert "Surface water in excess of ETAW" not in html
+        # No sentence writes the arithmetic out.
         assert "10.00 &minus;" not in html
-        # 149.1-05: the notes are the table's third column; the setting is
-        # named with its page and its live label (Delivery Settings).
-        assert (
-            "The share set on Delivery Settings when this month was calculated."
-        ) in html
-        assert "Where it comes from" in html
-        assert METER_LINE in html
-        # A field's own delivery (no split sentence on the ledger row) says
-        # nothing about a split.
-        assert "share of its headgate" not in html
 
-    def test_a_delivery_divided_up_by_crop_water_use_says_so_in_the_ruled_words(self):
+    def test_a_delivery_divided_up_by_etaw_says_so(self):
         from accounting.ledger_words import DELIVERY_SHARE_BY_USE
 
         parcel = ParcelFactory(parcel_number="RCPT-APN-003")
@@ -215,9 +225,7 @@ class TestTheReceipt:
             divided_from_headgate=True,  # 149-01: the split's rows say so in a column
         )
         html = _page(parcel, "2026-06")
-        assert (
-            "This field's share of its headgate's delivery this month was <span"
-        ) in html
+        assert "share of the headgate total" in html
 
     def test_the_rejected_words_are_gone(self):
         parcel = ParcelFactory(parcel_number="RCPT-APN-004")
@@ -244,69 +252,76 @@ class TestTheReceipt:
         config.default_irrigation_efficiency = Decimal("0.600")
         config.save()
         html = _page(parcel, "2026-06")
-        assert "&divide; 70%, the share of pumped water the crop consumes" in html
-        assert "OpenH2O counts 90 percent of it toward the crop" in html
-        assert "&divide; 50%" not in html
-        assert "&divide; 70%, the share of pumped water the crop consumes" in html
+        assert ">70%<" in html
+        assert "<b>90%</b>" in html
+        assert ">50%<" not in html
+        assert "<b>60%</b>" not in html
 
-    def test_a_run_from_before_pumping_was_stamped_stops_at_the_well_water(self):
+    def test_a_run_from_before_extraction_was_stamped_stops_at_etaw_met_by_groundwater(self):
         parcel = ParcelFactory(parcel_number="RCPT-APN-006")
         _well_run(parcel, gw_extracted_af=None)
         html = _page(parcel, "2026-06")
-        assert "Estimated well water, June 2026:" in html
         assert "&divide;" not in html
-        assert "= estimated pumping" not in html
-        assert "= well water the crop used" in html
+        assert '<div class="budget-seg-label">Groundwater extraction (estimated)</div>' not in html
+        assert 'class="budget-seg budget-seg--result"' in html
+        assert '<div class="budget-seg-label">ETAW met by groundwater</div>' in html
+
+    def test_etaw_met_by_surface_water_stops_at_etaw(self):
+        """The run's surface_water_af is the delivery times the efficiency,
+        uncapped; the panel shows the part up to ETAW, and the excess as its
+        own breakdown row from the run's own over_delivery_af."""
+        parcel = ParcelFactory(parcel_number="RCPT-APN-007")
+        _well_run(
+            parcel,
+            surface_water_af=Decimal("12.0000"),
+            final_af=Decimal("0.0000"),
+            gw_extracted_af=Decimal("0.0000"),
+            over_delivery_af=Decimal("3.0000"),
+        )
+        html = _page(parcel, "2026-06")
+        assert 'title="9.0000 acre-feet">9.00<' in html  # ETAW, and ETAW met by surface water
+        assert "12.00" not in html
+        assert "Surface water in excess of ETAW" in html
+        assert 'title="3.0000 acre-feet">3.00</b>' in html
+
+    def test_a_floor_above_zero_is_named(self):
+        parcel = ParcelFactory(parcel_number="RCPT-APN-008")
+        breakdown = [_canal_step(), {"step_type": "clamp_floor", "detail": {"floor": "0.5000"}}]
+        _well_run(
+            parcel,
+            surface_water_af=Decimal("9.0000"),
+            final_af=Decimal("0.5000"),
+            gw_extracted_af=Decimal("0.6250"),
+            breakdown=breakdown,
+        )
+        html = _page(parcel, "2026-06")
+        assert "<span>Floor<span class=\"budget-breakdown-note\">Methodology Settings</span></span><b>0.50</b>" in html
+        _well_run(parcel, "2026-07", breakdown=breakdown)
+        html = _page(parcel, "2026-07")
+        assert "<span>Floor" not in html
 
 
 class TestAZeroMonth:
-    """A well month where rain and canal water covered the crop."""
+    """A well month with no ETAW met by groundwater."""
 
-    def test_says_so_in_the_months_own_numbers(self):
+    def test_shows_the_same_three_equations_at_zero(self):
         parcel = ParcelFactory(parcel_number="RCPT-APN-010")
         _zero_run(parcel)
         html = _page(parcel, "2025-12")
-        assert "Estimated pumping, December 2025:" in html
-        assert ">0.00 acre-feet</span>" in html
-        assert (
-            "Rain covered the crop's water use this month, so OpenH2O estimates no pumping."
-        ) in html
-        # 149.1-05: the figure is a row of the table, its figure beside its name.
-        assert "Canal water left over" in html
-        assert 'title="4.0000 acre-feet">4.00</td>' in html
-        assert "Canal water left over" in html
-        assert "None of the canal water was needed this month." in html
-        assert "8.00 &minus; 8.00 &minus; 4.00 is less than zero, so OpenH2O records 0.00, the lowest value Methodology Settings allows." in html
-        # Nothing to divide, so no division line and no 80% note.
-        assert "&divide;" not in html
-        assert "= estimated pumping" not in html
+        # Rain met crop ET: ETAW 0, so none of the 4.00 meets ETAW.
+        assert 'title="0.0000 acre-feet">0.00<' in html
+        assert "Surface water in excess of ETAW" in html
+        assert 'title="4.0000 acre-feet">4.00</b>' in html
+        # Nothing was divided, so the run holds no groundwater irrigation
+        # efficiency to show; the live setting is never shown in its place.
+        assert "not applied this month" in html
+        assert ">80%<" not in html
         # The default treatment (not credited) says nothing more.
-        assert "credited" not in html
+        assert "Credited to this field" not in html
         assert "its own line" not in html
         assert "A meter reading for December 2025 would replace this estimate." in html
 
-    def test_names_only_the_water_that_covered_the_crop(self):
-        parcel = ParcelFactory(parcel_number="RCPT-APN-011")
-        _zero_run(
-            parcel, "2025-11",
-            effective_precip_af=Decimal("0.0000"),
-            surface_water_af=Decimal("8.0000"),
-            over_delivery_af=Decimal("0.0000"),
-        )
-        html = _page(parcel, "2025-11")
-        assert "Canal water covered the crop's water use this month, so OpenH2O estimates no pumping." in html
-        assert "more than the crop needed" not in html
-        _zero_run(
-            parcel, "2025-10",
-            surface_water_af=Decimal("0.0000"),
-            surface_delivered_af=Decimal("0.0000"),
-            over_delivery_af=Decimal("0.0000"),
-        )
-        html = _page(parcel, "2025-10")
-        assert "Rain covered the crop's water use this month, so OpenH2O estimates no pumping." in html
-        assert "No canal delivery on record for this field this month." in html
-
-    def test_under_the_credited_setting_one_sentence_says_what_happened(self):
+    def test_under_the_credited_setting_the_two_parts_are_shown(self):
         parcel = ParcelFactory(parcel_number="RCPT-APN-012")
         _zero_run(
             parcel,
@@ -315,21 +330,16 @@ class TestAZeroMonth:
             over_delivery_credited_af=Decimal("3.6000"),
         )
         html = _page(parcel, "2025-12")
-        assert (
-            "3.60 acre-feet of it is credited to this field; 0.40 acre-feet (10%) "
-            "stays in the basin."
-        ) in html
+        assert "<span>Credited to this field</span><b>3.60</b>" in html
+        assert "<span>Left in the basin (10%)</span><b>0.40</b>" in html
 
-    def test_under_the_named_line_setting_one_sentence_says_where_it_shows(self):
+    def test_under_the_named_line_setting_the_excess_says_where_it_shows(self):
         parcel = ParcelFactory(parcel_number="RCPT-APN-013")
         _zero_run(parcel, over_delivery_treatment="named_line")
         html = _page(parcel, "2025-12")
-        assert (
-            "It is shown on the field's page as its own line, not a credit and "
-            "not charged."
-        ) in html
+        assert "shown on the field's page as its own line" in html
 
-    def test_the_sentence_is_the_runs_own_stamp_not_the_live_setting(self):
+    def test_the_breakdown_is_the_runs_own_stamp_not_the_live_setting(self):
         parcel = ParcelFactory(parcel_number="RCPT-APN-014")
         _zero_run(parcel, over_delivery_treatment="not_credited")
         config, _ = SiteConfig.objects.get_or_create(defaults={"agency_name": "Receipt Test Agency"})
@@ -337,7 +347,7 @@ class TestAZeroMonth:
         config.over_delivery_leave_behind = Decimal("0.100")
         config.save()
         html = _page(parcel, "2025-12")
-        assert "credited" not in html
+        assert "Credited to this field" not in html
 
 
 class TestTheShortPage:
@@ -353,10 +363,10 @@ class TestTheShortPage:
             unmet_demand_af=Decimal("5.0000"),
         )
         html = _page(parcel, "2026-06")
-        assert "No estimated pumping for June 2026" in html
+        assert "No groundwater extraction estimated for June 2026" in html
         assert NO_WELL_SENTENCE in html
         assert reverse("parcels:detail", args=[parcel.pk]) in html
-        assert "Estimated pumping," not in html
+        assert "budget-panel" not in html
         assert "5.00" not in html
         for words in REJECTED:
             assert words not in html, words
@@ -365,11 +375,10 @@ class TestTheShortPage:
         parcel = ParcelFactory(parcel_number="RCPT-APN-021")
         _well_run(parcel, residual_disposition="metered", gw_extracted_af=None)
         html = _page(parcel, "2026-06")
-        assert "No estimated pumping for June 2026" in html
+        assert "No groundwater extraction estimated for June 2026" in html
         assert METERED_SENTENCE.format(month="June 2026") in html
         assert NO_WELL_SENTENCE not in html
-        assert "Estimated pumping," not in html
-        assert "= well water" not in html
+        assert "budget-panel" not in html
 
     def test_a_month_with_no_run_is_still_a_404(self):
         parcel = ParcelFactory(parcel_number="RCPT-APN-022")
@@ -404,7 +413,7 @@ class TestTheFieldPageLinks:
         assert parcel_receipt_periods(parcel, rp) == ["2026-05"]
 
         html = _field_page(parcel, rp.pk)
-        assert "Estimated pumping, month by month:" in html
+        assert "Estimated groundwater extraction, month by month:" in html
         link = lambda period: reverse(  # noqa: E731
             "accounting:calculation_run_detail", args=[parcel.pk, period]
         )
@@ -422,7 +431,7 @@ class TestTheFieldPageLinks:
         )
         assert parcel_receipt_periods(parcel, rp) == []
         html = _field_page(parcel, rp.pk)
-        assert "Estimated pumping, month by month:" not in html
+        assert "Estimated groundwater extraction, month by month:" not in html
         assert "calculation-run" not in html
         # The balance panel is still gated on the wider run_periods.
         assert "Water balance" in html

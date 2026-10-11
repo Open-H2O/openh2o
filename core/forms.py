@@ -234,7 +234,7 @@ class DeliverySettingsForm(forms.Form):
     efficiency_percent = forms.IntegerField(
         min_value=1,
         max_value=100,
-        label="Share of delivered water the crop consumes",
+        label="Default irrigation efficiency",
         # 90-02: said "soaks back into the aquifer as recharge", which named the
         # `recharge` module's noun on deployments that do not run it. The
         # sentence does not need the word — where the water goes is already
@@ -250,16 +250,16 @@ class DeliverySettingsForm(forms.Form):
     groundwater_efficiency_percent = forms.IntegerField(
         min_value=1,
         max_value=100,
-        label="Share of pumped groundwater the crop consumes",
-        help_text="Typical: 80%. Estimated groundwater extracted is the "
-        "estimated groundwater consumed divided by this share; a meter "
-        "reading is used as recorded.",
+        label="Groundwater irrigation efficiency",
+        help_text="Typical: 80%. OpenH2O divides ETAW met by groundwater by "
+        "this efficiency to estimate groundwater extraction. Where a well has "
+        "a meter reading, OpenH2O uses the reading as recorded.",
         widget=forms.NumberInput(
             attrs={"class": "form-input", "style": "width: 6rem;", "step": "1"}
         ),
     )
-    # 148-04 Task 1: what happens to a canal delivery that went beyond what
-    # its field's crop could use. `required=False` at the Django level (see
+    # 148-04 Task 1: what happens to surface water in excess of ETAW
+    # (150.1-02, Brent's term, 2026-10-11). `required=False` at the Django level (see
     # the class docstring) -- a submission that omits it leaves the stored
     # treatment untouched, same convention as `identifier_host` blank meaning
     # "use the default". Plain-language radio labels are set in __init__,
@@ -267,7 +267,7 @@ class DeliverySettingsForm(forms.Form):
     over_delivery_treatment = forms.ChoiceField(
         choices=SiteConfig.OVER_DELIVERY_TREATMENT_CHOICES,
         required=False,
-        label="Canal water beyond what the crop could use",
+        label="Surface water in excess of ETAW",
         widget=forms.RadioSelect,
     )
     # Shown/entered as a whole-number percent, stored as a Decimal fraction --

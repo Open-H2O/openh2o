@@ -317,9 +317,11 @@ def test_zone_groundwater_budget_remaining_moves_by_the_extraction():
 # ---------------------------------------------------------------------------
 
 
-def test_the_groundwater_disposition_label_says_consumed_estimated():
+def test_the_groundwater_disposition_label_says_etaw_met_by_groundwater():
+    # 150.1-02 (Brent, 2026-10-11 05:39): "Groundwater consumed" is no
+    # California engineer's term; the row's amount is ETAW met by groundwater.
     run = CalculationRun(residual_disposition="groundwater")
-    assert run.get_residual_disposition_display() == "Groundwater consumed (estimated)"
+    assert run.get_residual_disposition_display() == "ETAW met by groundwater (estimated)"
 
 
 # ---------------------------------------------------------------------------
@@ -350,7 +352,7 @@ def test_groundwater_efficiency_shown_when_wells_is_enabled(admin_client):
     body = resp.content.decode()
     assert resp.status_code == 200
     assert "Groundwater" in body
-    assert "Share of pumped groundwater the crop consumes" in body
+    assert "Groundwater irrigation efficiency" in body
 
 
 @override_settings(OPENH2O_MODULES=_WITHOUT_WELLS)
@@ -358,7 +360,7 @@ def test_groundwater_efficiency_absent_when_wells_is_disabled(admin_client):
     resp = admin_client.get(reverse("accounting:delivery_settings"))
     assert resp.status_code == 200
     body = resp.content.decode()
-    assert "Share of pumped groundwater the crop consumes" not in body
+    assert "Groundwater irrigation efficiency" not in body
     assert 'name="groundwater_efficiency_percent"' not in body
 
 
@@ -450,16 +452,17 @@ def test_the_calculation_page_names_consumed_and_charges_extracted(admin_client)
     ).content.decode()
 
     assert "Billable groundwater" not in html
-    # 148-03 (2026-09-28): the page is a receipt. The answer first, the
-    # pumped figure at two places, and the divisor read back off the run's
-    # own two figures (0.8800 / 1.1000 = 80%), never the live setting.
-    assert "Estimated pumping, May 2025:" in html
-    assert ">1.10 acre-feet</span>" in html
-    assert "= well water the crop used" in html
+    # 150.1-02 (2026-10-11): the page is the equation panel. ETAW met by
+    # groundwater, divided by the groundwater irrigation efficiency read back
+    # off the run's own two figures (0.8800 / 1.1000 = 80%), never the live
+    # setting, is the groundwater extraction (estimated) the allocation is
+    # charged.
+    assert '<div class="budget-seg-label">ETAW met by groundwater</div>' in html
     assert ">0.88<" in html
-    assert "&divide; 80%, the share of pumped water the crop consumes" in html
-    assert "= estimated pumping" in html
-    assert "This field has a well and no meter reading for May 2025, so OpenH2O estimates the pumping from the crop's water use." in html
+    assert '<div class="budget-seg-label">Groundwater irrigation efficiency</div>' in html
+    assert ">80%<" in html
+    assert '<div class="budget-seg-label">Groundwater extraction (estimated)</div>' in html
+    assert 'title="1.1000 acre-feet">1.10<' in html
     assert "Groundwater consumed" not in html
 
 
@@ -482,12 +485,12 @@ def test_a_metered_calculation_page_shows_no_extracted_figure(admin_client):
 
     # 148-03: a metered month has nothing to estimate, so it gets the short
     # page (one sentence, a link back to the field), never the receipt.
-    assert "Estimated pumping," not in html
+    assert "budget-panel" not in html
     assert "= pumped" not in html
-    assert "No estimated pumping for May 2025" in html
+    assert "No groundwater extraction estimated for May 2025" in html
     assert (
-        "This field has a meter reading for May 2025, so the pumping is the "
-        "reading and OpenH2O estimates nothing."
+        "This field has a meter reading for May 2025, so the groundwater "
+        "extraction is the reading and OpenH2O estimates nothing."
     ) in html
 
 

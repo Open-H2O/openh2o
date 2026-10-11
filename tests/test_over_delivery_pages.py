@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""148-04 Task 3: the calculation page names what happened to canal water
-beyond what the crop could use, and the field page shows (c)'s line.
+"""148-04 Task 3: the calculation page names what happened to surface water
+in excess of ETAW, and the field page shows (c)'s line.
 
 Every ``CalculationRun`` here is built directly with the ORM, never by
 running the engine — the sentence and the figures are read off the run's OWN
@@ -27,33 +27,28 @@ User = get_user_model()
 
 pytestmark = pytest.mark.django_db
 
-# 148-03 (2026-09-28): the calculation page is a receipt. A well month where
-# rain and canal water covered the crop says so in the month's own numbers,
-# and what happened to the canal water beyond what the crop could use is one
-# sentence under the credited or named-line setting only; under the default
-# (not credited) the figure stands and nothing more is said. The field page's
-# own line keeps the fixed noun's short form.
-ZERO_SENTENCE = "Rain and canal water covered the crop's water use this month, so OpenH2O estimates no pumping."
-#: 2026-10-10 20:16 (Brent approved): rain 8 against crop 10 leaves the crop
-#: needing 2 of the 6 acre-feet of canal water, so 4 is left over.
-NEED_SENTENCE = "The crop needed 2.00 of the 6.00 acre-feet of canal water."
-EXCESS_SENTENCE = 'title="4.0000 acre-feet">4.00</td>'  # 149.1-05: a row of the receipt table
-FIELD_LABEL = "Canal water beyond crop use:"
+# 150.1-02 (2026-10-11): the calculation page is the equation panel. Under
+# ETAW met by surface water, the run's own surface water in excess of ETAW is
+# a breakdown row, and what happened to it is two more rows under the credited
+# setting or a note under the named-line setting only; under the default (not
+# credited) the figure stands and nothing more is said. Rain 8 against crop
+# ET 10 leaves an ETAW of 2, so 2 of the 6 acre-feet meets ETAW and 4 is the
+# excess.
+EXCESS_LABEL = "<span>Surface water in excess of ETAW"
+EXCESS_FIGURE = 'title="4.0000 acre-feet">4.00</b>'
+ETAW_MET_BY_SURFACE = 'title="2.0000 acre-feet">2.00<'
+FIELD_LABEL = "Surface water in excess of ETAW:"
 
 OVER = Decimal("4.0000")
 SHARE = Decimal("0.100")
 CREDITED = Decimal("3.6000")
 LEFT = Decimal("0.4000")
 
-# The sentences are literal template text (composed with floatformat in the
-# template, not a pre-built Python string), so Django's autoescape never
-# touches them; the apostrophes render plain.
-CREDITED_FIELD_SENTENCE = (
-    "3.60 acre-feet of it is credited to this field; 0.40 acre-feet (10%) stays in the basin."
+CREDITED_ROWS = (
+    "<span>Credited to this field</span><b>3.60</b>",
+    "<span>Left in the basin (10%)</span><b>0.40</b>",
 )
-NAMED_LINE_SENTENCE = (
-    "It is shown on the field's page as its own line, not a credit and not charged."
-)
+NAMED_LINE_NOTE = "shown on the field's page as its own line"
 
 
 def _user(name="r148-04-reader"):
@@ -78,9 +73,9 @@ def _run(
     leave_behind=None,
     pooled=False,
 ):
-    # A well month rain and canal water covered: crop 10.0000, rain 8.0000,
-    # canal water the crop could use 6.0000, well water 0, and 4.0000 of the
-    # canal water beyond what the crop could use.
+    # A well month with no ETAW met by groundwater: crop ET 10.0000,
+    # effective precipitation 8.0000 (ETAW 2.0000), delivery times efficiency
+    # 6.0000, of which 4.0000 is surface water in excess of ETAW.
     return CalculationRun.objects.create(
         parcel=parcel,
         period=period,
@@ -121,17 +116,17 @@ def _field_page(parcel):
 
 
 class TestCalculationPageSentenceByStamp:
-    """The zero month's sentence, and what follows it by the run's own stamp."""
+    """The excess row, and what follows it by the run's own stamp."""
 
     def test_not_credited_says_nothing_more(self):
         parcel = ParcelFactory(parcel_number="R148-04-A")
         _run(parcel, "2026-08", treatment="not_credited")
         html = _calc_page(parcel, "2026-08")
-        assert ZERO_SENTENCE in html
-        assert EXCESS_SENTENCE in html
-        assert "credited" not in html
+        assert EXCESS_LABEL in html
+        assert EXCESS_FIGURE in html
+        assert ETAW_MET_BY_SURFACE in html
+        assert "Credited to this field" not in html
         assert "its own line" not in html
-        assert NEED_SENTENCE in html
 
     def test_credited_to_the_field(self):
         parcel = ParcelFactory(parcel_number="R148-04-B")
@@ -140,15 +135,16 @@ class TestCalculationPageSentenceByStamp:
             credited_af=CREDITED, leave_behind=SHARE, pooled=False,
         )
         html = _calc_page(parcel, "2026-08")
-        assert EXCESS_SENTENCE in html
-        assert CREDITED_FIELD_SENTENCE in html
+        assert EXCESS_FIGURE in html
+        for row in CREDITED_ROWS:
+            assert row in html, row
 
     def test_named_line(self):
         parcel = ParcelFactory(parcel_number="R148-04-D")
         _run(parcel, "2026-08", treatment="named_line")
         html = _calc_page(parcel, "2026-08")
-        assert EXCESS_SENTENCE in html
-        assert NAMED_LINE_SENTENCE in html
+        assert EXCESS_FIGURE in html
+        assert NAMED_LINE_NOTE in html
 
     def test_credited_with_nothing_actually_credited_reads_as_not_credited(self):
         """`treatment` stamps "credited" but `over_delivery_credited_af` stays
@@ -161,22 +157,21 @@ class TestCalculationPageSentenceByStamp:
             credited_af=None, leave_behind=SHARE, pooled=False,
         )
         html = _calc_page(parcel, "2026-08")
-        assert EXCESS_SENTENCE in html
-        assert "credited" not in html
+        assert EXCESS_FIGURE in html
+        assert "Credited to this field" not in html
 
-    def test_zero_over_delivery_says_nothing_about_canal_water_beyond_the_crop(self):
+    def test_zero_over_delivery_shows_no_excess_row(self):
         parcel = ParcelFactory(parcel_number="R148-04-E")
         _run(parcel, "2026-08", over_delivery_af=Decimal("0.0000"), treatment="credited")
         html = _calc_page(parcel, "2026-08")
-        assert ZERO_SENTENCE in html
-        assert "more than the crop needed" not in html
-        assert "credited" not in html
+        assert EXCESS_LABEL not in html
+        assert "Credited to this field" not in html
 
 
 class TestSentenceIsTheRunsOwnStamp:
     """ISS-177: the live setting is read never; only what THIS run stamped."""
 
-    def test_changing_the_live_setting_after_the_run_does_not_move_the_sentence(self):
+    def test_changing_the_live_setting_after_the_run_does_not_move_the_rows(self):
         parcel = ParcelFactory(parcel_number="R148-04-F")
         _run(parcel, "2026-08", treatment="not_credited")
 
@@ -188,8 +183,8 @@ class TestSentenceIsTheRunsOwnStamp:
         config.save()
 
         html = _calc_page(parcel, "2026-08")
-        assert EXCESS_SENTENCE in html
-        assert "credited" not in html
+        assert EXCESS_FIGURE in html
+        assert "Credited to this field" not in html
 
 
 class TestFieldPageLine:
@@ -249,9 +244,8 @@ class TestNoRecharge:
             credited_af=CREDITED, leave_behind=SHARE, pooled=False,
         )
         html = _calc_page(parcel, "2026-08")
-        assert ZERO_SENTENCE in html
-        start = html.index(ZERO_SENTENCE)
-        end = html.index("</p>", start)
+        start = html.index('<div class="budget-panel ')
+        end = html.index("</div>", html.index("budget-panel-note", start))
         segment = html[start:end]
         assert "recharge" not in segment.lower()
 

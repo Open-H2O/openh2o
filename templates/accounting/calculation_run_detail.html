@@ -57,9 +57,24 @@
   months that needed well water. Brent, 04:51 PDT: "Use the actual "-" sign,
   Crop water use - rain and canal water". The zero month keeps its figures
   (a comparison with zero that rounding cannot change), with the same sign.
+
+  2026-10-11 05:30 PDT, Brent on the rebuilt receipt: "Start completely over
+  and redesing this enitre page". The page's purpose (Fable, 05:35): staff
+  open it when a landowner questions the groundwater charged on an unmetered
+  well for one month, to confirm each input and setting or find the wrong
+  one. Rebuilt as the dashboard's equation panel (.budget-panel--centered),
+  three equations in the engineer's terms Brent approved at 05:41 and 05:48
+  PDT: Crop ET - Effective precipitation = ETAW; ETAW - ETAW met by surface
+  water = ETAW met by groundwater; ETAW met by groundwater / Groundwater
+  irrigation efficiency = Groundwater extraction (estimated). Each figure
+  carries its source and setting beneath it as label and figure, never a
+  sentence; no sentence writes the arithmetic out. The table, its "where it
+  comes from" column, the lead and the zero-month sentence are gone. Two
+  decimals; each figure's title attribute carries the stored four-decimal
+  value, printed as the Decimal so it adds no figure site of its own.
 {% endcomment %}
-{% block title %}How was this calculated? - Open Water Accounting Platform{% endblock %}
-{% block page_title %}How was this calculated?{% endblock %}
+{% block title %}Groundwater extraction (estimated), {{ parcel.parcel_number }}, {{ month_label }} - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Groundwater extraction (estimated){% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -68,7 +83,6 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">{{ parcel.parcel_number }} &middot; {{ month_label }}</span>
   </nav>
-  <p class="page-description">{% if receipt %}This page shows where this field's estimated pumping for {{ month_label }} came from, one figure at a time.{% else %}Nothing was estimated for this field in {{ month_label }}.{% endif %}</p>
 </div>
 {% endblock %}
 
@@ -87,104 +101,125 @@
     {% endif %}
   </div>
 
-  <div class="card-raised receipt{% if not receipt %} receipt-short{% endif %}">
-    <div class="text-tertiary text-sm receipt-facts">
-      {{ parcel.parcel_number }}{% if parcel.owner_name %} &middot; {{ parcel.owner_name }}{% endif %} &middot; {{ parcel.area_acres|floatformat:2 }} acres &middot; Methodology: {{ methodology_plan_name|blank }}
+  {% if receipt %}
+  <div class="budget-panel budget-panel--centered receipt-panel">
+    <div class="budget-panel-head">
+      <span class="budget-panel-title">{{ parcel.parcel_number }}{% if parcel.owner_name %} &middot; {{ parcel.owner_name }}{% endif %} &middot; {{ parcel.area_acres|floatformat:2 }} acres</span>
+      <span class="budget-panel-period">{{ month_label }}</span>
     </div>
+    <div class="budget-panel-body">
 
-    {% if receipt %}
-    <h2 class="receipt-headline">
-      {% if run.gw_extracted_af is not None %}Estimated pumping{% else %}Estimated well water{% endif %}, {{ month_label }}:
-      <span class="receipt-headline-figure" title="{{ headline_af }} acre-feet">{{ headline_af|floatformat:2|intcomma }} acre-feet</span>
-    </h2>
-    <p class="text-secondary receipt-lead">This field has a well and no meter reading for {{ month_label }}, so OpenH2O estimates the pumping from the crop's water use.</p>
+      <div class="budget-panel-row">
+        <div class="budget-seg">
+          <div class="budget-seg-label">Crop ET</div>
+          <div class="budget-seg-value" title="{{ run.gross_et_af }} acre-feet">{{ run.gross_et_af|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+          <div class="budget-seg-caption">OpenET satellite estimate</div>
+        </div>
+        <div class="budget-op">&minus;</div>
+        <div class="budget-seg">
+          <div class="budget-seg-label">Effective precipitation</div>
+          <div class="budget-seg-value" title="{{ run.effective_precip_af }} acre-feet">{{ run.effective_precip_af|default_if_none:0|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+          {% if run.effective_precip_af is None %}
+          <div class="budget-seg-caption">not in the calculation plan</div>
+          {% else %}
+          <div class="budget-seg-caption">gridMET rainfall</div>
+          <div class="budget-breakdown-group">
+            {% if rainfall_af is not None %}<div class="budget-breakdown-row"><span>Rainfall</span><b title="{{ rainfall_af }} acre-feet">{{ rainfall_af|floatformat:2|intcomma }}</b></div>{% endif %}
+            {% if precip_method_label %}<div class="budget-breakdown-row"><span>Method<span class="budget-breakdown-note">Methodology Settings</span></span><b>{{ precip_method_label }}</b></div>{% endif %}
+          </div>
+          {% endif %}
+        </div>
+        <div class="budget-op">&equals;</div>
+        <div class="budget-seg">
+          <div class="budget-seg-label">ETAW</div>
+          <div class="budget-seg-value" title="{{ etaw_af }} acre-feet">{{ etaw_af|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+          <div class="budget-seg-caption">crop ET minus effective precipitation</div>
+        </div>
+      </div>
 
-    <div class="table-scroll">
-    <table class="data-table receipt-table">
-      <thead>
-        <tr>
-          <th>Figure</th>
-          <th class="th-right">Acre-feet</th>
-          <th>Where it comes from</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td class="col-name">Crop water use</td>
-          <td class="col-amount td-num" title="{{ run.gross_et_af }} acre-feet">{{ run.gross_et_af|floatformat:2|intcomma }}</td>
-          <td>OpenET's satellite estimate for this field and month.</td>
-        </tr>
-        {% if run.effective_precip_af is not None %}
-        <tr>
-          <td class="col-name">minus rain the crop could use</td>
-          <td class="col-amount td-num" title="{{ run.effective_precip_af }} acre-feet">{{ run.effective_precip_af|floatformat:2|intcomma }}</td>
-          <td>The month's rainfall from gridMET, counted by the method set on Methodology Settings.</td>
-        </tr>
-        {% endif %}
-        {% if run.surface_water_af is not None %}
-        <tr>
-          <td class="col-name">minus canal water the crop could use</td>
-          <td class="col-amount td-num" title="{{ run.surface_water_af }} acre-feet">{{ run.surface_water_af|floatformat:2|intcomma }}</td>
-          <td>{% if run.surface_delivered_af %}{% if delivery_split %}This field's share of its headgate's delivery this month was{% else %}This field's delivery this month was{% endif %} <span title="{{ run.surface_delivered_af }} acre-feet">{{ run.surface_delivered_af|floatformat:2|intcomma }}</span> acre-feet{% if irrigation_efficiency_pct is not None %}, and OpenH2O counts {{ irrigation_efficiency_pct|floatformat:0 }} percent of it toward the crop. {% if irrigation_efficiency_source == "method" %}The {{ irrigation_efficiency_pct|floatformat:0 }} percent is the irrigation efficiency of the field's irrigation method on file{% if irrigation_method_name %}, {{ irrigation_method_name }}{% endif %}.{% else %}The {{ irrigation_efficiency_pct|floatformat:0 }} percent is the default irrigation efficiency on Delivery Settings, because the field has no irrigation method on file.{% endif %}{% else %}.{% endif %}{% elif run.surface_water_af %}The whole delivery on the district's record; this deployment's calculation plan applies no irrigation efficiency.{% else %}No canal delivery on record for this field this month.{% endif %}</td>
-        </tr>
-        {% endif %}
-        {% if run.final_af == 0 and run.over_delivery_af > 0 %}
-        <tr>
-          <td class="col-name">Canal water left over</td>
-          <td class="col-amount td-num" title="{{ run.over_delivery_af }} acre-feet">{{ run.over_delivery_af|floatformat:2|intcomma }}</td>
-          <td>{% if canal_need_af > 0 %}The crop needed {{ canal_need_af|floatformat:2|intcomma }} of the {{ run.surface_water_af|floatformat:2|intcomma }} acre-feet of canal water.{% else %}None of the canal water was needed this month.{% endif %}{% if run.over_delivery_treatment == "credited" and over_delivery_left_af is not None %} {{ run.over_delivery_credited_af|floatformat:2|intcomma }} acre-feet of it is credited to this field; {{ over_delivery_left_af|floatformat:2|intcomma }} acre-feet ({{ over_delivery_share_pct|floatformat:0 }}%) stays in the basin.{% elif run.over_delivery_treatment == "named_line" %} It is shown on the field's page as its own line, not a credit and not charged.{% endif %}</td>
-        </tr>
-        {% endif %}
-        <tr class="receipt-total">
-          <td class="col-name">= well water the crop used</td>
-          <td class="col-amount td-num" title="{{ run.final_af }} acre-feet">{{ run.final_af|floatformat:2|intcomma }}</td>
-          <td>{% if raw_af < run.final_af %}{{ run.gross_et_af|floatformat:2|intcomma }}{% if run.effective_precip_af is not None %} &minus; {{ run.effective_precip_af|floatformat:2|intcomma }}{% endif %}{% if run.surface_water_af is not None %} &minus; {{ run.surface_water_af|floatformat:2|intcomma }}{% endif %} is less than {% if run.final_af == 0 %}zero{% else %}{{ run.final_af|floatformat:2|intcomma }}{% endif %}, so OpenH2O records {{ run.final_af|floatformat:2|intcomma }}, the lowest value Methodology Settings allows.{% else %}Crop water use &minus; rain and canal water{% endif %}</td>
-        </tr>
-        {% if gw_efficiency_pct is not None %}
-        <tr>
-          <td class="col-name">&divide; {{ gw_efficiency_pct|floatformat:0 }}%, the share of pumped water the crop consumes</td>
-          <td class="col-amount td-num"></td>
-          <td>The share set on Delivery Settings when this month was calculated.</td>
-        </tr>
-        <tr class="receipt-total">
-          <td class="col-name">= estimated pumping</td>
-          <td class="col-amount td-num" title="{{ run.gw_extracted_af }} acre-feet">{{ run.gw_extracted_af|floatformat:2|intcomma }}</td>
-          <td>OpenH2O charges this amount against the account's groundwater allocation.</td>
-        </tr>
-        {% endif %}
-        <tr class="receipt-aside">
-          <td class="col-name">Meter reading</td>
-          <td class="col-amount td-num">None</td>
-          <td>A meter reading for {{ month_label }} would replace this estimate.</td>
-        </tr>
-      </tbody>
-    </table>
+      <div class="budget-panel-row">
+        <div class="budget-seg">
+          <div class="budget-seg-label">ETAW</div>
+          <div class="budget-seg-value" title="{{ etaw_af }} acre-feet">{{ etaw_af|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+        </div>
+        <div class="budget-op">&minus;</div>
+        <div class="budget-seg">
+          <div class="budget-seg-label">ETAW met by surface water</div>
+          <div class="budget-seg-value" title="{{ etaw_met_by_surface_af }} acre-feet">{{ etaw_met_by_surface_af|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+          {% if run.surface_water_af is None %}
+          <div class="budget-seg-caption">not in the calculation plan</div>
+          {% else %}
+          <div class="budget-seg-caption">delivery &times; irrigation efficiency, up to ETAW</div>
+          <div class="budget-breakdown-group">
+            {% if run.surface_delivered_af is not None %}<div class="budget-breakdown-row"><span>Delivered{% if delivery_split %}<span class="budget-breakdown-note">share of the headgate total</span>{% endif %}</span><b title="{{ run.surface_delivered_af }} acre-feet">{{ run.surface_delivered_af|floatformat:2|intcomma }}</b></div>{% endif %}
+            {% if irrigation_efficiency_pct is not None %}<div class="budget-breakdown-row"><span>Irrigation efficiency<span class="budget-breakdown-note">{% if irrigation_efficiency_source == "method" %}{% if irrigation_method_name %}{{ irrigation_method_name }}, the field's irrigation method{% else %}the field's irrigation method{% endif %}{% else %}Delivery Settings default{% endif %}</span></span><b>{{ irrigation_efficiency_pct|floatformat:0 }}%</b></div>{% endif %}
+            {% if run.over_delivery_af > 0 %}<div class="budget-breakdown-row"><span>Surface water in excess of ETAW{% if run.over_delivery_treatment == "named_line" %}<span class="budget-breakdown-note">shown on the field's page as its own line</span>{% endif %}</span><b title="{{ run.over_delivery_af }} acre-feet">{{ run.over_delivery_af|floatformat:2|intcomma }}</b></div>
+            {% if run.over_delivery_treatment == "credited" and over_delivery_left_af is not None %}<div class="budget-breakdown-row"><span>Credited to this field</span><b>{{ run.over_delivery_credited_af|floatformat:2|intcomma }}</b></div>
+            <div class="budget-breakdown-row"><span>Left in the basin ({{ over_delivery_share_pct|floatformat:0 }}%)</span><b>{{ over_delivery_left_af|floatformat:2|intcomma }}</b></div>{% endif %}{% endif %}
+          </div>
+          {% endif %}
+        </div>
+        <div class="budget-op">&equals;</div>
+        <div class="budget-seg{% if run.gw_extracted_af is None %} budget-seg--result{% endif %}">
+          <div class="budget-seg-label">ETAW met by groundwater</div>
+          <div class="budget-seg-value" title="{{ run.final_af }} acre-feet">{{ run.final_af|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+          <div class="budget-seg-caption">recorded on the field's ledger</div>
+          {% if floor_raised %}
+          <div class="budget-breakdown-group">
+            <div class="budget-breakdown-row"><span>Floor<span class="budget-breakdown-note">Methodology Settings</span></span><b>{{ floor_af|floatformat:2|intcomma }}</b></div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if run.gw_extracted_af is not None %}
+      <div class="budget-panel-row">
+        <div class="budget-seg">
+          <div class="budget-seg-label">ETAW met by groundwater</div>
+          <div class="budget-seg-value" title="{{ run.final_af }} acre-feet">{{ run.final_af|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+        </div>
+        <div class="budget-op">&divide;</div>
+        <div class="budget-seg">
+          <div class="budget-seg-label">Groundwater irrigation efficiency</div>
+          {% if gw_efficiency_pct is not None %}
+          <div class="budget-seg-value">{{ gw_efficiency_pct|floatformat:0 }}%</div>
+          <div class="budget-seg-caption">set on Delivery Settings when this month was calculated</div>
+          {% else %}
+          <div class="budget-seg-value text-tertiary">&ndash;</div>
+          <div class="budget-seg-caption">not applied this month</div>
+          {% endif %}
+        </div>
+        <div class="budget-op">&equals;</div>
+        <div class="budget-seg budget-seg--result">
+          <div class="budget-seg-label">Groundwater extraction (estimated)</div>
+          <div class="budget-seg-value" title="{{ run.gw_extracted_af }} acre-feet">{{ run.gw_extracted_af|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+          <div class="budget-seg-caption">charged to the groundwater allocation</div>
+        </div>
+      </div>
+      {% endif %}
+
     </div>
+    <div class="budget-panel-note">Methodology: {{ methodology_plan_name|blank }}. Calculated {{ run.created_at|date:"F j, Y, g:i A" }}. A changed setting affects a past month only when that month is recalculated. A meter reading for {{ month_label }} would replace this estimate.</div>
+  </div>
 
-    {% if run.final_af == 0 %}
-    {% comment %} A well month where rain and canal water covered the crop,
-       in the month's own numbers: the one line under the table. The canal
-       water beyond what the crop could use, if any, is a row in the table
-       above (149.1-05). {% endcomment %}
-    <p class="text-secondary receipt-zero">
-      {% if covered_by %}{{ covered_by }} covered the crop's water use this month{% else %}No crop is on record for this field this month{% endif %}, so OpenH2O estimates no pumping.
-    </p>
-    {% endif %}
-
-    {% else %}
-    {% comment %} The short page: a month with nothing to estimate, reached by
-       a direct URL (the field page links only receipt months). Not a 404,
-       because the run exists and the reader deserves the one sentence. {% endcomment %}
-    <h2 class="receipt-headline">No estimated pumping for {{ month_label }}</h2>
+  {% else %}
+  {% comment %} The short page: a month with nothing to estimate, reached by
+     a direct URL (the field page links only estimated months). Not a 404,
+     because the run exists and the reader deserves the one sentence. {% endcomment %}
+  <div class="text-tertiary text-sm receipt-facts">
+    {{ parcel.parcel_number }}{% if parcel.owner_name %} &middot; {{ parcel.owner_name }}{% endif %} &middot; {{ parcel.area_acres|floatformat:2 }} acres &middot; Methodology: {{ methodology_plan_name|blank }}
+  </div>
+  <div class="card-raised receipt receipt-short">
+    <h2 class="receipt-headline">No groundwater extraction estimated for {{ month_label }}</h2>
     <p class="text-secondary receipt-lead">
       {% if run.residual_disposition == "metered" %}
-      This field has a meter reading for {{ month_label }}, so the pumping is the reading and OpenH2O estimates nothing.
+      This field has a meter reading for {{ month_label }}, so the groundwater extraction is the reading and OpenH2O estimates nothing.
       {% else %}
-      This field has no well on record, so there is no pumping to estimate.
+      This field has no well on record, so there is no groundwater extraction to estimate.
       {% endif %}
     </p>
-    {% endif %}
   </div>
+  {% endif %}
 
 </div>
 {% endblock %}
