@@ -62,9 +62,9 @@
       </div>
       <div class="budget-op">&minus;</div>
       <div class="budget-seg">
-        <div class="budget-seg-label">Consumptive use</div>
+        <div class="budget-seg-label">Crop ET</div>
         <div class="budget-seg-value text-usage">{{ balance.consumptive_use_gross|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
-        <div class="budget-seg-caption">estimated from satellite ET</div>
+        <div class="budget-seg-caption">OpenET satellite estimate</div>
         {% comment %}
           143-03: the parts of this figure are its coverage -- how many of the
           account's use areas the estimate reaches, and the calculation runs
@@ -79,9 +79,9 @@
       </div>
       <div class="budget-op">&equals;</div>
       <div class="budget-seg budget-seg--result">
-        <div class="budget-seg-label" style="display: flex; align-items: center; gap: var(--space-xs);">Balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Consumptive use here is the satellite ET estimate. Supplies are surface, groundwater, and rain. The balance is supplies minus that use — a small gap is normal, not an error." link=wb_help_url link_label="How water balances work" %}</div>
+        <div class="budget-seg-label" style="display: flex; align-items: center; gap: var(--space-xs);">Balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Crop ET is OpenET's satellite estimate. Supplies are surface water, groundwater and rain. The balance is supplies minus crop ET. A small balance is normal, not an error." link=wb_help_url link_label="How water balances work" %}</div>
         <div class="budget-seg-value {% if balance.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ balance.net_vs_supply|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
-        <div class="budget-seg-caption">supplies minus consumptive use</div>
+        <div class="budget-seg-caption">supplies minus crop ET</div>
         <div class="budget-breakdown-group">
           <div class="budget-breakdown-title">Balance by use area</div>
           <div class="budget-breakdown-row"><span>In surplus</span><b>{{ use_areas_in_surplus }}</b></div>
@@ -136,8 +136,8 @@
       {% endcomment %}
       <th rowspan="2">Use area</th>
       <th colspan="4" class="th-group-label">Supplies</th>
-      <th rowspan="2" class="th-right"><span class="th-stack">Consumptive use</span></th>
-      <th rowspan="2" class="th-right col-sep">Balance{% include "partials/_explainer_popout.html" with title="Balance" text="Total supplies minus consumptive use, for this use area and period. Positive means the supplies on record exceeded the estimated use." link=wb_help_url link_label="How water balances work" %}</th>
+      <th rowspan="2" class="th-right"><span class="th-stack">Crop ET</span></th>
+      <th rowspan="2" class="th-right col-sep">Balance{% include "partials/_explainer_popout.html" with title="Balance" text="Total supplies minus crop ET, for this use area and period. Positive means the supplies on record exceeded crop ET." link=wb_help_url link_label="How water balances work" %}</th>
     </tr>
     <tr>
       <th class="th-right">Surface</th>

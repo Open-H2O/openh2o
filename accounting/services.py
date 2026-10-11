@@ -1777,6 +1777,9 @@ def _subtraction_context(run):
         ),
         "gross_et_af": run.gross_et_af,
         "effective_precip_af": run.effective_precip_af,
+        # 2026-10-11 (Brent): the worked example shows ETAW, crop ET minus
+        # effective precipitation, the run's own stored figure.
+        "etaw_af": run.net_consumptive_use_af,
         "surface_delivered_af": run.surface_delivered_af,
         "irrigation_efficiency": run.surface_efficiency,
         "irrigation_efficiency_pct": irrigation_efficiency_pct,

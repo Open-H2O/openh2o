@@ -28,8 +28,8 @@ budget); a unit stated once in the caller's own subtitle, never on a column.
     <tr class="th-group">
       <th rowspan="2" style="min-width: 170px;">Account</th>
       <th colspan="4" class="th-group-label">Supplies</th>
-      <th rowspan="2" class="th-right"><span class="th-stack">Consumptive use</span></th>
-      <th rowspan="2" class="th-right">Balance{% include "partials/_explainer_popout.html" with title="Balance" text="Total supplies minus consumptive use, for this account and period. Positive means the supplies on record exceeded the estimated use." link=wb_help_url link_label="How water balances work" %}</th>
+      <th rowspan="2" class="th-right"><span class="th-stack">Crop ET</span></th>
+      <th rowspan="2" class="th-right">Balance{% include "partials/_explainer_popout.html" with title="Balance" text="Total supplies minus crop ET, for this account and period. Positive means the supplies on record exceeded crop ET." link=wb_help_url link_label="How water balances work" %}</th>
       {% if has_allocations %}
       {% comment %}148-02 Task 4 (Q2): the label stays "Groundwater budget" (Brent, 2026-09-24), same as the Zones table's identical group
            header in _dashboard_content.html -- one label, both tables (rule

@@ -57,8 +57,8 @@
             <td>OpenH2O calculates each month&rsquo;s figures by following the steps listed on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a>{% else %}Methodology Settings{% endif %}. A district can reorder those steps or switch any of them off.</td>
           </tr>
           <tr>
-            <td class="col-name">Rain</td>
-            <td>{% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a>{% else %}Methodology Settings{% endif %} also sets the method for estimating the rain the crop could use: all of the month&rsquo;s rain, a fixed percentage of it, or the USDA-SCS soil-storage method, which is the default.</td>
+            <td class="col-name">Effective precipitation</td>
+            <td>{% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a>{% else %}Methodology Settings{% endif %} also sets the method for estimating effective precipitation: all of the month&rsquo;s rain, a fixed percentage of it, or the USDA-SCS soil-storage method, which is the default.</td>
           </tr>
           <tr>
             <td class="col-name">Lowest remainder</td>
@@ -70,15 +70,15 @@
           </tr>
           <tr>
             <td class="col-name">The surplus</td>
-            <td>When rain and canal water together exceed crop water use, OpenH2O sets the remainder to zero and records the surplus in two parts: rain and canal water.</td>
+            <td>When effective precipitation and the delivery times irrigation efficiency together exceed crop ET, OpenH2O sets the remainder to zero and records the surplus in two parts: effective precipitation in excess of crop ET, and surface water in excess of ETAW.</td>
           </tr>
           <tr>
-            <td class="col-name">The canal part</td>
-            <td>A setting on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %} determines how OpenH2O treats the canal part of that surplus. By default, OpenH2O credits it to no one. A district can instead credit it to the landowner, less a share left in the basin (10 percent by default), or show it as a separate line on the field&rsquo;s page without crediting it.</td>
+            <td class="col-name">Surface water in excess of ETAW</td>
+            <td>A setting on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %} determines how OpenH2O treats surface water in excess of ETAW. By default, OpenH2O credits that water to no one. A district can instead credit it to the landowner, less a share left in the basin (10 percent by default), or show it as a separate line on the field&rsquo;s page without crediting it.</td>
           </tr>
           {% if 'wells' in enabled_modules %}<tr>
-            <td class="col-name">Pumped water</td>
-            <td>OpenH2O calculates groundwater extracted by dividing groundwater consumed by the share of pumped water the crop consumes. That share is set on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}, at 80 percent by default. OpenH2O records the difference as deep percolation.</td>
+            <td class="col-name">Groundwater extraction</td>
+            <td>Where a well has no meter reading, OpenH2O estimates groundwater extraction by dividing ETAW met by groundwater by the groundwater irrigation efficiency. The groundwater irrigation efficiency is set on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}, at 80 percent by default. OpenH2O records the difference as deep percolation.</td>
           </tr>{% endif %}
           <tr>
             <td class="col-name">Unused allocation</td>
@@ -161,15 +161,15 @@
       </a>
       <a href="{{ delivery_url }}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Delivery Settings</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">This page holds the efficiencies and the treatment of surplus canal water.</p>
+        <p class="text-secondary text-sm">This page holds the efficiencies and the treatment of surface water in excess of ETAW.</p>
       </a>{% endif %}
       {% explainer_available "surface_deliveries" as show_surface_help %}{% if show_surface_help %}<a href="{{ surface_help_url }}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Surface Delivery Settings</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">This page explains the canal delivery settings on Delivery Settings.</p>
+        <p class="text-secondary text-sm">This page explains the surface water delivery settings on Delivery Settings.</p>
       </a>{% endif %}
       {% explainer_available "methods" as show_methods %}{% if show_methods %}<a href="{{ methods_url }}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Methods Behind the Numbers</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">This page explains the settings behind each figure and how OpenH2O divides and estimates canal deliveries.</p>
+        <p class="text-secondary text-sm">This page explains the settings behind each figure and how OpenH2O divides and estimates surface water deliveries.</p>
       </a>{% endif %}
     </div>
   </div>

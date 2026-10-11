@@ -33,7 +33,7 @@
 <div class="page-grid-dashboard-top">
 <div class="budget-panel budget-panel--centered">
   <div class="budget-panel-head">
-    <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">District water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Supplies come from the period's ledger rows, surface and groundwater by source; rain and consumptive use come from its calculation runs." link=wb_help_url link_label="How water balances work" %}</span>
+    <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">District water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Supplies come from the period's ledger rows, surface and groundwater by source; rain and crop ET come from its calculation runs." link=wb_help_url link_label="How water balances work" %}</span>
     <span class="budget-panel-period">{{ selected_period.name }}</span>
   </div>
   <div class="budget-panel-body">
@@ -57,7 +57,7 @@
       </div>
       <div class="budget-op">&minus;</div>
       <div class="budget-seg">
-        <div class="budget-seg-label">Consumptive use</div>
+        <div class="budget-seg-label">Crop ET</div>
         {% comment %}
           ISS-099: with no calculation runs behind it this is not a zero, it is a
           blank. Rendering 0.00 here is what made the balance below read as a
@@ -70,7 +70,7 @@
         {% else %}
         <div class="budget-seg-value text-usage">{{ grand_consumptive_use|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
         {% endif %}
-        <div class="budget-seg-caption">estimated from satellite ET</div>
+        <div class="budget-seg-caption">OpenET satellite estimate</div>
         {% comment %}
           143-04: the parts of this figure are its coverage, as on the account
           page -- how many of the active accounts the estimate reaches, and
@@ -92,7 +92,7 @@
         {% else %}
         <div class="budget-seg-value {% if grand_net >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ grand_net|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
         {% endif %}
-        <div class="budget-seg-caption">supplies minus consumptive use</div>
+        <div class="budget-seg-caption">supplies minus crop ET</div>
         {% comment %}
           143-04: the balance judged account by account, counted only among
           accounts with an estimate (the table below dashes the rest, ISS-099).
@@ -134,7 +134,7 @@
   (`period_detail`, its page title is the period's name).
 {% endcomment %}
 <div class="card-raised empty-state">
-  <p class="empty-state-text text-secondary m-0"><strong class="text-primary">Consumptive use has not been calculated for {{ selected_period.name }}.</strong>{% if not has_calculation_plan %} There is no calculation plan yet.{% endif %}</p>
+  <p class="empty-state-text text-secondary m-0"><strong class="text-primary">No month of {{ selected_period.name }} has been calculated yet.</strong>{% if not has_calculation_plan %} There is no calculation plan yet.{% endif %}</p>
   {% if user_can_write %}
   <div class="form-footer" style="justify-content: center; margin-top: var(--space-md);">
     {% if not has_calculation_plan %}
@@ -201,7 +201,7 @@
       <tr class="th-group">
         <th rowspan="2" style="min-width: 190px;">Zone</th>
         <th colspan="4" class="th-group-label">Supplies</th>
-        <th rowspan="2" class="th-right"><span class="th-stack">Consumptive use</span></th>
+        <th rowspan="2" class="th-right"><span class="th-stack">Crop ET</span></th>
         <th rowspan="2" class="th-right">Balance</th>
         {% if has_allocations %}
         {% comment %}148-02 Task 4 (Q2): the label stays "Groundwater budget"
@@ -345,7 +345,7 @@
     <thead>
       <tr>
         <th style="min-width: 200px;">Field</th>
-        <th class="th-right">Consumptive use</th>
+        <th class="th-right">Crop ET</th>
         {% comment %}
           Sentence case, deliberately, against the data-table Title-Case
           exception (DESIGN.md rule 4). The phrase is a settled product term and

@@ -113,16 +113,16 @@
         </thead>
         <tbody>
           {% if 'wells' in enabled_modules %}<tr>
-            <td class="col-name">Groundwater extracted</td>
-            <td>OpenH2O charges a groundwater allocation with groundwater extracted: the meter reading where a well is metered, and the figure OpenH2O calculates where a well has no meter.</td>
+            <td class="col-name">Groundwater extraction</td>
+            <td>OpenH2O charges a groundwater allocation with groundwater extraction: the meter reading where a well has one, and the figure OpenH2O estimates where a well has no meter reading.</td>
           </tr>{% endif %}
           <tr>
-            <td class="col-name">Canal deliveries</td>
-            <td>OpenH2O never charges canal deliveries against a groundwater allocation.</td>
+            <td class="col-name">Surface water deliveries</td>
+            <td>OpenH2O never charges surface water deliveries against a groundwater allocation.</td>
           </tr>
           <tr>
             <td class="col-name">Remaining allocation</td>
-            <td>An account&rsquo;s remaining allocation is its allocation minus the groundwater extracted on its use areas. A negative remaining allocation means the account has extracted more than its allocation.</td>
+            <td>An account&rsquo;s remaining allocation is its allocation minus the groundwater extraction on its use areas. A negative remaining allocation means the account's groundwater extraction has exceeded its allocation.</td>
           </tr>
           <tr>
             <td class="col-name">Carry-over</td>
@@ -150,7 +150,7 @@
       </a>{% endif %}
       {% explainer_available 'methods' as show_methods %}{% if show_methods %}<a href="{% url 'methods' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Methods Behind the Numbers</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">This page explains the settings behind each figure and how OpenH2O divides and estimates canal deliveries.</p>
+        <p class="text-secondary text-sm">This page explains the settings behind each figure and how OpenH2O divides and estimates surface water deliveries.</p>
       </a>{% endif %}
     </div>
   </div>
