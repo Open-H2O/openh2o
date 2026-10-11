@@ -633,10 +633,11 @@ def charged_groundwater(queryset):
     non-``surface_diversion`` row charges at its recorded (consumed) magnitude
     EXCEPT a ``calculated`` row whose ``CalculationRun`` stamped an extraction
     estimate (``gw_extracted_af``, not null) -- that row charges the run's
-    stamped figure instead. The run's figure was read once, when the run was
-    computed, off the ``SiteConfig.groundwater_efficiency`` in force at that
-    moment (``run_calculations.py``); it is never re-derived here from
-    whatever the setting holds NOW, so a finalized period's billable
+    stamped figure instead. The run's figure was divided, when the run was
+    computed, by the field's own irrigation efficiency in force at that
+    moment (150.2-02, stamped on the run as
+    ``groundwater_application_efficiency``; ``run_calculations.py``); it is
+    never re-derived here from whatever the settings hold NOW, so a finalized period's billable
     groundwater cannot move just because someone tunes the setting
     afterwards (ISS-177 -- the finalized-period lock protects runs, not
     settings). A ``calculated`` row from an OLD run, written before 148-02
@@ -1695,6 +1696,33 @@ def example_field_month():
     return _subtraction_context(run)
 
 
+def stamped_groundwater_efficiency(run):
+    """The irrigation efficiency a run divided ETAW met by groundwater by.
+
+    150.2-02: the run's own ``groundwater_application_efficiency`` stamp.
+    A run from before the stamp existed is read back as ``final_af /
+    gw_extracted_af`` (4dp); a zero month from before the stamp cannot be
+    divided back apart, so it has none (``None``). Never the live setting
+    (ISS-177): a change to Delivery Settings moves nothing a month already
+    run says about itself.
+    """
+    if run.groundwater_application_efficiency is not None:
+        return run.groundwater_application_efficiency
+    if run.gw_extracted_af:
+        return (run.final_af / run.gw_extracted_af).quantize(Decimal("0.0001"))
+    return None
+
+
+def groundwater_efficiency_method_name(run):
+    """The irrigation method named for a run's stamped groundwater
+    efficiency, or None. Read off the field's method now, as the surface
+    row's method name is: the run stamps the source, not the name."""
+    if run.groundwater_efficiency_source != "method":
+        return None
+    link = getattr(run.parcel, "irrigation", None)
+    return link.method.name if link is not None else None
+
+
 def _subtraction_context(run):
     """The template variables `_the_subtraction.html` reads, for one run.
 
@@ -1707,7 +1735,6 @@ def _subtraction_context(run):
     from core.models import SiteConfig
     from parcels.models import ParcelLedger
 
-    quant = Decimal("0.0001")
 
     # `irrigation_efficiency_source` and the method name behind it live only
     # in the run's own stored `breakdown` (the evaluate_chain step list,
@@ -1732,19 +1759,9 @@ def _subtraction_context(run):
         run.surface_efficiency * 100 if run.surface_efficiency is not None else None
     )
 
-    # `run.final_af / run.gw_extracted_af` is the same division
-    # `accounting/views.py::calculation_run_detail` builds as
-    # `gw_efficiency_applied`; a 0.00 month can't be divided back apart, so
-    # this falls back to the LIVE setting and says so (words-help-pages.md
-    # A.2), rather than reading as though a Delivery Settings figure this
-    # month never actually used.
-    gw_efficiency_is_live_setting = False
-    if run.gw_extracted_af:
-        gw_efficiency = (run.final_af / run.gw_extracted_af).quantize(quant)
-    else:
-        config = SiteConfig.objects.first() or SiteConfig()
-        gw_efficiency = config.groundwater_efficiency
-        gw_efficiency_is_live_setting = True
+    # 150.2-02: the field's irrigation efficiency the run divided ETAW met by
+    # groundwater by, as the run stamped it -- never the live setting.
+    gw_efficiency = stamped_groundwater_efficiency(run)
     gw_efficiency_pct = gw_efficiency * 100 if gw_efficiency is not None else None
 
     # `delivery_split` (words-help-pages.md A.2, revision 3; ISS-225, 150-02).
@@ -1791,7 +1808,8 @@ def _subtraction_context(run):
         "final_af": run.final_af,
         "gw_efficiency": gw_efficiency,
         "gw_efficiency_pct": gw_efficiency_pct,
-        "gw_efficiency_is_live_setting": gw_efficiency_is_live_setting,
+        "gw_efficiency_source": run.groundwater_efficiency_source,
+        "gw_efficiency_method_name": groundwater_efficiency_method_name(run),
         "extracted_af": run.gw_extracted_af,
         "over_delivery_af": run.over_delivery_af,
         "delivery_split": delivery_split,

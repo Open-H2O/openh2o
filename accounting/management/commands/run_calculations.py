@@ -35,8 +35,8 @@ clamp_floor's `incidental_recharge_af` — is always recorded on the run, as
 `CalculationRun.over_delivery_af`.
 
 148-04 (Brent's Q1 ruling, 2026-09-20) makes what happens to it a deployment
-setting, `SiteConfig.over_delivery_treatment`, read ONCE per run alongside
-`groundwater_efficiency`: `"not_credited"` (the default, exactly the
+setting, `SiteConfig.over_delivery_treatment`, read ONCE per run:
+`"not_credited"` (the default, exactly the
 behaviour above) writes no `recharge` ledger row and no basin-pool deposit;
 `"named_line"` is identical on the engine side (the amount is shown
 elsewhere, never here); `"credited"` writes a `recharge` row for a has-well
@@ -91,6 +91,7 @@ from accounting.services import (
 )
 from core.models import SiteConfig
 from parcels.models import Parcel, ParcelLedger
+from parcels.services import field_efficiency
 
 # The reason recorded on every change a forced recompute of a finalized period
 # writes, so the change history says why a filed figure moved.
@@ -113,24 +114,27 @@ def _incidental_recharge_af(breakdown):
     return Decimal(str(clamp["detail"].get("incidental_recharge_af", "0")))
 
 
-def _groundwater_extraction(final_af, groundwater_efficiency):
+def _groundwater_extraction(final_af, efficiency):
     """148-02 Task 4 (Q2): split a `groundwater`-disposition run's CONSUMED
-    magnitude (``final_af``, the calculated row's amount) into what the pump
-    had to extract and what never reached the crop.
+    magnitude (``final_af``, the calculated row's amount, ETAW met by
+    groundwater) into what the pump had to extract and what never reached
+    the crop.
 
-    ``gw_extracted_af = final_af / groundwater_efficiency``;
+    ``gw_extracted_af = final_af / efficiency``;
     ``deep_percolation_gw_af = gw_extracted_af - final_af``. Both quantized to
-    4dp, the ledger's own convention. ``groundwater_efficiency`` is the
-    ``SiteConfig`` value read ONCE per run, by the caller, at compute time --
-    never re-read later, so a setting change after the run does not move a
-    figure already stamped on it (ISS-177, the finalized-period lock protects
-    runs, not settings). A zero-residual month (``final_af == 0``) divides to
-    ``(0, 0)`` with no special-casing needed.
+    4dp, the ledger's own convention. ``efficiency`` is the field's own
+    irrigation efficiency (150.2-02, ``parcels.services.field_efficiency``:
+    its irrigation method's, else the Delivery Settings default), the same
+    figure its canal water is multiplied by, read by the caller at compute
+    time and stamped on the run -- never re-read later, so a setting change
+    after the run does not move a figure already stamped on it (ISS-177, the
+    finalized-period lock protects runs, not settings). A zero-residual month
+    (``final_af == 0``) divides to ``(0, 0)`` with no special-casing needed.
 
     Returns ``(gw_extracted_af, deep_percolation_gw_af)``, both ``Decimal``.
     """
     quant = Decimal("0.0001")
-    extracted = (final_af / groundwater_efficiency).quantize(quant)
+    extracted = (final_af / efficiency).quantize(quant)
     deep_percolation = (extracted - final_af).quantize(quant)
     return extracted, deep_percolation
 
@@ -223,7 +227,8 @@ def _resolve_leftover(parcel, period, final_af, breakdown, *, commit):
 
 def _persist_calculation_run(
     parcel, period, gross_af, net_af, breakdown, info, plan_id, plan_name, plan_hash,
-    *, residual_disposition, unmet_demand_af, groundwater_efficiency,
+    *, residual_disposition, unmet_demand_af, groundwater_application_efficiency,
+    groundwater_efficiency_source,
     over_delivery_treatment, over_delivery_leave_behind, over_delivery_credited_af,
     over_delivery_credit_pooled,
 ):
@@ -239,10 +244,11 @@ def _persist_calculation_run(
     148-02 Task 4 (Q2): ``gw_extracted_af`` / ``deep_percolation_gw_af`` are set
     only when ``residual_disposition == "groundwater"`` (a has-well, unmetered
     parcel) — ``_groundwater_extraction`` splits the CONSUMED magnitude
-    (``final_af``, quantized) by ``groundwater_efficiency``, the SiteConfig
-    value the CALLER read once for this whole run (never re-read per parcel;
-    it is one agency-wide setting). Null on a metered or no-well run, exactly
-    as the model field's help text says.
+    (``final_af``, quantized) by ``groundwater_application_efficiency``, the
+    field's own irrigation efficiency the CALLER resolved for this parcel
+    (150.2-02), which is stamped beside them with its source ("method" or
+    "agency"). All are null (the source blank) on a metered or no-well run,
+    exactly as the model fields' help text says.
 
     148-04: the four ``over_delivery_*`` stamps are the CALLER's decision
     (``_over_delivery_decision``, computed before this function runs) —
@@ -309,10 +315,14 @@ def _persist_calculation_run(
     # number, and a no-well run has no pump to have extracted anything.
     gw_extracted_af = None
     deep_percolation_gw_af = None
+    efficiency_stamp = None
+    source_stamp = ""
     if residual_disposition == "groundwater":
         gw_extracted_af, deep_percolation_gw_af = _groundwater_extraction(
-            final_af, groundwater_efficiency
+            final_af, groundwater_application_efficiency
         )
+        efficiency_stamp = groundwater_application_efficiency
+        source_stamp = groundwater_efficiency_source
 
     CalculationRun.objects.filter(parcel=parcel, period=period).delete()
     CalculationRun.objects.create(
@@ -333,6 +343,8 @@ def _persist_calculation_run(
         unmet_demand_af=unmet_demand_af,
         gw_extracted_af=gw_extracted_af,
         deep_percolation_gw_af=deep_percolation_gw_af,
+        groundwater_application_efficiency=efficiency_stamp,
+        groundwater_efficiency_source=source_stamp,
         banked_af=info["deposited"],
         drawn_af=info["drawn"],
         final_af=final_af,
@@ -397,7 +409,11 @@ class Command(BaseCommand):
         eff_date = dt.date(year, month, 1)
         dry_run = options["dry_run"]
 
-        parcels = Parcel.objects.all().order_by("parcel_number")
+        parcels = (
+            Parcel.objects.select_related("irrigation__method")
+            .all()
+            .order_by("parcel_number")
+        )
         if options.get("parcel"):
             parcels = parcels.filter(parcel_number=options["parcel"])
             if not parcels.exists():
@@ -491,19 +507,15 @@ class Command(BaseCommand):
             code="GW", defaults={"name": "Groundwater"}
         )
 
-        # 148-02 Task 4 (Q2): the agency-wide extraction-efficiency setting,
-        # read ONCE for the whole run -- identical for every parcel (it is one
-        # SiteConfig row, not per-parcel like parcels' field_efficiency), and
-        # deliberately not re-read per parcel so a setting edit mid-run cannot
-        # tear. `SiteConfig.objects.first() or SiteConfig()` is the established
+        # The deployment's settings, read ONCE for the whole run and never
+        # re-read per parcel, so a setting edit mid-run cannot tear.
+        # `SiteConfig.objects.first() or SiteConfig()` is the established
         # idiom (`parcels/services.py::field_efficiency`): reads safely before
-        # a row exists, falling back to the field's own class default (0.800).
-        # 148-04: the over-delivery treatment and leave-behind share are read
-        # from this SAME SiteConfig object, once, for the same reason —
-        # one agency-wide setting, never re-read per parcel so a mid-run edit
-        # cannot tear.
+        # a row exists, falling back to the fields' own class defaults.
+        # 148-04: the over-delivery treatment and leave-behind share.
+        # 150.2-02: the default irrigation efficiency, handed to
+        # field_efficiency for each field with no irrigation method on file.
         site_config = SiteConfig.objects.first() or SiteConfig()
-        groundwater_efficiency = site_config.groundwater_efficiency
         over_delivery_treatment = site_config.over_delivery_treatment
         over_delivery_leave_behind = site_config.over_delivery_leave_behind
 
@@ -515,6 +527,12 @@ class Command(BaseCommand):
         for parcel in parcels:
             is_metered = parcel.id in metered_row_ids
             final_af, breakdown = evaluate_chain(parcel, period)
+            # 150.2-02 (Brent, 2026-10-11: "one irrigation efficiency per
+            # field"): ETAW met by groundwater is divided by the field's own
+            # irrigation efficiency, the same lookup its canal water uses.
+            gw_efficiency, gw_efficiency_source = field_efficiency(
+                parcel, config=site_config
+            )
             incidental_af = _incidental_recharge_af(breakdown)
 
             et_step = next(
@@ -622,17 +640,16 @@ class Command(BaseCommand):
                 # 148-02 Task 4 (Q2): an estimated field (has a well, no
                 # meter) also names the extraction split the run would stamp
                 # -- what the pump had to lift beyond what the crop consumed.
-                # Metered and no-well parcels never divide by the setting (a
-                # meter is the number; there is no pump to have extracted
-                # anything).
+                # Metered and no-well parcels never divide (a meter is the
+                # number; there is no pump to have extracted anything).
                 if not is_metered and routes_personal:
                     consumed_af = net_af.quantize(Decimal("0.0001"))
                     extracted_af, deep_percolation_af = _groundwater_extraction(
-                        consumed_af, groundwater_efficiency
+                        consumed_af, gw_efficiency
                     )
                     extra += (
                         f"; groundwater consumed {consumed_af} AF / "
-                        f"{groundwater_efficiency} = {extracted_af} AF "
+                        f"{gw_efficiency} = {extracted_af} AF "
                         f"extracted, {deep_percolation_af} AF deep percolation"
                     )
                 if is_metered:
@@ -736,7 +753,8 @@ class Command(BaseCommand):
                     plan_id, plan_name, plan_hash,
                     residual_disposition=residual_disposition,
                     unmet_demand_af=unmet_demand_af,
-                    groundwater_efficiency=groundwater_efficiency,
+                    groundwater_application_efficiency=gw_efficiency,
+                    groundwater_efficiency_source=gw_efficiency_source,
                     over_delivery_treatment=over_delivery_treatment,
                     over_delivery_leave_behind=leave_behind_stamp,
                     over_delivery_credited_af=credited_af,

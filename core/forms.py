@@ -191,14 +191,11 @@ class DeliverySettingsForm(forms.Form):
     ``rollover_allocations`` read it for any zone's unused allocation, surface or
     not.
 
-    **The groundwater efficiency field belongs to ``wells`` the same way
-    (148-02 Task 4, Q2).** ``groundwater_efficiency`` has exactly one consumer —
-    ``run_calculations``, which splits an estimated field's residual into what
-    the crop consumed and what the pump had to extract to deliver it. A
-    deployment with no Wells module has no well to pump, so the field is shown
-    and saved under its own ``shows_groundwater_efficiency`` gate, mirroring
-    the efficiency field's percent display/entry convention (75 shown, 0.750
-    stored).
+    **There is no separate groundwater efficiency (150.2-02).** From 148-02
+    to 150.2-02 a flat ``groundwater_efficiency`` (80%) had its own card here;
+    Brent ruled "one irrigation efficiency per field" (2026-10-11), so
+    ``run_calculations`` divides pumped groundwater by the same field
+    efficiency the default above feeds, and the setting is gone.
 
     **The over-delivery treatment belongs to ``surface`` the same way (148-04
     Task 1, Brent's Q1 ruling 2026-09-20).** ``over_delivery_treatment`` and
@@ -239,21 +236,9 @@ class DeliverySettingsForm(forms.Form):
         # `recharge` module's noun on deployments that do not run it. The
         # sentence does not need the word — where the water goes is already
         # said — so the copy changed rather than `_FORBIDDEN_VOCABULARY`.
-        help_text="Typical: 75%.",
-        widget=forms.NumberInput(
-            attrs={"class": "form-input", "style": "width: 6rem;", "step": "1"}
-        ),
-    )
-    # 148-02 Task 4 (Q2): the groundwater sibling of efficiency_percent, shown
-    # only when `wells` is enabled (see the class docstring). Same percent
-    # display / Decimal-fraction storage convention.
-    groundwater_efficiency_percent = forms.IntegerField(
-        min_value=1,
-        max_value=100,
-        label="Groundwater irrigation efficiency",
-        help_text="Typical: 80%. OpenH2O divides ETAW met by groundwater by "
-        "this efficiency to estimate groundwater extraction. Where a well has "
-        "a meter reading, OpenH2O uses the reading as recorded.",
+        # 150.2-02 (Brent, 2026-10-11 13:25 PDT: "approved").
+        help_text="Typical: 75%. OpenH2O uses this efficiency for every field "
+        "with no irrigation method on file.",
         widget=forms.NumberInput(
             attrs={"class": "form-input", "style": "width: 6rem;", "step": "1"}
         ),
@@ -368,10 +353,9 @@ class DeliverySettingsForm(forms.Form):
         self.shows_surface_settings = is_enabled("surface")
         # Same gate as the surface settings, named for what it shows.
         self.shows_diversion_settings = self.shows_surface_settings
-        # 148-02 Task 4 (Q2): groundwater_efficiency's own gate, `wells` rather
-        # than `surface` -- a deployment can run either module without the
-        # other, so this is intentionally independent of shows_surface_settings.
-        self.shows_groundwater_efficiency = is_enabled("wells")
+        # Whether the deployment has wells: the credited choice's sentence
+        # about a field with no well is said only where a field can have one.
+        self.has_wells = is_enabled("wells")
         if instance is not None and "initial" not in kwargs:
             initial = {
                 "recovery_horizon": instance.default_recovery_horizon,
@@ -381,10 +365,6 @@ class DeliverySettingsForm(forms.Form):
                 # 0.750 (fraction) -> 75 (percent), rounded to a whole number.
                 initial["efficiency_percent"] = int(
                     (instance.default_irrigation_efficiency * 100).to_integral_value()
-                )
-            if self.shows_groundwater_efficiency:
-                initial["groundwater_efficiency_percent"] = int(
-                    (instance.groundwater_efficiency * 100).to_integral_value()
                 )
             if self.shows_surface_settings:
                 initial["over_delivery_treatment"] = instance.over_delivery_treatment
@@ -398,8 +378,6 @@ class DeliverySettingsForm(forms.Form):
         super().__init__(*args, **kwargs)
         if not self.shows_efficiency:
             del self.fields["efficiency_percent"]
-        if not self.shows_groundwater_efficiency:
-            del self.fields["groundwater_efficiency_percent"]
         if not self.shows_surface_settings:
             del self.fields["over_delivery_treatment"]
             del self.fields["over_delivery_leave_behind_percent"]
@@ -442,7 +420,7 @@ class DeliverySettingsForm(forms.Form):
         """
         if not self.shows_surface_settings:
             return []
-        if self.shows_groundwater_efficiency:
+        if self.has_wells:
             credited = (
                 "The landowner's share is a credit on the field's ledger. "
                 "A field with no well has its share go to the zone's shared "
@@ -482,14 +460,6 @@ class DeliverySettingsForm(forms.Form):
     def clean_efficiency_percent(self):
         percent = self.cleaned_data["efficiency_percent"]
         # Percent (75) -> Decimal fraction (0.750), the stored convention.
-        try:
-            return (Decimal(percent) / Decimal("100")).quantize(Decimal("0.001"))
-        except InvalidOperation:
-            raise forms.ValidationError("Enter a whole number between 1 and 100.")
-
-    def clean_groundwater_efficiency_percent(self):
-        percent = self.cleaned_data["groundwater_efficiency_percent"]
-        # Percent (80) -> Decimal fraction (0.800), the stored convention.
         try:
             return (Decimal(percent) / Decimal("100")).quantize(Decimal("0.001"))
         except InvalidOperation:
@@ -535,11 +505,6 @@ class DeliverySettingsForm(forms.Form):
                 "efficiency_percent"
             ]
             updated.append("default_irrigation_efficiency")
-        if self.shows_groundwater_efficiency:
-            config.groundwater_efficiency = self.cleaned_data[
-                "groundwater_efficiency_percent"
-            ]
-            updated.append("groundwater_efficiency")
         if self.shows_surface_settings:
             # 148-04 Task 1: a submission that omits the treatment (nobody
             # was offered it, e.g. a caller built before this plan) leaves

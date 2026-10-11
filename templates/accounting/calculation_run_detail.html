@@ -180,13 +180,12 @@
         </div>
         <div class="budget-op">&divide;</div>
         <div class="budget-seg">
-          <div class="budget-seg-label">Groundwater irrigation efficiency</div>
+          <div class="budget-seg-label">Irrigation efficiency</div>
           {% if gw_efficiency_pct is not None %}
           <div class="budget-seg-value">{{ gw_efficiency_pct|floatformat:0 }}%</div>
-          <div class="budget-seg-caption">set on Delivery Settings when this month was calculated</div>
+          {% if gw_efficiency_source == "method" %}<div class="budget-seg-caption">{% if gw_efficiency_method_name %}{{ gw_efficiency_method_name }}, the field's irrigation method{% else %}the field's irrigation method{% endif %}</div>{% elif gw_efficiency_source == "agency" %}<div class="budget-seg-caption">Delivery Settings default</div>{% endif %}
           {% else %}
           <div class="budget-seg-value text-tertiary">&ndash;</div>
-          <div class="budget-seg-caption">not applied this month</div>
           {% endif %}
         </div>
         <div class="budget-op">&equals;</div>

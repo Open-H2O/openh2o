@@ -2068,19 +2068,20 @@ def _receipt_context(parcel, run, period):
     150.1-02 (2026-10-11): the page is rebuilt as three equations in the
     engineer's terms Brent approved at 05:41 and 05:48 PDT (crop ET, effective
     precipitation, ETAW, ETAW met by surface water, ETAW met by groundwater,
-    groundwater irrigation efficiency, groundwater extraction (estimated),
+    groundwater irrigation efficiency (retired by 150.2-02 for the field's
+    irrigation efficiency), groundwater extraction (estimated),
     surface water in excess of ETAW):
 
         Crop ET - Effective precipitation = ETAW
         ETAW - ETAW met by surface water = ETAW met by groundwater
-        ETAW met by groundwater / groundwater irrigation efficiency
+        ETAW met by groundwater / the field's irrigation efficiency
             = groundwater extraction (estimated)
 
     Every figure is the run's own stamped column or is worked from them; the
-    two percentages are read back off the run (the irrigation efficiency it
-    stored; the groundwater irrigation efficiency as final_af /
-    gw_extracted_af), never off the live setting, so a change to Delivery
-    Settings moves nothing a month already run says about itself.
+    two percentages are read back off the run (the irrigation efficiency its
+    canal water was multiplied by; the one ETAW met by groundwater was
+    divided by, 150.2-02's stamp), never off the live setting, so a change to
+    Delivery Settings moves nothing a month already run says about itself.
 
     ``surface_water_af`` is the delivery times the irrigation efficiency, NOT
     capped at ETAW (accounting/steps.py::subtract_surface_water); ETAW met by
@@ -2109,6 +2110,15 @@ def _receipt_context(parcel, run, period):
         link = getattr(parcel, "irrigation", None)
         if link is not None:
             irrigation_method_name = link.method.name
+
+    # 150.2-02: the field's irrigation efficiency the run stamped (a run from
+    # before the stamp reads it back off final_af / gw_extracted_af).
+    from accounting.services import (
+        groundwater_efficiency_method_name,
+        stamped_groundwater_efficiency,
+    )
+
+    gw_efficiency = stamped_groundwater_efficiency(run)
 
     zero = Decimal("0")
     etaw = run.net_consumptive_use_af
@@ -2151,8 +2161,10 @@ def _receipt_context(parcel, run, period):
         ),
         "rainfall_af": rainfall_af,
         "gw_efficiency_pct": (
-            run.final_af / run.gw_extracted_af * 100 if run.gw_extracted_af else None
+            gw_efficiency * 100 if gw_efficiency is not None else None
         ),
+        "gw_efficiency_source": run.groundwater_efficiency_source,
+        "gw_efficiency_method_name": groundwater_efficiency_method_name(run),
         "irrigation_efficiency_pct": (
             run.surface_efficiency * 100 if run.surface_efficiency is not None else None
         ),
@@ -2267,12 +2279,6 @@ def delivery_settings(request):
     if form.shows_surface_settings:
         position += 1
         over_delivery_number = position
-    # 148-02 Task 4 (Q2): the groundwater card sits beside the surface one it
-    # mirrors, before the always-shown cards -- its own `wells` gate, computed
-    # the same DISPLAY-order way as every other optional card here.
-    if form.shows_groundwater_efficiency:
-        position += 1
-    groundwater_number = position if form.shows_groundwater_efficiency else None
     position += 1
     recovery_number = position
     diversion_number = None
@@ -2293,7 +2299,6 @@ def delivery_settings(request):
             "settings_total": settings_total,
             "efficiency_number": efficiency_number,
             "over_delivery_number": over_delivery_number,
-            "groundwater_number": groundwater_number,
             "recovery_number": recovery_number,
             "diversion_number": diversion_number,
             "identifier_number": identifier_number,

@@ -70,7 +70,6 @@ _BASE_POST = {
     # Every field DeliverySettingsForm requires on a `surface` + `wells`
     # deployment, so these POSTs are valid apart from what each test varies.
     "efficiency_percent": "75",
-    "groundwater_efficiency_percent": "80",
     "recovery_horizon": "carry_forward",
     "diversion_report_year_rule": "water_year",
 }
@@ -210,7 +209,6 @@ def test_saving_with_surface_disabled_leaves_stored_values_untouched(admin_clien
         {
             "recovery_horizon": "same_water_year",
             "efficiency_percent": "75",
-            "groundwater_efficiency_percent": "80",
         },
     )
     assert resp.status_code == 302

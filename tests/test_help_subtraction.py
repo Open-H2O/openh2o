@@ -217,14 +217,66 @@ class TestExampleFieldMonthArithmetic:
         assert result["final_af"] == Decimal("0.8800")
         assert result["irrigation_efficiency_pct"] == Decimal("75.000")
         assert result["irrigation_efficiency_source"] == "agency"
-        # final_af / gw_extracted_af = 0.8800 / 1.1000 = 0.8000 exactly.
+        # A run from before 150.2-02 stamped no efficiency, so it is read
+        # back as final_af / gw_extracted_af = 0.8800 / 1.1000 = 0.8000.
         assert result["gw_efficiency"] == Decimal("0.8000")
         assert result["gw_efficiency_pct"] == Decimal("80.0000")
-        assert result["gw_efficiency_is_live_setting"] is False
+        assert "gw_efficiency_is_live_setting" not in result
         # No ParcelLedger row at all for this parcel-month, so delivery_split
         # defaults to "by_use" (words-help-pages.md A.2: "otherwise 'by_use'").
         assert result["delivery_split"] == "by_use"
         assert result["demonstration"] is True
+
+    def test_the_groundwater_efficiency_is_the_runs_own_stamp(self):
+        """150.2-02: the field's irrigation efficiency the run divided ETAW
+        met by groundwater by is stamped on the run, and the example reads
+        that stamp, never the live Delivery Settings default."""
+        from accounting.services import _subtraction_context
+
+        parcel = ParcelFactory(parcel_number="TEST-APN-STAMP")
+        run = _run(
+            parcel, "2025-07", final=Decimal("1.2200"),
+            gw_extracted=Decimal("1.6267"),
+        )
+        run.groundwater_application_efficiency = Decimal("0.750")
+        run.save()
+        SiteConfig.objects.create(
+            agency_name="Test Agency", default_irrigation_efficiency=Decimal("0.500")
+        )
+
+        result = _subtraction_context(run)
+
+        assert result["gw_efficiency"] == Decimal("0.750")
+        assert result["gw_efficiency_pct"] == Decimal("75.000")
+
+    def test_a_zero_month_reads_the_stamp_not_the_live_setting(self):
+        """A month whose ETAW met by groundwater is zero still divided by the
+        field's efficiency, and the run says which; before 150.2-02 this read
+        the live setting instead."""
+        from accounting.services import _subtraction_context
+
+        parcel = ParcelFactory(parcel_number="TEST-APN-ZERO")
+        run = _run(parcel, "2025-07", gw_extracted=Decimal("0.0000"))
+        run.groundwater_application_efficiency = Decimal("0.900")
+        run.save()
+
+        result = _subtraction_context(run)
+
+        assert result["gw_efficiency"] == Decimal("0.900")
+        assert result["gw_efficiency_pct"] == Decimal("90.000")
+
+    def test_a_zero_month_from_before_the_stamp_has_no_efficiency(self):
+        """Nothing was divided and nothing was stamped, so there is no figure
+        to show; the live setting is never read in its place."""
+        from accounting.services import _subtraction_context
+
+        parcel = ParcelFactory(parcel_number="TEST-APN-ZERO-OLD")
+        run = _run(parcel, "2025-07", gw_extracted=Decimal("0.0000"))
+
+        result = _subtraction_context(run)
+
+        assert result["gw_efficiency"] is None
+        assert result["gw_efficiency_pct"] is None
 
     def test_delivery_split_reads_fixed_share_off_the_ledger_row(self):
         from accounting.ledger_words import DELIVERY_SHARE_BY_FIXED

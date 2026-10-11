@@ -2,7 +2,7 @@
 """Lookups about a use area that every deployment needs, canals or not."""
 
 
-def field_efficiency(parcel):
+def field_efficiency(parcel, config=None):
     """One parcel's own field efficiency, and where it came from (148-02, S1).
 
     Returns ``(Decimal, source)``. ``source`` is ``"method"`` when the parcel
@@ -21,6 +21,11 @@ def field_efficiency(parcel):
     reads, so a deployment without ``surface`` (a groundwater-only district)
     resolves a field's efficiency the same way.
 
+    ``config`` lets a caller that has already read the deployment's
+    ``SiteConfig`` for a whole run pass it in (150.2-02: ``run_calculations``
+    reads it once, so a settings edit mid-run cannot give two fields two
+    different defaults). Otherwise it is read here.
+
     ``SiteConfig.objects.first() or SiteConfig()`` rather than ``.get()``
     (the established idiom, ``surface/diversion_import.py``): a real deployment
     always carries exactly one row, but this reads safely before one exists,
@@ -32,5 +37,6 @@ def field_efficiency(parcel):
     link = getattr(parcel, "irrigation", None)
     if link is not None:
         return link.method.assigned_efficiency, "method"
-    config = SiteConfig.objects.first() or SiteConfig()
+    if config is None:
+        config = SiteConfig.objects.first() or SiteConfig()
     return config.default_irrigation_efficiency, "agency"

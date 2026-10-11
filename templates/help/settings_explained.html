@@ -66,7 +66,7 @@
           </tr>
           <tr>
             <td class="col-name">Irrigation efficiency</td>
-            <td>Each field&rsquo;s irrigation efficiency comes from its irrigation method on file. A field with no irrigation method on file uses the default efficiency on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}, 75 percent unless the district changes it.</td>
+            <td>Each field&rsquo;s irrigation efficiency comes from its irrigation method on file. A field with no irrigation method on file uses the default efficiency on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}, 75 percent unless the district changes it.{% if 'surface' in enabled_modules %} OpenH2O uses the same irrigation efficiency for a field&rsquo;s surface water and its groundwater.{% endif %}</td>
           </tr>
           <tr>
             <td class="col-name">The surplus</td>
@@ -78,7 +78,7 @@
           </tr>
           {% if 'wells' in enabled_modules %}<tr>
             <td class="col-name">Groundwater extraction</td>
-            <td>Where a well has no meter reading, OpenH2O estimates groundwater extraction by dividing ETAW met by groundwater by the groundwater irrigation efficiency. The groundwater irrigation efficiency is set on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}, at 80 percent by default. OpenH2O records the difference as deep percolation.</td>
+            <td>Where a well has no meter reading, OpenH2O estimates groundwater extraction by dividing ETAW met by groundwater by the field&rsquo;s irrigation efficiency. OpenH2O records the difference as deep percolation.</td>
           </tr>{% endif %}
           <tr>
             <td class="col-name">Unused allocation</td>

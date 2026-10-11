@@ -203,7 +203,6 @@ def record_types():
 # 150.2-01: every field has an irrigation method, canal or well.
 FIELD_MODULES = {
     "core.SiteConfig.default_irrigation_efficiency": "parcels",
-    "core.SiteConfig.groundwater_efficiency": "wells",
     "core.SiteConfig.diversion_use_type_rule": "surface",
     "core.SiteConfig.diversion_report_year_rule": "surface",
     "core.SiteConfig.season_start_month": "surface",
