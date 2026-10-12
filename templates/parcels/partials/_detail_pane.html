@@ -379,7 +379,7 @@
               {% elif ef.type == "number" %}
                 {% if ef.value is not None %}{{ ef.value|floatformat:2 }}{% else %}—{% endif %}
               {% elif ef.name == "irrigation_method" %}
-                {{ ef.display|blank }}{% if ef.value %} <span class="text-tertiary text-xs">used in this field's calculation in place of the agency default</span>{% else %}. <span class="text-tertiary text-xs">The default irrigation efficiency on Delivery Settings applies.</span>{% endif %}
+                {{ ef.display|blank }}{% if ef.value %} <span class="text-tertiary text-xs">used in this field's calculation in place of the default on Delivery Settings</span>{% else %}. <span class="text-tertiary text-xs">The default irrigation efficiency on Delivery Settings applies.</span>{% endif %}
               {% else %}
                 {{ ef.value|blank }}
               {% endif %}

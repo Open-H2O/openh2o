@@ -83,7 +83,7 @@
       <div class="form-group">
         <label class="form-label" for="{{ form.facility_id.id_for_label }}">{{ form.facility_id.label }}</label>
         {{ form.facility_id }}
-        <div class="form-help">The state assigns this ID within {{ system.name }}. Enter it as the district engineer gave it to you. A lab file names the facility by it.</div>
+        <div class="form-help">The state assigns this ID within {{ system.name }}. Enter it exactly as the state issued it. A lab file names the facility by it.</div>
         {% for error in form.facility_id.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
       </div>
       <div class="form-group">

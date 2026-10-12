@@ -33,8 +33,9 @@
 
     {% comment %} 150-04 (S4, rule B): one two-track grid in
          place of the old paired rows. The holder, the two seasons and the
-         notes span both tracks; the CalWATRS PIN moved up beside the maximum
-         rate so neither sits alone at half width. {% endcomment %}
+         notes span both tracks. 2026-10-12: the CalWATRS PIN that sat beside the
+         maximum rate is gone (Brent: "The PIN was a one time thing for the first
+         year of reporting. I dont think its still relevant."). {% endcomment %}
     <form method="post" class="form-grid">
       {% csrf_token %}
 
@@ -113,11 +114,6 @@
         <div class="form-help">{{ form.max_rate_cfs.help_text }}</div>
       </div>
 
-      {% if form.calwatrs_pin %}<div class="form-group">
-        <label class="form-label" for="{{ form.calwatrs_pin.id_for_label }}">{{ form.calwatrs_pin.label }}</label>
-        {{ form.calwatrs_pin }}
-        <div class="form-help">{{ form.calwatrs_pin.help_text }}</div>
-      </div>{% endif %}
 
       {% comment %}
         146-02 Task 1: four month selects, four day fields, per season, laid

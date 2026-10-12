@@ -456,7 +456,13 @@ BASELINE: dict = {
     #   still needed well water.", in the words Brent approved at 19:19 PDT. The
     #   scanner reads "The crop used all of the canal" as opening a definition of
     #   canal water. It says what this month's figures did, a false positive.
-    "templates/**/*.html": 12,
+    #   2026-10-12: 12 -> 13 for wells/partials/_detail_pane.html, whose
+    #   tooltip reads "Local registration ID / The ID the well carries in a
+    #   local registry, such as a groundwater agency's or a county's.", in the
+    #   words Brent approved at 2026-10-11 20:36 PDT. The scanner reads "The ID
+    #   the well" as opening a definition of a well. It defines the ID field, a
+    #   false positive.
+    "templates/**/*.html": 13,
     "help_text=": 4,
 }
 

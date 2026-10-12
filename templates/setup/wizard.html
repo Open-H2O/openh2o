@@ -72,7 +72,7 @@
           <option value="{{ b.pk }}">{{ b.name }}{% if b.area_sq_miles %} ({{ b.area_sq_miles|floatformat:1 }} sq mi){% endif %}</option>
           {% endfor %}
         </select>
-        <p class="form-help">Select the boundary that defines your district or agency service area.</p>
+        <p class="form-help">Select the boundary of the area you manage water for.</p>
         {% else %}
         <select name="boundary_id" id="boundary_id" class="form-select" disabled aria-describedby="boundary-none-yet">
           <option value="">None yet</option>
@@ -127,7 +127,7 @@
           onchange="updateZoneLabel(this.files[0])"
         >
         <p class="text-base text-secondary mt-xs">When the file holds several polygons, OpenH2O combines them into one boundary.</p>
-        <p class="form-help">This is one shape drawn on a map: the outline of the area this deployment covers. A GIS consultant, or whoever handles the district's mapping, can export one, and can fix a file rejected here.</p>
+        <p class="form-help">This is one shape drawn on a map: the outline of the area this deployment covers. A GIS consultant, or whoever keeps your maps, can export one, and can fix a file rejected here.</p>
         <p class="form-help">OpenH2O reads a shapefile's projection from the .prj file in its zip and converts the coordinates to WGS84 longitude and latitude when needed. A KML or GeoJSON file is read as WGS84.</p>
       </div>
 
@@ -148,7 +148,7 @@
 
       <div class="form-group">
         <label class="form-label" for="extent_name">Name</label>
-        <input type="text" name="name" id="extent_name" class="form-input" placeholder="District name">
+        <input type="text" name="name" id="extent_name" class="form-input" placeholder="Area name">
       </div>
 
       <div class="form-group">

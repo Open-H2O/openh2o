@@ -645,7 +645,7 @@ def glossary(request):
         "Up to date / Slightly behind / Dormant": "The Monitoring Stations list shows one of these three words for each station, judging its latest reading against how often its source usually publishes (CDEC and CNRFC 36 hours; USGS and CIMIS 2 days; NOAA 3 days; OpenET 45 days; DWR-WDL and DWR-SGMA 120 days; any other source 1 day). A station is Up to date within 1.5 times its source's interval, Slightly behind within 4 times, and Dormant after that or with no reading at all.",
         "USGS": "United States Geological Survey, a federal source of stream gauge and groundwater level data.",
         "Water Account": "This platform's record of one account: its name, account number, contact and status, and the use areas it holds. Its allocation and remaining water are worked out across those use areas.",
-        "Water Right": "One record per right, holding its state ID, type, holder, priority date, face value in acre-feet, CalWATRS PIN and status, plus its places of use, the use areas it serves. The platform only keeps the record; it never issues or changes a right.",
+        "Water Right": "One record per right, holding its state ID, type, holder, priority date, face value in acre-feet and status, plus its places of use, the use areas it serves. The platform only keeps the record; it never issues or changes a right.",
         "Zone / Management Zone": "OpenH2O's record of one area that carries its own Allocation Ceiling, with its name, type, outline on the map and the use areas assigned to it. See Help > Allocations & Ceilings.",
         "Well": "One record per well: its state well number, WCR number and local ID, its meters, the use areas it irrigates, and its depth, casing and screen intervals.",
     }
@@ -654,11 +654,6 @@ def glossary(request):
         # page names the state's reporting systems, the glossary included.
         terms.pop("GEARS", None)
         terms.pop("CalWATRS", None)
-        if "Water Right" in terms:
-            terms["Water Right"] = terms["Water Right"].replace(
-                "face value in acre-feet, CalWATRS PIN and status",
-                "face value in acre-feet and status",
-            )
     entries = []
     for term, definition in sorted(terms.items(), key=lambda item: item[0].casefold()):
         text, pointer_page, pointer_url = _split_help_pointer(

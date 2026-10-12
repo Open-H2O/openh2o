@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """seed_merced_details fills the demo's descriptive detail fields.
 
-The structural seeds leave well construction, parcel addresses, CalWATRS PINs,
+The structural seeds leave well construction, parcel addresses,
 account contacts, and the meters behind "Certified Meter" wells blank — so detail
 pages render hollow sections. This command fills those gaps with deterministic,
 fill-only-when-blank mock data, and mints display-only meters that do NOT touch
@@ -75,14 +75,15 @@ def test_no_meter_for_unmetered_wells(db):
 
 
 @pytest.mark.django_db
-def test_fills_parcel_address_pin_and_contact(db):
+def test_fills_parcel_address_and_contact_and_mints_no_pin(db):
     ParcelFactory(parcel_number="MER-APN-TEST", address="")
     WaterRightFactory(right_id="MER-WR-TEST", calwatrs_pin="")
     WaterAccountFactory(name="El Nido Irrigation", contact_name="Jane Operator",
                         contact_email="")
     call_command("seed_merced_details")
     assert "CA" in Parcel.objects.get(parcel_number="MER-APN-TEST").address
-    assert WaterRight.objects.get(right_id="MER-WR-TEST").calwatrs_pin.startswith("DEMO-P")
+    # The CalWATRS PIN is removed everywhere (Brent, 2026-10-12).
+    assert WaterRight.objects.get(right_id="MER-WR-TEST").calwatrs_pin == ""
     assert WaterAccount.objects.get(
         name="El Nido Irrigation").contact_email.endswith("@example.com")
 

@@ -269,7 +269,7 @@ class DeliverySettingsForm(forms.Form):
         # dropped module's noun (tests/droppability).
         help_text="Under the credited choice, OpenH2O leaves this share of the "
         "surface water in excess of ETAW in the basin, credited to no one, and "
-        "credits the rest to the landowner. 10 percent unless the district "
+        "credits the rest to the landowner. 10 percent unless an administrator "
         "changes it. A changed setting affects a past month only when that "
         "month is recalculated.",
         widget=forms.NumberInput(

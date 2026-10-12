@@ -53,7 +53,7 @@ Order matters:
                               layer (needs the WY 2024-2025 ReportingPeriod + parcels
                               from step 9).
  11. seed_merced_details   — descriptive detail fields (well construction, parcel
-                              addresses, CalWATRS PINs, account contacts) so every
+                              addresses, account contacts) so every
                               detail page reads complete. Invented mock data, which
                               is why step 12's real wells are excluded from it.
  12. seed_merced_measurements — the instrument record: on-site monitoring at the

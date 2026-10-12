@@ -82,7 +82,7 @@ IDENTIFIER_FIELDS = {
     "water-system": ("pwsid",),
     "facility": ("facility_id", "epa_facility_id"),
     "sampling-point": ("ps_code",),
-    "water-right": ("right_id", "calwatrs_pin", "permit_number", "license_number"),
+    "water-right": ("right_id", "permit_number", "license_number"),
 }
 
 _CONTEXT = {
@@ -257,19 +257,9 @@ def _contained_in(kind, obj, geometry, base):
     return refs
 
 
-#: Identifiers that belong to a module, published only while it is on. The
-#: CalWATRS PIN is the state reporting system's key, and reporting is off
-#: unless a site names it (Brent, 2026-10-12): with it off, the record's data
-#: document names no reporting system, as its pages do not.
-_IDENTIFIER_MODULE = {"calwatrs_pin": "reporting"}
-
-
 def _identifiers(kind, obj):
     out = []
     for field in IDENTIFIER_FIELDS[kind]:
-        module = _IDENTIFIER_MODULE.get(field)
-        if module and not is_enabled(module):
-            continue
         value = getattr(obj, field, "")
         if value in (None, ""):
             continue

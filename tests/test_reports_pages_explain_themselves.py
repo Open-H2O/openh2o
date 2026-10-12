@@ -149,7 +149,9 @@ class TestWorksheetBlockersLinkToTheFix:
             "the point of diversion</a>" in body
         )
 
-    def test_a_right_with_no_pin_links_to_the_water_right(self, auth_client):
+    def test_the_worksheet_asks_for_no_pin(self, auth_client):
+        """The CalWATRS PIN is removed everywhere (Brent, 2026-10-12: "The PIN
+        was a one time thing for the first year of reporting.")."""
         from surface.models import DiversionRecord, PointOfDiversion, WaterRight, WaterRightType
 
         template, _ = ReportTemplate.objects.get_or_create(
@@ -162,7 +164,6 @@ class TestWorksheetBlockersLinkToTheFix:
         right_type = WaterRightType.objects.create(name="Probe Right Type", code="PROBE")
         wr = WaterRight.objects.create(
             right_id="PROBE-WR-93", holder_name="Probe Holder", right_type=right_type,
-            calwatrs_pin="",
         )
         pod = PointOfDiversion.objects.create(
             name="Probe No-Pin POD", location=Point(-120.0, 37.0), water_right=wr,
@@ -174,8 +175,6 @@ class TestWorksheetBlockersLinkToTheFix:
         )
         resp = auth_client.get(reverse("reporting:calwatrs_worksheet", args=[sub.pk]))
         body = resp.content.decode()
-        assert "Add this right's PIN on" in body
-        assert (
-            f'<a class="text-link" href="{reverse("surface:detail", args=[wr.pk])}">'
-            "the water right</a>" in body
-        )
+        assert resp.status_code == 200
+        assert "PIN" not in body
+        assert wr.right_id in body

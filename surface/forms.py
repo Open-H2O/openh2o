@@ -383,7 +383,7 @@ class WaterRightForm(forms.ModelForm):
             "direct_season_end_month", "direct_season_end_day",
             "storage_season_start_month", "storage_season_start_day",
             "storage_season_end_month", "storage_season_end_day",
-            "calwatrs_pin", "notes",
+            "notes",
         ]
         widgets = {
             "right_id": forms.TextInput(attrs={"class": "form-input"}),
@@ -404,7 +404,6 @@ class WaterRightForm(forms.ModelForm):
             "direct_season_end_day": forms.NumberInput(attrs={"class": "form-input", "min": 1, "max": 31, "placeholder": "Day"}),
             "storage_season_start_day": forms.NumberInput(attrs={"class": "form-input", "min": 1, "max": 31, "placeholder": "Day"}),
             "storage_season_end_day": forms.NumberInput(attrs={"class": "form-input", "min": 1, "max": 31, "placeholder": "Day"}),
-            "calwatrs_pin": forms.TextInput(attrs={"class": "form-input"}),
             "notes": forms.Textarea(attrs={"class": "form-textarea", "rows": 3}),
         }
         # Django's auto-derived label only capitalises the first word ("Right
@@ -413,14 +412,6 @@ class WaterRightForm(forms.ModelForm):
         # test_identifier_is_capitalised_on_every_rendered_page).
         labels = {"right_id": "Right ID"}
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Reporting is off unless a site names it (2026-10-12). Without it the
-        # CalWATRS PIN is not offered, and a save leaves a stored PIN untouched.
-        from core.modules import is_enabled
-
-        if not is_enabled("reporting"):
-            self.fields.pop("calwatrs_pin", None)
 
     def _clean_season(self, cleaned, prefix, label):
         start_month = cleaned.get(f"{prefix}_start_month")

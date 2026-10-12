@@ -77,7 +77,7 @@ class Zone(models.Model):
     ZONE_TYPE_CHOICES = [
         ("management_area", "Management area"),
         ("subbasin", "Subbasin"),
-        ("custom", "Agency-drawn"),
+        ("custom", "Other area"),
     ]
 
     name = models.CharField(max_length=200)

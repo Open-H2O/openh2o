@@ -105,16 +105,17 @@ def test_water_right_form_offers_no_calwatrs_pin(client_without_reporting):
 
 
 @pytest.mark.skipif(not mod.is_enabled("surface"), reason="surface module is not enabled")
-def test_saving_a_right_without_reporting_keeps_its_stored_pin(settings):
+def test_the_water_right_form_never_offers_a_pin(settings):
+    """Removed everywhere on 2026-10-12, Reports on or off; a stored PIN stays put."""
     from surface.forms import WaterRightForm
     from tests.factories import WaterRightFactory
 
     right = WaterRightFactory(calwatrs_pin="PIN-123")
-    settings.OPENH2O_MODULES = WITHOUT_REPORTING
-    form = WaterRightForm(instance=right)
-    assert "calwatrs_pin" not in form.fields
-    settings.OPENH2O_MODULES = list(mod.ALL_MODULE_NAMES)
-    assert "calwatrs_pin" in WaterRightForm(instance=right).fields
+    for names in (WITHOUT_REPORTING, list(mod.ALL_MODULE_NAMES)):
+        settings.OPENH2O_MODULES = names
+        assert "calwatrs_pin" not in WaterRightForm(instance=right).fields
+    right.refresh_from_db()
+    assert right.calwatrs_pin == "PIN-123"
 
 
 def test_glossary_names_no_reporting_system(client_without_reporting):
@@ -129,17 +130,16 @@ def test_about_page_says_nothing_about_filing(client_without_reporting):
         assert phrase not in html, phrase
 
 
+
 @pytest.mark.skipif(not mod.is_enabled("surface"), reason="surface module is not enabled")
-def test_a_rights_data_document_names_no_pin_without_reporting(settings):
+def test_a_rights_data_document_never_names_a_pin(settings):
     """The record's JSON-LD is read by programs, not people, but it is still the
     record published under the site's own address."""
     from core.identifiers import jsonld_for
     from tests.factories import WaterRightFactory
 
     right = WaterRightFactory(calwatrs_pin="PIN-123")
-    settings.OPENH2O_MODULES = WITHOUT_REPORTING
-    ids = [i["schema:propertyID"] for i in jsonld_for(right, base="https://x.test")["schema:identifier"]]
-    assert "calwatrs_pin" not in ids
-    settings.OPENH2O_MODULES = list(mod.ALL_MODULE_NAMES)
-    ids = [i["schema:propertyID"] for i in jsonld_for(right, base="https://x.test")["schema:identifier"]]
-    assert "calwatrs_pin" in ids
+    for names in (WITHOUT_REPORTING, list(mod.ALL_MODULE_NAMES)):
+        settings.OPENH2O_MODULES = names
+        doc = jsonld_for(right, base="https://x.test")
+        assert "calwatrs_pin" not in [i["schema:propertyID"] for i in doc["schema:identifier"]]

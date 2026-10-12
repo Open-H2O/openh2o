@@ -30,7 +30,7 @@
     <p class="text-secondary text-sm m-0">
       <strong style="color: var(--color-text-primary);">OpenH2O does not submit reports to the state.</strong>
       You enter these figures in CalWATRS yourself. This worksheet holds {{ blocks|length }} block{{ blocks|length|pluralize }},
-      one for each point of diversion, with its water right's CalWATRS PIN. After you have entered and certified the
+      one for each point of diversion. After you have entered and certified the
       report in CalWATRS, return to the report page and record the confirmation number.
     </p>
   </div>
@@ -58,12 +58,12 @@
         <div class="field-label">Right type</div>
         <div class="field-value-sm">{{ block.right_type|blank }}</div>
       </div>
-      <div class="field-group mb-0">
-        <div class="field-label">CalWATRS PIN</div>
-        <div class="field-value-sm" style="font-family: var(--font-mono);">
-          {% if block.calwatrs_pin %}{{ block.calwatrs_pin }}{% elif block.has_water_right %}<span class="text-tertiary">Add this right's PIN on <a class="text-link" href="{% url 'surface:detail' block.water_right_id %}">the water right</a></span>{% else %}<span class="text-tertiary">Add this right's PIN on the water right</span>{% endif %}
-        </div>
-      </div>
+      {% comment %}2026-10-12, Brent: "The PIN was a one time thing for the first
+      year of reporting. I dont think its still relevant." The CalWATRS PIN field
+      that stood here is removed everywhere; a stored PIN stays in the database.
+      Six lines, as the field had, so the figure inventory's line numbers hold
+      for the two figures below.
+      {% endcomment %}
     </div>
 
     <table class="data-table" style="width: 100%;">

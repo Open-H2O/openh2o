@@ -112,8 +112,9 @@ def test_w2_the_point_of_diversion_title_is_the_blocks_head():
     assert "W150 Headgate" in head
     assert 'field-label">Point of diversion' not in html
     # The head sits above the field grid, whose first field is now Water right.
+    # The CalWATRS PIN field is gone (Brent, 2026-10-12).
     assert html.index("Point of diversion 1 of 1") < html.index('field-label">Water right')
-    for label in ("Water right", "Holder", "Right type", "CalWATRS PIN"):
+    for label in ("Water right", "Holder", "Right type"):
         assert f'<div class="field-label">{label}</div>' in html, label
 
 

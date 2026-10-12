@@ -231,7 +231,6 @@ def validate_report(reporting_period, report_type):
             DiversionRecord,
             PointOfDiversion,
             PointOfDiversionParcel,
-            WaterRight,
         )
 
         diversion_type = "direct_use" if report_type == "calwatrs_a1" else "to_storage"
@@ -328,24 +327,6 @@ def validate_report(reporting_period, report_type):
                 ),
             })
 
-        # CalWATRS is filed per right under that right's PIN.
-        rights_missing_pin = (
-            WaterRight.objects.filter(
-                pointofdiversion__diversionrecord__reporting_period=reporting_period,
-                pointofdiversion__diversionrecord__diversion_type=diversion_type,
-                calwatrs_pin="",
-            )
-            .distinct()
-            .count()
-        )
-        if rights_missing_pin > 0:
-            warnings.append({
-                "level": "warning",
-                "message": (
-                    f"{rights_missing_pin} water right(s) in this filing have no CalWATRS PIN — "
-                    "you need each right's PIN to file. Add it on the water right."
-                ),
-            })
 
         active_pods = PointOfDiversion.objects.filter(status="active").count()
         if active_pods > 0 and div_count > 0:

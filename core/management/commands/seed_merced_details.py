@@ -4,7 +4,7 @@
 The spatial + accounting layers of the Merced demo are real/derived, but the
 *descriptive* fields a reviewer sees when they open a detail page were left blank
 by the structural seeds: well construction (the DWR Well Completion Report
-section), parcel addresses, CalWATRS PINs, account contacts, and the meters
+section), parcel addresses, account contacts, and the meters
 behind "Certified Meter" wells. An empty Construction section or a "No active
 meters" line under a metered well reads as an unfinished product, not a
 demonstration. This command stamps those gaps so every detail page tells a
@@ -66,12 +66,11 @@ class Command(BaseCommand):
         wells = self._fill_wells()
         meters = self._mint_meters()
         parcels = self._fill_parcel_addresses()
-        rights = self._fill_water_right_pins()
         accounts = self._fill_account_contacts()
         self.stdout.write(self.style.SUCCESS(
             f"Merced detail fields filled: {wells} well(s) enriched, "
             f"{meters} meter(s) minted, {parcels} parcel address(es), "
-            f"{rights} CalWATRS PIN(s), {accounts} account contact(s)."))
+            f"{accounts} account contact(s)."))
 
     # --- Wells: the DWR Well Completion Report section -------------------------
     def _fill_wells(self):
@@ -202,22 +201,6 @@ class Command(BaseCommand):
             p.address = (f"{rng.randint(1000, 28000)} "
                          f"{rng.choice(COUNTY_ROADS)} Rd, {town}, CA {zip_code}")
             p.save(update_fields=["address"])
-            count += 1
-        return count
-
-    # --- CalWATRS PIN per water right -----------------------------------------
-    def _fill_water_right_pins(self):
-        from surface.models import WaterRight
-
-        count = 0
-        for r in WaterRight.objects.all():
-            if r.calwatrs_pin:
-                continue
-            rng = random.Random(f"pin:{r.right_id}")
-            # DEMO- prefix so the sample PIN can never be mistaken for a real
-            # CalWATRS PIN (real PINs are a bare P followed by six digits).
-            r.calwatrs_pin = f"DEMO-P{rng.randint(100000, 999999)}"
-            r.save(update_fields=["calwatrs_pin"])
             count += 1
         return count
 
