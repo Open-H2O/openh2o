@@ -886,7 +886,7 @@ def build_recharge():
             "capacityAcreFeet": q4(cap_af), "status": "active",
             "operator": RECHARGE_OPERATOR,
             "notes": (f"{acres:.0f}-acre spreading basin on open cropland beside an "
-                      f"MID canal; flooded in storm events and pooled to percolate."),
+                      f"irrigation canal; flooded in storm events and pooled to percolate."),
             # An area-accurate box footprint (acres → square Polygon), so the native map draws the
             # basin's real extent instead of a pin. The seed places these by centroid + acreage.
             "footprint": acre_box_footprint(lon, lat, acres),

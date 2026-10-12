@@ -462,7 +462,12 @@ BASELINE: dict = {
     #   words Brent approved at 2026-10-11 20:36 PDT. The scanner reads "The ID
     #   the well" as opening a definition of a well. It defines the ID field, a
     #   false positive.
-    "templates/**/*.html": 13,
+    #   2026-10-12: 13 -> 14 for accounting/periods_list.html, whose line reads
+    #   "The usual water year runs October through September.", in the words
+    #   Brent approved at 09:43 PDT. The line it replaced gave the same months in
+    #   parentheses; it states the default the New water year form fills in
+    #   (October 1 to September 30), a convention of the form, not a lecture.
+    "templates/**/*.html": 14,
     "help_text=": 4,
 }
 

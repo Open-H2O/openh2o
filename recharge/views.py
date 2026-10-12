@@ -357,8 +357,8 @@ def recharge_event_create(request, pk):
             # so it was deposited to the GSA basin recharge pool for the zone —
             # not smeared across individual parcels.
             ledger_msg = (
-                "Event saved. Recharge deposited to the GSA basin pool for the "
-                "site's zone."
+                "Event saved. Recharge deposited to the basin recharge pool for "
+                "the site's zone."
             )
     except ValueError:
         # 150-03 (ISS-182): a message that names a requirement names the place.

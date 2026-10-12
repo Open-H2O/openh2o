@@ -84,7 +84,7 @@ BASELINE: dict = {
     "templates/reporting/partials/_report_detail_pane.html": {"em dash": 1, "stand-in": 1},
     "templates/reporting/report_list.html": {"em dash": 1},
     "templates/reporting/report_prefill.html": {"em dash": 2},
-    "templates/wells/partials/_detail_pane.html": {"double hyphen": 1, "district reader": 1},
+    "templates/wells/partials/_detail_pane.html": {"double hyphen": 1},
     "accounting/ledger_words.py": {"em dash": 1},
     "accounting/views.py": {"em dash": 2},
     "core/models.py": {"em dash": 1},

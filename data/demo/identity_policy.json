@@ -8,6 +8,7 @@
   },
 
   "notes": [
+    "2026-10-12, 150.4-02: the whole-column protection on geography_boundary.description is REMOVED. It let seed_merced_base.py write 'served by Merced Irrigation District's canal network' into the demo basin's description, which Phase 97 had ruled true public geography; Brent's 2026-10-11 17:51 PDT ruling ('We arent supposed to be pointing out individual districts') supersedes that ruling. The column is now scanned like any other, so a real district name there fails the scan (measured: 1 finding on the local demo before the seed text changed, 0 after).",
     "DELIBERATE EXCLUSION 1 — 'Diversion Canal Growers' is NOT banned. 97-01-NAMES.md records it as not a real-place exposure: it is a generic invented name that was merely aligned to the seed's naming so one demo carries one set of names. Banning it would also collide with 'Diversion Canal', which is protected real geography in the list below.",
     "DELIBERATE EXCLUSION 2 — 'Bottomlands Cattle Co.' is NOT banned. 97-01-NAMES.md records it as not a real-place exposure either: it was simply stale, no longer matching its right's holder after 97-01 renamed San Joaquin Bottomlands Ranch.",
     "SCOPE IS METADATA, NOT A FILTER, for entries with the default match mode 'global'. The scope records where propagation-analysis §0.2 measured the value. A real district name is wrong in ANY column, so the scan matches global entries everywhere and reports an out-of-scope hit louder, not quieter.",
@@ -520,11 +521,6 @@
       "value": "*",
       "reason": "WHOLE COLUMNS. recharge_rechargesite.name and .notes — basin labels and siting notes built from real canal and river geography ('beside the El Nido Canal', 'served by the Merced River diversion'), verified identical on both sides in §0.2. The recharge OPERATOR column is deliberately NOT protected: that is where the real district name was, and it is a banned scope above.",
       "scope": ["recharge_rechargesite.name", "recharge_rechargesite.notes"]
-    },
-    {
-      "value": "*",
-      "reason": "WHOLE COLUMN. geography_boundary.description — the DWR Bulletin 118 basin description, carried as published: 'Valley floor south of the Merced River to the Chowchilla, San Joaquin River on the west, Sierra foothills on the east... served by Merced Irrigation District's canal network'. That last clause is REAL public infrastructure, and 97-02-SUMMARY.md rules it explicitly as one of the eight justified survivors of the Phase 97 sweep (seed_merced_base.py:55): true public geography, not an attribution of invented data. §0.2 protects geography_boundary as a table. Scoped to the description column only, deliberately — the boundary NAME column stays live, so a real district name landing THERE is still caught.",
-      "scope": ["geography_boundary.description"]
     },
     {
       "value": "*",

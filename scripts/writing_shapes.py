@@ -131,6 +131,8 @@ DISTRICT_READER = re.compile(
 #: out of a lab file, and not the reader. Removed before DISTRICT_READER counts.
 DISTRICT_ENTITY: tuple = (
     (r"fills the agency", "a lab import fills in the system's regulating agency"),
+    (r"a groundwater agency's published table", "names the efficiency table's publisher, not the reader (Brent, 2026-10-12 09:43)"),
+    (r"a groundwater agency's or a county's", "a local registry's keeper, not the reader (Brent, 2026-10-11 20:36)"),
 )
 _DISTRICT_KEPT = re.compile("|".join(f"(?:{phrase})" for phrase, _ in DISTRICT_ENTITY), re.I)
 

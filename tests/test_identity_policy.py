@@ -496,13 +496,12 @@ def test_a_single_token_banned_value_gets_no_slug_term():
 # ---------------------------------------------------------------------------
 #: Seed strings that hold a banned value on purpose, each with its reason.
 #: Keyed by file, then by the banned value the string carries.
+#:
+#: 2026-10-12 (150.4-02): seed_merced_base.py's entry is gone. It excused "served by
+#: Merced Irrigation District's canal network" in the demo basin's description as
+#: "carried as published". Brent's 2026-10-11 17:51 rule removes the clause either
+#: way, and the exception is why this test passed it.
 SEED_TEXT_EXCEPTIONS = {
-    "seed_merced_base.py": {
-        "Merced Irrigation District": (
-            "geography_boundary.description is the DWR Bulletin 118 basin "
-            "description carried as published; the policy protects the whole column."
-        ),
-    },
     "seed_merced_basins_from_selection.py": {
         "Merced Irrigation District": (
             "LEGACY_OPERATORS is a teardown key that deletes rows seeded under "

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
-Load California county boundaries from Census TIGERweb.
+Load one state's county boundaries from Census TIGERweb.
 
 Queries the TIGERweb State_County MapServer for all counties in a given
 state (default: California, FIPS 06) and creates Boundary records.
@@ -106,7 +106,7 @@ class Command(BaseCommand):
                     else:
                         Boundary.objects.create(
                             name=county_name,
-                            description=f"California County (FIPS {geoid})",
+                            description=f"County (FIPS {geoid})",
                             geometry=geom,
                         )
                         self.stdout.write(f"  Created: {county_name}")

@@ -51,10 +51,8 @@ BOUNDARY_CONFIGS = [
             "DWR Bulletin 118 Merced Subbasin (5-022.04), part of the San "
             "Joaquin Valley Groundwater Basin. Valley floor south of the "
             "Merced River to the Chowchilla, San Joaquin River on the west, "
-            "Sierra foothills on the east. Critically overdrafted under SGMA; "
-            "served by Merced Irrigation District's canal network and three "
-            "GSAs (HIUGSA, HVGSA, VIWD-1). The complex 'lower' half of the "
-            "Merced demonstration."
+            "Sierra foothills on the east. Critically overdrafted under SGMA. "
+            "The complex 'lower' half of the Merced demonstration."
         ),
     },
 ]

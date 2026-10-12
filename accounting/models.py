@@ -447,7 +447,7 @@ class AllocationCarryover(models.Model):
         ("allocation_carryover", "Allocation carryover"),
         ("basin_recharge_pool", "Basin recharge pool (managed)"),
         ("incidental_recharge_pool", "Basin recharge pool (incidental)"),
-        ("conveyance_seepage_pool", "District seepage pool (canal)"),
+        ("conveyance_seepage_pool", "Seepage pool (canal)"),
     ]
 
     zone = models.ForeignKey("geography.Zone", on_delete=models.CASCADE)
