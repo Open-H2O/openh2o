@@ -77,6 +77,17 @@
       <p class="text-secondary text-sm mb-md form-span-2">The share of what this headgate diverts that is lost in the canal before it reaches a field. Each month these come off the headgate total before the rest is divided among the fields.</p>
 
       <div class="form-group">
+        <label class="form-label" for="{{ form.lining.id_for_label }}">{{ form.lining.label }}</label>
+        {{ form.lining }}
+        <div class="form-help">{{ form.lining.help_text }}</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.loss_basis.id_for_label }}">{{ form.loss_basis.label }}</label>
+        {{ form.loss_basis }}
+        <div class="form-help">{{ form.loss_basis.help_text }}</div>
+      </div>
+
+      <div class="form-group">
         <label class="form-label" for="{{ form.evaporation_fraction.id_for_label }}">{{ form.evaporation_fraction.label }}</label>
         {{ form.evaporation_fraction }}
         <div class="form-help">{{ form.evaporation_fraction.help_text }}</div>
@@ -113,12 +124,6 @@
         <label class="form-label" for="{{ form.spill_device.id_for_label }}">{{ form.spill_device.label }}</label>
         {{ form.spill_device }}
         <div class="form-help">{{ form.spill_device.help_text }}</div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label" for="{{ form.loss_basis.id_for_label }}">{{ form.loss_basis.label }}</label>
-        {{ form.loss_basis }}
-        <div class="form-help">{{ form.loss_basis.help_text }}</div>
       </div>
 
       <div class="form-group form-span-2">

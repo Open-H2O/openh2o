@@ -233,12 +233,22 @@
       <p class="text-secondary text-sm mb-md">Each loss below is a share of the water taken at the headgate each month. It is subtracted before the rest is divided among the fields.</p>
       <div class="field-grid-2">
         <div class="field-group">
+          <div class="field-label">Basis</div>
+          <div class="field-value">{{ pod.get_loss_basis_display }}</div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Lining</div>
+          <div class="field-value">{{ pod.get_lining_display|default:"Not stated" }}</div>
+        </div>
+        <div class="field-group">
           <div class="field-label">Evaporation</div>
           <div class="field-value">{{ pod.evaporation_display }}</div>
+          {% with note=pod.evaporation_default_note %}{% if note %}<div class="text-tertiary text-xs mt-xs">{{ note }}</div>{% endif %}{% endwith %}
         </div>
         <div class="field-group">
           <div class="field-label">Seepage</div>
           <div class="field-value">{{ pod.seepage_display }}</div>
+          {% with note=pod.seepage_default_note %}{% if note %}<div class="text-tertiary text-xs mt-xs">{{ note }}</div>{% endif %}{% endwith %}
         </div>
         <div class="field-group">
           <div class="field-label">Spill</div>
@@ -246,10 +256,7 @@
           {% if pod.spill_device %}
           <div class="text-tertiary text-xs mt-xs">Measured at {{ pod.spill_device }}</div>
           {% endif %}
-        </div>
-        <div class="field-group">
-          <div class="field-label">Basis</div>
-          <div class="field-value">{{ pod.get_loss_basis_display }}</div>
+          {% with note=pod.spill_default_note %}{% if note %}<div class="text-tertiary text-xs mt-xs">{{ note }}</div>{% endif %}{% endwith %}
         </div>
       </div>
     </div>

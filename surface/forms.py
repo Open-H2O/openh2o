@@ -174,12 +174,11 @@ class PointOfDiversionForm(forms.ModelForm):
     water_right and location are excluded (set via separate UI: the POD
     page's own "Water right" panel and the map click that placed the point).
     The canal-loss fractions sit under the template's own "Canal losses"
-    heading; ``clean()`` here is the operator's entry boundary rejecting a
-    fraction sum of 1 or more with a plain sentence (149-02: the canal split
-    refuses a month where nothing would reach the fields), the same shape
-    ``DiversionRecordForm.clean_returned_af`` uses for its own model guard --
-    kept at the form layer only (not duplicated on the model) so the error
-    is never shown twice.
+    heading. A fraction sum of 1 or more is refused with a plain sentence
+    (149-02: the canal split refuses a month where nothing would reach the
+    fields) by ``PointOfDiversion.clean()``, which this form's full_clean
+    runs on the shares save() will store (150.3-01: a stated lining sets the
+    default seepage and evaporation), so the error is shown once.
     """
 
     class Meta:
@@ -190,7 +189,7 @@ class PointOfDiversionForm(forms.ModelForm):
             "evaporation_fraction", "evaporation_band_percent",
             "seepage_fraction", "seepage_band_percent",
             "spill_fraction", "spill_band_percent", "spill_device",
-            "loss_basis", "notes",
+            "loss_basis", "lining", "notes",
         ]
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-input"}),
@@ -228,6 +227,7 @@ class PointOfDiversionForm(forms.ModelForm):
             }),
             "spill_device": forms.Select(attrs={"class": "form-select"}),
             "loss_basis": forms.Select(attrs={"class": "form-select"}),
+            "lining": forms.Select(attrs={"class": "form-select"}),
             "notes": forms.Textarea(attrs={"class": "form-textarea", "rows": 3}),
         }
         labels = {
@@ -242,6 +242,22 @@ class PointOfDiversionForm(forms.ModelForm):
             "spill_band_percent": "Spill band (%)",
             "spill_device": "Spill measured at",
             "loss_basis": "How these shares were set",
+            "lining": "Lining",
+        }
+        # 150.3-01 (Brent 2026-10-11 16:40 PDT: "approved").
+        help_texts = {
+            "lining": "While the basis is the platform's default, OpenH2O sets "
+            "the seepage share from the lining: 25 percent for an unlined "
+            "canal, 5 percent for a lined canal and 0 for a pipe. A measured "
+            "figure or a district estimate is never replaced.",
+            "seepage_fraction": "Share of the diverted volume lost to canal "
+            "seepage. While the basis is the platform's default and the "
+            "lining is stated, OpenH2O replaces this figure with the lining's "
+            "default when you save.",
+            "evaporation_fraction": "Share of the diverted volume lost to "
+            "evaporation off the canal. The platform's default is 1 percent "
+            "for an open canal and 0 for a pipe. An agency's own measured or "
+            "district figure replaces this default.",
         }
 
     def __init__(self, *args, **kwargs):
@@ -260,21 +276,18 @@ class PointOfDiversionForm(forms.ModelForm):
         self.fields["evaporation_band_percent"].required = False
         self.fields["seepage_band_percent"].required = False
         self.fields["spill_band_percent"].required = False
+        self.fields["lining"].required = False
+        self.fields["lining"].choices = [("", "Not stated")] + list(
+            PointOfDiversion.LINING_CHOICES
+        )
 
-    def clean(self):
-        cleaned = super().clean()
-        fractions = [
-            cleaned.get(field)
-            for field in ("evaporation_fraction", "seepage_fraction", "spill_fraction")
-        ]
-        fractions = [f for f in fractions if f is not None]
-        if fractions and sum(fractions) >= 1:
-            raise forms.ValidationError(
-                "Evaporation, seepage and spill together cannot exceed the "
-                "whole of what was diverted, or equal it: some water has to "
-                "reach the fields."
-            )
-        return cleaned
+    def clean_lining(self):
+        return self.cleaned_data.get("lining") or None
+
+    # The sum of the three shares is checked once, by PointOfDiversion.clean(),
+    # which the form's full_clean runs on what save() will store: while the
+    # basis is the default, a stated lining replaces the typed seepage and
+    # evaporation shares (150.3-01). A second check here showed the error twice.
 
 
 class MeasuringDeviceForm(forms.ModelForm):
