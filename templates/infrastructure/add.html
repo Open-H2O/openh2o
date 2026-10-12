@@ -413,7 +413,7 @@
   var latInput = document.getElementById('latitude');
   var lngInput = document.getElementById('longitude');
   var coordWarning = document.getElementById('coord-warning');
-  var CA_BOUNDS = { latMin: 32.5, latMax: 42.0, lngMin: -124.5, lngMax: -114.1 };
+  var US_BOUNDS = { latMin: 17.0, latMax: 72.0, lngMin: -180.0, lngMax: -64.0 };
 
   // Type field visibility
   var typeFields = {
@@ -597,7 +597,7 @@
   }
 
   // ISS-171: a valid typed pair places the marker exactly as a click does; a
-  // pair outside California's box gets a plain warning and STILL places the
+  // pair outside the United States' box gets a plain warning and STILL places the
   // marker (a warning, never a refusal — a border district or a fat-fingered
   // sign is still the operator's call, not this form's).
   function handleCoordInput() {
@@ -611,8 +611,8 @@
       return;
     }
     placePoint({ lng: lng, lat: lat }, true);
-    if (lat < CA_BOUNDS.latMin || lat > CA_BOUNDS.latMax || lng < CA_BOUNDS.lngMin || lng > CA_BOUNDS.lngMax) {
-      showCoordWarning('Outside California; check the sign of the longitude.');
+    if (lat < US_BOUNDS.latMin || lat > US_BOUNDS.latMax || lng < US_BOUNDS.lngMin || lng > US_BOUNDS.lngMax) {
+      showCoordWarning('Outside the United States; check the sign of the longitude.');
     }
   }
 

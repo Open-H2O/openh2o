@@ -11,7 +11,7 @@ class UserAdmin(BaseUserAdmin):
     list_display = ["username", "email", "first_name", "last_name", "agency_admin", "read_only", "title", "is_staff"]
     list_filter = ["agency_admin", "read_only", "is_staff", "is_active"]
     fieldsets = BaseUserAdmin.fieldsets + (
-        ("Agency", {"fields": ("agency_admin", "read_only", "phone", "title")}),
+        ("Role and contact", {"fields": ("agency_admin", "read_only", "phone", "title")}),
     )
 
 

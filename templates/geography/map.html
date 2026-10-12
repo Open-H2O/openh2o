@@ -161,7 +161,7 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
         // ── Administrative ──
         {
             id: 'boundary-outline', type: 'line', source: 'boundaries',
-            label: 'Agency Boundary', section: 'Administrative', label_id: 'boundary-label',
+            label: 'Boundary', section: 'Administrative', label_id: 'boundary-label',
             paint: { 'line-color': OH2O.colors.boundary, 'line-width': 2.5, 'line-opacity': 0.85, 'line-blur': 0.3 },
             swatch: 'line', swatchColor: OH2O.colors.boundary
         },
@@ -181,7 +181,7 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
         // `filter` does — the ISS-116 lesson (`countFilter` mirrors `filter`).
         {
             id: 'zones-fill', type: 'fill', source: 'zones',
-            label: 'GSA Zones', group: 'zones', section: 'Administrative',
+            label: 'Management Areas', group: 'zones', section: 'Administrative',
             filter: ['==', ['get', 'zone_type'], 'management_area'],
             countFilter: { prop: 'zone_type', val: 'management_area' },
             // Fill colors are rendered from the live GSA zones (geography views
@@ -540,7 +540,7 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
     // deleting it is the fix. Do not add per-layer rows back here; that was
     // tried on 2026-08-05 and produced a second panel echoing the first.
     legend: [
-{% if gsa_zones %}        { title: 'GSA Zones', items: [
+{% if gsa_zones %}        { title: 'Management Areas', items: [
 {% for z in gsa_zones %}            { label: '{{ z.name|escapejs }}', swatch: 'fill', color: '{{ z.color }}' }{% if not forloop.last %},{% endif %}
 {% endfor %}        ]}
 {% endif %}    ]

@@ -2248,7 +2248,7 @@ def delivery_settings(request):
     from core.forms import DeliverySettingsForm
 
     config, _ = SiteConfig.objects.get_or_create(
-        defaults={"agency_name": "Agency"}
+        defaults={"agency_name": "OpenH2O"}
     )
 
     if request.method == "POST":

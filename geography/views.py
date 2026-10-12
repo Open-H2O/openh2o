@@ -629,7 +629,7 @@ def zone_create(request):
             if not boundary:
                 return render(request, "geography/zone_create.html", {
                     "form": form,
-                    "error": "No district boundary configured. Create a boundary first in the admin.",
+                    "error": "No boundary is on file yet. An administrator adds one with the Setup Wizard.",
                 })
             zone.boundary = boundary
             zone.save()

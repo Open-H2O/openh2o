@@ -1219,7 +1219,7 @@ def diversion_import_commit(request):
     data_state = request.POST.get("data_state", "") or "provisional"
     use_rule = _posted_use_rule(request)
 
-    site_config, _ = SiteConfig.objects.get_or_create(defaults={"agency_name": "Agency"})
+    site_config, _ = SiteConfig.objects.get_or_create(defaults={"agency_name": "OpenH2O"})
 
     try:
         result = diversion_import_service.import_diversion_rows(

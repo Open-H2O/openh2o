@@ -87,7 +87,7 @@ BASELINE: dict = {
     "templates/wells/partials/_detail_pane.html": {"double hyphen": 1, "district reader": 1},
     "accounting/ledger_words.py": {"em dash": 1},
     "accounting/views.py": {"em dash": 2},
-    "core/models.py": {"em dash": 1, "district reader": 3},
+    "core/models.py": {"em dash": 1},
     "datasync/freshness.py": {"em dash": 8},
     "drinking/glossary.py": {"em dash": 1},
     "drinking/ps_codes.py": {"em dash": 1},
@@ -121,12 +121,10 @@ BASELINE: dict = {
     "templates/datasync/monitoring_dashboard.html": {"district reader": 1},
     "templates/geography/partials/_zone_recovery_horizon.html": {"district reader": 3},
     "templates/geography/zone_detail.html": {"district reader": 1},
-    "templates/infrastructure/import.html": {"California": 1},
     "templates/parcels/partials/_detail_pane.html": {"district reader": 1},
     "templates/reporting/partials/_handoff.html": {"district reader": 1},
     "templates/reporting/partials/_status_section.html": {"district reader": 3},
     "templates/surface/partials/_diversion_import_preview.html": {"California": 1},
-    "config/views.py": {"district reader": 1},
 }
 
 _ADVICE = (

@@ -39,7 +39,7 @@ def check_development_settings_in_use(app_configs, **kwargs):
         CheckWarning(
             "Development settings are running (DEBUG=True). This is "
             "config.settings.local, which is for working on the code — not for "
-            "holding an agency's records.",
+            "holding real water records.",
             hint=(
                 "DEBUG=True prints the site's internals — stack traces, "
                 "settings, SQL queries — onto any error page, to whoever is "
@@ -92,8 +92,9 @@ def check_site_identity_is_set(app_configs, **kwargs):
             "whoever asked for it.",
             hint=(
                 "The name and web address are worked out from settings this "
-                "platform already holds: the agency name from the Setup "
-                "Wizard, and the web address from ALLOWED_HOSTS in .env. Fill "
+                "platform already holds: the organization's name, set at "
+                "/admin/ under Core > Site configs, and the web address from "
+                "ALLOWED_HOSTS in .env. Fill "
                 "in whichever is still blank, then run "
                 "'docker compose exec web python manage.py migrate' — that is "
                 "what applies it. See DEPLOY.md, section 10."

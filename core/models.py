@@ -117,7 +117,7 @@ class SiteConfig(models.Model):
     demonstration_mode = models.BooleanField(
         default=False,
         help_text="When on, every report surface and generated file is stamped "
-        "'demonstration — not submittable'. Off for a real agency deployment; "
+        "'demonstration — not submittable'. Off for a real deployment; "
         "the Merced demo seed turns it on.",
     )
 
@@ -174,8 +174,8 @@ class SiteConfig(models.Model):
         max_length=16,
         choices=RECOVERY_HORIZON_CHOICES,
         default="carry_forward",
-        help_text="What happens to a district's unused allocation at year-end "
-        "(agency-wide default; a district may override it).",
+        help_text="What happens to a zone's unused allocation at year-end. An "
+        "administrator can set a different choice for one zone on that zone's page.",
     )
 
     # --- Diversion records: the 145-01 memo's crosswalk layer (146-03 Task

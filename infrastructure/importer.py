@@ -329,8 +329,10 @@ _STRING_FIELDS = {
     "storage": ["site_type", "operator"],
 }
 
-_CA_LAT = (32.0, 42.5)
-_CA_LON = (-125.0, -113.0)
+# A box around the United States, Alaska, Hawaii and Puerto Rico included
+# (Brent, 2026-10-12 09:17 PDT: "Yes"; it was a box around California).
+_US_LAT = (17.0, 72.0)
+_US_LON = (-180.0, -64.0)
 
 
 def validate_rows(rows, mapping, infra_type, existing_reg_ids):
@@ -504,9 +506,9 @@ def _resolve_location(row, mapping, errors):
         except ValueError:
             errors.append(f"location lat/lon are not numbers: '{lat_raw}', '{lon_raw}'.")
             return None
-        if not (_CA_LAT[0] <= lat <= _CA_LAT[1] and _CA_LON[0] <= lon <= _CA_LON[1]):
+        if not (_US_LAT[0] <= lat <= _US_LAT[1] and _US_LON[0] <= lon <= _US_LON[1]):
             errors.append(
-                f"location ({lat}, {lon}) is outside the expected California range."
+                f"location ({lat}, {lon}) is outside the United States; check the sign of the longitude."
             )
             return None
         return Point(lon, lat, srid=4326)

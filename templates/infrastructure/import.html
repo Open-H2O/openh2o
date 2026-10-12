@@ -31,7 +31,7 @@
     <p class="text-base text-secondary mt-md">Nothing is written until you match the columns, check the first rows and press Create.</p>
     <p class="text-secondary text-sm mt-sm"><a href="{% url 'infrastructure:add' %}?type={{ infra_type }}">Add {{ infra_label|lower }}</a> creates one record at a time.</p>
     {% comment %}149.1-06: what every type's file must carry, from infrastructure/importer.py
-    (name; a geometry or latitude and longitude inside California; the well registration
+    (name; a geometry or latitude and longitude inside the United States; the well registration
     ID check). The per-type field list is the mapping step's; the page cannot reach it
     without a view change (ISS-228).{% endcomment %}
     <div class="table-scroll mt-md">
@@ -52,7 +52,7 @@
           <tr>
             <td class="col-name">Latitude and longitude, or a geometry</td>
             <td>Yes</td>
-            <td>Decimal degrees inside California, or the shapefile, GeoJSON or KML geometry</td>
+            <td>Decimal degrees inside the United States, or the shapefile, GeoJSON or KML geometry</td>
           </tr>
           <tr>
             <td class="col-name">The other {{ infra_label|lower }} columns</td>

@@ -240,7 +240,7 @@ class TestEveryNamedLayerCanBeKeyed:
         """Sanity on the reader above: it finds layers across the whole config,
         not just the first block, so a silent parse failure cannot pass."""
         names = {name for name, _ in _labelled_layers(_rendered(client_in))}
-        assert {"Agency Boundary", "GSA Zones", "Rivers & Streams"} <= names
+        assert {"Boundary", "Management Areas", "Rivers & Streams"} <= names
 
 
 # -- 2. The hardcoded legend pair is gone -------------------------------------
@@ -272,7 +272,7 @@ class TestTheExplicitLegendHoldsOnlyTheZoneBreakdown:
         """
         legend = _array(_rendered(client_in), "legend")
         titles = re.findall(r"title:\s*'([^']+)'", legend)
-        assert titles == ["GSA Zones"], (
+        assert titles == ["Management Areas"], (
             f"expected only the GSA zone breakdown to be declared, got {titles}"
         )
         for zone in management_areas:
@@ -335,7 +335,7 @@ class TestBothPopulatedModulesAreReachable:
         ``#3a7d5c``, which lived nowhere in the derivation.
         """
         names = dict(_labelled_layers(_rendered(client_in)))
-        element = names["GSA Zones"]
+        element = names["Management Areas"]
         assert "'#3a9742'" in element.split("swatch:")[-1], (
             "the zones swatch does not follow the fill it paints"
         )
@@ -429,7 +429,7 @@ class TestTheDistrictSplitsIntoTwoZoneKinds:
             _rendered(client_in), "layers", "id: 'zones-fill'"
         )
         assert "filter: ['==', ['get', 'zone_type'], 'management_area']" in element
-        assert "label: 'GSA Zones'" in element
+        assert "label: 'Management Areas'" in element
         assert "swatch: 'fill'" in element
 
     def test_service_areas_outline_is_filtered_to_everything_else_and_keyed(

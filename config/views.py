@@ -89,7 +89,7 @@ def index(request):
 
     # Status-hero data — every value is real, never decorative.
     site_config = SiteConfig.objects.first()
-    context["agency_name"] = site_config.agency_name if site_config else "Your Agency"
+    context["agency_name"] = site_config.agency_name if site_config else "OpenH2O"
     # 143-09 (R-137): the greeting ("Good morning") and the `_greeting`
     # helper that built it are both removed; the greeting named a time of
     # day, not a fact about the district, and the hero's largest words now
