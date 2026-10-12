@@ -139,6 +139,10 @@ SEQUENCE = [
     # River Flood-MAR cropland). Replaces the hardcoded two-square seed; runs
     # after parcels (needs MER-POD-009) and before the recharge events.
     ("seed_merced_basins_from_selection", {}),
+    # 150.3-01: each point of diversion's lining, which sets its default
+    # seepage share. Runs after the last command that creates a point (the
+    # recharge intake above) and before the ledgers divide any delivery.
+    ("seed_merced_pod_lining", {}),
     # Land use BEFORE the accounting layer: the engine's facility_only_zero step
     # zeros any parcel with no crop_type UsageLocation, so the ledgers' parcels
     # need crop land use first. Idempotent; MER-keyed.

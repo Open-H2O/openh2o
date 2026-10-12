@@ -266,3 +266,33 @@ def test_page_pipe_notes(auth_client):
     assert "gives pipelines no seepage" in html
     assert "Westlands Water District reports" in html
     assert "Default for an open canal" not in html
+
+
+# ---------------------------------------------------------------------------
+# Task 4: the demonstration's points get their lining
+# ---------------------------------------------------------------------------
+
+
+def test_demo_lining_command_sets_each_named_point_once():
+    from core.management.commands.seed_merced_pod_lining import (
+        LINING_BY_POD,
+        apply_demo_pod_lining,
+    )
+
+    atwater = PointOfDiversionFactory(name="MER-POD-004-DEMO Atwater Canal Headgate")
+    hydro = PointOfDiversionFactory(name="MER-POD-010-DEMO Merced Falls Hydroelectric Diversion")
+    riparian = PointOfDiversionFactory(name="MER-POD-009-DEMO Bottomlands Riparian Take")
+    other = PointOfDiversionFactory(name="Somebody else's headgate")
+
+    assert apply_demo_pod_lining() == 3
+    for pod in (atwater, hydro, riparian, other):
+        pod.refresh_from_db()
+    assert atwater.lining == "unlined" and atwater.seepage_fraction == Decimal("0.2500")
+    assert hydro.lining == "pipe" and hydro.evaporation_fraction == Decimal("0")
+    assert riparian.lining is None and riparian.seepage_fraction == Decimal("0")
+    assert other.lining is None and other.notes == ""
+    assert atwater.notes == LINING_BY_POD[atwater.name][1]
+
+    assert apply_demo_pod_lining() == 0
+    atwater.refresh_from_db()
+    assert atwater.notes.count("Demonstration data") == 1
