@@ -34,6 +34,10 @@
   links and cards it points out to. The `{% templatetag openblock %} url ...
   as var {% templatetag closeblock %}` form fails silently to the empty
   string, so the defect those guards close is a dead link, not a 500.
+  2026-10-11 (150.4-01): the national, role-neutral lens. Brent approved who acts
+  in a sentence at 20:36 PDT ("yes") and the help-page rows at 20:49 PDT ("yes"):
+  "An administrator" acts in place of "a district" (Methodology Settings and Delivery Settings are @admin_required). Each actor traced to its view in
+  .planning/phases/150.4-national-role-neutral-tone-pass/150.4-01-WORDS.md.
 {% endcomment %}{% url 'accounting:methodology_settings' as methodology_url %}
 {% url 'accounting:delivery_settings' as delivery_url %}
 {% url 'water_balances' as water_balances_url %}
@@ -53,7 +57,7 @@
         <tbody>
           <tr>
             <td class="col-name">Calculation steps</td>
-            <td>OpenH2O calculates each month's figures by following the steps listed on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a>{% else %}Methodology Settings{% endif %}. A district can reorder those steps or switch any of them off.</td>
+            <td>OpenH2O calculates each month's figures by following the steps listed on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a>{% else %}Methodology Settings{% endif %}. An administrator can reorder those steps or switch any of them off.</td>
           </tr>
           <tr>
             <td class="col-name">Effective precipitation</td>
@@ -61,7 +65,7 @@
           </tr>
           <tr>
             <td class="col-name">Irrigation efficiency</td>
-            <td>Each field's irrigation efficiency comes from its irrigation method on file. A field with no irrigation method on file uses the default efficiency on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}, 75 percent unless the district changes it.{% if 'surface' in enabled_modules %} OpenH2O uses the same irrigation efficiency for a field's surface water and its groundwater.{% endif %}</td>
+            <td>Each field's irrigation efficiency comes from its irrigation method on file. A field with no irrigation method on file uses the default efficiency on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}, 75 percent unless an administrator changes it.{% if 'surface' in enabled_modules %} OpenH2O uses the same irrigation efficiency for a field's surface water and its groundwater.{% endif %}</td>
           </tr>
           <tr>
             <td class="col-name">Delivery lost to efficiency</td>
@@ -97,7 +101,7 @@
           </tr>
           <tr>
             <td class="col-name">Surface water in excess of ETAW</td>
-            <td>A setting on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %} determines how OpenH2O treats surface water in excess of ETAW. By default, OpenH2O credits that water to no one. A district can instead credit it to the landowner, less a share left in the basin (10 percent by default), or show it as a separate line on the field's page without crediting it.</td>
+            <td>A setting on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %} determines how OpenH2O treats surface water in excess of ETAW. By default, OpenH2O credits that water to no one. An administrator can instead credit it to the landowner, less a share left in the basin (10 percent by default), or show it as a separate line on the field's page without crediting it.</td>
           </tr>
           <tr>
             <td class="col-name">Where a credit goes</td>

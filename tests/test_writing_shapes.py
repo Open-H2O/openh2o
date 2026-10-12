@@ -125,13 +125,6 @@ BASELINE: dict = {
     "templates/geography/zone_create.html": {"district reader": 1},
     "templates/geography/zone_detail.html": {"district reader": 1},
     "templates/geography/zone_list.html": {"district reader": 1},
-    "templates/help/budgets_allocations.html": {"district reader": 1},
-    "templates/help/getting_started.html": {"district reader": 2},
-    "templates/help/methods.html": {"district reader": 3},
-    "templates/help/partials/_the_subtraction.html": {"district reader": 2},
-    "templates/help/settings_explained.html": {"district reader": 6},
-    "templates/help/surface_deliveries.html": {"district reader": 3},
-    "templates/help/water_balances.html": {"district reader": 1},
     "templates/index.html": {"district reader": 1},
     "templates/infrastructure/import.html": {"California": 1},
     "templates/parcels/partials/_detail_pane.html": {"district reader": 2},
@@ -140,7 +133,7 @@ BASELINE: dict = {
     "templates/reporting/partials/_status_section.html": {"district reader": 3},
     "templates/setup/wizard.html": {"district reader": 3},
     "templates/surface/partials/_diversion_import_preview.html": {"California": 1},
-    "config/views.py": {"district reader": 4},
+    "config/views.py": {"district reader": 1},
 }
 
 _ADVICE = (

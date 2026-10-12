@@ -269,7 +269,7 @@ class TestRenderedPages:
 
         settings.OPENH2O_MODULES = NINE_MODULE_DRINKING
         drinking = admin_client.get("/help/getting-started/").content.decode()
-        assert "Give the Setup Wizard your district&rsquo;s boundary" in drinking
+        assert "Give the Setup Wizard the boundary of the area you manage water for" in drinking
         assert "brings in the groundwater subbasins and streams in and around" in drinking
         assert "Run the Setup Wizard before Step 2, because the wizard does part of the work in it." in drinking
 

@@ -599,7 +599,7 @@ def glossary(request):
     screens use, and an entry says what the platform holds or does and stops.
     """
     terms = {
-        "Allocation Ceiling": "The total volume in acre-feet that a district sets on Allocations for one zone, one water type and one water year. See Help > Allocations & Ceilings.",
+        "Allocation Ceiling": "The total volume in acre-feet that an administrator or operator sets on Allocations for one zone, one water type and one water year. See Help > Allocations & Ceilings.",
         "Allocation": "One account's share of a zone's groundwater Allocation Ceiling, in proportion to the number of use areas the account holds in the zone. An account with use areas in several zones holds the sum of its shares. See Help > Allocations & Ceilings.",
         "Apportionment": "Another name for ET-Demand Allocation. See Help > Methods Behind the Numbers.",
         "Usage": "A ledger row that draws water against an allocation, stored as a negative amount. Meter readings, deliveries and the month's calculated ETAW met by groundwater are usage rows.",
@@ -629,7 +629,7 @@ def glossary(request):
         "Ledger Entry": "One row on a use area's ledger: an amount in acre-feet with its date, water type and source. Water credited is positive and water drawn against the allocation is negative.",
         "Managed Aquifer Recharge (MAR)": "One record per site, holding its capacity in acre-feet, its zone, its location and outline on the map, the points of diversion feeding it, and its events, each with its dates, a volume in acre-feet and a water type.",
         "MCL": "Maximum Contaminant Level. The platform stores the MCL a laboratory's file carries on each result row exactly as reported, in the row's own units, and shows it in the Limit (file) column and beside the finding on the result's page. It never compares a finding with it.",
-        "Methodology / Calculation Plan": "The list of steps OpenH2O follows to calculate each use area's month, set on Methodology Settings. A district can reorder those steps or switch any of them off. See Help > Methods Behind the Numbers.",
+        "Methodology / Calculation Plan": "The list of steps OpenH2O follows to calculate each use area's month, set on Methodology Settings. An administrator can reorder those steps or switch any of them off. See Help > Methods Behind the Numbers.",
         "Monitoring Station": "One record per outside station (a stream gauge, a weather station, a groundwater level well), holding its name, its ID at the data source, its location and the parameters it reports.",
         "OpenET": "OpenET's satellite evapotranspiration data is the source of OpenH2O's crop ET, read for every field each month.",
         "Use Area": "This platform's record of one field: its Assessor Parcel Number (APN), owner, area in acres and outline on the map. Every monthly figure is calculated per use area; all are listed on the Use Areas page.",
@@ -646,7 +646,7 @@ def glossary(request):
         "USGS": "United States Geological Survey, a federal source of stream gauge and groundwater level data.",
         "Water Account": "This platform's record of one account: its name, account number, contact and status, and the use areas it holds. Its allocation and remaining water are worked out across those use areas.",
         "Water Right": "One record per right, holding its state ID, type, holder, priority date, face value in acre-feet, CalWATRS PIN and status, plus its places of use, the use areas it serves. The platform only keeps the record; it never issues or changes a right.",
-        "Zone / Management Zone": "OpenH2O's record of one area of the district that carries its own Allocation Ceiling, with its name, type, outline on the map and the use areas assigned to it. See Help > Allocations & Ceilings.",
+        "Zone / Management Zone": "OpenH2O's record of one area that carries its own Allocation Ceiling, with its name, type, outline on the map and the use areas assigned to it. See Help > Allocations & Ceilings.",
         "Well": "One record per well: its state well number, WCR number and local ID, its meters, the use areas it irrigates, and its depth, casing and screen intervals.",
     }
     entries = []

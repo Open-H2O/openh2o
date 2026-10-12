@@ -83,9 +83,9 @@
             {% if delivery_split == "own" %}
             This is the field's own delivery record, typed on its ledger or imported.
             {% elif delivery_split == "fixed_share" %}
-            This district's record is a headgate total, from a meter or the ditch tender's estimate. No field on this headgate has an estimated use on record for the month, so the total was divided by each field's fixed share on file.
+            The delivery record is the headgate's monthly total, from a meter or the ditch tender's estimate. No field on this headgate has an estimated use on record for the month, so the total was divided by each field's fixed share on file.
             {% else %}
-            This district's record is a headgate total, from a meter or the ditch tender's estimate.
+            The delivery record is the headgate's monthly total, from a meter or the ditch tender's estimate.
             {% endif %}
           </td>
           <td class="col-sure">{% if delivery_split == "own" %}<span class="badge badge-pill badge-grey">Recorded</span>{% else %}<span class="badge badge-pill badge-gold" title="Divided up by the software">Divided up</span>{% endif %}</td>

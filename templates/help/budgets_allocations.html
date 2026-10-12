@@ -35,6 +35,10 @@
   sentence is guarded on it (tests/droppability/checks.py refuses "well"
   without it). The bare `url` tags below raise NoReverseMatch, so their guards
   close a 500, not a dead link.
+  2026-10-11 (150.4-01): the national, role-neutral lens. Brent approved who acts
+  in a sentence at 20:36 PDT ("yes") and the help-page rows at 20:49 PDT ("yes"):
+  "An administrator or operator" sets a ceiling (Allocations is open to every role but Viewer). Each actor traced to its view in
+  .planning/phases/150.4-national-role-neutral-tone-pass/150.4-01-WORDS.md.
 {% endcomment %}<div class="page-stack page-help help-page">
 
   <div class="card-raised">
@@ -50,7 +54,7 @@
         <tbody>
           <tr>
             <td class="col-name">Ceilings</td>
-            <td>A district sets an allocation ceiling on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{% url 'accounting:allocations_list' %}">Allocations</a>{% else %}Allocations{% endif %} for each zone, water type and water year.</td>
+            <td>An administrator or operator sets an allocation ceiling on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{% url 'accounting:allocations_list' %}">Allocations</a>{% else %}Allocations{% endif %} for each zone, water type and water year.</td>
           </tr>
           <tr>
             <td class="col-name">An account&rsquo;s share</td>

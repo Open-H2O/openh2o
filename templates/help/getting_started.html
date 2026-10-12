@@ -37,6 +37,10 @@
   _FORBIDDEN_VOCABULARY refuses that module's nouns on a deployment without
   it; a sentence that would lose its subject goes whole rather than being
   reworded.
+  2026-10-11 (150.4-01): the national, role-neutral lens. Brent approved who acts
+  in a sentence at 20:36 PDT ("yes") and the help-page rows at 20:49 PDT ("yes"):
+  the Setup Wizard step names "the area you manage water for", not the district. Each actor traced to its view in
+  .planning/phases/150.4-national-role-neutral-tone-pass/150.4-01-WORDS.md.
 {% endcomment %}<div class="page-stack page-help help-page">
 
   <div class="card-raised">
@@ -60,7 +64,7 @@
           {% if 'setup' in enabled_modules %}<tr>
             <td class="col-step"><span class="step-num"></span>Run the Setup Wizard</td>
             <td class="col-where">Administration &gt; Setup Wizard{% if user_can_write %}<br><a href="{% url 'setup:wizard' %}" class="text-sm text-accent">Run the Setup Wizard &rarr;</a>{% endif %}</td>
-            <td>Give the Setup Wizard your district&rsquo;s boundary as a zipped shapefile, KML or GeoJSON file, or type the north, south, east and west limits of a rectangle around the district. The wizard then brings in the groundwater subbasins{% if 'parcels' in enabled_modules %}, parcels{% endif %}{% if 'datasync' in enabled_modules %}, streams and monitoring stations{% else %} and streams{% endif %} in and around your boundary. You choose which of these the wizard brings in before it starts. Run the Setup Wizard before Step{{ wizard_cited_count|pluralize }} {{ wizard_cited_steps }}, because the wizard does part of the work in {% if wizard_cited_count > 1 %}each{% else %}it{% endif %}.</td>
+            <td>Give the Setup Wizard the boundary of the area you manage water for, as a zipped shapefile, KML or GeoJSON file, or type the north, south, east and west limits of a rectangle around that area. The wizard then brings in the groundwater subbasins{% if 'parcels' in enabled_modules %}, parcels{% endif %}{% if 'datasync' in enabled_modules %}, streams and monitoring stations{% else %} and streams{% endif %} in and around your boundary. You choose which of these the wizard brings in before it starts. Run the Setup Wizard before Step{{ wizard_cited_count|pluralize }} {{ wizard_cited_steps }}, because the wizard does part of the work in {% if wizard_cited_count > 1 %}each{% else %}it{% endif %}.</td>
           </tr>{% endif %}
           <tr>
             <td class="col-step"><span class="step-num">{{ steps.zones }}</span>Create management zones</td>

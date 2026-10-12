@@ -35,6 +35,10 @@
   off. `wells` is not among them, so the row naming fields with and without a
   well is guarded on it. The bare `url` tags raise NoReverseMatch, so their
   guards close a 500, not a dead link.
+  2026-10-11 (150.4-01): the national, role-neutral lens. Brent approved who acts
+  in a sentence at 20:36 PDT ("yes") and the help-page rows at 20:49 PDT ("yes"):
+  "An administrator" acts in place of "a district" (Delivery Settings and the zone page are @admin_required). Each actor traced to its view in
+  .planning/phases/150.4-national-role-neutral-tone-pass/150.4-01-WORDS.md.
 {% endcomment %}<div class="page-stack page-help help-page">
 
   <div class="card-raised">
@@ -50,7 +54,7 @@
         <tbody>
           <tr>
             <td class="col-name">Irrigation efficiency</td>
-            <td>Each field&rsquo;s irrigation efficiency comes from its irrigation method on file. A field with no irrigation method on file uses the default efficiency on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{% url 'accounting:delivery_settings' %}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}, 75 percent unless the district changes it.</td>
+            <td>Each field&rsquo;s irrigation efficiency comes from its irrigation method on file. A field with no irrigation method on file uses the default efficiency on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{% url 'accounting:delivery_settings' %}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}, 75 percent unless an administrator changes it.</td>
           </tr>
           <tr>
             <td class="col-name">Delivery lost to efficiency</td>
@@ -62,7 +66,7 @@
           </tr>
           <tr>
             <td class="col-name">Surface water in excess of ETAW</td>
-            <td>A setting on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{% url 'accounting:delivery_settings' %}">Delivery Settings</a>{% else %}Delivery Settings{% endif %} determines how OpenH2O treats surface water in excess of ETAW. By default, OpenH2O credits that water to no one. A district can instead credit it to the landowner, less a share left in the basin (10 percent by default), or show it as a separate line on the field&rsquo;s page without crediting it.</td>
+            <td>A setting on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{% url 'accounting:delivery_settings' %}">Delivery Settings</a>{% else %}Delivery Settings{% endif %} determines how OpenH2O treats surface water in excess of ETAW. By default, OpenH2O credits that water to no one. An administrator can instead credit it to the landowner, less a share left in the basin (10 percent by default), or show it as a separate line on the field&rsquo;s page without crediting it.</td>
           </tr>
           {% if 'wells' in enabled_modules %}<tr>
             <td class="col-name">Where a credit goes</td>
@@ -98,7 +102,7 @@
           </tr>
           <tr>
             <td class="col-name">One zone</td>
-            <td>A district can set a different choice for one zone on that zone&rsquo;s page.</td>
+            <td>An administrator can set a different choice for one zone on that zone&rsquo;s page.</td>
           </tr>
           <tr>
             <td class="col-name">When it is written</td>
