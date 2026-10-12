@@ -5512,24 +5512,26 @@ details[open] > summary .disclosure-mark {
 }
 
 /* -- The water year's calculation notes as one table (2026-10-12) ---------- */
-/* Each group's label sits in the first cell of its first row; the figures and
-   the point names keep to one line so the label column takes the wrap. */
 /* Each item is its own tbody (Brent, 16:47: "They all look like they're the
-   same thing"): a shaded band with its label, a heavier rule above every band
-   after the first, the points indented under it, a total in the shared
-   `.row-subtotal` row. The band is excluded from the zebra stripe. */
+   same thing ... you need a gap or a bolder line"): a band in the raised
+   colour with an accent rule carries the item's label, real space in the
+   card's colour separates one item from the next, the points sit indented
+   under the band, and a total takes the shared `.row-subtotal` row. A first
+   try with a 3 px border-colour rule and a stripe-shade band still read as one
+   list (looked at 1,730, 16:52). Figures and point names keep to one line. */
 .calculation-notes-table tr.note-group-head td,
 .calculation-notes-table tbody tr.note-group-head:nth-child(even) td {
     text-align: left;
     color: var(--color-text-secondary);
-    background-color: color-mix(in srgb, var(--color-elevated) 85%, transparent);
-    border-top: 1px solid var(--color-border-hover);
+    background-color: var(--color-elevated);
+    border-top: none;
     border-bottom: 1px solid var(--color-border-hover);
-    padding-block: 10px;
+    box-shadow: inset 0 2px 0 var(--color-accent);
+    padding-block: 12px;
 }
 .calculation-notes-table tr.note-group-head strong { color: var(--color-text-primary); }
 .calculation-notes-table tbody + tbody tr.note-group-head td {
-    border-top: 3px solid var(--color-border-hover);
+    border-top: var(--space-lg) solid var(--color-card);
 }
 .calculation-notes-table td.note-point { padding-left: var(--space-xl); }
 .calculation-notes-table td.td-num, .calculation-notes-table th.th-right,
