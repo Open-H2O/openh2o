@@ -23,6 +23,13 @@ the code is"), the headings that started this work. The stand-in shape ("that pl
 3cbe34c, 2 at 017c89d and at fbe4f47 (the two versions Brent struck for it)
 and 0 after his sentence went in.
 
+The "district reader" and "California" shapes joined on 2026-10-11 (150.4-01),
+after Brent asked for OpenH2O to read nationally and for any reader, not only a
+district. Replayed against f4b18da first: templates caught 48 of the recount's
+49 district-reader lines and 3 of its 4 generic-California lines (the misses
+sit inside ``<script>``); the numbers and every miss are in
+.planning/phases/150.4-national-role-neutral-tone-pass/150.4-01-REPLAY.md.
+
 The other three shapes (a phrase posing as a statement, a thing acting like a
 person, a slogan) need a reader and are not counted here.
 
@@ -32,6 +39,7 @@ from __future__ import annotations
 
 import importlib.util
 import os
+import re
 from pathlib import Path
 
 import pytest
@@ -69,17 +77,17 @@ BASELINE: dict = {
     "templates/base_auth.html": {"em dash": 1},
     "templates/core/user_form.html": {"em dash": 1},
     "templates/datasync/station_add.html": {"em dash": 1},
-    "templates/drinking/overview.html": {"em dash": 4},
+    "templates/drinking/overview.html": {"em dash": 4, "district reader": 2},
     "templates/drinking/production.html": {"em dash": 1},
     "templates/partials/_demo_marker.html": {"em dash": 1},
     "templates/reporting/partials/_openet_prefill.html": {"em dash": 1},
     "templates/reporting/partials/_report_detail_pane.html": {"em dash": 1, "stand-in": 1},
     "templates/reporting/report_list.html": {"em dash": 1},
     "templates/reporting/report_prefill.html": {"em dash": 2},
-    "templates/wells/partials/_detail_pane.html": {"double hyphen": 1},
+    "templates/wells/partials/_detail_pane.html": {"double hyphen": 1, "district reader": 2},
     "accounting/ledger_words.py": {"em dash": 1},
     "accounting/views.py": {"em dash": 2},
-    "core/models.py": {"em dash": 1},
+    "core/models.py": {"em dash": 1, "district reader": 3},
     "datasync/freshness.py": {"em dash": 8},
     "drinking/glossary.py": {"em dash": 1},
     "drinking/ps_codes.py": {"em dash": 1},
@@ -89,27 +97,59 @@ BASELINE: dict = {
     "reporting/generators.py": {"em dash": 2},
     "reporting/validators.py": {"em dash": 17},
     "reporting/views.py": {"em dash": 1},
-    "setup/boundaries.py": {"em dash": 3},
+    "setup/boundaries.py": {"em dash": 3, "district reader": 1},
     "surface/views.py": {"double hyphen": 3},
-    "CONTRIBUTING.md": {"em dash": 10},
-    "DEPLOY.md": {"em dash": 124, "filler": 22, "stand-in": 3},
+    "CONTRIBUTING.md": {"em dash": 10, "California": 1},
+    "DEPLOY.md": {"em dash": 124, "filler": 22, "stand-in": 3, "district reader": 29},
     "MAINTAINER.md": {"em dash": 10},
-    "README.md": {"em dash": 49, "filler": 3, "stand-in": 4},
+    "README.md": {"em dash": 49, "filler": 3, "stand-in": 4, "district reader": 16, "California": 1},
     "SECURITY.md": {"em dash": 3},
-    "docs/AI-OPERATOR-GUIDE.md": {"filler": 11, "paired heading": 1, "stand-in": 1},
-    "docs/DATA-IMPORT.md": {"double hyphen": 8, "filler": 2, "stand-in": 1},
-    "docs/DATA-STANDARDS.md": {"em dash": 13, "filler": 1, "stand-in": 1},
-    "docs/INSTALL-WITHOUT-DOCKER.md": {"em dash": 41, "filler": 7, "paired heading": 3, "stand-in": 3},
-    "docs/README.md": {"em dash": 4},
-    "docs/ROADMAP.md": {"em dash": 14, "filler": 3},
-    "docs/earth-engine-tier-setup.md": {"em dash": 3, "filler": 5},
-    "docs/water-budget-terms.md": {"filler": 1},
+    "docs/AI-OPERATOR-GUIDE.md": {"filler": 11, "paired heading": 1, "stand-in": 1, "district reader": 47, "California": 1},
+    "docs/DATA-IMPORT.md": {"double hyphen": 8, "filler": 2, "stand-in": 1, "district reader": 5},
+    "docs/DATA-STANDARDS.md": {"em dash": 13, "filler": 1, "stand-in": 1, "district reader": 4, "California": 1},
+    "docs/INSTALL-WITHOUT-DOCKER.md": {"em dash": 41, "filler": 7, "paired heading": 3, "stand-in": 3, "district reader": 7},
+    "docs/README.md": {"em dash": 4, "district reader": 1},
+    "docs/ROADMAP.md": {"em dash": 14, "filler": 3, "district reader": 3, "California": 1},
+    "docs/earth-engine-tier-setup.md": {"em dash": 3, "filler": 5, "district reader": 15, "California": 1},
+    "docs/water-budget-terms.md": {"filler": 1, "district reader": 2},
+    # 2026-10-11: the "district reader" and "California" shapes joined at their
+    # counts that day (150.4-01). 150.4-02, 150.1-02 and 150.1-03 lower them.
+    "templates/about.html": {"district reader": 4, "California": 1},
+    "templates/account/signup_closed.html": {"district reader": 3},
+    "templates/accounting/dashboard.html": {"district reader": 1},
+    "templates/accounting/delivery_settings.html": {"district reader": 3},
+    "templates/accounting/partials/_dashboard_content.html": {"district reader": 2},
+    "templates/datasync/monitoring_dashboard.html": {"district reader": 1},
+    "templates/drinking/facility_form.html": {"district reader": 1},
+    "templates/geography/partials/_zone_recovery_horizon.html": {"district reader": 3},
+    "templates/geography/zone_create.html": {"district reader": 1},
+    "templates/geography/zone_detail.html": {"district reader": 1},
+    "templates/geography/zone_list.html": {"district reader": 1},
+    "templates/help/budgets_allocations.html": {"district reader": 1},
+    "templates/help/getting_started.html": {"district reader": 2},
+    "templates/help/methods.html": {"district reader": 3},
+    "templates/help/partials/_the_subtraction.html": {"district reader": 2},
+    "templates/help/settings_explained.html": {"district reader": 6},
+    "templates/help/surface_deliveries.html": {"district reader": 3},
+    "templates/help/water_balances.html": {"district reader": 1},
+    "templates/index.html": {"district reader": 1},
+    "templates/infrastructure/import.html": {"California": 1},
+    "templates/parcels/partials/_detail_pane.html": {"district reader": 2},
+    "templates/parcels/partials/_list_results.html": {"district reader": 1},
+    "templates/reporting/partials/_handoff.html": {"district reader": 1},
+    "templates/reporting/partials/_status_section.html": {"district reader": 3},
+    "templates/setup/wizard.html": {"district reader": 3},
+    "templates/surface/partials/_diversion_import_preview.html": {"California": 1},
+    "config/views.py": {"district reader": 4},
 }
 
 _ADVICE = (
     "An em dash or double hyphen becomes a colon, a comma, a full stop or "
     "parentheses. A filler word comes out. A heading in two clauses becomes one "
-    "plain question or one plain statement (DESIGN.md copy rule 15)."
+    "plain question or one plain statement (DESIGN.md copy rule 15). A district "
+    "reader names who really acts (\"An administrator can\", \"unless an "
+    "administrator changes it\", \"the area you manage water for\"); a general "
+    "\"California\" says the general thing (DESIGN.md copy rule 11)."
 )
 
 
@@ -220,3 +260,89 @@ def test_text_no_reader_sees_stays_silent():
     assert set(shapes.count_file("planted.py", python).values()) == {0}
     guide = "```\nmake up  # really — a shell comment\n```\n| Code | Unit |\n|---|---|\n| x | — |\n"
     assert set(shapes.count_file("planted.md", guide).values()) == {0}
+
+
+# -- District reader and California (150.4-01) --------------------------------
+
+def test_a_planted_district_reader_is_caught_on_every_surface():
+    """The sentences Brent's 2026-10-11 20:36 PDT approval replaced, as they read."""
+    template = (
+        "<td>A district can reorder those steps or switch any of them off.</td>"
+        "<td>75 percent unless the district changes it.</td>"
+        "<p>Give the Setup Wizard your district&rsquo;s boundary.</p>"
+        '<input placeholder="District name">'
+    )
+    assert _template(template)["district reader"] == 4
+    python = 'HELP = "These agency-wide settings apply to the whole agency."\n'
+    assert shapes.count_file("planted.py", python)["district reader"] == 2
+    guide = "Ask your agency for an account.\n"
+    assert shapes.count_file("planted.md", guide)["district reader"] == 1
+
+
+def test_the_approved_replacements_carry_no_district_reader():
+    approved = (
+        "<td>An administrator can reorder those steps or switch any of them off.</td>"
+        "<td>75 percent unless an administrator changes it.</td>"
+        "<td>An administrator or operator sets an allocation ceiling on Allocations.</td>"
+        "<p>Give the Setup Wizard the boundary of the area you manage water for.</p>"
+        "<p>OpenH2O is for anyone who keeps water records, anywhere in the United States: "
+        "engineers and managers at water agencies and districts, growers, ditch tenders "
+        "and drinking-water system operators.</p>"
+    )
+    assert _template(approved)["district reader"] == 0
+
+
+def test_a_district_or_agency_in_the_water_world_is_not_a_reader():
+    entity = (
+        "<p>The regulating agency was recorded from the file.</p>"
+        "<p>State classification and regulating agency; a lab import fills the agency.</p>"
+        "<p>not for the agency that regulates it.</p>"
+        "<p>Pick an area, such as the land an irrigation district serves.</p>"
+        "<p>the local agency responsible for managing groundwater under SGMA.</p>"
+    )
+    assert _template(entity)["district reader"] == 0
+
+
+def test_a_planted_generic_california_is_caught_on_every_surface():
+    assert _template("<p>Decimal degrees inside California.</p>")["California"] == 1
+    python = 'MESSAGE = "outside the expected California range."\n'
+    assert shapes.count_file("planted.py", python)["California"] == 1
+    guide = "a platform a California water agency can stand up\n"
+    assert shapes.count_file("planted.md", guide)["California"] == 1
+
+
+def test_a_california_proper_name_is_not_counted():
+    names = (
+        "<p>California Data Exchange Center, real-time data.</p>"
+        "<p>the California law requiring groundwater management.</p>"
+        "<p>ELAP is California's Environmental Laboratory Accreditation Program.</p>"
+    )
+    assert _template(names)["California"] == 0
+
+
+def _every_text_read():
+    texts = []
+    for files in shapes.surfaces().values():
+        for rel in files:
+            source = (REPO_ROOT / rel).read_text()
+            if rel.endswith(".html"):
+                texts.extend(shapes.template_text(source)[0])
+            elif rel.endswith(".py"):
+                texts.extend(shapes.python_strings(source))
+            else:
+                texts.extend(shapes.guide_text(source)[0])
+    return "\n".join(texts)
+
+
+def test_every_kept_name_and_phrase_is_still_used():
+    """A kept name no page uses any more would let a generic one through later."""
+    text = _every_text_read()
+    stale = [
+        name for name, _ in shapes.CALIFORNIA_NAMES + shapes.DISTRICT_ENTITY
+        if not re.search(name, text, re.I)
+    ]
+    assert not stale, (
+        "these kept names match nothing the scanner reads; take them out of "
+        "CALIFORNIA_NAMES or DISTRICT_ENTITY in scripts/writing_shapes.py: "
+        + "; ".join(stale)
+    )

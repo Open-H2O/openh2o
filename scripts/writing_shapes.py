@@ -11,7 +11,12 @@ them can be found by pattern, and this script counts those four:
   why, when, which);
 - a heading that ends in a trailing clause, ", by what" or ", by which";
 - a stand-in the reader has to resolve ("that platform", "both are", "the
-  former") where the name itself should be repeated.
+  former") where the name itself should be repeated;
+- a district reader: a phrase that assumes whoever reads the page is a water
+  district or agency ("your district", "a district can", "unless the
+  district", "agency-wide");
+- "California" said where a general statement works, outside the proper
+  names in ``CALIFORNIA_NAMES``.
 
 A phrase posing as a statement, a thing acting like a person and a slogan need
 a reader. This script does not try to find them.
@@ -103,8 +108,66 @@ STAND_IN = re.compile(
     r"\b(?:that|those|said) (?:platform|system|software|project|tool|method|code|program"
     r"|agency|page)s?\b|\bboth (?:are|were|use|run|have)\b|\bthe (?:former|latter)\b", re.I)
 
+#: A phrase that puts the reader in a water district or agency. Brent,
+#: 2026-10-11 18:01 PDT: "we want openh2o to be used nationally ... some users
+#: may not be districts, they may be growers or ditchtenders." He approved the
+#: replacements at 20:36 PDT ("An administrator can ...", "unless an
+#: administrator changes it", "the area you manage water for"). A district or
+#: agency that is a real thing in the water world, and not the reader, does not
+#: match: "the regulating agency", "the primacy agency", "a GSA" under SGMA, "an
+#: irrigation district" as one kind of supplier, "the agency that regulates it".
+#: Replayed against f4b18da before it was installed; the numbers are in
+#: .planning/phases/150.4-national-role-neutral-tone-pass/150.4-01-REPLAY.md.
+DISTRICT_READER = re.compile(
+    r"\b(?:your|our|this) (?:district|agency|gsa)\b"
+    r"|\b(?:an?|the) (?:water |groundwater )?(?:district|agency)\b(?!\s+that\s+regulates)"
+    r"|\bagency[- ](?:wide|default|boundary)\b"
+    r"|\bdistrict (?:name|water balance|total)\b"
+    r"|\b(?:one|another) (?:district|agency)\b|\bagency-drawn\b|\bper-agency\b"
+    r"|\bthe whole agency\b|\bfor districts and agencies\b|@district\.gov|\bmy[- ]gsa\b",
+    re.I)
+
+#: Phrases where "the agency" is the regulating agency of a water system, read
+#: out of a lab file, and not the reader. Removed before DISTRICT_READER counts.
+DISTRICT_ENTITY: tuple = (
+    (r"fills the agency", "a lab import fills in the system's regulating agency"),
+)
+_DISTRICT_KEPT = re.compile("|".join(f"(?:{phrase})" for phrase, _ in DISTRICT_ENTITY), re.I)
+
+
+def district_reader_count(text: str) -> int:
+    """Each phrase in ``text`` that assumes the reader is a district or agency."""
+    return len(DISTRICT_READER.findall(_DISTRICT_KEPT.sub(" ", text)))
+
+#: "California" where it names a real thing and stays, one reason each. Every
+#: other "California" is a general statement written for one state, and is
+#: counted. ``tests/test_writing_shapes.py`` fails on an entry no surface uses.
+CALIFORNIA_NAMES: tuple = (
+    (r"California Water Data Consortium", "the organization that oversees the earlier platform"),
+    (r"California Water Accounting, Tracking, and Reporting System", "CalWATRS spelled out"),
+    (r"California Data Exchange Center", "CDEC spelled out"),
+    (r"California Irrigation Management Information System", "CIMIS spelled out"),
+    (r"California Nevada River Forecast Center", "CNRFC spelled out"),
+    (r"California Department of Water Resources", "DWR spelled out"),
+    (r"California's Environmental Laboratory Accreditation Program", "ELAP spelled out"),
+    (r"California's accreditation of laboratories", "ELAP is a California program"),
+    (r"the California law requiring groundwater management", "SGMA is a California law"),
+    (r"California's \**Sustainable Groundwater Management Act", "SGMA spelled out"),
+    (r"California DDW", "DDW is California's Division of Drinking Water"),
+    (r"real,? (?:published )?California basin", "the demonstration's real geography"),
+    (r"open up California's water data", "the Consortium's purpose, in its own terms"),
+)
+CALIFORNIA = re.compile(r"\bCalifornia\b")
+_CALIFORNIA_KEPT = re.compile("|".join(f"(?:{name})" for name, _ in CALIFORNIA_NAMES))
+
+
+def california_count(text: str) -> int:
+    """Each "California" in ``text`` outside a name in ``CALIFORNIA_NAMES``."""
+    return len(CALIFORNIA.findall(_CALIFORNIA_KEPT.sub(" ", text)))
+
+
 SHAPES: tuple = ("em dash", "double hyphen", "filler", "paired heading", "trailing heading",
-                 "stand-in")
+                 "stand-in", "district reader", "California")
 
 
 # -- Templates ----------------------------------------------------------------
@@ -265,6 +328,8 @@ def count(runs: list, headings: list) -> dict:
         "paired heading": sum(1 for h in headings if PAIRED_HEADING.search(h)),
         "trailing heading": sum(1 for h in headings if TRAILING_HEADING.search(h)),
         "stand-in": len(STAND_IN.findall(text)),
+        "district reader": district_reader_count(text),
+        "California": california_count(text),
     }
 
 
