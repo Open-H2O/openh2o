@@ -5514,9 +5514,26 @@ details[open] > summary .disclosure-mark {
 /* -- The water year's calculation notes as one table (2026-10-12) ---------- */
 /* Each group's label sits in the first cell of its first row; the figures and
    the point names keep to one line so the label column takes the wrap. */
-.calculation-notes-table td:first-child { min-width: 22ch; }
-.calculation-notes-table td.td-num, .calculation-notes-table td.td-num-bold,
-.calculation-notes-table th.th-right, .calculation-notes-table td:last-child { white-space: nowrap; }
+/* Each item is its own tbody (Brent, 16:47: "They all look like they're the
+   same thing"): a shaded band with its label, a heavier rule above every band
+   after the first, the points indented under it, a total in the shared
+   `.row-subtotal` row. The band is excluded from the zebra stripe. */
+.calculation-notes-table tr.note-group-head td,
+.calculation-notes-table tbody tr.note-group-head:nth-child(even) td {
+    text-align: left;
+    color: var(--color-text-secondary);
+    background-color: color-mix(in srgb, var(--color-elevated) 85%, transparent);
+    border-top: 1px solid var(--color-border-hover);
+    border-bottom: 1px solid var(--color-border-hover);
+    padding-block: 10px;
+}
+.calculation-notes-table tr.note-group-head strong { color: var(--color-text-primary); }
+.calculation-notes-table tbody + tbody tr.note-group-head td {
+    border-top: 3px solid var(--color-border-hover);
+}
+.calculation-notes-table td.note-point { padding-left: var(--space-xl); }
+.calculation-notes-table td.td-num, .calculation-notes-table th.th-right,
+.calculation-notes-table td.note-point { white-space: nowrap; }
 
 /* -- Allocations list, the water-year page (143-06) ----------------------- */
 /* The allocations card carries no padding (the table fills it, the ledger's
