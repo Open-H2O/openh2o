@@ -384,7 +384,14 @@ def estimate_month(first, notes):
             f"Estimated from the fields' crop water use: {headgate:,.2f} AF.{cap_text}",
             period,
         )
-        notes.append({"kind": "estimate_written", "pod": point.name, "month": first})
+        notes.append(
+            {
+                "kind": "estimate_written",
+                "pod": point.name,
+                "month": first,
+                "estimate_af": written,
+            }
+        )
         if written < headgate:
             notes.append(
                 {

@@ -594,6 +594,11 @@ def _calculation_card_context(period):
         )
     else:
         context["calculation_who"] = _CALCULATION_WHO.get(latest.trigger, "")
+    # The run's notes: sentences above, table groups in one table below them
+    # (Brent, 2026-10-12 16:07 PDT). A run from before stores sentences only.
+    notes = latest.notes or []
+    context["calculation_note_sentences"] = [n for n in notes if not isinstance(n, dict)]
+    context["calculation_note_table"] = [n for n in notes if isinstance(n, dict)]
     badge = _CALCULATION_BADGE.get(latest.status)
     if badge:
         context["calculation_badge_class"], context["calculation_badge_text"] = badge

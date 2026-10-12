@@ -17,10 +17,34 @@
   <div class="mb-sm"><span class="badge badge-pill {{ calculation_badge_class }}">{{ calculation_badge_text }}</span></div>
   <p class="text-base m-0">{{ calculation.outcome }}</p>
   <p class="text-tertiary text-sm" style="margin: var(--space-xs) 0 0;">{{ calculation.finished_at|date:"M j, Y, g:i A" }}, {{ calculation_who }}</p>
-  {% if calculation.notes %}
+  {% if calculation_note_sentences %}
   <ul class="concept-list text-secondary text-base mt-sm">
-    {% for note in calculation.notes %}<li>{{ note }}</li>{% endfor %}
+    {% for note in calculation_note_sentences %}<li>{{ note }}</li>{% endfor %}
   </ul>
+  {% endif %}
+  {% if calculation_note_table %}
+  {# Brent, 2026-10-12 16:07 PDT ("yes" to the mock-up): the run's figures as one table, not bullets. #}
+  <h3 class="section-header-sm mt-md">What the calculation found</h3>
+  <div class="table-scroll">
+  <table class="data-table calculation-notes-table">
+    <thead><tr><th></th><th class="th-right">Acre-feet</th><th>Point of diversion</th></tr></thead>
+    <tbody>
+    {% for group in calculation_note_table %}{% for row in group.rows %}
+    <tr>
+      <td class="text-secondary">{% if forloop.first %}<strong class="text-primary">{{ group.lead }}</strong>{{ group.rest }}{% endif %}</td>
+      <td class="td-num">{% if row.af %}{{ row.af }}{% else %}&mdash;{% endif %}</td>
+      <td>{{ row.where }}</td>
+    </tr>
+    {% endfor %}{% if group.total %}
+    <tr>
+      <td></td>
+      <td class="td-num-bold">{{ group.total }}</td>
+      <td class="text-secondary">Total</td>
+    </tr>
+    {% endif %}{% endfor %}
+    </tbody>
+  </table>
+  </div>
   {% endif %}
   {% endif %}
 </div>

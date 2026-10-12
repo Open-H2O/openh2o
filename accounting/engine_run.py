@@ -261,7 +261,7 @@ def _amount(value):
     return f"{Decimal(value):,.2f}"
 
 
-def _note_sentences(raw):
+def _note_sentences(raw, *, tabled=False):
     """Plain sentences for what the canal division raised: ``(attention, info)``.
 
     ``attention`` is what someone has to look at: fields' own delivery records
@@ -274,6 +274,12 @@ def _note_sentences(raw):
     Two more information sentences came with canal losses (149-02): the
     evaporation and spill every point wrote off this period, in ONE sentence,
     and one sentence for each point-month whose seepage had no zone to go to.
+
+    ``tabled=True`` (2026-10-12, Brent: the notes as one table) leaves out the
+    four kinds ``_note_table`` sets out as rows instead: the headgate water left
+    over, canal evaporation and spill, the unmetered estimates and the curtailed
+    points. A run stores those as table groups; the sentences stay the default
+    so a caller reading one month's notes still gets plain sentences.
     """
     attention = []
     unexplained = defaultdict(lambda: Decimal("0"))
@@ -323,7 +329,7 @@ def _note_sentences(raw):
         elif note.get("kind") == "estimate_right_not_active":
             not_active[note["status"]].add(note["pod"])
     info = []
-    if unexplained:
+    if unexplained and not tabled:
         # Brent's wording, 2026-10-06: the ruled phrase "canal water beyond
         # what the crop could use", the canals named with their amounts,
         # largest first, and what happens to it.
@@ -339,7 +345,7 @@ def _note_sentences(raw):
             f"received its ETAW divided by its irrigation efficiency ({each}). "
             f"OpenH2O lists it on Site Health under Unallocated Delivery."
         )
-    if loss_points:
+    if loss_points and not tabled:
         # Working copy for Brent's checkpoint (149-02). Only the losses that
         # are above zero are named.
         # Brent, 2026-10-12 15:18 PDT ("yes"; "subtracted", not "wrote off"):
@@ -364,7 +370,7 @@ def _note_sentences(raw):
         )
     # Estimates for a ditch with no meter (149-02). Working copy for Brent's
     # checkpoint. They keep a run green: an estimate is information, never a fault.
-    if estimated_points:
+    if estimated_points and not tabled:
         points, months = len(estimated_points), len(estimated_months)
         # Brent, 2026-10-12 15:18 PDT ("yes"; "1 unmetered point of
         # diversion", 15:06). The basis is ETAW / efficiency (surface/estimate.py).
@@ -397,6 +403,8 @@ def _note_sentences(raw):
             f"{'each has' if len(no_right) > 1 else 'it has'} no water right linked."
         )
     for status, pods in sorted(not_active.items()):
+        if status == "curtailed" and tabled:
+            continue
         if status == "curtailed":
             # Brent, 2026-10-12 15:18 PDT ("yes"): an order stops the estimate
             # only in the months it covers (surface/estimate.py).
@@ -417,6 +425,127 @@ def _note_sentences(raw):
             f"up to the whole of the water diverted."
         )
     return attention, info
+
+
+# The run's notes as one table (Brent, 2026-10-12 16:07 PDT, "yes" to the
+# mock-up, after "Providing this kind of detailed information in bullet
+# narrative form is a little clunky." at 15:55). Each group is stored on the
+# run as a dict: its lead words (bold on the page), the rest of its label, one
+# row per point of diversion with the acre-feet already formatted, and a total
+# when a group has more than one point. The words are the sentences he
+# approved at 15:18, cut to a label. A run stores these after its sentences, so
+# Site Health's first note is still a sentence.
+_TABLE_LABELS = {
+    "unallocated": (
+        "Headgate water left after each field received its ETAW divided by its "
+        "irrigation efficiency.",
+        " Listed on Site Health under Unallocated Delivery.",
+    ),
+    "evaporation": ("Canal evaporation subtracted from the water diverted", ""),
+    "spill": ("Canal spill subtracted from the water diverted", ""),
+    "estimate": (
+        "Delivery estimated at an unmetered point of diversion",
+        ", from the ETAW of the fields it serves divided by each field's "
+        "irrigation efficiency. An estimate, not a measurement.",
+    ),
+    "curtailed": (
+        "No delivery estimated",
+        " in the months a curtailment order covers the water right",
+    ),
+}
+
+
+def _table_group(key, rows):
+    lead, rest = _TABLE_LABELS[key]
+    amounts = [Decimal(af) for _where, af in rows if af is not None]
+    total = (
+        _amount(sum(amounts, Decimal("0")))
+        if len(rows) > 1 and len(amounts) == len(rows)
+        else None
+    )
+    return {
+        "table": key,
+        "lead": lead,
+        "rest": rest,
+        "rows": [
+            {"af": _amount(af) if af is not None else None, "where": where}
+            for where, af in rows
+        ],
+        "total": total,
+    }
+
+
+def _note_table(raw):
+    """The four kinds of note a run sets out as a table, one group per kind.
+
+    Groups come in a fixed order (left over, evaporation, spill, estimates,
+    curtailed); rows with an amount run largest first, the others by name. A
+    kind with nothing to say has no group.
+    """
+    unexplained = defaultdict(lambda: Decimal("0"))
+    evaporation = defaultdict(lambda: Decimal("0"))
+    spill = defaultdict(lambda: Decimal("0"))
+    estimated = defaultdict(lambda: Decimal("0"))
+    estimated_known = defaultdict(lambda: True)
+    estimated_months = defaultdict(set)
+    curtailed = set()
+    for note in raw:
+        kind = note.get("kind")
+        if kind == "unallocated":
+            unexplained[note["pod"]] += Decimal(note["amount_af"])
+        elif kind == "canal_losses":
+            evaporation[note["pod"]] += Decimal(note["evaporation_af"])
+            spill[note["pod"]] += Decimal(note["spill_af"])
+        elif kind == "estimate_written":
+            estimated_months[note["pod"]].add(note["month"])
+            if note.get("estimate_af") is None:
+                estimated_known[note["pod"]] = False
+            else:
+                estimated[note["pod"]] += Decimal(note["estimate_af"])
+        elif kind == "estimate_right_not_active" and note.get("status") == "curtailed":
+            curtailed.add(note["pod"])
+
+    def largest_first(amounts):
+        return [
+            (pod, af)
+            for pod, af in sorted(amounts.items(), key=lambda kv: (-kv[1], kv[0]))
+            if af > 0
+        ]
+
+    groups = []
+    for key, amounts in (
+        ("unallocated", unexplained),
+        ("evaporation", evaporation),
+        ("spill", spill),
+    ):
+        rows = largest_first(amounts)
+        if rows:
+            groups.append(_table_group(key, rows))
+    if estimated_months:
+        rows = []
+        for pod in sorted(estimated_months):
+            count = len(estimated_months[pod])
+            where = f"{pod}, {count} month{'s' if count != 1 else ''}"
+            rows.append((where, estimated[pod] if estimated_known[pod] else None))
+        groups.append(_table_group("estimate", rows))
+    if curtailed:
+        groups.append(_table_group("curtailed", [(pod, None) for pod in sorted(curtailed)]))
+    return groups
+
+
+def note_lines(note):
+    """A stored note as plain lines: a sentence as itself, a table group as
+    its label and one line per point (the command line and anything else that
+    prints text)."""
+    if not isinstance(note, dict):
+        return [str(note)]
+    lines = [f"{note['lead']}{note['rest']}"]
+    for row in note["rows"]:
+        amount = f"{row['af']} AF" if row["af"] is not None else "no amount"
+        lines.append(f"    {row['where']}: {amount}")
+    if note.get("total"):
+        lines.append(f"    Total: {note['total']} AF")
+    return lines
 
 
 def _names(pods):
@@ -601,8 +730,8 @@ def _run(request_obj, notes):
     # Months with no crop water use data yet are the normal state of a year in
     # progress (the data arrives a month or two behind), so they are a note,
     # never a reason for the run to read as needing attention.
-    attention, info = _note_sentences(raw)
-    notes.extend(attention + skipped + info)
+    attention, info = _note_sentences(raw, tabled=True)
+    notes.extend(attention + skipped + info + _note_table(raw))
     if not to_run:
         outcome = "There was no crop water use data to calculate yet."
     elif len(to_run) == 1:

@@ -28,6 +28,7 @@ from accounting.engine_run import (
     MONTH_RE,
     create_request,
     month_date,
+    note_lines,
     run_queue,
 )
 from accounting.models import CalculationRequest, ReportingPeriod
@@ -158,5 +159,8 @@ class Command(BaseCommand):
         else:
             self.stdout.write(line)
         for note in req.notes or []:
-            self.stdout.write(f"  - {note}")
+            first, *rest = note_lines(note)
+            self.stdout.write(f"  - {first}")
+            for line in rest:
+                self.stdout.write(f"  {line}")
 

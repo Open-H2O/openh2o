@@ -512,10 +512,12 @@ def test_a_run_with_losses_stays_green_and_says_what_was_written_off(engine_worl
     # 30 AF x 0.01 = 0.30 evaporation, x 0.02 = 0.60 spill, x 0.12 = 3.60
     # seepage; 30 - 0.30 - 3.60 - 0.60 = 25.50 left for the field
     assert req.status == "succeeded"
-    assert (
-        "OpenH2O subtracted 0.30 AF of canal evaporation and 0.60 AF of spill "
-        "from the water diverted at 1 point of diversion in the months calculated."
-    ) in req.notes
+    # A run stores the losses as table groups (Brent, 2026-10-12 16:07 PDT).
+    groups = {n["table"]: n for n in req.notes if isinstance(n, dict)}
+    assert groups["evaporation"]["rows"] == [
+        {"af": "0.30", "where": "Test Canal Headgate"}
+    ]
+    assert groups["spill"]["rows"] == [{"af": "0.60", "where": "Test Canal Headgate"}]
     assert (
         "Canal seepage of 3.60 AF at Test Canal Headgate in January 2024 has "
         "no district zone to go to."
