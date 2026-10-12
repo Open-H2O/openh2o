@@ -40,7 +40,7 @@ budget); a unit stated once in the caller's own subtitle, never on a column.
     <tr>
       <th class="th-right">Surface</th>
       <th class="th-right">Groundwater</th>
-      <th class="th-right">Rain</th>
+      <th class="th-right"><span class="th-stack">Effective precipitation</span></th>
       <th class="th-right">Total</th>
       {% if has_allocations %}
       <th class="th-right col-sep">Allocation{% include "partials/_explainer_popout.html" with title="GW allocation" text="This account's share of the water year's groundwater allocation, pro-rated by how many of its use areas fall in each groundwater zone. Surface-water allocation is a separate budget and is not counted here." link=budgets_help_url link_label="How budgets & allocations work" %}</th>
@@ -128,3 +128,4 @@ budget); a unit stated once in the caller's own subtitle, never on a column.
 <a href="{% url 'accounting:account_create' %}" class="link-accent text-sm">+ New account</a>
 {% endif %}
 {% comment %}150.1-02 screen 2, Dashboard: the heading "Water balance", the row "Total", the empty-site line, the over-budget count, the Remaining pop-out and the fields-table pop-out are Brent's approved sentences (2026-10-12 12:04 PDT, "Everything looks great, approved."; recorded in brent-sentence-corrections.md). A balance that prints 0.00 is "Balanced" (ISS-237, his choice the same minute). Notes sit at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
+{% comment %}"Effective precipitation" for the figure that read "Rain" (CalculationRun.effective_precip_af): Brent 2026-10-12 13:21 PDT, "The wording is approved." (150.1-02 screen 3). Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}

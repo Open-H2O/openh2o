@@ -244,7 +244,7 @@ def test_the_breakdown_says_of_which():
     assert "Supplies by source" in html
     assert "<span>Surface</span><b>0.00</b>" in html
     assert "<span>Groundwater</span><b>37.50</b>" in html
-    assert "<span>Rain</span><b>0.00</b>" in html
+    assert "<span>Effective precipitation</span><b>0.00</b>" in html
 
 
 def test_the_panel_names_its_population():
@@ -306,7 +306,7 @@ def test_the_accounts_table_reads_as_the_equation():
 
     assert _header_rows(table) == [
         ["Account", "Supplies", "Crop ET", "Balance", "Groundwater budget"],
-        ["Surface", "Groundwater", "Rain", "Total", "Allocation", "Remaining"],
+        ["Surface", "Groundwater", "Effective precipitation", "Total", "Allocation", "Remaining"],
     ]
     assert 'colspan="4"' in table
     assert 'colspan="2"' in table
@@ -320,7 +320,7 @@ def test_the_zones_table_spans_three_budget_columns():
 
     assert _header_rows(table) == [
         ["Zone", "Supplies", "Crop ET", "Balance", "Groundwater budget"],
-        ["Surface", "Groundwater", "Rain", "Total", "Allocation", "Carried fwd", "Remaining"],
+        ["Surface", "Groundwater", "Effective precipitation", "Total", "Allocation", "Carried fwd", "Remaining"],
     ]
     assert 'colspan="3"' in table
 

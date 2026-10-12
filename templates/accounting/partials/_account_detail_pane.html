@@ -48,7 +48,7 @@
   <div class="alert-warning">
     <strong>Curtailment in effect.</strong>
     {% for o in curtailment_orders %}{{ o.title }}{% if not forloop.last %}; {% endif %}{% endfor %}
-    Surface deliveries to this account's curtailed parcels stop after the curtailment date.
+    OpenH2O estimates no surface water delivery under the curtailed right for any month the order covers, even in part. A delivery recorded for that month stays on the record and counts.
   </div>
   {% endif %}
 
@@ -224,3 +224,4 @@
 
   </div>
 </div>
+{% comment %}The curtailment sentence above: Brent 2026-10-12 13:21 PDT, "The wording is approved." It says what the software does (surface/estimate.py skips an estimate for any month surface/curtailments.py orders_covering_month finds an order overlapping; nothing refuses a recorded delivery, ISS-239). The old line said deliveries stop, which OpenH2O does not do.{% endcomment %}

@@ -18,7 +18,7 @@
       type="button"
       hx-post="{% url 'accounting:remove_parcel' account.pk wap.pk %}"
       hx-target="#parcel-assignments"
-      hx-confirm="Remove parcel {{ wap.parcel.parcel_number }} from this account?"
+      hx-confirm="Remove use area {{ wap.parcel.parcel_number }} from this account?"
       class="assignment-chip-remove"
       aria-label="Remove {{ wap.parcel.parcel_number }} from this account"
       title="Remove from this account">&times;</button>{% endif %}

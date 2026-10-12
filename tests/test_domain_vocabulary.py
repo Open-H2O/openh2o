@@ -467,7 +467,15 @@ BASELINE: dict = {
     #   Brent approved at 09:43 PDT. The line it replaced gave the same months in
     #   parentheses; it states the default the New water year form fills in
     #   (October 1 to September 30), a convention of the form, not a lecture.
-    "templates/**/*.html": 14,
+    #   2026-10-12: 14 -> 15 for accounting/partials/_account_balances.html, whose
+    #   Balance pop-out reads "Groundwater is the meter reading on a use area with
+    #   a meter, and ETAW met by groundwater on a use area with a well and no
+    #   meter reading." and "A use area with a well and no meter reading balances
+    #   to zero ...", in the words Brent approved at 13:21 PDT ("The wording is
+    #   approved."). They say which figure the Groundwater column holds and when
+    #   OpenH2O's balance is zero, a data convention, not what groundwater or a
+    #   well is: a false positive (copular "groundwater", opening "well").
+    "templates/**/*.html": 15,
     "help_text=": 4,
 }
 

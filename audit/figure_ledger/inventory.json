@@ -247,7 +247,7 @@
     "kind": "figure",
     "template": "templates/accounting/partials/_account_balances.html",
     "line": 60,
-    "column": 92,
+    "column": 111,
     "expression": "{{ balance.supplies.precip|floatformat:2|intcomma }}",
     "enclosing_loop": null,
     "nearest_label": "{{ balance.supplies.precip|"
@@ -643,7 +643,7 @@
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
     "line": 55,
-    "column": 88,
+    "column": 107,
     "expression": "{{ grand_supply_precip|floatformat:2|intcomma }}",
     "enclosing_loop": null,
     "nearest_label": "{{ grand_supply_precip|"

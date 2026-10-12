@@ -166,7 +166,7 @@ def test_the_leaf_headers_run_in_equation_order(page):
         "Balance",
         "Surface",
         "Groundwater",
-        "Rain",
+        "Effective precipitation",
         "Total",
     ], f"the header no longer reads as the equation: {header_cells}"
 
@@ -177,7 +177,7 @@ def test_the_supplies_group_header_brackets_exactly_four_columns(page):
 
     assert '<th colspan="4" class="th-group-label">Supplies</th>' in html, (
         "the Supplies group header does not span exactly its own four columns, "
-        "so nothing shows that Surface + Groundwater + Rain make Total"
+        "so nothing shows that Surface + Groundwater + Effective precipitation make Total"
     )
 
 
@@ -215,7 +215,7 @@ def test_the_unit_is_stated_once_and_never_on_a_column(page):
 # -- One name per thing (DESIGN.md rule 6, copy rule 12) ---------------------
 
 
-def test_the_card_says_rain_and_balance_not_precip_and_net(page):
+def test_the_card_says_effective_precipitation_and_balance_not_precip_and_net(page):
     """R-037 / rule 6, and the reason this test exists at all.
 
     `tests/test_water_vocabulary.py` does NOT police these two words -- its
@@ -226,7 +226,10 @@ def test_the_card_says_rain_and_balance_not_precip_and_net(page):
     html, _account, _period = page
     header_cells = [c for row in _rows(html)[:2] for c in row]
 
-    assert "Rain" in header_cells and "Precip" not in header_cells
+    # Brent 2026-10-12 13:21 PDT approved "Effective precipitation": the figure is
+    # CalculationRun.effective_precip_af, not rainfall, so "Rain" was false.
+    assert "Effective precipitation" in header_cells and "Precip" not in header_cells
+    assert "Rain" not in header_cells
     assert "Balance" in header_cells
     assert "Net" not in header_cells
 
