@@ -5,7 +5,7 @@ Under the shipped default (``ACCESS_CONTROL_ENFORCED=True``) self-signup is
 closed at ``core/adapters.py``, and the login page nevertheless said *"No
 account yet? Create one"* and linked to allauth's own refusal page — which
 answers "We are sorry, but the sign up is currently closed" and carries no link
-of any kind. A district engineer who followed that invitation was told no and
+of any kind. A reader who followed that invitation was told no and
 given nowhere to go.
 
 **Every assertion here is against a rendered response, not template source.**

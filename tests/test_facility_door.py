@@ -3,7 +3,7 @@
 146-04 Task 3 (D9): a facility the operator adds by hand, with its local name.
 
 Until this plan a ``SystemFacility`` was written only by Envirofacts onboarding,
-so a source the district engineer had just assigned an id to did not exist in
+so a source the operator had just assigned an id to did not exist in
 the product until EPA published it. Shape 2's walk (Le Grand CSD) needed the
 operator's own name for a source beside the state's padded one (the memo's J8:
 "Cedar Well 02", the state's "WL 002 CEDAR WELL 02").

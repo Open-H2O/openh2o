@@ -2,13 +2,13 @@
 
 ## Project Overview
 
-A water-data management platform for California Groundwater Sustainability Agencies (GSAs) and water districts. It manages an agency's water data — measurements, deliveries, wells, surface diversions, mixed-use accounting, and managed aquifer recharge. When an agency files with the state, it can generate the data for the required reports (GEARS CSV, CalWATRS CSV); reporting is an optional feature, not the platform's purpose.
+A water-data management platform. OpenH2O is for anyone who keeps water records, anywhere in the United States: engineers and managers at water agencies and districts, growers, ditch tenders and drinking-water system operators. Each OpenH2O site keeps the water records of one organization: a district, an agency, a farm or a ditch company. It manages that organization's water data — measurements, deliveries, wells, surface diversions, mixed-use accounting, and managed aquifer recharge. Where an organization files with a state, it can generate the data for the required reports (California's GEARS CSV and CalWATRS CSV today); reporting is an optional feature, not the platform's purpose.
 
 ⚠ **There is NO working filing path, and no document or screen may imply one (Brent, 2026-08-05).** GEARS and CalWATRS are large state platforms that would each need work on their own side before they could accept data from this system, and that work has not been done. OpenH2O calculates the figures and writes them out in those systems' layouts; it cannot submit them, and neither system can currently take a file it produces. "Ready-to-file", "prepares the filing" and any upload instruction are all overclaims — every reader-facing mention must say plainly that OpenH2O does not submit to either system, in professional wording ("OpenH2O does not submit reports to the state"), never "wanted and not built", which Brent struck as unprofessional on 2026-09-23.
 
 ⚠ **Explain the software and the data conventions; never explain the water
-(BLOCKING).** The reader is a water district engineer or operator — there is no
-more expert audience alive on what a well is. This platform's own coined
+(BLOCKING).** OpenH2O is for anyone who keeps water records, anywhere in the United States: engineers and managers at water agencies and districts, growers, ditch tenders and drinking-water system operators.
+Every one of these readers knows water, so OpenH2O explains its own software and data and never the water. This platform's own coined
 concepts (Allocation Ceiling, Use Area, Ledger Entry), agency and program names
 (GEARS, SGMA, CDEC), and codes inside data it did not author (EPA's `STBY`,
 `GAC`, `DST`) all get explained, because none of those are hydrology. Water and
@@ -280,5 +280,5 @@ optional module, test it with rows present (ISS-091).
 - **Caddy, not nginx.** Auto-HTTPS with smaller configuration footprint.
 - **AUTH_USER_MODEL = 'core.User'** is set from day one. Never change this after migrations run.
 - **PostGIS from day one.** All geographic models use spatial fields.
-- **Single-tenant.** One deployment serves one agency. Multi-tenancy is out of scope by design.
+- **Single-tenant.** Each OpenH2O site keeps the water records of one organization: a district, an agency, a farm or a ditch company. Multi-tenancy is out of scope by design.
 - **License: AGPL-3.0-or-later.** If you modify and host it, you must offer users the source (see NOTICE).

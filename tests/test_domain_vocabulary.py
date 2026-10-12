@@ -18,7 +18,7 @@ in ``DESIGN.md`` and ``CLAUDE.md``; this is the half that cannot be argued with.
 **What this gate proves, and what it does not.** That a term from the list sits
 inside a *definitional construction* — the "A/An <thing>" noun-phrase opening,
 an appositive after a dash or colon, or a copular "X is a …". It cannot read a
-sentence and judge whether a district engineer would find it patronising, and it
+sentence and judge whether a reader who knows water would find it patronising, and it
 cannot see a water explanation written in a shape none of those three cover. It
 under-reaches on purpose, in the same way and for the same reason
 ``core/operator_vocabulary.py`` leaves a loose pattern out: a gate that cries
@@ -489,7 +489,7 @@ def test_the_facility_description_dictionary_stays_deleted():
     assert resurrected == [], (
         f"drinking/glossary.py has regrown {resurrected}. That dictionary gave "
         "every EPA facility code a sentence describing what the thing physically "
-        "is, to a reader who is a water district engineer, and the facility panel "
+        "is, to a reader who knows water, and the facility panel "
         "heading already carries EPA's own label. Deleted by ISS-129 on "
         "2026-08-06 — DESIGN.md copy rule 11. Do not restore it, and do not "
         "leave a stub with a live name."
@@ -505,8 +505,8 @@ def test_no_surface_gains_a_water_definition():
             climbed.append(f"{surface}: {baseline} -> {count}")
 
     assert not climbed, (
-        "these surfaces gained a definition of a water term. The reader is a "
-        "water district engineer; explain the software and the data "
+        "these surfaces gained a definition of a water term. Every reader "
+        "knows water; explain the software and the data "
         "conventions, never the water (DESIGN.md copy rule 11). Expand a code "
         "and stop. Lowering a baseline is the only legitimate edit to "
         "BASELINE: " + "; ".join(climbed)

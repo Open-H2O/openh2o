@@ -12,7 +12,7 @@ walks all 80 pages against it; Phases 141-144 work the register it produces.
 ## Part 1. The test, and what it is not
 
 **The two-audience test.** A reader who does not work in water can say what the screen
-is about and what the biggest number on it means; a district engineer can find the figure
+is about and what the biggest number on it means; a water professional (an agency or district engineer, a grower, a ditch tender) can find the figure
 they came for without reading the page.
 
 That is not the test the prior passes ran. A pass that checks that every table uses
@@ -41,7 +41,7 @@ read off a staging capture (commit `241c22b`, 2026-09-07), and says what explain
 itself looks like, without prescribing how. Copy rule 11 holds throughout: a surface
 explains the software and the data conventions, never the water.
 
-**L** marks the reader who does not work in water; **E** the district engineer.
+**L** marks the reader who does not work in water; **E** the water professional.
 
 ### Data table
 

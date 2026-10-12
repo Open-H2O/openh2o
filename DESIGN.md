@@ -465,10 +465,9 @@ of line and renders its second line onward as page text — the defect
 **The rule, in one sentence: explain the software and the data conventions;
 never explain the water.**
 
-**Who is reading.** Water district engineers and operators. There is no more
-expert audience on earth on the question of what a well is, what a canal does,
-or what evapotranspiration means — many of them have spent thirty years on it.
-A sentence telling that reader what a well is does not merely waste a line; it
+**Who is reading.** OpenH2O is for anyone who keeps water records, anywhere in the United States: engineers and managers at water agencies and districts, growers, ditch tenders and drinking-water system operators.
+Every one of these readers knows water, so OpenH2O explains its own software and data and never the water. Many of them have spent thirty years on what a well is, what a
+canal does or what evapotranspiration means. A sentence telling that reader what a well is does not merely waste a line; it
 tells them the product does not know who they are.
 
 **The axis is ownership, not difficulty.** This rule is not "no jargon" and not

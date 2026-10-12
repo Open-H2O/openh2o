@@ -4,7 +4,7 @@
 ``core/site_identity.py`` derives the pair from configuration the platform
 already holds — the agency name from ``SiteConfig``, the web address from
 ``ALLOWED_HOSTS`` — because the alternative was one more environment variable
-that a water-district engineer would never know to set.
+that a water manager would never know to set.
 
 These tests cover the derivation, the two filters that make it safe on a real
 production deployment, the guard that keeps it away from a value an operator

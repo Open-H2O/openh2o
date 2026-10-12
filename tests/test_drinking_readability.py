@@ -19,7 +19,7 @@ failures that this file must now guard against in both directions.
 
 1. **It explained the domain to the domain expert (ISS-129, 2026-08-06).** Three
    tests here MANDATED that the screens say what a well, a treatment plant and a
-   distribution system physically are — to water district engineers. Because the
+   distribution system physically are — to readers who know water. Because the
    tests held those sentences up, every correction made by hand was reverted by
    the suite on the next run; the mechanism, not the wording, was the defect. All
    three are gone, replaced by
@@ -169,8 +169,7 @@ class TestBuilderIsUsable:
         *mandated* a physical description for the facility panel — one demanded
         the word "pipes" on the rendered page, one demanded a sentence for all 22
         EPA codes, one demanded ``glossary.facility_type_plain("DS")`` say what a
-        distribution system is. The reader is a water district engineer or
-        operator, so every one of those sentences told an expert what a well is;
+        distribution system is. Every reader knows water, so every one of those sentences told an expert what a well is;
         and because the tests held them up, every correction made by hand was
         reverted by the suite on the next run. That mechanism, not the wording,
         is the defect ISS-129 was filed over.

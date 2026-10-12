@@ -561,7 +561,8 @@ def glossary(request):
     """Glossary of the terms this platform uses, for the operator running it.
 
     **This is a software glossary, not a hydrology one (DESIGN.md copy rule 11).**
-    The reader is a water district engineer or operator, so an entry answers
+    Every reader knows water (an agency or district engineer, a grower, a ditch
+    tender, a drinking-water operator), so an entry answers
     *what does this platform mean by X and what does it hold against one* — never
     *what is X*. Rewritten on that axis 2026-08-06 (ISS-129): "Well" used to read
     "A borehole used to draw groundwater", which told a thirty-year groundwater
