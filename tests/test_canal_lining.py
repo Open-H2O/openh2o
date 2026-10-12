@@ -5,8 +5,8 @@
 Brent, 2026-10-11 11:50 PDT: "Yes, lets add lined, unlined, and pipe choice to
 each point of diversion to help with seepage calcs." A point whose losses are
 still the platform's default takes 25 percent seepage if unlined, 5 percent if
-lined and 0 if pipe. A district's own figure (measured or district estimate)
-is never overwritten, and a point whose lining is not stated keeps whatever
+lined and 0 if pipe. A share marked as measured or estimated is never
+overwritten, and a point whose lining is not stated keeps whatever
 seepage it holds, so nothing moves until someone states the lining.
 """
 from decimal import Decimal
@@ -238,8 +238,9 @@ def test_page_shows_the_lining_and_where_the_default_comes_from(auth_client):
     html = auth_client.get(reverse("surface:pod_detail", args=[pod.pk])).content.decode()
     assert "Lining" in html and "Unlined" in html
     assert "25.00%" in html
-    assert "Merced Irrigation District&#x27;s 2020 Agricultural Water Management Plan" in html
-    assert "SacWAM" in html
+    assert "FAO Irrigation and Drainage Paper 61 gives unlined canals 20 to 30 percent" in html
+    assert "Published water management plans report canal evaporation" in html
+    assert "Platform default" in html
     assert "Spill depends on how the canal is operated" in html
 
 
@@ -264,7 +265,7 @@ def test_page_pipe_notes(auth_client):
     pod = PointOfDiversionFactory(lining="pipe", loss_basis="default")
     html = auth_client.get(reverse("surface:pod_detail", args=[pod.pk])).content.decode()
     assert "gives pipelines no seepage" in html
-    assert "Westlands Water District reports" in html
+    assert "A closed pipe has no open water surface" in html
     assert "Default for an open canal" not in html
 
 
@@ -296,6 +297,32 @@ def test_demo_lining_command_sets_each_named_point_once():
     assert apply_demo_pod_lining() == 0
     atwater.refresh_from_db()
     assert atwater.notes.count("Demonstration data") == 1
+
+
+def test_demo_lining_command_replaces_the_note_that_named_a_district():
+    """A re-run takes out the first-built note and keeps the point's own notes.
+
+    The first build appended a note naming a real district (Brent 2026-10-11
+    17:51 PDT rejected it). The El Nido intake's own description sat before it.
+    """
+    from core.management.commands.seed_merced_pod_lining import (
+        LINING_BY_POD,
+        apply_demo_pod_lining,
+    )
+
+    name = "MER-BPOD-001 El Nido Canal Recharge Intake"
+    own = "Shared recharge intake on the El Nido Canal."
+    retired = (
+        "Demonstration data: lining set to unlined, a real district's majority "
+        "(406 miles of unlined canal against 105 of lined canal). No published "
+        "source read states this canal's own lining."
+    )
+    intake = PointOfDiversionFactory(name=name, lining="unlined", notes=f"{own}\n\n{retired}")
+
+    assert apply_demo_pod_lining() == 1
+    intake.refresh_from_db()
+    assert intake.notes == f"{own}\n\n{LINING_BY_POD[name][1]}"
+    assert apply_demo_pod_lining() == 0
 
 
 def test_form_basis_help_points_at_the_shares_below_it():

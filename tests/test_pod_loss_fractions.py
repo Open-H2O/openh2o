@@ -158,7 +158,7 @@ def test_band_saves_and_the_page_shows_it(auth_client):
     detail = auth_client.get(reverse("surface:pod_detail", args=[pod.pk]))
     body = detail.content.decode()
     assert "±35%" in body or "±35.00%" in body
-    assert "District estimate" in body
+    assert "Estimated" in body
 
 
 # ---------------------------------------------------------------------------

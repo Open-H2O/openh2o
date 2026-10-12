@@ -203,22 +203,22 @@ class WaterRightParcel(models.Model):
 
 # Default seepage share by the canal's lining (150.3-01; Brent 2026-10-11
 # 11:50 PDT approved the lining choice on these three figures). Unlined 25
-# percent: Merced Irrigation District's 2020 Agricultural Water Management Plan
-# puts distribution seepage at 25.9 to 43.1 percent of its Merced River
-# diversion, 2016-2020 (Tables 18 and 22; seepage is the plan's closure term),
-# and FAO Irrigation and Drainage Paper 61, Table 10 (from USBR 1978), gives
-# unlined canals 20 to 30 percent of canal flow. Lined 5 percent: the mostly
-# lined Modesto and Turlock Irrigation Districts report channel seepage of 4.2
-# percent (MID 2025 plan, Table 47) and 6.4 percent (TID 2012 plan, Table 4.8)
-# of supply. Pipe 0: FAO Paper 61, Table 10, "Pipelines 0".
+# percent: the middle of FAO Irrigation and Drainage Paper 61, Table 10 (from
+# USBR 1978), unlined canals 20 to 30 percent of canal flow. Lined 5 percent:
+# two irrigation districts whose canals are about 90 percent lined report
+# channel seepage of 4.2 and 6.4 percent of supply in their published water
+# management plans (FAO's 15 to 20 percent for lined canals is not used). Pipe
+# 0: FAO Paper 61, Table 10, "Pipelines 0".
 #
-# Evaporation stays 1 percent for an open canal (SacWAM's evaporative loss
-# factor, 0.01 for every non-Delta demand unit; Modesto, Turlock and Imperial
-# Irrigation Districts report 0.3 to 1 percent) and is 0 for a pipe (Brent,
-# 2026-10-11 16:40 PDT, approving the recommended yes; Westlands Water
-# District's plan says its pipe system delivers "with virtually no losses to
-# seepage, evaporation, and spills"). Spill is not tied to lining by any source
-# read, so the lining never sets it.
+# Evaporation stays 1 percent for an open canal (published water management
+# plans report 0.3 to 1 percent of the diversion) and is 0 for a pipe (Brent,
+# 2026-10-11 16:40 PDT, approving the recommended yes). Spill is not tied to
+# lining by any source read, so the lining never sets it.
+#
+# The plans, tables and page numbers are in the audited research files
+# ~/Documents/Work/Research/water-swrcb/canal-loss-merced-area-2026-10-11.md and
+# canal-loss-lined-unlined-2026-10-11.md. Screens and notes name no district
+# (Brent 2026-10-11 17:51 and 18:01 PDT; words approved 18:43 PDT).
 UNLINED_DEFAULT_SEEPAGE = Decimal("0.2500")
 LINED_DEFAULT_SEEPAGE = Decimal("0.0500")
 PIPE_DEFAULT_SEEPAGE = Decimal("0")
@@ -294,8 +294,8 @@ class PointOfDiversion(models.Model):
     # computes with them. Nothing here does.
     LOSS_BASIS_CHOICES = [
         ("measured", "Measured"),
-        ("district_estimate", "District estimate"),
-        ("default", "Default (not district-specific)"),
+        ("district_estimate", "Estimated"),
+        ("default", "Platform default"),
     ]
     LINING_CHOICES = [
         ("unlined", "Unlined"),
@@ -314,15 +314,17 @@ class PointOfDiversion(models.Model):
         decimal_places=4,
         default=Decimal("0.0100"),
         help_text="Share of the diverted volume lost to evaporation off the "
-        "canal, about 1 percent by convention. An agency's own measured or "
-        "district figure replaces this default.",
+        "canal. The platform's default is 1 percent for an open canal and 0 "
+        "for a pipe. A share marked as measured or estimated replaces this "
+        "default.",
     )
     seepage_fraction = models.DecimalField(
         max_digits=5,
         decimal_places=4,
         default=Decimal("0"),
-        help_text="Share of the diverted volume lost to canal seepage. "
-        "Defaults to 0 (not stated) rather than guessing a district's figure.",
+        help_text="Share of the diverted volume lost to canal seepage. While "
+        "the basis is the platform's default and the lining is stated, OpenH2O "
+        "replaces this figure with the lining's default when you save.",
     )
     spill_fraction = models.DecimalField(
         max_digits=5,
@@ -337,31 +339,31 @@ class PointOfDiversion(models.Model):
         decimal_places=2,
         null=True,
         blank=True,
-        help_text="The district's stated uncertainty; blank when none is "
-        "stated; never a model spread.",
+        help_text="The uncertainty stated with this figure, left blank when "
+        "none is stated. OpenH2O never calculates it.",
     )
     seepage_band_percent = models.DecimalField(
         max_digits=5,
         decimal_places=2,
         null=True,
         blank=True,
-        help_text="The district's stated uncertainty; blank when none is "
-        "stated; never a model spread. Turlock publishes seepage at ±35%.",
+        help_text="The uncertainty stated with this figure, left blank when "
+        "none is stated. OpenH2O never calculates it.",
     )
     spill_band_percent = models.DecimalField(
         max_digits=5,
         decimal_places=2,
         null=True,
         blank=True,
-        help_text="The district's stated uncertainty; blank when none is "
-        "stated; never a model spread.",
+        help_text="The uncertainty stated with this figure, left blank when "
+        "none is stated. OpenH2O never calculates it.",
     )
     loss_basis = models.CharField(
         max_length=20,
         choices=LOSS_BASIS_CHOICES,
         default="default",
-        help_text="How the three shares above were set: measured on this "
-        "canal, a district estimate, or this platform's own default.",
+        help_text="How the three shares below were set: measured on this "
+        "canal, estimated for this canal, or the platform's default.",
     )
     # 150.3-01: blank means not stated, so a point nobody has described keeps
     # the seepage it holds. While loss_basis is "default", save() sets the
@@ -462,15 +464,12 @@ class PointOfDiversion(models.Model):
     # 2026-10-11 16:40 PDT: "approved"). Each names where a default figure
     # comes from, and is empty unless the basis is the platform's default.
     _SEEPAGE_DEFAULT_NOTES = {
-        "unlined": "Default for an unlined canal. Merced Irrigation District's "
-        "2020 Agricultural Water Management Plan reports distribution system "
-        "seepage of 26 to 43 percent of its Merced River diversion, and FAO "
-        "Irrigation and Drainage Paper 61 gives 20 to 30 percent for unlined "
-        "canals.",
-        "lined": "Default for a lined canal. Modesto and Turlock Irrigation "
-        "Districts, whose canals are about 90 percent lined, report canal "
-        "seepage of about 4 and 6 percent in their Agricultural Water "
-        "Management Plans.",
+        "unlined": "Default for an unlined canal. FAO Irrigation and Drainage "
+        "Paper 61 gives unlined canals 20 to 30 percent seepage, and OpenH2O "
+        "uses the middle of that range.",
+        "lined": "Default for a lined canal. Two irrigation districts whose "
+        "canals are about 90 percent lined report canal seepage of about 4 and "
+        "6 percent in their published water management plans.",
         "pipe": "Default for a pipe. FAO Irrigation and Drainage Paper 61 gives "
         "pipelines no seepage.",
     }
@@ -479,17 +478,17 @@ class PointOfDiversion(models.Model):
         "default seepage share."
     )
     _EVAPORATION_NOTE_OPEN_CANAL = (
-        "Default for an open canal. The State Water Board's SacWAM model uses "
-        "1 percent of the diversion for canal evaporation, and Modesto, Turlock "
-        "and Imperial Irrigation Districts report 0.3 to 1 percent."
+        "Default for an open canal. Published water management plans report "
+        "canal evaporation of 0.3 to 1 percent of the diversion, and OpenH2O "
+        "uses 1 percent."
     )
     _EVAPORATION_NOTE_PIPE = (
-        "Default for a pipe. Westlands Water District reports that its pipe "
-        "system loses virtually no water to evaporation."
+        "Default for a pipe. A closed pipe has no open water surface to "
+        "evaporate from."
     )
     _SPILL_NOTE = (
         "No default. Spill depends on how the canal is operated, so OpenH2O "
-        "uses none until the district enters its own figure."
+        "uses none until a figure is entered for this canal."
     )
 
     def seepage_default_note(self):

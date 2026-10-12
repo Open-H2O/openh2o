@@ -244,23 +244,24 @@ class PointOfDiversionForm(forms.ModelForm):
             "loss_basis": "How these shares were set",
             "lining": "Lining",
         }
-        # 150.3-01 (Brent 2026-10-11 16:40 PDT: "approved").
+        # 150.3-01 (Brent 2026-10-11 16:40 PDT: "approved"; the district
+        # wording replaced by the national words approved 18:43 PDT).
         help_texts = {
             "lining": "While the basis is the platform's default, OpenH2O sets "
             "the seepage share from the lining: 25 percent for an unlined "
-            "canal, 5 percent for a lined canal and 0 for a pipe. A measured "
-            "figure or a district estimate is never replaced.",
+            "canal, 5 percent for a lined canal and 0 for a pipe. A share "
+            "marked as measured or estimated is never replaced.",
             "seepage_fraction": "Share of the diverted volume lost to canal "
             "seepage. While the basis is the platform's default and the "
             "lining is stated, OpenH2O replaces this figure with the lining's "
             "default when you save.",
             # The basis now sits above the three shares, beside the lining.
             "loss_basis": "How the three shares below were set: measured on "
-            "this canal, a district estimate, or this platform's own default.",
+            "this canal, estimated for this canal, or the platform's default.",
             "evaporation_fraction": "Share of the diverted volume lost to "
             "evaporation off the canal. The platform's default is 1 percent "
-            "for an open canal and 0 for a pipe. An agency's own measured or "
-            "district figure replaces this default.",
+            "for an open canal and 0 for a pipe. A share marked as measured "
+            "or estimated replaces this default.",
         }
 
     def __init__(self, *args, **kwargs):
