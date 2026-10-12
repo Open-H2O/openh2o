@@ -52,6 +52,13 @@ as a secret, do **not** store it in Bitwarden, and do **not** mirror it on prod.
     its own — it has to be added to the override too. That is the one piece of the
     original defect that survives on purpose. The override deliberately carries no
     `volumes:` key, so volumes DO merge through from the tracked file.
+- **Staging syncs external data once a night, production hourly and nightly (2026-10-11).**
+  Butler's crontab runs production's `run-sync.sh cdec usgs` hourly and all five sources at
+  03:20 PT, after the 03:15 demo reset. Staging runs all five at 03:40 PT, inline
+  `OPENH2O_DIR=/home/butler/openh2o-staging`, logging to `~/openh2o-staging-logs/sync.log`
+  (the crontab's own `OPENH2O_DIR` is production's). Staging has no nightly reset, so its
+  synced readings accumulate; the calculation reads only OpenET's cache, which no job syncs,
+  so a sync never moves a demo figure.
 - **Staging deploy** = git checkout on Butler: `git fetch && git reset --hard
   origin/main`, then `docker compose up -d --build web` (code is baked into the
   image, not bind-mounted — a sync alone changes nothing the container serves).
