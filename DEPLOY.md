@@ -501,7 +501,7 @@ the output.
 - `seed_data_sources` (CDEC, USGS, OpenET, CIMIS, CNRFC, DWR, NOAA)
 - `seed_drinking` (federal MCL reference limits for the drinking-water module)
 - `seed_water_right_types` (Appropriative, Pre-1914, Riparian, etc.)
-- `seed_report_templates` (GEARS CSV, CalWATRS CSV)
+- `seed_report_templates` (the reporting feature's formats; skipped while reporting is off, the default)
 
 To run any seed command individually:
 
@@ -665,8 +665,8 @@ docker compose logs web --tail=50
 Every email this platform sends — password resets above all — carries the
 deployment's own name at the front of the subject line, where the person
 receiving it will read it before anything else. Nothing has to be configured for
-that: the platform works the name out for itself from the agency name typed into
-the Setup Wizard (§11) and the web address already in `ALLOWED_HOSTS`, and
+that: the platform works the name out for itself from the organization's name, set
+at `/admin/` under Core > Site configs, and the web address already in `ALLOWED_HOSTS`, and
 writes it down when §6's migration step runs. It is still worth one look, because
 a deployment that has been told neither introduces itself as `example.com`.
 
@@ -678,9 +678,9 @@ Expect the agency's name and this deployment's own web address.
 `docker compose exec web python manage.py check` reports the same thing as
 `openh2o.W002` if you would rather be told than look.
 
-If the name is missing, it is because nobody has typed the agency's name into
-the Setup Wizard (§11) yet; do that and run §6's migration step again, which is
-what applies it and which changes nothing else.
+If the name is missing, it is because nobody has set the organization's name at
+`/admin/` under Core > Site configs yet; do that and run §6's migration step again,
+which is what applies it and which changes nothing else.
 
 **On Branch A the address will stay `example.com`, and that is expected.** The
 platform deliberately refuses to treat `localhost` or `127.0.0.1` as a public
@@ -835,8 +835,7 @@ decision rather than an oversight.** It answers "is every measurement in here
 mapped to a known concept with a real unit?", and that answer only moves when
 somebody loads data or switches on a new source — so a clock is the wrong
 trigger. Run it by hand at the two moments it matters: right after the agency's
-own records are loaded (§9), and before a filing deadline rather than during
-one.
+own records are loaded (§9), and before the data is shared or published.
 
 ```bash
 docker compose exec web python manage.py check_conformance

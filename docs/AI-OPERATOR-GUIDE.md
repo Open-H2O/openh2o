@@ -498,17 +498,17 @@ because it is not.
 Set expectations on the two tiers instead: who needs to administer this, and who
 just uses it.
 
-Then walk them through the first loop: log in → confirm their boundary → review their accounts, allocations, and recorded data. If the agency files with the state, show the optional reporting step too: open the reporting page → generate a draft GEARS or CalWATRS CSV. **Be blunt about what that is and is not.** It is the agency's own figures, laid out the way those state systems lay theirs out, useful for checking the numbers and keeping their own copy. It is **not** a filing. OpenH2O cannot submit to either system, and neither system can currently accept a file it produces: both would need work on the state's side first, and that work has not been done. An agency that hears "it does the state reports" and plans around it will be caught out, so say the limit out loud at handover rather than letting them find it at a deadline.
+Then walk them through the first loop: log in → confirm their boundary → review their accounts, allocations, and recorded data. The Reports page is under development and switched off; leave it off. OpenH2O does not submit reports to the state.
 
-**Before the first password reset, check what name the mail goes out under.** Every email the platform sends carries this deployment's own name at the front of the subject line, the first thing the recipient reads. The platform works that name out for itself, from the agency name typed into the Setup Wizard and the web address already in `ALLOWED_HOSTS`, and writes it down when the migration step runs. Confirm it landed:
+**Before the first password reset, check what name the mail goes out under.** Every email the platform sends carries this deployment's own name at the front of the subject line, the first thing the recipient reads. The platform works that name out for itself, from the organization's name, set at `/admin/` under Core > Site configs, and the web address already in `ALLOWED_HOSTS`, and writes it down when the migration step runs. Confirm it landed:
 
 ```bash
 docker compose exec web python manage.py shell -c "from django.contrib.sites.models import Site; s = Site.objects.get_current(); print(s.name, '|', s.domain)"
 ```
 
-Expect the agency's name and their web address. If either still reads `example.com`, fill in whichever is blank (the agency name in the Setup Wizard, the address in `.env`), then run `docker compose exec web python manage.py migrate` and look again. `manage.py check` will also say so, as `openh2o.W002`.
+Expect the agency's name and their web address. If either still reads `example.com`, fill in whichever is blank (the organization's name at `/admin/` under Core > Site configs, the address in `.env`), then run `docker compose exec web python manage.py migrate` and look again. `manage.py check` will also say so, as `openh2o.W002`.
 
-✋ **Done when:** an agency staffer can log in and see and manage their own basin data without you, and, if they report to the state, produce a draft report.
+✋ **Done when:** an agency staffer can log in and see and manage their own basin data without you.
 
 ---
 

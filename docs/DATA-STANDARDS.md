@@ -94,17 +94,12 @@ The rule is encoded as `ObservedProperty.is_publishable()`: publishable only whe
 
 ---
 
-## 5. State reporting exports
+## 5. California's reporting format (under development)
 
-OpenH2O prepares the two filings California agencies owe, as ready-to-submit CSV. It does **not** auto-submit: the state has no submission API, and the filings are certified under penalty of perjury, so a human reviews and files them.
-
-⚠ **These two are layouts, not a filing path.** OpenH2O writes its figures out to
-match these specifications. It does not submit them, and neither GEARS nor
-CalWATRS can currently accept a file produced here — each would need work on the
-state's own side first, and that work has not been done.
+A feature under development writes figures in California's reporting format for two state systems, GEARS and CalWATRS. It is switched off by default. OpenH2O does not submit reports to the state, and neither system can currently accept a file produced here.
 
 - **GEARS** — two modes: *by-well* (monthly metered extraction) and *by-ET* (monthly consumptive use from OpenET). Unit: acre-feet.
-- **CalWATRS** — *Direct Use* and *To Storage* templates, by point of diversion. Units: acre-feet and CFS. Flags parcels with both groundwater and surface-water sources as combined-use, and marks missing water rights as `[INCOMPLETE]`. Its Measurement Method column carries the state's own 23 CCR 934(b) device vocabulary (a diversion record's `method`, and its device's type when the method is "a measuring device"): prepared, never filed, like the rest of this worksheet.
+- **CalWATRS** — *Direct Use* and *To Storage* templates, by point of diversion. Units: acre-feet and CFS. Flags parcels with both groundwater and surface-water sources as combined-use, and marks missing water rights as `[INCOMPLETE]`. Its Measurement Method column carries the state's own 23 CCR 934(b) device vocabulary (a diversion record's `method`, and its device's type when the method is "a measuring device").
 
 **Source of truth:** `reporting/generators.py`, `reporting/models.py`.
 

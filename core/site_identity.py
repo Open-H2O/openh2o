@@ -12,8 +12,8 @@ every password-reset email openh2o.com has ever sent went out titled
 ``OPENH2O_SITE_DOMAIN`` environment variable. The operators are water-district
 engineers who will not know such a setting exists, let alone that a wrong value
 shows up in a stranger's inbox. The platform already holds both facts:
-``SiteConfig.agency_name`` is the agency's own name, typed into the setup
-wizard, and ``ALLOWED_HOSTS`` is the address the deployment answers on. This
+``SiteConfig.agency_name`` is the organization's name, set at /admin/ under
+Core > Site configs (no screen outside /admin/ edits it, ISS-235), and ``ALLOWED_HOSTS`` is the address the deployment answers on. This
 module is the arithmetic between them.
 
 **Why a ``post_migrate`` receiver and not something simpler.** Recorded so it

@@ -158,6 +158,7 @@ CALIFORNIA_NAMES: tuple = (
     (r"California DDW", "DDW is California's Division of Drinking Water"),
     (r"real,? (?:published )?California basin", "the demonstration's real geography"),
     (r"open up California's water data", "the Consortium's purpose, in its own terms"),
+    (r"California's reporting format", "the state's own format, Brent's words for it (2026-10-12 05:42: \"California's reporting format, not layout\")"),
 )
 CALIFORNIA = re.compile(r"\bCalifornia\b")
 _CALIFORNIA_KEPT = re.compile("|".join(f"(?:{name})" for name, _ in CALIFORNIA_NAMES))
