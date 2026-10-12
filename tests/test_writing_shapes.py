@@ -114,7 +114,7 @@ BASELINE: dict = {
     "docs/water-budget-terms.md": {"filler": 1, "district reader": 2},
     # 2026-10-11: the "district reader" and "California" shapes joined at their
     # counts that day (150.4-01). 150.4-02, 150.1-02 and 150.1-03 lower them.
-    "templates/about.html": {"district reader": 4, "California": 1},
+    "templates/about.html": {"district reader": 3, "California": 1},
     "templates/account/signup_closed.html": {"district reader": 3},
     "templates/accounting/dashboard.html": {"district reader": 1},
     "templates/accounting/delivery_settings.html": {"district reader": 3},

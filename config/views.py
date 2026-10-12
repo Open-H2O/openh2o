@@ -649,6 +649,16 @@ def glossary(request):
         "Zone / Management Zone": "OpenH2O's record of one area that carries its own Allocation Ceiling, with its name, type, outline on the map and the use areas assigned to it. See Help > Allocations & Ceilings.",
         "Well": "One record per well: its state well number, WCR number and local ID, its meters, the use areas it irrigates, and its depth, casing and screen intervals.",
     }
+    if not is_enabled("reporting"):
+        # Reporting is off unless a site names it (2026-10-12): with it off, no
+        # page names the state's reporting systems, the glossary included.
+        terms.pop("GEARS", None)
+        terms.pop("CalWATRS", None)
+        if "Water Right" in terms:
+            terms["Water Right"] = terms["Water Right"].replace(
+                "face value in acre-feet, CalWATRS PIN and status",
+                "face value in acre-feet and status",
+            )
     entries = []
     for term, definition in sorted(terms.items(), key=lambda item: item[0].casefold()):
         text, pointer_page, pointer_url = _split_help_pointer(

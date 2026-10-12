@@ -343,6 +343,14 @@ class ModuleSpec:
     #: ``make test-droppable`` exercises it in the ``without-wells`` and
     #: ``without-datasync`` cases.
     schema_resident: bool = False
+    #: Switched on when ``OPENH2O_MODULES`` is unset. False leaves the module
+    #: out of a default deployment; a site still runs it by naming it in
+    #: ``OPENH2O_MODULES`` (or ``OPENH2O_MODULES=all``). Only ``reporting`` is
+    #: off by default (Brent, 2026-10-12 06:10 PDT: "turn the reports pages off
+    #: and simply gray out the left-hand column selector so that it shows its
+    #: under developement"; the filing pages read as a working path to the state,
+    #: which OpenH2O is not).
+    on_by_default: bool = True
 
 
 @dataclass(frozen=True)
@@ -801,6 +809,9 @@ MODULE_REGISTRY: dict = {
         # `core` for ReportSubmission.certified_by, `geography` for
         # ReportingProfile.boundary.
         requires=("core", "geography", "accounting"),
+        # Off unless a site names it. With it off the sidebar shows Reports
+        # greyed out as "Under development" (templates/partials/_sidebar.html).
+        on_by_default=False,
     ),
     "health": ModuleSpec(
         name="health",
@@ -1017,8 +1028,28 @@ MODULE_REGISTRY: dict = {
     ),
 }
 
-#: Every module name, in app order. The default value of ``OPENH2O_MODULES``.
+#: Every module name, in app order. What ``OPENH2O_MODULES=all`` runs, and what
+#: the test suite runs (Makefile ``test``, .github/workflows/tests.yml).
 ALL_MODULE_NAMES: tuple = tuple(MODULE_REGISTRY.keys())
+
+#: The default value of ``OPENH2O_MODULES``: every module except those marked
+#: ``on_by_default=False`` (today only ``reporting``).
+DEFAULT_MODULE_NAMES: tuple = tuple(
+    name for name, spec in MODULE_REGISTRY.items() if spec.on_by_default
+)
+
+
+def module_names_from_env(raw: str) -> list:
+    """The module list an ``OPENH2O_MODULES`` value asks for, before validation.
+
+    Blank means ``DEFAULT_MODULE_NAMES``; ``all`` (any case) means every module;
+    anything else is a comma-separated list, validated afterwards by
+    ``enabled_module_names``.
+    """
+    raw = (raw or "").strip()
+    if raw.lower() == "all":
+        return list(ALL_MODULE_NAMES)
+    return [m.strip() for m in raw.split(",") if m.strip()] or list(DEFAULT_MODULE_NAMES)
 
 #: Modules that cannot be switched off — some structurally, some because they
 #: are not yet decoupled. See the module docstring for the distinction.

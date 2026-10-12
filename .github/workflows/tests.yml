@@ -59,6 +59,7 @@ jobs:
           POSTGRES_DB=openh2o
           POSTGRES_USER=openh2o
           POSTGRES_PASSWORD=openh2o
+          OPENH2O_MODULES=all
           EOF
 
       - name: Build web image
@@ -72,7 +73,7 @@ jobs:
 
       - name: Run the test suite
         run: >-
-          docker compose exec -T web
+          docker compose exec -T -e OPENH2O_MODULES=all web
           python -m pytest tests/
           --ds=config.settings.local
           -m "not network"

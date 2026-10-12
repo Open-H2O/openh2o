@@ -320,9 +320,11 @@ def test_disabling_a_module_removes_only_its_own_nav():
     required=True by 77-01 after ~100 cross-app module-scope imports were found,
     so dropping it is a startup error, not a nav change.
 
-    `reporting` is the interesting one: it is the ONLY entry in its section, so
-    dropping it must take the "Reporting" heading with it rather than leaving an
-    empty labelled block.
+    `reporting` is the interesting one: it is the ONLY entry in its section.
+    Since 2026-10-12 (Brent: "gray out the left-hand column selector so that it
+    shows its under developement") dropping it leaves its heading over one
+    greyed, unlinked "Reports" marked "Under development", and no link into
+    /reporting/.
     """
     from core.modules import ALL_MODULE_NAMES
 
@@ -339,9 +341,12 @@ def test_disabling_a_module_removes_only_its_own_nav():
         assert f">{label}</span>" in full, f"{label} should be in the full sidebar"
         assert f">{label}</span>" not in trimmed, f"{label} survived its module being dropped"
 
-    # The section with no surviving entries disappears heading and all.
+    # Reporting stays as a greyed, unlinked entry; nothing links into it.
     assert "sidebar-section-label\">Reporting</span>" in full
-    assert "sidebar-section-label\">Reporting</span>" not in trimmed
+    assert "sidebar-link-disabled" not in full
+    assert 'href="/reporting/' not in trimmed
+    assert 'aria-disabled="true" title="Under development"' in trimmed
+    assert '<span class="sidebar-link-note">Under development</span>' in trimmed
 
     # Sections that still have entries keep their headings.
     for label in ("Water Data", "Administration"):

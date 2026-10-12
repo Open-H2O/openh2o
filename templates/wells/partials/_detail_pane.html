@@ -43,7 +43,7 @@
 <div class="pane-stack">
   <div class="page-grid-account page-grid-account--source-order">
 
-    <!-- Identification, State reporting (GEARS); Construction is the right column's last card -->
+    {# Identification, State reporting (GEARS); Construction is the right column's last card #}
     <div class="card-raised page-grid-account-info">
 
       {% comment %}
@@ -107,10 +107,10 @@
         {% include "partials/_identifier_line.html" with record=well %}
       </div>
 
-      <!-- ── State Reporting (GEARS) ── -->
-      <h2 class="section-header mt-lg">State reporting (GEARS, State Water Board)</h2>
+      {# 2026-10-12: GEARS is named only where reporting is on; it is off unless a site names it (core/modules.py on_by_default). Five lines, as before, so the figure inventory's line numbers hold. #}
+      <h2 class="section-header mt-lg">{% if 'reporting' in enabled_modules %}State reporting (GEARS, State Water Board){% else %}Pumping{% endif %}</h2>
       <p class="text-tertiary text-xs" style="margin-bottom: var(--space-sm);">
-        GEARS is the Groundwater Extraction Annual Reporting System; the three method fields follow the Department of Water Resources (DWR) annual report table.
+        {% if 'reporting' in enabled_modules %}GEARS is the Groundwater Extraction Annual Reporting System; the three method fields follow the Department of Water Resources (DWR) annual report table.{% else %}The three method fields follow the Department of Water Resources (DWR) annual report table.{% endif %}
       </p>
 
       {% comment %}

@@ -183,11 +183,11 @@ verify-clean: ## Assert this install has reference data only (no demo/agency con
 guard-fresh: ## Fail loudly if the web image's source has drifted from the working tree (ISS-075)
 	@COMPOSE="$(COMPOSE)" bash scripts/assert-image-fresh.sh
 
-test: guard-fresh ## Run test suite (pinned to local settings; --ds outranks the container's prod env)
-	$(COMPOSE) exec web python -m pytest tests/ -v --ds=config.settings.local
+test: guard-fresh ## Run test suite (pinned to local settings; --ds outranks the container's prod env; every module on, reporting included)
+	$(COMPOSE) exec -e OPENH2O_MODULES=all web python -m pytest tests/ -v --ds=config.settings.local
 
 test-droppable: guard-fresh ## Prove every optional module can be dropped (see tests/droppability/README.md)
-	$(COMPOSE) exec web python -m pytest tests/test_droppability_acceptance.py -v --ds=config.settings.local
+	$(COMPOSE) exec -e OPENH2O_MODULES=all web python -m pytest tests/test_droppability_acceptance.py -v --ds=config.settings.local
 
 # ---------------------------------------------------------------------------
 # Seed Data

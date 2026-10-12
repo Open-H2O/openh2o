@@ -113,11 +113,11 @@
         <div class="form-help">{{ form.max_rate_cfs.help_text }}</div>
       </div>
 
-      <div class="form-group">
+      {% if form.calwatrs_pin %}<div class="form-group">
         <label class="form-label" for="{{ form.calwatrs_pin.id_for_label }}">{{ form.calwatrs_pin.label }}</label>
         {{ form.calwatrs_pin }}
         <div class="form-help">{{ form.calwatrs_pin.help_text }}</div>
-      </div>
+      </div>{% endif %}
 
       {% comment %}
         146-02 Task 1: four month selects, four day fields, per season, laid

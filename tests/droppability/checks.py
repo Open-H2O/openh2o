@@ -399,8 +399,13 @@ _FORBIDDEN_VOCABULARY = (
     # GEARS and CalWATRS, and both of those belong to the domains whose water
     # they report (wells and surface), not to reporting. Forbidding "report"
     # here would fire on every page that mentions reporting periods, which
-    # `accounting` owns. An empty tuple is a real answer, not a gap.
-    ("reporting", ()),
+    # `accounting` owns.
+    #
+    # 2026-10-12: reporting is now off unless a site names it, and Brent's
+    # concern is that the state reads a reporting page as a filing path. So the
+    # names of the state's two reporting systems are forbidden on every page a
+    # deployment without `reporting` serves, wherever their water lives.
+    ("reporting", ("GEARS", "CalWATRS")),
     ("health", ()),
     ("setup", ()),
     ("infrastructure", ()),

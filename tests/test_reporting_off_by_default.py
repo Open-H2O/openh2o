@@ -1,0 +1,129 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+"""Reporting is off unless a site names it (2026-10-12).
+
+Brent, 2026-10-12 06:10 PDT: "Can we turn the reports pages off and simply gray
+out the left-hand column selector so that it shows its under developement? I'm
+worried these reporting pages are going to freak the state out to the point that
+it disregards this entire platform."
+
+So: a deployment with ``OPENH2O_MODULES`` unset runs without ``reporting``; the
+sidebar shows Reports greyed and unlinked as "Under development"; and no page
+such a deployment serves names GEARS or CalWATRS. The droppability harness reads
+list pages only, so the detail pages and forms that carried the two names are
+read here. The suite itself runs with ``OPENH2O_MODULES=all`` (Makefile, CI).
+"""
+
+import pytest
+from django.test import Client
+from django.urls import get_resolver
+
+from core import modules as mod
+from tests.factories import WellFactory
+
+WITHOUT_REPORTING = [name for name in mod.ALL_MODULE_NAMES if name != "reporting"]
+
+
+def _admin():
+    from core.models import User
+
+    return User.objects.create_superuser(
+        username="reportingoff", email="reportingoff@example.com", password="x-not-used"
+    )
+
+
+@pytest.fixture
+def client_without_reporting(settings):
+    get_resolver().url_patterns  # build the URLconf under the full set first
+    settings.OPENH2O_MODULES = WITHOUT_REPORTING
+    c = Client()
+    c.force_login(_admin())
+    return c
+
+
+@pytest.fixture
+def client_with_reporting(settings):
+    get_resolver().url_patterns
+    settings.OPENH2O_MODULES = list(mod.ALL_MODULE_NAMES)
+    c = Client()
+    c.force_login(_admin())
+    return c
+
+
+def test_default_module_list_leaves_reporting_out():
+    assert "reporting" not in mod.DEFAULT_MODULE_NAMES
+    assert set(mod.ALL_MODULE_NAMES) - set(mod.DEFAULT_MODULE_NAMES) == {"reporting"}
+
+
+@pytest.mark.parametrize("raw", ["", "   "])
+def test_unset_env_means_the_default_list(raw):
+    assert mod.module_names_from_env(raw) == list(mod.DEFAULT_MODULE_NAMES)
+
+
+@pytest.mark.parametrize("raw", ["all", "ALL", " all "])
+def test_all_means_every_module(raw):
+    assert mod.module_names_from_env(raw) == list(mod.ALL_MODULE_NAMES)
+
+
+def test_a_named_list_is_taken_as_written():
+    assert mod.module_names_from_env("core, geography,reporting") == [
+        "core", "geography", "reporting",
+    ]
+
+
+def test_sidebar_shows_reports_greyed_and_unlinked(client_without_reporting):
+    html = client_without_reporting.get("/about/").content.decode()
+    assert 'href="/reporting/' not in html
+    assert 'class="sidebar-link sidebar-link-disabled" aria-disabled="true"' in html
+    assert '<span class="sidebar-link-note">Under development</span>' in html
+
+
+def test_sidebar_links_reports_when_reporting_is_on(client_with_reporting):
+    html = client_with_reporting.get("/about/").content.decode()
+    assert 'href="/reporting/reports/"' in html
+    assert "sidebar-link-disabled" not in html
+
+
+@pytest.mark.skipif(not mod.is_enabled("wells"), reason="wells module is not enabled")
+def test_well_page_names_no_reporting_system(client_without_reporting):
+    well = WellFactory()
+    html = client_without_reporting.get(f"/wells/{well.pk}/").content.decode()
+    assert "GEARS" not in html
+    assert '<h2 class="section-header mt-lg">Pumping</h2>' in html
+
+
+@pytest.mark.skipif(not mod.is_enabled("wells"), reason="wells module is not enabled")
+def test_well_page_keeps_gears_when_reporting_is_on(client_with_reporting):
+    well = WellFactory()
+    html = client_with_reporting.get(f"/wells/{well.pk}/").content.decode()
+    assert "State reporting (GEARS, State Water Board)" in html
+
+
+@pytest.mark.skipif(not mod.is_enabled("surface"), reason="surface module is not enabled")
+def test_water_right_form_offers_no_calwatrs_pin(client_without_reporting):
+    html = client_without_reporting.get("/surface/rights/add/").content.decode()
+    assert "CalWATRS" not in html
+
+
+@pytest.mark.skipif(not mod.is_enabled("surface"), reason="surface module is not enabled")
+def test_saving_a_right_without_reporting_keeps_its_stored_pin(settings):
+    from surface.forms import WaterRightForm
+    from tests.factories import WaterRightFactory
+
+    right = WaterRightFactory(calwatrs_pin="PIN-123")
+    settings.OPENH2O_MODULES = WITHOUT_REPORTING
+    form = WaterRightForm(instance=right)
+    assert "calwatrs_pin" not in form.fields
+    settings.OPENH2O_MODULES = list(mod.ALL_MODULE_NAMES)
+    assert "calwatrs_pin" in WaterRightForm(instance=right).fields
+
+
+def test_glossary_names_no_reporting_system(client_without_reporting):
+    html = client_without_reporting.get("/help/glossary/").content.decode()
+    assert "GEARS" not in html
+    assert "CalWATRS" not in html
+
+
+def test_about_page_says_nothing_about_filing(client_without_reporting):
+    html = client_without_reporting.get("/about/").content.decode()
+    for phrase in ("report layout", "files them", "GEARS", "CalWATRS"):
+        assert phrase not in html, phrase

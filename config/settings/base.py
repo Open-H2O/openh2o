@@ -12,9 +12,9 @@ import environ
 from django.core.exceptions import ImproperlyConfigured
 
 from core.modules import (
-    ALL_MODULE_NAMES,
     enabled_module_names,
     installed_apps_for,
+    module_names_from_env,
 )
 
 # -- Paths -------------------------------------------------------------------
@@ -59,10 +59,11 @@ SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
 # core/modules.py for the registry, the required modules, and the dependency
 # rules — all of which are validated below and fail LOUDLY at startup rather
 # than silently dropping a domain someone notices weeks later.
-_modules_env = os.environ.get("OPENH2O_MODULES", "")
-OPENH2O_MODULES = [m.strip() for m in _modules_env.split(",") if m.strip()] or list(
-    ALL_MODULE_NAMES
-)
+#
+# Unset means DEFAULT_MODULE_NAMES: every module except `reporting`, which is
+# off unless a site names it (2026-10-12). `all` runs every module, which is
+# what the test suite does.
+OPENH2O_MODULES = module_names_from_env(os.environ.get("OPENH2O_MODULES", ""))
 
 # Validates and normalises to registry order; raises ImproperlyConfigured on an
 # unknown name, an omitted required module, or an unmet dependency.

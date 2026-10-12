@@ -88,7 +88,20 @@
            class="sidebar-link{% if entry|nav_active:nav_lit %} active{% endif %}">
             {% include "partials/_nav_icon.html" with icon_key=entry.icon %}
             <span class="sidebar-link-text">{{ entry.label }}</span>
-        </a>{% endif %}{% endfor %}{% endif %}{% endfor %}
+        </a>{% endif %}{% endfor %}{% endif %}{% endfor %}{% if 'reporting' not in enabled_modules %}
+        {% comment %}2026-10-12 06:10 PDT, Brent: "turn the reports pages off and
+        simply gray out the left-hand column selector so that it shows its under
+        developement". Reporting is off unless a site names it in OPENH2O_MODULES
+        (core/modules.py on_by_default), so this greyed entry stands where the
+        Reports link was. Not a link: nothing behind it is served.{% endcomment %}
+        <!-- REPORTING (switched off: greyed, under development) -->
+        <div class="sidebar-section">
+            <span class="sidebar-link-text sidebar-section-label">Reporting</span>
+        </div>
+        <span class="sidebar-link sidebar-link-disabled" aria-disabled="true" title="Under development">
+            {% include "partials/_nav_icon.html" with icon_key="report" %}
+            <span class="sidebar-link-text">Reports <span class="sidebar-link-note">Under development</span></span>
+        </span>{% endif %}
 
         <!-- HELP (collapsed by default; auto-opens when the lit entry is one of its own) -->
         <details class="sidebar-collapsible"{% if nav_lit_section == 'help' %} open{% endif %}>

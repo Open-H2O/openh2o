@@ -413,6 +413,15 @@ class WaterRightForm(forms.ModelForm):
         # test_identifier_is_capitalised_on_every_rendered_page).
         labels = {"right_id": "Right ID"}
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Reporting is off unless a site names it (2026-10-12). Without it the
+        # CalWATRS PIN is not offered, and a save leaves a stored PIN untouched.
+        from core.modules import is_enabled
+
+        if not is_enabled("reporting"):
+            self.fields.pop("calwatrs_pin", None)
+
     def _clean_season(self, cleaned, prefix, label):
         start_month = cleaned.get(f"{prefix}_start_month")
         start_day = cleaned.get(f"{prefix}_start_day")
