@@ -47,7 +47,7 @@
   {% if is_curtailed %}
   <div class="alert-warning">
     <strong>Curtailment in effect.</strong>
-    {% for o in curtailment_orders %}{{ o.title }}{% if not forloop.last %}; {% endif %}{% endfor %}
+    {% for o in curtailment_orders %}{{ o.title }}{% if not forloop.last %}; {% endif %}{% endfor %}{% if curtailment_orders %}.{% endif %}
     OpenH2O estimates no surface water delivery under the curtailed right for any month the order covers, even in part. A delivery recorded for that month stays on the record and counts.
   </div>
   {% endif %}
