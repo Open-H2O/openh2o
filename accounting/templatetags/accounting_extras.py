@@ -13,6 +13,7 @@ from django import template
 
 from accounting.ledger_words import ledger_row_words as _ledger_row_words
 from accounting.ledger_words import sign_rule_sentence as _sign_rule_sentence
+from accounting.services import balance_state as _balance_state
 
 register = template.Library()
 
@@ -40,3 +41,16 @@ def sign_rule_sentence(recharge_enabled=True, surface_enabled=True):
     return _sign_rule_sentence(
         recharge_enabled=recharge_enabled, surface_enabled=surface_enabled
     )
+
+
+_BALANCE_CLASS = {"surplus": "text-surplus", "deficit": "text-deficit", "balanced": ""}
+
+
+@register.filter
+def balance_class(value):
+    """``{{ balance|balance_class }}`` -- the colour class for a water balance.
+
+    Judged on the two decimals the page prints (ISS-237): a balance that prints
+    0.00 is balanced and takes the plain text colour, never green or orange.
+    """
+    return _BALANCE_CLASS.get(_balance_state(value), "")

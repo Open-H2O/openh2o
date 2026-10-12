@@ -72,6 +72,7 @@ from core.workspace import redirect_to_selected
 from accounting.services import (
     account_consumptive_balance,
     attach_orphans_to_period,
+    balance_state,
     current_period_id as compute_current_period_id,
     parcel_consumptive_balance,
     parse_ledger_csv,
@@ -252,6 +253,7 @@ def dashboard(request):
     grand_calculation_runs = 0
     accounts_in_surplus = 0
     accounts_in_deficit = 0
+    accounts_balanced = 0
 
     has_allocations = False
 
@@ -290,10 +292,14 @@ def dashboard(request):
             grand_calculation_runs += row["calculation_runs"]
             if row["calculation_runs"] > 0:
                 accounts_with_estimates += 1
-                if row["net_vs_supply"] >= 0:
+                # ISS-237: judged on the two decimals the page prints.
+                state = balance_state(row["net_vs_supply"])
+                if state == "surplus":
                     accounts_in_surplus += 1
-                else:
+                elif state == "deficit":
                     accounts_in_deficit += 1
+                else:
+                    accounts_balanced += 1
 
         # Zone summaries
         for zone in Zone.objects.order_by("name"):
@@ -486,6 +492,7 @@ def dashboard(request):
         "accounts_with_estimates": accounts_with_estimates,
         "grand_calculation_runs": grand_calculation_runs,
         "accounts_in_surplus": accounts_in_surplus,
+        "accounts_balanced": accounts_balanced,
         "accounts_in_deficit": accounts_in_deficit,
         "engine_has_never_run": engine_has_never_run,
         "has_calculation_plan": has_calculation_plan,
@@ -1185,8 +1192,11 @@ def _account_detail_context(account, period_param=None):
     # the per-use-area rows the table below already renders, so they cannot
     # disagree with it.
     use_areas_estimated = sum(1 for pb in parcel_balances if pb["calculation_runs"])
-    use_areas_in_surplus = sum(1 for pb in parcel_balances if pb["net_vs_supply"] >= 0)
-    use_areas_in_deficit = len(parcel_balances) - use_areas_in_surplus
+    # ISS-237: judged on the two decimals the page prints; 0.00 is balanced.
+    use_area_states = [balance_state(pb["net_vs_supply"]) for pb in parcel_balances]
+    use_areas_in_surplus = use_area_states.count("surplus")
+    use_areas_in_deficit = use_area_states.count("deficit")
+    use_areas_balanced = use_area_states.count("balanced")
 
     # The account's map card (ISS-175, 150-02): the head's two counts, read off
     # the rows the loop above already fetched (select_related parcel, so no
@@ -1237,6 +1247,7 @@ def _account_detail_context(account, period_param=None):
         "use_areas_estimated": use_areas_estimated,
         "use_areas_in_surplus": use_areas_in_surplus,
         "use_areas_in_deficit": use_areas_in_deficit,
+        "use_areas_balanced": use_areas_balanced,
         "use_areas_all_count": use_areas_all_count,
         "use_areas_located_count": use_areas_located_count,
         "periods": periods,

@@ -52,7 +52,7 @@
   {% if accounts_over_budget %}
   <a href="#active-accounts" class="attention-row">
     <span class="attention-count attention-count--over">{{ accounts_over_budget }}</span>
-    <span class="attention-row-text">account{{ accounts_over_budget|pluralize }} over groundwater budget<span class="block text-tertiary text-xs">This counts each active account whose groundwater use this water year has passed its groundwater allocation.</span></span>
+    <span class="attention-row-text">account{{ accounts_over_budget|pluralize }} over groundwater budget<span class="block text-tertiary text-xs">This counts each active account whose pumping this water year has passed its groundwater allocation.</span></span>
   </a>
   {% endif %}
 
@@ -76,3 +76,4 @@
 </div>
 {% endif %}
 {% endif %}
+{% comment %}150.1-02 screen 2, Dashboard: the heading "Water balance", the row "Total", the empty-site line, the over-budget count, the Remaining pop-out and the fields-table pop-out are Brent's approved sentences (2026-10-12 12:04 PDT, "Everything looks great, approved."; recorded in brent-sentence-corrections.md). A balance that prints 0.00 is "Balanced" (ISS-237, his choice the same minute). Notes sit at the end of the file so the figure ledger's line numbers stand.{% endcomment %}

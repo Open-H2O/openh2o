@@ -1,4 +1,4 @@
-{% load humanize %}
+{% load humanize accounting_extras %}
 {% url 'water_balances' as wb_help_url %}
 {% comment %}
   Phase 143 (R-037, R-038, R-039, R-040), carrying the pattern DESIGN.md →
@@ -80,12 +80,12 @@
       <div class="budget-op">&equals;</div>
       <div class="budget-seg budget-seg--result">
         <div class="budget-seg-label" style="display: flex; align-items: center; gap: var(--space-xs);">Balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Crop ET is OpenET's satellite estimate. Supplies are surface water, groundwater and rain. The balance is supplies minus crop ET. A small balance is normal, not an error." link=wb_help_url link_label="How water balances work" %}</div>
-        <div class="budget-seg-value {% if balance.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ balance.net_vs_supply|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+        <div class="budget-seg-value {{ balance.net_vs_supply|balance_class }}">{{ balance.net_vs_supply|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
         <div class="budget-seg-caption">supplies minus crop ET</div>
         <div class="budget-breakdown-group">
           <div class="budget-breakdown-title">Balance by use area</div>
           <div class="budget-breakdown-row"><span>In surplus</span><b>{{ use_areas_in_surplus }}</b></div>
-          <div class="budget-breakdown-row"><span>In deficit</span><b>{{ use_areas_in_deficit }}</b></div>
+          <div class="budget-breakdown-row"><span>In deficit</span><b>{{ use_areas_in_deficit }}</b></div>{% if use_areas_balanced %}<div class="budget-breakdown-row"><span>Balanced</span><b>{{ use_areas_balanced }}</b></div>{% endif %}
         </div>
       </div>
     </div>
@@ -169,7 +169,7 @@
       <td class="td-num text-usage">
         {{ pb.consumptive_use_gross|floatformat:2|intcomma }}
       </td>
-      <td class="td-num-bold col-sep {% if pb.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
+      <td class="td-num-bold col-sep {{ pb.net_vs_supply|balance_class }}">
         {{ pb.net_vs_supply|floatformat:2|intcomma }}
       </td>
     </tr>
@@ -196,7 +196,7 @@
       <td class="td-num text-supply">{{ balance.supplies.precip|floatformat:2|intcomma }}</td>
       <td class="td-num-bold text-supply">{{ balance.supply_total|floatformat:2|intcomma }}</td>
       <td class="td-num text-usage">{{ balance.consumptive_use_gross|floatformat:2|intcomma }}</td>
-      <td class="td-num-bold col-sep {% if balance.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ balance.net_vs_supply|floatformat:2|intcomma }}</td>
+      <td class="td-num-bold col-sep {{ balance.net_vs_supply|balance_class }}">{{ balance.net_vs_supply|floatformat:2|intcomma }}</td>
     </tr>
   </tfoot>
 </table>
@@ -206,3 +206,4 @@
 <p class="text-tertiary text-sm">No use area is assigned to this account.</p>
 {% endif %}
 </div>
+{% comment %}ISS-237 (Brent 2026-10-12 12:04 PDT, "Balanced"): a use area whose balance prints 0.00 counts as Balanced, not surplus or deficit, and takes the plain text colour (accounting.services.balance_state). Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}

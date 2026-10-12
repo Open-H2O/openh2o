@@ -1,4 +1,4 @@
-{% load static humanize %}
+{% load static humanize accounting_extras %}
 {% if not selected_period %}
 {% comment %} No water years exist yet. {% endcomment %}
 <div class="empty-state">
@@ -33,7 +33,7 @@
 <div class="page-grid-dashboard-top">
 <div class="budget-panel budget-panel--centered">
   <div class="budget-panel-head">
-    <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">District water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Supplies come from the period's ledger rows, surface and groundwater by source; rain and crop ET come from its calculation runs." link=wb_help_url link_label="How water balances work" %}</span>
+    <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Supplies come from the period's ledger rows, surface and groundwater by source; rain and crop ET come from its calculation runs." link=wb_help_url link_label="How water balances work" %}</span>
     <span class="budget-panel-period">{{ selected_period.name }}</span>
   </div>
   <div class="budget-panel-body">
@@ -90,7 +90,7 @@
         {% if engine_has_never_run %}
         <div class="budget-seg-value text-tertiary">&mdash;</div>
         {% else %}
-        <div class="budget-seg-value {% if grand_net >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ grand_net|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+        <div class="budget-seg-value {{ grand_net|balance_class }}">{{ grand_net|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
         {% endif %}
         <div class="budget-seg-caption">supplies minus crop ET</div>
         {% comment %}
@@ -103,7 +103,7 @@
         <div class="budget-breakdown-group">
           <div class="budget-breakdown-title">Balance by account</div>
           <div class="budget-breakdown-row"><span>In surplus</span><b>{{ accounts_in_surplus }}</b></div>
-          <div class="budget-breakdown-row"><span>In deficit</span><b>{{ accounts_in_deficit }}</b></div>
+          <div class="budget-breakdown-row"><span>In deficit</span><b>{{ accounts_in_deficit }}</b></div>{% if accounts_balanced %}<div class="budget-breakdown-row"><span>Balanced</span><b>{{ accounts_balanced }}</b></div>{% endif %}
         </div>
         {% endif %}
       </div>
@@ -277,7 +277,7 @@
         <td class="td-num {% if row.has_calculations %}text-usage{% else %}text-tertiary{% endif %}">
           {% if row.has_calculations %}{{ row.consumptive_use_gross|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
         </td>
-        <td class="td-num-bold {% if not row.has_calculations %}text-tertiary{% elif row.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
+        <td class="td-num-bold {% if not row.has_calculations %}text-tertiary{% else %}{{ row.net_vs_supply|balance_class }}{% endif %}">
           {% if row.has_calculations %}{{ row.net_vs_supply|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
         </td>
         {% if has_allocations %}
@@ -337,7 +337,7 @@
 <div class="card-raised" id="unmet-demand">
   <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
     <h2 class="section-header-flush">Fields with water use recorded and no supply reported</h2>
-    <span class="text-tertiary text-xs">{{ selected_period.name }}{% include "partials/_explainer_popout.html" with title="How a row is counted" text="One row per field, the figure as the calculation run stored it. The column adds." link=wb_help_url link_label="How water balances work" %} · All figures in acre-feet (AF).</span>
+    <span class="text-tertiary text-xs">{{ selected_period.name }}{% include "partials/_explainer_popout.html" with title="How a row is counted" text="One row per field whose water use in a month of this water year was more than the water on its record. Each figure adds the field's monthly amounts not met by supplies, and the column adds to the total at the bottom." link=wb_help_url link_label="How water balances work" %} · All figures in acre-feet (AF).</span>
   </div>
   {% if unmet_demand_rows %}
   <div class="table-scroll">
@@ -375,7 +375,7 @@
     </tbody>
     <tfoot>
       <tr>
-        <td class="tfoot-total">District total</td>
+        <td class="tfoot-total">Total</td>
         <td></td>
         <td class="td-num-bold">{{ unmet_demand_total|floatformat:2|intcomma }}</td>
       </tr>
@@ -395,3 +395,4 @@
   here was invisible to any deployment that does not do groundwater accounting.
   See the block there.
 {% endcomment %}
+{% comment %}150.1-02 screen 2, Dashboard: the heading "Water balance", the row "Total", the empty-site line, the over-budget count, the Remaining pop-out and the fields-table pop-out are Brent's approved sentences (2026-10-12 12:04 PDT, "Everything looks great, approved."; recorded in brent-sentence-corrections.md). A balance that prints 0.00 is "Balanced" (ISS-237, his choice the same minute). Notes sit at the end of the file so the figure ledger's line numbers stand.{% endcomment %}

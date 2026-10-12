@@ -269,7 +269,7 @@
     "kind": "figure",
     "template": "templates/accounting/partials/_account_balances.html",
     "line": 83,
-    "column": 145,
+    "column": 106,
     "expression": "{{ balance.net_vs_supply|floatformat:2|intcomma }}",
     "enclosing_loop": null,
     "nearest_label": "{{ balance.net_vs_supply|"
@@ -401,7 +401,7 @@
     "kind": "figure",
     "template": "templates/accounting/partials/_account_balances.html",
     "line": 199,
-    "column": 145,
+    "column": 106,
     "expression": "{{ balance.net_vs_supply|floatformat:2|intcomma }}",
     "enclosing_loop": null,
     "nearest_label": "{{ balance.net_vs_supply|"
@@ -566,7 +566,7 @@
     "kind": "figure",
     "template": "templates/accounting/partials/_active_accounts_table.html",
     "line": 115,
-    "column": 203,
+    "column": 183,
     "expression": "{{ grand_net|floatformat:2|intcomma }}",
     "enclosing_loop": null,
     "nearest_label": "{{ grand_net|"
@@ -665,7 +665,7 @@
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
     "line": 93,
-    "column": 121,
+    "column": 82,
     "expression": "{{ grand_net|floatformat:2|intcomma }}",
     "enclosing_loop": null,
     "nearest_label": "{{ grand_net|"

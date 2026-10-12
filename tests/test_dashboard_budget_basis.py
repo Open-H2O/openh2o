@@ -219,7 +219,7 @@ def test_the_panel_is_named_for_the_district_balance():
 
     html = _dashboard(period).content.decode()
 
-    assert "District water balance" in html
+    assert "Water balance" in html and "District water balance" not in html
     assert "Supply vs. use" not in html
 
 

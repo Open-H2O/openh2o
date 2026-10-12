@@ -27,7 +27,7 @@ Diversion/recharge ledger integration utilities and balance calculations.
 import io
 import logging
 from datetime import datetime
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 
 from django.db import transaction
 from django.db.models import Case, DecimalField, F, OuterRef, Q, Subquery, Sum, When
@@ -1223,6 +1223,26 @@ def parcel_over_delivery_total(parcel, reporting_period=None):
     if total is None:
         return Decimal("0")
     return total.quantize(Decimal("0.0001"))
+
+
+def balance_state(value):
+    """``"surplus"``, ``"deficit"`` or ``"balanced"`` for a water balance in AF.
+
+    Judged on the two decimal places every page prints (ISS-237). A field with
+    no meter closes at zero by construction, but its monthly figures are stored
+    to four places, so a year's sum can land at +0.0001 or -0.0003 AF. Judged
+    unrounded, two accounts that both print 0.00 were counted one in surplus
+    and one in deficit. Brent, 2026-10-12 12:04 PDT, chose "Balanced": a
+    balance that prints 0.00 is neither. ``None`` (no measurement) stays None.
+    """
+    if value is None:
+        return None
+    shown = Decimal(value).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    if shown > 0:
+        return "surplus"
+    if shown < 0:
+        return "deficit"
+    return "balanced"
 
 
 def unmet_demand_by_parcel(reporting_period):
