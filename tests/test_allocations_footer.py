@@ -260,8 +260,8 @@ class TestAllocationsAcrossWaterYears:
         assert html.count("108,000.00") == 4
         assert "216,000.00" not in html
         assert "216000" not in html
-        assert f"All 1 surface-water allocation, {period_a.name}" in html
-        assert f"All 1 surface-water allocation, {period_b.name}" in html
+        assert f"All 1 surface water allocation, {period_a.name}" in html
+        assert f"All 1 surface water allocation, {period_b.name}" in html
 
     def test_one_period_tfoot_names_the_entitlement_once_with_the_period_and_the_count(
         self, auth_client, two_periods_same_entitlement
@@ -283,7 +283,7 @@ class TestAllocationsAcrossWaterYears:
         tfoot_html = tfoot_match.group(1)
 
         assert tfoot_html.count("108,000.00") == 1
-        assert f"All 1 surface-water allocation, {period_a.name}" in tfoot_html
+        assert f"All 1 surface water allocation, {period_a.name}" in tfoot_html
         assert "216,000.00" not in html
 
 

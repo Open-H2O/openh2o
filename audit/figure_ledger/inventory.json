@@ -1270,7 +1270,7 @@
     "kind": "figure",
     "template": "templates/parcels/partials/_detail_pane.html",
     "line": 118,
-    "column": 97,
+    "column": 116,
     "expression": "{{ mass_balance.inputs.precip|floatformat:2|intcomma }}",
     "enclosing_loop": null,
     "nearest_label": "{{ mass_balance.inputs.precip|"

@@ -71,7 +71,7 @@
       {% if not period_id and alloc.ends_period_group %}
       {% for subtotal in alloc.period_group_subtotals %}
       <tr class="row-subtotal">
-        <td class="tfoot-total" colspan="2">All {{ subtotal.plans }} {{ subtotal.water_type__name|slugify }} allocation{{ subtotal.plans|pluralize }}, {{ alloc.reporting_period.name }}</td>
+        <td class="tfoot-total" colspan="2">All {{ subtotal.plans }} {{ subtotal.water_type__name|lower }} allocation{{ subtotal.plans|pluralize }}, {{ alloc.reporting_period.name }}</td>
         <td class="td-num-bold td-total">{{ subtotal.total|floatformat:2|intcomma }}</td>
       </tr>
       {% endfor %}
@@ -90,7 +90,7 @@
     <tfoot>
       {% for subtotal in allocation_subtotals %}
       <tr>
-        <td class="tfoot-total" colspan="2">All {{ subtotal.plans }} {{ subtotal.water_type__name|slugify }} allocation{{ subtotal.plans|pluralize }}, {{ period_name }}</td>
+        <td class="tfoot-total" colspan="2">All {{ subtotal.plans }} {{ subtotal.water_type__name|lower }} allocation{{ subtotal.plans|pluralize }}, {{ period_name }}</td>
         <td class="td-num-bold td-total">{{ subtotal.total|floatformat:2|intcomma }}</td>
       </tr>
       {% endfor %}
@@ -140,3 +140,4 @@
   {% endif %}
 </div>
 {% endif %}
+{% comment %}Total rows read "surface water", not the slug "surface-water", the same row as the Water year page: Brent 2026-10-12 15:18 PDT, "yes" (150.1-02 screen 4, Water year page); recorded in brent-sentence-corrections.md. Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}

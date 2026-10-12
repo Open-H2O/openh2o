@@ -330,8 +330,8 @@ def test_no_zone_at_all_deposits_nothing_and_says_so_in_words():
     attention, info = _note_sentences(notes)
     assert attention == []
     assert info == [
-        "Canal evaporation 0.95 AF and spill 1.90 AF across 1 point this "
-        "period, not credited to anyone.",
+        "OpenH2O subtracted 0.95 AF of canal evaporation and 1.90 AF of spill "
+        "from the water diverted at 1 point of diversion in the months calculated.",
         "Canal seepage of 11.40 AF at Plain Canal Headgate in January 2024 "
         "has no district zone to go to.",
     ]
@@ -393,8 +393,8 @@ def test_evaporation_and_spill_are_one_sentence_across_the_points():
 
     assert attention == []
     assert info == [
-        "Canal evaporation 4.00 AF and spill 1.90 AF across 2 points this "
-        "period, not credited to anyone."
+        "OpenH2O subtracted 4.00 AF of canal evaporation and 1.90 AF of spill "
+        "from the water diverted at 2 points of diversion in the months calculated."
     ]
 
 
@@ -411,7 +411,8 @@ def test_with_no_spill_anywhere_only_evaporation_is_named():
 
     assert _note_sentences(raw) == (
         [],
-        ["Canal evaporation 3.00 AF across 1 point this period, not credited to anyone."],
+        ["OpenH2O subtracted 3.00 AF of canal evaporation from the water diverted "
+         "at 1 point of diversion in the months calculated."],
     )
 
 
@@ -512,8 +513,8 @@ def test_a_run_with_losses_stays_green_and_says_what_was_written_off(engine_worl
     # seepage; 30 - 0.30 - 3.60 - 0.60 = 25.50 left for the field
     assert req.status == "succeeded"
     assert (
-        "Canal evaporation 0.30 AF and spill 0.60 AF across 1 point this "
-        "period, not credited to anyone."
+        "OpenH2O subtracted 0.30 AF of canal evaporation and 0.60 AF of spill "
+        "from the water diverted at 1 point of diversion in the months calculated."
     ) in req.notes
     assert (
         "Canal seepage of 3.60 AF at Test Canal Headgate in January 2024 has "

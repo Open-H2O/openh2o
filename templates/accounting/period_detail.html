@@ -149,9 +149,9 @@
         <div>
           <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">Calculation</h2>
           {% if period.is_finalized %}
-          <p class="text-secondary text-base m-0">This water year is finalized, so its figures are not recalculated. An administrator can reopen it.</p>
+          <p class="text-secondary text-base m-0">OpenH2O does not recalculate a finalized water year. An administrator can reopen it.</p>
           {% else %}
-          <p class="text-secondary text-base m-0">Works out each month's figures for this water year, one month at a time, oldest first. It stops at the first month that fails and keeps the months before it. It never changes a finalized year.</p>
+          <p class="text-secondary text-base m-0">OpenH2O calculates this water year one month at a time, oldest first. If a month fails, OpenH2O stops there and keeps the months already calculated. OpenH2O never recalculates a finalized water year.</p>
           {% endif %}
           {% if user_can_write and not period.is_finalized %}
           <form method="post" action="{% url 'accounting:period_calculate' period.pk %}" style="margin-top: var(--space-md);">
@@ -231,7 +231,7 @@
           <tfoot>
             {% for subtotal in allocation_subtotals %}
             <tr>
-              <td class="tfoot-total" colspan="2">All {{ subtotal.plans }} {{ subtotal.water_type__name|slugify }} allocation{{ subtotal.plans|pluralize }}, {{ period.name }}</td>
+              <td class="tfoot-total" colspan="2">All {{ subtotal.plans }} {{ subtotal.water_type__name|lower }} allocation{{ subtotal.plans|pluralize }}, {{ period.name }}</td>
               <td class="td-num-bold td-total">{{ subtotal.total|floatformat:2|intcomma }}</td>
             </tr>
             {% endfor %}
@@ -250,3 +250,4 @@
   </div>
 </div>
 {% endblock %}
+{% comment %}The Calculation card's two sentences and the total row's "surface water" (was the slug "surface-water"): Brent 2026-10-12 15:18 PDT, "yes" (150.1-02 screen 4, Water year page); recorded in brent-sentence-corrections.md. Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}

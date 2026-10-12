@@ -573,7 +573,8 @@ def test_a_curtailed_right_gets_no_estimate_and_loses_the_one_it_held():
 
     assert _estimates(pod).count() == 0
     assert _sentences(notes) == [
-        "No delivery was estimated for El Nido Ditch: the water right is curtailed."
+        "OpenH2O estimated no delivery at El Nido Ditch in the months a curtailment "
+        "order covers its water right."
     ]
 
 
@@ -589,7 +590,8 @@ def test_points_are_grouped_by_the_status_of_their_right():
 
     assert _estimates().count() == 0
     assert _sentences(notes) == [
-        "No delivery was estimated for A Gate and B Gate: the water right is curtailed.",
+        "OpenH2O estimated no delivery at A Gate and B Gate in the months a "
+        "curtailment order covers their water rights.",
         "No delivery was estimated for C Gate: the water right is inactive.",
     ]
 
@@ -617,8 +619,9 @@ def test_the_run_says_once_how_many_points_and_months_were_estimated():
 
     assert attention == []
     assert info == [
-        "Estimated the delivery of 2 points with no meter for 2 months, from the "
-        "fields' crop water use. These are estimates, not measurements."
+        "OpenH2O estimated the delivery at 2 unmetered points of diversion for 2 "
+        "months, from the ETAW of the fields they serve divided by each field's "
+        "irrigation efficiency. These figures are estimates, not measurements."
     ]
 
 
@@ -803,8 +806,9 @@ def test_the_estimate_fills_the_fields_exactly_through_the_months_run():
     attention, info = _note_sentences(raw)
     assert attention == []
     assert (
-        "Estimated the delivery of 1 point with no meter for 1 month, from the "
-        "fields' crop water use. These are estimates, not measurements."
+        "OpenH2O estimated the delivery at 1 unmetered point of diversion for 1 "
+        "month, from the ETAW of the fields it serves divided by each field's "
+        "irrigation efficiency. These figures are estimates, not measurements."
     ) in info
 
 
@@ -983,7 +987,8 @@ def test_an_order_effective_mid_year_stops_the_months_it_covers_and_not_the_one_
     assert _estimate_of(pod, JAN).volume_acre_feet == Decimal("98.0392")
     assert _estimates(pod).count() == 1
     curtailed = [
-        "No delivery was estimated for El Nido Ditch: the water right is curtailed."
+        "OpenH2O estimated no delivery at El Nido Ditch in the months a curtailment "
+        "order covers its water right."
     ]
     assert _sentences(feb_notes) == curtailed
     assert _sentences(mar_notes) == curtailed

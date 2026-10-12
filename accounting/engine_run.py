@@ -332,24 +332,30 @@ def _note_sentences(raw):
             f"{pod} {_amount(af)}"
             for pod, af in sorted(unexplained.items(), key=lambda kv: (-kv[1], kv[0]))
         )
+        # Brent, 2026-10-12 15:18 PDT ("yes", with "charges no field for it
+        # and" struck at 15:06): the ETAW terms replace the 10-06 phrase.
         info.append(
-            f"{_amount(total)} AF of canal water went beyond what the crops "
-            f"could use ({each}). No field is charged for it. Site Health "
-            f"lists it under Unallocated Delivery."
+            f"{_amount(total)} AF of headgate water was left after each field "
+            f"received its ETAW divided by its irrigation efficiency ({each}). "
+            f"OpenH2O lists it on Site Health under Unallocated Delivery."
         )
     if loss_points:
         # Working copy for Brent's checkpoint (149-02). Only the losses that
         # are above zero are named.
+        # Brent, 2026-10-12 15:18 PDT ("yes"; "subtracted", not "wrote off"):
+        # the losses come off the water diverted (surface/services.py).
         parts = []
         if evaporation > 0:
-            parts.append(f"evaporation {_amount(evaporation)} AF")
+            parts.append(f"{_amount(evaporation)} AF of canal evaporation")
         if spill > 0:
-            parts.append(f"spill {_amount(spill)} AF")
+            parts.append(
+                f"{_amount(spill)} AF of {'spill' if parts else 'canal spill'}"
+            )
         count = len(loss_points)
         info.append(
-            f"Canal {' and '.join(parts)} across {count} "
-            f"point{'s' if count != 1 else ''} this period, not credited to "
-            f"anyone."
+            f"OpenH2O subtracted {' and '.join(parts)} from the water diverted "
+            f"at {count} point{'s' if count != 1 else ''} of diversion in the "
+            f"months calculated."
         )
     for note in sorted(no_zone, key=lambda n: (n["month"], n["pod"])):
         info.append(
@@ -360,10 +366,15 @@ def _note_sentences(raw):
     # checkpoint. They keep a run green: an estimate is information, never a fault.
     if estimated_points:
         points, months = len(estimated_points), len(estimated_months)
+        # Brent, 2026-10-12 15:18 PDT ("yes"; "1 unmetered point of
+        # diversion", 15:06). The basis is ETAW / efficiency (surface/estimate.py).
         info.append(
-            f"Estimated the delivery of {points} point{'s' if points != 1 else ''} "
-            f"with no meter for {months} month{'s' if months != 1 else ''}, from "
-            f"the fields' crop water use. These are estimates, not measurements."
+            f"OpenH2O estimated the delivery at {points} unmetered "
+            f"point{'s' if points != 1 else ''} of diversion for {months} "
+            f"month{'s' if months != 1 else ''}, from the ETAW of the fields "
+            f"{'it serves' if points == 1 else 'they serve'} divided by each "
+            f"field's irrigation efficiency. These figures are estimates, not "
+            f"measurements."
         )
     for note in sorted(capped, key=lambda n: (n["month"], n["pod"])):
         where = {
@@ -386,6 +397,15 @@ def _note_sentences(raw):
             f"{'each has' if len(no_right) > 1 else 'it has'} no water right linked."
         )
     for status, pods in sorted(not_active.items()):
+        if status == "curtailed":
+            # Brent, 2026-10-12 15:18 PDT ("yes"): an order stops the estimate
+            # only in the months it covers (surface/estimate.py).
+            info.append(
+                f"OpenH2O estimated no delivery at {_names(pods)} in the months "
+                f"a curtailment order covers "
+                f"{'its water right' if len(pods) == 1 else 'their water rights'}."
+            )
+            continue
         info.append(
             f"No delivery was estimated for {_names(pods)}: the water right is "
             f"{status}."

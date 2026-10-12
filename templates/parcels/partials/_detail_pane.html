@@ -115,7 +115,7 @@
             {% if mass_balance.inputs.surface %}
             {% endif %}
             <div class="budget-breakdown-row"><span>Groundwater extraction{% if mass_balance.gw_is_estimated %}<span class="budget-breakdown-note">estimated</span>{% endif %}</span><b>{{ mass_balance.inputs.gw_recovered|floatformat:2|intcomma }}</b></div>
-            <div class="budget-breakdown-row"><span>Rain</span><b>{{ mass_balance.inputs.precip|floatformat:2|intcomma }}</b></div>
+            <div class="budget-breakdown-row"><span>Effective precipitation</span><b>{{ mass_balance.inputs.precip|floatformat:2|intcomma }}</b></div>
           </div>
         </div>
         <div class="budget-op">&minus;</div>
@@ -632,3 +632,4 @@
   boot();
 })();
 </script>
+{% comment %}"Effective precipitation" for the figure that read "Rain" (CalculationRun.effective_precip_af, summed in parcel_mass_balance): Brent 2026-10-12 15:18 PDT, "yes" (150.1-02 screen 4, Water year page); recorded in brent-sentence-corrections.md. Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}

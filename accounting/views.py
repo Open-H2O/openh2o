@@ -707,8 +707,11 @@ def period_create(request):
             counts = attach_orphans_to_period(period)
             messages.success(
                 request,
-                f"Water year created. {counts['diversion_records']} "
-                f"diversion records, {counts['ledger_rows']} ledger rows attached.",
+                # Brent, 2026-10-12 15:18 PDT ("yes", 150.1-02 screen 4).
+                f"Water year created. OpenH2O attached "
+                f"{counts['diversion_records']} diversion records and "
+                f"{counts['ledger_rows']} ledger rows dated inside it to this "
+                f"water year.",
             )
             return redirect("accounting:period_detail", pk=period.pk)
     else:

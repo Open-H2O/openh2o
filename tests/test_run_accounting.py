@@ -522,7 +522,8 @@ def test_canal_water_beyond_what_the_crops_could_use_is_one_plain_note(world):
     assert req.status == "succeeded"  # information, not a fault
     surplus = UnallocatedDelivery.objects.get(point_of_diversion=world.pod)
     assert req.notes[-1] == (
-        f"{surplus.amount_acre_feet:,.2f} AF of canal water went beyond what the "
-        f"crops could use (Test Canal Headgate {surplus.amount_acre_feet:,.2f}). "
-        f"No field is charged for it. Site Health lists it under Unallocated Delivery."
+        f"{surplus.amount_acre_feet:,.2f} AF of headgate water was left after each "
+        f"field received its ETAW divided by its irrigation efficiency (Test Canal "
+        f"Headgate {surplus.amount_acre_feet:,.2f}). OpenH2O lists it on Site Health "
+        f"under Unallocated Delivery."
     )

@@ -177,8 +177,7 @@ class TestPeriodCreateAttachesAndReports:
 
         assert resp.status_code == 200
         body = resp.content.decode()
-        assert "2 diversion records" in body
-        assert "1 ledger rows attached" in body
+        assert "OpenH2O attached 2 diversion records and 1 ledger rows dated" in body
         assert DiversionRecord.objects.filter(reporting_period__isnull=True).count() == 0
 
 
