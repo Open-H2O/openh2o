@@ -151,3 +151,26 @@ def test_every_first_party_model_is_described(entries):
         "with an expected count and a reason saying what determines it:\n  "
         + "\n  ".join(undescribed)
     )
+
+
+def test_off_by_default_apps_match_the_module_registry(shape):
+    """Gate 2 lets a model be absent only for an app the default build leaves out.
+
+    The candidate is built with OPENH2O_MODULES empty, which is the default
+    module set. A module marked on_by_default=False is missing from that build,
+    so gate 2 must expect it missing (found 2026-10-12: the first production
+    deploy after reporting went off by default refused on five reporting
+    models). The list may not grow past the registry either: an app listed
+    here that the default does build is a domain gate 2 would let vanish.
+    """
+    from core.modules import MODULE_REGISTRY
+
+    expected = sorted(
+        app
+        for spec in MODULE_REGISTRY.values()
+        if not spec.on_by_default and not spec.schema_resident
+        for app in spec.apps
+    )
+    listed = shape.get("off_by_default_apps", {})
+    assert sorted(listed.get("apps", [])) == expected
+    assert len(listed.get("reason", "").split()) >= 12

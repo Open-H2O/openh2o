@@ -226,9 +226,12 @@ echo "verify-candidate: restored — $applied applied migrations in the scratch 
 # write a user row into the candidate.
 export DEMO_WEB="run --rm --no-deps -e OPENH2O_MODULES= web"
 
-# -e OPENH2O_MODULES= is load-bearing: empty means the FULL module list. This
-# host's .env may carry a reduced set, and gates run against a reduced module
-# list would silently skip whole domains and still report PASS.
+# -e OPENH2O_MODULES= is load-bearing: empty means the code's DEFAULT module
+# set (every module except those marked on_by_default=False in core/modules.py,
+# today only reporting), the set the live site runs. This host's .env may carry
+# a reduced set, and gates run against a reduced module list would silently
+# skip whole domains and still report PASS. Gate 2 knows which apps the default
+# leaves out from expected_shape.json's off_by_default_apps.
 run_web() {
   # shellcheck disable=SC2086
   $C run --rm --no-deps -e OPENH2O_MODULES= -T web "$@"
@@ -318,6 +321,7 @@ with open(shape_path) as handle:
     shape = json.load(handle)
 models = shape["models"]
 unlisted_policy = shape.get("unlisted_model", "fail")
+off_by_default_apps = set(shape.get("off_by_default_apps", {}).get("apps", []))
 
 actual = {}
 with open(counts_path) as handle:
@@ -350,6 +354,12 @@ for label in sorted(set(models) | set(actual)):
             )
         continue
 
+    if got is None and label.split(".", 1)[0] in off_by_default_apps:
+        # A module the default set leaves out (the shape file names it under
+        # off_by_default_apps), and the build runs that default.
+        rows.append((label, spec["expected"], "absent", "off"))
+        continue
+
     if got is None:
         # Described but absent from the candidate entirely: the model was
         # removed, or the module it lives in was not built.
@@ -380,7 +390,7 @@ width = max(len(r[0]) for r in rows)
 if failures:
     print("  %-*s %8s %8s   %s" % (width, "model", "expect", "actual", "verdict"))
     for label, expected, got, verdict in rows:
-        mark = "    " if verdict == "ok" else " <<<"
+        mark = "    " if verdict in ("ok", "off") else " <<<"
         print("  %-*s %8s %8s   %-8s%s" % (width, label, expected, got, verdict, mark))
     print("")
     print("  SHAPE GATE FAILED — %d model(s):" % len(failures))

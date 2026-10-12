@@ -124,11 +124,15 @@ fi
 #   reached production. THE CANDIDATE MUST CONTAIN ZERO USER ROWS.
 #
 #   -e OPENH2O_MODULES= is not noise. config/settings/base.py reads that
-#   variable and falls back to the FULL module list when it is empty. The
-#   checkout's .env may carry a reduced set (Plan 90-03 deliberately ran staging
-#   on reduced configurations), and a golden built under a reduced config would
-#   silently omit whole domains. Empty pins the build to the full default set
-#   regardless of what this host happens to be running.
+#   variable and falls back to the code's DEFAULT module set when it is empty:
+#   every module except those marked on_by_default=False (today only
+#   reporting, 2026-10-12). The checkout's .env may carry a reduced set (Plan
+#   90-03 deliberately ran staging on reduced configurations), and a golden
+#   built under a reduced config would silently omit whole domains. Empty pins
+#   the build to the default set regardless of what this host happens to be
+#   running. It must be the default and not `all`: the live site runs the
+#   default, and reset-demo.sh refuses a golden whose migration fingerprint
+#   differs from the live one.
 run_step() {
   echo ""
   echo "=== $* ==="
