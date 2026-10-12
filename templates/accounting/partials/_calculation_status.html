@@ -22,29 +22,6 @@
     {% for note in calculation_note_sentences %}<li>{{ note }}</li>{% endfor %}
   </ul>
   {% endif %}
-  {% if calculation_note_table %}
-  {# Brent, 2026-10-12 16:07 PDT ("yes" to the mock-up): the run's figures as one table, not bullets. #}
-  <h3 class="section-header-sm mt-md">What the calculation found</h3>
-  <div class="table-scroll">
-  <table class="data-table calculation-notes-table">
-    <thead><tr><th></th><th class="th-right">Acre-feet</th><th>Point of diversion</th></tr></thead>
-    <tbody>
-    {% for group in calculation_note_table %}{% for row in group.rows %}
-    <tr>
-      <td class="text-secondary">{% if forloop.first %}<strong class="text-primary">{{ group.lead }}</strong>{{ group.rest }}{% endif %}</td>
-      <td class="td-num">{% if row.af %}{{ row.af }}{% else %}&mdash;{% endif %}</td>
-      <td>{{ row.where }}</td>
-    </tr>
-    {% endfor %}{% if group.total %}
-    <tr>
-      <td></td>
-      <td class="td-num-bold">{{ group.total }}</td>
-      <td class="text-secondary">Total</td>
-    </tr>
-    {% endif %}{% endfor %}
-    </tbody>
-  </table>
-  </div>
-  {% endif %}
   {% endif %}
 </div>
+{% if oob %}{% include "accounting/partials/_calculation_notes_table.html" %}{% endif %}

@@ -692,7 +692,7 @@ def period_calculation_status(request, pk):
     return render(
         request,
         "accounting/partials/_calculation_status.html",
-        {"period": period, **_calculation_card_context(period)},
+        {"period": period, "oob": True, **_calculation_card_context(period)},
     )
 
 

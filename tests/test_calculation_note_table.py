@@ -140,3 +140,29 @@ def test_the_water_year_page_shows_sentences_above_one_table(auth_client):
     assert "Canal evaporation subtracted from the water diverted" in html
     assert ">43.40<" in html
     assert "&#x27;table&#x27;" not in html and "{&#x27;" not in html
+
+
+@pytest.mark.django_db
+def test_the_table_spans_the_card_and_the_poll_sends_it_out_of_band(auth_client):
+    # Looked at 1,730 (16:31): in the status column the point names wrapped to
+    # four lines beside an empty half card. The page places the table after the
+    # card's grid; the 3-second poll returns it with hx-swap-oob.
+    period = ReportingPeriodFactory()
+    CalculationRequest.objects.create(
+        trigger="command", reporting_period=period, status="succeeded",
+        outcome="Calculated 2 months.", notes=_note_table(RAW),
+    )
+
+    page = auth_client.get(
+        reverse("accounting:period_detail", args=[period.pk])
+    ).content.decode()
+    status = page.index('id="calculation-status"')
+    notes = page.index('id="calculation-notes"')
+    assert notes > page.index("</div>", status)
+    assert 'id="calculation-notes" hx-swap-oob' not in page
+
+    poll = auth_client.get(
+        reverse("accounting:period_calculation_status", args=[period.pk])
+    ).content.decode()
+    assert '<div id="calculation-notes" hx-swap-oob="true">' in poll
+    assert "Canal evaporation subtracted from the water diverted" in poll

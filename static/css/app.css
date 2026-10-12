@@ -5516,7 +5516,7 @@ details[open] > summary .disclosure-mark {
    the point names keep to one line so the label column takes the wrap. */
 .calculation-notes-table td:first-child { min-width: 22ch; }
 .calculation-notes-table td.td-num, .calculation-notes-table td.td-num-bold,
-.calculation-notes-table th.th-right { white-space: nowrap; }
+.calculation-notes-table th.th-right, .calculation-notes-table td:last-child { white-space: nowrap; }
 
 /* -- Allocations list, the water-year page (143-06) ----------------------- */
 /* The allocations card carries no padding (the table fills it, the ledger's
