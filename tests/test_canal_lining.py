@@ -296,3 +296,9 @@ def test_demo_lining_command_sets_each_named_point_once():
     assert apply_demo_pod_lining() == 0
     atwater.refresh_from_db()
     assert atwater.notes.count("Demonstration data") == 1
+
+
+def test_form_basis_help_points_at_the_shares_below_it():
+    """The basis sits above the three shares on the form (150.3-01)."""
+    form = PointOfDiversionForm(instance=PointOfDiversionFactory())
+    assert "three shares below" in form.fields["loss_basis"].help_text

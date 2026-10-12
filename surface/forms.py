@@ -254,6 +254,9 @@ class PointOfDiversionForm(forms.ModelForm):
             "seepage. While the basis is the platform's default and the "
             "lining is stated, OpenH2O replaces this figure with the lining's "
             "default when you save.",
+            # The basis now sits above the three shares, beside the lining.
+            "loss_basis": "How the three shares below were set: measured on "
+            "this canal, a district estimate, or this platform's own default.",
             "evaporation_fraction": "Share of the diverted volume lost to "
             "evaporation off the canal. The platform's default is 1 percent "
             "for an open canal and 0 for a pipe. An agency's own measured or "
