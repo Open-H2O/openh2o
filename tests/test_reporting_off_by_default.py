@@ -127,3 +127,19 @@ def test_about_page_says_nothing_about_filing(client_without_reporting):
     html = client_without_reporting.get("/about/").content.decode()
     for phrase in ("report layout", "files them", "GEARS", "CalWATRS"):
         assert phrase not in html, phrase
+
+
+@pytest.mark.skipif(not mod.is_enabled("surface"), reason="surface module is not enabled")
+def test_a_rights_data_document_names_no_pin_without_reporting(settings):
+    """The record's JSON-LD is read by programs, not people, but it is still the
+    record published under the site's own address."""
+    from core.identifiers import jsonld_for
+    from tests.factories import WaterRightFactory
+
+    right = WaterRightFactory(calwatrs_pin="PIN-123")
+    settings.OPENH2O_MODULES = WITHOUT_REPORTING
+    ids = [i["schema:propertyID"] for i in jsonld_for(right, base="https://x.test")["schema:identifier"]]
+    assert "calwatrs_pin" not in ids
+    settings.OPENH2O_MODULES = list(mod.ALL_MODULE_NAMES)
+    ids = [i["schema:propertyID"] for i in jsonld_for(right, base="https://x.test")["schema:identifier"]]
+    assert "calwatrs_pin" in ids
