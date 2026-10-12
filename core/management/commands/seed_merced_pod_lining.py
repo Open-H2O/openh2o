@@ -6,50 +6,46 @@ each point of diversion to help with seepage calcs." Every demonstration point
 keeps the platform's default loss basis, so the lining set here also sets its
 default seepage share (``PointOfDiversion.apply_lining_default``).
 
-What the sources say, read 2026-10-11:
+What the sources say, read 2026-10-11 (plans, tables and quotes in the audited
+research file ~/Documents/Work/Research/water-swrcb/canal-loss-merced-area-2026-10-11.md):
 
-- Merced Irrigation District's 2020 Agricultural Water Management Plan, Table 2,
-  counts 406 miles of unlined canal and 105 of lined canal, and names no canal's
-  lining. The 2018 Merced Integrated Regional Water Management Plan lists
-  "lining portions of the Main and Le Grand Canals"; the district's 2025
-  Atwater Canal Headworks Replacement bid lines the headworks only. No source
-  read says any of these canals is lined along its length, so each canal point
-  is set to unlined, the district's majority, and its notes say so.
+- The area's 2020 water management plan counts 406 miles of unlined canal and
+  105 of lined canal, and names no canal's lining. A 2018 regional water plan
+  lists lining portions of the Main and Le Grand Canals; a 2025 headworks
+  replacement bid lines the Atwater headworks only. No source read says any of
+  these canals is lined along its length, so each canal point is set to
+  unlined, the area's majority, and its notes say so.
 - The two river takes with no canal of their own (the Bottomlands riparian take
   and the Snelling re-diversion) are left not stated: no source describes how
   their water reaches a field, so they keep no seepage share.
 - The Merced Falls hydroelectric diversion passes its water through the power
   plant and back to the river, which is a pipe.
 
-Each entry's note is appended to the point's own notes once. Idempotent, keyed
-on the demonstration names, and touches no other point.
+Notes name no district (Brent 2026-10-11 17:51 PDT: "We arent supposed to be
+pointing out individual districts"); the words were approved 18:43 PDT. Each
+entry's note replaces any earlier note this command wrote (``_RETIRED_NOTE``)
+and is otherwise appended to the point's own notes once. Idempotent, keyed on
+the demonstration names, and touches no other point.
 """
+import re
+
 from django.core.management.base import BaseCommand
 
 from surface.models import PointOfDiversion
 
 _MAJORITY = (
-    "Demonstration data: lining set to unlined, Merced Irrigation District's "
-    "majority (406 miles of unlined canal against 105 of lined canal, 2020 "
-    "Agricultural Water Management Plan, Table 2). No published source read "
-    "states this canal's own lining."
+    "Demonstration data: lining set to unlined. A published water management "
+    "plan for this area counts 406 miles of unlined canal against 105 of lined "
+    "canal, and no published source read states this canal's own lining."
 )
+_PARTLY_LINED = " A regional water plan from 2018 lists lining portions of this canal."
 
 LINING_BY_POD = {
     "MER-POD-004-DEMO Atwater Canal Headgate": ("unlined", _MAJORITY),
-    "MER-POD-005-DEMO Le Grand Canal Headgate": (
-        "unlined",
-        _MAJORITY + " The 2018 Merced Integrated Regional Water Management Plan "
-        "lists lining portions of the Le Grand Canal.",
-    ),
+    "MER-POD-005-DEMO Le Grand Canal Headgate": ("unlined", _MAJORITY + _PARTLY_LINED),
     "MER-POD-006-DEMO Stevinson Diversion Canal Headgate": ("unlined", _MAJORITY),
     "MER-POD-007-DEMO Plainsburg El Nido Canal Headgate": ("unlined", _MAJORITY),
-    "MER-POD-008-DEMO Crocker-Huffman River Diversion": (
-        "unlined",
-        _MAJORITY + " This take feeds Merced Irrigation District's Main Canal; the "
-        "2018 Merced Integrated Regional Water Management Plan lists lining "
-        "portions of the Main Canal.",
-    ),
+    "MER-POD-008-DEMO Crocker-Huffman River Diversion": ("unlined", _MAJORITY + _PARTLY_LINED),
     "MER-POD-009-DEMO Bottomlands Riparian Take": (
         None,
         "Demonstration data: lining not stated. This riparian take draws from "
@@ -72,6 +68,21 @@ LINING_BY_POD = {
     "MER-BPOD-001 El Nido Canal Recharge Intake": ("unlined", _MAJORITY),
 }
 
+# Notes an earlier version of this command wrote (150.3-01 as first built,
+# 2026-10-11 16:40 PDT) named a real district. Each was one paragraph opening
+# with this prefix (a comma where the current note has a full stop), so a re-run
+# removes that paragraph before appending the current note. Matched by prefix so
+# this file never has to spell the banned name.
+_RETIRED_NOTE = re.compile(r"Demonstration data: lining set to unlined, [^\n]*")
+
+
+def _without_retired(notes):
+    """The notes with any retired paragraph this command wrote taken out."""
+    if not _RETIRED_NOTE.search(notes):
+        return notes
+    parts = [_RETIRED_NOTE.sub("", part).strip() for part in notes.split("\n\n")]
+    return "\n\n".join(part for part in parts if part)
+
 
 def apply_demo_pod_lining():
     """Set each demonstration point's lining and note; return how many changed."""
@@ -80,7 +91,7 @@ def apply_demo_pod_lining():
         pod = PointOfDiversion.objects.filter(name=name).first()
         if pod is None:
             continue
-        notes = pod.notes or ""
+        notes = _without_retired(pod.notes or "")
         if note not in notes:
             notes = f"{notes}\n\n{note}" if notes else note
         if pod.lining == lining and pod.notes == notes:

@@ -489,3 +489,78 @@ def test_a_single_token_banned_value_gets_no_slug_term():
     ParcelLedgerFactory(description="Adjusted at the midpoint of the reporting period.")
 
     call_command("scan_demo_identity")  # no CommandError == not flagged
+
+
+# ---------------------------------------------------------------------------
+# 8. Seed Python writes text too (150.3-01)
+# ---------------------------------------------------------------------------
+#: Seed strings that hold a banned value on purpose, each with its reason.
+#: Keyed by file, then by the banned value the string carries.
+SEED_TEXT_EXCEPTIONS = {
+    "seed_merced_base.py": {
+        "Merced Irrigation District": (
+            "geography_boundary.description is the DWR Bulletin 118 basin "
+            "description carried as published; the policy protects the whole column."
+        ),
+    },
+    "seed_merced_basins_from_selection.py": {
+        "Merced Irrigation District": (
+            "LEGACY_OPERATORS is a teardown key that deletes rows seeded under "
+            "the old operator; it is never written."
+        ),
+    },
+}
+
+
+def _seed_strings(path):
+    """Every string a seed module builds, docstrings left out.
+
+    Implicitly joined literals arrive as one constant, so a name split across
+    two source lines is still one string here.
+    """
+    import ast
+
+    tree = ast.parse(path.read_text())
+    docstrings = set()
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+            body = getattr(node, "body", [])
+            if body and isinstance(body[0], ast.Expr) and isinstance(body[0].value, ast.Constant):
+                docstrings.add(id(body[0].value))
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Constant) and isinstance(node.value, str) and id(node) not in docstrings:
+            yield node.value
+
+
+def test_no_banned_value_in_seed_command_text(policy):
+    """A note a seed command writes is demo data as surely as a fixture file is.
+
+    150.3-01 wrote a real district's name into six point-of-diversion notes from
+    seed Python, and nothing failed until Brent read the page (2026-10-11 17:51
+    PDT): `test_no_banned_value_in_committed_demo_data` reads data files only,
+    and the scan runs against a database, which here is empty.
+    """
+    banned = [e["value"] for e in policy["banned"] if e.get("match", "global") == "global"]
+    commands = REPO_ROOT / "core" / "management" / "commands"
+    offenders = []
+    for path in sorted(commands.glob("seed_*.py")):
+        allowed = SEED_TEXT_EXCEPTIONS.get(path.name, {})
+        for text in _seed_strings(path):
+            lowered = text.lower()
+            for value in banned:
+                if value.lower() in lowered and value not in allowed:
+                    offenders.append(f"{path.name}: {value!r} in {text[:80]!r}")
+
+    assert not offenders, "banned names in seed command text:\n  " + "\n  ".join(offenders)
+
+
+def test_seed_text_exceptions_are_still_needed(policy):
+    """An exception whose string is gone is a hole waiting for the next name."""
+    commands = REPO_ROOT / "core" / "management" / "commands"
+    stale = []
+    for name, values in SEED_TEXT_EXCEPTIONS.items():
+        strings = [t.lower() for t in _seed_strings(commands / name)]
+        for value in values:
+            if not any(value.lower() in t for t in strings):
+                stale.append(f"{name}: {value!r}")
+    assert not stale, "seed text exceptions with nothing left to excuse:\n  " + "\n  ".join(stale)

@@ -60,7 +60,7 @@ BASIN_CONFIGS = [
         "operator": "Halvern Irrigation District",
         "notes": (
             "Spreading basin on open cropland in the Cressey-Winton area of "
-            "eastern Merced County, beside a Merced Irrigation District canal. "
+            "eastern Merced County, beside an irrigation canal. "
             "~110 surface acres; flooded during storm events when water is "
             "diverted from the canal and pooled to percolate. Footprint sized "
             "to true acreage (area_accurate_box), not a fixed-degree box."
@@ -75,8 +75,8 @@ BASIN_CONFIGS = [
         "operator": "Halvern Irrigation District",
         "notes": (
             "Spreading basin on open cropland in the El Nido area of the "
-            "southern Merced Subbasin, beside a Merced Irrigation District "
-            "canal. ~85 surface acres; flooded during storm events when water "
+            "southern Merced Subbasin, beside an irrigation canal. ~85 surface "
+            "acres; flooded during storm events when water "
             "is diverted from the canal and pooled to percolate. Footprint "
             "sized to true acreage (area_accurate_box), not a fixed-degree box."
         ),
