@@ -86,9 +86,12 @@ class TestDemoMarkerGating:
 
     @pytest.mark.parametrize("mode", [True, False])
     def test_status_pop_out_reads_the_approved_sentence(self, mode):
-        # Brent, 2026-10-12 19:24 PDT, "approved": one sentence, demo or not.
+        # Brent, 2026-10-13 08:08 PDT (150.1-02 screen 8): demo or not.
         body = _detail_body("active", demonstration_mode=mode)
-        assert "Active rights are currently exercisable." in body
+        assert (
+            "Whether this right is active, inactive or revoked. OpenH2O "
+            "estimates no delivery under an inactive or revoked right."
+        ) in body
         assert "Curtailed" not in body
         assert "illustrative sample data" not in body
 

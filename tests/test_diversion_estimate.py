@@ -528,7 +528,11 @@ def _junior_right(*, status="active", priority_date=date(1962, 5, 5)):
     )
 
 
-def test_points_with_no_water_right_get_no_estimate_and_one_listing_note():
+def test_a_point_with_no_water_right_is_estimated_with_no_cap():
+    # 150.1-02 screen 8 (Brent 2026-10-13 08:08 PDT): a point with no linked
+    # right used to get no estimate, which shut out anyone whose right is not
+    # on file or who has none. It is now estimated, with no season and no
+    # face value to cap it, and the run writes no note about the right.
     _rp, first, _f1 = _ditch(name="Beta Gate")
     _rp, second, _f2 = _ditch(name="Alpha Gate")
     for pod in (first, second):
@@ -537,11 +541,12 @@ def test_points_with_no_water_right_get_no_estimate_and_one_listing_note():
 
     notes = _run()
 
-    assert _estimates().count() == 0
-    assert _sentences(notes) == [
-        "No delivery was estimated for Alpha Gate and Beta Gate: each has no "
-        "water right linked."
-    ]
+    for pod in (first, second):
+        record = _estimate_of(pod)
+        assert record.volume_acre_feet == Decimal("98.0392")
+        assert "Capped" not in record.notes
+        assert "season" not in record.notes
+    assert not [s for s in _sentences(notes) if "water right" in s]
 
 
 def test_a_typed_zero_stops_the_estimate_and_the_one_held_is_deleted():

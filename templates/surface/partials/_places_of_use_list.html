@@ -12,7 +12,7 @@
       type="button"
       hx-post="{% url 'surface:water_right_remove_parcel' water_right.pk wrp.pk %}"
       hx-target="#places-of-use-list"
-      hx-confirm="Remove parcel {{ wrp.parcel.parcel_number }} as a place of use on this right?"
+      hx-confirm="Remove use area {{ wrp.parcel.parcel_number }} from this right's places of use?"
       class="assignment-chip-remove"
       aria-label="Remove {{ wrp.parcel.parcel_number }} as a place of use"
       title="Remove as a place of use">&times;</button>{% endif %}

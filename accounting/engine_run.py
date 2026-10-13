@@ -289,7 +289,6 @@ def _note_sentences(raw, *, tabled=False):
     estimated_points = set()
     estimated_months = set()
     capped = []
-    no_right = set()
     losses_too_large = set()
     not_active = defaultdict(set)
     for note in raw:
@@ -321,8 +320,6 @@ def _note_sentences(raw, *, tabled=False):
             estimated_months.add(note["month"])
         elif note.get("kind") == "estimate_capped":
             capped.append(note)
-        elif note.get("kind") == "estimate_no_right":
-            no_right.add(note["pod"])
         elif note.get("kind") == "estimate_losses_too_large":
             losses_too_large.add(note["pod"])
         elif note.get("kind") == "estimate_right_not_active":
@@ -397,11 +394,6 @@ def _note_sentences(raw, *, tabled=False):
             f"{month_label(note['month'])}; {_amount(note['above_af'])} AF of the "
             f"fields' use is above what the water right allows this season and "
             f"is counted as {where}."
-        )
-    if no_right:
-        info.append(
-            f"No delivery was estimated for {_names(no_right)}: "
-            f"{'each has' if len(no_right) > 1 else 'it has'} no water right linked."
         )
     for status, pods in sorted(not_active.items()):
         info.append(

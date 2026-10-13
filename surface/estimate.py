@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Estimate the delivery of a ditch with no meter, capped at what the right allows (149-02).
 
-A point of diversion that serves fields, carries a water right, has no measuring
+A point of diversion that serves fields, has no measuring
 device in service in a month and has no volume a person typed for it gets that
 month's delivery estimated from what its fields used, and the estimate is stored
 as an ordinary ``DiversionRecord`` marked ``method="estimated_from_use"`` and
@@ -22,7 +22,7 @@ for each point, crop water use again (``accounting.engine_run.run_month``).
    places once, at the end of the step.
 2. ``headgate_estimate = field_need / (1 - evaporation - seepage - spill)``,
    the point's own three canal-loss shares, quantized once.
-3. The cap. When the right records a direct season and the month lies wholly
+3. The cap, for a point with a right. When the right records a direct season and the month lies wholly
    outside it, the figure is 0.0000 (a season may run over the year end; a
    month partly in season counts as in season). Otherwise it is the smaller of
    the estimate and ``face_value - already_used``, floored at zero, where
@@ -35,8 +35,8 @@ for each point, crop water use again (``accounting.engine_run.run_month``).
    leaves the same row and adds no change history.
 
 A point whose right is revoked or inactive gets no estimate and loses any it
-held. A point with no right gets none either (an estimate needs a right to cap
-against). A month in which a point delivered nothing is recorded as a typed
+held. A point with no right is estimated with no cap: no season, no face value
+(150.1-02 screen 8, 2026-10-13; it used to get none). A month in which a point delivered nothing is recorded as a typed
 record of 0, which stops the estimate like any other typed record. The estimator only ever touches
 records whose method is ``estimated_from_use``; a person who edits an estimate
 and changes its volume turns it into a typed record (``typed_method_for``), so
@@ -288,12 +288,11 @@ def estimate_month(first, notes):
             _drop(point, first)
             continue
 
+        # A point with no linked right is estimated with no cap (150.1-02
+        # screen 8, Brent 2026-10-13 08:08: requiring a right shut out anyone
+        # whose right is not on file, or who has none).
         right = point.water_right
-        if right is None:
-            _drop(point, first)
-            notes.append({"kind": "estimate_no_right", "pod": point.name})
-            continue
-        if right.status in ("revoked", "inactive"):
+        if right is not None and right.status in ("revoked", "inactive"):
             _drop(point, first)
             notes.append(
                 {
@@ -344,7 +343,9 @@ def estimate_month(first, notes):
 
         written = headgate
         cap_text = ""
-        if not _in_direct_season(right, first, last):
+        if right is None:
+            pass
+        elif not _in_direct_season(right, first, last):
             written = Decimal("0.0000")
             cap_text = (
                 " Set to 0.00 AF because this month is outside the water "

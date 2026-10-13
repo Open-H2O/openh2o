@@ -60,7 +60,7 @@
         <div class="field-group">
           <div class="field-label field-row">
             Direct diversion season
-            {% include "partials/_help_tooltip.html" with label="Direct Diversion Season" text="These are the DIRECT_SEASON_START_MONTH_1 / _DAY_1 and DIRECT_DIV_SEASON_END_MONTH_1 / _DAY_1 columns in the state's rights list." %}
+            {% include "partials/_help_tooltip.html" with label="Direct Diversion Season" text="OpenH2O sets an estimated delivery to zero in a month that falls wholly outside this season." %}
           </div>
           <div class="field-value">{{ water_right.direct_season_display|blank }}</div>
         </div>
@@ -68,7 +68,7 @@
         <div class="field-group">
           <div class="field-label field-row">
             Storage season
-            {% include "partials/_help_tooltip.html" with label="Storage Season" text="These are the STORAGE_SEASON_START_MONTH_1 / _DAY_1 and STORAGE_SEASON_END_MONTH_1 / _DAY_1 columns in the state's rights list." %}
+            {# 150.1-02 screen 8, every sentence on this page approved by Brent 2026-10-13 08:08 PDT ("Yes - and the rest of the rows are approved."): the column-name pop-out deleted; nothing reads the storage season. #}
           </div>
           <div class="field-value">{{ water_right.storage_season_display|blank }}</div>
         </div>
@@ -76,7 +76,7 @@
         <div class="field-group">
           <div class="field-label field-row">
             Max rate (cfs)
-            {% include "partials/_help_tooltip.html" with label="Max Rate" text="This is the MAX_DD_APPL column in the state's rights list, in cubic feet per second." %}
+            {# 150.1-02 screen 8: pop-out deleted; nothing reads the right's max rate. #}
           </div>
           <div class="field-value">{% if water_right.max_rate_cfs %}{{ water_right.max_rate_cfs|floatformat:2 }} cfs{% else %}{{ ""|blank }}{% endif %}</div>
         </div>
@@ -94,7 +94,7 @@
         <div class="field-group">
           <div class="field-label field-row">
             Net acreage
-            {% include "partials/_help_tooltip.html" with label="Net Acreage" text="This is the USE_NET_ACREAGE column in the state's rights list, in acres." %}
+            {# 150.1-02 screen 8: pop-out deleted; nothing reads the net acreage. #}
           </div>
           <div class="field-value">{% if water_right.net_acreage %}{{ water_right.net_acreage|floatformat:2|intcomma }}{% else %}{{ ""|blank }}{% endif %}</div>
         </div>
@@ -102,7 +102,7 @@
         <div class="field-group">
           <div class="field-label field-row">
             Priority date
-            {% include "partials/_help_tooltip.html" with label="Priority Date" text="The date establishing seniority. Earlier dates have higher priority during shortages." %}
+            {# 150.1-02 screen 8: pop-out deleted; it explained seniority, and nothing reads the priority date. #}
           </div>
           <div class="field-value">
             {% if water_right.priority_date %}{{ water_right.priority_date|date:"M d, Y" }}{% else %}&mdash;{% endif %}
@@ -112,7 +112,7 @@
         <div class="field-group">
           <div class="field-label field-row">
             Face value (AF)
-            {% include "partials/_help_tooltip.html" with label="Face Value" text="The maximum amount of water authorized by the right, in acre-feet per year." %}
+            {% include "partials/_help_tooltip.html" with label="Face Value" text="OpenH2O caps an estimated delivery at the face value less the direct diversions recorded in the earlier months of the water year." %}
           </div>
           <div class="field-value">
             {% if water_right.face_value_acre_feet %}{{ water_right.face_value_acre_feet|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
@@ -127,7 +127,7 @@
         <div class="field-group">
           <div class="field-label field-row">
             Status
-            {% include "partials/_help_tooltip.html" with label="Status" text="Active rights are currently exercisable." %}
+            {% include "partials/_help_tooltip.html" with label="Status" text="Whether this right is active, inactive or revoked. OpenH2O estimates no delivery under an inactive or revoked right." %}
           </div>
           <div style="margin-top: 2px;">{% include "surface/partials/_status_badge.html" with status=water_right.status %}</div>
         </div>
@@ -169,7 +169,7 @@
         <div class="text-secondary text-base">
           {% if water_right.face_value_acre_feet %}
             {% if current_period %}
-              {% if current_totals %}{{ current_period.name }} &middot; {{ current_totals.count }} record{{ current_totals.count|pluralize }} &middot; Remaining is the face value less the volume recorded. Every water year on record is compared below.{% else %}No records in {{ current_period.name }}.{% endif %}
+              {% if current_totals %}{{ current_period.name }} &middot; {{ current_totals.count }} record{{ current_totals.count|pluralize }}{% else %}No records in {{ current_period.name }}.{% endif %}
             {% else %}
               {% include "partials/_no_water_year.html" %}
             {% endif %}
@@ -187,19 +187,19 @@
               <div class="budget-seg">
                 <div class="budget-seg-label">Face value</div>
                 <div class="budget-seg-value">{{ water_right.face_value_acre_feet|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
-                <div class="budget-seg-caption">authorised per year, from the right's record</div>
+                <div class="budget-seg-caption">authorized per year</div>
               </div>
               <div class="budget-op">&minus;</div>
               <div class="budget-seg">
                 <div class="budget-seg-label">Recorded</div>
                 <div class="budget-seg-value">{{ current_totals.diverted|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
-                <div class="budget-seg-caption">{% if current_holds_estimate %}recorded and estimated, {% endif %}diverted at {{ pod_breakdown|length }} point{{ pod_breakdown|length|pluralize }}, {{ current_period.name }}</div>
+                <div class="budget-seg-caption">{% if current_holds_estimate %}reported or estimated{% else %}diverted{% endif %} at {{ pod_breakdown|length }} point{{ pod_breakdown|length|pluralize }} in {{ current_period.name }}</div>
               </div>
               <div class="budget-op">&equals;</div>
               <div class="budget-seg budget-seg--result">
                 <div class="budget-seg-label">Remaining</div>
                 <div class="budget-seg-value {% if remaining >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ remaining|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
-                <div class="budget-seg-notes"><p class="text-tertiary">Face value less the volume recorded, {{ current_period.name }}.</p></div>
+                {# 150.1-02 screen 8: the note under Remaining deleted; the row already shows the subtraction. #}
               </div>
             </div>
             {% if pod_breakdown %}
@@ -247,7 +247,7 @@
               <div class="budget-seg-label">Recorded</div>
               {% if current_totals %}
               <div class="budget-seg-value">{{ current_totals.diverted|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
-              <div class="budget-seg-caption">{% if current_holds_estimate %}recorded and estimated, {% endif %}diverted at {{ pod_breakdown|length }} point{{ pod_breakdown|length|pluralize }}, {{ current_period.name }}</div>
+              <div class="budget-seg-caption">{% if current_holds_estimate %}reported or estimated{% else %}diverted{% endif %} at {{ pod_breakdown|length }} point{{ pod_breakdown|length|pluralize }} in {{ current_period.name }}</div>
               {% else %}
               <div class="budget-seg-value text-tertiary">&mdash;</div>
               {% endif %}
@@ -279,7 +279,7 @@
           <tr>
             <th>Water year</th>
             <th class="th-right">Total</th>
-            <th class="th-right">Of it estimated</th>
+            <th class="th-right">Estimated</th>
             <th>Against the face value</th>
           </tr>
         </thead>
@@ -288,7 +288,7 @@
           <tr>
             <td class="text-secondary">{{ year.period_name }}</td>
             <td class="td-num">{{ year.total_af|floatformat:2|intcomma }}</td>
-            <td class="td-num">{{ year.estimated_af|floatformat:2|intcomma }}{% if year.months_estimated %}<div class="text-tertiary text-xs">{{ year.months_estimated }} of {{ year.months }} month{{ year.months|pluralize }}</div>{% endif %}</td>
+            <td class="td-num">{{ year.estimated_af|floatformat:2|intcomma }}</td>
             <td>{% if year.over_by_af is not None %}<b class="text-deficit">{{ year.over_by_af|floatformat:2|intcomma }} AF</b> over its face value{% elif year.remaining_af is not None %}<span class="text-secondary">{{ year.remaining_af|floatformat:2|intcomma }} AF remaining</span>{% endif %}</td>
           </tr>
           {% endfor %}
@@ -324,13 +324,13 @@
         <tbody>
           {% for group in record_groups %}
           <tr class="row-group">
-            <td colspan="4">{{ group.period_name }} &middot; {{ group.count }} record{{ group.count|pluralize }}{% if group.against_face_value.months_estimated %} &middot; {{ group.against_face_value.months_estimated }} of {{ group.against_face_value.months }} month{{ group.against_face_value.months|pluralize }} estimated{% endif %}</td>
+            <td colspan="4">{{ group.period_name }} &middot; {{ group.count }} record{{ group.count|pluralize }}</td>
           </tr>
           {% for record in group.rows %}
           <tr>
             <td class="text-secondary">
               {{ record.month|date:"M Y" }}
-              {% if record.method == "estimated_from_use" %}<span class="badge badge-grey" title="At least one diversion record this month is estimated from use, not measured.">Estimated</span>{% endif %}
+              {% if record.method == "estimated_from_use" %}<span class="badge badge-grey" title="OpenH2O estimated this delivery from the ETAW of the fields this point serves, divided by each field's irrigation efficiency.">Estimated</span>{% endif %}
             </td>
             <td class="text-secondary">{{ record.point_of_diversion.name }}</td>
             <td class="td-num">{{ record.volume_acre_feet|floatformat:2|intcomma }}</td>

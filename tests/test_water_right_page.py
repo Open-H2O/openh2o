@@ -146,8 +146,9 @@ class TestWaterRightRecordOrder:
 # ledger), so the equation row reads 100.00 - 80.00 = 20.00.
 # ---------------------------------------------------------------------------
 ESTIMATED_BADGE = (
-    '<span class="badge badge-grey" title="At least one diversion record this '
-    'month is estimated from use, not measured.">Estimated</span>'
+    '<span class="badge badge-grey" title="OpenH2O estimated this delivery from '
+    "the ETAW of the fields this point serves, divided by each field's "
+    'irrigation efficiency.">Estimated</span>'
 )
 
 
@@ -187,36 +188,38 @@ class TestWaterRightByWaterYear:
         assert '<span class="text-secondary">20.00 AF remaining</span>' in html
         assert "violation" not in html.lower()
 
-    def test_the_head_line_says_every_year_is_compared_below(self):
+    def test_the_head_line_is_the_year_and_its_record_count_alone(self):
+        # 150.1-02 screen 8 (Brent 2026-10-13 08:08 PDT): the two sentences
+        # after the count are deleted; Remaining and the table say it.
         html = _right_page(_two_year_right())
 
-        assert (
-            "Remaining is the face value less the volume recorded. Every water "
-            "year on record is compared below."
-        ) in html
+        assert "Remaining is the face value less the volume recorded" not in html
+        assert "Every water year on record is compared below" not in html
+        assert "Face value less the volume recorded" not in html
 
-    def test_the_year_with_an_estimate_says_how_many_of_its_months_were_estimated(self):
+    def test_the_year_with_an_estimate_counts_no_months(self):
+        # 150.1-02 screen 8: a month counted as estimated when any one record
+        # in it was, so the month count is deleted; the badge marks the record.
         html = _right_page(_two_year_right())
 
-        assert (
-            '<td colspan="4">WY 2023-2024 &middot; 2 records &middot; '
-            "1 of 2 months estimated</td>"
-        ) in html
+        assert '<td colspan="4">WY 2023-2024 &middot; 2 records</td>' in html
         assert '<td colspan="4">WY 2024-2025 &middot; 1 record</td>' in html
         assert html.count(ESTIMATED_BADGE) == 1
-        assert '<div class="text-tertiary text-xs">1 of 2 months</div>' in html
+        assert "months estimated" not in html
+        assert "1 of 2 months" not in html
+        assert '<th class="th-right">Estimated</th>' in html
 
     def test_the_equation_still_reads_the_current_year(self):
         html = _right_page(_two_year_right())
 
         assert _result_segment_values(html) == ["20.00"]
-        assert "diverted at 1 point, WY 2024-2025" in html
-        assert "recorded and estimated" not in html
+        assert "diverted at 1 point in WY 2024-2025" in html
+        assert "reported or estimated" not in html
 
     def test_the_recorded_caption_names_the_estimate_when_the_current_year_holds_one(self):
         html = _right_page(_two_year_right(estimate_in_current=True))
 
-        assert "recorded and estimated, diverted at 1 point, WY 2024-2025" in html
+        assert "reported or estimated at 1 point in WY 2024-2025" in html
 
     def test_a_right_with_no_face_value_lists_its_years_with_nothing_set_against_them(self):
         html = _right_page(_two_year_right(face_value=None))
