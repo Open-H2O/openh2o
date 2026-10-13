@@ -313,14 +313,14 @@ def test_the_accounts_table_reads_as_the_equation():
 
 
 def test_the_zones_table_spans_three_budget_columns():
-    """Zones carry Carried fwd between Allocation and Remaining."""
+    """Zones carry Added between Allocation and Remaining."""
     period, _zone, _parcel, _account = _basin()
 
     table = _zones_table(_dashboard(period).content.decode())
 
     assert _header_rows(table) == [
         ["Zone", "Supplies", "Crop ET", "Balance", "Groundwater budget"],
-        ["Surface", "Groundwater", "Effective precipitation", "Total", "Allocation", "Carried fwd", "Remaining"],
+        ["Surface", "Groundwater", "Effective precipitation", "Total", "Allocation", "Added", "Remaining"],
     ]
     assert 'colspan="3"' in table
 

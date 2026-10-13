@@ -25,6 +25,7 @@ from accounting.models import AllocationPlan
 from accounting.services import (
     billable_ledger,
     current_period_id as compute_current_period_id,
+    zone_credit_sources,
     zone_groundwater_budget,
 )
 from core.access import admin_required, public_in_open_demo
@@ -205,9 +206,9 @@ def _zone_budget_captions(is_groundwater, period_name):
     """
     if is_groundwater:
         return {
-            "available": f"allocation plus carry-over, {period_name}",
-            "used": f"pumped, metered or calculated, {period_name}",
-            "remaining": f"allocation plus carry-over, less pumped, {period_name}",
+            "available": f"allocation plus recharge, seepage and carry-over, {period_name}",
+            "used": f"pumped, metered or estimated, {period_name}",
+            "remaining": f"available less pumped, {period_name}",
         }
     return {
         "available": f"allocation, {period_name}",
@@ -325,6 +326,9 @@ def _zone_detail_context(zone):
                 "available": gw["available"],
                 "used": gw["used"],
                 "used_label": "pumped",
+                "is_groundwater": True,
+                # 150.1-02 screen 5: what the carry-over sum is made of, by kind.
+                "credit_sources": zone_credit_sources(zone, alloc.reporting_period),
                 "remaining": gw["remaining"],
                 "available_caption": captions["available"],
                 "used_caption": captions["used"],

@@ -117,8 +117,6 @@ BASELINE: dict = {
     "templates/about.html": {"district reader": 1},
     "templates/account/signup_closed.html": {"district reader": 3},
     "templates/datasync/monitoring_dashboard.html": {"district reader": 1},
-    "templates/geography/partials/_zone_recovery_horizon.html": {"district reader": 3},
-    "templates/geography/zone_detail.html": {"district reader": 1},
     "templates/parcels/partials/_detail_pane.html": {"district reader": 1},
     "templates/reporting/partials/_handoff.html": {"district reader": 1},
     "templates/reporting/partials/_status_section.html": {"district reader": 3},

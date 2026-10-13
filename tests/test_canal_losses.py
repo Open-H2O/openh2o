@@ -332,8 +332,9 @@ def test_no_zone_at_all_deposits_nothing_and_says_so_in_words():
     assert info == [
         "OpenH2O subtracted 0.95 AF of canal evaporation and 1.90 AF of spill "
         "from the water diverted at 1 point of diversion in the months calculated.",
-        "Canal seepage of 11.40 AF at Plain Canal Headgate in January 2024 "
-        "has no district zone to go to.",
+        "OpenH2O credited the 11.40 AF of canal seepage at Plain Canal Headgate "
+        "in January 2024 to no zone, because no management area contains the "
+        "point or the field that received the most of that month's delivery.",
     ]
 
 
@@ -519,8 +520,9 @@ def test_a_run_with_losses_stays_green_and_says_what_was_written_off(engine_worl
     ]
     assert groups["spill"]["rows"] == [{"af": "0.60", "where": "Test Canal Headgate"}]
     assert (
-        "Canal seepage of 3.60 AF at Test Canal Headgate in January 2024 has "
-        "no district zone to go to."
+        "OpenH2O credited the 3.60 AF of canal seepage at Test Canal Headgate "
+        "in January 2024 to no zone, because no management area contains the "
+        "point or the field that received the most of that month's delivery."
     ) in req.notes
     assert CanalMonthLoss.objects.get().available_af == Decimal("25.5000")
 

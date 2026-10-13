@@ -131,7 +131,7 @@
                 <div class="budget-breakdown-group">
                   <div class="budget-breakdown-title">Available by source</div>
                   <div class="budget-breakdown-row"><span>Allocation</span><b>{{ b.budget|floatformat:2|intcomma }}</b></div>
-                  <div class="budget-breakdown-row"><span>Carried forward</span><b>{% if b.carryover > 0 %}+{% endif %}{{ b.carryover|floatformat:2|intcomma }}</b></div>
+                  {% for label, amount in b.credit_sources %}<div class="budget-breakdown-row"><span>{{ label }}</span><b>{% if amount > 0 %}+{% endif %}{{ amount|floatformat:2|intcomma }}</b></div>{% endfor %}
                 </div>
                 {% endif %}
               </div>
@@ -150,7 +150,7 @@
                 <div class="budget-seg-label">Remaining</div>
                 <div class="budget-seg-value {% if b.remaining >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ b.remaining|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
                 <div class="budget-seg-caption">{{ b.remaining_caption }}</div>
-                <div class="budget-seg-notes"><p class="text-tertiary">The dashboard's zone row prints this same figure. <a href="{{ dashboard_url }}?period={{ b.period.pk }}" class="data-table-link">See it there</a></p></div>
+                {% if b.is_groundwater %}<div class="budget-seg-notes"><p class="text-tertiary">The dashboard's zone row prints this same figure. <a href="{{ dashboard_url }}?period={{ b.period.pk }}" class="data-table-link">See it there</a></p></div>{% endif %}
               </div>
             </div>
           </div>
@@ -177,7 +177,7 @@
           </tr>
           <tr>
             <th class="th-right">Allocation</th>
-            <th class="th-right"><span class="th-stack">Carried forward</span></th>
+            <th class="th-right">Added</th>
           </tr>
         </thead>
         <tbody>
@@ -305,3 +305,4 @@
   go();
 })();
 </script>
+{% comment %}150.1-02 screen 5 (Brent 2026-10-12 17:47 PDT, "The rest of the zone page is approved."): Available by source names each kind of row zone_carryover sums (accounting/services.py zone_credit_sources; on the demonstration all of the old "Carried forward" was managed recharge and canal seepage, no rollover having run); the table column reads "Added"; the pointer to the Dashboard sits under a groundwater result only, because the Dashboard dashes a surface allocation's remaining. Captions are geography/views.py _zone_budget_captions. Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}

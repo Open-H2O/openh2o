@@ -33,7 +33,7 @@
         <button
           hx-post="{% url 'geography:zone_parcel_remove' zone.pk pz.pk %}"
           hx-target="#zone-parcels"
-          hx-confirm="Remove parcel {{ pz.parcel.parcel_number }} from this zone?"
+          hx-confirm="Remove use area {{ pz.parcel.parcel_number }} from this zone?"
           class="btn-secondary btn-sm"
           style="font-size: 0.75rem; padding: 1px 8px; color: var(--color-error); border-color: rgba(239,68,68,0.3);">
           Remove
@@ -64,3 +64,4 @@
 {% else %}
 <p class="text-tertiary" style="font-size: 0.875rem;">No use area is assigned to this zone.</p>
 {% endif %}{% endif %}
+{% comment %}"Remove use area": Brent 2026-10-12 17:47 PDT (150.1-02 screen 5), the zone page's twin of the Account page's 13:21 row. Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}

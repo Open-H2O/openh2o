@@ -1017,10 +1017,10 @@
     "kind": "figure",
     "template": "templates/geography/partials/_zone_detail_pane.html",
     "line": 134,
-    "column": 135,
-    "expression": "{{ b.carryover|floatformat:2|intcomma }}",
-    "enclosing_loop": "b in current_budgets",
-    "nearest_label": "{{ b.carryover|"
+    "column": 164,
+    "expression": "{{ amount|floatformat:2|intcomma }}",
+    "enclosing_loop": "label, amount in b.credit_sources",
+    "nearest_label": "{{ amount|"
   },
   {
     "id": "FIG-geography-004",

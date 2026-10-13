@@ -100,8 +100,8 @@ class Zone(models.Model):
         choices=RECOVERY_HORIZON_CHOICES,
         blank=True,
         null=True,
-        help_text="Override the agency default for this district. "
-        "Blank = use the agency default.",
+        help_text="A different year-end choice for this zone. "
+        "Blank uses the site default.",
     )
     # Q5 (146-05 Task 3): a zone-level jurisdictional attribute -- the Delta
     # case is the stated example, but the field names no case itself, only the

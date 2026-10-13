@@ -222,7 +222,7 @@
         <th class="th-right">Total</th>
         {% if has_allocations %}
         <th class="th-right col-sep">Allocation</th>
-        <th class="th-right"><span class="th-stack">Carried fwd</span></th>
+        <th class="th-right">Added</th>
         <th class="th-right">Remaining</th>
         {% endif %}
       </tr>
@@ -397,3 +397,4 @@
 {% endcomment %}
 {% comment %}150.1-02 screen 2, Dashboard: the heading "Water balance", the row "Total", the empty-site line, the over-budget count, the Remaining pop-out and the fields-table pop-out are Brent's approved sentences (2026-10-12 12:04 PDT, "Everything looks great, approved."; recorded in brent-sentence-corrections.md). A balance that prints 0.00 is "Balanced" (ISS-237, his choice the same minute). Notes sit at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
 {% comment %}"Effective precipitation" for the figure that read "Rain" (CalculationRun.effective_precip_af): Brent 2026-10-12 13:21 PDT, "The wording is approved." (150.1-02 screen 3). Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
+{% comment %}The zones table's "Added" column (was "Carried fwd"): Brent 2026-10-12 17:47 PDT (150.1-02 screen 5). The column is zone_carryover, which adds managed recharge, canal seepage and year-end carry-over; the zone page lists them by kind. Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}

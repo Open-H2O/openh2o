@@ -369,8 +369,8 @@ class TestDashboardCarryover:
         # remaining = allocation 1000 + carryover (-400) - consumptive use 200 = 400
         assert row["carryover"] == Decimal("-400.0000")
         assert row["remaining"] == Decimal("400.0000")
-        # The carried-forward column renders in the HTML with a minus sign.
-        assert b"Carried fwd" in resp.content
+        # The Added column (was "Carried fwd", Brent 2026-10-12 17:47) renders.
+        assert b'<th class="th-right">Added</th>' in resp.content
 
     def test_no_carryover_row_is_zero(self):
         zone, period = self._setup_dashboard(carryover_af=None)

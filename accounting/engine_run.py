@@ -365,8 +365,10 @@ def _note_sentences(raw, *, tabled=False):
         )
     for note in sorted(no_zone, key=lambda n: (n["month"], n["pod"])):
         info.append(
-            f"Canal seepage of {_amount(note['amount_af'])} AF at {note['pod']} "
-            f"in {month_label(note['month'])} has no district zone to go to."
+            f"OpenH2O credited the {_amount(note['amount_af'])} AF of canal seepage "
+            f"at {note['pod']} in {month_label(note['month'])} to no zone, because "
+            f"no management area contains the point or the field that received "
+            f"the most of that month's delivery."
         )
     # Estimates for a ditch with no meter (149-02). Working copy for Brent's
     # checkpoint. They keep a run green: an estimate is information, never a fault.

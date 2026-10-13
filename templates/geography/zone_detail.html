@@ -21,7 +21,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">{{ zone.name }}</span>
   </nav>
-  <p class="page-description">A zone is an area the district accounts for as one unit: its boundary, the use areas inside it, and its allocation against its use for the selected water year.</p>
+  <p class="page-description">A zone is one area on the map with its own allocations. This page shows its outline, the use areas assigned to it, and each water year's allocation beside the water used.</p>
 </div>
 {% endblock %}
 
@@ -51,3 +51,4 @@
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="{% static 'js/map-core.js' %}"></script>
 {% endblock %}
+{% comment %}150.1-02 screen 5, Zone page: the description is Brent's approved sentence (2026-10-12 17:47 PDT, "The rest of the zone page is approved."; recorded in brent-sentence-corrections.md). The old one named "the district" and "the selected water year", and the page has no water year selector. Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}

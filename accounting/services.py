@@ -1560,6 +1560,41 @@ def zone_carryover(zone, water_year):
     ).aggregate(total=Sum("amount_af"))["total"] or Decimal("0")
 
 
+#: What the zone page's "Available by source" calls each kind of row that
+#: `zone_carryover` adds into a zone's groundwater available, in the order it
+#: lists them (Brent, 2026-10-12 17:47 PDT: "Managed recharge", "Canal seepage",
+#: "Carried forward"; the deep-percolation pool takes Delivery Settings' own
+#: words for that water).
+ZONE_CREDIT_LABELS = (
+    (BASIN_RECHARGE_POOL, "Managed recharge"),
+    (INCIDENTAL_RECHARGE_POOL, "Surface water in excess of ETAW"),
+    (CONVEYANCE_SEEPAGE_POOL, "Canal seepage"),
+    ("allocation_carryover", "Carried forward"),
+)
+
+
+def zone_credit_sources(zone, reporting_period):
+    """``[(label, AF), ...]`` for each kind of row in the zone's carry-over sum.
+
+    The same rows, water year and sum as `zone_groundwater_budget`'s
+    ``carryover``, split by ``origin`` so the zone page can say what the figure
+    is made of. A kind with no rows, or rows netting to zero, is left out.
+    """
+    end = reporting_period.end_date
+    water_year = water_year_of(f"{end.year}-{end.month:02d}")
+    totals = dict(
+        AllocationCarryover.objects.filter(zone=zone, water_year=water_year)
+        .values("origin")
+        .annotate(total=Sum("amount_af"))
+        .values_list("origin", "total")
+    )
+    return [
+        (label, totals[origin])
+        for origin, label in ZONE_CREDIT_LABELS
+        if totals.get(origin)
+    ]
+
+
 def zone_groundwater_budget(zone, reporting_period):
     """A zone's groundwater budget for one period — the ONE computation of it.
 
