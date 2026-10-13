@@ -37,7 +37,7 @@
   2026-10-11 (150.4-01): the national, role-neutral lens. Brent approved who acts
   in a sentence at 20:36 PDT ("yes") and the help-page rows at 20:49 PDT ("yes"):
   "An administrator" acts in place of "a district" (Methodology Settings and Delivery Settings are @admin_required). Each actor traced to its view in
-  .planning/phases/150.4-national-role-neutral-tone-pass/150.4-01-WORDS.md.
+  .planning/phases/150.4-national-role-neutral-tone-pass/150.4-01-WORDS.md. 2026-10-13 (150.1-02 screen 8): the unmetered estimate rows rewritten when a diversion with no linked right began to be estimated with no cap; Brent "yes, approved" 08:17 PDT.
 {% endcomment %}{% url 'accounting:methodology_settings' as methodology_url %}
 {% url 'accounting:delivery_settings' as delivery_url %}
 {% url 'water_balances' as water_balances_url %}
@@ -149,11 +149,11 @@
         <tbody>
           <tr>
             <td class="col-name">The estimate</td>
-            <td>For an unmetered diversion, OpenH2O estimates the month's delivery from the ETAW of the fields the diversion serves, adds the canal's losses, and caps the estimate at the water right's remaining face value for the water year.</td>
+            <td>For an unmetered diversion, OpenH2O estimates the month's delivery from the ETAW of the fields the diversion serves and adds the canal's losses. Where the diversion's water right has a face value, OpenH2O caps the estimate at the face value remaining for the water year.</td>
           </tr>
           <tr>
             <td class="col-name">When there is no estimate</td>
-            <td>OpenH2O estimates a delivery only when the diversion is linked to an active water right.</td>
+            <td>OpenH2O estimates no delivery at a diversion whose water right is inactive or revoked.</td>
           </tr>
         </tbody>
       </table>
