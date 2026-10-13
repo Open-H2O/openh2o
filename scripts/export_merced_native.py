@@ -49,9 +49,11 @@ BOUNDARY_GEOJSON = os.path.join(DATA, "lower_merced_subbasin.geojson")
 
 BASIN_CODE = "5-022.04"
 
-# The junior El Nido right is curtailed mid-water-year: its POD stops delivering
-# after June 2025 (mirrors seed_merced_ledgers CURTAILMENT_LAST_DELIVERY).
-CURTAILED_POD = "MER-POD-007"
+# The El Nido canal runs dry mid-water-year: its POD stops delivering after June
+# 2025 (mirrors seed_merced_ledgers EL_NIDO_LAST_DELIVERY). Curtailment orders were
+# removed from OpenH2O, web and native, in 2026-10 (Brent: "Lets get rid fo
+# curtailments entirely." and "fix the native app").
+DRY_POD = "MER-POD-007"
 
 # Face-value sizing model (mirrors seed_merced_ledgers fallback constants).
 SURFACE_RATE = Decimal("2.2")   # AF/acre/yr
@@ -62,8 +64,8 @@ SEASONAL_WEIGHTS = {
     4: Decimal("0.08"), 5: Decimal("0.14"), 6: Decimal("0.16"),
     7: Decimal("0.16"), 8: Decimal("0.15"), 9: Decimal("0.13"),
 }
-SUBSTITUTION_MULTIPLIER = Decimal("1.6")   # curtailed conjunctive farms pump more Jul-Sep
-POST_CURTAILMENT_MONTHS = {7, 8, 9}
+SUBSTITUTION_MULTIPLIER = Decimal("1.6")   # El Nido conjunctive farms pump more Jul-Sep
+SUBSTITUTION_MONTHS = {7, 8, 9}
 
 GROUNDWATER_SOURCES = {"groundwater", "conjunctive"}
 SURFACE_SOURCES = {"surface", "conjunctive"}
@@ -92,7 +94,7 @@ GW_SOLO_OWNERS = [
 # Synthesized from the SAME fixtures the ledger uses, so each POD's monthly
 # DiversionRecords sum to exactly the surface_diversion ledger rows for its
 # served parcels. Values mirror the web seed_merced_operations (the senior 1930
-# MID right, the junior 1962 El Nido right that drought-curtails, the undated
+# MID right, the junior 1962 El Nido right whose canal runs dry, the undated
 # riparian take). The water-right HOLDER is the district/agency (as in CA), kept
 # distinct from the farm parcel owners the bundle already carries.
 #
@@ -115,9 +117,9 @@ WATER_RIGHTS = [
      "22000", "Diversion Canal", "active", "A018002"),
     ("MER-WR-008", "RIP", "Tulepine Bottomlands Ranch", None,
      "4000", "Merced River", "active", ""),
-    # Junior right (newest priority) → first curtailed in the summer-2025 drought.
+    # Junior right (newest priority); its canal runs dry after June 2025.
     ("MER-WR-009", "POST14", "Saddlebow Irrigation District", "1962-05-05",
-     "9000", "El Nido Canal", "curtailed", "A021145"),
+     "9000", "El Nido Canal", "active", "A021145"),
     # Merced Falls hydroelectric passthrough — serves no parcels, returns its full
     # diverted volume to the river (non-consumptive). Lights up the "Non-consumptive
     # (returned to stream)" classification with real-looking data on the read screen.
@@ -142,27 +144,13 @@ HYDRO_POD_SPEC = ("MER-WR-010", "Merced Falls Hydroelectric Diversion", "Merced 
 HYDRO_POD_LONLAT = (-120.30, 37.52)
 HYDRO_MONTHLY_AF = Decimal("3200")   # flat monthly passthrough volume, fully returned
 
-# The summer-2025 drought curtailment: basin-wide by priority date (how the State
-# Water Board actually cut the Merced system in 2021-22). Its 1962 cutoff curtails
-# only the junior El Nido right (MER-WR-009, priority 1962-05-05).
-CURTAILMENT_ORDER = {
-    "orderID": "MER-CURT-001",
-    "title": "Merced River System Drought Curtailment — Summer 2025",
-    "effectiveDate": "2025-07-01",
-    "endDate": "2025-09-30",
-    "watershed": "",                       # basin-wide (empty = matches every right)
-    "priorityDateCutoff": "1962-01-01",
-    "status": "active",
-    "notes": "Curtails post-1962 junior appropriative rights during the 2025 drought.",
-}
-
 # --- Managed-recharge domain (Phase F-recharge) -----------------------------
 # The demo district's two spreading basins (from seed_merced_recharge:
 # Cressey-Winton ~110 ac / 550 AF, El Nido ~85 ac / 425 AF), each placed on open
 # cropland beside an MID canal that fills it. The basin↔POD link ties each basin to
 # the surface diversion that feeds it — a data link surfaced on the detail page, not a
-# flow line on the map. (El Nido is fed by MER-POD-007, the same canal whose junior
-# right drought-curtails — the basin's supply and the surface book share one source.)
+# flow line on the map. (El Nido is fed by MER-POD-007, the same canal that runs dry
+# after June 2025 — the basin's supply and the surface book share one source.)
 #
 # code -> name, siteType, lon, lat, acres, capacityAF, fedByPOD
 RECHARGE_SITES = {
@@ -201,7 +189,7 @@ RECHARGE_MEASUREMENTS = {
         ("2025-02-16", "water_quality", "300", "mg/L", "Source-water total dissolved solids (storm runoff)."),
         ("2025-02-16", "water_level", "2.8", "ft", "Ponded depth during the February refill."),
     ],
-    "MER-RB-002": [   # El Nido — the smaller (~85 ac) basin, fed by the curtailed canal
+    "MER-RB-002": [   # El Nido — the smaller (~85 ac) basin, fed by the El Nido canal
         ("2024-12-16", "water_level", "2.7", "ft", "Ponded depth after the December storm flooding."),
         ("2024-12-16", "flow_rate", "61", "cfs", "Canal inflow while the basin was filling."),
         ("2025-01-16", "infiltration_rate", "1.1", "in/hr", "Percolation rate measured mid-season."),
@@ -569,7 +557,7 @@ def build_bundle():
         number = p["parcelNumber"]
         area = Decimal(p["areaAcres"])
         seq = seq_of[number]
-        curtailed = (p["servedBy"] == CURTAILED_POD)
+        runs_dry = (p["servedBy"] == DRY_POD)
         has_surface = p["waterSource"] in SURFACE_SOURCES and p["servedBy"]
         is_flood = p.get("floodMAR", False)
 
@@ -578,8 +566,8 @@ def build_bundle():
             # Surface delivery (negative; counts as supply). Flood-MAR parcels are
             # deliberately over-delivered to recharge the aquifer.
             if has_surface:
-                if curtailed and (yr, mn) > (2025, 6):
-                    pass  # El Nido cut after June 2025 -> no delivery
+                if runs_dry and (yr, mn) > (2025, 6):
+                    pass  # the El Nido canal delivers nothing after June 2025
                 else:
                     base = area * SURFACE_RATE * weight * jitter(seq)
                     if is_flood:
@@ -598,7 +586,7 @@ def build_bundle():
             # Meter reading (negative; authoritative groundwater) for metered wells.
             if number in metered_parcels:
                 bump = (SUBSTITUTION_MULTIPLIER
-                        if curtailed and mn in POST_CURTAILMENT_MONTHS else Decimal("1"))
+                        if runs_dry and mn in SUBSTITUTION_MONTHS else Decimal("1"))
                 amt = q4(area * GW_RATE * weight * jitter(seq) * bump)
                 if Decimal(amt) > 0:
                     ledger.append({
@@ -651,7 +639,7 @@ def build_bundle():
             "parcels": [p["parcelNumber"] for p in parcels if p["ownerName"] == owner],
         })
 
-    # --- Surface-water domain (rights, PODs, diversion records, curtailment) ---
+    # --- Surface-water domain (rights, PODs, diversion records) ---
     surface = build_surface(parcels, parcel_by_number, ledger, schedule)
 
     # --- Managed-recharge domain (basins, basin↔POD links, recharge events) ---
@@ -868,7 +856,6 @@ def build_surface(parcels, parcel_by_number, ledger, schedule):
         "pointsOfDiversion": points,
         "waterRightParcels": water_right_parcels,
         "diversionRecords": records,
-        "curtailmentOrders": [CURTAILMENT_ORDER],
     }
 
 
@@ -941,8 +928,7 @@ def main():
     print(f"  wells metered/total: {metered}/{len(bundle['wells'])}")
     s = bundle["surface"]
     print(f"  surface: {len(s['waterRights'])} rights, {len(s['pointsOfDiversion'])} PODs, "
-          f"{len(s['diversionRecords'])} diversion records, "
-          f"{len(s['curtailmentOrders'])} curtailment order(s)")
+          f"{len(s['diversionRecords'])} diversion records")
     rc = bundle["recharge"]
     print(f"  recharge: {len(rc['sites'])} basins, {len(rc['sitePODs'])} basin↔POD links, "
           f"{len(rc['events'])} recharge events, {len(rc['measurements'])} measurements")
