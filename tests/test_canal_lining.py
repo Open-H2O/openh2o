@@ -177,7 +177,6 @@ def _form_data(pod, **overrides):
         "evaporation_fraction": "0.0100",
         "seepage_fraction": "0",
         "spill_fraction": "0",
-        "miners_inch_gpm": "11.22",
     }
     data.update(overrides)
     return data

@@ -277,7 +277,7 @@ def test_the_page_shows_the_headings_and_the_totals():
         "Spill",
         "Fields' own records",
         "Divided up among the other fields",
-        "Beyond what the crops could use",
+        "Left after each field received its ETAW divided by its irrigation efficiency",
     ):
         assert heading in section, heading
     assert "All 2 months" in section

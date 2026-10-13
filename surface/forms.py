@@ -184,7 +184,7 @@ class PointOfDiversionForm(forms.ModelForm):
         model = PointOfDiversion
         fields = [
             "name", "stream_name", "max_rate_cfs", "status",
-            "local_name", "contract_unit", "miners_inch_gpm",
+            "local_name",
             "evaporation_fraction", "evaporation_band_percent",
             "seepage_fraction", "seepage_band_percent",
             "spill_fraction", "spill_band_percent", "spill_device",
@@ -201,10 +201,6 @@ class PointOfDiversionForm(forms.ModelForm):
             "local_name": forms.TextInput(attrs={
                 "class": "form-input",
                 "placeholder": "e.g. Turnout 14",
-            }),
-            "contract_unit": forms.Select(attrs={"class": "form-select"}),
-            "miners_inch_gpm": forms.NumberInput(attrs={
-                "class": "form-input", "step": "0.01",
             }),
             "evaporation_fraction": forms.NumberInput(attrs={
                 "class": "form-input", "step": "0.0001", "min": "0", "max": "1",
@@ -231,8 +227,6 @@ class PointOfDiversionForm(forms.ModelForm):
         }
         labels = {
             "local_name": "Known locally as",
-            "contract_unit": "Contract unit",
-            "miners_inch_gpm": "Miner's inch (gallons per minute)",
             "evaporation_fraction": "Evaporation share (0 to 1)",
             "evaporation_band_percent": "Evaporation band (%)",
             "seepage_fraction": "Seepage share (0 to 1)",
@@ -275,7 +269,6 @@ class PointOfDiversionForm(forms.ModelForm):
         else:
             self.fields["spill_device"].queryset = MeasuringDevice.objects.none()
         self.fields["spill_device"].required = False
-        self.fields["contract_unit"].required = False
         self.fields["evaporation_band_percent"].required = False
         self.fields["seepage_band_percent"].required = False
         self.fields["spill_band_percent"].required = False

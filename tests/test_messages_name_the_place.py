@@ -114,11 +114,11 @@ class TestNoWaterYearNamesWaterYears:
 
 
 class TestNoWaterRightNamesWaterRights:
-    LINE = "No water right is linked."
+    LINE = "This point has no linked water right."
 
     def _expected(self):
         return (
-            "No water right is linked. Rights are kept under Administration &gt; "
+            "This point has no linked water right. Water rights are listed under Administration &gt; "
             f'<a href="{reverse("surface:water_rights_list")}" '
             'class="text-accent">Water Rights</a>.'
         )
@@ -159,7 +159,7 @@ class TestTheCalwatrsLineFollowsTheReportingModule:
     ):
         pod = PointOfDiversionFactory(water_right=None)
         body = writer.get(reverse("surface:pod_detail", args=[pod.pk])).content.decode()
-        assert "CalWATRS" not in _fragment(body, "No water right is linked.")
+        assert "CalWATRS" not in _fragment(body, "This point has no linked water right.")
         assert self.LINE not in body
         assert 'name="water_right_id"' in body
 
@@ -169,7 +169,7 @@ class TestTheCalwatrsLineFollowsTheReportingModule:
         body = writer.post(
             reverse("surface:pod_link_right", args=[pod.pk]), {"water_right_id": ""}
         ).content.decode()
-        assert "No water right is linked." in body
+        assert "This point has no linked water right." in body
         assert self.LINE not in body
 
 

@@ -31,7 +31,7 @@
     <label class="field-label" for="id_returned_af">Returned to stream (AF)</label>
     {{ form.returned_af }}
     {% if form.returned_af.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ form.returned_af.errors|join:", " }}</span>{% endif %}
-    <span class="text-xs text-tertiary">Leave blank if none returned. Equal to the diverted volume for hydropower or other non-consumptive passthrough.</span>
+    <span class="text-xs text-tertiary">Leave this blank if no water went back to the stream. For a hydropower plant, enter the full amount diverted.</span>
   </div>
   <div class="form-group">
     <label class="field-label" for="id_max_flow_rate_cfs">Max flow rate (CFS)</label>
@@ -47,7 +47,7 @@
     <label class="field-label" for="id_data_state">Data state</label>
     {{ form.data_state }}
     {% if form.data_state.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ form.data_state.errors|join:", " }}</span>{% endif %}
-    <span class="text-xs text-tertiary">Only non-provisional data goes in an annual report.</span>
+    <span class="text-xs text-tertiary">The data state does not change any figure OpenH2O calculates.</span>
   </div>
   <div class="form-group">
     <label class="field-label" for="id_method">How known</label>

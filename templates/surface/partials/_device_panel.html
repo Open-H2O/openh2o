@@ -41,10 +41,6 @@
     </div>
   </div>
 
-  {% if needs_evidence %}
-  <p class="text-secondary text-sm mt-sm">evidence of proper functioning is due at least every five years (934(d)).</p>
-  {% endif %}
-
   {% if user_can_write %}
   <div class="row-start mt-sm" style="gap: var(--space-sm); align-items: center;">
     <a href="{% url 'surface:device_edit' device.pk %}" class="btn-secondary btn-sm">Edit</a>

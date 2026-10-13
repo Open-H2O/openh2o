@@ -389,14 +389,29 @@ def test_v9_a_recharge_only_point_has_no_where_the_water_went_card(auth_client):
 
 
 def test_v9_a_point_with_a_direct_use_record_keeps_the_card(auth_client):
-    from tests.factories import DiversionRecordFactory
+    from tests.factories import DiversionRecordFactory, PointOfDiversionParcelFactory
 
     pod = PointOfDiversionFactory(name="V150 Canal Headgate")
+    PointOfDiversionParcelFactory(point_of_diversion=pod)
     DiversionRecordFactory(point_of_diversion=pod, diversion_type="direct_use")
 
     body = auth_client.get(reverse("surface:pod_detail", args=[pod.pk])).content.decode()
 
     assert 'id="where-the-water-went"' in body
+
+
+def test_a_point_with_no_linked_use_area_shows_no_card(auth_client):
+    """Brent 2026-10-13 07:22 "yes" (150.1-02 screen 7, row B1): the calculation
+    never splits a point with no linked use area, so its months were shown as
+    "not yet calculated" forever. The card is not shown there."""
+    from tests.factories import DiversionRecordFactory
+
+    pod = PointOfDiversionFactory(name="V150 Unlinked Headgate")
+    DiversionRecordFactory(point_of_diversion=pod, diversion_type="direct_use")
+
+    body = auth_client.get(reverse("surface:pod_detail", args=[pod.pk])).content.decode()
+
+    assert 'id="where-the-water-went"' not in body
 
 
 # ---------------------------------------------------------------------------

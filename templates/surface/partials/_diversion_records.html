@@ -54,10 +54,10 @@
   <tbody>
     {% for group in record_groups %}
     <tr class="row-group">
-      <td colspan="7">{{ group.period_name }} &middot; {{ group.count }} month{{ group.count|pluralize }}</td>
+      <td colspan="7">{{ group.period_name }} &middot; {{ group.count }} record{{ group.count|pluralize }}</td>
     </tr>
     {% for record in group.rows %}
-    <tr {% if edit_record.pk == record.pk %}class="row-editing"{% endif %} title="{{ record.rule_version }}">
+    <tr {% if edit_record.pk == record.pk %}class="row-editing"{% endif %} {% if 'reporting' in enabled_modules %}title="{{ record.rule_version }}"{% endif %}>
       <td class="text-secondary">{{ record.month|date:"M Y" }}</td>
       <td class="td-num">{{ record.volume_acre_feet|floatformat:2|intcomma }}</td>
       <td class="td-num text-secondary">{{ record.returned_af|floatformat:2|intcomma }}</td>
@@ -65,9 +65,9 @@
       <td class="text-tertiary text-xs">
         {{ record.get_diversion_type_display }}
         {% if record.is_non_consumptive %}
-        <span class="badge badge-teal" title="Returned volume equals the diverted volume, so nothing counts as consumed. Hydropower and other passthroughs record this way.">Non-consumptive (returned to stream)</span>
+        <span class="badge badge-teal" title="All of this water went back to the stream, so OpenH2O does not count any of it as a delivery.">Non-consumptive (returned to stream)</span>
         {% elif record.is_partial_return %}
-        <span class="badge badge-blue" title="Part of the diverted volume is returned to the stream; only the remainder is consumed.">Partial return</span>
+        <span class="badge badge-blue" title="Some of this water went back to the stream. OpenH2O counts only the water retained as a delivery.">Partial return</span>
         {% endif %}
       </td>
       <td class="text-tertiary text-xs">
@@ -95,7 +95,7 @@
     </tr>
     {% endfor %}
     <tr class="row-subtotal">
-      <td class="tfoot-total">All {{ group.count }} month{{ group.count|pluralize }}, {{ group.period_name }}</td>
+      <td class="tfoot-total">All {{ group.count }} record{{ group.count|pluralize }}, {{ group.period_name }}</td>
       <td class="td-num-bold td-total">{{ group.diverted|floatformat:2|intcomma }}</td>
       <td class="td-num-bold td-total">{{ group.returned|floatformat:2|intcomma }}</td>
       <td class="td-num-bold td-total col-sep">{{ group.retained|floatformat:2|intcomma }}</td>

@@ -50,7 +50,7 @@
 <div class="pane-stack">
   <div class="page-grid-account">
 
-    <!-- Diversion point information (+ Water journey, when this POD re-diverts) -->
+    <!-- Diversion point information (+ Re-diversion, when this POD re-diverts) -->
     <div class="card-raised page-grid-account-info">
       <h2 class="section-header">
         Point of diversion information {% include "partials/_demo_marker.html" %}
@@ -103,8 +103,8 @@
         ends at its fields.
       {% endcomment %}
       {% if rediverted_from or rediversions %}
-      <h2 class="section-header mt-lg">Water journey</h2>
-      <p class="text-secondary text-sm mb-md">Each row below is one hop.</p>
+      <h2 class="section-header mt-lg mb-md">Re-diversion</h2>
+      {# 150.1-02 screen 7, Brent 2026-10-13 06:30 "Yes": heading "Re-diversion"; "Each row below is one hop." deleted. #}
 
       {% if rediverted_from %}
       <div class="field-group">
@@ -230,7 +230,7 @@
     {% endcomment %}
     <div class="card-raised page-grid-account-full">
       <h2 class="section-header mb-md">Losses in the canal below this headgate</h2>
-      <p class="text-secondary text-sm mb-md">Each loss below is a share of the water taken at the headgate each month. It is subtracted before the rest is divided among the fields.</p>
+      <p class="text-secondary text-sm mb-md">Each loss below is a percentage of the water taken at the headgate. Every month, OpenH2O subtracts these losses before dividing the rest among the fields.</p>
       <div class="field-grid-2">
         <div class="field-group">
           <div class="field-label">Basis</div>
@@ -273,14 +273,14 @@
       WORKING COPY for Brent's checkpoint: the section heading, the intro
       sentence, the column labels ("Taken at the headgate", "Canal losses" with
       Evaporation / Seepage / Spill, "Fields' own records", "Divided up among
-      the other fields", "Beyond what the crops could use" is Brent's ruled
-      phrase), the totals label and the "Not yet calculated" / "Does not add
+      the other fields", and since 2026-10-13 the Water year page's approved
+      unallocated label), the totals label and the "Not yet calculated" / "Does not add
       up" flags. A month whose parts do not sum to the headgate figure is
       flagged, never hidden; 149.1-05 adds one line under the table, shown only
       when a month is flagged, saying what the flag marks.
     {% endcomment %}
-    {% comment %} 150-04 V9: the card is rendered only for a point with a direct-use record (canal_water is empty otherwise); a recharge-only point gets none. {% endcomment %}
-    {% if canal_water %}
+    {% comment %} 150-04 V9: the card is rendered only for a point with a direct-use record (canal_water is empty otherwise); a recharge-only point gets none. 150.1-02 screen 7 (Brent 2026-10-13 07:22 "yes"): nor does a point with no linked use area, whose months the calculation never splits (accounting/engine_run.py _points_of_diversion). {% endcomment %}
+    {% if canal_water and pod_parcels %}
     <div class="card-raised page-grid-account-full" id="where-the-water-went">
       <h2 class="section-header mb-md">Where the water went</h2>
       <p class="text-secondary text-sm mb-md">Canal losses and the three columns after them add up to the water taken at the headgate; a month that does not is marked Does not add up. Acre-feet.</p>
@@ -310,7 +310,7 @@
               <th colspan="3" class="th-group-label col-sep">Canal losses</th>
               <th rowspan="2" class="th-right">Fields' own records</th>
               <th rowspan="2" class="th-right">Divided up among the other fields</th>
-              <th rowspan="2" class="th-right">Beyond what the crops could use</th>
+              <th rowspan="2" class="th-right">Left after each field received its ETAW divided by its irrigation efficiency</th>
             </tr>
             <tr>
               <th class="th-right col-sep">Evaporation</th>
@@ -382,11 +382,11 @@
         <table class="data-table text-sm">
           <thead>
             <tr>
-              <th>Parcel</th>
+              <th>Use area</th>
               <th>Owner</th>
               <th class="th-right">
                 Share
-                {% include "partials/_help_tooltip.html" with label="Share" text="This use area's share of the canal on file. It divides the canal total only in a month when no use area the canal serves has an estimated use. A use area fed by two points has a share on each." %}
+                {% include "partials/_help_tooltip.html" with label="Share" text="This use area's fixed share of the canal's water. OpenH2O divides the canal's water in these shares only in a month when none of the canal's use areas has any ETAW. A use area fed by two points has a share at each." %}
               </th>
             </tr>
           </thead>

@@ -13,7 +13,7 @@ tree (the exact quotes live in 146-03-EVIDENCE.md):
   1. `PointOfDiversionForm` rejects a fraction sum over 1 with a plain
      sentence.
   2. A band saved through `surface:pod_edit` shows "±35%" on the POD page.
-  3. `miners_inch_gpm` defaults to 11.22 on a POD created with no value.
+  3. The contract unit and miner's inch fields are gone (2026-10-13).
   4. "Known locally as <local_name>" appears on the POD page once set.
 """
 from decimal import Decimal
@@ -84,7 +84,6 @@ def test_form_rejects_a_fraction_sum_at_exactly_one():
             "evaporation_fraction": "0.50",
             "seepage_fraction": "0.30",
             "spill_fraction": "0.20",
-            "miners_inch_gpm": "11.22",
         },
         instance=pod,
     )
@@ -102,7 +101,6 @@ def test_form_accepts_a_fraction_sum_just_under_one():
             "evaporation_fraction": "0.50",
             "seepage_fraction": "0.30",
             "spill_fraction": "0.1999",
-            "miners_inch_gpm": "11.22",
         },
         instance=pod,
     )
@@ -120,7 +118,6 @@ def test_view_re_renders_the_form_with_the_error_and_saves_nothing(auth_client):
             "evaporation_fraction": "0.60",
             "seepage_fraction": "0.60",
             "spill_fraction": "0",
-            "miners_inch_gpm": "11.22",
         },
     )
     assert resp.status_code == 200
@@ -147,7 +144,6 @@ def test_band_saves_and_the_page_shows_it(auth_client):
             "seepage_fraction": "0.12",
             "seepage_band_percent": "35",
             "spill_fraction": "0",
-            "miners_inch_gpm": "11.22",
         },
     )
     assert resp.status_code == 302
@@ -162,16 +158,21 @@ def test_band_saves_and_the_page_shows_it(auth_client):
 
 
 # ---------------------------------------------------------------------------
-# 3. miners_inch_gpm defaults to 11.22
+# 3. Contract unit and miner's inch are gone (Brent 2026-10-13 07:22 "yes",
+#    150.1-02 screen 7 row 9: nothing in OpenH2O read either field)
 # ---------------------------------------------------------------------------
 
 
-def test_miners_inch_gpm_defaults_to_11_22():
-    pod = PointOfDiversionFactory()
-    assert pod.miners_inch_gpm == Decimal("11.22")
+def test_contract_unit_and_miners_inch_are_not_fields():
+    names = {f.name for f in PointOfDiversion._meta.get_fields()}
+    assert "contract_unit" not in names
+    assert "miners_inch_gpm" not in names
 
 
-def test_miners_inch_gpm_default_survives_a_blank_infrastructure_add_submit(auth_client):
+def test_a_blank_infrastructure_add_submit_still_creates_the_point(auth_client):
+    resp = auth_client.get(reverse("infrastructure:add"))
+    assert 'name="miners_inch_gpm"' not in resp.content.decode()
+    assert 'name="contract_unit"' not in resp.content.decode()
     resp = auth_client.post(
         reverse("infrastructure:add"),
         {
@@ -182,8 +183,7 @@ def test_miners_inch_gpm_default_survives_a_blank_infrastructure_add_submit(auth
         },
     )
     assert resp.status_code == 302
-    pod = PointOfDiversion.objects.get(name="New Turnout")
-    assert pod.miners_inch_gpm == Decimal("11.22")
+    assert PointOfDiversion.objects.filter(name="New Turnout").exists()
 
 
 # ---------------------------------------------------------------------------

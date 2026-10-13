@@ -324,7 +324,7 @@ Read the agency's existing water data and practices before building anything. Do
 
 | # | Ask the human | Field or setting | Door |
 |---|---|---|---|
-| J1 | Which miner's inch this district's contract means (the statute's 11.22 gallons a minute, or a contract's 10 or 9), what a head is here, whether a shutoff is imputed to the next pass | `contract_unit` and `miners_inch_gpm` on the point of diversion (the district's own value only; a head and an imputed shutoff have no field yet) | the point's own edit page, `/surface/diversion/<pk>/edit/` |
+| J1 | Which miner's inch the delivery records use, what a head is here, whether a shutoff is imputed to the next pass | no field: enter deliveries in acre-feet (the point's contract unit and miner's inch fields were removed on 2026-10-13 because nothing read them) | the diversion records themselves, in acre-feet |
 | J2 | Which headgate is which point of diversion; the state keeps one point of diversion per right, the platform keeps many | `local_name` on the point of diversion | the same edit page, shown on the point's own page as "known locally as" |
 | J3 | Whether USE minus DIRECT is the returned volume, or is dropped | `diversion_use_type_rule` on the deployment | the diversion import screen's mapping step, shown only when the uploaded file carries USE rows, and remembered after the first import |
 | J4 | Which parcels, and the share when two rights serve one field | `fraction` on the point-to-parcel link | the point's own page, its linked-use-area share editor |
@@ -336,7 +336,7 @@ Read the agency's existing water data and practices before building anything. Do
 | J10 | Which meter feeds which source; whether the year was reported in the January row | the production import file's own source column, one of six on the operator's monthly layout, or the type code on the state's eAR layout | the production import screen |
 | J11 | Whether the platform should hold a schedule at all | the sampling schedule | "Add" on the system's Sampling Schedule page |
 
-**The crosswalk layer, named as such, is five fields and settings, not a phase of its own**: the point of diversion's `local_name` and `contract_unit` (with `miners_inch_gpm`) on its own edit page; the water system facility's `local_name` on its own add-and-edit page; and the deployment's `diversion_use_type_rule` (on the diversion import screen) and `diversion_report_year_rule` (on Delivery Settings). Everything else on the worksheet is either already built, arithmetic the worksheet already names the factor for, or a question with no field yet, named as such in the table above.
+**The crosswalk layer, named as such, is four fields and settings, not a phase of its own**: the point of diversion's `local_name` on its own edit page; the water system facility's `local_name` on its own add-and-edit page; and the deployment's `diversion_use_type_rule` (on the diversion import screen) and `diversion_report_year_rule` (on Delivery Settings). Everything else on the worksheet is either already built, arithmetic the worksheet already names the factor for, or a question with no field yet, named as such in the table above.
 
 ### Option B: Their real data
 

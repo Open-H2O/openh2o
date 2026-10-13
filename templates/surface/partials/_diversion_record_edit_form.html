@@ -61,7 +61,7 @@
     <label class="field-label" for="{{ edit_form.data_state.id_for_label }}">Data state</label>
     {{ edit_form.data_state }}
     {% if edit_form.data_state.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ edit_form.data_state.errors|join:", " }}</span>{% endif %}
-    <span class="text-xs text-tertiary">Only non-provisional data goes in an annual report.</span>
+    <span class="text-xs text-tertiary">The data state does not change any figure OpenH2O calculates.</span>
   </div>
   <div class="form-group">
     <label class="field-label" for="{{ edit_form.method.id_for_label }}">How known</label>

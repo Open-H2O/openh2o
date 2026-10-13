@@ -190,7 +190,8 @@ def test_mark_removed_a_bare_get_is_405(auth_client):
 
 
 # ---------------------------------------------------------------------------
-# 4. The 934(d) five-year evidence sentence
+# 4. The 934(d) five-year evidence sentence: deleted (Brent 2026-10-13 07:22 "yes",
+#    150.1-02 screen 7: it stated a California rule as if it bound every site)
 # ---------------------------------------------------------------------------
 
 EVIDENCE_SENTENCE = "evidence of proper functioning is due at least every five years (934(d))"
@@ -202,7 +203,7 @@ def _years_ago(years):
     return today.replace(year=today.year - years)
 
 
-def test_evidence_sentence_shows_when_blank(auth_client):
+def test_evidence_sentence_absent_when_blank(auth_client):
     pod = PointOfDiversionFactory()
     device = MeasuringDevice.objects.create(
         nickname="No evidence yet", device_type="inline_flow_meter",
@@ -211,10 +212,10 @@ def test_evidence_sentence_shows_when_blank(auth_client):
     PointOfDiversionDevice.objects.create(point_of_diversion=pod, device=device)
 
     resp = auth_client.get(reverse("surface:pod_detail", args=[pod.pk]))
-    assert EVIDENCE_SENTENCE in resp.content.decode()
+    assert EVIDENCE_SENTENCE not in resp.content.decode()
 
 
-def test_evidence_sentence_shows_when_six_years_old(auth_client):
+def test_evidence_sentence_absent_when_six_years_old(auth_client):
     pod = PointOfDiversionFactory()
     device = MeasuringDevice.objects.create(
         nickname="Stale evidence", device_type="inline_flow_meter",
@@ -223,7 +224,7 @@ def test_evidence_sentence_shows_when_six_years_old(auth_client):
     PointOfDiversionDevice.objects.create(point_of_diversion=pod, device=device)
 
     resp = auth_client.get(reverse("surface:pod_detail", args=[pod.pk]))
-    assert EVIDENCE_SENTENCE in resp.content.decode()
+    assert EVIDENCE_SENTENCE not in resp.content.decode()
 
 
 def test_evidence_sentence_absent_when_one_year_old(auth_client):

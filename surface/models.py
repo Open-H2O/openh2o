@@ -301,12 +301,6 @@ class PointOfDiversion(models.Model):
         ("lined", "Lined"),
         ("pipe", "Pipe"),
     ]
-    CONTRACT_UNIT_CHOICES = [
-        ("cfs", "Cubic feet per second (cfs)"),
-        ("miners_inch", "Miner's inch"),
-        ("gpm", "Gallons per minute (gpm)"),
-        ("acre_feet_per_day", "Acre-feet per day"),
-    ]
 
     evaporation_fraction = models.DecimalField(
         max_digits=5,
@@ -329,9 +323,7 @@ class PointOfDiversion(models.Model):
         max_digits=5,
         decimal_places=4,
         default=Decimal("0"),
-        help_text="Share of the diverted volume that spills downstream, "
-        "re-diverted at the point spill_device or rediverted_from names. "
-        "Defaults to 0 (not stated).",
+        help_text="Share of the diverted volume that spills out of the canal.",
     )
     evaporation_band_percent = models.DecimalField(
         max_digits=5,
@@ -382,33 +374,17 @@ class PointOfDiversion(models.Model):
         null=True,
         blank=True,
         related_name="spill_points",
-        help_text="Spill measured at the terminus where a device exists.",
     )
 
-    # --- The 145-01 memo's crosswalk layer (146-03 Task 3): a local alias
-    # and the contract unit a ditch company's own book uses, so a bulk
-    # import (a later task) can resolve a headgate by the name the ditch
-    # tender actually uses rather than only this platform's own name.
+    # --- The 145-01 memo's crosswalk layer (146-03 Task 3): a local alias,
+    # so a bulk import can resolve a headgate by its local name rather than
+    # only this platform's own name. The contract unit and miner's inch
+    # fields beside it were removed 2026-10-13 (Brent, "yes" to 150.1-02
+    # screen 7 row 9): nothing in OpenH2O read either.
     local_name = models.CharField(
         max_length=200,
         blank=True,
-        help_text="The ditch tender's own name for this point, such as a "
-        "headgate, a run or a turnout. Shown as \"known locally as\" beside "
-        "the point's own name when set.",
-    )
-    contract_unit = models.CharField(
-        max_length=20,
-        choices=CONTRACT_UNIT_CHOICES,
-        blank=True,
-        help_text="The unit the operator's own delivery record is kept in, "
-        "when it is not cfs.",
-    )
-    miners_inch_gpm = models.DecimalField(
-        max_digits=5,
-        decimal_places=2,
-        default=Decimal("11.22"),
-        help_text="The statute's 11.22 gallons a minute, unless the "
-        "district's own contract says 10 or 9.",
+        help_text="A local name for this point, such as Turnout 14.",
     )
 
     def clean(self):
@@ -826,9 +802,7 @@ class DiversionRecord(models.Model):
         max_digits=12,
         decimal_places=4,
         default=Decimal("0"),
-        help_text="Agency-asserted acre-feet of this diversion returned to the "
-        "stream (0 = fully consumed; = full volume for non-consumptive / "
-        "hydropower passthrough).",
+        help_text="Acre-feet of this diversion that went back to the stream.",
     )
     max_flow_rate_cfs = models.DecimalField(
         max_digits=10, decimal_places=4, null=True, blank=True
@@ -856,8 +830,7 @@ class DiversionRecord(models.Model):
         max_length=20,
         choices=DATA_STATE_CHOICES,
         default="provisional",
-        help_text="931(s) and 931(j)(3): raw, provisional or non-provisional. "
-        "Only non-provisional data goes in an annual report.",
+        help_text="The data state does not change any figure OpenH2O calculates.",
     )
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

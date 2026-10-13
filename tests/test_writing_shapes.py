@@ -103,7 +103,7 @@ BASELINE: dict = {
     "MAINTAINER.md": {"em dash": 10},
     "README.md": {"em dash": 45, "filler": 3, "stand-in": 2, "district reader": 14, "California": 1},
     "SECURITY.md": {"em dash": 3},
-    "docs/AI-OPERATOR-GUIDE.md": {"filler": 11, "paired heading": 1, "stand-in": 1, "district reader": 42, "California": 1},
+    "docs/AI-OPERATOR-GUIDE.md": {"filler": 11, "paired heading": 1, "stand-in": 1, "district reader": 40, "California": 1},
     "docs/DATA-IMPORT.md": {"double hyphen": 8, "filler": 2, "stand-in": 1, "district reader": 5},
     "docs/DATA-STANDARDS.md": {"em dash": 12, "filler": 1, "stand-in": 1, "district reader": 4},
     "docs/INSTALL-WITHOUT-DOCKER.md": {"em dash": 41, "filler": 7, "paired heading": 3, "stand-in": 3, "district reader": 7},
