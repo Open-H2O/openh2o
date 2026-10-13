@@ -1097,8 +1097,18 @@ class Command(BaseCommand):
             # and the guarded update below writes nothing on the second pass.
             metered = (wseq % 2 == 0)
             method = "certified_meter" if metered else "unmetered_estimate"
-            if well.measurement_method != method:
-                Well.objects.filter(pk=well.pk).update(measurement_method=method)
+            # DWR's own row filled beside it (Brent 2026-10-13 05:26 PDT, "yes,
+            # approved"): a metered well is Meters, direct; an unmetered one is
+            # Land Use, estimate, because the engine estimates its pumping from
+            # crop ET. Accuracy band stays blank: the demo states none.
+            dwr = ("meters", "direct") if metered else ("land_use", "estimate")
+            if (well.measurement_method, well.dwr_extraction_method,
+                    well.dwr_direct_or_estimate) != (method, *dwr):
+                Well.objects.filter(pk=well.pk).update(
+                    measurement_method=method,
+                    dwr_extraction_method=dwr[0],
+                    dwr_direct_or_estimate=dwr[1],
+                )
 
             # Unmetered wells are engine-owned: the method is set (above) but the
             # seed writes no synthetic extraction, so the engine's `calculated`

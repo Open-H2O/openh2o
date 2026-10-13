@@ -350,6 +350,29 @@ def test_unmetered_wells_write_no_seed_groundwater_rows(seeded):
                 f"{ln.parcel_id} has no meter_reading row")
 
 
+def test_seed_fills_the_three_dwr_fields_beside_the_method(seeded):
+    """Brent 2026-10-13 05:26 PDT ("yes, approved"): every demo well with a
+    method recorded shows DWR's own row too, never a method above three blank
+    fields. Metered: Meters, direct. Unmetered: Land Use, estimate (the engine
+    estimates its pumping from crop ET). The demo states no accuracy band.
+    """
+    wells = list(Well.objects.filter(well_registration_id__startswith="MER-W-"))
+    expected = {
+        "certified_meter": ("meters", "direct"),
+        "unmetered_estimate": ("land_use", "estimate"),
+    }
+    seen = set()
+    for w in wells:
+        if not w.measurement_method:
+            continue
+        seen.add(w.measurement_method)
+        assert (w.dwr_extraction_method, w.dwr_direct_or_estimate) == (
+            expected[w.measurement_method]
+        ), w.well_registration_id
+        assert w.accuracy_band == ""
+    assert seen == set(expected)
+
+
 # --------------------------------------------------------------------------
 # Group 2 — budgets exist for BOTH authorities, both periods
 # --------------------------------------------------------------------------

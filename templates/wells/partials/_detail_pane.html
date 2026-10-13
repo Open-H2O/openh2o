@@ -132,19 +132,19 @@
         {% include "wells/partials/_editable_field.html" with ef=ef.year_pumping_began %}
 
         {% comment %}
-          146-05 checkpoint ruling 2 (2026-09-23): STATIC, not editable. This
-          field used to carry its own pencil beside the three DWR fields
-          below, derived from it once by migration 0005 and independent of
-          it ever since, so the two could disagree on the same card. It is
-          no longer in EDITABLE_FIELDS (wells/views.py), so the PATCH/GET
-          endpoint refuses it like any unknown field; this renders its value
-          with no editor, the same pattern as the static Registration ID
-          field above.
+          146-05 checkpoint ruling 2 (2026-09-23): STATIC, not editable; no
+          longer in EDITABLE_FIELDS, so the PATCH/GET endpoint refuses it.
+          150.1-02 screen 6, Brent 2026-10-13 05:26 PDT "yes, approved": the
+          pop-out no longer says the two "cannot disagree" (every demo well
+          showed a method above three blank DWR fields), the Status, Direct
+          or Estimate, Accuracy Band and Share pop-outs, "Irrigated use
+          areas", "Monitored by" and the map's "Local registration ID" are
+          his approved words (brent-sentence-corrections.md).
         {% endcomment %}
         <div class="field-group">
           <div class="field-label field-row">
             Measurement method
-            {% include "partials/_help_tooltip.html" with label="Measurement Method" text="This is the value as it was first recorded. The three DWR fields below now say how this well's pumping is measured, and this one is read-only so the two records cannot disagree." %}
+            {% include "partials/_help_tooltip.html" with label="Measurement Method" text="OpenH2O keeps the method first recorded for this well read-only. The three DWR fields below record how the well's pumping is measured. OpenH2O uses the month's meter reading where there is one and otherwise estimates the pumping, whatever these fields say." %}
           </div>
           <div class="field-value">{{ measurement_method_display }}</div>
         </div>
@@ -161,7 +161,7 @@
       </div>
     </div>
 
-    {# Three short cards: Current meters and Irrigated parcels side by side (each is a one-line list on most wells, and a one-line list across a 2fr cell read as an empty box, page-verdict 143-10), Monitoring data under them. No lead figure on this page (R-055 does not name one here), so no .budget-panel -- this cell is a plain page-stack that fills the height the Identification card sets. #}
+    {# Three short cards: Current meters and Irrigated use areas side by side (each is a one-line list on most wells, and a one-line list across a 2fr cell read as an empty box, page-verdict 143-10), Monitoring data under them. No lead figure on this page (R-055 does not name one here), so no .budget-panel -- this cell is a plain page-stack that fills the height the Identification card sets. #}
     <div class="page-grid-account-balance">
       <div class="page-stack">
         <div class="page-grid-2col">
@@ -186,8 +186,8 @@
         <!-- Irrigated Parcels card -->
         <div class="card-raised">
           <h2 class="section-header mb-md field-row">
-            Irrigated parcels
-            {% include "partials/_help_tooltip.html" with label="Share" text="The share of this point's water this use area receives. Two use areas fed by two different points each carry their own fixed share -- this page does not sum them." %}
+            Irrigated use areas
+            {% include "partials/_help_tooltip.html" with label="Share" text="The share of this well's water that this use area receives. OpenH2O does not check that this well's shares add up to 1." %}
           </h2>
           {% if irrigated_parcels %}
             {% for wip in irrigated_parcels %}
@@ -225,7 +225,7 @@
           <div class="page-stack" style="gap: var(--space-sm);">
             {% if monitoring.monitoring_agency %}
             <div class="field-group mb-0">
-              <span class="field-label">Agency</span>
+              <span class="field-label">Monitored by</span>
               <div class="field-value-sm">{{ monitoring.monitoring_agency }}</div>
             </div>
             {% endif %}
@@ -414,7 +414,7 @@
       source: 'well',
       popup: function (p) {
         return '<strong>' + (p.name || 'Unnamed Well') + '</strong><br>' +
-               'Reg ID: ' + (p.well_registration_id || '—');
+               'Local registration ID: ' + (p.well_registration_id || '—');
       }
     });
   }

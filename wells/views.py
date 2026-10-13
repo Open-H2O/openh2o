@@ -131,18 +131,22 @@ def _dwr_extraction_line(well):
     """"Extraction: <method>, <direct/estimate>, ±<band>" -- DWR's three-part
     identity for how a well's pumping is known (23 CCR 356.2(b)(2)).
 
-    Each part reads "not stated" on its own when blank, so a well missing one
-    part is never read as though the whole line were unset.
+    Brent, 2026-10-13 05:26 PDT ("yes, approved"): a well with none of the
+    three reads "not stated" once; a well with some of them names each blank
+    part ("direct or estimate not stated", "accuracy band not stated"), since
+    three bare "not stated" in a row did not say which part was missing.
     """
+    if not (well.dwr_extraction_method or well.dwr_direct_or_estimate or well.accuracy_band):
+        return "not stated"
     method = dict(DWR_EXTRACTION_METHOD_CHOICES).get(well.dwr_extraction_method)
     direct_or_estimate = dict(DWR_DIRECT_OR_ESTIMATE_CHOICES).get(well.dwr_direct_or_estimate)
     if well.accuracy_band:
         band = f"±{well.accuracy_band.replace('_', ' ')}%"
     else:
-        band = "not stated"
+        band = "accuracy band not stated"
     return ", ".join([
-        method if method else "not stated",
-        direct_or_estimate.lower() if direct_or_estimate else "not stated",
+        method if method else "extraction method not stated",
+        direct_or_estimate.lower() if direct_or_estimate else "direct or estimate not stated",
         band,
     ])
 

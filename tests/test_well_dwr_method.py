@@ -262,12 +262,22 @@ def test_shape_4_well_page_shows_the_three_editors_and_well_type(auth_client):
 
 
 def test_identity_line_says_not_stated_per_part():
+    """Brent, 2026-10-13 05:26 PDT: "not stated" once when all three are
+    blank; otherwise each blank part is named."""
     from wells.views import _dwr_extraction_line
 
     well = Well(
         dwr_extraction_method="", dwr_direct_or_estimate="", accuracy_band=""
     )
-    assert _dwr_extraction_line(well) == "not stated, not stated, not stated"
+    assert _dwr_extraction_line(well) == "not stated"
 
     well.dwr_extraction_method = "land_use"
-    assert _dwr_extraction_line(well) == "Land Use, not stated, not stated"
+    assert _dwr_extraction_line(well) == (
+        "Land Use, direct or estimate not stated, accuracy band not stated"
+    )
+
+    well.dwr_extraction_method = ""
+    well.accuracy_band = "5-10"
+    assert _dwr_extraction_line(well) == (
+        "extraction method not stated, direct or estimate not stated, ±5-10%"
+    )

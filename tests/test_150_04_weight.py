@@ -234,7 +234,7 @@ def test_s6_construction_is_the_right_columns_last_card():
     # the right column.
     assert right_column < construction < history
     assert html.index("Current meters") < construction
-    assert html.index("Irrigated parcels") < construction
+    assert html.index("Irrigated use areas") < construction
     assert '<h2 class="section-header">Construction (DWR Well Completion Report)</h2>' in html
     # Every editable field moved with its section, each on its own swap target.
     for name in (

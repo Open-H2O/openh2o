@@ -491,7 +491,7 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
         {% endif %}
         {% if 'wells' in enabled_modules %}'wells-points': function(p) {
             return '<strong>' + (p.name || 'Unnamed Well') + '</strong><br>' +
-                   'Reg ID: ' + (p.well_registration_id || '—') + '<br>' +
+                   'Local registration ID: ' + (p.well_registration_id || '—') + '<br>' +
                    'Depth: ' + (p.depth_ft ? parseFloat(p.depth_ft).toFixed(0) + ' ft' : '—') + '<br>' +
                    'Status: ' + (p.status || '—') + '<br>' +
                    '<a href="/wells/' + p.pk + '/" style="color:'+OH2O.colors.gold+'">View details →</a>';
