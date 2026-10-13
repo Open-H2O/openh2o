@@ -17,14 +17,6 @@
 </div>
 {% endif %}
 
-{% if is_curtailed %}
-<div class="alert-warning">
-  <strong>Curtailment in effect.</strong>
-  {% for o in curtailment_orders %}{{ o.title }}{% if not forloop.last %}; {% endif %}{% endfor %}
-  Surface deliveries to the curtailed parcels stop after the curtailment date; the current-year surface allocation below is reduced to match.
-</div>
-{% endif %}
-
 {% comment %}
   143-06 (R-101, R-103, R-055, R-112). The page composed as a page at 1,730 CSS
   px (DESIGN.md, *What a finished page is*), reusing the account page's grid
@@ -64,20 +56,6 @@
       <div class="field-group">
         <div class="field-label">Description</div>
         <div class="text-secondary text-base">{{ zone.description }}</div>
-      </div>
-      {% endif %}
-
-      {% comment %}
-        Q5 (146-05 Task 3): shown only when set, nothing when not -- the plan's
-        own words. A zone that does not carry the Delta rule states nothing
-        about it, rather than printing "Not recorded" for a rule almost no
-        zone will ever set.
-      {% endcomment %}
-      {% if zone.subsurface_supply_is_diversion %}
-      <div class="field-group">
-        <div class="field-label">Subsurface supply</div>
-        <div class="field-value">Counts as a diversion here, under a stated legal basis.</div>
-        <div class="text-secondary text-base">{{ zone.legal_basis }}</div>
       </div>
       {% endif %}
 

@@ -884,7 +884,7 @@ class TestSurfacePages:
         # Fragment, not full document: no <html> shell from base.html.
         assert "<html" not in body.lower()
 
-    def test_curtailed_right_carries_no_demo_badge_on_the_list_but_one_on_detail(
+    def test_revoked_right_carries_no_demo_badge_on_the_list_but_one_on_detail(
         self, auth_client
     ):
         """143-10 (R-118): the list's notice above the table already says the
@@ -895,7 +895,7 @@ class TestSurfacePages:
         from core.models import SiteConfig
 
         SiteConfig.objects.create(agency_name="Demo GSA", demonstration_mode=True)
-        right = WaterRightFactory(status="curtailed")
+        right = WaterRightFactory(status="revoked")
 
         list_body = auth_client.get(reverse("surface:water_rights_list")).content.decode()
         assert "badge-demo" not in list_body

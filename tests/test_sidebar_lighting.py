@@ -139,9 +139,6 @@ EXPECTED_LIT = {
     "/reporting/reports/shared-supply-check/": "Reports",
     "/setup/": "Setup Wizard",
     "/surface/": "Surface Diversions",
-    "/surface/curtailments/": "Curtailment Orders",
-    "/surface/curtailments/<int:pk>/edit/": "Curtailment Orders",
-    "/surface/curtailments/add/": "Curtailment Orders",
     "/surface/device/<int:pk>/edit/": "Surface Diversions",
     "/surface/diversion/<int:pk>/": "Surface Diversions",
     "/surface/diversion/<int:pk>/device/add/": "Surface Diversions",
@@ -210,7 +207,6 @@ SECTION_OF = {
     "Schedule": "Water Data",
     "Add a water system": "Water Data",
     "Water Rights": "Administration",
-    "Curtailment Orders": "Administration",
     "Accounts": "Administration",
     "Water Years": "Administration",
     "Allocations": "Administration",
@@ -333,7 +329,7 @@ def walk():
     """The fixture the walk renders against: one row per converter, a superuser."""
     from accounting.models import CalculationPlan, CalculationRun, CalculationStep
     from drinking.models import SamplingSchedule
-    from surface.models import CurtailmentOrder, MeasuringDevice, PointOfDiversionDevice
+    from surface.models import MeasuringDevice, PointOfDiversionDevice
     from tests.factories import (
         DiversionRecordFactory,
         MonitoredStationFactory,
@@ -356,7 +352,6 @@ def walk():
         WellIrrigatedParcelFactory,
         ZoneFactory,
     )
-    from datetime import date
     from decimal import Decimal
 
     rows = SimpleNamespace()
@@ -419,14 +414,6 @@ def walk():
     PointOfDiversionDevice.objects.create(
         point_of_diversion=rows.pod, device=rows.device, is_current=True
     )
-    rows.curtailment = CurtailmentOrder.objects.create(
-        order_id="LIGHT-2026-01",
-        title="A lighting walk order",
-        effective_date=date(2026, 1, 1),
-        watershed="MERCED RIVER",
-        priority_date_cutoff=date(1930, 1, 1),
-        status="active",
-    )
     rows.recharge_site = RechargeSiteFactory()
     rows.report = ReportSubmissionFactory(reporting_period=rows.period)
     rows.system = WaterSystemFactory()
@@ -461,7 +448,6 @@ PK_ROW_BY_PREFIX = (
     ("/parcels/", "parcel"),
     ("/recharge/", "recharge_site"),
     ("/reporting/reports/", "report"),
-    ("/surface/curtailments/", "curtailment"),
     ("/surface/device/", "device"),
     ("/surface/diversion/", "pod"),
     ("/surface/rights/", "right"),

@@ -4,7 +4,7 @@
 ISS-147. The pane's period was resolved from the LEDGER — the most recent period
 carrying a non-allocation row — so a field whose newer year has a calculation but
 no delivery of its own opened on the older year, and there was no control to move
-it. The six curtailed Merced fields are exactly that shape: the dry year is the
+it. The six El Nido Merced fields (a canal dry after June 2025) are exactly that shape: the dry year is the
 year with the finding, and it was the year the pane would not show.
 
 The fixture here is that shape, hermetically: one parcel with NO well, a real
@@ -64,7 +64,7 @@ def _user():
 
 
 @pytest.fixture
-def curtailed_field():
+def dry_canal_field():
     """A no-well field with a calculation in both years, activity only in the older.
 
     Returns ``(parcel, older_period, newer_period)``.
@@ -123,14 +123,14 @@ def client_logged_in():
 
 
 def test_the_pane_opens_on_the_most_recent_period_with_a_calculation(
-    curtailed_field, client_logged_in
+    dry_canal_field, client_logged_in
 ):
     """No ``?period=``: the newer year, because that is where the calculation is.
 
     Under the ledger-activity default this parcel opened on WY 2024-2025, the
     only year with a non-allocation row.
     """
-    parcel, older, newer = curtailed_field
+    parcel, older, newer = dry_canal_field
 
     response = client_logged_in.get(
         reverse("parcels:detail", args=[parcel.pk]), HTTP_HX_REQUEST="true"
@@ -140,15 +140,15 @@ def test_the_pane_opens_on_the_most_recent_period_with_a_calculation(
     pk, name = selected_period(response.content.decode())
     assert (pk, name) == (newer.pk, "WY 2025-2026"), (
         f"the pane opened on {name!r}; the newer year is the one with a "
-        "calculation, and it is the year the curtailment shows in (ISS-147)"
+        "calculation, and it is the year the dry canal shows in (ISS-147)"
     )
 
 
 def test_an_explicit_period_argument_opens_the_older_year(
-    curtailed_field, client_logged_in
+    dry_canal_field, client_logged_in
 ):
     """``?period=`` is honoured, so the wet year is never hidden."""
-    parcel, older, newer = curtailed_field
+    parcel, older, newer = dry_canal_field
 
     response = client_logged_in.get(
         reverse("parcels:detail", args=[parcel.pk]) + f"?period={older.pk}",
@@ -161,10 +161,10 @@ def test_an_explicit_period_argument_opens_the_older_year(
 
 
 def test_an_unknown_period_argument_falls_back_to_the_default(
-    curtailed_field, client_logged_in
+    dry_canal_field, client_logged_in
 ):
     """A stale bookmark or a hand-typed pk renders the pane, never a 404 or a 500."""
-    parcel, older, newer = curtailed_field
+    parcel, older, newer = dry_canal_field
 
     response = client_logged_in.get(
         reverse("parcels:detail", args=[parcel.pk]) + "?period=999999",
@@ -177,7 +177,7 @@ def test_an_unknown_period_argument_falls_back_to_the_default(
 
 
 def test_the_page_and_the_old_workspace_deep_link_show_the_same_period(
-    curtailed_field, client_logged_in
+    dry_canal_field, client_logged_in
 ):
     """The standalone page and the old workspace's ``?selected=`` deep link
     resolve the period identically.
@@ -189,7 +189,7 @@ def test_the_page_and_the_old_workspace_deep_link_show_the_same_period(
     in one of them would be a link that opens on a different year than the
     page it points at.
     """
-    parcel, older, newer = curtailed_field
+    parcel, older, newer = dry_canal_field
 
     page = client_logged_in.get(reverse("parcels:detail", args=[parcel.pk]))
     assert page.status_code == 200
@@ -206,12 +206,12 @@ def test_the_page_and_the_old_workspace_deep_link_show_the_same_period(
 
 
 def test_an_explicit_period_survives_the_old_workspace_deep_link(
-    curtailed_field, client_logged_in
+    dry_canal_field, client_logged_in
 ):
     """A `?selected=&period=` deep link into the old workspace carries its
     period forward onto the redirect, so a bookmarked link still opens the
     year it was saved on."""
-    parcel, older, newer = curtailed_field
+    parcel, older, newer = dry_canal_field
 
     old_link = client_logged_in.get(
         reverse("parcels:list") + f"?selected={parcel.pk}&period={older.pk}"

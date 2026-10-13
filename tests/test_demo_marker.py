@@ -2,8 +2,9 @@
 """Demo-honesty marker gating (Phase 64 Plan 01).
 
 The Merced demo is shown to outside evaluators. A surface water-right in the
-``curtailed``/``revoked`` state renders the real Water Board legal term, which an
-evaluator could mistake for an actual curtailment order on what is sample data.
+``revoked`` state renders a real legal term, which an evaluator could mistake
+for an actual action on what is sample data. (The ``curtailed`` status went
+with the curtailment feature, 150.5-01.)
 A flag-gated ``DEMO`` meta-label disambiguates it — but ONLY when
 ``SiteConfig.demonstration_mode`` is on, so a real production instance renders
 exactly as before.
@@ -13,8 +14,8 @@ These tests lock the gate through the request path (so the
 partial directly would bypass it):
 
   - present iff demonstration_mode, AND
-  - only on legal-action statuses (curtailed/revoked), never on ``active``, AND
-  - real-instance output (flag off) keeps the original Status caption untouched.
+  - only on the legal-action status (revoked), never on ``active``, AND
+  - real-instance output (flag off) shows no marker.
 
 **Phase 101 added the second half of this file, and it is the same gate rather
 than a new one.** ``templates/wells/partials/_detail_pane.html`` included the
@@ -67,11 +68,6 @@ def _detail_body(status, *, demonstration_mode):
 
 @pytest.mark.django_db
 class TestDemoMarkerGating:
-    def test_curtailed_shows_marker_in_demo_mode(self):
-        body = _detail_body("curtailed", demonstration_mode=True)
-        assert "badge-demo" in body
-        assert ">DEMO<" in body
-
     def test_revoked_shows_marker_in_demo_mode(self):
         body = _detail_body("revoked", demonstration_mode=True)
         assert "badge-demo" in body
@@ -83,14 +79,17 @@ class TestDemoMarkerGating:
         assert "badge-demo" not in body
         assert ">DEMO<" not in body
 
-    def test_curtailed_no_marker_and_original_caption_on_real_instance(self):
-        body = _detail_body("curtailed", demonstration_mode=False)
-        # Real instance: no marker at all.
+    def test_revoked_no_marker_on_real_instance(self):
+        body = _detail_body("revoked", demonstration_mode=False)
         assert "badge-demo" not in body
         assert ">DEMO<" not in body
-        # And the Status caption is byte-for-byte the pre-Phase-64 text — the
-        # demo-only clause must be absent.
-        assert "Curtailed rights are temporarily restricted." in body
+
+    @pytest.mark.parametrize("mode", [True, False])
+    def test_status_pop_out_reads_the_approved_sentence(self, mode):
+        # Brent, 2026-10-12 19:24 PDT, "approved": one sentence, demo or not.
+        body = _detail_body("active", demonstration_mode=mode)
+        assert "Active rights are currently exercisable." in body
+        assert "Curtailed" not in body
         assert "illustrative sample data" not in body
 
 

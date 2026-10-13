@@ -614,7 +614,6 @@ def glossary(request):
         "CFS (Cubic Feet per Second)": "Rates on a point of diversion, a water right and a monthly diversion record, shown as \"50.00 cfs\".",
         "CIMIS": "California Irrigation Management Information System, weather station data for agriculture.",
         "Closing Balance": "OpenH2O's water balance for one use area and water year, with supplies on one side, uses on the other and the residual between them. See Help > How Water Balances Work.",
-        "Curtailment": "One record per State Water Board order, holding its order ID, title, effective and end dates, watershed and priority-date cutoff; each right it affects shows its status on its own detail card.",
         "DLR": "Detection Limit for purposes of Reporting. The platform stores the DLR a laboratory's file carries on each result row exactly as reported, in the row's own units, and shows it under Limit (file) on the result's page.",
         "Delivery Settings": "The administrator's page for irrigation efficiency, surface water in excess of ETAW, the year-end choice, the reporting year and record addresses. See Help > Surface Delivery Settings.",
         "Data Source": "One record per outside agency or service the platform reads data from, holding its name, code, address, how often it is read and when it was last read.",

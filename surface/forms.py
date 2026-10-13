@@ -6,7 +6,6 @@ from django import forms
 from django.db.models import Q
 
 from surface.models import (
-    CurtailmentOrder,
     DiversionRecord,
     MeasuringDevice,
     PointOfDiversion,
@@ -446,28 +445,3 @@ class WaterRightForm(forms.ModelForm):
         return cleaned
 
 
-class CurtailmentOrderForm(forms.ModelForm):
-    """Create/edit a curtailment order (146-02 Task 4, door D6).
-
-    The matching rule that reads these fields lives in
-    `surface/curtailments.py::orders_that_may_apply`; this form only takes
-    the order's own fields down, the same shape `WaterRightForm` uses.
-    """
-
-    class Meta:
-        model = CurtailmentOrder
-        fields = [
-            "order_id", "title", "effective_date", "end_date", "watershed",
-            "priority_date_cutoff", "status", "notes",
-        ]
-        widgets = {
-            "order_id": forms.TextInput(attrs={"class": "form-input"}),
-            "title": forms.TextInput(attrs={"class": "form-input"}),
-            "effective_date": forms.DateInput(attrs={"type": "date", "class": "form-input"}),
-            "end_date": forms.DateInput(attrs={"type": "date", "class": "form-input"}),
-            "watershed": forms.TextInput(attrs={"class": "form-input"}),
-            "priority_date_cutoff": forms.DateInput(attrs={"type": "date", "class": "form-input"}),
-            "status": forms.Select(attrs={"class": "form-select"}),
-            "notes": forms.Textarea(attrs={"class": "form-textarea", "rows": 3}),
-        }
-        labels = {"order_id": "Order ID"}

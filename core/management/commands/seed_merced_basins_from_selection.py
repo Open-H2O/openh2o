@@ -33,9 +33,8 @@ Nido intake diverts storm water to storage under its own invented right,
 ``MER-WR-011-DEMO``, created and attached HERE because this command owns the
 intake POD and ``update_or_create``s it on every build — a link made anywhere
 else would be erased by the next rebuild. The right is NEW rather than borrowed:
-``MER-WR-009-DEMO`` (Saddlebow, the curtailed junior right on this same canal)
-delivers nothing in the dry year and is special-cased by the ledger seed's flush
-and curtailment lookup, and ``MER-WR-004-DEMO`` names the Merced River as its
+``MER-WR-009-DEMO`` (Saddlebow, the junior right on this same canal) delivers
+nothing in the dry year and is special-cased by the ledger seed, and ``MER-WR-004-DEMO`` names the Merced River as its
 source. A real district files a separate right for a recharge operation, and it
 appears honestly as the seventh row of the water-rights list. The right serves
 NO parcel — no WaterRightParcel, no PointOfDiversionParcel — so the ledger

@@ -133,14 +133,14 @@ RIGHT_CONFIGS = [
      Decimal("22000"), "Diversion Canal", "active"),
     ("MER-WR-008-DEMO", 2, "Tulepine Bottomlands Ranch", None,
      Decimal("4000"), "Merced River", "active"),
-    # Junior right (newest priority date) → first to be curtailed in a drought,
-    # which is how California priority works. Its El Nido service area (POD-007)
-    # is the curtailment story: surface deliveries are cut, conjunctive growers
-    # fall back on groundwater, and surface-only growers simply go short. (A
-    # former empty pre-1914 MER-WR-007 was removed — a curtailed right with no
-    # parcels demonstrated nothing.)
+    # Junior right (newest priority date). Its El Nido service area (POD-007) is
+    # the dry-canal story: the canal delivers nothing after June 2025
+    # (seed_merced_ledgers EL_NIDO_LAST_DELIVERY), conjunctive growers fall back
+    # on groundwater, and surface-only growers simply go short. (A former empty
+    # pre-1914 MER-WR-007 was removed — a right with no parcels demonstrated
+    # nothing.)
     ("MER-WR-009-DEMO", 1, "Saddlebow Irrigation District", "1962-05-05",
-     Decimal("9000"), "El Nido Canal", "curtailed"),
+     Decimal("9000"), "El Nido Canal", "active"),
 ]
 
 # ---------------------------------------------------------------------------

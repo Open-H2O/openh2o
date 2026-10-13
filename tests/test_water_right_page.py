@@ -229,24 +229,18 @@ class TestWaterRightByWaterYear:
 
 
 class TestWaterRightCardsTakeTheirContentsHeight:
-    """ISS-201 on this page: the face-value card and the curtailment card are
-    each their content's height, by modifiers this page alone carries, so the
-    account page's balance cell (the same grid) keeps its stretch."""
+    """ISS-201 on this page: the face-value card is its content's height, by a
+    modifier this page alone carries, so the account page's balance cell (the
+    same grid) keeps its stretch. (The curtailment card beside the points of
+    diversion went with the feature, 150.5-01.)"""
 
     def test_the_page_carries_both_modifiers_and_the_stylesheet_defines_them(self):
         from pathlib import Path
-
-        from surface.models import CurtailmentOrder
 
         right = WaterRightFactory(
             face_value_acre_feet=Decimal("100.0000"),
             priority_date=date(1962, 5, 5),
             source_name="El Nido Canal",
-        )
-        CurtailmentOrder.objects.create(
-            order_id="TEST-CURT-PAGE", title="Test order",
-            effective_date=date(2020, 1, 1), watershed="El Nido Canal",
-            priority_date_cutoff=date(1962, 5, 5),
         )
         html = _right_page(right)
         css = (Path(__file__).resolve().parent.parent / "static/css/app.css").read_text()
@@ -255,7 +249,7 @@ class TestWaterRightCardsTakeTheirContentsHeight:
             'class="card-raised page-grid-account-balance '
             'page-grid-account-balance--content-height"'
         ) in html
-        assert 'class="page-grid-2col page-grid-2col--align-start page-grid-account-full"' in html
+        assert "Curtailment" not in html
         assert re.search(
             r"\.page-grid-account-balance--content-height\s*\{\s*align-self:\s*start;\s*\}", css
         )

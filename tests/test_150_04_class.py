@@ -56,9 +56,13 @@ def test_c3_a_clickable_row_takes_its_pointer_from_the_class_not_an_inline_style
         assert "onclick=" in row, f"{name}: the row lost its link"
 
 
-@pytest.mark.parametrize("name", ["infrastructure/add.html", "geography/zone_create.html"])
-def test_c2_form_stack_is_gone_and_the_fields_keep_their_form_group(name):
+# zone_create.html had five fields until 150.5-01 removed the Delta checkbox and
+# its legal basis box (Brent 2026-10-12 19:17 PDT, "Remove it"): three remain.
+@pytest.mark.parametrize(
+    "name,groups", [("infrastructure/add.html", 5), ("geography/zone_create.html", 3)]
+)
+def test_c2_form_stack_is_gone_and_the_fields_keep_their_form_group(name, groups):
     """RED before: add.html carried `form-stack` seven times, zone_create.html twice."""
     text = (TEMPLATES / name).read_text()
     assert "form-stack" not in text
-    assert text.count('class="form-group"') >= 5
+    assert text.count('class="form-group"') >= groups

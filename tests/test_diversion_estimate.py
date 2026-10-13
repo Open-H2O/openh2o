@@ -33,7 +33,6 @@ from surface.diversion_import import commit_rows
 from surface.estimate import estimate_month
 from parcels.models import IrrigationMethod, ParcelIrrigationMethod
 from surface.models import (
-    CurtailmentOrder,
     DiversionRecord,
     MeasuringDevice,
     PointOfDiversionDevice,
@@ -522,23 +521,10 @@ def test_an_estimate_on_another_day_of_the_month_is_updated_in_place():
 # (e) no right, a right that is not active ------------------------------------
 
 
-def _junior_right(*, status="curtailed", priority_date=date(1962, 5, 5)):
-    """A right on El Nido Canal, junior to the cutoff ``_order`` carries."""
+def _junior_right(*, status="active", priority_date=date(1962, 5, 5)):
+    """A right on El Nido Canal."""
     return WaterRightFactory(
         status=status, priority_date=priority_date, source_name="El Nido Canal"
-    )
-
-
-def _order(*, effective, end=None, watershed="El Nido Canal", status="active"):
-    """A curtailment order on El Nido Canal, cutoff 1962-05-05."""
-    return CurtailmentOrder.objects.create(
-        order_id=f"TEST-CURT-{CurtailmentOrder.objects.count() + 1:03d}",
-        title="Test curtailment order",
-        effective_date=effective,
-        end_date=end,
-        watershed=watershed,
-        priority_date_cutoff=date(1962, 5, 5),
-        status=status,
     )
 
 
@@ -558,41 +544,37 @@ def test_points_with_no_water_right_get_no_estimate_and_one_listing_note():
     ]
 
 
-def test_a_curtailed_right_gets_no_estimate_and_loses_the_one_it_held():
-    # 150-02 (ISS-226 edge 3): the curtailment is read off an order covering
-    # the month, not the right's status alone, so this right carries one.
-    right = _junior_right(status="active")
-    _rp, pod, _fields = _ditch(name="El Nido Ditch", right=right)
+def test_a_typed_zero_stops_the_estimate_and_the_one_held_is_deleted():
+    # 150.5-01: with curtailment orders gone, a month in which a point
+    # delivered nothing is recorded as a typed record of 0, and that stops the
+    # estimate like any other typed record (Brent 2026-10-12 17:47 PDT).
+    _rp, pod, _fields = _ditch(name="El Nido Ditch", right=_junior_right())
     _run()
-    assert _estimates(pod).count() == 1
-    right.status = "curtailed"
-    right.save()
-    _order(effective=date(2023, 12, 1))
+    assert _estimate_of(pod).volume_acre_feet == Decimal("98.0392")
+    zero = DiversionRecordFactory(
+        point_of_diversion=pod, month=date(2024, 1, 15), volume_acre_feet=Decimal("0")
+    )
 
     notes = _run()
 
     assert _estimates(pod).count() == 0
-    assert _sentences(notes) == [
-        "OpenH2O estimated no delivery at El Nido Ditch in the months a curtailment "
-        "order covers its water right."
-    ]
+    zero.refresh_from_db()
+    assert zero.volume_acre_feet == Decimal("0.0000")
+    assert zero.method == ""
+    assert notes == []
 
 
 def test_points_are_grouped_by_the_status_of_their_right():
-    # 150-02 (ISS-226 edge 3): A and B are curtailed by an order covering
-    # January; C's status alone stops it.
-    _order(effective=date(2023, 12, 1))
-    _rp, a, _f1 = _ditch(name="A Gate", right=_junior_right())
-    _rp, b, _f2 = _ditch(name="B Gate", right=_junior_right())
+    _rp, a, _f1 = _ditch(name="A Gate", right=_junior_right(status="revoked"))
+    _rp, b, _f2 = _ditch(name="B Gate", right=_junior_right(status="revoked"))
     _rp, c, _f3 = _ditch(name="C Gate", right=WaterRightFactory(status="inactive"))
 
     notes = _run()
 
     assert _estimates().count() == 0
     assert _sentences(notes) == [
-        "OpenH2O estimated no delivery at A Gate and B Gate in the months a "
-        "curtailment order covers their water rights.",
         "No delivery was estimated for C Gate: the water right is inactive.",
+        "No delivery was estimated for A Gate and B Gate: the water right is revoked.",
     ]
 
 
@@ -844,8 +826,8 @@ def test_the_calwatrs_worksheet_marks_an_estimated_month():
 # Edge 1: an estimate a person edits. Saved with a changed volume it becomes a
 # typed record, so the next run leaves it; saved unchanged it stays an
 # estimate. Edge 2: only a CURRENT link to an ACTIVE device is a device in
-# service. Edge 3: a right's curtailment is read off the orders covering the
-# month, so an order stops the months it covers and no others.
+# service. Edge 3 (a right's curtailment read off the orders covering the
+# month) went with the curtailment feature, 150.5-01; a typed 0 does its work.
 
 ESTIMATE_LINE = (
     "This record is the platform's estimate. Save it with a changed volume and "
@@ -972,13 +954,16 @@ def test_a_removed_device_does_not_count():
     assert _estimate_of(pod).volume_acre_feet == Decimal("98.0392")
 
 
-def test_an_order_effective_mid_year_stops_the_months_it_covers_and_not_the_one_before():
+def test_typed_zeros_stop_only_the_months_they_cover():
     _rp, pod, _fields = _ditch(
         name="El Nido Ditch",
         right=_junior_right(),
         months=("2024-01", "2024-02", "2024-03"),
     )
-    _order(effective=date(2024, 2, 15))
+    for month in (date(2024, 2, 15), date(2024, 3, 15)):
+        DiversionRecordFactory(
+            point_of_diversion=pod, month=month, volume_acre_feet=Decimal("0")
+        )
 
     _run(JAN)
     feb_notes = _run(FEB)
@@ -986,66 +971,7 @@ def test_an_order_effective_mid_year_stops_the_months_it_covers_and_not_the_one_
 
     assert _estimate_of(pod, JAN).volume_acre_feet == Decimal("98.0392")
     assert _estimates(pod).count() == 1
-    curtailed = [
-        "OpenH2O estimated no delivery at El Nido Ditch in the months a curtailment "
-        "order covers its water right."
-    ]
-    assert _sentences(feb_notes) == curtailed
-    assert _sentences(mar_notes) == curtailed
-
-
-def test_an_order_that_ended_before_the_month_does_not_stop_it():
-    _rp, pod, _fields = _ditch(right=_junior_right())
-    _order(effective=date(2023, 6, 1), end=date(2023, 12, 31))
-
-    _run()
-
-    assert _estimate_of(pod).volume_acre_feet == Decimal("98.0392")
-
-
-def test_an_order_that_is_not_active_does_not_stop_it():
-    _rp, pod, _fields = _ditch(right=_junior_right())
-    _order(effective=date(2023, 12, 1), status="rescinded")
-
-    _run()
-
-    assert _estimate_of(pod).volume_acre_feet == Decimal("98.0392")
-
-
-def test_an_order_on_another_watershed_does_not_stop_it():
-    _rp, pod, _fields = _ditch(right=_junior_right())
-    _order(effective=date(2023, 12, 1), watershed="Merced River")
-
-    _run()
-
-    assert _estimate_of(pod).volume_acre_feet == Decimal("98.0392")
-
-
-def test_a_right_senior_to_the_cutoff_is_not_stopped():
-    _rp, pod, _fields = _ditch(right=_junior_right(priority_date=date(1930, 4, 10)))
-    _order(effective=date(2023, 12, 1))
-
-    _run()
-
-    assert _estimate_of(pod).volume_acre_feet == Decimal("98.0392")
-
-
-def test_a_curtailed_right_with_no_order_covering_the_month_is_estimated():
-    _rp, pod, _fields = _ditch(right=_junior_right(status="curtailed"))
-
-    notes = _run()
-
-    assert _estimate_of(pod).volume_acre_feet == Decimal("98.0392")
-    assert [n["kind"] for n in notes] == ["estimate_written"]
-
-
-def test_a_right_with_no_priority_date_is_not_curtailed_for_the_estimate():
-    _rp, pod, _fields = _ditch(right=_junior_right(priority_date=None))
-    _order(effective=date(2023, 12, 1))
-
-    _run()
-
-    assert _estimate_of(pod).volume_acre_feet == Decimal("98.0392")
+    assert feb_notes == [] and mar_notes == []
 
 
 def test_a_revoked_right_still_gets_no_estimate():

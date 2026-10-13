@@ -89,10 +89,6 @@ ACTIVE_PATHS = [
     "/wells/",
     "/surface/",
     "/surface/rights/",
-    # 146-02 Task 4: /surface/curtailments/ is the same trap as
-    # /surface/rights/ above -- a prefix of /surface/ that must not light up
-    # the Surface Diversions entry, and must light up its own.
-    "/surface/curtailments/",
     "/recharge/",
     # Phase 78's three, plus 100-01's Facilities. The overview's prefix is a
     # prefix of every sub-page, so all of them are listed for the same reason
@@ -394,16 +390,17 @@ def test_every_nav_entry_is_rendered():
     19 through Phase 77; 78-02 adds Drinking Water, Sampling Points and Sample
     Results to the Water Data section, 80-02 adds the onboarding wizard (now
     "Add a water system"), and 100-01
-    adds Facilities. 146-02 Task 4 adds Curtailment Orders beside Water Rights.
-    146-04 Task 2 adds Production beside the other drinking-water sub-pages,
+    adds Facilities. 146-02 Task 4 added Curtailment Orders beside Water Rights
+    and 150.5-01 removed it with the feature. 146-04 Task 2 adds Production beside the other drinking-water sub-pages,
     and 146-04 Task 4 adds Schedule after it. 147-01 added Change History to
     Overview; 147-02 removed it from the sidebar (Brent's checkpoint ruling),
     so the count is back to 27. 150-03 adds Infrastructure under Water Data: 28.
+    150.5-01 removes Curtailment Orders: 27.
     """
     html = render_sidebar(path="/", nav_mode="admin", user_is_admin=True,
                           access_enforced=False)
     expected = [e for spec in enabled_modules() for e in spec.nav]
-    assert len(expected) == 28
+    assert len(expected) == 27
     for entry in expected:
         assert f">{entry.label}</span>" in html, (
             f"Nav entry {entry.url_name!r} ({entry.label}) is missing from the sidebar"

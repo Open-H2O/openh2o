@@ -64,13 +64,12 @@
     },
     {
       "value": "Plainsburg Irrigation District",
-      "reason": "Real-place district (Plainsburg, Merced County) carrying an invented CURTAILED right — the demo names it as the subject of a curtailment order that never happened. Rights-holder table, 97-01-NAMES.md. Replaced by Saddlebow Irrigation District.",
+      "reason": "Real-place district (Plainsburg, Merced County) carrying an invented right. Rights-holder table, 97-01-NAMES.md. Replaced by Saddlebow Irrigation District.",
       "scope": [
         "surface_waterright.holder_name",
         "geography_zone.name",
         "geography_zone.description",
-        "accounting_allocationplan.name",
-        "surface_curtailmentorder.title"
+        "accounting_allocationplan.name"
       ]
     },
     {

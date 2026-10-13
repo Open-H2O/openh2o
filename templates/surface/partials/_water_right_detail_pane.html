@@ -28,7 +28,7 @@
   the account page's grid UNCHANGED: Right information beside "Face value
   against records" at one height, the records table full width below
   (grouped by water year, every record now, not just the last 12), then
-  Points of diversion and Curtailment orders that may apply, side by side.
+  Points of diversion.
 {% endcomment %}
 <div class="pane-stack">
   <div class="page-grid-account">
@@ -127,11 +127,7 @@
         <div class="field-group">
           <div class="field-label field-row">
             Status
-            {% if site_config.demonstration_mode %}
-              {% include "partials/_help_tooltip.html" with label="Status" text="Active rights are currently exercisable. Curtailed rights are temporarily restricted. In this demonstration, curtailment and revocation states are illustrative sample data, not real State Water Board actions." %}
-            {% else %}
-              {% include "partials/_help_tooltip.html" with label="Status" text="Active rights are currently exercisable. Curtailed rights are temporarily restricted." %}
-            {% endif %}
+            {% include "partials/_help_tooltip.html" with label="Status" text="Active rights are currently exercisable." %}
           </div>
           <div style="margin-top: 2px;">{% include "surface/partials/_status_badge.html" with status=water_right.status %}</div>
         </div>
@@ -355,81 +351,7 @@
       {% endif %}
     </div>
 
-    {% comment %}
-      Points of diversion + Active curtailments, side by side when an order
-      may apply or a right could not be matched for want of a date;
-      otherwise Points of diversion spans full width rather than sitting
-      alone in a half-width column beside nothing. 150-02 (ISS-201): each
-      card is its content's height, not stretched to its neighbour's.
-    {% endcomment %}
-    {% if active_curtailments or unmatched_curtailments %}
-    <div class="page-grid-2col page-grid-2col--align-start page-grid-account-full">
-      <div class="card-raised">
-        <h2 class="section-header mb-md">Points of diversion</h2>
-        {% if pods %}
-          {% for pod in pods %}
-          <div class="item-row">
-            <div class="row-between" style="margin-bottom: 2px;">
-              <a href="{% url 'surface:pod_detail' pod.pk %}" class="data-table-link field-value-sm" style="font-weight: 600;">{{ pod.name }}</a>
-              {% include "surface/partials/_status_badge.html" with status=pod.status %}
-            </div>
-            {% if pod.stream_name %}
-              <div class="text-tertiary text-xs">{{ pod.stream_name }}</div>
-            {% endif %}
-            {% if pod.max_rate_cfs %}
-              <div class="text-tertiary text-xs">Max rate: {{ pod.max_rate_cfs|floatformat:2 }} cfs</div>
-            {% endif %}
-          </div>
-          {% endfor %}
-        {% else %}
-          <p class="text-tertiary text-base">No point of diversion is recorded.</p>
-        {% endif %}
-      </div>
-
-      <div class="card-raised">
-        <h2 class="section-header mb-md text-accent">
-          Curtailment orders that may apply
-          {% include "partials/_demo_marker.html" %}
-        </h2>
-        {% if site_config.demonstration_mode %}
-        <p class="text-tertiary text-xs" style="margin-top: -0.5rem; margin-bottom: var(--space-sm);">
-          Illustrative sample orders for this demonstration, not filed State Water Board curtailment orders.
-        </p>
-        {% endif %}
-        {% if not active_curtailments and not unmatched_curtailments %}
-          <p class="text-tertiary text-base">No curtailment order on record matches this right.</p>
-        {% endif %}
-        {% for curtailment in active_curtailments %}
-        <div class="item-row" style="padding: var(--space-sm) 0;">
-          <div class="field-value-sm" style="font-weight: 600;">{{ curtailment.title }}</div>
-          <div class="text-tertiary text-xs" style="margin-top: 2px;">
-            Order {{ curtailment.order_id }} &middot; Effective {{ curtailment.effective_date|date:"M d, Y" }}
-            &middot; {% if curtailment.watershed %}{{ curtailment.watershed }}{% else %}as stated on the order{% endif %}
-          </div>
-          {% if curtailment.priority_date_cutoff %}
-            <div class="text-xs" style="color: var(--color-accent); margin-top: 2px;">
-              Priority cutoff: {{ curtailment.priority_date_cutoff|date:"M d, Y" }}
-            </div>
-          {% endif %}
-        </div>
-        {% endfor %}
-        {% if unmatched_curtailments %}
-        <div class="item-row" style="padding: var(--space-sm) 0;">
-          <div class="field-value-sm" style="font-weight: 600;">Cannot be matched: no priority date on record</div>
-          <div class="text-tertiary text-xs" style="margin-top: 2px;">
-            {{ unmatched_curtailments|length }} order{{ unmatched_curtailments|length|pluralize }} could apply
-            ({% for curtailment in unmatched_curtailments %}{{ curtailment.order_id }}{% if not forloop.last %}, {% endif %}{% endfor %})
-            but this right carries no priority date to test against a cutoff.
-            {% if user_can_write %}<a href="{% url 'surface:water_right_edit' water_right.pk %}" class="data-table-link">Edit the right</a> to add one.{% endif %}
-          </div>
-        </div>
-        {% endif %}
-        <p class="text-tertiary text-xs" style="margin-top: var(--space-sm);">
-          The order's own text governs; this list is a lookup by date and watershed.
-        </p>
-      </div>
-    </div>
-    {% else %}
+    {% comment %} Points of diversion, full width. {% endcomment %}
     <div class="card-raised page-grid-account-full">
       <h2 class="section-header mb-md">Points of diversion</h2>
       {% if pods %}
@@ -451,7 +373,6 @@
         <p class="text-tertiary text-base">No point of diversion is recorded.</p>
       {% endif %}
     </div>
-    {% endif %}
 
     {% comment %} 146-02 D3: places of use, full width under points of diversion. {% endcomment %}
     {% include "surface/partials/_places_of_use.html" %}

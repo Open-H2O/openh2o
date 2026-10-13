@@ -10,8 +10,6 @@
   <span class="badge badge-pill badge-green">Active</span>
 {% elif status == "inactive" %}
   <span class="badge badge-pill badge-grey">Inactive</span>
-{% elif status == "curtailed" %}
-  <span class="badge badge-pill badge-gold">Curtailed</span> {% if demo_marker is not False %}{% include "partials/_demo_marker.html" %}{% endif %}
 {% elif status == "revoked" %}
   <span class="badge badge-pill badge-red">Revoked</span> {% if demo_marker is not False %}{% include "partials/_demo_marker.html" %}{% endif %}
 {% else %}

@@ -534,9 +534,10 @@ class TestNavResolution:
         # Overview; 147-02 (Brent's checkpoint ruling) removed it from the
         # sidebar, so the count is back to 27. 150-03 added Infrastructure
         # under Water Data (the add and import pages lit nothing): 28.
+        # 150.5-01 removed Curtailment Orders with the feature: 27.
         # The sidebar also renders `index`, the nav-mode toggle and six static
         # help/about pages, none of which are module-owned.
-        assert len(entries) == 28
+        assert len(entries) == 27
 
     def test_icon_keys_are_unique(self):
         icons = [e.icon for s in mod.enabled_modules() for e in s.nav]
@@ -572,10 +573,9 @@ class TestNavResolution:
             if e.url_name == "surface:pod_list"
         )
         assert entry.active_match == "/surface/"
-        assert entry.active_excludes == ("/surface/rights", "/surface/curtailments")
+        assert entry.active_excludes == ("/surface/rights",)
         assert entry.is_active("/surface/") is True
         assert entry.is_active("/surface/rights/") is False
-        assert entry.is_active("/surface/curtailments/") is False
 
     def test_drinking_water_excludes_all_of_its_sub_pages(self):
         """The case that forced the tuple: one exclusion would not have done.

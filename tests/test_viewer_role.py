@@ -270,7 +270,7 @@ WRITE_PAGES = [
     "geography:zone_edit", "geography:zone_parcel_assign", "geography:zone_parcel_remove",
     "infrastructure:add", "infrastructure:import", "infrastructure:import_commit",
     "infrastructure:import_preview", "infrastructure:parcel_create", "parcels:edit_field",
-    "recharge:event_create", "surface:curtailment_create", "surface:curtailment_edit",
+    "recharge:event_create",
     "surface:device_add", "surface:device_edit", "surface:device_mark_removed",
     "surface:diversion_import", "surface:diversion_import_commit",
     "surface:diversion_import_preview", "surface:diversion_record_create",

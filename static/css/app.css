@@ -942,8 +942,8 @@ html { color-scheme: dark; }
 .page-grid-2col > * {
     min-width: 0;
 }
-/* Each card its content's height (150-02, ISS-201): the water right's
-   curtailment card was stretched to the points-of-diversion list beside it. */
+/* Each card its content's height (150-02, ISS-201): a card beside a longer
+   list is not stretched to its neighbour's height. */
 .page-grid-2col--align-start {
     align-items: start;
 }
@@ -2702,7 +2702,7 @@ html { color-scheme: dark; }
     flex-shrink: 0;
 }
 
-/* Phase 64: flag-gated meta-label marking demo sample data (e.g. a "Curtailed"
+/* Phase 64: flag-gated meta-label marking demo sample data (e.g. a "Revoked"
    state that an outside evaluator could mistake for a real Water Board order).
    Deliberately neutral — no status color — so it reads as a label ABOUT the
    data, not as another status. Token-only. */

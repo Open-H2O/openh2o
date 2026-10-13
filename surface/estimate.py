@@ -35,12 +35,9 @@ for each point, crop water use again (``accounting.engine_run.run_month``).
    leaves the same row and adds no change history.
 
 A point whose right is revoked or inactive gets no estimate and loses any it
-held, and so does a point whose right a curtailment order covers for the month
-(``surface.curtailments.orders_covering_month``): an estimate there would
-invent water the curtailment stopped. A right whose status reads "curtailed"
-with no order covering the month IS estimated, because the status alone
-carries no date (150-02, ISS-226). A point with no right gets none either (an
-estimate needs a right to cap against). The estimator only ever touches
+held. A point with no right gets none either (an estimate needs a right to cap
+against). A month in which a point delivered nothing is recorded as a typed
+record of 0, which stops the estimate like any other typed record. The estimator only ever touches
 records whose method is ``estimated_from_use``; a person who edits an estimate
 and changes its volume turns it into a typed record (``typed_method_for``), so
 the next run leaves it.
@@ -60,7 +57,6 @@ from accounting.carryover_math import water_year_of
 from accounting.models import CalculationRun, ReportingPeriod
 from accounting.recharge_policy import recharge_routes_to_personal
 from parcels.services import field_efficiency
-from surface.curtailments import orders_covering_month
 from surface.models import (
     DiversionRecord,
     PointOfDiversion,
@@ -307,19 +303,6 @@ def estimate_month(first, notes):
                 }
             )
             continue
-        if orders_covering_month(right, first, last):
-            # The right is curtailed for this month by an order that covers
-            # it; a month the order does not reach is estimated as usual.
-            _drop(point, first)
-            notes.append(
-                {
-                    "kind": "estimate_right_not_active",
-                    "pod": point.name,
-                    "status": "curtailed",
-                }
-            )
-            continue
-
         fractions = (
             point.evaporation_fraction + point.seepage_fraction + point.spill_fraction
         )

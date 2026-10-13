@@ -11,8 +11,8 @@ actually lands on TELL that story — the gaps caught at the 52-02 human-verify 
    page lists its parcels AND can total delivered-vs-budget).
 3. The zone-detail page must show budget VS USE (pumped for groundwater budgets,
    delivered for surface budgets), not budget alone.
-4. The curtailment must read as a narrative (a flag + the order) on the curtailed
-   account and district zone — not only as a quietly smaller number.
+4. (Retired 150.5-01.) The curtailment notice on the account and district zone
+   went with the curtailment feature; the pages now carry no such notice.
 
 The fixture is the same hermetic Phase-51-03 physical slice the 52-01 invariant
 tests build, with the 52-01 ledger seed run on top.
@@ -27,10 +27,10 @@ from django.test import Client
 from accounting.models import ReportingPeriod, WaterAccount, WaterAccountParcel
 from accounting.services import account_consumptive_balance
 from geography.models import ParcelZone, Zone
-from surface.models import PointOfDiversion, PointOfDiversionParcel, WaterRight
+from surface.models import PointOfDiversion, PointOfDiversionParcel
 
 from tests.test_merced_ledgers import (
-    CURTAILED_RIGHT,
+    EL_NIDO_RIGHT,
     NORMAL_RIGHT,
     OPEN_WY,
     PRIOR_WY,
@@ -62,9 +62,9 @@ def _district_zone(right_id):
     )
 
 
-def _curtailed_account():
-    """The account whose parcels are served by the curtailed right."""
-    pods = PointOfDiversion.objects.filter(water_right__right_id=CURTAILED_RIGHT)
+def _el_nido_account():
+    """The account whose parcels are served by the El Nido right."""
+    pods = PointOfDiversion.objects.filter(water_right__right_id=EL_NIDO_RIGHT)
     parcel_ids = PointOfDiversionParcel.objects.filter(
         point_of_diversion__in=pods
     ).values_list("parcel_id", flat=True)
@@ -93,9 +93,9 @@ def _curtailed_account():
 def test_account_detail_opens_on_a_period_that_has_usage(seeded_site):
     """A conjunctive account opened with no period filter must land on a period
     with real usage — so usage reads non-zero and the story is visible."""
-    # A conjunctive account (has groundwater extraction) — the curtailed Plainsburg
+    # A conjunctive account (has groundwater extraction) — the El Nido Plainsburg
     # account qualifies (its conjunctive parcels substitute groundwater).
-    account = _curtailed_account()
+    account = _el_nido_account()
     resp = seeded_site.get(f"/accounting/accounts/{account.pk}/")
     assert resp.status_code == 200
     selected = resp.context["selected_period"]
@@ -117,7 +117,7 @@ def test_both_water_years_carry_account_usage(seeded_site):
     sides, and the auto-select cannot land on an empty year because there isn't
     one.
     """
-    account = _curtailed_account()
+    account = _el_nido_account()
     for name in (PRIOR_WY, OPEN_WY):
         supply = account_consumptive_balance(
             account, reporting_period=ReportingPeriod.objects.get(name=name)
@@ -147,7 +147,7 @@ def test_dashboard_opens_on_a_period_with_nonzero_usage(seeded_site):
 # ---------------------------------------------------------------------------
 @pytest.mark.django_db
 def test_district_zones_have_parcel_links(seeded_site):
-    for right_id in (NORMAL_RIGHT, CURTAILED_RIGHT):
+    for right_id in (NORMAL_RIGHT, EL_NIDO_RIGHT):
         zone = _district_zone(right_id)
         served = ParcelZone.objects.filter(zone=zone).count()
         assert served > 0, (
@@ -249,51 +249,14 @@ def test_surface_district_zone_detail_shows_delivered_against_budget(seeded_site
 
 
 # ---------------------------------------------------------------------------
-# Fix #4 — curtailment reads as a narrative
+# Fix #4 (retired 150.5-01) — no curtailment notice on either page
 # ---------------------------------------------------------------------------
 @pytest.mark.django_db
-def test_curtailed_district_zone_is_flagged(seeded_site):
-    zone = _district_zone(CURTAILED_RIGHT)
-    resp = seeded_site.get(f"/map/zones/{zone.pk}/")
-    assert resp.context["is_curtailed"] is True
-    assert resp.context["curtailment_orders"], (
-        "curtailed district zone should surface its curtailment order"
-    )
-
-
-@pytest.mark.django_db
-def test_normal_district_zone_is_not_flagged(seeded_site):
-    zone = _district_zone(NORMAL_RIGHT)
-    resp = seeded_site.get(f"/map/zones/{zone.pk}/")
-    assert resp.context["is_curtailed"] is False
-
-
-@pytest.mark.django_db
-def test_curtailed_account_is_flagged(seeded_site):
-    account = _curtailed_account()
-    resp = seeded_site.get(f"/accounting/accounts/{account.pk}/")
-    assert resp.context["is_curtailed"] is True
-    assert resp.context["curtailment_orders"]
-
-
-@pytest.mark.django_db
-def test_normal_account_is_not_flagged(seeded_site):
-    """An account with no curtailed right shows no curtailment banner."""
-    # Find an account none of whose parcels is under a curtailed right.
-    curtailed_pids = set(
-        WaterRight.objects.filter(status="curtailed")
-        .values_list("water_right_parcels__parcel_id", flat=True)
-    )
-    normal = None
-    for acct in WaterAccount.objects.filter(account_number__startswith="MER-ACCT-"):
-        pids = set(
-            WaterAccountParcel.objects.filter(water_account=acct).values_list(
-                "parcel_id", flat=True
-            )
-        )
-        if pids and not (pids & curtailed_pids):
-            normal = acct
-            break
-    assert normal is not None, "fixture should have a non-curtailed account"
-    resp = seeded_site.get(f"/accounting/accounts/{normal.pk}/")
-    assert resp.context["is_curtailed"] is False
+def test_el_nido_zone_and_account_carry_no_curtailment_notice(seeded_site):
+    zone = _district_zone(EL_NIDO_RIGHT)
+    zone_body = seeded_site.get(f"/map/zones/{zone.pk}/").content.decode()
+    account = _el_nido_account()
+    account_body = seeded_site.get(f"/accounting/accounts/{account.pk}/").content.decode()
+    for body in (zone_body, account_body):
+        assert "Curtailment in effect" not in body
+        assert "curtail" not in body.lower()

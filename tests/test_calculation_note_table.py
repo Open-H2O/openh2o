@@ -3,9 +3,10 @@
 mock-up after "Providing this kind of detailed information in bullet narrative
 form is a little clunky." at 15:55).
 
-The four kinds he saw as bullets (headgate water left over, canal evaporation,
-the unmetered estimate, the curtailed point) become one group each, one row per
-point of diversion, a total where a group has more than one point. Sentences
+The kinds he saw as bullets (headgate water left over, canal evaporation, the
+unmetered estimate) become one group each, one row per point of diversion, a
+total where a group has more than one point. (A fourth, the curtailed point,
+went with the curtailment feature, 150.5-01.) Sentences
 that ask for attention stay sentences, above the table.
 """
 from datetime import date
@@ -43,7 +44,6 @@ RAW = [
      "evaporation_af": Decimal("1.6273"), "spill_af": Decimal("0")},
     {"kind": "estimate_written", "pod": "Atwater", "month": OCT, "estimate_af": Decimal("100")},
     {"kind": "estimate_written", "pod": "Atwater", "month": NOV, "estimate_af": Decimal("62.7261")},
-    {"kind": "estimate_right_not_active", "pod": "El Nido", "month": OCT, "status": "curtailed"},
     {"kind": "estimate_right_not_active", "pod": "Old Gate", "month": OCT, "status": "revoked"},
 ]
 
@@ -52,9 +52,9 @@ def test_each_kind_is_one_group_with_one_row_per_point():
     groups = _note_table(RAW)
 
     assert [g["table"] for g in groups] == [
-        "unallocated", "evaporation", "estimate", "curtailed",
+        "unallocated", "evaporation", "estimate",
     ]
-    left, evap, est, curt = groups
+    left, evap, est = groups
     assert left["rows"] == [
         {"af": "27.35", "where": "Crocker"},
         {"af": "16.05", "where": "Stevinson"},
@@ -67,7 +67,6 @@ def test_each_kind_is_one_group_with_one_row_per_point():
     assert evap["total"] == "56.64"
     assert est["rows"] == [{"af": "162.73", "where": "Atwater, 2 months"}]
     assert est["total"] is None
-    assert curt["rows"] == [{"af": None, "where": "El Nido"}]
 
 
 def test_the_labels_are_the_approved_words():
@@ -85,10 +84,7 @@ def test_the_labels_are_the_approved_words():
         "the fields it serves divided by each field's irrigation efficiency. An "
         "estimate, not a measurement."
     )
-    assert groups["curtailed"]["lead"] + groups["curtailed"]["rest"] == (
-        "No delivery estimated in the months a curtailment order covers the "
-        "water right"
-    )
+    assert "curtailed" not in groups
 
 
 def test_tabled_sentences_leave_out_only_what_the_table_carries():
@@ -96,7 +92,7 @@ def test_tabled_sentences_leave_out_only_what_the_table_carries():
     _attention, plain = _note_sentences(RAW)
 
     assert tabled == ["No delivery was estimated for Old Gate: the water right is revoked."]
-    assert len(plain) == 5
+    assert len(plain) == 4
 
 
 def test_an_estimate_note_without_an_amount_shows_no_amount():

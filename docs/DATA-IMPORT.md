@@ -241,7 +241,6 @@ A small water system usually does not have a boundary to draw; it has a PWSID. *
 No public source and no bulk importer fills these; each has its own full-page create screen instead of a file or auto-populate path:
 
 - **Water rights** (unless you have the state's rights LIST CSV, above): `/surface/rights/add/`
-- **Curtailment orders**: `/surface/curtailments/add/`
 - **Measuring devices** (on a point of diversion): from the point's own page
 - **Water accounts**: `/accounting/accounts/create/`
 - **Allocations** (the agency's budget decisions): `/accounting/allocations/create/`

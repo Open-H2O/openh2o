@@ -46,7 +46,6 @@ from parcels.models import Parcel
 from surface import importer
 from surface import diversion_import as diversion_import_service
 from surface.services import canal_water_by_month
-from surface.curtailments import orders_that_may_apply
 from surface.estimate import (
     ESTIMATE_METHOD,
     discard_estimate,
@@ -56,14 +55,12 @@ from surface.estimate import (
 )
 from surface.face_value import years_against_face_value
 from surface.forms import (
-    CurtailmentOrderForm,
     DiversionRecordForm,
     MeasuringDeviceForm,
     PointOfDiversionForm,
     WaterRightForm,
 )
 from surface.models import (
-    CurtailmentOrder,
     DiversionRecord,
     MeasuringDevice,
     PointOfDiversion,
@@ -821,7 +818,7 @@ def water_rights_list(request):
 
     Water rights are a Bucket-3 screen (few items, each heavy): a district has a
     handful, and each right's detail is rich (its points of diversion mapped,
-    diversion records, active curtailments, place of use). So this screen is a
+    diversion records, place of use). So this screen is a
     finder, not a master-detail half-pane: the full-width list is for finding one
     fast, and clicking a row opens that right's own full detail page. Unlike the
     other Bucket-3 screens there is NO overview map — a water right is a legal
@@ -1327,11 +1324,6 @@ def _water_right_detail_context(water_right):
             for name, total in sorted(totals_by_pod.items())
         ]
 
-    # Curtailment orders that may apply to this right (146-02 Task 4, ISS-180
-    # D6): the rule lives in surface/curtailments.py, grounded and verified
-    # per 146-02-EVIDENCE.md Task 4 -- never re-derived here.
-    active_curtailments, unmatched_curtailments = orders_that_may_apply(water_right)
-
     # GeoJSON for the PODs this right serves — a FeatureCollection (the right maps
     # multiple diversion points, so OH2O.detailPaneMap frames the map across all of
     # them via geojson.features). Python object (not a dumped string): the template
@@ -1364,8 +1356,6 @@ def _water_right_detail_context(water_right):
         "face_value_years": face_value_years,
         "current_holds_estimate": current_holds_estimate,
         "pod_breakdown": pod_breakdown,
-        "active_curtailments": active_curtailments,
-        "unmatched_curtailments": unmatched_curtailments,
         "pods_geojson": pods_geojson,
         # 146-02 D3: this right's places of use. Gated on `parcels` for the
         # same reason `basin_links` above is gated on `recharge` -- surface
@@ -1471,51 +1461,6 @@ def water_right_search_parcels(request, pk):
     return render(request, "surface/partials/_places_of_use_search_results.html", {
         "water_right": water_right, "results": results, "q": q,
     })
-
-
-# ---------------------------------------------------------------------------
-# Curtailment orders (146-02 Task 4, door D6, ISS-180). The matching rule
-# these orders feed into is `surface/curtailments.py::orders_that_may_apply`,
-# grounded on a real instance and an order's own text -- see
-# 146-02-EVIDENCE.md Task 4. These three doors only take an order's own
-# fields down; the list and the right's page are what read them.
-# ---------------------------------------------------------------------------
-
-
-@login_required
-def curtailments_list(request):
-    """All curtailment orders, newest effective date first."""
-    orders = CurtailmentOrder.objects.order_by("-effective_date")
-    return render(request, "surface/curtailments_list.html", {"orders": orders})
-
-
-@login_required
-def curtailment_create(request):
-    """Create a curtailment order (146-02 door D6), the `right_form.html` full-page pattern."""
-    if request.method == "POST":
-        form = CurtailmentOrderForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect("surface:curtailments_list")
-    else:
-        form = CurtailmentOrderForm()
-
-    return render(request, "surface/curtailment_form.html", {"form": form, "order": None})
-
-
-@login_required
-def curtailment_edit(request, pk):
-    """Edit a curtailment order (146-02 door D6)."""
-    order = get_object_or_404(CurtailmentOrder, pk=pk)
-    if request.method == "POST":
-        form = CurtailmentOrderForm(request.POST, instance=order)
-        if form.is_valid():
-            form.save()
-            return redirect("surface:curtailments_list")
-    else:
-        form = CurtailmentOrderForm(instance=order)
-
-    return render(request, "surface/curtailment_form.html", {"form": form, "order": order})
 
 
 @public_in_open_demo

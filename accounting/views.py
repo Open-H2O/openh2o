@@ -1097,8 +1097,7 @@ def _account_delivery_sentence(account):
     schema-resident, so reading it needs no guard); the point-of-diversion
     side lives on `surface.WaterAccountDeliveryPoint` instead and is read
     through a guarded, function-scope import -- `surface` is optional and
-    truly removable (Phase 87), the same reason `is_enabled("surface")`
-    gates the curtailment lookup above.
+    truly removable (Phase 87).
     """
     parts = [account.unit_kind_sentence()]
     delivery = None
@@ -1216,37 +1215,6 @@ def _account_detail_context(account, period_param=None):
         1 for p in assigned_parcels.values() if p.geometry is not None
     )
 
-    # Curtailment narrative (ISS / Phase 52-02): surface the cut as a story, not
-    # just lower numbers. An account is "curtailed" when any of its parcels is
-    # served by a water right under a curtailment order. Match the active order to
-    # the right by priority-date cutoff (the same date the right carries).
-    curtailment_orders = []
-    is_curtailed = False
-    if is_enabled("surface"):
-        # Local import: `surface` is an optional module (Phase 87), so this must
-        # not run at module scope — importing surface.models with the app
-        # uninstalled raises RuntimeError before any useful error prints. The
-        # guard matters as well as the import: an account page is `accounting`,
-        # which stays enabled, so this block would otherwise run unconditionally.
-        from surface.models import CurtailmentOrder, WaterRight
-
-        is_curtailed = WaterRight.objects.filter(
-            status="curtailed", water_right_parcels__parcel_id__in=acct_parcel_ids
-        ).exists()
-        if is_curtailed:
-            cutoffs = list(
-                WaterRight.objects.filter(
-                    status="curtailed",
-                    water_right_parcels__parcel_id__in=acct_parcel_ids,
-                    priority_date__isnull=False,
-                ).values_list("priority_date", flat=True)
-            )
-            curtailment_orders = list(
-                CurtailmentOrder.objects.filter(
-                    status="active", priority_date_cutoff__in=cutoffs
-                )
-            )
-
     return {
         "account": account,
         "assignments": assignments,
@@ -1260,8 +1228,6 @@ def _account_detail_context(account, period_param=None):
         "use_areas_located_count": use_areas_located_count,
         "periods": periods,
         "selected_period": selected_period,
-        "is_curtailed": is_curtailed,
-        "curtailment_orders": curtailment_orders,
         "delivery_sentence": _account_delivery_sentence(account),
     }
 

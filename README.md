@@ -159,7 +159,7 @@ with every figure carrying the source that published it:
 <!-- defines: postgis -->
 - **Parcels and wells** with real spatial data — boundaries, points of diversion, well inventories. All of it lives in *PostgreSQL*, the database program that stores every record the site shows, with the *PostGIS* add-on that teaches it to understand maps, boundaries and points on a map.
 - **A water-data ledger** that records supply, usage, and allocations by water type and zone, so every entry is traceable.
-- **Surface-water rights** with points of diversion and diversion records, including curtailment.
+- **Surface-water rights** with points of diversion and diversion records.
 - **Managed aquifer recharge** site and event tracking.
 - **Drinking-water quality** — water systems, facilities, and sampling points keyed to their EPA PWSID, a lab-results importer for California DDW exports, and a PWSID-driven onboarding wizard that prefills a system from public records. Quality and quantity live side by side in one instance.
 - **External data sync** from public sources. USGS, CDEC and DWR (Water Data Library and SGMA portal) are switched on and need no credentials. CIMIS and NOAA are switched on too but stay idle until you supply a free API key — a long password-like string that lets this program, rather than a person, fetch data automatically from another organisation's computers, treated as a secret exactly like a password. CNRFC and OpenET satellite evapotranspiration ship switched off, ready to enable; OpenET also needs a key. Everything is crosswalked to a single canonical vocabulary (see [Data standards](#data-standards--interoperability)). <!-- defines: api_key -->

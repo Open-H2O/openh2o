@@ -403,37 +403,6 @@ def _zone_detail_context(zone):
     used_labels = {b["used_label"] for b in budgets}
     used_label_uniform = next(iter(used_labels)) if len(used_labels) == 1 else None
 
-    # Curtailment narrative — flag the zone if any of its parcels is served by a
-    # curtailed water right, and surface the matching active order (by priority-
-    # date cutoff). Tells the El Nido story on the district page, not just via the
-    # collapsed open-year budget number.
-    curtailment_orders = []
-    is_curtailed = False
-    if is_enabled("surface"):
-        # Local import: `surface` is an optional module (Phase 87), so this must
-        # not run at module scope — importing surface.models with the app
-        # uninstalled raises RuntimeError before any useful error prints. The
-        # guard matters as well as the import: a zone page is `geography`, which
-        # stays enabled, so this block would otherwise run unconditionally.
-        from surface.models import CurtailmentOrder, WaterRight
-
-        is_curtailed = WaterRight.objects.filter(
-            status="curtailed", water_right_parcels__parcel_id__in=zone_parcel_ids
-        ).exists()
-        if is_curtailed:
-            cutoffs = list(
-                WaterRight.objects.filter(
-                    status="curtailed",
-                    water_right_parcels__parcel_id__in=zone_parcel_ids,
-                    priority_date__isnull=False,
-                ).values_list("priority_date", flat=True)
-            )
-            curtailment_orders = list(
-                CurtailmentOrder.objects.filter(
-                    status="active", priority_date_cutoff__in=cutoffs
-                )
-            )
-
     # GeoJSON for the persistent detail map. A FeatureCollection (via serialize)
     # so OH2O.detailPaneMap reads it exactly as it does for every other screen;
     # it auto-detects the zone's polygon boundary (fill + outline). A Python
@@ -488,8 +457,6 @@ def _zone_detail_context(zone):
         "budgets": budgets,
         "current_budgets": current_budgets,
         "used_label_uniform": used_label_uniform,
-        "is_curtailed": is_curtailed,
-        "curtailment_orders": curtailment_orders,
         "geojson": geojson,
         "parcels_geojson": parcels_geojson,
     }

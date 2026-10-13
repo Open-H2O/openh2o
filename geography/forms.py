@@ -18,8 +18,6 @@ class ZoneForm(forms.ModelForm):
             "name",
             "zone_type",
             "description",
-            "subsurface_supply_is_diversion",
-            "legal_basis",
         ]
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-input", "placeholder": "e.g. North Basin Zone A"}),
@@ -28,11 +26,5 @@ class ZoneForm(forms.ModelForm):
                 "class": "form-textarea",
                 "rows": 3,
                 "placeholder": "Optional description of this zone...",
-            }),
-            "subsurface_supply_is_diversion": forms.CheckboxInput(),
-            "legal_basis": forms.Textarea(attrs={
-                "class": "form-textarea",
-                "rows": 3,
-                "placeholder": "The stated legal basis, e.g. the case name and citation...",
             }),
         }

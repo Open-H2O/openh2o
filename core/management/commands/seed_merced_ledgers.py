@@ -17,9 +17,10 @@ groundwater extraction):
   1. single-source canal district — surface-only parcels get surface deliveries
      and NEVER a groundwater extraction;
   2. conjunctive use — parcels with both a canal delivery and a well get both;
-  3. curtailment → substitution — the junior El Nido right (MER-WR-009) is cut
-     going into peak season; its parcels lose surface water after June, and the
-     conjunctive growers among them fall back on groundwater (a clear pumping bump);
+  3. a dry canal → substitution — the El Nido canal (MER-POD-007) delivers
+     nothing after June 2025, recorded as a delivery of 0 each month; its parcels
+     lose surface water, and the conjunctive growers among them fall back on
+     groundwater (a clear pumping bump);
   4. shared-well apportionment — a well that irrigates several parcels splits its
      monthly extraction across them by the stored fraction, summing to the well total.
 
@@ -171,9 +172,9 @@ GW_RATE = 1.8               # AF/acre/yr — allocation ceiling + meter fallback
 #
 # SURFACE: lean generous (a canal district over-delivers; the surplus percolates
 #   as incidental recharge → the parcel's books close to ~0 regardless of the
-#   exact over-delivery). Always ≥ 1.0 so a non-curtailed surface parcel never
-#   shows a deficit — the ONLY surface deficits in the demo come from the
-#   intentional El Nido curtailment.
+#   exact over-delivery). Always ≥ 1.0 so a surface parcel off the El Nido canal
+#   never shows a deficit — the ONLY surface deficits in the demo come from the
+#   El Nido canal running dry after June 2025.
 # METER: pumps a little MORE than the crop consumed (on-farm loss / return flow).
 #   Always ≥ 1.0 so a metered farm never reads as "in trouble"; the small excess
 #   is its positive, non-alarming residual (no recharge sink for a meter reading).
@@ -238,8 +239,8 @@ GSA_SUSTAINABLE_RATE = 2.0  # fallback for a GSA not named in the table below
 #   Halvern Valley GSA          4,844.7 ac × 0.58 = 2,809.93 AF against 2,518.46 AF
 #       pumped in WY 2024-2025 (+291.47 under) and 3,142.51 AF in WY 2025-2026
 #       (−332.58 over): the allocation is identical in both years and pumping
-#       is the only thing that moved. The curtailed Saddlebow growers'
-#       groundwater substitution is most of the rise.
+#       is the only thing that moved. The Saddlebow growers' groundwater
+#       substitution, after the El Nido canal runs dry, is most of the rise.
 #   Verdano Island Water District GSA   365.9 ac × 2.90 = 1,061.11 AF against
 #       1,028.48 AF (+32.63) and 1,092.73 AF (−31.62): a groundwater-only GSA
 #       within 3% of its budget in the wet year and over it in the dry, with no
@@ -255,26 +256,26 @@ GSA_SUSTAINABLE_RATE_AF_PER_ACRE = {
 }
 GSA_BUDGET_FLOOR = Decimal("500.0")   # a GSA with no demo parcels still gets a budget
 SURFACE_BUDGET_FRACTION = Decimal("0.9")    # district surface budget ~ 90% of face
-CURTAILED_OPEN_FRACTION = Decimal("0.1")    # curtailed district's current-year budget collapses
+DRY_YEAR_OPEN_FRACTION = Decimal("0.1")    # the El Nido district's current-year budget is cut
 
-# Curtailment. The junior El Nido right is cut going INTO the peak season: the
-# last month with a surface delivery is June 2025, so July–September run dry and
-# the conjunctive growers substitute groundwater (a clear pumping bump).
+# The El Nido canal runs dry going INTO the peak season: the last month with a
+# surface delivery is June 2025, so July–September deliver nothing and the
+# conjunctive growers substitute groundwater (a clear pumping bump).
 #
 # 133-02 — THIS CALENDAR IS A DECISION, NOT A LEFTOVER DATE. It is a single
-# cutoff, not a per-water-year window, and that is deliberate: a curtailment
-# order does not expire when the water year rolls over. `MER-CURT-001` is
-# effective 2025-07-01, status `active`, with no rescission anywhere in the
-# seed — so every month of WY 2025-2026 falls after the cutoff and the El Nido
-# right records NO diversion at all in the open year. That is what a curtailment
-# carried across a whole dry year means. The district's paper allocation for
-# that year is deliberately NOT zero (`CURTAILED_OPEN_FRACTION` leaves it at a
-# tenth of face value), and the gap between a 10%-of-face budget and no
-# deliveries at all IS the story on screen: the board cut the allocation, and
-# then the order stopped the diversions outright. Rescinding the order partway
-# through the open year would be a different demonstration; it belongs to a
-# phase that decides to tell it, not to a constant that lapses by accident.
-CURTAILMENT_LAST_DELIVERY = date(2025, 6, 30)
+# cutoff, not a per-water-year window, so every month of WY 2025-2026 falls
+# after it and the El Nido point delivers nothing in the open year. Each of
+# those months carries a typed delivery record of 0 (150.5-01, Brent
+# 2026-10-12: curtailment orders removed from OpenH2O). A typed record stops
+# the estimator (surface/estimate.py `_has_typed_record`, zero included), so
+# the platform never estimates water the district recorded as not delivered.
+# The district's allocation for that year is deliberately NOT zero
+# (`DRY_YEAR_OPEN_FRACTION` leaves it at a tenth of face value): the district
+# cut the allocation, and then the canal delivered nothing at all.
+EL_NIDO_LAST_DELIVERY = date(2025, 6, 30)
+# The El Nido canal's point of diversion, matched by its id prefix (the demo
+# marker suffix "-DEMO" is not on every build's names).
+EL_NIDO_POD_PREFIX = "MER-POD-007"
 # The demo's one ditch with no meter (Brent, 2026-10-06: "Yes"). The seed types
 # no monthly volume for it; the platform estimates each month's delivery from
 # its fields' crop water use (surface.estimate), the same path a district's own
@@ -294,7 +295,7 @@ JOURNEY_PARTIAL_RETURN_MONTH = 5
 # parcel-month has a run, so both of these are inert in the shipped demo and are
 # kept for the fallback's hermetic story. Their month NUMBERS are water-year
 # agnostic, so a second year needs no variant of them.
-POST_CURTAILMENT_MONTHS = {7, 8, 9}
+SUBSTITUTION_MONTHS = {7, 8, 9}
 SUBSTITUTION_MULTIPLIER = Decimal("1.6")
 
 # 134-01 — THE STORM'S HEADGATE RATE. The peak flow recorded on the CalWATRS
@@ -408,7 +409,7 @@ class Command(BaseCommand):
     def _flush(self):
         # Local import: `surface` is an optional module (Phase 87), so this must
         # not run at module scope.
-        from surface.models import CurtailmentOrder, DiversionRecord
+        from surface.models import DiversionRecord
 
         ParcelLedger.objects.filter(
             parcel__parcel_number__startswith=MER_PARCEL_PREFIX
@@ -459,8 +460,6 @@ class Command(BaseCommand):
         ).delete()
         Zone.objects.filter(id__in=district_zone_ids).delete()
 
-        CurtailmentOrder.objects.filter(order_id__startswith="MER-CURT-").delete()
-
     # ------------------------------------------------------------------
     # Seed
     # ------------------------------------------------------------------
@@ -503,12 +502,11 @@ class Command(BaseCommand):
             PointOfDiversionParcel.objects.filter(parcel__in=parcels)
             .values_list("parcel_id", flat=True)
         )
-        # Parcels served by a CURTAILED MER right (via its PODs) — the El Nido story.
-        curtailed_parcel_ids = set(
+        # Parcels served by the El Nido canal, which runs dry after June 2025.
+        dry_parcel_ids = set(
             PointOfDiversionParcel.objects.filter(
                 parcel__in=parcels,
-                point_of_diversion__water_right__status="curtailed",
-                point_of_diversion__water_right__right_id__startswith="MER-WR-",
+                point_of_diversion__name__startswith=EL_NIDO_POD_PREFIX,
             ).values_list("parcel_id", flat=True)
         )
 
@@ -520,9 +518,6 @@ class Command(BaseCommand):
 
         # --- Water accounts (one per distinct owner) + account-parcel links ---
         self._build_accounts(parcels, prior)
-
-        # --- Curtailment order (audit provenance for the El Nido cut) ---
-        self._build_curtailment_order()
 
         # 58-03: each parcel-month's ESTIMATED net consumptive-use demand
         # (gross ET − effective precip), read from the CalculationRuns the first
@@ -553,7 +548,7 @@ class Command(BaseCommand):
             # POD, then let the PLATFORM service split it across served parcels by
             # ET demand. The service writes the negative surface_diversion rows.
             surface_rows.extend(self._surface_deliveries(
-                parcels, curtailed_parcel_ids, rp, net_cu, eff_by_parcel))
+                parcels, dry_parcel_ids, rp, net_cu, eff_by_parcel))
 
             # Meter readings AFTER surface: a metered parcel's groundwater covers
             # only the ET demand its surface delivery did NOT meet (the same residual
@@ -564,7 +559,7 @@ class Command(BaseCommand):
             # period's months and the other year's rows are simply never asked for.
             surface_by_pm = self._surface_by_parcel_month(parcels)
             period_gw_rows = self._groundwater_rows(
-                parcels, curtailed_parcel_ids, gw, rp, net_cu, surface_by_pm,
+                parcels, dry_parcel_ids, gw, rp, net_cu, surface_by_pm,
                 eff_by_parcel)
             ParcelLedger.objects.bulk_create(period_gw_rows, batch_size=500)
             gw_rows.extend(period_gw_rows)
@@ -591,7 +586,7 @@ class Command(BaseCommand):
         entries = entries + gw_rows  # combined ledger count for the summary
 
         self._summary(parcels, district_zones, surface_parcel_ids,
-                      curtailed_parcel_ids, entries, surface_rows)
+                      dry_parcel_ids, entries, surface_rows)
 
     # ------------------------------------------------------------------
     # Surface-district service-area zones
@@ -691,16 +686,17 @@ class Command(BaseCommand):
                 )
 
         # Surface-district allocations — one per district zone, both periods, sized near
-        # the right's face value. The curtailed district's CURRENT-year allocation
-        # collapses to reflect the curtailment, so the on-screen story stays honest.
+        # the right's face value. The El Nido district's CURRENT-year allocation
+        # is cut to a tenth for the dry year.
         for right_id, (zone, right) in district_zones.items():
             face = Decimal(str(right.face_value_acre_feet or 0))
             base = _q(face * SURFACE_BUDGET_FRACTION)
-            curtailed = right.status == "curtailed"
+            dry = right.right_id.startswith("MER-WR-009")
             for rp in periods:
-                if curtailed and rp is open_wy:
-                    amount = _q(face * CURTAILED_OPEN_FRACTION)
-                    note = "Surface allocation reduced — junior right curtailed this year."
+                if dry and rp is open_wy:
+                    amount = _q(face * DRY_YEAR_OPEN_FRACTION)
+                    # Brent, 2026-10-12 19:24 PDT, "approved".
+                    note = "Surface allocation reduced for a dry year."
                 else:
                     amount = base
                     note = "Surface Allocation (~face value of the district's right)."
@@ -736,36 +732,6 @@ class Command(BaseCommand):
                 water_account=acct_by_owner[p.owner_name or "Unassigned Owner"],
                 parcel=p, reporting_period=activity_period,
             )
-
-    # ------------------------------------------------------------------
-    # Curtailment order (audit provenance)
-    # ------------------------------------------------------------------
-    def _build_curtailment_order(self):
-        # Local import: `surface` is an optional module (Phase 87) — see `_flush`.
-        from surface.models import CurtailmentOrder, WaterRight
-
-        curtailed = WaterRight.objects.filter(
-            status="curtailed", right_id__startswith="MER-WR-").first()
-        if curtailed is None:
-            return
-        CurtailmentOrder.objects.update_or_create(
-            order_id="MER-CURT-001",
-            defaults={
-                "title": (
-                    f"Drought curtailment of junior right {curtailed.right_id} "
-                    f"({curtailed.holder_name})"
-                ),
-                "effective_date": date(2025, 7, 1),
-                "watershed": curtailed.source_name or "Merced River",
-                "priority_date_cutoff": curtailed.priority_date,
-                "status": "active",
-                "notes": (
-                    "Demo curtailment: the junior El Nido right is cut going into "
-                    "the peak irrigation season. Surface deliveries stop after June; "
-                    "conjunctive growers substitute groundwater."
-                ),
-            },
-        )
 
     # ------------------------------------------------------------------
     # Ledger rows
@@ -918,7 +884,7 @@ class Command(BaseCommand):
             out[key] = out.get(key, Decimal("0")) + abs(row[2] or Decimal("0"))
         return out
 
-    def _surface_deliveries(self, parcels, curtailed_parcel_ids, period, net_cu,
+    def _surface_deliveries(self, parcels, dry_parcel_ids, period, net_cu,
                             eff_by_parcel):
         """Surface deliveries, produced by the PLATFORM allocation service.
 
@@ -943,12 +909,12 @@ class Command(BaseCommand):
         percolates as incidental recharge, so served parcels close to ~0. A
         parcel-month with no run (should not happen inside the two-pass refresh)
         fails soft to the retired flat ``area × SURFACE_RATE × jitter × seasonal``.
-        Curtailed PODs record NO diversion after June 2025 — the El Nido cut — so
-        the service produces no post-curtailment deliveries for their parcels; the
+        The El Nido POD records a delivery of 0 for every month after June 2025,
+        so the service produces no deliveries for its parcels after then; the
         resulting summer shortfall on their surface-only parcels is the intentional
         scarcity demonstration, not a sizing error. 133-02: because the cutoff is a
-        date and not a per-year window, that also means a curtailed POD records
-        nothing at all across WY 2025-2026 — see the constant's comment block.
+        date and not a per-year window, the El Nido POD delivers nothing at all
+        across WY 2025-2026 — see the constant's comment block.
 
         133-02: called ONCE PER REPORTING PERIOD. The ``period`` argument sets both
         the month schedule and the ``reporting_period`` stamped on each
@@ -986,9 +952,7 @@ class Command(BaseCommand):
         for pod_seq, pod in enumerate(pods):
             if pod.name.startswith(UNMETERED_POD_PREFIX):
                 continue  # no meter: estimated below, never typed
-            curtailed = (
-                pod.water_right is not None and pod.water_right.status == "curtailed"
-            )
+            runs_dry = pod.name.startswith(EL_NIDO_POD_PREFIX)
             served = [
                 link.parcel
                 for link in PointOfDiversionParcel.objects.filter(
@@ -1000,8 +964,19 @@ class Command(BaseCommand):
             # over-delivery band. This is the metered truth the platform splits;
             # idempotent via update_or_create on the (POD, month, type) unique key.
             for month_date, mn in schedule:
-                if curtailed and month_date > CURTAILMENT_LAST_DELIVERY:
-                    continue  # no diversion recorded once the junior right is cut
+                if runs_dry and month_date > EL_NIDO_LAST_DELIVERY:
+                    # Nothing delivered: a typed record of 0, so the estimator
+                    # never invents a delivery for the month (150.5-01).
+                    DiversionRecord.objects.update_or_create(
+                        point_of_diversion=pod,
+                        month=month_date,
+                        diversion_type="direct_use",
+                        defaults={
+                            "reporting_period": period,
+                            "volume_acre_feet": Decimal("0"),
+                        },
+                    )
+                    continue
                 month_key = _period_str(month_date)
                 total = Decimal("0")
                 for p in served:
@@ -1045,7 +1020,7 @@ class Command(BaseCommand):
         # use, month by month, oldest first (the face-value cap reads earlier
         # months). Run only after every metered point's typed volumes are in, so
         # no metered point is mistaken for an unmetered one; the estimator skips
-        # any point with a typed record, a curtailed right or no right.
+        # any point with a typed record or with no active right.
         for month_date, _mn in schedule:
             estimate_month(month_date.replace(day=1), [])
 
@@ -1062,7 +1037,7 @@ class Command(BaseCommand):
         )
         return written
 
-    def _groundwater_rows(self, parcels, curtailed_parcel_ids, gw, period, net_cu,
+    def _groundwater_rows(self, parcels, dry_parcel_ids, gw, period, net_cu,
                           surface_by_pm, eff_by_parcel):
         """Monthly groundwater extraction (NEGATIVE) for METERED wells ONLY.
 
@@ -1081,10 +1056,10 @@ class Command(BaseCommand):
           conjunctive parcel (``ET − precip − surface``), so a parcel with BOTH a
           meter and a surface delivery is never double-supplied: its meter reads ~0
           when surface covered its ET, and rises (the substitution story) when
-          surface is curtailed. A groundwater-only metered parcel (no surface) reads
+          the El Nido canal runs dry. A groundwater-only metered parcel (no surface) reads
           its full demand × the band. Readings are stored NEGATIVE (production
           convention). NO synthetic substitution bump is applied on the ET path —
-          surface curtailment lifts the residual on its own. The bump + the
+          the dry canal lifts the residual on its own. The bump + the
           fraction-split well total survive ONLY on the fallback path (a parcel-month
           with no run), to preserve the hermetic demo story.
 
@@ -1093,7 +1068,7 @@ class Command(BaseCommand):
           synthetic row here would double-count. The well still gets
           ``measurement_method='unmetered_estimate'`` so the metered/unmetered story
           survives. The substitution story for these parcels EMERGES from the engine:
-          surface deliveries stop after curtailment, so the engine subtracts less
+          surface deliveries stop after June 2025, so the engine subtracts less
           surface → more net groundwater in the dry months.
         """
         parcel_by_id = {p.id: p for p in parcels}
@@ -1131,7 +1106,7 @@ class Command(BaseCommand):
             if not metered:
                 continue
 
-            substitutes = any(ln.parcel_id in curtailed_parcel_ids for ln in links)
+            substitutes = any(ln.parcel_id in dry_parcel_ids for ln in links)
             # Fallback basis (used only for a parcel-month with no CalculationRun).
             served_acres = sum(
                 Decimal(str(parcel_by_id[ln.parcel_id].area_acres or 40)) * ln.fraction
@@ -1154,7 +1129,7 @@ class Command(BaseCommand):
                 # the ET path the demand is already per parcel, so the well total is
                 # the sum of its parcels' needs rather than a split of one figure.
                 # Fallback (no run this parcel-month): the flat seasonal envelope
-                # split by fraction, with the curtailment substitution bump.
+                # split by fraction, with the dry-canal substitution bump.
                 demands = {
                     ln.parcel_id: net_cu.get((ln.parcel_id, month_key))
                     for ln in links
@@ -1175,7 +1150,7 @@ class Command(BaseCommand):
                         ))
                 else:
                     well_monthly = well_annual * Decimal(str(SEASONAL_WEIGHTS[mn]))
-                    if substitutes and mn in POST_CURTAILMENT_MONTHS:
+                    if substitutes and mn in SUBSTITUTION_MONTHS:
                         well_monthly *= SUBSTITUTION_MULTIPLIER
                     shares = {
                         ln.parcel_id: _q(well_monthly * ln.fraction) for ln in links
@@ -1418,7 +1393,7 @@ class Command(BaseCommand):
 
     # ------------------------------------------------------------------
     def _summary(self, parcels, district_zones, surface_parcel_ids,
-                 curtailed_parcel_ids, entries, surface_rows):
+                 dry_parcel_ids, entries, surface_rows):
         gsa_count = Zone.objects.filter(
             zone_type="management_area", basin_code=GSA_BASIN_CODE).count()
         total_rows = len(entries) + len(surface_rows)
@@ -1426,7 +1401,7 @@ class Command(BaseCommand):
             "\nMerced synthetic accounting layer seeded:\n"
             f"  {len(parcels)} parcels keyed off water source "
             f"({len(surface_parcel_ids)} with surface delivery, "
-            f"{len(curtailed_parcel_ids)} under the curtailed El Nido right)\n"
+            f"{len(dry_parcel_ids)} on the El Nido canal, dry after June 2025)\n"
             f"  {len(district_zones)} surface-district service-area zones "
             f"(+ {gsa_count} GSA zones) carry Allocations for BOTH authorities\n"
             f"  {WaterAccount.objects.filter(account_number__startswith='MER-ACCT-').count()} "

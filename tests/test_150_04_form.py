@@ -51,7 +51,6 @@ _GRID_FORM_PAGES = [
     "geography/zone_edit.html",
     "surface/right_form.html",
     "surface/device_form.html",
-    "surface/curtailment_form.html",
     "surface/pod_form.html",
     "drinking/production_form.html",
     "drinking/facility_form.html",

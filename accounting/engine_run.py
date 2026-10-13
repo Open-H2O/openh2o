@@ -276,9 +276,8 @@ def _note_sentences(raw, *, tabled=False):
     and one sentence for each point-month whose seepage had no zone to go to.
 
     ``tabled=True`` (2026-10-12, Brent: the notes as one table) leaves out the
-    four kinds ``_note_table`` sets out as rows instead: the headgate water left
-    over, canal evaporation and spill, the unmetered estimates and the curtailed
-    points. A run stores those as table groups; the sentences stay the default
+    three kinds ``_note_table`` sets out as rows instead: the headgate water left
+    over, canal evaporation and spill, and the unmetered estimates. A run stores those as table groups; the sentences stay the default
     so a caller reading one month's notes still gets plain sentences.
     """
     attention = []
@@ -405,17 +404,6 @@ def _note_sentences(raw, *, tabled=False):
             f"{'each has' if len(no_right) > 1 else 'it has'} no water right linked."
         )
     for status, pods in sorted(not_active.items()):
-        if status == "curtailed" and tabled:
-            continue
-        if status == "curtailed":
-            # Brent, 2026-10-12 15:18 PDT ("yes"): an order stops the estimate
-            # only in the months it covers (surface/estimate.py).
-            info.append(
-                f"OpenH2O estimated no delivery at {_names(pods)} in the months "
-                f"a curtailment order covers "
-                f"{'its water right' if len(pods) == 1 else 'their water rights'}."
-            )
-            continue
         info.append(
             f"No delivery was estimated for {_names(pods)}: the water right is "
             f"{status}."
@@ -450,10 +438,6 @@ _TABLE_LABELS = {
         ", from the ETAW of the fields it serves divided by each field's "
         "irrigation efficiency. An estimate, not a measurement.",
     ),
-    "curtailed": (
-        "No delivery estimated",
-        " in the months a curtailment order covers the water right",
-    ),
 }
 
 
@@ -478,10 +462,10 @@ def _table_group(key, rows):
 
 
 def _note_table(raw):
-    """The four kinds of note a run sets out as a table, one group per kind.
+    """The three kinds of note a run sets out as a table, one group per kind.
 
-    Groups come in a fixed order (left over, evaporation, spill, estimates,
-    curtailed); rows with an amount run largest first, the others by name. A
+    Groups come in a fixed order (left over, evaporation, spill, estimates);
+    rows with an amount run largest first, the others by name. A
     kind with nothing to say has no group.
     """
     unexplained = defaultdict(lambda: Decimal("0"))
@@ -490,7 +474,6 @@ def _note_table(raw):
     estimated = defaultdict(lambda: Decimal("0"))
     estimated_known = defaultdict(lambda: True)
     estimated_months = defaultdict(set)
-    curtailed = set()
     for note in raw:
         kind = note.get("kind")
         if kind == "unallocated":
@@ -504,8 +487,6 @@ def _note_table(raw):
                 estimated_known[note["pod"]] = False
             else:
                 estimated[note["pod"]] += Decimal(note["estimate_af"])
-        elif kind == "estimate_right_not_active" and note.get("status") == "curtailed":
-            curtailed.add(note["pod"])
 
     def largest_first(amounts):
         return [
@@ -530,8 +511,6 @@ def _note_table(raw):
             where = f"{pod}, {count} month{'s' if count != 1 else ''}"
             rows.append((where, estimated[pod] if estimated_known[pod] else None))
         groups.append(_table_group("estimate", rows))
-    if curtailed:
-        groups.append(_table_group("curtailed", [(pod, None) for pod in sorted(curtailed)]))
     return groups
 
 

@@ -3,7 +3,6 @@
 from django.contrib import admin
 
 from .models import (
-    CurtailmentOrder,
     DiversionRecord,
     MeasuringDevice,
     PointOfDiversion,
@@ -70,8 +69,3 @@ class WaterAccountDeliveryPointAdmin(admin.ModelAdmin):
     raw_id_fields = ["account", "point_of_diversion"]
 
 
-@admin.register(CurtailmentOrder)
-class CurtailmentOrderAdmin(admin.ModelAdmin):
-    list_display = ["order_id", "title", "effective_date", "end_date", "status"]
-    list_filter = ["status"]
-    search_fields = ["order_id", "title", "watershed"]

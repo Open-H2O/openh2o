@@ -7,7 +7,7 @@ diversion entitlement and its CalWATRS PIN; PointOfDiversion is where that water
 is taken from a stream, with PointOfDiversionParcel linking a diversion to the
 parcels it serves. DiversionRecord logs each diversion event, including the
 returned_af that distinguishes diverted from actually consumed water.
-CurtailmentOrder records when a right is curtailed. MeasuringDevice is the
+MeasuringDevice is the
 23 CCR 934(b)(1) device registry (146-03 Task 1), linked to a point of
 diversion through PointOfDiversionDevice the way wells.WellMeter links a meter
 to a well. The irrigation-method table and each use area's method began here
@@ -39,7 +39,6 @@ class WaterRight(models.Model):
     STATUS_CHOICES = [
         ("active", "Active"),
         ("inactive", "Inactive"),
-        ("curtailed", "Curtailed"),
         ("revoked", "Revoked"),
     ]
 
@@ -945,33 +944,6 @@ class DiversionRecord(models.Model):
 
     def __str__(self):
         return f"{self.point_of_diversion} {self.month}: {self.volume_acre_feet} AF"
-
-
-@track_changes()
-class CurtailmentOrder(models.Model):
-    STATUS_CHOICES = [
-        ("active", "Active"),
-        ("expired", "Expired"),
-        ("rescinded", "Rescinded"),
-    ]
-
-    order_id = models.CharField(max_length=50, unique=True)
-    title = models.CharField(max_length=300)
-    effective_date = models.DateField()
-    end_date = models.DateField(null=True, blank=True)
-    watershed = models.CharField(
-        max_length=200,
-        blank=True,
-        help_text="As the order names it; matched against a right's watershed or source name.",
-    )
-    priority_date_cutoff = models.DateField(null=True, blank=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
-    notes = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return self.order_id
 
 
 @track_changes()

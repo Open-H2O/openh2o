@@ -652,8 +652,13 @@ def allocate_district_delivery(
 
         for record in month_records:
             delivery_total = remainders[record.pk]
-            if own_total > 0 and delivery_total == 0:
-                continue  # the own records already account for the headgate
+            if delivery_total == 0:
+                # Nothing to divide: the own records already account for the
+                # headgate, or the point delivered nothing (a typed 0, which is
+                # how a month with no delivery is recorded since 150.5-01). A
+                # split row of 0 would put a delivery on each field's ledger
+                # that never happened.
+                continue
             demand_by_parcel = {p: _month_demand(p, record.month) for p in free}
             shares = allocate_by_demand(
                 delivery_total,

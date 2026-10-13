@@ -14,14 +14,14 @@ The five invariant groups (the headline cases of the whole Merced rebuild):
    conjunctive parcels get both.
 2. Budgets for BOTH authorities — a groundwater Water Budget per GSA zone and a
    surface Water Budget per surface-district zone, in both reporting periods.
-3. Curtailment — parcels served by the curtailed El Nido right lose surface deliveries
-   after the curtailment month; the conjunctive ones among them substitute groundwater.
+3. A dry canal — parcels served by the El Nido canal lose surface deliveries after
+   June 2025 (typed records of 0); the conjunctive ones among them substitute groundwater.
 4. Shared-well apportionment — a shared well's monthly extraction splits across its
    parcels by the stored fraction and sums back to the well total (no double-count).
 5. Idempotency — running the seed twice leaves ledger/account/budget counts unchanged.
 
 The fixture mirrors the real selection's shape (surface-only / groundwater-only /
-conjunctive; a curtailed district reaching surface + conjunctive parcels; two shared
+conjunctive; a dry-canal district reaching surface + conjunctive parcels; two shared
 well groups) at a fraction of the size so the suite stays fast and hermetic.
 """
 from collections import defaultdict
@@ -57,15 +57,15 @@ GW_EXTRACTION_SOURCES = {"meter_reading", "et_estimate"}
 # the proven engine path (Oct 2024 – Sep 2025).
 PRIOR_WY = "WY 2024-2025"
 OPEN_WY = "WY 2025-2026"
-# The junior El Nido right is curtailed going into the peak irrigation season: the
-# last month with a surface delivery is June 2025, so July–September are dry.
-FIRST_CURTAILED_MONTH = date(2025, 7, 1)
-POST_CURTAILMENT_MONTHS = {7, 8, 9}
+# The El Nido canal runs dry going into the peak irrigation season: the last month
+# with a surface delivery is June 2025, so July–September are dry.
+FIRST_DRY_MONTH = date(2025, 7, 1)
+SUBSTITUTION_MONTHS = {7, 8, 9}
 QUANT = Decimal("0.0001")
 
 # Surface districts modeled in the fixture (a right whose POD(s) serve real parcels).
 NORMAL_RIGHT = "MER-WR-004"
-CURTAILED_RIGHT = "MER-WR-009"
+EL_NIDO_RIGHT = "MER-WR-009"
 
 
 def _box(cx, cy, size=0.01):
@@ -110,22 +110,22 @@ def _build_physical_merced():
     post14, _ = WaterRightType.objects.get_or_create(
         code="POST14", defaults={"name": "Post-1914 Appropriative"})
 
-    # Two surface districts: a normal one and the curtailed El Nido junior right.
+    # Two surface districts: a normal one and the El Nido junior right, whose canal runs dry.
     normal = WaterRight.objects.create(
         right_id=NORMAL_RIGHT, right_type=post14, holder_name="Halvern Irrigation District",
         priority_date=date(1930, 4, 10), face_value_acre_feet=Decimal("120000"),
         status="active", source_name="Merced River",
     )
-    curtailed = WaterRight.objects.create(
-        right_id=CURTAILED_RIGHT, right_type=post14, holder_name="Saddlebow Irrigation District",
+    el_nido = WaterRight.objects.create(
+        right_id=EL_NIDO_RIGHT, right_type=post14, holder_name="Saddlebow Irrigation District",
         priority_date=date(1962, 5, 5), face_value_acre_feet=Decimal("9000"),
-        status="curtailed", source_name="El Nido Canal",
+        status="active", source_name="El Nido Canal",
     )
     pod_normal = PointOfDiversion.objects.create(
         water_right=normal, name="MER-POD-008 Crocker-Huffman River Diversion",
         location=Point(-120.66, 37.34), status="active")
-    pod_curtailed = PointOfDiversion.objects.create(
-        water_right=curtailed, name="MER-POD-007 Plainsburg El Nido Canal Headgate",
+    pod_el_nido = PointOfDiversion.objects.create(
+        water_right=el_nido, name="MER-POD-007 Plainsburg El Nido Canal Headgate",
         location=Point(-120.47, 37.20), status="active")
 
     ag_well, _ = WellType.objects.get_or_create(name="Agricultural")
@@ -177,12 +177,12 @@ def _build_physical_merced():
         serve(pod_normal, p)
         solo_well(p)
 
-    # Curtailed district: 2 surface-only + 2 conjunctive (the substitution growers).
+    # El Nido district: 2 surface-only + 2 conjunctive (the substitution growers).
     for _ in range(2):
-        serve(pod_curtailed, make_parcel("surface", gsa_list[2], "Saddlebow Ag Holdings"))
+        serve(pod_el_nido, make_parcel("surface", gsa_list[2], "Saddlebow Ag Holdings"))
     for _ in range(2):
         p = make_parcel("conjunctive", gsa_list[2], "Saddlebow Ag Holdings")
-        serve(pod_curtailed, p)
+        serve(pod_el_nido, p)
         solo_well(p)
 
     # Groundwater-only: 1 solo + two shared groups (N=2 and N=3).
@@ -217,8 +217,8 @@ def seeded():
     call_command("seed_merced_ledgers")
 
 
-def _curtailed_parcels():
-    pods = PointOfDiversion.objects.filter(water_right__right_id=CURTAILED_RIGHT)
+def _el_nido_parcels():
+    pods = PointOfDiversion.objects.filter(water_right__right_id=EL_NIDO_RIGHT)
     ids = PointOfDiversionParcel.objects.filter(
         point_of_diversion__in=pods).values_list("parcel_id", flat=True)
     return list(Parcel.objects.filter(id__in=ids))
@@ -427,48 +427,49 @@ def test_each_surface_district_zone_has_a_surface_budget_in_both_periods(seeded)
 
 
 @pytest.mark.django_db
-def test_curtailed_district_open_year_surface_budget_is_reduced(seeded):
-    """The curtailed district's CURRENT-year surface budget reflects the curtailment."""
+def test_el_nido_district_open_year_surface_budget_is_reduced(seeded):
+    """The El Nido district's CURRENT-year surface budget is cut for the dry year."""
     sw = WaterType.objects.get(code="SW")
     prior = ReportingPeriod.objects.get(name=PRIOR_WY)
     open_wy = ReportingPeriod.objects.get(name=OPEN_WY)
-    # The curtailed district's zone carries its right_id in the name.
+    # The El Nido district's zone carries its right_id in the name.
     zone = Zone.objects.get(
         zone_type="custom", name__startswith="MER Surface Service Area",
-        name__contains=CURTAILED_RIGHT)
+        name__contains=EL_NIDO_RIGHT)
     prior_budget = AllocationPlan.objects.get(zone=zone, water_type=sw, reporting_period=prior)
     open_budget = AllocationPlan.objects.get(zone=zone, water_type=sw, reporting_period=open_wy)
     assert open_budget.allocation_acre_feet < prior_budget.allocation_acre_feet, (
-        "curtailed district's open-year surface budget should be reduced vs the prior year")
+        "El Nido district's open-year surface budget should be reduced vs the prior year")
+    assert open_budget.notes == "Surface allocation reduced for a dry year."
 
 
 # --------------------------------------------------------------------------
-# Group 3 — curtailment + groundwater substitution
+# Group 3 — a dry canal + groundwater substitution
 # --------------------------------------------------------------------------
 @pytest.mark.django_db
-def test_curtailed_parcels_have_no_surface_delivery_after_curtailment(seeded):
-    curtailed = _curtailed_parcels()
-    assert curtailed, "fixture should have parcels served by the curtailed right"
-    for p in curtailed:
+def test_el_nido_parcels_have_no_surface_delivery_after_june_2025(seeded):
+    dry = _el_nido_parcels()
+    assert dry, "fixture should have parcels served by the El Nido canal"
+    for p in dry:
         rows = ParcelLedger.objects.filter(parcel=p, source_type="surface_diversion")
-        assert rows.filter(effective_date__lt=FIRST_CURTAILED_MONTH).exists(), (
-            f"{p.parcel_number} should have pre-curtailment surface deliveries")
-        assert not rows.filter(effective_date__gte=FIRST_CURTAILED_MONTH).exists(), (
-            f"{p.parcel_number} has a surface delivery after curtailment")
+        assert rows.filter(effective_date__lt=FIRST_DRY_MONTH).exists(), (
+            f"{p.parcel_number} should have surface deliveries before July 2025")
+        assert not rows.filter(effective_date__gte=FIRST_DRY_MONTH).exists(), (
+            f"{p.parcel_number} has a surface delivery after June 2025")
 
 
 @pytest.mark.django_db
-def test_curtailed_conjunctive_parcels_substitute_groundwater(seeded):
-    """Conjunctive growers under the curtailed right pump MORE groundwater in the
-    dry post-curtailment months than equivalent non-curtailed conjunctive growers."""
-    curtailed_ids = {p.id for p in _curtailed_parcels()}
+def test_el_nido_conjunctive_parcels_substitute_groundwater(seeded):
+    """Conjunctive growers on the El Nido canal pump MORE groundwater in the dry
+    months than equivalent conjunctive growers on a canal that kept delivering."""
+    el_nido_ids = {p.id for p in _el_nido_parcels()}
 
-    def post_curtailment_gw(parcels):
+    def dry_month_gw(parcels):
         total = Decimal("0")
         for p in parcels:
             for r in ParcelLedger.objects.filter(
                     parcel=p, source_type__in=GW_EXTRACTION_SOURCES):
-                if r.effective_date.month in POST_CURTAILMENT_MONTHS and r.effective_date.year == 2025:
+                if r.effective_date.month in SUBSTITUTION_MONTHS and r.effective_date.year == 2025:
                     total += abs(r.amount_acre_feet)
         # Per acre, so unequal group acreage can't skew the comparison.
         acres = sum(Decimal(str(p.area_acres or 0)) for p in parcels) or Decimal("1")
@@ -481,13 +482,13 @@ def test_curtailed_conjunctive_parcels_substitute_groundwater(seeded):
         p for p in Parcel.objects.filter(parcel_number__startswith="MER-APN-")
         if _source_of(p) == "conjunctive" and _parcel_has_metered_well(p)
     ]
-    curtailed_conj = [p for p in conjunctive if p.id in curtailed_ids]
-    normal_conj = [p for p in conjunctive if p.id not in curtailed_ids]
-    assert curtailed_conj and normal_conj, (
-        "need both curtailed and normal METERED conjunctive parcels")
+    el_nido_conj = [p for p in conjunctive if p.id in el_nido_ids]
+    normal_conj = [p for p in conjunctive if p.id not in el_nido_ids]
+    assert el_nido_conj and normal_conj, (
+        "need both El Nido and normal METERED conjunctive parcels")
 
-    assert post_curtailment_gw(curtailed_conj) > post_curtailment_gw(normal_conj) * Decimal("1.2"), (
-        "curtailed conjunctive parcels should show a clear groundwater-substitution bump")
+    assert dry_month_gw(el_nido_conj) > dry_month_gw(normal_conj) * Decimal("1.2"), (
+        "El Nido conjunctive parcels should show a clear groundwater-substitution bump")
 
 
 # --------------------------------------------------------------------------
@@ -829,11 +830,11 @@ def test_both_periods_carry_supply_on_the_same_parcels(seeded):
         open_parcels = parcels_with(open_wy)
         assert prior_parcels, f"fixture should produce {source_type} rows"
 
-        # The curtailed right records no diversion in the open year at all — that
-        # is the ruling in CURTAILMENT_LAST_DELIVERY's comment block, not a gap.
+        # The El Nido canal delivers nothing in the open year at all — that is
+        # the ruling in EL_NIDO_LAST_DELIVERY's comment block, not a gap.
         expected = prior_parcels
         if source_type == "surface_diversion":
-            expected = prior_parcels - {p.id for p in _curtailed_parcels()}
+            expected = prior_parcels - {p.id for p in _el_nido_parcels()}
 
         assert expected <= open_parcels, (
             f"{source_type}: parcels {sorted(expected - open_parcels)} have supply "
@@ -866,33 +867,54 @@ def test_seed_is_deterministic_across_both_water_years(seeded):
 
 
 @pytest.mark.django_db
-def test_curtailed_district_delivers_nothing_in_the_open_year(seeded):
+def test_el_nido_point_carries_a_typed_zero_for_every_dry_month(seeded):
+    """150.5-01: the months the El Nido canal delivers nothing are typed records
+    of 0, so the estimator never writes a delivery there (curtailment orders,
+    which used to stop it, were removed on Brent's 2026-10-12 17:47 PDT ruling)."""
+    from surface.estimate import ESTIMATE_METHOD
+    from surface.models import DiversionRecord
+
+    pod = PointOfDiversion.objects.get(name__startswith="MER-POD-007")
+    after = DiversionRecord.objects.filter(
+        point_of_diversion=pod, diversion_type="direct_use",
+        month__gte=FIRST_DRY_MONTH,
+    )
+    # July 2025 through September 2026: fifteen months.
+    assert after.count() == 15
+    assert {r.volume_acre_feet for r in after} == {Decimal("0.0000")}
+    assert not after.filter(method=ESTIMATE_METHOD).exists()
+    assert DiversionRecord.objects.filter(
+        point_of_diversion=pod, month__lt=FIRST_DRY_MONTH, volume_acre_feet__gt=0
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_el_nido_district_delivers_nothing_in_the_open_year(seeded):
     """The El Nido cut carries across the whole open year, and the paper trail says so.
 
     Three facts together, because any one alone is ambiguous: the district
     delivered water in the prior year, it delivers none in the open year, and its
     open-year allocation is still a positive tenth of face value. The gap between
-    a live 10% budget and zero deliveries is the curtailment order doing its job —
-    not a seeding hole.
+    a live 10% budget and zero deliveries is the dry canal recorded as typed
+    zeros — not a seeding hole.
     """
     from django.db.models import Sum
 
-    curtailed_ids = [p.id for p in _curtailed_parcels()]
-    assert curtailed_ids, "fixture should have parcels under the curtailed right"
+    el_nido_ids = [p.id for p in _el_nido_parcels()]
+    assert el_nido_ids, "fixture should have parcels on the El Nido canal"
 
     def delivered(period_name):
         return abs(
             ParcelLedger.objects.filter(
-                parcel_id__in=curtailed_ids,
+                parcel_id__in=el_nido_ids,
                 source_type="surface_diversion",
                 reporting_period__name=period_name,
             ).aggregate(s=Sum("amount_acre_feet"))["s"] or Decimal("0")
         )
 
-    assert delivered(PRIOR_WY) > 0, "the curtailed district delivered before the cut"
+    assert delivered(PRIOR_WY) > 0, "the El Nido district delivered before July 2025"
     assert delivered(OPEN_WY) == 0, (
-        "MER-CURT-001 is effective 2025-07-01 and never rescinded, so every month "
-        "of the open year sits after CURTAILMENT_LAST_DELIVERY"
+        "every month of the open year sits after EL_NIDO_LAST_DELIVERY"
     )
 
     open_wy = ReportingPeriod.objects.get(name=OPEN_WY)
@@ -942,7 +964,7 @@ def test_diversion_records_are_stamped_with_their_own_period(seeded):
 BASIN_INTAKE_POD = "MER-BPOD-001 El Nido Canal Recharge Intake"
 FLOOD_MAR_POD = "MER-POD-009-DEMO Bottomlands Riparian Take"
 # The intake's own right in the linked shape (136-02). Fixture ids drop the
-# -DEMO suffix the way NORMAL_RIGHT and CURTAILED_RIGHT do.
+# -DEMO suffix the way NORMAL_RIGHT and EL_NIDO_RIGHT do.
 RECHARGE_RIGHT = "MER-WR-011"
 # Wet-year storms in RECHARGE_SEASONS x the two intakes. Written as a literal
 # so a change to the schedule goes red here rather than being re-derived.

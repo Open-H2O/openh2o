@@ -472,16 +472,6 @@
       "tolerance": 0,
       "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
     },
-    "surface.CurtailmentOrder": {
-      "expected": 1,
-      "tolerance": 0,
-      "reason": "One curtailment order, so the demonstration exercises the curtailment path at all. Invented."
-    },
-    "surface.CurtailmentOrderEvent": {
-      "expected": 0,
-      "tolerance": 0,
-      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
-    },
     "surface.DiversionRecord": {
       "expected": 172,
       "tolerance": 0,
