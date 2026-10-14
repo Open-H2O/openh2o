@@ -1,0 +1,27 @@
+{
+  "_note": "TEST DATA, invented runs for ci_gate tests",
+  "runs": [
+    {
+      "databaseId": 7,
+      "headSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "status": "completed",
+      "conclusion": "failure",
+      "attempt": 1,
+      "workflowName": "tests",
+      "event": "push",
+      "createdAt": "2026-10-14T20:00:00Z",
+      "url": "https://example.invalid/runs/7"
+    },
+    {
+      "databaseId": 8,
+      "headSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "status": "completed",
+      "conclusion": "success",
+      "attempt": 2,
+      "workflowName": "tests",
+      "event": "push",
+      "createdAt": "2026-10-14T21:00:00Z",
+      "url": "https://example.invalid/runs/8"
+    }
+  ]
+}

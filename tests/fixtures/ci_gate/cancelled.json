@@ -1,0 +1,16 @@
+{
+  "_note": "TEST DATA, invented runs for ci_gate tests",
+  "runs": [
+    {
+      "databaseId": 3,
+      "headSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "status": "completed",
+      "conclusion": "cancelled",
+      "attempt": 1,
+      "workflowName": "tests",
+      "event": "push",
+      "createdAt": "2026-10-14T20:00:00Z",
+      "url": "https://example.invalid/runs/3"
+    }
+  ]
+}
