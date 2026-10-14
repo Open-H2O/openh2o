@@ -22,6 +22,7 @@ from django.test import Client
 from django.urls import reverse
 
 from drinking import provenance
+from drinking.models import SamplingPoint
 from tests.factories import (
     AnalyteFactory,
     SampleEventFactory,
@@ -116,19 +117,28 @@ class TestAFacilityAddedByHandIsLabelledAsEnteredHere:
 
 @pytest.mark.django_db
 class TestTheMapSentenceCountsThePointsItLeavesOff:
+    """Counted from the database, not hardcoded: tests/test_merced_drinking_seed.py
+    commits the Merced seed for its module, so later tests can see its rows. The
+    every-point-mapped case is tests/test_drinking_map.py's ("4 of the 4", no
+    "The other"), which runs before that seed."""
+
+    @staticmethod
+    def _counts():
+        total = SamplingPoint.objects.count()
+        mapped = SamplingPoint.objects.filter(facility__location__isnull=False).count()
+        return total, mapped
+
     def test_the_unmapped_points_are_counted(self, client_in):
         result = _result()
         located = result.event.sampling_point.facility
         bare = SystemFacilityFactory(system=located.system, facility_id="090", location=None)
         for n in (1, 2):
             SamplingPointFactory(ps_code=f"CA1010794_090_09{n}", facility=bare)
+        total, mapped = self._counts()
         text = _text(client_in.get(reverse("drinking:sampling_points")))
-        assert "The map shows 1 of the 3 sampling points at their facilities' locations." in text
-        assert "The other 2 belong to facilities with no location recorded." in text
+        assert (
+            f"The map shows {mapped} of the {total} sampling points at their facilities' locations."
+            in text
+        )
+        assert f"The other {total - mapped} belong to facilities with no location recorded." in text
         assert "/admin/ under Drinking Water &gt; System Facilities" in text
-
-    def test_every_point_mapped_says_no_other(self, client_in):
-        _result()
-        text = _text(client_in.get(reverse("drinking:sampling_points")))
-        assert "The map shows 1 of the 1 sampling point" in text
-        assert "The other" not in text
