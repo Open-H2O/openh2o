@@ -24,14 +24,17 @@
   the header went (the tile labels already say what each figure counts), and
   the corner says "1 of N systems": drinking_summary shows the first system by
   PWSID only.
+
+  Brent 2026-10-14 14:14 PDT, on the 11px DRINKING WATER label above this card:
+  "shockingly small, so they don't really explain that the tiles below relate to
+  drinking water". He chose "Title it like the rest": the outer label went and
+  the card's own heading is "Drinking water" at the size of "Zones" and "Active
+  water accounts", with the system name and PWSID on the line under it.
 {% endcomment %}{% drinking_summary as summary %}{% if summary %}
-<h2 class="content-section-label">Drinking water</h2>
 <div class="card-raised">
-  <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-    <h2 class="section-header-flush">{{ summary.system.name }}</h2>
-    <span class="text-tertiary text-xs">
-      Public water system ID (PWSID) {{ summary.system.pwsid }}{% if summary.system_count > 1 %} · 1 of {{ summary.system_count }} systems{% endif %}
-    </span>
+  <div class="mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+    <h2 class="section-header-flush">Drinking water</h2>
+    <p class="text-secondary text-sm" style="margin: var(--space-xs) 0 0;">{{ summary.system.name }} · Public water system ID (PWSID) {{ summary.system.pwsid }}{% if summary.system_count > 1 %} · 1 of {{ summary.system_count }} systems{% endif %}</p>
   </div>
 
   {% comment %}
