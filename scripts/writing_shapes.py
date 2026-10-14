@@ -155,6 +155,7 @@ CALIFORNIA_NAMES: tuple = (
     (r"the California law requiring groundwater management", "SGMA is a California law"),
     (r"California's \**Sustainable Groundwater Management Act", "SGMA spelled out"),
     (r"California DDW", "DDW is California's Division of Drinking Water"),
+    (r"California.s SDWIS format", "the lab file layout is California's Division of Drinking Water's (Brent, 2026-10-14 13:33)"),
     (r"real,? (?:published )?California basin", "the demonstration's real geography"),
     (r"open up California's water data", "the Consortium's purpose, in its own terms"),
     (r"California's reporting format", "the state's own format, Brent's words for it (2026-10-12 05:42: \"California's reporting format, not layout\")"),

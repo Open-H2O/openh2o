@@ -401,7 +401,10 @@ class TestTheOverviewIsAFrontDoor:
         """A sentence naming the missing source is information. A column of
         em-dashes is not."""
         html = client_in.get(reverse("drinking:overview")).content.decode()
-        assert "annual electronic report" in html
+        # 150.1-02 screen 11 (Brent 2026-10-14 13:33 PDT): no import fills the
+        # splits, so the note names who enters them instead of a missing import.
+        assert "An administrator enters the counts by category" in html
+        assert "annual electronic report" not in html
         assert "Population by category" not in html
         assert "Connections by use type" not in html
 
@@ -415,9 +418,9 @@ class TestTheOverviewIsAFrontDoor:
         html = client_in.get(reverse("drinking:overview")).content.decode()
         assert "Population by category" in html
         assert "88,000" in html
-        # Connections are still unsplit, so the sentence narrows to them alone
-        # rather than claiming both are missing.
-        assert "The breakdown of connections by use type comes" in html
+        # Connections are still unsplit, so the note still shows. 150.1-02
+        # screen 11 (Brent 2026-10-14 13:33 PDT): one sentence for both.
+        assert "An administrator enters the counts by category" in html
 
     def test_the_three_tiles_link_to_the_three_lists(
         self, client_in, sampled_system

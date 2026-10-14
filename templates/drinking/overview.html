@@ -25,7 +25,12 @@
   Water AGAINST "the rest of the platform", which on a drinking-water-only
   deployment is nothing: the contrast is an Accounting claim with no forbidden
   noun in it.
-  The contrast sentence below this comment was struck 2026-09-17 (143.1-01).{% endcomment %}<p class="page-description">This page shows the public water system this agency operates and its facilities.{% if 'wells' in enabled_modules %} A source facility can link to the well it draws from.{% endif %}</p>
+  The contrast sentence below this comment was struck 2026-09-17 (143.1-01).
+  150.1-02 screen 11: this page's wording approved by Brent 2026-10-14 13:33 PDT
+  ("approved"). Three sentences were false: the splits note promised an eAR
+  import that does not exist; "Facilities are EPA's record" (facility_add adds
+  one by hand); the builder's "one per facility you choose" (a facility can
+  carry several points). The well-link sentence went: nothing here shows one.{% endcomment %}<p class="page-description">This page shows each public water system on this site, with counts of its facilities, sampling points and sample results.</p>
 </div>
 {% endblock %}
 
@@ -169,10 +174,8 @@
       em-dashes was not.
     {% endcomment %}
     <p class="text-secondary text-sm" style="margin-top: var(--space-md); max-width: 70ch;">
-      EPA publishes one total for each of these.
-      {% if not system.has_population_splits and not system.has_connection_splits %}The residential, non-transient and transient split of that population, and the breakdown of connections by use type, come{% elif not system.has_population_splits %}The residential, non-transient and transient split of that population comes{% else %}The breakdown of connections by use type comes{% endif %}
-      from the state's annual electronic report, which this deployment has not
-      imported.
+      EPA publishes one total for population and one for connections.
+      An administrator enters the counts by category at /admin/ under Drinking Water &gt; Water Systems.
     </p>
     {% endif %}
 
@@ -194,7 +197,7 @@
     under it; the tiles below are otherwise byte-identical to before.
     {% endcomment %}
     <h2 class="section-header mt-lg">Records for this system</h2>
-    <p class="text-secondary text-base mb-md">Facilities are EPA's record; sampling points are composed here; sample results are the state's laboratory export.</p>
+    <p class="text-secondary text-base mb-md">Facilities come from EPA's record or you add them by hand. You add the sampling points. Sample results come from imported lab files.</p>
       {% comment %}
       123-02: the whole tile is the anchor, not just the digits. The page has
       always advertised the affordance (`.card-raised:hover`, app.css:98-102
@@ -275,10 +278,10 @@
       {% include "partials/icons/_onboard.html" %}
     </span>
     <div class="step-body">
-      <span class="step-eyebrow">Step 1 &middot; done{% if system.facility_count %} &mdash; {{ system.facility_count|intcomma }} facilit{{ system.facility_count|pluralize:"y,ies" }}{% endif %}</span>
+      <span class="step-eyebrow">Step 1 &middot; done{% if system.facility_count %} &middot; {{ system.facility_count|intcomma }} facilit{{ system.facility_count|pluralize:"y,ies" }}{% endif %}</span>
       <h2 class="section-header">Add a water system</h2>
-      <p class="text-secondary text-base">Enter a PWSID and OpenH2O looks the system up in EPA&rsquo;s Envirofacts record &mdash; the regulatory details and the facilities. Nothing is written until you have reviewed what came back. Run it again to add a second system this agency operates.</p>
-      {% if user_can_write %}<a href="{% url 'drinking:onboard' %}" class="text-sm text-accent">Onboard another system &rarr;</a>{% endif %}
+      <p class="text-secondary text-base">Enter a PWSID, and OpenH2O reads the system and its facilities from EPA&rsquo;s Envirofacts record. OpenH2O saves nothing until you review the record and confirm.</p>
+      {% if user_can_write %}<a href="{% url 'drinking:onboard' %}" class="text-sm text-accent">Add another system &rarr;</a>{% endif %}
     </div>
   </div>
 
@@ -287,10 +290,10 @@
       {% include "partials/icons/_sampling-point.html" %}
     </span>
     <div class="step-body">
-      <span class="step-eyebrow">Step 2 &middot; {% if system.step_points_done %}done &mdash; {{ system.sampling_point_count|intcomma }} point{{ system.sampling_point_count|pluralize }}{% else %}not yet{% endif %}</span>
-      <h2 class="section-header">Build its sampling points</h2>
-      <p class="text-secondary text-base">Envirofacts carries the facilities but not their sampling points, so onboarding creates none. The builder composes each PS Code in the state&rsquo;s published format, one per facility you choose.</p>
-      {% if user_can_write %}<a href="{% url 'drinking:onboard_points' system.pwsid %}" class="text-sm text-accent">Go to the point builder &rarr;</a>{% endif %}
+      <span class="step-eyebrow">Step 2 &middot; {% if system.step_points_done %}done &middot; {{ system.sampling_point_count|intcomma }} point{{ system.sampling_point_count|pluralize }}{% else %}not yet{% endif %}</span>
+      <h2 class="section-header">Add sampling points</h2>
+      <p class="text-secondary text-base">EPA&rsquo;s record has no sampling points, so adding a system creates none. You add each point under its facility, and OpenH2O builds the point&rsquo;s PS Code from the PWSID, the facility ID and the point number.</p>
+      {% if user_can_write %}<a href="{% url 'drinking:onboard_points' system.pwsid %}" class="text-sm text-accent">Add sampling points &rarr;</a>{% endif %}
     </div>
   </div>
 
@@ -299,9 +302,9 @@
       {% include "partials/icons/_sample-result.html" %}
     </span>
     <div class="step-body">
-      <span class="step-eyebrow">Step 3 &middot; {% if system.step_results_done %}done &mdash; {{ system.result_count|intcomma }} result{{ system.result_count|pluralize }}{% else %}not yet{% endif %}</span>
+      <span class="step-eyebrow">Step 3 &middot; {% if system.step_results_done %}done &middot; {{ system.result_count|intcomma }} result{{ system.result_count|pluralize }}{% else %}not yet{% endif %}</span>
       <h2 class="section-header">Import lab results</h2>
-      <p class="text-secondary text-base">Upload a laboratory file in the state&rsquo;s own SDWIS.CSV layout. Each row is matched to one of your sampling points by its PS Code, and you see a preview of what matched and what did not before anything is written.</p>
+      <p class="text-secondary text-base">Upload a laboratory file in California&rsquo;s SDWIS format. OpenH2O matches each row to a sampling point by PS Code and shows the matched and unmatched rows before saving anything.</p>
       {% if user_can_write %}<a href="{% url 'drinking:import' %}" class="text-sm text-accent">Go to lab import &rarr;</a>{% endif %}
     </div>
   </div>

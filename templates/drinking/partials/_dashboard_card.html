@@ -19,16 +19,20 @@
   which DESIGN.md rule 2 keeps), and each tile label says what its number is a
   count OF. "Sample results stored" because 22,367 is a count of stored rows,
   not of anything in the water.
+
+  150.1-02 screen 11 (Brent 2026-10-14 13:33 PDT, "approved"): the line under
+  the header went (the tile labels already say what each figure counts), and
+  the corner says "1 of N systems": drinking_summary shows the first system by
+  PWSID only.
 {% endcomment %}{% drinking_summary as summary %}{% if summary %}
 <h2 class="content-section-label">Drinking water</h2>
 <div class="card-raised">
   <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
     <h2 class="section-header-flush">{{ summary.system.name }}</h2>
     <span class="text-tertiary text-xs">
-      Public water system ID (PWSID) {{ summary.system.pwsid }}{% if summary.system_count > 1 %} · {{ summary.system_count }} systems carried{% endif %}
+      Public water system ID (PWSID) {{ summary.system.pwsid }}{% if summary.system_count > 1 %} · 1 of {{ summary.system_count }} systems{% endif %}
     </span>
   </div>
-  <p class="text-secondary text-sm" style="margin: 0 0 var(--space-md);">These figures count the records this platform holds for the system and give the date of the latest sample.</p>
 
   {% comment %}
     Each count links to the page that holds the rows behind it, in the same

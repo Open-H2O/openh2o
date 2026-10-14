@@ -476,7 +476,7 @@ class TestTheMapIsUnfilteredAndSaysSo:
 
 
 class TestTheStepSequence:
-    STEPS = ("Add a water system", "Build its sampling points", "Import lab results")
+    STEPS = ("Add a water system", "Add sampling points", "Import lab results")
 
     def test_the_three_steps_render_in_order(self, client_in, mapped_system):
         html = _get(client_in, "drinking:overview")
@@ -527,8 +527,8 @@ class TestTheStepSequence:
         A numeral typed into the eyebrow passes on staging and fails right here.
         """
         html = _get(client_in, "drinking:overview")
-        assert "Step 1 · done — 3 facilities" in html
-        assert "Step 2 · done — 4 points" in html
+        assert "Step 1 · done · 3 facilities" in html
+        assert "Step 2 · done · 4 points" in html
         assert "Step 3 · not yet" in html
 
     def test_an_undone_step_says_not_yet(self, client_in, db):
