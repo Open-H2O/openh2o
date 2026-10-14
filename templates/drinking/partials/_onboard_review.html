@@ -13,6 +13,12 @@
   Deliberately no verdict language: this reports what EPA sent and what would be
   written. It does not assess compliance, and EPA's SDWIS extract is a federal
   copy rather than the primacy agency's authoritative file.
+
+  150.1-02 screen 12: the review's wording approved by Brent 2026-10-13 09:06 PDT
+  ("approved", message B), the error paragraphs 2026-10-14 13:04 PDT ("approved",
+  message C). Three cells repeat the onboarding page's table and take its
+  approved rows word for word. The "did not answer" case no longer shows the
+  exception's text in a box: it repeated the paragraph above it.
 {% endcomment %}
 {% if error_kind %}
 <div class="card-raised">
@@ -25,20 +31,19 @@
 
   {% if error_kind == "not_found" %}
   <p class="text-base text-secondary mt-md">
-    EPA's Envirofacts record has no water system with the identifier
-    <span class="text-mono">{{ pwsid }}</span>. Check the ID against the
-    regulator's listing and try again. EPA answered; the ID was not found.
+    EPA's Envirofacts lists no water system with the PWSID
+    <span class="text-mono">{{ pwsid }}</span>. Check the PWSID against the
+    regulator's listing and try again.
   </p>
   {% elif error_kind == "unavailable" %}
   <p class="text-base text-secondary mt-md">
-    EPA's Envirofacts service was too slow or could not be reached. Your PWSID
-    may be correct; this service is routinely slow, and a lookup taking
-    15 to 30 seconds is normal for it. Try again in a few minutes.
+    EPA's Envirofacts service did not answer. Your PWSID may still be correct;
+    try again in a few minutes.
   </p>
   {% elif error_kind == "service_error" %}
   <p class="text-base text-secondary mt-md">
-    EPA's service answered, but not with a record we can read. Nothing about
-    the identifier you entered is necessarily wrong. What EPA reported:
+    EPA's Envirofacts service sent an answer OpenH2O cannot read. Your PWSID
+    may still be correct. Details:
   </p>
   {% else %}
   <p class="text-base text-secondary mt-md">
@@ -46,7 +51,7 @@
   </p>
   {% endif %}
 
-  {% if error_kind == "service_error" or error_kind == "unavailable" %}
+  {% if error_kind == "service_error" %}
   <div class="card-inset mt-md">
     <p class="text-sm text-secondary m-0">{{ error }}</p>
   </div>
@@ -84,7 +89,7 @@
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
     <span>Preview, read from EPA</span>
   </div>
-  <h2 class="card-header-ruled">Nothing has been saved yet</h2>
+  <h2 class="card-header-ruled">Not saved yet</h2>
 
   <p class="text-base" style="margin-top: var(--space-md); font-size: 1.05rem;">
     Below is EPA's record for <span class="text-mono">{{ pwsid }}</span>. Close this page and nothing changes.
@@ -92,7 +97,7 @@
 
   <div class="row-start" style="gap: var(--space-sm); margin-top: var(--space-md); flex-wrap: wrap;">
     {% if already_onboarded %}
-      <span class="badge badge-blue">Already carried, would refresh</span>
+      <span class="badge badge-blue">Already in OpenH2O</span>
     {% else %}
       <span class="badge badge-green">New system</span>
     {% endif %}
@@ -107,15 +112,15 @@
       <thead>
         <tr>
           <th>Record</th>
-          <th>Written when you press {% if already_onboarded %}Refresh{% else %}Create{% endif %}</th>
-          <th>Not written</th>
+          <th>Saved when you press {% if already_onboarded %}Refresh{% else %}Create{% endif %}</th>
+          <th>Not saved</th>
         </tr>
       </thead>
       <tbody>
         <tr>
           <td class="col-name">Water system</td>
-          <td>{% if already_onboarded %}Updated from EPA's current record, never copied; you carry it with {{ existing_facility_count }} facilit{{ existing_facility_count|pluralize:"y,ies" }}{% else %}Created, with its name, status, types, primary source and mailing address{% endif %}</td>
-          <td>State classification and regulating agency; a lab import fills the agency</td>
+          <td>{% if already_onboarded %}Updated from EPA's current record. OpenH2O already has this system and its {{ existing_facility_count }} facilit{{ existing_facility_count|pluralize:"y,ies" }}.{% else %}Created, with its name, status, types, primary source and mailing address{% endif %}</td>
+          <td>State classification and regulating agency. OpenH2O fills a blank regulating agency from the Regulating Agency column of an imported lab file.</td>
         </tr>
         <tr>
           <td class="col-name">Facilities</td>
@@ -125,7 +130,7 @@
         <tr>
           <td class="col-name">Population and service connections</td>
           <td>EPA's total for each</td>
-          <td>The breakdowns by category. EPA sends one total for each, so those fields stay empty until a source that breaks them down is imported.</td>
+          <td>The counts by category. EPA sends one total for population and one for connections. An administrator enters the counts by category at /admin/ under Drinking Water &gt; Water Systems.</td>
         </tr>
         <tr>
           <td class="col-name">Sampling points</td>
@@ -135,7 +140,7 @@
         {% if 'wells' in enabled_modules %}<tr>
           <td class="col-name">Links to wells</td>
           <td>None</td>
-          <td>Set afterwards on each facility's page under <a href="{% url 'drinking:facilities' %}" class="data-table-link">Facilities</a>, with Edit local name; a link already made is left alone</td>
+          <td>You link a facility to its well on the facility's page under <a href="{% url 'drinking:facilities' %}" class="data-table-link">Facilities</a>, with Edit local name. Refresh never changes a link you have made.</td>
         </tr>{% endif %}
       </tbody>
     </table>
@@ -151,13 +156,9 @@
 {% if skipped %}
 <div class="card-raised">
   <h2 class="card-header-ruled">{{ skipped|length }} of EPA's {{ epa_facility_count }} facilities will be left out</h2>
-  <p class="text-base" style="margin-top: var(--space-md); font-size: 1.05rem;">
-    <strong>{{ facility_count }} will be saved and {{ skipped|length }} will not.</strong>
-    Each row below names the facility and why.
-  </p>
   <table class="data-table mt-md">
     <thead>
-      <tr><th>Which one, and why it cannot be saved</th></tr>
+      <tr><th>Facility and reason</th></tr>
     </thead>
     <tbody>
       {% for reason in skipped %}
@@ -218,7 +219,7 @@
     EPA lists this address for the system's administrative contact, not for the agency that regulates it.
   </p>
 
-  <h3 class="section-header mt-lg">What EPA reports for size</h3>
+  <h3 class="section-header mt-lg">Population and service connections</h3>
   <div class="form-grid-2col">
     <div class="field-group">
       <div class="field-label">Population served (EPA total)</div>
@@ -250,7 +251,7 @@
   </table>
   {% endif %}
 
-  <h3 class="section-header mt-lg">Facilities to be written ({{ facility_count }})</h3>
+  <h3 class="section-header mt-lg">Facilities to be saved ({{ facility_count }})</h3>
   {% if facilities %}
   <div class="table-scroll">
     <table class="data-table mt-sm">
@@ -279,11 +280,11 @@
     </table>
   </div>
   <p class="text-tertiary text-sm mt-sm">
-    Facility ID is the <strong>state's</strong> key, the segment a PS Code is built from; EPA ID is EPA's own key, kept for provenance.
+    Facility ID is the state-assigned ID that forms the middle part of each PS Code. EPA ID is EPA's own ID for the same facility.
   </p>
   {% else %}
   <p class="text-secondary text-sm mt-sm">
-    EPA carries no writable facility for this system.
+    None of this system's facilities in EPA's record has a state-assigned facility ID.
   </p>
   {% endif %}
 
@@ -299,7 +300,7 @@
         {% if already_onboarded %}Refresh{% else %}Create{% endif %} {{ name|default:pwsid }}
       </button>
       <a href="{% url 'drinking:onboard' %}" class="btn-secondary">Look up a different system</a>
-      <span id="onboard-commit-spinner" class="htmx-indicator text-tertiary text-sm">Writing&hellip;</span>
+      <span id="onboard-commit-spinner" class="htmx-indicator text-tertiary text-sm">Saving&hellip;</span>
     </div>
   </form>
 </div>

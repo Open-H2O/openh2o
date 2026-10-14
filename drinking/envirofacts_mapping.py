@@ -112,6 +112,11 @@ def _count(value):
 def _coded(value, choices, field_name, warnings):
     """Return ``value`` only if it is in a published vocabulary.
 
+    ``field_name`` is the READER'S name for the field ("the system type",
+    "facility 010's water type"), because the note reaches the onboarding
+    review verbatim. Wording approved by Brent 2026-10-14 13:04 PDT (150.1-02
+    screen 12, message C row 4); it used to name the model field (pws_type).
+
     An unrecognised code is REPORTED and dropped, never stored. The code lists
     in ``drinking/models.py`` are transcribed from published DDW and EPA
     valid-value tables, so a miss means EPA published something new — which an
@@ -127,8 +132,8 @@ def _coded(value, choices, field_name, warnings):
     if code in {c for c, _ in choices}:
         return True, code
     warnings.append(
-        f"EPA sent {field_name} \"{code}\", which is not a published value. "
-        f"The field was left unset rather than storing an unknown code."
+        f"EPA sent {field_name} \"{code}\", which is not a published code. "
+        f"OpenH2O did not save {field_name}."
     )
     return False, ""
 
@@ -170,13 +175,15 @@ def map_water_system(payload, warnings=None):
         "mailing_zip": _text(payload.get("zip_code")),
     }
 
-    for source_key, target, choices in (
-        ("pws_activity_code", "activity_status", ACTIVITY_STATUS_CHOICES),
-        ("pws_type_code", "pws_type", PWS_TYPE_CHOICES),
-        ("owner_type_code", "owner_type", OWNER_TYPE_CHOICES),
-        ("primary_source_code", "primary_source_code", PRIMARY_SOURCE_CHOICES),
+    for source_key, target, choices, words in (
+        ("pws_activity_code", "activity_status", ACTIVITY_STATUS_CHOICES,
+         "the system's status"),
+        ("pws_type_code", "pws_type", PWS_TYPE_CHOICES, "the system type"),
+        ("owner_type_code", "owner_type", OWNER_TYPE_CHOICES, "the owner type"),
+        ("primary_source_code", "primary_source_code", PRIMARY_SOURCE_CHOICES,
+         "the primary source"),
     ):
-        found, code = _coded(payload.get(source_key), choices, target, warnings)
+        found, code = _coded(payload.get(source_key), choices, words, warnings)
         if found:
             kwargs[target] = code
 
@@ -184,9 +191,7 @@ def map_water_system(payload, warnings=None):
         deactivated = _text(payload.get("pws_deactivation_date"))
         warnings.append(
             f"EPA lists this system as inactive"
-            f"{f' (deactivated {deactivated[:10]})' if deactivated else ''}. "
-            f"That is not a reason to stop — an operator may legitimately be "
-            f"researching a deactivated system — but it should be confirmed."
+            f"{f' since {deactivated[:10]}' if deactivated else ''}."
         )
 
     # STILL NOT mapped, deliberately: population_residential / _non_transient /
@@ -223,7 +228,7 @@ def map_facility(payload, warnings=None):
 
     if not state_facility_id:
         # ISS-101: this string is rendered VERBATIM to an operator, in the
-        # onboarding review's "Which one, and why it cannot be saved" panel and
+        # onboarding review's "Facility and reason" panel and
         # again on the result page. It used to name `state_facility_id` — a
         # Django field name — two lines above the same screen's own English for
         # the same fact. The field name is not lost: it is on the exception as
@@ -231,9 +236,9 @@ def map_facility(payload, warnings=None):
         # the log; the operator reads the page.
         raise UnmappableFacility(
             f"EPA facility {epa_facility_id or '(unidentified)'} "
-            f"(\"{_text(payload.get('facility_name'))}\") has no "
-            f"state-assigned facility ID, so no PS Code can be built for it. "
-            f"Skipped."
+            f"({_text(payload.get('facility_name'))}) has no "
+            f"state-assigned facility ID, so OpenH2O cannot build a PS Code for "
+            f"the facility."
         )
 
     kwargs = {
@@ -245,15 +250,17 @@ def map_facility(payload, warnings=None):
         "is_source": _flag(payload.get("is_source_ind")),
     }
 
-    label = f"facility {state_facility_id}"
-    for source_key, target, choices in (
-        ("facility_activity_code", "activity_status", ACTIVITY_STATUS_CHOICES),
-        ("facility_type_code", "facility_type", FACILITY_TYPE_CHOICES),
-        ("water_type_code", "water_type", WATER_TYPE_CHOICES),
-        ("availability_code", "availability", AVAILABILITY_CHOICES),
+    label = f"facility {state_facility_id}'s"
+    for source_key, target, choices, words in (
+        ("facility_activity_code", "activity_status", ACTIVITY_STATUS_CHOICES,
+         "status"),
+        ("facility_type_code", "facility_type", FACILITY_TYPE_CHOICES, "type"),
+        ("water_type_code", "water_type", WATER_TYPE_CHOICES, "water type"),
+        ("availability_code", "availability", AVAILABILITY_CHOICES,
+         "availability"),
     ):
         found, code = _coded(
-            payload.get(source_key), choices, f"{label} {target}", warnings
+            payload.get(source_key), choices, f"{label} {words}", warnings
         )
         if found:
             kwargs[target] = code

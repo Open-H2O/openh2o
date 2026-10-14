@@ -274,7 +274,7 @@ def test_the_approved_replacements_carry_no_district_reader():
 def test_a_district_or_agency_in_the_water_world_is_not_a_reader():
     entity = (
         "<p>The regulating agency was recorded from the file.</p>"
-        "<p>State classification and regulating agency; a lab import fills the agency.</p>"
+        "<p>State classification and regulating agency. OpenH2O fills a blank regulating agency from the Regulating Agency column of an imported lab file.</p>"
         "<p>not for the agency that regulates it.</p>"
         "<p>Pick an area, such as the land an irrigation district serves.</p>"
         "<p>the local agency responsible for managing groundwater under SGMA.</p>"

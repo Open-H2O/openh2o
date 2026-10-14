@@ -149,7 +149,7 @@ class TestLookupReview:
             reverse("drinking:onboard_lookup"), {"pwsid": PWSID}
         ).content.decode()
 
-        assert "skipped" in body.lower()
+        assert "left out" in body.lower()
         # ISS-101: the reason must be READABLE, not a Django field name. This
         # assertion used to require the literal `state_facility_id`, which is
         # what held the defect in place through a whole copy pass.
@@ -214,7 +214,10 @@ class TestLookupReview:
 
         assert "Population served (EPA total)" in body
         assert "EPA&#x27;s total for each" in body or "EPA's total for each" in body
-        assert "stay empty until a source that breaks them down is imported" in body
+        # 150.1-02 screen 12 (Brent 2026-10-13 09:03 PDT): no import fills the
+        # breakdowns, so the row no longer promises one.
+        assert "An administrator enters the counts by category" in body
+        assert "breaks them down is imported" not in body
         assert "Shown, not written" not in body
 
     def test_the_mailing_state_is_never_called_the_regulating_state(self, client_in, epa):
@@ -248,7 +251,7 @@ class TestLookupFailureModes:
         ).content.decode()
 
         assert "No system with that PWSID" in body
-        assert "EPA answered; the ID was not found" in body
+        assert "lists no water system with the PWSID" in body
         assert WaterSystem.objects.count() == 0
 
     def test_a_timeout_never_reads_as_not_found(self, client_in, monkeypatch):
@@ -263,7 +266,7 @@ class TestLookupFailureModes:
         ).content.decode()
 
         assert "EPA did not answer in time" in body
-        assert "may be correct" in body
+        assert "may still be correct" in body
         assert "No system with that PWSID" not in body
         assert WaterSystem.objects.count() == 0
 
@@ -362,7 +365,7 @@ class TestCommit:
         """Not only on the review — someone who clicked past it still needs the record."""
         body = self._lookup_then_commit(client_in).content.decode()
 
-        assert "Facilities that were not written" in body
+        assert "Facilities left out" in body
         # ISS-101, same rule as the review screen: this page is read by the same
         # operator and carries the same sentence.
         assert "state-assigned facility ID" in body

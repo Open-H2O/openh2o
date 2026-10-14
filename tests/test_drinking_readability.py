@@ -277,8 +277,9 @@ class TestReviewScreenSaysNothingIsSaved:
     def test_leads_with_nothing_saved(self):
         """A lookup fetches real records, so it feels like something happened."""
         body = self._render([])
-        assert "Nothing has been saved yet" in body
-        assert body.index("Nothing has been saved yet") < body.index("PWSID")
+        # 150.1-02 screen 12: "Not saved yet", approved by Brent 2026-10-13 09:06 PDT.
+        assert "Not saved yet" in body
+        assert body.index("Not saved yet") < body.index("PWSID")
 
     def test_skip_is_a_headline_not_a_buried_row(self):
         body = self._render(['EPA facility CA1010001001 ("WELL 01") has no state id.'])

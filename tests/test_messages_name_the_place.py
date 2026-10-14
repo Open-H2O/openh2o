@@ -222,10 +222,10 @@ class TestTheDrinkingPagesNameTheirOwnScreens:
         body = writer.get(reverse("drinking:onboard")).content.decode()
         assert "Django admin" not in body
         assert (
-            "Set on each facility's page under "
+            "You link a facility to its well on the facility's page under "
             f'<a href="{reverse("drinking:facilities")}" class="data-table-link">'
-            "Facilities</a>, with Edit local name; a second lookup never changes "
-            "a link already made"
+            "Facilities</a>, with Edit local name. Refresh never changes a link "
+            "you have made."
         ) in body
 
     def test_the_review_says_the_same(self, writer, epa):
@@ -235,7 +235,7 @@ class TestTheDrinkingPagesNameTheirOwnScreens:
         assert "Django admin" not in body
         fragment = _fragment(body, "Links to wells")
         assert f'href="{reverse("drinking:facilities")}"' in fragment
-        assert "with Edit local name; a link already made is left alone" in fragment
+        assert "with Edit local name. Refresh never changes a link you have made." in fragment
 
     def test_the_edit_door_on_a_facility_page_is_named_edit_local_name(self, writer):
         """The cell names a button; the button must say those words."""
