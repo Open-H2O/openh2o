@@ -51,6 +51,8 @@ from drinking.models import (
     POINT_TYPE_CHOICES,
     PRIMARY_SOURCE_CHOICES,
     PRODUCTION_TYPE_CHOICES,
+    PRODUCTION_TYPE_NS,
+    PRODUCTION_TYPE_SO,
     PRODUCTION_UNIT_CHOICES,
     PWS_TYPE_CHOICES,
     WATER_TYPE_CHOICES,
@@ -1779,6 +1781,10 @@ PRODUCTION_MONTH_NAMES = {
     12: "December",
 }
 
+#: Water sold to another system: left out of the year's produced-or-purchased
+#: total and named on its own (Brent, 2026-10-14 15:12 PDT).
+SOLD_TYPE_CODES = frozenset({PRODUCTION_TYPE_SO, PRODUCTION_TYPE_NS})
+
 
 @login_required
 def production(request):
@@ -1864,15 +1870,23 @@ def production(request):
                 "acre_feet": sum((r.volume_acre_feet for r in column), Decimal("0")),
             }
         )
-    grand_total_gallons = sum((t["gallons"] for t in totals), Decimal("0"))
-    grand_total_af = sum((t["acre_feet"] for t in totals), Decimal("0"))
+    # 150.1-02 screen 13 (Brent 2026-10-14 15:12 PDT, "approved"): the year
+    # total is water produced or purchased. Water sold to another system came
+    # out of that water, so adding the two sold columns counted it twice; they
+    # are totalled on their own and named after it. Each column's own total in
+    # the table foot is unchanged.
+    supply = [t for t in totals if t["type_code"] not in SOLD_TYPE_CODES]
+    sold = [t for t in totals if t["type_code"] in SOLD_TYPE_CODES]
+    grand_total_gallons = sum((t["gallons"] for t in supply), Decimal("0"))
+    grand_total_af = sum((t["acre_feet"] for t in supply), Decimal("0"))
+    sold_total_gallons = sum((t["gallons"] for t in sold), Decimal("0"))
 
     # 146-04 Task 6 (page verdict at 1,730): a source reported as zero, or not
     # at all, in every month of the year is one sentence above the table, not
     # a column of twelve zeros. Le Grand's real eAR carries five such columns
     # beside its one groundwater column, and the reader's worst fault was that
     # "most of the page's largest region is dead space". The grand total
-    # still sums every source, so nothing drops out of the arithmetic.
+    # still sums every source column, so nothing drops out of the arithmetic.
     shown = [
         i for i, code in enumerate(type_codes)
         if any(
@@ -1880,7 +1894,12 @@ def production(request):
         )
     ]
     # Named in lower case because they are read mid-sentence in the head line.
-    shown_labels = [PRODUCTION_TYPE_CHOICES[i][1].lower() for i in shown]
+    # The sold columns are not where the water came from, so the "from" list
+    # leaves them out; the head line names sold water on its own.
+    shown_labels = [
+        PRODUCTION_TYPE_CHOICES[i][1].lower() for i in shown
+        if type_codes[i] not in SOLD_TYPE_CODES
+    ]
     if not shown:
         shown = list(range(len(type_codes)))
     zero_labels = [
@@ -1909,6 +1928,7 @@ def production(request):
             "grand_total_gallons": grand_total_gallons,
             "grand_total_gallons_whole": int(grand_total_gallons.to_integral_value()),
             "grand_total_af": grand_total_af,
+            "sold_total_gallons_whole": int(sold_total_gallons.to_integral_value()),
             "has_any": SystemProduction.objects.filter(system=system).exists(),
         },
     )

@@ -18,7 +18,7 @@ from drinking.models import (
     SystemProduction,
 )
 
-MONTH_CHOICES = [("", "-- Year total, not one month --")] + [
+MONTH_CHOICES = [("", "Whole year (one figure)")] + [
     (i, name) for i, name in enumerate(
         ["January", "February", "March", "April", "May", "June", "July",
          "August", "September", "October", "November", "December"],
@@ -58,8 +58,11 @@ class SystemProductionForm(forms.ModelForm):
             "unit_as_reported": forms.Select(attrs={"class": "form-select"}),
             "notes": forms.Textarea(attrs={"class": "form-textarea", "rows": 2}),
         }
+        # 150.1-02 screen 13 (Brent 2026-10-14 15:12 PDT): "Type" and "Volume",
+        # not the model's "Type code" and "Volume, as reported".
         labels = {
-            "volume_as_reported": "Volume, as reported",
+            "type_code": "Type",
+            "volume_as_reported": "Volume",
             "unit_as_reported": "Unit",
         }
 

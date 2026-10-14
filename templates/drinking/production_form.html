@@ -13,7 +13,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Add month</span>
   </nav>
-  <p class="page-description">One month, one source, typed in by hand. For a whole year at once, use <a href="{% url 'drinking:production_import' %}">Import</a> instead.</p>
+  <p class="page-description">Enter a monthly or whole-year figure for one type of water, or use <a href="{% url 'drinking:production_import' %}">Import</a> to bring in a whole file.</p>
 </div>
 {% endblock %}
 
@@ -26,9 +26,7 @@
   <div class="card-raised">
     <h2 class="card-header-ruled">No water system yet</h2>
     <p class="text-base text-secondary mt-md">
-      Production is recorded against a water system, and none is onboarded on
-      this deployment yet. <a href="{% url 'drinking:onboard' %}">Onboard a system</a>
-      first.
+      This site has no water system yet. <a href="{% url 'drinking:onboard' %}">Add a water system</a> first.
     </p>
   </div>
   {% else %}

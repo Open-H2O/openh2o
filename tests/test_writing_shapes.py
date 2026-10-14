@@ -77,7 +77,6 @@ BASELINE: dict = {
     "templates/base_auth.html": {"em dash": 1},
     "templates/core/user_form.html": {"em dash": 1},
     "templates/datasync/station_add.html": {"em dash": 1},
-    "templates/drinking/production.html": {"em dash": 1},
     "templates/partials/_demo_marker.html": {"em dash": 1},
     "templates/reporting/partials/_openet_prefill.html": {"em dash": 1},
     "templates/reporting/partials/_report_detail_pane.html": {"em dash": 1, "stand-in": 1},

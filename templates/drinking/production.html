@@ -13,7 +13,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Production</span>
   </nav>
-  <p class="page-description">This page shows what the system produced or delivered, by month and by source. It reads back the state's own annual electronic report (eAR).</p>
+  <p class="page-description">This page shows the water system's production and deliveries by month and by type, from imported files or months entered by hand.</p>
 </div>
 {% endblock %}
 
@@ -24,19 +24,16 @@
   <div class="card-raised">
     <h2 class="card-header-ruled">No water system yet</h2>
     <p class="text-base text-secondary mt-md">
-      Production is recorded against a water system, and none is onboarded on
-      this deployment yet. <a href="{% url 'drinking:onboard' %}">Onboard a system</a>
-      first.
+      This site has no water system yet. <a href="{% url 'drinking:onboard' %}">Add a water system</a> first.
     </p>
   </div>
   {% elif not has_any %}
   <div class="card-raised">
     <h2 class="card-header-ruled">No production recorded yet</h2>
     <p class="text-base text-secondary mt-md">
-      Two files bring this in: the state's own annual electronic report (eAR)
-      production export, or the operator's own monthly log &mdash; either one,
-      through <strong>Import</strong> below. A single month can also be typed
-      in by hand.
+      Import the production figures exported from California's Electronic Annual
+      Report (eAR), or a monthly log kept on Section 5 of the eAR template. You can
+      also enter one month at a time.
     </p>
     <div class="row-start mt-lg" style="gap: var(--space-sm);">
       <a href="{% url 'drinking:production_import' %}" class="btn-primary">Import a file</a>
@@ -70,10 +67,14 @@
     and purchased water as much as groundwater; the head line says which
     sources carried water this year and which were zero every month, so a
     groundwater-only year never reads as a groundwater-only page.
+
+    150.1-02 screen 13: this page's wording approved by Brent 2026-10-14
+    15:12 PDT ("approved"), with the head line's total changed to water
+    produced or purchased; sold water is named on its own (views.production).
   {% endcomment %}
   <div class="card-raised table-scroll" style="padding: 0;">
     <div class="ledger-card-head">
-      <div class="text-secondary text-base">{{ year }}: {{ grand_total_gallons_whole|intcomma }} gallons produced or delivered{% if shown_labels %}, from {{ shown_labels|join:", " }}{% endif %}.{% if zero_labels %} Reported as zero every month: {{ zero_labels|join:", " }}.{% endif %}</div>
+      <div class="text-secondary text-base">{{ year }}: {{ grand_total_gallons_whole|intcomma }} gallons produced or purchased{% if shown_labels %}, from {{ shown_labels|join:", " }}{% endif %}.{% if sold_total_gallons_whole %} {{ sold_total_gallons_whole|intcomma }} gallons sold.{% endif %}{% if zero_labels %} Reported as zero every month: {{ zero_labels|join:", " }}.{% endif %}</div>
     </div>
     <table class="data-table">
       <thead>

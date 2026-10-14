@@ -516,7 +516,35 @@ def test_a_surface_water_system_gets_its_surface_water_column(auth_client, le_gr
     assert "<th>Groundwater</th>" not in body
     assert "2.5 MG" in body
     # 12 x 2.5 MG + 12 x 100,000 gal = 30,000,000 + 1,200,000
-    assert "31,200,000 gallons produced or delivered, from surface water, purchased." in body
+    assert "31,200,000 gallons produced or purchased, from surface water, purchased." in body
+
+
+def test_sold_water_is_not_added_to_the_year_total(auth_client, le_grand):
+    """150.1-02 screen 13 (Brent 2026-10-14 15:12 PDT): water sold to another
+    system came out of the water produced, so the year total leaves the two
+    sold columns out and names sold water on its own. 48 MG pumped, 3 MG of it
+    sold, used to read 51,000,000 gallons."""
+    from drinking.models import SystemProduction
+
+    SystemProduction.objects.create(
+        system=le_grand, year=2024, month=1, type_code="GW",
+        volume_as_reported=Decimal("48"), unit_as_reported="MG", provenance="typed",
+    )
+    SystemProduction.objects.create(
+        system=le_grand, year=2024, month=1, type_code="SO",
+        volume_as_reported=Decimal("2"), unit_as_reported="MG", provenance="typed",
+    )
+    SystemProduction.objects.create(
+        system=le_grand, year=2024, month=1, type_code="NS",
+        volume_as_reported=Decimal("1"), unit_as_reported="MG", provenance="typed",
+    )
+    body = auth_client.get(
+        reverse("drinking:production") + "?year=2024"
+    ).content.decode()
+    assert "48,000,000 gallons produced or purchased, from groundwater. 3,000,000 gallons sold." in body
+    assert "51,000,000" not in body
+    # Each column keeps its own total in the table foot.
+    assert "2,000,000 gal" in body
 
 
 # ---------------------------------------------------------------------------
