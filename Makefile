@@ -16,7 +16,7 @@ export APP_VERSION = $(VERSION)
         seed-data-sources seed-report-templates seed-water-right-types \
         seed-well-types demo flush-demo merced teardown-demo \
         check test test-droppable guard-fresh fresh snapshot-demo reset-demo calc-rebuild verify-clean install-cron show-cron sync guard-prod guard-demo-host deploy rebuild-golden \
-        verify-candidate promote-golden
+        verify-candidate promote-golden ci-gate
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | \
@@ -125,9 +125,51 @@ guard-demo-host:
 		exit 1; \
 	fi
 
-deploy: guard-demo-host ## REFUSES unless this checkout is the demo host (.demo-host) — it resets code to origin/main and REPLACES THE LIVE DATABASE with the demonstration snapshot; agencies upgrade via DEPLOY.md §11
+# THE CI GATE. `deploy` refuses a commit whose `tests` run on GitHub did not
+# pass, BEFORE its `git reset --hard`, so a red, still-running or never-tested
+# commit leaves the old code, the old golden and the demo database exactly as
+# they were. Three things about it are deliberate:
+#
+#   1. The gate resolves REF to one full SHA and `deploy` resets to THAT SHA,
+#      read back from .deploy-verified-sha, never to $(REF) again. origin/main
+#      moving between the check and the reset cannot ship a commit nobody
+#      checked.
+#   2. .deploy-verified-sha is deleted first thing on every run, so a file left
+#      by an earlier run can never stand in for this run's check.
+#   3. It FAILS CLOSED. When GitHub cannot be asked (no network, an HTTP error,
+#      the anonymous rate limit of 60 requests an hour), the deploy is refused
+#      and the reason printed. It does not fall back to running the suite here:
+#      the suite needs PostGIS in Docker and takes close to half an hour, on the
+#      machine serving the live site. Wait and retry, or check the run by hand.
+#
+# `make ci-gate REF=<sha>` runs the check alone and changes nothing but the
+# marker file. CI_REPO names the repository whose Actions runs are asked; a
+# fork that runs its own `tests` workflow sets CI_REPO=<owner>/<name>.
+CI_REPO ?= Open-H2O/openh2o
+
+ci-gate: ## Refuse unless REF's `tests` run on GitHub passed (make deploy runs this before its reset); REF=<sha> to check one commit
+	@rm -f .deploy-verified-sha
 	git fetch origin
-	git reset --hard $(REF)
+	@sha=$$(git rev-parse --verify --quiet "$(REF)^{commit}") || { \
+		echo ""; \
+		echo "  REFUSING: '$(REF)' is not a commit in this checkout, even after git fetch origin."; \
+		echo ""; \
+		exit 1; \
+	}; \
+	python3 scripts/ci_gate.py --fetch --repo "$(CI_REPO)" --workflow tests.yml --sha "$$sha" || { \
+		code=$$?; \
+		echo ""; \
+		echo "  REFUSING to deploy $$sha: its \`tests\` run did not pass, or GitHub could not be asked (ci_gate exit $$code)."; \
+		echo "  Nothing was changed. Deploy a commit whose run is green, or wait for this one's run to finish."; \
+		echo ""; \
+		exit 1; \
+	}; \
+	echo "$$sha" > .deploy-verified-sha; \
+	echo "ci-gate: $$sha passed its tests run; wrote .deploy-verified-sha"
+
+deploy: guard-demo-host ## REFUSES unless this checkout is the demo host (.demo-host) and REF's `tests` run passed (ci-gate) — it resets code to that commit and REPLACES THE LIVE DATABASE with the demonstration snapshot; agencies upgrade via DEPLOY.md §11
+	@$(MAKE) --no-print-directory ci-gate REF="$(REF)"
+	sha=$$(cat .deploy-verified-sha) && test -n "$$sha" && git reset --hard "$$sha"
 	@echo ""
 	@echo "Building the demonstration database from this commit (nothing is promoted yet)…"
 	bash scripts/rebuild-golden.sh

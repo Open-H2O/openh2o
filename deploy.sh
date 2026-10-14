@@ -4,7 +4,9 @@
 # openh2o is NOT a static site and NOT on Cloudflare — it runs as Docker
 # containers on Butler (prod checkout: ~/openh2o). The ONLY supported deploy is
 # `make deploy` run on Butler, which:
-#   - git fetch + reset --hard to origin/main   (so: PUSH your changes first)
+#   - refuses first unless origin/main's `tests` run on GitHub passed, and
+#     refuses when GitHub cannot be asked (`make ci-gate`; nothing is changed)
+#   - git fetch + reset --hard to the commit it checked   (so: PUSH your changes first)
 #   - rebuilds the web container
 #   - RESETS the demo database to the golden snapshot and re-stamps it
 #

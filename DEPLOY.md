@@ -773,7 +773,10 @@ docker compose exec web python manage.py collectstatic --noinput
 the maintainer's public demonstration site: it discards every local change in the
 checkout and then replaces the live database with the canned demonstration
 snapshot. It refuses to run unless the checkout carries a `.demo-host` marker
-file, which only that one demonstration host has.
+file, which only that one demonstration host has. Before it changes anything it
+also refuses a commit whose `tests` run on GitHub did not pass (failed, still
+running, or never run), and it refuses when GitHub cannot be asked;
+`make ci-gate REF=<commit>` runs that check on its own.
 
 ### Protecting a Live Installation (`.production-lock`)
 

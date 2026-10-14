@@ -95,3 +95,11 @@ as a secret, do **not** store it in Bitwarden, and do **not** mirror it on prod.
   marker means "this checkout is the public demonstration and its database is
   disposable", which is the opposite claim to `.production-lock` ("this checkout
   is protected") — both live on the prod checkout and neither replaces the other.
+- **`make deploy` refuses a commit whose `tests` run did not pass** (failed,
+  cancelled, still running, or no run at all), before its `git reset --hard`, and
+  it then resets to the exact SHA it checked, not to whatever `origin/main` has
+  become. It also refuses when GitHub cannot be asked (no network, an HTTP error,
+  the anonymous limit of 60 requests an hour) rather than running the suite on
+  the host that serves the site. `make ci-gate REF=<sha>` runs the check alone.
+  When the newest commit on `main` is red or its run has not finished, deploy the
+  newest green one with `make deploy REF=<sha>`.

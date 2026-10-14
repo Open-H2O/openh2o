@@ -55,3 +55,6 @@ media/
 *.bak
 *.bak.*
 static/img/logo-alternatives/
+
+# Written by `make ci-gate`: the commit the last gate run found green.
+.deploy-verified-sha
