@@ -9,8 +9,8 @@
   Three blocks, in the order a reader actually asks the questions: what was
   found, how it was analysed, and which sample it came from.
 
-  **No RegulatoryLimit appears on this page.** The platform prepares
-  submissions; it does not determine compliance. tests/test_drinking_detail_views.py
+  **No RegulatoryLimit appears on this page.** OpenH2O does not determine
+  compliance. tests/test_drinking_detail_views.py
   asserts the federal table's value is absent with a limit present in the
   database, so the assertion is real rather than vacuous.
 
@@ -18,6 +18,14 @@
   (ISS-140, ruled "beside" by Brent 2026-09-22 07:31 PDT). It is the state
   export's own MCL cell for this row, stored as reported. Nothing on the page
   compares it with the finding, colours by it or names a verdict.
+
+  150.1-02 screen 14, approved by Brent 2026-10-14: message A rows 3 to 11 at
+  15:37 PDT ("I read the sentences and they look good"), message B row 2 and
+  row 11 at 15:51 PDT ("approved"). One source label for the lab file, beside
+  The finding, naming the file (`result_source`), where three section labels
+  named the State Water Board for any file; the facility's label follows
+  `added_by_hand` as the facility page does; the CCR line no longer explains
+  what a Consumer Confidence Report is.
 
   {% comment %}, never {# #}: the hash form comments only to the end of its
   LINE, so a multi-line note written that way leaks into the page.
@@ -37,7 +45,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">{{ result.analyte.name }} {{ event.sample_date|date:"Y-m-d" }}</span>
   </nav>
-  <p class="page-description">This page shows one analyte's finding in one sample. It records what was measured, who measured it and where the water came from.</p>
+  <p class="page-description">This page shows one analyte's finding in one sample.</p>
 </div>
 {% endblock %}
 
@@ -64,7 +72,7 @@
   <div class="page-grid-account">
 
     <div class="card-raised page-grid-account-info">
-      <h2 class="section-header" style="margin-top: 0;">The analysis {% source_label "DDW_LAB" %}</h2>
+      <h2 class="section-header" style="margin-top: 0;">The analysis</h2>
       <div class="field-grid-2">
         <div class="field-group">
           <div class="field-label">Date</div>
@@ -94,10 +102,10 @@
         {% endif %}
       </div>
       <p class="text-sm text-tertiary" style="margin-top: var(--space-xs); max-width: 75ch;">
-        ELAP is California's Environmental Laboratory Accreditation Program, the certification a laboratory holds to run this analysis for regulatory purposes.
+        ELAP is California's Environmental Laboratory Accreditation Program.
       </p>
 
-      <h2 class="section-header mt-lg">The sample it came from {% source_label "DDW_LAB" %}</h2>
+      <h2 class="section-header mt-lg">The sample</h2>
       <div class="field-grid-2">
         <div class="field-group">
           <div class="field-label">Sample date</div>
@@ -142,8 +150,8 @@
     {% endcomment %}
     <div class="card-raised page-grid-account-balance">
       <div class="page-grid-account-head mb-md">
-        <h2 class="section-header-flush">The finding {% source_label "DDW_LAB" %}</h2>
-        <div class="text-secondary text-base">{{ result.analyte.name }}, state code {{ result.analyte.ddw_code|blank:"not published" }} &middot; {{ finding_count }} finding{{ finding_count|pluralize }} of it at {{ point.ps_code }}.</div>
+        <h2 class="section-header-flush">The finding {% result_source result %}</h2>
+        <div class="text-secondary text-base">{{ result.analyte.name }}, state code {{ result.analyte.ddw_code|blank:"not published" }} &middot; {{ finding_count }} finding{{ finding_count|pluralize }} at sampling point {{ point.ps_code }}.</div>
       </div>
       <div class="budget-panel">
         <div class="budget-panel-body">
@@ -151,18 +159,13 @@
             <div class="budget-seg budget-seg--result">
               <div class="budget-seg-label">Result</div>
               <div class="budget-seg-value">{% include "drinking/partials/_result_value.html" with result=result parts=True %}</div>
-              <div class="budget-seg-caption">
-                {% if result.less_than_rl %}reported below the laboratory's reporting level, not a measured quantity
-                {% elif result.result_kind == "presence_absence" %}reported present or absent, never as a concentration
-                {% else %}as the laboratory reported it{% endif %}
-              </div>
+              <div class="budget-seg-caption">as reported by the laboratory</div>
             </div>
             <div class="budget-op"></div>
             <div class="budget-seg">
               <div class="budget-seg-label">Reporting level</div>
               {% if result.reporting_level is not None %}
               <div class="budget-seg-value">{{ result.reporting_level|plain_decimal }}<span class="budget-seg-unit">{{ result.unit }}</span></div>
-              <div class="budget-seg-caption">the least this method reports</div>
               {% else %}
               <div class="budget-seg-value text-tertiary">&mdash;</div>
               <div class="budget-seg-caption">not given in the lab file</div>
@@ -178,17 +181,16 @@
               (tests/test_limits_as_reported.py compares the two DOMs).
             {% endcomment %}
             <div class="budget-seg">
-              <div class="budget-seg-label">Limit (file)</div>
+              <div class="budget-seg-label"><abbr title="maximum contaminant level">MCL</abbr> in the lab file</div>
               {% if result.mcl_as_reported is not None %}
               <div class="budget-seg-value">{{ result.mcl_as_reported|plain_decimal }}<span class="budget-seg-unit">{{ result.unit }}</span></div>
-              <div class="budget-seg-caption">the <abbr title="maximum contaminant level">MCL</abbr> the laboratory's file carried{% if result.dlr_as_reported is not None %}; <abbr title="detection limit for purposes of reporting">DLR</abbr> {{ result.dlr_as_reported|plain_decimal }}{% endif %}</div>
+              {% if result.dlr_as_reported is not None %}<div class="budget-seg-caption"><abbr title="detection limit for purposes of reporting">DLR</abbr> {{ result.dlr_as_reported|plain_decimal }} {{ result.unit }}</div>{% endif %}
+              {% elif result.limits_file_date %}
+              <div class="budget-seg-value text-tertiary">None</div>
+              {% if result.dlr_as_reported is not None %}<div class="budget-seg-caption"><abbr title="detection limit for purposes of reporting">DLR</abbr> {{ result.dlr_as_reported|plain_decimal }} {{ result.unit }}</div>{% endif %}
               {% else %}
               <div class="budget-seg-value text-tertiary">&mdash;</div>
-              {% if result.limits_file_date %}
-              <div class="budget-seg-caption">no limit in the file{% if result.dlr_as_reported is not None %}; <abbr title="detection limit for purposes of reporting">DLR</abbr> {{ result.dlr_as_reported|plain_decimal }}{% endif %}</div>
-              {% else %}
-              <div class="budget-seg-caption">not recorded: imported before the file's limits were kept; importing the same file again adds them</div>
-              {% endif %}
+              <div class="budget-seg-caption">This result was imported before OpenH2O stored the file's MCL and DLR. Import the same file again to add the MCL and DLR.</div>
               {% endif %}
             </div>
             <div class="budget-op"></div>
@@ -208,15 +210,15 @@
     </div>
 
     {% comment %}
-      Split out of "The sample it came from" deliberately. Everything above is
-      the lab file; these four fields are the record the sample hangs off, and
-      the State Water Board did not publish them. The facility, the system name
-      and the PWSID are EPA's; the PS code is composed here from the state's
-      convention, so it carries its own row label rather than inheriting EPA's.
-      Left inside the DDW section, one label claimed one publisher for three.
+      Split out of "The sample" deliberately. Everything above is the lab
+      file; these four fields are the record the sample hangs off, and the lab
+      file did not write them. The facility, the system name and the PWSID are
+      EPA's, unless the facility was added by hand (then "entered on this
+      site", as on the facility page); the sampling point is entered here, so
+      it carries its own row label rather than inheriting EPA's.
     {% endcomment %}
     <div class="card-raised page-grid-account-full">
-      <h2 class="section-header">The record it belongs to {% source_label "EPA_SDWIS" %}</h2>
+      <h2 class="section-header">Sampling point and water system {% if facility.added_by_hand %}{% source_label "OPERATOR_ENTERED" %}{% else %}{% source_label "EPA_SDWIS" %}{% endif %}</h2>
       <div class="form-grid-2col">
         <div class="field-group">
           <div class="field-label">Sampling point {% source_label "PS_CODE_COMPOSED" %}</div>
@@ -250,18 +252,14 @@
       {% endcomment %}
       {% if ccr_url %}
       {% comment %}
-        The one section on this page that is not the lab file. The sections
-        above are the State Water Board's own export; this points at a document
-        the water system itself published, for the whole year rather than for
-        this sample. Inheriting the page's publisher here would attribute the
-        system's annual report to the regulator.
+        The one section on this page that is not the lab file: a document the
+        water system itself published, for the whole year. No source label: the
+        link text names whose report it is (Brent 2026-10-14 15:37 PDT).
       {% endcomment %}
-      <h2 class="section-header mt-lg">Published report {% source_label "CCR_SYSTEM" %}</h2>
+      <h2 class="section-header mt-lg">Published report</h2>
       <p class="text-base text-secondary" style="max-width: 75ch;">
-        <a href="{{ ccr_url }}" target="_blank" rel="noopener" class="data-table-link">{{ system.name }}'s {{ ccr_year }} Consumer Confidence Report</a>
-        is the annual water-quality report this system published for the year this
-        sample was taken. It is the system's report for the whole year, not this
-        sample's own laboratory sheet.
+        <a href="{{ ccr_url }}" target="_blank" rel="noopener" class="data-table-link">The system's {{ ccr_year }} Consumer Confidence Report</a>
+        covers the year this sample was taken.
       </p>
       {% endif %}
     </div>

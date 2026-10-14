@@ -18,25 +18,28 @@ the Facilities page's coverage sentence does (UAT-001, `_facility_results.html`)
 It says WHY not every point is on the map at all; the card head above already
 says how many of the CURRENT list matched and how many of those are located.
 
-"Groundwater sources", not "source wells": the word "wells" belongs to a
-module a drinking-water utility may not run, and the droppability vocabulary
-gate fails a kept page that names a domain the deployment does not have.
+No "wells" in these sentences: the word belongs to a module a drinking-water
+utility may not run, and the droppability vocabulary gate fails a kept page
+that names a domain the deployment does not have.
+
+150.1-02 screen 14 message B rows 4 and 5, approved by Brent 2026-10-14 15:51
+PDT ("approved"). No GAMA: OpenH2O has no GAMA import, and only the Merced
+seed's coordinates came from it; a facility otherwise gets a location only at
+/admin/ (SystemFacilityAdmin, the Location field).
 {% endcomment %}{% if mapped_facility_count %}
 <p class="page-description">
   The map shows {{ mapped_point_count }} of the {{ point_total_count }} sampling
-  point{{ point_total_count|pluralize }} in this inventory, drawn at the
-  {{ mapped_facility_count }} of the {{ total_facility_count }} facilities that
-  have a published location. The state's Groundwater Ambient Monitoring and
-  Assessment Program (GAMA) publishes coordinates for groundwater sources only,
-  so the points at treatment plants and the distribution system are not on it.
+  point{{ point_total_count|pluralize }} at their facilities' locations.{% if unmapped_point_count == 1 %}
+  The other 1 belongs to a facility with no location recorded.{% elif unmapped_point_count %}
+  The other {{ unmapped_point_count }} belong to facilities with no location recorded.{% endif %}
+  An administrator enters a facility's location at /admin/ under Drinking
+  Water &gt; System Facilities.
 </p>
 {% else %}
 <p class="page-description">
-  No facility in this system has a published location, so there is no map of
-  this inventory yet. The state's Groundwater Ambient Monitoring and Assessment
-  Program (GAMA) publishes coordinates for groundwater sources only; EPA's
-  Envirofacts record, which onboarding reads, carries none. A new system has no
-  map until its sources are located.
+  No facility on this site has a location recorded, so there is no map. EPA
+  publishes no facility coordinates. An administrator enters a facility's
+  location at /admin/ under Drinking Water &gt; System Facilities.
 </p>
 {% endif %}
 
@@ -44,13 +47,12 @@ gate fails a kept page that names a domain the deployment does not have.
 <div class="card-raised table-scroll" style="padding: 0;">
   {% comment %}
   R-067, R-068. The card head above the table (shape 1, the ledger list's
-  own no-h2 form). The facts line says once what the "Sample results"
-  column counts and what "Latest Sample" is the newest of, so neither has to
-  be re-explained on 27 rows.
+  own no-h2 form). The line explaining the "Sample results" and "Latest
+  Sample" columns was deleted (150.1-02 screen 14 message B row 3, Brent
+  2026-10-14 15:51 PDT): the headings say it.
   {% endcomment %}
   <div class="ledger-card-head">
     <div class="text-secondary text-base">{{ total_count }} sampling point{{ total_count|pluralize }}</div>
-    <div class="text-secondary text-base">Sample results counts the laboratory findings recorded at the point; Latest Sample is the newest of them.</div>
   </div>
   <table class="data-table">
     <thead>

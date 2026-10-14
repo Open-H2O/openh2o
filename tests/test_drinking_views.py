@@ -10,8 +10,7 @@ place it can still go wrong — the template. "Absent" must read as *Absent*, no
 as 0, not as "< RL", and a non-detect must read as a bound rather than as its
 reporting level.
 
-**No verdicts.** The platform prepares submissions and does not determine
-compliance, so no page here may compare a result against a RegulatoryLimit or
+**No verdicts.** OpenH2O does not determine compliance, so no page here may compare a result against a RegulatoryLimit or
 color a row by one. Asserted directly, because the temptation to add a red cell
 is exactly the kind of "helpful" change that would slip through review.
 

@@ -266,10 +266,9 @@ class TestTheScreensShowTheLimitBeside:
         html = client_in.get(
             reverse("drinking:result_detail", args=[above.pk])
         ).content.decode()
-        assert "the laboratory&#x27;s file carried" in html or (
-            "the laboratory's file carried" in html
-        )
-        assert "Limit (file)" in html
+        # 150.1-02 screen 14 row 4 (Brent 2026-10-14 15:37 PDT).
+        assert "the laboratory&#x27;s file carried" not in html
+        assert "</abbr> in the lab file" in html
 
     def test_a_row_without_a_limit_says_the_file_carried_none(
         self, client_in, le_grand
@@ -279,7 +278,8 @@ class TestTheScreensShowTheLimitBeside:
         html = client_in.get(
             reverse("drinking:result_detail", args=[bare.pk])
         ).content.decode()
-        assert "no limit in the file" in html
+        assert "no limit in the file" not in html
+        assert '<div class="budget-seg-value text-tertiary">None</div>' in html
 
     def test_a_row_imported_before_limits_were_kept_says_not_recorded(
         self, client_in, le_grand
@@ -293,13 +293,18 @@ class TestTheScreensShowTheLimitBeside:
         html = client_in.get(
             reverse("drinking:result_detail", args=[legacy.pk])
         ).content.decode()
-        assert "no limit in the file" not in html
-        assert "not recorded: imported before" in html
+        assert '<div class="budget-seg-value text-tertiary">None</div>' not in html
+        assert (
+            "This result was imported before OpenH2O stored the file&#x27;s MCL and DLR."
+            in html
+            or "This result was imported before OpenH2O stored the file's MCL and DLR."
+            in html
+        )
 
     def test_the_results_log_carries_the_column(self, client_in, le_grand):
         _import()
         html = client_in.get(reverse("drinking:results")).content.decode()
-        assert "Limit (file)" in html
+        assert "MCL in the lab file" in html
 
     def test_the_sampling_point_page_carries_the_column(self, client_in, le_grand):
         _import()
@@ -310,7 +315,7 @@ class TestTheScreensShowTheLimitBeside:
                 args=[above.event.sampling_point_id],
             )
         ).content.decode()
-        assert "Limit (file)" in html
+        assert "MCL in the lab file" in html
 
 
 # ---------------------------------------------------------------------------

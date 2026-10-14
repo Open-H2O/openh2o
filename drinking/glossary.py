@@ -50,10 +50,12 @@ import re
 #: does it for a living. A status code's meaning stays, because what the state's
 #: own flag signifies is a data convention this platform owes the reader; a
 #: description of the water, the equipment or the sampling never does.
+#: No em dash in a value (INAC, 150.1-02 screen 14 row 13, Brent 2026-10-14
+#: 15:51 PDT, "approved").
 SHORTHAND = {
     "RAW": "Untreated water.",
     "STBY": "Standby. A source held in reserve, not normally running.",
-    "INAC": "Inactive — not currently in service.",
+    "INAC": "Inactive. Not currently in service.",
     "INACTIVE": "Not currently in service.",
     "DESTROYED": "The facility has been decommissioned or destroyed.",
     "BLENDED": "Water from more than one source, mixed together.",

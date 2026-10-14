@@ -45,6 +45,25 @@ def source_label(key, detail=""):
     return {"source": provenance.publisher(key), "detail": detail}
 
 
+@register.inclusion_tag("partials/_source_label.html")
+def result_source(result):
+    """One sample result's source: the lab file it was imported from.
+
+    150.1-02 screen 14 row 3 (Brent 2026-10-14 15:37 PDT, "they look good"):
+    the file name and import date the importer stores on every row it writes
+    (``limits_source_file`` / ``limits_file_date``, ISS-140), or
+    ``provenance.LAB_FILE`` for a row imported before file names were kept.
+    The label used to name the State Water Board for every result, which is
+    false of a lab's own file in the same format.
+    """
+    name = (result.limits_source_file or "").strip()
+    if not name:
+        return {"source": provenance.LAB_FILE, "detail": ""}
+    if result.limits_file_date:
+        name = f"{name}, imported {result.limits_file_date:%Y-%m-%d}"
+    return {"source": name, "detail": ""}
+
+
 @register.simple_tag
 def drinking_summary():
     """Counts for the dashboard card.

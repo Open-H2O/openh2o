@@ -261,12 +261,15 @@ class TestTheCoverageSentenceIsComputed:
         A test asserting the demonstration's own "21 of 61" would pass forever
         and prove nothing.
         """
+        # Counted in points since 150.1-02 screen 14 message B row 4 (Brent
+        # 2026-10-14 15:51 PDT): the sentence no longer counts facilities.
         html = _squash(
             client_in.get(reverse("drinking:sampling_points")).content.decode()
         )
-        assert "2 of the 3" in html, (
-            "the page does not state the facility coverage it actually has"
+        assert "3 of the 4 sampling points" in html, (
+            "the page does not state the coverage it actually has"
         )
+        assert "The other 1 belongs to a facility with no location recorded." in html
 
         mapped_system["unlocated"].location = _point(0.02)
         mapped_system["unlocated"].save(update_fields=["location"])
@@ -274,7 +277,8 @@ class TestTheCoverageSentenceIsComputed:
         html = _squash(
             client_in.get(reverse("drinking:sampling_points")).content.decode()
         )
-        assert "3 of the 3" in html, "the coverage sentence is a hardcoded literal"
+        assert "4 of the 4 sampling points" in html, "the coverage sentence is a hardcoded literal"
+        assert "The other" not in html
 
     def test_it_counts_the_points_the_map_can_show(self, client_in, mapped_system):
         """Three of the four sampling points hang off a located facility."""
@@ -284,18 +288,18 @@ class TestTheCoverageSentenceIsComputed:
         assert "3 of the 4" in html
 
     def test_it_says_why_the_rest_are_missing(self, client_in, mapped_system):
-        """The gap is a fact about the public record, not a defect here.
+        """Their facilities have no location, and where one is entered.
 
-        "Groundwater sources", not "source wells": the droppability vocabulary
-        gate fails a kept page that says "wells" on a deployment without the
-        Wells module, and it is right to — it cannot tell this module's WL
-        facility type from that module's section.
+        No GAMA since 150.1-02 screen 14 message B row 4 (Brent 2026-10-14
+        15:51 PDT): only the demonstration seed's coordinates came from it, and
+        on any other site a facility's location is entered at /admin/.
         """
         html = _squash(
             client_in.get(reverse("drinking:sampling_points")).content.decode()
         ).lower()
-        assert "groundwater sources" in html
-        assert "gama" in html
+        assert "no location recorded" in html
+        assert "/admin/ under drinking water &gt; system facilities" in html
+        assert "gama" not in html
 
     def test_no_hardcoded_demonstration_numbers(self, client_in, mapped_system):
         """The Merced counts must not be written into the template."""
@@ -336,10 +340,13 @@ class TestTheEmptyStateIsASentence:
         html = _squash(
             client_in.get(reverse("drinking:sampling_points")).content.decode()
         ).lower()
-        assert "no facility in this system has a published location" in html
-        assert "groundwater sources" in html
-        # And it names the reason a new operator sees this at all.
-        assert "envirofacts" in html
+        # 150.1-02 screen 14 message B row 5 (Brent 2026-10-14 15:51 PDT):
+        # no GAMA (only the demo seed's coordinates came from it), and where
+        # a location is entered.
+        assert "no facility on this site has a location recorded" in html
+        assert "epa publishes no facility coordinates" in html
+        assert "/admin/ under drinking water &gt; system facilities" in html
+        assert "gama" not in html
 
     def test_the_endpoint_is_still_valid_and_empty(self, client_in, unmapped_system):
         _, data = _geojson(client_in)
@@ -600,11 +607,11 @@ class TestTheSamplingPointDetailMap:
             "the map caption does not name whose coordinate this is, so a "
             "reader may believe the tap itself was surveyed"
         )
-        assert "Source:" in caption, (
-            "the borrowed coordinate carries no publisher attribution"
-        )
-        assert "not this point" in caption or "not for this point" in caption, (
-            "the caption never says the coordinate is not the point's own"
+        # The GAMA label under it went (150.1-02 screen 14 message B row 7,
+        # Brent 2026-10-14 15:51 PDT); the caption itself says the position is
+        # the facility's.
+        assert "The map places this sampling point at facility" in caption.replace("&#x27;", "'"), (
+            "the caption never says the coordinate is the facility's"
         )
 
     def test_a_point_on_an_unlocated_facility_emits_NO_element_at_all(
@@ -618,7 +625,7 @@ class TestTheSamplingPointDetailMap:
         html = response.content.decode()
         assert _embedded_geojson(html, "point-geojson-data") is None
         assert 'id="detail-map"' not in html
-        assert "has no published coordinate" in _squash(html)
+        assert "has no location recorded, so this page has no map" in _squash(html)
 
     def test_the_geojson_properties_carry_no_verdict(self, client_in, mapped_system):
         html = client_in.get(

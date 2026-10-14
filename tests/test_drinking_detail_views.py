@@ -36,6 +36,7 @@ href, so a future template edit that drops a link fails here instead of on
 staging.
 """
 
+import re
 from datetime import date, time
 from decimal import Decimal
 
@@ -279,10 +280,9 @@ class TestResultsRenderHonestly:
         assert "&lt; 0.002" in html
         assert "mg/L" in html
         text = _squash(html)
-        assert (
-            "reported below the laboratory's reporting level, "
-            "not a measured quantity"
-        ) in text, "the page shows a bound but never says it is one"
+        # One caption for every kind of result (150.1-02 screen 14 row 8,
+        # Brent 2026-10-14 15:37 PDT); the "<" is the bound.
+        assert "as reported by the laboratory" in text
 
     def test_a_stored_decimal_never_shows_precision_nobody_measured(
         self, client_in, sampled_system
@@ -347,11 +347,9 @@ class TestNoComplianceVerdict:
         numeric.save()
 
         html = client_in.get(_urls(sampled_system)[page]).content.decode()
-        assert "Limit (file)" in html
-        if page == "result":
-            assert "the laboratory&#x27;s file carried" in html or (
-                "the laboratory's file carried" in html
-            )
+        # 150.1-02 screen 14 row 4 (Brent 2026-10-14 15:37 PDT).
+        assert "in the lab file" in html
+        assert "the laboratory&#x27;s file carried" not in html
         assert "10 mg/L" in html or ">10<" in html
         assert "Maximum Contaminant Level" not in html
         assert "1.000000" not in html
@@ -466,7 +464,7 @@ class TestTruncationAdmitsItself:
         assert "30 sample results" in text, (
             "the head line does not state the true total"
         )
-        assert "The 25 most recent are below" in text, (
+        assert "The 25 newest results are below." in text, (
             "the head line does not say the list is truncated"
         )
         assert "See all 30 results for this point" in text, (
@@ -480,7 +478,7 @@ class TestTruncationAdmitsItself:
         html = client_in.get(
             reverse("drinking:sampling_point_detail", args=[sampled_system["point"].pk])
         ).content.decode()
-        assert "most recent are below" not in _squash(html)
+        assert "newest results are below" not in _squash(html)
         assert _tbody(html).count("<tr>") == 3
 
 
@@ -511,8 +509,11 @@ class TestConsumerConfidenceReportLink:
                 reverse("drinking:result_detail", args=[sampled_system["numeric"].pk])
             ).content.decode()
         )
-        assert "Consumer Confidence Report" in text
-        assert "not this sample's own laboratory sheet" in text
+        # 150.1-02 screen 14 row 11 (Brent 2026-10-14 15:37 PDT): the line
+        # says which year the report covers and no longer explains what a
+        # Consumer Confidence Report is.
+        prose = " ".join(re.sub(r"<[^>]+>", " ", text.replace("&#x27;", "'")).split())
+        assert "The system's 2024 Consumer Confidence Report covers the year this sample was taken." in prose
 
     def test_the_link_is_absent_for_a_non_california_system(
         self, client_in, sampled_system

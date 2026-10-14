@@ -118,15 +118,17 @@ class TestLabResultLeadsWithTheFinding:
         assert "7.4" in segment
         assert "MG/L" in segment
 
-    def test_the_reporting_level_peer_shows_the_least_the_method_reports(
+    def test_the_reporting_level_peer_shows_the_level_with_no_caption(
         self, client_in, lab_result_with_history
     ):
+        """Its caption, "the least this method reports", was deleted
+        (150.1-02 screen 14 row 8, Brent 2026-10-14 15:37 PDT)."""
         html = client_in.get(
             reverse("drinking:result_detail", args=[lab_result_with_history["later"].pk])
         ).content.decode()
         text = _squash(html)
         assert "0.5" in text
-        assert "the least this method reports" in text
+        assert "the least this method reports" not in text
 
     def test_the_previous_finding_peer_shows_the_earlier_result_and_its_date(
         self, client_in, lab_result_with_history
@@ -165,10 +167,9 @@ class TestLabResultLeadsWithTheFinding:
         ).content.decode()
         segment = _result_segment(html)
         assert "&lt; 0.5" in segment
-        assert (
-            "reported below the laboratory's reporting level, "
-            "not a measured quantity"
-        ) in _squash(segment)
+        # One caption for every kind of result (150.1-02 screen 14 row 8).
+        assert "as reported by the laboratory" in _squash(segment)
+        assert "not a measured quantity" not in _squash(segment)
 
     def test_regulatory_limit_never_appears_even_with_a_limit_on_the_analyte(
         self, client_in, lab_result_with_history

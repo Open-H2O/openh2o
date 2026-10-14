@@ -88,9 +88,11 @@
           146-04 Task 3: onboarding never writes this field (EPA's record
           carries a state code, not a DDW district); the lab import fills it
           from the file's Regulating Agency column, so when it holds a value
-          the card's EPA label above does not describe it.
+          the card's EPA label above does not describe it. "an imported lab
+          file", not the State Water Board: any lab file in that format can
+          fill it (150.1-02 screen 14 row 3, Brent 2026-10-14 15:37 PDT).
         {% endcomment %}
-        <div class="field-label">Regulating agency{% if system.regulating_agency %} {% source_label "DDW_LAB" detail="read off the lab file" %}{% endif %}</div>
+        <div class="field-label">Regulating agency{% if system.regulating_agency %} {% source_label "LAB_FILE" %}{% endif %}</div>
         <div class="field-value">{{ system.regulating_agency|blank }}</div>
       </div>
       {% if system.seller_pwsid %}

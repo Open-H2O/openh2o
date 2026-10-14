@@ -38,8 +38,8 @@ information from the deployment that needs it most.
 
 **Wording convention.** Every constant is a publisher noun phrase that reads
 correctly after "Source: ", which is what ``partials/_source_label.html`` renders.
-Proper nouns keep their capitals; the two "composed by this deployment" values
-start lowercase because they are descriptions, not names. Keep them short: these
+Proper nouns keep their capitals; the "on this site" values and the lab-file
+values start lowercase because they are descriptions, not names. Keep them short: these
 render inline beside a section header, not as body copy.
 
 **Vocabulary constraint.** These strings reach rendered page text, so none of
@@ -68,6 +68,20 @@ EPA_SDWIS = "EPA Envirofacts (SDWIS)"
 #: laboratories and ELAP certification numbers.
 DDW_LAB = "State Water Board Division of Drinking Water"
 
+#: Where a sample result came from, said truthfully on ANY deployment
+#: (150.1-02 screen 14, Brent 2026-10-14 15:37 PDT, "they look good").
+#:
+#: ``DDW_LAB`` above names the State Water Board, which is true of the
+#: demonstration's file and false of a lab's own file in the same format, and the
+#: importer accepts either. The result page names the file itself
+#: (``drinking_display.result_source``, from ``SampleResult.limits_source_file``
+#: and ``limits_file_date``); the lists, which hold many rows, say this.
+LAB_FILES = "imported lab files"
+
+#: One result's source when no file name was stored with it (a row imported
+#: before ISS-140 kept file names), and the regulating agency read off a file.
+LAB_FILE = "an imported lab file"
+
 #: GAMA — the state's Groundwater Ambient Monitoring and Assessment Program.
 #:
 #: "Program", not "programme": the official title of a California State Water
@@ -89,9 +103,7 @@ GAMA = "State Water Board GAMA Program"
 #: purpose: the PS-code FORMAT is the state's published convention and the
 #: ``{pwsid}_{facility_id}_{point_number}`` join key every lab row is matched on,
 #: while the point RECORD is composed here on an operator's explicit action.
-PS_CODE_COMPOSED = (
-    "composed by this deployment from the State Water Board's PS-code convention"
-)
+PS_CODE_COMPOSED = "entered on this site with a California-format PS Code"
 
 #: An identifier this deployment minted for its own registry.
 #:
@@ -99,16 +111,7 @@ PS_CODE_COMPOSED = (
 #: in the demonstration, ``core/management/commands/seed_merced_drinking.py``),
 #: which names no state or federal registry and deliberately is not written to
 #: ``state_well_number`` or ``wcr_number``.
-LOCAL_REGISTRY = "composed by this deployment"
-
-#: The water system's own annual Consumer Confidence Report.
-#:
-#: Not a value this platform stores at all — a composed link out to the report the
-#: system itself published for the year a sample was taken
-#: (``drinking.views``' CCR gating). It is the one thing on the result detail page
-#: that is neither the lab file nor EPA, and the section carrying it inherits the
-#: wrong publisher without a label of its own.
-CCR_SYSTEM = "the water system's own annual report"
+LOCAL_REGISTRY = "assigned on this site"
 
 #: The published identity of a municipal supply source, as it reaches the wells
 #: module.
@@ -128,7 +131,10 @@ PUBLISHED_SUPPLY_SOURCE = "EPA and State Water Board published record"
 #: 146-04 Task 3 (D9): a facility added by hand. Nothing federal wrote it, so
 #: the facility page's identity card names the operator rather than inheriting
 #: ``EPA_SDWIS``, which every onboarded facility on the same list carries.
-OPERATOR_ENTERED = "entered by the operator on this deployment"
+#: The sampling point and lab result pages carry it too, for the same facility
+#: (150.1-02 screen 14 row 11, Brent 2026-10-14 15:51 PDT, "approved"; the old
+#: wording named an operator and a "deployment").
+OPERATOR_ENTERED = "entered on this site"
 
 #: Every constant above, keyed by its own name.
 #:
@@ -140,10 +146,11 @@ OPERATOR_ENTERED = "entered by the operator on this deployment"
 PUBLISHERS = {
     "EPA_SDWIS": EPA_SDWIS,
     "DDW_LAB": DDW_LAB,
+    "LAB_FILES": LAB_FILES,
+    "LAB_FILE": LAB_FILE,
     "GAMA": GAMA,
     "PS_CODE_COMPOSED": PS_CODE_COMPOSED,
     "LOCAL_REGISTRY": LOCAL_REGISTRY,
-    "CCR_SYSTEM": CCR_SYSTEM,
     "PUBLISHED_SUPPLY_SOURCE": PUBLISHED_SUPPLY_SOURCE,
     "OPERATOR_ENTERED": OPERATOR_ENTERED,
 }

@@ -481,6 +481,7 @@ def sampling_points(request):
             "points_pwsid": points_pwsid,
             "point_total_count": point_total_count,
             "mapped_point_count": mapped_point_count,
+            "unmapped_point_count": point_total_count - mapped_point_count,
             "total_facility_count": total_facility_count,
             "mapped_facility_count": mapped_facility_count,
             "all_count": point_total_count,

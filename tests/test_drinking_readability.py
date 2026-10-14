@@ -311,12 +311,11 @@ class TestReviewScreenSaysNothingIsSaved:
 #: Proper names, not copy: "Groundwater Ambient Monitoring and Assessment
 #: Program" is what the State Water Board calls its own program, so pinning it
 #: constrains the facts a page must state and leaves every sentence around it
-#: free to be rewritten. `GAMA` reaches three pages, `SDWIS` and `PWSID` reach
+#: free to be rewritten. `GAMA` reaches the facility page (the sampling point pages dropped it at
+#: 150.1-02 screen 14, Brent 2026-10-14 15:51 PDT), `SDWIS` and `PWSID` reach
 #: the onboarding front door — see the audit's D6, D7 and D8.
 REQUIRED_EXPANSIONS = {
     "facility_detail": ["Groundwater Ambient Monitoring and Assessment Program"],
-    "sampling_point_detail": ["Groundwater Ambient Monitoring and Assessment Program"],
-    "sampling_points": ["Groundwater Ambient Monitoring and Assessment Program"],
     "onboard": [
         "Safe Drinking Water Information System",
         "Public Water System Identification",

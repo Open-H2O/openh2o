@@ -163,14 +163,16 @@ def _paths(surfaces):
         (reverse("drinking:sampling_points"), (provenance.PS_CODE_COMPOSED,)),
         (
             reverse("drinking:sampling_point_detail", args=[surfaces["point"].pk]),
+            # No GAMA: the map label went (150.1-02 screen 14 message B row 7,
+            # Brent 2026-10-14 15:51 PDT). LAB_FILES, not DDW_LAB: any lab
+            # file in that format imports (message A row 3, 15:37 PDT).
             (
                 provenance.PS_CODE_COMPOSED,
                 provenance.EPA_SDWIS,
-                provenance.DDW_LAB,
-                provenance.GAMA,
+                provenance.LAB_FILES,
             ),
         ),
-        (reverse("drinking:results"), (provenance.DDW_LAB,)),
+        (reverse("drinking:results"), (provenance.LAB_FILES,)),
         (
             reverse("drinking:result_detail", args=[surfaces["result"].pk]),
             # EPA_SDWIS and PS_CODE_COMPOSED are here because the breadcrumb —
@@ -178,11 +180,13 @@ def _paths(surfaces):
             # file. It sat inside the DDW section until this was pinned, which
             # attributed EPA's identity fields and a locally composed PS code to
             # the State Water Board's laboratory export.
+            # LAB_FILE: the fixture's result carries no stored file name, so
+            # its one label reads "an imported lab file" (result_source). The
+            # CCR line's own label went (150.1-02 screen 14 row 11).
             (
-                provenance.DDW_LAB,
+                provenance.LAB_FILE,
                 provenance.EPA_SDWIS,
                 provenance.PS_CODE_COMPOSED,
-                provenance.CCR_SYSTEM,
             ),
         ),
     )
@@ -204,6 +208,8 @@ class TestThePublisherVocabulary:
         for name in (
             "EPA_SDWIS",
             "DDW_LAB",
+            "LAB_FILES",
+            "LAB_FILE",
             "GAMA",
             "PS_CODE_COMPOSED",
             "LOCAL_REGISTRY",

@@ -23,6 +23,12 @@
   place the platform decides how a lab finding reads. A presence/absence result
   must read "Absent", never 0 and never "< RL".
 
+  150.1-02 screen 14, approved by Brent 2026-10-14: message A rows 2 to 4 at
+  15:37 PDT ("I read the sentences and they look good"), message B rows 2 and
+  6 to 11 at 15:51 PDT ("approved"). No GAMA label on the map: only the Merced
+  seed's coordinates came from GAMA, and a facility otherwise gets a location
+  at /admin/.
+
   {% comment %}, never {# #}: the hash form comments only to the end of its
   LINE, so a multi-line note written that way leaks into the page.
 {% endcomment %}
@@ -41,7 +47,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">{{ point.ps_code }}</span>
   </nav>
-  <p class="page-description">This page shows the sampling point's location and the measurements taken there.</p>
+  <p class="page-description">This page shows one sampling point, its facility and its sample results.</p>
 </div>
 {% endblock %}
 
@@ -69,35 +75,23 @@
   <div id="detail-map-card" class="card-raised" style="padding: 0; overflow: hidden; display: none;">
     <div id="detail-map" class="map-embed" style="height: 380px; position: relative; overflow: hidden; background: var(--color-base);"></div>
     {% comment %}
-      ROW-LEVEL. The point record above is composed by this deployment; the dot
-      on this map is not — it is the FACILITY's published coordinate, borrowed.
-      99-02 established the attribution in words and in the popup; the label is
-      what makes the publisher of that borrowed position explicit rather than
-      leaving a reader to read it out of the position of the sentence.
-
-      The caption and the label do ONE JOB EACH, which is the 101-02 checkpoint's
-      ruling on this card. The caption says where the dot is; the label says who
-      published it and what it is a coordinate OF. The earlier draft made both
-      say both — 36 words carrying two facts — and read as padding.
-
-      No GAMA expansion here on purpose. Rule 5 expands an acronym in PROSE, and
-      the only GAMA on this branch is now inside the citation, which the rule
-      excludes. The no-map branch below still carries the expansion for a reader
-      who lands there.
+      ROW-LEVEL. The dot on this map is not the point's own position: it is
+      the FACILITY's coordinate, borrowed, and the caption and the popup both
+      say so. The GAMA label that sat under the caption was removed (150.1-02
+      screen 14 message B row 7, Brent 2026-10-14 15:51 PDT): only the Merced
+      seed's coordinates came from GAMA, and on any other site an
+      administrator enters the location at /admin/.
     {% endcomment %}
     <p class="text-secondary text-sm" style="margin: 0; padding: var(--space-sm) var(--space-md); max-width: 75ch;">
-      The dot is drawn at the location published for facility {{ point.facility.facility_id }}.
-      {% source_label "GAMA" detail="the facility's coordinate, not this point's" %}
+      The map places this sampling point at facility {{ point.facility.facility_id }}'s location.
     </p>
   </div>
   {% else %}
   <div class="card-raised">
     <p class="text-secondary text-base" style="max-width: 70ch; margin: 0;">
-      Facility {{ point.facility.facility_id }} has no published coordinate, so there is
-      no map to show. A sampling point takes its facility's position. Positions
-      come from the state's Groundwater Ambient Monitoring and Assessment
-      Program (GAMA), which publishes them for groundwater sources only, and not
-      for every one.
+      Facility {{ point.facility.facility_id }} has no location recorded, so this
+      page has no map. An administrator enters a facility's location at /admin/
+      under Drinking Water &gt; System Facilities.
     </p>
   </div>
   {% endif %}
@@ -130,7 +124,7 @@
         carries its own label rather than inheriting the section's.
       {% endcomment %}
       <div class="field-group">
-        <div class="field-label">Facility {% source_label "EPA_SDWIS" %}</div>
+        <div class="field-label">Facility {% if point.facility.added_by_hand %}{% source_label "OPERATOR_ENTERED" %}{% else %}{% source_label "EPA_SDWIS" %}{% endif %}</div>
         <div class="field-value">
           <a href="{% url 'drinking:facility_detail' point.facility.pk %}" class="data-table-link">{{ point.facility.facility_id }}</a>{% if point.facility.name %} ({{ point.facility.name }}){% endif %}
         </div>
@@ -158,7 +152,7 @@
           {% elif point.facility.well %}
             {{ point.facility.well.name }}
           {% else %}
-            <span class="value-empty" title="This deployment links a source facility to its well record when both exist.">Not linked</span>
+            <span class="value-empty" title="Link the facility to its well on the facility's page.">Not linked</span>
           {% endif %}
         </div>
       </div>
@@ -180,10 +174,10 @@
 
   <div class="card-raised" style="padding: 0;">
     <div class="ledger-card-head">
-      <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">Sample results {% source_label "DDW_LAB" %}</h2>
-      <div class="text-secondary text-base">{{ result_count|intcomma }} sample results &middot; {{ analyte_count }} analytes &middot; sampled {{ first_sample|date:"Y-m-d" }} to {{ latest_sample|date:"Y-m-d" }}{% if result_groups %} &middot; A value with &lt; is one the laboratory reported below its reporting level, not a measured quantity.{% endif %}</div>
+      <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">Sample results {% source_label "LAB_FILES" %}</h2>
+      <div class="text-secondary text-base">{{ result_count|intcomma }} sample results &middot; {{ analyte_count }} analytes &middot; sampled {{ first_sample|date:"Y-m-d" }} to {{ latest_sample|date:"Y-m-d" }}</div>
       {% if is_truncated %}
-      <div class="text-secondary text-base">The {{ shown_limit }} most recent are below; the full log is at Sample results.</div>
+      <div class="text-secondary text-base">The {{ shown_limit }} newest results are below.</div>
       {% endif %}
     </div>
 
@@ -194,7 +188,7 @@
           <tr>
             <th>Analyte</th>
             <th>Result</th>
-        <th>Limit (file)</th>
+        <th>MCL in the lab file</th>
             <th>Method</th>
             <th>Laboratory</th>
           </tr>

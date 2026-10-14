@@ -86,7 +86,6 @@ BASELINE: dict = {
     "accounting/views.py": {"em dash": 2},
     "core/models.py": {"em dash": 1},
     "datasync/freshness.py": {"em dash": 8},
-    "drinking/glossary.py": {"em dash": 1},
     "drinking/ps_codes.py": {"em dash": 1},
     "drinking/views.py": {"em dash": 2, "double hyphen": 2},
     "health/checks.py": {"em dash": 4},
