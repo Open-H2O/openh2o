@@ -78,10 +78,10 @@
     "Total Amount of Potable Water" column is never read.
   {% endcomment %}
   <div class="card-raised">
-    <h2 class="card-header-ruled">Columns each layout carries</h2>
-    <p class="text-base text-secondary mt-md">The layout is recognized by its headers; other columns are ignored.</p>
+    {% comment %} Message T, approved by Brent 2026-10-15 08:50 PDT; the heading and the deleted "layout is recognized" sentence reuse the diversion page's approved ones. {% endcomment %}
+    <h2 class="card-header-ruled">Columns OpenH2O reads</h2>
 
-    <h3 class="section-header-sm mt-lg">The state&rsquo;s eAR production export</h3>
+    <h3 class="section-header-sm mt-lg">The eAR export</h3>
     <div class="table-scroll mt-sm">
       <table class="data-table help-cases-table">
         <thead>
@@ -95,7 +95,7 @@
           <tr>
             <td class="col-name">PWSID</td>
             <td class="col-sure">Yes</td>
-            <td>Public Water System Identification number; must match the water system on file</td>
+            <td>The Public Water System ID. OpenH2O imports only rows whose PWSID matches the water system on file.</td>
           </tr>
           <tr>
             <td class="col-name">Year</td>
@@ -110,17 +110,17 @@
           <tr>
             <td class="col-name">DateStartOfMonth</td>
             <td class="col-sure">No</td>
-            <td>First day of the month, M/D/YYYY; read when Month is not a month name</td>
+            <td>The first day of the month, written M/D/YYYY or YYYY-MM-DD. OpenH2O reads this column when Month is not a month name.</td>
           </tr>
           <tr>
             <td class="col-name">TypeCode</td>
             <td class="col-sure">Yes</td>
-            <td>Source, one of the state&rsquo;s seven: GW, SW, Purchased, Sold, Recycled, NonPotable, NonPotableSold; any other code is a row error</td>
+            <td>The type of water: GW, SW, Purchased, Sold, Recycled, NonPotable or NonPotableSold. OpenH2O refuses a row with any other code.</td>
           </tr>
           <tr>
             <td class="col-name">Units of Measure As Reported</td>
             <td class="col-sure">No</td>
-            <td>G, MG, AF or CCF (gallons, million gallons, acre-feet, hundred cubic feet); a blank cell is a row error until a unit for blank rows is chosen on the preview</td>
+            <td>G, MG, AF or CCF: gallons, million gallons, acre-feet or hundred cubic feet. When this cell is blank, choose the unit on the preview.</td>
           </tr>
           <tr>
             <td class="col-name">Quantity as in Units Reported</td>
@@ -131,8 +131,8 @@
       </table>
     </div>
 
-    <h3 class="section-header-sm mt-lg">The operator&rsquo;s monthly log</h3>
-    <p class="text-base text-secondary mt-sm">The log has one column per source. On the preview you choose the report year and one unit for the whole file; the unit is gallons unless you change it.</p>
+    <h3 class="section-header-sm mt-lg">A monthly log on the eAR template</h3>
+    <p class="text-base text-secondary mt-sm">The monthly log has one column per type of water. On the preview, enter the report year and choose one unit for the whole file. Gallons is the default.</p>
     <div class="table-scroll mt-sm">
       <table class="data-table help-cases-table">
         <thead>
@@ -146,42 +146,42 @@
           <tr>
             <td class="col-name">Date/Month</td>
             <td class="col-sure">Yes</td>
-            <td>Month name; a row that is not a month, such as Maximum Day, Annual Total or Percent Treated, is skipped and named</td>
+            <td>The month name. OpenH2O skips summary rows such as Maximum Day, Annual Total and Percent Treated, and lists those rows on the preview.</td>
           </tr>
           <tr>
             <td class="col-name">Water Produced from Groundwater (Wells)</td>
-            <td class="col-sure">One source at least</td>
+            <td class="col-sure">At least one of the six</td>
             <td>Recorded as Groundwater</td>
           </tr>
           <tr>
             <td class="col-name">Water Produced from Surface Water</td>
-            <td class="col-sure">One source at least</td>
+            <td class="col-sure">At least one of the six</td>
             <td>Recorded as Surface water</td>
           </tr>
           <tr>
             <td class="col-name">Finished Water Purchased or Received from another PWS</td>
-            <td class="col-sure">One source at least</td>
+            <td class="col-sure">At least one of the six</td>
             <td>Recorded as Purchased</td>
           </tr>
           <tr>
             <td class="col-name">Water Sold to Another PWS</td>
-            <td class="col-sure">One source at least</td>
+            <td class="col-sure">At least one of the six</td>
             <td>Recorded as Sold</td>
           </tr>
           <tr>
             <td class="col-name">Non-potable (exclude recycled)</td>
-            <td class="col-sure">One source at least</td>
+            <td class="col-sure">At least one of the six</td>
             <td>Recorded as Non-potable</td>
           </tr>
           <tr>
             <td class="col-name">Recycled</td>
-            <td class="col-sure">One source at least</td>
+            <td class="col-sure">At least one of the six</td>
             <td>Recorded as Recycled</td>
           </tr>
           <tr>
             <td class="col-name">Total Amount of Potable Water</td>
             <td class="col-sure">No</td>
-            <td>Never read; it totals the source columns above</td>
+            <td>The sum of groundwater, surface water and purchased water. OpenH2O does not read this column.</td>
           </tr>
         </tbody>
       </table>

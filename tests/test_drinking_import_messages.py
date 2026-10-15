@@ -502,3 +502,14 @@ class TestTheProductionRowErrors:
         assert "1 imported" in body
         assert "OpenH2O imported 1 production record." in body
         assert ws.production_records.count() == 1
+
+    def test_the_column_tables(self, auth_client):
+        """Message T, approved 2026-10-15 08:50 PDT."""
+        body = auth_client.get(reverse("drinking:production_import")).content.decode()
+        for line in ("Columns OpenH2O reads", "The eAR export",
+                     "A monthly log on the eAR template",
+                     "The sum of groundwater, surface water and purchased water. "
+                     "OpenH2O does not read this column.",
+                     "At least one of the six", "Gallons is the default."):
+            assert line in body, line
+        assert "totals the source columns above" not in body
