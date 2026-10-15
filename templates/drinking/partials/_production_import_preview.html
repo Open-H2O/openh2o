@@ -15,7 +15,8 @@ pressed.
 {% endif %}
 
 <div class="card-raised">
-  <h2 class="card-header-ruled">Settings: {{ row_count }} row{{ row_count|pluralize }}{% if layout == "ear" %}, the state&rsquo;s eAR export{% elif layout == "operator_log" %}, the operator&rsquo;s monthly log{% endif %}</h2>
+  {% comment %} Message S, approved by Brent 2026-10-15 08:43 PDT (150.1-02 screen 18). {% endcomment %}
+  <h2 class="card-header-ruled">{{ row_count }} row{{ row_count|pluralize }} from {% if layout == "ear" %}an eAR export{% else %}a monthly log{% endif %}</h2>
 
   <form id="production-import-mapping-form" class="mt-lg">
     {% csrf_token %}
@@ -25,19 +26,19 @@ pressed.
     <div class="form-group">
       <label class="form-label" for="production-unit-for-blank">Unit for rows with a blank unit</label>
       <select id="production-unit-for-blank" name="unit_for_blank" class="form-select">
-        <option value=""{% if not unit_for_blank %} selected{% endif %}>(none chosen; a blank-unit row is an error)</option>
+        <option value=""{% if not unit_for_blank %} selected{% endif %}>Not chosen</option>
         {% for value, label in unit_choices %}
         <option value="{{ value }}"{% if unit_for_blank == value %} selected{% endif %}>{{ label }}</option>
         {% endfor %}
       </select>
-      <div class="form-help">This unit applies only to a row whose own "Units of Measure As Reported" cell is empty.</div>
+      <div class="form-help">OpenH2O applies this unit to every row that gives no unit.</div>
     </div>
     {% else %}
     <div class="form-row-2col">
       <div class="form-group">
         <label class="form-label" for="production-operator-year">Report year</label>
-        <input type="number" id="production-operator-year" name="operator_year" class="form-input" value="{{ operator_year }}" placeholder="e.g. 2022">
-        <div class="form-help">The operator's log carries no year of its own.</div>
+        <input type="number" id="production-operator-year" name="operator_year" class="form-input" value="{{ operator_year }}" placeholder="2022">
+        <div class="form-help">The log has no year column.</div>
         {% if year_missing %}<div class="form-error-text">Enter the report year above, then press Update preview.</div>{% endif %}
       </div>
       <div class="form-group">
@@ -47,7 +48,7 @@ pressed.
           <option value="{{ value }}"{% if operator_unit == value %} selected{% endif %}>{{ label }}</option>
           {% endfor %}
         </select>
-        <div class="form-help">This unit applies to every row. The log carries no per-row unit.</div>
+        <div class="form-help">OpenH2O reads every figure in the log in this unit.</div>
       </div>
     </div>
     {% endif %}
@@ -66,20 +67,20 @@ pressed.
 </div>
 
 <div class="card-raised">
-  <h3 class="section-header-sm">What this would do</h3>
+  <h3 class="section-header-sm">Preview</h3>
   <div class="row-start" style="gap: var(--space-sm); margin-top: var(--space-md); flex-wrap: wrap;">
-    <span class="badge badge-green">Create {{ created }}</span>
-    {% if skipped_duplicates %}<span class="badge badge-orange">Already on file {{ skipped_duplicates }}</span>{% endif %}
-    {% if duplicate_rows_in_file %}<span class="badge badge-orange">Repeated in file {{ duplicate_rows_in_file }}</span>{% endif %}
-    {% if skipped_rows %}<span class="badge badge-grey">Not a month {{ skipped_rows|length }}</span>{% endif %}
-    {% if errors %}<span class="badge badge-orange">Errors {{ errors|length }}</span>{% endif %}
+    <span class="badge badge-green">{{ created }} to import</span>
+    {% if skipped_duplicates %}<span class="badge badge-orange">{{ skipped_duplicates }} already on file</span>{% endif %}
+    {% if duplicate_rows_in_file %}<span class="badge badge-orange">{{ duplicate_rows_in_file }} repeated in this file</span>{% endif %}
+    {% if skipped_rows %}<span class="badge badge-grey">{{ skipped_rows|length }} not a month</span>{% endif %}
+    {% if errors %}<span class="badge badge-orange">{{ errors|length }} with errors</span>{% endif %}
   </div>
 </div>
 
 {% if skipped_rows %}
 <div class="card-raised">
-  <h3 class="section-header-sm">Rows that are not a month</h3>
-  <p class="text-base text-secondary mt-md">These are skipped, never guessed at as a thirteenth month.</p>
+  <h3 class="section-header-sm">Rows that are not monthly figures</h3>
+  <p class="text-base text-secondary mt-md">OpenH2O skips these rows.</p>
   <table class="data-table mt-md">
     <thead><tr><th style="width: 6rem;">Row</th><th>Value</th></tr></thead>
     <tbody>
@@ -93,9 +94,9 @@ pressed.
 
 {% if errors %}
 <div class="card-raised">
-  <h3 class="section-header-sm">Row errors</h3>
+  <h3 class="section-header-sm">Rows with errors</h3>
   <table class="data-table mt-md">
-    <thead><tr><th style="width: 6rem;">Row</th><th>Problem</th></tr></thead>
+    <thead><tr><th style="width: 6rem;">Row</th><th>What is wrong</th></tr></thead>
     <tbody>
       {% for err in errors %}
       <tr><td class="text-mono">{{ err.line }}</td><td class="text-furnace">{{ err.message }}</td></tr>
@@ -109,7 +110,7 @@ pressed.
 {% if preview_rows %}
 <div class="card-raised">
   {% if row_count > preview_rows|length %}
-  <p class="text-base text-secondary">Showing the first {{ preview_rows|length }} of {{ row_count }} rows</p>
+  <p class="text-base text-secondary">The file&rsquo;s first {{ preview_rows|length }} of {{ row_count }} rows</p>
   {% endif %}
   <div class="table-scroll{% if row_count > preview_rows|length %} mt-md{% endif %}">
   <table class="data-table" id="production-import-rows">

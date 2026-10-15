@@ -13,25 +13,23 @@ and why.
   <h2 class="card-header-ruled">Import complete</h2>
 
   <div class="row-start" style="gap: var(--space-sm); margin-top: var(--space-md); flex-wrap: wrap;">
-    <span class="badge badge-green">Created {{ created }}</span>
-    {% if skipped_duplicates %}<span class="badge badge-orange">Already on file {{ skipped_duplicates }}</span>{% endif %}
-    {% if duplicate_rows_in_file %}<span class="badge badge-orange">Repeated in file {{ duplicate_rows_in_file }}</span>{% endif %}
-    {% if skipped_rows %}<span class="badge badge-grey">Not a month {{ skipped_rows|length }}</span>{% endif %}
-    {% if errors %}<span class="badge badge-orange">Errors {{ errors|length }}</span>{% endif %}
+    <span class="badge badge-green">{{ created }} imported</span>
+    {% if skipped_duplicates %}<span class="badge badge-orange">{{ skipped_duplicates }} already on file</span>{% endif %}
+    {% if duplicate_rows_in_file %}<span class="badge badge-orange">{{ duplicate_rows_in_file }} repeated in this file</span>{% endif %}
+    {% if skipped_rows %}<span class="badge badge-grey">{{ skipped_rows|length }} not a month</span>{% endif %}
+    {% if errors %}<span class="badge badge-orange">{{ errors|length }} with errors</span>{% endif %}
   </div>
 
   {% comment %}
     149.1-06: one line with the counts, or "Nothing to import." when the
     file gave nothing to create, skip or report; each arm its own <p>.
   {% endcomment %}
-  {% if not created and not skipped_duplicates and not errors %}
-  <p class="text-base text-secondary mt-md">Nothing to import.</p>
-  {% else %}
-  <p class="text-base text-secondary mt-md">Created {{ created }} production record{{ created|pluralize }}{% if skipped_duplicates %}; {{ skipped_duplicates }} already on file, skipped, never overwritten{% endif %}.</p>
-  {% endif %}
+  {% comment %} Message S, approved by Brent 2026-10-15 08:43 PDT. {% endcomment %}
+  <p class="text-base text-secondary mt-md">{% if created %}OpenH2O imported {{ created }} production record{{ created|pluralize }}.{% else %}OpenH2O imported no production records.{% endif %}</p>
 
   {% if skipped_rows %}
-  <h3 class="section-header-sm mt-lg">Rows that are not a month</h3>
+  <h3 class="section-header-sm mt-lg">Rows that are not monthly figures</h3>
+  <p class="text-base text-secondary mt-sm">OpenH2O skips these rows.</p>
   <table class="data-table mt-md">
     <thead><tr><th style="width: 6rem;">Row</th><th>Value</th></tr></thead>
     <tbody>
@@ -43,9 +41,9 @@ and why.
   {% endif %}
 
   {% if errors %}
-  <h3 class="section-header-sm mt-lg">Row errors</h3>
+  <h3 class="section-header-sm mt-lg">Rows with errors</h3>
   <table class="data-table mt-md">
-    <thead><tr><th style="width: 6rem;">Row</th><th>Problem</th></tr></thead>
+    <thead><tr><th style="width: 6rem;">Row</th><th>What is wrong</th></tr></thead>
     <tbody>
       {% for err in errors %}
       <tr><td class="text-mono">{{ err.line }}</td><td class="text-furnace">{{ err.message }}</td></tr>

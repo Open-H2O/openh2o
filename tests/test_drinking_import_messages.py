@@ -476,3 +476,29 @@ class TestTheProductionRowErrors:
             reverse("drinking:production_import_commit"), {"rows_json": rows}
         ).content.decode()
         assert "Enter the report year above, then press Update preview." in body
+
+    def test_the_preview_and_result_lines(self, auth_client):
+        """Message S, approved 2026-10-15 08:43 PDT."""
+        from tests.factories import WaterSystemFactory
+
+        ws = WaterSystemFactory(pwsid="CA2410009")
+        csv_text = self.E + "CA2410009,2024,May,,GW,G,1\nCA2410009,2024,May,,GW,G,1\n,2024,June,,GW,G,1\n"
+        upload = SimpleUploadedFile("p.csv", csv_text.encode(), content_type="text/csv")
+        body = auth_client.post(
+            reverse("drinking:production_import_preview"), {"file": upload}
+        ).content.decode()
+        for line in ("3 rows from an eAR export", "1 to import", "1 repeated in this file",
+                     "1 with errors", "Rows with errors", "What is wrong",
+                     "OpenH2O applies this unit to every row that gives no unit.",
+                     ">Not chosen<"):
+            assert line in body, line
+        rows = json.dumps([{"PWSID": "CA2410009", "Year": "2024", "Month": "May",
+                            "DateStartOfMonth": "", "TypeCode": "GW",
+                            "Units of Measure As Reported": "G",
+                            "Quantity as in Units Reported": "1"}])
+        body = auth_client.post(
+            reverse("drinking:production_import_commit"), {"rows_json": rows}
+        ).content.decode()
+        assert "1 imported" in body
+        assert "OpenH2O imported 1 production record." in body
+        assert ws.production_records.count() == 1

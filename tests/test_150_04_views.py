@@ -180,7 +180,7 @@ def test_v2_a_three_row_file_lists_its_three_rows(auth_client):
     assert 'id="production-import-rows"' in body
     assert _listed_rows(body) == 3
     assert "<th>Quantity as in Units Reported</th>" in body, "the file's own column names"
-    assert "Showing the first" not in body
+    assert "first 50 of" not in body
 
 
 def test_v2_a_sixty_row_file_lists_fifty_and_says_so(auth_client):
@@ -194,7 +194,7 @@ def test_v2_a_sixty_row_file_lists_fifty_and_says_so(auth_client):
 
     assert 'id="production-import-rows"' in body
     assert _listed_rows(body) == 50
-    assert "Showing the first 50 of 60 rows" in body
+    assert "The file&rsquo;s first 50 of 60 rows" in body
 
 
 # ---------------------------------------------------------------------------
