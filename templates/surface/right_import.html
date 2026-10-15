@@ -82,7 +82,7 @@
           <tr>
             <td class="col-name"><code>WATER_RIGHT_TYPE</code></td>
             <td>Yes</td>
-            <td>Right type, matched by name to a type on file</td>
+            <td>The right type. OpenH2O adds any right type not yet on file, spelled as the file spells it.</td>
           </tr>
           <tr>
             <td class="col-name"><code>PRIMARY_OWNER_NAME</code></td>
@@ -112,7 +112,7 @@
           <tr>
             <td class="col-name"><code>FACE_VALUE_UNITS</code></td>
             <td>No</td>
-            <td>Checked, never stored; a unit other than &ldquo;Acre-feet per Year&rdquo; skips the row</td>
+            <td>OpenH2O keeps the face value only when this column reads Acre-feet per Year. Otherwise OpenH2O imports the right without its face value.</td>
           </tr>
           <tr>
             <td class="col-name"><code>MAX_DD_APPL</code></td>
@@ -122,7 +122,7 @@
           <tr>
             <td class="col-name"><code>MAX_DD_UNITS</code></td>
             <td>No</td>
-            <td>Checked, never stored; a unit other than &ldquo;Cubic Feet per Second&rdquo; skips the row</td>
+            <td>OpenH2O keeps the maximum rate only when this column reads Cubic Feet per Second. Otherwise OpenH2O imports the right without its maximum rate.</td>
           </tr>
           <tr>
             <td class="col-name"><code>PRIORITY_DATE</code></td>

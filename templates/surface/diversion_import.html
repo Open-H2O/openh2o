@@ -13,7 +13,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Import diversion records</span>
   </nav>
-  <p class="page-description">Upload California's Water Use Reported export or your own book of deliveries as a CSV file, preview it, then import one record per point, month and type.</p>
+  <p class="page-description">This page imports monthly diversion volumes from a CSV file: California's Water Use Reported export or your own book of deliveries.</p>
 </div>
 {% endblock %}
 
@@ -24,7 +24,7 @@
 
   <div class="card-raised">
     <h2 class="card-header-ruled">Diversion volumes</h2>
-    <p class="text-base text-secondary mt-md">Nothing is written until you press Import on the preview, which lists every conversion, combined month and unresolved row.</p>
+    <p class="text-base text-secondary mt-md">OpenH2O saves nothing until you press Import on the preview.</p>
 
     <form class="mt-lg"
       id="diversion-import-upload-form"
@@ -78,7 +78,7 @@
           <tr>
             <td class="col-name"><code>APPL_ID</code></td>
             <td>Yes</td>
-            <td>Application Number of a water right on file; its point is used when the right has only one</td>
+            <td>The water right's application number. When the right has a single point of diversion, OpenH2O assigns the volume to that point.</td>
           </tr>
           <tr>
             <td class="col-name"><code>YEAR</code></td>
@@ -88,12 +88,12 @@
           <tr>
             <td class="col-name"><code>MONTH</code></td>
             <td>Yes</td>
-            <td>Month number, 1 to 12, placed in a calendar month by the reporting-year setting on Delivery Settings</td>
+            <td>Month number, 1 to 12. The report year setting on Delivery Settings decides which calendar year each month falls in.</td>
           </tr>
           <tr>
             <td class="col-name"><code>DIVERSION_TYPE</code></td>
             <td>Yes</td>
-            <td>DIRECT or STORAGE; USE rows are settled on the preview; COMBINED is refused</td>
+            <td>DIRECT, STORAGE or USE. The preview asks how to count USE rows. OpenH2O does not import Combined (Direct + Storage) rows.</td>
           </tr>
           <tr>
             <td class="col-name"><code>AMOUNT</code></td>
@@ -103,17 +103,17 @@
           <tr>
             <td class="col-name"><code>APPL_POD</code></td>
             <td>No</td>
-            <td>Point on file, by name; used before <code>APPL_ID</code></td>
+            <td>The name of a point of diversion on file. When this column is filled in, OpenH2O uses that point rather than the application number.</td>
           </tr>
           <tr>
             <td class="col-name"><code>calendar_month</code></td>
             <td>No</td>
-            <td>YYYY-MM; used in place of <code>YEAR</code> and <code>MONTH</code></td>
+            <td>The calendar month, written YYYY-MM. When filled in, this column replaces YEAR and MONTH.</td>
           </tr>
           <tr>
             <td class="col-name">A record already on file</td>
             <td></td>
-            <td>Skipped, never overwritten, for the same point, month and type; one the platform estimated is replaced</td>
+            <td>OpenH2O skips a row when its point, month and type already have a volume on file. OpenH2O replaces its own estimate for that month with the imported volume.</td>
           </tr>
         </tbody>
       </table>
@@ -148,27 +148,27 @@
           <tr>
             <td class="col-name"><code>volume</code> and <code>unit</code></td>
             <td>One of three</td>
-            <td>Unit af, gallons, ccf, mg or cfs_hours; converted to acre-feet</td>
+            <td>The unit is af, gallons, ccf, mg or cfs_hours. OpenH2O converts the volume to acre-feet.</td>
           </tr>
           <tr>
             <td class="col-name"><code>flow_cfs</code> and <code>hours</code></td>
             <td>One of three</td>
-            <td>Converted to acre-feet at 1.9835 acre-feet per cfs-day</td>
+            <td>OpenH2O converts flow and hours to acre-feet at 1.9835 acre-feet per cfs-day.</td>
           </tr>
           <tr>
             <td class="col-name"><code>type</code></td>
             <td>No</td>
-            <td>direct, storage or use; blank reads as direct</td>
+            <td>direct, storage or use. OpenH2O reads a blank as direct.</td>
           </tr>
           <tr>
             <td class="col-name"><code>returned</code></td>
             <td>No</td>
-            <td>Returned to stream, acre-feet</td>
+            <td>Acre-feet that went back to the stream.</td>
           </tr>
           <tr>
             <td class="col-name">A record already on file</td>
             <td></td>
-            <td>Skipped, never overwritten, for the same point, month and type; one the platform estimated is replaced</td>
+            <td>OpenH2O skips a row when its point, month and type already have a volume on file. OpenH2O replaces its own estimate for that month with the imported volume.</td>
           </tr>
         </tbody>
       </table>

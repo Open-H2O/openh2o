@@ -273,3 +273,25 @@ def test_the_import_preview_labels_the_data_status(auth_client, one_point):
     ).content.decode()
     assert ">Data status</label>" in body
     assert "Data state" not in body
+
+
+# --- message G: the two import pages, read whole ------------------------------
+
+
+def test_the_rights_page_describes_what_the_import_now_does(auth_client):
+    body = " ".join(auth_client.get(reverse("surface:water_right_import")).content.decode().split())
+    assert "skips the row" not in body
+    assert "OpenH2O adds any right type not yet on file, spelled as the file spells it." in body
+    assert (
+        "OpenH2O keeps the face value only when this column reads Acre-feet per Year. "
+        "Otherwise OpenH2O imports the right without its face value."
+    ) in body
+
+
+def test_the_diversion_page_says_what_it_imports(auth_client):
+    body = " ".join(auth_client.get(reverse("surface:diversion_import")).content.decode().split())
+    assert (
+        "This page imports monthly diversion volumes from a CSV file: California's "
+        "Water Use Reported export or your own book of deliveries."
+    ) in body.replace("&#x27;", "'").replace("&#39;", "'")
+    assert "OpenH2O saves nothing until you press Import on the preview." in body
