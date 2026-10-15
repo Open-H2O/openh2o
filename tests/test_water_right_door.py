@@ -279,17 +279,20 @@ def test_second_import_of_the_same_file_creates_nothing_and_skips_one(auth_clien
     body = second_commit.content.decode()
     assert "Created 0" in body
     assert "Skipped 1" in body
-    assert "already exists" in body
+    assert "Water right A001885 is already on file." in body
     assert WaterRight.objects.filter(right_id="A001885").count() == 1
 
 
-def test_unknown_water_right_type_is_a_row_error(auth_client):
+def test_a_type_not_on_file_is_added_as_the_file_writes_it(auth_client):
+    """150.1-02 screen 18, message E row 4 (Brent 2026-10-14 18:47): a type
+    the seeded rows do not carry, such as eWRIMS's "Statement of Div and Use",
+    is added the first time a file carries it, not refused."""
     csv_body = RIGHTS_LIST_HEADER + "\n" + RIGHTS_LIST_ROW_A001885.replace(
-        "Appropriative", "Mystery Type", 1
+        "Appropriative", "Statement of Div and Use", 1
     ) + "\n"
     preview = _upload_csv(auth_client, csv_body)
     commit = _commit_from_preview(auth_client, preview, csv_body)
     body = commit.content.decode()
-    assert "Created 0" in body
-    assert "matches no seeded water right type" in body
-    assert not WaterRight.objects.filter(right_id="A001885").exists()
+    assert "Created 1" in body
+    right = WaterRight.objects.get(right_id="A001885")
+    assert right.right_type.name == "Statement of Div and Use"

@@ -486,6 +486,16 @@ class DeliverySettingsForm(forms.Form):
                     "Enter the share left in the basin when crediting the "
                     "landowner.",
                 )
+        if self.shows_diversion_settings:
+            # 150.1-02 screen 18 (Brent 18:01, message B row 9): a season with
+            # no starting month failed every row of a Water Use Reported file.
+            if (
+                cleaned.get("diversion_report_year_rule") == "season"
+                and not cleaned.get("season_start_month")
+            ):
+                self.add_error(
+                    "season_start_month", "Enter the season's starting month."
+                )
         return cleaned
 
     def save(self):

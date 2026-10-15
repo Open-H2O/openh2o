@@ -156,6 +156,7 @@ CALIFORNIA_NAMES: tuple = (
     (r"California's \**Sustainable Groundwater Management Act", "SGMA spelled out"),
     (r"California DDW", "DDW is California's Division of Drinking Water"),
     (r"California.s SDWIS format", "the lab file layout is California's Division of Drinking Water's (Brent, 2026-10-14 13:33)"),
+    (r"California.s Water Use Reported export", "the State Water Board's published diversion file (Brent, 2026-10-14 18:41)"),
     (r"California.s Electronic\s+Annual\s+Report", "the eAR is California's report (Brent, 2026-10-14 15:12)"),
     (r"real,? (?:published )?California basin", "the demonstration's real geography"),
     (r"open up California's water data", "the Consortium's purpose, in its own terms"),

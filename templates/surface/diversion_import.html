@@ -13,7 +13,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Import diversion records</span>
   </nav>
-  <p class="page-description">Upload the state's Water Use Reported export or a ditch tender's book (CSV), preview it, then import one record per point, month and type.</p>
+  <p class="page-description">Upload California's Water Use Reported export or your own book of deliveries as a CSV file, preview it, then import one record per point, month and type.</p>
 </div>
 {% endblock %}
 
@@ -65,7 +65,7 @@
     <h2 class="card-header-ruled">Columns each layout carries</h2>
     <p class="text-secondary text-sm mt-md">The layout is recognized by its headers; a file with neither set is refused, naming the headers it found.</p>
 
-    <h3 class="section-header-sm help-subsection">The state's Water Use Reported export</h3>
+    <h3 class="section-header-sm help-subsection">California's Water Use Reported export</h3>
     <div class="table-scroll mt-md">
       <table class="data-table help-cases-table">
         <thead>
@@ -120,7 +120,7 @@
       </table>
     </div>
 
-    <h3 class="section-header-sm help-subsection">A ditch tender's book</h3>
+    <h3 class="section-header-sm help-subsection">A book of deliveries</h3>
     <div class="table-scroll mt-md">
       <table class="data-table help-cases-table">
         <thead>
@@ -133,13 +133,13 @@
         <tbody>
           <tr>
             <td class="col-name"><code>local_name</code>, <code>headgate</code>, <code>point</code> or <code>name</code></td>
-            <td>Yes</td>
-            <td>Point on file, by its local name or its name</td>
+            <td>No</td>
+            <td>A point of diversion on file, by its name or its local name. Without this column, choose one point of diversion for the whole file on the preview.</td>
           </tr>
           <tr>
             <td class="col-name"><code>date</code> or <code>month</code></td>
             <td>Yes</td>
-            <td>YYYY-MM-DD or YYYY-MM; the record's month</td>
+            <td>YYYY-MM-DD, YYYY-MM or M/D/YYYY; the record's month</td>
           </tr>
           <tr>
             <td class="col-name"><code>acre_feet</code> or <code>af</code></td>

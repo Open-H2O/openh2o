@@ -15,8 +15,9 @@ pressed.
 {% endif %}
 
 <div class="card-raised">
-  <h2 class="card-header-ruled">Match your settings: {{ row_count }} row{{ row_count|pluralize }}, {{ layout }} layout</h2>
-  <p class="text-base text-secondary mt-md">{{ rule_sentence }}</p>
+  {% comment %} 150.1-02 screen 18 (Brent 2026-10-14 18:41, message D row 10; 18:01, message B row 10): the heading names the file kind, and the year sentence shows for a Water Use Reported file only (a book's dates are read as written). {% endcomment %}
+  <h2 class="card-header-ruled">{{ row_count }} row{{ row_count|pluralize }} from {% if layout == "state" %}a Water Use Reported export{% else %}a book of deliveries{% endif %}</h2>
+  {% if layout == "state" %}<p class="text-base text-secondary mt-md">{{ rule_sentence }}</p>{% endif %}
 
   <form id="diversion-import-mapping-form" class="mt-lg">
     {% csrf_token %}
@@ -141,7 +142,6 @@ pressed.
 {% if unresolved_rows %}
 <div class="card-raised">
   <h3 class="section-header-sm">Unresolved rows</h3>
-  <p class="text-base text-secondary mt-md">Nothing is written for these until a point is chosen for them, either by adding a column to the file or by picking a whole-file point above.</p>
   <table class="data-table mt-md">
     <thead><tr><th style="width: 6rem;">Row</th><th>Why</th></tr></thead>
     <tbody>

@@ -446,20 +446,25 @@ def test_commit_with_the_same_use_rule_as_stored_does_not_say_it_saved(auth_clie
 
 
 # ---------------------------------------------------------------------------
-# 10. A COMBINED row errors, naming the year
+# 10. A combined row is refused, under the state's own spelling too
 # ---------------------------------------------------------------------------
 
 
-def test_combined_type_errors_naming_the_year(db):
-    text = "APPL_ID,YEAR,MONTH,DIVERSION_TYPE,AMOUNT\nA100002,2013,3,COMBINED,50\n"
+@pytest.mark.parametrize("written", ["COMBINED", "Combined (Direct + Storage)"])
+def test_combined_type_is_refused(db, written):
+    """The state's file writes it "Combined (Direct + Storage)" (150.1-02
+    screen 18, message B row 4); the bare word is refused the same way."""
+    text = f"APPL_ID,YEAR,MONTH,DIVERSION_TYPE,AMOUNT\nA100002,2013,3,{written},50\n"
     columns, rows = _parse(text)
 
     result = _import(columns, rows, dry_run=False)
 
     assert result["created"] == 0
     assert len(result["errors"]) == 1
-    assert "2013" in result["errors"][0]["message"]
-    assert "COMBINED" in result["errors"][0]["message"]
+    assert result["errors"][0]["message"] == (
+        "OpenH2O does not import Combined (Direct + Storage) rows. Direct "
+        "diversion and storage need separate rows."
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -560,7 +565,7 @@ def test_diversion_import_preview_shows_mapping_and_totals(auth_client, shape1_p
     resp = auth_client.post(reverse("surface:diversion_import_preview"), {"file": upload})
     assert resp.status_code == 200
     body = resp.content.decode()
-    assert "state layout" in body
+    assert "from a Water Use Reported export" in body
     assert "rows_json" in body
 
 

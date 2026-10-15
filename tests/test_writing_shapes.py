@@ -94,7 +94,6 @@ BASELINE: dict = {
     "reporting/validators.py": {"em dash": 16},
     "reporting/views.py": {"em dash": 1},
     "setup/boundaries.py": {"em dash": 3, "district reader": 1},
-    "surface/views.py": {"double hyphen": 3},
     "CONTRIBUTING.md": {"em dash": 10, "California": 1},
     "DEPLOY.md": {"em dash": 124, "filler": 22, "stand-in": 3, "district reader": 27},
     "MAINTAINER.md": {"em dash": 10},

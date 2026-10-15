@@ -23,6 +23,31 @@ infrastructure/partials/_import_result.html:
     {% if skipped %}{{ skipped|length }} row{{ skipped|length|pluralize }} were skipped because of the problems below. Fix them in your file and re-import just those.{% else %}Every row was valid.{% endif %}
   </p>
 
+  {% if noted %}
+  {% comment %} 150.1-02 screen 18 (Brent 2026-10-14 18:47, message E rows 5 and 6): a right created without a face value or rate given in another unit. {% endcomment %}
+  <h3 class="section-header-sm mt-lg">Imported with a note</h3>
+  <table class="data-table mt-md">
+    <thead>
+      <tr>
+        <th style="width: 6rem;">Row</th>
+        <th>Note</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in noted %}
+      <tr>
+        <td class="text-mono">{{ row.index|add:1 }}</td>
+        <td>
+          {% for note in row.warnings %}
+          <div>{{ note }}</div>
+          {% endfor %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
   {% if skipped %}
   <table class="data-table mt-md">
     <thead>

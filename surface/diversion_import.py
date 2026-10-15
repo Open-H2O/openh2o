@@ -49,7 +49,7 @@ Rules enforced here, in order:
    has USE rows); otherwise it falls back to the deployment's remembered
    default, ``SiteConfig.diversion_use_type_rule``.
 3. WITHIN-FILE COMBINE. Two or more rows landing on the same (point, month,
-   diversion type) -- a ditch tender's book often carries two or more
+   diversion type) -- a book of deliveries often carries two or more
    deliveries a month at one headgate -- are summed into ONE record, never
    written as two. Reported as "N rows combined into one month" per group.
 4. POINT RESOLUTION, in order: the state's own ``APPL_POD`` column; else the
@@ -69,6 +69,7 @@ Rules enforced here, in order:
    validated.  The reporting period covering each row's month is attached
    the same way ``surface/views.py::diversion_record_create`` does.
 """
+import calendar
 import csv
 import io
 from datetime import date, datetime
@@ -81,6 +82,12 @@ from accounting.locks import finalized_message
 from accounting.models import ReportingPeriod
 from core.models import SiteConfig
 from surface.estimate import discard_estimate
+from surface.importer import (
+    NO_COLUMNS_MESSAGE,
+    NO_ROWS_MESSAGE,
+    NOT_CSV_MESSAGE,
+    too_large_message,
+)
 from surface.models import DiversionRecord, PointOfDiversion, WaterRight
 
 MAX_ROWS = 2000
@@ -136,14 +143,11 @@ def parse_csv(file_obj, filename=""):
     """
     name = (filename or "").lower()
     if name and not name.endswith(".csv"):
-        raise ImportError("Diversion import accepts CSV only.")
+        raise ImportError(NOT_CSV_MESSAGE)
 
     size = getattr(file_obj, "size", None)
     if size is not None and size > MAX_UPLOAD_BYTES:
-        raise ImportError(
-            f"File is too large ({size // (1024 * 1024)} MB); the upload cap "
-            f"is {MAX_UPLOAD_BYTES // (1024 * 1024)} MB."
-        )
+        raise ImportError(too_large_message(size, MAX_UPLOAD_BYTES))
 
     raw = file_obj.read()
     if isinstance(raw, bytes):
@@ -151,16 +155,24 @@ def parse_csv(file_obj, filename=""):
     reader = csv.DictReader(io.StringIO(raw))
     columns = list(reader.fieldnames or [])
     if not columns:
-        raise ImportError("CSV file appears empty or has no headers.")
+        raise ImportError(NO_COLUMNS_MESSAGE)
     rows = [{k: ("" if v is None else v) for k, v in row.items()} for row in reader]
     if not rows:
-        raise ImportError("CSV file has headers but no data rows.")
+        raise ImportError(NO_ROWS_MESSAGE)
     if len(rows) > MAX_ROWS:
-        raise ImportError(
-            f"Import is {len(rows)} rows, over the {MAX_ROWS}-row cap. "
-            "Re-upload a smaller file."
-        )
+        raise ImportError(row_cap_message(len(rows)))
     return columns, rows
+
+
+def row_cap_message(row_count):
+    """Split by point or by year: a split that puts one point's month in two
+    files loses the second part's volume, because the second import skips
+    that point, month and type as already on file (commit_rows)."""
+    return (
+        f"This file has {row_count:,} rows, and OpenH2O imports up to "
+        f"{MAX_ROWS:,} rows from one file. Split the file by point or by year "
+        "and import each part."
+    )
 
 
 def recognise_layout(columns):
@@ -174,13 +186,19 @@ def recognise_layout(columns):
 
     lower = {c.strip().lower() for c in columns if c}
     has_point = any(col in lower for col in _POINT_COLUMNS)
+    has_month = bool({"date", "month"} & lower)
     has_volume = any(col in lower for col in _VOLUME_COLUMNS) or "volume" in lower
     has_flow_hours = {"flow_cfs", "hours"} <= lower
-    if has_point and (has_volume or has_flow_hours):
+    # A book with no point column (one headgate) is a book: its rows take the
+    # point chosen for the whole file on the preview (Brent 2026-10-14 17:51,
+    # message A rows 8 and 9).
+    if (has_point or has_month) and (has_volume or has_flow_hours):
         return "book"
 
+    # The import page adds "The tables below list the columns OpenH2O
+    # imports." (surface/views.py LAYOUT_TABLES_SENTENCE).
     raise ImportError(
-        "Unrecognised file layout; headers seen: " + ", ".join(columns)
+        "OpenH2O does not recognize the columns in this file: " + ", ".join(columns) + "."
     )
 
 
@@ -194,9 +212,17 @@ def _cfs_hours_to_af(flow_cfs, hours):
 
 
 def _convert_generic_volume(amount, unit, line_num):
-    """('volume' + 'unit' book rows) -> (af, conversion-dict-or-None) | (None, error)."""
-    unit = (unit or "af").strip().lower()
-    if unit in ("", "af", "acre_feet", "acre-feet"):
+    """('volume' + 'unit' book rows) -> (af, conversion-dict-or-None) | (None, error).
+
+    A blank unit is an error (Brent 2026-10-14 18:34, message C row 7): it used
+    to be read as acre-feet with no note, so a book kept in gallons imported
+    325,851 times its water.
+    """
+    written = (unit or "").strip()
+    unit = written.lower()
+    if not unit:
+        return None, "The unit is blank. Enter af, gallons, ccf, mg or cfs_hours."
+    if unit in ("af", "acre_feet", "acre-feet", "acre-ft", "ac-ft", "acre feet", "acre ft"):
         return amount, None
     if unit in ("gallons", "gal", "g"):
         af = amount / GALLONS_PER_ACRE_FOOT
@@ -231,7 +257,10 @@ def _convert_generic_volume(amount, unit, line_num):
                       f"({ACRE_FEET_PER_CFS_DAY}/24 per cfs-hour)",
             "value": str(af.quantize(_FOUR_PLACES)),
         }
-    return None, f"unrecognised unit: {unit!r}"
+    return None, (
+        f"OpenH2O does not recognize the unit '{written}'. "
+        "Use af, gallons, ccf, mg or cfs_hours."
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -244,15 +273,21 @@ def resolve_point(row_l, whole_file_point, *, right_cache, right_points_cache):
 
     Order: APPL_POD; else the right (APPL_ID) when it has exactly one point
     on file; else a point-ish column (local_name / headgate / point / name);
-    else the whole-file point chosen in the mapping step. Returns
-    (PointOfDiversion, None) or (None, reason).
+    else the whole-file point chosen in the mapping step. A right not on file
+    falls through to the point column and the whole-file point (Brent
+    2026-10-14 18:41, message D row 3). Returns (PointOfDiversion, None) or
+    (None, reason).
     """
+    choose = "choose one point of diversion for the whole file above."
     appl_pod = row_l.get("appl_pod", "").strip()
     if appl_pod:
         point = PointOfDiversion.objects.filter(name=appl_pod).first()
         if point:
             return point, None
-        return None, f"point '{appl_pod}' not found (APPL_POD)"
+        return None, (
+            f"No point of diversion on file is named '{appl_pod}'. "
+            "Add the point first, or correct the name in the file."
+        )
 
     appl_id = row_l.get("appl_id", "").strip()
     right = None
@@ -260,16 +295,16 @@ def resolve_point(row_l, whole_file_point, *, right_cache, right_points_cache):
         if appl_id not in right_cache:
             right_cache[appl_id] = WaterRight.objects.filter(right_id=appl_id).first()
         right = right_cache[appl_id]
-        if right is None:
-            return None, f"water right '{appl_id}' not found; import the rights list first"
-        if right.pk not in right_points_cache:
-            right_points_cache[right.pk] = list(
-                PointOfDiversion.objects.filter(water_right=right)
-            )
-        points = right_points_cache[right.pk]
-        if len(points) == 1:
-            return points[0], None
-        # 0 or several points: fall through to a point column, then whole-file.
+        if right is not None:
+            if right.pk not in right_points_cache:
+                right_points_cache[right.pk] = list(
+                    PointOfDiversion.objects.filter(water_right=right)
+                )
+            points = right_points_cache[right.pk]
+            if len(points) == 1:
+                return points[0], None
+        # Not on file, or 0 or several points: fall through to a point
+        # column, then the whole-file point.
 
     for key in _POINT_COLUMNS:
         value = row_l.get(key, "").strip()
@@ -279,20 +314,34 @@ def resolve_point(row_l, whole_file_point, *, right_cache, right_points_cache):
                 point = PointOfDiversion.objects.filter(name=value).first()
             if point:
                 return point, None
-            return None, f"point '{value}' not found (by {key})"
+            return None, (
+                f"No point of diversion on file has the name or local name '{value}'. "
+                "Add the point first, or correct the name in the file."
+            )
 
     if whole_file_point is not None:
         return whole_file_point, None
 
-    if appl_id and right is not None:
+    if appl_id and right is None:
+        return None, (
+            f"No water right on file has the application number {appl_id}. "
+            f"Import the water right, or {choose}"
+        )
+    if appl_id:
         n = len(right_points_cache[right.pk])
         if n == 0:
-            return None, f"water right '{appl_id}' has no points of diversion on file"
+            return None, (
+                f"Water right {appl_id} has no point of diversion on file. "
+                f"{choose[0].upper()}{choose[1:]}"
+            )
         return None, (
-            f"water right '{appl_id}' has {n} points of diversion; "
-            "choose a point for the whole file"
+            f"Water right {appl_id} has {n} points of diversion, so OpenH2O cannot "
+            f"tell which one this row belongs to. Add an APPL_POD column, or {choose}"
         )
-    return None, "no point column, no APPL_POD and no whole-file point chosen"
+    return None, (
+        "This row names no point of diversion. Add a point column to the file, "
+        f"or {choose}"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -311,35 +360,47 @@ def _report_year_to_calendar_month(year, month_num, site_config):
     if rule == "season":
         start = site_config.season_start_month
         if not start:
-            return None, (
-                "diversion_report_year_rule is 'season' but season_start_month "
-                "is not set"
-            )
+            return None, SEASON_WITHOUT_START
     else:
         start = 10  # water_year: October fixed.
     calendar_year = year - 1 if month_num >= start else year
     return date(calendar_year, month_num, 1), None
 
 
-def rule_sentence(site_config):
-    """The plain sentence naming which report-year rule was applied (146-03
+#: Brent 2026-10-14 18:01, message B row 9 (Delivery Settings now refuses it).
+SEASON_WITHOUT_START = (
+    "The report year on Delivery Settings is a season with no starting month. "
+    "Enter the starting month on Delivery Settings."
+)
 
-    Task 4 correction 1: the preview must say so, not leave it implicit).
+
+def rule_sentence(site_config):
+    """How YEAR and MONTH become a calendar month, said above the preview's
+    settings for a Water Use Reported file only (Brent 2026-10-14 18:01,
+    message B row 10). A season is read as ending in YEAR, as a water year is.
     """
     rule = site_config.diversion_report_year_rule
     if rule == "calendar_year":
-        return "Calendar year: YEAR and MONTH are read as written."
+        return "OpenH2O reads YEAR and MONTH as the calendar year and month."
     if rule == "season":
         start = site_config.season_start_month
+        if not start:
+            return SEASON_WITHOUT_START
+        start_name = calendar.month_name[start]
+        if start == 1:
+            span = f"a season starting in {start_name} and ending in December"
+        else:
+            span = (
+                f"a season starting in {start_name} and ending the next "
+                f"{calendar.month_name[start - 1]}"
+            )
         return (
-            f"Season starting month {start}: MONTH {start} and later belong to "
-            "the prior calendar year, the rest to the report year."
-            if start else
-            "Season rule selected, but no season_start_month is set."
+            f"OpenH2O reads YEAR as {span}, so MONTH {start} through 12 fall in "
+            "the calendar year before YEAR."
         )
     return (
-        "Water year: MONTH 10, 11 and 12 belong to the prior calendar year; "
-        "MONTH 1 through 9 belong to the report year."
+        "OpenH2O reads YEAR as the water year ending in September, so MONTH 10, "
+        "11 and 12 fall in the calendar year before YEAR."
     )
 
 
@@ -361,14 +422,14 @@ def _process_state_row(line_num, row, *, whole_file_point, right_cache,
 
     appl_id = row_l.get("appl_id", "")
     if not appl_id:
-        errors.append("missing APPL_ID")
+        errors.append("APPL_ID is blank.")
 
     year = None
     year_raw = row_l.get("year", "")
     try:
         year = int(year_raw)
     except ValueError:
-        errors.append(f"invalid YEAR: {year_raw!r}")
+        errors.append(f"YEAR '{year_raw}' is not a year.")
 
     month_num = None
     month_raw = row_l.get("month", "")
@@ -377,26 +438,32 @@ def _process_state_row(line_num, row, *, whole_file_point, right_cache,
         if not (1 <= month_num <= 12):
             raise ValueError
     except ValueError:
-        errors.append(f"invalid MONTH: {month_raw!r}")
+        errors.append(f"MONTH '{month_raw}' is not a month number from 1 to 12.")
 
-    dtype_raw = row_l.get("diversion_type", "").strip().upper()
-    if dtype_raw == "COMBINED":
+    dtype_written = row_l.get("diversion_type", "").strip()
+    dtype_raw = dtype_written.upper()
+    # The state writes it "Combined (Direct + Storage)" (its data dictionary;
+    # message B row 4), so match the word, not the whole value.
+    if dtype_raw.startswith("COMBINED"):
         errors.append(
-            f"COMBINED diversion type is not supported (pre-2015 file, "
-            f"year {year_raw or '?'})"
+            "OpenH2O does not import Combined (Direct + Storage) rows. Direct "
+            "diversion and storage need separate rows."
         )
     elif dtype_raw not in _STATE_TYPE_MAP:
-        errors.append(f"unrecognised DIVERSION_TYPE: {dtype_raw!r}")
+        errors.append(
+            f"OpenH2O does not recognize the diversion type '{dtype_written}'. "
+            "Use DIRECT, STORAGE or USE."
+        )
 
     amount = None
     amount_raw = row_l.get("amount", "")
     if not amount_raw:
-        errors.append("missing AMOUNT")
+        errors.append("AMOUNT is blank.")
     else:
         try:
             amount = Decimal(amount_raw)
         except InvalidOperation:
-            errors.append(f"invalid AMOUNT: {amount_raw!r}")
+            errors.append(f"AMOUNT '{amount_raw}' is not a number.")
 
     if errors:
         return {"line": line_num, "errors": errors}
@@ -411,7 +478,7 @@ def _process_state_row(line_num, row, *, whole_file_point, right_cache,
         except (ValueError, TypeError):
             return {
                 "line": line_num,
-                "errors": [f"invalid calendar_month: {calendar_month_raw!r}"],
+                "errors": [f"calendar_month '{calendar_month_raw}' is not written YYYY-MM."],
             }
     else:
         month_date, rule_error = _report_year_to_calendar_month(year, month_num, site_config)
@@ -439,7 +506,7 @@ def _process_state_row(line_num, row, *, whole_file_point, right_cache,
 
 
 def _parse_book_month(raw):
-    for fmt in ("%Y-%m-%d", "%Y-%m"):
+    for fmt in ("%Y-%m-%d", "%Y-%m", "%m/%d/%Y"):
         try:
             return datetime.strptime(raw, fmt).date().replace(day=1)
         except ValueError:
@@ -466,23 +533,30 @@ def _process_book_row(line_num, row, *, whole_file_point, right_cache, right_poi
             month_source = key
             month_date = _parse_book_month(raw)
             if month_date is None:
-                errors.append(f"invalid {key}: {raw!r}")
+                errors.append(
+                    f"The {key} '{raw}' is not written YYYY-MM-DD, YYYY-MM or M/D/YYYY."
+                )
             break
     if month_source is None:
-        errors.append("no date or month column to determine the reporting month")
+        errors.append("This row has no date or month.")
 
-    type_raw = row_l.get("type", "").strip().lower()
+    type_written = row_l.get("type", "").strip()
+    type_raw = type_written.lower()
     if not type_raw:
         kind = "direct_use"
     elif type_raw in _BOOK_TYPE_MAP:
         kind = _BOOK_TYPE_MAP[type_raw]
     else:
-        errors.append(f"unrecognised type: {type_raw!r}")
+        errors.append(
+            f"OpenH2O does not recognize the diversion type '{type_written}'. "
+            "Use direct, storage or use."
+        )
         kind = None
 
     conversions = []
     amount = None
-    acre_feet_raw = row_l.get("acre_feet", "") or row_l.get("af", "")
+    acre_feet_col = "acre_feet" if row_l.get("acre_feet", "") else "af"
+    acre_feet_raw = row_l.get(acre_feet_col, "")
     volume_raw = row_l.get("volume", "")
     flow_cfs_raw = row_l.get("flow_cfs", "")
     hours_raw = row_l.get("hours", "")
@@ -491,13 +565,13 @@ def _process_book_row(line_num, row, *, whole_file_point, right_cache, right_poi
         try:
             amount = Decimal(acre_feet_raw)
         except InvalidOperation:
-            errors.append(f"invalid acre_feet: {acre_feet_raw!r}")
+            errors.append(f"The {acre_feet_col} value '{acre_feet_raw}' is not a number.")
     elif volume_raw:
         try:
             raw_amount = Decimal(volume_raw)
         except InvalidOperation:
             raw_amount = None
-            errors.append(f"invalid volume: {volume_raw!r}")
+            errors.append(f"The volume value '{volume_raw}' is not a number.")
         if raw_amount is not None:
             unit = row_l.get("unit", "")
             converted, conv = _convert_generic_volume(raw_amount, unit, line_num)
@@ -508,12 +582,16 @@ def _process_book_row(line_num, row, *, whole_file_point, right_cache, right_poi
                 if conv is not None:
                     conversions.append(conv)
     elif flow_cfs_raw and hours_raw:
+        flow_cfs = hours = None
         try:
             flow_cfs = Decimal(flow_cfs_raw)
+        except InvalidOperation:
+            errors.append(f"The flow_cfs value '{flow_cfs_raw}' is not a number.")
+        try:
             hours = Decimal(hours_raw)
         except InvalidOperation:
-            errors.append(f"invalid flow_cfs/hours: {flow_cfs_raw!r}/{hours_raw!r}")
-        else:
+            errors.append(f"The hours value '{hours_raw}' is not a number.")
+        if flow_cfs is not None and hours is not None:
             amount = _cfs_hours_to_af(flow_cfs, hours)
             conversions.append({
                 "line": line_num,
@@ -524,7 +602,10 @@ def _process_book_row(line_num, row, *, whole_file_point, right_cache, right_poi
                 "value": str(amount.quantize(_FOUR_PLACES)),
             })
     else:
-        errors.append("no acre_feet, volume or flow_cfs/hours column to compute a volume")
+        errors.append(
+            "This row has no volume. Fill in the acre_feet, af or volume column, "
+            "or both the flow_cfs and hours columns."
+        )
 
     returned = Decimal("0")
     returned_raw = row_l.get("returned", "")
@@ -532,7 +613,7 @@ def _process_book_row(line_num, row, *, whole_file_point, right_cache, right_poi
         try:
             returned = Decimal(returned_raw)
         except InvalidOperation:
-            errors.append(f"invalid returned: {returned_raw!r}")
+            errors.append(f"The returned value '{returned_raw}' is not a number.")
 
     max_flow_cfs = None
     if flow_cfs_raw:
@@ -621,7 +702,7 @@ def build_rows(columns, rows, layout, *, whole_file_point=None, method="",
             )
 
         if entry.get("errors"):
-            errors.append({"line": line_num, "message": "; ".join(entry["errors"])})
+            errors.append({"line": line_num, "message": " ".join(entry["errors"])})
             continue
 
         conversions.extend(entry["conversions"])
@@ -689,8 +770,9 @@ def build_rows(columns, rows, layout, *, whole_file_point=None, method="",
             errors.append({
                 "line": use_group["lines"][0],
                 "message": (
-                    f"USE row(s) for {use_group['point']} {month:%Y-%m} have "
-                    "no matching DIRECT row to attach a returned volume to"
+                    f"{use_group['point']} has a USE row for {month:%Y-%m} and no "
+                    "DIRECT row, so OpenH2O cannot calculate the water returned "
+                    "to the stream."
                 ),
             })
             continue
@@ -857,7 +939,10 @@ def commit_rows(built, *, method="", data_state="provisional", dry_run=False):
             except Exception as exc:
                 errors.append({
                     "line": ", ".join(str(n) for n in c["source_lines"]),
-                    "message": f"{type(exc).__name__}: {exc}",
+                    "message": (
+                        "An unexpected error stopped OpenH2O from saving this "
+                        f"record. Details: {type(exc).__name__}: {exc}"
+                    ),
                 })
 
     return {

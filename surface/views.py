@@ -943,7 +943,7 @@ def water_right_import_preview(request):
         return render(
             request,
             "surface/partials/_right_import_result.html",
-            {"error": "No file provided. Choose the state's rights LIST CSV export."},
+            {"error": importer.NO_FILE_MESSAGE},
         )
 
     try:
@@ -977,17 +977,14 @@ def water_right_import_commit(request):
         return render(
             request,
             "surface/partials/_right_import_result.html",
-            {"error": "No rows to import -- please re-upload your file and try again."},
+            {"error": importer.ROWS_NOT_RECEIVED_MESSAGE},
         )
 
     if len(rows) > importer.MAX_ROWS:
         return render(
             request,
             "surface/partials/_right_import_result.html",
-            {"error": (
-                f"Import is {len(rows)} rows, over the {importer.MAX_ROWS}-row "
-                "cap. Re-upload a smaller file."
-            )},
+            {"error": importer.row_cap_message(len(rows))},
         )
 
     mapping = {
@@ -1009,16 +1006,18 @@ def water_right_import_commit(request):
             "surface/partials/_right_import_mapping.html",
             _rights_mapping_context(
                 columns, rows, mapping,
-                error=f"Nothing was created: {type(exc).__name__}: {exc}",
+                error=importer.unexpected_error_message(exc),
             ),
             status=200,
         )
     skipped = [r for r in results if r["errors"]]
+    # Message E rows 5 and 6: a right created without a figure in another unit.
+    noted = [r for r in results if not r["errors"] and r["warnings"]]
 
     return render(
         request,
         "surface/partials/_right_import_result.html",
-        {"created": created, "skipped": skipped, "total": len(results)},
+        {"created": created, "skipped": skipped, "noted": noted, "total": len(results)},
     )
 
 
@@ -1048,6 +1047,11 @@ def _posted_use_rule(request):
     """
     value = request.POST.get("use_rule", "").strip()
     return value or None
+
+
+#: Said under the unrecognised-columns refusal on the import page only (the
+#: command line has no tables below it). Brent 2026-10-14 17:51, message A row 8.
+LAYOUT_TABLES_SENTENCE = "The tables below list the columns OpenH2O imports."
 
 
 #: How many row numbers one grouped row error names before " ..." (150-04 V1).
@@ -1090,7 +1094,7 @@ def _group_row_errors(errors):
 def diversion_import(request):
     """Bulk import landing page for diversion volumes (D4): the state's
 
-    Water Use Reported layout, or a ditch tender's own book.
+    Water Use Reported export, or a book of deliveries.
     """
     points = PointOfDiversion.objects.filter(status="active").order_by("name")
     return render(
@@ -1128,22 +1132,19 @@ def diversion_import_preview(request):
         if not rows:
             return render(
                 request, "surface/partials/_diversion_import_result.html",
-                {"error": "No rows to preview -- please re-upload your file and try again."},
+                {"error": importer.ROWS_NOT_RECEIVED_MESSAGE},
             )
         columns = list(rows[0].keys())
     else:
         return render(
             request, "surface/partials/_diversion_import_result.html",
-            {"error": "No file provided. Choose a diversion volume CSV."},
+            {"error": importer.NO_FILE_MESSAGE},
         )
 
     if len(rows) > diversion_import_service.MAX_ROWS:
         return render(
             request, "surface/partials/_diversion_import_result.html",
-            {"error": (
-                f"Import is {len(rows)} rows, over the "
-                f"{diversion_import_service.MAX_ROWS}-row cap. Re-upload a smaller file."
-            )},
+            {"error": diversion_import_service.row_cap_message(len(rows))},
         )
 
     try:
@@ -1151,7 +1152,7 @@ def diversion_import_preview(request):
     except ImportError as exc:
         return render(
             request, "surface/partials/_diversion_import_result.html",
-            {"error": str(exc)},
+            {"error": f"{exc} {LAYOUT_TABLES_SENTENCE}"},
         )
 
     point_pk = request.POST.get("point", "")
@@ -1198,7 +1199,7 @@ def diversion_import_commit(request):
     if not rows:
         return render(
             request, "surface/partials/_diversion_import_result.html",
-            {"error": "No rows to import -- please re-upload your file and try again."},
+            {"error": importer.ROWS_NOT_RECEIVED_MESSAGE},
         )
 
     columns = list(rows[0].keys())
@@ -1207,7 +1208,7 @@ def diversion_import_commit(request):
     except ImportError as exc:
         return render(
             request, "surface/partials/_diversion_import_result.html",
-            {"error": str(exc)},
+            {"error": f"{exc} {LAYOUT_TABLES_SENTENCE}"},
         )
 
     point_pk = request.POST.get("point", "")
@@ -1232,7 +1233,7 @@ def diversion_import_commit(request):
         context["rows_json"] = json.dumps(rows)
         context["row_count"] = len(rows)
         context["use_rule"] = use_rule or site_config.diversion_use_type_rule
-        context["error"] = f"Nothing was created: {type(exc).__name__}: {exc}"
+        context["error"] = importer.unexpected_error_message(exc)
         return render(request, "surface/partials/_diversion_import_preview.html", context)
 
     use_rule_saved = bool(

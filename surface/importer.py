@@ -28,6 +28,8 @@ engine's own names so a reader who knows one door reads the other for free:
 """
 import csv
 import io
+import math
+import re
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
@@ -38,11 +40,48 @@ from surface.models import WaterRight, WaterRightType
 MAX_ROWS = 500
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MB, same ceiling as the infrastructure importer
 
-#: The state's own rights-LIST unit values. A row carrying a face value or a
-#: maximum rate in any other unit is a row error naming the unit found. This
-#: importer never converts a unit; it only accepts the one the model assumes.
+#: The state's own rights-LIST unit values. A face value or a maximum rate in
+#: any other unit is left out of the right, with a note naming the unit found
+#: (150.1-02 screen 18, message E). This importer never converts a unit.
 FACE_VALUE_UNITS_EXPECTED = "Acre-feet per Year"
 MAX_DD_UNITS_EXPECTED = "Cubic Feet per Second"
+
+#: The whole-file messages Brent approved for both surface water imports
+#: (150.1-02 screen 18, message A, 2026-10-14 17:51). diversion_import.py
+#: imports these so the two pages say the same thing for the same fault.
+NO_FILE_MESSAGE = "Choose a CSV file to upload."
+NOT_CSV_MESSAGE = (
+    "This page imports CSV files only. Save the file as CSV and upload it again."
+)
+NO_COLUMNS_MESSAGE = "This file has no column names on its first line."
+NO_ROWS_MESSAGE = "This file has column names but no rows below them."
+ROWS_NOT_RECEIVED_MESSAGE = (
+    "OpenH2O did not receive the file's rows from the preview. "
+    "Upload the file again."
+)
+
+
+def too_large_message(size, cap):
+    """The size is rounded UP, so a file over the cap never reads as equal to it."""
+    mb = 1024 * 1024
+    return (
+        f"This file is {math.ceil(size / mb)} MB. "
+        f"OpenH2O imports files of up to {cap // mb} MB."
+    )
+
+
+def unexpected_error_message(exc):
+    return (
+        "An unexpected error stopped the import, and OpenH2O saved nothing "
+        f"from this file. Details: {type(exc).__name__}: {exc}"
+    )
+
+
+def row_cap_message(row_count):
+    return (
+        f"This file has {row_count:,} rows, and OpenH2O imports up to "
+        f"{MAX_ROWS:,} rows from one file. Split the file and import each part."
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -59,17 +98,11 @@ def parse_upload(file, filename):
     """
     name = (filename or "").lower()
     if not name.endswith(".csv"):
-        raise ImportError(
-            "Water rights import accepts CSV only (the state's own rights "
-            "LIST export)."
-        )
+        raise ImportError(NOT_CSV_MESSAGE)
 
     size = getattr(file, "size", None)
     if size is not None and size > MAX_UPLOAD_BYTES:
-        raise ImportError(
-            f"File is too large ({size // (1024 * 1024)} MB); the upload cap "
-            f"is {MAX_UPLOAD_BYTES // (1024 * 1024)} MB."
-        )
+        raise ImportError(too_large_message(size, MAX_UPLOAD_BYTES))
 
     raw = file.read()
     if isinstance(raw, bytes):
@@ -78,13 +111,12 @@ def parse_upload(file, filename):
     columns = list(reader.fieldnames or [])
     rows = [{k: ("" if v is None else v) for k, v in row.items()} for row in reader]
 
-    if len(rows) > MAX_ROWS:
-        raise ImportError(
-            f"File contains {len(rows)} rows, over the {MAX_ROWS}-row import "
-            "cap. Please split it into smaller files."
-        )
+    if not columns:
+        raise ImportError(NO_COLUMNS_MESSAGE)
     if not rows:
-        raise ImportError("No rows found in the uploaded file.")
+        raise ImportError(NO_ROWS_MESSAGE)
+    if len(rows) > MAX_ROWS:
+        raise ImportError(row_cap_message(len(rows)))
 
     return {"columns": columns, "rows": rows}
 
@@ -224,10 +256,21 @@ _BARE_TYPE_ALIASES = {
 }
 
 
-def _resolve_right_type(raw_value, type_by_name, errors):
-    if not raw_value:
-        errors.append("WATER_RIGHT_TYPE is required (blank or unmapped).")
-        return None
+def _column(mapping, field):
+    """The file column a message names for ``field``: the one the person
+    matched, else the state's own header (150.1-02 screen 18, message E)."""
+    return mapping.get(field) or sorted(RIGHT_FIELD_ALIASES[field])[0]
+
+
+def _resolve_right_type(raw_value, type_by_name):
+    """The WaterRightType for ``raw_value``, or the name to add on commit.
+
+    Returns ``(type_or_None, new_name_or_None)``. A type the seeded rows do
+    not carry is no longer an error (Brent 2026-10-14 18:47, message E row 4:
+    only "Appropriative" used to import, 29,755 of the 84,833 rows of the
+    state's list): ``commit_rows`` adds it the first time a file carries it,
+    named as eWRIMS writes it. No calculation reads a right's type.
+    """
     key = raw_value.strip().lower()
     match = type_by_name.get(key)
     if match is None:
@@ -235,16 +278,11 @@ def _resolve_right_type(raw_value, type_by_name, errors):
         if alias:
             match = type_by_name.get(alias.lower())
     if match is None:
-        seeded_names = sorted({t.name for t in type_by_name.values()})
-        errors.append(
-            f"WATER_RIGHT_TYPE '{raw_value}' matches no seeded water right "
-            f"type. Seeded types are: {', '.join(seeded_names)}."
-        )
-        return None
-    return match
+        return None, raw_value.strip()
+    return match, None
 
 
-def _parse_priority_date(raw_value, errors):
+def _parse_priority_date(raw_value, column, errors):
     """ISO (YYYY-MM-DD) or m/d/yyyy (crosswalk M5); blank stays null."""
     raw_value = (raw_value or "").strip()
     if not raw_value:
@@ -255,8 +293,7 @@ def _parse_priority_date(raw_value, errors):
         except ValueError:
             continue
     errors.append(
-        f"PRIORITY_DATE '{raw_value}' is not a recognised date "
-        "(expected YYYY-MM-DD or M/D/YYYY)."
+        f"{column} '{raw_value}' is not a date written YYYY-MM-DD or M/D/YYYY."
     )
     return None
 
@@ -266,11 +303,12 @@ def validate_rows(rows, mapping, existing_right_ids):
 
     Returns a list of {index, data, errors, warnings}, the same shape
     ``infrastructure.importer.validate_rows`` returns. A row with any errors
-    is skipped by ``commit_rows``. Dedup on ``right_id`` is enforced here
-    (against both the database and earlier rows in this same file) so a
-    second import of the same file, or a file with an internal repeat, is a
-    named skip rather than a silent overwrite. This importer never updates
-    an existing right.
+    is skipped by ``commit_rows``; a row with only warnings is created, and
+    its warnings are listed under "Imported with a note". Dedup on
+    ``right_id`` is enforced here (against both the database and earlier rows
+    in this same file) so a second import of the same file, or a file with an
+    internal repeat, is a named skip rather than a silent overwrite. This
+    importer never updates an existing right.
     """
     type_by_name = {t.name.lower(): t for t in WaterRightType.objects.all()}
     existing = {r for r in (existing_right_ids or set())}
@@ -288,25 +326,36 @@ def validate_rows(rows, mapping, existing_right_ids):
                 return ""
             return (row.get(col) or "").strip()
 
+        def blank(field):
+            errors.append(f"{_column(mapping, field)} is blank or not matched to a column.")
+
         right_id = src("right_id")
         if not right_id:
-            errors.append("APPLICATION_NUMBER is required (blank or unmapped).")
-        elif right_id in existing or right_id in seen_in_batch:
+            blank("right_id")
+        elif right_id in existing:
             errors.append(
-                f"a water right with id '{right_id}' already exists; import "
-                "never overwrites, so this row was skipped."
+                f"Water right {right_id} is already on file. OpenH2O does not "
+                "overwrite a water right on import."
             )
+        elif right_id in seen_in_batch:
+            errors.append(f"Water right {right_id} appears earlier in this file.")
         else:
             seen_in_batch.add(right_id)
         data["right_id"] = right_id
 
-        right_type = _resolve_right_type(src("right_type_name"), type_by_name, errors)
-        if right_type is not None:
-            data["right_type"] = right_type
+        type_raw = src("right_type_name")
+        if not type_raw:
+            blank("right_type_name")
+        else:
+            right_type, new_type_name = _resolve_right_type(type_raw, type_by_name)
+            if right_type is not None:
+                data["right_type"] = right_type
+            else:
+                data["new_right_type_name"] = new_type_name
 
         holder_name = src("holder_name")
         if not holder_name:
-            errors.append("PRIMARY_OWNER_NAME is required (blank or unmapped).")
+            blank("holder_name")
         data["holder_name"] = holder_name
 
         for field in ("state_status", "source_name", "watershed", "license_number",
@@ -316,47 +365,56 @@ def validate_rows(rows, mapping, existing_right_ids):
                 data[field] = val
 
         # --- face value + its unit ---
+        # A face value in another unit leaves the right in, without the face
+        # value (Brent 2026-10-14 18:47, message E row 5).
         face_value_raw = src("face_value_acre_feet")
         if face_value_raw:
             units = src("face_value_units")
             if units and units != FACE_VALUE_UNITS_EXPECTED:
-                errors.append(
-                    f"FACE_VALUE_UNITS '{units}' is not "
-                    f"'{FACE_VALUE_UNITS_EXPECTED}'; this importer does not "
-                    "convert units."
+                warnings.append(
+                    "OpenH2O imported this right without its face value, which "
+                    f"the file gives in {units}. OpenH2O records a face value in "
+                    "acre-feet per year."
                 )
             else:
                 try:
                     data["face_value_acre_feet"] = Decimal(face_value_raw)
                 except (InvalidOperation, ValueError):
                     errors.append(
-                        f"FACE_VALUE_AMOUNT is not a number: '{face_value_raw}'."
+                        f"{_column(mapping, 'face_value_acre_feet')} "
+                        f"'{face_value_raw}' is not a number."
                     )
 
-        # --- max rate + its unit ---
+        # --- max rate + its unit --- (message E row 6)
         rate_raw = src("max_rate_cfs")
         if rate_raw:
             units = src("max_rate_units")
             if units and units != MAX_DD_UNITS_EXPECTED:
-                errors.append(
-                    f"MAX_DD_UNITS '{units}' is not "
-                    f"'{MAX_DD_UNITS_EXPECTED}'; this importer does not "
-                    "convert units."
+                warnings.append(
+                    "OpenH2O imported this right without its maximum rate, which "
+                    f"the file gives in {units}. OpenH2O records a maximum rate in "
+                    "cubic feet per second."
                 )
             else:
                 try:
                     data["max_rate_cfs"] = Decimal(rate_raw)
                 except (InvalidOperation, ValueError):
-                    errors.append(f"MAX_DD_APPL is not a number: '{rate_raw}'.")
+                    errors.append(
+                        f"{_column(mapping, 'max_rate_cfs')} '{rate_raw}' is not a number."
+                    )
 
         net_acreage_raw = src("net_acreage")
         if net_acreage_raw:
             try:
                 data["net_acreage"] = Decimal(net_acreage_raw)
             except (InvalidOperation, ValueError):
-                errors.append(f"USE_NET_ACREAGE is not a number: '{net_acreage_raw}'.")
+                errors.append(
+                    f"{_column(mapping, 'net_acreage')} '{net_acreage_raw}' is not a number."
+                )
 
-        data["priority_date"] = _parse_priority_date(src("priority_date"), errors)
+        data["priority_date"] = _parse_priority_date(
+            src("priority_date"), _column(mapping, "priority_date"), errors
+        )
 
         for field in _INT_FIELDS:
             val = src(field)
@@ -364,7 +422,7 @@ def validate_rows(rows, mapping, existing_right_ids):
                 try:
                     data[field] = int(Decimal(val))
                 except (InvalidOperation, ValueError):
-                    errors.append(f"{FIELD_LABELS[field]} is not a number: '{val}'.")
+                    errors.append(f"{_column(mapping, field)} '{val}' is not a number.")
 
         results.append(
             {"index": index, "data": data, "errors": errors, "warnings": warnings}
@@ -378,13 +436,36 @@ def validate_rows(rows, mapping, existing_right_ids):
 # ---------------------------------------------------------------------------
 
 
+def _type_code_for(name):
+    """A unique WaterRightType.code (max 20) for a type added from a file."""
+    base = re.sub(r"[^A-Z0-9]+", "_", name.upper()).strip("_")[:20] or "TYPE"
+    code, n = base, 2
+    while WaterRightType.objects.filter(code=code).exists():
+        suffix = f"_{n}"
+        code = base[: 20 - len(suffix)] + suffix
+        n += 1
+    return code
+
+
+def _right_type_named(name):
+    """The type named ``name`` (case-insensitive), added if none exists."""
+    existing = WaterRightType.objects.filter(name__iexact=name).first()
+    if existing is not None:
+        return existing
+    return WaterRightType.objects.create(
+        name=name[:100], code=_type_code_for(name)
+    )
+
+
 def commit_rows(valid_results):
     """Create a WaterRight from the coerced `data` of every error-free row.
 
     One outer transaction with a per-row savepoint, the same shape
     ``infrastructure.importer.commit_rows`` uses: a single bad row (a unique
     constraint slipping past the dedup check under a race, say) is rolled
-    back and reported, never allowed to poison the whole batch.
+    back and reported, never allowed to poison the whole batch. A water right
+    type the file names and OpenH2O does not carry yet is added inside the
+    row's savepoint, named as the file writes it.
     """
     clean = [r for r in valid_results if not r["errors"]]
     created = 0
@@ -394,9 +475,15 @@ def commit_rows(valid_results):
             data = {k: v for k, v in result["data"].items() if k in _MODEL_FIELDS}
             try:
                 with transaction.atomic():
+                    new_type_name = result["data"].get("new_right_type_name")
+                    if new_type_name:
+                        data["right_type"] = _right_type_named(new_type_name)
                     WaterRight.objects.create(**data)
                 created += 1
             except Exception as exc:
-                result["errors"].append(f"could not be saved: {exc}")
+                result["errors"].append(
+                    "An unexpected error stopped OpenH2O from saving this water "
+                    f"right. Details: {type(exc).__name__}: {exc}"
+                )
 
     return created
