@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load humanize %}
 
 {% block title %}Import production - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Import production{% endblock %}
@@ -13,7 +14,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Import production</span>
   </nav>
-  <p class="page-description">Upload a year of production by month and source, check the preview, then import.</p>
+  <p class="page-description">This page imports monthly production figures from a CSV file: California&rsquo;s Electronic Annual Report (eAR) export, or a monthly log kept on Section 5 of the eAR template.</p>
 </div>
 {% endblock %}
 
@@ -28,9 +29,12 @@
       149.1-06: the first line says what file the page takes, what the preview
       shows and what the import writes; the two layouts' columns are the
       tables below, read from drinking/production_import.py.
+      150.1-02 screen 18, message Q, approved by Brent 2026-10-15 08:17 PDT:
+      the description, these two lines, the file label, its help and the
+      loading line.
     {% endcomment %}
-    <p class="text-base text-secondary mt-md">Upload a CSV of the state's annual electronic report (eAR) production export or of the operator's own monthly log. The preview shows what would be created before anything is written. The import writes one production record per month and source.</p>
-    <p class="text-base text-secondary mt-sm">A month and source already on file is skipped, never overwritten.</p>
+    <p class="text-base text-secondary mt-md">OpenH2O saves nothing until you press Import on the preview.</p>
+    <p class="text-base text-secondary mt-sm">OpenH2O skips a row whose month and type of water are already on file.</p>
 
     <form class="mt-lg"
       id="production-import-upload-form"
@@ -44,7 +48,7 @@
       {% csrf_token %}
 
       <div class="form-group">
-        <label class="form-label" for="production-import-file">Data file <span class="required-mark">*</span></label>
+        <label class="form-label" for="production-import-file">Production file <span class="required-mark">*</span></label>
         <div class="file-picker">
           <label class="btn-secondary file-picker-button">
             Choose file
@@ -54,12 +58,12 @@
           </label>
           <span class="file-picker-name text-tertiary text-sm" id="production-import-file-name">No file chosen</span>
         </div>
-        <div class="form-help">Up to {{ max_rows|default:"2,000" }} rows per file. CSV only.</div>
+        <div class="form-help">A CSV file of up to {{ max_rows|default:2000|intcomma }} rows and 25 MB.</div>
       </div>
 
       <div class="row-start pt-sm">
         <button type="submit" class="btn-primary">Upload &amp; preview</button>
-        <span id="production-import-spinner" class="htmx-indicator text-tertiary text-sm">Parsing&hellip;</span>
+        <span id="production-import-spinner" class="htmx-indicator text-tertiary text-sm">Reading the file&hellip;</span>
       </div>
     </form>
   </div>

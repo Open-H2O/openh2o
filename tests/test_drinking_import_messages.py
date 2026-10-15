@@ -367,3 +367,56 @@ class TestTheImportPagesTables:
         ):
             assert line in body
         assert "stored with a result below it" not in body
+
+
+class TestRowNumbers:
+    """Every import numbers rows as the spreadsheet does, the column names
+    being row 1 (Brent 2026-10-15 08:17 PDT, "approved")."""
+
+    def test_the_lab_preview_and_result(self, auth_client):
+        csv_text = "PS Code,Sample Date,Analyte Name,Result\n,2024-03-05,Nitrate,1\n"
+        body = _preview(auth_client, "lab.csv", csv_text).content.decode()
+        assert '<td class="text-mono">2</td>' in body
+        body = auth_client.post(
+            reverse("drinking:import_commit"),
+            {"rows_json": json.dumps([{"PS Code": "", "Sample Date": "2024-03-05",
+                                       "Analyte Name": "Nitrate", "Result": "1"}])},
+        ).content.decode()
+        assert '<td class="text-mono">2</td>' in body
+
+    def test_the_water_rights_result(self, db):
+        from django.template.loader import render_to_string
+
+        html = render_to_string(
+            "surface/partials/_right_import_result.html",
+            {"created": 0, "skipped": [{"index": 0, "errors": ["x"]}], "total": 1},
+        )
+        assert '<td class="text-mono">2</td>' in html
+
+
+class TestTheProductionImport:
+    """Message Q, approved 2026-10-15 08:17 PDT."""
+
+    def test_the_page(self, auth_client):
+        body = auth_client.get(reverse("drinking:production_import")).content.decode()
+        assert "This page imports monthly production figures from a CSV file" in body
+        assert "OpenH2O saves nothing until you press Import on the preview." in body
+        assert "OpenH2O skips a row whose month and type of water are already on file." in body
+        assert "A CSV file of up to 2,000 rows and 25 MB." in body
+        assert "Production file" in body
+
+    def test_whole_file_messages(self):
+        from drinking import production_import as svc
+
+        class F:
+            size = svc.MAX_UPLOAD_BYTES + 512 * 1024
+
+            def read(self):
+                return b""
+
+        with pytest.raises(ImportError, match="This file is 26 MB"):
+            svc.parse_csv(F(), "p.csv")
+        with pytest.raises(ImportError, match="This page imports CSV files only"):
+            svc.parse_csv(F(), "p.xlsx")
+        with pytest.raises(ImportError, match="OpenH2O does not recognize the columns in this file: Well, Date"):
+            svc.recognise_layout(["Well", "Date"])

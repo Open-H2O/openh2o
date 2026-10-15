@@ -40,6 +40,7 @@ collapsed the same way, counted separately as ``duplicate_rows_in_file``.
 """
 import csv
 import io
+import math
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
@@ -49,6 +50,24 @@ from drinking.models import PRODUCTION_UNIT_CHOICES, SystemProduction
 
 MAX_ROWS = 2000
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MB, the ceiling every importer here uses
+
+
+# The whole-file messages, approved by Brent 2026-10-15 08:17 PDT (150.1-02
+# screen 18, message Q) in the surface and lab imports' words. The size is
+# rounded UP, so a file over the cap never reads as equal to it.
+def too_large_message(size):
+    mb = 1024 * 1024
+    return (
+        f"This file is {math.ceil(size / mb)} MB. "
+        f"OpenH2O imports files of up to {MAX_UPLOAD_BYTES // mb} MB."
+    )
+
+
+def row_cap_message(row_count):
+    return (
+        f"This file has {row_count:,} rows, and OpenH2O imports up to "
+        f"{MAX_ROWS:,} rows from one file. Split the file and import each part."
+    )
 
 _UNIT_CODES = {code for code, _label in PRODUCTION_UNIT_CHOICES}
 
@@ -103,14 +122,14 @@ def parse_csv(file_obj, filename=""):
     """
     name = (filename or "").lower()
     if name and not name.endswith(".csv"):
-        raise ImportError("Production import accepts CSV only.")
+        raise ImportError(
+            "This page imports CSV files only. Save the file as CSV and upload "
+            "it again."
+        )
 
     size = getattr(file_obj, "size", None)
     if size is not None and size > MAX_UPLOAD_BYTES:
-        raise ImportError(
-            f"File is too large ({size // (1024 * 1024)} MB); the upload cap "
-            f"is {MAX_UPLOAD_BYTES // (1024 * 1024)} MB."
-        )
+        raise ImportError(too_large_message(size))
 
     raw = file_obj.read()
     if isinstance(raw, bytes):
@@ -118,15 +137,12 @@ def parse_csv(file_obj, filename=""):
     reader = csv.DictReader(io.StringIO(raw))
     columns = list(reader.fieldnames or [])
     if not columns:
-        raise ImportError("CSV file appears empty or has no headers.")
+        raise ImportError("This file has no column names on its first line.")
     rows = [{k: ("" if v is None else v) for k, v in row.items() if k is not None} for row in reader]
     if not rows:
-        raise ImportError("CSV file has headers but no data rows.")
+        raise ImportError("This file has column names but no rows below them.")
     if len(rows) > MAX_ROWS:
-        raise ImportError(
-            f"Import is {len(rows)} rows, over the {MAX_ROWS}-row cap. "
-            "Re-upload a smaller file."
-        )
+        raise ImportError(row_cap_message(len(rows)))
     return columns, rows
 
 
@@ -144,7 +160,9 @@ def recognise_layout(columns):
         return "operator_log"
 
     raise ImportError(
-        "Unrecognised file layout; headers seen: " + ", ".join(columns)
+        "OpenH2O does not recognize the columns in this file: "
+        + ", ".join(columns)
+        + ". The tables below list the columns OpenH2O imports."
     )
 
 

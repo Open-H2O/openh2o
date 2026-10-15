@@ -38,7 +38,7 @@ infrastructure/partials/_import_result.html:
     <tbody>
       {% for row in noted %}
       <tr>
-        <td class="text-mono">{{ row.index|add:1 }}</td>
+        <td class="text-mono">{{ row.index|add:2 }}</td>
         <td>
           {% for note in row.warnings %}
           <div>{{ note }}</div>
@@ -61,7 +61,7 @@ infrastructure/partials/_import_result.html:
     <tbody>
       {% for row in skipped %}
       <tr>
-        <td class="text-mono">{{ row.index|add:1 }}</td>
+        <td class="text-mono">{{ row.index|add:2 }}</td>
         <td>
           {% for err in row.errors %}
           <div class="text-furnace">{{ err }}</div>

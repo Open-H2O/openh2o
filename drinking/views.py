@@ -1105,7 +1105,9 @@ def _preview_rows(rows, mapping, validated):
         row = rows[item["index"]]
         shaped.append(
             {
-                "index": item["index"] + 1,  # 1-based: matches the file's rows
+                # The spreadsheet's row number, the column names being row 1
+                # (Brent 2026-10-15 08:17 PDT, "approved").
+                "index": item["index"] + 2,
                 "ps_code": src(row, "ps_code"),
                 "sample_date": src(row, "sample_date"),
                 "analyte": src(row, "analyte_name"),
@@ -1275,7 +1277,7 @@ def import_commit(request):
     agency = importer.record_regulating_agency(rows, mapping, validated)
 
     skipped = [
-        {"index": item["index"] + 1, "errors": item["errors"]}
+        {"index": item["index"] + 2, "errors": item["errors"]}
         for item in validated
         if item["errors"]
     ]
@@ -2003,7 +2005,7 @@ def production_import_preview(request):
         return render(
             request,
             "drinking/partials/_production_import_result.html",
-            {"error": "Add a water system first."},
+            {"error": "This site has no water system yet. Add a water system first."},
         )
 
     uploaded = request.FILES.get("file")
@@ -2027,27 +2029,21 @@ def production_import_preview(request):
             return render(
                 request,
                 "drinking/partials/_production_import_result.html",
-                {"error": "No rows to preview -- please re-upload your file and try again."},
+                {"error": _ROWS_NOT_RECEIVED},
             )
         columns = list(rows[0].keys())
     else:
         return render(
             request,
             "drinking/partials/_production_import_result.html",
-            {"error": "No file provided. Choose a production CSV."},
+            {"error": "Choose a CSV file to upload."},
         )
 
     if len(rows) > production_import_service.MAX_ROWS:
         return render(
             request,
             "drinking/partials/_production_import_result.html",
-            {
-                "error": (
-                    f"Import is {len(rows)} rows, over the "
-                    f"{production_import_service.MAX_ROWS}-row cap. Re-upload a "
-                    "smaller file."
-                )
-            },
+            {"error": production_import_service.row_cap_message(len(rows))},
         )
 
     try:
@@ -2098,7 +2094,7 @@ def production_import_commit(request):
         return render(
             request,
             "drinking/partials/_production_import_result.html",
-            {"error": "Add a water system first."},
+            {"error": "This site has no water system yet. Add a water system first."},
         )
 
     try:
@@ -2110,7 +2106,7 @@ def production_import_commit(request):
         return render(
             request,
             "drinking/partials/_production_import_result.html",
-            {"error": "No rows to import -- please re-upload your file and try again."},
+            {"error": _ROWS_NOT_RECEIVED},
         )
 
     columns = list(rows[0].keys())
@@ -2143,7 +2139,10 @@ def production_import_commit(request):
         )
         context["rows_json"] = json.dumps(rows)
         context["row_count"] = len(rows)
-        context["error"] = f"Nothing was created: {type(exc).__name__}: {exc}"
+        context["error"] = (
+            "An unexpected error stopped the import, and OpenH2O saved nothing "
+            f"from this file. Details: {type(exc).__name__}: {exc}"
+        )
         return render(
             request, "drinking/partials/_production_import_preview.html", context,
             status=200,
