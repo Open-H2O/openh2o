@@ -830,7 +830,7 @@ class DiversionRecord(models.Model):
         max_length=20,
         choices=DATA_STATE_CHOICES,
         default="provisional",
-        help_text="The data state does not change any figure OpenH2O calculates.",
+        help_text="The data status does not change any figure OpenH2O calculates.",
     )
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

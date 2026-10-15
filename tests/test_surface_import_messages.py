@@ -197,7 +197,7 @@ def test_a_right_not_on_file_falls_through_to_the_whole_file_point(one_point):
     unresolved = _build(text)["unresolved_rows"]
     assert unresolved[0]["reason"] == (
         "No water right on file has the application number NOT-ON-FILE. Import "
-        "the water right, or choose one point of diversion for the whole file above."
+        "the water right, or choose one point of diversion for the whole file on the preview."
     )
     result = _build(text, whole_file_point=one_point)
     assert not result["unresolved_rows"] and result["created"] == 1
@@ -245,3 +245,31 @@ def test_a_face_value_in_another_unit_imports_the_right_without_it(db):
         "in Cubic Feet per Second. OpenH2O records a face value in acre-feet per year."
     ]
     assert WaterRightType.objects.filter(name="Statement of Div and Use").count() == 1
+
+
+# --- message F: the leftovers -------------------------------------------------
+
+
+def test_the_rights_result_says_records_and_counts_the_notes(db):
+    from django.template.loader import render_to_string
+
+    html = render_to_string(
+        "surface/partials/_right_import_result.html",
+        {"created": 3, "skipped": [], "total": 3,
+         "noted": [{"index": 0, "warnings": ["A note."]}]},
+    )
+    text = " ".join(html.split())
+    assert "OpenH2O created 3 water right records. 1 of them has a note below." in text
+    assert "Every row was valid." not in text
+
+
+def test_the_import_preview_labels_the_data_status(auth_client, one_point):
+    upload = SimpleUploadedFile(
+        "b.csv", b"local_name,date,acre_feet\nHeadgate No. 1,2025-01-01,3\n",
+        content_type="text/csv",
+    )
+    body = auth_client.post(
+        reverse("surface:diversion_import_preview"), {"file": upload}
+    ).content.decode()
+    assert ">Data status</label>" in body
+    assert "Data state" not in body

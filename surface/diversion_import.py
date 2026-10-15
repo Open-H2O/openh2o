@@ -278,7 +278,7 @@ def resolve_point(row_l, whole_file_point, *, right_cache, right_points_cache):
     2026-10-14 18:41, message D row 3). Returns (PointOfDiversion, None) or
     (None, reason).
     """
-    choose = "choose one point of diversion for the whole file above."
+    choose = "choose one point of diversion for the whole file on the preview."
     appl_pod = row_l.get("appl_pod", "").strip()
     if appl_pod:
         point = PointOfDiversion.objects.filter(name=appl_pod).first()

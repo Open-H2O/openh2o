@@ -19,8 +19,10 @@ infrastructure/partials/_import_result.html:
   </div>
 
   <p class="text-base text-secondary mt-md">
-    {{ created }} water right record{{ created|pluralize }} created.
-    {% if skipped %}{{ skipped|length }} row{{ skipped|length|pluralize }} were skipped because of the problems below. Fix them in your file and re-import just those.{% else %}Every row was valid.{% endif %}
+    {% comment %} Brent 2026-10-14 19:35, message F row 3: OpenH2O records a right, it never grants one. {% endcomment %}
+    OpenH2O created {{ created }} water right record{{ created|pluralize }}.
+    {% if noted %}{{ noted|length }} of them {{ noted|length|pluralize:"has a note,have notes" }} below.{% endif %}
+    {% if skipped %}{{ skipped|length }} row{{ skipped|length|pluralize }} were skipped because of the problems below. Fix them in your file and re-import just those.{% elif not noted %}Every row was valid.{% endif %}
   </p>
 
   {% if noted %}
