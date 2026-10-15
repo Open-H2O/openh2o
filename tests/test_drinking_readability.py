@@ -156,7 +156,7 @@ class TestBuilderIsUsable:
         ).content.decode()
         # 149.1-06 (2026-10-07): the "What this page is for" card left; the
         # description says what a sampling point record is and the one action.
-        assert "A sampling point record is one PS Code" in body
+        assert "This page adds sampling points to the water system" in body
         assert "lab file" in body.lower()
         assert "PS Code" in body
 

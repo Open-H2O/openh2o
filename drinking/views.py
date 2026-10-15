@@ -1657,8 +1657,8 @@ def onboard_points(request, pwsid):
     if system is None:
         messages.warning(
             request,
-            f"{pwsid} has not been onboarded yet, so it has no facilities to "
-            "add sampling points to. Look the system up first.",
+            f"No water system in OpenH2O has the PWSID {pwsid}. Add the water "
+            "system first.",
         )
         return redirect("drinking:onboard")
 
@@ -1666,8 +1666,7 @@ def onboard_points(request, pwsid):
     if not facilities:
         messages.warning(
             request,
-            f"{pwsid} has no facilities, so no sampling point can be added. "
-            "Re-run the lookup to refresh its facilities from EPA.",
+            f"{system.name} has no facilities on file. Add a facility first.",
         )
         return redirect("drinking:onboard")
 
@@ -1725,7 +1724,10 @@ def onboard_points_add(request, pwsid):
                 "point_groups": [],
                 "point_count": 0,
                 "n_with": 0,
-                "error": f"{pwsid} is not a system carried here.",
+                "error": (
+                    f"No water system in OpenH2O has the PWSID {pwsid}. Add "
+                    "the water system first."
+                ),
             },
         )
 
@@ -1743,7 +1745,9 @@ def onboard_points_add(request, pwsid):
         pk=(request.POST.get("facility") or "").strip() or None
     ).first()
     if facility is None:
-        return _listed(error="That facility is not part of this system.")
+        return _listed(
+            error=f"The facility you chose does not belong to {system.name}."
+        )
 
     point_number = (request.POST.get("point_number") or "").strip()
     name = (request.POST.get("name") or "").strip()
@@ -1758,7 +1762,9 @@ def onboard_points_add(request, pwsid):
         return _listed(error=str(exc))
 
     if point_type and point_type not in dict(POINT_TYPE_CHOICES):
-        return _listed(error="That is not a point type this platform carries.")
+        return _listed(
+            error="Choose a point type: Source, Entry Point, Distribution or Tap."
+        )
 
     point, created = SamplingPoint.objects.get_or_create(
         ps_code=ps_code,

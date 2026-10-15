@@ -43,7 +43,10 @@ _SEGMENT = re.compile(r"^[A-Z0-9-]+$")
 
 
 def compose_ps_code(pwsid, facility_id, point_number):
-    """Build the ``{pwsid}_{facility_id}_{point_number}`` composite.
+    """The messages are 150.1-02 screen 18 message U, approved by Brent
+    2026-10-15 08:59 PDT.
+
+Build the ``{pwsid}_{facility_id}_{point_number}`` composite.
 
     Segments are stripped and upper-cased — DDW publishes fixed-width padded
     fields, and operator input arrives however it arrives, but the stored code
@@ -65,24 +68,26 @@ def compose_ps_code(pwsid, facility_id, point_number):
     ):
         value = (raw or "").strip().upper()
         if not value:
-            raise ValueError(f"The {label} is required to build a PS Code.")
+            raise ValueError(f"Enter the {label}.")
         if "_" in value:
             raise ValueError(
-                f"The {label} '{value}' contains an underscore. Underscore "
-                "separates the three parts of a PS Code, so one inside a part "
-                "would produce a code that cannot be read back."
+                f"The {label} '{value}' contains an underscore. A PS Code uses "
+                "underscores only between its three parts."
             )
         if not _SEGMENT.match(value):
+            bad = next(ch for ch in value if not re.match(r"[A-Z0-9-]", ch))
+            what = "a space" if bad == " " else f"the character '{bad}'"
             raise ValueError(
-                f"The {label} '{value}' has characters a PS Code cannot carry. "
-                "Use letters, digits and hyphens — for example 010, DST or LCR."
+                f"The {label} '{value}' contains {what}. A PS Code uses only "
+                "letters, digits and hyphens, such as 010, DST or LCR."
             )
         segments.append(value)
 
     composed = "_".join(segments)
     if len(composed) > MAX_PS_CODE_LENGTH:
         raise ValueError(
-            f"'{composed}' is {len(composed)} characters, over the "
-            f"{MAX_PS_CODE_LENGTH}-character limit for a PS Code."
+            f"The PS Code {composed} has {len(composed)} characters, and "
+            f"OpenH2O stores PS Codes of up to {MAX_PS_CODE_LENGTH}. Shorten "
+            "the point number."
         )
     return composed

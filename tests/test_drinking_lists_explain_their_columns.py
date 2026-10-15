@@ -403,5 +403,5 @@ class TestBuilderIsOneFormOneTable:
             },
         )
         assert response.status_code == 200
-        assert b"already listed" in response.content
+        assert b"is already on file. OpenH2O changed nothing." in response.content
         assert b'id="points-listed"' in response.content

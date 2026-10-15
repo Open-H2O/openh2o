@@ -513,3 +513,27 @@ class TestTheProductionRowErrors:
                      "At least one of the six", "Gallons is the default."):
             assert line in body, line
         assert "totals the source columns above" not in body
+
+
+class TestThePointBuilder:
+    """Message U, approved 2026-10-15 08:59 PDT."""
+
+    def test_the_ps_code_messages(self):
+        from drinking.ps_codes import compose_ps_code
+
+        cases = {
+            "": "Enter the point number.",
+            "A_1": "The point number 'A_1' contains an underscore. A PS Code uses "
+                   "underscores only between its three parts.",
+            "A 1": "The point number 'A 1' contains a space. A PS Code uses only "
+                   "letters, digits and hyphens, such as 010, DST or LCR.",
+            "A#1": "The point number 'A#1' contains the character '#'. A PS Code "
+                   "uses only letters, digits and hyphens, such as 010, DST or LCR.",
+        }
+        for value, message in cases.items():
+            with pytest.raises(ValueError) as exc:
+                compose_ps_code("CA2410009", "001", value)
+            assert str(exc.value) == message
+        with pytest.raises(ValueError, match="has 64 characters, and OpenH2O stores "
+                                             "PS Codes of up to 60. Shorten the point number."):
+            compose_ps_code("CA2410009", "001", "X" * 50)

@@ -31,13 +31,12 @@
   {% endif %}
   {% if added %}
   <div class="alert-success">
-    Added <span class="text-mono">{{ added.ps_code }}</span>{% if added.name %} ({{ added.name }}){% endif %}.
+    OpenH2O added {% if added.name %}{{ added.name }} as {% endif %}sampling point <span class="text-mono">{{ added.ps_code }}</span>.
   </div>
   {% endif %}
   {% if duplicate %}
   <div class="alert-warning">
-    <span class="text-mono">{{ duplicate.ps_code }}</span> is already listed; nothing was
-    changed. A partly finished system can be resumed; this is not an error.
+    Sampling point <span class="text-mono">{{ duplicate.ps_code }}</span> is already on file. OpenH2O changed nothing.
   </div>
   {% endif %}
 </div>
@@ -46,7 +45,7 @@
   <div class="ledger-card-head">
     <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">Sampling points</h2>
     <div class="text-secondary text-base">{{ point_count }} sampling point{{ point_count|pluralize }} listed on {{ n_with }} of {{ facilities|length }} facilities.</div>
-    <div class="text-secondary text-base">Lab results naming any PS Code below match on import; a row naming one that is not listed is reported and skipped.</div>
+    <div class="text-secondary text-base">OpenH2O matches each result in a lab file to the sampling point below with the same PS Code.</div>
   </div>
   {% if point_groups %}
   <div class="table-scroll">
