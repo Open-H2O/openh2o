@@ -1118,6 +1118,14 @@ def _preview_rows(rows, mapping, validated):
     return shaped
 
 
+# Approved by Brent 2026-10-14 20:37 PDT (150.1-02 screen 18, message J), the
+# surface water imports' sentence: rows_json is empty or not a list of rows.
+_ROWS_NOT_RECEIVED = (
+    "OpenH2O did not receive the file's rows from the preview. "
+    "Upload the file again."
+)
+
+
 @login_required
 @require_POST
 def import_preview(request):
@@ -1127,7 +1135,7 @@ def import_preview(request):
         return render(
             request,
             "drinking/partials/_import_result.html",
-            {"error": "No file provided. Choose a CSV of lab results."},
+            {"error": "Choose a lab results file to upload."},
         )
 
     try:
@@ -1143,19 +1151,12 @@ def import_preview(request):
     rows = parsed["rows"]
     mapping = importer.auto_map_columns(columns)
 
-    missing = importer.missing_required(mapping)
+    missing = [f for f in importer.REQUIRED_FIELDS if not mapping.get(f)]
     if missing:
         return render(
             request,
             "drinking/partials/_import_result.html",
-            {
-                "error": (
-                    "This file is missing column"
-                    f"{'s' if len(missing) > 1 else ''} the import needs: "
-                    f"{', '.join(missing)}. The expected layout is the state's "
-                    "own SDWIS.CSV lab-results format."
-                )
-            },
+            {"error": importer.missing_columns_message(missing)},
         )
 
     validated = importer.validate_rows(rows, mapping)
@@ -1231,7 +1232,7 @@ def import_commit(request):
         return render(
             request,
             "drinking/partials/_import_result.html",
-            {"error": "No rows to import — please re-upload your file and try again."},
+            {"error": _ROWS_NOT_RECEIVED},
         )
 
     # Re-enforce the row cap on COMMIT, not just on preview. `rows_json` is a
@@ -1242,19 +1243,14 @@ def import_commit(request):
         return render(
             request,
             "drinking/partials/_import_result.html",
-            {
-                "error": (
-                    f"Import is {len(rows)} rows, over the {importer.MAX_ROWS}-row "
-                    "cap. Re-upload a smaller file."
-                )
-            },
+            {"error": importer.row_cap_message(len(rows))},
         )
 
     if not isinstance(rows, list) or not all(isinstance(r, dict) for r in rows):
         return render(
             request,
             "drinking/partials/_import_result.html",
-            {"error": "The import data was malformed — please re-upload your file."},
+            {"error": _ROWS_NOT_RECEIVED},
         )
 
     # Re-derive the mapping and re-validate from scratch. The preview's verdict

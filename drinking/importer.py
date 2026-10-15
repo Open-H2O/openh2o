@@ -79,6 +79,7 @@ duplicate identity (``_NOT_IDENTITY_FIELDS``).
 
 import csv
 import io
+import math
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
@@ -121,6 +122,47 @@ MAX_ROWS = 5000
 # only checked AFTER a full parse, so it is no defense against a 5GB file.
 # The measured single-system slice above is 0.69 MB, well inside this.
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MB
+
+
+# The whole-file messages, approved by Brent 2026-10-14 20:37 PDT (150.1-02
+# screen 18, message J: "approve"), in the words the surface water imports
+# carry. The size is rounded UP, so a file over the cap never reads as equal to
+# it (a 25.5 MB file read "File is too large (25 MB); the upload cap is 25 MB.").
+def too_large_message(size):
+    mb = 1024 * 1024
+    return (
+        f"This file is {math.ceil(size / mb)} MB. "
+        f"OpenH2O imports files of up to {MAX_UPLOAD_BYTES // mb} MB."
+    )
+
+
+def row_cap_message(row_count):
+    return (
+        f"This file has {row_count:,} rows, and OpenH2O imports up to "
+        f"{MAX_ROWS:,} rows from one file. Split the file and import each part."
+    )
+
+
+#: Each required field by the name the Division of Drinking Water's file gives
+#: its column, the name the import page's column table lists.
+REQUIRED_COLUMN_NAMES = {
+    "ps_code": "PS Code",
+    "sample_date": "Sample Date",
+    "analyte_name": "Analyte Name",
+    "result": "Result",
+}
+
+
+def missing_columns_message(fields):
+    """``This file has no Sample Date, Analyte Name or Result column. ...``"""
+    names = [REQUIRED_COLUMN_NAMES[field] for field in fields]
+    listed = names[0] if len(names) == 1 else (
+        f"{', '.join(names[:-1])} or {names[-1]}"
+    )
+    return (
+        f"This file has no {listed} column. "
+        "The table below lists the columns OpenH2O imports."
+    )
 
 # Result-column tokens meaning "present" / "absent".
 #
@@ -204,29 +246,23 @@ def parse_upload(file, filename):
     # DATA_UPLOAD_MAX_MEMORY_SIZE does not cover file uploads.)
     size = getattr(file, "size", None)
     if size is not None and size > MAX_UPLOAD_BYTES:
-        raise ImportError(
-            f"File is too large ({size // (1024 * 1024)} MB); the upload cap is "
-            f"{MAX_UPLOAD_BYTES // (1024 * 1024)} MB. Please split it into "
-            "smaller files."
-        )
+        raise ImportError(too_large_message(size))
 
     extension = next((ext for ext in _DELIMITERS if name.endswith(ext)), None)
     if extension is None:
         raise ImportError(
-            "Unsupported format. Lab results import from a delimited text "
-            "file: .tab (the state's own SDWIS extract from the DDW EDT "
-            "Library), .csv, or .txt."
+            "This page imports .csv, .tab and .txt files only. Save the file "
+            "as CSV and upload it again."
         )
 
     rows, columns = _parse_csv(file, _DELIMITERS[extension])
 
     if len(rows) > MAX_ROWS:
-        raise ImportError(
-            f"File contains {len(rows)} rows, over the {MAX_ROWS}-row import "
-            "cap. Please split it into smaller files."
-        )
+        raise ImportError(row_cap_message(len(rows)))
+    if not columns:
+        raise ImportError("This file has no column names on its first line.")
     if not rows:
-        raise ImportError("No rows found in the uploaded file.")
+        raise ImportError("This file has column names but no rows below them.")
 
     return {"columns": columns, "rows": rows}
 

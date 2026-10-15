@@ -162,25 +162,36 @@ class TestParseUpload:
         assert len(result["rows"]) == TOTAL_ROWS
 
     def test_rejects_a_non_csv(self, fixture_text):
-        with pytest.raises(ImportError, match="Unsupported format"):
+        with pytest.raises(ImportError, match="This page imports .csv, .tab and .txt files only"):
             importer.parse_upload(_csv_file(fixture_text), "results.xlsx")
 
     def test_rejects_an_empty_file(self):
         header = "PS Code,Sample Date,Analyte Name,Result\n"
-        with pytest.raises(ImportError, match="No rows"):
+        with pytest.raises(
+            ImportError, match="This file has column names but no rows below them."
+        ):
             importer.parse_upload(_csv_file(header), "lab.csv")
+
+    def test_a_file_with_nothing_in_it_is_told_apart(self):
+        with pytest.raises(
+            ImportError, match="This file has no column names on its first line."
+        ):
+            importer.parse_upload(_csv_file(""), "lab.csv")
 
     def test_rejects_an_oversize_upload_before_parsing(self, fixture_text):
         f = _csv_file(fixture_text)
-        f.size = importer.MAX_UPLOAD_BYTES + 1
-        with pytest.raises(ImportError, match="too large"):
+        f.size = importer.MAX_UPLOAD_BYTES + 512 * 1024  # 25.5 MB
+        with pytest.raises(
+            ImportError,
+            match="This file is 26 MB. OpenH2O imports files of up to 25 MB.",
+        ):
             importer.parse_upload(f, "lab.csv")
 
     def test_rejects_more_than_max_rows(self, fixture_text):
         lines = fixture_text.strip().split("\n")
         header, first = lines[0], lines[1]
         bloated = "\n".join([header] + [first] * (importer.MAX_ROWS + 1))
-        with pytest.raises(ImportError, match="row import cap"):
+        with pytest.raises(ImportError, match="This file has 5,001 rows, and OpenH2O imports up to 5,000 rows"):
             importer.parse_upload(_csv_file(bloated), "lab.csv")
 
 
@@ -590,12 +601,15 @@ class TestImportViews:
             reverse("drinking:import_preview"), {"file": _csv_file(bad)}
         )
         assert response.status_code == 200
-        assert "PS Code" in response.content.decode()
+        assert (
+            "This file has no PS Code or Sample Date column. The table below "
+            "lists the columns OpenH2O imports."
+        ) in response.content.decode()
 
     def test_a_missing_file_is_reported_not_crashed(self, auth_client):
         response = auth_client.post(reverse("drinking:import_preview"), {})
         assert response.status_code == 200
-        assert "No file provided" in response.content.decode()
+        assert "Choose a lab results file to upload." in response.content.decode()
 
     def test_commit_re_enforces_the_row_cap(self, auth_client, system):
         """rows_json is a hidden field the browser posts back, so the cap has
@@ -609,7 +623,7 @@ class TestImportViews:
         response = auth_client.post(
             reverse("drinking:import_commit"), {"rows_json": json.dumps(rows)}
         )
-        assert "over the" in response.content.decode()
+        assert "Split the file and import each part." in response.content.decode()
         assert SampleResult.objects.count() == 0
 
     @pytest.mark.parametrize(

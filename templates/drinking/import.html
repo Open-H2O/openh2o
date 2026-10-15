@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load humanize %}
 
 {% block title %}Import Lab Results - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Import lab results{% endblock %}
@@ -14,7 +15,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Import</span>
   </nav>
-  <p class="page-description">Upload a lab results file, check the preview, then commit.</p>
+  <p class="page-description">This page imports sample results from a lab results file.</p>
 </div>
 {% endblock %}
 
@@ -45,8 +46,14 @@
       same column layout. 149.1-06: the card's first line says what file the
       page takes, what the preview shows and what the commit writes; the
       columns are the table below, read from drinking/importer.py.
+      150.1-02 screen 18, message J, approved by Brent 2026-10-14 20:37 PDT
+      ("approve"): the description, this line, the file label and its help.
+      The picker accepts .tab and .txt as parse_upload does: it accepted only
+      .csv, so the Division of Drinking Water's SDWIS4 .tab file could not be
+      chosen. SDWIS4 is 2.19 GB for every California system (ISSUES.md), so
+      the help says to upload only the rows for systems on file.
     {% endcomment %}
-    <p class="text-base text-secondary mt-md">The preview lists every row before anything is written; the commit writes sample events and results.</p>
+    <p class="text-base text-secondary mt-md">OpenH2O saves nothing until you press Import on the preview.</p>
 
 
     <form class="mt-lg"
@@ -61,16 +68,16 @@
       {% csrf_token %}
 
       <div class="form-group">
-        <label class="form-label" for="import-file">Lab results file: the SDWIS.CSV export from the Division of Drinking Water <span class="required-mark">*</span></label>
+        <label class="form-label" for="import-file">Lab results file <span class="required-mark">*</span></label>
         <div class="file-picker">
           <label class="btn-secondary file-picker-button">
             Choose file
-            <input type="file" id="import-file" name="file" accept=".csv"
+            <input type="file" id="import-file" name="file" accept=".csv,.tab,.txt"
                    required class="file-picker-input">
           </label>
           <span class="file-picker-name text-tertiary text-sm" id="import-file-name">No file chosen</span>
         </div>
-        <div class="form-help">Up to {{ max_rows }} rows, 25 MB.</div>
+        <div class="form-help">A .csv, .tab or .txt file of up to {{ max_rows|intcomma }} rows and 25 MB. The Division of Drinking Water&rsquo;s SDWIS4 file holds every water system in California. Upload only the rows for the water systems on file.</div>
       </div>
 
       <div class="row-start pt-sm">

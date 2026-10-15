@@ -232,7 +232,7 @@
     <input type="hidden" name="source_file" value="{{ source_file }}">
     <div class="row-start" style="gap: var(--space-sm);">
       <button type="submit" class="btn-primary" {% if not committable and not limits_fill_count %}disabled{% endif %}>
-        {% if committable or not limits_fill_count %}Commit {{ committable }} result{{ committable|pluralize }}{% else %}Add limits to {{ limits_fill_count }} result{{ limits_fill_count|pluralize }}{% endif %}
+        {% if committable or not limits_fill_count %}Import {{ committable }} result{{ committable|pluralize }}{% else %}Add limits to {{ limits_fill_count }} result{{ limits_fill_count|pluralize }}{% endif %}
       </button>
       <a href="{% url 'drinking:import' %}" class="btn-secondary">Choose a different file</a>
       <span id="commit-spinner" class="htmx-indicator text-tertiary text-sm">Saving&hellip;</span>
