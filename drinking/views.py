@@ -1113,6 +1113,8 @@ def _preview_rows(rows, mapping, validated):
                 "unit": src(row, "unit"),
                 "errors": item["errors"],
                 "warnings": item["warnings"],
+                # Message M row 10: already on file or repeated in the file.
+                "skip": bool(item["data"].get("is_duplicate")),
             }
         )
     return shaped

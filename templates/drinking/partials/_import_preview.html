@@ -26,7 +26,7 @@
     <span class="badge badge-green">{{ committable }} to import</span>
     {% if duplicate_count %}<span class="badge badge-orange">{{ duplicate_count }} already on file</span>{% endif %}
     {% if repeat_count %}<span class="badge badge-orange">{{ repeat_count }} repeated in this file</span>{% endif %}
-    {% if limits_fill_count %}<span class="badge badge-blue">{{ limits_fill_count }} to gain the file&rsquo;s limits</span>{% endif %}
+    {% if limits_fill_count %}<span class="badge badge-blue">MCL and DLR for {{ limits_fill_count }} result{{ limits_fill_count|pluralize }} on file</span>{% endif %}
     {% if error_count %}<span class="badge badge-orange">{{ error_count }} with errors</span>{% endif %}
     {% if new_analytes %}<span class="badge badge-blue">{{ new_analytes|length }} new analyte{{ new_analytes|length|pluralize }}</span>{% endif %}
   </div>
@@ -36,12 +36,13 @@
     the count sentence and "A row already recorded, or repeated in this file,
     is skipped and never written twice." deleted; the badges and each row's
     note say both. A repeat inside the file has its own badge.
+    Message M (Brent 2026-10-15 06:40 PDT, "approved"): the limits sentence
+    deleted (each row's note says it), the error line, the unknown PS Code
+    box, the new analytes line, "Rows with a note", the status column (a row
+    OpenH2O skips reads Will skip) and blank file cells read Blank.
   {% endcomment %}
-  {% if limits_fill_count %}
-  <p class="text-base text-secondary mt-sm">Of these, {{ limits_fill_count }} {{ limits_fill_count|pluralize:"was,were" }} recorded before this platform kept the limits a laboratory file carries; committing adds this file&rsquo;s MCL and DLR to {{ limits_fill_count|pluralize:"it,them" }} and changes nothing else.</p>
-  {% endif %}
   {% if error_count %}
-  <p class="text-base text-secondary mt-sm">Each row that cannot be imported is listed below with what is wrong; fix {{ error_count|pluralize:"it,them" }} in your file and import again.</p>
+  <p class="text-base text-secondary mt-md">Correct the rows below in the file and upload the file again.</p>
   {% endif %}
 
   {% comment %}
@@ -75,12 +76,12 @@
   <div class="card-inset mt-md">
     <p class="text-base text-secondary" style="margin: 0 0 var(--space-sm) 0;">
       <strong>{{ unknown_ps_codes|length }} PS Code{{ unknown_ps_codes|length|pluralize }} in this file
-      {{ unknown_ps_codes|length|pluralize:"is,are" }} not carried here.</strong>
-      Add the sampling point{{ unknown_ps_codes|length|pluralize }} where shown, then import the same file again.
+      {{ unknown_ps_codes|length|pluralize:"matches,match" }} no sampling point in OpenH2O.</strong>
+      Add the sampling point{{ unknown_ps_codes|length|pluralize }}, then upload the file again.
     </p>
     <table class="data-table mt-sm">
       <thead>
-        <tr><th>PS Code</th><th>Where to add it</th></tr>
+        <tr><th>PS Code</th><th>Where to add the sampling point</th></tr>
       </thead>
       <tbody>
         {% for route in unknown_ps_codes %}
@@ -91,14 +92,13 @@
               <a href="{% url 'drinking:onboard_points' route.pwsid %}">Add sampling points for {{ route.pwsid }}</a>
             {% elif route.pwsid %}
               <span class="text-secondary">
-                <span class="text-mono">{{ route.pwsid }}</span> is not onboarded yet; start at
-                <a href="{% url 'drinking:onboard' %}">Add a water system</a>.
+                No water system in OpenH2O has the PWSID <span class="text-mono">{{ route.pwsid }}</span>.
+                <a href="{% url 'drinking:onboard' %}">Add the water system</a> first.
               </span>
             {% else %}
               <span class="text-secondary">
-                Not a readable PS Code
-                (<span class="text-mono">{pwsid}_{facility}_{point}</span>); check the file
-                rather than adding a point.
+                This PS Code is not in the form <span class="text-mono">PWSID_facility_point</span>.
+                Correct the code in the file.
               </span>
             {% endif %}
           </td>
@@ -112,7 +112,7 @@
   {% if new_analytes %}
   <div class="card-inset mt-md">
     <p class="text-sm text-secondary m-0">
-      <strong>Committing adds these new analytes under the file&rsquo;s own name and code:</strong>
+      <strong>New analytes OpenH2O will add:</strong>
       <span class="text-mono">{{ new_analytes|join:", " }}</span>
     </p>
   </div>
@@ -149,8 +149,8 @@
       {% for row in error_rows %}
       <tr>
         <td class="text-mono">{{ row.index }}</td>
-        <td class="text-mono">{{ row.ps_code|blank }}</td>
-        <td>{{ row.analyte|blank }}</td>
+        <td class="text-mono">{{ row.ps_code|blank:"Blank" }}</td>
+        <td>{{ row.analyte|blank:"Blank" }}</td>
         <td>
           {% for err in row.errors %}<div class="text-furnace">{{ err }}</div>{% endfor %}
         </td>
@@ -161,7 +161,7 @@
   {% endif %}
 
   {% if warning_rows %}
-  <h3 class="text-base mt-lg">Rows to be aware of</h3>
+  <h3 class="text-base mt-lg">Rows with a note</h3>
   <table class="data-table mt-sm">
     <thead>
       <tr>
@@ -175,8 +175,8 @@
       {% for row in warning_rows %}
       <tr>
         <td class="text-mono">{{ row.index }}</td>
-        <td class="text-mono">{{ row.ps_code|blank }}</td>
-        <td>{{ row.analyte|blank }}</td>
+        <td class="text-mono">{{ row.ps_code|blank:"Blank" }}</td>
+        <td>{{ row.analyte|blank:"Blank" }}</td>
         <td>
           {% for warn in row.warnings %}<div class="text-secondary">{{ warn }}</div>{% endfor %}
         </td>
@@ -203,15 +203,15 @@
       {% for row in preview_rows %}
       <tr>
         <td class="text-mono">{{ row.index }}</td>
-        <td class="text-mono">{{ row.ps_code|blank }}</td>
-        <td>{{ row.sample_date|blank }}</td>
-        <td>{{ row.analyte|blank }}</td>
-        <td class="text-mono">{{ row.result|blank }}</td>
-        <td>{{ row.unit|blank }}</td>
+        <td class="text-mono">{{ row.ps_code|blank:"Blank" }}</td>
+        <td>{{ row.sample_date|blank:"Blank" }}</td>
+        <td>{{ row.analyte|blank:"Blank" }}</td>
+        <td class="text-mono">{{ row.result|blank:"Blank" }}</td>
+        <td>{{ row.unit|blank:"Blank" }}</td>
         <td>
           {% if row.errors %}<span class="badge badge-orange">Error</span>
-          {% elif row.warnings %}<span class="badge badge-blue">Note</span>
-          {% else %}<span class="badge badge-green">Will create</span>{% endif %}
+          {% elif row.skip %}<span class="badge badge-blue">Will skip</span>
+          {% else %}<span class="badge badge-green">Will import</span>{% endif %}
         </td>
       </tr>
       {% endfor %}

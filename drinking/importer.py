@@ -348,7 +348,7 @@ FIELD_LABELS = {
     "sample_time": "Sample time",
     "sample_type": "Sample type",
     "analysis_date": "Analysis date",
-    "lab_cert_no": "ELAP cert #",
+    "lab_cert_no": "ELAP certificate number",
     "lab_name": "Lab name",
     "ddw_code": "Analyte code",
     "analyte_name": "Analyte name",
@@ -360,8 +360,8 @@ FIELD_LABELS = {
     "method": "Method",
     "collector": "Collector",
     "regulating_agency": "Regulating agency",
-    "mcl_as_reported": "MCL (stored as reported)",
-    "dlr_as_reported": "DLR (stored as reported)",
+    "mcl_as_reported": "MCL",
+    "dlr_as_reported": "DLR",
 }
 
 # Without these four a row cannot become a result at all.

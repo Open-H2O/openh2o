@@ -129,7 +129,7 @@ class TestImporterHandsBackToTheBuilder:
         body = response.content.decode()
 
         # No sampling points exist, so every code in the file is unknown...
-        assert "not carried here" in body
+        assert "match no sampling point in OpenH2O" in body or "matches no sampling point in OpenH2O" in body
         # ...and each one routes back to the builder for its own system.
         assert reverse("drinking:onboard_points", args=[PWSID]) in body
 
@@ -155,11 +155,11 @@ class TestImporterHandsBackToTheBuilder:
 
         response = self._upload(client_logged_in, FIXTURE.read_bytes())
         body = response.content.decode()
-        assert "not carried here" not in body
+        assert "no sampling point in OpenH2O" not in body
 
     def test_unknown_system_says_onboard_first(self, client_logged_in, db):
         """A code whose PWSID is not carried at all routes to the wizard."""
         WaterSystem.objects.all().delete()
         response = self._upload(client_logged_in, FIXTURE.read_bytes())
         body = response.content.decode()
-        assert "is not onboarded yet" in body
+        assert "No water system in OpenH2O has the PWSID" in body

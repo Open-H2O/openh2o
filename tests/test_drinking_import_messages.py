@@ -253,3 +253,35 @@ class TestPreviewNotes:
         ) in body
         assert "rows were read" not in body
         assert "never written twice" not in body
+
+
+class TestThePreviewsOtherLines:
+    """Message M, approved 2026-10-15 06:40 PDT."""
+
+    def test_status_blank_cells_and_the_box(self, auth_client):
+        from tests.factories import SamplingPointFactory
+
+        point = SamplingPointFactory()
+        good = f"{point.ps_code},2024-03-05,Nitrate,1\n"
+        body = _preview(
+            auth_client, "lab.csv",
+            "PS Code,Sample Date,Analyte Name,Result\n" + good + good
+            + "NOCODE,2024-03-05,Nitrate,1\n" + ",2024-03-05,Nitrate,1\n",
+        ).content.decode()
+        assert "Will import" in body
+        assert "Will skip" in body
+        assert ">Blank<" in body
+        assert "Not recorded" not in body
+        assert "Correct the rows below in the file and upload the file again." in body
+        assert "matches no sampling point in OpenH2O." in body
+        assert "Where to add the sampling point" in body
+        assert "This PS Code is not in the form" in body
+        assert "Correct the code in the file." in body
+        assert "New analytes OpenH2O will add:" in body
+        assert "Rows with a note" in body
+        assert "Will create" not in body
+
+    def test_column_labels(self):
+        assert importer.FIELD_LABELS["lab_cert_no"] == "ELAP certificate number"
+        assert importer.FIELD_LABELS["mcl_as_reported"] == "MCL"
+        assert importer.FIELD_LABELS["dlr_as_reported"] == "DLR"
