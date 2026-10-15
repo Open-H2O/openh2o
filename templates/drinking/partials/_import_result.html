@@ -58,7 +58,7 @@
   <p class="text-base text-secondary mt-sm">{{ a.system.name }} already has {{ a.existing }} on file as its regulating agency. OpenH2O kept {{ a.existing }} and did not record this file&rsquo;s {{ a.value }}.</p>
       {% endif %}
     {% else %}
-  <p class="text-base text-secondary mt-sm">This file names {{ a.values|length|apnumber }} regulating agencies for {{ a.system.name }}: {{ a.values|slice:":-1"|join:", " }} and {{ a.values|last }}. OpenH2O recorded {% if a.values|length == 2 %}neither{% else %}none of them{% endif %}.</p>
+  <p class="text-base text-secondary mt-sm">The rows of this file name {{ a.values|length }} different regulating agencies for {{ a.system.name }}: {{ a.values|slice:":-1"|join:", " }} and {{ a.values|last }}. OpenH2O records a regulating agency only when every row names the same agency.</p>
     {% endif %}
   {% endfor %}
 

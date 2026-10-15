@@ -316,7 +316,7 @@ class TestThePageAfterImport:
             "skips every row already on file."
         ) in body
 
-    def test_three_agencies_read_none_of_them(self, auth_client):
+    def test_three_agencies_state_the_rule(self, auth_client):
         from tests.factories import SamplingPointFactory
 
         point = SamplingPointFactory()
@@ -329,7 +329,28 @@ class TestThePageAfterImport:
             reverse("drinking:import_commit"), {"rows_json": json.dumps(rows)}
         ).content.decode()
         assert (
-            f"This file names three regulating agencies for "
-            f"{point.facility.system.name}: A, B and C. OpenH2O recorded "
-            "none of them."
+            "The rows of this file name 3 different regulating agencies for "
+            f"{point.facility.system.name}: A, B and C. OpenH2O records a "
+            "regulating agency only when every row names the same agency."
         ) in body
+
+
+class TestTheImportPagesTables:
+    """Message O, approved 2026-10-15 07:58 PDT."""
+
+    def test_the_tables(self, auth_client):
+        body = auth_client.get(reverse("drinking:import")).content.decode()
+        for line in (
+            "What OpenH2O saves from a lab file",
+            "OpenH2O imports each row that has no error, unless the same result "
+            "is already on file or appears earlier in the file.",
+            "OpenH2O never adds a sampling point or a facility from a lab file.",
+            "Columns OpenH2O reads",
+            "OpenH2O reads only the columns listed below.",
+            "OpenH2O matches an analyte on file by Analyte Code first, then by "
+            "Analyte Name.",
+        ):
+            assert line in body
+        for gone in ("Will create", "What the commit does", "needs no mapping",
+                     "the state&#x27;s file", "the state's file"):
+            assert gone not in body

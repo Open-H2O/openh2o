@@ -87,36 +87,38 @@
     </form>
   </div>
 
+  {% comment %}
+    150.1-02 screen 18, message O, approved by Brent 2026-10-15 07:58 PDT
+    ("yes, approved"): this table, and the column table's heading, intro and
+    first three cells. Row 2 states the rule (07:55: "Why is the word will
+    capitalized?"); the error row deleted (the preview's error table says it).
+  {% endcomment %}
   <div class="card-raised">
-    <h2 class="card-header-ruled">What the import will and will not create</h2>
+    <h2 class="card-header-ruled">What OpenH2O saves from a lab file</h2>
     <div class="table-scroll mt-md">
       <table class="data-table help-cases-table">
         <thead>
           <tr>
             <th>Case</th>
-            <th>What the commit does</th>
+            <th>What OpenH2O does</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td class="col-name">Sample events and results</td>
-            <td>Created from every row the preview marks Will create</td>
+            <td>OpenH2O imports each row that has no error, unless the same result is already on file or appears earlier in the file.</td>
           </tr>
           <tr>
             <td class="col-name">New analytes</td>
-            <td>Analytes the file names that this system has not seen are added to the vocabulary; the state's file is the authority. The preview lists each one before you commit.</td>
+            <td>OpenH2O adds any analyte in the file that is not already on file. The preview lists each new analyte.</td>
           </tr>
           <tr>
             <td class="col-name">Sampling points and facilities</td>
-            <td>Never created. A PS Code this system does not carry is a row error; add the facility and sampling point first, then import again.</td>
+            <td>OpenH2O never adds a sampling point or a facility from a lab file. Add a missing sampling point first, then upload the file again.</td>
           </tr>
           <tr>
-            <td class="col-name">A result already recorded</td>
-            <td>Skipped, so importing the same file again is safe; one recorded before limits were kept gains this file's MCL and DLR</td>
-          </tr>
-          <tr>
-            <td class="col-name">A row with an error</td>
-            <td>Not written; the preview lists it with what is wrong</td>
+            <td class="col-name">A result already on file</td>
+            <td>OpenH2O skips the row, so importing the same file again adds no result. For a result imported before OpenH2O kept a lab file&rsquo;s MCL and DLR, OpenH2O adds this file&rsquo;s MCL and DLR.</td>
           </tr>
         </tbody>
       </table>
@@ -133,8 +135,8 @@
     matched and never read. Never a sentence of names.
   {% endcomment %}
   <div class="card-raised">
-    <h2 class="card-header-ruled">Columns the file carries</h2>
-    <p class="text-base text-secondary mt-md">Columns are matched by header, so the state's own file needs no mapping. A file missing a required column is refused before the preview. Other columns are ignored.</p>
+    <h2 class="card-header-ruled">Columns OpenH2O reads</h2>
+    <p class="text-base text-secondary mt-md">OpenH2O matches each column by its name, so the Division of Drinking Water&rsquo;s file needs no column matching. OpenH2O reads only the columns listed below.</p>
     <div class="table-scroll mt-md">
       <table class="data-table help-cases-table">
         <thead>
@@ -148,7 +150,7 @@
           <tr>
             <td class="col-name">PS Code</td>
             <td class="col-sure">Yes</td>
-            <td>Sampling point the sample was taken at; the point must already be on file</td>
+            <td>The sampling point where the sample was taken. The point must already be on file.</td>
           </tr>
           <tr>
             <td class="col-name">Sample Date</td>
@@ -158,12 +160,12 @@
           <tr>
             <td class="col-name">Analyte Name</td>
             <td class="col-sure">Yes</td>
-            <td>Analyte, matched by Analyte Code first, then by name</td>
+            <td>OpenH2O matches an analyte on file by Analyte Code first, then by Analyte Name.</td>
           </tr>
           <tr>
             <td class="col-name">Result</td>
             <td class="col-sure">Yes</td>
-            <td>A number; a value below the reporting level, such as &lt;0.005; or presence or absence, such as P or A. Blank only with Less Than Reporting Level Y and a Reporting Level.</td>
+            <td>A number, a value below the reporting level such as &lt;0.005, or P or A for present or absent. The cell can be blank when Less Than Reporting Level is Y and Reporting Level gives the level.</td>
           </tr>
           <tr>
             <td class="col-name">Sample Time</td>

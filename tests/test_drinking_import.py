@@ -1340,9 +1340,10 @@ class TestRegulatingAgency:
         assert system["system"].regulating_agency == ""
         body = response.content.decode()
         assert (
-            "This file names two regulating agencies for "
+            "The rows of this file name 2 different regulating agencies for "
             f"{system['system'].name}: District 98 and District 99. OpenH2O "
-            "recorded neither."
+            "records a regulating agency only when every row names the same "
+            "agency."
         ) in body
 
     def test_a_file_without_the_column_says_nothing_about_it(
