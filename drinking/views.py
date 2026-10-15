@@ -2124,6 +2124,11 @@ def production_import_commit(request):
     operator_year = int(operator_year_raw) if operator_year_raw.isdigit() else None
     operator_unit = request.POST.get("operator_unit", "").strip() or "G"
 
+    # A log with no year imports nothing: show the preview again, with the
+    # year box asking for it (message R row 12, Brent 2026-10-15 08:23 PDT).
+    if layout == "operator_log" and operator_year is None:
+        return production_import_preview(request)
+
     try:
         result = production_import_service.import_production_rows(
             columns, rows, system=system, layout=layout,

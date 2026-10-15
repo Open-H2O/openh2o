@@ -46,7 +46,11 @@ from decimal import Decimal, InvalidOperation
 
 from django.db import transaction
 
-from drinking.models import PRODUCTION_UNIT_CHOICES, SystemProduction
+from drinking.models import (
+    PRODUCTION_TYPE_CHOICES,
+    PRODUCTION_UNIT_CHOICES,
+    SystemProduction,
+)
 
 MAX_ROWS = 2000
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MB, the ceiling every importer here uses
@@ -174,27 +178,30 @@ def recognise_layout(columns):
 def _process_ear_row(line_num, row, *, system, unit_for_blank):
     errors = []
 
-    pwsid = (row.get("PWSID") or "").strip().upper()
+    # The row errors are message R, approved by Brent 2026-10-15 08:23 PDT
+    # (150.1-02 screen 18): each a sentence, values as the file writes them.
+    pwsid_raw = (row.get("PWSID") or "").strip()
+    pwsid = pwsid_raw.upper()
     if not pwsid:
-        errors.append("missing PWSID")
+        errors.append("PWSID is blank.")
     elif pwsid != system.pwsid.strip().upper():
         errors.append(
-            f"PWSID {pwsid!r} does not match this deployment's system "
-            f"({system.pwsid})"
+            f"This row's PWSID {pwsid_raw} does not match the water system's "
+            f"PWSID {system.pwsid}."
         )
 
     year = None
     year_raw = (row.get("Year") or "").strip()
     if not year_raw:
-        errors.append("missing Year")
+        errors.append("Year is blank.")
     else:
         try:
             year = int(year_raw)
         except ValueError:
-            errors.append(f"invalid Year: {year_raw!r}")
+            errors.append(f"Year '{year_raw}' is not a year.")
 
-    month_raw = (row.get("Month") or "").strip().lower()
-    month_num = _MONTH_NAMES.get(month_raw)
+    month_written = (row.get("Month") or "").strip()
+    month_num = _MONTH_NAMES.get(month_written.lower())
     if month_num is None:
         # Fall back to DateStartOfMonth (M/D/YYYY, the eAR's own date column)
         # -- the same order of precedence the state's own file would need if
@@ -208,41 +215,48 @@ def _process_ear_row(line_num, row, *, system, unit_for_blank):
                 continue
         if month_num is None:
             errors.append(
-                f"unreadable Month/DateStartOfMonth: {month_raw!r} / {date_raw!r}"
+                f"OpenH2O cannot read a month from Month '{month_written}' or "
+                f"DateStartOfMonth '{date_raw}'."
             )
 
     type_raw = (row.get("TypeCode") or "").strip()
     type_code = _EAR_TYPE_MAP.get(type_raw)
     if type_code is None:
         errors.append(
-            f"TypeCode {type_raw!r} is not one of the state's seven "
-            "(GW, SW, Purchased, Sold, Recycled, NonPotable, NonPotableSold)"
+            f"OpenH2O does not recognize the TypeCode '{type_raw}'. Use GW, SW, "
+            "Purchased, Sold, Recycled, NonPotable or NonPotableSold."
         )
 
-    unit_raw = (row.get("Units of Measure As Reported") or "").strip().upper()
+    unit_written = (row.get("Units of Measure As Reported") or "").strip()
+    unit_raw = unit_written.upper()
     unit = None
     if not unit_raw:
         if unit_for_blank:
             unit = unit_for_blank
         else:
             errors.append(
-                "Units of Measure As Reported is blank; choose the unit for "
-                "blank rows in the mapping step below"
+                "Units of Measure As Reported is blank. Choose a unit for blank "
+                "rows in the settings above, then press Update preview."
             )
     elif unit_raw in _UNIT_CODES:
         unit = unit_raw
     else:
-        errors.append(f"unrecognised unit: {unit_raw!r}")
+        errors.append(
+            f"OpenH2O does not recognize the unit '{unit_written}'. "
+            "Use G, MG, AF or CCF."
+        )
 
     volume = None
     qty_raw = (row.get("Quantity as in Units Reported") or "").strip()
     if not qty_raw:
-        errors.append("missing Quantity as in Units Reported")
+        errors.append("Quantity as in Units Reported is blank.")
     else:
         try:
             volume = Decimal(qty_raw.replace(",", ""))
         except InvalidOperation:
-            errors.append(f"invalid Quantity as in Units Reported: {qty_raw!r}")
+            errors.append(
+                f"Quantity as in Units Reported '{qty_raw}' is not a number."
+            )
 
     if errors:
         return {"line": line_num, "errors": errors}
@@ -278,7 +292,7 @@ def _process_operator_log_row(line_num, row, *, year, unit):
         try:
             volume = Decimal(raw.replace(",", ""))
         except InvalidOperation:
-            errors.append(f"invalid {column}: {raw!r}")
+            errors.append(f"{column} '{raw}' is not a number.")
             continue
         entries.append(
             {
@@ -312,11 +326,12 @@ def build_rows(columns, rows, layout, *, system, unit_for_blank=None,
     candidates_by_key = {}
     duplicate_rows_in_file = 0
 
+    year_missing = False
     if layout == "ear":
         for line_num, row in enumerate(rows, start=2):
             entry = _process_ear_row(line_num, row, system=system, unit_for_blank=unit_for_blank)
             if entry.get("errors"):
-                errors.append({"line": line_num, "message": "; ".join(entry["errors"])})
+                errors.append({"line": line_num, "message": " ".join(entry["errors"])})
                 continue
             key = (entry["year"], entry["month"], entry["type_code"])
             if key in candidates_by_key:
@@ -334,10 +349,9 @@ def build_rows(columns, rows, layout, *, system, unit_for_blank=None,
             }
     else:
         if operator_year is None:
-            errors.append(
-                {"line": 1, "message": "The operator's log carries no year; "
-                 "choose the report year in the mapping step below."}
-            )
+            # Said once under the Report year box (message R row 12), never
+            # as an error on a "Row 1" the file does not have.
+            year_missing = True
         else:
             for line_num, row in enumerate(rows, start=2):
                 entry = _process_operator_log_row(
@@ -348,7 +362,7 @@ def build_rows(columns, rows, layout, *, system, unit_for_blank=None,
                     continue
                 if entry["errors"]:
                     errors.append(
-                        {"line": line_num, "message": "; ".join(entry["errors"])}
+                        {"line": line_num, "message": " ".join(entry["errors"])}
                     )
                     continue
                 for item in entry["entries"]:
@@ -384,6 +398,7 @@ def build_rows(columns, rows, layout, *, system, unit_for_blank=None,
         "skipped_rows": skipped_rows,
         "duplicate_rows_in_file": duplicate_rows_in_file,
         "errors": errors,
+        "year_missing": year_missing,
     }
 
 
@@ -437,9 +452,17 @@ def commit_rows(built, *, system, provenance, dry_run=False):
                     )
                     created += 1
             except Exception as exc:
+                type_label = dict(PRODUCTION_TYPE_CHOICES).get(
+                    c["type_code"], c["type_code"]
+                ).lower()
+                month_name = datetime(2000, c["month"], 1).strftime("%B")
                 errors.append({
                     "line": ", ".join(str(n) for n in c["source_lines"]),
-                    "message": f"{type(exc).__name__}: {exc}",
+                    "message": (
+                        "An unexpected error stopped OpenH2O from saving the "
+                        f"{type_label} figure for {month_name} {c['year']}. "
+                        f"Details: {type(exc).__name__}: {exc}"
+                    ),
                 })
 
     return {
@@ -475,5 +498,6 @@ def import_production_rows(columns, rows, *, system, layout=None,
         "skipped_rows": built["skipped_rows"],
         "duplicate_rows_in_file": built["duplicate_rows_in_file"],
         "errors": committed["errors"],
+        "year_missing": built["year_missing"],
         "dry_run": dry_run,
     }

@@ -374,7 +374,8 @@ def test_operator_log_requires_the_report_year(le_grand):
     result = production_import.import_production_rows(columns, rows, system=le_grand, dry_run=False)
 
     assert result["created"] == 0
-    assert any("year" in e["message"].lower() for e in result["errors"])
+    assert result["year_missing"] is True
+    assert result["errors"] == []  # said once under the year box, not as "Row 1"
 
 
 def test_operator_log_agrees_with_the_ear_file_row_for_row(le_grand):

@@ -38,6 +38,7 @@ pressed.
         <label class="form-label" for="production-operator-year">Report year</label>
         <input type="number" id="production-operator-year" name="operator_year" class="form-input" value="{{ operator_year }}" placeholder="e.g. 2022">
         <div class="form-help">The operator's log carries no year of its own.</div>
+        {% if year_missing %}<div class="form-error-text">Enter the report year above, then press Update preview.</div>{% endif %}
       </div>
       <div class="form-group">
         <label class="form-label" for="production-operator-unit">Unit</label>

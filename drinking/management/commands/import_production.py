@@ -96,6 +96,9 @@ class Command(BaseCommand):
         except ImportError as exc:
             raise CommandError(str(exc))
 
+        if result["year_missing"]:
+            raise CommandError("The log carries no year; pass --operator-year.")
+
         action = "Would create" if dry_run else "Created"
         self.stdout.write(f"Layout recognised: {result['layout']}")
         self.stdout.write(

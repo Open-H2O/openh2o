@@ -420,3 +420,59 @@ class TestTheProductionImport:
             svc.parse_csv(F(), "p.xlsx")
         with pytest.raises(ImportError, match="OpenH2O does not recognize the columns in this file: Well, Date"):
             svc.recognise_layout(["Well", "Date"])
+
+
+class TestTheProductionRowErrors:
+    """Message R, approved 2026-10-15 08:23 PDT."""
+
+    E = ("PWSID,Year,Month,DateStartOfMonth,TypeCode,"
+         "Units of Measure As Reported,Quantity as in Units Reported\n")
+
+    def _errors(self, system, *lines):
+        from drinking import production_import as svc
+
+        columns, rows = svc.parse_csv(
+            __import__("io").StringIO(self.E + "\n".join(lines) + "\n"), "p.csv"
+        )
+        return [e["message"] for e in svc.import_production_rows(
+            columns, rows, system=system, dry_run=True)["errors"]]
+
+    def test_the_messages(self, db):
+        from tests.factories import WaterSystemFactory
+
+        ws = WaterSystemFactory(pwsid="CA2410009")
+        assert self._errors(ws, ",2024,May,,GW,G,1") == ["PWSID is blank."]
+        assert self._errors(ws, "CA9999999,2024,May,,GW,G,1") == [
+            "This row's PWSID CA9999999 does not match the water system's "
+            "PWSID CA2410009."]
+        assert self._errors(ws, "CA2410009,20x4,May,,GW,G,1") == ["Year '20x4' is not a year."]
+        assert self._errors(ws, "CA2410009,2024,Smarch,13/45/2024,GW,G,1") == [
+            "OpenH2O cannot read a month from Month 'Smarch' or DateStartOfMonth "
+            "'13/45/2024'."]
+        assert self._errors(ws, "CA2410009,2024,May,,Well,lbs,") == [
+            "OpenH2O does not recognize the TypeCode 'Well'. Use GW, SW, "
+            "Purchased, Sold, Recycled, NonPotable or NonPotableSold. "
+            "OpenH2O does not recognize the unit 'lbs'. Use G, MG, AF or CCF. "
+            "Quantity as in Units Reported is blank."]
+        assert self._errors(ws, "CA2410009,2024,May,,GW,,1") == [
+            "Units of Measure As Reported is blank. Choose a unit for blank rows "
+            "in the settings above, then press Update preview."]
+
+    def test_a_log_with_no_year_asks_under_the_year_box(self, auth_client):
+        from tests.factories import WaterSystemFactory
+
+        WaterSystemFactory()
+        log = ("Date/Month,Water Produced from Groundwater (Wells)\n"
+               "January,100\n")
+        upload = SimpleUploadedFile("log.csv", log.encode(), content_type="text/csv")
+        body = auth_client.post(
+            reverse("drinking:production_import_preview"), {"file": upload}
+        ).content.decode()
+        assert "Enter the report year above, then press Update preview." in body
+        assert "carries no year;" not in body
+        rows = json.dumps([{"Date/Month": "January",
+                            "Water Produced from Groundwater (Wells)": "100"}])
+        body = auth_client.post(
+            reverse("drinking:production_import_commit"), {"rows_json": rows}
+        ).content.decode()
+        assert "Enter the report year above, then press Update preview." in body
