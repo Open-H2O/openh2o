@@ -354,3 +354,16 @@ class TestTheImportPagesTables:
         for gone in ("Will create", "What the commit does", "needs no mapping",
                      "the state&#x27;s file", "the state's file"):
             assert gone not in body
+
+    def test_the_column_cells(self, auth_client):
+        """Message P, approved 2026-10-15 08:07 PDT."""
+        body = auth_client.get(reverse("drinking:import")).content.decode()
+        for line in (
+            "OpenH2O stores the reporting level with every numeric result.",
+            "OpenH2O records the collector only for a sample not already on file.",
+            "OpenH2O stores the file&rsquo;s MCL with the result and does not "
+            "compare the result with the MCL.",
+            "The detection limit for purposes of reporting.",
+        ):
+            assert line in body
+        assert "stored with a result below it" not in body

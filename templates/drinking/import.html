@@ -90,7 +90,8 @@
   {% comment %}
     150.1-02 screen 18, message O, approved by Brent 2026-10-15 07:58 PDT
     ("yes, approved"): this table, and the column table's heading, intro and
-    first three cells. Row 2 states the rule (07:55: "Why is the word will
+    first three cells; message P (08:07 PDT, "Approved") the other twelve
+    cells. Row 2 states the rule (07:55: "Why is the word will
     capitalized?"); the error row deleted (the preview's error table says it).
   {% endcomment %}
   <div class="card-raised">
@@ -170,22 +171,22 @@
           <tr>
             <td class="col-name">Sample Time</td>
             <td class="col-sure">No</td>
-            <td>Time collected; an unreadable time is ignored and noted in the preview</td>
+            <td>The time the sample was collected. When OpenH2O cannot read the time, OpenH2O imports the result without a time and notes the row on the preview.</td>
           </tr>
           <tr>
             <td class="col-name">Sample Type</td>
             <td class="col-sure">No</td>
-            <td>RT, RP, SP or TG (routine, repeat, special, triggered), or a type name such as Confirmation; blank is recorded as routine, any other value as routine with a note</td>
+            <td>RT, RP, SP or TG, or the name Routine, Repeat, Confirmation, Special or Triggered. OpenH2O records a blank as routine, and any other value as routine with a note on the preview.</td>
           </tr>
           <tr>
             <td class="col-name">Analysis Date</td>
             <td class="col-sure">No</td>
-            <td>Date analyzed</td>
+            <td>The date the lab analyzed the sample, written YYYY-MM-DD, MM-DD-YYYY or M/D/YYYY.</td>
           </tr>
           <tr>
             <td class="col-name">ELAP Cert#</td>
             <td class="col-sure">No</td>
-            <td>Laboratory's certificate number under the Environmental Laboratory Accreditation Program (ELAP)</td>
+            <td>The lab&rsquo;s certificate number under California&rsquo;s Environmental Laboratory Accreditation Program.</td>
           </tr>
           <tr>
             <td class="col-name">Lab Name</td>
@@ -195,17 +196,17 @@
           <tr>
             <td class="col-name">Analyte Code</td>
             <td class="col-sure">No</td>
-            <td>State's analyte code; recorded on an analyte on file that has none</td>
+            <td>The Division of Drinking Water&rsquo;s code for the analyte. When an analyte on file has no code, OpenH2O adds the file&rsquo;s code to that analyte.</td>
           </tr>
           <tr>
             <td class="col-name">Counting Error (&plusmn;)</td>
             <td class="col-sure">No</td>
-            <td>Counting error, stored with the result</td>
+            <td>OpenH2O stores the counting error with the result.</td>
           </tr>
           <tr>
             <td class="col-name">Units of Measure</td>
             <td class="col-sure">No</td>
-            <td>Unit of the result, stored as written, such as mg/L</td>
+            <td>The result&rsquo;s unit, such as mg/L. OpenH2O copies the unit unchanged.</td>
           </tr>
           <tr>
             <td class="col-name">Less Than Reporting Level</td>
@@ -215,7 +216,7 @@
           <tr>
             <td class="col-name">Reporting Level</td>
             <td class="col-sure">No</td>
-            <td>Reporting level, stored with a result below it</td>
+            <td>OpenH2O stores the reporting level with every numeric result.</td>
           </tr>
           <tr>
             <td class="col-name">Method</td>
@@ -225,22 +226,22 @@
           <tr>
             <td class="col-name">Collector</td>
             <td class="col-sure">No</td>
-            <td>Who collected the sample, stored on a new sample event</td>
+            <td>The person who collected the sample. OpenH2O records the collector only for a sample not already on file.</td>
           </tr>
           <tr>
             <td class="col-name">Regulating Agency</td>
             <td class="col-sure">No</td>
-            <td>Recorded on the water system when its own field is blank and every row names the same agency</td>
+            <td>OpenH2O records the agency on the water system when the system has none on file and every row names the same agency.</td>
           </tr>
           <tr>
             <td class="col-name">MCL</td>
             <td class="col-sure">No</td>
-            <td>Maximum contaminant level the file carries, stored as reported and never compared with the result</td>
+            <td>OpenH2O stores the file&rsquo;s MCL with the result and does not compare the result with the MCL.</td>
           </tr>
           <tr>
             <td class="col-name">DLR</td>
             <td class="col-sure">No</td>
-            <td>Detection limit for purposes of reporting the file carries, stored as reported</td>
+            <td>The detection limit for purposes of reporting. OpenH2O stores the file&rsquo;s DLR with the result.</td>
           </tr>
         </tbody>
       </table>

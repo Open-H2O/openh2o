@@ -131,6 +131,7 @@ DISTRICT_READER = re.compile(
 #: out of a lab file, and not the reader. Removed before DISTRICT_READER counts.
 DISTRICT_ENTITY: tuple = (
     (r"a groundwater agency's published table", "names the efficiency table's publisher, not the reader (Brent, 2026-10-12 09:43)"),
+    (r"records the agency on the water system", "the lab file's regulating agency, not the reader (Brent, 2026-10-15 08:07)"),
     (r"a groundwater agency's or a county's", "a local registry's keeper, not the reader (Brent, 2026-10-11 20:36)"),
 )
 _DISTRICT_KEPT = re.compile("|".join(f"(?:{phrase})" for phrase, _ in DISTRICT_ENTITY), re.I)
@@ -150,7 +151,7 @@ CALIFORNIA_NAMES: tuple = (
     (r"California Irrigation Management Information System", "CIMIS spelled out"),
     (r"California Nevada River Forecast Center", "CNRFC spelled out"),
     (r"California Department of Water Resources", "DWR spelled out"),
-    (r"California's Environmental Laboratory Accreditation Program", "ELAP spelled out"),
+    (r"California.s Environmental Laboratory Accreditation Program", "ELAP spelled out"),
     (r"California's accreditation of laboratories", "ELAP is a California program"),
     (r"the California law requiring groundwater management", "SGMA is a California law"),
     (r"California's \**Sustainable Groundwater Management Act", "SGMA spelled out"),
