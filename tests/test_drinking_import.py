@@ -348,11 +348,11 @@ class TestValidateRows:
 
     def test_an_unknown_ps_code_is_a_row_error_not_an_auto_create(self, validated):
         row = validated[27]
-        assert any("not a known sampling point" in e for e in row["errors"])
+        assert any("No sampling point on file has the PS Code" in e for e in row["errors"])
 
     def test_an_unreadable_result_is_rejected_never_coerced_to_zero(self, validated):
         row = validated[29]
-        assert any("neither a number nor a presence/absence" in e for e in row["errors"])
+        assert any("OpenH2O does not recognize the result" in e for e in row["errors"])
         assert row["data"].get("result_value") is None
 
     def test_an_unknown_analyte_is_a_warning_not_an_error(self, validated):
@@ -564,7 +564,7 @@ class TestImportViews:
         body = preview.content.decode()
         # The preview must show what will happen BEFORE anything is written.
         assert "Perchlorate" in body  # the new-analyte warning
-        assert "not a known sampling point" in body  # the blocking error
+        assert "No sampling point on file has the PS Code" in body  # the blocking error
         assert SampleResult.objects.count() == 0
 
         rows_json = preview.context["rows_json"]
@@ -861,6 +861,7 @@ class TestRealDDWDates:
         message = next(e for e in row["errors"] if "is not a date" in e)
         assert "YYYY-MM-DD" in message
         assert "MM-DD-YYYY" in message
+        assert "M/D/YYYY" in message
 
 
 class TestRealDDWNonDetects:
@@ -908,7 +909,7 @@ class TestRealDDWNonDetects:
             }
         )
         assert row["errors"], "a flagged blank with no level must not pass"
-        assert any("Reporting Level" in e for e in row["errors"])
+        assert any("gives no reporting level" in e for e in row["errors"])
         assert row["data"].get("result_value") is None
 
     def test_the_retired_less_than_prefix_still_works(self, ddw_system):

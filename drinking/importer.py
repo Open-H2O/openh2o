@@ -422,7 +422,7 @@ def missing_required(mapping):
 
 
 # The two date formats this importer accepts, in the order it tries them.
-_DATE_FORMAT_HELP = "YYYY-MM-DD or MM-DD-YYYY"
+_DATE_FORMAT_HELP = "YYYY-MM-DD, MM-DD-YYYY or M/D/YYYY"
 
 
 def _parse_lab_date(raw):
@@ -463,10 +463,15 @@ def _parse_lab_date(raw):
         parsed = None
     if parsed is not None:
         return parsed
-    try:
-        return datetime.strptime(text, "%m-%d-%Y").date()
-    except ValueError:
-        return None
+    # M/D/YYYY, how a spreadsheet saves a US date (3/5/2024), added with
+    # Brent's approval 2026-10-14 20:46 PDT (150.1-02 screen 18, message K).
+    # Still month first, so it adds no ambiguity to the rule above.
+    for fmt in ("%m-%d-%Y", "%m/%d/%Y"):
+        try:
+            return datetime.strptime(text, fmt).date()
+        except ValueError:
+            continue
+    return None
 
 
 def _decimal_or_none(raw):
@@ -528,8 +533,8 @@ def _parse_result(raw_result, raw_lt_rl, raw_rl, errors):
             # would take it and `_result_value.html` would render it as
             # "< None", so it is refused here instead.
             errors.append(
-                "Result is blank and marked below the reporting level, but no "
-                "Reporting Level was given."
+                "This row reports the result as below the reporting level and "
+                "gives no reporting level."
             )
             return None
         # No flag: the lab did not report a finding. That is not the same claim
@@ -559,7 +564,8 @@ def _parse_result(raw_result, raw_lt_rl, raw_rl, errors):
 
     if number is None:
         errors.append(
-            f"Result '{text}' is neither a number nor a presence/absence value."
+            f"OpenH2O does not recognize the result '{text}'. Use a number, a "
+            "value below the reporting level such as <0.005, or P or A."
         )
         return None
 
@@ -739,13 +745,15 @@ def validate_rows(rows, mapping):
 
         # --- sampling point: must already exist -----------------------------
         ps_code = src("ps_code")
+        # Message K (Brent 2026-10-14 20:46 PDT): a blank required cell is
+        # named by the file's own column (a file missing the column is refused
+        # before the preview, so "unmapped" never reached a row).
         if not ps_code:
-            errors.append("PS Code is required (blank or unmapped).")
+            errors.append(f"{mapping.get('ps_code') or 'PS Code'} is blank.")
         elif ps_code not in known_points:
             errors.append(
-                f"PS Code '{ps_code}' is not a known sampling point. Add the "
-                "facility and sampling point first; a lab file does not create "
-                "system structure."
+                f"No sampling point on file has the PS Code {ps_code}. Add the "
+                "sampling point first, or correct the code in the file."
             )
         else:
             data["sampling_point_id"] = known_points[ps_code]
@@ -754,12 +762,13 @@ def validate_rows(rows, mapping):
         # --- event identity -------------------------------------------------
         raw_date = src("sample_date")
         sample_date = _parse_lab_date(raw_date) if raw_date else None
+        date_column = mapping.get("sample_date") or "Sample Date"
         if not raw_date:
-            errors.append("Sample date is required (blank or unmapped).")
+            errors.append(f"{date_column} is blank.")
         elif sample_date is None:
             errors.append(
-                f"Sample date '{raw_date}' is not a date "
-                f"(use {_DATE_FORMAT_HELP})."
+                f"{date_column} '{raw_date}' is not a date written "
+                f"{_DATE_FORMAT_HELP}."
             )
         data["sample_date"] = sample_date
 
@@ -793,7 +802,9 @@ def validate_rows(rows, mapping):
         data["ddw_code"] = ddw_code
 
         if not analyte_name:
-            errors.append("Analyte name is required (blank or unmapped).")
+            errors.append(
+                f"{mapping.get('analyte_name') or 'Analyte Name'} is blank."
+            )
         else:
             key = analyte_name.lower()
             analyte_pk = known_analytes_by_code.get(ddw_code) if ddw_code else None
@@ -1028,8 +1039,11 @@ def commit_rows(valid_results, source_file="", imported_on=None):
                         limits_file_date=limits["limits_file_date"],
                     )
                 counts["results"] += 1
-            except Exception:
-                result["errors"].append("could not be saved (invalid result data).")
+            except Exception as exc:
+                result["errors"].append(
+                    "An unexpected error stopped OpenH2O from saving this "
+                    f"result. Details: {type(exc).__name__}: {exc}"
+                )
                 counts["skipped"] += 1
 
         # --- limits for results recorded before they were kept ---------------

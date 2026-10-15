@@ -110,3 +110,82 @@ class TestTheImportStep:
         ).content.decode()
         assert "Import 0 results" in body
         assert "Commit" not in body
+
+
+class TestRowErrors:
+    """Message K, approved 2026-10-14 20:46 PDT."""
+
+    MAPPING = {"ps_code": "Station", "sample_date": "Collection Date",
+               "analyte_name": "Analyte Name", "result": "Result",
+               "less_than_rl": "Less Than Reporting Level",
+               "analysis_date": "Analysis Date"}
+
+    def _one(self, **cells):
+        row = {"Station": "X_1_1", "Collection Date": "2024-03-05",
+               "Analyte Name": "Nitrate", "Result": "1",
+               "Less Than Reporting Level": "", "Analysis Date": ""}
+        row.update(cells)
+        return importer.validate_rows([row], self.MAPPING)[0]
+
+    def test_blank_cells_are_named_by_the_files_column(self, db):
+        assert "Station is blank." in self._one(Station="")["errors"]
+        assert "Collection Date is blank." in self._one(**{"Collection Date": ""})["errors"]
+        assert "Analyte Name is blank." in self._one(**{"Analyte Name": ""})["errors"]
+
+    def test_a_point_not_on_file(self, db):
+        assert (
+            "No sampling point on file has the PS Code X_1_1. Add the sampling "
+            "point first, or correct the code in the file."
+        ) in self._one()["errors"]
+
+    def test_a_spreadsheet_date_is_read_month_first(self, db):
+        row = self._one(**{"Collection Date": "3/5/2024", "Analysis Date": "3/7/2024"})
+        assert row["data"]["sample_date"].isoformat() == "2024-03-05"
+        assert row["data"]["analysis_date"].isoformat() == "2024-03-07"
+
+    def test_an_unreadable_date(self, db):
+        assert (
+            "Collection Date '13/45/2024' is not a date written YYYY-MM-DD, "
+            "MM-DD-YYYY or M/D/YYYY."
+        ) in self._one(**{"Collection Date": "13/45/2024"})["errors"]
+
+    def test_below_the_reporting_level_with_no_level(self, db):
+        row = self._one(Result="", **{"Less Than Reporting Level": "Y"})
+        assert (
+            "This row reports the result as below the reporting level and gives "
+            "no reporting level."
+        ) in row["errors"]
+
+    def test_an_unreadable_result(self, db):
+        assert (
+            "OpenH2O does not recognize the result 'high'. Use a number, a value "
+            "below the reporting level such as <0.005, or P or A."
+        ) in self._one(Result="high")["errors"]
+
+    def test_the_page_names_the_date_formats(self, auth_client):
+        body = auth_client.get(reverse("drinking:import")).content.decode()
+        assert (
+            "The date the sample was collected, written YYYY-MM-DD, MM-DD-YYYY "
+            "or M/D/YYYY."
+        ) in body
+
+    def test_a_failure_at_import_keeps_its_details(self, db, monkeypatch):
+        from drinking.models import SampleResult
+        from tests.factories import SamplingPointFactory
+
+        point = SamplingPointFactory()
+        row = {"Station": point.ps_code, "Collection Date": "2024-03-05",
+               "Analyte Name": "Nitrate", "Result": "1",
+               "Less Than Reporting Level": "", "Analysis Date": ""}
+        validated = importer.validate_rows([row], self.MAPPING)
+
+        def boom(**kwargs):
+            raise ValueError("bad value")
+
+        monkeypatch.setattr(SampleResult.objects, "create", boom)
+        counts = importer.commit_rows(validated)
+        assert counts["skipped"] == 1
+        assert validated[0]["errors"] == [
+            "An unexpected error stopped OpenH2O from saving this result. "
+            "Details: ValueError: bad value"
+        ]
