@@ -13,7 +13,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Import</span>
   </nav>
-  <p class="page-description">Upload the state's rights LIST export (CSV), match its columns, then create one water right for each valid row.</p>
+  <p class="page-description">This page imports water right records from the water rights list that eWRIMS exports as a CSV file.</p>
 </div>
 {% endblock %}
 
@@ -23,9 +23,9 @@
   <a href="{% url 'surface:water_rights_list' %}" class="back-link">&larr; Back to Water Rights</a>
 
   <div class="card-raised">
-    <h2 class="card-header-ruled">Rights LIST export</h2>
-    <p class="text-base text-secondary mt-md">A CSV from eWRIMS, the State Water Board's water rights database. Nothing is written until you match the columns, check the first rows and press Create.</p>
-    <p class="text-secondary text-sm mt-sm"><a href="{% url 'surface:water_right_create' %}">Add right</a> creates one right at a time.</p>
+    <h2 class="card-header-ruled">eWRIMS water rights list</h2>
+    <p class="text-base text-secondary mt-md">eWRIMS is the State Water Board's water rights database. OpenH2O saves nothing until you press Create.</p>
+    <p class="text-secondary text-sm mt-sm">To enter one water right record by hand, use <a href="{% url 'surface:water_right_create' %}">Add right</a>.</p>
 
     <form class="mt-lg"
       id="right-import-upload-form"
@@ -63,7 +63,7 @@
   <div id="right-import-area"></div>
 
   <div class="card-raised">
-    <h2 class="card-header-ruled">Columns the file carries</h2>
+    <h2 class="card-header-ruled">Columns OpenH2O reads</h2>
     <div class="table-scroll mt-md">
       <table class="data-table help-cases-table">
         <thead>
@@ -77,7 +77,7 @@
           <tr>
             <td class="col-name"><code>APPLICATION_NUMBER</code></td>
             <td>Yes</td>
-            <td>Right ID; a row whose number is already on file is skipped, never overwritten</td>
+            <td>The right's application number. OpenH2O skips a row whose application number is already on file.</td>
           </tr>
           <tr>
             <td class="col-name"><code>WATER_RIGHT_TYPE</code></td>
@@ -92,17 +92,17 @@
           <tr>
             <td class="col-name"><code>WATER_RIGHT_STATUS</code></td>
             <td>No</td>
-            <td>State status, as written</td>
+            <td>OpenH2O copies the right's eWRIMS status unchanged.</td>
           </tr>
           <tr>
             <td class="col-name"><code>SOURCE_NAME</code></td>
             <td>No</td>
-            <td>Source, as written</td>
+            <td>OpenH2O copies the source unchanged.</td>
           </tr>
           <tr>
             <td class="col-name"><code>WATERSHED</code></td>
             <td>No</td>
-            <td>Watershed, as written</td>
+            <td>OpenH2O copies the watershed unchanged.</td>
           </tr>
           <tr>
             <td class="col-name"><code>FACE_VALUE_AMOUNT</code></td>
@@ -162,7 +162,7 @@
         </tbody>
       </table>
     </div>
-    <p class="text-secondary text-sm mt-md">Other columns in the export are not read. No unit is converted.</p>
+    <p class="text-secondary text-sm mt-md">OpenH2O does not read the export's other columns and does not convert any unit.</p>
   </div>
 
 </div>

@@ -13,12 +13,11 @@ rows, and a button that posts the confirmed mapping to import/commit/.
 </div>
 {% endif %}
 <div class="card-raised">
-  <h2 class="card-header-ruled">Match your columns: Water Rights</h2>
+  <h2 class="card-header-ruled">Match the file's columns</h2>
   <p class="text-base text-secondary mt-md">
-    Found <strong>{{ row_count }}</strong> record{{ row_count|pluralize }} and
-    <strong>{{ columns|length }}</strong> column{{ columns|pluralize }}. Each field below is
-    set to our best guess against the state's own rights LIST headers. Change any
-    that look wrong, then create the rights.
+    OpenH2O found <strong>{{ row_count }}</strong> row{{ row_count|pluralize }} and
+    <strong>{{ columns|length }}</strong> column{{ columns|pluralize }}, and matched each
+    field below to an eWRIMS column. Change any match that is wrong, then press Create.
   </p>
 
   <form class="mt-lg"
@@ -60,7 +59,7 @@ rows, and a button that posts the confirmed mapping to import/commit/.
 </div>
 
 <div class="card-raised">
-  <h3 class="section-header-sm">Sample of your data (first {{ sample_count }} row{{ sample_count|pluralize }})</h3>
+  <h3 class="section-header-sm">The file's first {{ sample_count }} row{{ sample_count|pluralize }}</h3>
   <div style="overflow-x: auto;">
     <table class="data-table">
       <thead>

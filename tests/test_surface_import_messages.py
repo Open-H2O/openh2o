@@ -295,3 +295,19 @@ def test_the_diversion_page_says_what_it_imports(auth_client):
         "Water Use Reported export or your own book of deliveries."
     ) in body.replace("&#x27;", "'").replace("&#39;", "'")
     assert "OpenH2O saves nothing until you press Import on the preview." in body
+
+
+def test_the_rights_matching_step_says_records_not_rights(auth_client):
+    upload = SimpleUploadedFile(
+        "r.csv", b"APPLICATION_NUMBER,WATER_RIGHT_TYPE,PRIMARY_OWNER_NAME\nA1,Riparian,H\n",
+        content_type="text/csv",
+    )
+    body = " ".join(auth_client.post(
+        reverse("surface:water_right_import_preview"), {"file": upload}
+    ).content.decode().split())
+    assert "Match the file&#x27;s columns" in body or "Match the file's columns" in body
+    assert (
+        "OpenH2O found <strong>1</strong> row and <strong>3</strong> columns, and matched "
+        "each field below to an eWRIMS column. Change any match that is wrong, then press Create."
+    ) in body
+    assert "create the rights" not in body
