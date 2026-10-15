@@ -311,3 +311,8 @@ def test_the_rights_matching_step_says_records_not_rights(auth_client):
         "each field below to an eWRIMS column. Change any match that is wrong, then press Create."
     ) in body
     assert "create the rights" not in body
+    # Message I (Brent 2026-10-14 20:01): sentence-case labels.
+    assert ">Application number<" in body or "Application number</td>" in body
+    assert "Face value in acre-feet per year" in body
+    assert ">Not imported</option>" in body
+    assert "Right ID (Application Number)" not in body

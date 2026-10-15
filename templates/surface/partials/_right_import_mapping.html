@@ -40,7 +40,7 @@ rows, and a button that posts the confirmed mapping to import/commit/.
           <td>{{ fr.label }}</td>
           <td>
             <select name="map:{{ fr.field }}" class="form-select">
-              <option value="">(not imported)</option>
+              <option value="">Not imported</option>
               {% for col in columns %}
               <option value="{{ col }}"{% if fr.guess == col %} selected{% endif %}>{{ col }}</option>
               {% endfor %}
