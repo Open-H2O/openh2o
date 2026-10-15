@@ -973,6 +973,11 @@ def commit_rows(valid_results, source_file="", imported_on=None):
         ),
         "skipped": sum(1 for r in valid_results if r["errors"]),
         "limits_filled": 0,
+        # Of ``duplicates``, the rows that repeat an earlier row of this file
+        # rather than a result on file (message N, Brent 2026-10-15 07:43 PDT).
+        "repeats": sum(
+            1 for r in valid_results if r["data"].get("repeat_in_file")
+        ),
     }
 
     if imported_on is None:

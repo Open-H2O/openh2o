@@ -7,6 +7,8 @@ file picker let only a .csv be chosen although the importer reads the
 Division of Drinking Water's .tab file; a 25.5 MB file read "25 MB" against a
 25 MB cap; an empty file and a file of column names alone read the same.
 """
+import json
+
 import factory
 import pytest
 from django.contrib.auth.hashers import make_password
@@ -285,3 +287,49 @@ class TestThePreviewsOtherLines:
         assert importer.FIELD_LABELS["lab_cert_no"] == "ELAP certificate number"
         assert importer.FIELD_LABELS["mcl_as_reported"] == "MCL"
         assert importer.FIELD_LABELS["dlr_as_reported"] == "DLR"
+
+
+class TestThePageAfterImport:
+    """Message N, approved 2026-10-15 07:43 PDT."""
+
+    def test_counts_and_lines(self, auth_client):
+        from tests.factories import SamplingPointFactory
+
+        point = SamplingPointFactory()
+        good = {"PS Code": point.ps_code, "Sample Date": "2024-03-05",
+                "Analyte Name": "Nitrate", "Result": "1"}
+        bad = dict(good, **{"PS Code": ""})
+        body = auth_client.post(
+            reverse("drinking:import_commit"),
+            {"rows_json": json.dumps([good, good, bad])},
+        ).content.decode()
+        assert "1 result</span>" in body
+        assert "1 repeated in this file" in body
+        assert "already on file</span>" not in body
+        assert "1 with errors" in body
+        assert "3 rows read" in body
+        assert "OpenH2O imported 1 sample result and added 1 sample event." in body
+        assert "OpenH2O added 1 new analyte from this file." in body
+        assert "Rows OpenH2O did not import" in body
+        assert (
+            "Correct these rows in the file and upload the file again. OpenH2O "
+            "skips every row already on file."
+        ) in body
+
+    def test_three_agencies_read_none_of_them(self, auth_client):
+        from tests.factories import SamplingPointFactory
+
+        point = SamplingPointFactory()
+        rows = [
+            {"PS Code": point.ps_code, "Sample Date": "2024-03-05",
+             "Analyte Name": "Nitrate", "Result": str(n), "Regulating Agency": a}
+            for n, a in enumerate(["A", "B", "C"], start=1)
+        ]
+        body = auth_client.post(
+            reverse("drinking:import_commit"), {"rows_json": json.dumps(rows)}
+        ).content.decode()
+        assert (
+            f"This file names three regulating agencies for "
+            f"{point.facility.system.name}: A, B and C. OpenH2O recorded "
+            "none of them."
+        ) in body

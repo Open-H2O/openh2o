@@ -201,9 +201,9 @@ def test_v2_a_sixty_row_file_lists_fifty_and_says_so(auth_client):
 # V3: the lab-file preview says the agency line the commit will say
 # ---------------------------------------------------------------------------
 
-RECORDED_SENTENCE = "The regulating agency was recorded from the file as District 99."
+RECORDED_SENTENCE = "OpenH2O recorded District 99 as the regulating agency of "
 #: The preview says what the commit WILL do; the commit says what it did (the main session, 150-04).
-PREVIEW_SENTENCE = "The regulating agency will be recorded from the file as District 99."
+PREVIEW_SENTENCE = "OpenH2O will record District 99 as the regulating agency of "
 
 
 def test_v3_the_preview_carries_the_commits_agency_sentence_and_writes_nothing(
@@ -241,7 +241,11 @@ def test_v3_a_system_that_already_has_one_previews_the_commits_refusal(
         reverse("drinking:import_preview"), {"file": _csv_file(fixture_text)}
     ).content.decode()
 
-    assert "The regulating agency will not be recorded: the system already has one, DISTRICT 11 - MERCED." in body
+    assert (
+        f"{ws.name} already has DISTRICT 11 - MERCED on file as its regulating "
+        "agency. OpenH2O will keep DISTRICT 11 - MERCED and will not record this "
+        "file&rsquo;s District 99."
+    ) in body
 
 
 def test_v3_the_commit_still_writes_through_the_split_function(system, parsed):

@@ -1285,6 +1285,7 @@ def import_commit(request):
         "drinking/partials/_import_result.html",
         {
             "counts": counts,
+            "on_file": counts["duplicates"] - counts["repeats"],
             "skipped": skipped,
             "total": len(validated),
             "agency": agency,

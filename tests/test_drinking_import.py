@@ -1310,9 +1310,9 @@ class TestRegulatingAgency:
         system["system"].refresh_from_db()
         assert system["system"].regulating_agency == "District 99"
         assert (
-            "The regulating agency was recorded from the file as District 99."
-            in response.content.decode()
-        )
+            "OpenH2O recorded District 99 as the regulating agency of "
+            f"{system['system'].name}."
+        ) in response.content.decode()
 
     def test_a_system_that_already_has_one_keeps_it(
         self, auth_client, system, parsed
@@ -1324,8 +1324,11 @@ class TestRegulatingAgency:
         ws.refresh_from_db()
         assert ws.regulating_agency == "DISTRICT 11 - MERCED"
         body = response.content.decode()
-        assert "The regulating agency was not recorded: the system already has one" in body
-        assert "DISTRICT 11 - MERCED" in body
+        assert (
+            f"{ws.name} already has DISTRICT 11 - MERCED on file as its regulating "
+            "agency. OpenH2O kept DISTRICT 11 - MERCED and did not record this "
+            "file&rsquo;s District 99."
+        ) in body
 
     def test_a_file_that_disagrees_with_itself_writes_nothing(
         self, auth_client, system, parsed
@@ -1336,8 +1339,11 @@ class TestRegulatingAgency:
         system["system"].refresh_from_db()
         assert system["system"].regulating_agency == ""
         body = response.content.decode()
-        assert "The regulating agency was not recorded: the file names two" in body
-        assert "District 98" in body and "District 99" in body
+        assert (
+            "This file names two regulating agencies for "
+            f"{system['system'].name}: District 98 and District 99. OpenH2O "
+            "recorded neither."
+        ) in body
 
     def test_a_file_without_the_column_says_nothing_about_it(
         self, auth_client, system, parsed
