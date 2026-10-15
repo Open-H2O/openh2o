@@ -189,3 +189,67 @@ class TestRowErrors:
             "An unexpected error stopped OpenH2O from saving this result. "
             "Details: ValueError: bad value"
         ]
+
+
+class TestPreviewNotes:
+    """Message L, approved 2026-10-15 04:50 PDT."""
+
+    MAPPING = TestRowErrors.MAPPING | {
+        "sample_time": "Sample Time", "sample_type": "Sample Type",
+        "mcl_as_reported": "MCL", "dlr_as_reported": "DLR",
+    }
+
+    def _one(self, **cells):
+        from tests.factories import SamplingPointFactory
+
+        point = SamplingPointFactory()
+        row = {"Station": point.ps_code, "Collection Date": "2024-03-05",
+               "Analyte Name": "Nitrate", "Result": "1",
+               "Less Than Reporting Level": "", "Analysis Date": "",
+               "Sample Time": "", "Sample Type": "", "MCL": "", "DLR": ""}
+        row.update(cells)
+        return importer.validate_rows([row], self.MAPPING)[0]
+
+    @pytest.mark.parametrize("raw", ["9am", "25:99"])
+    def test_an_unreadable_or_impossible_time_is_a_note(self, db, raw):
+        row = self._one(**{"Sample Time": raw})
+        assert row["errors"] == []
+        assert (
+            f"OpenH2O cannot read the Sample Time '{raw}' and will import this "
+            "result without a time."
+        ) in row["warnings"]
+
+    def test_the_other_notes(self, db):
+        row = self._one(**{"Sample Type": "XX", "MCL": "ten", "DLR": "n/a",
+                           "Analysis Date": "2024-99-99"})
+        assert row["warnings"] == [
+            "OpenH2O does not recognize the sample type 'XX' and will record "
+            "this sample as routine.",
+            "No analyte on file is named Nitrate. OpenH2O will add Nitrate as a "
+            "new analyte.",
+            "OpenH2O cannot read the MCL 'ten' and will import this result "
+            "without an MCL.",
+            "OpenH2O cannot read the DLR 'n/a' and will import this result "
+            "without a detection limit for purposes of reporting.",
+            "OpenH2O cannot read the Analysis Date '2024-99-99' and will import "
+            "this result without an analysis date.",
+        ]
+
+    def test_a_repeat_in_the_file_is_counted_apart(self, auth_client):
+        from tests.factories import SamplingPointFactory
+
+        point = SamplingPointFactory()
+        line = f"{point.ps_code},2024-03-05,Nitrate,1\n"
+        body = _preview(
+            auth_client, "lab.csv",
+            "PS Code,Sample Date,Analyte Name,Result\n" + line + line,
+        ).content.decode()
+        assert "1 to import" in body
+        assert "1 repeated in this file" in body
+        assert "already on file</span>" not in body
+        assert (
+            "An earlier row in this file has the same result, so OpenH2O will "
+            "skip this row."
+        ) in body
+        assert "rows were read" not in body
+        assert "never written twice" not in body

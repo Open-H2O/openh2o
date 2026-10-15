@@ -1164,9 +1164,12 @@ def import_preview(request):
 
     error_rows = [r for r in preview if r["errors"]]
     warning_rows = [r for r in preview if r["warnings"] and not r["errors"]]
+    repeat_count = sum(
+        1 for item in validated if item["data"].get("repeat_in_file")
+    )
     duplicate_count = sum(
         1 for item in validated if item["data"].get("is_duplicate")
-    )
+    ) - repeat_count
     new_analytes = sorted(
         {
             item["data"]["analyte_name"]
@@ -1204,6 +1207,7 @@ def import_preview(request):
             "row_count": len(rows),
             "error_count": len(error_rows),
             "duplicate_count": duplicate_count,
+            "repeat_count": repeat_count,
             "new_analytes": new_analytes,
             "committable": committable,
             "limits_fill_count": limits_fill_count,

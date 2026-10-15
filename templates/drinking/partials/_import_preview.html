@@ -23,23 +23,20 @@
 
   <div class="row-start" style="gap: var(--space-sm); margin-top: var(--space-md); flex-wrap: wrap;">
     <span class="badge badge-grey">{{ row_count }} row{{ row_count|pluralize }} read</span>
-    <span class="badge badge-green">{{ committable }} to create</span>
-    {% if duplicate_count %}<span class="badge badge-orange">{{ duplicate_count }} already recorded</span>{% endif %}
+    <span class="badge badge-green">{{ committable }} to import</span>
+    {% if duplicate_count %}<span class="badge badge-orange">{{ duplicate_count }} already on file</span>{% endif %}
+    {% if repeat_count %}<span class="badge badge-orange">{{ repeat_count }} repeated in this file</span>{% endif %}
     {% if limits_fill_count %}<span class="badge badge-blue">{{ limits_fill_count }} to gain the file&rsquo;s limits</span>{% endif %}
     {% if error_count %}<span class="badge badge-orange">{{ error_count }} with errors</span>{% endif %}
     {% if new_analytes %}<span class="badge badge-blue">{{ new_analytes|length }} new analyte{{ new_analytes|length|pluralize }}</span>{% endif %}
   </div>
 
   {% comment %}
-    149.1-06: the head line with the counts, then one line per reason a row
-    is not created, each its own <p> inside its own guard. Per-reason counts
-    of the error rows are not in the view's context; the error table below
-    names each row's reason.
+    150.1-02 screen 18, message L (Brent 2026-10-15 04:50 PDT, "approved"):
+    the count sentence and "A row already recorded, or repeated in this file,
+    is skipped and never written twice." deleted; the badges and each row's
+    note say both. A repeat inside the file has its own badge.
   {% endcomment %}
-  <p class="text-base text-secondary mt-md">{{ row_count }} row{{ row_count|pluralize }} {{ row_count|pluralize:"was,were" }} read: <strong>{{ committable }}</strong> will be created{% if duplicate_count %}, {{ duplicate_count }} already recorded{% endif %}{% if error_count %}, {{ error_count }} cannot be imported{% endif %}.</p>
-  {% if duplicate_count %}
-  <p class="text-base text-secondary mt-sm">A row already recorded, or repeated in this file, is skipped and never written twice.</p>
-  {% endif %}
   {% if limits_fill_count %}
   <p class="text-base text-secondary mt-sm">Of these, {{ limits_fill_count }} {{ limits_fill_count|pluralize:"was,were" }} recorded before this platform kept the limits a laboratory file carries; committing adds this file&rsquo;s MCL and DLR to {{ limits_fill_count|pluralize:"it,them" }} and changes nothing else.</p>
   {% endif %}

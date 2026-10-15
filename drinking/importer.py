@@ -772,10 +772,20 @@ def validate_rows(rows, mapping):
             )
         data["sample_date"] = sample_date
 
+        # The notes below are message L, approved by Brent 2026-10-15 04:50
+        # PDT (150.1-02 screen 18). parse_time raises on a well-formed but
+        # impossible time (25:99), which was a 500 on the preview; it is the
+        # same note as any unreadable time.
         raw_time = src("sample_time")
-        sample_time = parse_time(raw_time) if raw_time else None
+        try:
+            sample_time = parse_time(raw_time) if raw_time else None
+        except ValueError:
+            sample_time = None
         if raw_time and sample_time is None:
-            warnings.append(f"Sample time '{raw_time}' was not readable; ignored.")
+            warnings.append(
+                f"OpenH2O cannot read the {mapping.get('sample_time') or 'Sample Time'} "
+                f"'{raw_time}' and will import this result without a time."
+            )
         data["sample_time"] = sample_time
 
         # Keep the raw spelling for the warning: an operator searches their own
@@ -788,8 +798,8 @@ def validate_rows(rows, mapping):
             sample_type = _SDWIS_SAMPLE_TYPES.get(sample_type, sample_type)
         if sample_type not in _SAMPLE_TYPES:
             warnings.append(
-                f"Sample type '{raw_sample_type}' is not a standard type; "
-                "recorded as routine."
+                f"OpenH2O does not recognize the sample type '{raw_sample_type}' "
+                "and will record this sample as routine."
             )
             sample_type = "routine"
         data["sample_type"] = sample_type
@@ -819,8 +829,8 @@ def validate_rows(rows, mapping):
                 if key not in new_analyte_names:
                     new_analyte_names.add(key)
                 warnings.append(
-                    f"'{analyte_name}' is a new analyte and will be added to the "
-                    "vocabulary from this file."
+                    f"No analyte on file is named {analyte_name}. OpenH2O will "
+                    f"add {analyte_name} as a new analyte."
                 )
 
         # --- the finding itself ---------------------------------------------
@@ -840,12 +850,16 @@ def validate_rows(rows, mapping):
         # Stored as reported and nothing more. An unreadable cell is a
         # warning, never an error: the finding is still the finding, and a
         # limit this importer cannot read is simply not stored.
-        for field, label in (("mcl_as_reported", "MCL"), ("dlr_as_reported", "DLR")):
+        for field, label, without in (
+            ("mcl_as_reported", "MCL", "an MCL"),
+            ("dlr_as_reported", "DLR", "a detection limit for purposes of reporting"),
+        ):
             raw_limit = src(field)
             value = _decimal_or_none(raw_limit)
             if raw_limit and value is None:
                 warnings.append(
-                    f"{label} '{raw_limit}' was not readable; not stored."
+                    f"OpenH2O cannot read the {label} '{raw_limit}' and will "
+                    f"import this result without {without}."
                 )
             data[field] = value
 
@@ -853,7 +867,9 @@ def validate_rows(rows, mapping):
         analysis_date = _parse_lab_date(raw_analysis) if raw_analysis else None
         if raw_analysis and analysis_date is None:
             warnings.append(
-                f"Analysis date '{raw_analysis}' was not readable; ignored."
+                f"OpenH2O cannot read the {mapping.get('analysis_date') or 'Analysis Date'} "
+                f"'{raw_analysis}' and will import this result without an "
+                "analysis date."
             )
         data["analysis_date"] = analysis_date
 
@@ -882,12 +898,14 @@ def validate_rows(rows, mapping):
                     if predates_limits:
                         data["fill_limits_pk"] = stored_pk
                         warnings.append(
-                            "This result is already recorded; the limits this "
-                            "file carries for it will be added."
+                            "The same result is already on file from before "
+                            "OpenH2O kept a lab file's MCL and DLR. OpenH2O "
+                            "will add this file's MCL and DLR to that result."
                         )
                     else:
                         warnings.append(
-                            "This result is already recorded; it will be skipped."
+                            "The same result is already on file, so OpenH2O "
+                            "will skip this row."
                         )
 
         if not errors:
@@ -903,11 +921,14 @@ def validate_rows(rows, mapping):
                 sample_type,
                 analyte_name.lower(),
             ) + _result_identity(None, data.get("analyte_id"), data)
-            if batch_key in seen_in_batch:
+            # Counted apart from "already on file" (message L row 9): a repeat
+            # of a row whose result is already on file is that, and only that.
+            if batch_key in seen_in_batch and not data.get("is_duplicate"):
                 data["is_duplicate"] = True
+                data["repeat_in_file"] = True
                 warnings.append(
-                    "This row repeats an earlier row in this file; it will be "
-                    "skipped."
+                    "An earlier row in this file has the same result, so "
+                    "OpenH2O will skip this row."
                 )
             seen_in_batch.add(batch_key)
 

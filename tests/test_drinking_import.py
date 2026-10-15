@@ -365,7 +365,8 @@ class TestValidateRows:
         row = validated[28]  # exact repeat of row 1
         assert row["errors"] == []
         assert row["data"]["is_duplicate"] is True
-        assert any("repeats an earlier row" in w for w in row["warnings"])
+        assert any("An earlier row in this file has the same result" in w for w in row["warnings"])
+        assert row["data"]["repeat_in_file"] is True
 
     def test_a_plain_numeric_result_keeps_its_value_and_unit(self, validated):
         row = validated[0]  # Nitrate 3.2 mg/L
@@ -570,7 +571,9 @@ class TestImportViews:
         rows_json = preview.context["rows_json"]
         assert preview.context["committable"] == EXPECTED_RESULTS
         assert preview.context["error_count"] == EXPECTED_ERRORS
-        assert preview.context["duplicate_count"] == EXPECTED_DUPLICATES
+        # Row 29 repeats row 1 in the file: its own count (message L row 9).
+        assert preview.context["duplicate_count"] == 0
+        assert preview.context["repeat_count"] == EXPECTED_DUPLICATES
 
         commit = auth_client.post(
             reverse("drinking:import_commit"), {"rows_json": rows_json}
@@ -936,13 +939,13 @@ class TestRealDDWSampleType:
     ):
         row = ddw_validated[0]
         assert row["data"]["sample_type"] == "routine"
-        assert not [w for w in row["warnings"] if "Sample type" in w]
+        assert not [w for w in row["warnings"] if "recognize the sample type" in w]
 
     def test_no_real_row_warns_about_its_sample_type(self, ddw_validated):
         offenders = [
             v["index"]
             for v in ddw_validated
-            if any("Sample type" in w for w in v["warnings"])
+            if any("recognize the sample type" in w for w in v["warnings"])
         ]
         assert offenders == []
 
@@ -960,20 +963,20 @@ class TestRealDDWSampleType:
     ):
         row = _validate_one(**{"Sample Type": raw})
         assert row["data"]["sample_type"] == expected
-        assert not [w for w in row["warnings"] if "Sample type" in w]
+        assert not [w for w in row["warnings"] if "recognize the sample type" in w]
 
     def test_an_unrecognised_code_still_warns_and_records_routine(
         self, ddw_system
     ):
         row = _validate_one(**{"Sample Type": "ZQ"})
         assert row["data"]["sample_type"] == "routine"
-        assert any("Sample type" in w for w in row["warnings"])
+        assert any("recognize the sample type" in w for w in row["warnings"])
 
     def test_the_warning_echoes_the_code_as_the_file_wrote_it(self, ddw_system):
         """An operator searches their file for the string the warning shows.
         Lowercasing it means the search finds nothing."""
         row = _validate_one(**{"Sample Type": "ZQ"})
-        warning = next(w for w in row["warnings"] if "Sample type" in w)
+        warning = next(w for w in row["warnings"] if "recognize the sample type" in w)
         assert "'ZQ'" in warning
 
 
@@ -1000,14 +1003,14 @@ class TestFederalSampleTypeCodes:
     ):
         row = _validate_one(**{"Sample Type": code})
         assert row["data"]["sample_type"] == expected
-        assert not [w for w in row["warnings"] if "Sample type" in w]
+        assert not [w for w in row["warnings"] if "recognize the sample type" in w]
 
     @pytest.mark.parametrize("code", ["rt", "rp", "sp", "Rp", "sP"])
     def test_the_codes_are_case_insensitive(self, ddw_system, code):
         """Real exports are not consistent about casing, and a state that
         lowercases its codes must not fall through to the warning path."""
         row = _validate_one(**{"Sample Type": code})
-        assert not [w for w in row["warnings"] if "Sample type" in w]
+        assert not [w for w in row["warnings"] if "recognize the sample type" in w]
 
     def test_a_repeat_sample_is_no_longer_silently_recorded_as_routine(
         self, ddw_system
@@ -1032,7 +1035,7 @@ class TestFederalSampleTypeCodes:
         """
         row = _validate_one(**{"Sample Type": "TG"})
         assert row["data"]["sample_type"] == "triggered"
-        assert not [w for w in row["warnings"] if "Sample type" in w]
+        assert not [w for w in row["warnings"] if "recognize the sample type" in w]
 
 
 class TestTheRealDDWSliceValidatesClean:
