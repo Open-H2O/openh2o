@@ -2253,6 +2253,15 @@ html { color-scheme: dark; }
     border-top: 1px solid var(--color-border);
 }
 
+/* A subsection straight under a ruled card heading needs no second rule: the
+   heading's own rule already separates them (the diversion import page's
+   "Columns OpenH2O reads", 150.1-02 screen 18). */
+.card-header-ruled + .help-subsection {
+    margin-top: var(--space-md);
+    padding-top: 0;
+    border-top: 0;
+}
+
 /* `.callout-rule` carries its own margins for pages that drop it into running
    prose; here the utilities set the rhythm, so it sits flush like every other
    block. */
