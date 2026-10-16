@@ -13,7 +13,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Add Station</span>
   </nav>
-  <p class="page-description">A monitoring station is a gauge the platform syncs readings from through a public data source. Pick the source first; the external station ID is the source's own identifier for the gauge, such as 11303000 at USGS. The name and coordinates are what the map shows.</p>
+  <p class="page-description">This page adds one monitoring station for OpenH2O to sync from a public data source. The external station ID is the source's own identifier for the station, such as 11303000 at USGS.</p>
 </div>
 {% endblock %}
 
@@ -47,10 +47,10 @@
       <div class="form-group form-span-2">
         <label class="form-label" for="id_data_source">Data source <span class="required-mark">*</span></label>
         <select id="id_data_source" name="data_source" required class="form-select">
-          <option value="">Select a data source...</option>
+          <option value="">Choose a data source</option>
           {% for ds in data_sources %}
             <option value="{{ ds.pk }}" {% if form_data.data_source == ds.pk|stringformat:'s' %}selected{% endif %}>
-              {{ ds.code }} — {{ ds.name }}
+              {{ ds.name }}
             </option>
           {% endfor %}
         </select>
@@ -67,7 +67,6 @@
           required
           class="form-input text-mono"
         >
-        <p class="form-help">Enter the identifier the external data provider uses for this station.</p>
       </div>
 
       <!-- Station Name -->

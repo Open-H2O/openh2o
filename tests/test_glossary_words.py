@@ -134,11 +134,11 @@ class TestTheHoursReadAsAReaderSaysThem:
 class TestTheStationTooltip:
     def test_the_sentence_for_one_source(self):
         assert freshness.freshness_thresholds("cdec", "CDEC") == (
-            "A station is Up to date when its latest reading is at most 54 hours "
-            "old, Slightly behind at most 6 days old, and Dormant after that or "
-            "with no reading. Those limits are 1.5 and 4 times how often CDEC "
-            "usually publishes, every 36 hours. A station can be syncing and "
-            "still dormant."
+            "CDEC usually publishes every 36 hours. OpenH2O marks a station up to "
+            "date until its latest reading is 54 hours old and slightly behind "
+            "until the reading is 6 days old: 1.5 and 4 times that interval. A "
+            "station with an older reading or no reading is dormant, even with "
+            "syncing turned on."
         )
 
     @pytest.mark.parametrize(
@@ -158,8 +158,8 @@ class TestTheStationTooltip:
         assert freshness.classify_freshness(code, now - stale_limit - minute, now) == "dead"
 
         sentence = freshness.freshness_thresholds(code)
-        assert f"at most {freshness.format_hours(interval * freshness.FRESH_MULTIPLIER)} old" in sentence
-        assert f"at most {freshness.format_hours(interval * freshness.STALE_MULTIPLIER)} old" in sentence
+        assert f"up to date until its latest reading is {freshness.format_hours(interval * freshness.FRESH_MULTIPLIER)} old" in sentence
+        assert f"slightly behind until the reading is {freshness.format_hours(interval * freshness.STALE_MULTIPLIER)} old" in sentence
 
     def test_the_station_page_and_list_carry_it(self):
         from core.models import User
@@ -180,8 +180,8 @@ class TestTheStationTooltip:
             username="iss183-reader", email="iss183@example.com", is_active=True,
         ))
         expected = freshness.freshness_thresholds("openet", "Probe OpenET Source")
-        assert "at most 67.5 days old" in expected
-        assert "at most 180 days old" in expected
+        assert "until its latest reading is 67.5 days old" in expected
+        assert "until the reading is 180 days old" in expected
 
         detail = client.get(reverse("datasync:station_detail", args=[station.pk]))
         assert f'title="{expected}">Dormant</span>' in detail.content.decode()

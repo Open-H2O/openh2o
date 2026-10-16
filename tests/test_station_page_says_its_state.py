@@ -52,11 +52,11 @@ class TestDormantStationSaysWhyItIsEmpty:
         # within 36 hours (1.5 x 24), Slightly behind within 4 days (4 x 24).
         assert (
             '<span class="badge badge-grey" '
-            'title="A station is Up to date when its latest reading is at most '
-            "36 hours old, Slightly behind at most 4 days old, and Dormant after "
-            "that or with no reading. Those limits are 1.5 and 4 times how often "
-            "Probe Dormant Source usually publishes, every day. A station can be "
-            'syncing and still dormant.">Dormant</span>' in body
+            'title="Probe Dormant Source usually publishes every day. OpenH2O '
+            "marks a station up to date until its latest reading is 36 hours old "
+            "and slightly behind until the reading is 4 days old: 1.5 and 4 times "
+            "that interval. A station with an older reading or no reading is "
+            'dormant, even with syncing turned on.">Dormant</span>' in body
         )
 
     def test_no_chart_for_a_station_that_has_never_published(self, auth_client):

@@ -137,7 +137,6 @@ BASELINE: dict = {
     "em dash": {
         "templates/accounting/partials/_needs_attention.html": 1,
         "templates/core/user_form.html": 1,
-        "templates/datasync/station_add.html": 1,
         "templates/reporting/partials/_openet_prefill.html": 1,
         "templates/reporting/report_list.html": 1,
         "templates/reporting/report_prefill.html": 2,

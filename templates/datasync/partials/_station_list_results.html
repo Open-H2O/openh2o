@@ -17,9 +17,9 @@ OH2O.followResults reads them after every swap and filters the map to them.
         <th>Reporting</th>
         <th>Station</th>
         <th>Source</th>
-        <th>Last Data</th>
+        <th>Last reading</th>
         <th>Trend</th>
-        <th style="width: 60px;" title="Whether scheduled syncs include this station.">Syncing</th>
+        <th style="width: 60px;" title="Whether OpenH2O's scheduled syncs include this station.">Syncing</th>
       </tr>
     </thead>
     <tbody>
@@ -52,7 +52,7 @@ OH2O.followResults reads them after every swap and filters the map to them.
           {% if item.station.last_data_at %}
             {{ item.station.last_data_at|timesince }} ago
           {% else %}
-            <span class="text-tertiary">never</span>
+            <span class="text-tertiary">No reading</span>
           {% endif %}
         </td>
         <td>
@@ -141,8 +141,13 @@ OH2O.followResults reads them after every swap and filters the map to them.
       <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
     </svg>
   </div>
-  {% if q or source %}
-  <p class="empty-state-text">No station{% if q %} matches &ldquo;{{ q }}&rdquo;{% endif %}{% if source %} from {{ source }}{% endif %}.</p>
+  {% comment %} 150.1-02 screen 15 message B row 8: the source by its name, not its code. {% endcomment %}
+  {% if source and q %}
+  <p class="empty-state-text">No station from {{ source_phrase }} matches &ldquo;{{ q }}&rdquo;.</p>
+  {% elif source %}
+  <p class="empty-state-text">No station from {{ source_phrase }} matches these filters.</p>
+  {% elif q %}
+  <p class="empty-state-text">No station matches &ldquo;{{ q }}&rdquo;.</p>
   {% elif active or reporting %}
   <p class="empty-state-text">No station matches these filters.</p>
   {% else %}

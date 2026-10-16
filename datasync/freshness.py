@@ -142,13 +142,14 @@ def freshness_thresholds(source_code, source_name=None):
     interval = expected_interval_hours(source_code)
     name = source_name or source_display(source_code)
     every = "every day" if interval == 24 else f"every {format_hours(interval)}"
+    # Brent, 150.1-02 screen 15 message B row 4 (2026-10-16 05:45).
     return (
-        "A station is Up to date when its latest reading is at most "
-        f"{format_hours(interval * FRESH_MULTIPLIER)} old, Slightly behind at most "
-        f"{format_hours(interval * STALE_MULTIPLIER)} old, and Dormant after that "
-        f"or with no reading. Those limits are {FRESH_MULTIPLIER:g} and "
-        f"{STALE_MULTIPLIER:g} times how often {name} usually publishes, {every}. "
-        "A station can be syncing and still dormant."
+        f"{name} usually publishes {every}. OpenH2O marks a station up to date "
+        f"until its latest reading is {format_hours(interval * FRESH_MULTIPLIER)} "
+        "old and slightly behind until the reading is "
+        f"{format_hours(interval * STALE_MULTIPLIER)} old: {FRESH_MULTIPLIER:g} "
+        f"and {STALE_MULTIPLIER:g} times that interval. A station with an older "
+        "reading or no reading is dormant, even with syncing turned on."
     )
 
 

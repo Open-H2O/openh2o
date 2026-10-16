@@ -118,6 +118,19 @@ def _build_source_status(boundary, now):
     return result
 
 
+def _source_phrase(name):
+    """A data source's name as a sentence carries it after "from".
+
+    Brent, 150.1-02 screen 15 message B row 8: "No station from the Department
+    of Water Resources SGMA Portal matches ..." A spelled-out name takes "the";
+    a short name (CDEC, USGS NWIS, OpenET) does not.
+    """
+    words = name.split()
+    if len(words) > 1 and not words[0].isupper():
+        return f"the {name}"
+    return name
+
+
 def _station_list_head_line(*, total_count, q, source, active, reporting):
     """The Monitoring Stations card head's count line (143-07).
 
@@ -135,7 +148,7 @@ def _station_list_head_line(*, total_count, q, source, active, reporting):
     if q:
         clauses.append(f"matching “{q}”")
     if source:
-        clauses.append(f"from {source}")
+        clauses.append(f"from {source}")  # the source's phrase, never its code
     if clauses:
         noun += " " + " ".join(clauses)
 
@@ -199,6 +212,11 @@ def station_list(request):
         )
     if source:
         queryset = queryset.filter(data_source__code=source)
+    source_name = (
+        DataSource.objects.filter(code=source).values_list("name", flat=True).first()
+        if source else None
+    )
+    source_phrase = _source_phrase(source_name or source) if source else ""
     # Default to active-only so the list doesn't surface dead/inactive stations.
     # Explicit opt-ins: "0" = inactive only, "all" = everything.
     if active == "0":
@@ -313,6 +331,7 @@ def station_list(request):
         "total_count": paginator.count,
         "q": q,
         "source": source,
+        "source_phrase": source_phrase,
         "active": active,
         "reporting": reporting,
         "data_sources": DataSource.objects.filter(is_active=True).order_by("code"),
@@ -321,7 +340,7 @@ def station_list(request):
         ).count(),
         "result_pks": [s.pk for s in stations_ordered],
         "line": _station_list_head_line(
-            total_count=paginator.count, q=q, source=source,
+            total_count=paginator.count, q=q, source=source_phrase,
             active=active, reporting=reporting,
         ),
         "hx_request": bool(request.headers.get("HX-Request")),
@@ -476,33 +495,42 @@ def station_add(request):
         lat_raw = request.POST.get("lat", "").strip()
         lng_raw = request.POST.get("lng", "").strip()
 
+        # Brent, 150.1-02 screen 15 message B rows 12 and 13 (2026-10-16 05:45).
         errors = []
-        if not source_id:
-            errors.append("Data source is required.")
+        data_source = None
+        if source_id:
+            try:
+                data_source = DataSource.objects.get(pk=int(source_id))
+            except (ValueError, DataSource.DoesNotExist):
+                data_source = None
+        if data_source is None:
+            errors.append("Choose a data source.")
         if not external_id:
-            errors.append("External station ID is required.")
+            errors.append("Enter the external station ID.")
         if not name:
-            errors.append("Station name is required.")
+            errors.append("Enter the station name.")
         try:
             lat = float(lat_raw)
             lng = float(lng_raw)
         except (ValueError, TypeError):
-            errors.append("Valid latitude and longitude are required.")
+            errors.append("Enter the latitude and longitude in decimal degrees.")
             lat = lng = None
 
+        # A source and ID already on file (unique_together) was a server error.
+        if data_source is not None and external_id and MonitoredStation.objects.filter(
+            data_source=data_source, external_station_id=external_id
+        ).exists():
+            errors.append(f"{data_source.name} station {external_id} is already on file.")
+
         if not errors:
-            try:
-                data_source = DataSource.objects.get(pk=source_id)
-                station = MonitoredStation.objects.create(
-                    data_source=data_source,
-                    external_station_id=external_id,
-                    station_name=name,
-                    location=Point(lng, lat, srid=4326),
-                    is_active=True,
-                )
-                return redirect("datasync:station_detail", pk=station.pk)
-            except DataSource.DoesNotExist:
-                errors.append("Selected data source does not exist.")
+            station = MonitoredStation.objects.create(
+                data_source=data_source,
+                external_station_id=external_id,
+                station_name=name,
+                location=Point(lng, lat, srid=4326),
+                is_active=True,
+            )
+            return redirect("datasync:station_detail", pk=station.pk)
 
         context = {
             "data_sources": DataSource.objects.filter(is_active=True).order_by("code"),

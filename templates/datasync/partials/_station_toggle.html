@@ -2,7 +2,7 @@
   hx-post="{% url 'datasync:station_toggle' station.pk %}"
   hx-target="this"
   hx-swap="outerHTML"
-  title="{% if station.is_active %}Deactivate{% else %}Activate{% endif %} station"
+  title="{% if station.is_active %}Turn syncing off{% else %}Turn syncing on{% endif %}"
   style="
     display: inline-flex; align-items: center; justify-content: center;
     width: 36px; height: 20px;
