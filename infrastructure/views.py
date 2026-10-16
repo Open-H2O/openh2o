@@ -666,6 +666,7 @@ def infrastructure_import_commit(request):
             status=200,
         )
     skipped = [r for r in results if r["errors"]]
+    noted = [r for r in results if r["warnings"] and not r["errors"]]
 
     back_name, back_label = ADD_TYPE_BACK[infra_type]
     return render(
@@ -674,9 +675,12 @@ def infrastructure_import_commit(request):
         {
             "created": created,
             "skipped": skipped,
+            "noted": noted,
             "total": len(results),
+            "map_file": importer.is_map_rows(rows),
             "infra_type": infra_type,
             "infra_label": ADD_TYPE_LABEL[infra_type],
+            "record_noun": IMPORT_RECORD_NOUN[infra_type],
             "back_url": reverse(back_name),
             "back_label": back_label,
         },

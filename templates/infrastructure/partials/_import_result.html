@@ -9,32 +9,57 @@ Outcome of an import. Three shapes:
 </div>
 {% else %}
 <div class="card-raised">
+  {% comment %} Brent 2026-10-15 18:35, 150.1-02 screen 18 message Y; the heading, counts, "1 of them has a note below.", both tables and the skipped line reuse the water rights result and message N row 9 as approved. A map file's features are numbered from 1 under "Feature"; a CSV file's rows as the spreadsheet numbers them (message V). {% endcomment %}
   <h2 class="card-header-ruled">Import complete</h2>
 
   <div class="row-start" style="gap: var(--space-sm); margin-top: var(--space-md);">
     <span class="badge badge-green">Created {{ created }}</span>
     {% if skipped %}<span class="badge badge-orange">Skipped {{ skipped|length }}</span>{% endif %}
-    <span class="badge badge-grey">{{ total }} row{{ total|pluralize }} total</span>
+    <span class="badge badge-grey">{% if map_file %}{{ total }} map feature{{ total|pluralize }} total{% else %}{{ total }} row{{ total|pluralize }} total{% endif %}</span>
   </div>
 
-  {% if skipped %}
-  <p class="text-base text-secondary mt-md">{{ created }} {{ infra_label|lower }} record{{ created|pluralize }} created; {{ skipped|length }} row{{ skipped|length|pluralize }} skipped for the reasons below. Fix {{ skipped|length|pluralize:"it,them" }} in the file and import just {{ skipped|length|pluralize:"that row,those rows" }}.</p>
-  {% else %}
-  <p class="text-base text-secondary mt-md">{{ created }} {{ infra_label|lower }} record{{ created|pluralize }} created; every row was valid.</p>
+  <p class="text-base text-secondary mt-md">
+    {% if created %}OpenH2O created {{ created }} {{ record_noun }} record{{ created|pluralize }}.{% else %}OpenH2O created no {{ record_noun }} records.{% endif %}
+    {% if noted %}{{ noted|length }} of them {{ noted|length|pluralize:"has a note,have notes" }} below.{% endif %}
+    {% if skipped %}Correct these rows in the file and upload the file again. OpenH2O skips every row already on file.{% endif %}
+  </p>
+
+  {% if noted %}
+  <h3 class="section-header-sm mt-lg">Imported with a note</h3>
+  <table class="data-table mt-md">
+    <thead>
+      <tr>
+        <th style="width: 6rem;">{% if map_file %}Feature{% else %}Row{% endif %}</th>
+        <th>Note</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in noted %}
+      <tr>
+        <td class="text-mono">{% if map_file %}{{ row.index|add:1 }}{% else %}{{ row.index|add:2 }}{% endif %}</td>
+        <td>
+          {% for note in row.warnings %}
+          <div>{{ note }}</div>
+          {% endfor %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
   {% endif %}
 
   {% if skipped %}
   <table class="data-table mt-md">
     <thead>
       <tr>
-        <th style="width: 6rem;">Row</th>
+        <th style="width: 6rem;">{% if map_file %}Feature{% else %}Row{% endif %}</th>
         <th>Why it was skipped</th>
       </tr>
     </thead>
     <tbody>
       {% for row in skipped %}
       <tr>
-        <td class="text-mono">{{ row.index|add:1 }}</td>
+        <td class="text-mono">{% if map_file %}{{ row.index|add:1 }}{% else %}{{ row.index|add:2 }}{% endif %}</td>
         <td>
           {% for err in row.errors %}
           <div class="text-furnace">{{ err }}</div>

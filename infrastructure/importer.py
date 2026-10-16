@@ -415,6 +415,34 @@ _CHOICE_FIELDS = {
     },
 }
 
+#: A choice read in any case, by its stored value or its label ("Turbine",
+#: "TURBINE", "turbine"); anything else is imported without the field and
+#: noted (Brent, 150.1-02 screen 18 message Y, 2026-10-15 18:35). It used to
+#: be saved as written, an invalid choice, with a note nobody was shown.
+_CHOICE_LOOKUP = {
+    field: {
+        key.lower(): value
+        for value, label in choices
+        for key in (value, label)
+    }
+    for field, choices in (
+        ("measurement_method", MEASUREMENT_METHOD_CHOICES),
+        ("pump_type", PUMP_TYPE_CHOICES),
+    )
+}
+_CHOICE_NOTES = {
+    "pump_type": (
+        "OpenH2O imported this well without its pump type, which the file gives "
+        "as '{val}'. OpenH2O records a pump type only as submersible, turbine, "
+        "centrifugal or other."
+    ),
+    "measurement_method": (
+        "OpenH2O imported this well without its measurement method, which the "
+        "file gives as '{val}'. OpenH2O records a measurement method only as "
+        "certified meter, unmetered estimate, power conversion or ET method."
+    ),
+}
+
 # Free-text fields copied straight through when mapped + present.
 _STRING_FIELDS = {
     "well": ["wcr_number", "state_well_number", "casing_material", "owner_name"],
@@ -592,15 +620,15 @@ def validate_rows(rows, mapping, infra_type, existing_reg_ids, existing_names=No
                         "not a number."
                     )
 
-        # --- choice fields: off-list = warning, value kept ---
-        for field, valid in choice_fields.items():
+        # --- choice fields: read in any case; off-list = imported without, noted ---
+        for field in choice_fields:
             val = src(field)
             if val:
-                if val not in valid:
-                    warnings.append(
-                        f"{field} '{val}' is not a standard choice; kept as-is."
-                    )
-                data[field] = val
+                code = _CHOICE_LOOKUP[field].get(val.lower())
+                if code is None:
+                    warnings.append(_CHOICE_NOTES[field].format(val=val))
+                else:
+                    data[field] = code
 
         # --- plain string passthrough fields ---
         for field in _STRING_FIELDS.get(infra_type, []):
@@ -634,15 +662,14 @@ def validate_rows(rows, mapping, infra_type, existing_reg_ids, existing_names=No
             parcel_val = src("parcel_number")
             if parcel_val:
                 parcel_pk = existing_parcels.get(parcel_val)
+                # Brent, message Y rows 6 and 7: a match needs no note.
                 if parcel_pk is not None:
                     data["_pod_parcel_id"] = parcel_pk
-                    warnings.append(
-                        f"use area {parcel_val} will be linked at share 1.0000."
-                    )
                 else:
                     warnings.append(
-                        f"parcel_number '{parcel_val}' matches no use area on "
-                        "record; not linked."
+                        f"No use area on file has the parcel number {parcel_val}, "
+                        "so OpenH2O imported this point of diversion without a "
+                        "use area."
                     )
 
         results.append(

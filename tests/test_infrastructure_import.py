@@ -213,12 +213,18 @@ class TestValidateRows:
             in results[0]["errors"]
         )
 
-    def test_unknown_choice_is_warning_but_value_kept(self):
+    def test_unknown_choice_is_imported_without_it_and_noted(self):
+        """Brent, message Y (2026-10-15 18:35): an off-list pump type was saved
+        as written, an invalid choice; now the well imports without it."""
         rows = [{"name": "Odd Pump", "lat": "37.2", "lon": "-119.5", "reg_id": "", "casing": "", "pump": "rocket"}]
         results = importer.validate_rows(rows, self._mapping(), "well", set())
         assert results[0]["errors"] == []
-        assert results[0]["warnings"]
-        assert results[0]["data"]["pump_type"] == "rocket"
+        assert results[0]["warnings"] == [
+            "OpenH2O imported this well without its pump type, which the file gives "
+            "as 'rocket'. OpenH2O records a pump type only as submersible, turbine, "
+            "centrifugal or other."
+        ]
+        assert "pump_type" not in results[0]["data"]
 
     def test_good_row_coerces_decimal_and_point(self):
         from django.contrib.gis.geos import Point

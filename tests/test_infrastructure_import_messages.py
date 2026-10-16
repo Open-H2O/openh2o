@@ -357,3 +357,58 @@ class TestMatchingStepRefusals:
         assert sentence in body
         assert 'name="rows_json"' in body
         assert Well.objects.count() == before
+
+
+@pytest.mark.django_db
+class TestPageAfterCreate:
+    """Message Y (2026-10-15 18:35): the page after Create and its notes."""
+
+    def _commit(self, client, rows, mapping, infra_type="well"):
+        resp = client.post(
+            reverse("infrastructure:import_commit"),
+            {"infra_type": infra_type, "rows_json": json.dumps(rows),
+             **{f"map:{k}": v for k, v in mapping.items()}},
+        )
+        return resp.content.decode().replace("&#x27;", "'")
+
+    def test_csv_counts_notes_and_spreadsheet_rows(self, auth_client):
+        rows = [
+            {"name": "Y1", "lat": "37.3", "lon": "-120.5", "pump": "Turbine"},
+            {"name": "Y2", "lat": "37.3", "lon": "-120.5", "pump": "windmill"},
+            {"name": "", "lat": "37.3", "lon": "-120.5", "pump": ""},
+        ]
+        body = self._commit(auth_client, rows, {
+            "name": "name", "latitude": "lat", "longitude": "lon", "pump_type": "pump",
+        })
+        assert "OpenH2O created 2 well records." in body
+        assert "1 of them has a note below." in body
+        assert (
+            "Correct these rows in the file and upload the file again. OpenH2O skips "
+            "every row already on file."
+        ) in body
+        assert "Imported with a note" in body
+        assert '<td class="text-mono">3</td>' in body  # Y2: spreadsheet row 3
+        assert '<td class="text-mono">4</td>' in body  # the blank name: row 4
+        assert "3 rows total" in body
+        assert Well.objects.get(name="Y1").pump_type == "turbine"
+        assert Well.objects.get(name="Y2").pump_type == ""
+
+    def test_map_file_features_and_none_created(self, auth_client):
+        rows = [{"name": "", importer.GEOMETRY_COL: '{"type": "Point", "coordinates": [-120.5, 37.3]}'}]
+        body = self._commit(auth_client, rows, {"name": "name", "geometry": importer.GEOMETRY_COL},
+                            infra_type="storage")
+        assert "OpenH2O created no storage pond records." in body
+        assert "1 map feature total" in body
+        assert ">Feature<" in body
+        assert '<td class="text-mono">1</td>' in body
+
+    def test_unmatched_parcel_number_note(self, auth_client):
+        rows = [{"name": "POD Note", "lat": "37.3", "lon": "-120.5", "apn": "024-100-001"}]
+        body = self._commit(auth_client, rows, {
+            "name": "name", "latitude": "lat", "longitude": "lon", "parcel_number": "apn",
+        }, infra_type="diversion")
+        assert "OpenH2O created 1 point of diversion record." in body
+        assert (
+            "No use area on file has the parcel number 024-100-001, so OpenH2O "
+            "imported this point of diversion without a use area."
+        ) in body
