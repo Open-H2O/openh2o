@@ -841,7 +841,11 @@
     btn.disabled = true;
     fetch(parcelCreateUrl, { method: 'POST', body: body, credentials: 'same-origin' })
       .then(function(r) {
-        if (!r.ok) return r.json().then(function(d) { throw new Error(d.error || 'Save failed'); });
+        if (!r.ok) {
+          return r.json()
+            .catch(function() { return {}; })
+            .then(function(d) { throw new Error(d.error || ''); });
+        }
         return r.text();
       })
       .then(function(html) {
@@ -857,10 +861,12 @@
         parcelsLoaded = false;
         exitParcelMode();
       })
-      .catch(function() {
+      .catch(function(err) {
         btn.textContent = 'Save Parcel';
         btn.disabled = false;
-        setCoordText('Error saving parcel — try again');
+        // Brent, 150.1-02 screen 18 message AA row 7: the server's sentence
+        // when there is one, else this.
+        setCoordText((err && err.message) || 'OpenH2O could not save the parcel. Try again.');
       });
   });
 

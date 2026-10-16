@@ -51,8 +51,9 @@ every page, and a notice people learn to skip is a notice that does not work.
 <div class="card-raised demo-notice" role="note" aria-label="Demonstration data notice">
   <span class="badge badge-pill notice-badge">Demo</span>
   <p class="demo-notice-text">
-    This demo mixes <strong>invented sample data</strong> with <strong>real published records</strong> to show what the platform can do.
-    <a href="{% url 'demonstration_data' %}" class="prose-link">See the difference</a>.
+    {% comment %} Brent 2026-10-15 19:19 (150.1-02 screen 18 message AA row 2): the link inside a sentence that says what it opens. {% endcomment %}
+    This demo mixes <strong>invented sample data</strong> with <strong>real published records</strong>.
+    Another page lists <a href="{% url 'demonstration_data' %}" class="prose-link">where every figure comes from</a>.
     <strong>For testing purposes only.</strong>
   </p>
 </div>

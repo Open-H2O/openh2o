@@ -748,15 +748,32 @@ def parcel_create_inline(request):
     owner_name = request.POST.get("owner_name", "").strip()
     geometry_json = request.POST.get("geometry_json", "")
 
+    # Brent, 150.1-02 screen 18 message AA rows 8 to 10 (2026-10-15 19:19).
     if not parcel_number or not geometry_json:
-        return JsonResponse({"error": "Parcel number and geometry required."}, status=400)
+        return JsonResponse(
+            {"error": "Enter the parcel number, then draw the parcel on the map."},
+            status=400,
+        )
+
+    if Parcel.objects.filter(parcel_number=parcel_number).exists():
+        # parcel_number is unique: this was an IntegrityError, a server error.
+        return JsonResponse(
+            {"error": (
+                f"Parcel {parcel_number} is already on file. Choose it with the "
+                "parcel search above, or enter a different parcel number."
+            )},
+            status=400,
+        )
 
     try:
         geom = GEOSGeometry(geometry_json, srid=4326)
         if isinstance(geom, Polygon):
             geom = MultiPolygon(geom, srid=4326)
     except Exception:
-        return JsonResponse({"error": "Invalid geometry."}, status=400)
+        return JsonResponse(
+            {"error": "OpenH2O cannot read the parcel you drew. Draw the parcel again."},
+            status=400,
+        )
 
     parcel = Parcel.objects.create(
         parcel_number=parcel_number,

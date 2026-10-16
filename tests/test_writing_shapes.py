@@ -73,11 +73,8 @@ BASELINE: dict = {
     "templates/drinking/partials/_onboard_result.html": {"stand-in": 1},
     "templates/drinking/partials/_empty_drinking.html": {"stand-in": 1},
     "templates/accounting/partials/_needs_attention.html": {"em dash": 1},
-    "templates/allauth/layouts/base.html": {"em dash": 1},
-    "templates/base_auth.html": {"em dash": 1},
     "templates/core/user_form.html": {"em dash": 1},
     "templates/datasync/station_add.html": {"em dash": 1},
-    "templates/partials/_demo_marker.html": {"em dash": 1},
     "templates/reporting/partials/_openet_prefill.html": {"em dash": 1},
     "templates/reporting/partials/_report_detail_pane.html": {"em dash": 1, "stand-in": 1},
     "templates/reporting/report_list.html": {"em dash": 1},
@@ -106,7 +103,6 @@ BASELINE: dict = {
     # 2026-10-11: the "district reader" and "California" shapes joined at their
     # counts that day (150.4-01). 150.4-02, 150.1-02 and 150.1-03 lower them.
     "templates/about.html": {"district reader": 1},
-    "templates/account/signup_closed.html": {"district reader": 3},
     "templates/datasync/monitoring_dashboard.html": {"district reader": 1},
     "templates/parcels/partials/_detail_pane.html": {"district reader": 1},
     "templates/reporting/partials/_handoff.html": {"district reader": 1},

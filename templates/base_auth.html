@@ -39,7 +39,10 @@
         {% block content %}{% endblock %}
     </div>
     <footer style="position: fixed; bottom: 0; left: 0; right: 0; padding: 0.6rem; text-align: center; font-size: 0.78rem;">
-        <a href="https://github.com/Open-H2O/openh2o" target="_blank" rel="noopener noreferrer" style="color:var(--color-text-secondary); text-decoration:none;">OpenH2O — Source code (AGPL-3.0)</a>
+        {% comment %} 150.1-02 screen 18 message AA: the app footer approved in plan 01, reused. {% endcomment %}
+        <span style="color:var(--color-text-secondary);">OpenH2O (Open Water Accounting Platform) ·
+        <a href="{% url 'about' %}" style="color:var(--color-text-secondary);">About</a> ·
+        <a href="https://github.com/Open-H2O/openh2o" target="_blank" rel="noopener noreferrer" style="color:var(--color-text-secondary);">Source code (AGPL-3.0)</a></span>
     </footer>
 </body>
 </html>

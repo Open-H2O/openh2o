@@ -412,3 +412,34 @@ class TestPageAfterCreate:
             "No use area on file has the parcel number 024-100-001, so OpenH2O "
             "imported this point of diversion without a use area."
         ) in body
+
+
+@pytest.mark.django_db
+class TestParcelCreateMessages:
+    """Message AA rows 8 to 10 (2026-10-15 19:19): the Add page's parcel save."""
+
+    SQUARE = json.dumps({"type": "Polygon", "coordinates": [[
+        [-120.5, 37.3], [-120.4, 37.3], [-120.4, 37.4], [-120.5, 37.3]]]})
+
+    def _post(self, client, **data):
+        resp = client.post(reverse("infrastructure:parcel_create"), data)
+        return resp.status_code, (resp.json().get("error") if resp.status_code == 400 else None)
+
+    def test_parcel_number_already_on_file_is_a_sentence_not_a_500(self, auth_client):
+        from parcels.models import Parcel
+
+        assert self._post(auth_client, parcel_number="024-100-001", geometry_json=self.SQUARE)[0] == 200
+        assert self._post(auth_client, parcel_number="024-100-001", geometry_json=self.SQUARE) == (
+            400,
+            "Parcel 024-100-001 is already on file. Choose it with the parcel search "
+            "above, or enter a different parcel number.",
+        )
+        assert Parcel.objects.filter(parcel_number="024-100-001").count() == 1
+
+    def test_missing_and_unreadable(self, auth_client):
+        assert self._post(auth_client, parcel_number="", geometry_json=self.SQUARE) == (
+            400, "Enter the parcel number, then draw the parcel on the map.",
+        )
+        assert self._post(auth_client, parcel_number="X-1", geometry_json="not geometry") == (
+            400, "OpenH2O cannot read the parcel you drew. Draw the parcel again.",
+        )
