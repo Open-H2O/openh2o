@@ -82,7 +82,6 @@ BASELINE: dict = {
     "accounting/ledger_words.py": {"em dash": 1},
     "accounting/views.py": {"em dash": 2},
     "core/models.py": {"em dash": 1},
-    "datasync/freshness.py": {"em dash": 8},
     "health/checks.py": {"em dash": 4},
     "reporting/generators.py": {"em dash": 2},
     "reporting/validators.py": {"em dash": 16},
@@ -103,7 +102,6 @@ BASELINE: dict = {
     # 2026-10-11: the "district reader" and "California" shapes joined at their
     # counts that day (150.4-01). 150.4-02, 150.1-02 and 150.1-03 lower them.
     "templates/about.html": {"district reader": 1},
-    "templates/datasync/monitoring_dashboard.html": {"district reader": 1},
     "templates/parcels/partials/_detail_pane.html": {"district reader": 1},
     "templates/reporting/partials/_handoff.html": {"district reader": 1},
     "templates/reporting/partials/_status_section.html": {"district reader": 3},

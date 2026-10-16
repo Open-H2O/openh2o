@@ -67,8 +67,7 @@ class TestSourceCardsShareOneCountShape:
         assert resp.status_code == 200
         assert '<span class="badge badge-grey">Not yet synced</span>' in body
         assert (
-            "This deployment has not run a sync against PROBE_NEVER_SYNCED "
-            "yet; the readings it holds were loaded, not synced." in body
+            "OpenH2O has not synced Probe Never-Synced Source on this site yet." in body
         )
         assert (
             "3 active of 3 stations: 1 up to date, 1 slightly behind, "

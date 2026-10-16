@@ -49,15 +49,17 @@ CREDENTIAL_ENV = {
 
 # Short, plain-English description of what each source actually is. Surfaced in
 # the UI so "CNRFC" is not an unexplained acronym.
+# Brent, 150.1-02 screen 15 message A row 4 (2026-10-16 05:10). CNRFC and
+# OpenET are not station sources on the dashboard; theirs follow the same form.
 SOURCE_BLURBS = {
-    "cdec": "California Data Exchange Center — live reservoir, river and snow telemetry.",
-    "usgs": "USGS National Water Information System — daily stream-gauge flow and stage.",
-    "cimis": "CA Irrigation Management Information System — daily reference ET (needs an API key).",
-    "cnrfc": "California Nevada River Forecast Center (NOAA) — river-flow and precipitation forecasts.",
-    "noaa": "NOAA climate data — daily temperature and precipitation (needs an API token).",
-    "dwr_wdl": "DWR Water Data Library — periodic (roughly quarterly) groundwater-level readings.",
-    "dwr_sgma": "DWR SGMA portal — groundwater monitoring submitted under Sustainable Groundwater law.",
-    "openet": "OpenET — monthly satellite evapotranspiration estimates (needs an API key).",
+    "cdec": "California Data Exchange Center: reservoir, river and snow telemetry.",
+    "usgs": "USGS National Water Information System: daily stream flow and stage.",
+    "cimis": "California Irrigation Management Information System: daily reference ET. Needs an API key.",
+    "cnrfc": "California Nevada River Forecast Center: river flow and precipitation forecasts.",
+    "noaa": "NOAA climate data: daily temperature and precipitation. Needs an API token.",
+    "dwr_wdl": "Department of Water Resources Water Data Library: groundwater levels measured about every three months.",
+    "dwr_sgma": "Department of Water Resources SGMA Portal: groundwater monitoring reported under the Sustainable Groundwater Management Act.",
+    "openet": "OpenET: monthly satellite evapotranspiration estimates. Needs an API key.",
 }
 
 # Short display labels for the source chips — proper acronym casing rather than
@@ -85,7 +87,7 @@ STATUS_META = {
     # `discover_stations.py` creates rows with is_active=False, so following the
     # advice changes nothing at all.
     "none_activated": {"label": "None activated", "tone": "neutral"},
-    "no_data": {"label": "No recent data", "tone": "stale"},
+    "no_data": {"label": "None up to date", "tone": "stale"},
     "running": {"label": "Syncing…", "tone": "stale"},
     "failed": {"label": "Last sync failed", "tone": "dead"},
     "never": {"label": "Not yet synced", "tone": "neutral"},

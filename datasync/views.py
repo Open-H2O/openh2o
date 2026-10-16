@@ -101,6 +101,9 @@ def _build_source_status(boundary, now):
             "source": src,
             "display": freshness.source_display(src.code),
             "log": log,
+            # 150.1-02 screen 15 message A rows 6 and 8.
+            "readings_saved": f"{log.records_published:,}" if log else "",
+            "credential_env": freshness.CREDENTIAL_ENV.get(src.code, ""),
             "total": total,
             "active": active,
             "fresh": fresh,
@@ -549,6 +552,13 @@ def monitoring_dashboard(request):
         total_active, fresh_count, stale_count, dead_count
     )
 
+    # Brent, 150.1-02 screen 15 message A row 2: the boundary line counts the
+    # active stations outside the boundary instead of assuming some are.
+    outside_count = (
+        active_stations.exclude(location__within=boundary.geometry).count()
+        if boundary and boundary.geometry else 0
+    )
+
     # Per-source status, source-aware freshness (not boundary-scoped — see above)
     source_status_list = _build_source_status(None, now)
     n_sources = len(source_status_list)
@@ -611,6 +621,8 @@ def monitoring_dashboard(request):
         else:
             latest_tooltip = None
         station_list.append({
+            # Brent, screen 15 message A row 11: the source's name, not its code.
+            "source_display": freshness.source_display(s.data_source.code),
             "station": s,
             "freshness": fresh_class,
             "sparkline_points": station_sparklines.get(s.pk),
@@ -661,6 +673,7 @@ def monitoring_dashboard(request):
         # Never alarm red: running low is a budget state, not a hard error.
         "openet_low": bool(openet_limit) and openet_used >= 0.8 * openet_limit,
         "boundary_name": boundary.name if boundary else None,
+        "outside_count": outside_count,
     }
 
     if request.headers.get("HX-Request"):

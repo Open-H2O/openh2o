@@ -27,10 +27,11 @@
       figure they cannot act on. The used figure's own class is the whole
       low-allowance signal now that the card (and its border) are gone.
     {% endcomment %}
+    {% comment %} Brent 2026-10-16 05:10, 150.1-02 screen 15 message A rows 5 to 11. {% endcomment %}
     <p class="text-secondary text-base mb-md">
-      {{ n_sources }} station sources. Satellite crop-water estimates come from
-      OpenET, not a station: <span{% if openet_low %} class="text-deficit"{% endif %}>{{ openet_used }}</span> of {{ openet_limit }} requests used this month
-      ({% if openet_source == "provider" %}counted by OpenET{% if openet_tier %}, tier {{ openet_tier }}{% endif %}{% else %}counted here, not by OpenET: {{ openet_fallback_reason }}{% endif %}); the allowance resets on the 1st.
+      {{ n_sources }} station sources. Satellite estimates of crop water use come from
+      OpenET, which is not a station source. This site has used <span{% if openet_low %} class="text-deficit"{% endif %}>{{ openet_used }}</span> of its {{ openet_limit }} OpenET requests this month,
+      {% if openet_source == "provider" %}as OpenET counts them{% else %}as OpenH2O counts them, because {{ openet_fallback_reason }}{% endif %}; the count resets on the 1st.
     </p>
     {% if source_status_list %}
     <div class="health-grid">
@@ -45,19 +46,16 @@
         {% endif %}
         <p class="text-tertiary text-xs" style="margin: 0 0 var(--space-xs) 0;">{{ info.count_line }}</p>
         {% if info.status_code == "needs_key" %}
-        <p class="text-tertiary text-xs m-0">Add the API credential on the server to enable this source.</p>
+        <p class="text-tertiary text-xs m-0">Set {{ info.credential_env }} on the server to turn this source on.</p>
         {% elif info.status_code == "no_stations" %}
-        <p class="text-tertiary text-xs m-0">No station is wired yet. Run station discovery for this source.</p>
+        <p class="text-tertiary text-xs m-0">No {{ info.source.name }} station is on file. Add stations with the discover_stations command.</p>
         {% elif info.status_code == "none_activated" %}
-        <p class="text-tertiary text-xs m-0">
-          {{ info.total }} station{{ info.total|pluralize }} known here, none switched on. Discovery adds stations dormant; open one and activate it to start syncing.
-        </p>
+        <p class="text-tertiary text-xs m-0">OpenH2O syncs a newly discovered station only after you turn syncing on for that station on the station list.</p>
         {% elif info.status_code == "never" %}
-        <p class="text-tertiary text-xs m-0">This deployment has not run a sync against {{ info.display }} yet; the readings it holds were loaded, not synced.</p>
+        <p class="text-tertiary text-xs m-0">OpenH2O has not synced {{ info.source.name }} on this site yet.</p>
         {% elif info.log %}
         <p class="text-tertiary text-xs m-0">
-          Last sync: {{ info.log.started_at|timesince }} ago
-          {% if info.log.records_published %}&middot; {{ info.log.records_published }} published{% endif %}
+          OpenH2O last synced {{ info.source.name }} {{ info.log.started_at|timesince }} ago{% if info.log.records_published %} and saved {{ info.readings_saved }} reading{{ info.log.records_published|pluralize }}{% endif %}.
         </p>
         {% endif %}
       </div>
@@ -83,10 +81,10 @@
       <a href="{% url 'datasync:station_detail' item.station.pk %}" class="card-raised station-card-link" style="text-decoration: none; display: block;">
         <div class="row-between mb-sm">
           <span class="section-header-sm" style="margin: 0; border: none; padding: 0; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ item.station.station_name }}</span>
-          <span class="freshness-dot freshness-dot--{{ item.freshness }}" title="{{ item.freshness }}"></span>
+          <span class="freshness-dot freshness-dot--{{ item.freshness }}" title="{% if item.freshness == 'fresh' %}Up to date{% else %}Slightly behind{% endif %}"></span>
         </div>
         <div class="row-between">
-          <span class="badge badge-grey badge-pill text-xs">{{ item.station.data_source.code }}</span>
+          <span class="badge badge-grey badge-pill text-xs">{{ item.source_display }}</span>
           {% if item.sparkline_points %}
           <div class="sparkline-container" {% if item.latest_tooltip %}title="{{ item.latest_tooltip }}" style="cursor: default;"{% endif %}>
             <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">

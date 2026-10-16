@@ -63,16 +63,15 @@ class TestTheCardSaysWhereTheNumberCameFrom:
         status paragraph, so the phrase is now mid-sentence, lowercase, rather
         than a standalone capitalized card note ("Counted by OpenET")."""
         body = _dashboard(client_logged_in, PROVIDER_ANSWERED).content.decode()
-        assert "counted by OpenET" in body
-        assert "tier 1" in body
-        assert "counted here" not in body
+        # Brent, 150.1-02 screen 15 message A row 10 (2026-10-16 05:10).
+        assert "as OpenET counts them" in body
+        assert "as OpenH2O counts them" not in body
 
     def test_fallback_sourced_says_it_was_counted_here_and_why(self, client_logged_in):
         """143-12: same move, same casing change ("Counted here" -> "counted here")."""
         body = _dashboard(client_logged_in, PROVIDER_UNREACHABLE).content.decode()
-        assert "counted here" in body
-        assert "could not be reached" in body
-        assert "counted by OpenET" not in body
+        assert "as OpenH2O counts them, because OpenET could not be reached" in body
+        assert "as OpenET counts them" not in body
 
     def test_the_two_states_are_distinguishable(self, client_logged_in):
         provider = _dashboard(client_logged_in, PROVIDER_ANSWERED).content.decode()
@@ -234,4 +233,4 @@ class TestTheMapHeadSplitsActiveStationsThreeWays:
 
     def test_the_quota_sentence_names_the_provider_figure(self, client_logged_in):
         body = _dashboard(client_logged_in, PROVIDER_ANSWERED).content.decode()
-        assert "of 100 requests" in body
+        assert "of its 100 OpenET requests" in body
