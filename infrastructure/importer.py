@@ -298,36 +298,52 @@ ALIASES = {
     "storage": _RECHARGE_ALIASES,
 }
 
-# Human-readable labels for the column-mapping UI. A GSA user sees "Casing
-# diameter (in)", not "casing_diameter_in".
+# Labels for the column-matching step: the approved Add page and well page
+# labels word for word, and "Geometry" and "Water right application number"
+# (Brent, 150.1-02 screen 18 message W, 2026-10-15 18:12).
 FIELD_LABELS = {
     "name": "Name",
-    "well_registration_id": "Registration ID (local)",
-    "wcr_number": "WCR number (DWR)",
-    "state_well_number": "State Well Number (DWR)",
+    "well_registration_id": "Local registration ID",
+    "wcr_number": "WCR number",
+    "state_well_number": "State well number",
     "capacity_gpm": "Capacity (gpm)",
-    "tested_yield_gpm": "Tested Yield (gpm)",
+    "tested_yield_gpm": "Tested yield (gpm)",
     "depth_ft": "Depth (ft)",
-    "casing_diameter_in": "Casing Diameter (in)",
-    "casing_material": "Casing Material",
-    "screen_top_ft": "Screen Top (ft)",
-    "screen_bottom_ft": "Screen Bottom (ft)",
-    "pump_type": "Pump Type",
-    "year_pumping_began": "Year Pumping Began",
-    "measurement_method": "Measurement Method",
-    "owner_name": "Owner Name",
+    "casing_diameter_in": "Casing diameter (in)",
+    "casing_material": "Casing material",
+    "screen_top_ft": "Screen top (ft)",
+    "screen_bottom_ft": "Screen bottom (ft)",
+    "pump_type": "Pump type",
+    "year_pumping_began": "Year pumping began",
+    "measurement_method": "Measurement method",
+    "owner_name": "Owner name",
     "latitude": "Latitude",
     "longitude": "Longitude",
-    "geometry": "Geometry (GeoJSON / WKT)",
-    "stream_name": "Stream Name",
-    "local_name": "Known Locally As",
-    "max_rate_cfs": "Max Rate (cfs)",
-    "site_type": "Site Type",
-    "capacity_acre_feet": "Capacity (acre-feet)",
+    "geometry": "Geometry",
+    "stream_name": "Stream name",
+    "local_name": "Known locally as",
+    "max_rate_cfs": "Max rate (cfs)",
+    "site_type": "Site type",
+    "capacity_acre_feet": "Capacity per fill (acre-feet)",
     "operator": "Operator",
-    "water_right": "Water Right (right ID)",
-    "parcel_number": "Parcel Number (use area)",
+    "water_right": "Water right application number",
+    "parcel_number": "Parcel number",
 }
+
+
+#: What a map file's geometry column is called on the matching step and in
+#: the sample table (message W row 7); the key itself stays GEOMETRY_COL.
+GEOMETRY_COL_LABEL = "The file's geometry"
+
+
+def sample_cell(column, value):
+    """A sample-table cell: a map file's geometry shows only its shape type."""
+    if column == GEOMETRY_COL:
+        try:
+            return json.loads(value).get("type", "") if value else ""
+        except (ValueError, AttributeError):
+            return ""
+    return value
 
 
 def import_fields(infra_type):

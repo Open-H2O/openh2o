@@ -36,6 +36,7 @@
     (name; a geometry or latitude and longitude inside the United States; the well registration
     ID check). The per-type field list is the mapping step's; the page cannot reach it
     without a view change (ISS-228).{% endcomment %}
+    <h3 class="section-header-sm mt-lg">Columns OpenH2O reads</h3>
     <div class="table-scroll mt-md">
       <table class="data-table help-cases-table">
         <thead>
@@ -49,17 +50,17 @@
           <tr>
             <td class="col-name">Name</td>
             <td>Yes</td>
-            <td>The record's name</td>
+            <td>The {{ record_noun }}'s name.</td>
           </tr>
           <tr>
             <td class="col-name">Latitude and longitude, or a geometry</td>
             <td>Yes</td>
-            <td>Decimal degrees inside the United States, or the shapefile, GeoJSON or KML geometry</td>
+            <td>Decimal degrees inside the United States, or the shapefile, GeoJSON or KML geometry. For a line or an area, OpenH2O records the center point.</td>
           </tr>
           <tr>
             <td class="col-name">The other {{ infra_label|lower }} columns</td>
             <td>No</td>
-            <td>Matched to their fields on the next step, one row per field</td>
+            <td>On the next step, OpenH2O matches each column to a field by name.</td>
           </tr>
         </tbody>
       </table>

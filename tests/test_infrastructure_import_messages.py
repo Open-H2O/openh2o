@@ -203,3 +203,46 @@ class TestRowsAlreadyOnFile:
         results = self._validate("storage", rows)
         assert results[0]["errors"] == []
         assert results[1]["errors"]
+
+
+class TestMatchingStep:
+    """Message W (2026-10-15 18:12): the column table and the matching step."""
+
+    def test_page_table(self, auth_client):
+        body = auth_client.get(reverse("infrastructure:import") + "?type=storage").content.decode()
+        body = body.replace("&#x27;", "'").replace("&rsquo;", "'")
+        assert "Columns OpenH2O reads" in body
+        assert "The storage pond's name." in body
+        assert "For a line or an area, OpenH2O records the center point." in body
+        assert "On the next step, OpenH2O matches each column to a field by name." in body
+
+    def test_csv_matching_step(self, auth_client):
+        body = _preview(auth_client, "wells.csv", "name,lat,lon,Casing Dia\nW1,37.3,-120.5,8\n")
+        assert "Match the file's columns" in body
+        assert (
+            "OpenH2O found <strong>1</strong> row and <strong>4</strong> columns, and "
+            "matched the fields below to the file's columns by name. Change any match "
+            "that is wrong, then press Create."
+        ) in body
+        assert ">Not imported<" in body
+        assert "Local registration ID" in body
+        assert "The file's first 1 row" in body
+        assert "__geometry__<" not in body
+
+    def test_map_file_matching_step(self, auth_client):
+        gj = json.dumps({"type": "FeatureCollection", "features": [
+            {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [
+                [[-120.5, 37.3], [-120.4, 37.3], [-120.4, 37.4], [-120.5, 37.3]]]},
+             "properties": {"name": "Pond A"}},
+        ]})
+        body = _preview(auth_client, "ponds.geojson", gj, infra_type="storage")
+        assert "OpenH2O found <strong>1</strong> map feature and" in body
+        assert "The file's first 1 map feature" in body
+        assert ">The file's geometry</option>" in body
+        assert "<td>Polygon</td>" in body
+        assert "coordinates" not in body.split("The file's first")[1]
+        assert ">Geometry<" in body
+
+    def test_sample_cell_shows_the_shape_type(self):
+        assert importer.sample_cell(importer.GEOMETRY_COL, '{"type": "Point", "coordinates": [1, 2]}') == "Point"
+        assert importer.sample_cell("depth", "200") == "200"

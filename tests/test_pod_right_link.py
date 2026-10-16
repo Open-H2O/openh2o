@@ -220,6 +220,7 @@ def test_preview_shows_the_resolved_water_right_per_row(auth_client):
 
     assert resp.status_code == 200
     body = resp.content.decode()
-    assert "Water right (resolved)" in body
-    assert "A001885" in body
-    assert "not found: A999999" in body
+    # Brent 2026-10-15 18:12 (150.1-02 screen 18, message W row 9).
+    assert "Water right on file" in body
+    assert "<td>A001885</td>" in body
+    assert "Not on file" in body

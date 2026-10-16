@@ -292,7 +292,7 @@ class TestImportFlowViews:
         assert resp.status_code == 200
         body = resp.content.decode()
         # The mapping table offers the well fields and pre-selects the right column.
-        assert "Casing Diameter (in)" in body
+        assert "Casing diameter (in)" in body  # the Add page label (message W)
         assert "WCR_NO" in body
         assert 'name="rows_json"' in body
 

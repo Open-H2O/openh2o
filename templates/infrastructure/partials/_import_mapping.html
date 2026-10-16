@@ -15,8 +15,9 @@ pressed Create and got this same table back with no explanation at all).
 </div>
 {% endif %}
 <div class="card-raised">
-  <h2 class="card-header-ruled">Match your columns</h2>
-  <p class="text-base text-secondary mt-md">Found <strong>{{ row_count }}</strong> record{{ row_count|pluralize }} and <strong>{{ columns|length }}</strong> column{{ columns|pluralize }}. Each field shows its best match; change any that are wrong.</p>
+  {% comment %} Brent 2026-10-15 18:12, 150.1-02 screen 18 message W (row 4; the heading and "Not imported" reuse the water rights step's approved words). {% endcomment %}
+  <h2 class="card-header-ruled">Match the file's columns</h2>
+  <p class="text-base text-secondary mt-md">OpenH2O found <strong>{{ row_count }}</strong> {% if map_file %}map feature{{ row_count|pluralize }}{% else %}row{{ row_count|pluralize }}{% endif %} and <strong>{{ columns|length }}</strong> column{{ columns|pluralize }}, and matched the fields below to the file's columns by name. Change any match that is wrong, then press Create.</p>
 
   <form class="mt-lg"
     hx-post="{% url 'infrastructure:import_commit' %}"
@@ -39,9 +40,9 @@ pressed Create and got this same table back with no explanation at all).
           <td>{{ fr.label }}</td>
           <td>
             <select name="map:{{ fr.field }}" class="form-select">
-              <option value="">(not imported)</option>
+              <option value="">Not imported</option>
               {% for col in columns %}
-              <option value="{{ col }}"{% if fr.guess == col %} selected{% endif %}>{{ col }}</option>
+              <option value="{{ col }}"{% if fr.guess == col %} selected{% endif %}>{% if col == "__geometry__" %}The file's geometry{% else %}{{ col }}{% endif %}</option>
               {% endfor %}
             </select>
           </td>
@@ -58,12 +59,12 @@ pressed Create and got this same table back with no explanation at all).
 </div>
 
 <div class="card-raised">
-  <h3 class="section-header-sm">Sample of your data (first {{ sample_count }} row{{ sample_count|pluralize }})</h3>
+  <h3 class="section-header-sm">The file's first {{ sample_count }} {% if map_file %}map feature{{ sample_count|pluralize }}{% else %}row{{ sample_count|pluralize }}{% endif %}</h3>
   <div style="overflow-x: auto;">
     <table class="data-table">
       <thead>
         <tr>
-          {% for col in sample_columns|default:columns %}<th class="text-mono">{{ col }}</th>{% endfor %}
+          {% for col in sample_columns|default:columns %}<th class="text-mono">{% if col == "__geometry__" %}The file's geometry{% else %}{{ col }}{% endif %}</th>{% endfor %}
         </tr>
       </thead>
       <tbody>

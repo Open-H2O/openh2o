@@ -472,7 +472,10 @@ def infrastructure_import_preview(request):
         {"field": field, "label": label, "guess": mapping.get(field, "")}
         for field, label in importer.import_fields(infra_type)
     ]
-    sample_table = [[row.get(col, "") for col in columns] for row in rows[:5]]
+    sample_table = [
+        [importer.sample_cell(col, row.get(col, "")) for col in columns]
+        for row in rows[:5]
+    ]
     # 146-02 D2: the sample table's OWN header, separate from `columns` (which
     # the field-mapping <select>s above also iterate as the file's real source
     # columns -- appending a synthetic entry there would offer it as a
@@ -493,6 +496,7 @@ def infrastructure_import_preview(request):
             "sample_table": sample_table,
             "sample_count": len(sample_table),
             "row_count": len(rows),
+            "map_file": importer.is_map_rows(rows),
             "rows_json": json.dumps(rows),
         },
     )
@@ -520,15 +524,16 @@ def _diversion_water_right_preview_column(infra_type, rows, mapping, columns, sa
     right_col = mapping["water_right"]
     for i, row in enumerate(rows[: len(sample_table)]):
         raw = (row.get(right_col) or "").strip()
+        # Brent, message W row 9 (2026-10-15 18:12).
         if not raw:
-            resolved = "(none)"
+            resolved = ""
         elif raw in existing_rights:
             resolved = raw
         else:
-            resolved = f"not found: {raw}"
+            resolved = "Not on file"
         sample_table[i].append(resolved)
 
-    return list(columns) + ["Water right (resolved)"]
+    return list(columns) + ["Water right on file"]
 
 
 def _columns_from_rows(rows):
@@ -555,7 +560,10 @@ def _commit_failure_context(infra_type, rows, mapping, exc):
         {"field": field, "label": label, "guess": mapping.get(field, "")}
         for field, label in importer.import_fields(infra_type)
     ]
-    sample_table = [[row.get(col, "") for col in columns] for row in rows[:5]]
+    sample_table = [
+        [importer.sample_cell(col, row.get(col, "")) for col in columns]
+        for row in rows[:5]
+    ]
     return {
         "infra_type": infra_type,
         "infra_label": ADD_TYPE_LABEL[infra_type],
@@ -564,6 +572,7 @@ def _commit_failure_context(infra_type, rows, mapping, exc):
         "sample_table": sample_table,
         "sample_count": len(sample_table),
         "row_count": len(rows),
+        "map_file": importer.is_map_rows(rows),
         "rows_json": json.dumps(rows),
         "error": importer.unexpected_error_message(exc),
     }
