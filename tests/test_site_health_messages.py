@@ -112,3 +112,106 @@ def test_database_name_sentences():
         # pytest-django runs on test_<name>, which the settings do not name.
         f"OpenH2O is connected to test_{name}, but the database named in OpenH2O's settings is {name}.",
     )
+
+
+# --- message B (2026-10-16 07:07) -------------------------------------------
+
+
+def test_ssl_sentences(settings):
+    settings.ALLOWED_HOSTS = ["butler", "butler.example.net"]
+    settings.SITE_DOMAIN = None
+    r = checks.check_ssl()
+    assert r["status"] == "skipped"
+    assert r["message"] == (
+        "OpenH2O has no HTTPS certificate to check, because this site's address "
+        "is butler, not a public domain name."
+    )
+    settings.ALLOWED_HOSTS = ["*"]
+    assert checks.check_ssl()["message"] == (
+        "This site has no public domain name, so OpenH2O has no HTTPS certificate to check."
+    )
+    assert checks._is_public_domain("openh2o.com")
+    for name in ("butler", "localhost", "127.0.0.1", "box.local", "*", ""):
+        assert not checks._is_public_domain(name)
+    settings.ALLOWED_HOSTS = ["probe.example.org"]
+    with mock.patch.object(checks.socket, "create_connection", side_effect=OSError("timed out")):
+        assert checks.check_ssl()["message"] == (
+            "OpenH2O cannot read the HTTPS certificate for probe.example.org. Details: timed out"
+        )
+
+
+def test_migrations_sentence():
+    assert checks.check_migrations()["message"] == (
+        "The database has every update this version of OpenH2O needs."
+    )
+
+
+def _source(code, name, *, synced_hours_ago=None):
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from datasync.models import DataSource, DataSyncLog
+
+    src = DataSource.objects.create(code=code, name=name, is_active=True)
+    if synced_hours_ago is not None:
+        log = DataSyncLog.objects.create(data_source=src, status="success")
+        DataSyncLog.objects.filter(pk=log.pk).update(
+            started_at=timezone.now() - timedelta(hours=synced_hours_ago)
+        )
+    return src
+
+
+def test_sync_sentences(settings, monkeypatch):
+    from datasync.models import DataSource
+
+    settings.HEALTH_DEMO_MODE = False
+    DataSource.objects.update(is_active=False)
+    monkeypatch.delenv("CIMIS_API_KEY", raising=False)
+    _source("probe_never", "Department of Probe Records")
+    _source("probe_old", "PROBE NCEI", synced_hours_ago=84)
+    _source("probe_ok", "PROBE OK", synced_hours_ago=2)
+    _source("cimis", "CIMIS")
+    r = checks.check_sync_freshness()
+    assert r["status"] == "red"
+    assert r["message"] == (
+        "OpenH2O has not synced the Department of Probe Records on this site yet. "
+        "OpenH2O last synced PROBE NCEI 3.5 days ago. "
+        "OpenH2O asks for attention when a data source last synced more than 48 hours "
+        "ago, and for action after 7 days or when it has never synced. "
+        "OpenH2O does not count CIMIS, which needs an API key."
+    )
+    DataSource.objects.filter(code__in=["probe_never", "probe_old"]).update(is_active=False)
+    _source("probe_ok2", "PROBE OK TWO", synced_hours_ago=1)
+    assert checks.check_sync_freshness()["message"] == (
+        "OpenH2O synced each of the 2 data sources in the last 48 hours. "
+        "OpenH2O does not count CIMIS, which needs an API key."
+    )
+    DataSource.objects.update(is_active=False)
+    assert checks.check_sync_freshness()["message"] == "No data source is turned on."
+    settings.HEALTH_DEMO_MODE = True
+    assert checks.check_sync_freshness()["message"] == (
+        "This demonstration site restores its data every night, so OpenH2O does not "
+        "check how recently each data source synced."
+    )
+
+
+def test_ledger_and_use_area_sentences():
+    r = checks.check_ledger_integrity()
+    assert r["status"] == "green"
+    assert r["message"].startswith("Every ledger entry belongs to a use area on file.")
+    assert dict(HealthCheckResult.CATEGORY_CHOICES)["orphans"] == "Use areas without an account"
+    assert checks.check_orphans()["message"] in (
+        "Every active use area belongs to a water account.",
+    ) or checks.check_orphans()["message"].endswith("have no water account.") \
+        or checks.check_orphans()["message"].endswith("has no water account.")
+
+
+def test_openet_and_share_sentences():
+    assert checks.check_cache_duplication()["message"] == (
+        "OpenH2O holds one OpenET estimate for each use area and month."
+    )
+    assert dict(HealthCheckResult.CATEGORY_CHOICES)["pod_fractions"] == "Point of diversion shares"
+    r = checks.check_pod_fractions()
+    assert "split to 100%" not in r["message"]
+    assert "lost or invented" not in r["message"]

@@ -239,11 +239,12 @@ class TestCheckSsl:
         result = check_ssl()
         assert result["status"] in VALID_STATUSES
 
-    def test_yellow_in_dev_environment(self):
-        """Dev environment has no public domain, so SSL check returns yellow."""
+    def test_not_applicable_in_dev_environment(self):
+        """Brent, 150.1-02 screen 16 message B row 2: a site with no public
+        domain name has no certificate to check (it was yellow, and red at a
+        local-network name)."""
         result = check_ssl()
-        # In test/dev with no SITE_DOMAIN and localhost in ALLOWED_HOSTS, expect yellow
-        assert result["status"] in {"yellow", "green", "red"}
+        assert result["status"] == "skipped"
 
 
 class TestCheckDocker:
@@ -338,10 +339,12 @@ class TestHealthDemoMode:
 
     @pytest.mark.django_db
     @override_settings(HEALTH_DEMO_MODE=False)
-    def test_zero_amount_ledger_is_yellow_when_live(self):
-        ParcelLedgerFactory(amount_acre_feet=Decimal("0"))
+    def test_zero_amount_ledger_is_green_when_live(self):
+        """Brent, 150.1-02 screen 16 message B row 6: a month with no ETAW met
+        by groundwater is a normal month on every site."""
+        ParcelLedgerFactory(amount_acre_feet=Decimal("0"), source_type="calculated")
         result = check_ledger_integrity()
-        assert result["status"] == "yellow"
+        assert result["status"] == "green"
 
     @pytest.mark.django_db
     @override_settings(HEALTH_DEMO_MODE=False)
@@ -357,7 +360,7 @@ class TestHealthDemoMode:
         result = check_ledger_integrity()
         message = result["message"]
         assert "no etaw met by groundwater" in message.lower()
-        assert "no groundwater extraction estimated" in message.lower()
+        assert "so openh2o estimates no groundwater extraction" in message.lower()
 
 
 # ---------------------------------------------------------------------------

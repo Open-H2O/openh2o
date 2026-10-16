@@ -118,19 +118,6 @@ def _build_source_status(boundary, now):
     return result
 
 
-def _source_phrase(name):
-    """A data source's name as a sentence carries it after "from".
-
-    Brent, 150.1-02 screen 15 message B row 8: "No station from the Department
-    of Water Resources SGMA Portal matches ..." A spelled-out name takes "the";
-    a short name (CDEC, USGS NWIS, OpenET) does not.
-    """
-    words = name.split()
-    if len(words) > 1 and not words[0].isupper():
-        return f"the {name}"
-    return name
-
-
 def _station_list_head_line(*, total_count, q, source, active, reporting):
     """The Monitoring Stations card head's count line (143-07).
 
@@ -216,7 +203,7 @@ def station_list(request):
         DataSource.objects.filter(code=source).values_list("name", flat=True).first()
         if source else None
     )
-    source_phrase = _source_phrase(source_name or source) if source else ""
+    source_phrase = freshness.source_phrase(source_name or source) if source else ""
     # Default to active-only so the list doesn't surface dead/inactive stations.
     # Explicit opt-ins: "0" = inactive only, "all" = everything.
     if active == "0":

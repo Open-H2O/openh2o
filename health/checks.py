@@ -9,6 +9,7 @@ reporting-period month alignment, satellite-ET-versus-meter agreement, SSL
 certificate expiry, the expected database, and pending migrations;
 ``run_all_checks`` runs them all in order.
 """
+import ipaddress
 import shutil
 import ssl
 import socket
@@ -208,7 +209,11 @@ def check_sync_freshness():
         return {
             "category": "sync_freshness",
             "status": "green",
-            "message": "Demo instance — sync freshness not enforced (data is snapshot-restored nightly).",
+            # Brent, 150.1-02 screen 16 message B row 5 (2026-10-16 07:07).
+            "message": (
+                "This demonstration site restores its data every night, so "
+                "OpenH2O does not check how recently each data source synced."
+            ),
             "details": {"demo_mode": True},
         }
 
@@ -217,15 +222,26 @@ def check_sync_freshness():
         return {
             "category": "sync_freshness",
             "status": "green",
-            "message": "No active data sources configured.",
+            "message": "No data source is turned on.",
             "details": {},
         }
+
+    from datasync import freshness
 
     now = timezone.now()
     details = {}
     worst_status = "green"
+    names = {}
+    # Row 4: a source waiting for its API key is not counted, as the
+    # monitoring dashboard shows it (it was action required here).
+    waiting_for_key = []
 
     for source in active_sources:
+        if freshness.credential_missing(source.code):
+            waiting_for_key.append(source.name)
+            details[source.code] = {"last_sync": None, "status": "needs_key"}
+            continue
+        names[source.code] = source.name
         last_log = (
             DataSyncLog.objects.filter(data_source=source, status="success")
             .order_by("-started_at")
@@ -252,8 +268,39 @@ def check_sync_freshness():
                 "status": source_status,
             }
 
-    stale_count = sum(1 for v in details.values() if v["status"] != "green")
-    msg = f"{len(details)} sources checked, {stale_count} stale" if stale_count else f"{len(details)} sources all fresh"
+    # Brent, 150.1-02 screen 16 message B row 4 (2026-10-16 07:07).
+    counted = {c: v for c, v in details.items() if v["status"] != "needs_key"}
+    never = [freshness.source_phrase(names[c]) for c, v in counted.items() if v["last_sync"] is None]
+    behind = [(c, v) for c, v in counted.items() if v["last_sync"] and v["status"] != "green"]
+    sentences = []
+    if never:
+        sentences.append(f"OpenH2O has not synced {_and(never)} on this site yet.")
+    for c, v in behind:
+        sentences.append(
+            f"OpenH2O last synced {freshness.source_phrase(names[c])} "
+            f"{freshness.format_hours(round(v['age_hours']))} ago."
+        )
+    if sentences:
+        sentences.append(
+            "OpenH2O asks for attention when a data source last synced more "
+            "than 48 hours ago, and for action after 7 days or when it has "
+            "never synced."
+        )
+    elif len(counted) == 1:
+        sentences.append(
+            f"OpenH2O synced {freshness.source_phrase(names[next(iter(counted))])} "
+            "in the last 48 hours."
+        )
+    elif counted:
+        sentences.append(
+            f"OpenH2O synced each of the {len(counted)} data sources in the last 48 hours."
+        )
+    if waiting_for_key:
+        need = "needs" if len(waiting_for_key) == 1 else "need"
+        sentences.append(
+            f"OpenH2O does not count {_and(waiting_for_key)}, which {need} an API key."
+        )
+    msg = " ".join(sentences)
     return {
         "category": "sync_freshness",
         "status": worst_status,
@@ -274,7 +321,10 @@ def check_ledger_integrity():
         parcel_id__in=Parcel.objects.values_list("id", flat=True)
     ).count()
 
-    zero_count = ParcelLedger.objects.filter(amount_acre_feet=0).count()
+    # Row 6: only calculated rows (a zero meter reading is not one).
+    zero_count = ParcelLedger.objects.filter(
+        amount_acre_feet=0, source_type="calculated"
+    ).count()
 
     details = {"orphan_entries": orphan_count, "zero_amount_entries": zero_count}
 
@@ -288,26 +338,29 @@ def check_ledger_integrity():
     # Use Ledger tells about those rows in its Description column, so a reader
     # who meets the count here and the rows there reads one story instead of
     # two different words for the same fact.
-    demo = getattr(settings, "HEALTH_DEMO_MODE", False)
+    # Brent, 150.1-02 screen 16 message B row 6 (2026-10-16 07:07): a month
+    # with no ETAW met by groundwater is a normal month, so it is healthy on
+    # every site (it asked for attention outside the demo).
     if orphan_count > 0:
         status = "red"
-        msg = f"{orphan_count} orphaned ledger entries (parcel deleted)"
-    elif zero_count > 0 and not demo:
-        status = "yellow"
-        msg = (
-            f"{zero_count} calculated ledger rows with no ETAW met by "
-            "groundwater, so no groundwater extraction estimated"
-        )
-    elif zero_count > 0:
-        status = "green"
-        msg = (
-            f"{zero_count} calculated ledger rows with no ETAW met by "
-            "groundwater, so no groundwater extraction estimated (demo data, "
-            "informational)"
-        )
+        if orphan_count == 1:
+            msg = "1 ledger entry belongs to a use area that is no longer on file."
+        else:
+            msg = (
+                f"{orphan_count:,} ledger entries belong to a use area that is "
+                "no longer on file."
+            )
     else:
         status = "green"
-        msg = "All ledger entries valid"
+        msg = "Every ledger entry belongs to a use area on file."
+        if zero_count:
+            have = "has" if zero_count == 1 else "have"
+            months = "that month" if zero_count == 1 else "those months"
+            msg += (
+                f" {_count(zero_count, 'calculated ledger row', 'calculated ledger rows')} "
+                f"{have} no ETAW met by groundwater, so OpenH2O estimates no "
+                f"groundwater extraction for {months}."
+            )
 
     return {
         "category": "ledger_integrity",
@@ -350,12 +403,17 @@ def check_orphans():
 
         details["monitored_stations"] = MonitoredStation.objects.count()
 
+    # Brent, 150.1-02 screen 16 message B row 7 (2026-10-16 07:07).
     if unassigned_parcels > 0:
         status = "yellow"
-        msg = f"{unassigned_parcels} active parcels not assigned to any account"
+        have = "has" if unassigned_parcels == 1 else "have"
+        msg = (
+            f"{_count(unassigned_parcels, 'active use area', 'active use areas')} "
+            f"{have} no water account."
+        )
     else:
         status = "green"
-        msg = "All active parcels assigned to accounts"
+        msg = "Every active use area belongs to a water account."
 
     return {
         "category": "orphans",
@@ -368,17 +426,27 @@ def check_orphans():
 def check_ssl():
     hosts = getattr(settings, "ALLOWED_HOSTS", [])
     domain = getattr(settings, "SITE_DOMAIN", None)
+    target = (domain or (hosts[0] if hosts else "")).lstrip(".")
 
-    if domain:
-        target = domain
-    elif hosts and hosts[0] not in ("*", "localhost", "127.0.0.1", ""):
-        target = hosts[0]
-    else:
+    # Brent, 150.1-02 screen 16 message B row 2 (2026-10-16 07:07): a site
+    # reached at a name that is not a public domain (one computer, an office
+    # network) has no certificate to check. It was action required forever.
+    if not _is_public_domain(target):
+        if target and target != "*":
+            msg = (
+                "OpenH2O has no HTTPS certificate to check, because this "
+                f"site's address is {target}, not a public domain name."
+            )
+        else:
+            msg = (
+                "This site has no public domain name, so OpenH2O has no HTTPS "
+                "certificate to check."
+            )
         return {
             "category": "ssl",
-            "status": "yellow",
-            "message": "SSL check unavailable (development mode)",
-            "details": {"reason": "No public domain configured in ALLOWED_HOSTS"},
+            "status": "skipped",
+            "message": msg,
+            "details": {"address": target},
         }
 
     try:
@@ -396,10 +464,18 @@ def check_ssl():
                 else:
                     status = "green"
 
+                # Row 1.
+                days = f"{days_remaining} day{'' if days_remaining == 1 else 's'}"
+                msg = f"The HTTPS certificate for {target} expires in {days}."
+                if status != "green":
+                    msg += (
+                        " OpenH2O asks for attention 30 days before the "
+                        "certificate expires and for action 7 days before."
+                    )
                 return {
                     "category": "ssl",
                     "status": status,
-                    "message": f"Certificate valid for {days_remaining} days ({target})",
+                    "message": msg,
                     "details": {
                         "domain": target,
                         "expires": not_after.isoformat(),
@@ -410,9 +486,21 @@ def check_ssl():
         return {
             "category": "ssl",
             "status": "red",
-            "message": f"SSL check failed: {e}",
+            "message": f"OpenH2O cannot read the HTTPS certificate for {target}. Details: {e}",
             "details": {"domain": target, "error": str(e)},
         }
+
+
+def _is_public_domain(name: str) -> bool:
+    """A dotted name that is not an IP address or a local-network name."""
+    if not name or name == "*" or "." not in name:
+        return False
+    try:
+        ipaddress.ip_address(name)
+        return False
+    except ValueError:
+        pass
+    return not name.endswith((".local", ".localhost", ".internal", ".lan"))
 
 
 def check_docker():
@@ -466,14 +554,18 @@ def check_migrations():
             return {
                 "category": "migrations",
                 "status": "green",
-                "message": "All migrations applied",
+                # Brent, 150.1-02 screen 16 message B row 3 (2026-10-16 07:07).
+                "message": "The database has every update this version of OpenH2O needs.",
                 "details": {"unapplied_count": 0},
             }
         else:
             return {
                 "category": "migrations",
                 "status": "red",
-                "message": f"{len(unapplied)} unapplied migrations",
+                "message": (
+                    f"The database is missing {_count(len(unapplied), 'update', 'updates')} "
+                    "this version of OpenH2O needs. Run the migrate command."
+                ),
                 "details": {
                     "unapplied_count": len(unapplied),
                     "unapplied": unapplied[:10],
@@ -483,7 +575,7 @@ def check_migrations():
         return {
             "category": "migrations",
             "status": "red",
-            "message": f"Migration check failed: {e}",
+            "message": f"OpenH2O cannot read which updates the database has. Details: {e}",
             "details": {"error": str(e)},
         }
 
@@ -510,20 +602,22 @@ def check_cache_duplication():
 
     from datasync.models import OpenETCache
 
-    exact_duplicates = (
+    exact_groups = list(
         OpenETCache.objects.exclude(model_name=OpenETCache.PENDING_MARKER)
+        .filter(parcel__isnull=False)
         .values("parcel_id", "start_date", "end_date", "variable", "model_name")
         .annotate(n=Count("id"))
         .filter(n__gt=1)
-        .count()
+        .values_list("parcel_id", flat=True)
     )
+    exact_duplicates = len(exact_groups)
 
     # Overlapping-but-not-identical spans, per parcel/variable/model. Small
     # table (one row per parcel-window), so the self-join is cheap.
     with connection.cursor() as cur:
         cur.execute(
             """
-            SELECT count(*) FROM datasync_openetcache a
+            SELECT a.parcel_id FROM datasync_openetcache a
             JOIN datasync_openetcache b
               ON a.parcel_id = b.parcel_id
              AND a.variable = b.variable
@@ -535,23 +629,28 @@ def check_cache_duplication():
             """,
             [OpenETCache.PENDING_MARKER],
         )
-        overlapping = cur.fetchone()[0]
+        overlap_parcels = [row[0] for row in cur.fetchall()]
+    overlapping = len(overlap_parcels)
+    use_areas = len(set(exact_groups) | set(overlap_parcels))
 
     details = {
         "exact_duplicate_groups": exact_duplicates,
         "overlapping_span_pairs": overlapping,
+        "use_areas": use_areas,
     }
 
-    if exact_duplicates or overlapping:
-        status = "red"
+    # Brent, 150.1-02 screen 16 message B row 8 (2026-10-16 07:07): the
+    # engine reads the newer estimate (accounting/steps.py), so no figure is
+    # overstated; attention needed, not action required.
+    if use_areas:
+        status = "yellow"
         msg = (
-            f"OpenET cache covers some parcel-months twice "
-            f"({exact_duplicates} duplicate windows, {overlapping} overlapping "
-            f"spans) — ET and precip may be overstated"
+            "OpenH2O holds two OpenET estimates for the same months at "
+            f"{_count(use_areas, 'use area', 'use areas')}, and uses the newer one."
         )
     else:
         status = "green"
-        msg = "No duplicated OpenET cache coverage"
+        msg = "OpenH2O holds one OpenET estimate for each use area and month."
 
     return {
         "category": "cache_duplication",
@@ -604,15 +703,28 @@ def check_pod_fractions():
 
     details = {"pods_checked": len(sums), "offenders": offenders[:20]}
 
+    # Brent, 150.1-02 screen 16 message B row 9 (2026-10-16 07:07): the
+    # shares divide a canal's water only in a month with no ETAW on any of
+    # its use areas, so attention needed, not action required.
+    n_points = len(sums)
     if offenders:
-        status = "red"
+        status = "yellow"
         msg = (
-            f"{len(offenders)} point(s) of diversion do not split to 100% — "
-            f"diverted water is being lost or invented"
+            f"At {_count(len(offenders), 'point', 'points')} of diversion, the use "
+            "areas' shares do not add up to 100%. OpenH2O divides a canal's water "
+            "in these shares only in a month when none of the canal's use areas "
+            "has any ETAW. In such a month, the use areas together receive more "
+            "or less water than the canal delivered."
         )
+    elif n_points == 1:
+        status = "green"
+        msg = "At the 1 point of diversion, the use areas' shares add up to 100%."
     else:
         status = "green"
-        msg = f"All {len(sums)} points of diversion split to 100%"
+        msg = (
+            f"At each of the {n_points} points of diversion, the use areas' "
+            "shares add up to 100%."
+        )
 
     return {
         "category": "pod_fractions",

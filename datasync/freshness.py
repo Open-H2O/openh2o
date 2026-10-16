@@ -117,6 +117,19 @@ def source_display(source_code):
     return SOURCE_DISPLAY.get(source_code, (source_code or "").upper())
 
 
+def source_phrase(name):
+    """A data source's name as a sentence carries it.
+
+    Brent, 150.1-02 screen 15 message B row 8: "No station from the Department
+    of Water Resources SGMA Portal matches ..." A spelled-out name takes "the";
+    a short name (CDEC, USGS NWIS, OpenET) does not.
+    """
+    words = name.split()
+    if len(words) > 1 and not words[0].isupper():
+        return f"the {name}"
+    return name
+
+
 def format_hours(hours):
     """A span of hours as a reader says it: "36 hours", "2 days", "67.5 days".
 

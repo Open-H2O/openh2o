@@ -23,13 +23,13 @@ class HealthCheckResult(models.Model):
         ("disk", "Disk"),
         ("sync_freshness", "Sync Freshness"),
         ("ledger_integrity", "Ledger Integrity"),
-        ("orphans", "Orphans"),
+        ("orphans", "Use areas without an account"),
         # Added by the 2026-07-18 math evaluation. These four checks shipped
         # earlier the same day writing categories that were never listed here —
         # harmless at the DB level (choices are not enforced by Postgres) but
         # full_clean() rejects them and the admin dropdown cannot show them.
         ("cache_duplication", "Cache Duplication"),
-        ("pod_fractions", "POD Fractions"),
+        ("pod_fractions", "Point of diversion shares"),
         ("unallocated_delivery", "Unallocated Delivery"),
         ("period_alignment", "Period Alignment"),
         ("et_meter_agreement", "ET / Meter Agreement"),
