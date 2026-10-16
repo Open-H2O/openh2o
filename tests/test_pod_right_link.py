@@ -165,7 +165,8 @@ def test_importer_rejects_unresolved_water_right_id():
     results = importer.validate_rows(rows, mapping, "diversion", set())
 
     assert results[0]["errors"] == [
-        "no water right with id A999999; import the rights list first."
+        "No water right on file has the application number A999999. Import the "
+        "water right first, or correct the number in the file."
     ]
     created = importer.commit_rows(results, "diversion")
     assert created == 0

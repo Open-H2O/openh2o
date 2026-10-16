@@ -188,7 +188,7 @@ class TestValidateRows:
     def test_existing_registration_id_is_duplicate_error(self):
         rows = [{"name": "Dup Well", "lat": "37.2", "lon": "-119.5", "reg_id": "EXIST-1", "casing": "", "pump": ""}]
         results = importer.validate_rows(rows, self._mapping(), "well", {"EXIST-1"})
-        assert any("duplicate" in e.lower() for e in results[0]["errors"])
+        assert "Registration ID EXIST-1 is already on file." in results[0]["errors"]
 
     def test_within_batch_duplicate_registration_id_is_error(self):
         rows = [
@@ -197,17 +197,21 @@ class TestValidateRows:
         ]
         results = importer.validate_rows(rows, self._mapping(), "well", set())
         assert results[0]["errors"] == []
-        assert any("duplicate" in e.lower() for e in results[1]["errors"])
+        assert "Registration ID BATCH-1 appears earlier in this file." in results[1]["errors"]
 
     def test_non_numeric_value_names_the_field(self):
         rows = [{"name": "Bad Casing", "lat": "37.2", "lon": "-119.5", "reg_id": "", "casing": "abc", "pump": ""}]
         results = importer.validate_rows(rows, self._mapping(), "well", set())
-        assert any("casing_diameter_in" in e for e in results[0]["errors"])
+        # Brent, message X (2026-10-15 18:25): the field in plain words.
+        assert "The casing diameter is 'abc', which is not a number." in results[0]["errors"]
 
     def test_missing_location_is_error(self):
         rows = [{"name": "No Loc", "lat": "", "lon": "", "reg_id": "", "casing": "", "pump": ""}]
         results = importer.validate_rows(rows, self._mapping(), "well", set())
-        assert any("location" in e.lower() for e in results[0]["errors"])
+        assert (
+            "This row has no location. Fill in the latitude and longitude."
+            in results[0]["errors"]
+        )
 
     def test_unknown_choice_is_warning_but_value_kept(self):
         rows = [{"name": "Odd Pump", "lat": "37.2", "lon": "-119.5", "reg_id": "", "casing": "", "pump": "rocket"}]

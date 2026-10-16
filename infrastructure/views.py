@@ -546,7 +546,7 @@ def _columns_from_rows(rows):
     return seen
 
 
-def _commit_failure_context(infra_type, rows, mapping, exc):
+def _commit_failure_context(infra_type, rows, mapping, exc, error=None):
     """Rebuild the mapping-step context after a commit-time crash (ISS-179).
 
     The same shape `infrastructure_import_preview` renders the first time,
@@ -574,7 +574,7 @@ def _commit_failure_context(infra_type, rows, mapping, exc):
         "row_count": len(rows),
         "map_file": importer.is_map_rows(rows),
         "rows_json": json.dumps(rows),
-        "error": importer.unexpected_error_message(exc),
+        "error": error or importer.unexpected_error_message(exc),
     }
 
 
@@ -621,6 +621,17 @@ def infrastructure_import_commit(request):
         for key, val in request.POST.items()
         if key.startswith("map:") and val
     }
+
+    # Brent, 150.1-02 screen 18 message X rows 2 and 3 (2026-10-15 18:25): no
+    # column matched to the name or the location keeps the matching step on
+    # screen with one sentence, instead of failing every row the same way.
+    refusal = importer.mapping_refusal(mapping)
+    if refusal:
+        return render(
+            request,
+            "infrastructure/partials/_import_mapping.html",
+            _commit_failure_context(infra_type, rows, mapping, None, error=refusal),
+        )
 
     existing_reg_ids = set()
     if infra_type == "well":

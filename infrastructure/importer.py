@@ -429,6 +429,48 @@ _US_LAT = (17.0, 72.0)
 _US_LON = (-180.0, -64.0)
 
 
+#: Each numeric field as a row error names it (Brent, 150.1-02 screen 18
+#: message X, 2026-10-15 18:25): the field in plain words, never the file's
+#: own column heading, which can be anything ("lat", "Casing Dia").
+FIELD_NOUNS = {
+    "capacity_gpm": "capacity",
+    "tested_yield_gpm": "tested yield",
+    "depth_ft": "depth",
+    "casing_diameter_in": "casing diameter",
+    "screen_top_ft": "screen top",
+    "screen_bottom_ft": "screen bottom",
+    "max_rate_cfs": "max rate",
+    "capacity_acre_feet": "capacity per fill",
+}
+
+#: The matching-step refusals (message X rows 2 and 3): with no column matched
+#: to the name or to a location, every row used to fail with the same error.
+NAME_NOT_MATCHED_MESSAGE = "Choose the file's column for the name, then press Create."
+LOCATION_NOT_MATCHED_MESSAGE = (
+    "Choose the file's columns for latitude and longitude, or the file's "
+    "geometry column, then press Create."
+)
+
+
+def mapping_refusal(mapping):
+    """The sentence that keeps the matching step on screen, or None."""
+    if not mapping.get("name"):
+        return NAME_NOT_MATCHED_MESSAGE
+    if not mapping.get("geometry") and not (
+        mapping.get("latitude") and mapping.get("longitude")
+    ):
+        return LOCATION_NOT_MATCHED_MESSAGE
+    return None
+
+
+def outside_us_message(lat, lon):
+    """The location sentence Brent approved 2026-10-12 09:17 (reused in message X)."""
+    return (
+        f"location ({lat}, {lon}) is outside the United States; check the sign "
+        "of the longitude."
+    )
+
+
 def existing_names(infra_type):
     """The names already on file for the type the import creates.
 
@@ -502,15 +544,17 @@ def validate_rows(rows, mapping, infra_type, existing_reg_ids, existing_names=No
         # --- name (required for every type) ---
         name = src("name")
         if not name:
-            errors.append("name is required (blank or unmapped).")
-        elif name in names_on_file or name in seen_names:
-            errors.append(f"duplicate name '{name}'.")
+            errors.append("The name is blank.")
+        elif name in names_on_file:
+            errors.append(f"The name {name} is already on file.")
+        elif name in seen_names:
+            errors.append(f"The name {name} appears earlier in this file.")
         if name:
             seen_names.add(name)
         data["name"] = name
 
         # --- location: geometry column OR lat+lon pair ---
-        location = _resolve_location(row, mapping, errors)
+        location = _resolve_location(row, mapping, errors, map_row=GEOMETRY_COL in row)
         if location is not None:
             data["location"] = location
 
@@ -518,8 +562,10 @@ def validate_rows(rows, mapping, infra_type, existing_reg_ids, existing_names=No
         if infra_type == "well":
             reg = src("well_registration_id")
             if reg:
-                if reg in existing or reg in seen_reg_ids:
-                    errors.append(f"duplicate well_registration_id '{reg}'.")
+                if reg in existing:
+                    errors.append(f"Registration ID {reg} is already on file.")
+                elif reg in seen_reg_ids:
+                    errors.append(f"Registration ID {reg} appears earlier in this file.")
                 seen_reg_ids.add(reg)
                 data["well_registration_id"] = reg
 
@@ -530,7 +576,9 @@ def validate_rows(rows, mapping, infra_type, existing_reg_ids, existing_names=No
                 try:
                     data["year_pumping_began"] = int(Decimal(year))
                 except (InvalidOperation, ValueError):
-                    errors.append(f"year_pumping_began is not a number: '{year}'.")
+                    errors.append(
+                        f"The year pumping began is '{year}', which is not a year."
+                    )
 
         # --- numeric/decimal fields ---
         for field in decimal_fields:
@@ -539,7 +587,10 @@ def validate_rows(rows, mapping, infra_type, existing_reg_ids, existing_names=No
                 try:
                     data[field] = Decimal(val)
                 except (InvalidOperation, ValueError):
-                    errors.append(f"{field} is not a number: '{val}'.")
+                    errors.append(
+                        f"The {FIELD_NOUNS.get(field, field)} is '{val}', which is "
+                        "not a number."
+                    )
 
         # --- choice fields: off-list = warning, value kept ---
         for field, valid in choice_fields.items():
@@ -567,8 +618,9 @@ def validate_rows(rows, mapping, infra_type, existing_reg_ids, existing_names=No
                 right_pk = existing_rights.get(right_val)
                 if right_pk is None:
                     errors.append(
-                        f"no water right with id {right_val}; import the rights "
-                        "list first."
+                        f"No water right on file has the application number "
+                        f"{right_val}. Import the water right first, or correct "
+                        "the number in the file."
                     )
                 else:
                     data["water_right_id"] = right_pk
@@ -600,46 +652,93 @@ def validate_rows(rows, mapping, infra_type, existing_reg_ids, existing_names=No
     return results
 
 
-def _resolve_location(row, mapping, errors):
+def _resolve_location(row, mapping, errors, map_row=False):
     """Return a Point (4326) from a geometry column or a lat/lon pair, or None.
 
     Appends an error and returns None when no usable location is present.
+    The sentences are Brent's (150.1-02 screen 18 message X, 2026-10-15
+    18:25); a geometry is held to the same United States box as a typed
+    latitude and longitude (it was checked only against the world).
     """
     geom_col = mapping.get("geometry")
     if geom_col:
         raw = (row.get(geom_col) or "").strip()
         if raw:
             point = _point_from_geometry(raw)
-            if point is not None:
-                return point
-            # A geometry value was present but unparseable / non-finite /
-            # out-of-range — report it as a row error rather than silently
-            # falling back to lat/lon (or 500-ing downstream on a centroid).
-            errors.append(
-                "geometry is invalid (non-finite or out-of-range coordinates, "
-                "or unparseable)."
-            )
+            if point is None:
+                xy = _first_xy(raw)
+                if xy is not None:
+                    errors.append(outside_us_message(round(xy[1], 6), round(xy[0], 6)))
+                elif map_row:
+                    errors.append("OpenH2O cannot read this feature's geometry.")
+                else:
+                    errors.append(
+                        f"The geometry is '{raw}', which OpenH2O cannot read as "
+                        "GeoJSON or WKT."
+                    )
+                return None
+            if not _within_us(point.y, point.x):
+                errors.append(outside_us_message(round(point.y, 6), round(point.x, 6)))
+                return None
+            return point
+        if map_row:
+            errors.append("This feature has no geometry.")
             return None
 
     lat_col = mapping.get("latitude")
     lon_col = mapping.get("longitude")
     lat_raw = (row.get(lat_col) or "").strip() if lat_col else ""
     lon_raw = (row.get(lon_col) or "").strip() if lon_col else ""
-    if lat_raw and lon_raw:
+    if not lat_raw and not lon_raw:
+        errors.append("This row has no location. Fill in the latitude and longitude.")
+        return None
+    values = {}
+    bad = False
+    for label, raw in (("latitude", lat_raw), ("longitude", lon_raw)):
+        if not raw:
+            errors.append(f"The {label} is blank.")
+            bad = True
+            continue
         try:
-            lat = float(lat_raw)
-            lon = float(lon_raw)
+            values[label] = float(raw)
         except ValueError:
-            errors.append(f"location lat/lon are not numbers: '{lat_raw}', '{lon_raw}'.")
-            return None
-        if not (_US_LAT[0] <= lat <= _US_LAT[1] and _US_LON[0] <= lon <= _US_LON[1]):
-            errors.append(
-                f"location ({lat}, {lon}) is outside the United States; check the sign of the longitude."
-            )
-            return None
-        return Point(lon, lat, srid=4326)
+            errors.append(f"The {label} is '{raw}', which is not a number.")
+            bad = True
+    if bad:
+        return None
+    lat, lon = values["latitude"], values["longitude"]
+    if not _within_us(lat, lon):
+        errors.append(outside_us_message(lat, lon))
+        return None
+    return Point(lon, lat, srid=4326)
 
-    errors.append("location is required (a geometry column, or both lat and lon).")
+
+def _within_us(lat, lon):
+    return (
+        math.isfinite(lat) and math.isfinite(lon)
+        and _US_LAT[0] <= lat <= _US_LAT[1] and _US_LON[0] <= lon <= _US_LON[1]
+    )
+
+
+def _first_xy(raw):
+    """The first finite [x, y] of a GeoJSON geometry whose coordinates fall
+    outside the world box, so the refusal can name where it lies; None when
+    the text is not GeoJSON with numeric coordinates (it cannot be read)."""
+    try:
+        data = json.loads(raw)
+    except (ValueError, TypeError):
+        return None
+    coords = data.get("coordinates") if isinstance(data, dict) else None
+    while isinstance(coords, (list, tuple)) and coords and isinstance(coords[0], (list, tuple)):
+        coords = coords[0]
+    if (
+        isinstance(coords, (list, tuple)) and len(coords) >= 2
+        and all(isinstance(c, (int, float)) and not isinstance(c, bool) for c in coords[:2])
+        and all(math.isfinite(c) for c in coords[:2])
+    ):
+        x, y = float(coords[0]), float(coords[1])
+        if not (-180.0 <= x <= 180.0 and -90.0 <= y <= 90.0):
+            return x, y
     return None
 
 
@@ -790,9 +889,11 @@ def commit_rows(valid_results, infra_type):
                     else:
                         continue
                 created += 1
-            except Exception:
+            except Exception as exc:
+                # Brent, message X row 11: the failure keeps its details.
                 result["errors"].append(
-                    "could not be saved (invalid geometry or data)."
+                    "An unexpected error stopped OpenH2O from saving this record. "
+                    f"Details: {type(exc).__name__}: {exc}"
                 )
 
     return created

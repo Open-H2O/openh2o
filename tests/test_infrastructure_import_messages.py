@@ -246,3 +246,114 @@ class TestMatchingStep:
     def test_sample_cell_shows_the_shape_type(self):
         assert importer.sample_cell(importer.GEOMETRY_COL, '{"type": "Point", "coordinates": [1, 2]}') == "Point"
         assert importer.sample_cell("depth", "200") == "200"
+
+
+@pytest.mark.django_db
+class TestRowErrors:
+    """Message X (2026-10-15 18:25): the row errors, the field in plain words."""
+
+    MAPPING = {
+        "name": "NAME", "latitude": "lat", "longitude": "lon", "geometry": "geom",
+        "well_registration_id": "reg", "casing_diameter_in": "Casing Dia",
+        "year_pumping_began": "Year Drilled",
+    }
+
+    def _errors(self, row, infra_type="well", mapping=None):
+        base = {"NAME": "W1", "lat": "37.3", "lon": "-120.5", "geom": "", "reg": "",
+                "Casing Dia": "", "Year Drilled": ""}
+        base.update(row)
+        return importer.validate_rows([base], mapping or self.MAPPING, infra_type, set())[0]["errors"]
+
+    def test_name_blank(self):
+        assert self._errors({"NAME": ""}) == ["The name is blank."]
+
+    def test_not_a_number_and_not_a_year(self):
+        assert self._errors({"Casing Dia": "eight", "Year Drilled": "19x0"}) == [
+            "The year pumping began is '19x0', which is not a year.",
+            "The casing diameter is 'eight', which is not a number.",
+        ]
+
+    def test_each_bad_location_value_its_own_sentence(self):
+        assert self._errors({"lat": "abc", "lon": ""}) == [
+            "The latitude is 'abc', which is not a number.",
+            "The longitude is blank.",
+        ]
+        assert self._errors({"lat": "", "lon": ""}) == [
+            "This row has no location. Fill in the latitude and longitude."
+        ]
+
+    def test_geometry_unreadable(self):
+        assert self._errors({"geom": "POINT(abc)"}) == [
+            "The geometry is 'POINT(abc)', which OpenH2O cannot read as GeoJSON or WKT."
+        ]
+
+    def test_map_feature_messages(self):
+        mapping = {"name": "name", "geometry": importer.GEOMETRY_COL}
+        rows = [
+            {"name": "A", importer.GEOMETRY_COL: ""},
+            {"name": "B", importer.GEOMETRY_COL: '{"type": "Point", "coordinates": ["x", 1]}'},
+        ]
+        results = importer.validate_rows(rows, mapping, "well", set())
+        assert results[0]["errors"] == ["This feature has no geometry."]
+        assert results[1]["errors"] == ["OpenH2O cannot read this feature's geometry."]
+
+    def test_geometry_held_to_the_united_states_check(self):
+        """Code change: a geometry was checked only against the world."""
+        assert self._errors({"geom": '{"type": "Point", "coordinates": [120.5, 37.3]}'}) == [
+            "location (37.3, 120.5) is outside the United States; check the sign of the longitude."
+        ]
+        assert self._errors({"geom": '{"type": "Point", "coordinates": [999, 999]}'}) == [
+            "location (999.0, 999.0) is outside the United States; check the sign of the longitude."
+        ]
+
+    def test_names_already_on_file_and_repeated(self):
+        Well.objects.create(name="North Well", location=Point(-120.5, 37.3, srid=4326))
+        rows = [
+            {"NAME": "North Well", "lat": "37.3", "lon": "-120.5"},
+            {"NAME": "South Well", "lat": "37.3", "lon": "-120.5"},
+            {"NAME": "South Well", "lat": "37.3", "lon": "-120.5"},
+        ]
+        results = importer.validate_rows(
+            rows, {"name": "NAME", "latitude": "lat", "longitude": "lon"}, "well", set(),
+            existing_names=importer.existing_names("well"),
+        )
+        assert results[0]["errors"] == ["The name North Well is already on file."]
+        assert results[1]["errors"] == []
+        assert results[2]["errors"] == ["The name South Well appears earlier in this file."]
+
+    def test_save_failure_keeps_its_details(self, monkeypatch):
+        results = importer.validate_rows(
+            [{"NAME": "W9", "lat": "37.3", "lon": "-120.5"}],
+            {"name": "NAME", "latitude": "lat", "longitude": "lon"}, "well", set(),
+        )
+
+        def _boom(**kwargs):
+            raise ValueError("synthetic")
+
+        monkeypatch.setattr(Well.objects, "create", _boom)
+        assert importer.commit_rows(results, "well") == 0
+        assert results[0]["errors"] == [
+            "An unexpected error stopped OpenH2O from saving this record. "
+            "Details: ValueError: synthetic"
+        ]
+
+
+class TestMatchingStepRefusals:
+    @pytest.mark.parametrize("mapping,sentence", [
+        ({"map:latitude": "lat", "map:longitude": "lon"},
+         "Choose the file's column for the name, then press Create."),
+        ({"map:name": "name", "map:latitude": "lat"},
+         "Choose the file's columns for latitude and longitude, or the file's "
+         "geometry column, then press Create."),
+    ])
+    def test_refusal_keeps_the_matching_step(self, auth_client, mapping, sentence):
+        rows = [{"name": "W1", "lat": "37.3", "lon": "-120.5"}]
+        before = Well.objects.count()
+        resp = auth_client.post(
+            reverse("infrastructure:import_commit"),
+            {"infra_type": "well", "rows_json": json.dumps(rows), **mapping},
+        )
+        body = resp.content.decode().replace("&#x27;", "'")
+        assert sentence in body
+        assert 'name="rows_json"' in body
+        assert Well.objects.count() == before
