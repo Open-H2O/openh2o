@@ -33,7 +33,23 @@ def access_flags(request):
         "access_enforced": settings.ACCESS_CONTROL_ENFORCED,
         "user_is_admin": is_administrator(getattr(request, "user", None)),
         "user_can_write": not is_viewer(getattr(request, "user", None)),
+        "site_sends_email": site_sends_email(),
     }
+
+
+#: Email backends that deliver nothing: the console backend prints a message
+#: into the server log, the dummy one drops it.
+_NO_DELIVERY_BACKENDS = (
+    "django.core.mail.backends.console.EmailBackend",
+    "django.core.mail.backends.dummy.EmailBackend",
+)
+
+
+def site_sends_email() -> bool:
+    """False on a site with no mail server (Brent, 150.1-02 screen 18 message
+    AB, 2026-10-15 20:58): its reset page took an address and said a link was
+    sent while the email only reached the server log."""
+    return settings.EMAIL_BACKEND not in _NO_DELIVERY_BACKENDS
 
 
 def nav_mode(request):
