@@ -47,15 +47,37 @@ def not_applicable(category: str, module: str, subject: str) -> dict:
     module is absent — and is no longer the thing the UI branches on. That was
     the workaround while the field had only three values.
     """
+    # Brent, 150.1-02 screen 16 message A row 4 (2026-10-16 06:39): the
+    # module in words, never its key.
     return {
         "category": category,
         "status": "skipped",
         "message": (
-            f"Not applicable — {subject} needs the '{module}' module, which is "
-            f"not enabled on this deployment."
+            f"This site has turned off OpenH2O's {_MODULE_WORDS.get(module, module)}, "
+            "so this check does not apply."
         ),
         "details": {"module_disabled": module},
     }
+
+
+#: The modules a check can need, as a sentence names them.
+_MODULE_WORDS = {
+    "accounting": "accounting",
+    "datasync": "data sync",
+    "parcels": "use areas",
+    "surface": "surface water records",
+}
+
+
+def _count(n: int, one: str, many: str) -> str:
+    return f"{n:,} {one if n == 1 else many}"
+
+
+def _and(parts: list) -> str:
+    """'a', 'a and b', 'a, b and c'."""
+    if len(parts) < 2:
+        return "".join(parts)
+    return f"{', '.join(parts[:-1])} and {parts[-1]}"
 
 
 # Irrigation-efficiency bands for check_et_meter_agreement (math eval item 9).
@@ -87,32 +109,32 @@ def check_database():
 
             counts["parcels"] = Parcel.objects.count()
             counts["ledger_entries"] = ParcelLedger.objects.count()
-            phrases.append(f"{counts['parcels']} parcels")
+            phrases.append(_count(counts["parcels"], "use area", "use areas"))
         if is_enabled("wells"):
             from wells.models import Well
 
             counts["wells"] = Well.objects.count()
-            phrases.append(f"{counts['wells']} wells")
+            phrases.append(_count(counts["wells"], "well", "wells"))
         if is_enabled("parcels"):
-            phrases.append(f"{counts['ledger_entries']} ledger entries")
+            phrases.append(_count(counts["ledger_entries"], "ledger entry", "ledger entries"))
         if is_enabled("accounting"):
             from accounting.models import WaterAccount
 
             counts["water_accounts"] = WaterAccount.objects.count()
         # With every counted module off, the honest sentence is the bare fact
-        # this check exists to establish.
-        detail = (". " + ", ".join(phrases) + ".") if phrases else "."
+        # this check exists to establish. Brent, screen 16 message A row 6.
+        held = f", which holds {_and(phrases)}" if phrases else ""
         return {
             "category": "database",
             "status": "green",
-            "message": f"Connected{detail}",
+            "message": f"OpenH2O reached the database{held}.",
             "details": counts,
         }
     except Exception as e:
         return {
             "category": "database",
             "status": "red",
-            "message": f"Connection failed: {e}",
+            "message": f"OpenH2O cannot reach the database. Details: {e}",
             "details": {"error": str(e)},
         }
 
@@ -148,8 +170,20 @@ def check_disk():
             details[label] = {"error": str(e)}
             worst_status = "red"
 
+    # Brent, screen 16 message A row 7.
     base = details.get("base_dir", {})
-    msg = f"{base.get('percent_used', '?')}% used, {base.get('free_gb', '?')} GB free"
+    if "error" in base:
+        msg = f"OpenH2O cannot read the disk's size. Details: {base['error']}"
+    else:
+        msg = (
+            f"The server's disk is {base['percent_used']}% full, with "
+            f"{base['free_gb']} GB free."
+        )
+        if worst_status != "green":
+            msg += (
+                " OpenH2O asks for attention when the disk is over 80% full and "
+                "for action when it is over 90% full."
+            )
     return {
         "category": "disk",
         "status": worst_status,
@@ -394,21 +428,28 @@ def check_docker():
             return {
                 "category": "docker",
                 "status": "green",
-                "message": f"Database '{actual_name}' matches configuration",
+                # Brent, screen 16 message A row 8.
+                "message": (
+                    f"OpenH2O is connected to {actual_name}, the database named "
+                    "in OpenH2O's settings."
+                ),
                 "details": {"expected": expected_name, "actual": actual_name},
             }
         else:
             return {
                 "category": "docker",
                 "status": "red",
-                "message": f"Database mismatch: expected '{expected_name}', got '{actual_name}'",
+                "message": (
+                    f"OpenH2O is connected to {actual_name}, but the database "
+                    f"named in OpenH2O's settings is {expected_name}."
+                ),
                 "details": {"expected": expected_name, "actual": actual_name},
             }
     except Exception as e:
         return {
             "category": "docker",
             "status": "red",
-            "message": f"Docker check failed: {e}",
+            "message": f"OpenH2O cannot read the database's name. Details: {e}",
             "details": {"error": str(e)},
         }
 

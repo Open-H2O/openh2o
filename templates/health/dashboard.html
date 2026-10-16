@@ -15,7 +15,7 @@
      third sentence that used to close this paragraph (which checks are left out of the
      score, and why) now sits under the "This run" card's field grid instead, next to the
      Not applicable field it explains (143-09). {% endcomment %}
-  <p class="page-description">{{ total }} categories checked. Green means healthy, yellow means attention needed, red means action required.</p>
+  <p class="page-description">This page shows the latest result of each of OpenH2O's {{ total }} checks on this site's records and server.</p>
 </div>
 {% endblock %}
 
@@ -28,11 +28,8 @@
 
     {% if total == 0 %}
     <div class="card-raised empty-state">
-        <p class="empty-state-text text-secondary">No health checks yet.</p>
-        <p class="text-tertiary text-base">
-            Run them with
-            <code style="font-family: var(--font-mono); background: var(--color-base); padding: var(--space-xs) var(--space-sm); border-radius: var(--radius-sm); margin-top: var(--space-xs); display: inline-block;">python manage.py run_health_checks</code>.
-        </p>
+        <p class="empty-state-text text-secondary">OpenH2O has not checked this site yet.</p>
+        <p class="text-tertiary text-base">Run the checks with the <code class="text-mono">run_health_checks</code> command.</p>
     </div>
     {% elif show_detail %}
     {% comment %}
@@ -58,7 +55,7 @@
           <div class="field-group">
             <div class="field-label">Not applicable</div>
             <div class="field-value">
-              {% if skipped_category_names %}{{ skipped_category_names|join:", " }}{% else %}<span class="value-empty">None; every check has a module to measure</span>{% endif %}
+              {% if skipped_category_names %}{{ skipped_category_names|join:", " }}{% else %}<span class="value-empty">None</span>{% endif %}
             </div>
           </div>
           <div class="field-group">
@@ -66,13 +63,12 @@
             <div class="field-value"><code class="text-mono">python manage.py run_health_checks</code></div>
           </div>
         </div>
-        <p class="text-secondary text-base" style="margin-top: var(--space-md);">A check belonging to a module this deployment does not run is marked not applicable and left out of the score.</p>
+        <p class="text-secondary text-base" style="margin-top: var(--space-md);">A check that does not apply to this site reports not applicable, and OpenH2O leaves it out of the counts on this page.</p>
       </div>
 
       <div class="card-raised page-grid-account-balance">
         <div class="page-grid-account-head mb-md">
           <h2 class="section-header-flush">Health</h2>
-          <div class="text-secondary text-base">{{ applicable }} applicable check{{ applicable|pluralize }}, judged by their own rules</div>
         </div>
         <div class="budget-panel">
           <div class="budget-panel-body">
@@ -80,13 +76,13 @@
               <div class="budget-seg budget-seg--result">
                 <div class="budget-seg-label">Healthy</div>
                 <div class="budget-seg-value">{{ green_count }}</div>
-                <div class="budget-seg-caption">of {{ applicable }} applicable check{{ applicable|pluralize }}</div>
+                <div class="budget-seg-caption">of {{ applicable }} check{{ applicable|pluralize }} that appl{{ applicable|pluralize:"ies,y" }}</div>
               </div>
               <div class="budget-op"></div>
               <div class="budget-seg">
                 <div class="budget-seg-label">Attention needed</div>
                 <div class="budget-seg-value{% if yellow_count %} text-deficit{% endif %}">{{ yellow_count }}</div>
-                <div class="budget-seg-caption">check{{ yellow_count|pluralize }} marked Attention needed</div>
+                <div class="budget-seg-caption">of {{ applicable }} check{{ applicable|pluralize }} that appl{{ applicable|pluralize:"ies,y" }}</div>
               </div>
               <div class="budget-op"></div>
               <div class="budget-seg">
@@ -97,7 +93,7 @@
                    and uses that. {% endcomment %}
                 <div class="budget-seg-label">Action required</div>
                 <div class="budget-seg-value{% if red_count %} text-error{% endif %}">{{ red_count }}</div>
-                <div class="budget-seg-caption">check{{ red_count|pluralize }} marked Action required</div>
+                <div class="budget-seg-caption">of {{ applicable }} check{{ applicable|pluralize }} that appl{{ applicable|pluralize:"ies,y" }}</div>
               </div>
             </div>
           </div>
@@ -110,7 +106,7 @@
         {% for result in results %}
         <div class="card-raised">
             <div class="row-between mb-sm">
-                <h3 class="section-header-flush" style="text-transform: capitalize;">
+                <h3 class="section-header-flush">
                     {{ result.get_category_display }}
                 </h3>
                 {% if result.status == 'skipped' %}
@@ -130,7 +126,7 @@
               {% if result.where %}
               <a class="text-link" href="{{ result.where.href }}">Open {{ result.where.label }} →</a>
               {% elif result.host_level %}
-              <p class="text-secondary text-sm m-0">This is fixed on the host, not in the platform.</p>
+              <p class="text-secondary text-sm m-0">This fault is on the server, outside OpenH2O.</p>
               {% endif %}
             {% endif %}
             {% if result.admin_detail %}
@@ -146,10 +142,8 @@
     {% comment %} Anonymous visitors get the aggregate liveness status only — no per-subsystem
        names or failure messages (those are operator-only reconnaissance). {% endcomment %}
     <div class="card-raised empty-state">
-        <p class="empty-state-text text-secondary" style="text-transform: capitalize;">
-            Overall status: {{ overall_status }}
-        </p>
-        <p class="text-tertiary text-base">Sign in to view per-subsystem detail.</p>
+        <p class="empty-state-text text-secondary">Overall status: {{ overall_words }}</p>
+        <p class="text-tertiary text-base">Sign in to see each check.</p>
     </div>
     {% endif %}
 </div>

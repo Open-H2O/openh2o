@@ -542,9 +542,9 @@ _DATA_DEPENDENT_TEXT_OUT_OF_SCOPE = (
     ),
     (
         "/health/",
-        "A skipped check renders 'Not applicable — the use-area ledger needs the "
-        "'parcels' module', and NAMING the missing module is the entire point of "
-        "that message (ISS-087). This is the stronger instance and it is why (a) "
+        "A skipped check renders 'This site has turned off OpenH2O's use areas, so "
+        "this check does not apply.', and NAMING the missing module is the entire "
+        "point of that message (ISS-087). This is the stronger instance and it is why (a) "
         "was rejected: seeding health results would make the gate fail on the one "
         "feature whose job is to say which module is absent.",
     ),

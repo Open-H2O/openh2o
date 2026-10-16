@@ -90,6 +90,13 @@ HOST_LEVEL_CATEGORIES = {
     "cache_duplication",
 }
 
+_OVERALL_WORDS = {
+    "healthy": "healthy",
+    "degraded": "attention needed",
+    "unhealthy": "action required",
+    "unknown": "unknown",
+}
+
 # Cards read red, yellow, green, skipped, then category (the panel says how
 # many need attention, so the first cards under it are the ones that do).
 _STATUS_ORDER = {"red": 0, "yellow": 1, "green": 2, "skipped": 3}
@@ -254,6 +261,8 @@ def health_dashboard(request):
         "last_checked": last_checked,
         "skipped_category_names": skipped_category_names,
         "overall_status": overall_status,
+        # Brent, screen 16 message A row 9: the badges' own words.
+        "overall_words": _OVERALL_WORDS.get(overall_status, overall_status),
         # Per-subsystem messages name internals + failure reasons — operator-only
         # reconnaissance. Anonymous visitors see the aggregate status only.
         "show_detail": request.user.is_authenticated,

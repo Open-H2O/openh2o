@@ -75,7 +75,7 @@ class TestThePanelLeadsWithTheHealthyCount:
     def test_the_red_host_level_card_reads_fixed_on_the_host(self):
         _persist_fixture()
         html = _client_in().get(reverse("health:dashboard")).content.decode()
-        assert "This is fixed on the host, not in the platform." in html
+        assert "This fault is on the server, outside OpenH2O." in html
 
     def test_a_green_card_carries_no_link(self):
         _persist_fixture()
@@ -124,11 +124,13 @@ class TestOneSetOfWordsAcrossBadgesAndPanel:
         assert "Critical" not in grid
 
     def test_the_captions_name_the_badge_they_count(self):
-        """RED before: the captions read "check reading Warning" / "check reading Critical"."""
+        """RED before: the captions read "check reading Warning" / "check reading Critical".
+        Brent, 150.1-02 screen 16 message A row 3 (2026-10-16 06:39): the label
+        above each count names the badge; each caption reads "of N checks that apply"."""
         _persist_fixture()
         html = _client_in().get(reverse("health:dashboard")).content.decode()
-        assert '<div class="budget-seg-caption">check marked Attention needed</div>' in html
-        assert '<div class="budget-seg-caption">check marked Action required</div>' in html
+        assert html.count(' that apply</div>') + html.count(' that applies</div>') == 3
+        assert "marked Attention needed" not in html and "marked Action required" not in html
         assert "reading Warning" not in html
         assert "reading Critical" not in html
 

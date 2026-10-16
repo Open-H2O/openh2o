@@ -486,8 +486,9 @@ class TestNotApplicableIsSkipped:
         """The human-readable reason is the point of ISS-087's first half — this
         task changed the stored status, not the explanation."""
         result = not_applicable("cache_duplication", "datasync", "the OpenET cache")
-        assert "datasync" in result["message"]
-        assert "the OpenET cache" in result["message"]
+        assert result["message"] == (
+            "This site has turned off OpenH2O's data sync, so this check does not apply."
+        )
 
     def test_details_retains_module_disabled_as_provenance(self):
         result = not_applicable("orphans", "parcels", "parcel-to-account assignment")
@@ -630,10 +631,10 @@ class TestCategoryCountIsRegistryDerived:
         """
         _persist(["green"] * 4 + ["yellow"] + ["skipped"] * 9)
         html = client.get(reverse("health:dashboard")).content.decode()
-        assert "14 categories checked" in html
+        assert "of OpenH2O's 14 checks on this site's records and server." in html
         assert "8 categories" not in html
         assert "14: 5 applicable, 9 not applicable" in html
-        assert "of 5 applicable checks" in html
+        assert "of 5 checks that apply" in html
         assert '<div class="budget-seg-value">4</div>' in html
 
 
@@ -694,7 +695,7 @@ class TestWhereToLookLinksAreModuleGated:
     ):
         _persist(["yellow" if c == "ssl" else "green" for c in ALL_CATEGORIES])
         html = client.get(reverse("health:dashboard")).content.decode()
-        assert "This is fixed on the host, not in the platform." in html
+        assert "This fault is on the server, outside OpenH2O." in html
         assert "text-link" not in html
 
     @pytest.mark.django_db
