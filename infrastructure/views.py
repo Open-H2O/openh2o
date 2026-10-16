@@ -51,6 +51,16 @@ ADD_TYPE_LABEL = {
     "recharge_site": "Recharge Site",
 }
 
+#: What one imported record is called in the import page's sentences (Brent,
+#: 150.1-02 screen 18 message V, 2026-10-15 17:55): "This page imports well
+#: records ...", "To enter one point of diversion record by hand ...".
+IMPORT_RECORD_NOUN = {
+    "well": "well",
+    "diversion": "point of diversion",
+    "storage": "storage pond",
+    "recharge_site": "recharge site",
+}
+
 #: The full name of each type, as the operator reads it on the page. ADD_TYPE_LABEL
 #: above is the terse breadcrumb/button form ("Add Well", "Create Well"); these are
 #: what a sentence calls the thing.
@@ -410,6 +420,7 @@ def infrastructure_import(request):
         {
             "infra_type": infra_type,
             "infra_label": ADD_TYPE_LABEL[infra_type],
+            "record_noun": IMPORT_RECORD_NOUN[infra_type],
             "back_url": reverse(back_name),
             "back_label": back_label,
             # The OTHER types this deployment can serve, built exactly as
@@ -438,7 +449,7 @@ def infrastructure_import_preview(request):
         return render(
             request,
             "infrastructure/partials/_import_result.html",
-            {"error": "No file provided. Choose a CSV, GeoJSON, shapefile (.zip), or KML."},
+            {"error": importer.NO_FILE_MESSAGE},
         )
 
     try:
@@ -554,7 +565,7 @@ def _commit_failure_context(infra_type, rows, mapping, exc):
         "sample_count": len(sample_table),
         "row_count": len(rows),
         "rows_json": json.dumps(rows),
-        "error": f"Nothing was created: {type(exc).__name__}: {exc}",
+        "error": importer.unexpected_error_message(exc),
     }
 
 
@@ -577,7 +588,7 @@ def infrastructure_import_commit(request):
         return render(
             request,
             "infrastructure/partials/_import_result.html",
-            {"error": "No rows to import — please re-upload your file and try again."},
+            {"error": importer.ROWS_NOT_RECEIVED_MESSAGE},
         )
 
     # Re-enforce the row cap on COMMIT, not just on preview. rows_json is a hidden
@@ -590,9 +601,8 @@ def infrastructure_import_commit(request):
         return render(
             request,
             "infrastructure/partials/_import_result.html",
-            {"error": (
-                f"Import is {len(rows)} rows, over the {importer.MAX_ROWS}-row cap. "
-                "Re-upload a smaller file."
+            {"error": importer.row_cap_message(
+                len(rows), map_file=importer.is_map_rows(rows)
             )},
         )
 
@@ -620,7 +630,10 @@ def infrastructure_import_commit(request):
     # shape 4, two). Now they get that same table back with one line saying
     # nothing was created and why, at 200 so HTMX actually swaps it in.
     try:
-        results = importer.validate_rows(rows, mapping, infra_type, existing_reg_ids)
+        results = importer.validate_rows(
+            rows, mapping, infra_type, existing_reg_ids,
+            existing_names=importer.existing_names(infra_type),
+        )
         created = importer.commit_rows(results, infra_type)
     except Exception as exc:
         logger.exception(

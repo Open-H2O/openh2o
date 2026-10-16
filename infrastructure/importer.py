@@ -24,6 +24,7 @@ import csv
 import io
 import json
 import math
+import zipfile
 from decimal import Decimal, InvalidOperation
 
 from django.contrib.gis.gdal import GDALException
@@ -59,6 +60,69 @@ MAX_ROWS = 500
 # callers read importer.MAX_UPLOAD_BYTES. The archive readers read the caps
 # from core.geofiles, so a test that shrinks one patches it there.
 
+#: The whole-file messages Brent approved (150.1-02 screen 18, message V,
+#: 2026-10-15 17:55; the CSV ones are the surface and lab imports' words,
+#: reused as approved). This module is optional and may not import the
+#: surface module's copies, so the sentences are repeated here.
+NO_FILE_MESSAGE = "Choose a file to upload."
+WRONG_TYPE_MESSAGE = (
+    "This page imports .csv, .zip, .geojson, .json and .kml files only. "
+    "Save the file as CSV and upload it again."
+)
+NO_COLUMNS_MESSAGE = "This file has no column names on its first line."
+NO_ROWS_MESSAGE = "This file has column names but no rows below them."
+NO_FEATURES_MESSAGE = "This file has no map features."
+ROWS_NOT_RECEIVED_MESSAGE = (
+    "OpenH2O did not receive the file's rows from the preview. "
+    "Upload the file again."
+)
+_CHECK_IN_GIS = "Check that the file opens in a GIS program, then upload it again."
+NOT_GEOJSON_MESSAGE = f"OpenH2O cannot read this file as GeoJSON. {_CHECK_IN_GIS}"
+NOT_KML_MESSAGE = f"OpenH2O cannot read this file as KML. {_CHECK_IN_GIS}"
+NOT_ZIP_MESSAGE = "OpenH2O cannot open this file as a zip archive."
+NOT_SHAPEFILE_MESSAGE = (
+    f"OpenH2O cannot read the shapefile in this zip file. {_CHECK_IN_GIS}"
+)
+
+
+def too_large_message(size):
+    """The size is rounded UP, so a file over the cap never reads as equal to it."""
+    mb = 1024 * 1024
+    return (
+        f"This file is {math.ceil(size / mb)} MB. "
+        f"OpenH2O imports files of up to {MAX_UPLOAD_BYTES // mb} MB."
+    )
+
+
+def is_map_rows(rows):
+    """True when the rows came from a shapefile, GeoJSON or KML file.
+
+    Only the map readers add the GEOMETRY_COL key, so a CSV row never has it.
+    A map file has no spreadsheet rows: its features are numbered from 1 in
+    the file's order (Brent, message V).
+    """
+    return bool(rows) and GEOMETRY_COL in rows[0]
+
+
+def row_cap_message(row_count, map_file=False):
+    if map_file:
+        return (
+            f"This file has {row_count:,} map features, and OpenH2O imports up to "
+            f"{MAX_ROWS:,} map features from one file. Split the file and import "
+            "each part."
+        )
+    return (
+        f"This file has {row_count:,} rows, and OpenH2O imports up to "
+        f"{MAX_ROWS:,} rows from one file. Split the file and import each part."
+    )
+
+
+def unexpected_error_message(exc):
+    return (
+        "An unexpected error stopped the import, and OpenH2O saved nothing "
+        f"from this file. Details: {type(exc).__name__}: {exc}"
+    )
+
 
 # ---------------------------------------------------------------------------
 # parse_upload
@@ -72,7 +136,9 @@ def parse_upload(file, filename):
     GDAL helpers below, each row = feature properties + a synthesized
     __geometry__ GeoJSON string.
 
-    Raises ImportError on: unsupported extension, no rows, or > MAX_ROWS rows.
+    Raises ImportError with the sentence the page shows on: a file over the
+    size cap, an unsupported extension, a damaged map file (these were server
+    errors before message V), no rows or map features, or > MAX_ROWS of them.
     """
     name = (filename or "").lower()
 
@@ -80,31 +146,43 @@ def parse_upload(file, filename):
     # (Django's DATA_UPLOAD_MAX_MEMORY_SIZE does not cover file uploads.)
     size = getattr(file, "size", None)
     if size is not None and size > MAX_UPLOAD_BYTES:
-        raise ImportError(
-            f"File is too large ({size // (1024 * 1024)} MB); the upload cap is "
-            f"{MAX_UPLOAD_BYTES // (1024 * 1024)} MB. Please split it into smaller files."
-        )
+        raise ImportError(too_large_message(size))
 
+    map_file = True
     if name.endswith(".csv"):
+        map_file = False
         rows, columns = _parse_csv(file)
+        if not columns:
+            raise ImportError(NO_COLUMNS_MESSAGE)
     elif name.endswith((".geojson", ".json")):
-        rows, columns = _features_to_rows(_parse_geojson_file(file))
+        try:
+            features = _parse_geojson_file(file)
+        except (ValueError, AttributeError, TypeError):
+            # ValueError covers json.JSONDecodeError and UnicodeDecodeError;
+            # AttributeError / TypeError a JSON value that is not GeoJSON.
+            raise ImportError(NOT_GEOJSON_MESSAGE)
+        rows, columns = _features_to_rows(features)
     elif name.endswith(".zip"):
-        rows, columns = _features_to_rows(_parse_shapefile_zip(file))
+        try:
+            features = _parse_shapefile_zip(file)
+        except zipfile.BadZipFile:
+            raise ImportError(NOT_ZIP_MESSAGE)
+        except GDALException:
+            raise ImportError(NOT_SHAPEFILE_MESSAGE)
+        rows, columns = _features_to_rows(features)
     elif name.endswith(".kml"):
-        rows, columns = _features_to_rows(_parse_kml_file(file))
+        try:
+            features = _parse_kml_file(file)
+        except GDALException:
+            raise ImportError(NOT_KML_MESSAGE)
+        rows, columns = _features_to_rows(features)
     else:
-        raise ImportError(
-            "Unsupported format. Use .csv, .geojson, .json, .zip (shapefile), or .kml."
-        )
+        raise ImportError(WRONG_TYPE_MESSAGE)
 
     if len(rows) > MAX_ROWS:
-        raise ImportError(
-            f"File contains {len(rows)} rows, over the {MAX_ROWS}-row import cap. "
-            "Please split it into smaller files."
-        )
+        raise ImportError(row_cap_message(len(rows), map_file=map_file))
     if not rows:
-        raise ImportError("No rows found in the uploaded file.")
+        raise ImportError(NO_FEATURES_MESSAGE if map_file else NO_ROWS_MESSAGE)
 
     return {"columns": columns, "rows": rows}
 
@@ -335,15 +413,43 @@ _US_LAT = (17.0, 72.0)
 _US_LON = (-180.0, -64.0)
 
 
-def validate_rows(rows, mapping, infra_type, existing_reg_ids):
+def existing_names(infra_type):
+    """The names already on file for the type the import creates.
+
+    Brent, 150.1-02 screen 18 message V (2026-10-15 17:55): every type skips a
+    row whose name is already on file or appears earlier in the file. Points
+    of diversion, storage ponds and recharge sites were never checked, so a
+    file imported twice created its records twice. Storage ponds and recharge
+    sites are both RechargeSite rows, so they share one set of names.
+    """
+    if infra_type == "well":
+        from wells.models import Well
+
+        return set(Well.objects.values_list("name", flat=True))
+    if infra_type == "diversion" and is_enabled("surface"):
+        from surface.models import PointOfDiversion
+
+        return set(PointOfDiversion.objects.values_list("name", flat=True))
+    if infra_type in ("recharge_site", "storage") and is_enabled("recharge"):
+        from recharge.models import RechargeSite
+
+        return set(RechargeSite.objects.values_list("name", flat=True))
+    return set()
+
+
+def validate_rows(rows, mapping, infra_type, existing_reg_ids, existing_names=None):
     """Validate + coerce a batch into writer-ready `data` dicts.
 
     Returns a list of {index, data, errors, warnings}. A row with any errors is
     skipped by commit_rows; warnings (e.g. an off-list choice value) are kept.
+    `existing_names` (from `existing_names()`) makes a row whose name is already
+    on file an error; a name repeated in the file is an error either way.
     """
     results = []
     seen_reg_ids = set()
     existing = {r for r in (existing_reg_ids or set())}
+    names_on_file = set(existing_names or ())
+    seen_names = set()
 
     decimal_fields = _DECIMAL_FIELDS.get(infra_type, [])
     choice_fields = _CHOICE_FIELDS.get(infra_type, {})
@@ -381,6 +487,10 @@ def validate_rows(rows, mapping, infra_type, existing_reg_ids):
         name = src("name")
         if not name:
             errors.append("name is required (blank or unmapped).")
+        elif name in names_on_file or name in seen_names:
+            errors.append(f"duplicate name '{name}'.")
+        if name:
+            seen_names.add(name)
         data["name"] = name
 
         # --- location: geometry column OR lat+lon pair ---

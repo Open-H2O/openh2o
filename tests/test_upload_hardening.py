@@ -45,7 +45,9 @@ class _BigFile:
 def test_oversize_upload_rejected_before_parse():
     with pytest.raises(ImportError) as exc:
         importer.parse_upload(_BigFile(), "huge.csv")
-    assert "cap" in str(exc.value).lower()
+    # Brent 2026-10-15 17:55 (150.1-02 screen 18, message V): the approved
+    # size sentence, the size rounded up.
+    assert str(exc.value) == "This file is 26 MB. OpenH2O imports files of up to 25 MB."
 
 
 def test_zip_bomb_rejected_before_extract(monkeypatch):

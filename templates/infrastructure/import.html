@@ -13,7 +13,8 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Bulk Import</span>
   </nav>
-  <p class="page-description">Upload a CSV, shapefile (.zip), GeoJSON or KML of {{ infra_label|lower }} records; match its columns, then create one record per valid row.</p>
+  {% comment %} Brent 2026-10-15 17:55, 150.1-02 screen 18 message V, rows 1 to 4. {% endcomment %}
+  <p class="page-description">This page imports {{ record_noun }} records from a CSV file, a zipped shapefile, a GeoJSON file or a KML file.</p>
   {% if other_import_types %}
   <p class="text-secondary text-sm" style="margin: var(--space-xs) 0 0 0;">Importing something else? {% for t in other_import_types %}<a href="?type={{ t.value }}">{{ t.label|capfirst }}</a>{% if not forloop.last %} · {% endif %}{% endfor %}</p>
   {% endif %}
@@ -28,8 +29,9 @@
   <div class="card-raised">
     {% comment %} Was "Bulk import &mdash; {{ infra_label }}" under the title "Bulk import" (Phase 143-02, copy rule 13): the remainder is the type. {% endcomment %}
     <h2 class="card-header-ruled">{{ infra_label }}</h2>
-    <p class="text-base text-secondary mt-md">Nothing is written until you match the columns, check the first rows and press Create.</p>
-    <p class="text-secondary text-sm mt-sm"><a href="{% url 'infrastructure:add' %}?type={{ infra_type }}">Add {{ infra_label|lower }}</a> creates one record at a time.</p>
+    <p class="text-base text-secondary mt-md">OpenH2O saves nothing until you press Create.</p>
+    <p class="text-base text-secondary mt-sm">{% if infra_type == "well" %}OpenH2O skips a row whose name or registration ID is already on file or appears earlier in the file.{% else %}OpenH2O skips a row whose name is already on file or appears earlier in the file.{% endif %}</p>
+    <p class="text-secondary text-sm mt-sm">To enter one {{ record_noun }} record by hand, use <a href="{% url 'infrastructure:add' %}?type={{ infra_type }}">Add {{ infra_label|lower }}</a>.</p>
     {% comment %}149.1-06: what every type's file must carry, from infrastructure/importer.py
     (name; a geometry or latitude and longitude inside the United States; the well registration
     ID check). The per-type field list is the mapping step's; the page cannot reach it
@@ -59,11 +61,6 @@
             <td>No</td>
             <td>Matched to their fields on the next step, one row per field</td>
           </tr>
-          <tr>
-            <td class="col-name">A row already on file</td>
-            <td></td>
-            <td>{% if infra_type == "well" %}Skipped, never overwritten, when its registration ID is already on file or repeated in the file{% else %}Not checked; a file imported twice creates its records twice{% endif %}</td>
-          </tr>
         </tbody>
       </table>
     </div>
@@ -91,12 +88,12 @@
           </label>
           <span class="file-picker-name text-tertiary text-sm" id="import-file-name">No file chosen</span>
         </div>
-        <div class="form-help">Up to 500 records per file.</div>
+        <div class="form-help">A file of up to 500 rows or map features and 25 MB.</div>
       </div>
 
       <div class="row-start pt-sm">
         <button type="submit" class="btn-primary">Upload &amp; preview</button>
-        <span id="import-spinner" class="htmx-indicator text-tertiary text-sm">Parsing&hellip;</span>
+        <span id="import-spinner" class="htmx-indicator text-tertiary text-sm">Reading the file&hellip;</span>
       </div>
     </form>
   </div>
