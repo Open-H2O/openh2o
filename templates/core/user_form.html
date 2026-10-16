@@ -13,7 +13,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Add User</span>
   </nav>
-  <p class="page-description">This form gives a colleague a sign-in on this deployment. Set their sign-in email, a starting password to hand them and their role.</p>
+  <p class="page-description">This page adds an account for one person, who signs in with an email address and the password you set here.</p>
 </div>
 {% endblock %}
 
@@ -25,11 +25,7 @@
   <div class="card-raised">
     {% comment %} Was "Add a user", the page title said again in other words (Phase 143-02, copy rule 13: a label under a heading says the remainder). {% endcomment %}
     <h2 class="card-header-ruled">Details</h2>
-    <p class="text-sm text-secondary mb-md">
-      Create an account someone can sign in with right away. Email isn't sent
-      from this site, so set their starting password here and share it with them
-      directly &mdash; they can change it afterward.
-    </p>
+    <p class="text-sm text-secondary mb-md">OpenH2O does not email the person you add, so give them the password yourself. They can sign in right away and change the password on their profile page.</p>
 
     {% if form.non_field_errors %}
     <div class="form-error-box">
@@ -46,32 +42,31 @@
       <div class="form-group form-span-2">
         <label class="form-label" for="{{ form.email.id_for_label }}">Email</label>
         {{ form.email }}
-        {% if form.email.errors %}<p class="form-error-text">{{ form.email.errors|striptags }}</p>{% endif %}
+        {% for error in form.email.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
       </div>
 
       <div class="form-group">
         <label class="form-label" for="{{ form.first_name.id_for_label }}">First name</label>
         {{ form.first_name }}
-        {% if form.first_name.errors %}<p class="form-error-text">{{ form.first_name.errors|striptags }}</p>{% endif %}
+        {% for error in form.first_name.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
       </div>
 
       <div class="form-group">
         <label class="form-label" for="{{ form.last_name.id_for_label }}">Last name</label>
         {{ form.last_name }}
-        {% if form.last_name.errors %}<p class="form-error-text">{{ form.last_name.errors|striptags }}</p>{% endif %}
+        {% for error in form.last_name.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
       </div>
 
       <div class="form-group form-span-2">
         <label class="form-label" for="{{ form.title.id_for_label }}">Title</label>
         {{ form.title }}
-        {% if form.title.errors %}<p class="form-error-text">{{ form.title.errors|striptags }}</p>{% endif %}
+        {% for error in form.title.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
       </div>
 
       <div class="form-group">
         <label class="form-label" for="{{ form.password.id_for_label }}">Starting password</label>
         {{ form.password }}
-        <p class="text-sm text-tertiary mt-xs">{{ form.password.help_text }}</p>
-        {% if form.password.errors %}<p class="form-error-text">{{ form.password.errors|striptags }}</p>{% endif %}
+        {% for error in form.password.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
       </div>
 
       <div class="form-group" role="radiogroup" aria-labelledby="role-label">
@@ -83,7 +78,7 @@
         </label>
         {% endfor %}
         <p class="text-sm text-tertiary mt-xs">{{ form.role.help_text }}</p>
-        {% if form.role.errors %}<p class="form-error-text">{{ form.role.errors|striptags }}</p>{% endif %}
+        {% for error in form.role.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
       </div>
 
       <div class="form-footer">

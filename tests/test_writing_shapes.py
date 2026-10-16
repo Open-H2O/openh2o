@@ -73,7 +73,6 @@ BASELINE: dict = {
     "templates/drinking/partials/_onboard_result.html": {"stand-in": 1},
     "templates/drinking/partials/_empty_drinking.html": {"stand-in": 1},
     "templates/accounting/partials/_needs_attention.html": {"em dash": 1},
-    "templates/core/user_form.html": {"em dash": 1},
     "templates/reporting/partials/_openet_prefill.html": {"em dash": 1},
     "templates/reporting/partials/_report_detail_pane.html": {"em dash": 1, "stand-in": 1},
     "templates/reporting/report_list.html": {"em dash": 1},

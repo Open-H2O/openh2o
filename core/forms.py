@@ -51,11 +51,13 @@ ROLE_VIEWER = "viewer"
 ROLE_CHOICES = [
     (ROLE_ADMINISTRATOR, "Administrator"),
     (ROLE_OPERATOR, "Operator"),
-    (ROLE_VIEWER, "Viewer (read only)"),
+    (ROLE_VIEWER, "Viewer"),
 ]
+# Brent, 150.1-02 screen 17 message A rows 5 and 6 (2026-10-16 06:15).
 ROLE_HELP = (
-    "Administrators also manage users and the agency's settings. Operators "
-    "enter and view data. Viewers read every page and change nothing."
+    "Viewers read every record and change none. Operators also add, change "
+    "and remove records. Administrators also manage users, set up the site, "
+    "change the site's settings and finalize or reopen a water year."
 )
 
 
@@ -93,10 +95,7 @@ class UserCreateForm(forms.ModelForm):
         widget=forms.PasswordInput(
             attrs={"class": "form-input", "autocomplete": "new-password"}
         ),
-        help_text=(
-            "The user signs in with this. They can change it later under "
-            "Sign-in & Security."
-        ),
+        error_messages={"required": "Enter the starting password."},
     )
     role = forms.ChoiceField(
         choices=ROLE_CHOICES,
@@ -111,7 +110,7 @@ class UserCreateForm(forms.ModelForm):
         fields = ["email", "first_name", "last_name", "title"]
         widgets = {
             "email": forms.EmailInput(
-                attrs={"class": "form-input", "placeholder": "name@district.gov"}
+                attrs={"class": "form-input", "placeholder": "name@example.com"}
             ),
             "first_name": forms.TextInput(attrs={"class": "form-input"}),
             "last_name": forms.TextInput(attrs={"class": "form-input"}),
@@ -131,16 +130,31 @@ class UserCreateForm(forms.ModelForm):
         # AbstractUser.email is blank=True at the model level; on this platform
         # email IS the login, so require it on the form.
         self.fields["email"].required = True
+        self.fields["email"].error_messages["required"] = "Enter the email address."
 
     def clean_email(self):
+        # Brent, 150.1-02 screen 17 message A row 8: an address on file as any
+        # account's (a second address added under Manage email included) is
+        # refused; the save's update_or_create used to move it onto this account.
         email = self.cleaned_data["email"].strip().lower()
-        if User.objects.filter(email__iexact=email).exists():
-            raise forms.ValidationError("A user with that email already exists.")
+        if (
+            User.objects.filter(email__iexact=email).exists()
+            or EmailAddress.objects.filter(email__iexact=email).exists()
+        ):
+            raise forms.ValidationError(
+                f"The email address {email} already belongs to an account."
+            )
         return email
 
     def clean_password(self):
+        # Row 10: with no user passed, Django's check against the email and
+        # names never ran. The fields above are cleaned before this one.
         password = self.cleaned_data["password"]
-        validate_password(password)
+        validate_password(password, user=User(
+            email=self.cleaned_data.get("email", ""),
+            first_name=self.cleaned_data.get("first_name", ""),
+            last_name=self.cleaned_data.get("last_name", ""),
+        ))
         return password
 
     def save(self, commit=True):
