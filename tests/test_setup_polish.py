@@ -226,9 +226,8 @@ def test_upload_non_json_shows_specific_error(db):
     client.force_login(_admin())
     resp = _upload(client, b"this is not json at all")
     assert resp.status_code == 200
-    # Apostrophe in "isn't" is HTML-escaped through the {{ error }} variable;
-    # assert on the apostrophe-free part of the message.
-    assert "valid JSON" in resp.content.decode()
+    # Brent, 150.1-02 screen 18 message Z: message V's GeoJSON sentence.
+    assert "OpenH2O cannot read this file as GeoJSON." in resp.content.decode()
     assert not Boundary.objects.exists()
 
 
@@ -243,7 +242,8 @@ def test_upload_wrong_geometry_type_shows_specific_error(db):
     })
     resp = _upload(client, point.encode())
     assert resp.status_code == 200
-    assert "Polygon or MultiPolygon is required" in resp.content.decode()
+    # Brent, 150.1-02 screen 18 message Z (2026-10-15 18:49).
+    assert "This file has only points or lines. The boundary must be a polygon." in resp.content.decode()
     assert not Boundary.objects.exists()
 
 
@@ -254,7 +254,7 @@ def test_upload_empty_featurecollection_shows_specific_error(db):
     fc = json.dumps({"type": "FeatureCollection", "features": []})
     resp = _upload(client, fc.encode())
     assert resp.status_code == 200
-    assert "FeatureCollection is empty" in resp.content.decode()
+    assert "This file has no map features." in resp.content.decode()
 
 
 def test_step_result_failed_is_not_a_green_check(db):

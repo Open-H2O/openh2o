@@ -33,7 +33,8 @@ from django.contrib.gis.geos import (
 
 from core.geofiles import (
     GEOJSON_EXTENSIONS,
-    THREE_FORMATS,
+    NO_FEATURES_MESSAGE,
+    NOT_GEOJSON_MESSAGE,
     check_upload_size,
     extension,
     features_from_upload,
@@ -175,91 +176,37 @@ def boundary_attrs_from_properties(properties: dict) -> dict:
 
 
 def parse_geojson_boundary(geojson: dict):
-    """
-    Extract a MultiPolygon GEOSGeometry from a GeoJSON dict.
-    Accepts Feature, FeatureCollection (first feature), or raw geometry.
+    """A MultiPolygon GEOSGeometry (srid 4326) from a GeoJSON dict.
 
-    Raises ``ValueError`` with a specific, plain-language reason when no valid
-    polygon can be extracted, so the wizard can tell the operator exactly what
-    was wrong (empty collection vs. wrong geometry type vs. unreadable
-    coordinates) instead of one generic failure.
-
-    **Validity repair (ISS-122).** An invalid polygon (most often a
-    self-intersecting ring) stored straight into the database breaks spatial
-    queries downstream — ``ST_Intersects``/``ST_Within`` and friends can raise
-    or silently return the wrong answer against an invalid geometry. Until
-    this was added here, the wizard's upload path stored whatever the file
-    contained, invalid or not, while
-    ``core/management/commands/seed_merced_base.py`` repaired its own fixture
-    with ``buffer(0)`` before saving. The same uploaded file therefore behaved
-    differently depending on which of the two loading paths it went through.
-    ``buffer(0)`` is applied here — the same GEOS self-repair trick the Merced
-    seeder uses — so every caller of this function gets the same, valid
-    geometry regardless of which path called it. srid stays 4326 throughout.
+    Accepts a FeatureCollection, a Feature or a raw geometry. Since 150.1-02
+    screen 18 message Z (Brent, 2026-10-15 18:49) every polygon in the
+    document is combined, exactly as a shapefile's or a KML's are; this read
+    only the first feature, and refused a file whose first feature was a
+    point even when the rest were polygons, while the wizard said several
+    polygons are combined. Raises ``ValueError`` with the sentence the page
+    shows. Invalid polygons are repaired with ``buffer(0)`` (ISS-122), the
+    same GEOS repair the Merced seeder uses.
     """
+    return _boundary_from_features(_geojson_features(geojson), fallback_name="")[1]
+
+
+def _geojson_features(geojson):
+    """The features of a GeoJSON document, in the readers' {geometry, properties} form."""
     if not isinstance(geojson, dict):
-        raise ValueError(
-            "That file isn't a GeoJSON object — expected a Feature, "
-            "FeatureCollection, or geometry."
-        )
-
+        raise ValueError(NOT_GEOJSON_MESSAGE)
     gtype = geojson.get("type")
     if gtype == "FeatureCollection":
-        features = geojson.get("features", [])
-        if not features:
-            raise ValueError(
-                "The GeoJSON FeatureCollection is empty — it has no features to "
-                "use as a boundary."
-            )
-        geom_dict = features[0].get("geometry")
+        raw = geojson.get("features") or []
     elif gtype == "Feature":
-        geom_dict = geojson.get("geometry")
+        raw = [geojson]
     else:
-        geom_dict = geojson  # raw geometry
-
-    if geom_dict is None:
-        raise ValueError(
-            "No geometry found in the file. Provide a GeoJSON Feature or "
-            "FeatureCollection whose feature has Polygon or MultiPolygon geometry."
-        )
-
-    geom_type = geom_dict.get("type", "")
-    if geom_type not in ("Polygon", "MultiPolygon"):
-        raise ValueError(
-            f"The boundary geometry is a {geom_type or 'unknown type'}, but a "
-            "Polygon or MultiPolygon is required — upload an area outline (your "
-            "district), not a point or line."
-        )
-
-    try:
-        geos = GEOSGeometry(json.dumps(geom_dict), srid=4326)
-    except Exception:
-        logger.exception("GEOSGeometry parse failed")
-        raise ValueError(
-            "The geometry couldn't be read as a valid polygon. Check the "
-            "coordinates are WGS84 longitude/latitude pairs (EPSG:4326)."
-        )
-
-    if isinstance(geos, Polygon):
-        geos = MultiPolygon(geos, srid=4326)
-    elif isinstance(geos, MultiPolygon):
-        pass
-    else:
-        raise ValueError(
-            f"The geometry parsed as {geos.geom_type}, but a Polygon or "
-            "MultiPolygon is required."
-        )
-
-    if not geos.valid:
-        # Repair self-intersections rather than store an invalid geometry that
-        # would break spatial queries downstream — mirrors
-        # seed_merced_base.py:85-90.
-        geos = geos.buffer(0)
-        if geos.geom_type == "Polygon":
-            geos = MultiPolygon(geos)
-        geos.srid = 4326
-
-    return geos
+        raw = [{"geometry": geojson, "properties": {}}]
+    if not isinstance(raw, list) or not all(isinstance(f, dict) for f in raw):
+        raise ValueError(NOT_GEOJSON_MESSAGE)
+    return [
+        {"geometry": f.get("geometry"), "properties": f.get("properties") or {}}
+        for f in raw
+    ]
 
 
 def boundary_from_geojson_text(raw_text, *, fallback_name):
@@ -289,20 +236,16 @@ def boundary_from_geojson_text(raw_text, *, fallback_name):
     """
     decoded = raw_text.decode("utf-8")
     geojson = json.loads(decoded)
-    geom = parse_geojson_boundary(geojson)
-    properties = feature_properties(geojson)
-    name = (
-        geojson.get("name")
-        or properties.get("name")
-        or fallback_name
+    name, geom, attrs, _count = _boundary_from_features(
+        _geojson_features(geojson), fallback_name=fallback_name
     )
-    return name or "Uploaded Boundary", geom, boundary_attrs_from_properties(properties)
+    top_name = geojson.get("name") if isinstance(geojson.get("name"), str) else ""
+    return top_name or name, geom, attrs
 
 
-NO_POLYGON_SENTENCE = (
-    "That file holds no polygon, only points or lines. The boundary must be an "
-    f"area outline, in {THREE_FORMATS}."
-)
+#: Brent, 150.1-02 screen 18 message Z (2026-10-15 18:49).
+NO_POLYGON_SENTENCE = "This file has only points or lines. The boundary must be a polygon."
+_CHECK_IN_GIS = "Check that the file opens in a GIS program, then upload it again."
 
 
 def _two_dimensional(coordinates):
@@ -331,10 +274,7 @@ def _polygons_of(geom_dict):
         geos = GEOSGeometry(json.dumps(flat), srid=4326)
     except (GDALException, GEOSException, ValueError, TypeError):
         logger.exception("GEOSGeometry parse failed")
-        raise ValueError(
-            "A polygon in the file could not be read. Check that the file opens "
-            "in a GIS program, then upload it again."
-        )
+        raise ValueError(f"OpenH2O cannot read a polygon in this file. {_CHECK_IN_GIS}")
     parts = [geos] if isinstance(geos, Polygon) else list(geos)
     repaired = []
     for part in parts:
@@ -374,12 +314,28 @@ def boundary_from_upload(uploaded_file, *, fallback_name):
     """
     if extension(getattr(uploaded_file, "name", "")) in GEOJSON_EXTENSIONS:
         check_upload_size(uploaded_file)
-        name, geom, attrs = boundary_from_geojson_text(
-            uploaded_file.read(), fallback_name=fallback_name,
+        geojson = json.loads(uploaded_file.read().decode("utf-8"))
+        name, geom, attrs, count = _boundary_from_features(
+            _geojson_features(geojson), fallback_name=fallback_name
         )
-        return name, geom, attrs, geom.num_geom
+        top_name = geojson.get("name") if isinstance(geojson.get("name"), str) else ""
+        return top_name or name, geom, attrs, count
 
-    features = features_from_upload(uploaded_file)
+    return _boundary_from_features(
+        features_from_upload(uploaded_file), fallback_name=fallback_name
+    )
+
+
+def _boundary_from_features(features, *, fallback_name):
+    """(name, geometry, attrs, polygon_count) from map-file features.
+
+    Every Polygon and MultiPolygon is kept and every point and line dropped;
+    the boundary is the dissolved union, one MultiPolygon in srid 4326. The
+    name is the first polygon feature's name, else ``fallback_name``; attrs
+    come from that feature's properties.
+    """
+    if not any(isinstance(f.get("geometry"), dict) for f in features):
+        raise ValueError(NO_FEATURES_MESSAGE)
 
     first_properties = None
     polygon_count = 0
@@ -404,8 +360,7 @@ def boundary_from_upload(uploaded_file, *, fallback_name):
     except GEOSException:
         logger.exception("Polygon union failed")
         raise ValueError(
-            "The polygons in the file could not be combined into one boundary. "
-            "Check that the file opens in a GIS program, then upload it again."
+            f"OpenH2O cannot combine the polygons in this file into one boundary. {_CHECK_IN_GIS}"
         )
 
     if union.empty or union.geom_type not in ("Polygon", "MultiPolygon"):

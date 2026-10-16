@@ -17,6 +17,7 @@ copied at import, so a test can shrink them with ``monkeypatch``.
 """
 
 import json
+import math
 import os
 import shutil
 import tempfile
@@ -42,9 +43,39 @@ THREE_FORMATS = (
     "a zipped shapefile (.zip), a KML (.kml) or a GeoJSON (.geojson or .json) file"
 )
 
-UNSUPPORTED_SENTENCE = (
-    f"That file type cannot be read here. Upload {THREE_FORMATS}."
+#: The Setup Wizard's wrong-type sentence (Brent, 150.1-02 screen 18 message Z,
+#: 2026-10-15 18:49).
+UNSUPPORTED_SENTENCE = "This page imports .zip, .kml, .geojson and .json files only."
+
+#: The map-file sentences both pages show: the bulk import's (message V,
+#: 2026-10-15 17:55) and the Setup Wizard's, which reuses them (message Z).
+#: They live here because ``setup`` may not depend on the optional
+#: ``infrastructure`` module.
+_CHECK_IN_GIS = "Check that the file opens in a GIS program, then upload it again."
+NOT_GEOJSON_MESSAGE = f"OpenH2O cannot read this file as GeoJSON. {_CHECK_IN_GIS}"
+NOT_KML_MESSAGE = f"OpenH2O cannot read this file as KML. {_CHECK_IN_GIS}"
+NOT_ZIP_MESSAGE = "OpenH2O cannot open this file as a zip archive."
+NOT_SHAPEFILE_MESSAGE = (
+    f"OpenH2O cannot read the shapefile in this zip file. {_CHECK_IN_GIS}"
 )
+NO_FEATURES_MESSAGE = "This file has no map features."
+NO_SHP_MESSAGE = "This zip file holds no shapefile (.shp)."
+
+
+def too_large_message(size):
+    """The size is rounded UP, so a file over the cap never reads as equal to it."""
+    mb = 1024 * 1024
+    return (
+        f"This file is {math.ceil(size / mb)} MB. "
+        f"OpenH2O imports files of up to {MAX_UPLOAD_BYTES // mb} MB."
+    )
+
+
+def unsafe_path_message(name):
+    return (
+        f"This zip file contains the path '{name}', which points outside the zip "
+        f"file. Remove '{name}' from the zip file, then upload the zip file again."
+    )
 
 
 def extension(filename) -> str:
@@ -60,10 +91,7 @@ def check_upload_size(uploaded):
     """
     size = getattr(uploaded, "size", None)
     if size is not None and size > MAX_UPLOAD_BYTES:
-        raise ValueError(
-            f"That file is larger than the {MAX_UPLOAD_BYTES // (1024 * 1024)} MB "
-            "upload cap."
-        )
+        raise ValueError(too_large_message(size))
 
 
 def features_from_upload(uploaded_file):
@@ -88,14 +116,10 @@ def features_from_upload(uploaded_file):
             return _parse_shapefile_zip(uploaded_file)
         return _parse_kml_file(uploaded_file)
     except zipfile.BadZipFile:
-        raise ValueError(
-            "That file could not be opened as a zip archive. Upload "
-            f"{THREE_FORMATS}."
-        )
+        raise ValueError(NOT_ZIP_MESSAGE)
     except GDALException:
         raise ValueError(
-            "That file could not be read as a map file. Check that it opens in "
-            f"a GIS program, then upload {THREE_FORMATS}."
+            NOT_SHAPEFILE_MESSAGE if ext in SHAPEFILE_EXTENSIONS else NOT_KML_MESSAGE
         )
 
 
@@ -138,15 +162,16 @@ def _validate_zip_entries(zf, dest_dir):
         name = info.filename
         parts = name.replace("\\", "/").split("/")
         if os.path.isabs(name) or ".." in parts:
-            raise ImportError(f"Unsafe path in archive: '{name}'.")
+            raise ImportError(unsafe_path_message(name))
         resolved = os.path.realpath(os.path.join(dest_dir, name))
         if resolved != dest_root and not resolved.startswith(dest_root + os.sep):
-            raise ImportError(f"Archive entry escapes the extract directory: '{name}'.")
+            raise ImportError(unsafe_path_message(name))
         total += info.file_size
         if total > MAX_EXTRACTED_BYTES:
+            mb = MAX_EXTRACTED_BYTES // (1024 * 1024)
             raise ImportError(
-                f"Archive expands to more than {MAX_EXTRACTED_BYTES // (1024 * 1024)} "
-                "MB; refusing to extract (possible zip bomb)."
+                f"This zip file expands to more than {mb} MB, and OpenH2O opens zip "
+                f"files of up to {mb} MB unzipped."
             )
 
 
@@ -178,7 +203,7 @@ def _parse_shapefile_zip(uploaded):
             if fn.lower().endswith(".shp")
         )
         if not shp_files:
-            raise ImportError("No .shp file found in archive.")
+            raise ImportError(NO_SHP_MESSAGE)
 
         return _extract_features_from_datasource(shp_files[0])
     finally:

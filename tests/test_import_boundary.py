@@ -140,7 +140,7 @@ def test_point_geometry_fails_with_wizard_polygon_message(tmp_path):
     }
     path = _write_geojson(tmp_path, point_feature)
 
-    with pytest.raises(CommandError, match="Polygon or MultiPolygon is required"):
+    with pytest.raises(CommandError, match="This file has only points or lines. The boundary must be a polygon."):
         call_command("import_boundary", file_path=path, stdout=StringIO())
 
     assert not Boundary.objects.exists()

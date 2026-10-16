@@ -61,7 +61,7 @@ def test_zip_bomb_rejected_before_extract(monkeypatch):
     upload = SimpleUploadedFile("bomb.zip", buf.getvalue())
     with pytest.raises(ImportError) as exc:
         importer._parse_shapefile_zip(upload)
-    assert "zip bomb" in str(exc.value).lower()
+    assert "OpenH2O opens zip files of up to" in str(exc.value)
 
 
 # ---------------------------------------------------------------------------
@@ -76,7 +76,7 @@ def test_zip_slip_entry_rejected():
     upload = SimpleUploadedFile("slip.zip", buf.getvalue())
     with pytest.raises(ImportError) as exc:
         importer._parse_shapefile_zip(upload)
-    assert "unsafe path" in str(exc.value).lower()
+    assert "which points outside the zip file" in str(exc.value)
 
 
 # ---------------------------------------------------------------------------

@@ -21,7 +21,7 @@ from core.access import admin_required
 from core.modules import is_enabled
 from datasync.models import MonitoredStation
 from geography.models import Boundary
-from core.geofiles import THREE_FORMATS
+from core.geofiles import NOT_GEOJSON_MESSAGE
 from setup.boundaries import (
     boundary_from_extent,
     boundary_from_upload,
@@ -54,13 +54,11 @@ SESSION_KEY_SELECTED_STEPS = "setup_wizard_selected_steps"
 SESSION_KEY_POLYGON_COUNT = "setup_wizard_polygon_count"
 
 # The upload card's refusals that name the three formats (150-03).
-UPLOAD_NO_FILE = f"Please choose a boundary file to upload: {THREE_FORMATS}."
-UPLOAD_NOT_TEXT = (
-    f"That file could not be read as text, so it is not GeoJSON. Upload {THREE_FORMATS}."
-)
-UPLOAD_NOT_JSON = (
-    f"The file is not valid JSON, so it is not GeoJSON. Upload {THREE_FORMATS}."
-)
+# Brent, 150.1-02 screen 18 message Z (2026-10-15 18:49); a file that is not
+# text or not JSON reuses message V's GeoJSON sentence.
+UPLOAD_NO_FILE = "Choose a boundary file to upload."
+UPLOAD_NOT_TEXT = NOT_GEOJSON_MESSAGE
+UPLOAD_NOT_JSON = NOT_GEOJSON_MESSAGE
 
 # The step list is resolved per request via `wizard_steps()`, not frozen into a
 # module constant: `datasync` is demotable from Phase 88, and a deployment that
@@ -131,7 +129,10 @@ def setup_wizard(request):
                     errors.append(str(exc))
                 except Exception as exc:
                     logger.exception("Boundary file upload failed")
-                    errors.append(f"Upload failed: {exc}")
+                    errors.append(
+                        "An unexpected error stopped the import, and OpenH2O saved "
+                        f"nothing from this file. Details: {type(exc).__name__}: {exc}"
+                    )
 
         elif action == "extent":
             name = request.POST.get("name", "").strip()

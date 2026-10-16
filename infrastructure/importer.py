@@ -38,6 +38,12 @@ from django.db import transaction
 from core.geofiles import (  # noqa: F401  re-exported under their old names (150-03)
     MAX_EXTRACTED_BYTES,
     MAX_UPLOAD_BYTES,
+    NO_FEATURES_MESSAGE,
+    NOT_GEOJSON_MESSAGE,
+    NOT_KML_MESSAGE,
+    NOT_SHAPEFILE_MESSAGE,
+    NOT_ZIP_MESSAGE,
+    too_large_message,
     _extract_features_from_datasource,
     _parse_geojson_file,
     _parse_kml_file,
@@ -71,27 +77,13 @@ WRONG_TYPE_MESSAGE = (
 )
 NO_COLUMNS_MESSAGE = "This file has no column names on its first line."
 NO_ROWS_MESSAGE = "This file has column names but no rows below them."
-NO_FEATURES_MESSAGE = "This file has no map features."
 ROWS_NOT_RECEIVED_MESSAGE = (
     "OpenH2O did not receive the file's rows from the preview. "
     "Upload the file again."
 )
-_CHECK_IN_GIS = "Check that the file opens in a GIS program, then upload it again."
-NOT_GEOJSON_MESSAGE = f"OpenH2O cannot read this file as GeoJSON. {_CHECK_IN_GIS}"
-NOT_KML_MESSAGE = f"OpenH2O cannot read this file as KML. {_CHECK_IN_GIS}"
-NOT_ZIP_MESSAGE = "OpenH2O cannot open this file as a zip archive."
-NOT_SHAPEFILE_MESSAGE = (
-    f"OpenH2O cannot read the shapefile in this zip file. {_CHECK_IN_GIS}"
-)
-
-
-def too_large_message(size):
-    """The size is rounded UP, so a file over the cap never reads as equal to it."""
-    mb = 1024 * 1024
-    return (
-        f"This file is {math.ceil(size / mb)} MB. "
-        f"OpenH2O imports files of up to {MAX_UPLOAD_BYTES // mb} MB."
-    )
+# NO_FEATURES_MESSAGE, NOT_GEOJSON_MESSAGE, NOT_KML_MESSAGE, NOT_ZIP_MESSAGE,
+# NOT_SHAPEFILE_MESSAGE and too_large_message come from core.geofiles (the
+# Setup Wizard shows the same sentences, message Z).
 
 
 def is_map_rows(rows):

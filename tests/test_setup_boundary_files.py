@@ -70,51 +70,29 @@ DROP_ZONE_SENTENCE = (
     "Drag and drop a zipped shapefile (.zip), a KML (.kml) or a GeoJSON "
     "(.geojson or .json) file here, or click to browse."
 )
-UNSUPPORTED_SENTENCE = (
-    "That file type cannot be read here. Upload a zipped shapefile (.zip), "
-    "a KML (.kml) or a GeoJSON (.geojson or .json) file."
-)
-NO_POLYGON_SENTENCE = (
-    "That file holds no polygon, only points or lines. The boundary must be "
-    "an area outline, in a zipped shapefile (.zip), a KML (.kml) or a GeoJSON "
-    "(.geojson or .json) file."
-)
-NO_FILE_SENTENCE = (
-    "Please choose a boundary file to upload: a zipped shapefile (.zip), "
-    "a KML (.kml) or a GeoJSON (.geojson or .json) file."
-)
+# Brent, 150.1-02 screen 18 message Z (2026-10-15 18:49); the not-text,
+# not-JSON and empty sentences reuse message V's (2026-10-15 17:55).
+UNSUPPORTED_SENTENCE = "This page imports .zip, .kml, .geojson and .json files only."
+NO_POLYGON_SENTENCE = "This file has only points or lines. The boundary must be a polygon."
+NO_FILE_SENTENCE = "Choose a boundary file to upload."
 NOT_TEXT_SENTENCE = (
-    "That file could not be read as text, so it is not GeoJSON. Upload a "
-    "zipped shapefile (.zip), a KML (.kml) or a GeoJSON (.geojson or .json) file."
+    "OpenH2O cannot read this file as GeoJSON. Check that the file opens in a "
+    "GIS program, then upload it again."
 )
-NOT_JSON_SENTENCE = (
-    "The file is not valid JSON, so it is not GeoJSON. Upload a zipped "
-    "shapefile (.zip), a KML (.kml) or a GeoJSON (.geojson or .json) file."
+NOT_JSON_SENTENCE = NOT_TEXT_SENTENCE
+NO_FEATURES_SENTENCE = "This file has no map features."
+
+# --- The zip sentences, shared with the bulk import (message Z) --------------
+
+NO_SHP_SENTENCE = "This zip file holds no shapefile (.shp)."
+UNSAFE_PATH_SENTENCE = (
+    "This zip file contains the path '../evil.shp', which points outside the zip "
+    "file. Remove '../evil.shp' from the zip file, then upload the zip file again."
 )
-
-# --- Sentences the importer already says, moved with its readers -------------
-
-NO_SHP_SENTENCE = "No .shp file found in archive."
-UNSAFE_PATH_SENTENCE = "Unsafe path in archive: '../evil.shp'."
 # The cap figure is MAX_UPLOAD_BYTES in whole MB, so a test that shrinks the
-# cap to bytes reads "0 MB"; the phrase after the figure is what is pinned.
-UPLOAD_CAP_PHRASE = "MB upload cap."
-ZIP_BOMB_PHRASE = "refusing to extract (possible zip bomb)."
-
-# --- GeoJSON-shaped failures that keep today's wording -----------------------
-# (two of today's three carry an em dash mid-sentence, so the part before it
-# is pinned; the third is pinned whole)
-
-GEOJSON_EMPTY_COLLECTION = (
-    "The GeoJSON FeatureCollection is empty"
-)
-GEOJSON_POINT_GEOMETRY = (
-    "The boundary geometry is a Point, but a Polygon or MultiPolygon is required"
-)
-GEOJSON_NO_GEOMETRY = (
-    "No geometry found in the file. Provide a GeoJSON Feature or "
-    "FeatureCollection whose feature has Polygon or MultiPolygon geometry."
-)
+# cap to bytes reads "0 MB"; the phrase before the figure is what is pinned.
+UPLOAD_CAP_PHRASE = "OpenH2O imports files of up to"
+ZIP_BOMB_PHRASE = "and OpenH2O opens zip files of up to"
 
 # Today's GeoJSON-only advice, which must be gone from every refusal.
 OLD_EXPORT_GEOJSON_ADVICE = ("make sure you exported GeoJSON", "check you exported GeoJSON")
@@ -449,17 +427,15 @@ class TestRefusals:
 @pytest.mark.django_db
 class TestBadGeoJSON:
 
-    def test_not_json_names_the_three_formats(self):
+    def test_not_json(self):
         client = _admin_client()
         errors = _errors(_post(client, "boundary.geojson", b"this is not json at all"))
         assert errors == [NOT_JSON_SENTENCE]
-        # tests/test_setup_polish.py pins this phrase too.
-        assert "valid JSON" in errors[0]
         for old in OLD_EXPORT_GEOJSON_ADVICE:
             assert old not in errors[0]
         assert not Boundary.objects.exists()
 
-    def test_not_text_names_the_three_formats(self):
+    def test_not_text(self):
         client = _admin_client()
         errors = _errors(_post(client, "boundary.geojson", b"\xff\xfe\x00\x81binary"))
         assert errors == [NOT_TEXT_SENTENCE]
@@ -467,31 +443,58 @@ class TestBadGeoJSON:
             assert old not in errors[0]
         assert not Boundary.objects.exists()
 
-    def test_empty_featurecollection_keeps_its_wording(self):
+    def test_empty_featurecollection(self):
         client = _admin_client()
         payload = b'{"type": "FeatureCollection", "features": []}'
         errors = _errors(_post(client, "boundary.geojson", payload))
-        assert len(errors) == 1
-        assert errors[0].startswith(GEOJSON_EMPTY_COLLECTION)
+        assert errors == [NO_FEATURES_SENTENCE]
         assert not Boundary.objects.exists()
 
-    def test_point_geometry_keeps_its_wording(self):
+    def test_point_geometry(self):
         client = _admin_client()
         payload = (
             b'{"type": "Feature", "properties": {}, '
             b'"geometry": {"type": "Point", "coordinates": [-120.55, 37.25]}}'
         )
         errors = _errors(_post(client, "boundary.geojson", payload))
-        assert len(errors) == 1
-        assert errors[0].startswith(GEOJSON_POINT_GEOMETRY)
+        assert errors == [NO_POLYGON_SENTENCE]
         assert not Boundary.objects.exists()
 
-    def test_missing_geometry_keeps_its_wording(self):
+    def test_missing_geometry(self):
         client = _admin_client()
         payload = b'{"type": "Feature", "properties": {}, "geometry": null}'
         errors = _errors(_post(client, "boundary.geojson", payload))
-        assert errors == [GEOJSON_NO_GEOMETRY]
+        assert errors == [NO_FEATURES_SENTENCE]
         assert not Boundary.objects.exists()
+
+    def test_not_a_geojson_object(self):
+        client = _admin_client()
+        errors = _errors(_post(client, "boundary.geojson", b"[1, 2]"))
+        assert errors == [NOT_TEXT_SENTENCE]
+        assert not Boundary.objects.exists()
+
+    def test_several_polygons_are_combined_and_a_leading_point_is_dropped(self):
+        """Code change (message Z): a GeoJSON was read from its first feature
+        only, and refused when that feature was a point, while the page says
+        several polygons are combined."""
+        import json as _json
+
+        def square(x):
+            return {"type": "Polygon", "coordinates": [[[x, 37.0], [x + 0.1, 37.0],
+                    [x + 0.1, 37.1], [x, 37.1], [x, 37.0]]]}
+
+        payload = _json.dumps({"type": "FeatureCollection", "features": [
+            {"type": "Feature", "properties": {"name": "Gauge"},
+             "geometry": {"type": "Point", "coordinates": [-120.55, 37.25]}},
+            {"type": "Feature", "properties": {"name": "West"}, "geometry": square(-120.5)},
+            {"type": "Feature", "properties": {}, "geometry": square(-120.2)},
+        ]}).encode()
+        client = _admin_client()
+        resp = _post(client, "two.geojson", payload)
+        assert resp.status_code == 302, _errors(resp)
+        boundary = Boundary.objects.get()
+        assert boundary.geometry.num_geom == 2
+        assert boundary.name == "West"
 
 
 # --------------------------------------------------------------------------
