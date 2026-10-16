@@ -254,7 +254,11 @@ def _two_dimensional(coordinates):
     GDAL reads a KML position as (lon, lat, altitude), and ``Boundary.geometry``
     is a 2D column, so the altitude is dropped before GEOS ever sees it.
     """
-    if coordinates and isinstance(coordinates[0], (int, float)):
+    if not isinstance(coordinates, (list, tuple)):
+        # A GeoJSON file can hold anything here ("a", null); GEOS refuses it
+        # below with the polygon sentence instead of this recursing forever.
+        return coordinates
+    if coordinates and not isinstance(coordinates[0], (list, tuple)):
         return list(coordinates[:2])
     return [_two_dimensional(part) for part in coordinates]
 

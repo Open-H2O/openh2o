@@ -467,6 +467,17 @@ class TestBadGeoJSON:
         assert errors == [NO_FEATURES_SENTENCE]
         assert not Boundary.objects.exists()
 
+    def test_unreadable_polygon(self):
+        """A GeoJSON polygon with text coordinates: the polygon sentence, not a
+        RecursionError (seen on staging building message Z)."""
+        client = _admin_client()
+        payload = b'{"type": "Polygon", "coordinates": [[["a", "b"]]]}'
+        errors = _errors(_post(client, "boundary.geojson", payload))
+        assert errors == [
+            "OpenH2O cannot read a polygon in this file. Check that the file opens "
+            "in a GIS program, then upload it again."
+        ]
+
     def test_not_a_geojson_object(self):
         client = _admin_client()
         errors = _errors(_post(client, "boundary.geojson", b"[1, 2]"))
