@@ -89,12 +89,12 @@ GB = 1024**3
 
 def test_disk_sentences():
     with mock.patch.object(checks.shutil, "disk_usage", return_value=Usage(100 * GB, 41.8 * GB, 58.2 * GB)):
-        assert checks.check_disk()["message"] == "The server's disk is 41.8% full, with 58.2 GB free."
+        assert checks.check_disk()["message"] == "The disk OpenH2O runs on is 41.8% full, with 58.2 GB free."
     with mock.patch.object(checks.shutil, "disk_usage", return_value=Usage(100 * GB, 85 * GB, 15 * GB)):
         r = checks.check_disk()
         assert r["status"] == "yellow"
         assert r["message"] == (
-            "The server's disk is 85.0% full, with 15.0 GB free. OpenH2O asks for attention "
+            "The disk OpenH2O runs on is 85.0% full, with 15.0 GB free. OpenH2O asks for attention "
             "when the disk is over 80% full and for action when it is over 90% full."
         )
     with mock.patch.object(checks.shutil, "disk_usage", side_effect=OSError("no such path")):
@@ -215,3 +215,30 @@ def test_openet_and_share_sentences():
     r = checks.check_pod_fractions()
     assert "split to 100%" not in r["message"]
     assert "lost or invented" not in r["message"]
+
+
+# --- the AI hand-off (2026-10-16 08:19 and 09:01) ----------------------------
+
+
+def test_server_fault_line_hands_the_fix_to_the_ai():
+    _persist(lambda c: "red" if c == "disk" else "green")
+    html = _signed_in().get(reverse("health:dashboard")).content.decode().replace("&#x27;", "'")
+    assert (
+        "This fault is on the server, outside OpenH2O. Pass this card to the AI that "
+        "maintains the site; the fix is in OpenH2O's operator guide."
+    ) in html
+
+
+def test_the_guide_has_a_row_for_every_server_card():
+    from pathlib import Path
+
+    from django.conf import settings
+
+    guide = (Path(settings.BASE_DIR) / "docs" / "AI-OPERATOR-GUIDE.md").read_text()
+    section = guide.split("## Keeping it running", 1)[1].split("\n## ", 1)[0]
+    labels = dict(HealthCheckResult.CATEGORY_CHOICES)
+    from health.views import HOST_LEVEL_CATEGORIES
+
+    for category in sorted(HOST_LEVEL_CATEGORIES | {"sync_freshness", "calculation"}):
+        assert f"\n| {labels[category]} | " in section, labels[category]
+    assert "run_health_checks --json" in section

@@ -171,13 +171,14 @@ def check_disk():
             details[label] = {"error": str(e)}
             worst_status = "red"
 
-    # Brent, screen 16 message A row 7.
+    # Brent, screen 16 message A row 7; its first sentence as reworded
+    # 2026-10-16 09:01 (on Docker Desktop the disk is Docker's own).
     base = details.get("base_dir", {})
     if "error" in base:
         msg = f"OpenH2O cannot read the disk's size. Details: {base['error']}"
     else:
         msg = (
-            f"The server's disk is {base['percent_used']}% full, with "
+            f"The disk OpenH2O runs on is {base['percent_used']}% full, with "
             f"{base['free_gb']} GB free."
         )
         if worst_status != "green":

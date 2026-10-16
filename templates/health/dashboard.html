@@ -126,7 +126,8 @@
               {% if result.where %}
               <a class="text-link" href="{{ result.where.href }}">Open {{ result.where.label }} →</a>
               {% elif result.host_level %}
-              <p class="text-secondary text-sm m-0">This fault is on the server, outside OpenH2O.</p>
+              {% comment %} Brent, 2026-10-16 08:19: the fix belongs to the AI that maintains the site; docs/AI-OPERATOR-GUIDE.md "Keeping it running" has a row per card. {% endcomment %}
+              <p class="text-secondary text-sm m-0">This fault is on the server, outside OpenH2O. Pass this card to the AI that maintains the site; the fix is in OpenH2O's operator guide.</p>
               {% endif %}
             {% endif %}
             {% if result.admin_detail %}

@@ -512,6 +512,27 @@ Expect the agency's name and their web address. If either still reads `example.c
 
 ---
 
+## Keeping it running
+
+<!-- defines: cron -->The schedule in crontab.txt needs cron, the scheduler built into Linux and macOS. Windows has no cron, and this guide does not yet give Windows steps for the schedule, so tell the organization that on a Windows computer the syncs, the nightly calculation and the health checks every 6 hours will not run on their own.
+
+Once you install crontab.txt, OpenH2O checks itself every 6 hours and shows each result on the Site health page. When the organization asks you to look at the site, run `docker compose exec web python manage.py run_health_checks --json` to read every result, then fix each card marked attention needed or action required using the row below that names the card.
+
+| Site health card | What it means, and the fix |
+|---|---|
+| Database | OpenH2O cannot reach the database. Run `docker compose ps`. If db is not Up (healthy), run `docker compose up -d` and read `docker compose logs db`. |
+| Disk | Over 80% full. Run `docker system df` to see what Docker holds, and `docker image prune` to remove images no container uses. Ask the organization before deleting anything else. On a Mac, Docker Desktop stores OpenH2O on a virtual disk whose size limit you set in Docker Desktop's settings. If pruning does not free enough space, raise the limit in those settings. |
+| Database name | The web container is connected to a database other than the one named by DATABASE_URL in .env. Correct DATABASE_URL, then run `docker compose up -d`. |
+| SSL | The certificate expires in under 30 days, or OpenH2O cannot read it. Where the Caddyfile names the domain, Caddy renews the certificate 30 days before it expires, so this card means the renewal is failing: check that the domain's A record still points at this server, that ports 80 and 443 are open, and read `docker compose logs caddy`. Where a tunnel or the organization's own proxy handles the encryption, renew the certificate there. |
+| Migrations | The database is missing updates this version of OpenH2O needs. Run `docker compose exec web python manage.py migrate`. |
+| Sync Freshness | A data source has never synced or has fallen behind. Check that crontab.txt is installed (`crontab -l`), that the source's key is in .env (CIMIS_API_KEY, NOAA_CDO_TOKEN or OPENET_API_KEY) and that at least one of its stations is syncing, then run `scripts/run-sync.sh` with the source's code and read what it prints. `scripts/run-sync.sh` is a bash script for Linux and macOS. On Windows, run a sync with `docker compose exec web python manage.py sync_source` and the source's short name, such as usgs. |
+| Calculation | A calculation has waited more than 15 minutes to start, or stopped without finishing. Run it with `docker compose exec web python manage.py run_accounting --request` and the request number from the card's JSON details, or ask the engineer to run it again from the water year's page. |
+| Cache Duplication | OpenH2O holds two OpenET estimates for the same months at some use areas. No figure changes, because OpenH2O uses the newer estimate. <!-- defines: repository -->OpenH2O's code and bug reports are public at github.com/Open-H2O/openh2o. Open a bug report at github.com/Open-H2O/openh2o/issues and attach the card's JSON details. |
+
+On an installation without Docker, load the variables in .env into the terminal as the [no-Docker install guide](INSTALL-WITHOUT-DOCKER.md) shows, run each command above with this installation's Python in place of `docker compose exec web`, and restart OpenH2O's background service with the command that guide gives.
+
+---
+
 ## Troubleshooting by symptom
 
 <!-- defines: geospatial_libraries -->
