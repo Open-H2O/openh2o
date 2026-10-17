@@ -1,0 +1,15 @@
+# testing.yml: this repository's place in the testing standard: its tier, its suite, and every
+# path that ships its code with that path's gate and smoke test. A weekly scoreboard reads it.
+version: 1
+tier: 1
+why: openh2o.com, public
+suite:
+  command: docker compose up -d --wait db web && docker compose exec -T -e OPENH2O_MODULES=all web python -m pytest tests/ --ds=config.settings.local -m "not network" -q
+  push_ci: .github/workflows/tests.yml
+  skips: none
+  quarantine: none
+deploy:
+  - name: production
+    how: deploy.sh [commit]
+    gate: ci-gate
+    smoke: scripts/release.sh runs scripts/smoke.sh on https://openh2o.com/ for the title and the new version, and rolls back on failure
