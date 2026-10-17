@@ -5,8 +5,8 @@
 # triage pipeline yet, then alert if any remain stuck. Meant to run on a cron.
 #
 # Context: a feedback report is saved to THIS platform's DB first and only
-# best-effort forwarded to the central triage pipeline (Gmail approval queue,
-# feedback.vanderdev.net). Reports now survive the nightly demo reset (see
+# best-effort forwarded to the triage service named by FEEDBACK_ENDPOINT, when
+# the site sets one. Reports now survive the nightly demo reset (see
 # reset-demo.sh), so a failed forward is no longer data loss — but without this,
 # a report could sit in the DB forever and silently never reach the queue. This
 # re-fires the forward (idempotent: a row flips forwarded=true once it lands) and
@@ -38,6 +38,6 @@ echo "[$(date '+%F %T')] forward-pending-feedback: ${out:-no-result}"
 stuck="$(printf '%s' "$out" | sed -n 's/.*stuck=\([0-9]\{1,\}\).*/\1/p')"
 if [ -n "$NTFY_URL" ] && [ "${stuck:-0}" -gt 0 ] 2>/dev/null; then
   curl -fsS -H "Title: OpenH2O feedback not reaching triage" -H "Priority: high" -H "Tags: warning" \
-    -d "$stuck feedback report(s) on $(hostname) are saved in the platform DB but did NOT reach the triage pipeline after a retry. They are safe (durable in the DB) but need a look: feedback.vanderdev.net health + Django /admin/feedback/." \
+    -d "$stuck feedback report(s) on $(hostname) are saved in the platform DB but did NOT reach the triage service after a retry. They are safe (durable in the DB) but need a look: the FEEDBACK_ENDPOINT service's health + Django /admin/feedback/." \
     "$NTFY_URL" >/dev/null 2>&1 || true
 fi

@@ -171,9 +171,9 @@ def setup_status(request):
 
 
 def analytics(request):
-    """Expose Umami config to templates. Both values are blank/default on a
-    fresh clone, so the tracking tag stays absent unless a deployment opts in
-    by setting UMAMI_WEBSITE_ID in its environment."""
+    """Expose Umami config to templates. Both values are blank on a fresh
+    clone, so the tracking tag stays absent unless a deployment sets both
+    UMAMI_WEBSITE_ID and UMAMI_SCRIPT_URL in its environment."""
     return {
         "umami_website_id": settings.UMAMI_WEBSITE_ID,
         "umami_script_url": settings.UMAMI_SCRIPT_URL,

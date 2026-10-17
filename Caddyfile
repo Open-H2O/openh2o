@@ -77,16 +77,13 @@
     #   fonts.googleapis   Public Sans stylesheet; fonts.gstatic.com serves the files
     #   tiles.openfreemap  basemap tiles, sprites and glyphs (map-core.js)
     #   server.arcgisonline satellite imagery and the boundaries/places overlay
-    #   analytics.vanderdev.net  Umami, and ONLY when UMAMI_WEBSITE_ID is set. Running
-    #                      your own instance with a different analytics host? Change
-    #                      this origin to yours, or the tag is blocked silently.
-    #   static.cloudflareinsights.com  Cloudflare's Browser Insights beacon. This one is
-    #                      injected by the CLOUDFLARE EDGE, not by any template here, so
-    #                      it appears on openh2o.com and on no staging or local run —
-    #                      which is precisely how it got missed until the header was
-    #                      tested against production itself. Drop this origin if you do
-    #                      not front your instance with Cloudflare, or if you turn
-    #                      Browser Insights off.
+    #   {$CSP_EXTRA_ORIGINS}  a site's own extra script origins, space-separated, from
+    #                      the environment and empty by default. A site that turns on
+    #                      Umami (UMAMI_WEBSITE_ID and UMAMI_SCRIPT_URL) adds its Umami
+    #                      server's origin here, or the browser blocks the tag. A site
+    #                      behind Cloudflare with Browser Insights on adds
+    #                      https://static.cloudflareinsights.com, because Cloudflare's
+    #                      edge injects that beacon into every page.
     #
     # 'unsafe-inline' is deliberate, not an oversight: 29 templates carry inline
     # <script> blocks (the diagnostics buffer in base.html loads first by design) and
@@ -102,7 +99,7 @@
     # site works either way — but leaving it blocked means anyone who opens devtools on
     # a page here is greeted by a red CSP error that has nothing to do with their bug.
     header {
-        Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net https://analytics.vanderdev.net https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://tiles.openfreemap.org https://server.arcgisonline.com; connect-src 'self' https://unpkg.com https://cdn.jsdelivr.net https://tiles.openfreemap.org https://server.arcgisonline.com https://analytics.vanderdev.net https://static.cloudflareinsights.com; worker-src 'self' blob:; child-src 'self' blob:"
+        Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net {$CSP_EXTRA_ORIGINS}; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://tiles.openfreemap.org https://server.arcgisonline.com; connect-src 'self' https://unpkg.com https://cdn.jsdelivr.net https://tiles.openfreemap.org https://server.arcgisonline.com {$CSP_EXTRA_ORIGINS}; worker-src 'self' blob:; child-src 'self' blob:"
     }
 
     # Serve static files directly

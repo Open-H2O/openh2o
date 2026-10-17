@@ -413,12 +413,13 @@ HEALTH_DEMO_MODE = env.bool("HEALTH_DEMO_MODE", default=False)
 
 
 # -- Analytics ---------------------------------------------------------------
-# Umami is opt-in and deployment-specific. UMAMI_WEBSITE_ID is blank by default
-# so a self-hosted copy reports traffic to no one; the tracking <script> only
-# renders when this is set (see core.context_processors.analytics and the
-# base templates). Set it in the environment on your own deployment only.
+# Umami visitor statistics are optional, and each site uses its own Umami server.
+# Both settings are blank by default, and the tracking <script> renders only when
+# both are set (see core.context_processors.analytics and the base templates).
+# A site that sets them also adds the script's origin to CSP_EXTRA_ORIGINS, which
+# the Caddyfile's Content-Security-Policy reads.
 UMAMI_WEBSITE_ID = env("UMAMI_WEBSITE_ID", default="")
-UMAMI_SCRIPT_URL = env("UMAMI_SCRIPT_URL", default="https://analytics.vanderdev.net/script.js")
+UMAMI_SCRIPT_URL = env("UMAMI_SCRIPT_URL", default="")
 
 # -- In-app feedback widget --------------------------------------------------
 # The widget now POSTs to the platform's OWN intake endpoint (feedback.views.

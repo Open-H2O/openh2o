@@ -69,6 +69,11 @@ services:
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
+    environment:
+      # Extra script origins the Content-Security-Policy allows, space-separated,
+      # such as the site's own Umami server (see the Caddyfile). Set in .env; empty
+      # by default.
+      CSP_EXTRA_ORIGINS: ${CSP_EXTRA_ORIGINS:-}
     ports:
       - "80:80"
       - "443:443"
