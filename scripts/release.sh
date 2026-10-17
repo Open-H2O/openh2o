@@ -19,7 +19,8 @@
 # `git describe`. With --drill-smoke-missing-page it also asks for a page that does not exist,
 # which can only fail: that is the drill that proves the rollback.
 #
-# The rollback, when the smoke test fails or make deploy fails after its reset:
+# The rollback, when the smoke test fails or make deploy fails after its reset (git printed
+# "HEAD is now at"; a refusal's own text may name the command, so the command is not read):
 #   1. git reset --hard <the previous commit>
 #   2. docker tag <repository>:previous <repository>:<tag>, then
 #      APP_VERSION=<previous describe> docker compose up -d --no-build. The image carries its own
@@ -205,7 +206,7 @@ make deploy REF="$ref" </dev/null 2>&1 | tee "$mkout"
 mk=${PIPESTATUS[0]}
 cat "$mkout" >> "$log"
 if [ "$mk" != 0 ]; then
-  if grep -qF 'git reset --hard' "$mkout"; then
+  if grep -q '^HEAD is now at ' "$mkout"; then
     rollback "make deploy failed (exit $mk) after its reset"
   fi
   say "make deploy stopped (exit $mk) before its reset. Nothing changed."
