@@ -137,7 +137,7 @@ def zone_list(request):
     master-detail half-pane: the map up top shows all zone boundaries at once,
     the full-width list below is for finding one fast, and clicking a row (or a
     zone on the map) opens that zone's own full-width detail page. See
-    ``docs/2.0-UX-PATTERN-SPEC.md`` for why this is Bucket 3, not master-detail.
+    ``DESIGN.md "Kinds of page"`` for why this is Bucket 3, not master-detail.
 
     Returns the ``_zone_list_results`` partial for an HTMX list refresh (search /
     filter / pagination, which target ``#results``), and the full page otherwise.

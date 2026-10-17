@@ -136,7 +136,7 @@ def pod_list(request):
     this screen is a finder, not a master-detail half-pane: the map up top shows
     every diversion point at once, the full-width list below is for finding one
     fast, and clicking a row (or a point on the map) opens that diversion's own
-    full-width detail page. See ``docs/2.0-UX-PATTERN-SPEC.md`` for why this is
+    full-width detail page. See ``DESIGN.md "Kinds of page"`` for why this is
     Bucket 3, not master-detail.
 
     Returns the ``_pod_list_results`` partial for an HTMX list refresh (search /
@@ -824,7 +824,7 @@ def water_rights_list(request):
     other Bucket-3 screens there is NO overview map — a water right is a legal
     entitlement with no geometry of its own; its spatial footprint (the diversion
     points it authorizes) is shown on its detail page where it has meaning. See
-    ``docs/2.0-UX-PATTERN-SPEC.md``.
+    ``DESIGN.md "Kinds of page"``.
 
     Returns the ``_list_results`` partial for an HTMX list refresh (search /
     filter / pagination, which target ``#results``), and the full page otherwise.

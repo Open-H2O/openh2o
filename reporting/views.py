@@ -233,7 +233,7 @@ def report_generate(request):
 def _report_detail_context(submission):
     """Per-submission detail context, shared by the standalone report_detail
     page and its in-pane HTMX render, so both render identically and never drift
-    (Bucket 3, docs/2.0-UX-PATTERN-SPEC.md)."""
+    (Bucket 3, DESIGN.md "Kinds of page")."""
     report_type = submission.report_template.report_type
     return {
         "submission": submission,

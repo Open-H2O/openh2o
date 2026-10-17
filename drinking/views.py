@@ -626,7 +626,7 @@ def results(request):
 # ---------------------------------------------------------------------------
 #
 # The three lists above are inventories; these are the records themselves. Each
-# is **Bucket 3** (``docs/2.0-UX-PATTERN-SPEC.md``): a full-width page of its
+# is **Bucket 3** (``DESIGN.md "Kinds of page"``): a full-width page of its
 # own, reached from a table row rather than from a side pane. So they use plain
 # ``render`` + ``get_object_or_404`` and deliberately NOT
 # ``core.workspace.detail_response`` — that helper's whole job is the HTMX
@@ -1873,10 +1873,7 @@ def production(request):
                 # nothing a formatter would do here that `int()` does not.
                 # Acre-feet is different: it is a conversion this platform
                 # performs (325,851 gallons per acre-foot), so it goes
-                # through `floatformat:2` in the template and carries its own
-                # figure-ledger row -- `FIG-drinking-002` (this total) and
-                # `FIG-drinking-003` (the grand total below), both in
-                # `docs/figure-ledger-2026-09.md`.
+                # through `floatformat:2` in the template.
                 "gallons": gallons,
                 "gallons_whole": int(gallons.to_integral_value()),
                 "acre_feet": sum((r.volume_acre_feet for r in column), Decimal("0")),

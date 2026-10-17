@@ -2950,8 +2950,8 @@ html { color-scheme: dark; }
 /* One row of figure cells. Each cell carries a figure and, beneath it, that
    figure's own parts: Supplies -> "by source"; on the use-area pane Uses ->
    "by destination" and the result -> its badge and the lines that judge it.
-   The operators stay in the markup BETWEEN the cells, because the tests and
-   the figure-ledger extractors pin `.budget-seg-label` directly above
+   The operators stay in the markup BETWEEN the cells, because the tests
+   pin `.budget-seg-label` directly above
    `.budget-seg-value`; CSS seats each operator against the figure it applies
    to, on the rule that divides the cells.
 

@@ -815,7 +815,7 @@ def allocations_list(request):
 
     # Allocated volume over the WHOLE filtered set (every matching row, not just
     # the visible page) — the dense-table "how much, in total?" answer that makes
-    # this a Bucket-2 data table (docs/2.0-UX-PATTERN-SPEC.md). Zone is a
+    # this a Bucket-2 data table (DESIGN.md "Kinds of page"). Zone is a
     # ForeignKey, not an M2M, so the queryset has no row duplication and
     # aggregates directly without the ledger's pk-refilter.
     #

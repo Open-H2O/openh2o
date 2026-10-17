@@ -1,14 +1,12 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """The sidebar's lighting rule: every signed-in page lights exactly one entry.
 
-Plan 150-03 Task 2, written test-first from the lighting table in
-``.planning/phases/150-water-first-screens/page-verdict/READER-TASKS-150-03.md``
-(every URL pattern rendered through the product in both sidebar modes, measured
-2026-10-09) and from Brent's six sidebar register rows in
-``docs/reading-register-2026-09.md``: R-028 (pages that light nothing), R-145
-(the lit entry is below the fold), R-012 (crumbs rooted at a word the sidebar
-never shows), R-013 (the onboarding entry's name), R-098 (Map and Zones lit at
-once) and R-072 (the onboarding points page).
+Plan 150-03 Task 2, written test-first from a table of every URL pattern
+rendered through the product in both sidebar modes (measured 2026-10-09) and
+from six sidebar findings of the September 2026 reading review: pages that
+light nothing, a lit entry below the fold, crumbs rooted at a word the sidebar
+never shows, the onboarding entry's name, Map and Zones lit at once, and the
+onboarding points page.
 
 The rule, as settled in the plan:
 

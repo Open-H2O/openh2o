@@ -7,9 +7,6 @@ came back after every earlier removal because tests/test_state_exports.py
 asserted it was present; this guard is the opposite assertion, over every
 template and every reader-facing document, so the phrase cannot return by any
 route.
-
-docs/reading-register-*.md is excluded: it is a dated record that quotes the
-defect it found.
 """
 import re
 from pathlib import Path
@@ -28,7 +25,7 @@ FORBIDDEN = re.compile(
 
 def _reader_facing_files():
     files = list((ROOT / "templates").rglob("*.html"))
-    files += [p for p in (ROOT / "docs").rglob("*.md") if not p.name.startswith("reading-register-")]
+    files += list((ROOT / "docs").rglob("*.md"))
     files += [ROOT / "README.md", ROOT / "DEPLOY.md"]
     return [p for p in files if p.exists()]
 

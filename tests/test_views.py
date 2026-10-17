@@ -271,7 +271,7 @@ class TestLedgerPresetChips:
 
 
 class TestAccessibility:
-    """WCAG 2.1 AA / 508 remediation (2026-06-23, audit docs/2.0-ACCESSIBILITY-AUDIT.md):
+    """WCAG 2.1 AA / 508 remediation (2026-06-23 accessibility audit):
     F1 keyboard-operable master rows, F3 a real per-page <h1>."""
 
     def test_table_rows_are_keyboard_activatable(self, auth_client):

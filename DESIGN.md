@@ -6,29 +6,72 @@ Inherits the VanderDev design token system. Dark mode only, OKLCH color ramps.
 
 ## What a finished page is (read this before any visual change)
 
-**The page is balanced, filled out appropriately and logically, so that it looks
-right, at a 1,730-pixel viewport, to a reader with no plan.** Brent, 2026-09-11,
-the second time the overhaul was stopped over dead space. This is the acceptance
-criterion for every visual phase, above every rule below and above the reading
-standard (`docs/reading-standard-2026-09.md`), which asks whether a screen
-explains itself and cannot see whether it looks finished.
-
-Three things follow, and all three were missing on 2026-09-11:
+A finished page is balanced and filled out logically, so that it looks right at
+a 1,730-pixel viewport to a reader who knows nothing of the plan behind it. This
+is the acceptance test for every visual change, and it comes before every rule
+below. Three things follow from it:
 
 1. **The unit of acceptance is the page, not the component.** A shared panel
    redesigned correctly on three pages was right on one page and wrong on two,
    because a card that sits well beside a table leaves a quadrant of dead space
    beside a short one. Every page a change touches is judged as a page.
-2. **The width is 1,730 CSS pixels.** Measured from his screenshots (an
-   effective device pixel ratio of 2.2; a panel that is 886 px in his capture
-   renders at 882 px in a 1,730 viewport). Not 2,560, which is the physical
-   display and at which the account page shows a layout he never sees. If his
-   window changes, re-measure from a screenshot; never assume.
-3. **The judge is not the author.** Before staging or a checkpoint, every
-   touched page gets `/page-verdict`: a context-free reader at 1,730 answering
-   *would you put this in front of a client?* DO NOT SHIP is a design task.
-   The ledger, the probes, the ratio sweep, the golden HTML and the tests stay
-   as regression checks; none of them is evidence that a page looks right.
+2. **The width is 1,730 CSS pixels**, the maintainer's working window, measured
+   from screenshots (an effective device pixel ratio of 2.2; a panel that is
+   886 px in a capture renders at 882 px in a 1,730 viewport). It is not 2,560,
+   the physical display, at which the account page shows a layout no one works
+   in. If the window changes, re-measure it from a screenshot.
+3. **The judge is not the author.** Before a page goes to staging, a reader who
+   did not build it and knows nothing of the plan looks at every touched page at
+   1,730 and answers *would you put this in front of a client?* A "no" (DO NOT
+   SHIP) is a design task. Probes, measurements and tests stay as regression
+   checks; none of them shows that a page looks right.
+
+### A screen explains itself
+
+A screen also has to say what its numbers mean. The test has two readers. A
+reader who does not work in water can say what the screen is about and what the
+biggest number on it means. A water professional (an engineer, a grower, a
+ditch tender) can find the figure they came for without reading the page. Each
+kind of surface has one job:
+
+- **A data table:** the reader finds one row, reads one figure across it and
+  compares it with its neighbours. The header row shows which columns belong
+  together and which one they make, a derived column is visibly derived, and a
+  column from a different framework sits apart from the measured ones.
+- **A stat row or budget panel:** the reader reads the figure the page leads with
+  and sees the two or three figures that make it.
+- **A page head** (breadcrumb, title, description and actions): the reader
+  confirms which screen this is, what its numbers are and where to act.
+- **A filter bar:** the reader narrows a list to the rows they came for and sees
+  what it is narrowed to.
+- **A map:** the reader finds a record by where it is and opens it.
+- **The sidebar:** the reader finds the section they need and knows which page
+  they are on.
+- **Body prose** (help pages, About and the explainers on data pages): the reader
+  learns in a paragraph what a screen or figure is and how OpenH2O arrived at it.
+
+### Kinds of page
+
+Every list of records takes one of three layouts. Code comments call them
+Bucket 1, 2 and 3.
+
+- **Bucket 1, master-detail workspace.** For many records, each with a
+  medium-sized story, where the reader compares and switches often: a searchable
+  list on the left and the selected record's detail on the right, with a map at
+  the top of the detail when the record has a location. Clicking a row swaps the
+  detail in place and the list stays put; a heavy detail offers a link to its
+  full page. Below about 720 px the layout becomes Bucket 3. Use areas, wells
+  and water accounts.
+- **Bucket 2, dense data table.** For many records that are data, with little
+  to say about each one: the whole screen is one table, with filters across the
+  top, sortable columns, a sticky header and totals at the foot. There is no
+  detail pane; a row may link to a related record. The use ledger and
+  allocations.
+- **Bucket 3, overview then full detail page.** For few records, each with a lot
+  to show: a wide map of all of them over full-width rows, and each record opens
+  on its own full-width page. A record with no location of its own (a water
+  right) has no overview map, and its page shows the places it relates to. Zones,
+  recharge, water rights, surface diversions and monitoring stations.
 
 ## Colors
 
@@ -230,9 +273,8 @@ and the footer"; with the footer riding the content, the same pages read DO NOT 
 floating mid-page" (one read SHIP 4 with that as its worst fault). The same reader faulted a panel
 beside a taller card both stretched ("mostly an empty dark box") and at its content's height ("a
 large dead gap under the stats panel"). Two readers contradicting each other on one element is the
-stop rule: the shell and the 143-03 matched row stay, and the one shape that fills the gap, the
-field page's balance-beside-map grid (150-02), is Brent's ruling. The reads are in
-`.planning/phases/150-water-first-screens/page-verdict/VERDICTS-150-04.md`.
+stop rule: the shell and the 143-03 matched row stay, and the one shape that fills the gap is the
+field page's balance-beside-map grid (150-02).
 
 ### Casing convention
 
@@ -254,7 +296,7 @@ default option** is Title Case ("All Statuses"). Those are what 19 of 19
 Water Data breadcrumbs, 20-plus back-links and 18 of 20 default options already
 do.
 
-### Tables that explain their numbers (Phase 142, approved by Brent 2026-09-08)
+### Tables that explain their numbers (Phase 142)
 
 The dashboard's tables were the worked example (`templates/accounting/partials/_dashboard_content.html`,
 `.data-table--grouped` in `app.css`). Four consistency passes never reached these faults because none is a
@@ -290,13 +332,11 @@ below was judged on the whole page, not a table in isolation, and Phase 143 carr
    word has the same shape on every table. **A header cell that spans both rows is bottom-aligned**, so
    every leaf-level word sits on one line; a spanning cell otherwise centres over the two-row height and
    floats half a line above its neighbours.
-10. **Adding a figure to a template renumbers the figure ledger.** Ids in `audit/figure_ledger/inventory.json`
-    number by position, so an inserted `floatformat` site moves every later id in that app. Regenerate the
-    inventory, run `audit/figure_ledger/remap_ids.py`, and give the new site a row that names the figure it
-    repeats or the recomputation that covers it. The build refuses until it is done.
+10. *Retired 2026-10-17.* It described the figure ledger, a record of the September 2026 figure check
+    that is no longer kept in the repository.
 
-Rulings from the 143-10 checkpoint (Brent, 2026-09-13, on staging at his own width), each pinned by a
-guard so it is not re-learned. They extend rules 1-10 and hold on every page that copies these shapes:
+Rules 11 to 18 come from reading the pages on staging at 1,730. Each is pinned by a guard so it is not
+re-learned, and each holds on every page that copies these shapes:
 
 11. **A lead panel never holds one lone figure.** A single segment in the panel's five-track row read as
     "a giant blank box to the right of the recharged value". Where the page's figure is a sum with nothing
@@ -323,9 +363,8 @@ guard so it is not re-learned. They extend rules 1-10 and hold on every page tha
 17. **A card's subtitle is a noun phrase, not a sentence with a story in it.** "What came through the meter,
     and what the water table did beneath it" became "Meter reads and depth to water, by water year."
     The platform-wide sweep is Phase 143.1; the shape of the fault is in the roadmap entry.
-18. **A grouped table's bracket header sits centred over its bracket.** Tried left on 2026-09-13 at
-    Brent's first read and ruled back to centre on staging the same evening ("way worse"): the bracket
-    is the group's extent and the word balances it from the middle. `.data-table--grouped
+18. **A grouped table's bracket header sits centred over its bracket.** Left alignment was tried and
+    read worse: the bracket is the group's extent and the word balances it from the middle. `.data-table--grouped
     th.th-group-label`, platform-wide; guard
     `tests/test_template_hygiene.py::TestGroupedTableBracketHeaderIsCentred`.
 19. **A map's marks are named on the map and keyed above it; the map follows its list.** Every overview
@@ -339,8 +378,8 @@ guard so it is not re-learned. They extend rules 1-10 and hold on every page tha
 ## Copy rules
 
 House rules for the words on screen. Written 2026-07-30 during the drinking
-module's copy pass; each one exists because a defect was **counted**, and the
-counts are in [`docs/drinking-copy-audit-2026-07-30.md`](docs/drinking-copy-audit-2026-07-30.md).
+module's copy pass; each one exists because a defect was **counted** on the
+screens.
 A rule with no measured instance behind it does not belong here.
 
 They are stated for the platform, not for one module. The drinking module is
@@ -492,10 +531,9 @@ the thing.** `GAC` → "granular activated carbon" is the platform doing its job
 "— a filter that removes organic chemicals" is the platform explaining
 treatment to the person who runs the treatment.
 
-**No exception for a clause about the filing.** Brent ruled on this directly on
-2026-08-06, against the measured list in
-`.planning/phases/118-screens-stop-explaining-water/118-01-EVIDENCE.md`. The
-case put to him was `LCR`, whose clause — "Lead and Copper Rule — samples taken
+**No exception for a clause about the filing.** This was decided on 2026-08-06,
+against a measured list of every such clause. The strongest case was `LCR`,
+whose clause — "Lead and Copper Rule — samples taken
 at customer taps to check for lead" — describes what the regulation makes a
 district collect rather than describing water, and so had a real claim to stay.
 The ruling is **decode only, with no exceptions**: one rule anyone can follow
@@ -531,9 +569,8 @@ behind the numbers, carry four sentences that explain the water: the acre-foot
 sentence, "Plants give off water as they grow, and satellites can pick that up.",
 "Not all the canal water reaches the crop: some soaks past the roots and some runs
 off the end of the field.", and "A pump has to lift more water than the crop ends
-up using, because some water soaks past the roots." They stand by Brent's approval
-of those two pages on 2026-09-28 16:23 PDT, because the pages are written for a
-reader who does not work in water (picture two, approved 2026-09-24). Every other
+up using, because some water soaks past the roots." They stay because those two
+pages are written for a reader who does not work in water. Every other
 page stays under the rule, and no other sentence of that kind may be added
 anywhere without a ruling.
 
@@ -587,8 +624,8 @@ the number; nothing in this table asks for a new calculation.
 <!-- vocabulary: begin -->
 | Term | Means | Computed as | Never called |
 |---|---|---|---|
-| **Crop ET** | The crop's evapotranspiration for one field and month, OpenET's satellite estimate. Gross, before effective precipitation. The headline use figure on the dashboard, the account page, the field page, the help pages and the glossary. Brent, 2026-10-11: the engineer's term replaces "crop water use" and the dashboard's "consumptive use", because DWR's handbook ties consumptive use to ETAW and the screen meant gross ET. | `consumptive_use_gross` = sum of `CalculationRun.gross_et_af` | `crop water use` in `templates/help/`, `crop water use` in `templates/accounting/`, `crop water use` in `templates/parcels/`, `Crop water use` in `templates/help/`, `Crop water use` in `templates/accounting/`, `Crop water use` in `templates/parcels/`, `Consumptive use` in `templates/help/`, `Consumptive use` in `templates/accounting/`, `Consumptive use` in `templates/parcels/`, `consumptive use` in `templates/help/`, `consumptive use` in `templates/accounting/`, `consumptive use` in `templates/parcels/` |
-| **ETAW** | Evapotranspiration of applied water: crop ET minus effective precipitation, for one field and month. OpenH2O assigns it first to surface water, up to the delivery times the field's irrigation efficiency, and the rest to groundwater (Brent, 2026-10-11 05:48). Written "ETAW" on every screen; the glossary expands it. | `consumptive_use_net` = sum of `CalculationRun.net_consumptive_use_af` | `net consumptive use` in `templates/help/`, `net consumptive use` in `templates/accounting/`, `net consumptive use` in `templates/parcels/`, `Net consumptive use` in `templates/help/`, `Net consumptive use` in `templates/accounting/`, `Net consumptive use` in `templates/parcels/` |
+| **Crop ET** | The crop's evapotranspiration for one field and month, OpenET's satellite estimate. Gross, before effective precipitation. The headline use figure on the dashboard, the account page, the field page, the help pages and the glossary. The engineer's term replaces "crop water use" and the dashboard's "consumptive use", because DWR's handbook ties consumptive use to ETAW and the screen meant gross ET. | `consumptive_use_gross` = sum of `CalculationRun.gross_et_af` | `crop water use` in `templates/help/`, `crop water use` in `templates/accounting/`, `crop water use` in `templates/parcels/`, `Crop water use` in `templates/help/`, `Crop water use` in `templates/accounting/`, `Crop water use` in `templates/parcels/`, `Consumptive use` in `templates/help/`, `Consumptive use` in `templates/accounting/`, `Consumptive use` in `templates/parcels/`, `consumptive use` in `templates/help/`, `consumptive use` in `templates/accounting/`, `consumptive use` in `templates/parcels/` |
+| **ETAW** | Evapotranspiration of applied water: crop ET minus effective precipitation, for one field and month. OpenH2O assigns it first to surface water, up to the delivery times the field's irrigation efficiency, and the rest to groundwater. Written "ETAW" on every screen; the glossary expands it. | `consumptive_use_net` = sum of `CalculationRun.net_consumptive_use_af` | `net consumptive use` in `templates/help/`, `net consumptive use` in `templates/accounting/`, `net consumptive use` in `templates/parcels/`, `Net consumptive use` in `templates/help/`, `Net consumptive use` in `templates/accounting/`, `Net consumptive use` in `templates/parcels/` |
 | **Supplies** | Water that reached the field in the period: surface water delivered, groundwater, effective precipitation. Never a credit, an allocation, or paper of any kind. Two screens add two different groundwater figures, on purpose: the dashboard's Supplies columns add ETAW met by groundwater (the `calculated` row's own amount, or the meter); the field page's water balance adds groundwater extraction, and lists the difference under Uses as deep percolation so the balance still closes. In both, a month with neither a `calculated` nor a `meter_reading` row lets the satellite `et_estimate` row stand in. | dashboard: `supplies.surface` + `supplies.groundwater` + `supplies.precip` from `consumptive_use_balance()`, where `supplies.groundwater` = `_recorded_usage(billable_ledger(qs))` (ETAW met by groundwater); field page: `parcel_mass_balance()["inputs"]` = `surface` + `precip` + `gw_recovered`, where `gw_recovered` = `_balance_dict(billable)["usage"]` (extraction) | no gated phrase |
 | **Groundwater use** | What the groundwater budget is spent by: groundwater extraction, never ETAW met by groundwater. A `calculated` row charges the extracted figure its run stamped; a `meter_reading` row charges as recorded; a `calculated` row from a run that stamped no extracted figure charges its recorded amount. Never "consumptive use", and never "pumped" when the number also holds canal water (ISS-154, Phase 137). The dashboard's supplies figure never uses it; the field page's water balance does, with the difference from ETAW met by groundwater listed under Uses. | `charged_groundwater(billable_ledger(qs))`, read as `_balance_dict(...)["usage"]` and as `consumptive_use_balance()["groundwater_charged"]` | no gated phrase |
 | **Allocation** | Paper. A zone's ceiling for one water type in one period; an account's pro-rated share of it. A groundwater allocation and a surface allocation are managed by different agencies under different law and are never added (ISS-156, Phase 138). Never a supply. | `AllocationPlan.allocation_acre_feet`, filtered by `water_type` | no gated phrase |
@@ -597,19 +634,19 @@ the number; nothing in this table asks for a new calculation.
 | **Delivered** | Surface water the ledger records as reaching the field in the month, from the district's own record: a meter at the gate, or the ditch tender's estimate. Where the district recorded only the canal total, the field's figure was divided up from the canal total in proportion to each field's ETAW, and its ledger row says so. Stored negative by the ledger's convention (water leaving its source). Never "debits", and never "usage" in a footer that also holds credits. Never the figure the calculation subtracts: that is the delivery times the field's irrigation efficiency. | `surface_diversion` rows, magnitude; on the run, `CalculationRun.surface_delivered_af` | `debits` in `templates/accounting/` |
 | **Effective precipitation** | The month's rainfall for a field that OpenH2O counts against crop ET, estimated from gridMET rainfall by the method set on Methodology Settings (USDA-SCS unless changed). The dashboard's and the balances' short label for it as a supply is "Rain". | `CalculationRun.effective_precip_af`, from `accounting/steps.py::subtract_effective_precip` | `rain the crop could use` in `templates/help/`, `rain the crop could use` in `templates/accounting/`, `rain the crop could use` in `templates/parcels/`, `rain the crop could use` in `templates/surface/`, `rain the crop could use` in `templates/geography/`, `rain the crop could use` in `templates/reporting/` |
 | **ETAW met by surface water** | The part of a field's ETAW that OpenH2O assigns to surface water: the month's delivery times the field's irrigation efficiency (its irrigation method's assigned efficiency, else the deployment's default on Delivery Settings, 75% unless changed), up to the month's ETAW. The rest of the delivery is deep percolation on the field's water balance, and any part of delivery times efficiency above ETAW is surface water in excess of ETAW. | `CalculationRun.surface_water_af` = `surface_delivered_af` x `surface_efficiency` (`accounting/steps.py::subtract_surface_water`), of which the part up to `net_consumptive_use_af` meets ETAW | `canal water the crop could use` in `templates/help/`, `canal water the crop could use` in `templates/accounting/`, `canal water the crop could use` in `templates/parcels/`, `canal water the crop could use` in `templates/surface/`, `canal water the crop could use` in `templates/geography/`, `canal water the crop could use` in `templates/reporting/`, `Canal water the crop could use` in `templates/help/`, `Canal water the crop could use` in `templates/accounting/`, `Canal water the crop could use` in `templates/parcels/`, `Canal water the crop could use` in `templates/surface/`, `Canal water the crop could use` in `templates/geography/`, `Canal water the crop could use` in `templates/reporting/` |
-| **ETAW met by groundwater** | The part of a field's ETAW that surface water does not meet, on a field with a well and no meter reading. The engine's estimate, not a reading. It is the `calculated` ledger row's magnitude. Never "pumped" or "pumping" (those mean groundwater extraction), never "measured", never "groundwater consumed" (Brent, 2026-10-11 05:39: no California engineer uses it). | `CalculationRun.final_af`; the `calculated` row `run_calculations.py` writes with `PUMPING_ESTIMATE_WORDS` (or `NO_PUMPING_DERIVED_WORDS` at zero) | `Groundwater consumed` in `templates/help/`, `Groundwater consumed` in `templates/accounting/`, `Groundwater consumed` in `templates/parcels/`, `Groundwater consumed` in `templates/surface/`, `Groundwater consumed` in `templates/geography/`, `Groundwater consumed` in `templates/reporting/`, `groundwater consumed` in `templates/help/`, `groundwater consumed` in `templates/accounting/`, `groundwater consumed` in `templates/parcels/`, `groundwater consumed` in `templates/surface/`, `groundwater consumed` in `templates/geography/`, `groundwater consumed` in `templates/reporting/`, `well water the crop used` in `templates/help/`, `well water the crop used` in `templates/accounting/`, `well water the crop used` in `templates/parcels/`, `well water the crop used` in `templates/surface/`, `well water the crop used` in `templates/geography/`, `well water the crop used` in `templates/reporting/`, `billable groundwater` in `templates/help/`, `billable groundwater` in `templates/accounting/`, `billable groundwater` in `templates/parcels/`, `billable groundwater` in `templates/surface/`, `billable groundwater` in `templates/geography/`, `billable groundwater` in `templates/reporting/`, `Billable groundwater` in `templates/help/`, `Billable groundwater` in `templates/accounting/`, `Billable groundwater` in `templates/parcels/`, `Billable groundwater` in `templates/surface/`, `Billable groundwater` in `templates/geography/`, `Billable groundwater` in `templates/reporting/` |
+| **ETAW met by groundwater** | The part of a field's ETAW that surface water does not meet, on a field with a well and no meter reading. The engine's estimate, not a reading. It is the `calculated` ledger row's magnitude. Never "pumped" or "pumping" (those mean groundwater extraction), never "measured", never "groundwater consumed" (no engineer uses it). | `CalculationRun.final_af`; the `calculated` row `run_calculations.py` writes with `PUMPING_ESTIMATE_WORDS` (or `NO_PUMPING_DERIVED_WORDS` at zero) | `Groundwater consumed` in `templates/help/`, `Groundwater consumed` in `templates/accounting/`, `Groundwater consumed` in `templates/parcels/`, `Groundwater consumed` in `templates/surface/`, `Groundwater consumed` in `templates/geography/`, `Groundwater consumed` in `templates/reporting/`, `groundwater consumed` in `templates/help/`, `groundwater consumed` in `templates/accounting/`, `groundwater consumed` in `templates/parcels/`, `groundwater consumed` in `templates/surface/`, `groundwater consumed` in `templates/geography/`, `groundwater consumed` in `templates/reporting/`, `well water the crop used` in `templates/help/`, `well water the crop used` in `templates/accounting/`, `well water the crop used` in `templates/parcels/`, `well water the crop used` in `templates/surface/`, `well water the crop used` in `templates/geography/`, `well water the crop used` in `templates/reporting/`, `billable groundwater` in `templates/help/`, `billable groundwater` in `templates/accounting/`, `billable groundwater` in `templates/parcels/`, `billable groundwater` in `templates/surface/`, `billable groundwater` in `templates/geography/`, `billable groundwater` in `templates/reporting/`, `Billable groundwater` in `templates/help/`, `Billable groundwater` in `templates/accounting/`, `Billable groundwater` in `templates/parcels/`, `Billable groundwater` in `templates/surface/`, `Billable groundwater` in `templates/geography/`, `Billable groundwater` in `templates/reporting/` |
 | **Groundwater extraction** | What the well pumped: SGMA's term. On a metered field the meter reading. On a field with a well and no meter reading, ETAW met by groundwater divided by the field's irrigation efficiency (its irrigation method's, else the default on Delivery Settings, 75% unless changed; the same figure its surface water is multiplied by), stamped on the run so a later change to the setting moves no month already run, and called groundwater extraction (estimated) where it is shown. This is the figure the groundwater allocation is charged with. Extraction minus ETAW met by groundwater is deep percolation on the field's water balance. | `CalculationRun.gw_extracted_af`, from `run_calculations._groundwater_extraction()` = `final_af` / `parcels.services.field_efficiency()` at compute time, stamped as `groundwater_application_efficiency` with its source; null on a metered or no-well run; a metered field's `meter_reading` row is the figure | `Groundwater extracted` in `templates/help/`, `Groundwater extracted` in `templates/accounting/`, `Groundwater extracted` in `templates/parcels/`, `Groundwater extracted` in `templates/surface/`, `Groundwater extracted` in `templates/geography/`, `Groundwater extracted` in `templates/reporting/`, `groundwater extracted` in `templates/help/`, `groundwater extracted` in `templates/accounting/`, `groundwater extracted` in `templates/parcels/`, `groundwater extracted` in `templates/surface/`, `groundwater extracted` in `templates/geography/`, `groundwater extracted` in `templates/reporting/`, `share of pumped` in `templates/help/`, `share of pumped` in `templates/accounting/`, `share of pumped` in `templates/parcels/`, `share of pumped` in `templates/surface/`, `share of pumped` in `templates/geography/`, `share of pumped` in `templates/reporting/`, `Share of pumped` in `templates/help/`, `Share of pumped` in `templates/accounting/`, `Share of pumped` in `templates/parcels/`, `Share of pumped` in `templates/surface/`, `Share of pumped` in `templates/geography/`, `Share of pumped` in `templates/reporting/` |
 | **Surface water in excess of ETAW** | The part of a month's delivery times the field's irrigation efficiency that exceeds the field's ETAW. Effective precipitation that on its own exceeded crop ET is not in it; the calculation keeps that apart. Recorded on every run. What else happens to it is a Delivery Settings choice: credited to no one (the default); credited to the landowner less a share left in the basin (10% unless changed; a field with no well has its share go to the zone's shared account); or shown on the field's page as its own line, not a credit and not charged. Every run records the choice it ran under. | `CalculationRun.over_delivery_af` (the floor step's `incidental_recharge_af`, `accounting/steps.py::clamp_floor`); the choice stamped as `CalculationRun.over_delivery_treatment`; the share `over_delivery_leave_behind`; what was credited `over_delivery_credited_af` and `over_delivery_credit_pooled`; the field page's own line `parcel_over_delivery_shown()` | `Canal water beyond` in `templates/help/`, `Canal water beyond` in `templates/accounting/`, `Canal water beyond` in `templates/parcels/`, `Canal water beyond` in `templates/surface/`, `Canal water beyond` in `templates/geography/`, `Canal water beyond` in `templates/reporting/`, `canal water beyond` in `templates/help/`, `canal water beyond` in `templates/accounting/`, `canal water beyond` in `templates/parcels/`, `canal water beyond` in `templates/surface/`, `canal water beyond` in `templates/geography/`, `canal water beyond` in `templates/reporting/`, `beyond crop use` in `templates/help/`, `beyond crop use` in `templates/accounting/`, `beyond crop use` in `templates/parcels/`, `beyond crop use` in `templates/surface/`, `beyond crop use` in `templates/geography/`, `beyond crop use` in `templates/reporting/`, `beyond what the crop could use` in `templates/help/`, `beyond what the crop could use` in `templates/accounting/`, `beyond what the crop could use` in `templates/parcels/`, `beyond what the crop could use` in `templates/surface/`, `beyond what the crop could use` in `templates/geography/`, `beyond what the crop could use` in `templates/reporting/` |
-| **Residual** | The field's water balance leftover: supplies minus uses (crop ET, deep percolation, managed recharge, storage change). Positive or negative. Badge words: Estimated / Residual / Deficit, and no word on a metered field (the three cases of the field page's badge, 2026-09-28; Balanced / Residual / Deficit was the trio Brent set on 2026-09-05, and Balanced retired because on a field with a well and no meter the balance closes on the engine's own remainder, so the badge must say what closed it, not that the records agree). Estimated, grey, where the balance closes on the engine's estimate; Residual for a positive leftover and Deficit for a negative one on a field with no meter; no word on a metered field, where the figure is a difference between records and there is nothing to name it but the number. Never "Surplus", never "Balanced". | `parcel_mass_balance()["residual_af"]`; the band from `residual_band_status()` (`closes` within 0.01 AF, `realistic` within a quarter of crop ET, else `large`); whether the groundwater row is the engine's estimate from `parcel_mass_balance()["gw_is_estimated"]` | `Surplus` in `templates/parcels/`; `Balanced` in `templates/parcels/` |
+| **Residual** | The field's water balance leftover: supplies minus uses (crop ET, deep percolation, managed recharge, storage change). Positive or negative. Badge words: Estimated / Residual / Deficit, and no word on a metered field (the three cases of the field page's badge, 2026-09-28; the earlier trio was Balanced / Residual / Deficit, and Balanced retired because on a field with a well and no meter the balance closes on the engine's own remainder, so the badge must say what closed it, not that the records agree). Estimated, grey, where the balance closes on the engine's estimate; Residual for a positive leftover and Deficit for a negative one on a field with no meter; no word on a metered field, where the figure is a difference between records and there is nothing to name it but the number. Never "Surplus", never "Balanced". | `parcel_mass_balance()["residual_af"]`; the band from `residual_band_status()` (`closes` within 0.01 AF, `realistic` within a quarter of crop ET, else `large`); whether the groundwater row is the engine's estimate from `parcel_mass_balance()["gw_is_estimated"]` | `Surplus` in `templates/parcels/`; `Balanced` in `templates/parcels/` |
 | **Diverted / Returned to stream / Retained** | A diversion record's volume; the part returned to the stream; the difference. Retained water is delivered (direct use) or taken to storage (recharge) according to the record's `diversion_type`, and only delivered water can be consumed. The method keeps its name because 173 records and the CalWATRS generator read it; the column does not. | `volume_acre_feet`; `returned_af`; `consumed_acre_feet()` | `Consumptive Use` in `templates/surface/` |
 | **Water use recorded, no supply reported** | The part of a field's ETAW in the period that no surface water on record meets, on a field with no well. The platform's stored unmet demand (`residual_disposition = "unmet_demand"`). It states what the rows show and stops: it is never a finding about the grower, and it is never invented pumping (the help pages already say so). Zero renders nothing. | sum of `CalculationRun.unmet_demand_af` over the runs `runs_in_period()` selects for the parcel and period, where `residual_disposition == "unmet_demand"` | `unauthorized` in `templates/parcels/`, `unauthorized` in `templates/accounting/`, `unauthorized` in `templates/geography/`, `Unauthorized` in `templates/parcels/`, `Unauthorized` in `templates/accounting/`, `Unauthorized` in `templates/geography/`, `unpermitted` anywhere, `Unpermitted` anywhere, `unlawful` anywhere, `Unlawful` anywhere, `illegal` anywhere, `Illegal` anywhere, `stolen` anywhere, `Stolen` anywhere |
 <!-- vocabulary: end -->
 
 ### 13. A label under a heading says the remainder, never the heading again
 
-Brent, 2026-09-08, at the Phase 142 checkpoint: the fields table's column header repeated its card title
-word for word ("Water use recorded, no supply reported" under "Fields with water use recorded and no
-supply reported"), and the panel's breakdown was titled "Supplies, of which", an idiom he had to ask about.
+The fields table's column header once repeated its card title word for word ("Water use recorded, no
+supply reported" under "Fields with water use recorded and no supply reported"), and the panel's breakdown
+was titled "Supplies, of which", an idiom a reader had to ask about.
 A label is read under the heading above it. If the heading already says the thing, the label says what is
 left to say: the arithmetic ("Not met by supplies"), the unit, the scope ("by source"). The settled phrase
 stays the quantity's NAME where it stands alone (the field's own page prints "Water use recorded, no supply
@@ -618,22 +655,21 @@ it never renames a quantity. Platform-wide sweep: ISS-168, Phase 144.
 
 ### 14. Text an engine writes onto a record is a sentence a reader can use
 
-Brent, 2026-09-12, at the 143-05 checkpoint, the moment the ledger's Description column was readable in
-full: "What does demand-weighted ET allocated mean? These descriptions may be accurate, but they are
-difficult to understand." The strings were engine output stored on 1,880 of the demonstration's 2,313
+Once the ledger's Description column could be read in full, its descriptions proved accurate and hard
+to understand ("demand-weighted ET allocated"). The strings were engine output stored on 1,880 of the demonstration's 2,313
 rows, not template text, so no template edit could fix them. Rule 9 is the nearest rule and forbids a
 column name in a message; this rule requires more: a description an engine stores is copy, and it must
 say what the row is in words the reader would use.
 
-The five sentences (143-11, ISS-170), settled by Brent 2026-09-15 and kept in ONE module,
+The five sentences (143-11, ISS-170) are kept in ONE module,
 `accounting/ledger_words.py`, beside the Water column's words, so every word the ledger shows lives in one
 file: a share of a headgate's delivery split by estimated use ("Share of 214.58 AF delivered from Stevinson
 Diversion Canal Headgate, divided up from the canal total in proportion to each field's crop water use after
-rain" (reworded 2026-09-28 under the ISS-218 ruling, Brent 2026-09-25: every description of a demand-weighted
-split says it in those words; the weight is each field's net consumptive use));
+rain" (every description of a demand-weighted split says it in those words, and the weight is each
+field's net consumptive use; ISS-218));
 the same split by each use area's share of the canal on file ("…, divided up from the canal total by this use
 area's share of the canal on file, 20%, because no use area the canal serves has an estimated use for the
-month" (reworded 2026-10-07, 149.1-05, under Brent's 2026-09-17 08:31 ruling "What is a fixed share?")); the incidental credit ("Credit for canal water delivered beyond the use area's
+month" (reworded 2026-10-07, 149.1-05, because "fixed share" was not a phrase a reader knew)); the incidental credit ("Credit for canal water delivered beyond the use area's
 estimated use for the month"); the pumping estimate ("Estimated pumping: the month's estimated use, less
 rainfall and canal water delivered"); and the month with none ("No groundwater extraction was derived for
 this month; rainfall and delivered surface water covered the estimated use."). The guards:
@@ -650,8 +686,8 @@ follow the 143-07 map-card ruling (table rule 19, `core.map_labels.map_label`): 
 
 ### 15. Explanatory prose is short, complete sentences
 
-Brent, 2026-10-08 15:46 PDT, reading the facility page after three plans of word work: "One facility
-of CITY OF MERCED, and the sampling points on it." Nobody writes like this. A noun-phrase fragment
+The facility page once described itself as "One facility of CITY OF MERCED, and the sampling points on
+it." Nobody writes like this. A noun-phrase fragment
 presented as a statement is the shape this platform's prose fell into most often: a reviewer with no
 project history flagged 43 of the 77 page descriptions for it the same hour, and none of the rules above
 names it, so none of the checks caught it.
@@ -659,9 +695,8 @@ names it, so none of the checks caught it.
 **The rule, in one sentence: a page description, a card intro, a help line, an instruction or an
 empty-state line is one or more short, complete sentences, each with a subject and a finite verb.**
 
-Brent, 2026-10-09 18:45 PDT, after the About page shipped the heading "What it owes to the Groundwater
-Accounting Platform, and what is its own": "I didn't mean to accept the similar headings, I want the weird
-shape fixed everywhere." A heading is held to this rule too, and so is wording approved before that date.
+The About page once shipped the heading "What it owes to the Groundwater Accounting Platform, and what is
+its own". A heading is held to this rule too, and so is wording approved before 2026-10-09.
 
 Seven shapes are faults, in any heading or sentence a reader sees:
 
@@ -694,8 +729,7 @@ rule 13's fault, not this rule's cure.
 full stop is a label, and only shapes 4 to 7 apply to it.
 
 **A definition may stay in dictionary form.** A short line that says what one field or one glossary word
-means ("The date establishing seniority.") is a definition, not a statement, and may keep that form
-(Brent, 2026-10-09 20:03 PDT). It still carries no em dash.
+means ("The date establishing seniority.") is a definition, not a statement, and may keep that form. It still carries no em dash.
 
 **The guards.** `tests/test_writing_shapes.py` counts the shapes a pattern can find, in every template,
 in the Python that writes onto a screen and in the public guides: an em dash or double hyphen between two

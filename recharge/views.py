@@ -105,7 +105,7 @@ def recharge_sites_list(request):
     every recharge site at once — polygons as basins, single points as markers —
     the full-width list below is for finding one fast, and clicking a row (or a
     feature on the map) opens that site's own full-width detail page. See
-    ``docs/2.0-UX-PATTERN-SPEC.md`` for why this is Bucket 3, not master-detail.
+    ``DESIGN.md "Kinds of page"`` for why this is Bucket 3, not master-detail.
 
     Returns the ``_list_results`` partial for an HTMX list refresh (search /
     filter / pagination, which target ``#results``), and the full page otherwise.

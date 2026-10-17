@@ -58,9 +58,7 @@ to improve without breaking the suite.
 and formatting pass wrote nine house rules into DESIGN.md's *Copy rules*
 section; `TestCopyRules` at the foot of this file pins the half of them a
 machine can check. It holds the same line the paragraph above draws: a rule, a
-casing, a spelling or a proper name may be pinned — a sentence may not. The
-measured evidence behind every one is in
-``docs/drinking-copy-audit-2026-07-30.md``.
+casing, a spelling or a proper name may be pinned — a sentence may not.
 """
 
 import re
@@ -301,7 +299,7 @@ class TestReviewScreenSaysNothingIsSaved:
 # same line this file's docstring already draws, and the reason it is drawn is
 # that a copy pass which ends by freezing the copy has defeated the file it
 # extended. If a rule cannot be expressed without pinning a sentence, it stays
-# in DESIGN.md as prose; docs/drinking-copy-audit-2026-07-30.md records which.
+# in DESIGN.md as prose.
 # ---------------------------------------------------------------------------
 
 #: Domain shorthand this module is allowed to write, paired with the expansion a
@@ -433,7 +431,7 @@ def _read_surfaces(rows):
 
 
 class TestCopyRules:
-    """DESIGN.md → Copy rules. Evidence in docs/drinking-copy-audit-2026-07-30.md."""
+    """DESIGN.md → Copy rules."""
 
     def test_the_states_field_name_keeps_the_states_casing(
         self, client_logged_in, unlocated

@@ -37,8 +37,8 @@ build: guard-prod ## Rebuild containers without starting (refuses in prod — us
 
 # Which ref `deploy` ships. A deliberate branch-deploy door: it lets a release be
 # rehearsed against a throwaway branch (which is how the refusal path is proved)
-# and it retires the manual "git reset to a branch first, NOT make deploy"
-# workaround that docs/2.0-UX-ROADMAP.md used to document.
+# and it retires the old manual workaround of resetting to a branch first
+# instead of running make deploy.
 REF ?= origin/main
 
 # ISS-106: a REFUSED promotion has to alert somebody, and it did not.
