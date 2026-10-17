@@ -74,7 +74,7 @@ def test_shape_module_lists_match_145_02_evidence():
 
 
 def test_script_never_touches_the_maintainers_own_stacks():
-    """The literal project names `openh2o` and `openh2o-staging` (MAINTAINER.md's
+    """The literal project names `openh2o` and `openh2o-staging` (the maintainer's
     live checkouts) must never appear as a docker compose -p argument in this
     script; only openh2o-shape-<n> may."""
     text = SCRIPT.read_text()

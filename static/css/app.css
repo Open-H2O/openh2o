@@ -605,7 +605,7 @@ html { color-scheme: dark; }
     padding: var(--space-lg);
     text-decoration: none;
     /* Resting pop-shadow is the brand depth signature: every card floats above
-       the near-black page at rest, not only on hover (matches VanderDev/VanderOps). */
+       the near-black page at rest, not only on hover. */
     box-shadow: var(--shadow-pop-sm);
     /* Names every property the hover below changes. "Interaction = light moves"
        (tokens.css), so the fill fades with the border and the shadow rather

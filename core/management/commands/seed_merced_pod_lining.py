@@ -6,8 +6,7 @@ each point of diversion to help with seepage calcs." Every demonstration point
 keeps the platform's default loss basis, so the lining set here also sets its
 default seepage share (``PointOfDiversion.apply_lining_default``).
 
-What the sources say, read 2026-10-11 (plans, tables and quotes in the audited
-research file ~/Documents/Work/Research/water-swrcb/canal-loss-merced-area-2026-10-11.md):
+What the sources say, read 2026-10-11:
 
 - The area's 2020 water management plan counts 406 miles of unlined canal and
   105 of lined canal, and names no canal's lining. A 2018 regional water plan

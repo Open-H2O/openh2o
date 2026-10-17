@@ -21,8 +21,8 @@ hangs the pick on.
 
 1. **Build the picker** (re-run only to refresh from source data):
    ```sh
-   ~/.local/share/gis-venv/bin/python fetch_parcels.py      # county parcels -> non-ag candidates
-   ~/.local/share/gis-venv/bin/python build_basin_gpkg.py   # -> .gpkg
+   python fetch_parcels.py      # county parcels -> non-ag candidates
+   python build_basin_gpkg.py   # -> .gpkg
    sh build_picker_project.sh                               # -> .qgz
    ```
    (`fetch_parcels.py` pulls Merced County assessor parcels and keeps the

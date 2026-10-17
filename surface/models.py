@@ -214,10 +214,8 @@ class WaterRightParcel(models.Model):
 # 2026-10-11 16:40 PDT, approving the recommended yes). Spill is not tied to
 # lining by any source read, so the lining never sets it.
 #
-# The plans, tables and page numbers are in the audited research files
-# ~/Documents/Work/Research/water-swrcb/canal-loss-merced-area-2026-10-11.md and
-# canal-loss-lined-unlined-2026-10-11.md. Screens and notes name no district
-# (Brent 2026-10-11 17:51 and 18:01 PDT; words approved 18:43 PDT).
+# The sources are listed in seed_merced_pod_lining.py. Screens and notes name
+# no district.
 UNLINED_DEFAULT_SEEPAGE = Decimal("0.2500")
 LINED_DEFAULT_SEEPAGE = Decimal("0.0500")
 PIPE_DEFAULT_SEEPAGE = Decimal("0")

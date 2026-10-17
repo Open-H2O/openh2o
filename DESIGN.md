@@ -29,7 +29,6 @@ Three things follow, and all three were missing on 2026-09-11:
    *would you put this in front of a client?* DO NOT SHIP is a design task.
    The ledger, the probes, the ratio sweep, the golden HTML and the tests stay
    as regression checks; none of them is evidence that a page looks right.
-   Analysis and validation: `~/Documents/Infrastructure/Claude-Tooling/visual-judgment-rca-2026-09-11.md`.
 
 ## Colors
 

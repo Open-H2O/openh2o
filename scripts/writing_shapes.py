@@ -78,7 +78,6 @@ SCREEN_PYTHON: tuple = (
 GUIDES: tuple = (
     "CONTRIBUTING.md",
     "DEPLOY.md",
-    "MAINTAINER.md",
     "README.md",
     "SECURITY.md",
     "docs/AI-OPERATOR-GUIDE.md",

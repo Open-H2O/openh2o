@@ -14,9 +14,10 @@ Output: merced_parcel_picker.gpkg with layers
                   plus empty `served_by` and `water_source` columns to fill in
   - diversions, canals, subbasin : reference layers (read-only context)
 
-Run with the gis-venv python (geopandas):
-  ~/.local/share/gis-venv/bin/python fetch_crop_fields.py
+Run with a Python that has geopandas:
+  python fetch_crop_fields.py
 """
+import os
 import json
 import sys
 import time
@@ -26,7 +27,8 @@ import urllib.request
 import geopandas as gpd
 from shapely.geometry import shape
 
-HERE = "/Users/slate/GitHub/openh2o/data/merced/parcel_selection"
+MERCED = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+HERE = os.path.join(MERCED, "parcel_selection")
 LAYER = (
     "https://utility.arcgis.com/usrsvcs/servers/"
     "d94e891e00364e49a2ed9e9e2e27837d/rest/services/Planning/"

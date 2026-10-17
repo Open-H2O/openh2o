@@ -58,3 +58,6 @@ static/img/logo-alternatives/
 
 # Written by `make ci-gate`: the commit the last gate run found green.
 .deploy-verified-sha
+
+# A maintainer's own agent notes, never published.
+CLAUDE.local.md

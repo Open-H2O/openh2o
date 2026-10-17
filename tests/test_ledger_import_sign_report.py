@@ -44,8 +44,7 @@ pytestmark = pytest.mark.django_db
 
 DOCS_PATH = Path(__file__).resolve().parent.parent / "docs" / "DATA-IMPORT.md"
 
-# The shape-6 district's own file (`~/Documents/Vadose/Products/openh2o/
-# six-shapes-2026-09/datasets/shape-6-district/ledger.csv`), reproduced
+# The shape-6 district test dataset's own `ledger.csv`, reproduced
 # verbatim. Ten parcels, one usage row (`manual_entry`, already negative in
 # the file, unconstrained so untouched) and one supply row each (`surface_
 # diversion` or `meter_reading`, positive in the file, NON_POSITIVE by the

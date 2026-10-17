@@ -4,9 +4,8 @@
 a water system.
 
 The fixture below is copied verbatim (columns trimmed to the seven this
-importer reads; every value is the state's own) from
-``~/Documents/Vadose/Products/openh2o/six-shapes-2026-09/datasets/shape-2-small-water-system/ear-2022-production.csv``
--- Le Grand Community Services District, PWSID CA2410011, real 2022
+importer reads; every value is the state's own) from the shape-2 small
+water system test dataset's ``ear-2022-production.csv`` -- Le Grand Community Services District, PWSID CA2410011, real 2022
 production. The harness and the real world stay apart (never read from disk
 at test time), so the text lives here as a string, the same way
 ``tests/test_diversion_import.py`` carries its own state-layout fixture.

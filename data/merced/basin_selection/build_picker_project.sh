@@ -1,7 +1,7 @@
 #!/bin/sh
 # Run build_picker_project.py inside the QGIS bundle's Python environment.
 # Mirrors the env recipe in ~/mcp/qgis_mcp/__main__.py (_reexec_into_bundle).
-# Build the .gpkg first with: ~/.local/share/gis-venv/bin/python build_basin_gpkg.py
+# Build the .gpkg first with: python build_basin_gpkg.py
 set -eu
 BUNDLE=/Applications/QGIS-final-4_0_1.app
 RES="$BUNDLE/Contents/Resources"

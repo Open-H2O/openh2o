@@ -15,7 +15,7 @@ crop fields (DWR i15 Statewide Crop Mapping, 2023 final) and lets Brent pick.
 
 1. **Build the picker** (already done; re-run only to refresh the crop data):
    ```sh
-   ~/.local/share/gis-venv/bin/python fetch_crop_fields.py   # -> .gpkg
+   python fetch_crop_fields.py   # -> .gpkg
    sh build_picker_project.sh                                # -> .qgz
    ```
 2. **Pick fields** — open `merced_parcel_picker.qgz` in QGIS:

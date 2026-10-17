@@ -119,7 +119,7 @@ def dbz(request):
     """Database reachability probe: SELECT 1 against the default connection.
 
     The deliberate inverse of livez — this one MUST touch the database, because
-    its whole purpose is to let an external monitor (the VanderOps Sites page)
+    its whole purpose is to let an external uptime monitor
     measure "the app can reach Postgres" instead of inferring it from page
     loads. Returns plain 200/"ok" or 503/"db unreachable"; no schema details,
     no row counts, safe for anonymous callers.

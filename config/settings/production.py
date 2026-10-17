@@ -15,8 +15,8 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 # HTTPS-only behaviours. They default ON so a real (TLS) deployment is secure
-# out of the box; a plain-HTTP deployment behind a trusted network — e.g. the
-# Tailscale-only staging box on http://butler:8081 — sets these False in its
+# out of the box; a plain-HTTP deployment behind a trusted network (a site
+# reachable only on a private network) sets these False in its
 # .env so the browser will actually send the session/CSRF cookies (a Secure
 # cookie is never sent over http, which otherwise 403s every login). Never set
 # these False on a deployment reachable over the public internet.

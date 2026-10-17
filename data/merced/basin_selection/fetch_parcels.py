@@ -15,9 +15,10 @@ Output: merced_candidate_parcels.geojson (EPSG:4326) — sizable (>= MIN_ACRES)
 non-agricultural parcels in the Merced Subbasin, each with APN / acreage / the
 ag-overlap fraction, ready for Brent to pick basins from.
 
-Run with the gis-venv python (geopandas):
-  ~/.local/share/gis-venv/bin/python fetch_parcels.py
+Run with a Python that has geopandas:
+  python fetch_parcels.py
 """
+import os
 import json
 import sys
 import time
@@ -27,8 +28,9 @@ import urllib.request
 import geopandas as gpd
 from shapely.geometry import shape
 
-HERE = "/Users/slate/GitHub/openh2o/data/merced/basin_selection"
-PARCEL_SEL = "/Users/slate/GitHub/openh2o/data/merced/parcel_selection"
+MERCED = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+HERE = os.path.join(MERCED, "basin_selection")
+PARCEL_SEL = os.path.join(MERCED, "parcel_selection")
 LAYER = ("https://gis.countyofmerced.com/server/rest/services/"
          "Assessment_Parcels/FeatureServer/42")
 BBOX = "-120.97847,37.04449,-120.05146,37.52305"  # Merced Subbasin (EPSG:4326)

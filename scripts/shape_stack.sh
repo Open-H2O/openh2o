@@ -58,7 +58,7 @@ require_shape() {
 
 # This is the guard named in the plan: PROJECT is always openh2o-shape-<n>, never
 # `openh2o` or `openh2o-staging`, those are the maintainer's live checkouts
-# (see MAINTAINER.md) and this script must never reach them.
+# and this script must never reach them.
 project_for() {
   local n="$1"
   local project="openh2o-shape-${n}"

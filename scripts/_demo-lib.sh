@@ -12,7 +12,7 @@
 # definition here guarantees they stay in lockstep.
 
 # Optional: set OPENH2O_NTFY_URL to an ntfy topic URL to receive alerts
-# (e.g. http://192.168.0.114:8080/vander-infra). Unset = alerting disabled.
+# (e.g. https://ntfy.example.org/openh2o-alerts). Unset = alerting disabled.
 #
 # This reads the SHELL ENVIRONMENT ONLY, and nothing here should ever reach into
 # .env for it. The Makefile already lifts the key out of .env and exports it for

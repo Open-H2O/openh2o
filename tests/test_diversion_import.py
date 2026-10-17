@@ -2,9 +2,8 @@
 """
 146-03 Task 4 (D4): diversion volumes in bulk against a point of diversion.
 
-Two fixtures, copied verbatim from
-``~/Documents/Vadose/Products/openh2o/six-shapes-2026-09/datasets/shape-1-surface-diverter/``
-(never read from disk here -- the harness and the real world stay apart):
+Two fixtures, copied verbatim from the shape-1 surface-diverter test dataset,
+which is kept outside this repository (never read from disk here -- the harness and the real world stay apart):
 ``monthly-diversion-2024.csv`` (the state's Water Use Reported layout, one
 right with three points, no ``APPL_POD`` column -- the whole-file point is
 required) and ``ditch-tenders-book-2024.csv`` (the operator's book layout,

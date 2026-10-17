@@ -6,10 +6,8 @@ Before this fix (145-02's walk of shape 4, S3): a file carrying `depth_ft`,
 wells, 0 errors" and all four fields blank, and a well with the same name as
 an existing one imported as a silent second row ("0 duplicates skipped").
 
-The primary fixture below is the shape-4 dataset's own `wells.csv`
-(`~/Documents/Vadose/Products/openh2o/six-shapes-2026-09/datasets/
-shape-4-well-registry/wells.csv`, header and three rows reproduced verbatim,
-read 2026-09-23) -- not `district-well-inventory.csv`, which the 146-06 plan
+The primary fixture below is the shape-4 well-registry dataset's own
+`wells.csv` (header and three rows reproduced verbatim, read 2026-09-23) -- not `district-well-inventory.csv`, which the 146-06 plan
 names but which carries no `wcr_number` or `owner_name` column at all (its
 header is `well_id,owner,apn,use,depth_ft,casing_diameter_in,pump,meter,
 record_type,section`); `wells.csv` is the file the shape-4 walker actually ran

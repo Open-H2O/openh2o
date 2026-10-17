@@ -13,12 +13,14 @@ real Flowline). Each kept feature carries:
 
 Run after a QGIS selection session (toggle editing off → Save first):
 
-  ~/.local/share/gis-venv/bin/python extract_selection.py
+  python extract_selection.py
 """
+import os
 import geopandas as gpd
 
-HERE = "/Users/slate/GitHub/openh2o/data/merced/basin_selection"
-OUT = "/Users/slate/GitHub/openh2o/data/merced/selected_basins.geojson"
+MERCED = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+HERE = os.path.join(MERCED, "basin_selection")
+OUT = os.path.join(MERCED, "selected_basins.geojson")
 KEEP = ["name", "operator", "capacity_acre_feet", "feeds_via",
         "APN", "GIS_ACRES", "geometry"]
 

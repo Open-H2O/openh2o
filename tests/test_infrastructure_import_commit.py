@@ -250,12 +250,9 @@ def test_unsupported_type_404_on_commit_too(auth_client):
 # (d) the state's own OSWCR export maps without an operator override
 # ---------------------------------------------------------------------------
 
-#: `wells-oswcr.csv`'s header, read verbatim 2026-09-20 off
-#: `~/Documents/Vadose/Products/openh2o/six-shapes-2026-09/datasets/
-#: shape-4-well-registry/wells-oswcr.csv` (`head -1`). Pasted rather than read
-#: from that path at test time: the path is outside this repository and the
-#: dev container has no bind mount to it (MAINTAINER.md/CLAUDE.md: the web
-#: image bakes the source in).
+#: `wells-oswcr.csv`'s header, read verbatim 2026-09-20 from the shape-4
+#: well-registry test dataset (`head -1`). Pasted rather than read at test
+#: time: the dataset is kept outside this repository.
 OSWCR_HEADER = [
     "WCRNUMBER",
     "LEGACYLOGNUMBER",

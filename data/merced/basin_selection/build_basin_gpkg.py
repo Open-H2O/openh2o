@@ -21,13 +21,15 @@ Output: merced_basin_picker.gpkg with layers
   existing_basins  : the v1.9 RechargeSite footprints (reference; wiped + repicked)
   subbasin         : the Merced Subbasin outline (reference)
 
-Run with the gis-venv python (geopandas), AFTER fetch_parcels.py:
-  ~/.local/share/gis-venv/bin/python build_basin_gpkg.py
+Run with a Python that has geopandas, AFTER fetch_parcels.py:
+  python build_basin_gpkg.py
 """
+import os
 import geopandas as gpd
 
-HERE = "/Users/slate/GitHub/openh2o/data/merced/basin_selection"
-PARCEL_SEL = "/Users/slate/GitHub/openh2o/data/merced/parcel_selection"
+MERCED = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+HERE = os.path.join(MERCED, "basin_selection")
+PARCEL_SEL = os.path.join(MERCED, "parcel_selection")
 CANDIDATE_PARCELS = f"{HERE}/merced_candidate_parcels.geojson"
 CROP_FIELDS_GPKG = f"{PARCEL_SEL}/merced_parcel_picker.gpkg"
 OUT = f"{HERE}/merced_basin_picker.gpkg"

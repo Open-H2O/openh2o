@@ -84,7 +84,6 @@ BASELINE: dict = {
     "reporting/validators.py": {"em dash": 16, "negation frame": 2},
     "reporting/views.py": {"em dash": 1},
     "DEPLOY.md": {"em dash": 124, "filler": 22, "stand-in": 3, "district reader": 27, "reassurance": 13, "negation frame": 38, "bold verdict": 27},
-    "MAINTAINER.md": {"em dash": 10, "reassurance": 4, "negation frame": 3, "bold verdict": 3},
     "docs/AI-OPERATOR-GUIDE.md": {"filler": 11, "paired heading": 1, "stand-in": 1, "district reader": 40, "California": 1, "reassurance": 8, "negation frame": 22, "bold verdict": 13},
     "docs/DATA-IMPORT.md": {"double hyphen": 8, "filler": 2, "stand-in": 1, "district reader": 5, "negation frame": 11, "bold verdict": 1},
     "docs/DATA-STANDARDS.md": {"em dash": 12, "filler": 1, "stand-in": 1, "district reader": 4, "reassurance": 2, "negation frame": 8, "bold verdict": 1},

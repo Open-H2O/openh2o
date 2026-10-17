@@ -24,7 +24,7 @@
 # the production checkout is safe precisely because its volume is separate.
 #
 # SNAPSHOT DIRECTORY AND SCRATCH PROJECT ARE DERIVED FROM THE CHECKOUT.
-# Two checkouts on one host (Butler runs ~/openh2o = PRODUCTION and
+# Two checkouts on one host (for example ~/openh2o = PRODUCTION and
 # ~/openh2o-staging = STAGING as the same unix user) must never be able to write
 # each other's snapshot or tear down each other's scratch stack. A hardcoded
 # $HOME/openh2o-demo-snapshot made both resolve to the same files. Deriving from
@@ -119,7 +119,7 @@ fi
 #   entrypoint.sh branches on [ "$#" -gt 0 ]: WITH arguments it execs the
 #   command and exits. WITHOUT them it runs collectstatic + migrate +
 #   createcachetable + ensure_superuser, and that last one would create the
-#   checkout's .env admin — on staging, admin@staging.local — and bake it into
+#   checkout's .env admin (on staging, the staging login) and bake it into
 #   the candidate. That is the exact mechanism by which staging admin rows once
 #   reached production. THE CANDIDATE MUST CONTAIN ZERO USER ROWS.
 #

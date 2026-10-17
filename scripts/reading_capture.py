@@ -15,10 +15,10 @@ post-JS DOM (``page.content()``). Byte-exact server output and reader-visible
 output are different questions; this script answers the second one and leaves
 the first to ``figure_capture.py``.
 
-**Run from the host** (not inside a container) with the venv that already has
+**Run from the host** (not inside a container) with a Python that has
 Playwright 1.58 and chromium-1217 installed::
 
-    ~/.venv/bin/python scripts/reading_capture.py \
+    python scripts/reading_capture.py \
         --out .planning/phases/140-the-reading-standard/140-01-screens/
 
 Do NOT run ``playwright install`` -- the browser binary is already present and
@@ -34,11 +34,10 @@ submitting the form: the post-submit URL must not still contain
 in the same browser context. Either failure aborts the whole run before a single
 screenshot is taken, rather than silently saving 80 copies of the sign-in wall.
 
-**The staging login is a standing, documented, non-secret credential**, not
-something this script is inventing or hardening. MAINTAINER.md lines 17-20:
-"Staging login is standing, documented, and NON-SECRET by design... It is
-intentionally shareable in plain text -- the Tailscale network is the real
-gate." Plain-text defaults below are correct, not a lapse.
+**The site's address and login come from the environment**:
+``READING_CAPTURE_BASE``, ``READING_CAPTURE_LOGIN`` and
+``READING_CAPTURE_PASSWORD``, or the ``--base``, ``--login`` and ``--password``
+arguments. The script has no built-in site.
 
 **A non-200 (302 included) is a FINDING, not a retry.** Playwright's ``goto``
 follows redirects transparently, so the response it hands back is the FINAL
@@ -66,11 +65,10 @@ from zoneinfo import ZoneInfo
 
 from playwright.sync_api import sync_playwright
 
-# Staging's standing, documented, non-secret login -- see the module docstring
-# and MAINTAINER.md lines 17-20 ("do not treat it as a secret").
-DEFAULT_BASE = "https://butler.tail7ae369.ts.net"
-DEFAULT_LOGIN = "admin@staging.local"
-DEFAULT_PASSWORD = "staging-demo-2026"
+# The site to capture and its login, from the environment (see the module docstring).
+DEFAULT_BASE = os.environ.get("READING_CAPTURE_BASE")
+DEFAULT_LOGIN = os.environ.get("READING_CAPTURE_LOGIN")
+DEFAULT_PASSWORD = os.environ.get("READING_CAPTURE_PASSWORD")
 DEFAULT_CENSUS = (
     ".planning/phases/137-water-balance-panel-and-page-pass/137-03-census.json"
 )
@@ -250,9 +248,9 @@ def capture_one(context, base, row, out_dir):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--census", default=DEFAULT_CENSUS)
-    parser.add_argument("--base", default=DEFAULT_BASE)
-    parser.add_argument("--login", default=DEFAULT_LOGIN)
-    parser.add_argument("--password", default=DEFAULT_PASSWORD)
+    parser.add_argument("--base", default=DEFAULT_BASE, required=DEFAULT_BASE is None)
+    parser.add_argument("--login", default=DEFAULT_LOGIN, required=DEFAULT_LOGIN is None)
+    parser.add_argument("--password", default=DEFAULT_PASSWORD, required=DEFAULT_PASSWORD is None)
     parser.add_argument("--out", required=True)
     parser.add_argument(
         "--only",

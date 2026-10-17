@@ -7,12 +7,14 @@ A field is "tagged" if it has a served_by (surface delivery) OR a water_source
 (so groundwater-only fields, which have no canal, are included). Run after a
 QGIS selection session:
 
-  ~/.local/share/gis-venv/bin/python extract_selection.py
+  python extract_selection.py
 """
+import os
 import geopandas as gpd
 
-HERE = "/Users/slate/GitHub/openh2o/data/merced/parcel_selection"
-OUT = "/Users/slate/GitHub/openh2o/data/merced/selected_parcels.geojson"
+MERCED = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+HERE = os.path.join(MERCED, "parcel_selection")
+OUT = os.path.join(MERCED, "selected_parcels.geojson")
 KEEP = ["served_by", "water_source", "well_group", "MAIN_CROP", "crop_class",
         "COUNTY", "ACRES", "UniqueID", "geometry"]
 

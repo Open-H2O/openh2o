@@ -183,16 +183,11 @@ it — do not eyeball a new look.
    reach without logging in still render, which makes the plain-HTTP URL look
    like it works right up until it doesn't.
 
-   The maintainer's staging host and its URL are in
-   [MAINTAINER.md](MAINTAINER.md).
-
 ## Staging & production access
 
-The maintainer's own deployments (openh2o.com and its staging twin) are
-documented in [MAINTAINER.md](MAINTAINER.md) — standing staging login, which
-checkout is which on the host, and how each is deployed. It is separated out
-because none of it applies to anyone running their own instance; for that,
-[DEPLOY.md](DEPLOY.md) is the whole story.
+The maintainer's own deployments (openh2o.com and its staging copy) are
+documented outside this repository, because none of it applies to anyone
+running their own instance. For that, [DEPLOY.md](DEPLOY.md) is the whole story.
 
 **Never invent access to a shared environment.** If a login does not work the
 answer is written down — read it. Creating an account or generating a password
