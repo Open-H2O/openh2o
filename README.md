@@ -2,11 +2,11 @@
 
 <p align="center"><img src="static/img/favicon-192.png" alt="OpenH2O" width="110"></p>
 
-# OpenH2O — Open Water Accounting Platform
+# OpenH2O (Open Water Accounting Platform)
 
-**A production-ready water-data management platform that a California water agency can stand up wherever it already has a computer — an office machine, a $15/month rented server, or agency infrastructure — with an AI agent doing the deployment.**
+**OpenH2O is water-data management software that an organization can run on an office computer, its own servers or a rented server costing about $15 a month, with an AI agent doing the installation.**
 
-OpenH2O helps a water agency manage its own water data — the measurements, deliveries, wells, diversions, recharge, and drinking-water quality records that make up an agency's files — so the agency owns and understands its own basin. Satellite evapotranspiration (ET) is one of those data feeds, not the centerpiece. A feature that writes figures in California's reporting format is under development and switched off by default. OpenH2O does not submit reports to the state. It is built on a fully open stack so that any agency — or any engineering firm working on their behalf — can run it, read it, and improve it.
+OpenH2O keeps an organization's own water records: measurements, deliveries, wells, diversions, recharge and drinking-water quality results. Satellite evapotranspiration (ET) from OpenET is one of its data sources. A feature that writes figures in California's reporting format is under development and switched off by default. OpenH2O does not submit reports to the state. OpenH2O and the software it runs on are open source, so any organization, or an engineering firm working for one, can run it, read it and improve it.
 
 > **Live demo:** [openh2o.com](https://openh2o.com) · **License:** [AGPL-3.0-or-later](#license) · **Deploy guide:** [DEPLOY.md](DEPLOY.md) · **Deploy it with an AI:** [docs/AI-OPERATOR-GUIDE.md](docs/AI-OPERATOR-GUIDE.md)
 
@@ -14,17 +14,19 @@ OpenH2O helps a water agency manage its own water data — the measurements, del
 
 ## Who this is for
 
-California's **Sustainable Groundwater Management Act (SGMA)** requires hundreds of local **Groundwater Sustainability Agencies (GSAs)** and water districts to account for the water their basins use. Most of these agencies are small, underfunded, and have no software staff. The existing tooling is excellent but expensive, and effectively every deployment is vendor-managed.
+OpenH2O is for anyone who keeps water records, anywhere in the United States: engineers and managers at water agencies and districts, growers, ditch tenders and drinking-water system operators.
 
-OpenH2O exists to change the cost structure. The core idea is simple:
+In California, the **Sustainable Groundwater Management Act (SGMA)** requires hundreds of local **Groundwater Sustainability Agencies (GSAs)** and water districts to account for the water their basins use. Many of them are small and have no software staff. The water-accounting software available today is excellent but expensive, and a vendor runs nearly every installation.
+
+OpenH2O exists to lower the cost of running water-accounting software.
 
 <!-- defines: repository -->
-> **The goal is to lower the cost and access barrier.** An under-resourced agency can stand the platform up itself — point a frontier-AI agent at this *repository* (a folder holding all of the program's files, kept on a website called GitHub with a complete history of every change ever made to it) and at a cheap rented computer, and the agent does the deployment, with no procurement cycle to wait on. An engineering firm or consultant can run it just as well, and for many agencies that is the sensible path; the point is that self-deployment is now a real option, not a vendor contract by default.
+> **An organization with no software staff can install OpenH2O itself:** point a frontier AI agent at this *repository* (a folder holding all of the program's files, kept on a website called GitHub with a complete history of every change ever made to it) and at a low-cost rented computer, and the agent does the installation, with no purchasing process to wait for. An engineering firm or consultant can run OpenH2O just as well, and for many organizations that is the sensible choice. Because an organization can also install it with its own staff, a vendor contract is a choice and not a requirement.
 
-It is designed for a single agency per deployment (single-tenant), and it works whether your basin is surface-water, groundwater, mixed-use, or doing active recharge.
+Each OpenH2O site keeps the water records of one organization: a district, an agency, a farm or a ditch company. OpenH2O accounts for surface water and groundwater, separately or together, and for active recharge.
 
 ### A note on terms
-- **GSA** — Groundwater Sustainability Agency, the local body responsible for a basin under SGMA.
+- **GSA**: Groundwater Sustainability Agency, the local body responsible for a basin under SGMA.
 - **OpenET** — a satellite-derived estimate of evapotranspiration (how much water crops and land consume), used here to estimate consumptive use.
 
 ---

@@ -133,6 +133,8 @@ DISTRICT_ENTITY: tuple = (
     (r"a groundwater agency's published table", "names the efficiency table's publisher, not the reader (Brent, 2026-10-12 09:43)"),
     (r"records the agency on the water system", "the lab file's regulating agency, not the reader (Brent, 2026-10-15 08:07)"),
     (r"a groundwater agency's or a county's", "a local registry's keeper, not the reader (Brent, 2026-10-11 20:36)"),
+    (r"one organization: a district, an agency, a farm or a ditch company", "the kinds of organization a site serves, not the reader (Brent, 2026-10-11 20:36)"),
+    (r"A water agency or district running OpenH2O", "who needs Earth Engine's paid license, not the reader (Brent, 2026-10-17 12:42)"),
 )
 _DISTRICT_KEPT = re.compile("|".join(f"(?:{phrase})" for phrase, _ in DISTRICT_ENTITY), re.I)
 
@@ -154,7 +156,7 @@ CALIFORNIA_NAMES: tuple = (
     (r"California.s Environmental Laboratory Accreditation Program", "ELAP spelled out"),
     (r"California's accreditation of laboratories", "ELAP is a California program"),
     (r"the California law requiring groundwater management", "SGMA is a California law"),
-    (r"California's \**Sustainable Groundwater Management Act", "SGMA spelled out"),
+    (r"In California, the \**Sustainable Groundwater Management Act", "SGMA spelled out (Brent, 2026-10-17 12:17)"),
     (r"California DDW", "DDW is California's Division of Drinking Water"),
     (r"California.s SDWIS format", "the lab file layout is California's Division of Drinking Water's (Brent, 2026-10-14 13:33)"),
     (r"California.s Water Use Reported export", "the State Water Board's published diversion file (Brent, 2026-10-14 18:41)"),

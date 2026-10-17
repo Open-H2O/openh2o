@@ -83,10 +83,10 @@ BASELINE: dict = {
     "reporting/generators.py": {"em dash": 2},
     "reporting/validators.py": {"em dash": 16},
     "reporting/views.py": {"em dash": 1},
-    "CONTRIBUTING.md": {"em dash": 10, "California": 1},
+    "CONTRIBUTING.md": {"em dash": 8},
     "DEPLOY.md": {"em dash": 124, "filler": 22, "stand-in": 3, "district reader": 27},
     "MAINTAINER.md": {"em dash": 10},
-    "README.md": {"em dash": 45, "filler": 3, "stand-in": 2, "district reader": 14, "California": 1},
+    "README.md": {"em dash": 36, "filler": 3, "stand-in": 2, "district reader": 11},
     "SECURITY.md": {"em dash": 3},
     "docs/AI-OPERATOR-GUIDE.md": {"filler": 11, "paired heading": 1, "stand-in": 1, "district reader": 40, "California": 1},
     "docs/DATA-IMPORT.md": {"double hyphen": 8, "filler": 2, "stand-in": 1, "district reader": 5},
@@ -94,7 +94,6 @@ BASELINE: dict = {
     "docs/INSTALL-WITHOUT-DOCKER.md": {"em dash": 41, "filler": 7, "paired heading": 3, "stand-in": 3, "district reader": 7},
     "docs/README.md": {"em dash": 4, "district reader": 1},
     "docs/ROADMAP.md": {"em dash": 14, "filler": 3, "district reader": 3, "California": 1},
-    "docs/earth-engine-tier-setup.md": {"em dash": 3, "filler": 5, "district reader": 15, "California": 1},
     "docs/water-budget-terms.md": {"filler": 1, "district reader": 2},
     # 2026-10-11: the "district reader" and "California" shapes joined at their
     # counts that day (150.4-01). 150.4-02, 150.1-02 and 150.1-03 lower them.
