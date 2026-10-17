@@ -39,6 +39,11 @@ if [ "$mode" = refuse ]; then
   echo "  REFUSING to deploy: its tests run did not pass (ci_gate exit 1)."
   exit 2
 fi
+if [ "$mode" = guard_refuse ]; then
+  echo "  If it had run here it would have thrown away every local change in this"
+  echo "  checkout (git reset --hard), rebuilt the canned demonstration database, and"
+  exit 2
+fi
 echo 'sha=$(cat .deploy-verified-sha) && test -n "$sha" && git reset --hard "$sha"'
 git reset --hard "$(cat "$S/new_sha")"
 if [ "$mode" = fail_before_promote ]; then
@@ -249,6 +254,12 @@ setup 12; echo no_backup > "$S/make_mode"; run REF=$NEW
 check "12 a replaced golden with no backup exits 6" '[ $RC = 6 ]'
 check "12 says so" 'says "no backup of it from this run"'
 check "12 the code and image still go back" 'called "git reset --hard $PREV" && is "$S/container_image" sha256:old'
+
+# (13) a refusal whose text mentions git reset --hard (guard-demo-host's does) is still a refusal:
+# only git's own "HEAD is now at" line means the reset ran.
+setup 13; echo guard_refuse > "$S/make_mode"; run REF=$NEW
+check "13 a refusal that names git reset --hard exits 1" '[ $RC = 1 ] && called "make deploy REF=$NEW"'
+check "13 no rollback" 'called "make deploy REF=$NEW" && not_called "git reset" && not_called "compose up"'
 
 echo "$pass passed, $fail failed"
 [ "$fail" = 0 ]
