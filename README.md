@@ -4,7 +4,7 @@
 
 # OpenH2O (Open Water Accounting Platform)
 
-**OpenH2O is water-data management software that an organization can run on an office computer, its own servers or a rented server costing about $15 a month, with an AI agent doing the installation.**
+OpenH2O is water-data management software that an organization can run on an office computer, its own servers or a rented server costing about $15 a month, with an AI agent doing the installation.
 
 OpenH2O keeps an organization's own water records: measurements, deliveries, wells, diversions, recharge and drinking-water quality results. Satellite evapotranspiration (ET) from OpenET is one of its data sources. A feature that writes figures in California's reporting format is under development and switched off by default. OpenH2O does not submit reports to the state. OpenH2O and the software it runs on are open source, so any organization, or an engineering firm working for one, can run it, read it and improve it.
 
@@ -16,9 +16,7 @@ OpenH2O keeps an organization's own water records: measurements, deliveries, wel
 
 OpenH2O is for anyone who keeps water records, anywhere in the United States: engineers and managers at water agencies and districts, growers, ditch tenders and drinking-water system operators.
 
-In California, the **Sustainable Groundwater Management Act (SGMA)** requires hundreds of local **Groundwater Sustainability Agencies (GSAs)** and water districts to account for the water their basins use. Many of them are small and have no software staff. The water-accounting software available today is excellent but expensive, and a vendor runs nearly every installation.
-
-OpenH2O exists to lower the cost of running water-accounting software.
+In California, the **Sustainable Groundwater Management Act (SGMA)** requires hundreds of local **Groundwater Sustainability Agencies (GSAs)** and water districts to account for the water their basins use. Many of them are small and have no software staff. The water-accounting software available today is excellent but expensive, and a vendor runs nearly every installation. OpenH2O is meant to make water-accounting software affordable for those organizations.
 
 <!-- defines: repository -->
 > **An organization with no software staff can install OpenH2O itself:** point a frontier AI agent at this *repository* (a folder holding all of the program's files, kept on a website called GitHub with a complete history of every change ever made to it) and at a low-cost rented computer, and the agent does the installation, with no purchasing process to wait for. An engineering firm or consultant can run OpenH2O just as well, and for many organizations that is the sensible choice. Because an organization can also install it with its own staff, a vendor contract is a choice and not a requirement.
@@ -27,7 +25,7 @@ Each OpenH2O site keeps the water records of one organization: a district, an ag
 
 ### A note on terms
 - **GSA**: Groundwater Sustainability Agency, the local body responsible for a basin under SGMA.
-- **OpenET** — a satellite-derived estimate of evapotranspiration (how much water crops and land consume), used here to estimate consumptive use.
+- **OpenET**: a service that publishes satellite estimates of evapotranspiration. OpenH2O uses them to estimate consumptive use.
 
 ---
 
@@ -35,40 +33,36 @@ Each OpenH2O site keeps the water records of one organization: a district, an ag
 
 | Path | Who it's for | Start here |
 |------|--------------|------------|
-| **AI-operated** | An agency with no software staff, using a frontier AI agent | [docs/AI-OPERATOR-GUIDE.md](docs/AI-OPERATOR-GUIDE.md) |
-| **Manual deploy** | An ops person or consultant on a fresh Linux server | [DEPLOY.md](DEPLOY.md) |
-| **Single computer** | An agency running it on one office machine or a laptop — a supported deployment, not a preview | [Quick start](#quick-start-single-computer) below |
+| **AI-operated** | An organization with no software staff, using a frontier AI agent | [docs/AI-OPERATOR-GUIDE.md](docs/AI-OPERATOR-GUIDE.md) |
+| **Manual deploy** | An IT person or consultant installing it on a new Linux server | [DEPLOY.md](DEPLOY.md) |
+| **Single computer** | An organization running it on one office computer or a laptop | [Quick start](#quick-start-single-computer) below |
 
-**None of these is a lesser deployment.** What changes between them is who needs
-to reach the instance: only the machine it runs on, an office network, or the
-public internet. Only the last needs a domain name and encryption.
+The three paths install the same software. The configuration depends on who needs
+to reach the site: people at the computer itself, people on an office network, or
+anyone on the internet. Only a site on the internet needs a domain name and
+encryption.
 
 <!-- defines: tls_https -->
-*HTTPS* is the padlock-icon, encrypted version of a web address, and the padlock
-rests on a *certificate* — a file that proves the address really is itself. A
-deployment nobody outside the building can reach has no address to prove and
-needs neither, and going without is a supported posture here rather than a
-corner cut.
+*HTTPS* encrypts the connection between a browser and a website, and the browser
+shows a padlock when it is in use. HTTPS depends on a *certificate*, a file that
+proves the address belongs to the site. A site that only people inside the
+building can reach can run without either.
 
 <!-- defines: docker -->
-**All three assume Docker, and you do not have to.** OpenH2O normally ships as
-three *containers*: a container is a sealed, pre-packed box holding one piece of
-the program plus everything it needs to run, so it behaves the same on any
-computer, and Docker is the software that builds and runs those boxes. Any of
-the three paths can instead install the pieces directly onto the machine — a
-legitimate first choice, and the only option when the machine's own host will
-not allow those boxes at all. The whole path is in
-[docs/INSTALL-WITHOUT-DOCKER.md](docs/INSTALL-WITHOUT-DOCKER.md).
+Each path normally uses Docker, and each can also be done without it. OpenH2O
+ships as three *containers*. A container is a sealed package that holds one part
+of the program and everything that part needs, and it runs the same way on any
+computer. Docker is the program that builds and runs containers. Without Docker,
+you install OpenH2O's parts directly on the computer. Installing without Docker is
+the only option on a hosted server whose provider does not allow containers.
+[docs/INSTALL-WITHOUT-DOCKER.md](docs/INSTALL-WITHOUT-DOCKER.md) describes the whole
+process.
 
-**What a brand-new installation contains, and what it does not.** It holds none
-of your agency's own water records, and that is what the setup guide expects,
-not a step that went wrong. A fresh install starts empty and the first thing
-anyone loads into it is the Merced Subbasin demonstration — a real, published
-California basin, labelled as the demonstration everywhere it appears, there so
-that the platform has something to show while you work out how to get your own
-records in. Replacing it with your agency's own basin is the normal next step.
-So if a brand-new install shows you Merced's wells, canals and parcels, nothing
-has failed: you are looking at exactly what a brand-new install holds.
+A new installation starts with an empty database. The setup steps then load the
+Merced Subbasin demonstration, a real California basin with published records and
+invented sample data, which you can explore before you load your own. The
+demonstration is labeled as demonstration data wherever it appears, and replacing
+it with your organization's own basin is the usual next step.
 
 ### Quick start (single computer)
 
@@ -81,10 +75,10 @@ cp .env.example .env
 #   DJANGO_SETTINGS_MODULE=config.settings.local   # dev mode: DEBUG on, dev DB password is fine
 #
 # WARNING: config.settings.local is for LOOKING AT IT, not for holding an
-# agency's real records. DEBUG=True prints the site's internals on any error
-# page, and it defaults ALLOWED_HOSTS to "*" if you set none. To actually
-# run your agency on one computer, use production settings with the three
-# plain-HTTP flips - see docs/AI-OPERATOR-GUIDE.md Phase 2.
+# organization's real records. DEBUG=True prints the site's internals on any
+# error page, and it defaults ALLOWED_HOSTS to "*" if you set none. To run
+# OpenH2O with real records on one computer, use production settings with the
+# three plain-HTTP flips - see docs/AI-OPERATOR-GUIDE.md Phase 2.
 docker compose up -d --build         # start db + web + caddy
 docker compose exec web python manage.py migrate
 docker compose exec web python manage.py seed_data      # reference data
@@ -92,65 +86,83 @@ docker compose exec web python manage.py seed_merced    # the Merced Subbasin de
 docker compose exec web python manage.py createsuperuser   # your login for the trial
 ```
 
+Use these settings only to look around. To keep real records on one computer, use
+the production settings described in
+[docs/AI-OPERATOR-GUIDE.md](docs/AI-OPERATOR-GUIDE.md), Phase 2.
+
 <!-- defines: localhost -->
 <!-- defines: superuser -->
-Open `http://localhost` — that word and `127.0.0.1` both mean "this same
-computer," as opposed to an address anyone else could type — and log in with the
-*superuser* you just created. A superuser is the one account inside OpenH2O that
-can do anything: add other staff accounts, change settings, see everything. It
-is separate from and unrelated to any login for the computer itself, it has to
-be created by hand before anyone can sign in at all, and there is no "first
-visitor becomes the administrator" magic. Most pages sit behind a login, and
-self-signup is closed by default on a fresh install (that's the
-`ACCESS_CONTROL_ENFORCED` setting; the public demo at openh2o.com runs with it
-off).
+Open `http://localhost` and sign in with the *superuser* you just created.
+`localhost` and `127.0.0.1` both mean the computer you are using, and only that
+computer can reach the site at those addresses. The superuser is the one account
+that can do everything in OpenH2O: add staff accounts, change settings and see
+every page. It is separate from your computer login, and you create it by hand
+before anyone can sign in. Most pages need a sign-in, and a new site keeps sign-up
+closed through the `ACCESS_CONTROL_ENFORCED` setting. The public demo at
+openh2o.com turns that setting off.
 
 <!-- defines: seed_data -->
-You'll land on the **Merced Subbasin** demonstration — a real California basin,
-the same one running at [openh2o.com](https://openh2o.com). *Seeding* means
-loading a starting set of data into the empty database, either small reference
-lists such as units and categories or a whole demonstration dataset. The seed
-here fetches live hydrography and monitoring stations from public government
-services (a few-minute wait, no key required), and the demonstration's water
-rights, deliveries, parcels and ledger activity are all seeded and internally
-coherent without any key.
+You will see the **Merced Subbasin** demonstration, the same one running at
+[openh2o.com](https://openh2o.com). *Seeding* means loading a starting set of data
+into the empty database: small reference lists such as units and categories, or a
+whole demonstration dataset. The demonstration seed takes a few minutes to download
+hydrography and monitoring stations from public government services. It also loads
+the demonstration's water rights, deliveries, parcels and ledger entries. These
+steps work without any key.
 
-**Consumptive-use figures are the exception: they are computed from satellite ET, so without an OpenET key those numbers stay empty.** Add an OpenET key to fill them in. `run_calculations` also needs a calculation method in place first, which `seed_calculation_plan` creates and no other seed command runs for you — the demonstration seed ends by listing whatever is still missing, and that list is the thing to follow. Run `make help` for all shortcuts. For a real deployment with encryption, a domain, scheduled data sync, and production hardening, follow [DEPLOY.md](DEPLOY.md).
+Consumptive-use figures need an OpenET key (free from
+[etdata.org](https://etdata.org)), because OpenH2O calculates them from satellite
+ET. `run_calculations` also needs a calculation method, which only
+`seed_calculation_plan` creates. The demonstration seed ends with a list of
+anything still missing. For a site with a domain, encryption, scheduled data
+updates and production security settings, follow [DEPLOY.md](DEPLOY.md).
+`make help` lists every shortcut command.
 
 ---
 
-## The AI agent's role doesn't end at setup
+## The AI agent keeps working after setup
 
-For an agency with no software staff, a capable coding agent (Claude Code or similar) is not just a one-time installer — it's the ongoing operator and translator between the agency and the platform.
+For an organization with no software staff, a capable AI agent such as Claude Code
+can install OpenH2O and then keep running the site and explaining it to the staff.
 
-- **It onboards your existing records.** Point the agent at the data you already have — a county assessor parcel export, a stack of spreadsheets, a dump from an old system — and it works out how your columns map onto OpenH2O's importers and loads them. The import tools are built for this: field-name overrides, a dry-run that validates before writing anything, and a staging table so a bad file never half-corrupts your data. The agent handles the data crosswalking you'd otherwise need a developer for. See [docs/DATA-IMPORT.md](docs/DATA-IMPORT.md).
-- **It runs the routine work.** Monthly data sync, pruning dead monitoring stations, reading the health check: the agent can do these on a schedule and explain what each number means.
-- **It troubleshoots.** When something breaks, the agent reads the logs and the deploy guide and fixes it, rather than the agency waiting on a vendor support ticket.
+- **Loading existing records.** Point the agent at the records you already have,
+  such as a county assessor's parcel export, a set of spreadsheets or an export
+  from an old system. The agent works out how your columns match OpenH2O's
+  importers and loads the records. The import tools accept your own field names,
+  check a file in a dry run before writing anything, and hold each file in a
+  staging table, which keeps a bad file from leaving your data half-changed. See
+  [docs/DATA-IMPORT.md](docs/DATA-IMPORT.md).
+- **Routine work.** The agent can run the monthly data updates, remove monitoring
+  stations that have stopped reporting and read the health check on a schedule. It
+  can also explain what each health check result means.
+- **Troubleshooting.** When something breaks, the agent can read the logs and the
+  deployment guide and often fix the problem without a vendor's support ticket.
 
-The deployment is the first thing the agent does, not the only thing. [docs/AI-OPERATOR-GUIDE.md](docs/AI-OPERATOR-GUIDE.md) walks an agent through the whole arc.
+[docs/AI-OPERATOR-GUIDE.md](docs/AI-OPERATOR-GUIDE.md) takes an agent through the
+installation and through each of these jobs.
 
 ---
 
 ## What it looks like
 
-All three are the live demo at [openh2o.com](https://openh2o.com), running the
-Merced Subbasin dataset. Rows marked *Demo* are invented sample data shown
-beside real published records — the platform labels which is which rather than
-blurring them.
+These screenshots are from the live demo at [openh2o.com](https://openh2o.com),
+which runs the Merced Subbasin dataset. Invented sample data carries a *Demo* label
+and appears beside the real published records.
 
-**The accounting dashboard** — supplies, consumptive use, and the balance
-between them for the selected water year, with what needs attention on top:
+**The accounting dashboard** shows supplies, consumptive use and the balance
+between them for the selected water year, and lists the items that need attention
+at the top.
 
 ![The OpenH2O accounting dashboard, showing supplies minus consumptive use for water year 2024-2025 and an attention strip listing stations down and accounts over budget](docs/screenshots/dashboard.png)
 
-**The map**, which is public on the demo — agency boundary, GSA zones, rivers
-and canals, parcels, wells, points of diversion, recharge sites and
-drinking-water facilities, each an independent layer:
+**The map** shows the boundary, GSA zones, rivers and canals, parcels, wells,
+points of diversion, recharge sites and drinking-water facilities, each as its own
+layer. On the demo, anyone can open the map without signing in.
 
 ![The OpenH2O map over aerial imagery of the Merced Subbasin, with a layers panel listing administrative, surface water, land use, drinking water, infrastructure and monitoring layers](docs/screenshots/map.jpg)
 
-**The drinking-water module** — a public water system keyed to its EPA PWSID,
-with every figure carrying the source that published it:
+**The drinking-water module** shows a public water system under its EPA PWSID and
+names the source of every figure.
 
 ![The OpenH2O drinking-water overview for the City of Merced, showing PWSID, system type, owner type and population served, each labelled with its EPA Envirofacts source](docs/screenshots/drinking-water.png)
 
@@ -159,29 +171,35 @@ with every figure carrying the source that published it:
 ## What it does
 
 <!-- defines: postgis -->
-- **Parcels and wells** with real spatial data — boundaries, points of diversion, well inventories. All of it lives in *PostgreSQL*, the database program that stores every record the site shows, with the *PostGIS* add-on that teaches it to understand maps, boundaries and points on a map.
-- **A water-data ledger** that records supply, usage, and allocations by water type and zone, so every entry is traceable.
-- **Surface-water rights** with points of diversion and diversion records.
-- **Managed aquifer recharge** site and event tracking.
-- **Drinking-water quality** — water systems, facilities, and sampling points keyed to their EPA PWSID, a lab-results importer for California DDW exports, and a PWSID-driven onboarding wizard that prefills a system from public records. Quality and quantity live side by side in one instance.
-- **External data sync** from public sources. USGS, CDEC and DWR (Water Data Library and SGMA portal) are switched on and need no credentials. CIMIS and NOAA are switched on too but stay idle until you supply a free API key — a long password-like string that lets this program, rather than a person, fetch data automatically from another organisation's computers, treated as a secret exactly like a password. CNRFC and OpenET satellite evapotranspiration ship switched off, ready to enable; OpenET also needs a key. Everything is crosswalked to a single canonical vocabulary (see [Data standards](#data-standards--interoperability)). <!-- defines: api_key -->
+- **Parcels and wells** with their locations and boundaries, plus points of diversion and well inventories. Every record is stored in *PostgreSQL*, the database program behind the site. *PostGIS* is the add-on that lets PostgreSQL work with maps, boundaries and points.
+- **A water ledger** that records supplies, use and allocations by water type and zone. Every figure can be traced to its entries.
+- **Surface-water rights**, with points of diversion and diversion records.
+- **Managed aquifer recharge** sites and events.
+- **Drinking-water quality.** Water systems, facilities and sampling points are kept under their EPA PWSID. The module includes an importer for California DDW lab exports and a setup wizard that fills in a system's details from public records when you enter its PWSID. Quality and quantity records live in the same site.
+- **Data from public sources.** <!-- defines: api_key --> USGS, CDEC and DWR's Water Data Library and SGMA Portal are switched on and need no credentials. CIMIS and NOAA are switched on and start fetching once you add a free API key. An *API key* is a long password-like string that lets a program fetch data from another organization's computers. Treat it like a password. CNRFC and OpenET satellite ET are off until you turn them on, and OpenET also needs a key. OpenH2O maps every source's data to one shared vocabulary (see [Data standards](#data-standards--interoperability)).
 - **Reporting (under development, off by default):** figures written in California's reporting format. OpenH2O does not submit reports to the state.
-- **Standards-based publishing** — the data model is built to publish out as OGC SensorThings, Frictionless Data Packages, and WaDE 2.0 (see below).
-- **Health monitoring** dashboard with source-aware freshness, plus interactive maps via MapLibre GL JS — aerial imagery by default, with a dark basemap a click away.
-- **In-app feedback (optional, off by default)** — a built-in widget can let users file bugs, ideas, and questions (with screenshots and automatic diagnostics) without leaving the app; reports are stored locally and can optionally forward to a triage pipeline. Enable it with `FEEDBACK_ENABLED=True` on a deployment that has someone to read the reports.
+- **Open-standards publishing (not yet live).** The data model is designed for publishing as OGC SensorThings, Frictionless Data Packages and WaDE 2.0, but OpenH2O does not publish anywhere yet.
+- **A health dashboard** that shows how current each data source is.
+- **Interactive maps** built with MapLibre GL JS. The maps open on aerial imagery, with a dark basemap one click away.
+- **In-app feedback (optional, off by default).** A built-in form lets users send bug reports, ideas and questions without leaving the site, and it attaches screenshots and diagnostics automatically. Reports are stored on the site and can also be forwarded to a triage service. Turn it on with `FEEDBACK_ENABLED=True` on a site where someone will read the reports.
 
 ---
 
 ## Data standards & interoperability
 
-This is the part most worth a careful look. OpenH2O is **born-compliant** — standards-*interoperable* by design, not a claim of SGMA compliance: every measurement it stores or ingests is mapped to a single canonical vocabulary, so it can publish to open data standards without per-agency remapping.
+Every measurement OpenH2O stores or receives is mapped to one shared vocabulary,
+which lets the data be published to open standards without remapping for each
+site.
 
-- A **canonical ObservedProperty registry** maps every measured concept (stream discharge, depth-to-groundwater, ET, reservoir storage, …) to its **USGS parameter code**, **EPA WQX characteristic name**, and **UCUM unit**.
-- A **SourceParameter crosswalk** maps each external source's native parameter codes onto that canonical vocabulary, so USGS code `00060`, CDEC code `20`, and a CNRFC streamflow forecast all resolve to the same `discharge` concept.
-- Measurements carry **quality flags** (provisional / approved / estimated) and groundwater wells carry a **vertical datum** (NAVD88 / NGVD29), both following OGC SensorThings conventions.
-- A **conformance audit** (`check_conformance`) reports every measurement that is not fully publishable — a missing unit, a missing crosswalk entry — and exits non-zero when it finds one, so a script can gate on it. It is run by hand; nothing calls it automatically, and there is no live publish path for it to sit in front of yet.
+- The **ObservedProperty registry** links every measured quantity (stream discharge, depth to groundwater, ET, reservoir storage and others) to its **USGS parameter code**, **EPA WQX characteristic name** and **UCUM unit**.
+- A **SourceParameter crosswalk** maps each outside source's own parameter codes to that vocabulary. USGS code `00060`, CDEC code `20` and a CNRFC streamflow forecast all resolve to the same `discharge` concept.
+- Measurements carry **quality flags** (provisional, approved or estimated), and groundwater wells carry a **vertical datum** (NAVD88 or NGVD29). Both follow OGC SensorThings conventions.
+- A **conformance check** (`check_conformance`) lists every measurement that cannot yet be published, such as one with no unit or no crosswalk entry. The check exits with an error when it finds one, which lets a script stop on it. Someone has to run it by hand, and OpenH2O does not publish anywhere yet.
 
-The full crosswalk, the standards roadmap (OGC SensorThings API, Frictionless, WaDE 2.0), and a machine-readable export live in **[docs/DATA-STANDARDS.md](docs/DATA-STANDARDS.md)**. If you run another district's system, this is the part you can reuse directly.
+The full crosswalk, the standards roadmap (OGC SensorThings API, Frictionless,
+WaDE 2.0) and a machine-readable export are in
+**[docs/DATA-STANDARDS.md](docs/DATA-STANDARDS.md)**. If you run another water-data
+platform, the registry and the crosswalk are the parts you can reuse directly.
 
 ---
 
@@ -190,27 +208,26 @@ The full crosswalk, the standards roadmap (OGC SensorThings API, Frictionless, W
 <!-- defines: reverse_proxy -->
 <!-- defines: cron -->
 <!-- defines: docker_compose -->
-Three of the names in this table are pieces an operator actually meets, so they
-are worth a sentence each. **Caddy** is a *reverse proxy* — a middleman program
-that receives the traffic arriving from outside and relays it inward to the real
-program — and here it also obtains the encryption certificate by itself.
-***cron*** is Linux's built-in scheduler: "run this command every night at 2am,"
-a task the computer performs on a repeating clock with nobody there to click a
-button. **Docker Compose** is a helper tool, installed alongside Docker, that
-starts, stops and rebuilds all three boxes together from one instruction file
-(`docker-compose.yml`) instead of doing each by hand.
+**Caddy** is a *reverse proxy*: a program that receives traffic from outside and
+passes it to OpenH2O. Caddy also obtains the encryption certificate automatically.
+***cron*** is Linux's built-in scheduler, which runs commands on a timetable, such
+as every night at 2 a.m. **Docker Compose** is a tool installed with Docker that
+starts, stops and rebuilds all three containers together from one file,
+`docker-compose.yml`.
 
 | Component | Technology | Why |
 |-----------|------------|-----|
-| Framework | Django 5 + GeoDjango | Batteries-included, spatial-aware, one language |
-| Database | PostgreSQL 16 + PostGIS 3.4 | The open-source standard for spatial data |
-| Frontend | HTMX + Tailwind (standalone binary) | No Node.js toolchain to maintain |
-| Maps | MapLibre GL JS | Open vector maps, no API keys |
-| Reverse proxy | Caddy | Automatic HTTPS with near-zero config |
-| Background work | Django management commands + cron | No Celery/Redis; fits 2–4 GB RAM |
-| Packaging | Docker Compose | One command to start everything |
+| Framework | Django 5 + GeoDjango | A complete web framework with built-in map support, all in Python |
+| Database | PostgreSQL 16 + PostGIS 3.4 | The standard open-source database for spatial data |
+| Frontend | HTMX + Tailwind (standalone binary) | No Node.js tools to maintain |
+| Maps | MapLibre GL JS | Open vector maps with no API key |
+| Reverse proxy | Caddy | Automatic HTTPS with almost no setup |
+| Background work | Django management commands + cron | Small enough for 2–4 GB of memory without Celery or Redis |
+| Packaging | Docker Compose | One command starts everything |
 
-Deliberate non-goals: **no Node.js build step, no Celery/Redis, no multi-tenancy.** The platform is meant to run comfortably on the smallest practical server.
+OpenH2O has no Node.js build step and does not use Celery or Redis, which keeps it
+small enough for a server with 2 to 4 GB of memory. Each site serves one
+organization (no multi-tenancy).
 
 ---
 
@@ -245,20 +262,17 @@ openh2o/
 
 <!-- defines: google_earth_engine -->
 <!-- defines: smtp -->
-Two rows below name something that is not obvious. **Google Earth Engine** is a
-separate, heavier-duty Google service for processing satellite imagery at large
-scale; an agency may hold a key for it without ever needing it at their size.
-**Transactional email** is the plumbing that lets a website send outgoing mail —
-here, "you forgot your password" messages — through an outside mail provider
-instead of pretending to be its own mail server, and **SMTP** is simply the
-agreed method for handing each message over.
+**Google Earth Engine** is a separate Google service for processing satellite
+imagery at large scale. Only an organization with thousands of parcels needs it.
+**Transactional email** is how a website sends its own messages, such as password
+resets, through an outside mail provider.
 
 | Item | Typical cost |
 |------|--------------|
-| Virtual server (2–4 GB RAM) | $15–30 / month |
-| Domain name | ~$12 / year |
-| OpenET (satellite ET) | Free tier for small agencies; Earth Engine batch tier $0–200/yr for thousands of parcels (see [docs/earth-engine-tier-setup.md](docs/earth-engine-tier-setup.md)) |
-| Transactional email (password resets) | Free tier covers most agencies |
+| Virtual server (2–4 GB RAM) | $15–30 a month |
+| Domain name | About $12 a year |
+| OpenET (satellite ET) | A free API key covers a small number of parcels. For thousands of parcels, the Earth Engine tier costs a few dollars a year in computing time, plus a plan fee of at least $500 a month unless Google approves the organization for its no-fee Limited plan (see [docs/earth-engine-tier-setup.md](docs/earth-engine-tier-setup.md)). |
+| Transactional email (password resets) | A free tier covers most organizations |
 | CIMIS / NOAA / CDEC / USGS / DWR data | Free (public APIs) |
 
 ## Testing
@@ -268,20 +282,38 @@ make test     # pytest, pinned to local settings
 ```
 
 <!-- defines: allowed_hosts -->
-The suite uses pytest + pytest-django + factory_boy and lives in [tests/](tests/). Production settings intentionally refuse to boot on an empty or well-known-default database password, or without a real `ALLOWED_HOSTS` — the safety list of web addresses the site will answer to, which stops a stranger tricking it into behaving as a different website. That refusal is deliberate, and it is why the test target pins `--ds=config.settings.local`.
+The tests use pytest, pytest-django and factory_boy and live in [tests/](tests/).
+The production settings will not start with an empty or well-known database
+password, or without a real `ALLOWED_HOSTS`. `ALLOWED_HOSTS` is the list of web
+addresses the site answers to, and the site refuses requests addressed to any other
+name. `make test` therefore runs with `--ds=config.settings.local`.
 
 ## Contributing
 
-Issues and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Because the platform is AGPL-licensed, contributions are made under the same terms.
+Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
+Because OpenH2O is licensed under the AGPL, contributions are made under the same
+license.
 
 ## License
 
-OpenH2O is licensed under the **GNU Affero General Public License, version 3 or later (AGPL-3.0-or-later)** — see [LICENSE](LICENSE) and [NOTICE](NOTICE).
+OpenH2O is licensed under the **GNU Affero General Public License, version 3 or
+later (AGPL-3.0-or-later)**. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
 
-The AGPL is the strongest open-source guarantee for networked software. Its **Section 13** means that if you run a modified version of OpenH2O and let people use it over a network, you must offer those users the source code to your modified version. In practice: any agency or vendor that improves OpenH2O and hosts it has to share those improvements back. That is intentional — it keeps the platform, and everything built on it, in the commons.
+The AGPL is written for software that people use over a network. Its
+**Section 13** says that if you run a modified version of OpenH2O and let people use
+it over a network, you must offer those users the source code of your version. Any
+organization or vendor that improves OpenH2O and hosts it therefore has to offer its
+users the improved code.
 
 ## Acknowledgments
 
-OpenH2O builds on earlier work. The idea — and much of the accounting methodology — comes from the **Groundwater Accounting Platform**, an open-source system created by **ESA (formerly Sitka Technology Group)** and stewarded by the **California Water Data Consortium**, the nonprofit set up in 2019 to open up California's water data. That platform is also released under the AGPL.
+OpenH2O builds on earlier work. Its idea and much of its accounting method come
+from the **Groundwater Accounting Platform**, open-source software that **ESA
+(formerly Sitka Technology Group)** develops and the **California Water Data
+Consortium** oversees. The Consortium is the nonprofit set up in 2019 to open up
+California's water data. The Groundwater Accounting Platform is also released
+under the AGPL.
 
-OpenH2O is an independent rebuild on a fully open stack: we studied how that platform works and reimplemented it from scratch, so none of their code is copied here — but we're grateful for the path they cleared.
+OpenH2O was written from scratch in Python and does not use any of the Groundwater
+Accounting Platform's code. We studied how the Groundwater Accounting Platform
+works, and we are grateful to the people who built it.

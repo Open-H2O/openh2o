@@ -74,34 +74,48 @@ BASELINE: dict = {
     "templates/drinking/partials/_empty_drinking.html": {"stand-in": 1},
     "templates/accounting/partials/_needs_attention.html": {"em dash": 1},
     "templates/reporting/partials/_openet_prefill.html": {"em dash": 1},
-    "templates/reporting/partials/_report_detail_pane.html": {"em dash": 1, "stand-in": 1},
+    "templates/reporting/partials/_report_detail_pane.html": {"em dash": 1, "stand-in": 1, "negation frame": 1},
     "templates/reporting/report_list.html": {"em dash": 1},
     "templates/reporting/report_prefill.html": {"em dash": 2},
     "accounting/ledger_words.py": {"em dash": 1},
-    "accounting/views.py": {"em dash": 2},
-    "core/models.py": {"em dash": 1},
-    "reporting/generators.py": {"em dash": 2},
-    "reporting/validators.py": {"em dash": 16},
+    "accounting/views.py": {"em dash": 2, "negation frame": 3},
+    "core/models.py": {"em dash": 1, "negation frame": 2},
+    "reporting/generators.py": {"em dash": 2, "negation frame": 2},
+    "reporting/validators.py": {"em dash": 16, "negation frame": 2},
     "reporting/views.py": {"em dash": 1},
-    "CONTRIBUTING.md": {"em dash": 8},
-    "DEPLOY.md": {"em dash": 124, "filler": 22, "stand-in": 3, "district reader": 27},
-    "MAINTAINER.md": {"em dash": 10},
-    "README.md": {"em dash": 36, "filler": 3, "stand-in": 2, "district reader": 11},
+    "CONTRIBUTING.md": {"em dash": 8, "reassurance": 2, "negation frame": 1},
+    "DEPLOY.md": {"em dash": 124, "filler": 22, "stand-in": 3, "district reader": 27, "reassurance": 13, "negation frame": 38, "bold verdict": 27},
+    "MAINTAINER.md": {"em dash": 10, "reassurance": 4, "negation frame": 3, "bold verdict": 3},
     "SECURITY.md": {"em dash": 3},
-    "docs/AI-OPERATOR-GUIDE.md": {"filler": 11, "paired heading": 1, "stand-in": 1, "district reader": 40, "California": 1},
-    "docs/DATA-IMPORT.md": {"double hyphen": 8, "filler": 2, "stand-in": 1, "district reader": 5},
-    "docs/DATA-STANDARDS.md": {"em dash": 12, "filler": 1, "stand-in": 1, "district reader": 4},
-    "docs/INSTALL-WITHOUT-DOCKER.md": {"em dash": 41, "filler": 7, "paired heading": 3, "stand-in": 3, "district reader": 7},
-    "docs/README.md": {"em dash": 4, "district reader": 1},
-    "docs/ROADMAP.md": {"em dash": 14, "filler": 3, "district reader": 3, "California": 1},
-    "docs/water-budget-terms.md": {"filler": 1, "district reader": 2},
+    "docs/AI-OPERATOR-GUIDE.md": {"filler": 11, "paired heading": 1, "stand-in": 1, "district reader": 40, "California": 1, "reassurance": 8, "negation frame": 22, "bold verdict": 13},
+    "docs/DATA-IMPORT.md": {"double hyphen": 8, "filler": 2, "stand-in": 1, "district reader": 5, "negation frame": 11, "bold verdict": 1},
+    "docs/DATA-STANDARDS.md": {"em dash": 12, "filler": 1, "stand-in": 1, "district reader": 4, "reassurance": 2, "negation frame": 8, "bold verdict": 1},
+    "docs/INSTALL-WITHOUT-DOCKER.md": {"em dash": 41, "filler": 7, "paired heading": 3, "stand-in": 3, "district reader": 7, "reassurance": 4, "negation frame": 13, "bold verdict": 20},
+    "docs/README.md": {"em dash": 4, "district reader": 1, "negation frame": 1},
+    "docs/ROADMAP.md": {"em dash": 14, "filler": 3, "district reader": 3, "California": 1, "reassurance": 1, "negation frame": 2},
+    "docs/water-budget-terms.md": {"filler": 1, "district reader": 2, "negation frame": 6},
     # 2026-10-11: the "district reader" and "California" shapes joined at their
     # counts that day (150.4-01). 150.4-02, 150.1-02 and 150.1-03 lower them.
     "templates/about.html": {"district reader": 1},
-    "templates/parcels/partials/_detail_pane.html": {"district reader": 1},
+    "templates/parcels/partials/_detail_pane.html": {"district reader": 1, "negation frame": 2},
     "templates/reporting/partials/_handoff.html": {"district reader": 1},
     "templates/reporting/partials/_status_section.html": {"district reader": 3},
     "templates/surface/partials/_diversion_import_preview.html": {"California": 1},
+    # 2026-10-17: the reassurance, negation-frame and bold-verdict shapes joined
+    # at their counts that day (150.1-03, Brent 13:32 PDT). The guides' rewrites lower them.
+    "templates/404.html": {"negation frame": 1},
+    "templates/accounting/partials/_methodology_preview.html": {"negation frame": 1},
+    "templates/drinking/partials/_facility_results.html": {"negation frame": 1},
+    "templates/drinking/partials/_onboard_review.html": {"negation frame": 2},
+    "templates/partials/_map_card_head.html": {"negation frame": 1},
+    "templates/reporting/partials/_report_actions.html": {"negation frame": 1},
+    "templates/surface/diversion_import.html": {"negation frame": 1},
+    "templates/surface/partials/_detail_pane.html": {"negation frame": 1},
+    "templates/surface/partials/_diversion_records.html": {"negation frame": 1},
+    "config/views.py": {"negation frame": 2},
+    "drinking/views.py": {"negation frame": 1},
+    "health/checks.py": {"negation frame": 2},
+    "infrastructure/views.py": {"negation frame": 1},
 }
 
 _ADVICE = (
@@ -307,3 +321,26 @@ def test_every_kept_name_and_phrase_is_still_used():
         "CALIFORNIA_NAMES or DISTRICT_ENTITY in scripts/writing_shapes.py: "
         + "; ".join(stale)
     )
+
+
+# -- The three shapes added on 2026-10-17 (Brent: "the AI Slop langugae") ------
+
+def test_brents_struck_readme_line_is_caught():
+    struck = "**A new installation holds none of your records.** It starts empty.\n"
+    counts = shapes.count_file("docs/planted.md", struck)
+    assert counts["bold verdict"] == 1
+    assert counts["negation frame"] == 1
+
+
+def test_a_planted_reassurance_is_caught():
+    assert _template("<p>The refusal to start is deliberate.</p>")["reassurance"] == 1
+
+
+def test_a_planted_negation_frame_is_caught():
+    assert _template("<p>The site sends mail through a provider instead of its own server.</p>")[
+        "negation frame"] == 1
+
+
+def test_an_approved_sentence_is_not_a_bold_verdict():
+    approved = "The demonstration uses a real California basin.\n"
+    assert shapes.count_file("docs/planted.md", approved)["bold verdict"] == 0

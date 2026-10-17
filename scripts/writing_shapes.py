@@ -175,8 +175,29 @@ def california_count(text: str) -> int:
     return len(CALIFORNIA.findall(_CALIFORNIA_KEPT.sub(" ", text)))
 
 
+#: Three habits Brent struck in the README on 2026-10-17 at 13:15 PDT ("A new
+#: installation holds none of your records." is "the AI Slop langugae"),
+#: replayed before they were installed against his past rulings: the 222
+#: sentences he struck and the 1,270 he approved (tests/test_literary_sentence.py
+#: and brent-sentence-corrections.md). A statement of intent or reassurance hit
+#: 7 struck and 0 approved; a negation frame hit 18 struck (8.1%) and 13 approved
+#: (1.0%); a bolded verdict sentence hit the struck README 3 times and nothing he
+#: approved. A ", so" ending hit 5.9% struck and 3.5% approved, too close to
+#: separate, so it is not counted. Replay:
+#: .planning/phases/150.1-fix-the-writing/150.1-03-SLOP-REVIEW-2026-10-17.md.
+REASSURANCE = re.compile(
+    r"\b(?:deliberate(?:ly)?|on purpose|intentional(?:ly)?|by design|fully supported"
+    r"|nothing has gone wrong|is not a (?:fault|bug|failure))\b", re.I)
+NEGATION_FRAME = re.compile(
+    r"\b(?:rather than|instead of|none of|nothing (?:has|is|to do)|never (?:makes|has|is))\b"
+    r"|, not (?:a |an |the |for |only )|\bnot [a-z]+, but\b", re.I)
+#: A paragraph that opens with a whole sentence in bold, announcing a verdict
+#: before the facts ("**A new installation holds none of your records.**").
+BOLD_VERDICT = re.compile(r"^\*\*[^*]{8,}[.]\*\*")
+
 SHAPES: tuple = ("em dash", "double hyphen", "filler", "paired heading", "trailing heading",
-                 "stand-in", "district reader", "California")
+                 "stand-in", "district reader", "California", "reassurance", "negation frame",
+                 "bold verdict")
 
 
 # -- Templates ----------------------------------------------------------------
@@ -339,6 +360,9 @@ def count(runs: list, headings: list) -> dict:
         "stand-in": len(STAND_IN.findall(text)),
         "district reader": district_reader_count(text),
         "California": california_count(text),
+        "reassurance": len(REASSURANCE.findall(text)),
+        "negation frame": len(NEGATION_FRAME.findall(text)),
+        "bold verdict": sum(1 for run in runs if BOLD_VERDICT.match(run)),
     }
 
 

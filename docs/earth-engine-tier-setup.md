@@ -29,7 +29,7 @@ Google gives Earth Engine away for research, teaching, journalism and some nonpr
 
 The paid version has two charges: a monthly plan fee and a charge for computing time. Computing time costs almost nothing. Google measures it in EECU-hours and charges $0.40 an hour. (EECU stands for Earth Engine Compute Unit.) We measured the computing time on Merced County crop parcels: a year of monthly ET for 50,000 parcels of about 70 acres uses about 0.65 EECU-hours, which costs about 26 cents. Allow a few dollars a year for recalculating past months when new data arrives.
 
-The plan fee is most of the bill. Google's Limited plan has no plan fee, so you pay only for computing time. Google offers it to self-serve customers whose work is occasional and not business-critical, and says it is not meant for enterprise customers. The other plans start at $500 a month. A small organization that matches the Limited plan's description can choose it. A public agency should ask Google which plan applies before it registers.
+The plan fee is most of the bill. Google's Limited plan has no plan fee: you pay only for computing time. Google offers it to self-serve customers whose work is occasional and not business-critical, and says it is not meant for enterprise customers. The other plans start at $500 a month. A small organization that matches the Limited plan's description can choose it. A public agency should ask Google which plan applies before it registers.
 
 To estimate your own computing time, use the measured rate. Each parcel uses
 0.022 EECU-seconds a year, plus 0.00035 EECU-seconds for each acre it covers:
@@ -58,13 +58,13 @@ If `gcloud` is not installed, install it from
 and run `gcloud auth login` once to sign in.
 
 The commands below use the project ID `my-openh2o`. A project ID must be unique
-across all of Google, so choose your own and use it in place of `my-openh2o` in
+across all of Google. Choose your own and use it in place of `my-openh2o` in
 every command, in the service account's email address and in the `.env` file.
 
 ### 1. Create a Google Cloud project and turn on the Earth Engine API
 
-Google bills Earth Engine by project, so your organization needs a project of its
-own, linked to a billing account. An existing Google Cloud project works too.
+Google bills Earth Engine by project. Your organization needs its own project,
+linked to a billing account. An existing Google Cloud project works too.
 
 ```bash
 # Create a new project (pick a globally-unique id)
@@ -96,8 +96,8 @@ paid or free use when you register, and there is no `gcloud` command for this st
 
 ### 3. Create a service account and download its key
 
-No one signs in to Google on the OpenH2O server, so OpenH2O signs in as a service
-account: a Google identity for a program, with its own key file. The service
+On the server, OpenH2O signs in to Google as a service account: a Google identity
+for a program, with its own key file. The service
 account needs two roles. The first lets it read Earth Engine data and run
 computations. The second lets it use the project's services. Without the second
 role, the sign-in succeeds and every Earth Engine request fails.
@@ -129,8 +129,8 @@ gcloud iam service-accounts keys create gee-key.json \
 ```
 
 The last command saves the key as `gee-key.json` in the folder where you ran it.
-Google can take a few minutes to apply new roles, so if the test in step 4 fails
-with a permission error, wait a few minutes and run it again.
+Google can take a few minutes to apply new roles. If the test in step 4 fails with
+a permission error, wait and run it again.
 
 ### 4. Put the key on the server and switch OpenH2O to the Earth Engine tier
 
@@ -148,7 +148,7 @@ GEE_SERVICE_ACCOUNT_EMAIL=openh2o-gee@my-openh2o.iam.gserviceaccount.com
 GEE_SERVICE_ACCOUNT_KEY_FILE=/run/secrets/gee-key.json
 ```
 
-Restart the web container so that it reads the new values:
+Restart the web container to load the new values:
 
 ```bash
 docker compose up -d --build web
