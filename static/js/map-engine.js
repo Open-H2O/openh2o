@@ -261,8 +261,8 @@ function buildSwatch(swatchType, color, swatchStyle) {
 //
 // It deliberately does NOT list one row per layer. An earlier pass at ISS-116
 // did, and the result was a second panel saying what the first already said —
-// same section headings, same names, same swatches, minus the feature counts
-// (Brent, 2026-08-05, looking at it on staging). The Layers panel is the map's
+// same section headings, same names, same swatches, minus the feature counts.
+// The Layers panel is the map's
 // key: it names every layer, shows its colour, AND says how many of each there
 // are, and it is always on screen. The defect ISS-116 actually reported — a
 // legend naming "Drinking Water Facilities" over a layer with zero features

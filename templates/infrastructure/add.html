@@ -41,9 +41,9 @@
 
   <div class="map-form-layout">
 
-    {% comment %}The map, a landscape band above the form (Brent, 2026-09-13: a map runs
-         landscape like every other map here; portrait beside the form put most
-         of it out of view).{% endcomment %}
+    {% comment %}The map, a landscape band above the form. A map runs landscape
+         like every other map here; portrait beside the form put most of it out
+         of view.{% endcomment %}
     <div class="page-stack">
       <div class="card-raised map-card" style="padding: 0; overflow: hidden;">
         <!-- Draw toolbar -->
@@ -541,7 +541,7 @@
 
   // fromTyping: the pair came from the two inputs, so do NOT write it back
   // into them (rewriting "-12" as "-12.000000" under the cursor on every
-  // keystroke made the boxes impossible to edit; Brent, staging, 18:24 PDT).
+  // keystroke made the boxes impossible to edit).
   function placePoint(lngLat, fromTyping) {
     if (marker) marker.remove();
     marker = new maplibregl.Marker({ color: OH2O.colors.gold, draggable: true })
@@ -864,8 +864,7 @@
       .catch(function(err) {
         btn.textContent = 'Save Parcel';
         btn.disabled = false;
-        // Brent, 150.1-02 screen 18 message AA row 7: the server's sentence
-        // when there is one, else this.
+        // The server's sentence when there is one, else this.
         setCoordText((err && err.message) || 'OpenH2O could not save the parcel. Try again.');
       });
   });

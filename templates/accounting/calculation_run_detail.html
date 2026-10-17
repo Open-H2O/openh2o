@@ -3,75 +3,31 @@
 {% load humanize %}
 {% load placeholders %}
 {% comment %}
-  The calculation page as a receipt (148-03; Brent approved the design
-  2026-09-28 20:12 PDT after rejecting two step tables the same day: "I have
-  no idea what all this means", and of the running-total redesign, "what does
-  left mean?").
+  The calculation page for one field and one month (148-03, rebuilt 2026-10-11).
 
-  The page answers one question and nothing else: this field was charged
-  groundwater nobody measured; where did that number come from? Only a month
-  on a field with a well and no meter reading has that question, so the
-  receipt renders only when the run's residual_disposition is "groundwater".
-  A metered or no-well month reached by a direct URL gets the short page at
-  the foot of this file: one plain sentence and a link back to the field.
+  Staff open it when a landowner questions the groundwater charged on an
+  unmetered well for one month, to confirm each input and setting or find the
+  wrong one. Only a month on a field with a well and no meter reading has that
+  question (metered means a meter_reading ledger row in the month,
+  run_calculations.py), so the equations render only when the run's
+  residual_disposition is "groundwater". A metered or no-well month reached by
+  a direct URL gets the short page at the foot of this file: one plain sentence
+  and a link back to the field.
 
-  Answer first (the headline), then ONE receipt table in the step order
-  the plan runs (149.1-05, 2026-10-07): Figure / Acre-feet / Where it comes
-  from, each row naming where its figure came from and the setting it used
-  with its page, in one phrase or one sentence. The four notes that stood
-  beside the table moved into its third column; the meter case is the last
-  row. No step numbers, no methodology step names. Two decimals here; the
-  run's own four-decimal value is in each figure's title attribute,
-  printed as the stored Decimal so it adds no figure site of its own.
-
-  Every figure is the run's own stamped column, and both percentages are
-  read back off the run (the view's docstring says how), never off the live
-  Delivery Settings value.
-
-  2026-10-10 (150.1-02, screen 1): every sentence in the third column, the
-  two row labels that carried a reason ("because a pump lifts ...") and a
-  ledger word ("budget"), the lead, the zero-month line and the metered short
-  page were rewritten from twelve rows Brent approved at 19:19 PDT ("yes"),
-  each checked against the code. The lead was false: the receipt runs when a
-  well has no meter READING for the month (run_calculations.py, metered = a
-  meter_reading ledger row in the month), not when the well has no meter.
+  The page is the dashboard's equation panel (.budget-panel--centered), with
+  three equations in the engineer's terms: Crop ET - Effective precipitation =
+  ETAW; ETAW - ETAW met by surface water = ETAW met by groundwater; ETAW met by
+  groundwater / Groundwater irrigation efficiency = Groundwater extraction
+  (estimated). Each figure carries its source and setting beneath it as a label
+  and a figure, never a sentence, and no sentence writes the arithmetic out.
   Rain is gridMET's (steps.py subtract_effective_precip); crop water use is
-  OpenET's (steps.py et_gross). Not rewritten (not sent): the old-run canal
-  line, "No canal delivery on record ...", the credited and named-line tails
-  and the no-well short page.
+  OpenET's (steps.py et_gross).
 
-  20:12 PDT, read on the built page, Brent: one row "doesnt make sense"; a
-  word swap drew "NO!!! ... Read the fucking words ... Start over and
-  re-assess the page." The coined phrases ("canal water the crop could use",
-  "beyond what the crop could use") contradicted each other in one sentence.
-  Re-assessed and approved at 20:16 PDT ("approved"): the receipt now shows
-  its subtraction in the month's own figures (views.py _receipt_context
-  raw_af, canal_need_af); the "Canal water beyond ... None" row on a month
-  that needed well water is gone; the left-over row says how much of the
-  canal water the crop needed; label and cell no longer repeat each other.
-  The canal cell no longer says how the headgate total was divided (the
-  field page's ledger rows say it, in the ISS-218 words).
-
-  2026-10-11: the approved "12.39 minus 0.22 minus 10.78." was not built:
-  the rounded figures miss the stored one by 0.01 on 83 of 322 demonstration
-  months that needed well water. Brent, 04:51 PDT: "Use the actual "-" sign,
-  Crop water use - rain and canal water". The zero month keeps its figures
-  (a comparison with zero that rounding cannot change), with the same sign.
-
-  2026-10-11 05:30 PDT, Brent on the rebuilt receipt: "Start completely over
-  and redesing this enitre page". The page's purpose (Fable, 05:35): staff
-  open it when a landowner questions the groundwater charged on an unmetered
-  well for one month, to confirm each input and setting or find the wrong
-  one. Rebuilt as the dashboard's equation panel (.budget-panel--centered),
-  three equations in the engineer's terms Brent approved at 05:41 and 05:48
-  PDT: Crop ET - Effective precipitation = ETAW; ETAW - ETAW met by surface
-  water = ETAW met by groundwater; ETAW met by groundwater / Groundwater
-  irrigation efficiency = Groundwater extraction (estimated). Each figure
-  carries its source and setting beneath it as label and figure, never a
-  sentence; no sentence writes the arithmetic out. The table, its "where it
-  comes from" column, the lead and the zero-month sentence are gone. Two
-  decimals; each figure's title attribute carries the stored four-decimal
-  value, printed as the Decimal so it adds no figure site of its own.
+  Every figure is the run's own stamped column, and both percentages are read
+  back off the run (the view's docstring says how), never off the live
+  Delivery Settings value. Two decimals; each figure's title attribute carries
+  the stored four-decimal value, printed as the Decimal so it adds no figure
+  site of its own.
 {% endcomment %}
 {% block title %}Groundwater extraction (estimated), {{ parcel.parcel_number }}, {{ month_label }} - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Groundwater extraction (estimated){% endblock %}

@@ -239,8 +239,7 @@ OH2O.followResults = function (map, opts) {
     }
     // Each layer's OWN filter (the recharge dots layer keeps only Point
     // geometry, for one) is read once and ANDed with the pk filter. Replacing
-    // it wholesale put a circle on every polygon vertex of every basin (Brent,
-    // staging, 18:17 PDT).
+    // it wholesale put a circle on every polygon vertex of every basin.
     // A legacy filter (['==', '$type', 'Point']) cannot sit inside an
     // expression ['all', ...]: MapLibre rejects the pair and keeps the old
     // filter, silently. Translate the one legacy shape this codebase uses.

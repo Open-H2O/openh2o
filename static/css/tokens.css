@@ -199,8 +199,8 @@
     --color-entity-hydro-casing: #06140e;  /* Dark casing under the canal */
 
     /* -- Border radius --------------------------------------------------- */
-    /* Squared 2026-09-06 (ISS-149, Brent's call at the 138-01 checkpoint after
-       comparing three scales rendered on four real pages). The four non-pill
+    /* Squared 2026-09-06 (ISS-149), chosen after comparing three scales
+       rendered on four real pages. The four non-pill
        tokens are DELIBERATELY the same value: the scale is flat, not a ladder.
        They keep separate names so a future pass can differentiate an input from
        a modal by editing one line here, instead of re-pointing 100+ call sites.

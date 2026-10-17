@@ -951,8 +951,7 @@ html { color-scheme: dark; }
 /* The well's Measurement history: meter reads beside the depth digest, each
    column a facts line over a table. Subgrid puts both facts lines in one row
    and both tables in the next, so the two tables' heads sit on one line even
-   when one facts line wraps and the other does not (Brent, 2026-09-13:
-   "the one on the right looks a line width lower"). Where subgrid is not
+   when one facts line wraps and the other does not. Where subgrid is not
    supported the columns fall back to their own auto rows. */
 .history-grid {
     grid-template-rows: auto auto;
@@ -976,7 +975,7 @@ html { color-scheme: dark; }
    assignment card, each the full width. The mirror grid this replaces
    (`1fr 2fr`, balance AND table in the right column) left the information card
    hanging over a quadrant of dead space and squeezed a seven-column table into
-   half the page at Brent's 1,730 viewport. `#balance-section`, the water-year
+   half the page at a 1,730 viewport. `#balance-section`, the water-year
    swap target, is `display: contents` so the two cards inside it are placed by
    this grid. */
 .page-grid-account {
@@ -1301,9 +1300,8 @@ html { color-scheme: dark; }
 
 /* A reading and the note under it are ONE entry (ISS-146 put the note on its
    own row). No rule between the two, the rule comes after the note, and the
-   zebra stripe, which counts physical rows, must not split the pair. Brent at
-   the 141-01 checkpoint, 2026-09-08: "the explanations are pressed up into the
-   separating line above". */
+   zebra stripe, which counts physical rows, must not split the pair. With a
+   rule between them, the note sat pressed against the line above it. */
 .data-table tr.row-has-note td {
     border-bottom: none;
     padding-bottom: 2px;
@@ -1321,14 +1319,13 @@ html { color-scheme: dark; }
 /* A full-width divider naming the kind of row that follows (Phase 142, R-010:
    the Zones table mixes zones with a groundwater budget and zones without,
    and the second kind dashes three cells; the divider says why, once, instead
-   of five times). Left-aligned so it sits over the zone names (Brent at the
-   142-01 checkpoint, overturning his centred call on the mock-up). Excluded
+   of five times). Left-aligned so it sits over the zone names. Excluded
    from the zebra stripe, same shape as `tr.row-note`. */
 .data-table tr.row-group td {
     text-align: left;
-    /* Brent, 2026-09-13, on the well's two grouped tables: "the water year
-       headers need to stand out a little more". Primary text at 700 on a
-       fuller band, ruled above and below, 8px tall instead of 6. */
+    /* The water-year headers on the well's two grouped tables stand out from
+       the rows: primary text at 700 on a fuller band, ruled above and below,
+       8px tall instead of 6. */
     font-size: 0.75rem;
     font-weight: 700;
     color: var(--color-text-primary);
@@ -1429,7 +1426,7 @@ html { color-scheme: dark; }
 }
 /* A cell that spans both header rows (Account, Consumptive use, Balance) would
    centre its words over the two-row height and float half a line above the
-   leaf words beside it (Brent, 142-01 checkpoint). Bottom-aligned, every
+   leaf words beside it. Bottom-aligned, every
    leaf-level word sits on one line under the group brackets. */
 .data-table--grouped thead tr.th-group th[rowspan] {
     vertical-align: bottom;
@@ -1449,7 +1446,7 @@ html { color-scheme: dark; }
     /* Below this the fixed columns squeeze a figure across its divider; the
        table scrolls inside its .table-scroll wrapper instead. 150-04: 63.5rem,
        not 64: at a 1,440 viewport the card holds 1,021px and 64rem is 1,024,
-       so the table scrolled by three pixels at Brent's common width; the
+       so the table scrolled by three pixels at that common width; the
        sweep at 1,440 shows 0 crossings at 63.5rem with the 2px tighter cells. */
     min-width: 63.5rem;
 }
@@ -1469,17 +1466,16 @@ html { color-scheme: dark; }
    (0,2,1) beats the base `.data-table th` left-align without an importance
    override; the pseudo-element positions against the sticky cell. */
 .data-table--grouped th.th-group-label {
-    /* Centred over its bracket. Tried left at 14:01 on 2026-09-13 and ruled
-       back to centre by Brent on staging at 18:24 ("center the word available
-       and we'll just move on"): the bracket is the group's extent, and the word
-       balances it from the middle. */
+    /* Centred over its bracket (left-aligned was tried and reverted): the
+       bracket is the group's extent, and the word balances it from the
+       middle. */
     text-align: center;
     /* NOT `transparent`. `.data-table` is `border-collapse: collapse`, and a
        collapsed border is not painted over by the cell's own background -- so a
        transparent 2px border here showed the CARD behind it as a dark band
        under the teal bracket, and wider than the bracket, because the `::after`
        rule is inset by `--space-sm` on both sides while the border spans the
-       whole cell. Reported by Brent 2026-09-08. Matching the header's own
+       whole cell. Matching the header's own
        background hides the border and leaves only the bracket visible. */
     border-bottom-color: color-mix(in srgb, var(--color-accent) 7%, var(--color-card));
 }
@@ -1493,8 +1489,8 @@ html { color-scheme: dark; }
     background: var(--color-accent);
     opacity: 0.7;
 }
-/* One vertical rule where the kind of number changes (Brent, 2026-09-06: the
-   groundwater budget belongs to a different regulatory framework). On the
+/* One vertical rule where the kind of number changes (the groundwater
+   budget belongs to a different regulatory framework). On the
    first budget cell in both header rows, every body row and the footer. */
 .data-table--grouped th.col-sep,
 .data-table--grouped td.col-sep {
@@ -1507,8 +1503,8 @@ html { color-scheme: dark; }
 }
 /* A totals row: a tinted band ruled off from the body with the header's own
    accent, no rule under it, and its label set like a column header so the row
-   reads as the table's closing line rather than one more entry (Brent, 142-01
-   checkpoint: bold alone did not call it out). The ledger and allocation
+   reads as the table's closing line rather than one more entry (bold alone
+   did not call it out). The ledger and allocation
    footers already tint themselves inline; Phase 143 folds them in. */
 .data-table tfoot td {
     border-top: 2px solid var(--color-accent-muted);
@@ -2230,9 +2226,8 @@ html { color-scheme: dark; }
 
 /* The two explainer pages built around the 148-01 picture (help/water_balances,
    help/methods) and the ledger partial they share
-   (help/partials/_the_subtraction.html). Brent, 2026-09-28, on the first render:
-   "the attention to detail isn't there aesthetically... the text looks hastily
-   formatted." Every rule below answers one named fault; the page container
+   (help/partials/_the_subtraction.html). Every rule below answers one fault
+   found on the first render; the page container
    carries `.help-page` so none of them leaks onto another page. Tokens only. */
 
 /* Copy rule 6: body prose at 75ch. The card is 752px inside its padding, which
@@ -2304,7 +2299,7 @@ html { color-scheme: dark; }
    length of the sentence above each. The same shape as `.stat-card-note`, the
    provenance line under a stat figure, at a size a full sentence can be read
    at. It was a pill: a sentence in a pill wrapped into a five-line tinted
-   slab, which is the "longer phrases in the pills" Brent named. */
+   slab. */
 .card-grid--3 > .concept-panel {
     display: flex;
     flex-direction: column;
@@ -2442,7 +2437,7 @@ html { color-scheme: dark; }
 
 /* The settings table on Configs & settings (149.1-03): its third column is one
    page name per row, so it takes 18% and the "What it decides" column the rest
-   (a page-verdict reader named the squeezed second column the worst fault). */
+   (a squeezed second column was the page's worst fault). */
 .help-cases-table .col-where {
     width: 22%;
 }
@@ -2962,7 +2957,7 @@ html { color-scheme: dark; }
 
    143-01, resumed 2026-09-11. The two-column body that stood here (equation
    packed left, one breakdown at the far right) left ~1,300px of nothing between
-   the two at 2560 -- on the pane Brent photographed on 09-09 AND on the
+   the two at 2560 -- on the use-area pane AND on the
    dashboard, whose version had been approved from 1440 mock-ups where it
    happened to fit. This shape was judged by eye at 2560 on the live staging
    page before anything was measured (`143-01-resume-mock-b.png`); the ratio
@@ -3012,16 +3007,15 @@ html { color-scheme: dark; }
    operators plus the body's padding), the cells are narrower than their
    content. The content is centred in the cell, so it overflowed BOTH ways: the
    figure's first digit ran under the "−" on the divider and "11 of 11" ran
-   across the divider into Balance (Brent's production screenshot, 2026-09-18
-   07:55, his 1,730 window at 150% browser zoom = an 1,153px viewport, panel
-   851px; reproduced on staging at that viewport, and absent at 1,730 and
+   across the divider into Balance (seen at a 1,730 window with 150% browser
+   zoom, an 1,153px viewport and an 851px panel; absent at 1,730 and
    2,560). In that range the figures and their parts scale with the panel
    (cqi is the container's inline size), and the operators' top padding
    follows the figure's smaller line box. The query and cqi both see the
    container's OWN inline size, which sits inside `.app-content`'s
    zoom: 1.0625, so the 1,020px panel at the 1,730 viewport queries as 958
    (its client width) and the 851px panel at 1,153 as 799. The range
-   therefore stops at 950: the 1,730 layout Brent approved is untouched, and
+   therefore stops at 950: the approved 1,730 layout is untouched, and
    every clamp is within a pixel of its maximum at 950 so nothing visibly
    steps at the boundary. Measured at 799: figure 18.4px, parts 11.2px,
    nothing overflows any cell. */
@@ -3053,7 +3047,7 @@ html { color-scheme: dark; }
     display: grid;
     /* Content-sized tracks, a 24px gap. "Use areas estimated 18 of 18" at a
        32px gap ran 30px past its cell and across the divider into the Balance
-       cell (Brent's screenshot, 2026-09-11 11:51); the label is "Use areas"
+       cell; the label is "Use areas"
        now and the widest pair, "Calculation runs 216", sits 190px in a 217px
        cell. A shrinkable label track was tried and wrapped every label. */
     grid-template-columns: max-content max-content;
@@ -3066,7 +3060,7 @@ html { color-scheme: dark; }
 /* A breakdown whose labels are names, not words (a point of diversion's id
    and name, "MER-POD-010-DEMO Merced Falls Hydroelectric Diversion") does
    not fit a segment: inside the Recorded cell it ran across the divider into
-   Remaining (Brent's screenshot, 2026-09-13 10:58), and shrunk to the cell
+   Remaining, and shrunk to the cell
    it wrapped seven lines deep. It sits UNDER the equation row instead, the
    full width of the panel body, ruled off from the row above. */
 .budget-panel-body > .budget-breakdown-group--under {
@@ -3160,9 +3154,8 @@ html { color-scheme: dark; }
 .page-grid-dashboard-top > .budget-panel {
     align-self: start;
 }
-/* Brent's ruling on the mock-up (12:54 PDT): "the District water balance
-   should still maintain our centered look so that it's actually balanced
-   and not left justified." Three equal cells, each figure block centred in
+/* The water balance keeps a centred look rather than a left-justified one.
+   Three equal cells, each figure block centred in
    its cell, the block itself left-aligned so the parts still read as a list.
    Inside the same container query as the row layout so the sub-700px stack
    above keeps winning.
@@ -3236,7 +3229,7 @@ html { color-scheme: dark; }
    across: Supplies and its parts, minus, Uses and its parts, equals, the
    result. The operator's tall top padding exists to sit it on the figures'
    baseline in a row, so it comes off in a column. 960 was the earlier line,
-   and it stacked the account page's 882px panel at Brent's 1,730 viewport
+   and it stacked the account page's 882px panel at a 1,730 viewport
    (143-03). */
 @container (max-width: 700px) {
     /* A two-column grid, not a flex column: the operator takes the narrow
@@ -4275,14 +4268,14 @@ details[open] > summary .disclosure-mark {
 .page-narrow { max-width: 640px; margin-inline: auto; }
 .page-medium { max-width: 800px; margin-inline: auto; }
 /* A help page whose content is tables and a diagram, not prose (149.1-01).
-   Two page-verdict readers, on the viewport and on the full page, named the
-   same worst fault for Methods behind the numbers at 800px: a card about
+   Read on the viewport and on the full page, Methods behind the numbers at
+   800px had one worst fault: a card about
    850px wide in a 1,450px content area, "a small panel lost in a large empty
    field". Prose inside it still runs at 75ch (`.help-page p`). */
 .page-help   { max-width: 1100px; margin-inline: auto; }
 /* The demonstration banner sits inside <main> above the content, full width
    on every page. On the 1,100 px help column it followed none of the edges
-   below it (page-verdict, 2026-10-06 19:16), so there it takes the column. */
+   below it, so there it takes the column. */
 .app-content:has(.page-help) > .demo-notice { max-width: 1100px; margin-inline: auto; }
 .page-wide   { max-width: 1400px; margin-inline: auto; }
 
@@ -4358,7 +4351,7 @@ details[open] > summary .disclosure-mark {
     text-align: left;
     /* Centred under the logo and wordmark: the box is narrower than the page
        (it holds the prose measure), and a zero inline margin left it hanging
-       off the logo's axis (Brent, 2026-10-10 04:12 PDT: "off center"). */
+       off the logo's axis. */
     margin: var(--space-md) auto 0;
 }
 
@@ -4697,8 +4690,8 @@ details[open] > summary .disclosure-mark {
 
 /* A `.upload-zone:hover` background stood here until 2026-08-26. It named
    --color-surface-elevated, a token defined nowhere, so the browser threw the
-   declaration away and hover painted no fill. Deleted rather than repointed:
-   Brent's ruling at the Phase 121 checkpoint. Hover keeps the teal border and
+   declaration away and hover painted no fill. It was deleted rather than
+   repointed (Phase 121). Hover keeps the teal border and
    the lighter label; the fill was never there to lose. */
 
 /* -- Responsive: stat-grid-4col ----------------------------------------- */
@@ -4797,11 +4790,10 @@ details[open] > summary .disclosure-mark {
 .map-form-layout {
     display: grid;
     /* One column: the map is a landscape band above the form, the record
-       pages' shape, and the form's cards sit two across under it. Brent,
-       2026-09-13, on the 143-10 build that ran the map beside the form at the
-       form's height: "having the map portrait orientation doesn't make a lot
-       of sense. Maps need to be in view so they're much better presented
-       landscape like all the other maps and most computer monitors." The
+       pages' shape, and the form's cards sit two across under it. The 143-10
+       build ran the map beside the form at the form's height, in portrait,
+       where most of it was out of view; maps here run landscape, like the
+       other maps and most computer monitors. The
        stretched two-column layout that produced the portrait map is retired
        with it (R-112 add: nothing runs out, nothing is beside
        anything). */
@@ -5521,13 +5513,13 @@ details[open] > summary .disclosure-mark {
 }
 
 /* -- The water year's calculation notes as one table (2026-10-12) ---------- */
-/* Each item is its own tbody (Brent, 16:47: "They all look like they're the
-   same thing ... you need a gap or a bolder line"): a band in the raised
+/* Each item is its own tbody, so the items stop reading as one list: a band
+   in the raised
    colour with an accent rule carries the item's label, real space in the
    card's colour separates one item from the next, the points sit indented
    under the band, and a total takes the shared `.row-subtotal` row. A first
    try with a 3 px border-colour rule and a stripe-shade band still read as one
-   list (looked at 1,730, 16:52). Figures and point names keep to one line. */
+   list at 1,730. Figures and point names keep to one line. */
 .calculation-notes-table tr.note-group-head td,
 .calculation-notes-table tbody tr.note-group-head:nth-child(even) td {
     text-align: left;
@@ -5560,7 +5552,7 @@ details[open] > summary .disclosure-mark {
    still forced the same surplus into Zone (539-643px gap, unchanged in
    kind), and `width: auto` stopped the table at ~757px inside a 1,439px
    card, leaving the card head and filter row full width above a table that
-   no longer matched -- not the shape the mock-up shows or Brent approved.
+   no longer matched -- not the shape the approved mock-up shows.
    `width: 100%` stays (the platform's own pattern: the ledger's Description
    column, the dashboard's tables all let their widest column take the
    surplus); Water type and Allocation are pinned to their own content width
@@ -5593,8 +5585,8 @@ details[open] > summary .disclosure-mark {
 /* The closing figure of a totals row (a tfoot or a `.row-subtotal`): the
    accent the label already carries, one weight up and one step larger than
    the body's figures, so the total reads as the table's answer rather than
-   one more entry. Brent, 143-06 verify checkpoint 2026-09-12: the band and
-   the teal label alone left the values blending into the list. The dashboard's
+   one more entry. The band and the teal label alone left the values
+   blending into the list. The dashboard's
    totals already colour theirs by meaning (`text-supply`); a plain total has
    no meaning colour, so it takes the platform's emphasis accent. */
 .data-table td.td-total,
@@ -5811,7 +5803,7 @@ details[open] > summary .disclosure-mark {
 
 /* ======================================================================
    150-04: the layout pass. Six shared rules, each designed on one page and
-   proven by a fresh read before it was applied (page-verdict/LAYOUT-INVENTORY-150-04.md).
+   checked by a fresh read before it was applied.
    ====================================================================== */
 
 /* -- A. Small pages: what was tried and what stands --------------------- */
