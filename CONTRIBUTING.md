@@ -6,7 +6,7 @@ Thanks for your interest. OpenH2O exists to put capable water-records software w
 
 ## License of contributions
 
-OpenH2O is licensed under **AGPL-3.0-or-later**. By submitting a contribution you agree it is licensed under the same terms. If you run a modified version as a network service, the AGPL requires you to offer your users its source — keep the in-app "Source code" link pointing at your published source (see [NOTICE](NOTICE)).
+OpenH2O is licensed under **AGPL-3.0-or-later**, and by submitting a contribution you agree to license it under the same terms. If you run a modified version as a network service, the AGPL requires you to offer its source to your users. Point the in-app "Source code" link at your published source (see [NOTICE](NOTICE)).
 
 ## Getting set up
 
@@ -20,25 +20,25 @@ docker compose exec web python manage.py seed_data
 make test                   # confirm a green baseline
 ```
 
-See [CLAUDE.md](CLAUDE.md) for an orientation to the codebase and [DEPLOY.md](DEPLOY.md) for production deployment.
+[CLAUDE.md](CLAUDE.md) gives an orientation to the codebase, and [DEPLOY.md](DEPLOY.md) covers production deployment.
 
 ## Ground rules
 
-- **Add tests.** Anything with logic — a model method, a view, a data adapter, a report generator — needs a test in [tests/](tests/). We use pytest + factory_boy.
-- **Run the suite before opening a PR:** `make test`. It's pinned to local settings; production settings refuse to boot without a strong DB password by design.
-- **Keep the standards gate green.** If you touch the data model or an adapter, run `python manage.py check_conformance` and update the crosswalk if needed (see [docs/DATA-STANDARDS.md](docs/DATA-STANDARDS.md)).
-- **Match the stack's constraints.** No Node.js build step, no Celery/Redis, single-tenant. These are deliberate — see the "Key Constraints" section of [CLAUDE.md](CLAUDE.md).
-- **One typeface, the design tokens.** UI work uses the tokens in `static/css/tokens.css`; don't introduce new fonts or ad-hoc colors.
-- **Every new source file** gets the SPDX header: `# SPDX-License-Identifier: AGPL-3.0-or-later`.
+- **Add tests.** Anything with logic needs a test in [tests/](tests/): a model method, a view, a data adapter or a report generator. The tests use pytest and factory_boy.
+- **Run the suite with `make test` before you open a pull request.** It uses the local settings, because the production settings refuse to start without a strong database password.
+- **Keep the standards check passing.** If you change the data model or an adapter, run `python manage.py check_conformance` and update the crosswalk if it reports a gap (see [docs/DATA-STANDARDS.md](docs/DATA-STANDARDS.md)).
+- **Keep to the stack's limits.** OpenH2O has no Node.js build step, does not use Celery or Redis, and serves one organization per site. The "Key Constraints" section of [CLAUDE.md](CLAUDE.md) gives the reasons.
+- **Use the design tokens.** Interface work uses the one typeface and the tokens in `static/css/tokens.css`. Add no new fonts or one-off colors.
+- **Give every new source file the SPDX header:** `# SPDX-License-Identifier: AGPL-3.0-or-later`.
 
 ## Adding a data adapter
 
-New external sources are the most common contribution. An adapter lives in `datasync/adapters/`, exposes a `PARAMETER_MAP`, and registers itself. Then map its native codes to canonical concepts in `standards/management/commands/seed_observed_properties.py` (the `CODE_TO_KEY` table) so the crosswalk and conformance gate stay complete. A regression test enforces that every adapter code resolves to an observed property.
+New external data sources are the most common contribution. An adapter lives in `datasync/adapters/`, defines a `PARAMETER_MAP` and registers itself. Then map the source's own codes to OpenH2O's measured quantities in the `CODE_TO_KEY` table in `standards/management/commands/seed_observed_properties.py`, which keeps the crosswalk and the conformance check complete. A test checks that every adapter code maps to an observed property.
 
 ## Reporting bugs and ideas
 
-**Open a GitHub issue** with what you expected, what happened, and (for bugs) the steps to reproduce. That's the path that always works.
+**Open a GitHub issue** with what you expected, what happened and, for a bug, the steps to reproduce it. A GitHub issue always reaches the maintainer.
 
-Some deployments — including the hosted demo — also turn on the **in-app feedback widget**, the blue "Send feedback" bar docked at the bottom of every page. Where it's enabled, it's the quickest route: pick a category (bug, idea, question, or "data looks wrong"), write what happened, and optionally attach a screenshot (click, drag, or paste one in). It quietly captures useful diagnostics — the page URL, your browser, any JavaScript errors, and the build version — so you don't have to. Reports land in that instance's own database; a maintained deployment also forwards them to a triage pipeline. Name and email are optional and only used to reply. (It's off by default; an operator turns it on with `FEEDBACK_ENABLED=True`.)
+Some sites, including the hosted demo, also turn on the in-app feedback form. Its "Send feedback" link sits at the foot of the menu on every page. Choose a category (bug, idea, question or "data looks wrong"), describe what happened, and attach a screenshot if it helps. The form also records the page address, your browser, any JavaScript errors and the version running. Reports are stored in that site's own database, and a maintained site can forward them to a triage service. Name and email are optional and are used only to reply. The form is off by default, and a site's operator turns it on with `FEEDBACK_ENABLED=True`.
 
-For security-sensitive reports, please contact the maintainer privately rather than opening a public issue.
+Report a security problem privately, as [SECURITY.md](SECURITY.md) describes, not in a public issue.
