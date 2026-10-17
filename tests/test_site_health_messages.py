@@ -153,7 +153,16 @@ def _source(code, name, *, synced_hours_ago=None):
 
     from datasync.models import DataSource, DataSyncLog
 
+    from django.contrib.gis.geos import Point
+
+    from datasync.models import MonitoredStation
+
     src = DataSource.objects.create(code=code, name=name, is_active=True)
+    # Message C row 1: a source counts only with a station turned on.
+    MonitoredStation.objects.create(
+        data_source=src, external_station_id=f"{code}-1", station_name=code,
+        location=Point(-120.0, 37.0, srid=4326), is_active=True,
+    )
     if synced_hours_ago is not None:
         log = DataSyncLog.objects.create(data_source=src, status="success")
         DataSyncLog.objects.filter(pk=log.pk).update(
@@ -184,7 +193,7 @@ def test_sync_sentences(settings, monkeypatch):
     DataSource.objects.filter(code__in=["probe_never", "probe_old"]).update(is_active=False)
     _source("probe_ok2", "PROBE OK TWO", synced_hours_ago=1)
     assert checks.check_sync_freshness()["message"] == (
-        "OpenH2O synced each of the 2 data sources in the last 48 hours. "
+        "OpenH2O synced all 2 data sources in the last 48 hours. "
         "OpenH2O does not count CIMIS, which needs an API key."
     )
     DataSource.objects.update(is_active=False)
@@ -242,3 +251,79 @@ def test_the_guide_has_a_row_for_every_server_card():
     for category in sorted(HOST_LEVEL_CATEGORIES | {"sync_freshness", "calculation"}):
         assert f"\n| {labels[category]} | " in section, labels[category]
     assert "run_health_checks --json" in section
+
+
+# --- message C (2026-10-16 20:23) -------------------------------------------
+
+
+def test_sync_counts_a_partial_sync_and_leaves_out_a_source_with_no_station(settings, monkeypatch):
+    from django.contrib.gis.geos import Point
+
+    from datasync.models import DataSource, DataSyncLog, MonitoredStation
+
+    settings.HEALTH_DEMO_MODE = False
+    DataSource.objects.update(is_active=False)
+    for code in ("CIMIS_API_KEY", "NOAA_CDO_TOKEN", "OPENET_API_KEY"):
+        monkeypatch.setenv(code, "x")
+    for code, name in (("probe_partial", "PROBE WDL"), ("probe_ok", "PROBE OK")):
+        src = DataSource.objects.create(code=code, name=name, is_active=True)
+        MonitoredStation.objects.create(
+            data_source=src, external_station_id=f"{code}-1", station_name=code,
+            location=Point(-120.0, 37.0, srid=4326), is_active=True,
+        )
+        DataSyncLog.objects.create(
+            data_source=src, status="partial" if code == "probe_partial" else "success"
+        )
+    DataSource.objects.create(code="probe_none_on", name="PROBE CIMIS", is_active=True)
+    assert checks.check_sync_freshness()["message"] == (
+        "OpenH2O synced all 2 data sources in the last 48 hours. "
+        "PROBE CIMIS, with no station turned on, is not counted."
+    )
+    for code, name in (("probe_a", "PROBE A"), ("probe_b", "PROBE B")):
+        src = DataSource.objects.create(code=code, name=name, is_active=True)
+        MonitoredStation.objects.create(
+            data_source=src, external_station_id=f"{code}-1", station_name=code,
+            location=Point(-120.0, 37.0, srid=4326), is_active=True,
+        )
+    assert checks.check_sync_freshness()["message"].startswith(
+        "OpenH2O has not synced PROBE A or PROBE B on this site yet."
+    )
+
+
+def test_water_year_dates():
+    from datetime import date
+
+    from accounting.models import ReportingPeriod
+
+    p = ReportingPeriod(name="WY 2025-2026", start_date=date(2025, 10, 15), end_date=date(2026, 9, 20))
+    assert checks._mid_month_sentences(p) == (
+        "WY 2025-2026 starts on October 15 and ends on September 20. OpenH2O "
+        "calculates whole months, so WY 2025-2026's figures include October 1 "
+        "to 14 and September 21 to 30."
+    )
+    p = ReportingPeriod(name="WY X", start_date=date(2025, 10, 15), end_date=date(2026, 9, 30))
+    assert checks._mid_month_sentences(p) == (
+        "WY X starts on October 15. OpenH2O calculates whole months, so WY X's "
+        "figures include October 1 to 14."
+    )
+    assert checks.check_period_month_alignment()["message"] in (
+        "Every water year starts on the first day of a month and ends on the last day of a month.",
+    ) or "OpenH2O calculates whole months" in checks.check_period_month_alignment()["message"]
+
+
+def test_leftover_headgate_water_green():
+    from surface.models import UnallocatedDelivery
+
+    if not UnallocatedDelivery.objects.exists():
+        assert checks.check_unallocated_delivery()["message"] == (
+            "No headgate water was left after each field received its ETAW "
+            "divided by its irrigation efficiency."
+        )
+
+
+def test_etaw_sentences_have_no_filing_path():
+    import inspect
+
+    src = inspect.getsource(checks.check_et_meter_agreement)
+    assert "before filing" not in src
+    assert "No metered use area has water metered or delivered" in src

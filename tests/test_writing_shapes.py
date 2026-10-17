@@ -80,7 +80,6 @@ BASELINE: dict = {
     "accounting/ledger_words.py": {"em dash": 1},
     "accounting/views.py": {"em dash": 2},
     "core/models.py": {"em dash": 1},
-    "health/checks.py": {"em dash": 1},
     "reporting/generators.py": {"em dash": 2},
     "reporting/validators.py": {"em dash": 16},
     "reporting/views.py": {"em dash": 1},

@@ -436,7 +436,7 @@ def test_a_finished_run_writes_the_site_health_record(world):
 
     result = HealthCheckResult.objects.get(category="calculation")
     assert result.details["request_id"] == req.pk
-    assert result.message.startswith("Last calculated ")
+    assert result.message.startswith("OpenH2O last calculated ")
 
 
 def test_a_site_health_failure_never_changes_the_run_status(world, monkeypatch):

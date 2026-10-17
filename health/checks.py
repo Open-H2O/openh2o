@@ -74,11 +74,15 @@ def _count(n: int, one: str, many: str) -> str:
     return f"{n:,} {one if n == 1 else many}"
 
 
-def _and(parts: list) -> str:
+def _and(parts: list, word: str = "and") -> str:
     """'a', 'a and b', 'a, b and c'."""
     if len(parts) < 2:
         return "".join(parts)
-    return f"{', '.join(parts[:-1])} and {parts[-1]}"
+    return f"{', '.join(parts[:-1])} {word} {parts[-1]}"
+
+
+def _or(parts: list) -> str:
+    return _and(parts, "or")
 
 
 # Irrigation-efficiency bands for check_et_meter_agreement (math eval item 9).
@@ -236,15 +240,26 @@ def check_sync_freshness():
     # Row 4: a source waiting for its API key is not counted, as the
     # monitoring dashboard shows it (it was action required here).
     waiting_for_key = []
+    # Brent, screen 16 message C row 1 (2026-10-16 20:23): a source with no
+    # station turned on is not counted (the dashboard says "None activated").
+    no_station_on = []
 
     for source in active_sources:
         if freshness.credential_missing(source.code):
             waiting_for_key.append(source.name)
             details[source.code] = {"last_sync": None, "status": "needs_key"}
             continue
+        if not source.monitoredstation_set.filter(is_active=True).exists():
+            no_station_on.append(source.name)
+            details[source.code] = {"last_sync": None, "status": "no_station_on"}
+            continue
         names[source.code] = source.name
+        # Row 1: a partial sync (some stations returned data) counts as a
+        # sync, as sync_source's own failure streak counts it.
         last_log = (
-            DataSyncLog.objects.filter(data_source=source, status="success")
+            DataSyncLog.objects.filter(
+                data_source=source, status__in=("success", "partial")
+            )
             .order_by("-started_at")
             .first()
         )
@@ -270,12 +285,15 @@ def check_sync_freshness():
             }
 
     # Brent, 150.1-02 screen 16 message B row 4 (2026-10-16 07:07).
-    counted = {c: v for c, v in details.items() if v["status"] != "needs_key"}
+    counted = {
+        c: v for c, v in details.items()
+        if v["status"] not in ("needs_key", "no_station_on")
+    }
     never = [freshness.source_phrase(names[c]) for c, v in counted.items() if v["last_sync"] is None]
     behind = [(c, v) for c, v in counted.items() if v["last_sync"] and v["status"] != "green"]
     sentences = []
     if never:
-        sentences.append(f"OpenH2O has not synced {_and(never)} on this site yet.")
+        sentences.append(f"OpenH2O has not synced {_or(never)} on this site yet.")
     for c, v in behind:
         sentences.append(
             f"OpenH2O last synced {freshness.source_phrase(names[c])} "
@@ -294,12 +312,17 @@ def check_sync_freshness():
         )
     elif counted:
         sentences.append(
-            f"OpenH2O synced each of the {len(counted)} data sources in the last 48 hours."
+            f"OpenH2O synced all {len(counted)} data sources in the last 48 hours."
         )
     if waiting_for_key:
         need = "needs" if len(waiting_for_key) == 1 else "need"
         sentences.append(
             f"OpenH2O does not count {_and(waiting_for_key)}, which {need} an API key."
+        )
+    if no_station_on:
+        verb = "is" if len(no_station_on) == 1 else "are"
+        sentences.append(
+            f"{_and(no_station_on)}, with no station turned on, {verb} not counted."
         )
     msg = " ".join(sentences)
     return {
@@ -773,15 +796,22 @@ def check_unallocated_delivery():
         "largest": worst,
     }
 
+    # Brent, screen 16 message C row 2 (2026-10-16 20:23): his approved run
+    # note's words (2026-10-12 15:18), the points of diversion named first.
     if count:
         status = "yellow"
+        points = rows.values("point_of_diversion").distinct().count()
         msg = (
-            f"{total} AF delivered across {count} POD-month(s) is not explained "
-            f"by crop demand — check diversion volumes, ET estimates, non-crop use"
+            f"At {_count(points, 'point', 'points')} of diversion, {total:,.2f} AF "
+            "of headgate water was left after each field received its ETAW "
+            "divided by its irrigation efficiency."
         )
     else:
         status = "green"
-        msg = "All delivered surface water is accounted for by demand"
+        msg = (
+            "No headgate water was left after each field received its ETAW "
+            "divided by its irrigation efficiency."
+        )
 
     return {
         "category": "unallocated_delivery",
@@ -830,18 +860,21 @@ def check_period_month_alignment():
 
     details = {"periods_checked": ReportingPeriod.objects.count(), "offenders": offenders}
 
+    # Brent, screen 16 message C row 3 (2026-10-16 20:23): name the day.
     if offenders:
         status = "yellow"
-        n = len(offenders)
-        msg = (
-            f"{n} water year{'s' if n != 1 else ''} start{'' if n != 1 else 's'} or "
-            f"end{'' if n != 1 else 's'} mid-month; monthly calculation runs are "
-            f"counted whole, so {'those water years include' if n != 1 else 'that water year includes'} "
-            f"more days than {'they state' if n != 1 else 'it states'}"
-        )
+        parts = []
+        for period in ReportingPeriod.objects.filter(
+            name__in=[o["period"] for o in offenders]
+        ).order_by("start_date"):
+            parts.append(_mid_month_sentences(period))
+        msg = " ".join(parts)
     else:
         status = "green"
-        msg = "All water years are month-aligned"
+        msg = (
+            "Every water year starts on the first day of a month and ends on "
+            "the last day of a month."
+        )
 
     return {
         "category": "period_alignment",
@@ -849,6 +882,35 @@ def check_period_month_alignment():
         "message": msg,
         "details": details,
     }
+
+
+def _day(d) -> str:
+    return f"{d:%B} {d.day}"
+
+
+def _mid_month_sentences(period) -> str:
+    """'WY 2025-2026 starts on October 15. OpenH2O calculates whole months,
+    so WY 2025-2026's figures include October 1 to 14.'"""
+    import calendar
+    from datetime import date
+
+    s, e = period.start_date, period.end_date
+    last = calendar.monthrange(e.year, e.month)[1]
+    when, extra = [], []
+    if s.day != 1:
+        when.append(f"starts on {_day(s)}")
+        before = date(s.year, s.month, s.day - 1)
+        extra.append(
+            f"{_day(date(s.year, s.month, 1))}" + ("" if s.day == 2 else f" to {before.day}")
+        )
+    if e.day != last:
+        when.append(f"ends on {_day(e)}")
+        after = date(e.year, e.month, e.day + 1)
+        extra.append(_day(after) + ("" if after.day == last else f" to {last}"))
+    return (
+        f"{period.name} {' and '.join(when)}. OpenH2O calculates whole months, "
+        f"so {period.name}'s figures include {' and '.join(extra)}."
+    )
 
 
 def _metered_use_areas(n: int) -> str:
@@ -1012,8 +1074,10 @@ def check_et_meter_agreement():
         return {
             "category": "et_meter_agreement",
             "status": "green",
+            # Brent, screen 16 message C row 6 (2026-10-16 20:23).
             "message": (
-                "No metered parcels with applied water to check satellite ET against"
+                "No metered use area has water metered or delivered, so OpenH2O "
+                "cannot compare ETAW with it."
             ),
             "details": details,
         }
@@ -1023,47 +1087,41 @@ def check_et_meter_agreement():
     details["total_consumptive_use_af"] = str(total_cu)
     details["total_applied_water_af"] = str(total_applied)
 
+    # Brent, screen 16 message C rows 4 to 6 (2026-10-16 20:23). The ratio
+    # is ETAW (net consumptive use: gross ET less effective precipitation)
+    # over the water metered or delivered.
     pct = (aggregate * 100).quantize(Decimal("0.1"))
-    band = (
-        f"expected {int(ET_METER_GREEN_LOW * 100)}-{int(ET_METER_GREEN_HIGH * 100)}% "
-        f"for irrigated agriculture"
+    n = comparable_parcels
+    low, high = int(ET_METER_GREEN_LOW * 100), int(ET_METER_GREEN_HIGH * 100)
+    each = "each counted" if n != 1 else "counted"
+    base = (
+        f"ETAW was {pct}% of the water metered or delivered across "
+        f"{_metered_use_areas(n)}, {each} once per water year."
     )
 
-    if comparable_parcels < ET_METER_MIN_SAMPLE:
+    if n < ET_METER_MIN_SAMPLE:
         status = "green"
+        have = "have" if n != 1 else "has"
         msg = (
-            f"Satellite ET is {pct}% of the supplies on record ({band}), but only "
-            f"{_metered_use_areas(comparable_parcels)}, counted once per water "
-            f"year; too small to judge"
+            f"Only {_metered_use_areas(n)}, {each} once per water year, {have} both "
+            "ETAW and water metered or delivered, too few for OpenH2O to compare."
         )
     elif aggregate < ET_METER_RED_LOW or aggregate > ET_METER_RED_HIGH:
         status = "red"
-        msg = (
-            f"Satellite ET is {pct}% of the supplies on record, outside anything "
-            f"irrigation efficiency explains ({band}); check ET magnitude and "
-            f"meter readings before filing"
-        )
+        msg = f"{base} Check the OpenET figures and the meter readings."
     elif aggregate < ET_METER_GREEN_LOW or aggregate > ET_METER_GREEN_HIGH:
         status = "yellow"
-        msg = (
-            f"Satellite ET is {pct}% of the supplies on record, outside the usual "
-            f"{band}"
-        )
+        msg = f"{base} OpenH2O asks for attention outside {low}% to {high}%."
     elif out_of_band:
         status = "yellow"
+        k = len(out_of_band)
         msg = (
-            f"Satellite ET is {pct}% of the supplies on record overall ({band}), but "
-            f"{len(out_of_band)} of {_metered_use_areas(comparable_parcels)}, "
-            f"counted once per water year, "
-            f"{'falls' if len(out_of_band) == 1 else 'fall'} outside that range"
+            f"{base} OpenH2O expects {low}% to {high}%, and {k} of the {n} "
+            f"{'falls' if k == 1 else 'fall'} outside that range."
         )
     else:
         status = "green"
-        msg = (
-            f"Satellite ET is {pct}% of the supplies on record across "
-            f"{_metered_use_areas(comparable_parcels)}, counted once per water "
-            f"year ({band})"
-        )
+        msg = f"{base} OpenH2O expects {low}% to {high}%."
 
     return {
         "category": "et_meter_agreement",
@@ -1122,9 +1180,10 @@ def check_calculation():
         .first()
     )
     if stuck:
+        # Brent, screen 16 message C row 8 (2026-10-16 20:23).
         sentence = (
             "The calculation stopped without finishing, probably because the "
-            "server restarted. Run it again from the period's page."
+            "server restarted. Run it again from the water year's page."
         )
         CalculationRequest.objects.filter(
             status="running", started_at__lt=now - STUCK_RUNNING_AFTER
@@ -1148,10 +1207,11 @@ def check_calculation():
         return {
             "category": "calculation",
             "status": "yellow",
+            # Row 9: the cause is in the guide's Calculation row.
             "message": (
-                f"A calculation has been waiting to start since "
-                f"{_when(waiting.requested_at)}. The program that runs it is "
-                f"not running; an administrator should check the server."
+                f"A calculation has waited to start since "
+                f"{_when(waiting.requested_at)}. Pass this card to the AI that "
+                "maintains the site; the fix is in OpenH2O's operator guide."
             ),
             "details": with_where(details_for(waiting), waiting),
         }
@@ -1166,19 +1226,20 @@ def check_calculation():
         return {
             "category": "calculation",
             "status": "yellow",
+            # Row 10.
             "message": (
-                "The calculation has never run on this site. Run it from a "
-                "water year's page."
+                "OpenH2O has not calculated any water year on this site yet. "
+                "Run the calculation from a water year's page."
             ),
             "details": {},
         }
 
+    # Row 7: "OpenH2O last calculated 12 months of WY 2025-2026 on ...".
     months = len(last.months or [])
-    parts = [_when(last.finished_at)]
+    what = f"{months} month{'' if months == 1 else 's'}"
     if last.reporting_period_id:
-        parts.append(last.reporting_period.name)
-    parts.append(f"{months} month{'' if months == 1 else 's'}")
-    summary = f"Last calculated {', '.join(parts)}."
+        what += f" of {last.reporting_period.name}"
+    summary = f"OpenH2O last calculated {what} on {_when(last.finished_at)}."
     d = details_for(last)
     if last.status == "failed":
         status, msg = "red", last.outcome

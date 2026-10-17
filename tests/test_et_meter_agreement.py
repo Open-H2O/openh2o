@@ -64,7 +64,7 @@ class TestAgreement:
         ReportingPeriodFactory()
         result = check_et_meter_agreement()
         assert result["status"] == "green"
-        assert "to check satellite ET against" in result["message"]
+        assert "so OpenH2O cannot compare ETAW with it" in result["message"]
         assert result["details"]["comparable_parcel_periods"] == 0
 
     def test_plausible_efficiency_is_green(self):
@@ -87,7 +87,7 @@ class TestAgreement:
         result = check_et_meter_agreement()
         assert result["status"] == "red"
         assert result["details"]["aggregate_ratio"] == "1.8600"
-        assert "check ET magnitude" in result["message"]
+        assert "Check the OpenET figures and the meter readings." in result["message"]
 
     def test_implausibly_low_et_is_also_red(self):
         """Symmetry matters: understated ET hides pumping just as badly."""
@@ -124,7 +124,7 @@ class TestAgreement:
             _metered_parcel(month, consumptive_use="186", metered="100")
         result = check_et_meter_agreement()
         assert result["status"] == "green"
-        assert "too small to judge" in result["message"]
+        assert "too few for OpenH2O to compare" in result["message"]
         assert result["details"]["sufficient_sample"] is False
 
     def test_surface_water_counts_as_applied_water(self):

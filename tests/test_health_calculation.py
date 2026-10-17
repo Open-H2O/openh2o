@@ -50,8 +50,8 @@ class TestStates:
         r = check_calculation()
         assert r["status"] == "yellow"
         assert r["message"] == (
-            "The calculation has never run on this site. Run it from a "
-            "water year's page."
+            "OpenH2O has not calculated any water year on this site yet. "
+            "Run the calculation from a water year's page."
         )
 
     def test_succeeded_is_green(self):
@@ -62,7 +62,7 @@ class TestStates:
         )
         r = check_calculation()
         assert r["status"] == "green"
-        assert r["message"] == f"Last calculated {_stamp(req)}, WY 2026, 3 months."
+        assert r["message"] == f"OpenH2O last calculated 3 months of WY 2026 on {_stamp(req)}."
         assert r["details"]["request_id"] == req.pk
         assert r["details"]["reporting_period_id"] == p.pk
         assert "where_href" not in r["details"]
@@ -71,7 +71,7 @@ class TestStates:
         req = _request("succeeded", months=["2026-01"],
                        finished_ago=dt.timedelta(hours=3))
         assert check_calculation()["message"] == (
-            f"Last calculated {_stamp(req)}, 1 month."
+            f"OpenH2O last calculated 1 month on {_stamp(req)}."
         )
 
     def test_finished_with_notes_is_yellow_with_first_note(self):
@@ -84,7 +84,7 @@ class TestStates:
         r = check_calculation()
         assert r["status"] == "yellow"
         assert r["message"] == (
-            f"Last calculated {_stamp(req)}, WY 2026, 2 months. "
+            f"OpenH2O last calculated 2 months of WY 2026 on {_stamp(req)}. "
             "No satellite ET for February 2026."
         )
         assert r["details"]["where_href"] == reverse(
@@ -113,14 +113,14 @@ class TestStates:
         r = check_calculation()
         assert r["status"] == "yellow"
         assert r["message"] == (
-            f"A calculation has been waiting to start since {when}. The "
-            "program that runs it is not running; an administrator should "
-            "check the server."
+            f"A calculation has waited to start since {when}. Pass this card "
+            "to the AI that maintains the site; the fix is in OpenH2O's "
+            "operator guide."
         )
 
     def test_queued_under_fifteen_minutes_is_not_flagged(self):
         _request("queued", requested_ago=dt.timedelta(minutes=5))
-        assert check_calculation()["message"].startswith("The calculation has never run")
+        assert check_calculation()["message"].startswith("OpenH2O has not calculated any water year")
 
     def test_stale_running_is_marked_failed_and_red(self):
         p = _period()
@@ -129,7 +129,7 @@ class TestStates:
         r = check_calculation()
         sentence = (
             "The calculation stopped without finishing, probably because the "
-            "server restarted. Run it again from the period's page."
+            "server restarted. Run it again from the water year's page."
         )
         assert r["status"] == "red"
         assert r["message"] == sentence
