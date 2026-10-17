@@ -16,7 +16,7 @@ export APP_VERSION = $(VERSION)
         seed-data-sources seed-report-templates seed-water-right-types \
         seed-well-types demo flush-demo merced teardown-demo \
         check test test-droppable guard-fresh fresh snapshot-demo reset-demo calc-rebuild verify-clean install-cron show-cron sync guard-prod guard-demo-host deploy rebuild-golden \
-        verify-candidate promote-golden ci-gate
+        verify-candidate promote-golden ci-gate release
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | \
@@ -190,6 +190,13 @@ deploy: guard-demo-host ## REFUSES unless this checkout is the demo host (.demo-
 	@echo "  and was promoted to golden (the previous golden is backed up beside it as"
 	@echo "  golden.dump.bak-pre-<version>-<date>). The live database now holds that build,"
 	@echo "  and so will every nightly reset until the next deploy."
+
+# `make deploy` checks before it ships and nothing after. `make release` (and deploy.sh, which
+# runs the same script from origin/main) runs it, then asks the live home page for its title and
+# the new version, and when that fails puts the previous code, web image and demonstration
+# database back in the same run. Exit codes are in the header of scripts/release.sh.
+release: guard-demo-host ## make deploy, then a smoke test of the live home page; a failure puts the previous release back (scripts/release.sh); REF=<sha>
+	bash scripts/release.sh REF="$(REF)"
 
 logs: ## Tail web container logs
 	$(COMPOSE) logs -f web

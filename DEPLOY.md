@@ -778,6 +778,17 @@ also refuses a commit whose `tests` run on GitHub did not pass (failed, still
 running, or never run), and it refuses when GitHub cannot be asked;
 `make ci-gate REF=<commit>` runs that check on its own.
 
+On that host `make deploy` checks before it ships and nothing after. Two routes
+add the check after: `make release REF=<commit>` in the checkout, and
+`deploy.sh [<commit>]` from the maintainer's computer, which runs the same
+`scripts/release.sh` over SSH, read from `origin/main`. After `make deploy` the
+script asks the live home page for its title and for the new version. When
+either is missing, it puts back the previous commit, the previous web image
+(kept as `openh2o-web:previous`) and the previous demonstration snapshot in the
+same run, then exits 5. `--drill-smoke-missing-page` adds a page that does not
+exist to that check, so the rollback can be shown working. Run `make deploy`
+alone only to skip the check after.
+
 ### Protecting a Live Installation (`.production-lock`)
 
 Once this deployment holds the agency's real records, a single careless command
