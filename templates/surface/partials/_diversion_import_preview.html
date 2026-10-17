@@ -15,7 +15,7 @@ pressed.
 {% endif %}
 
 <div class="card-raised">
-  {% comment %} 150.1-02 screen 18 (Brent 2026-10-14 18:41, message D row 10; 18:01, message B row 10): the heading names the file kind, and the year sentence shows for a Water Use Reported file only (a book's dates are read as written). {% endcomment %}
+  {% comment %} 150.1-02: the heading names the file kind, and the year sentence shows for a Water Use Reported file only (a book's dates are read as written). {% endcomment %}
   <h2 class="card-header-ruled">{{ row_count }} row{{ row_count|pluralize }} from {% if layout == "state" %}a Water Use Reported export{% else %}a book of deliveries{% endif %}</h2>
   {% if layout == "state" %}<p class="text-base text-secondary mt-md">{{ rule_sentence }}</p>{% endif %}
 

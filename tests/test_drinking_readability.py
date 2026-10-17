@@ -28,7 +28,7 @@ failures that this file must now guard against in both directions.
    `DESIGN.md` copy rule 11; the gate is `tests/test_domain_vocabulary.py`.
 
 2. **It wrote the screen in a register nobody would use with a colleague
-   (2026-08-06, raised by Brent looking at the live builder).** "For people to
+   (2026-08-06, seen in the live builder).** "For people to
    read. Anything that identifies the spot." · "Kind of place" · "Add this
    place" · "Whatever the state uses for this spot." That is not explaining
    water, so copy rule 11 passes it clean — a different axis, and the reason a
@@ -275,7 +275,7 @@ class TestReviewScreenSaysNothingIsSaved:
     def test_leads_with_nothing_saved(self):
         """A lookup fetches real records, so it feels like something happened."""
         body = self._render([])
-        # 150.1-02 screen 12: "Not saved yet", approved by Brent 2026-10-13 09:06 PDT.
+        # 150.1-02: "Not saved yet".
         assert "Not saved yet" in body
         assert body.index("Not saved yet") < body.index("PWSID")
 
@@ -310,7 +310,7 @@ class TestReviewScreenSaysNothingIsSaved:
 #: Program" is what the State Water Board calls its own program, so pinning it
 #: constrains the facts a page must state and leaves every sentence around it
 #: free to be rewritten. `GAMA` reaches the facility page (the sampling point pages dropped it at
-#: 150.1-02 screen 14, Brent 2026-10-14 15:51 PDT), `SDWIS` and `PWSID` reach
+#: 150.1-02), `SDWIS` and `PWSID` reach
 #: the onboarding front door — see the audit's D6, D7 and D8.
 REQUIRED_EXPANSIONS = {
     "facility_detail": ["Groundwater Ambient Monitoring and Assessment Program"],
@@ -323,7 +323,7 @@ REQUIRED_EXPANSIONS = {
 #: Spellings that must never reach a reader.
 #:
 #: `GAMA programme` shipped to staging in 101-01 across four surfaces and was
-#: caught by Brent's eye rather than by any gate. `test_drinking_provenance.py`
+#: caught by eye rather than by any gate. `test_drinking_provenance.py`
 #: closed the half of that hole covering the provenance constants; this closes
 #: the other half — the rendered page and the glossary strings.
 BRITISH_SPELLINGS = (
@@ -469,8 +469,8 @@ class TestCopyRules:
         and was green while `SHORTHAND["DST"]` said "The state's id for the
         distribution system" — a string that reaches a reader ONLY when a
         facility name on the page contains `DST`, which the real Merced data has
-        and no fixture here did. It was caught by grepping the deployed page at
-        this plan's checkpoint, not by this suite. A string is copy wherever it
+        and no fixture here did. It was caught by grepping the deployed page,
+        not by this suite. A string is copy wherever it
         is stored.
         """
         bare_id = re.compile(r"(?<![\w/-])id(?![\w-])")
@@ -621,11 +621,9 @@ class TestCopyRules:
         am I writing in*. Two different axes, and this screen failed the second
         one for six weeks while passing the first.
 
-        Raised by Brent on 2026-08-06 against the live builder, on the help text
-        under the Description field: *"'For people to read' ?? — this is
-        ridiculous, why would that be helpful?"* He was looking at a form for
-        entering a state record, written as though he might not know what a
-        description was for.
+        Found on 2026-08-06 in the live builder, in the help text under the
+        Description field. It was a form for entering a state record, written
+        as though the reader might not know what a description was for.
         """
         text = visible_text(
             client_logged_in.get(

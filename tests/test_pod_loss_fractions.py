@@ -158,8 +158,8 @@ def test_band_saves_and_the_page_shows_it(auth_client):
 
 
 # ---------------------------------------------------------------------------
-# 3. Contract unit and miner's inch are gone (Brent 2026-10-13 07:22 "yes",
-#    150.1-02 screen 7 row 9: nothing in OpenH2O read either field)
+# 3. Contract unit and miner's inch are gone (150.1-02:
+#    nothing in OpenH2O read either field)
 # ---------------------------------------------------------------------------
 
 

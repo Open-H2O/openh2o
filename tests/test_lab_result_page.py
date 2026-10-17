@@ -122,7 +122,7 @@ class TestLabResultLeadsWithTheFinding:
         self, client_in, lab_result_with_history
     ):
         """Its caption, "the least this method reports", was deleted
-        (150.1-02 screen 14 row 8, Brent 2026-10-14 15:37 PDT)."""
+        (150.1-02, 2026-10-14)."""
         html = client_in.get(
             reverse("drinking:result_detail", args=[lab_result_with_history["later"].pk])
         ).content.decode()
@@ -167,7 +167,7 @@ class TestLabResultLeadsWithTheFinding:
         ).content.decode()
         segment = _result_segment(html)
         assert "&lt; 0.5" in segment
-        # One caption for every kind of result (150.1-02 screen 14 row 8).
+        # One caption for every kind of result (150.1-02).
         assert "as reported by the laboratory" in _squash(segment)
         assert "not a measured quantity" not in _squash(segment)
 

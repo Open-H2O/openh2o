@@ -1,11 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """146-05 Task 3 (Q8): give every EXISTING water account a `unit_kind`.
 
-The plan's own note, carried verbatim: "the demonstration's accounts are
-Merced-modelled landowner accounts; set at 146-05 so the page can say which;
-re-rule at the checkpoint if wrong." This is an assumption for Brent's eyes at
-the 146-05 checkpoint, not a fact asserted -- the checkpoint's human-verify
-step asks him to confirm or correct it on the running demonstration.
+The plan's own note: the demonstration's accounts are Merced-modelled
+landowner accounts, set at 146-05 so the page can say which. This is an
+assumption to confirm or correct on the running demonstration, not a fact
+asserted.
 
 Only accounts with `unit_kind` still null are touched, so a re-run (or a
 future account created before this migration reaches a deployment) is

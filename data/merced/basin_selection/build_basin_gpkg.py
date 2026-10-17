@@ -4,7 +4,7 @@ Assemble the basin-picker GeoPackage from committed reference layers.
 
 Mirrors data/merced/parcel_selection/fetch_crop_fields.py's role (build the
 .gpkg the picker edits), but reads everything from committed GeoJSON instead of
-fetching DWR — the candidate footprints are the 74 crop fields Brent already
+fetching DWR — the candidate footprints are the 74 crop fields already
 hand-picked, and the hydrography is exported from the live DB by
 _export_reference_layers.py.
 
@@ -12,7 +12,7 @@ Output: merced_basin_picker.gpkg with layers
   candidate_basins : the NON-agricultural county parcels (open land where a
                      basin can go), from fetch_parcels.py, + empty editable
                      columns (name, operator, capacity_acre_feet, feeds_via) —
-                     Brent tags the parcels that become recharge basins
+                     The picker tags the parcels that become recharge basins
   agriculture      : the DWR crop fields, shown as a red "avoid" overlay (you
                      can't pond water on a working field)
   canals           : the named canal/lateral network (reference, labelled)
@@ -34,7 +34,7 @@ CANDIDATE_PARCELS = f"{HERE}/merced_candidate_parcels.geojson"
 CROP_FIELDS_GPKG = f"{PARCEL_SEL}/merced_parcel_picker.gpkg"
 OUT = f"{HERE}/merced_basin_picker.gpkg"
 
-# Context columns worth keeping so Brent can tell parcels apart and judge a
+# Context columns worth keeping so the picker can tell parcels apart and judge a
 # plausible feed (assessor APN + acreage + how non-ag the parcel is).
 KEEP_CONTEXT = ["APN", "GIS_ACRES", "ag_frac"]
 
@@ -44,7 +44,7 @@ def main():
     parcels = gpd.read_file(CANDIDATE_PARCELS).to_crs("EPSG:4326")
     cols = [c for c in KEEP_CONTEXT if c in parcels.columns] + ["geometry"]
     cand = parcels[cols].copy()
-    # Empty columns Brent fills in for the parcels that become basins.
+    # Empty columns the picker fills in for the parcels that become basins.
     #   name        -> basin name (e.g. "Cressey-Winton Recharge Basin")
     #   operator    -> operating district/GSA (optional)
     #   capacity_acre_feet -> design capacity hint (optional)

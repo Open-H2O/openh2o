@@ -50,7 +50,7 @@ EDITABLE_FIELDS = {
 #: 146-05 Task 1 (S1). Not a Parcel column, so not in EDITABLE_FIELDS: the
 #: method is its own row (parcels.ParcelIrrigationMethod). Offered on every
 #: deployment since 150.2-01, when the row moved here from `surface`: a field
-#: watered from a well has an irrigation method too (Brent, 2026-10-11).
+#: watered from a well has an irrigation method too.
 IRRIGATION_METHOD = "irrigation_method"
 
 

@@ -172,7 +172,7 @@ class TestRenderedPages:
 
     def test_getting_started_names_every_domain_on_a_full_deployment(self, admin_client):
         body = admin_client.get("/help/getting-started/").content.decode()
-        # 150.1 (2026-10-10): rebuilt from the facts Brent approved; the
+        # 150.1 (2026-10-10): rebuilt from approved facts; the
         # table tells the truth setup/services.py tells: use areas and
         # stations are brought in, wells and recharge sites are not.
         assert "Add surface diversions and recharge sites" in body

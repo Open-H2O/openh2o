@@ -226,7 +226,7 @@ def test_upload_non_json_shows_specific_error(db):
     client.force_login(_admin())
     resp = _upload(client, b"this is not json at all")
     assert resp.status_code == 200
-    # Brent, 150.1-02 screen 18 message Z: message V's GeoJSON sentence.
+    # The GeoJSON sentence.
     assert "OpenH2O cannot read this file as GeoJSON." in resp.content.decode()
     assert not Boundary.objects.exists()
 
@@ -242,7 +242,6 @@ def test_upload_wrong_geometry_type_shows_specific_error(db):
     })
     resp = _upload(client, point.encode())
     assert resp.status_code == 200
-    # Brent, 150.1-02 screen 18 message Z (2026-10-15 18:49).
     assert "This file has only points or lines. The boundary must be a polygon." in resp.content.decode()
     assert not Boundary.objects.exists()
 

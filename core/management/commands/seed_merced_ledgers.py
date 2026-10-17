@@ -24,7 +24,7 @@ groundwater extraction):
   4. shared-well apportionment — a well that irrigates several parcels splits its
      monthly extraction across them by the stored fraction, summing to the well total.
 
-TWO-AUTHORITY allocations (Brent's 2026-06-03 call). SGMA splits the jobs: the GSA
+TWO-AUTHORITY allocations (2026-06-03). SGMA splits the jobs: the GSA
 manages groundwater (a management-area zone), the irrigation district moves canal
 water (a water right + PODs). Both get Allocations here. A GSA already IS a zone,
 so its groundwater allocation hangs off it directly. A surface district is a water
@@ -265,7 +265,7 @@ DRY_YEAR_OPEN_FRACTION = Decimal("0.1")    # the El Nido district's current-year
 # 133-02 — THIS CALENDAR IS A DECISION, NOT A LEFTOVER DATE. It is a single
 # cutoff, not a per-water-year window, so every month of WY 2025-2026 falls
 # after it and the El Nido point delivers nothing in the open year. Each of
-# those months carries a typed delivery record of 0 (150.5-01, Brent
+# those months carries a typed delivery record of 0 (150.5-01,
 # 2026-10-12: curtailment orders removed from OpenH2O). A typed record stops
 # the estimator (surface/estimate.py `_has_typed_record`, zero included), so
 # the platform never estimates water the district recorded as not delivered.
@@ -276,7 +276,7 @@ EL_NIDO_LAST_DELIVERY = date(2025, 6, 30)
 # The El Nido canal's point of diversion, matched by its id prefix (the demo
 # marker suffix "-DEMO" is not on every build's names).
 EL_NIDO_POD_PREFIX = "MER-POD-007"
-# The demo's one ditch with no meter (Brent, 2026-10-06: "Yes"). The seed types
+# The demo's one ditch with no meter. The seed types
 # no monthly volume for it; the platform estimates each month's delivery from
 # its fields' crop water use (surface.estimate), the same path a district's own
 # unmetered ditch takes, and the split divides that estimate. Its right
@@ -695,7 +695,6 @@ class Command(BaseCommand):
             for rp in periods:
                 if dry and rp is open_wy:
                     amount = _q(face * DRY_YEAR_OPEN_FRACTION)
-                    # Brent, 2026-10-12 19:24 PDT, "approved".
                     note = "Surface allocation reduced for a dry year."
                 else:
                     amount = base
@@ -1097,8 +1096,7 @@ class Command(BaseCommand):
             # and the guarded update below writes nothing on the second pass.
             metered = (wseq % 2 == 0)
             method = "certified_meter" if metered else "unmetered_estimate"
-            # DWR's own row filled beside it (Brent 2026-10-13 05:26 PDT, "yes,
-            # approved"): a metered well is Meters, direct; an unmetered one is
+            # DWR's own row filled beside it: a metered well is Meters, direct; an unmetered one is
             # Land Use, estimate, because the engine estimates its pumping from
             # crop ET. Accuracy band stays blank: the demo states none.
             dwr = ("meters", "direct") if metered else ("land_use", "estimate")

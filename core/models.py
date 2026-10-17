@@ -132,7 +132,7 @@ class SiteConfig(models.Model):
         help_text="The default irrigation efficiency, for a field with no irrigation method on file.",
     )
 
-    # 148-04 Task 1 (Brent's Q1 ruling, 2026-09-20): what a canal delivery that
+    # 148-04 Task 1 (2026-09-20): what a canal delivery that
     # went beyond what its field's crop could use does to the numbers. Belongs
     # to `surface` -- only canal water can be over-delivered, so
     # DeliverySettingsForm shows and saves both fields under its
@@ -163,8 +163,8 @@ class SiteConfig(models.Model):
     )
 
     # 150.2-02: `groundwater_efficiency` (a flat 80% for pumped groundwater,
-    # 148-02) was removed. Brent, 2026-10-11: "one irrigation efficiency per
-    # field"; run_calculations divides by parcels.services.field_efficiency,
+    # 148-02) was removed: there is one irrigation efficiency per
+    # field. run_calculations divides by parcels.services.field_efficiency,
     # which falls back to default_irrigation_efficiency above.
     # The agency-wide default for what happens to an unused allocation at
     # year-end. A district may override it on its Zone; this default must always

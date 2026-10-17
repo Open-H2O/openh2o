@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""The account pages after ISS-248's design pass (Brent, 2026-10-17).
+"""The account pages after ISS-248's design pass.
 
 Decisions: an administrator changes a person's email address on the Users
-page (05:09); one address per person, so allauth's email page is removed
-(05:12); Change password and Set a password are app pages like the profile
-(05:20). Words: message A (05:31) and message B (05:47), each line below.
+page; one address per person, so allauth's email page is removed; Change
+password and Set a password are app pages like the profile. Each line of
+wording is checked below.
 
 Addresses are fictional (example.com, example.org).
 """
@@ -54,7 +54,7 @@ def _signs_in(email, password):
     return response.status_code == 302
 
 
-# -- The profile (message A rows 1, 2 and 11) --------------------------------
+# -- The profile -------------------------------------------------------------
 
 
 def test_profile_card_for_a_person():
@@ -74,7 +74,7 @@ def test_profile_card_for_an_administrator():
 
 
 def test_profile_card_for_a_host_administrator():
-    # Brent 2026-10-17 10:43 ("A"): neither line is true for the account the
+    # Neither line is true for the account the
     # server's settings create, so it shows only the Change password button.
     host = _person("probe.host@example.com", is_staff=True, is_superuser=True)
     body = _body(_client(host).get(reverse("profile")))
@@ -116,7 +116,7 @@ def test_one_address_per_person():
     assert settings.ACCOUNT_MAX_EMAIL_ADDRESSES == 1
 
 
-# -- Change password (message A rows 3 to 11) --------------------------------
+# -- Change password --------------------------------------------------------
 
 
 def test_change_password_page_words():
@@ -205,7 +205,7 @@ def test_the_mismatch_sentence_on_every_page_that_sets_a_password():
     assert form.errors["password2"] == [MISMATCH]
 
 
-# -- Set a password (message B rows 1 to 3) ----------------------------------
+# -- Set a password ---------------------------------------------------------
 
 
 def _google_only_person():
@@ -245,7 +245,7 @@ def test_set_a_password_returns_to_the_profile_with_the_sentence():
     assert "Password successfully set." not in body
 
 
-# -- The Users page and Change email (message B rows 4 to 10) ----------------
+# -- The Users page and Change email ----------------------------------------
 
 
 @pytest.fixture
@@ -344,7 +344,7 @@ def test_change_email_is_for_administrators_only():
     assert jane.email == "jane@example.com"
 
 
-# -- Add user (message B row 9 and the reworded row 2) ------------------------
+# -- Add user ---------------------------------------------------------------
 
 
 def test_add_user_incomplete_address(admin):

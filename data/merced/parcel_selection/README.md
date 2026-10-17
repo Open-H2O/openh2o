@@ -1,15 +1,15 @@
 # Merced Parcel Picker
 
-A human-in-the-loop replacement for guessing parcel locations. Brent selects
+A human-in-the-loop replacement for guessing parcel locations. A person selects
 the real fields each diversion serves, on satellite imagery, in QGIS. The
-selection is authoritative (real DWR-surveyed field boundaries + Brent's
+selection is authoritative (real DWR-surveyed field boundaries + that person's
 served-by judgment), so the demo's place-of-use stops landing on towns.
 
 ## Why this exists
 
 The platform's geometry has no land-use layer, so coordinate-guessing kept
 placing parcels on towns/bare ground. This pulls California's real surveyed
-crop fields (DWR i15 Statewide Crop Mapping, 2023 final) and lets Brent pick.
+crop fields (DWR i15 Statewide Crop Mapping, 2023 final) and lets a person pick.
 
 ## Workflow
 
@@ -29,8 +29,8 @@ crop fields (DWR i15 Statewide Crop Mapping, 2023 final) and lets Brent pick.
        conjunctive (both)
    - Tag every field a diversion serves. Leave the rest blank.
    - **Save** (toggle editing off → Save).
-3. **Tell Claude "done"** — Claude extracts the tagged fields to
-   `../selected_parcels.geojson` (committed), then in the deployment runs:
+3. **Run `extract_selection.py`.** It extracts the tagged fields to
+   `../selected_parcels.geojson`, which is committed. Then run, in the deployment:
    ```sh
    python manage.py seed_merced_parcels_from_selection
    ```
@@ -44,4 +44,4 @@ crop fields (DWR i15 Statewide Crop Mapping, 2023 final) and lets Brent pick.
 | `build_picker_project.py` / `.sh` | assemble the QGIS project | committed |
 | `merced_*.geojson` | reference layers exported from the platform DB | committed |
 | `merced_parcel_picker.gpkg` / `.qgz` | the picker (regenerable) | ignored |
-| `../selected_parcels.geojson` | Brent's saved selection (the source of truth) | committed when made |
+| `../selected_parcels.geojson` | The saved selection (the source of truth) | committed when made |

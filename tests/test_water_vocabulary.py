@@ -40,8 +40,7 @@ that arrives from the database (ISS-089's recorded scope).
 
 **The red run is on record.** Against the v2.15 templates (tag ``d12d778``,
 byte-identical to the working tree when the gate was first run) the ratchet
-named four sites; the verbatim output is in
-``.planning/phases/136-one-vocabulary-of-water-use/136-01-EVIDENCE.md``.
+named four sites.
 
 Every test calls ``scan()``. A control that exercises a different code path
 from the gate proves nothing.

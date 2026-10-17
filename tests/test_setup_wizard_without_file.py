@@ -6,7 +6,7 @@ Three decisions this file locks (146-01 Task 5, all written into the plan, none
 re-decided here):
   (a) step 1 offers three ways in (upload, type an extent, start without one),
       and the "Select an existing boundary" control is disabled with a
-      "None yet" note until a boundary exists to select (Brent, 2026-09-21);
+      "None yet" note until a boundary exists to select;
   (b) step 3 never runs a populate step nobody checked, and reports an unchosen
       step as "skipped: your choice", not an error;
   (c) "Start without one" writes nothing: no Boundary, no SiteConfig row.
@@ -82,7 +82,7 @@ class TestStepOneThreeWaysIn:
         """No Boundary row exists yet, so the select and its button are
         disabled and the note says none is on file (the ISS-178 bug: the old
         subtitle always said 'or select an existing one' and offered no
-        control at all). Brent's ruling 2026-09-21: shown disabled with a
+        control at all). It is shown disabled with a
         "none yet" note, not hidden."""
         assert Boundary.objects.count() == 0
         client = _admin_client()

@@ -19,7 +19,7 @@ another wall to scroll past.
 description (BLOCKING).** The reader is a water district operator, and telling
 that reader what granular activated carbon *does* explains treatment to the
 person who runs the treatment. ``GAC`` → "Granular activated carbon." is the
-whole job. Brent ruled on 2026-08-06 that this holds with **no exception for a
+whole job. This holds with **no exception for a
 clause about the filing**, so ``LCR`` is "Lead and Copper Rule." and nothing
 more. The rule is `DESIGN.md` copy rule 11; the guard is
 ``tests/test_domain_vocabulary.py``.
@@ -50,8 +50,7 @@ import re
 #: does it for a living. A status code's meaning stays, because what the state's
 #: own flag signifies is a data convention this platform owes the reader; a
 #: description of the water, the equipment or the sampling never does.
-#: No em dash in a value (INAC, 150.1-02 screen 14 row 13, Brent 2026-10-14
-#: 15:51 PDT, "approved").
+#: No em dash in a value (INAC, 150.1-02).
 SHORTHAND = {
     "RAW": "Untreated water.",
     "STBY": "Standby. A source held in reserve, not normally running.",

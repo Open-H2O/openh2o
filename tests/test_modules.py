@@ -531,7 +531,7 @@ class TestNavResolution:
         # 146-02 Task 4's Curtailment Orders beside Water Rights, and
         # 146-04 Task 2's Production under Drinking Water, and 146-04 Task 4's
         # Schedule after it. 147-01 added a Change History entry under
-        # Overview; 147-02 (Brent's checkpoint ruling) removed it from the
+        # Overview; 147-02 removed it from the
         # sidebar, so the count is back to 27. 150-03 added Infrastructure
         # under Water Data (the add and import pages lit nothing): 28.
         # 150.5-01 removed Curtailment Orders with the feature: 27.

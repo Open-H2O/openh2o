@@ -70,8 +70,8 @@ DROP_ZONE_SENTENCE = (
     "Drag and drop a zipped shapefile (.zip), a KML (.kml) or a GeoJSON "
     "(.geojson or .json) file here, or click to browse."
 )
-# Brent, 150.1-02 screen 18 message Z (2026-10-15 18:49); the not-text,
-# not-JSON and empty sentences reuse message V's (2026-10-15 17:55).
+# 150.1-02: the Setup Wizard's wrong-type sentence; the not-text,
+# not-JSON and empty sentences reuse the bulk import's.
 UNSUPPORTED_SENTENCE = "This page imports .zip, .kml, .geojson and .json files only."
 NO_POLYGON_SENTENCE = "This file has only points or lines. The boundary must be a polygon."
 NO_FILE_SENTENCE = "Choose a boundary file to upload."

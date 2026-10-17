@@ -125,7 +125,7 @@ class TestOneSetOfWordsAcrossBadgesAndPanel:
 
     def test_the_captions_name_the_badge_they_count(self):
         """RED before: the captions read "check reading Warning" / "check reading Critical".
-        Brent, 150.1-02 screen 16 message A row 3 (2026-10-16 06:39): the label
+        150.1-02: the label
         above each count names the badge; each caption reads "of N checks that apply"."""
         _persist_fixture()
         html = _client_in().get(reverse("health:dashboard")).content.decode()

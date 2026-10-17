@@ -11,7 +11,7 @@ that to happen, and they were:
   cron wrote "all sources OK: cdec usgs" directly beneath five station errors.
 
 The fix is deliberately NOT "exit non-zero whenever a run fails". Simultaneous
-probes from Butler and an off-LAN VPS on 2026-08-02 measured USGS's outages at
+probes from a home-network server and an off-LAN VPS on 2026-08-02 measured USGS's outages at
 about **40 seconds**, hitting both networks in the same wall-clock window and
 gone by the next hourly run. ``run-sync.sh`` alerts at ntfy Priority: high, and
 a high alert means "broken now" — waking somebody for a 40-second blip that the

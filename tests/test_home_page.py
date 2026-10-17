@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Plan 150-01: the signed-in home page offers what the deployment has.
 
-The rule (Brent, 2026-10-08 19:54):
+The rule (2026-10-08):
 
 * **Start a task.** "Log water use" needs at least one use area to log against,
   and "Water balance" needs at least one water year to balance. Module flags

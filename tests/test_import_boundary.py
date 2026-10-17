@@ -186,7 +186,7 @@ def test_area_property_is_read_from_the_file(tmp_path):
 def test_file_without_area_property_leaves_area_empty(tmp_path):
     """A file that carries no area property must leave the field empty — on
     purpose, never filled in with a number derived from the polygon itself
-    (BLOCKING project rule, Brent 2026-08-05)."""
+    (BLOCKING project rule, 2026-08-05)."""
     path = _write_geojson(tmp_path, _feature({}))
 
     out = StringIO()

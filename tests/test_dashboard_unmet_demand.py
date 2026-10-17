@@ -11,7 +11,7 @@ the half a regulator uses, because it names the fields to go and ask about.
 **It is a figure, not a finding.** The arithmetic did not close from the supplies
 on record, and the platform knows nothing about why: under-irrigation, a delivery
 filed against the wrong field, and a surface allocation error all land here
-identically. The screen wording is settled (Brent, 2026-09-06) and the tests here
+identically. The screen wording is settled and the tests here
 hold it: *water use recorded, no supply reported*, arithmetic and then stop.
 
 Every expected figure is a pasted literal, never a `> 0`.

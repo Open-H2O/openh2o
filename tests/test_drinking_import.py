@@ -311,7 +311,7 @@ class TestAutoMapColumns:
         """MCL and DLR are limits the file carried, never findings.
 
         Until 2026-09-22 neither column was mapped at all. ISS-140 was ruled
-        "beside" by Brent at 07:31 PDT that day (146-04 Task 1): both are now
+        "beside" that day (146-04 Task 1): both are now
         stored as reported, beside the finding, and still never compared with
         it. What this pins is that they land in their own two fields and in
         no field that describes the measurement.
@@ -571,7 +571,7 @@ class TestImportViews:
         rows_json = preview.context["rows_json"]
         assert preview.context["committable"] == EXPECTED_RESULTS
         assert preview.context["error_count"] == EXPECTED_ERRORS
-        # Row 29 repeats row 1 in the file: its own count (message L row 9).
+        # Row 29 repeats row 1 in the file: its own count.
         assert preview.context["duplicate_count"] == 0
         assert preview.context["repeat_count"] == EXPECTED_DUPLICATES
 
@@ -666,7 +666,7 @@ class TestEntryPoints:
 
 class TestNoComplianceVerdict:
     """The importer stores the file's MCL and DLR as reported, beside the
-    finding and apart from it (ISS-140, ruled "beside" 2026-09-22 07:31 PDT).
+    finding and apart from it (ISS-140, ruled "beside" 2026-09-22).
     Nothing it writes can be read as a compliance determination."""
 
     def test_the_limit_is_stored_only_as_what_the_file_carried(self, validated):
@@ -1133,7 +1133,7 @@ class TestARepeatIsNotAlwaysARepeat:
     threw away a detection, including 300 ug/L of free copper at a Lead and
     Copper Rule tap.
 
-    Brent's ruling, 2026-07-30: store them as separate results. We do not drop
+    The ruling, 2026-07-30: store them as separate results. We do not drop
     published data to make a count tidier.
     """
 

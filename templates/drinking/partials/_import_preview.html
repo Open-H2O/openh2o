@@ -32,11 +32,10 @@
   </div>
 
   {% comment %}
-    150.1-02 screen 18, message L (Brent 2026-10-15 04:50 PDT, "approved"):
-    the count sentence and "A row already recorded, or repeated in this file,
+    150.1-02: the count sentence and "A row already recorded, or repeated in this file,
     is skipped and never written twice." deleted; the badges and each row's
     note say both. A repeat inside the file has its own badge.
-    Message M (Brent 2026-10-15 06:40 PDT, "approved"): the limits sentence
+    Also: the limits sentence
     deleted (each row's note says it), the error line, the unknown PS Code
     box, the new analytes line, "Rows with a note", the status column (a row
     OpenH2O skips reads Will skip) and blank file cells read Blank.
@@ -49,8 +48,7 @@
     150-04 V3: the regulating-agency line, decided before the commit by
     drinking/importer.py::regulating_agency_outcomes, the function the commit
     itself calls. The words are the commit report's own
-    (_import_result.html) in the future tense (message N, Brent 2026-10-15
-    07:43 PDT); nothing renders when the file carries no Regulating Agency
+    (_import_result.html) in the future tense; nothing renders when the file carries no Regulating Agency
     column.
   {% endcomment %}
   {% for a in agency %}

@@ -179,9 +179,6 @@ last-known publication times; the ordinary sync brings the readings forward.**
 Observed on first run into fixture-restored stations: CDEC published 13,173
 readings, USGS 47, NOAA 9.
 
-Full measurement:
-`.planning/phases/104-deploy-cutover/104-02-station-freshness-findings-2026-08-01.md`
-
 These are real public USGS/CDEC/DWR/NOAA/CIMIS stations, which is consistent
 rather than a leak: the identity policy treats station names as **protected**,
 not banned, exactly as it does the river network beside them.

@@ -34,7 +34,7 @@ class HealthCheckResult(models.Model):
         ("period_alignment", "Period Alignment"),
         ("et_meter_agreement", "ET / Meter Agreement"),
         ("ssl", "SSL"),
-        # Brent, 150.1-02 screen 16 message A row 8: the check reads the
+        # 150.1-02: the check reads the
         # database's name; the stored key stays "docker".
         ("docker", "Database name"),
         ("migrations", "Migrations"),

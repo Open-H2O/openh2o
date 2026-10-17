@@ -1,13 +1,13 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
-Build the Merced place-of-use parcels from Brent's QGIS field selection.
+Build the Merced place-of-use parcels from the QGIS field selection.
 
 WHY this exists: parcels were previously placed by guessing coordinates,
 which repeatedly landed fields on towns or bare ground because the platform
 has no land-use layer. This command instead reads REAL DWR surveyed crop
-fields that Brent hand-selected in QGIS (data/merced/parcel_selection/), each
+fields that were hand-selected in QGIS (data/merced/parcel_selection/), each
 tagged with the diversion that serves it and its water source. The geometry
-is real, the served-by relationship is Brent's judgment, not a heuristic.
+is real, the served-by relationship is a human judgment, not a heuristic.
 
 It REPLACES the guessed parcels/wells/links from seed_merced_operations
 (which still owns the water rights + points of diversion). Run order:
@@ -75,7 +75,7 @@ GW_SOLO_OWNERS = [
 
 class Command(BaseCommand):
     help = (
-        "Rebuild Merced parcels + diversion/well links from Brent's QGIS "
+        "Rebuild Merced parcels + diversion/well links from the QGIS "
         "field selection (data/merced/selected_parcels.geojson). Replaces the "
         "guessed parcels/wells from seed_merced_operations; keeps rights/PODs."
     )

@@ -13,7 +13,7 @@ mostly NOT covered by crops is open land: a basin candidate.
 
 Output: merced_candidate_parcels.geojson (EPSG:4326) — sizable (>= MIN_ACRES)
 non-agricultural parcels in the Merced Subbasin, each with APN / acreage / the
-ag-overlap fraction, ready for Brent to pick basins from.
+ag-overlap fraction, ready to pick basins from.
 
 Run with a Python that has geopandas:
   python fetch_parcels.py

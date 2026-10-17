@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Measure how much of a help page is paragraphs, and how long its longest one is.
 
-Brent's rule for the help pages (149.1): a block of prose is at most 60 words,
+The rule for the help pages (149.1): a block of prose is at most 60 words,
 and at most half of a page's words sit in prose blocks. A table, a heading, a
 badge or a link card is the shape wanted; a wall of ``<p>`` is the fault.
 
@@ -26,9 +26,9 @@ import re
 import sys
 from pathlib import Path
 
-#: Brent, 2026-10-06 18:17 PDT
+#: The most words one block of prose may hold.
 MAX_BLOCK_WORDS = 60
-#: Brent, 2026-10-06 18:17 PDT
+#: The largest share of a page's words that may sit in prose blocks.
 MAX_PROSE_SHARE = 0.50
 
 _NOT_COPY = (

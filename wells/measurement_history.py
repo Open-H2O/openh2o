@@ -149,7 +149,7 @@ def water_level_history(well):
         by_year.setdefault(water_year(entry["month"]), []).append(entry)
     # Each water year closes with its NET change: the monthly changes add to
     # it (a close is a level and is never summed; the changes between closes
-    # are). Brent, 2026-09-13: the meter table beside this one closes every
+    # are). The meter table beside this one closes every
     # year with a row, and without one here the two tables drift a row apart
     # from the second year on.
     years = [

@@ -46,8 +46,8 @@ EDITABLE_FIELDS = {
         "label": "Year Pumping Began", "type": "number", "step": "1", "integer": True,
         "min_value": 1850, "max_is_current_year": True,
     },
-    # `measurement_method` is deliberately NOT here (146-05 checkpoint,
-    # Brent's ruling 2, 2026-09-23): the well page used to carry it with its
+    # `measurement_method` is deliberately NOT here (146-05,
+    # 2026-09-23): the well page used to carry it with its
     # own pencil beside the three DWR fields below, derived from it once by
     # migration 0005 and independent of it ever since, so the two could
     # disagree on the same card. It is now read-only -- rendered directly in
@@ -116,7 +116,7 @@ def _field_value(well, field):
 
 
 def _measurement_method_display(well):
-    """`measurement_method`'s own label, read-only (146-05 checkpoint ruling 2).
+    """`measurement_method`'s own label, read-only (146-05).
 
     Kept for provenance -- the seeds, seven test files and the Merced audit
     trail still read the raw field -- but no longer independently editable,
@@ -131,7 +131,7 @@ def _dwr_extraction_line(well):
     """"Extraction: <method>, <direct/estimate>, ±<band>" -- DWR's three-part
     identity for how a well's pumping is known (23 CCR 356.2(b)(2)).
 
-    Brent, 2026-10-13 05:26 PDT ("yes, approved"): a well with none of the
+    A well with none of the
     three reads "not stated" once; a well with some of them names each blank
     part ("direct or estimate not stated", "accuracy band not stated"), since
     three bare "not stated" in a row did not say which part was missing.
@@ -314,7 +314,7 @@ def _well_detail_context(well):
         # 146-05 S2: DWR's three-part identity line, computed once here so
         # the template states it rather than re-deriving it (rule 12).
         "dwr_extraction_line": _dwr_extraction_line(well),
-        # 146-05 checkpoint ruling 2: the legacy field's own label, read-only,
+        # 146-05: the legacy field's own label, read-only,
         # computed once here for the same reason.
         "measurement_method_display": _measurement_method_display(well),
         # Pass the Python object (or None); the template escapes it via

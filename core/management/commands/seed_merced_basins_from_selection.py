@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Build Merced recharge areas + their diversion links from Brent's QGIS pick.
+"""Build Merced recharge areas + their diversion links from the hand-picked QGIS selection.
 
 WHY this exists. v1.9 placed two recharge basins as fixed-degree squares at
 hardcoded coordinates (seed_merced_recharge). Phase 62 re-does them the same
-trustworthy way the 74 crop fields were done: Brent hand-selects real parcels in
+trustworthy way the 74 crop fields were done: real parcels are hand-selected in
 QGIS against the satellite + canal/river layers, and the export drives the seed.
 Two hand-picked scenarios, both real-hydrography recharge tied to a real point of
 diversion (POD):
@@ -28,7 +28,7 @@ Each recharge area is tied to its diversion through a RechargeSitePOD link
 command places sits on the real waterway: source_flowline + stream_name are read
 FROM the flowline, never typed (geography.placement, the ISS-053 archetype rule).
 
-THE INTAKE'S WATER RIGHT (136-02, ISS-152 option a, Brent 2026-09-05). The El
+THE INTAKE'S WATER RIGHT (136-02, ISS-152 option a, 2026-09-05). The El
 Nido intake diverts storm water to storage under its own invented right,
 ``MER-WR-011-DEMO``, created and attached HERE because this command owns the
 intake POD and ``update_or_create``s it on every build — a link made anywhere
@@ -108,7 +108,7 @@ RECHARGE_RIGHT_FACE_VALUE_AF = Decimal("3500")
 # SGMA-era. Invented, carries no legal claim; the demonstration's recharge
 # operation is post-2014 by design.
 RECHARGE_RIGHT_PRIORITY_DATE = date(2016, 11, 15)
-# Capacity convention: ~2 ft active ponded depth × footprint acres (Brent, 62-02
+# Capacity convention: ~2 ft active ponded depth × footprint acres (62-02
 # — dialed down from the prior basins' 5 ft because these hand-picked parcels are
 # large, so the operationally ponded fraction is shallower). Managed/storm
 # recharge pools to the GSA basin pool, so this sizes the pool, NOT the closure.
@@ -121,7 +121,7 @@ RIVER_POD_CODE = "MER-POD-009"
 
 class Command(BaseCommand):
     help = (
-        "Build Merced recharge areas from Brent's QGIS selection: El Nido Canal "
+        "Build Merced recharge areas from the QGIS selection: El Nido Canal "
         "spreading basins (new canal intakes) + Merced River Flood-MAR cropland "
         "(linked to MER-POD-009). Replaces the hardcoded seed_merced_recharge; "
         "idempotent, Merced-scoped."

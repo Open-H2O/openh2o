@@ -58,7 +58,7 @@ class SystemProductionForm(forms.ModelForm):
             "unit_as_reported": forms.Select(attrs={"class": "form-select"}),
             "notes": forms.Textarea(attrs={"class": "form-textarea", "rows": 2}),
         }
-        # 150.1-02 screen 13 (Brent 2026-10-14 15:12 PDT): "Type" and "Volume",
+        # 150.1-02: "Type" and "Volume",
         # not the model's "Type code" and "Volume, as reported".
         labels = {
             "type_code": "Type",

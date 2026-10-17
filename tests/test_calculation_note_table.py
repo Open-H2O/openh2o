@@ -1,9 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""The run's notes as one table (Brent, 2026-10-12 16:07 PDT, "yes" to the
-mock-up after "Providing this kind of detailed information in bullet narrative
-form is a little clunky." at 15:55).
+"""The run's notes as one table.
 
-The kinds he saw as bullets (headgate water left over, canal evaporation, the
+The kinds that were bullets (headgate water left over, canal evaporation, the
 unmetered estimate) become one group each, one row per point of diversion, a
 total where a group has more than one point. (A fourth, the curtailed point,
 went with the curtailment feature, 150.5-01.) Sentences

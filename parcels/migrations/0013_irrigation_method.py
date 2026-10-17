@@ -1,7 +1,6 @@
 # 150.2-01: the irrigation-method table and each use area's method move from
-# `surface` into `parcels`, so a deployment with no canals records them too
-# (Brent, 2026-10-11 11:27 PDT: "we need this software to help groundwater-only
-# growers and water managers").
+# `surface` into `parcels`, so a deployment with no canals records them too,
+# which helps groundwater-only growers and water managers.
 #
 # HOW THE ROWS MOVE, AND WHY THIS WAY. The plan preferred keeping the physical
 # tables and moving only Django's state. Kept as `surface_*` names, though, a

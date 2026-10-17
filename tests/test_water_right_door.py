@@ -284,7 +284,7 @@ def test_second_import_of_the_same_file_creates_nothing_and_skips_one(auth_clien
 
 
 def test_a_type_not_on_file_is_added_as_the_file_writes_it(auth_client):
-    """150.1-02 screen 18, message E row 4 (Brent 2026-10-14 18:47): a type
+    """A type
     the seeded rows do not carry, such as eWRIMS's "Statement of Div and Use",
     is added the first time a file carries it, not refused."""
     csv_body = RIGHTS_LIST_HEADER + "\n" + RIGHTS_LIST_ROW_A001885.replace(

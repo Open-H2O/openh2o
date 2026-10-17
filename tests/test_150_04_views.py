@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """150-04, class VIEW: what a view hands its template, and what the template
-then shows (page-verdict/LAYOUT-INVENTORY-150-04.md, rows V1 to V11 and T1).
+then shows (the 150-04 layout inventory, rows V1 to V11 and T1).
 
   V1   the diversion preview's identical row errors are one line per cause
   V2   the production preview lists the file's rows, the first 50 at most
@@ -405,7 +405,7 @@ def test_v9_a_point_with_a_direct_use_record_keeps_the_card(auth_client):
 
 
 def test_a_point_with_no_linked_use_area_shows_no_card(auth_client):
-    """Brent 2026-10-13 07:22 "yes" (150.1-02 screen 7, row B1): the calculation
+    """The calculation
     never splits a point with no linked use area, so its months were shown as
     "not yet calculated" forever. The card is not shown there."""
     from tests.factories import DiversionRecordFactory

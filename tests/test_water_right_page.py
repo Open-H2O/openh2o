@@ -189,7 +189,7 @@ class TestWaterRightByWaterYear:
         assert "violation" not in html.lower()
 
     def test_the_head_line_is_the_year_and_its_record_count_alone(self):
-        # 150.1-02 screen 8 (Brent 2026-10-13 08:08 PDT): the two sentences
+        # 150.1-02: the two sentences
         # after the count are deleted; Remaining and the table say it.
         html = _right_page(_two_year_right())
 
@@ -198,7 +198,7 @@ class TestWaterRightByWaterYear:
         assert "Face value less the volume recorded" not in html
 
     def test_the_year_with_an_estimate_counts_no_months(self):
-        # 150.1-02 screen 8: a month counted as estimated when any one record
+        # 150.1-02: a month counted as estimated when any one record
         # in it was, so the month count is deleted; the badge marks the record.
         html = _right_page(_two_year_right())
 

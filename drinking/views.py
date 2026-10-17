@@ -217,8 +217,8 @@ def _sampling_points_head_line(
     """
     if not q and not filter_words:
         noun = "sampling point" if all_count == 1 else "sampling points"
-        # Plain words (Brent, staging 18:24 PDT: "at a located facility, on
-        # the map" read as machine prose). The Facilities head's own shape.
+        # Plain words ("at a located facility, on the map" read as machine
+        # prose). The Facilities head's own shape.
         return f"{all_count:,} {noun}, {mapped_facility_count:,} of them on the map"
 
     clause_bits = []
@@ -1105,8 +1105,7 @@ def _preview_rows(rows, mapping, validated):
         row = rows[item["index"]]
         shaped.append(
             {
-                # The spreadsheet's row number, the column names being row 1
-                # (Brent 2026-10-15 08:17 PDT, "approved").
+                # The spreadsheet's row number, the column names being row 1.
                 "index": item["index"] + 2,
                 "ps_code": src(row, "ps_code"),
                 "sample_date": src(row, "sample_date"),
@@ -1122,8 +1121,7 @@ def _preview_rows(rows, mapping, validated):
     return shaped
 
 
-# Approved by Brent 2026-10-14 20:37 PDT (150.1-02 screen 18, message J), the
-# surface water imports' sentence: rows_json is empty or not a list of rows.
+# The surface water imports' sentence (150.1-02): rows_json is empty or not a list of rows.
 _ROWS_NOT_RECEIVED = (
     "OpenH2O did not receive the file's rows from the preview. "
     "Upload the file again."
@@ -1188,7 +1186,7 @@ def import_preview(request):
         if not item["errors"] and not item["data"].get("is_duplicate")
     )
     # Results already on file that predate the limits and will gain them from
-    # this file (146-04 checkpoint). A file that creates nothing but fills
+    # this file (146-04). A file that creates nothing but fills
     # these still has something to commit.
     limits_fill_count = sum(
         1
@@ -1794,7 +1792,7 @@ PRODUCTION_MONTH_NAMES = {
 }
 
 #: Water sold to another system: left out of the year's produced-or-purchased
-#: total and named on its own (Brent, 2026-10-14 15:12 PDT).
+#: total and named on its own.
 SOLD_TYPE_CODES = frozenset({PRODUCTION_TYPE_SO, PRODUCTION_TYPE_NS})
 
 
@@ -1879,7 +1877,7 @@ def production(request):
                 "acre_feet": sum((r.volume_acre_feet for r in column), Decimal("0")),
             }
         )
-    # 150.1-02 screen 13 (Brent 2026-10-14 15:12 PDT, "approved"): the year
+    # 150.1-02: the year
     # total is water produced or purchased. Water sold to another system came
     # out of that water, so adding the two sold columns counted it twice; they
     # are totalled on their own and named after it. Each column's own total in
@@ -2128,7 +2126,7 @@ def production_import_commit(request):
     operator_unit = request.POST.get("operator_unit", "").strip() or "G"
 
     # A log with no year imports nothing: show the preview again, with the
-    # year box asking for it (message R row 12, Brent 2026-10-15 08:23 PDT).
+    # year box asking for it.
     if layout == "operator_log" and operator_year is None:
         return production_import_preview(request)
 

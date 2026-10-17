@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='systemfacility',
             name='epa_facility_id',
-            field=models.CharField(blank=True, db_index=True, help_text="EPA's own facility ID. Provenance only — never a PS Code segment. See .planning/phases/79-envirofacts-adapter/79-RESEARCH.md.", max_length=20),
+            field=models.CharField(blank=True, db_index=True, help_text="EPA's own facility ID. Provenance only — never a PS Code segment.", max_length=20),
         ),
         migrations.AddField(
             model_name='watersystem',

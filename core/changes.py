@@ -6,8 +6,7 @@ into rows a person can read: when, who, which record, what changed (field,
 before, after) and the note.
 
 ``changes_for`` also fed the History panel on record pages until 147-02
-(Brent's 2026-09-24 checkpoint ruling removed the panel; keep the recording,
-strip the display). It stays here, tested directly, because it is the same
+(the panel was removed; the recording is kept and the display stripped). It stays here, tested directly, because it is the same
 one-record reading path ``/changes/``'s own ``?type=&record=`` filter uses.
 
 **One row per record per action.** A single request or command can write the

@@ -64,9 +64,6 @@ re-dumps against a database whose readings have moved — which is precisely wha
 ``git diff`` should show. It is serialised as an ISO-8601 UTC string, or
 ``null`` for a station that has never reported.
 
-Full measurement:
-``.planning/phases/104-deploy-cutover/104-02-station-freshness-findings-2026-08-01.md``
-
 ``created_at``/``updated_at`` are ``auto_now_add``/``auto_now`` and belong to
 Django. No primary key appears anywhere.
 

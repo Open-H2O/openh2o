@@ -108,7 +108,7 @@ def test_committed_payload_carries_no_personal_contact_details():
 
 
 def test_lab_file_is_exactly_three_years():
-    """Brent asked for three years so trends are visible; pin the window."""
+    """The seed carries three years so trends are visible; pin the window."""
     import csv
     import datetime
 

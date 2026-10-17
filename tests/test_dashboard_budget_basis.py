@@ -6,7 +6,7 @@ view changed, in the shape DESIGN.md rule 12's three review questions demand:
 every expected number is a literal worked out by hand from the fixture and
 written beside its arithmetic, never ``> 0`` and never the view's own formula.
 
-**The basis (option A, Brent 2026-09-05).** Remaining = groundwater allocation
+**The basis (option A, 2026-09-05).** Remaining = groundwater allocation
 minus groundwater use, where groundwater use is the metered or calculated
 pumping the dashboard already shows in its Groundwater column. Until 136-01 the
 column subtracted gross crop water use, a quantity that FALLS in a drought
@@ -235,7 +235,7 @@ def test_the_result_segment_is_marked_as_the_lead():
 
 def test_the_breakdown_says_of_which():
     """R-005: the three supply parts are titled as parts of the Supplies figure
-    ("by source": Brent at the checkpoint asked what "of which" meant),
+    ("by source", not "of which"),
     and carry the fixture's figures: surface 0.00, groundwater 37.50, rain 0.00."""
     period, _zone, _parcel, _account = _basin()
 

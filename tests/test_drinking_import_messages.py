@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""The lab results import's messages and the code changes Brent approved with
-them (150.1-02 screen 18, message J, 2026-10-14 20:37 PDT, "approve").
+"""The lab results import's messages and the code changes made with
+them (150.1-02).
 
 Each test pins a behaviour the old code got wrong, not only a wording: the
 file picker let only a .csv be chosen although the importer reads the
@@ -115,7 +115,7 @@ class TestTheImportStep:
 
 
 class TestRowErrors:
-    """Message K, approved 2026-10-14 20:46 PDT."""
+    """The row-error messages."""
 
     MAPPING = {"ps_code": "Station", "sample_date": "Collection Date",
                "analyte_name": "Analyte Name", "result": "Result",
@@ -194,7 +194,7 @@ class TestRowErrors:
 
 
 class TestPreviewNotes:
-    """Message L, approved 2026-10-15 04:50 PDT."""
+    """The preview notes."""
 
     MAPPING = TestRowErrors.MAPPING | {
         "sample_time": "Sample Time", "sample_type": "Sample Type",
@@ -258,7 +258,7 @@ class TestPreviewNotes:
 
 
 class TestThePreviewsOtherLines:
-    """Message M, approved 2026-10-15 06:40 PDT."""
+    """The preview's status, blank-cell and box lines."""
 
     def test_status_blank_cells_and_the_box(self, auth_client):
         from tests.factories import SamplingPointFactory
@@ -290,7 +290,7 @@ class TestThePreviewsOtherLines:
 
 
 class TestThePageAfterImport:
-    """Message N, approved 2026-10-15 07:43 PDT."""
+    """The counts and lines on the page after an import."""
 
     def test_counts_and_lines(self, auth_client):
         from tests.factories import SamplingPointFactory
@@ -336,7 +336,7 @@ class TestThePageAfterImport:
 
 
 class TestTheImportPagesTables:
-    """Message O, approved 2026-10-15 07:58 PDT."""
+    """The tables on the import page."""
 
     def test_the_tables(self, auth_client):
         body = auth_client.get(reverse("drinking:import")).content.decode()
@@ -356,7 +356,7 @@ class TestTheImportPagesTables:
             assert gone not in body
 
     def test_the_column_cells(self, auth_client):
-        """Message P, approved 2026-10-15 08:07 PDT."""
+        """The column cells."""
         body = auth_client.get(reverse("drinking:import")).content.decode()
         for line in (
             "OpenH2O stores the reporting level with every numeric result.",
@@ -371,7 +371,7 @@ class TestTheImportPagesTables:
 
 class TestRowNumbers:
     """Every import numbers rows as the spreadsheet does, the column names
-    being row 1 (Brent 2026-10-15 08:17 PDT, "approved")."""
+    being row 1."""
 
     def test_the_lab_preview_and_result(self, auth_client):
         csv_text = "PS Code,Sample Date,Analyte Name,Result\n,2024-03-05,Nitrate,1\n"
@@ -395,7 +395,7 @@ class TestRowNumbers:
 
 
 class TestTheProductionImport:
-    """Message Q, approved 2026-10-15 08:17 PDT."""
+    """The production import page."""
 
     def test_the_page(self, auth_client):
         body = auth_client.get(reverse("drinking:production_import")).content.decode()
@@ -423,7 +423,7 @@ class TestTheProductionImport:
 
 
 class TestTheProductionRowErrors:
-    """Message R, approved 2026-10-15 08:23 PDT."""
+    """The production import's row errors."""
 
     E = ("PWSID,Year,Month,DateStartOfMonth,TypeCode,"
          "Units of Measure As Reported,Quantity as in Units Reported\n")
@@ -478,7 +478,7 @@ class TestTheProductionRowErrors:
         assert "Enter the report year above, then press Update preview." in body
 
     def test_the_preview_and_result_lines(self, auth_client):
-        """Message S, approved 2026-10-15 08:43 PDT."""
+        """The preview and result lines."""
         from tests.factories import WaterSystemFactory
 
         ws = WaterSystemFactory(pwsid="CA2410009")
@@ -504,7 +504,7 @@ class TestTheProductionRowErrors:
         assert ws.production_records.count() == 1
 
     def test_the_column_tables(self, auth_client):
-        """Message T, approved 2026-10-15 08:50 PDT."""
+        """The column tables."""
         body = auth_client.get(reverse("drinking:production_import")).content.decode()
         for line in ("Columns OpenH2O reads", "The eAR export",
                      "A monthly log on the eAR template",
@@ -516,7 +516,7 @@ class TestTheProductionRowErrors:
 
 
 class TestThePointBuilder:
-    """Message U, approved 2026-10-15 08:59 PDT."""
+    """The point builder's messages."""
 
     def test_the_ps_code_messages(self):
         from drinking.ps_codes import compose_ps_code

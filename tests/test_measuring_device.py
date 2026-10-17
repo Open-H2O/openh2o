@@ -190,8 +190,7 @@ def test_mark_removed_a_bare_get_is_405(auth_client):
 
 
 # ---------------------------------------------------------------------------
-# 4. The 934(d) five-year evidence sentence: deleted (Brent 2026-10-13 07:22 "yes",
-#    150.1-02 screen 7: it stated a California rule as if it bound every site)
+# 4. The 934(d) five-year evidence sentence: deleted (150.1-02, 2026-10-13: it stated a California rule as if it bound every site)
 # ---------------------------------------------------------------------------
 
 EVIDENCE_SENTENCE = "evidence of proper functioning is due at least every five years (934(d))"

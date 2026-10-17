@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# 150.5-01: curtailment removed from OpenH2O (Brent 2026-10-12 17:47 PDT, "Lets get
-# rid fo curtailments entirely."). A right whose status read "curtailed" becomes
+# 150.5-01: curtailment removed from OpenH2O entirely. A right whose status read "curtailed" becomes
 # "active" first; the change-history rows that recorded "curtailed" keep it, as
 # history. Then the order tables go. The order's one effect on a figure (no
 # estimate in a month it covered) is what a typed delivery record of 0 does.

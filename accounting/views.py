@@ -97,7 +97,7 @@ def _account_summary_row(account, selected_period, has_allocations, groundwater_
     budget exists this period) its pro-rated allocation and what remains.
 
     143-13: extracted from the dashboard's account_summaries loop so the
-    accounts list (Brent's "accounts-table" ruling: the list becomes this same
+    accounts list (the list becomes this same
     table, with a search) computes the identical figures rather than holding a
     second copy of the allocation arithmetic. Both callers pass the SAME
     ``has_allocations`` / ``groundwater_type`` (the period-wide facts, not
@@ -143,7 +143,7 @@ def _account_summary_row(account, selected_period, has_allocations, groundwater_
                     * Decimal(account_parcels_in_zone)
                     / Decimal(total_parcels_in_zone)
                 )
-        # Budget basis, 136-01 (ISS-151; option A, Brent 2026-09-05): a
+        # Budget basis, 136-01 (ISS-151; option A, 2026-09-05): a
         # groundwater budget is spent by GROUNDWATER USE, the metered or
         # calculated pumping the Groundwater column already shows. This
         # REVERSES 57-02, which deliberately subtracted gross ET on the
@@ -262,7 +262,7 @@ def dashboard(request):
             reporting_period=selected_period,
         ).exists()
 
-        # 136-01 (ISS-151, option A, Brent 2026-09-05): the budget columns on
+        # 136-01 (ISS-151, option A, 2026-09-05): the budget columns on
         # both tables are the GROUNDWATER budget, so only groundwater plans
         # count towards an allocation and only groundwater use is subtracted
         # from it. Like with like. Resolved once, by code, because the water
@@ -595,7 +595,7 @@ def _calculation_card_context(period):
     else:
         context["calculation_who"] = _CALCULATION_WHO.get(latest.trigger, "")
     # The run's notes: sentences above, table groups in one table below them
-    # (Brent, 2026-10-12 16:07 PDT). A run from before stores sentences only.
+    # (2026-10-12). A run from before stores sentences only.
     notes = latest.notes or []
     context["calculation_note_sentences"] = [n for n in notes if not isinstance(n, dict)]
     context["calculation_note_table"] = [n for n in notes if isinstance(n, dict)]
@@ -712,7 +712,6 @@ def period_create(request):
             counts = attach_orphans_to_period(period)
             messages.success(
                 request,
-                # Brent, 2026-10-12 15:18 PDT ("yes", 150.1-02 screen 4).
                 f"Water year created. OpenH2O attached "
                 f"{counts['diversion_records']} diversion records and "
                 f"{counts['ledger_rows']} ledger rows dated inside it to this "
@@ -795,7 +794,7 @@ def allocations_list(request):
         if default_period_id is not None:
             period_id = str(default_period_id)
 
-    # Zone as the link (R-033, the checkpoint's "link-zone" ruling): the
+    # Zone as the link (R-033, "link-zone"): the
     # allocation's own record is read against its use on the zone page, which
     # already draws on the same helper the dashboard's zone row calls
     # (zone_groundwater_budget) -- an allocation page of its own would show one
@@ -861,7 +860,7 @@ def allocations_list(request):
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
-    # Candidate A (the checkpoint ruling, 2026-09-12): "All periods" groups the
+    # Candidate A (2026-09-12): "All periods" groups the
     # rows by water year and closes each group with its own subtotal rows,
     # inside the table body, never a tfoot naming a cross-year sum. Marked per
     # row on THIS page only (not the whole filtered set), so a group a page
@@ -950,7 +949,7 @@ def allocation_create(request):
 
 @login_required
 def accounts_list(request):
-    """Water accounts overview (143-13, checkpoint ruling "accounts-table"):
+    """Water accounts overview (143-13, "accounts-table"):
     the dashboard's own Active water accounts table, with a search and the
     period control that drives its figures. Replaces the earlier
     master-detail workspace (`workspace.html`), the shell Use Areas and Wells
@@ -1440,10 +1439,10 @@ LEDGER_SOURCE_TYPE_OWNERS = {
 }
 
 
-#: 143-05 (second checkpoint, 2026-09-12): the Source FILTER's option words.
+#: 143-05 (2026-09-12): the Source FILTER's option words.
 #: The filter still narrows on the stored ``source_type`` value; only the
-#: option LABELS changed, to the shortest true words the checkpoint ruling
-#: settled on (a filter option is one word or a short phrase, not the fuller
+#: option LABELS changed, to the shortest true words
+#: (a filter option is one word or a short phrase, not the fuller
 #: "{Water type}, metered" sentence the merged Water column prints per row:
 #: that sentence needs the row's own water type, which no single filter
 #: option can name). Keep this table in sync with
@@ -1992,7 +1991,7 @@ def _step_detail_summary(step, *, delivery_split=None):
                 else "the deployment's default"
             )
             # 150.1-02 (2026-10-11): written as the formula with its real
-            # signs, in Brent's terms; "the crop could use" is gone.
+            # signs; "the crop could use" is gone.
             if delivery_split == "use":
                 split = f", {DELIVERY_SHARE_BY_USE},"
             elif delivery_split == "fixed":
@@ -2051,7 +2050,7 @@ def _receipt_context(parcel, run, period):
     """The equation panel's figures for one run with a well and no meter reading.
 
     150.1-02 (2026-10-11): the page is rebuilt as three equations in the
-    engineer's terms Brent approved at 05:41 and 05:48 PDT (crop ET, effective
+    engineer's terms (crop ET, effective
     precipitation, ETAW, ETAW met by surface water, ETAW met by groundwater,
     groundwater irrigation efficiency (retired by 150.2-02 for the field's
     irrigation efficiency), groundwater extraction (estimated),
@@ -2198,7 +2197,7 @@ def calculation_run_detail(request, parcel_id, period):
             run.period_start.strftime("%B %Y") if run.period_start else period
         ),
         # The run's config_hash (a 12-character fingerprint) is NOT printed:
-        # no page compares two runs by it (Brent, 2026-09-16, 143-09).
+        # no page compares two runs by it (143-09).
         "methodology_plan_name": run.methodology_plan_name,
         "receipt": False,
     }

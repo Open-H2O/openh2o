@@ -63,7 +63,7 @@ from datasync.models import DataRecordStaging
 DEFAULT_OUTPUT = "data/merced/readings.json"
 
 # Two water years. A California water year runs 1 Oct - 30 Sep, so this is
-# WY2025 (2024-10-01) forward. Chosen by Brent 2026-08-01: one year shows a
+# WY2025 (2024-10-01) forward. One year shows a
 # season, two years show that seasons repeat, which is the point of a chart on a
 # water-accounting platform.
 DEFAULT_START = "2024-10-01"

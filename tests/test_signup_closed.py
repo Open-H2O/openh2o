@@ -70,7 +70,6 @@ class TestTheRefusalPage:
             "the refusal page does not offer the password reset, which is what "
             "most people who land here actually need"
         )
-        # Brent, 150.1-02 screen 18 message AA (2026-10-15 19:19).
         assert "only its" in body and "creates your account" in body, (
             "the refusal page does not name a person to ask, so it answers "
             "'no' without answering 'then what'"

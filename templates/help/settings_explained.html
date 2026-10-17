@@ -18,16 +18,15 @@
 
 {% block content %}
 {% comment %}
-  2026-10-10 (150.1): rebuilt from facts Brent approved at 14:22 PDT
-  ("approved", after deleting "That address changes no figure."), each checked
+  2026-10-10 (150.1): rebuilt from facts, each checked
   against the code: the floor step (accounting/steps.py clamp_floor, editable
   in accounting/views.py methodology_step_config), the reporting-year rule
   (surface/diversion_import.py, read only when a file gives a year and a
   month but no date), sign-in (config/settings/base.py
   ACCESS_CONTROL_ENFORCED, default on; admin_required on every settings
   view and zone_recovery_horizon), the year-end choice read when
-  rollover_allocations runs. The other rows are sentences he approved for
-  Methods behind the numbers (11:07) and Surface delivery settings (14:10),
+  rollover_allocations runs. The other rows are sentences taken from
+  Methods behind the numbers and Surface delivery settings,
   word for word; "The surplus" is there so "that surplus" in the next row
   has its antecedent, as on Methods.
 
@@ -35,10 +34,9 @@
   EXPLAINER_MODULES). `wells` is not among them, so the pumped-water row is
   guarded on it. The url-as-var lines fail silently to the empty string, so
   the links they feed are guarded on the module that serves them.
-  2026-10-11 (150.4-01): the national, role-neutral lens. Brent approved who acts
-  in a sentence at 20:36 PDT ("yes") and the help-page rows at 20:49 PDT ("yes"):
-  "An administrator" acts in place of "a district" (Methodology Settings, Delivery Settings and the zone page are @admin_required). Each actor traced to its view in
-  .planning/phases/150.4-national-role-neutral-tone-pass/150.4-01-WORDS.md.
+  2026-10-11 (150.4-01): the national, role-neutral lens. Who acts is set
+  in a sentence and in the help-page rows:
+  "An administrator" acts in place of "a district" (Methodology Settings, Delivery Settings and the zone page are @admin_required). Each actor traced to its view.
 {% endcomment %}{% url 'accounting:methodology_settings' as methodology_url %}
 {% url 'accounting:delivery_settings' as delivery_url %}
 {% url 'surface_deliveries' as surface_help_url %}

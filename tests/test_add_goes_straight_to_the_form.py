@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """The "+ Add" buttons land on the form for the thing they name.
 
-**The defect this pins (ISS-134, reported by Brent 2026-08-27).** Clicking
+**The defect this pins (ISS-134, reported 2026-08-27).** Clicking
 "+ Add well" went to `/infrastructure/add/?type=well`, which honoured the type
 — "Groundwater well" arrived pre-selected — and then showed a four-card
 "Infrastructure type" picker anyway, under a heading that said "Add Well" and a

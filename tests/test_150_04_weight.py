@@ -2,7 +2,7 @@
 """150-04, class WEIGHT (+ the two SMALL-DATA rows S6 and W5).
 
 Each row moved markup around words that stay exactly as they were
-(page-verdict/LAYOUT-INVENTORY-150-04.md; the shared rules are the 150-04
+(the 150-04 layout inventory; the shared rules are the 150-04
 block at the end of static/css/app.css):
 
   W1  the receipt's Meter reading row is secondary (rule D1, `tr.receipt-aside`)
@@ -112,7 +112,7 @@ def test_w2_the_point_of_diversion_title_is_the_blocks_head():
     assert "W150 Headgate" in head
     assert 'field-label">Point of diversion' not in html
     # The head sits above the field grid, whose first field is now Water right.
-    # The CalWATRS PIN field is gone (Brent, 2026-10-12).
+    # The CalWATRS PIN field is gone.
     assert html.index("Point of diversion 1 of 1") < html.index('field-label">Water right')
     for label in ("Water right", "Holder", "Right type"):
         assert f'<div class="field-label">{label}</div>' in html, label

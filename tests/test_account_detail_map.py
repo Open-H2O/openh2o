@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """The account's map (ISS-175, 150-02).
 
-Brent, 2026-09-16 18:49: "The map of the features owned by the account seems
-very useful." The standalone account page draws the 143-07 overview map card
+The standalone account page draws the 143-07 overview map card
 with only that account's use areas: the shared card head, then the map host,
 and the shared ``parcels/partials/_parcels_overview_map.html`` fetching
 ``parcels:geojson?account=<pk>``. The accounts workspace swaps the same pane

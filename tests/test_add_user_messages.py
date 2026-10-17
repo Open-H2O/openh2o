@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Add user's sentences Brent approved (150.1-02 screen 17, message A,
-2026-10-16 06:15), and the code changes with them: an email address on file
+"""Add user's sentences (150.1-02), and the code changes with them: an email address on file
 as any account's address (a second address included) is refused instead of
 moved onto the new account; Django's check against the email and names runs
 (no user was passed, so it never did); each password refusal prints on its
@@ -46,7 +45,7 @@ def test_page_words(admin_client):
         "address and the password you set here."
     ) in body
     assert (
-        # ISS-248 (Brent 2026-10-17 05:47): "yourself" struck as rude.
+        # ISS-248: the word "yourself" is not used.
         "OpenH2O does not email the person you add. They can sign in right away "
         "and change the password on their profile page."
     ) in body

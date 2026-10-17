@@ -26,9 +26,8 @@
   143-04 (2026-09-11): the panel and the period card share the top row
   (`.page-grid-dashboard-top`), the way the account page pairs its
   information card with its balance panel. The panel's three figure blocks
-  are centred in equal cells (`.budget-panel--centered`), Brent's call on the
-  mock-up: "the District water balance should still maintain our centered
-  look so that it's actually balanced and not left justified."
+  are centred in equal cells (`.budget-panel--centered`), so the water balance
+  keeps a centred look rather than a left-justified one.
 {% endcomment %}
 <div class="page-grid-dashboard-top">
 <div class="budget-panel budget-panel--centered">
@@ -45,8 +44,8 @@
         {% comment %}
           The parts of the figure above, under it (143-01 resumed, 2026-09-11):
           the breakdown used to sit in its own column at the panel's far right,
-          ~1,300px from the figure at 2560. "By source" is Brent's own word
-          (142-01 checkpoint, DESIGN.md copy rule 13).
+          ~1,300px from the figure at 2560. The title is "By source"
+          (142-01, DESIGN.md copy rule 13).
         {% endcomment %}
         <div class="budget-breakdown-group">
           <div class="budget-breakdown-title">Supplies by source</div>
@@ -125,7 +124,7 @@
 
   149.1-05: the empty-state pattern (the first-run block's), the period named,
   the one action as the button (a fresh reader needed the period named and the
-  action out of the sentence; 2026-10-07 12:25 PDT). The button is a write
+  action out of the sentence). The button is a write
   action, so it sits behind user_can_write like the first-run block's.
   Two branches because the order matters and the failure is otherwise cryptic:
   without an active calculation plan `run_calculations` does not quietly
@@ -178,7 +177,7 @@
   details" eyebrows that stood over these three cards are gone. Each labelled
   ONE card whose own heading said the same thing a line below, and at 1,730
   each sat alone in a 116px band between the panel and its table -- the
-  second fault a context-free reader named on the page. The anchors the
+  second fault on the page. The anchors the
   attention strip routes to moved onto the cards themselves.
 {% endcomment %}
 <div class="card-raised" id="active-accounts">
@@ -205,7 +204,7 @@
         <th rowspan="2" class="th-right">Balance</th>
         {% if has_allocations %}
         {% comment %}148-02 Task 4 (Q2): the label stays "Groundwater budget"
-             (Brent, 2026-09-24, after "Extraction budget" was tried): Remaining is now spent in EXTRACTED terms (a calculated row's stamped extraction estimate, not the
+             (after "Extraction budget" was tried): Remaining is now spent in EXTRACTED terms (a calculated row's stamped extraction estimate, not the
              Supplies "Groundwater" column beside it, which stays consumed),
              and "budget" alone no longer said which of the two it spends. The bare
              word "Extracted" over Allocation read as allocation extracted, and
@@ -235,8 +234,7 @@
         columns exist: with no allocations at all every row is unbudgeted and
         the columns are absent, so there is nothing to explain. Nothing here
         names GSAs or service areas; the demo's two kinds are not every
-        deployment's. Left-aligned over the zone names (Brent at the 142-01
-        checkpoint, 2026-09-08, overturning his centred call on the mock-up).
+        deployment's. Left-aligned over the zone names.
       {% endcomment %}
       {% if has_allocations %}
       {% ifchanged row.has_groundwater_budget %}
@@ -309,7 +307,7 @@
   explained the concept since Phase 130 and the field's own page has shown its
   own number since 137-01. This is the list.
 
-  ⛔ THE WORDING IS SETTLED (Brent, 2026-09-06) and it is arithmetic, then stop.
+  ⛔ THE WORDING IS SETTLED and it is arithmetic, then stop.
   The platform knows the books did not close; it knows nothing whatever about
   why. Under-irrigation, a delivery filed against the wrong field and a surface
   allocation error all land here identically, so any word that leans toward one
@@ -354,7 +352,7 @@
           defect rule 12 exists to end. No unit on either header (Phase 142): the
           card's subtitle states it once for the whole table.
 
-          142-01 checkpoint (Brent, 2026-09-08): the column used to repeat the
+          142-01: the column used to repeat the
           card's title word for word. The card title keeps the settled phrase,
           which stays the quantity's name on the field's own page; this header
           says the arithmetic in four words. Still nothing about why.
@@ -395,6 +393,6 @@
   here was invisible to any deployment that does not do groundwater accounting.
   See the block there.
 {% endcomment %}
-{% comment %}150.1-02 screen 2, Dashboard: the heading "Water balance", the row "Total", the empty-site line, the over-budget count, the Remaining pop-out and the fields-table pop-out are Brent's approved sentences (2026-10-12 12:04 PDT, "Everything looks great, approved."; recorded in brent-sentence-corrections.md). A balance that prints 0.00 is "Balanced" (ISS-237, his choice the same minute). Notes sit at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
-{% comment %}"Effective precipitation" for the figure that read "Rain" (CalculationRun.effective_precip_af): Brent 2026-10-12 13:21 PDT, "The wording is approved." (150.1-02 screen 3). Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
-{% comment %}The zones table's "Added" column (was "Carried fwd"): Brent 2026-10-12 17:47 PDT (150.1-02 screen 5). The column is zone_carryover, which adds managed recharge, canal seepage and year-end carry-over; the zone page lists them by kind. Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
+{% comment %}150.1-02, Dashboard: the heading "Water balance", the row "Total", the empty-site line, the over-budget count, the Remaining pop-out and the fields-table pop-out are approved sentences. A balance that prints 0.00 is "Balanced" (ISS-237). Notes sit at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
+{% comment %}"Effective precipitation" for the figure that read "Rain" (CalculationRun.effective_precip_af) (150.1-02). Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
+{% comment %}The zones table's "Added" column (was "Carried fwd") (150.1-02). The column is zone_carryover, which adds managed recharge, canal seepage and year-end carry-over; the zone page lists them by kind. Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}

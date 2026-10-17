@@ -1,20 +1,17 @@
 {% comment %}
-  The run's notes as one table (Brent, 2026-10-12 16:07 PDT, "yes" to the
-  mock-up). Full width under the Calculation card's two columns: in the right
+  The run's notes as one table. Full width under the Calculation card's two columns: in the right
   column alone the point names wrapped to four lines beside an empty left half
   (looked at, 1,730, 16:31). The page includes it after the card's grid; the
   status block's 3-second poll sends it back out of band (`oob`), so a run that
   finishes while the page is open shows its table without a reload.
 
-  Brent, 16:47 PDT, on the first full-width build: "Add some sort of separation
-  between these items. They all look like they're the same thing - you need a
-  gap or a bolder line or something. Humans need to read this." Each item is
+  The items need visible separation so they do not read as one. Each item is
   its own tbody: a shaded band carrying its label above a heavier rule, its
   points indented under it, and a total in the Allocations page's subtotal row.
 {% endcomment %}
 <div id="calculation-notes"{% if oob %} hx-swap-oob="true"{% endif %}>
 {% if calculation_note_table and not calculation_active %}
-  {# Brent, 2026-10-12 16:07 PDT ("yes" to the mock-up): the run's figures as one table, not bullets. #}
+  {# The run's figures as one table, not bullets. #}
   <h3 class="section-header-sm mt-lg">What the calculation found</h3>
   <div class="table-scroll">
   <table class="data-table calculation-notes-table">

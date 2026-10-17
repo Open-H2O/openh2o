@@ -8,7 +8,7 @@ help pages already say so in as many words ("It is never phantom pumping").
 **Nothing displayed it.** In the dry year 47 fields carry the disposition and six
 carry an amount.
 
-⛔ The words are the risk and they are settled (Brent, 2026-09-06): *water use
+⛔ The words are the risk and they are settled (2026-09-06): *water use
 recorded, no supply reported*. Never unauthorized, unpermitted, unlawful, illegal
 or stolen, and never implying them. The screen states the arithmetic and stops.
 The words themselves are held by ``tests/test_water_vocabulary.py`` against the

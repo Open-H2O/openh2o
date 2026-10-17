@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """The struck sentence shapes a machine can see may only go down.
 
-Brent ruled on 2026-10-09 at 18:45 PDT that the shapes he has struck are to be
-fixed everywhere. DESIGN.md copy rule 15 names seven. ``scripts/writing_shapes.py``
+Since 2026-10-09 the shapes struck in review are fixed everywhere. DESIGN.md copy rule 15 names seven. ``scripts/writing_shapes.py``
 counts the four a pattern can find: an em dash or a double hyphen between two
 words, the filler words (actually, genuinely, really, simply), a heading made
 of two clauses joined by ", and what", and a heading ending in ", by what". It
@@ -20,15 +19,13 @@ counts three ("What OpenH2O is, and who it is for"; "What it owes to the
 Groundwater Accounting Platform, and what is its own"; "Who made it, and where
 the code is"), the headings that started this work. The stand-in shape ("that platform",
 "both are") was replayed the same way on 2026-10-10: About counts 0 at
-3cbe34c, 2 at 017c89d and at fbe4f47 (the two versions Brent struck for it)
-and 0 after his sentence went in.
+3cbe34c, 2 at 017c89d and at fbe4f47 (the two versions struck for it)
+and 0 after the approved sentence went in.
 
 The "district reader" and "California" shapes joined on 2026-10-11 (150.4-01),
-after Brent asked for OpenH2O to read nationally and for any reader, not only a
-district. Replayed against f4b18da first: templates caught 48 of the recount's
+so that OpenH2O reads nationally and for any reader, not only a district. Replayed against f4b18da first: templates caught 48 of the recount's
 49 district-reader lines and 3 of its 4 generic-California lines (the misses
-sit inside ``<script>``); the numbers and every miss are in
-.planning/phases/150.4-national-role-neutral-tone-pass/150.4-01-REPLAY.md.
+sit inside ``<script>``).
 
 The other three shapes (a phrase posing as a statement, a thing acting like a
 person, a slogan) need a reader and are not counted here.
@@ -67,7 +64,7 @@ shapes = _load()
 #: Counts on 2026-10-09, measured on the working tree at the start of the
 #: writing work. Lower an entry when its file loses a shape; never raise one.
 #: Later the same evening About, the help pages, the footer and the Admin mode
-#: button took the wording Brent approved at 20:29 PDT, and their six entries
+#: button took the approved wording, and their six entries
 #: came off. 2026-10-10: the "stand-in" shape joined at its counts that day.
 BASELINE: dict = {
     "templates/drinking/partials/_onboard_result.html": {"stand-in": 1},
@@ -98,7 +95,7 @@ BASELINE: dict = {
     "templates/reporting/partials/_status_section.html": {"district reader": 3},
     "templates/surface/partials/_diversion_import_preview.html": {"California": 1},
     # 2026-10-17: the reassurance, negation-frame and bold-verdict shapes joined
-    # at their counts that day (150.1-03, Brent 13:32 PDT). The guides' rewrites lower them.
+    # at their counts that day (150.1-03). The guides' rewrites lower them.
     "templates/404.html": {"negation frame": 1},
     "templates/accounting/partials/_methodology_preview.html": {"negation frame": 1},
     "templates/drinking/partials/_facility_results.html": {"negation frame": 1},
@@ -132,7 +129,7 @@ def test_no_file_gains_a_shape():
         if n > BASELINE.get(rel, {}).get(shape, 0)
     ]
     assert not gained, (
-        "these files gained a sentence shape Brent has struck. " + _ADVICE
+        "these files gained a sentence shape struck in review. " + _ADVICE
         + " Never raise BASELINE to pass: " + "; ".join(gained)
     )
 
@@ -196,7 +193,7 @@ def test_a_planted_em_dash_is_caught_on_every_surface():
 
 
 def test_a_stand_in_for_a_name_is_caught():
-    """The two lines Brent struck on About on 2026-10-10, as they read."""
+    """The two lines struck on About on 2026-10-10, as they read."""
     source = (
         "<p>OpenH2O was written from scratch in Python and does not use any of "
         "that platform's code.</p>"
@@ -236,7 +233,7 @@ def test_text_no_reader_sees_stays_silent():
 # -- District reader and California (150.4-01) --------------------------------
 
 def test_a_planted_district_reader_is_caught_on_every_surface():
-    """The sentences Brent's 2026-10-11 20:36 PDT approval replaced, as they read."""
+    """The sentences the 2026-10-11 approval replaced, as they read."""
     template = (
         "<td>A district can reorder those steps or switch any of them off.</td>"
         "<td>75 percent unless the district changes it.</td>"
@@ -319,7 +316,7 @@ def test_every_kept_name_and_phrase_is_still_used():
     )
 
 
-# -- The three shapes added on 2026-10-17 (Brent: "the AI Slop langugae") ------
+# -- The three shapes added on 2026-10-17 ---------------------------------------
 
 def test_brents_struck_readme_line_is_caught():
     struck = "**A new installation holds none of your records.** It starts empty.\n"

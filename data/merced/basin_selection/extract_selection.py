@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
-Extract Brent's tagged basins from the picker GeoPackage into the committed
+Extract the tagged basins from the picker GeoPackage into the committed
 fixture the 62-02 seed reads: data/merced/selected_basins.geojson (EPSG:4326).
 
 A candidate parcel is a chosen recharge basin if it has a non-empty `feeds_via`

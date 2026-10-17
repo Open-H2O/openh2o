@@ -200,8 +200,8 @@ class WaterRightParcel(models.Model):
         return f"{self.water_right} → {self.parcel}"
 
 
-# Default seepage share by the canal's lining (150.3-01; Brent 2026-10-11
-# 11:50 PDT approved the lining choice on these three figures). Unlined 25
+# Default seepage share by the canal's lining (150.3-01; the lining choice rests on these
+# three figures). Unlined 25
 # percent: the middle of FAO Irrigation and Drainage Paper 61, Table 10 (from
 # USBR 1978), unlined canals 20 to 30 percent of canal flow. Lined 5 percent:
 # two irrigation districts whose canals are about 90 percent lined report
@@ -210,8 +210,7 @@ class WaterRightParcel(models.Model):
 # 0: FAO Paper 61, Table 10, "Pipelines 0".
 #
 # Evaporation stays 1 percent for an open canal (published water management
-# plans report 0.3 to 1 percent of the diversion) and is 0 for a pipe (Brent,
-# 2026-10-11 16:40 PDT, approving the recommended yes). Spill is not tied to
+# plans report 0.3 to 1 percent of the diversion) and is 0 for a pipe. Spill is not tied to
 # lining by any source read, so the lining never sets it.
 #
 # The sources are listed in seed_merced_pod_lining.py. Screens and notes name
@@ -377,8 +376,8 @@ class PointOfDiversion(models.Model):
     # --- The 145-01 memo's crosswalk layer (146-03 Task 3): a local alias,
     # so a bulk import can resolve a headgate by its local name rather than
     # only this platform's own name. The contract unit and miner's inch
-    # fields beside it were removed 2026-10-13 (Brent, "yes" to 150.1-02
-    # screen 7 row 9): nothing in OpenH2O read either.
+    # fields beside it were removed 2026-10-13 (150.1-02): nothing in
+    # OpenH2O read either.
     local_name = models.CharField(
         max_length=200,
         blank=True,
@@ -433,8 +432,7 @@ class PointOfDiversion(models.Model):
             }
         super().save(*args, **kwargs)
 
-    # The notes under each loss on the point's page (150.3-01, Brent
-    # 2026-10-11 16:40 PDT: "approved"). Each names where a default figure
+    # The notes under each loss on the point's page (150.3-01). Each names where a default figure
     # comes from, and is empty unless the basis is the platform's default.
     _SEEPAGE_DEFAULT_NOTES = {
         "unlined": "Default for an unlined canal. FAO Irrigation and Drainage "

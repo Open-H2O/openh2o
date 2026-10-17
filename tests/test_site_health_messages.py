@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Site health's sentences Brent approved (150.1-02 screen 16, message A,
-2026-10-16 06:39): the page, the not-applicable sentence, and the database,
+"""Site health's sentences (150.1-02): the page, the not-applicable sentence, and the database,
 disk and database-name checks. Code change: the card heading Docker reads
 Database name (the check reads the database's name).
 """
@@ -118,20 +117,20 @@ def test_database_name_sentences():
 
 
 def test_ssl_sentences(settings):
-    settings.ALLOWED_HOSTS = ["butler", "butler.example.net"]
+    settings.ALLOWED_HOSTS = ["office-server", "office-server.example.net"]
     settings.SITE_DOMAIN = None
     r = checks.check_ssl()
     assert r["status"] == "skipped"
     assert r["message"] == (
         "OpenH2O has no HTTPS certificate to check, because this site's address "
-        "is butler, not a public domain name."
+        "is office-server, not a public domain name."
     )
     settings.ALLOWED_HOSTS = ["*"]
     assert checks.check_ssl()["message"] == (
         "This site has no public domain name, so OpenH2O has no HTTPS certificate to check."
     )
     assert checks._is_public_domain("openh2o.com")
-    for name in ("butler", "localhost", "127.0.0.1", "box.local", "*", ""):
+    for name in ("office-server", "localhost", "127.0.0.1", "box.local", "*", ""):
         assert not checks._is_public_domain(name)
     settings.ALLOWED_HOSTS = ["probe.example.org"]
     with mock.patch.object(checks.socket, "create_connection", side_effect=OSError("timed out")):

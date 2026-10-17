@@ -58,7 +58,7 @@ _NOT_A_PACKAGE = re.compile(r"^-")
 #: install. Every entry carries its reason, because an exclusion with no reason
 #: is indistinguishable from an oversight and will be deleted or extended by
 #: someone who cannot tell which it was. Derived and MEASURED in
-#: `.planning/phases/112-undocumented-install-paths/112-02-DEPENDENCY-DERIVATION.md`.
+#: plan 112-02 (dependency derivation).
 EXCLUDED_FROM_THE_DOCUMENT: dict = {
     # Container-only. `entrypoint.sh` uses gosu to drop from root to the
     # unprivileged `app` user before exec-ing gunicorn. A native install never

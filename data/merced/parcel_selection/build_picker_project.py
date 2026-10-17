@@ -57,7 +57,7 @@ CLASS_COLORS = {
 FILL_ALPHA = 155  # opaque enough to read crop color over satellite imagery
 
 # Progress symbology: tagged fields light up by the headgate they serve, so
-# Brent can see what's done and where the gaps are. (code, color, label)
+# the picker can see what's done and where the gaps are. (code, color, label)
 HEADGATE_STYLE = [
     ("MER-POD-004", "#ff4d4d", "▣ Atwater Canal (MID)"),
     ("MER-POD-005", "#ff9e1b", "▣ Le Grand Canal"),

@@ -69,7 +69,7 @@ EPA_SDWIS = "EPA Envirofacts (SDWIS)"
 DDW_LAB = "State Water Board Division of Drinking Water"
 
 #: Where a sample result came from, said truthfully on ANY deployment
-#: (150.1-02 screen 14, Brent 2026-10-14 15:37 PDT, "they look good").
+#: (150.1-02).
 #:
 #: ``DDW_LAB`` above names the State Water Board, which is true of the
 #: demonstration's file and false of a lab's own file in the same format, and the
@@ -132,7 +132,7 @@ PUBLISHED_SUPPLY_SOURCE = "EPA and State Water Board published record"
 #: the facility page's identity card names the operator rather than inheriting
 #: ``EPA_SDWIS``, which every onboarded facility on the same list carries.
 #: The sampling point and lab result pages carry it too, for the same facility
-#: (150.1-02 screen 14 row 11, Brent 2026-10-14 15:51 PDT, "approved"; the old
+#: (150.1-02; the old
 #: wording named an operator and a "deployment").
 OPERATOR_ENTERED = "entered on this site"
 

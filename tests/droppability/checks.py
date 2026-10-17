@@ -401,7 +401,7 @@ _FORBIDDEN_VOCABULARY = (
     # here would fire on every page that mentions reporting periods, which
     # `accounting` owns.
     #
-    # 2026-10-12: reporting is now off unless a site names it, and Brent's
+    # 2026-10-12: reporting is now off unless a site names it, and the
     # concern is that the state reads a reporting page as a filing path. So the
     # names of the state's two reporting systems are forbidden on every page a
     # deployment without `reporting` serves, wherever their water lives.

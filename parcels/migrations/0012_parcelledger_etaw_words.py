@@ -1,7 +1,6 @@
 # 150.1-02 (2026-10-11): the engine's ledger sentences in the engineer's terms.
 #
-# Brent approved the terms for the whole system on 2026-10-11 (05:41 and 05:48
-# PDT): ETAW, ETAW met by surface water, ETAW met by groundwater, groundwater
+# The terms for the whole system are: ETAW, ETAW met by surface water, ETAW met by groundwater, groundwater
 # extraction (estimated), surface water in excess of ETAW. The calculated row,
 # the zero row, the demand-weighted split tail and the over-delivery credit
 # prefix in `accounting.ledger_words` now say them. A row is rewritten by the

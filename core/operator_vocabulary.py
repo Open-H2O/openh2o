@@ -8,14 +8,9 @@ without defining it. Their reader was named for them: a civil engineer at a
 sister water district, thirty years in groundwater and irrigation, who has never
 heard of DNS, a rented server, what sends an email, or what an API key is.
 
-This module is those four lists, merged, one record per concept. The logs:
+This module is those four lists, merged, one record per concept.
 
-    .planning/telemetry/cleanroom-runs/x86-blind-run-001/logs/OUTSIDE-KNOWLEDGE-LOG.md
-    .planning/telemetry/cleanroom-runs/x86-blind-run-002/logs/OUTSIDE-KNOWLEDGE-LOG.md
-    .planning/telemetry/cleanroom-runs/x86-blind-run-003/logs/OUTSIDE-KNOWLEDGE-LOG.md
-    .planning/telemetry/cleanroom-runs/arm64-local-run-004/logs/OUTSIDE-KNOWLEDGE-LOG.md
-
-Those logs live under ``.planning/``, which ``.dockerignore`` excludes, and the
+Those logs live in a private folder that ``.dockerignore`` excludes, and the
 test suite runs inside the ``web`` container. The gate can therefore never read
 them at test time. They are transcribed here once and cited as provenance;
 ``reported_by`` on every record names the run or runs that wrote the term down.
@@ -38,7 +33,7 @@ runs without a database and cannot be broken by an unrelated app change.
 import re
 from dataclasses import dataclass
 
-#: The four clean-room runs, as they are named in ``.planning/telemetry/``.
+#: The four clean-room runs.
 RUN_001 = "x86-blind-run-001"
 RUN_002 = "x86-blind-run-002"
 RUN_003 = "x86-blind-run-003"

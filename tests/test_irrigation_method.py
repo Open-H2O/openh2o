@@ -13,8 +13,8 @@ Proven here, each RED against the unfixed tree (quotes in 146-05-EVIDENCE.md):
      exist.
   3. Since 150.2-01 the use-area page shows the row, and the editor sets it,
      on the shape-4 configuration too (`parcels` on, `surface` off): a
-     groundwater-only district's fields have irrigation methods (Brent,
-     2026-10-11). Until then this section proved the opposite.
+     groundwater-only district's fields have irrigation methods
+     (2026-10-11). Until then this section proved the opposite.
      ``override_settings`` cannot uninstall `surface` mid-run, but it does
      change what ``core.modules.is_enabled`` returns; a truly-uninstalled
      `surface` is ``tests/test_irrigation_method_move.py``'s and the

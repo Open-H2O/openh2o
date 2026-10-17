@@ -351,7 +351,7 @@ def test_unmetered_wells_write_no_seed_groundwater_rows(seeded):
 
 
 def test_seed_fills_the_three_dwr_fields_beside_the_method(seeded):
-    """Brent 2026-10-13 05:26 PDT ("yes, approved"): every demo well with a
+    """Every demo well with a
     method recorded shows DWR's own row too, never a method above three blank
     fields. Metered: Meters, direct. Unmetered: Land Use, estimate (the engine
     estimates its pumping from crop ET). The demo states no accuracy band.
@@ -739,7 +739,7 @@ def test_seed_surface_split_is_demand_weighted_when_calculations_exist(seeded):
 def test_the_ditch_with_no_meter_is_estimated_once_the_crops_water_use_is_known(seeded):
     """With crop water use on record, the unmetered ditch's month is estimated.
 
-    Brent, 2026-10-06: the demo carries one ditch with no meter. The seed types
+    The demo carries one ditch with no meter. The seed types
     nothing for it; with each served field's use after rain on record for a
     month, re-running the seed writes ONE estimated, provisional record for that
     month and the split divides it, each field receiving its use over its own
@@ -893,7 +893,7 @@ def test_seed_is_deterministic_across_both_water_years(seeded):
 def test_el_nido_point_carries_a_typed_zero_for_every_dry_month(seeded):
     """150.5-01: the months the El Nido canal delivers nothing are typed records
     of 0, so the estimator never writes a delivery there (curtailment orders,
-    which used to stop it, were removed on Brent's 2026-10-12 17:47 PDT ruling)."""
+    which used to stop it, were removed on 2026-10-12)."""
     from surface.estimate import ESTIMATE_METHOD
     from surface.models import DiversionRecord
 

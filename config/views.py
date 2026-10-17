@@ -100,7 +100,7 @@ def index(request):
             DataSyncLog.objects.filter(status__in=["success", "partial"]).first()
         )
         context["last_sync_time"] = last_sync.started_at if last_sync else None
-    # 150-01 (Brent, 2026-10-08): records decide what the home page offers.
+    # 150-01 (2026-10-08): records decide what the home page offers.
     # Module flags cannot: `surface` and `datasync` both pull the
     # parcels/accounting pair on, so accounting can be running with no use
     # area to log against and no water year to balance. "Log water use" reads
@@ -316,7 +316,7 @@ def demonstration_data(request):
 #:
 #: **Why ``pwsid`` is FIRST, and why nobody should "fix" the numbering back.**
 #: Plan 92-01 (ISS-092) added the drinking-water door this page had never
-#: mentioned, and Brent's decision on 2026-07-22 was identity before geography.
+#: mentioned, and the decision on 2026-07-22 was identity before geography.
 #: The Setup Wizard's GeoJSON upload answers *where*: it draws a ``Boundary``
 #: polygon, and every step after it is a spatial query filtered to that shape. A
 #: PWSID answers *who*: it builds a ``WaterSystem`` out of three EPA Envirofacts
@@ -329,7 +329,7 @@ def demonstration_data(request):
 #: 1-11, and both cross-reference strings moved with them). That cost was
 #: accepted knowingly: it is the price of one page that is honest in both
 #: configurations rather than one that is honest in the larger of them.
-#: Brent, 2026-10-07 10:21 PDT (149.1-04): the order follows what depends on
+#: 149.1-04 (2026-10-07): the order follows what depends on
 #: what. Identity first (92-01), then the zones the records sit in, then the
 #: records (use areas, the wells and diversions that attach to them, the
 #: stations), then the accounting setup, and the ledger last because it is data
@@ -364,7 +364,7 @@ def _getting_started_numbering():
     """``{step key: rendered number}`` plus the wizard's step citation and its count.
 
     The state-report step (``reporting``, with a second condition on ``wells`` or
-    ``surface``) came off the page on 2026-10-07 at Brent's word (149.1-04: the
+    ``surface``) came off the page on 2026-10-07 (149.1-04: the
     module is not fully developed), so no row needs a second condition now.
     """
     numbers = {}
@@ -378,7 +378,7 @@ def _getting_started_numbering():
     cited = [str(numbers[k]) for k in _WIZARD_CITED_STEPS if k in numbers]
     return {
         "steps": numbers,
-        # No serial comma: the sentence Brent approved reads "Steps 2, 3 and 6".
+        # No serial comma: the sentence reads "Steps 2, 3 and 6".
         "wizard_cited_steps": (
             f"{', '.join(cited[:-1])} and {cited[-1]}" if len(cited) > 1
             else "".join(cited)
@@ -477,7 +477,7 @@ def water_balances(request):
 def methods(request):
     """Explainer: the settings behind each figure, the canal split and the unmetered estimate.
 
-    2026-10-10: built from thirteen facts Brent approved; the worked
+    2026-10-10: built from thirteen facts; the worked
     field-month moved off this page and lives on ``water_balances`` alone.
     """
     return _explainer(request, "methods", "help/methods.html")
@@ -576,13 +576,13 @@ def glossary(request):
     **Membership never changes, only wording (ISS-085, decided).** 36 entries in
     and 40 entries out (148-03 Task 2 added four calculation terms; 150-03 Task
     5 added nine more for ISS-183, the drinking-water words and the station
-    list's freshness words, for 49; 2026-10-11, at Brent's word, the four
+    list's freshness words, for 49; 2026-10-11, the four
     coined calculation terms and Consumptive Use gave way to the engineer's
     terms: ETAW, ETAW Met by Surface Water, ETAW Met by Groundwater,
     Groundwater Irrigation Efficiency, Groundwater Extraction and Surface Water
     in Excess of ETAW, and ET became Crop ET, for 50; 150.2-02 removed
-    Groundwater Irrigation Efficiency with the setting it named, for 49, at
-    Brent's "one irrigation efficiency per field"); a reduced deployment
+    Groundwater Irrigation Efficiency with the setting it named, for 49, because
+    there is one irrigation efficiency per field); a reduced deployment
     narrows the *pointers*, not the dictionary. And the ``See Help > X.`` sentences are matched byte-for-byte by
     ``_without_unavailable_help_pointers`` above — reword one and it stops being
     stripped, which sends a reduced-deployment reader at a 404 (the defect Plan
@@ -679,8 +679,8 @@ def profile(request):
         if form.is_valid():
             form.save()
             # No message here: the profile now shows messages (ISS-248, for
-            # "You changed your password."), and "Profile updated." was never
-            # one Brent approved. It never showed on this page before; it waited
+            # "You changed your password."), and "Profile updated." is not a
+            # sentence this site uses. It never showed on this page before; it waited
             # and surfaced on the next page that shows messages.
             return redirect("profile")
     else:

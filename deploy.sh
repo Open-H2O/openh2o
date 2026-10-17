@@ -2,8 +2,9 @@
 # Deploy openh2o.com: deploy.sh [<commit>] [--drill-smoke-missing-page]
 #
 # openh2o is NOT a static site and NOT on Cloudflare — it runs as Docker
-# containers on Butler (prod checkout: ~/openh2o). This wrapper runs
-# scripts/release.sh there over SSH, read from origin/main (so the newest
+# containers on the host named by OPENH2O_DEPLOY_HOST, an SSH host set in the
+# maintainer's own shell environment (prod checkout: ~/openh2o). This wrapper
+# runs scripts/release.sh there over SSH, read from origin/main (so the newest
 # release script runs even when the checkout is older), which:
 #   - runs `make deploy REF=<commit>`: it refuses first unless that commit's
 #     `tests` run on GitHub passed, and refuses when GitHub cannot be asked
@@ -22,6 +23,11 @@
 set -euo pipefail
 
 usage() { echo "usage: deploy.sh [<commit>] [--drill-smoke-missing-page]"; exit 2; }
+host=${OPENH2O_DEPLOY_HOST:-}
+if [ -z "$host" ]; then
+  echo "deploy.sh: set OPENH2O_DEPLOY_HOST to the SSH host that runs openh2o.com." >&2
+  exit 2
+fi
 ref="" drill=no-drill
 for a in "$@"; do
   case $a in
@@ -31,11 +37,11 @@ for a in "$@"; do
   esac
 done
 
-echo "About to release openh2o.com on Butler (rebuild web + RESET demo DB to golden, then a smoke test)."
+echo "About to release openh2o.com on $host (rebuild web + RESET demo DB to golden, then a smoke test)."
 echo "This ships ${ref:-whatever is on origin/main}. Ctrl-C now if it isn't pushed."
 # Both arguments always go over, as words ssh cannot drop or merge: the ref was
 # checked above to hold no space or shell character.
-ssh butler bash -s -- "${ref:-origin/main}" "$drill" <<'REMOTE'
+ssh "$host" bash -s -- "${ref:-origin/main}" "$drill" <<'REMOTE'
 set -euo pipefail
 cd ~/openh2o
 git fetch -q origin </dev/null

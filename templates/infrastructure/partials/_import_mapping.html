@@ -15,7 +15,7 @@ pressed Create and got this same table back with no explanation at all).
 </div>
 {% endif %}
 <div class="card-raised">
-  {% comment %} Brent 2026-10-15 18:12, 150.1-02 screen 18 message W (row 4; the heading and "Not imported" reuse the water rights step's approved words). {% endcomment %}
+  {% comment %} 150.1-02: the heading and "Not imported" reuse the water rights step's words. {% endcomment %}
   <h2 class="card-header-ruled">Match the file's columns</h2>
   <p class="text-base text-secondary mt-md">OpenH2O found <strong>{{ row_count }}</strong> {% if map_file %}map feature{{ row_count|pluralize }}{% else %}row{{ row_count|pluralize }}{% endif %} and <strong>{{ columns|length }}</strong> column{{ columns|pluralize }}, and matched the fields below to the file's columns by name. Change any match that is wrong, then press Create.</p>
 

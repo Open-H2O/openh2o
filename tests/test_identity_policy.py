@@ -499,7 +499,7 @@ def test_a_single_token_banned_value_gets_no_slug_term():
 #:
 #: 2026-10-12 (150.4-02): seed_merced_base.py's entry is gone. It excused "served by
 #: Merced Irrigation District's canal network" in the demo basin's description as
-#: "carried as published". Brent's 2026-10-11 17:51 rule removes the clause either
+#: "carried as published". The clause is removed either
 #: way, and the exception is why this test passed it.
 SEED_TEXT_EXCEPTIONS = {
     "seed_merced_basins_from_selection.py": {
@@ -535,8 +535,8 @@ def test_no_banned_value_in_seed_command_text(policy):
     """A note a seed command writes is demo data as surely as a fixture file is.
 
     150.3-01 wrote a real district's name into six point-of-diversion notes from
-    seed Python, and nothing failed until Brent read the page (2026-10-11 17:51
-    PDT): `test_no_banned_value_in_committed_demo_data` reads data files only,
+    seed Python, and nothing failed until the page was read:
+    `test_no_banned_value_in_committed_demo_data` reads data files only,
     and the scan runs against a database, which here is empty.
     """
     banned = [e["value"] for e in policy["banned"] if e.get("match", "global") == "global"]

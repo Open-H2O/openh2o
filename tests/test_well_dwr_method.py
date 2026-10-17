@@ -262,7 +262,7 @@ def test_shape_4_well_page_shows_the_three_editors_and_well_type(auth_client):
 
 
 def test_identity_line_says_not_stated_per_part():
-    """Brent, 2026-10-13 05:26 PDT: "not stated" once when all three are
+    """The line says "not stated" once when all three are
     blank; otherwise each blank part is named."""
     from wells.views import _dwr_extraction_line
 

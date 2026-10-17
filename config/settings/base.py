@@ -264,7 +264,7 @@ ACCOUNT_FORMS = {
     "reset_password_from_key": "core.account_forms.ResetPasswordKeyForm",
     "signup": "core.account_forms.SignupForm",
 }
-# One email address per person (Brent, ISS-248, 2026-10-17 05:12). The page
+# One email address per person (ISS-248, 2026-10-17). The page
 # that added a second one is gone (config/urls.py); this holds the rule for
 # any allauth path that could still add one.
 ACCOUNT_MAX_EMAIL_ADDRESSES = 1

@@ -1,16 +1,16 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """The shape of the help pages: 60 words a block, and half a page at most in prose.
 
-Brent's thresholds (2026-10-06 18:17 PDT) live in ``scripts/help_shape.py``. A
+The thresholds (set 2026-10-06) live in ``scripts/help_shape.py``. A
 help page is a table, a heading, a link card and short blocks; a wall of
 paragraphs is the fault. Every file under ``templates/help/`` is in exactly one
 of two lists below: ``ENFORCED`` is held to the thresholds, ``PENDING`` is held
 to the numbers it had when this file was written and may only get better.
 
 The cap limits length and says nothing about the shape of a sentence: a
-60-word paragraph can still be written in a shape Brent has struck. That is
-checked by ``tests/test_writing_shapes.py`` and by a reader. Brent kept the
-cap on 2026-10-09 at 20:03 PDT.
+60-word paragraph can still be written in a shape already ruled out. That is
+checked by ``tests/test_writing_shapes.py`` and by a reader. The cap was kept
+on 2026-10-09.
 
 **Kill switch:** ``OPENH2O_HELP_SHAPE_CHECK=0`` skips this module.
 """
@@ -31,7 +31,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 HELP_DIR = REPO_ROOT / "templates" / "help"
 SCRIPT = REPO_ROOT / "scripts" / "help_shape.py"
 
-#: Files under the gate: each fails if longest > 60 or share > 0.50. A page joins when Brent approves it.
+#: Files under the gate: each fails if longest > 60 or share > 0.50. A page joins once it is approved.
 ENFORCED: list = [
     "templates/help/budgets_allocations.html",
     "templates/help/methods.html",
@@ -42,8 +42,8 @@ ENFORCED: list = [
     # glossary.html is measured as it renders, in
     # test_the_glossary_holds_the_shape_as_it_renders below: its 49 definitions
     # come from config/views.py into table cells, so the template source holds
-    # almost no table words. When Brent struck the "Whose word" badges
-    # (2026-10-10 15:52 PDT) the source's share rose to 0.53 from words that
+    # almost no table words. When the "Whose word" badges were removed
+    # (2026-10-10) the source's share rose to 0.53 from words that
     # were never prose.
     "templates/help/partials/_the_subtraction.html",
     # 150-03 (2026-10-09): About carried to the help-page shape; measured 18 blocks,
@@ -53,7 +53,7 @@ ENFORCED: list = [
 
 #: Files not yet under the gate, with (longest, share) as measured; the test fails if either rises.
 #: Empty since 149.1-04 (2026-10-07): every help page is in ENFORCED. A new help page
-#: starts here at its measured numbers and moves up when Brent approves it.
+#: starts here at its measured numbers and moves up once it is approved.
 PENDING: dict = {}
 
 

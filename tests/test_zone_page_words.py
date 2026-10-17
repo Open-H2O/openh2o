@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""The Zone page's approved words (150.1-02 screen 5, Brent 2026-10-12 17:47 PDT:
-"The rest of the zone page is approved.").
+"""The Zone page's approved words (150.1-02).
 
 Two of the approved rows are structure, not a sentence a template holds, so they
 are pinned here: the groundwater panel's "Available by source" names what its

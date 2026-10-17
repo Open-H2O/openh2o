@@ -11,7 +11,7 @@ data/merced/basin_selection/ and committed as picker reference context):
 
   merced_river_flowlines.geojson  — NHD river hydrography (Channel Line +
       Waterbody Connector) for the Merced Subbasin, with name/feature_type so
-      Brent can read the river-feed options and tag feeds_via to a real name.
+      the picker can read the river-feed options and tag feeds_via to a real name.
   merced_existing_basins.geojson  — the v1.9 RechargeSite footprints, shown
       only for reference (they are wiped + re-picked).
 """

@@ -1,11 +1,10 @@
 {% load humanize accounting_extras %}
 {# overflow:hidden removed deliberately — it would clip the sticky <thead> (Phase 63). #}
 <div class="card-raised table-scroll-mobile" style="padding: 0;">
-  {% comment %} Subtitle line (143-05, second checkpoint 2026-09-12): the first
-       read (candidate B) put one sentence here at 12px; Brent called it
-       "tiny" and "unnecessarily wordy" and asked for "larger, more visible
-       facts that are just more clearly stated" rather than a header doing
-       math. The settled shape is two short facts at 14px (text-base, not
+  {% comment %} Subtitle line (143-05): the first
+       read (candidate B) put one sentence here at 12px, which was too small
+       and too wordy; larger, more visible facts that are just more clearly
+       stated work better than a header doing math. The settled shape is two short facts at 14px (text-base, not
        the 12px text-xs the first read used): a period/count line (names the
        period or "All periods", folds in the auto-default note on a bare
        landing, says "filtered" plus the active filter names when any facet
@@ -38,7 +37,7 @@
         {% comment %} Sortable columns re-request the partial carrying the full filter state
            (hx-include=#ledger-filters) with a toggled direction. ▲/▼ marks the
            active column; Date also shows ▼ in the default newest-first state.
-           Column order (143-05, second checkpoint): Date, Use area, Water,
+           Column order (143-05): Date, Use area, Water,
            Amount, Description: a row reads as a sentence, naming when, where,
            which water and how it was recorded, how much, then the note. The
            Source and Water type columns merged into one "Water" column

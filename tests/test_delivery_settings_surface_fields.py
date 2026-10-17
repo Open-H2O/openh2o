@@ -13,7 +13,7 @@ all, and only to confirm 200 with an empty database); this file is the
 first to assert on the fields themselves, in-process, the same
 ``is_enabled`` boolean the subprocess harness ultimately reads.
 
-**146-03 Task 6 (Brent's 2026-09-22 checkpoint ruling): the USE-row question
+**146-03 Task 6 (2026-09-22): the USE-row question
 came off this page entirely.** It was a question about one uploaded file,
 asked here months before any file exists, of a reader with no reason yet to
 hold California's DIVERSION_TYPE vocabulary. ``diversion_use_type_rule``

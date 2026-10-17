@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """State the lining of each demonstration point of diversion (150.3-01).
 
-Brent, 2026-10-11 11:50 PDT: "Yes, lets add lined, unlined, and pipe choice to
-each point of diversion to help with seepage calcs." Every demonstration point
+Each point of diversion is stated as lined, unlined or pipe, to help with
+seepage calculations. Every demonstration point
 keeps the platform's default loss basis, so the lining set here also sets its
 default seepage share (``PointOfDiversion.apply_lining_default``).
 
@@ -20,8 +20,7 @@ What the sources say, read 2026-10-11:
 - The Merced Falls hydroelectric diversion passes its water through the power
   plant and back to the river, which is a pipe.
 
-Notes name no district (Brent 2026-10-11 17:51 PDT: "We arent supposed to be
-pointing out individual districts"); the words were approved 18:43 PDT. Each
+Notes name no district. Each
 entry's note replaces any earlier note this command wrote (``_RETIRED_NOTE``)
 and is otherwise appended to the point's own notes once. Idempotent, keyed on
 the demonstration names, and touches no other point.

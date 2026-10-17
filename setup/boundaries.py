@@ -179,7 +179,7 @@ def parse_geojson_boundary(geojson: dict):
     """A MultiPolygon GEOSGeometry (srid 4326) from a GeoJSON dict.
 
     Accepts a FeatureCollection, a Feature or a raw geometry. Since 150.1-02
-    screen 18 message Z (Brent, 2026-10-15 18:49) every polygon in the
+    every polygon in the
     document is combined, exactly as a shapefile's or a KML's are; this read
     only the first feature, and refused a file whose first feature was a
     point even when the rest were polygons, while the wizard said several
@@ -243,7 +243,6 @@ def boundary_from_geojson_text(raw_text, *, fallback_name):
     return top_name or name, geom, attrs
 
 
-#: Brent, 150.1-02 screen 18 message Z (2026-10-15 18:49).
 NO_POLYGON_SENTENCE = "This file has only points or lines. The boundary must be a polygon."
 _CHECK_IN_GIS = "Check that the file opens in a GIS program, then upload it again."
 

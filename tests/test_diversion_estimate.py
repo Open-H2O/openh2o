@@ -529,7 +529,7 @@ def _junior_right(*, status="active", priority_date=date(1962, 5, 5)):
 
 
 def test_a_point_with_no_water_right_is_estimated_with_no_cap():
-    # 150.1-02 screen 8 (Brent 2026-10-13 08:08 PDT): a point with no linked
+    # 150.1-02: a point with no linked
     # right used to get no estimate, which shut out anyone whose right is not
     # on file or who has none. It is now estimated, with no season and no
     # face value to cap it, and the run writes no note about the right.
@@ -552,7 +552,7 @@ def test_a_point_with_no_water_right_is_estimated_with_no_cap():
 def test_a_typed_zero_stops_the_estimate_and_the_one_held_is_deleted():
     # 150.5-01: with curtailment orders gone, a month in which a point
     # delivered nothing is recorded as a typed record of 0, and that stops the
-    # estimate like any other typed record (Brent 2026-10-12 17:47 PDT).
+    # estimate like any other typed record.
     _rp, pod, _fields = _ditch(name="El Nido Ditch", right=_junior_right())
     _run()
     assert _estimate_of(pod).volume_acre_feet == Decimal("98.0392")

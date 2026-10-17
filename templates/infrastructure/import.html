@@ -13,7 +13,6 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Bulk Import</span>
   </nav>
-  {% comment %} Brent 2026-10-15 17:55, 150.1-02 screen 18 message V, rows 1 to 4. {% endcomment %}
   <p class="page-description">This page imports {{ record_noun }} records from a CSV file, a zipped shapefile, a GeoJSON file or a KML file.</p>
   {% if other_import_types %}
   <p class="text-secondary text-sm" style="margin: var(--space-xs) 0 0 0;">Importing something else? {% for t in other_import_types %}<a href="?type={{ t.value }}">{{ t.label|capfirst }}</a>{% if not forloop.last %} · {% endif %}{% endfor %}</p>

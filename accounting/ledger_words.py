@@ -11,12 +11,10 @@ ledger shows lives in one file rather than being composed again at each write
 site. `surface/services.py` and `accounting/management/commands/run_calculations.py`
 import from this module; neither writes a sentence of its own.
 
-Checkpoint ruling, 2026-09-12 (Brent, second read): the two badge-styled
-columns this plan's Task 4 shipped (a colored Source pill plus a plain Water
-type cell) read as "very confusing" -- "Meter reading in the source sticks
-out compared to surface water diversion", "California wouldn't say well
-meter", and the standing instruction to stop reaching for a short, simple
-fix and instead make the row readable. The settled shape is one column,
+The two badge-styled columns this plan's Task 4 shipped (a colored Source
+pill plus a plain Water type cell) were confusing: "Meter reading" stuck out
+next to "surface water diversion", and "well meter" is not a California
+term. The settled shape is one column,
 plain text, naming the row's own water type first and the kind of record
 second.
 
@@ -97,10 +95,10 @@ SOURCE_TYPE_SIGNS = {
 
 #: Source types whose word pairs with the row's own water type name as
 #: "{Water type}, {word}". ``calculated`` and ``et_estimate`` are the same
-#: reader-facing word (checkpoint ruling): both are the platform's own
+#: reader-facing word: both are the platform's own
 #: estimate of pumping, not a meter reading, so "estimated" is the honest
 #: word for either. ``manual_entry`` and ``csv_import`` are likewise one
-#: word, "entered" -- the checkpoint ruling named these the same thing to a
+#: word, "entered": they are the same thing to a
 #: reader, whichever door the row came in through.
 _PAIRED_WORDS = {
     "meter_reading": "metered",
@@ -128,7 +126,7 @@ def ledger_row_words(entry):
     ``recharge`` and ``allocation`` are paper, not a metering or estimating
     verb, so they get their own shapes: "Recharge credit" never names a
     water type (a recharge event is a credit regardless of which water
-    filled the basin, and the checkpoint ruling settled the words as
+    filled the basin, and the words are settled as
     written); "{Water type} allocation" names the type because a
     groundwater allocation and a surface allocation are managed by
     different agencies under different law (DESIGN.md's Allocation entry)
@@ -163,20 +161,19 @@ def ledger_row_words(entry):
 # paths) and `run_calculations.py` (the incidental-recharge credit and the
 # groundwater-extraction estimate) write these constants onto the
 # `ParcelLedger.description` field they own, instead of composing engine
-# shorthand at the write site. Every sentence here was ruled on by Brent,
-# 2026-09-15 09:40 PDT, and scanned clean through
+# shorthand at the write site. Every sentence here was scanned clean through
 # `tests/test_domain_vocabulary.py::scan` at planning time.
 # --------------------------------------------------------------------------
 
-#: The tail of a demand-weighted delivery-share sentence, in the ruled words
-#: (ISS-218, Brent 2026-09-25, applied 2026-09-28): the field's figure was
+#: The tail of a demand-weighted delivery-share sentence, in the settled words
+#: (ISS-218, applied 2026-09-28): the field's figure was
 #: divided up from the canal total in proportion to each field's crop water
 #: use after rain (the weight is ``CalculationRun.net_consumptive_use_af``,
 #: read by ``surface.services._month_demand``). Composed by
 #: ``delivery_share_words`` below, and printed again, in the same words, on
 #: the calculation page's canal line (``accounting/views.py``).
 #:
-#: 150.1-02 (Brent's terms, 2026-10-11 05:41 and 05:48 PDT): "crop water use
+#: 150.1-02 (2026-10-11): "crop water use
 #: after rain" is ETAW. The rows written before are reworded by
 #: parcels/migrations/0012.
 DELIVERY_SHARE_BY_USE = (
@@ -187,8 +184,7 @@ DELIVERY_SHARE_BY_USE = (
 #: had an estimated use for the month, so the split fell back to each use
 #: area's share of the canal on file (``PointOfDiversionParcel.fraction``,
 #: normalized by ``apportion_shared_supply``). 149.1-05: reworded from "the
-#: fixed share on file" under Brent's ruling of 2026-09-17 08:31 PDT ("What
-#: is a fixed share?"). ``delivery_share_words`` below prints it after
+#: fixed share on file", because "fixed share" was unclear. ``delivery_share_words`` below prints it after
 #: "divided up from the canal total by", the same words the calculation
 #: page's canal line puts before it (``accounting/views.py``), so it stays a
 #: noun phrase; the percentage and the "because no use area the canal serves
@@ -211,7 +207,7 @@ DELIVERY_SHARE_BY_FIXED = "this use area's share of the canal on file"
 #: `run_calculations`'s delete-by-prefix (which runs every time, on every
 #: treatment) still matches it.
 #:
-#: 150.1-02 (2026-10-11): reworded in Brent's term, surface water in excess
+#: 150.1-02 (2026-10-11): reworded to the term surface water in excess
 #: of ETAW. The words before are kept below as
 #: `LEGACY_CANAL_CREDIT_WORDS` for the delete-by-prefix.
 INCIDENTAL_RECHARGE_WORDS = "Credit for surface water in excess of ETAW"
@@ -250,8 +246,8 @@ LEGACY_INCIDENTAL_RECHARGE_WORDS = (
 #: water the crop could use", the same Task 1 fix Task 3 already made to
 #: NO_PUMPING_DERIVED_WORDS below.
 #:
-#: 150.1-02 (2026-10-11): the row's amount is ETAW met by groundwater, Brent's
-#: term ("Groundwater consumed" is no California engineer's term, 05:39 PDT),
+#: 150.1-02 (2026-10-11): the row's amount is ETAW met by groundwater
+#: ("Groundwater consumed" is no California engineer's term),
 #: written as the formula with its real sign.
 PUMPING_ESTIMATE_WORDS = (
     "ETAW met by groundwater (estimated): ETAW \u2212 ETAW met by surface water."
@@ -267,7 +263,7 @@ PUMPING_ESTIMATE_WORDS = (
 #: this sentence describes what actually closed the month out (rule 14: no
 #: "recharge", no "credit").
 #:
-#: 150.1-02 (2026-10-11): in Brent's terms. It names no supply: on 41 of the
+#: 150.1-02 (2026-10-11): reworded in ETAW terms. It names no supply: on 41 of the
 #: demo's 117 zero months effective precipitation alone met crop ET, so a
 #: sentence naming surface water would be false there.
 NO_PUMPING_DERIVED_WORDS = (
@@ -299,7 +295,7 @@ def delivery_share_words(record, pod, *, fixed_share=None, loss_fraction=None):
     together (149-02). When it is above zero the sentence says the share is
     worked out after canal losses of that percent, so a reader knows the figure
     is not the headgate's own recorded volume. Left out when there are no losses.
-    WORKING COPY: the clause is the one Brent reads at 149-02's checkpoint.
+    WORKING COPY: the clause is the one introduced at 149-02.
 
     ``fixed_share`` is the ``Decimal`` weight (4dp, from
     ``apportion_shared_supply``) this parcel received on the static-fraction

@@ -405,7 +405,7 @@ BASELINE: dict = {
     #   help_text= : 3 false positives naming a relation or a foreign key, plus
     #                core/forms.py:160, which explains what a SETTING means
     #   2026-10-10 15:27 PDT: 2 -> 6 (it had fallen to 0) for twenty
-    #   definitions Brent approved in two batches. All six are the scanner's
+    #   definitions added in two batches. All six are the scanner's
     #   shapes, not water lectures: "One record per well: its state well
     #   number, ..." and the same for a point of diversion name the record's
     #   fields (the software-glossary form this rule asks for); "A month's
@@ -416,24 +416,24 @@ BASELINE: dict = {
     "config/views.py::glossary": 6,
     #   2026-10-10 12:49 PDT: 2 -> 3 for help/getting_started.html, whose wizard
     #   row reads "The wizard then brings in the groundwater subbasins, ...", in
-    #   the words Brent approved. The scanner reads "The ... groundwater" as
+    #   the approved words. The scanner reads "The ... groundwater" as
     #   opening a definition of groundwater. It is a sentence about what the
     #   software imports, a false positive (same shape as the 2026-10-09 20:45
     #   headgate entry below).
     #   2026-10-10 13:18 PDT: 3 -> 4 for help/budgets_allocations.html, "...
     #   groundwater extracted: the meter reading where a well is metered, ...",
-    #   approved by Brent. The scanner reads the colon as opening an appositive
+    #   as approved. The scanner reads the colon as opening an appositive
     #   definition of a well; the clause names which figure is charged, a false
     #   positive.
     #   2026-10-10 14:10 PDT: 4 -> 5 for help/surface_deliveries.html, which
-    #   reuses six Methods sentences Brent approved at 11:07 word for word. Its
+    #   reuses six approved Methods sentences word for word. Its
     #   two flags ("The canal part" row label, "A field without a well has the
     #   credit added ...") are the same two false positives methods.html already
     #   carries in this count.
     #   2026-10-10 14:22 PDT: 5 -> 6 for help/settings_explained.html: the
     #   reused "The canal part" row (same false positive as methods.html) and
-    #   "...belongs to: a water year starting in October, ...", approved by
-    #   Brent, which the scanner reads as an appositive definition of a water
+    #   "...belongs to: a water year starting in October, ...", as
+    #   approved, which the scanner reads as an appositive definition of a water
     #   year; it names a setting's three choices, a false positive.
     "templates/help/*.html": 6,
     #   2026-10-09: 10 -> 11 because the surface now reads the words passed
@@ -445,34 +445,33 @@ BASELINE: dict = {
     #   dash itself is on the writing work's list.
     #   2026-10-09 20:45 PDT: 11 -> 12 for help/partials/_the_subtraction.html,
     #   whose note under the worked example now reads "The rest of the headgate
-    #   total is divided among the other fields", in the words Brent approved
-    #   at 20:29 PDT. The scanner reads "The ... headgate" as opening a
+    #   total is divided among the other fields", in the approved
+    #   words. The scanner reads "The ... headgate" as opening a
     #   definition of a headgate. It is a sentence about how the software
     #   divides a recorded total, a false positive.
     #   2026-10-10: back to 11. That note was removed from the worked example
     #   (it repeated the page's own section on how deliveries are divided).
     #   2026-10-10 19:35 PDT: 11 -> 12 for accounting/calculation_run_detail.html,
     #   whose row reads "The crop used all of the canal water it could use and
-    #   still needed well water.", in the words Brent approved at 19:19 PDT. The
+    #   still needed well water.", in the approved words. The
     #   scanner reads "The crop used all of the canal" as opening a definition of
     #   canal water. It says what this month's figures did, a false positive.
     #   2026-10-12: 12 -> 13 for wells/partials/_detail_pane.html, whose
     #   tooltip reads "Local registration ID / The ID the well carries in a
     #   local registry, such as a groundwater agency's or a county's.", in the
-    #   words Brent approved at 2026-10-11 20:36 PDT. The scanner reads "The ID
+    #   approved words. The scanner reads "The ID
     #   the well" as opening a definition of a well. It defines the ID field, a
     #   false positive.
     #   2026-10-12: 13 -> 14 for accounting/periods_list.html, whose line reads
     #   "The usual water year runs October through September.", in the words
-    #   Brent approved at 09:43 PDT. The line it replaced gave the same months in
+    #   approved. The line it replaced gave the same months in
     #   parentheses; it states the default the New water year form fills in
     #   (October 1 to September 30), a convention of the form, not a lecture.
     #   2026-10-12: 14 -> 15 for accounting/partials/_account_balances.html, whose
     #   Balance pop-out reads "Groundwater is the meter reading on a use area with
     #   a meter, and ETAW met by groundwater on a use area with a well and no
     #   meter reading." and "A use area with a well and no meter reading balances
-    #   to zero ...", in the words Brent approved at 13:21 PDT ("The wording is
-    #   approved."). They say which figure the Groundwater column holds and when
+    #   to zero ...", in the approved words. They say which figure the Groundwater column holds and when
     #   OpenH2O's balance is zero, a data convention, not what groundwater or a
     #   well is: a false positive (copular "groundwater", opening "well").
     "templates/**/*.html": 15,

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
-146-05 checkpoint, Brent's ruling 2 (2026-09-23): one editor for how a well is
+146-05 (2026-09-23): one editor for how a well is
 measured.
 
 The well page showed `measurement_method` with its own pencil beside the DWR

@@ -46,8 +46,8 @@ MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MB, same ceiling as the infrastructure
 FACE_VALUE_UNITS_EXPECTED = "Acre-feet per Year"
 MAX_DD_UNITS_EXPECTED = "Cubic Feet per Second"
 
-#: The whole-file messages Brent approved for both surface water imports
-#: (150.1-02 screen 18, message A, 2026-10-14 17:51). diversion_import.py
+#: The whole-file messages for both surface water imports
+#: (150.1-02). diversion_import.py
 #: imports these so the two pages say the same thing for the same fault.
 NO_FILE_MESSAGE = "Choose a CSV file to upload."
 NOT_CSV_MESSAGE = (
@@ -157,8 +157,7 @@ RIGHT_FIELD_ALIASES = {
     "storage_season_end_day": {"STORAGE_SEASON_END_DAY_1"},
 }
 
-#: Brent 2026-10-14 20:01 (150.1-02 screen 18, message I): sentence case,
-#: no parentheses.
+#: Sentence case, no parentheses (150.1-02).
 FIELD_LABELS = {
     "right_id": "Application number",
     "right_type_name": "Right type",
@@ -268,9 +267,8 @@ def _resolve_right_type(raw_value, type_by_name):
     """The WaterRightType for ``raw_value``, or the name to add on commit.
 
     Returns ``(type_or_None, new_name_or_None)``. A type the seeded rows do
-    not carry is no longer an error (Brent 2026-10-14 18:47, message E row 4:
-    only "Appropriative" used to import, 29,755 of the 84,833 rows of the
-    state's list): ``commit_rows`` adds it the first time a file carries it,
+    not carry is no longer an error (only "Appropriative" used to
+    import, 29,755 of the 84,833 rows of the state's list): ``commit_rows`` adds it the first time a file carries it,
     named as eWRIMS writes it. No calculation reads a right's type.
     """
     key = raw_value.strip().lower()
@@ -368,7 +366,7 @@ def validate_rows(rows, mapping, existing_right_ids):
 
         # --- face value + its unit ---
         # A face value in another unit leaves the right in, without the face
-        # value (Brent 2026-10-14 18:47, message E row 5).
+        # value.
         face_value_raw = src("face_value_acre_feet")
         if face_value_raw:
             units = src("face_value_units")

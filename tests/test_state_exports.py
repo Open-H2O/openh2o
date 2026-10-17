@@ -591,7 +591,7 @@ class TestDemonstrationFramingScreens:
         # sat under it on this screen is gone. Exports keep DEMO_BANNER.
         assert 'class="card-raised demo-notice"' in body
         assert DEMO_BANNER not in body
-        # The box says there is no filing path (CLAUDE.md, Brent 2026-08-05). This line
+        # The box says there is no filing path (CLAUDE.md, 2026-08-05). This line
         # used to assert "OpenH2O prepares your filing." was present, which is why that
         # overclaim survived every earlier removal (ISS-209, 2026-09-23).
         assert "OpenH2O does not submit reports to the state." in body

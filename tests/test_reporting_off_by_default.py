@@ -1,10 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Reporting is off unless a site names it (2026-10-12).
 
-Brent, 2026-10-12 06:10 PDT: "Can we turn the reports pages off and simply gray
-out the left-hand column selector so that it shows its under developement? I'm
-worried these reporting pages are going to freak the state out to the point that
-it disregards this entire platform."
+The reporting pages risk reading as a working path to the state, which
+OpenH2O is not.
 
 So: a deployment with ``OPENH2O_MODULES`` unset runs without ``reporting``; the
 sidebar shows Reports greyed and unlinked as "Under development"; and no page

@@ -14,7 +14,7 @@ on a deployment with a mail server carries a verified address and no password is
 ever cleared. The unconditional sentence therefore instructs a whole class of
 operators to warn their staff about something that cannot happen to them.
 
-Found by ``/gsd:verify-work 127`` on 2026-08-28 (UAT-002). This guard holds the
+Found by a verification pass on 2026-08-28 (UAT-002). This guard holds the
 conditional in place; the wording may change freely around it.
 """
 import re

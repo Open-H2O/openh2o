@@ -785,7 +785,7 @@ MASS_BALANCE_TOLERANCE = Decimal("0.01")
 #: zero — a meter measures pumping (which exceeds the crop's consumptive use by the
 #: on-farm loss / return flow), deficit irrigation under curtailment leaves a real
 #: shortfall, etc. A residual within this fraction of gross ET is "small, realistic,
-#: and not alarming" (Brent's bar): present it as a normal minor surplus/shortfall,
+#: and not alarming": present it as a normal minor surplus/shortfall,
 #: NOT a warning. Only a residual BEYOND it (e.g. a curtailed surface-only parcel
 #: that lost its peak-season water) is flagged for attention.
 REALISTIC_RESIDUAL_BAND = Decimal("0.25")
@@ -889,7 +889,7 @@ def parcel_run_periods(parcel, reporting_period=None):
 def parcel_receipt_periods(parcel, reporting_period=None):
     """The months a parcel has a calculation receipt for, sorted ``"YYYY-MM"``.
 
-    148-03 (Brent, 2026-09-28): the calculation page answers one question,
+    148-03 (2026-09-28): the calculation page answers one question,
     where this field's estimated pumping for the month came from, and only a
     month on a field with a well and no meter reading has that question
     (``residual_disposition == "groundwater"``). A metered month's pumping is
@@ -1152,7 +1152,7 @@ def parcel_unmet_demand(parcel, reporting_period=None):
     close from the supplies on record, and it says nothing whatever about why —
     under-irrigation, a delivery filed against the wrong field, and a surface
     allocation error all land here identically. ⛔ The screen wording is settled
-    (Brent, 2026-09-06): *water use recorded, no supply reported*. Never
+    (2026-09-06): *water use recorded, no supply reported*. Never
     unauthorized, unpermitted, unlawful, illegal or stolen, and never implying
     them; the DESIGN.md rule-12 row gates those words.
 
@@ -1232,7 +1232,7 @@ def balance_state(value):
     no meter closes at zero by construction, but its monthly figures are stored
     to four places, so a year's sum can land at +0.0001 or -0.0003 AF. Judged
     unrounded, two accounts that both print 0.00 were counted one in surplus
-    and one in deficit. Brent, 2026-10-12 12:04 PDT, chose "Balanced": a
+    and one in deficit. Since 2026-10-12 both are "Balanced": a
     balance that prints 0.00 is neither. ``None`` (no measurement) stays None.
     """
     if value is None:
@@ -1562,7 +1562,7 @@ def zone_carryover(zone, water_year):
 
 #: What the zone page's "Available by source" calls each kind of row that
 #: `zone_carryover` adds into a zone's groundwater available, in the order it
-#: lists them (Brent, 2026-10-12 17:47 PDT: "Managed recharge", "Canal seepage",
+#: lists them ("Managed recharge", "Canal seepage",
 #: "Carried forward"; the deep-percolation pool takes Delivery Settings' own
 #: words for that water).
 ZONE_CREDIT_LABELS = (
@@ -1851,7 +1851,7 @@ def _subtraction_context(run):
         ),
         "gross_et_af": run.gross_et_af,
         "effective_precip_af": run.effective_precip_af,
-        # 2026-10-11 (Brent): the worked example shows ETAW, crop ET minus
+        # 2026-10-11: the worked example shows ETAW, crop ET minus
         # effective precipitation, the run's own stored figure.
         "etaw_af": run.net_consumptive_use_af,
         "surface_delivered_af": run.surface_delivered_af,

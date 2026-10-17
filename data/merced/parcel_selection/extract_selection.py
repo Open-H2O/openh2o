@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
-Extract Brent's tagged fields from the picker GeoPackage into the committed
+Extract the tagged fields from the picker GeoPackage into the committed
 fixture the ingest reads: data/merced/selected_parcels.geojson (EPSG:4326).
 
 A field is "tagged" if it has a served_by (surface delivery) OR a water_source

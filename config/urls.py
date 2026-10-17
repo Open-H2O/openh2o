@@ -51,7 +51,7 @@ urlpatterns = [
     path("accounts/google/login/", google_login_guard),
     path("accounts/google/login/callback/", google_callback_guard),
     path("accounts/google/login/token/", google_login_by_token_guard),
-    # allauth's email page is removed (Brent, ISS-248, 2026-10-17 05:12: one
+    # allauth's email page is removed (ISS-248, 2026-10-17: one
     # address per person, and only an administrator changes it, on the Users
     # page). Declared before allauth's mount for the same reason as the guards
     # above, and unnamed for the same reason.

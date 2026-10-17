@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Count the sentence shapes Brent has struck that a machine can see.
+"""Count the sentence shapes struck in review that a machine can see.
 
-Brent ruled on 2026-10-09 at 18:45 PDT that the shapes he has struck are to be
-fixed everywhere. Seven shapes are named in DESIGN.md copy rule 15. Four of
+Since 2026-10-09 the shapes struck in review are fixed everywhere. Seven shapes are named in DESIGN.md copy rule 15. Four of
 them can be found by pattern, and this script counts those four:
 
 - an em dash between two words, and a double hyphen used as one;
@@ -98,25 +97,23 @@ FILLER = re.compile(r"\b(?:actually|genuinely|really|simply)\b", re.I)
 PAIRED_HEADING = re.compile(r",\s+and\s+(?:what|who|how|where|why|when|which)\b", re.I)
 TRAILING_HEADING = re.compile(r",\s+by\s+(?:what|which)\b", re.I)
 #: A stand-in for a name the reader has to resolve: "that platform", "both
-#: are", "the former". Brent struck "that platform's code" and "Both are
-#: released under..." on About (2026-10-10 04:40 and 04:53 PDT): name the
-#: thing again instead. Replayed before installing: it flags both struck
+#: are", "the former". "That platform's code" and "Both are released
+#: under..." were struck on About (2026-10-10): name the thing again instead. Replayed before installing: it flags both struck
 #: lines in About's history. Some hits are plain English ("two reasons, and
 #: both are good ones"), so a hit is a line to read, not an automatic fault.
 STAND_IN = re.compile(
     r"\b(?:that|those|said) (?:platform|system|software|project|tool|method|code|program"
     r"|agency|page)s?\b|\bboth (?:are|were|use|run|have)\b|\bthe (?:former|latter)\b", re.I)
 
-#: A phrase that puts the reader in a water district or agency. Brent,
-#: 2026-10-11 18:01 PDT: "we want openh2o to be used nationally ... some users
-#: may not be districts, they may be growers or ditchtenders." He approved the
-#: replacements at 20:36 PDT ("An administrator can ...", "unless an
-#: administrator changes it", "the area you manage water for"). A district or
+#: A phrase that puts the reader in a water district or agency. OpenH2O is
+#: meant to be used nationally, and some of its users are growers or ditch
+#: tenders rather than districts (2026-10-11). The approved replacements read
+#: "An administrator can ...", "unless an administrator changes it" and "the
+#: area you manage water for". A district or
 #: agency that is a real thing in the water world, and not the reader, does not
 #: match: "the regulating agency", "the primacy agency", "a GSA" under SGMA, "an
 #: irrigation district" as one kind of supplier, "the agency that regulates it".
-#: Replayed against f4b18da before it was installed; the numbers are in
-#: .planning/phases/150.4-national-role-neutral-tone-pass/150.4-01-REPLAY.md.
+#: Replayed against f4b18da before it was installed.
 DISTRICT_READER = re.compile(
     r"\b(?:your|our|this) (?:district|agency|gsa)\b"
     r"|\b(?:an?|the) (?:water |groundwater )?(?:district|agency)\b(?!\s+that\s+regulates)"
@@ -129,11 +126,11 @@ DISTRICT_READER = re.compile(
 #: Phrases where "the agency" is the regulating agency of a water system, read
 #: out of a lab file, and not the reader. Removed before DISTRICT_READER counts.
 DISTRICT_ENTITY: tuple = (
-    (r"a groundwater agency's published table", "names the efficiency table's publisher, not the reader (Brent, 2026-10-12 09:43)"),
-    (r"records the agency on the water system", "the lab file's regulating agency, not the reader (Brent, 2026-10-15 08:07)"),
-    (r"a groundwater agency's or a county's", "a local registry's keeper, not the reader (Brent, 2026-10-11 20:36)"),
-    (r"one organization: a district, an agency, a farm or a ditch company", "the kinds of organization a site serves, not the reader (Brent, 2026-10-11 20:36)"),
-    (r"A water agency or district running OpenH2O", "who needs Earth Engine's paid license, not the reader (Brent, 2026-10-17 12:42)"),
+    (r"a groundwater agency's published table", "names the efficiency table's publisher, not the reader (2026-10-12)"),
+    (r"records the agency on the water system", "the lab file's regulating agency, not the reader (2026-10-15)"),
+    (r"a groundwater agency's or a county's", "a local registry's keeper, not the reader (2026-10-11)"),
+    (r"one organization: a district, an agency, a farm or a ditch company", "the kinds of organization a site serves, not the reader (2026-10-11)"),
+    (r"A water agency or district running OpenH2O", "who needs Earth Engine's paid license, not the reader (2026-10-17)"),
 )
 _DISTRICT_KEPT = re.compile("|".join(f"(?:{phrase})" for phrase, _ in DISTRICT_ENTITY), re.I)
 
@@ -155,15 +152,15 @@ CALIFORNIA_NAMES: tuple = (
     (r"California.s Environmental Laboratory Accreditation Program", "ELAP spelled out"),
     (r"California's accreditation of laboratories", "ELAP is a California program"),
     (r"the California law requiring groundwater management", "SGMA is a California law"),
-    (r"In California, the \**Sustainable Groundwater Management Act", "SGMA spelled out (Brent, 2026-10-17 12:17)"),
+    (r"In California, the \**Sustainable Groundwater Management Act", "SGMA spelled out (2026-10-17)"),
     (r"California DDW", "DDW is California's Division of Drinking Water"),
-    (r"California.s SDWIS format", "the lab file layout is California's Division of Drinking Water's (Brent, 2026-10-14 13:33)"),
-    (r"California.s Water Use Reported export", "the State Water Board's published diversion file (Brent, 2026-10-14 18:41)"),
-    (r"SDWIS4 file holds every water system in California", "the Division of Drinking Water's file covers the state's systems (Brent, 2026-10-14 20:37)"),
-    (r"California.s Electronic\s+Annual\s+Report", "the eAR is California's report (Brent, 2026-10-14 15:12)"),
+    (r"California.s SDWIS format", "the lab file layout is California's Division of Drinking Water's (2026-10-14)"),
+    (r"California.s Water Use Reported export", "the State Water Board's published diversion file (2026-10-14)"),
+    (r"SDWIS4 file holds every water system in California", "the Division of Drinking Water's file covers the state's systems (2026-10-14)"),
+    (r"California.s Electronic\s+Annual\s+Report", "the eAR is California's report (2026-10-14)"),
     (r"real,? (?:published )?California basin", "the demonstration's real geography"),
     (r"open up California's water data", "the Consortium's purpose, in its own terms"),
-    (r"California's reporting format", "the state's own format, Brent's words for it (2026-10-12 05:42: \"California's reporting format, not layout\")"),
+    (r"California's reporting format", "the state's own format, the approved name for it (2026-10-12: \"California's reporting format, not layout\")"),
 )
 CALIFORNIA = re.compile(r"\bCalifornia\b")
 _CALIFORNIA_KEPT = re.compile("|".join(f"(?:{name})" for name, _ in CALIFORNIA_NAMES))
@@ -174,16 +171,13 @@ def california_count(text: str) -> int:
     return len(CALIFORNIA.findall(_CALIFORNIA_KEPT.sub(" ", text)))
 
 
-#: Three habits Brent struck in the README on 2026-10-17 at 13:15 PDT ("A new
-#: installation holds none of your records." is "the AI Slop langugae"),
-#: replayed before they were installed against his past rulings: the 222
-#: sentences he struck and the 1,270 he approved (tests/test_literary_sentence.py
-#: and brent-sentence-corrections.md). A statement of intent or reassurance hit
-#: 7 struck and 0 approved; a negation frame hit 18 struck (8.1%) and 13 approved
-#: (1.0%); a bolded verdict sentence hit the struck README 3 times and nothing he
-#: approved. A ", so" ending hit 5.9% struck and 3.5% approved, too close to
-#: separate, so it is not counted. Replay:
-#: .planning/phases/150.1-fix-the-writing/150.1-03-SLOP-REVIEW-2026-10-17.md.
+#: Three habits struck in the README on 2026-10-17 ("A new installation holds
+#: none of your records."), replayed before they were installed against past
+#: review rulings: 222 struck sentences and 1,270 approved ones. A statement of
+#: intent or reassurance hit 7 struck and 0 approved; a negation frame hit 18
+#: struck (8.1%) and 13 approved (1.0%); a bolded verdict sentence hit the
+#: struck README 3 times and nothing approved. A ", so" ending hit 5.9% struck
+#: and 3.5% approved, too close to separate, so it is not counted.
 REASSURANCE = re.compile(
     r"\b(?:deliberate(?:ly)?|on purpose|intentional(?:ly)?|by design|fully supported"
     r"|nothing has gone wrong|is not a (?:fault|bug|failure))\b", re.I)

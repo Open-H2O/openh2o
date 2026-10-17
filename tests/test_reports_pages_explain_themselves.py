@@ -150,8 +150,7 @@ class TestWorksheetBlockersLinkToTheFix:
         )
 
     def test_the_worksheet_asks_for_no_pin(self, auth_client):
-        """The CalWATRS PIN is removed everywhere (Brent, 2026-10-12: "The PIN
-        was a one time thing for the first year of reporting.")."""
+        """The CalWATRS PIN is removed everywhere."""
         from surface.models import DiversionRecord, PointOfDiversion, WaterRight, WaterRightType
 
         template, _ = ReportTemplate.objects.get_or_create(

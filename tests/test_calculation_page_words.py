@@ -79,11 +79,11 @@ def _run(parcel, period="2026-08", config_hash="abc123def456"):
 
 @pytest.mark.django_db
 class TestCalculationPageDoesNotPrintTheConfigHash:
-    """R-045, as Brent ruled it at the 143-09 checkpoint (2026-09-16): the
+    """R-045 (143-09): the
     twelve-character config hash is a machine key no page lets a reader
     compare, so it is not printed at all. The head names the methodology and
     stops. (The plan's first answer, naming the code as a "fingerprint" with
-    a sentence about a hash, was struck: "Nobody knows what that means.")"""
+    a sentence about a hash, was struck as meaningless to a reader.)"""
 
     def test_head_names_the_methodology_and_no_code(self):
         parcel = ParcelFactory(parcel_number="R045-APN-001")

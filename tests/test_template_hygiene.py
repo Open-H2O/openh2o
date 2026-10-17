@@ -155,11 +155,9 @@ class TestEmptyValuesAreWorded:
 
 
 class TestGroupedTableBracketHeaderIsCentred:
-    """Brent's ruling, 2026-09-13 18:24 PDT (143-07 staging checkpoint,
-    `/map/zones/2/`'s Available bracket): a grouped table's bracket header
-    sits CENTRED over its bracket. It had been moved left at 14:01 the same
-    day on his first read (commit ``69978e3``) and ruled back on staging
-    ("center the word available and we'll just move on"). Platform-wide on
+    """A grouped table's bracket header sits CENTRED over its bracket (143-07,
+    `/map/zones/2/`'s Available bracket). It had been moved left the same day
+    (commit ``69978e3``) and was reverted. Platform-wide on
     ``.data-table--grouped th.th-group-label``; the dashboard's Supplies /
     Groundwater budget headers follow it.
     """

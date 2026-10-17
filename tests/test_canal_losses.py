@@ -513,7 +513,7 @@ def test_a_run_with_losses_stays_green_and_says_what_was_written_off(engine_worl
     # 30 AF x 0.01 = 0.30 evaporation, x 0.02 = 0.60 spill, x 0.12 = 3.60
     # seepage; 30 - 0.30 - 3.60 - 0.60 = 25.50 left for the field
     assert req.status == "succeeded"
-    # A run stores the losses as table groups (Brent, 2026-10-12 16:07 PDT).
+    # A run stores the losses as table groups.
     groups = {n["table"]: n for n in req.notes if isinstance(n, dict)}
     assert groups["evaporation"]["rows"] == [
         {"af": "0.30", "where": "Test Canal Headgate"}
@@ -527,7 +527,7 @@ def test_a_run_with_losses_stays_green_and_says_what_was_written_off(engine_worl
     assert CanalMonthLoss.objects.get().available_af == Decimal("25.5000")
 
 
-# (e) the description clause (working copy for Brent's checkpoint) --------------
+# (e) the description clause ---------------------------------------------------
 
 
 def test_the_split_row_says_the_canal_losses_came_off_first():

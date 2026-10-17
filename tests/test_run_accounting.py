@@ -521,7 +521,7 @@ def test_canal_water_beyond_what_the_crops_could_use_is_one_plain_note(world):
 
     assert req.status == "succeeded"  # information, not a fault
     surplus = UnallocatedDelivery.objects.get(point_of_diversion=world.pod)
-    # A run stores it as a table group (Brent, 2026-10-12 16:07 PDT).
+    # A run stores it as a table group.
     group = req.notes[-1]
     assert group["table"] == "unallocated"
     assert group["lead"] == (

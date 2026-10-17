@@ -46,7 +46,7 @@ class TestTheRosterWordsItsOwnRow:
         _user("roster-host-admin", is_staff=True)
         client = _client_for(me)
         html = client.get(reverse("core:users_list")).content.decode()
-        # ISS-248 message B row 5 (Brent 2026-10-17 05:47).
+        # ISS-248.
         assert (
             "You cannot change your own role, status or email address. "
             "Another administrator can."

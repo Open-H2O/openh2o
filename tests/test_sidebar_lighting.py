@@ -163,7 +163,7 @@ NO_ENTRY_BY_DESIGN = {
         "Home",
     ),
     "/changes/": (
-        "reached from the Users page only (147-02, Brent's checkpoint ruling)",
+        "reached from the Users page only (147-02)",
         "Administration",
     ),
     "/search/": ("the search box's results, not a place in the sidebar", None),

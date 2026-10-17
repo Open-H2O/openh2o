@@ -47,8 +47,8 @@ def entries(admin_client):
 
 class TestTheNewEntries:
     def test_each_new_term_is_served(self, entries):
-        # 2026-10-10 15:52 PDT: Brent struck the "Whose word" column ("pointless
-        # and distracting"), so an entry no longer carries a kind to assert.
+        # 2026-10-10: the "Whose word" column was removed, so an entry no
+        # longer carries a kind to assert.
         missing = [term for term in NEW_TERMS if term not in entries]
         assert missing == []
 

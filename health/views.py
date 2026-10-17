@@ -261,7 +261,7 @@ def health_dashboard(request):
         "last_checked": last_checked,
         "skipped_category_names": skipped_category_names,
         "overall_status": overall_status,
-        # Brent, screen 16 message A row 9: the badges' own words.
+        # The badges' own words.
         "overall_words": _OVERALL_WORDS.get(overall_status, overall_status),
         # Per-subsystem messages name internals + failure reasons — operator-only
         # reconnaissance. Anonymous visitors see the aggregate status only.

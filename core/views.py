@@ -151,9 +151,8 @@ def user_toggle_active(request, pk):
 def user_email_edit(request, pk):
     """Change another person's email address, which is their sign-in name.
 
-    Brent, ISS-248, 2026-10-17: only an administrator changes an address
-    (05:09), one address per person (05:12); the words are message B (05:47).
-    Not your own (the role and status rule, for the same reason: a mistyped
+    ISS-248: only an administrator changes an address, and there is one
+    address per person. Not your own (the role and status rule, for the same reason: a mistyped
     address would lock you out with no one to fix it), and not a host
     administrator's, which the Users page already leaves to the host.
     """

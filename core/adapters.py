@@ -42,8 +42,7 @@ _SIGNED_IN_ONLY_MESSAGES = {"account/messages/password_changed.txt"}
 
 
 class AccessControlledAccountAdapter(DefaultAccountAdapter):
-    # ISS-248 message A row 9 (Brent 2026-10-17 05:31): was "Please type your
-    # current password."
+    # ISS-248: the sentence shown when the current password is wrong or blank.
     error_messages = {
         **DefaultAccountAdapter.error_messages,
         "enter_current_password": "The current password does not match your account.",

@@ -67,7 +67,7 @@
     {% endif %}
 
     {% comment %} Setting: surface water in excess of ETAW (148-04,
-         Brent's Q1 ruling 2026-09-20, built 2026-09-28; the words settled by
+         built 2026-09-28; the words settled by
          148-03 the same day). `surface` owns both fields
          (`shows_surface_settings`): only canal water can be over-delivered. Its position is
          computed in the view like every other optional card. Each choice is a
@@ -126,7 +126,7 @@
          surface settings (146-03 Task 3, the 145-01 memo's crosswalk layer). The
          USE-row question that used to sit here moved to the import screen,
          shown only when an uploaded file actually has USE rows (146-03
-         Task 6, Brent's 2026-09-22 checkpoint ruling). {% endcomment %}
+         Task 6). {% endcomment %}
     {% if form.shows_diversion_settings %}
     <div class="card-raised">
       <span class="step-eyebrow">Setting {{ diversion_number }} of {{ settings_total }}</span>

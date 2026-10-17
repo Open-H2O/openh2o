@@ -2,7 +2,7 @@
 """
 146-04 Task 5: the ISS-140 ruling, applied.
 
-Brent ruled **beside** at the 146-04 Task 1 checkpoint, 2026-09-22 07:31 PDT:
+The ruling was **beside** (146-04 Task 1, 2026-09-22):
 
     Store the file's own MCL and DLR as reported and show them beside the
     finding. No colour, no comparison, no verdict word. The "prepares, never
@@ -181,8 +181,7 @@ class TestTheImporterReadsTheLimitsAsReported:
     def test_re_importing_fills_results_recorded_before_the_limits_were_kept(
         self, le_grand
     ):
-        """Brent at the 146-04 checkpoint (2026-09-23): "We need to have values
-        here." A result imported before the ruling has no limits; importing
+        """The limits must show values. A result imported before the ruling has no limits; importing
         the same file again adds them and changes nothing else."""
         _import()
         SampleResult.objects.update(
@@ -266,7 +265,7 @@ class TestTheScreensShowTheLimitBeside:
         html = client_in.get(
             reverse("drinking:result_detail", args=[above.pk])
         ).content.decode()
-        # 150.1-02 screen 14 row 4 (Brent 2026-10-14 15:37 PDT).
+        # 150.1-02.
         assert "the laboratory&#x27;s file carried" not in html
         assert "</abbr> in the lab file" in html
 

@@ -76,7 +76,7 @@ class TestTheHeroLeadsWithTheStationFigure:
             assert greeting not in html
 
     def test_no_syncing_station_means_the_agency_leads_not_a_zero(self):
-        """Brent at the 143-09 checkpoint (2026-09-16): an agency with no
+        """143-09 (2026-09-16): an agency with no
         monitoring stations must not read "0 of 0 syncing stations". With
         datasync on and no active station the hero is the datasync-off shape:
         the agency name as the title, "Home" as the eyebrow, no station link."""

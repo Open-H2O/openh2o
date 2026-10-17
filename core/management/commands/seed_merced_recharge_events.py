@@ -15,7 +15,7 @@ Basins are selected by ``operator`` (Halvern Irrigation District) so this picks 
 whatever the current hand-pick produced without hardcoding basin names, and never
 touches Demo Valley recharge sites.
 
-Decision (Brent, 2026-06-03): recharge credits **Groundwater (GW)**. The physical
+Decision (2026-06-03): recharge credits **Groundwater (GW)**. The physical
 source water (storm/surface runoff diverted to the basin) is preserved in the
 event ``source_description``/``notes`` for the audit trail; the ledger
 ``water_type`` is GW so it credits the aquifer the demo tells a story about.
@@ -49,8 +49,7 @@ from parcels.models import ParcelLedger
 # schedule would be a lie. Seeding nothing would be a different lie: the basins
 # and their canal intake are still there, and a winter with half the rain still
 # produces storms worth diverting. The dry season below is scaled to 0.50 — the
-# same rainfall multiplier 133-01 applied to the satellite record (Brent, at that
-# plan's opening checkpoint) — and it arrives as TWO mid-winter storms rather
+# same rainfall multiplier 133-01 applied to the satellite record — and it arrives as TWO mid-winter storms rather
 # than a four-month season, because a dry winter is short of storms before it is
 # short of water in each one. December and March, the shoulder fills, do not
 # happen at all.

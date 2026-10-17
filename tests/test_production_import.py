@@ -479,7 +479,7 @@ def test_production_year_table_shows_twelve_months_and_the_total(auth_client, le
     body = resp.content.decode()
     assert "91,371,800" in body
     assert "4,007,800 gal" in body  # January, in the unit Le Grand reported
-    # Gallons only (Brent, 146-04 checkpoint, 2026-09-23): acre-feet is the
+    # Gallons only (146-04): acre-feet is the
     # unit of surface diversions and SGMA extraction, not of a drinking
     # water system's production. The model still stores it; the page does
     # not show it.
@@ -492,8 +492,7 @@ def test_production_year_table_shows_twelve_months_and_the_total(auth_client, le
 
 
 def test_a_surface_water_system_gets_its_surface_water_column(auth_client, le_grand):
-    """Brent at the checkpoint: "What if a drinking water system is using
-    surface water as its source?" Every source that carried water gets its
+    """A drinking water system may use surface water as its source. Every source that carried water gets its
     column; groundwater is not special."""
     from drinking.models import SystemProduction
 
@@ -520,7 +519,7 @@ def test_a_surface_water_system_gets_its_surface_water_column(auth_client, le_gr
 
 
 def test_sold_water_is_not_added_to_the_year_total(auth_client, le_grand):
-    """150.1-02 screen 13 (Brent 2026-10-14 15:12 PDT): water sold to another
+    """150.1-02: water sold to another
     system came out of the water produced, so the year total leaves the two
     sold columns out and names sold water on its own. 48 MG pumped, 3 MG of it
     sold, used to read 51,000,000 gallons."""

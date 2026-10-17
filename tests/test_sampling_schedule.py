@@ -2,9 +2,8 @@
 """
 146-04 Task 4 (D8): the sampling schedule.
 
-The operator's own checklist of what is sampled and when. Brent's "the plan
-holds" (2026-09-20 19:06 PDT) answered the memo's J11 ("whether the product
-should hold a schedule at all"): it does, and it HOLDS it. Nothing here
+The operator's own checklist of what is sampled and when. The memo's
+J11 ("whether the product should hold a schedule at all") is answered: it does, and it HOLDS it. Nothing here
 computes a due date, and nothing calls a row overdue; a row whose date has
 passed says "past the date you set", because the date is the operator's.
 

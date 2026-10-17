@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""The sign-in pages' sentences Brent approved (150.1-02 screen 18, message
-AB, 2026-10-15 20:58), and the code change with them: on a site with no mail
-server the reset page said a link was sent while the email only reached the
+"""The sign-in pages' sentences (150.1-02), and the code change with
+them: on a site with no mail server the reset page said a link was sent while the email only reached the
 server log, so it now says the site sends no email.
 """
 import pytest

@@ -34,7 +34,7 @@ setting. The month's canal water a parcel could use beyond its net use —
 clamp_floor's `incidental_recharge_af` — is always recorded on the run, as
 `CalculationRun.over_delivery_af`.
 
-148-04 (Brent's Q1 ruling, 2026-09-20) makes what happens to it a deployment
+148-04 (Q1, 2026-09-20) makes what happens to it a deployment
 setting, `SiteConfig.over_delivery_treatment`, read ONCE per run:
 `"not_credited"` (the default, exactly the
 behaviour above) writes no `recharge` ledger row and no basin-pool deposit;
@@ -527,8 +527,8 @@ class Command(BaseCommand):
         for parcel in parcels:
             is_metered = parcel.id in metered_row_ids
             final_af, breakdown = evaluate_chain(parcel, period)
-            # 150.2-02 (Brent, 2026-10-11: "one irrigation efficiency per
-            # field"): ETAW met by groundwater is divided by the field's own
+            # 150.2-02 (2026-10-11: one irrigation efficiency per
+            # field): ETAW met by groundwater is divided by the field's own
             # irrigation efficiency, the same lookup its canal water uses.
             gw_efficiency, gw_efficiency_source = field_efficiency(
                 parcel, config=site_config

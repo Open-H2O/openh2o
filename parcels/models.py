@@ -213,8 +213,8 @@ class IrrigationMethod(models.Model):
     ``parcels/0013_irrigation_method``, which also adopts the rows a deployment
     already had.
 
-    Lives in ``parcels`` since 150.2-01 (Brent, 2026-10-11: "we need this
-    software to help groundwater-only growers and water managers"). It began in
+    Lives in ``parcels`` since 150.2-01, which helps
+    groundwater-only growers and water managers. It began in
     ``surface`` on the reasoning that nothing read an efficiency where there
     was no canal; a field irrigated from a well has an irrigation method too,
     and a groundwater-only deployment runs without ``surface``.

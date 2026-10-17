@@ -82,7 +82,7 @@ def test_fills_parcel_address_and_contact_and_mints_no_pin(db):
                         contact_email="")
     call_command("seed_merced_details")
     assert "CA" in Parcel.objects.get(parcel_number="MER-APN-TEST").address
-    # The CalWATRS PIN is removed everywhere (Brent, 2026-10-12).
+    # The CalWATRS PIN is removed everywhere (2026-10-12).
     assert WaterRight.objects.get(right_id="MER-WR-TEST").calwatrs_pin == ""
     assert WaterAccount.objects.get(
         name="El Nido Irrigation").contact_email.endswith("@example.com")

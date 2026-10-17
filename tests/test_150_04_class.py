@@ -57,7 +57,7 @@ def test_c3_a_clickable_row_takes_its_pointer_from_the_class_not_an_inline_style
 
 
 # zone_create.html had five fields until 150.5-01 removed the Delta checkbox and
-# its legal basis box (Brent 2026-10-12 19:17 PDT, "Remove it"): three remain.
+# its legal basis box: three remain.
 @pytest.mark.parametrize(
     "name,groups", [("infrastructure/add.html", 5), ("geography/zone_create.html", 3)]
 )

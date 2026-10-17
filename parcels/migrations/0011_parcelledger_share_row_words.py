@@ -1,8 +1,7 @@
 # 149.1-05 (2026-10-07): the canal split's fallback sentence, reworded on the
 # rows already written.
 #
-# Brent rejected the fixed-share rows on staging on 2026-09-17 08:31 PDT ("This
-# is illegible to anyone including a district engineer. What is a fixed share?").
+# The fixed-share rows were illegible to anyone, a district engineer included.
 # `accounting.ledger_words.DELIVERY_SHARE_BY_FIXED` and the tail composed in
 # `delivery_share_words` now name the thing and the rule. A split row is only
 # rewritten by the engine when its headgate month is recalculated, so the rows

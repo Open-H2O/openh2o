@@ -317,8 +317,7 @@ def test_disabling_a_module_removes_only_its_own_nav():
     so dropping it is a startup error, not a nav change.
 
     `reporting` is the interesting one: it is the ONLY entry in its section.
-    Since 2026-10-12 (Brent: "gray out the left-hand column selector so that it
-    shows its under developement") dropping it leaves its heading over one
+    Since 2026-10-12, dropping it leaves its heading over one
     greyed, unlinked "Reports" marked "Under development", and no link into
     /reporting/.
     """
@@ -393,7 +392,7 @@ def test_every_nav_entry_is_rendered():
     adds Facilities. 146-02 Task 4 added Curtailment Orders beside Water Rights
     and 150.5-01 removed it with the feature. 146-04 Task 2 adds Production beside the other drinking-water sub-pages,
     and 146-04 Task 4 adds Schedule after it. 147-01 added Change History to
-    Overview; 147-02 removed it from the sidebar (Brent's checkpoint ruling),
+    Overview; 147-02 removed it from the sidebar,
     so the count is back to 27. 150-03 adds Infrastructure under Water Data: 28.
     150.5-01 removes Curtailment Orders: 27.
     """

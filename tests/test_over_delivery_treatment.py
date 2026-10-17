@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """148-04 Task 2: the engine follows `SiteConfig.over_delivery_treatment` (Q1).
 
-Three values, Brent's ruling (2026-09-20): (a) "not_credited" — today's
+Three values (2026-09-20): (a) "not_credited" — today's
 148-02 behaviour, nothing written beyond the run's own `over_delivery_af`;
 (b) "credited" — a has-well field's share becomes a personal `recharge` row
 (ISS-053 routing), a no-well field's share joins its zone's shared basin

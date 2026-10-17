@@ -4,8 +4,8 @@
 An estimated field's calculated row keeps the CONSUMED magnitude (what the
 crop actually used); the run also stamps an EXTRACTED figure (what the pump
 had to lift to deliver it) and a DEEP PERCOLATION figure (the difference).
-150.2-02 (Brent, 2026-10-11 11:16 PDT: "one irrigation efficiency per
-field"): the division is by the FIELD'S OWN irrigation efficiency
+150.2-02 (one irrigation efficiency per
+field): the division is by the FIELD'S OWN irrigation efficiency
 (`parcels.services.field_efficiency`: its irrigation method's, else the
 Delivery Settings default), read when the run is computed and stamped on it
 as `groundwater_application_efficiency`. The flat agency-wide groundwater
@@ -364,7 +364,7 @@ def test_zone_groundwater_budget_remaining_moves_by_the_extraction():
 
 
 def test_the_groundwater_disposition_label_says_etaw_met_by_groundwater():
-    # 150.1-02 (Brent, 2026-10-11 05:39): "Groundwater consumed" is no
+    # 150.1-02: "Groundwater consumed" is no
     # California engineer's term; the row's amount is ETAW met by groundwater.
     run = CalculationRun(residual_disposition="groundwater")
     assert run.get_residual_disposition_display() == "ETAW met by groundwater (estimated)"
@@ -373,7 +373,7 @@ def test_the_groundwater_disposition_label_says_etaw_met_by_groundwater():
 # ---------------------------------------------------------------------------
 # 6. Delivery Settings: one default irrigation efficiency, no groundwater card
 #    (150.2-02 retired the 148-02 Groundwater card and its tests with it:
-#    "one irrigation efficiency per field", Brent, 2026-10-11)
+#    "one irrigation efficiency per field", 2026-10-11)
 # ---------------------------------------------------------------------------
 
 

@@ -66,7 +66,7 @@ name is the workhorse match and a code arriving in a file is *learned*.
 **Prepare, never determine.** The DDW layout carries ``MCL`` and ``DLR``
 columns. Until 2026-09-22 this importer read neither, on the argument that a
 limit stored beside the value is one template change away from a compliance
-verdict. Brent ruled ISS-140 **beside** at 07:31 PDT that day (146-04 Task 1):
+verdict. ISS-140 was ruled **beside** that day (146-04 Task 1):
 the two columns are now stored on the result exactly as the file carried them
 (``mcl_as_reported``, ``dlr_as_reported``), with the file's name and the import
 date, and shown beside the finding as what "the laboratory's file carried".
@@ -124,8 +124,7 @@ MAX_ROWS = 5000
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MB
 
 
-# The whole-file messages, approved by Brent 2026-10-14 20:37 PDT (150.1-02
-# screen 18, message J: "approve"), in the words the surface water imports
+# The whole-file messages (150.1-02), in the words the surface water imports
 # carry. The size is rounded UP, so a file over the cap never reads as equal to
 # it (a 25.5 MB file read "File is too large (25 MB); the upload cap is 25 MB.").
 def too_large_message(size):
@@ -463,8 +462,8 @@ def _parse_lab_date(raw):
         parsed = None
     if parsed is not None:
         return parsed
-    # M/D/YYYY, how a spreadsheet saves a US date (3/5/2024), added with
-    # Brent's approval 2026-10-14 20:46 PDT (150.1-02 screen 18, message K).
+    # M/D/YYYY, how a spreadsheet saves a US date (3/5/2024), added in
+    # 150.1-02.
     # Still month first, so it adds no ambiguity to the rule above.
     for fmt in ("%m-%d-%Y", "%m/%d/%Y"):
         try:
@@ -705,9 +704,8 @@ def validate_rows(rows, mapping):
     #
     # Mapped to (pk, whether the stored row predates the limits): a result
     # imported before ISS-140's "beside" ruling has no `limits_file_date`, and
-    # re-importing its file is how it gets the limits the file carried
-    # (Brent at the 146-04 checkpoint, 2026-09-23: "We need to have values
-    # here"). The measurement itself is never touched.
+    # re-importing its file is how it gets the limits the file carried.
+    # The measurement itself is never touched.
     existing_keys = {
         _result_identity(
             event_id,
@@ -745,7 +743,7 @@ def validate_rows(rows, mapping):
 
         # --- sampling point: must already exist -----------------------------
         ps_code = src("ps_code")
-        # Message K (Brent 2026-10-14 20:46 PDT): a blank required cell is
+        # A blank required cell is
         # named by the file's own column (a file missing the column is refused
         # before the preview, so "unmapped" never reached a row).
         if not ps_code:
@@ -772,8 +770,7 @@ def validate_rows(rows, mapping):
             )
         data["sample_date"] = sample_date
 
-        # The notes below are message L, approved by Brent 2026-10-15 04:50
-        # PDT (150.1-02 screen 18). parse_time raises on a well-formed but
+        # The notes below are the 150.1-02 wording. parse_time raises on a well-formed but
         # impossible time (25:99), which was a 500 on the preview; it is the
         # same note as any unreadable time.
         raw_time = src("sample_time")
@@ -921,7 +918,7 @@ def validate_rows(rows, mapping):
                 sample_type,
                 analyte_name.lower(),
             ) + _result_identity(None, data.get("analyte_id"), data)
-            # Counted apart from "already on file" (message L row 9): a repeat
+            # Counted apart from "already on file": a repeat
             # of a row whose result is already on file is that, and only that.
             if batch_key in seen_in_batch and not data.get("is_duplicate"):
                 data["is_duplicate"] = True
@@ -974,7 +971,7 @@ def commit_rows(valid_results, source_file="", imported_on=None):
         "skipped": sum(1 for r in valid_results if r["errors"]),
         "limits_filled": 0,
         # Of ``duplicates``, the rows that repeat an earlier row of this file
-        # rather than a result on file (message N, Brent 2026-10-15 07:43 PDT).
+        # rather than a result on file.
         "repeats": sum(
             1 for r in valid_results if r["data"].get("repeat_in_file")
         ),

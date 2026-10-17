@@ -298,7 +298,7 @@ def test_mailing_address_is_mapped(system_payload):
 
 
 def test_personal_contact_details_are_dropped(system_payload):
-    """Brent's scope call, 2026-07-19: EPA's admin block is a named
+    """Scope call, 2026-07-19: EPA's admin block is a named
     individual's contact details. Address only; nothing else is carried."""
     assert system_payload["email_addr"]  # EPA really does send it
     assert system_payload["phone_number"]

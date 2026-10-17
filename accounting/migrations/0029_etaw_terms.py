@@ -1,5 +1,5 @@
 # 150.1-02 (2026-10-11): the canal step and the groundwater disposition in
-# the engineer's terms Brent approved at 05:41 and 05:48 PDT. The step's name
+# the engineer's terms. The step's name
 # becomes "Subtract delivery x irrigation efficiency" on the choice label and
 # on the plan rows already written (the Methodology page prints the row's
 # label), as 0028 did for the words before; the disposition's label becomes

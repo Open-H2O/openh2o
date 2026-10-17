@@ -54,7 +54,7 @@
 
       Rejected: keep the dashboard identity and drop the mass balance (the badge
       would then judge a number the panel does not show); keep both and reorder
-      the divs (Brent, 2026-09-06: "Do not fix this by moving three divs").
+      the divs.
 
       This is the house .budget-panel component, the same one the dashboard and
       the account pane use (DESIGN.md → House "concept" components). Do not
@@ -66,11 +66,10 @@
         {% include "parcels/partials/_period_control.html" %}
       </div>
       {% comment %}
-        143-01, resumed 2026-09-11 after Brent stopped the project on 09-09:
-        the two-column body (equation packed left, both breakdowns at the far
+        143-01, resumed 2026-09-11: the two-column body (equation packed left, both breakdowns at the far
         right) left ~1,300px of nothing between them at 2560, the same dead
-        space he had filed on 09-06 as ISS-159 #2, after three fixes each
-        signed off by a check that cannot see bad. This is the shape he judged
+        space filed as ISS-159 #2, after three fixes each
+        signed off by a check that cannot see bad. This is the shape judged
         by eye on the live page before anything was measured: three figure
         cells, each figure with its own parts beneath it. Supplies carries "by
         source", Uses carries "by destination", and the result carries its
@@ -93,8 +92,8 @@
         bookkeeping placeholder (verdict EXPLAINED in the 135-03 ledger) and a
         cell that can only ever read 0.00 says nothing. The key stays in the dict.
 
-        Titles: "by source" is Brent's own word for the supplies breakdown (he
-        overturned "of which" at the 142-01 checkpoint, DESIGN.md copy rule 13).
+        Titles: "by source" for the supplies breakdown, not "of which"
+        (DESIGN.md copy rule 13).
         The uses side mirrors it with the one word that answers the opposite
         question -- where the water went -- and repeats nothing from the
         heading above it.
@@ -163,7 +162,7 @@
             B. The residual is real (no meter, and no closing estimate: a
                field with no well, or a well field whose covered months wrote
                a 0 AF estimate): "Residual" for a positive figure, "Deficit"
-               for a negative one, the words Brent set on 2026-09-05. The
+               for a negative one. The
                COLOUR carries the size: a deficit is orange at any size; a
                positive residual is green until it passes
                REALISTIC_RESIDUAL_BAND, then orange. "Surplus" read as good
@@ -182,7 +181,7 @@
 
             This block tag is required for a note this long: Django's hash-style
             template comment is SINGLE-LINE only, and a multi-line one renders
-            onto the page as visible text. That shipped to Brent's screen on
+            onto the page as visible text. That shipped on
             2026-09-05.
           {% endcomment %}
           {% if mass_balance.band_status == "closes" %}
@@ -217,8 +216,7 @@
             irrigation, ditch seepage, a curtailment shortfall) explained the
             water (DESIGN.md copy rule 11) and are gone.
 
-            149.1-05 (Brent, 2026-09-17 08:31: "is this saying the residual
-            does not include losses?"). Case B's two figure lines say in their
+            149.1-05: Case B's two figure lines say in their
             LABEL how each sits in the residual (added, subtracted), never that
             it equals the residual: measured 2026-10-07 on the local demo, the
             residual equals minus the unmet-demand figure on 45 of the 87
@@ -248,8 +246,7 @@
             field with no well the engine writes the leftover as unmet demand rather
             than inventing pumping — and no screen had ever shown it.
 
-            ⛔ It is a figure, not a finding. The words are settled (Brent,
-            2026-09-06): *water use recorded, no supply reported*. Never unauthorized,
+            ⛔ It is a figure, not a finding. The words are settled: *water use recorded, no supply reported*. Never unauthorized,
             unpermitted, unlawful, illegal or stolen, never implying them, and no
             editorialising either — "unexplained", "suspicious" and "should be
             investigated" are all out. It states the arithmetic and stops. DESIGN.md
@@ -290,9 +287,8 @@
           </p>
           {% endif %}
 
-          {% comment %} 149.1-05: Brent's question at the 143.1-01 checkpoint
-               (2026-09-17 08:31, "is this saying the residual does not include
-               losses?") answered as two labelled lines, one per kind of loss,
+          {% comment %} 149.1-05: whether the residual includes losses is
+               answered as two labelled lines, one per kind of loss,
                each saying where that loss is counted instead; the panel's own
                breakdown rows, because two fresh readers read the sentences as a
                paragraph (rounds 1 and 2). {% endcomment %}
@@ -471,7 +467,7 @@
           carried VERBATIM in meaning from the Use Ledger, not reworded: one
           quantity, one wording, wherever it is shown (copy rule 12).
 
-          143-05 second checkpoint (2026-09-12): the Use Ledger's own facts
+          143-05 (2026-09-12): the Use Ledger's own facts
           line above its table shortened from one 30-word sentence to two
           short facts at 14px, and this card's copy shortened with it: same
           two clauses, same wording, both places. It also swapped its Source
@@ -632,4 +628,4 @@
   boot();
 })();
 </script>
-{% comment %}"Effective precipitation" for the figure that read "Rain" (CalculationRun.effective_precip_af, summed in parcel_mass_balance): Brent 2026-10-12 15:18 PDT, "yes" (150.1-02 screen 4, Water year page); recorded in brent-sentence-corrections.md. Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
+{% comment %}"Effective precipitation" for the figure that read "Rain" (CalculationRun.effective_precip_af, summed in parcel_mass_balance) (150.1-02, Water year page). Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}

@@ -56,8 +56,7 @@ MAX_ROWS = 2000
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MB, the ceiling every importer here uses
 
 
-# The whole-file messages, approved by Brent 2026-10-15 08:17 PDT (150.1-02
-# screen 18, message Q) in the surface and lab imports' words. The size is
+# The whole-file messages (150.1-02) use the surface and lab imports' words. The size is
 # rounded UP, so a file over the cap never reads as equal to it.
 def too_large_message(size):
     mb = 1024 * 1024
@@ -178,8 +177,7 @@ def recognise_layout(columns):
 def _process_ear_row(line_num, row, *, system, unit_for_blank):
     errors = []
 
-    # The row errors are message R, approved by Brent 2026-10-15 08:23 PDT
-    # (150.1-02 screen 18): each a sentence, values as the file writes them.
+    # The row errors (150.1-02): each a sentence, values as the file writes them.
     pwsid_raw = (row.get("PWSID") or "").strip()
     pwsid = pwsid_raw.upper()
     if not pwsid:
@@ -349,7 +347,7 @@ def build_rows(columns, rows, layout, *, system, unit_for_blank=None,
             }
     else:
         if operator_year is None:
-            # Said once under the Report year box (message R row 12), never
+            # Said once under the Report year box, never
             # as an error on a "Row 1" the file does not have.
             year_missing = True
         else:

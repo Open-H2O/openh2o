@@ -3,7 +3,7 @@
 Phase 63: view-layer tests for the at-scale ledger navigation tools —
 sortable columns (whitelist + fallback), the Zone facet (with de-duplication),
 and the page-size selector. These exercise ``accounting.views.ledger_list``
-query handling directly; the sticky/HTMX UI is verified live in the checkpoint.
+query handling directly; the sticky/HTMX UI is verified live in the browser.
 """
 
 import re
@@ -273,8 +273,8 @@ class TestLedgerFooter:
         assert "75.00" not in html
         assert "debits" not in html
         # 143-05: the sign sentence moved from the footer to the subtitle line
-        # above the table, where a reader meets it before the rows. Its
-        # second checkpoint (2026-09-12) shortened it from one 30-word
+        # above the table, where a reader meets it before the rows. It
+        # was shortened (2026-09-12) from one 30-word
         # sentence to a two-clause facts line at 14px; the old sentence is
         # gone from the page, and the new one appears exactly once, never
         # inside <tfoot>.
@@ -360,12 +360,11 @@ class TestLedgerSubtitle:
 
 
 class TestLedgerSignSentenceInSubtitle:
-    """R-018 (second checkpoint, 2026-09-12): the settled facts line lives in
+    """R-018 (2026-09-12): the settled facts line lives in
     the subtitle line above the table exactly once, and never inside
-    <tfoot> -- the footer keeps its two subtotals and no sentence. The first
-    checkpoint's candidate-B sentence was itself replaced at this second
-    checkpoint: "tiny", "unnecessarily wordy" (Brent), shortened from one
-    30-word sentence to two clauses at 14px."""
+    <tfoot> -- the footer keeps its two subtotals and no sentence. The earlier
+    candidate-B sentence was replaced because it was tiny and unnecessarily
+    wordy, shortened from one 30-word sentence to two clauses at 14px."""
 
     def test_full_sentence_appears_once_in_the_subtitle_and_not_the_footer(self, auth_client):
         period = TestLedgerFooter()._four_rows()
@@ -471,7 +470,7 @@ class TestLedgerZeroRowSentence:
 
 
 # ---------------------------------------------------------------------------
-# 143-05 second checkpoint (2026-09-12): the merged "Water" column
+# 143-05 (2026-09-12): the merged "Water" column
 # ---------------------------------------------------------------------------
 
 

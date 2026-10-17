@@ -579,7 +579,7 @@ class SampleResult(models.Model):
     lab_cert_no = models.CharField(
         max_length=20, blank=True, help_text="ELAP certification number."
     )
-    # ISS-140, ruled "beside" by Brent 2026-09-22 07:31 PDT (146-04 Task 1):
+    # ISS-140, ruled "beside" (146-04 Task 1):
     # the limits the laboratory's file carried on this row, stored exactly as
     # reported and shown BESIDE the finding. Never compared with it, never
     # coloured by it, never a verdict. They are provenance, not part of what
@@ -885,9 +885,8 @@ class SamplingSchedule(models.Model):
     frequency is a label for the row, not an input to arithmetic: nothing here
     adds a month to ``last_done``, because the schedule is the one the state
     set for the system and the operator keeps, and a software-computed date
-    that disagreed with it would be a second, wrong schedule. Brent's "the plan
-    holds" (2026-09-20 19:06 PDT) answered the memo's J11: the product holds a
-    schedule.
+    that disagreed with it would be a second, wrong schedule. The product
+    holds a schedule (the memo's J11).
 
     A row names what is sampled either by ``analyte`` (the platform's own
     vocabulary) or by ``group_label`` (coliform, a siting plan, anything the

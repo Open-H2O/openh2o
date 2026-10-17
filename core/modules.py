@@ -82,8 +82,8 @@ choice** — Phase 89 (2026-07-21) demoted the last two, ``parcels`` and
 ``accounting``, which is the milestone's whole point. They are demoted as an
 inseparable PAIR: ``accounting.requires`` has always named ``parcels``, and
 Phase 89 added ``accounting`` to ``parcels.requires``, so turning either off
-turns both off and the one-sided configuration is refused at boot. Brent's call,
-on measured evidence — ``parcels/views.py`` builds the Use Areas detail page out
+turns both off and the one-sided configuration is refused at boot. The reason,
+on measured evidence: ``parcels/views.py`` builds the Use Areas detail page out
 of Accounting, so the unpaired shape would ship a page with its content removed.
 
 They stay schema-resident rather than being removed because the arrows point the
@@ -346,9 +346,7 @@ class ModuleSpec:
     #: Switched on when ``OPENH2O_MODULES`` is unset. False leaves the module
     #: out of a default deployment; a site still runs it by naming it in
     #: ``OPENH2O_MODULES`` (or ``OPENH2O_MODULES=all``). Only ``reporting`` is
-    #: off by default (Brent, 2026-10-12 06:10 PDT: "turn the reports pages off
-    #: and simply gray out the left-hand column selector so that it shows its
-    #: under developement"; the filing pages read as a working path to the state,
+    #: off by default (the filing pages read as a working path to the state,
     #: which OpenH2O is not).
     on_by_default: bool = True
 
@@ -404,7 +402,7 @@ MODULE_REGISTRY: dict = {
         url_module="core.urls",
         url_order=120,
         nav=(
-            # 147-02 (Brent, 2026-09-24 checkpoint): the sidebar entry is gone;
+            # 147-02: the sidebar entry is gone;
             # /changes/ stays reachable from the Users page only. See
             # templates/core/users_list.html.
             NavEntry(
@@ -487,7 +485,7 @@ MODULE_REGISTRY: dict = {
         # named `parcels`; this completes the cycle, so turning either off turns
         # both off and the one-sided configuration is refused at boot.
         #
-        # Brent's decision, 2026-07-21, on measured evidence: `parcels/views.py`
+        # Decided 2026-07-21 on measured evidence: `parcels/views.py`
         # builds the Use Areas detail page out of Accounting (water balance,
         # recent ledger, resolved reporting period). Shipping `parcels` without
         # `accounting` would ship a page with its content removed.
@@ -660,7 +658,7 @@ MODULE_REGISTRY: dict = {
         requires=("core", "geography", "parcels"),
         # DEMOTED model-only in Phase 89 (2026-07-21), inseparably with
         # `parcels` — see that module's `requires` for the cycle and the reason
-        # Brent asked for it. The old `required_reason` blamed module-scope
+        # for it. The old `required_reason` blamed module-scope
         # imports and was wrong in the same way `parcels`' was.
         #
         # What keeps it schema-resident: two SCHEMA_EXCEPTIONS records point
@@ -996,7 +994,7 @@ MODULE_REGISTRY: dict = {
         # not started using it still sees the pre-78 dashboard.
         dashboard_cards=("drinking/partials/_dashboard_card.html",),
         seed_commands=("seed_drinking",),
-        # `wells` came OUT in Phase 88 (2026-07-21), on Brent's locked decision
+        # `wells` came OUT in Phase 88 (2026-07-21), on locked decision
         # 3: no agency type is assumed in either direction. A district can buy
         # every drop wholesale and still have a drinking-water system to track,
         # so the module must not force a groundwater section on. The one thing

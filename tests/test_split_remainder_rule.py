@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """149-01: the canal split keeps a field's own record and divides the remainder.
 
-Brent's rule (2026-09-28): a field with its own recorded delivery keeps it; the
+The rule (2026-09-28): a field with its own recorded delivery keeps it; the
 split divides only the REMAINDER of the headgate total among the served fields
 that have none. Every split row carries ``divided_from_headgate=True``; an own
 row (typed on the ledger form, or imported) is the same table with the flag

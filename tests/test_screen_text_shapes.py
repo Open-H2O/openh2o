@@ -1,11 +1,11 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Three sentence shapes Brent has rejected on screen, held where they stand today.
+"""Three sentence shapes rejected on screen in review, held where they stand today.
 
-``tests/test_literary_sentence.py`` pins the sentences Brent ruled on
+``tests/test_literary_sentence.py`` pins the sentences ruled on in review on
 2026-09-17 (138 rows). It cannot catch a NEW sentence written in the same shape. This file
 catches three of those shapes mechanically, in the words a template shows:
 
-1. **em dash.** Brent's standing rule is zero em dashes in anything a reader
+1. **em dash.** The standing rule is zero em dashes in anything a reader
    sees. In the 143.1 rulings, 63 of the 138 struck sentences carried one and 1
    of the 131 settled sentences did (S-1410, still on the setup progress page).
    Counted only between two words of one run of text (see ``EM_DASH``).
@@ -16,14 +16,14 @@ catches three of those shapes mechanically, in the words a template shows:
    "stands" hits on screen and in help text were the plain idioms "stands for",
    "stands as" and "the reading stands", and no struck sentence used it.
 3. **contrast**, the two-sentence device "X is not Y. It is Z." The one-sentence
-   ", not Y" form is deliberately absent, because Brent SETTLED it ("A missing
+   ", not Y" form is deliberately absent, because review SETTLED it ("A missing
    step, not a finding:", S-0453). ⚠ This shape matched 0 templates and 0 of the
    269 ruled sentences when it was installed: it is untested here, not proven.
 
 **A ratchet, not a sweep.** ``BASELINE`` holds each template's count on
 2026-10-03. A template may not gain a shape; a template that loses one must have
 its ceiling lowered. The existing em dashes are NOT fixed here, because the
-words on these pages are Brent's to rule (``test_literary_sentence.py``, rule 8
+words on these pages are ruled on in review (``test_literary_sentence.py``, rule 8
 of the house). The ceilings are the to-do list.
 
 **What it reads.** Template source with comments, ``<script>`` and ``<style>``
@@ -127,10 +127,10 @@ def measured() -> dict:
 #: Ceilings on 2026-10-03: 122 em dashes in 50 templates, one narrative verb.
 #: 150-03 (2026-10-09): about.html rebuilt at the help-page shape with none, so
 #: its entry (8) came off. 2026-10-09 20:29 PDT: the footer and the Admin mode
-#: button took Brent's approved wording, so base.html and _header.html came off.
+#: button took the approved wording, so base.html and _header.html came off.
 #: Lower one when a template loses a shape; never raise one. The one narrative
 #: verb ("a field with no such zone has nowhere to credit it", help/methods.html)
-#: arrived with the 148-03 page Brent passed at its checkpoint; the 2026-10-06
+#: arrived with the 148-03 page as approved; the 2026-10-06
 #: plain-language revision of the two help pages removed it, along with the four
 #: em dashes on help/water_balances.html, so both entries came off the list.
 BASELINE: dict = {
@@ -153,7 +153,7 @@ def test_no_template_gains_a_shape():
         if n > BASELINE[shape].get(rel, 0)
     ]
     assert not gained, (
-        "these templates gained a shape Brent has rejected on screen. An em dash "
+        "these templates gained a shape rejected on screen in review. An em dash "
         "becomes a colon, a comma, a full stop or parentheses; a narrative verb "
         "becomes the plain verb or the noun phrase that names the thing; 'X is "
         "not Y. It is Z.' becomes the statement of Z. Never raise BASELINE to "
@@ -187,7 +187,7 @@ def test_each_shape_is_caught_when_planted():
 
 
 def test_settled_wording_and_non_copy_stay_silent():
-    """Brent's own settled shapes, and text no reader sees, must not fire."""
+    """Shapes settled in review, and text no reader sees, must not fire."""
     silent = (
         "{# What came through the meter — a comment #}"
         "{% comment %}it sits here — not copy{% endcomment %}"

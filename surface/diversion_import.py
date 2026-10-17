@@ -93,8 +93,7 @@ from surface.models import DiversionRecord, PointOfDiversion, WaterRight
 MAX_ROWS = 2000
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MB, the same ceiling every other importer uses
 
-#: The import screen's own USE-row question (146-03 Task 6, Brent's
-#: 2026-09-22 checkpoint ruling): same three values as
+#: The import screen's own USE-row question (146-03 Task 6): same three values as
 #: ``SiteConfig.DIVERSION_USE_TYPE_RULE_CHOICES``, but the copy is aimed at
 #: someone looking at the rows in THIS file, not at a deployment-wide
 #: default -- so the wording differs and lives here, not on the model.
@@ -190,8 +189,7 @@ def recognise_layout(columns):
     has_volume = any(col in lower for col in _VOLUME_COLUMNS) or "volume" in lower
     has_flow_hours = {"flow_cfs", "hours"} <= lower
     # A book with no point column (one headgate) is a book: its rows take the
-    # point chosen for the whole file on the preview (Brent 2026-10-14 17:51,
-    # message A rows 8 and 9).
+    # point chosen for the whole file on the preview.
     if (has_point or has_month) and (has_volume or has_flow_hours):
         return "book"
 
@@ -214,7 +212,7 @@ def _cfs_hours_to_af(flow_cfs, hours):
 def _convert_generic_volume(amount, unit, line_num):
     """('volume' + 'unit' book rows) -> (af, conversion-dict-or-None) | (None, error).
 
-    A blank unit is an error (Brent 2026-10-14 18:34, message C row 7): it used
+    A blank unit is an error: it used
     to be read as acre-feet with no note, so a book kept in gallons imported
     325,851 times its water.
     """
@@ -274,8 +272,8 @@ def resolve_point(row_l, whole_file_point, *, right_cache, right_points_cache):
     Order: APPL_POD; else the right (APPL_ID) when it has exactly one point
     on file; else a point-ish column (local_name / headgate / point / name);
     else the whole-file point chosen in the mapping step. A right not on file
-    falls through to the point column and the whole-file point (Brent
-    2026-10-14 18:41, message D row 3). Returns (PointOfDiversion, None) or
+    falls through to the point column and the whole-file point.
+    Returns (PointOfDiversion, None) or
     (None, reason).
     """
     choose = "choose one point of diversion for the whole file on the preview."
@@ -367,7 +365,7 @@ def _report_year_to_calendar_month(year, month_num, site_config):
     return date(calendar_year, month_num, 1), None
 
 
-#: Brent 2026-10-14 18:01, message B row 9 (Delivery Settings now refuses it).
+#: Delivery Settings now refuses it.
 SEASON_WITHOUT_START = (
     "The report year on Delivery Settings is a season with no starting month. "
     "Enter the starting month on Delivery Settings."
@@ -376,8 +374,7 @@ SEASON_WITHOUT_START = (
 
 def rule_sentence(site_config):
     """How YEAR and MONTH become a calendar month, said above the preview's
-    settings for a Water Use Reported file only (Brent 2026-10-14 18:01,
-    message B row 10). A season is read as ending in YEAR, as a water year is.
+    settings for a Water Use Reported file only. A season is read as ending in YEAR, as a water year is.
     """
     rule = site_config.diversion_report_year_rule
     if rule == "calendar_year":

@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Guards for the 143-13 finder shape.
 
-The workspace FRAME ruling (open since 143-02, closed by Brent at this plan's
-decision checkpoint, 2026-09-16 18:29/18:34 PDT) moved Use Areas and Wells off
+The workspace FRAME ruling (open since 143-02, closed in plan 143-13) moved Use Areas and Wells off
 the master-detail workspace (`templates/workspace.html`, now deleted) onto the
 Bucket-3 list idiom every other list on the platform already uses: the 143-07
 overview map card (count line + key, following the list) above a one-row
@@ -199,7 +198,7 @@ class TestWellsFinder:
         assert body.count("data-table-link") == 2
 
     def test_wells_search_reaches_the_owner_column(self, auth_client):
-        """Brent, 143-13 checkpoint 2026-09-16 21:08 PDT: the Owner column is on
+        """The Owner column is on
         the list, so the search box has to find it, as Use Areas and Accounts do."""
         for n in range(5):
             WellFactory(name=f"Well {n:03d}", owner_name="Other Ranch")

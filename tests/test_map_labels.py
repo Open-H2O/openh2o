@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """``core.map_labels.map_label`` — the map-label prefix strip (143-07 Step 0).
 
-Brent's Task 3 ruling approved the overview map card with one change: the map
+The overview map card has one change: the map
 LABEL drops the platform's own composed identifier, front or back, and leaves
 a real deployment's plain name untouched. Six cases, matching the shapes named
 when this helper was commissioned.
@@ -15,7 +15,7 @@ strip as a leading token too, which contradicts that rule as stated — and
 would mean ANY all-caps first word strips, including a real name that happens
 to start with one. `test_an_em_dash_name_keeps_a_plain_leading_word` here
 follows the rule as stated three times, not the contradicting example, and
-`map_label` is built to match. Flagged for Brent/the main session rather than
+`map_label` is built to match. Flagged rather than
 guessed past.
 """
 

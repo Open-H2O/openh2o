@@ -1,16 +1,14 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""The three behaviours behind 150.1-02 screen 14's approved sentences.
+"""The three behaviours behind 150.1-02's sentences.
 
-Brent approved message A at 2026-10-14 15:37 PDT ("I read the sentences and
-they look good") and message B at 15:51 PDT ("approved"). Three rows needed
-code, not only words:
+Three rows needed code, not only words:
 
-* A row 3: a result names the lab file it was imported from, because the
+* a result names the lab file it was imported from, because the
   importer takes any lab file in the state's format and the old label named
   the State Water Board for all of them.
-* B row 11: a facility added by hand is labelled "entered on this site" on the
+* a facility added by hand is labelled "entered on this site" on the
   result page and the sampling point page, as the facility page already was.
-* B row 4: the map sentence counts the points it leaves off.
+* the map sentence counts the points it leaves off.
 """
 from datetime import date
 

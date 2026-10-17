@@ -85,7 +85,7 @@ fail() {
   cleanup
   # `low` on purpose: production is serving and untouched, and no golden was
   # read or written. A failed rebuild is something to look at in the morning,
-  # not something to be woken for. (Same reasoning Brent directed at 102-02.)
+  # not something to be woken for. (Same reasoning as 102-02.)
   demo_ntfy low "OpenH2O golden rebuild failed" \
     "rebuild-golden on $(hostname) failed. No candidate was written and nothing was promoted; the live site is unaffected."
   echo "rebuild-golden: FAILED — scratch stack torn down, nothing promoted." >&2

@@ -54,8 +54,7 @@ SESSION_KEY_SELECTED_STEPS = "setup_wizard_selected_steps"
 SESSION_KEY_POLYGON_COUNT = "setup_wizard_polygon_count"
 
 # The upload card's refusals that name the three formats (150-03).
-# Brent, 150.1-02 screen 18 message Z (2026-10-15 18:49); a file that is not
-# text or not JSON reuses message V's GeoJSON sentence.
+# A file that is not text or not JSON reuses the GeoJSON sentence.
 UPLOAD_NO_FILE = "Choose a boundary file to upload."
 UPLOAD_NOT_TEXT = NOT_GEOJSON_MESSAGE
 UPLOAD_NOT_JSON = NOT_GEOJSON_MESSAGE

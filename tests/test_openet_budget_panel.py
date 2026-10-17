@@ -63,7 +63,6 @@ class TestTheCardSaysWhereTheNumberCameFrom:
         status paragraph, so the phrase is now mid-sentence, lowercase, rather
         than a standalone capitalized card note ("Counted by OpenET")."""
         body = _dashboard(client_logged_in, PROVIDER_ANSWERED).content.decode()
-        # Brent, 150.1-02 screen 15 message A row 10 (2026-10-16 05:10).
         assert "as OpenET counts them" in body
         assert "as OpenH2O counts them" not in body
 

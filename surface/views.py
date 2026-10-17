@@ -1050,7 +1050,7 @@ def _posted_use_rule(request):
 
 
 #: Said under the unrecognised-columns refusal on the import page only (the
-#: command line has no tables below it). Brent 2026-10-14 17:51, message A row 8.
+#: command line has no tables below it).
 LAYOUT_TABLES_SENTENCE = "The tables below list the columns OpenH2O imports."
 
 

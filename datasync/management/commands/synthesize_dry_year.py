@@ -82,7 +82,7 @@ DEFAULT_SOURCE_WINDOW = "2024-10-01:2025-09-30"
 DEFAULT_TARGET_WINDOW = "2025-10-01:2026-09-30"
 DEFAULT_PREFIX = "MER-"
 
-# Brent's ruling at the 133-01 decision checkpoint, 2026-09-05: halve the rain.
+# Halve the rain (133-01).
 # The committed year is 294.9 mm (11.6 in) basin-mean, which reads normal-to-wet
 # for the valley floor; 0.50 takes it to 147.5 mm (5.8 in), which reads
 # unmistakably dry beside it. Measured consequence, computed by running
@@ -129,10 +129,10 @@ DRY_YEAR_PRECIP_WEIGHTS = {
 #   With the floor at 0.40, halving the rain moved basin net consumptive use by
 #   only +3.7% (median parcel +3.6%, none falling), because the winter ET
 #   reduction gave back 0.191 of the 0.279 AF/acre that the effective-precip
-#   drop had won. Brent chose the 50% multiplier at the 133-01 checkpoint over a
-#   65% option he rejected as "a difference a reader has to be told about" —
+#   drop had won. The 50% multiplier was chosen over a
+#   65% option whose difference a reader would have to be told about —
 #   and that rejected option was worth 0.18 AF/acre. A 0.088 AF/acre result is
-#   half of what he turned down, so the floor as first written defeated the
+#   half of what the rejected option gave, so the floor as first written defeated the
 #   decision it was supposed to implement.
 #
 # The floor stays ABOVE zero rather than being removed because holding winter ET

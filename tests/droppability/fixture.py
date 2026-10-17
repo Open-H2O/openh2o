@@ -33,7 +33,7 @@ one this module seeds.
 * **No network, ever.** This runs 12 times per ``make test-droppable``. Calling
   ``seed_merced`` or ``seed_data`` would reach external APIs and make the gate
   people rely on depend on the weather — which is exactly why real-data-on-every-run
-  was rejected in favour of two tiers (Brent, 2026-07-22). The real demo database
+  was rejected in favour of two tiers. The real demo database
   is Plan 90-03's separate staging gate.
 * **Deterministic.** Fixed dates and explicit identifiers rather than factory
   sequences, so two runs produce the same rows. A fixture that varies makes a

@@ -226,7 +226,7 @@ def test_the_card_says_effective_precipitation_and_balance_not_precip_and_net(pa
     html, _account, _period = page
     header_cells = [c for row in _rows(html)[:2] for c in row]
 
-    # Brent 2026-10-12 13:21 PDT approved "Effective precipitation": the figure is
+    # The header reads "Effective precipitation": the figure is
     # CalculationRun.effective_precip_af, not rainfall, so "Rain" was false.
     assert "Effective precipitation" in header_cells and "Precip" not in header_cells
     assert "Rain" not in header_cells
@@ -350,8 +350,8 @@ def test_balance_is_the_only_lead_figure(page):
 def test_the_supplies_breakdown_says_it_is_a_breakdown_of_supplies(page):
     """R-037. The three used to sit in a bare foot line saying nothing.
 
-    "by source", not "of which" -- Brent overturned that idiom at the 142-01
-    checkpoint and it is not to be reintroduced.
+    "by source", not "of which" -- the "of which" idiom was dropped (142-01)
+    and is not to be reintroduced.
     """
     html, _account, _period = page
 

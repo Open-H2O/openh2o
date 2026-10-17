@@ -240,7 +240,7 @@ class TestCheckSsl:
         assert result["status"] in VALID_STATUSES
 
     def test_not_applicable_in_dev_environment(self):
-        """Brent, 150.1-02 screen 16 message B row 2: a site with no public
+        """150.1-02: a site with no public
         domain name has no certificate to check (it was yellow, and red at a
         local-network name)."""
         result = check_ssl()
@@ -340,7 +340,7 @@ class TestHealthDemoMode:
     @pytest.mark.django_db
     @override_settings(HEALTH_DEMO_MODE=False)
     def test_zero_amount_ledger_is_green_when_live(self):
-        """Brent, 150.1-02 screen 16 message B row 6: a month with no ETAW met
+        """150.1-02: a month with no ETAW met
         by groundwater is a normal month on every site."""
         ParcelLedgerFactory(amount_acre_feet=Decimal("0"), source_type="calculated")
         result = check_ledger_integrity()
@@ -353,7 +353,7 @@ class TestHealthDemoMode:
         tell the same story about a zero-amount calculated row, not two
         different words for the same fact. The ledger's Description cell
         says 'No ETAW met by groundwater this month, so OpenH2O estimates no
-        groundwater extraction.' (150.1-02, Brent's terms, 2026-10-11); this
+        groundwater extraction.' (150.1-02, 2026-10-11); this
         message carries the same claim, not the old bare 'calculated rows have
         zero amount' framing."""
         ParcelLedgerFactory(amount_acre_feet=Decimal("0"), source_type="calculated")

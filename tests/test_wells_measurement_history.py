@@ -185,7 +185,7 @@ def test_the_monthly_water_level_closes_are_literal_for_two_months_in_each_water
 
 
 def test_each_water_year_of_the_depth_digest_closes_on_its_net_change():
-    """Brent, 2026-09-13: the digest keeps step with the meter table beside
+    """The digest keeps step with the meter table beside
     it, so each water year closes with a row. A close is a level and never
     sums; the monthly changes add to the year's net change, and that is the
     figure the closing row prints (typed here from the fixture, not summed)."""

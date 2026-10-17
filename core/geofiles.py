@@ -43,12 +43,11 @@ THREE_FORMATS = (
     "a zipped shapefile (.zip), a KML (.kml) or a GeoJSON (.geojson or .json) file"
 )
 
-#: The Setup Wizard's wrong-type sentence (Brent, 150.1-02 screen 18 message Z,
-#: 2026-10-15 18:49).
+#: The Setup Wizard's wrong-type sentence (150.1-02).
 UNSUPPORTED_SENTENCE = "This page imports .zip, .kml, .geojson and .json files only."
 
-#: The map-file sentences both pages show: the bulk import's (message V,
-#: 2026-10-15 17:55) and the Setup Wizard's, which reuses them (message Z).
+#: The map-file sentences both pages show: the bulk import's
+#: and the Setup Wizard's, which reuses them.
 #: They live here because ``setup`` may not depend on the optional
 #: ``infrastructure`` module.
 _CHECK_IN_GIS = "Check that the file opens in a GIS program, then upload it again."

@@ -2,7 +2,7 @@
 
 A human-in-the-loop pick of the Merced demo's recharge basins, on the same
 provenance footing as the 74 hand-selected crop fields. The old v1.9 basins are
-**wiped and re-picked from a blank slate** — Brent chooses which parcels become
+**wiped and re-picked from a blank slate** — a person chooses which parcels become
 recharge basins, on satellite imagery, in QGIS, and names the canal or river
 that fills each one.
 
@@ -12,7 +12,7 @@ A recharge basin is a pond on **open, un-cultivated ground beside a canal** that
 gets flooded to percolate into the aquifer — you can't pond water on a working
 field, so basins go on NON-agricultural land. The DWR crop layer only maps
 farmland, so it can't show basin sites. This pulls the county's real parcel
-fabric, flags the parcels that aren't cropped, and lets Brent pick basins from
+fabric, flags the parcels that aren't cropped, and lets a person pick basins from
 those — the same "a human chose this against the real map" provenance as the 74
 crop fields. Phase 62-01 also adds the basin→POD schema link the 62-02 seed
 hangs the pick on.
@@ -51,9 +51,9 @@ hangs the pick on.
    - You're not limited to parcels touching a headgate — tag any teal parcel a
      labelled canal or river can plausibly flood.
    - **Save** (toggle editing off → Save).
-3. **Tell Claude "picked"** — Claude extracts the tagged basins to
-   `../selected_basins.geojson` (committed) and confirms every `feeds_via`
-   resolves to a real `Flowline` name, then the 62-02 seed rebuilds the basins
+3. **Run `extract_selection.py`.** It extracts the tagged basins to
+   `../selected_basins.geojson`, which is committed. Check that every `feeds_via`
+   resolves to a real `Flowline` name; then the 62-02 seed rebuilds the basins
    + basin↔POD links from the real geometry.
 
 ## Files
@@ -70,7 +70,7 @@ hangs the pick on.
 | `merced_existing_basins.geojson` | v1.9 basins (reference only) | committed |
 | `esri_world_imagery.xml` | satellite basemap definition (GDAL TMS) | committed |
 | `merced_basin_picker.gpkg` / `.qgz` | the picker (regenerable) | ignored |
-| `../selected_basins.geojson` | Brent's saved selection (the source of truth) | committed when made |
+| `../selected_basins.geojson` | The saved selection (the source of truth) | committed when made |
 
 Canals, the subbasin outline, and the crop "avoid" overlay are reused in place
 from `../parcel_selection/` — not duplicated.

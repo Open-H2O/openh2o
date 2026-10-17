@@ -66,9 +66,8 @@ MAX_ROWS = 500
 # callers read importer.MAX_UPLOAD_BYTES. The archive readers read the caps
 # from core.geofiles, so a test that shrinks one patches it there.
 
-#: The whole-file messages Brent approved (150.1-02 screen 18, message V,
-#: 2026-10-15 17:55; the CSV ones are the surface and lab imports' words,
-#: reused as approved). This module is optional and may not import the
+#: The whole-file messages (the CSV ones are the surface and lab imports'
+#: words, reused as they are). This module is optional and may not import the
 #: surface module's copies, so the sentences are repeated here.
 NO_FILE_MESSAGE = "Choose a file to upload."
 WRONG_TYPE_MESSAGE = (
@@ -83,7 +82,7 @@ ROWS_NOT_RECEIVED_MESSAGE = (
 )
 # NO_FEATURES_MESSAGE, NOT_GEOJSON_MESSAGE, NOT_KML_MESSAGE, NOT_ZIP_MESSAGE,
 # NOT_SHAPEFILE_MESSAGE and too_large_message come from core.geofiles (the
-# Setup Wizard shows the same sentences, message Z).
+# Setup Wizard shows the same sentences).
 
 
 def is_map_rows(rows):
@@ -91,7 +90,7 @@ def is_map_rows(rows):
 
     Only the map readers add the GEOMETRY_COL key, so a CSV row never has it.
     A map file has no spreadsheet rows: its features are numbered from 1 in
-    the file's order (Brent, message V).
+    the file's order.
     """
     return bool(rows) and GEOMETRY_COL in rows[0]
 
@@ -130,7 +129,7 @@ def parse_upload(file, filename):
 
     Raises ImportError with the sentence the page shows on: a file over the
     size cap, an unsupported extension, a damaged map file (these were server
-    errors before message V), no rows or map features, or > MAX_ROWS of them.
+    errors before), no rows or map features, or > MAX_ROWS of them.
     """
     name = (filename or "").lower()
 
@@ -291,8 +290,7 @@ ALIASES = {
 }
 
 # Labels for the column-matching step: the approved Add page and well page
-# labels word for word, and "Geometry" and "Water right application number"
-# (Brent, 150.1-02 screen 18 message W, 2026-10-15 18:12).
+# labels word for word, and "Geometry" and "Water right application number".
 FIELD_LABELS = {
     "name": "Name",
     "well_registration_id": "Local registration ID",
@@ -324,7 +322,7 @@ FIELD_LABELS = {
 
 
 #: What a map file's geometry column is called on the matching step and in
-#: the sample table (message W row 7); the key itself stays GEOMETRY_COL.
+#: the sample table; the key itself stays GEOMETRY_COL.
 GEOMETRY_COL_LABEL = "The file's geometry"
 
 
@@ -409,7 +407,7 @@ _CHOICE_FIELDS = {
 
 #: A choice read in any case, by its stored value or its label ("Turbine",
 #: "TURBINE", "turbine"); anything else is imported without the field and
-#: noted (Brent, 150.1-02 screen 18 message Y, 2026-10-15 18:35). It used to
+#: noted. It used to
 #: be saved as written, an invalid choice, with a note nobody was shown.
 _CHOICE_LOOKUP = {
     field: {
@@ -444,13 +442,12 @@ _STRING_FIELDS = {
 }
 
 # A box around the United States, Alaska, Hawaii and Puerto Rico included
-# (Brent, 2026-10-12 09:17 PDT: "Yes"; it was a box around California).
+# (it was a box around California).
 _US_LAT = (17.0, 72.0)
 _US_LON = (-180.0, -64.0)
 
 
-#: Each numeric field as a row error names it (Brent, 150.1-02 screen 18
-#: message X, 2026-10-15 18:25): the field in plain words, never the file's
+#: Each numeric field as a row error names it: the field in plain words, never the file's
 #: own column heading, which can be anything ("lat", "Casing Dia").
 FIELD_NOUNS = {
     "capacity_gpm": "capacity",
@@ -463,7 +460,7 @@ FIELD_NOUNS = {
     "capacity_acre_feet": "capacity per fill",
 }
 
-#: The matching-step refusals (message X rows 2 and 3): with no column matched
+#: The matching-step refusals: with no column matched
 #: to the name or to a location, every row used to fail with the same error.
 NAME_NOT_MATCHED_MESSAGE = "Choose the file's column for the name, then press Create."
 LOCATION_NOT_MATCHED_MESSAGE = (
@@ -484,7 +481,7 @@ def mapping_refusal(mapping):
 
 
 def outside_us_message(lat, lon):
-    """The location sentence Brent approved 2026-10-12 09:17 (reused in message X)."""
+    """The sentence for a location outside the United States."""
     return (
         f"location ({lat}, {lon}) is outside the United States; check the sign "
         "of the longitude."
@@ -494,7 +491,7 @@ def outside_us_message(lat, lon):
 def existing_names(infra_type):
     """The names already on file for the type the import creates.
 
-    Brent, 150.1-02 screen 18 message V (2026-10-15 17:55): every type skips a
+    Every type skips a
     row whose name is already on file or appears earlier in the file. Points
     of diversion, storage ponds and recharge sites were never checked, so a
     file imported twice created its records twice. Storage ponds and recharge
@@ -654,7 +651,7 @@ def validate_rows(rows, mapping, infra_type, existing_reg_ids, existing_names=No
             parcel_val = src("parcel_number")
             if parcel_val:
                 parcel_pk = existing_parcels.get(parcel_val)
-                # Brent, message Y rows 6 and 7: a match needs no note.
+                # A match needs no note.
                 if parcel_pk is not None:
                     data["_pod_parcel_id"] = parcel_pk
                 else:
@@ -675,8 +672,7 @@ def _resolve_location(row, mapping, errors, map_row=False):
     """Return a Point (4326) from a geometry column or a lat/lon pair, or None.
 
     Appends an error and returns None when no usable location is present.
-    The sentences are Brent's (150.1-02 screen 18 message X, 2026-10-15
-    18:25); a geometry is held to the same United States box as a typed
+    A geometry is held to the same United States box as a typed
     latitude and longitude (it was checked only against the world).
     """
     geom_col = mapping.get("geometry")
@@ -909,7 +905,7 @@ def commit_rows(valid_results, infra_type):
                         continue
                 created += 1
             except Exception as exc:
-                # Brent, message X row 11: the failure keeps its details.
+                # The failure keeps its details.
                 result["errors"].append(
                     "An unexpected error stopped OpenH2O from saving this record. "
                     f"Details: {type(exc).__name__}: {exc}"

@@ -49,7 +49,7 @@ CREDENTIAL_ENV = {
 
 # Short, plain-English description of what each source actually is. Surfaced in
 # the UI so "CNRFC" is not an unexplained acronym.
-# Brent, 150.1-02 screen 15 message A row 4 (2026-10-16 05:10). CNRFC and
+# CNRFC and
 # OpenET are not station sources on the dashboard; theirs follow the same form.
 SOURCE_BLURBS = {
     "cdec": "California Data Exchange Center: reservoir, river and snow telemetry.",
@@ -120,8 +120,8 @@ def source_display(source_code):
 def source_phrase(name):
     """A data source's name as a sentence carries it.
 
-    Brent, 150.1-02 screen 15 message B row 8: "No station from the Department
-    of Water Resources SGMA Portal matches ..." A spelled-out name takes "the";
+    In "No station from the Department of Water Resources SGMA Portal
+    matches ...", a spelled-out name takes "the";
     a short name (CDEC, USGS NWIS, OpenET) does not.
     """
     words = name.split()
@@ -155,7 +155,6 @@ def freshness_thresholds(source_code, source_name=None):
     interval = expected_interval_hours(source_code)
     name = source_name or source_display(source_code)
     every = "every day" if interval == 24 else f"every {format_hours(interval)}"
-    # Brent, 150.1-02 screen 15 message B row 4 (2026-10-16 05:45).
     return (
         f"{name} usually publishes {every}. OpenH2O marks a station up to date "
         f"until its latest reading is {format_hours(interval * FRESH_MULTIPLIER)} "

@@ -26,8 +26,7 @@
   deployment is nothing: the contrast is an Accounting claim with no forbidden
   noun in it.
   The contrast sentence below this comment was struck 2026-09-17 (143.1-01).
-  150.1-02 screen 11: this page's wording approved by Brent 2026-10-14 13:33 PDT
-  ("approved"). Three sentences were false: the splits note promised an eAR
+  150.1-02: this page's wording. Three sentences were false: the splits note promised an eAR
   import that does not exist; "Facilities are EPA's record" (facility_add adds
   one by hand); the builder's "one per facility you choose" (a facility can
   carry several points). The well-link sentence went: nothing here shows one.{% endcomment %}<p class="page-description">This page shows each public water system on this site, with counts of its facilities, sampling points and sample results.</p>
@@ -43,10 +42,9 @@
     card under a head of their own, "Records for this system", so they read
     as what THIS deployment holds rather than floating under the population
     section. Task 4 first built them as a second card beside the identity
-    card (the account-grid shape); Brent at the checkpoint, 2026-09-15 17:18
-    PDT: "three boxes inside of a giant box with empty space is a little
-    awkward. Seems like these three boxes would be better in the box to the
-    left that holds the City of Merced data." So they are. The three tiles
+    card (the account-grid shape), but three boxes inside a larger box left empty
+    space, so they sit in the box to the left that holds the City of Merced
+    data. The three tiles
     keep every anchor, class and comment they carried:
     tests/test_drinking_module_shows_what_to_do.py pins their shape.
   {% endcomment %}
@@ -90,7 +88,7 @@
           from the file's Regulating Agency column, so when it holds a value
           the card's EPA label above does not describe it. "an imported lab
           file", not the State Water Board: any lab file in that format can
-          fill it (150.1-02 screen 14 row 3, Brent 2026-10-14 15:37 PDT).
+          fill it (150.1-02).
         {% endcomment %}
         <div class="field-label">Regulating agency{% if system.regulating_agency %} {% source_label "LAB_FILE" %}{% endif %}</div>
         <div class="field-value">{{ system.regulating_agency|blank }}</div>

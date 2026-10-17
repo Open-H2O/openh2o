@@ -19,7 +19,7 @@ should ever be quoted as saying the documents are comprehensible.
 
 **The gate is green.** It was red at **55** — 14 in ``README.md``, 17 in
 ``docs/AI-OPERATOR-GUIDE.md`` and 24 in ``DEPLOY.md`` — and the recorded red run
-is ``.planning/phases/110-comprehension-gate/110-01-EVIDENCE.md``. Phase 114 took
+was recorded in Phase 110 (110-01). Phase 114 took
 it to zero: 114-01 rewrote the two front-door documents, 114-02 rewrote
 ``DEPLOY.md``. It ran under ``@pytest.mark.xfail(strict=True)`` from Phase 110
 until that moment, so that a passing gate could not sit disguised as a failing

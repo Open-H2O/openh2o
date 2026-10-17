@@ -4,8 +4,7 @@
     The overview map card (143-07's shape, applied here 143-12): the head
     (the count line, in the station list's own words, and the three
     freshness keys on one row, partials/_stations_map_card_head.html) above
-    the map. No stat-grid-4col row survives on the dashboard (Brent,
-    2026-09-15: a dashboard with no identity card puts its counts in the
+    the map. No stat-grid-4col row survives on the dashboard (a dashboard with no identity card puts its counts in the
     map's card head and under the section headers below, never a row of
     tiles). freshness_line is built in the view (datasync/views.py).
   {% endcomment %}
@@ -27,7 +26,7 @@
       figure they cannot act on. The used figure's own class is the whole
       low-allowance signal now that the card (and its border) are gone.
     {% endcomment %}
-    {% comment %} Brent 2026-10-16 05:10, 150.1-02 screen 15 message A rows 5 to 11. {% endcomment %}
+    {% comment %} 150.1-02. {% endcomment %}
     <p class="text-secondary text-base mb-md">
       {{ n_sources }} station sources. Satellite estimates of crop water use come from
       OpenET, which is not a station source. This site has used <span{% if openet_low %} class="text-deficit"{% endif %}>{{ openet_used }}</span> of its {{ openet_limit }} OpenET requests this month,

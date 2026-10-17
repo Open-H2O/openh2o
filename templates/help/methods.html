@@ -18,8 +18,7 @@
 
 {% block content %}
 {% comment %}
-  2026-10-10: rebuilt from thirteen facts Brent approved at 11:07 PDT ("These
-  13 look great, approved"), each checked against the code: the calculation
+  2026-10-10: rebuilt from thirteen facts, each checked against the code: the calculation
   plan and its step knobs (accounting/models.py CalculationStep, accounting/
   steps.py, accounting/views.py methodology_step_*), the delivery settings
   (core/models.py SiteConfig), over-delivery credit routing (accounting/
@@ -34,10 +33,10 @@
   links and cards it points out to. The `{% templatetag openblock %} url ...
   as var {% templatetag closeblock %}` form fails silently to the empty
   string, so the defect those guards close is a dead link, not a 500.
-  2026-10-11 (150.4-01): the national, role-neutral lens. Brent approved who acts
-  in a sentence at 20:36 PDT ("yes") and the help-page rows at 20:49 PDT ("yes"):
-  "An administrator" acts in place of "a district" (Methodology Settings and Delivery Settings are @admin_required). Each actor traced to its view in
-  .planning/phases/150.4-national-role-neutral-tone-pass/150.4-01-WORDS.md. 2026-10-13 (150.1-02 screen 8): the unmetered estimate rows rewritten when a diversion with no linked right began to be estimated with no cap; Brent "yes, approved" 08:17 PDT.
+  2026-10-11 (150.4-01): the national, role-neutral lens. Who acts is set
+  in a sentence and in the help-page rows:
+  "An administrator" acts in place of "a district" (Methodology Settings and Delivery Settings are @admin_required). Each actor traced to its view.
+  2026-10-13 (150.1-02): the unmetered estimate rows rewritten when a diversion with no linked right began to be estimated with no cap.
 {% endcomment %}{% url 'accounting:methodology_settings' as methodology_url %}
 {% url 'accounting:delivery_settings' as delivery_url %}
 {% url 'water_balances' as water_balances_url %}

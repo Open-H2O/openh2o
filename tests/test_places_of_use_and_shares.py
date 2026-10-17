@@ -135,7 +135,7 @@ def test_bulk_import_parcel_number_links_use_area_at_full_share():
     }
     results = importer.validate_rows(rows, mapping, "diversion", set())
     assert results[0]["errors"] == []
-    # Brent, message Y row 7 (2026-10-15 18:35): a match needs no note.
+    # A match needs no note.
     assert results[0]["warnings"] == []
 
     created = importer.commit_rows(results, "diversion")

@@ -214,7 +214,7 @@ class TestLookupReview:
 
         assert "Population served (EPA total)" in body
         assert "EPA&#x27;s total for each" in body or "EPA's total for each" in body
-        # 150.1-02 screen 12 (Brent 2026-10-13 09:03 PDT): no import fills the
+        # 150.1-02 (2026-10-13): no import fills the
         # breakdowns, so the row no longer promises one.
         assert "An administrator enters the counts by category" in body
         assert "breaks them down is imported" not in body

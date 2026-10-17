@@ -51,8 +51,8 @@ ADD_TYPE_LABEL = {
     "recharge_site": "Recharge Site",
 }
 
-#: What one imported record is called in the import page's sentences (Brent,
-#: 150.1-02 screen 18 message V, 2026-10-15 17:55): "This page imports well
+#: What one imported record is called in the import page's sentences:
+#: "This page imports well
 #: records ...", "To enter one point of diversion record by hand ...".
 IMPORT_RECORD_NOUN = {
     "well": "well",
@@ -157,8 +157,8 @@ def _add_context(infra_type, **extra):
         ],
         "back_url": reverse(back_name),
         "back_label": back_label,
-        # `measurement_method` is deliberately not offered here (146-05
-        # checkpoint ruling 2, 2026-09-23): a new well created with it AND
+        # `measurement_method` is deliberately not offered here (146-05):
+        # a new well created with it AND
         # the three DWR fields below could start life with the two already
         # disagreeing. The model field stays for the seeds and the Merced
         # audit trail; a well made through this form simply starts blank on
@@ -524,7 +524,6 @@ def _diversion_water_right_preview_column(infra_type, rows, mapping, columns, sa
     right_col = mapping["water_right"]
     for i, row in enumerate(rows[: len(sample_table)]):
         raw = (row.get(right_col) or "").strip()
-        # Brent, message W row 9 (2026-10-15 18:12).
         if not raw:
             resolved = ""
         elif raw in existing_rights:
@@ -622,7 +621,7 @@ def infrastructure_import_commit(request):
         if key.startswith("map:") and val
     }
 
-    # Brent, 150.1-02 screen 18 message X rows 2 and 3 (2026-10-15 18:25): no
+    # No
     # column matched to the name or the location keeps the matching step on
     # screen with one sentence, instead of failing every row the same way.
     refusal = importer.mapping_refusal(mapping)
@@ -748,7 +747,6 @@ def parcel_create_inline(request):
     owner_name = request.POST.get("owner_name", "").strip()
     geometry_json = request.POST.get("geometry_json", "")
 
-    # Brent, 150.1-02 screen 18 message AA rows 8 to 10 (2026-10-15 19:19).
     if not parcel_number or not geometry_json:
         return JsonResponse(
             {"error": "Enter the parcel number, then draw the parcel on the map."},

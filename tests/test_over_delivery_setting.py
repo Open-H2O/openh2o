@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """148-04 Task 1: the over-delivery treatment setting on Delivery Settings.
 
-Three values Brent ruled (Q1, 2026-09-20): not credited (the default, today's
+Three values (Q1, 2026-09-20): not credited (the default, today's
 behaviour), credited to the landowner less a share left in the basin, or shown
 as its own named line that is not a credit. ``over_delivery_treatment`` and
 ``over_delivery_leave_behind`` belong to ``surface`` exactly as

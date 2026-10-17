@@ -42,7 +42,7 @@ silently — a page that stops being covered fails the gate instead of quietly
 leaving it.
 
 **Why the URLconf and not the 137-03 census.** The plan called for reversing the
-census's eighty pinned URLs. The census lives in ``.planning/``, which is in both
+census's eighty pinned URLs. The census lives in the planning directory, which is in both
 ``.gitignore`` and ``.dockerignore``, so it is not in the image the suite runs
 in and a test cannot read it. Enumerating the URLconf reaches the same pages
 without depending on a file that is not shipped, and it has the property the
@@ -503,7 +503,7 @@ EXPECTED_UNREACHABLE = {
     "/accounts/google/login/": "HTTP 404",
     "/accounts/google/login/callback/": "HTTP 404",
     "/accounts/google/login/token/": "HTTP 404",
-    # Removed (ISS-248, Brent 2026-10-17: one address per person, changed by an
+    # Removed (ISS-248: one address per person, changed by an
     # administrator on the Users page).
     "/accounts/email/": "HTTP 404",
     "/accounts/login/": "HTTP 302",

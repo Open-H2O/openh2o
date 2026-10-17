@@ -7,8 +7,8 @@ from core.history import CHANGE_NOTE_HELP, NOTE_MAX_LENGTH
 from core.modules import is_enabled
 from parcels.models import ParcelLedger
 
-#: Shortest reason accepted for reopening a finalized period (147-02, Brent
-#: 2026-09-23). Finalizing takes the same box with no minimum.
+#: Shortest reason accepted for reopening a finalized period (147-02, 2026-09-23).
+#: Finalizing takes the same box with no minimum.
 REOPEN_NOTE_MIN_LENGTH = 10
 
 
@@ -47,7 +47,7 @@ class PeriodFinalizeForm(forms.Form):
     with the reopening save via ``core.history.change_note`` so it lands on
     the period's change-history event. The field still accepts an optional
     note when finalizing (not reopening) -- the backend recording keeps
-    working -- but 147-02 (Brent's checkpoint ruling) removed that box from
+    working -- but 147-02 removed that box from
     the period page; only the required reopening reason still renders.
     ``reopening`` is passed explicitly by the view rather than read from the
     posted data, so a form cannot choose for itself which rule to enforce.

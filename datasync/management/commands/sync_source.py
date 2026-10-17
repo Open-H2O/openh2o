@@ -55,7 +55,7 @@ MINIMUM_WINDOW_DAYS = 7
 # How many back-to-back all-stations-failed runs before this command exits
 # non-zero and lets `run-sync.sh` raise a high-priority alert.
 #
-# Three, from measurement. Simultaneous probes from Butler and an off-LAN VPS on
+# Three, from measurement. Simultaneous probes from a home-network server and an off-LAN VPS on
 # 2026-08-02 caught a USGS outage lasting ~40 seconds, identical on both
 # networks — far shorter than the hourly cadence, and the 7-day pull window
 # means the following run recovers everything the failed one missed. One failed
@@ -264,7 +264,7 @@ class Command(BaseCommand):
         #
         # `run-sync.sh` alerts at ntfy Priority: high on any non-zero exit, and
         # a high alert means "broken now", not "broken briefly". Measured
-        # 2026-08-02 with simultaneous probes from Butler and an off-LAN VPS:
+        # 2026-08-02 with simultaneous probes from a home-network server and an off-LAN VPS:
         # USGS's outages are ~40 SECONDS long, hit both networks in the same
         # wall-clock window, and are gone by the next hourly run. Because the
         # pull window is 7 days, the next run refetches everything the failed

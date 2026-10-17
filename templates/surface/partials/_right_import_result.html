@@ -19,14 +19,14 @@ infrastructure/partials/_import_result.html:
   </div>
 
   <p class="text-base text-secondary mt-md">
-    {% comment %} Brent 2026-10-14 19:35, message F row 3: OpenH2O records a right, it never grants one. {% endcomment %}
+    {% comment %} OpenH2O records a right, it never grants one. {% endcomment %}
     OpenH2O created {{ created }} water right record{{ created|pluralize }}.
     {% if noted %}{{ noted|length }} of them {{ noted|length|pluralize:"has a note,have notes" }} below.{% endif %}
     {% if skipped %}{{ skipped|length }} row{{ skipped|length|pluralize }} were skipped because of the problems below. Fix them in your file and re-import just those.{% elif not noted %}Every row was valid.{% endif %}
   </p>
 
   {% if noted %}
-  {% comment %} 150.1-02 screen 18 (Brent 2026-10-14 18:47, message E rows 5 and 6): a right created without a face value or rate given in another unit. {% endcomment %}
+  {% comment %} 150.1-02: a right created without a face value or rate given in another unit. {% endcomment %}
   <h3 class="section-header-sm mt-lg">Imported with a note</h3>
   <table class="data-table mt-md">
     <thead>

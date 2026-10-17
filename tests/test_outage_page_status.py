@@ -18,8 +18,8 @@ is worse: an uptime monitor would read "whole site down" from one absent file.
 **Why this is a file scan and not a live request.** Neither ``caddy validate``
 nor ``caddy adapt`` can see either defect — both accepted the broken form and
 printed a valid config, which is exactly how this shipped. The live proof (stop
-``web``, wait past the 30 s retry budget, read the status line) is recorded in
-``.planning/phases/128-staging-runs-the-shipped-files/128-01-EVIDENCE.md`` §5.
+``web``, wait past the 30 s retry budget, read the status line) was run in
+128-01.
 This module is the ratchet that keeps the seam closed afterwards.
 
 Every assertion and every control goes through the same :func:`scan`. A control

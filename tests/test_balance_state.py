@@ -5,8 +5,8 @@ A field with no meter closes at zero by construction, but its monthly figures
 are stored to four places, so a year's sum lands at a few ten-thousandths of an
 acre-foot either side of zero. On staging (2026-10-12) MER-ACCT-002 summed to
 +0.0001 AF and MER-ACCT-006 to -0.0003 AF; both printed 0.00, and the Dashboard
-counted one in surplus and the other in deficit. Brent chose "Balanced"
-(2026-10-12 12:04 PDT): a balance that prints 0.00 is neither.
+counted one in surplus and the other in deficit. Such a balance is "Balanced":
+a balance that prints 0.00 is neither.
 """
 from decimal import Decimal
 

@@ -31,7 +31,7 @@
 # `high` alerts in reset-demo.sh are for a demo that did NOT reset, which is an
 # operational failure needing attention now. An alarm that wakes somebody for
 # something that can wait until morning is an alarm that gets muted — and then
-# the real one is muted too. (Directed by Brent at the 102-02 checkpoint.)
+# the real one is muted too. (102-02.)
 #
 # SNAPSHOT DIRECTORY IS DERIVED FROM THE CHECKOUT, and here that derivation is
 # load-bearing rather than tidy: this is the only script that WRITES golden.dump.

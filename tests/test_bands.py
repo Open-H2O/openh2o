@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
 150-02 Task 2: the band a measured figure carries, from the devices' stated
-accuracy (Brent's S2 ruling, 2026-09-20; settled in 150-02-PLAN.md).
+accuracy.
 
 A figure carries a band only when every record summed into it has a stated
 accuracy: a diversion record through its measuring device's

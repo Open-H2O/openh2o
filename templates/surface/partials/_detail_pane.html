@@ -34,8 +34,8 @@
 {% comment %}
   143-10 (R-115, R-055, R-112). Composed as a page at 1,730 CSS px, reusing
   the account page's grid UNCHANGED (143-03's .page-grid-account*): Diversion
-  point information beside Water diverted at one height (the checkpoint's
-  zone-lead ruling, 143-06, copied here), the records table full width below,
+  point information beside Water diverted at one height (the
+  zone-lead layout of 143-06, copied here), the records table full width below,
   then the linked-parcels row and the compliance strip. The previous
   .page-grid-2col put POD info, water journey, records and compliance in one
   tall left column beside a right column that ended a third of the way down
@@ -104,7 +104,7 @@
       {% endcomment %}
       {% if rediverted_from or rediversions %}
       <h2 class="section-header mt-lg mb-md">Re-diversion</h2>
-      {# 150.1-02 screen 7, Brent 2026-10-13 06:30 "Yes": heading "Re-diversion"; "Each row below is one hop." deleted. #}
+      {# 150.1-02: heading "Re-diversion"; "Each row below is one hop." deleted. #}
 
       {% if rediverted_from %}
       <div class="field-group">
@@ -262,7 +262,7 @@
     </div>
 
     {% comment %}
-      Where the water went, month by month (149-02 Task 2b, Brent 2026-10-06).
+      Where the water went, month by month (149-02 Task 2b).
       Read-only: every figure comes from stored rows through
       surface.services.canal_water_by_month (CanalMonthLoss, the split's own
       ledger rows, UnallocatedDelivery); nothing is recomputed here. One table
@@ -270,7 +270,7 @@
       years sit in a native <details>. The section id is the anchor Site Health's
       Unallocated Delivery card links to.
 
-      WORKING COPY for Brent's checkpoint: the section heading, the intro
+      Wording in this section: the section heading, the intro
       sentence, the column labels ("Taken at the headgate", "Canal losses" with
       Evaporation / Seepage / Spill, "Fields' own records", "Divided up among
       the other fields", and since 2026-10-13 the Water year page's approved
@@ -279,7 +279,7 @@
       flagged, never hidden; 149.1-05 adds one line under the table, shown only
       when a month is flagged, saying what the flag marks.
     {% endcomment %}
-    {% comment %} 150-04 V9: the card is rendered only for a point with a direct-use record (canal_water is empty otherwise); a recharge-only point gets none. 150.1-02 screen 7 (Brent 2026-10-13 07:22 "yes"): nor does a point with no linked use area, whose months the calculation never splits (accounting/engine_run.py _points_of_diversion). {% endcomment %}
+    {% comment %} 150-04 V9: the card is rendered only for a point with a direct-use record (canal_water is empty otherwise); a recharge-only point gets none. 150.1-02: nor does a point with no linked use area, whose months the calculation never splits (accounting/engine_run.py _points_of_diversion). {% endcomment %}
     {% if canal_water and pod_parcels %}
     <div class="card-raised page-grid-account-full" id="where-the-water-went">
       <h2 class="section-header mb-md">Where the water went</h2>

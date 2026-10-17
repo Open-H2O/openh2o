@@ -34,7 +34,7 @@
     {% elif show_detail %}
     {% comment %}
       143-09 (R-055, shape 1: the count-and-flag panel with two peers, AS BUILT on
-      shared_supply_check.html and accepted by Brent 2026-09-16 08:05 PDT). The
+      shared_supply_check.html). The
       info card is "This run" (when, how many, what is left out, how to re-run)
       beside the balance card's panel, which leads with the healthy count instead
       of burying it in a chip.
@@ -126,7 +126,7 @@
               {% if result.where %}
               <a class="text-link" href="{{ result.where.href }}">Open {{ result.where.label }} →</a>
               {% elif result.host_level %}
-              {% comment %} Brent, 2026-10-16 08:19: the fix belongs to the AI that maintains the site; docs/AI-OPERATOR-GUIDE.md "Keeping it running" has a row per card. {% endcomment %}
+              {% comment %} The fix belongs to the AI that maintains the site; docs/AI-OPERATOR-GUIDE.md "Keeping it running" has a row per card. {% endcomment %}
               <p class="text-secondary text-sm m-0">This fault is on the server, outside OpenH2O. Pass this card to the AI that maintains the site; the fix is in OpenH2O's operator guide.</p>
               {% endif %}
             {% endif %}

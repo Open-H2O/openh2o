@@ -49,8 +49,7 @@ def source_label(key, detail=""):
 def result_source(result):
     """One sample result's source: the lab file it was imported from.
 
-    150.1-02 screen 14 row 3 (Brent 2026-10-14 15:37 PDT, "they look good"):
-    the file name and import date the importer stores on every row it writes
+    150.1-02: the file name and import date the importer stores on every row it writes
     (``limits_source_file`` / ``limits_file_date``, ISS-140), or
     ``provenance.LAB_FILE`` for a row imported before file names were kept.
     The label used to name the State Water Board for every result, which is

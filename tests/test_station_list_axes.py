@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Wiring and freshness are two axes, and the station list now says so.
 
-Brent, reviewing 104-02: *"The filter says active but a bunch of dormant
-stations are present — this doesn't make sense."* It made sense in the data and
+In 104-02 the filter said active while dormant stations were listed. It made sense in the data and
 not in the words. Two independent things were wearing one vocabulary:
 
 * `is_active` — do we pull from this station at all. The switch on its page.

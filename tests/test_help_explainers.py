@@ -125,13 +125,13 @@ class TestGettingStartedNumbering:
 
         result = _getting_started_numbering()
         # 149.1-04 (2026-10-07): the state-report step came off the page at
-        # Brent's word, so a full deployment numbers 1 through 10.
+        # so a full deployment numbers 1 through 10.
         assert sorted(result["steps"].values()) == list(range(1, 11))
         # 149.1-04 (2026-10-07): the wizard citation lost wells and surface.
         # setup/services.py WIZARD_STEPS imports use areas (parcels) and
         # monitoring stations, and no wells or recharge basins, so the view's
         # list says so; "2, 3, 9, and 10" was a false cross-reference.
-        # 2026-10-07 10:21, Brent: the order follows what depends on what
+        # The order follows what depends on what
         # (pwsid, zones, use areas, wells, surface, stations, then the four
         # accounting steps), so the wizard's steps are 3 and 6 and the
         # accounting run is the last four.

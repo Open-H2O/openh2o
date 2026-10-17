@@ -197,8 +197,8 @@ def test_commit_failure_renders_nothing_was_created(auth_client, monkeypatch):
         "which was the ISS-179 silence), not propagate."
     )
     body = resp.content.decode()
-    # Brent 2026-10-15 17:55 (150.1-02 screen 18, message V): the surface
-    # imports' approved unexpected-error sentence, reused word for word.
+    # 150.1-02 (2026-10-15): the surface imports' unexpected-error sentence,
+    # reused word for word.
     assert (
         "An unexpected error stopped the import, and OpenH2O saved nothing "
         "from this file. Details: RuntimeError: synthetic outer-path failure"

@@ -1,12 +1,11 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""The monitoring dashboard's sentences Brent approved (150.1-02 screen 15,
-message A, 2026-10-16 05:10), and the two code changes with them: the
+"""The monitoring dashboard's sentences (150.1-02, 2026-10-16), and the two
+code changes with them: the
 boundary line counts the active stations outside the boundary (it claimed
 reservoirs and upstream gauges outside it on any site), and a station card
 shows its source's name and the freshness words (it showed cdec, fresh, stale).
 
-Message B (the station list and Add station, 2026-10-16 05:45) and its two
-code changes: the list's no-results line names the source (it printed the
+The station list and Add station brought two more code changes: the list's no-results line names the source (it printed the
 code, dwr_sgma), and a source and station ID already on file get a sentence
 on Add station (it was a server error).
 
@@ -96,7 +95,7 @@ def test_source_lines(auth_client):
     assert "—" not in "".join(freshness.SOURCE_BLURBS.values())
 
 
-# --- message B: the station list and Add station ---------------------------
+# --- the station list and Add station ---------------------------------------
 
 
 def _list(client, **params):

@@ -46,8 +46,7 @@ _NO_DELIVERY_BACKENDS = (
 
 
 def site_sends_email() -> bool:
-    """False on a site with no mail server (Brent, 150.1-02 screen 18 message
-    AB, 2026-10-15 20:58): its reset page took an address and said a link was
+    """False on a site with no mail server (150.1-02): its reset page took an address and said a link was
     sent while the email only reached the server log."""
     return settings.EMAIL_BACKEND not in _NO_DELIVERY_BACKENDS
 

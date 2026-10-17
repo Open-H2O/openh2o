@@ -4,8 +4,8 @@ The zone edit form (146-05 Task 3), without the Delta checkbox.
 
 146-05 added a zone edit route with a jurisdiction checkbox ("water reaching a
 crop from below is a diversion ... (the Delta case)") and a legal basis box.
-No calculation ever read either, and no zone ever set the box; Brent removed
-both on 2026-10-12 19:17 PDT ("Remove it"), Phase 150.5-01. The edit route
+No calculation ever read either, and no zone ever set the box; both were removed
+on 2026-10-12, Phase 150.5-01. The edit route
 stays.
 """
 import factory

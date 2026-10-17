@@ -11,7 +11,7 @@ from core.constants import RECOVERY_HORIZON_CHOICES
 from core.history import CHANGE_NOTE_HELP, NOTE_MAX_LENGTH
 from core.models import SiteConfig, User
 
-# ISS-248 message B row 9 (Brent 2026-10-17 05:47): replaces Django's "Enter a
+# ISS-248: replaces Django's "Enter a
 # valid email address." on every form where an administrator types an address.
 INCOMPLETE_EMAIL_VALIDATOR = EmailValidator(
     message="%(value)s is not a complete email address."
@@ -23,7 +23,7 @@ class ProfileForm(forms.ModelForm):
 
     Deliberately excludes email and password. The email address is the sign-in
     name and only an administrator changes it, on the Users page
-    (:class:`UserEmailForm`; Brent, ISS-248, 2026-10-17); the password has its
+    (:class:`UserEmailForm`; ISS-248); the password has its
     own page, linked from the profile.
     """
 
@@ -60,7 +60,7 @@ ROLE_CHOICES = [
     (ROLE_OPERATOR, "Operator"),
     (ROLE_VIEWER, "Viewer"),
 ]
-# Brent, 150.1-02 screen 17 message A rows 5 and 6 (2026-10-16 06:15).
+# The help line under the role choice (150.1-02).
 ROLE_HELP = (
     "Viewers read every record and change none. Operators also add, change "
     "and remove records. Administrators also manage users, set up the site, "
@@ -138,11 +138,11 @@ class UserCreateForm(forms.ModelForm):
         # email IS the login, so require it on the form.
         self.fields["email"].required = True
         self.fields["email"].error_messages["required"] = "Enter the email address."
-        # ISS-248 message B row 9 (Brent 2026-10-17 05:47), on Add user too.
+        # ISS-248: the same validator on Add user.
         self.fields["email"].validators = [INCOMPLETE_EMAIL_VALIDATOR]
 
     def clean_email(self):
-        # Brent, 150.1-02 screen 17 message A row 8: an address on file as any
+        # 150.1-02: an address on file as any
         # account's (a second address added under Manage email included) is
         # refused; the save's update_or_create used to move it onto this account.
         email = self.cleaned_data["email"].strip().lower()
@@ -211,8 +211,8 @@ def email_on_file(email, exclude_user=None):
 class UserEmailForm(forms.Form):
     """An administrator changes another person's email address (ISS-248).
 
-    Brent, 2026-10-17: only an administrator changes an address (05:09), and a
-    person has one address (05:12). The person's sign-in name changes with it,
+    Only an administrator changes an address, and a person has one address.
+    The person's sign-in name changes with it,
     so the save rewrites ``User.email``, the username kept in step with it, and
     allauth's one ``EmailAddress`` row, which is what sign-in reads first.
     Any second row left from the removed email page goes, so the old address
@@ -277,7 +277,7 @@ class DeliverySettingsForm(forms.Form):
     belonged to ``surface`` and disappeared with it, because its one consumer
     then apportioned canal deliveries. It is a field's irrigation efficiency
     wherever no irrigation method is on file (``parcels.services.field_efficiency``),
-    and a groundwater-only district has fields too (Brent, 2026-10-11), so it is
+    and a groundwater-only district has fields too, so it is
     shown whenever ``parcels`` runs. ``default_recovery_horizon`` stays for the
     same reason: ``accounting.services.resolve_recovery_horizon`` and
     ``rollover_allocations`` read it for any zone's unused allocation, surface or
@@ -285,12 +285,12 @@ class DeliverySettingsForm(forms.Form):
 
     **There is no separate groundwater efficiency (150.2-02).** From 148-02
     to 150.2-02 a flat ``groundwater_efficiency`` (80%) had its own card here;
-    Brent ruled "one irrigation efficiency per field" (2026-10-11), so
+    there is one irrigation efficiency per field (2026-10-11), so
     ``run_calculations`` divides pumped groundwater by the same field
     efficiency the default above feeds, and the setting is gone.
 
     **The over-delivery treatment belongs to ``surface`` the same way (148-04
-    Task 1, Brent's Q1 ruling 2026-09-20).** ``over_delivery_treatment`` and
+    Task 1, 2026-09-20).** ``over_delivery_treatment`` and
     ``over_delivery_leave_behind`` are read once per run by
     ``run_calculations`` (148-04 Task 2); only canal water can be
     over-delivered, so both fields are shown and saved under the
@@ -311,7 +311,7 @@ class DeliverySettingsForm(forms.Form):
     not why.
 
     **The USE-row question that used to sit beside it moved to the import
-    screen (146-03 Task 6, Brent's 2026-09-22 checkpoint ruling).** It is a
+    screen (146-03 Task 6, 2026-09-22).** It is a
     question about one uploaded file, asked here months before any file
     exists, of a reader with no reason yet to hold the vocabulary; it now
     renders on the import mapping step, and only when the uploaded file
@@ -328,7 +328,7 @@ class DeliverySettingsForm(forms.Form):
         # `recharge` module's noun on deployments that do not run it. The
         # sentence does not need the word — where the water goes is already
         # said — so the copy changed rather than `_FORBIDDEN_VOCABULARY`.
-        # 150.2-02 (Brent, 2026-10-11 13:25 PDT: "approved").
+        # 150.2-02.
         help_text="Typical: 75%. OpenH2O uses this efficiency for every field "
         "with no irrigation method on file.",
         widget=forms.NumberInput(
@@ -336,7 +336,7 @@ class DeliverySettingsForm(forms.Form):
         ),
     )
     # 148-04 Task 1: what happens to surface water in excess of ETAW
-    # (150.1-02, Brent's term, 2026-10-11). `required=False` at the Django level (see
+    # (150.1-02). `required=False` at the Django level (see
     # the class docstring) -- a submission that omits it leaves the stored
     # treatment untouched, same convention as `identifier_host` blank meaning
     # "use the default". Plain-language radio labels are set in __init__,
@@ -419,7 +419,7 @@ class DeliverySettingsForm(forms.Form):
 
     # Phase 147: why the settings changed, saved with the change in the change
     # history (core/history.py). Optional here; not a SiteConfig field. 147-02
-    # (Brent's checkpoint ruling) removed this field's box from the page; the
+    # removed this field's box from the page; the
     # recording stays, so a caller (or a future one) can still supply a note.
     note = forms.CharField(
         required=False,
@@ -579,7 +579,7 @@ class DeliverySettingsForm(forms.Form):
                     "landowner.",
                 )
         if self.shows_diversion_settings:
-            # 150.1-02 screen 18 (Brent 18:01, message B row 9): a season with
+            # 150.1-02: a season with
             # no starting month failed every row of a Water Use Reported file.
             if (
                 cleaned.get("diversion_report_year_rule") == "season"

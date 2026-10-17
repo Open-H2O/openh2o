@@ -2,8 +2,8 @@
 """Reading the change history back: /changes/ (147-01 Task 4).
 
 The History panel this module also covered on record pages was removed in
-147-02 (Brent's 2026-09-24 checkpoint ruling: keep the recording, strip the
-display); the reading functions it called (``changes_for``, field filtering)
+147-02 (the recording stays, the
+display went); the reading functions it called (``changes_for``, field filtering)
 stay and are still exercised directly here, since /changes/ reads through the
 same code.
 

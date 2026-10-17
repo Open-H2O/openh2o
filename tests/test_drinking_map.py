@@ -261,8 +261,7 @@ class TestTheCoverageSentenceIsComputed:
         A test asserting the demonstration's own "21 of 61" would pass forever
         and prove nothing.
         """
-        # Counted in points since 150.1-02 screen 14 message B row 4 (Brent
-        # 2026-10-14 15:51 PDT): the sentence no longer counts facilities.
+        # Counted in points since 150.1-02: the sentence no longer counts facilities.
         html = _squash(
             client_in.get(reverse("drinking:sampling_points")).content.decode()
         )
@@ -290,8 +289,7 @@ class TestTheCoverageSentenceIsComputed:
     def test_it_says_why_the_rest_are_missing(self, client_in, mapped_system):
         """Their facilities have no location, and where one is entered.
 
-        No GAMA since 150.1-02 screen 14 message B row 4 (Brent 2026-10-14
-        15:51 PDT): only the demonstration seed's coordinates came from it, and
+        No GAMA since 150.1-02: only the demonstration seed's coordinates came from it, and
         on any other site a facility's location is entered at /admin/.
         """
         html = _squash(
@@ -340,8 +338,7 @@ class TestTheEmptyStateIsASentence:
         html = _squash(
             client_in.get(reverse("drinking:sampling_points")).content.decode()
         ).lower()
-        # 150.1-02 screen 14 message B row 5 (Brent 2026-10-14 15:51 PDT):
-        # no GAMA (only the demo seed's coordinates came from it), and where
+        # 150.1-02: no GAMA (only the demo seed's coordinates came from it), and where
         # a location is entered.
         assert "no facility on this site has a location recorded" in html
         assert "epa publishes no facility coordinates" in html
@@ -594,7 +591,7 @@ class TestTheSamplingPointDetailMap:
         # 99-02's requirement, re-pointed at the FACT rather than the sentence
         # (101-02). The original pinned "Shown at the location of facility {id}"
         # verbatim, which made the correct copy a test failure the moment the
-        # caption was tightened at 101-02's checkpoint. What 99-02 actually
+        # caption was tightened in 101-02. What 99-02 actually
         # required — and what this now asserts — is that the caption NAMES the
         # facility whose coordinate this is, and ATTRIBUTES it, so a reader
         # cannot come away believing the tap itself was surveyed.
@@ -607,8 +604,7 @@ class TestTheSamplingPointDetailMap:
             "the map caption does not name whose coordinate this is, so a "
             "reader may believe the tap itself was surveyed"
         )
-        # The GAMA label under it went (150.1-02 screen 14 message B row 7,
-        # Brent 2026-10-14 15:51 PDT); the caption itself says the position is
+        # The GAMA label under it went (150.1-02); the caption itself says the position is
         # the facility's.
         assert "The map places this sampling point at facility" in caption.replace("&#x27;", "'"), (
             "the caption never says the coordinate is the facility's"

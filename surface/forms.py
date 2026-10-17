@@ -237,8 +237,7 @@ class PointOfDiversionForm(forms.ModelForm):
             "loss_basis": "How these shares were set",
             "lining": "Lining",
         }
-        # 150.3-01 (Brent 2026-10-11 16:40 PDT: "approved"; the district
-        # wording replaced by the national words approved 18:43 PDT).
+        # 150.3-01 (the district wording was replaced by the national words).
         help_texts = {
             "lining": "While the basis is the platform's default, OpenH2O sets "
             "the seepage share from the lining: 25 percent for an unlined "

@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """One helper for the map label prefix, shared by every overview map (143-07).
 
-Brent's Task 3 ruling (2026-09-13 14:10 PDT) approved the overview map card
-built on Surface Diversions with one change: the map LABEL drops the code
+The overview map card is built on Surface Diversions with one change: the map
+LABEL drops the code
 prefix a stored name carries. The demonstration seeds names like
 ``MER-POD-004-DEMO Atwater Canal Headgate`` and
 ``MER-BPOD-001 El Nido Canal Recharge Intake`` — the leading token is the

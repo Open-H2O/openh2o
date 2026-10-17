@@ -289,7 +289,7 @@ def estimate_month(first, notes):
             continue
 
         # A point with no linked right is estimated with no cap (150.1-02
-        # screen 8, Brent 2026-10-13 08:08: requiring a right shut out anyone
+        # screen 8): requiring a right shut out anyone
         # whose right is not on file, or who has none).
         right = point.water_right
         if right is not None and right.status in ("revoked", "inactive"):

@@ -28,8 +28,8 @@ User = get_user_model()
 
 pytestmark = pytest.mark.django_db
 
-#: 150.1-02 (2026-10-11): the page is three equations in the engineer's terms
-#: Brent approved at 05:41 and 05:48 PDT. Each label sits directly above its
+#: 150.1-02 (2026-10-11): the page is three equations in the engineer's terms.
+#: Each label sits directly above its
 #: figure (`.budget-seg-label`), in the order the equations run.
 LABELS = (
     "Crop ET",

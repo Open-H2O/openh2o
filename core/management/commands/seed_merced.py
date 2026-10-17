@@ -22,10 +22,10 @@ Order matters:
   4. seed_merced_operations — water rights + points of diversion (the surface
                               district). Needs the flowlines from step 2.
   5. seed_merced_parcels_from_selection — parcels + canal/well/GSA links from
-                              Brent's QGIS field selection (incl. the 2 Merced
+                              the QGIS field selection (incl. the 2 Merced
                               River dual-purpose parcels). Needs PODs (4), GSAs
                               (3), and data/merced/selected_parcels.geojson.
-  6. seed_merced_pivot_irrigation — 146-05 checkpoint, Brent's ruling 1: sets
+  6. seed_merced_pivot_irrigation — 146-05: sets
                               parcels.ParcelIrrigationMethod to "Center Pivot"
                               on every use area whose outline fills at least
                               90% of its minimum bounding circle (MER-APN-001
@@ -33,7 +33,7 @@ Order matters:
                               Purely geometric on the parcels seeded at step 5;
                               no other dependency. Never overwrites a method
                               already set. No-op when `surface` is off.
-  7. seed_merced_basins_from_selection — recharge AREAS from Brent's QGIS pick:
+  7. seed_merced_basins_from_selection — recharge AREAS from the QGIS pick:
                               El Nido Canal spreading basins (new canal intakes)
                               + Merced River Flood-MAR cropland (linked to the
                               existing MER-POD-009). Needs the PODs (4) + parcels
@@ -127,7 +127,7 @@ SEQUENCE = [
     # real parcels/wells right after, so the flush is safe.
     ("seed_merced_operations", {"flush": True}),
     ("seed_merced_parcels_from_selection", {}),
-    # 146-05 checkpoint, Brent's ruling 1 (2026-09-23): the nine round use
+    # 146-05 (2026-09-23): the nine round use
     # areas (MER-APN-001 through 009) are visibly center-pivot fields on the
     # aerial map, and the platform now has a place to say so
     # (parcels.ParcelIrrigationMethod, 146-05 Task 1). Runs right after

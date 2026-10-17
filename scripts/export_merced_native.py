@@ -51,8 +51,7 @@ BASIN_CODE = "5-022.04"
 
 # The El Nido canal runs dry mid-water-year: its POD stops delivering after June
 # 2025 (mirrors seed_merced_ledgers EL_NIDO_LAST_DELIVERY). Curtailment orders were
-# removed from OpenH2O, web and native, in 2026-10 (Brent: "Lets get rid fo
-# curtailments entirely." and "fix the native app").
+# removed from OpenH2O, web and native, in 2026-10.
 DRY_POD = "MER-POD-007"
 
 # Face-value sizing model (mirrors seed_merced_ledgers fallback constants).
@@ -170,7 +169,7 @@ RECHARGE_WET_SEASON = [
     ("2025-02-15", Decimal("0.30")),
     ("2025-03-15", Decimal("0.20")),
 ]
-# Decision (Brent, 2026-06-03): managed recharge credits Groundwater (GW); the physical
+# Decision (2026-06-03): managed recharge credits Groundwater (GW); the physical
 # source water (diverted storm/surface runoff) is preserved in the event source field.
 RECHARGE_WATER_TYPE = "GW"
 RECHARGE_SOURCE_DESC = "storm/surface runoff diverted to basin"

@@ -37,7 +37,7 @@ the class would conflate the two and did in fact turn that test red. The name
 also avoids `badge-demo` as a SUBSTRING, since those assertions match on raw
 HTML.
 ON THE WORDING. Three short sentences, in this order on purpose (rewrite
-2026-07-27, Brent's copy). The first says what the data IS, because a reader who
+2026-07-27). The first says what the data IS, because a reader who
 stops after one sentence should still leave knowing the mixture exists. The
 second is the way out to the detail. The third is the hard stop, last because
 that is where the eye rests and because it is the sentence that has to survive
@@ -51,7 +51,7 @@ every page, and a notice people learn to skip is a notice that does not work.
 <div class="card-raised demo-notice" role="note" aria-label="Demonstration data notice">
   <span class="badge badge-pill notice-badge">Demo</span>
   <p class="demo-notice-text">
-    {% comment %} Brent 2026-10-15 19:19 (150.1-02 screen 18 message AA row 2): the link inside a sentence that says what it opens. {% endcomment %}
+    {% comment %} 150.1-02: the link inside a sentence that says what it opens. {% endcomment %}
     This demo mixes <strong>invented sample data</strong> with <strong>real published records</strong>.
     Another page lists <a href="{% url 'demonstration_data' %}" class="prose-link">where every figure comes from</a>.
     <strong>For testing purposes only.</strong>

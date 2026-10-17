@@ -89,9 +89,9 @@
             {% include "partials/_nav_icon.html" with icon_key=entry.icon %}
             <span class="sidebar-link-text">{{ entry.label }}</span>
         </a>{% endif %}{% endfor %}{% endif %}{% endfor %}{% if 'reporting' not in enabled_modules %}
-        {% comment %}2026-10-12 06:10 PDT, Brent: "turn the reports pages off and
-        simply gray out the left-hand column selector so that it shows its under
-        developement". Reporting is off unless a site names it in OPENH2O_MODULES
+        {% comment %}2026-10-12: the reports pages are turned off and the
+        sidebar entry is greyed out, shown as under development.
+        Reporting is off unless a site names it in OPENH2O_MODULES
         (core/modules.py on_by_default), so this greyed entry stands where the
         Reports link was. Not a link: nothing behind it is served.{% endcomment %}
         <!-- REPORTING (switched off: greyed, under development) -->

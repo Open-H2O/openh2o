@@ -992,7 +992,7 @@ class TestTheDrawMapsFrameOnTheDistrictBoundary:
     """R-100. Before this plan both maps opened at a fixed point in the
     mountains ([-119.5, 37.3], zoom 8) with no agency boundary drawn.
     `OH2O.frameOnBoundary` (map-core.js) fetches this URL and, given
-    features, frames on them; verified in a real browser at the checkpoint
+    features, frames on them; verified in a real browser
     (a MapLibre instance is not something this suite can inspect); what a
     guard here can prove is that the page hands the helper something to
     fetch at all."""
@@ -1084,8 +1084,7 @@ class TestAccountGridOnWellsAndAddPage:
         # Bounded by the next <script> tag (the persistent-map script is the
         # last thing in the pane): everything between the heading and that
         # bound is this card's own two tables. The History panel that used to
-        # sit between them (147-01) was removed in 147-02 (Brent's checkpoint
-        # ruling); the fallback stays in case a panel-like block ever returns.
+        # sit between them (147-01) was removed in 147-02; the fallback stays in case a panel-like block ever returns.
         end = body.index("<script>", heading_pos)
         if "change-history-panel" in body[heading_pos:end]:
             end = body.index("change-history-panel", heading_pos)
@@ -1095,8 +1094,8 @@ class TestAccountGridOnWellsAndAddPage:
     def test_add_page_map_is_a_landscape_band_above_the_form(self, auth_client):
         from pathlib import Path
 
-        # Brent, 2026-09-13, on the build that ran the map beside the form at
-        # the form's height: a map is landscape, like every other map here.
+        # A map is landscape, like every other map here (an earlier build ran
+        # the map beside the form at the form's height).
         # The map card comes first in the layout and the form's cards follow
         # under it; the map is the record pages' 380px band.
         response = auth_client.get("/infrastructure/add/?type=well")

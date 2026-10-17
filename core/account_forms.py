@@ -1,9 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """allauth's password forms with OpenH2O's sentences (ISS-248).
 
-Brent, 2026-10-17 05:31, message A: the labels and blank-field sentences of
-Change password, and one sentence for two new passwords that differ, on every
-page that sets a password (row 10). The checks are allauth's own; only the
+The labels and blank-field sentences of Change password, and one sentence for
+two new passwords that differ, on every page that sets a password. The checks are allauth's own; only the
 words change. Wired through ``ACCOUNT_FORMS`` in config/settings/base.py.
 """
 from allauth.account import forms as allauth_forms

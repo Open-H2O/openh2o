@@ -275,7 +275,7 @@ def _note_sentences(raw, *, tabled=False):
     evaporation and spill every point wrote off this period, in ONE sentence,
     and one sentence for each point-month whose seepage had no zone to go to.
 
-    ``tabled=True`` (2026-10-12, Brent: the notes as one table) leaves out the
+    ``tabled=True`` (2026-10-12: the notes as one table) leaves out the
     three kinds ``_note_table`` sets out as rows instead: the headgate water left
     over, canal evaporation and spill, and the unmetered estimates. A run stores those as table groups; the sentences stay the default
     so a caller reading one month's notes still gets plain sentences.
@@ -326,26 +326,23 @@ def _note_sentences(raw, *, tabled=False):
             not_active[note["status"]].add(note["pod"])
     info = []
     if unexplained and not tabled:
-        # Brent's wording, 2026-10-06: the ruled phrase "canal water beyond
-        # what the crop could use", the canals named with their amounts,
-        # largest first, and what happens to it.
+        # The canals are named with their amounts, largest first, and what
+        # happens to the water.
         total = sum(unexplained.values(), Decimal("0"))
         each = ", ".join(
             f"{pod} {_amount(af)}"
             for pod, af in sorted(unexplained.items(), key=lambda kv: (-kv[1], kv[0]))
         )
-        # Brent, 2026-10-12 15:18 PDT ("yes", with "charges no field for it
-        # and" struck at 15:06): the ETAW terms replace the 10-06 phrase.
+        # The ETAW terms replace the earlier 10-06 phrase.
         info.append(
             f"{_amount(total)} AF of headgate water was left after each field "
             f"received its ETAW divided by its irrigation efficiency ({each}). "
             f"OpenH2O lists it on Site Health under Unallocated Delivery."
         )
     if loss_points and not tabled:
-        # Working copy for Brent's checkpoint (149-02). Only the losses that
-        # are above zero are named.
-        # Brent, 2026-10-12 15:18 PDT ("yes"; "subtracted", not "wrote off"):
-        # the losses come off the water diverted (surface/services.py).
+        # Working copy (149-02). Only the losses that are above zero are
+        # named. "Subtracted", not "wrote off": the losses come off the water
+        # diverted (surface/services.py).
         parts = []
         if evaporation > 0:
             parts.append(f"{_amount(evaporation)} AF of canal evaporation")
@@ -366,12 +363,12 @@ def _note_sentences(raw, *, tabled=False):
             f"no management area contains the point or the field that received "
             f"the most of that month's delivery."
         )
-    # Estimates for a ditch with no meter (149-02). Working copy for Brent's
-    # checkpoint. They keep a run green: an estimate is information, never a fault.
+    # Estimates for a ditch with no meter (149-02). Working copy. They keep a
+    # run green: an estimate is information, never a fault.
     if estimated_points and not tabled:
         points, months = len(estimated_points), len(estimated_months)
-        # Brent, 2026-10-12 15:18 PDT ("yes"; "1 unmetered point of
-        # diversion", 15:06). The basis is ETAW / efficiency (surface/estimate.py).
+        # The wording is "1 unmetered point of diversion". The basis is
+        # ETAW / efficiency (surface/estimate.py).
         info.append(
             f"OpenH2O estimated the delivery at {points} unmetered "
             f"point{'s' if points != 1 else ''} of diversion for {months} "
@@ -409,13 +406,11 @@ def _note_sentences(raw, *, tabled=False):
     return attention, info
 
 
-# The run's notes as one table (Brent, 2026-10-12 16:07 PDT, "yes" to the
-# mock-up, after "Providing this kind of detailed information in bullet
-# narrative form is a little clunky." at 15:55). Each group is stored on the
-# run as a dict: its lead words (bold on the page), the rest of its label, one
+# The run's notes as one table (bullet narrative was too clunky for this much
+# detail). Each group is stored on the run as a dict: its lead words (bold on the page), the rest of its label, one
 # row per point of diversion with the acre-feet already formatted, and a total
-# when a group has more than one point. The words are the sentences he
-# approved at 15:18, cut to a label. A run stores these after its sentences, so
+# when a group has more than one point. The words are the sentences
+# above, cut to a label. A run stores these after its sentences, so
 # Site Health's first note is still a sentence.
 _TABLE_LABELS = {
     "unallocated": (

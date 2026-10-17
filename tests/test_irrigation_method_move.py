@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """150.2-01: irrigation methods move from `surface` into `parcels`.
 
-Brent, 2026-10-11 11:27 PDT: "we need this software to help groundwater-only
-growers and water managers." A groundwater-only district runs without
+The software has to serve groundwater-only growers and water managers. A
+groundwater-only district runs without
 `surface`, and its fields have irrigation methods too, so the two models and
 the ``field_efficiency`` lookup now live in `parcels`.
 

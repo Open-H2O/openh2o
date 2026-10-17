@@ -249,7 +249,7 @@ def test_drinking_card_renders_counts_once_a_system_exists():
     # 142-01 (R-011, R-027): the code is named, the figures say what they count.
     assert "Public water system ID (PWSID) CA1910067" in main
     assert "Sample results stored" in main
-    # 150.1-02 screen 11 (Brent 2026-10-14 13:33 PDT): the line went; the tile
+    # 150.1-02: the line went; the tile
     # labels say what each figure counts.
     assert "the records this platform holds" not in main
     assert "Facilities on record" in main

@@ -482,7 +482,6 @@ def station_add(request):
         lat_raw = request.POST.get("lat", "").strip()
         lng_raw = request.POST.get("lng", "").strip()
 
-        # Brent, 150.1-02 screen 15 message B rows 12 and 13 (2026-10-16 05:45).
         errors = []
         data_source = None
         if source_id:
@@ -567,7 +566,7 @@ def monitoring_dashboard(request):
         total_active, fresh_count, stale_count, dead_count
     )
 
-    # Brent, 150.1-02 screen 15 message A row 2: the boundary line counts the
+    # The boundary line counts the
     # active stations outside the boundary instead of assuming some are.
     outside_count = (
         active_stations.exclude(location__within=boundary.geometry).count()
@@ -636,7 +635,7 @@ def monitoring_dashboard(request):
         else:
             latest_tooltip = None
         station_list.append({
-            # Brent, screen 15 message A row 11: the source's name, not its code.
+            # The source's name, not its code.
             "source_display": freshness.source_display(s.data_source.code),
             "station": s,
             "freshness": fresh_class,

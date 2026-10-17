@@ -1,8 +1,8 @@
 {% load humanize accounting_extras %}{% comment %}
 The Active water accounts table (Phase 142, R-007/R-008; ISS-159 #1), shared
 by the dashboard's own card (_dashboard_content.html) and the accounts list
-(143-13, the "accounts-table" checkpoint ruling: "the accounts list becomes
-the dashboard's Active water accounts table with a search"). Extracted here
+(143-13: the accounts list becomes the dashboard's Active water accounts
+table with a search). Extracted here
 so the two pages render the SAME markup over the SAME context keys
 (account_summaries, has_allocations, engine_has_never_run, grand_*) rather
 than a second copy of the table drifting from the first, and so the
@@ -31,7 +31,7 @@ budget); a unit stated once in the caller's own subtitle, never on a column.
       <th rowspan="2" class="th-right"><span class="th-stack">Crop ET</span></th>
       <th rowspan="2" class="th-right">Balance{% include "partials/_explainer_popout.html" with title="Balance" text="This account's total supplies minus its crop ET for the period. A positive balance means the supplies on record were more than crop ET." link=wb_help_url link_label="How water balances work" %}</th>
       {% if has_allocations %}
-      {% comment %}148-02 Task 4 (Q2): the label stays "Groundwater budget" (Brent, 2026-09-24), same as the Zones table's identical group
+      {% comment %}148-02 Task 4 (Q2): the label stays "Groundwater budget", same as the Zones table's identical group
            header in _dashboard_content.html -- one label, both tables (rule
            12).{% endcomment %}
       <th colspan="2" class="th-group-label col-sep">Groundwater budget</th>
@@ -127,6 +127,6 @@ budget); a unit stated once in the caller's own subtitle, never on a column.
 <p class="text-tertiary text-sm mb-sm">No active accounts yet.</p>
 <a href="{% url 'accounting:account_create' %}" class="link-accent text-sm">+ New account</a>
 {% endif %}
-{% comment %}150.1-02 screen 2, Dashboard: the heading "Water balance", the row "Total", the empty-site line, the over-budget count, the Remaining pop-out and the fields-table pop-out are Brent's approved sentences (2026-10-12 12:04 PDT, "Everything looks great, approved."; recorded in brent-sentence-corrections.md). A balance that prints 0.00 is "Balanced" (ISS-237, his choice the same minute). Notes sit at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
-{% comment %}"Effective precipitation" for the figure that read "Rain" (CalculationRun.effective_precip_af): Brent 2026-10-12 13:21 PDT, "The wording is approved." (150.1-02 screen 3). Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
-{% comment %}The Balance pop-out: Brent 2026-10-12 15:18 PDT, "yes" (150.1-02 screen 4, Water year page); recorded in brent-sentence-corrections.md.{% endcomment %}
+{% comment %}150.1-02, Dashboard: the heading "Water balance", the row "Total", the empty-site line, the over-budget count, the Remaining pop-out and the fields-table pop-out are approved sentences. A balance that prints 0.00 is "Balanced" (ISS-237). Notes sit at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
+{% comment %}"Effective precipitation" for the figure that read "Rain" (CalculationRun.effective_precip_af) (150.1-02). Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
+{% comment %}The Balance pop-out (150.1-02, Water year page).{% endcomment %}

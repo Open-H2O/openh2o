@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""The infrastructure import's messages and the code changes Brent approved
-with them (150.1-02 screen 18, message V, 2026-10-15 17:55).
+"""The infrastructure import's messages and the code changes made with them
+(150.1-02, 2026-10-15).
 
 Each test pins a behaviour the old code got wrong, not only a wording: a
 damaged GeoJSON, KML or zip file was a server error (the page showed

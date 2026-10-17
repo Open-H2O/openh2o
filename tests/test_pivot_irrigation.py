@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
-146-05 checkpoint, Brent's ruling 1 (2026-09-23): the demo's round use areas
+146-05 (2026-09-23): the demo's round use areas
 say Center Pivot.
 
 `seed_merced_pivot_irrigation` sets `parcels.ParcelIrrigationMethod` to the

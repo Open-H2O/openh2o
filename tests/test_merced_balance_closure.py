@@ -2,7 +2,7 @@
 """Hermetic proof that the per-parcel books stay within a REALISTIC residual band.
 
 This is the v1.10 capstone invariant (Phase 58-03, ISS-057 / ISS-054), rewritten
-from 58-01's strict-closure form to the CORRECTED acceptance bar (58-02, Brent's
+from 58-01's strict-closure form to the CORRECTED acceptance bar (58-02, the
 domain input): real water accounting never closes to zero — deficit irrigation,
 salt-flush flooding, shallow-groundwater / stream-adjacent rootzone supplement, and
 conveyance loss all leave a nonzero residual in BOTH directions. The bar a demo
@@ -532,7 +532,7 @@ def test_diversion_reach_journey_does_not_move_basin_closure():
 #
 # The parcel pane's badge words are Estimated / Residual / Deficit, and no word
 # on a metered field (148-03, 2026-09-28; DESIGN.md rule 12, the Residual row).
-# Residual / Deficit are the words Brent set on 2026-09-05: "Surplus" read as
+# Residual / Deficit are the words set on 2026-09-05: "Surplus" read as
 # good news to the one audience the platform is for, and on this pane a
 # positive residual is the opposite, water recorded arriving that the parcel's
 # uses do not account for. "Balanced" retired the same day the badge began to
@@ -658,7 +658,7 @@ def test_parcel_pane_states_one_subtraction_with_the_badge_inside_it():
     )
     assert "Surplus" not in html, (
         "the parcel pane still says Surplus; the badge word is Residual "
-        "(Brent, 2026-09-05; DESIGN.md rule 12)"
+        "(2026-09-05; DESIGN.md rule 12)"
     )
 
 

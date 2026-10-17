@@ -68,7 +68,7 @@
         <div class="field-group">
           <div class="field-label field-row">
             Storage season
-            {# 150.1-02 screen 8, every sentence on this page approved by Brent 2026-10-13 08:08 PDT ("Yes - and the rest of the rows are approved."): the column-name pop-out deleted; nothing reads the storage season. #}
+            {# 150.1-02: the column-name pop-out deleted; nothing reads the storage season. #}
           </div>
           <div class="field-value">{{ water_right.storage_season_display|blank }}</div>
         </div>
@@ -76,7 +76,7 @@
         <div class="field-group">
           <div class="field-label field-row">
             Max rate (cfs)
-            {# 150.1-02 screen 8: pop-out deleted; nothing reads the right's max rate. #}
+            {# 150.1-02: pop-out deleted; nothing reads the right's max rate. #}
           </div>
           <div class="field-value">{% if water_right.max_rate_cfs %}{{ water_right.max_rate_cfs|floatformat:2 }} cfs{% else %}{{ ""|blank }}{% endif %}</div>
         </div>
@@ -94,7 +94,7 @@
         <div class="field-group">
           <div class="field-label field-row">
             Net acreage
-            {# 150.1-02 screen 8: pop-out deleted; nothing reads the net acreage. #}
+            {# 150.1-02: pop-out deleted; nothing reads the net acreage. #}
           </div>
           <div class="field-value">{% if water_right.net_acreage %}{{ water_right.net_acreage|floatformat:2|intcomma }}{% else %}{{ ""|blank }}{% endif %}</div>
         </div>
@@ -102,7 +102,7 @@
         <div class="field-group">
           <div class="field-label field-row">
             Priority date
-            {# 150.1-02 screen 8: pop-out deleted; it explained seniority, and nothing reads the priority date. #}
+            {# 150.1-02: pop-out deleted; it explained seniority, and nothing reads the priority date. #}
           </div>
           <div class="field-value">
             {% if water_right.priority_date %}{{ water_right.priority_date|date:"M d, Y" }}{% else %}&mdash;{% endif %}
@@ -199,14 +199,14 @@
               <div class="budget-seg budget-seg--result">
                 <div class="budget-seg-label">Remaining</div>
                 <div class="budget-seg-value {% if remaining >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ remaining|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
-                {# 150.1-02 screen 8: the note under Remaining deleted; the row already shows the subtraction. #}
+                {# 150.1-02: the note under Remaining deleted; the row already shows the subtraction. #}
               </div>
             </div>
             {% if pod_breakdown %}
             {% comment %}
               Recorded's parts, under the row rather than inside its cell: a
               point of diversion's id and name ran the cell's rows across the
-              divider into Remaining (Brent's screenshot, 2026-09-13 10:58).
+              divider into Remaining.
             {% endcomment %}
             <div class="budget-breakdown-group budget-breakdown-group--under">
               <div class="budget-breakdown-title">Recorded, by point of diversion</div>

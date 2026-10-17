@@ -6,7 +6,7 @@ shared sources / 3 flagged / gap threshold 15 points" summary was 13px text
 over the period selector, Gap printed a raw fraction (0.0804) against a rule
 stated in points, and nothing marked Gap as the derived column. After: a
 flagged-only filter sits beside the period selector, the flagged count is the
-one large (32px) figure in a two-peer panel (the shape Brent accepted on the
+one large (32px) figure in a two-peer panel (the shape used on the
 lab-result page), and the table reads shares and Gap both in percent /
 percentage points, Gap bracketed off as the derived column.
 

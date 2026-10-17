@@ -43,10 +43,7 @@ _SEGMENT = re.compile(r"^[A-Z0-9-]+$")
 
 
 def compose_ps_code(pwsid, facility_id, point_number):
-    """The messages are 150.1-02 screen 18 message U, approved by Brent
-    2026-10-15 08:59 PDT.
-
-Build the ``{pwsid}_{facility_id}_{point_number}`` composite.
+    """Build the ``{pwsid}_{facility_id}_{point_number}`` composite.
 
     Segments are stripped and upper-cased — DDW publishes fixed-width padded
     fields, and operator input arrives however it arrives, but the stored code

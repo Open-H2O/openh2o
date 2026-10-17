@@ -1,14 +1,11 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Curtailment is not a feature of OpenH2O (150.5-01).
 
-Brent, 2026-10-12 17:40 PDT: "I don't understand the value of having curtailment
-involved with OpenH2O at all. I don't see how this helps a water manager or the
-water balance."; 17:47: "Lets get rid fo curtailments entirely." The order's one
+Curtailment orders were removed entirely: they did not help a water manager or
+the water balance. The removal's one
 effect on a figure, no estimate for an unmetered point in a month it covered, is
 what a typed delivery record of 0 does (tests/test_diversion_estimate.py).
 
-The lines that changed with it were approved at 19:17 ("looks good", the help
-sentence) and 19:24 ("approved", the rest).
 """
 import importlib
 
@@ -65,8 +62,7 @@ def test_the_orders_page_is_gone(client_in):
 
 def test_the_help_sentence_is_the_approved_one(client_in):
     body = client_in.get(reverse("methods")).content.decode()
-    # Replaced 2026-10-13 08:17 PDT (Brent "yes, approved", 150.1-02 screen 8)
-    # when a diversion with no linked right began to be estimated.
+    # Replaced (150.1-02) when a diversion with no linked right began to be estimated.
     assert (
         "OpenH2O estimates no delivery at a diversion whose water right is "
         "inactive or revoked."

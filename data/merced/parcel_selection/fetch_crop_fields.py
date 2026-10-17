@@ -6,8 +6,8 @@ build the parcel-picker GeoPackage.
 WHY this exists: parcel placement kept landing on towns/bare ground because
 the platform's geometry has no land-use layer. This pulls California's real
 surveyed crop fields (DWR i15, 2023 final) — real boundaries, real crop
-types — so Brent can SELECT the fields each diversion serves on satellite
-imagery instead of Claude guessing coordinates.
+types — so a person can SELECT the fields each diversion serves on satellite
+imagery instead of coordinates being guessed.
 
 Output: merced_parcel_picker.gpkg with layers
   - crop_fields : real DWR fields clipped to the subbasin, irrigated ag only,
@@ -122,7 +122,7 @@ def main():
     gdf["crop_class"] = gdf["_cls"].map(CLASS_NAMES).fillna("Other")
     gdf = gdf.drop(columns=["_cls"])
 
-    # Columns Brent fills in. served_by = which diversion feeds this field;
+    # Columns the picker fills in. served_by = which diversion feeds this field;
     # water_source = surface (canal only) / groundwater (well only) /
     # conjunctive (both) — this is the within-valley simple-vs-complex story.
     gdf["served_by"] = ""

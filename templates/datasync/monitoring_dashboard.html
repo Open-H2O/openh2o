@@ -22,7 +22,6 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Monitoring Dashboard</span>
   </nav>
-  {% comment %} Brent 2026-10-16 05:10, 150.1-02 screen 15 message A rows 1 and 2. {% endcomment %}
   <p class="page-description">This page shows how recently each monitoring station reported and when OpenH2O last synced each data source. The page refreshes every minute.</p>
   {% if boundary_name %}<p class="text-secondary text-sm" style="margin-top: 0;">This site's boundary is {{ boundary_name }}.{% if outside_count %} {{ outside_count }} of the {{ total_active }} active station{{ total_active|pluralize }} lie{{ outside_count|pluralize:"s," }} outside the boundary.{% endif %}</p>{% endif %}
 </div>

@@ -15,7 +15,7 @@ embedded table. "Absent" must read as *Absent*, not 0 and not "< RL".
 **No verdicts.** No page here may compare a result against a limit, or render a
 ``RegulatoryLimit`` beside a value. The fixture creates a federal limit that
 would be exceeded precisely so the assertion is real rather than vacuous. Since
-ISS-140 was ruled "beside" (Brent, 2026-09-22 07:31 PDT, 146-04 Task 1) the
+ISS-140 was ruled "beside" (2026-09-22, 146-04 Task 1) the
 limit the laboratory's FILE carried on a row IS shown beside the finding, as
 reported and uncompared; ``tests/test_limits_as_reported.py`` holds that side,
 including the proof that a finding above the file's limit renders with the
@@ -280,8 +280,7 @@ class TestResultsRenderHonestly:
         assert "&lt; 0.002" in html
         assert "mg/L" in html
         text = _squash(html)
-        # One caption for every kind of result (150.1-02 screen 14 row 8,
-        # Brent 2026-10-14 15:37 PDT); the "<" is the bound.
+        # One caption for every kind of result (150.1-02); the "<" is the bound.
         assert "as reported by the laboratory" in text
 
     def test_a_stored_decimal_never_shows_precision_nobody_measured(
@@ -333,7 +332,7 @@ class TestNoComplianceVerdict:
     def test_the_files_limit_is_shown_and_the_federal_tables_is_not(
         self, client_in, sampled_system, page
     ):
-        """Rewritten for the ISS-140 ruling, "beside" (2026-09-22 07:31 PDT).
+        """Rewritten for the ISS-140 ruling, "beside" (2026-09-22).
 
         Before the ruling this test asserted that no limit rendered at all.
         Now the limit the laboratory's file carried is shown beside the
@@ -347,7 +346,7 @@ class TestNoComplianceVerdict:
         numeric.save()
 
         html = client_in.get(_urls(sampled_system)[page]).content.decode()
-        # 150.1-02 screen 14 row 4 (Brent 2026-10-14 15:37 PDT).
+        # 150.1-02.
         assert "in the lab file" in html
         assert "the laboratory&#x27;s file carried" not in html
         assert "10 mg/L" in html or ">10<" in html
@@ -509,7 +508,7 @@ class TestConsumerConfidenceReportLink:
                 reverse("drinking:result_detail", args=[sampled_system["numeric"].pk])
             ).content.decode()
         )
-        # 150.1-02 screen 14 row 11 (Brent 2026-10-14 15:37 PDT): the line
+        # 150.1-02: the line
         # says which year the report covers and no longer explains what a
         # Consumer Confidence Report is.
         prose = " ".join(re.sub(r"<[^>]+>", " ", text.replace("&#x27;", "'")).split())

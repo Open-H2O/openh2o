@@ -114,8 +114,7 @@ def _coded(value, choices, field_name, warnings):
 
     ``field_name`` is the READER'S name for the field ("the system type",
     "facility 010's water type"), because the note reaches the onboarding
-    review verbatim. Wording approved by Brent 2026-10-14 13:04 PDT (150.1-02
-    screen 12, message C row 4); it used to name the model field (pws_type).
+    review verbatim. It used to name the model field (pws_type) (150.1-02).
 
     An unrecognised code is REPORTED and dropped, never stored. The code lists
     in ``drinking/models.py`` are transcribed from published DDW and EPA

@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
 Set parcels.ParcelIrrigationMethod to the seeded "Center Pivot" row on every
-use area whose outline is visibly a circle (146-05 checkpoint, Brent's
-ruling 1, 2026-09-23).
+use area whose outline is visibly a circle (146-05, 2026-09-23).
 
 WHY: MER-APN-001 through MER-APN-009 are round on the aerial map -- a center
 pivot's own signature, and the reason a reader can tell just by looking.

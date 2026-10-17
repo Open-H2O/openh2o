@@ -202,7 +202,7 @@ class TestValidateRows:
     def test_non_numeric_value_names_the_field(self):
         rows = [{"name": "Bad Casing", "lat": "37.2", "lon": "-119.5", "reg_id": "", "casing": "abc", "pump": ""}]
         results = importer.validate_rows(rows, self._mapping(), "well", set())
-        # Brent, message X (2026-10-15 18:25): the field in plain words.
+        # The field in plain words.
         assert "The casing diameter is 'abc', which is not a number." in results[0]["errors"]
 
     def test_missing_location_is_error(self):
@@ -214,7 +214,7 @@ class TestValidateRows:
         )
 
     def test_unknown_choice_is_imported_without_it_and_noted(self):
-        """Brent, message Y (2026-10-15 18:35): an off-list pump type was saved
+        """An off-list pump type was saved
         as written, an invalid choice; now the well imports without it."""
         rows = [{"name": "Odd Pump", "lat": "37.2", "lon": "-119.5", "reg_id": "", "casing": "", "pump": "rocket"}]
         results = importer.validate_rows(rows, self._mapping(), "well", set())

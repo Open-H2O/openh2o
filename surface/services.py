@@ -500,7 +500,7 @@ def allocate_district_delivery(
     row, and the figures of each month are stored there (replaced on every run,
     removed when the month has no record left).
 
-    **The remainder rule (149-01, Brent 2026-09-28).** A served field with a
+    **The remainder rule (149-01).** A served field with a
     recorded delivery of its own for the month (one or more ``surface_diversion``
     rows with ``divided_from_headgate=False``) keeps it. The split divides only
     the REMAINDER, ``max(0, available - own_total)``, among the served

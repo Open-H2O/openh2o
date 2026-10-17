@@ -48,8 +48,7 @@ def not_applicable(category: str, module: str, subject: str) -> dict:
     module is absent — and is no longer the thing the UI branches on. That was
     the workaround while the field had only three values.
     """
-    # Brent, 150.1-02 screen 16 message A row 4 (2026-10-16 06:39): the
-    # module in words, never its key.
+    # The module in words, never its key.
     return {
         "category": category,
         "status": "skipped",
@@ -127,7 +126,7 @@ def check_database():
 
             counts["water_accounts"] = WaterAccount.objects.count()
         # With every counted module off, the honest sentence is the bare fact
-        # this check exists to establish. Brent, screen 16 message A row 6.
+        # this check exists to establish.
         held = f", which holds {_and(phrases)}" if phrases else ""
         return {
             "category": "database",
@@ -175,8 +174,8 @@ def check_disk():
             details[label] = {"error": str(e)}
             worst_status = "red"
 
-    # Brent, screen 16 message A row 7; its first sentence as reworded
-    # 2026-10-16 09:01 (on Docker Desktop the disk is Docker's own).
+    # The first sentence was reworded 2026-10-16 (on Docker Desktop the disk
+    # is Docker's own).
     base = details.get("base_dir", {})
     if "error" in base:
         msg = f"OpenH2O cannot read the disk's size. Details: {base['error']}"
@@ -214,7 +213,6 @@ def check_sync_freshness():
         return {
             "category": "sync_freshness",
             "status": "green",
-            # Brent, 150.1-02 screen 16 message B row 5 (2026-10-16 07:07).
             "message": (
                 "This demonstration site restores its data every night, so "
                 "OpenH2O does not check how recently each data source synced."
@@ -240,7 +238,7 @@ def check_sync_freshness():
     # Row 4: a source waiting for its API key is not counted, as the
     # monitoring dashboard shows it (it was action required here).
     waiting_for_key = []
-    # Brent, screen 16 message C row 1 (2026-10-16 20:23): a source with no
+    # A source with no
     # station turned on is not counted (the dashboard says "None activated").
     no_station_on = []
 
@@ -284,7 +282,6 @@ def check_sync_freshness():
                 "status": source_status,
             }
 
-    # Brent, 150.1-02 screen 16 message B row 4 (2026-10-16 07:07).
     counted = {
         c: v for c, v in details.items()
         if v["status"] not in ("needs_key", "no_station_on")
@@ -362,7 +359,7 @@ def check_ledger_integrity():
     # Use Ledger tells about those rows in its Description column, so a reader
     # who meets the count here and the rows there reads one story instead of
     # two different words for the same fact.
-    # Brent, 150.1-02 screen 16 message B row 6 (2026-10-16 07:07): a month
+    # A month
     # with no ETAW met by groundwater is a normal month, so it is healthy on
     # every site (it asked for attention outside the demo).
     if orphan_count > 0:
@@ -427,7 +424,6 @@ def check_orphans():
 
         details["monitored_stations"] = MonitoredStation.objects.count()
 
-    # Brent, 150.1-02 screen 16 message B row 7 (2026-10-16 07:07).
     if unassigned_parcels > 0:
         status = "yellow"
         have = "has" if unassigned_parcels == 1 else "have"
@@ -452,7 +448,7 @@ def check_ssl():
     domain = getattr(settings, "SITE_DOMAIN", None)
     target = (domain or (hosts[0] if hosts else "")).lstrip(".")
 
-    # Brent, 150.1-02 screen 16 message B row 2 (2026-10-16 07:07): a site
+    # A site
     # reached at a name that is not a public domain (one computer, an office
     # network) has no certificate to check. It was action required forever.
     if not _is_public_domain(target):
@@ -540,7 +536,6 @@ def check_docker():
             return {
                 "category": "docker",
                 "status": "green",
-                # Brent, screen 16 message A row 8.
                 "message": (
                     f"OpenH2O is connected to {actual_name}, the database named "
                     "in OpenH2O's settings."
@@ -578,7 +573,6 @@ def check_migrations():
             return {
                 "category": "migrations",
                 "status": "green",
-                # Brent, 150.1-02 screen 16 message B row 3 (2026-10-16 07:07).
                 "message": "The database has every update this version of OpenH2O needs.",
                 "details": {"unapplied_count": 0},
             }
@@ -663,8 +657,7 @@ def check_cache_duplication():
         "use_areas": use_areas,
     }
 
-    # Brent, 150.1-02 screen 16 message B row 8 (2026-10-16 07:07): the
-    # engine reads the newer estimate (accounting/steps.py), so no figure is
+    # The engine reads the newer estimate (accounting/steps.py), so no figure is
     # overstated; attention needed, not action required.
     if use_areas:
         status = "yellow"
@@ -727,8 +720,7 @@ def check_pod_fractions():
 
     details = {"pods_checked": len(sums), "offenders": offenders[:20]}
 
-    # Brent, 150.1-02 screen 16 message B row 9 (2026-10-16 07:07): the
-    # shares divide a canal's water only in a month with no ETAW on any of
+    # The shares divide a canal's water only in a month with no ETAW on any of
     # its use areas, so attention needed, not action required.
     n_points = len(sums)
     if offenders:
@@ -796,8 +788,7 @@ def check_unallocated_delivery():
         "largest": worst,
     }
 
-    # Brent, screen 16 message C row 2 (2026-10-16 20:23): his approved run
-    # note's words (2026-10-12 15:18), the points of diversion named first.
+    # The run note's words (2026-10-12), the points of diversion named first.
     if count:
         status = "yellow"
         points = rows.values("point_of_diversion").distinct().count()
@@ -860,7 +851,7 @@ def check_period_month_alignment():
 
     details = {"periods_checked": ReportingPeriod.objects.count(), "offenders": offenders}
 
-    # Brent, screen 16 message C row 3 (2026-10-16 20:23): name the day.
+    # Name the day.
     if offenders:
         status = "yellow"
         parts = []
@@ -1074,7 +1065,6 @@ def check_et_meter_agreement():
         return {
             "category": "et_meter_agreement",
             "status": "green",
-            # Brent, screen 16 message C row 6 (2026-10-16 20:23).
             "message": (
                 "No metered use area has water metered or delivered, so OpenH2O "
                 "cannot compare ETAW with it."
@@ -1087,7 +1077,7 @@ def check_et_meter_agreement():
     details["total_consumptive_use_af"] = str(total_cu)
     details["total_applied_water_af"] = str(total_applied)
 
-    # Brent, screen 16 message C rows 4 to 6 (2026-10-16 20:23). The ratio
+    # The ratio
     # is ETAW (net consumptive use: gross ET less effective precipitation)
     # over the water metered or delivered.
     pct = (aggregate * 100).quantize(Decimal("0.1"))
@@ -1180,7 +1170,6 @@ def check_calculation():
         .first()
     )
     if stuck:
-        # Brent, screen 16 message C row 8 (2026-10-16 20:23).
         sentence = (
             "The calculation stopped without finishing, probably because the "
             "server restarted. Run it again from the water year's page."

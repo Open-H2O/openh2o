@@ -1,6 +1,6 @@
 """No screen or operator document may imply a working filing path (ISS-209).
 
-CLAUDE.md, Brent 2026-08-05: GEARS and CalWATRS cannot currently accept a file
+CLAUDE.md, 2026-08-05: GEARS and CalWATRS cannot currently accept a file
 this platform produces, so "ready-to-file", "prepares the filing" and any upload
 instruction are overclaims. The report page's "OpenH2O prepares your filing"
 came back after every earlier removal because tests/test_state_exports.py

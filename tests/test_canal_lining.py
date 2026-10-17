@@ -2,8 +2,8 @@
 """
 150.3-01 Task 1: a point of diversion's lining sets its default seepage share.
 
-Brent, 2026-10-11 11:50 PDT: "Yes, lets add lined, unlined, and pipe choice to
-each point of diversion to help with seepage calcs." A point whose losses are
+Each point of diversion has a lined, unlined or pipe choice to help with
+seepage calcs. A point whose losses are
 still the platform's default takes 25 percent seepage if unlined, 5 percent if
 lined and 0 if pipe. A share marked as measured or estimated is never
 overwritten, and a point whose lining is not stated keeps whatever
@@ -140,7 +140,7 @@ def test_lining_choices():
 
 
 # ---------------------------------------------------------------------------
-# Task 3: a pipe's default evaporation is 0 (Brent 2026-10-11 16:40 PDT)
+# Task 3: a pipe's default evaporation is 0
 # ---------------------------------------------------------------------------
 
 
@@ -301,8 +301,8 @@ def test_demo_lining_command_sets_each_named_point_once():
 def test_demo_lining_command_replaces_the_note_that_named_a_district():
     """A re-run takes out the first-built note and keeps the point's own notes.
 
-    The first build appended a note naming a real district (Brent 2026-10-11
-    17:51 PDT rejected it). The El Nido intake's own description sat before it.
+    The first build appended a note naming a real district (since removed).
+    The El Nido intake's own description sat before it.
     """
     from core.management.commands.seed_merced_pod_lining import (
         LINING_BY_POD,
