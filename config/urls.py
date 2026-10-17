@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 from django.conf import settings
 from django.contrib import admin
+from django.http import Http404
 from django.urls import include, path
 
 from core.modules import enabled_modules, url_specs_for
@@ -22,6 +23,11 @@ _module_urls = [
     path(prefix, include(url_module))
     for prefix, url_module in url_specs_for(enabled_modules())
 ]
+
+
+def _removed_page(request, *args, **kwargs):
+    raise Http404
+
 
 # Everything below is hand-written and NOT module-owned: the Django admin,
 # allauth, the root index, the static help/about pages, the nav-mode toggle and
@@ -45,6 +51,11 @@ urlpatterns = [
     path("accounts/google/login/", google_login_guard),
     path("accounts/google/login/callback/", google_callback_guard),
     path("accounts/google/login/token/", google_login_by_token_guard),
+    # allauth's email page is removed (Brent, ISS-248, 2026-10-17 05:12: one
+    # address per person, and only an administrator changes it, on the Users
+    # page). Declared before allauth's mount for the same reason as the guards
+    # above, and unnamed for the same reason.
+    path("accounts/email/", _removed_page),
     path("accounts/", include("allauth.urls")),
 ] + _module_urls + [
     path("about/", about, name="about"),

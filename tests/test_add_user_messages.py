@@ -46,9 +46,9 @@ def test_page_words(admin_client):
         "address and the password you set here."
     ) in body
     assert (
-        "OpenH2O does not email the person you add, so give them the password "
-        "yourself. They can sign in right away and change the password on their "
-        "profile page."
+        # ISS-248 (Brent 2026-10-17 05:47): "yourself" struck as rude.
+        "OpenH2O does not email the person you add. They can sign in right away "
+        "and change the password on their profile page."
     ) in body
     assert "Sign-in &amp; Security" not in body and "Sign-in & Security" not in body
     assert 'placeholder="name@example.com"' in body

@@ -46,7 +46,11 @@ class TestTheRosterWordsItsOwnRow:
         _user("roster-host-admin", is_staff=True)
         client = _client_for(me)
         html = client.get(reverse("core:users_list")).content.decode()
-        assert "Your account. Another administrator changes your role or status." in html
+        # ISS-248 message B row 5 (Brent 2026-10-17 05:47).
+        assert (
+            "You cannot change your own role, status or email address. "
+            "Another administrator can."
+        ) in html
         assert "Host administrator; managed outside this page." in html
         # The old shape left the cell reading "You" and nothing else.
         assert ">You<" not in html

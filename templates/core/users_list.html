@@ -70,14 +70,14 @@
           </td>
           <td class="th-right">
             {% if u == request.user %}
-              <span class="value-empty">Your account. Another administrator changes your role or status.</span>
+              <span class="value-empty">You cannot change your own role, status or email address. Another administrator can.</span>
             {% elif u.is_staff %}
               <span class="value-empty">Host administrator; managed outside this page.</span>
             {% elif not user_can_write %}
               <span class="value-empty">View only.</span>
             {% else %}
             <div class="row-start" style="gap: var(--space-xs); justify-content: flex-end; flex-wrap: wrap;">
-              <form method="post" action="{% url 'core:user_set_role' u.pk %}" class="row-start" style="display:inline-flex; gap: var(--space-xs);">
+              <form method="post" action="{% url 'core:user_set_role' u.pk %}" class="row-start" style="display:inline-flex; gap: var(--space-xs); flex-wrap: wrap; justify-content: flex-end;">
                 {% csrf_token %}
                 <label class="sr-only" for="role-{{ u.pk }}">Role for {{ u.email|default:u.username }}</label>
                 <select name="role" id="role-{{ u.pk }}" class="form-select form-select--compact">
@@ -93,6 +93,8 @@
                   {% if u.is_active %}Deactivate{% else %}Reactivate{% endif %}
                 </button>
               </form>
+              {% comment %} ISS-248 message B row 4 (Brent 2026-10-17 05:47). {% endcomment %}
+              <a href="{% url 'core:user_email_edit' u.pk %}" class="btn-secondary btn-sm">Change email</a>
             </div>
             {% endif %}
           </td>

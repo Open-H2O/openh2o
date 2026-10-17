@@ -2,7 +2,6 @@
 import os
 
 from django.conf import settings
-from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.http import Http404
@@ -679,7 +678,10 @@ def profile(request):
         form = ProfileForm(request.POST, instance=request.user)
         if form.is_valid():
             form.save()
-            messages.success(request, "Profile updated.")
+            # No message here: the profile now shows messages (ISS-248, for
+            # "You changed your password."), and "Profile updated." was never
+            # one Brent approved. It never showed on this page before; it waited
+            # and surfaced on the next page that shows messages.
             return redirect("profile")
     else:
         form = ProfileForm(instance=request.user)

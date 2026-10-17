@@ -18,6 +18,7 @@ reached. See ``config/settings/base.py`` under "-- Signup email verification".
 """
 from allauth.account.adapter import DefaultAccountAdapter
 from django.conf import settings
+from django.urls import reverse
 
 
 # allauth message templates we don't want surfaced. allauth pushes a Django
@@ -33,12 +34,36 @@ _SUPPRESSED_MESSAGES = {
 }
 
 
+# A password reset ends signed out on a page with its own approved sentence
+# (screen 18 message AB row 11), and no signed-out page shows messages, so
+# allauth's "password changed" message would wait in the session and surface
+# on the next signed-in page that shows messages, out of context.
+_SIGNED_IN_ONLY_MESSAGES = {"account/messages/password_changed.txt"}
+
+
 class AccessControlledAccountAdapter(DefaultAccountAdapter):
+    # ISS-248 message A row 9 (Brent 2026-10-17 05:31): was "Please type your
+    # current password."
+    error_messages = {
+        **DefaultAccountAdapter.error_messages,
+        "enter_current_password": "The current password does not match your account.",
+    }
+
     def is_open_for_signup(self, request):
         return not settings.ACCESS_CONTROL_ENFORCED
 
+    def get_password_change_redirect_url(self, request):
+        # ISS-248 message A row 11: Change password and Set a password return
+        # to the profile, which shows the sentence.
+        return reverse("profile")
+
     def add_message(self, request, level, message_template=None, *args, **kwargs):
         if message_template in _SUPPRESSED_MESSAGES:
+            return
+        if (
+            message_template in _SIGNED_IN_ONLY_MESSAGES
+            and not getattr(getattr(request, "user", None), "is_authenticated", False)
+        ):
             return
         return super().add_message(
             request, level, message_template, *args, **kwargs

@@ -5,19 +5,26 @@ from decimal import Decimal, InvalidOperation
 from allauth.account.models import EmailAddress
 from django import forms
 from django.contrib.auth.password_validation import validate_password
+from django.core.validators import EmailValidator
 
 from core.constants import RECOVERY_HORIZON_CHOICES
 from core.history import CHANGE_NOTE_HELP, NOTE_MAX_LENGTH
 from core.models import SiteConfig, User
 
+# ISS-248 message B row 9 (Brent 2026-10-17 05:47): replaces Django's "Enter a
+# valid email address." on every form where an administrator types an address.
+INCOMPLETE_EMAIL_VALIDATOR = EmailValidator(
+    message="%(value)s is not a complete email address."
+)
+
 
 class ProfileForm(forms.ModelForm):
     """Edit the user's own contact details.
 
-    Deliberately excludes email and password -- those are auth-sensitive and are
-    managed through django-allauth's own pages (Email Management and Change
-    Password), which keep allauth's EmailAddress table in sync. The profile page
-    links to those rather than duplicating them here.
+    Deliberately excludes email and password. The email address is the sign-in
+    name and only an administrator changes it, on the Users page
+    (:class:`UserEmailForm`; Brent, ISS-248, 2026-10-17); the password has its
+    own page, linked from the profile.
     """
 
     class Meta:
@@ -131,6 +138,8 @@ class UserCreateForm(forms.ModelForm):
         # email IS the login, so require it on the form.
         self.fields["email"].required = True
         self.fields["email"].error_messages["required"] = "Enter the email address."
+        # ISS-248 message B row 9 (Brent 2026-10-17 05:47), on Add user too.
+        self.fields["email"].validators = [INCOMPLETE_EMAIL_VALIDATOR]
 
     def clean_email(self):
         # Brent, 150.1-02 screen 17 message A row 8: an address on file as any
@@ -180,6 +189,75 @@ class UserRoleForm(forms.Form):
     """The Users screen's per-row role control (147-02)."""
 
     role = forms.ChoiceField(choices=ROLE_CHOICES)
+
+
+def email_on_file(email, exclude_user=None):
+    """Whether ``email`` is any account's address, in either table.
+
+    allauth signs a person in by any of their ``EmailAddress`` rows and falls
+    back to ``User.email`` (and the username here mirrors the email), so an
+    address counts as taken if any of the three holds it.
+    """
+    users = User.objects.filter(email__iexact=email) | User.objects.filter(
+        username__iexact=email
+    )
+    rows = EmailAddress.objects.filter(email__iexact=email)
+    if exclude_user is not None:
+        users = users.exclude(pk=exclude_user.pk)
+        rows = rows.exclude(user=exclude_user)
+    return users.exists() or rows.exists()
+
+
+class UserEmailForm(forms.Form):
+    """An administrator changes another person's email address (ISS-248).
+
+    Brent, 2026-10-17: only an administrator changes an address (05:09), and a
+    person has one address (05:12). The person's sign-in name changes with it,
+    so the save rewrites ``User.email``, the username kept in step with it, and
+    allauth's one ``EmailAddress`` row, which is what sign-in reads first.
+    Any second row left from the removed email page goes, so the old address
+    stops signing in.
+    """
+
+    email = forms.EmailField(
+        label="New email address",
+        widget=forms.EmailInput(
+            attrs={"class": "form-input", "placeholder": "name@example.com"}
+        ),
+        error_messages={"required": "Enter the email address."},
+    )
+
+    def __init__(self, *args, target, **kwargs):
+        self.target = target
+        super().__init__(*args, **kwargs)
+        self.fields["email"].validators = [INCOMPLETE_EMAIL_VALIDATOR]
+
+    def clean_email(self):
+        email = self.cleaned_data["email"].strip().lower()
+        if email == (self.target.email or "").lower():
+            raise forms.ValidationError(
+                f"{email} is already this person's email address."
+            )
+        if email_on_file(email, exclude_user=self.target):
+            raise forms.ValidationError(
+                f"The email address {email} already belongs to an account."
+            )
+        return email
+
+    def save(self):
+        from django.db import transaction
+
+        user = self.target
+        email = self.cleaned_data["email"]
+        with transaction.atomic():
+            user.email = email
+            user.username = email
+            user.save(update_fields=["email", "username"])
+            EmailAddress.objects.filter(user=user).delete()
+            EmailAddress.objects.create(
+                user=user, email=email, verified=True, primary=True
+            )
+        return user
 
 
 class DeliverySettingsForm(forms.Form):

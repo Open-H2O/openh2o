@@ -378,10 +378,8 @@ PAGES_WITHOUT_A_DESCRIPTION = {
     "/accounts/3rdparty/": "auth screen — its own heading carries it",
     "/accounts/3rdparty/login/cancelled/": "auth screen — its own heading carries it",
     "/accounts/confirm-email/": "auth screen — its own heading carries it",
-    "/accounts/email/": "auth screen — its own heading carries it",
     "/accounts/inactive/": "auth screen — its own heading carries it",
     "/accounts/logout/": "auth screen — its own heading carries it",
-    "/accounts/password/change/": "auth screen — its own heading carries it",
     "/accounts/password/reset/": "auth screen — its own heading carries it",
     "/accounts/password/reset/done/": "auth screen — its own heading carries it",
     "/accounts/password/reset/key/done/": "auth screen — its own heading carries it",
@@ -505,6 +503,9 @@ EXPECTED_UNREACHABLE = {
     "/accounts/google/login/": "HTTP 404",
     "/accounts/google/login/callback/": "HTTP 404",
     "/accounts/google/login/token/": "HTTP 404",
+    # Removed (ISS-248, Brent 2026-10-17: one address per person, changed by an
+    # administrator on the Users page).
+    "/accounts/email/": "HTTP 404",
     "/accounts/login/": "HTTP 302",
     "/accounts/login/code/confirm/": "HTTP 302",
     "/accounts/password/set/": "HTTP 302",

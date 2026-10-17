@@ -257,6 +257,17 @@ ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
 # OFF only on an open demo where self-registration should stay open. See
 # core.adapters / ISS-021.
 ACCOUNT_ADAPTER = "core.adapters.AccessControlledAccountAdapter"
+# OpenH2O's sentences on allauth's password forms (ISS-248, core/account_forms.py).
+ACCOUNT_FORMS = {
+    "change_password": "core.account_forms.ChangePasswordForm",
+    "set_password": "core.account_forms.SetPasswordForm",
+    "reset_password_from_key": "core.account_forms.ResetPasswordKeyForm",
+    "signup": "core.account_forms.SignupForm",
+}
+# One email address per person (Brent, ISS-248, 2026-10-17 05:12). The page
+# that added a second one is gone (config/urls.py); this holds the rule for
+# any allauth path that could still add one.
+ACCOUNT_MAX_EMAIL_ADDRESSES = 1
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
 SOCIALACCOUNT_PROVIDERS = {}

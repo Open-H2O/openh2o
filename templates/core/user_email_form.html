@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% comment %}
+  ISS-248 message B rows 6 to 9 (Brent 2026-10-17 05:47): an administrator
+  changes another person's email address, the address they sign in with.
+  Laid out like Add user, its neighbour on the Users page.
+{% endcomment %}
+
+{% block title %}Change email address - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Change email address{% endblock %}
+{% block page_head_class %}page-head--medium{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'core:users_list' %}">Administration</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'core:users_list' %}">Users</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Change email address</span>
+  </nav>
+  <p class="page-description">This page changes the email address {{ target.email }} signs in with. The new address takes effect immediately, and the password does not change. OpenH2O does not email the person about the change.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack page-medium">
+
+  <a href="{% url 'core:users_list' %}" class="back-link">&larr; Back to Users</a>
+
+  <div class="card-raised">
+    <form method="post" class="form-grid" novalidate>
+      {% csrf_token %}
+      <div class="form-group form-span-2">
+        <label class="form-label" for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+        <input type="email" name="{{ form.email.html_name }}" id="{{ form.email.id_for_label }}" class="form-input" placeholder="name@example.com" value="{{ form.email.value|default_if_none:'' }}" autocomplete="off">
+        {% for error in form.email.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
+      </div>
+      <div class="form-span-2">
+        <button type="submit" class="btn-primary">Change email address</button>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

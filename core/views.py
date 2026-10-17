@@ -31,6 +31,7 @@ from core.forms import (
     ROLE_ADMINISTRATOR,
     ROLE_CHOICES,
     UserCreateForm,
+    UserEmailForm,
     UserRoleForm,
     apply_role,
     role_of,
@@ -143,6 +144,37 @@ def user_toggle_active(request, pk):
     state = "reactivated" if target.is_active else "deactivated"
     messages.success(request, f"{target.email} {state}.")
     return redirect("core:users_list")
+
+
+@login_required
+@admin_required
+def user_email_edit(request, pk):
+    """Change another person's email address, which is their sign-in name.
+
+    Brent, ISS-248, 2026-10-17: only an administrator changes an address
+    (05:09), one address per person (05:12); the words are message B (05:47).
+    Not your own (the role and status rule, for the same reason: a mistyped
+    address would lock you out with no one to fix it), and not a host
+    administrator's, which the Users page already leaves to the host.
+    """
+    target = get_object_or_404(User, pk=pk)
+    if target == request.user or target.is_staff:
+        raise Http404
+    old_email = target.email
+    if request.method == "POST":
+        form = UserEmailForm(request.POST, target=target)
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                f"You changed the email address from {old_email} to {target.email}.",
+            )
+            return redirect("core:users_list")
+    else:
+        form = UserEmailForm(target=target)
+    return render(
+        request, "core/user_email_form.html", {"form": form, "target": target}
+    )
 
 
 # ---------------------------------------------------------------------------
