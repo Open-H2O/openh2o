@@ -149,22 +149,22 @@ These screenshots are from the live demo at [openh2o.com](https://openh2o.com),
 which runs the Merced Subbasin dataset. Invented sample data carries a *Demo* label
 and appears beside the real published records.
 
-**The accounting dashboard** shows supplies, consumptive use and the balance
-between them for the selected water year, and lists the items that need attention
-at the top.
+**The dashboard** shows the water balance for the water year: supplies by source,
+crop ET from OpenET's satellite estimate, the balance between them, and how many
+accounts are in surplus or in deficit.
 
-![The OpenH2O accounting dashboard, showing supplies minus consumptive use for water year 2024-2025 and an attention strip listing stations down and accounts over budget](docs/screenshots/dashboard.png)
+![The OpenH2O dashboard for water year 2025-2026, showing supplies of 15,173.16 acre-feet by source, crop ET of 16,209.28 acre-feet and a balance of -1,036.12 acre-feet](docs/screenshots/dashboard.png)
 
-**The map** shows the boundary, GSA zones, rivers and canals, parcels, wells,
-points of diversion, recharge sites and drinking-water facilities, each as its own
-layer. On the demo, anyone can open the map without signing in.
+**The map** shows the boundary, management areas, surface service areas, rivers
+and canals, points of diversion, use areas, wells, recharge sites and
+drinking-water facilities, each as its own layer. On the demo, anyone can open the map without signing in.
 
-![The OpenH2O map over aerial imagery of the Merced Subbasin, with a layers panel listing administrative, surface water, land use, drinking water, infrastructure and monitoring layers](docs/screenshots/map.jpg)
+![The OpenH2O map over aerial imagery of the Merced Subbasin, with a Layers panel listing administrative, surface water and land use layers and a legend of three management areas](docs/screenshots/map.jpg)
 
-**The drinking-water module** shows a public water system under its EPA PWSID and
-names the source of every figure.
+**The drinking-water page** shows each public water system under its EPA PWSID
+and names the source of every figure.
 
-![The OpenH2O drinking-water overview for the City of Merced, showing PWSID, system type, owner type and population served, each labelled with its EPA Envirofacts source](docs/screenshots/drinking-water.png)
+![The OpenH2O drinking-water page for the City of Merced, showing its PWSID, system type, owner type and population served, each labeled with its EPA Envirofacts source](docs/screenshots/drinking-water.png)
 
 ---
 
