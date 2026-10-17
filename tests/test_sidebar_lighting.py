@@ -151,6 +151,7 @@ EXPECTED_LIT = {
     "/surface/rights/import/": "Water Rights",
     "/users/": "Users",
     "/users/add/": "Users",
+    "/users/<int:pk>/email/": "Users",
     "/wells/": "Wells",
     "/wells/<int:pk>/": "Wells",
 }
@@ -431,6 +432,14 @@ def walk():
         is_staff=True,
         is_superuser=True,
     )
+    # A second person for the Users routes that act on someone else: Change
+    # email (ISS-248) refuses your own account and a host administrator's.
+    rows.other_user = get_user_model().objects.create_user(
+        username="lighting-walk-other@example.org",
+        email="lighting-walk-other@example.org",
+        password="a-good-passw0rd",
+        is_active=True,
+    )
     return rows
 
 
@@ -451,7 +460,7 @@ PK_ROW_BY_PREFIX = (
     ("/surface/device/", "device"),
     ("/surface/diversion/", "pod"),
     ("/surface/rights/", "right"),
-    ("/users/", "user"),
+    ("/users/", "other_user"),
     ("/wells/", "well"),
 )
 
