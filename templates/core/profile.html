@@ -66,9 +66,15 @@
         {% comment %} ISS-248 message A rows 1 and 2 (Brent 2026-10-17 05:31): only an
              administrator changes an address, on the Users page, and the email
              page is gone. {% endcomment %}
+        {% comment %} Brent 2026-10-17 10:43 ("A"): no email line for a host
+             administrator. Its address and password come from the server's
+             settings at every start (ensure_superuser), and the Users page
+             leaves its row alone, so neither line would be true for it. {% endcomment %}
+        {% if not user.is_staff %}
         <p class="text-sm text-secondary mb-md">
             {% if user.is_administrator %}Another administrator can change your email address on the Users page.{% else %}Ask an administrator to change your email address.{% endif %}
         </p>
+        {% endif %}
         <div class="row-start" style="gap: var(--space-sm); flex-wrap: wrap;">
             <a href="{% url 'account_change_password' %}" class="btn-secondary">Change password</a>
         </div>

@@ -73,6 +73,15 @@ def test_profile_card_for_an_administrator():
     assert "Ask an administrator to change your email address." not in body
 
 
+def test_profile_card_for_a_host_administrator():
+    # Brent 2026-10-17 10:43 ("A"): neither line is true for the account the
+    # server's settings create, so it shows only the Change password button.
+    host = _person("probe.host@example.com", is_staff=True, is_superuser=True)
+    body = _body(_client(host).get(reverse("profile")))
+    assert "change your email address" not in body
+    assert ">Change password</a>" in body
+
+
 def test_saving_the_profile_shows_no_unapproved_sentence():
     client = _client(_person("probe.save@example.com"))
     response = client.post(
