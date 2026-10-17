@@ -16,7 +16,9 @@
 {% block content %}
 <div class="page-medium">
 
-    {% include "partials/_messages.html" %}
+    {% comment %} The same gap as the space between the two cards (seen on
+         staging 2026-10-17: the line sat flush on the card). {% endcomment %}
+    {% if messages %}<div style="margin-bottom: var(--space-lg);">{% include "partials/_messages.html" %}</div>{% endif %}
 
     <div class="card-raised">
         {% comment %} Was "Profile" under the title "Your profile" (Phase 143-02, copy rule 13). {% endcomment %}
