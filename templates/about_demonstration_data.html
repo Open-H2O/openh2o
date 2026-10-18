@@ -13,93 +13,99 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Demonstration data</span>
   </nav>
-  <p class="page-description">This page lists where each record on this demonstration comes from.</p>
+  <p class="page-description">This page lists which records on this site are public records, who published each one, and which records were made up for the demonstration.</p>
 </div>
 {% endblock %}
 
 {% block content %}
-<div class="page-stack page-medium">
+{% comment %}
+  2026-10-18 (150.1-03): written whole from the page's reader and purpose
+  (.planning/phases/150.1-fix-the-writing/150.1-03-PAGE-REVIEW-demonstration-data.md)
+  and from the records counted on staging. The reader arrives from the
+  demonstration notice and asks which records are real. Every line is a
+  sentence written subject first; table cells answer their column.
+
+  Pinned by tests/test_demonstration_banner.py and
+  tests/test_drinking_provenance.py: "names no real water district",
+  "Invented sample data", "Groundwater Sustainability Agency boundaries",
+  "names of the agencies and districts", "not a compliance assessment", "it
+  does not compare them and does", the word "label", and the publisher
+  constants below.
+
+  Every publisher named in the public records table uses the EXACT wording of
+  its constant in `drinking/provenance.py` (EPA_SDWIS, DDW_LAB, GAMA). This
+  template deliberately does NOT `{% load drinking_display %}`: `drinking` is
+  truly optional, this page is not, and loading a dropped app's tag library
+  is a TemplateSyntaxError. The strings are literal and the test keeps them
+  honest.
+{% endcomment %}<div class="page-stack page-medium">
 
   <div class="card-raised">
-    <h2 class="section-header">The short version</h2>
+    <h2 class="section-header">What this site holds</h2>
     <p class="about-purpose">
-      This site demonstrates OpenH2O with two kinds of records: public records
-      exactly as their publishers released them, and invented records that show
-      how the accounting works. The two tables below say which records are which.
+      This site shows OpenH2O at work on a real groundwater basin, the Merced
+      Subbasin in the San Joaquin Valley. Its maps, monitoring
+      stations and drinking-water results are public records. Its water
+      accounting is sample data made up for the demonstration, and it
+      names no real water district.
     </p>
     <p class="about-purpose">
-      This site is a demonstration, and nothing on it has regulatory or legal
-      standing.
-    </p>
-    {% comment %}
-      One sentence, in the existing prose voice, no new panel and no coloured
-      callout. It exists because this page and the per-screen labels are now two
-      statements of the same fact, and a reader who arrives here should learn
-      that the answer is also available where the data is; otherwise the labels
-      are a feature only someone who already knows about them will find.
-    {% endcomment %}
-    <p class="about-purpose">
-      Each drinking-water section on the site also carries a label that names
-      who published its values.
+      The site is for trying OpenH2O and has no regulatory or legal standing.
+      On the drinking-water screens, a label on each section names its
+      publisher.
     </p>
   </div>
 
-  {% comment %}
-    Every publisher named in this table uses the EXACT wording of its constant in
-    `drinking/provenance.py`, and `tests/test_drinking_provenance.py` asserts
-    that. Before Phase 101 this page carried three different shapes for the same
-    two publishers ("EPA Envirofacts (SDWIS), PWSID CA2410009", "State Water
-    Board Division of Drinking Water, and GAMA" and "Division of Drinking Water,
-    SDWIS4 export from the EDT Library"), which is exactly the drift a summary
-    page and eight screens produce when nobody owns the words.
-
-    This template deliberately does NOT `{% load drinking_display %}`: `drinking`
-    is truly optional, this page is not, and loading a dropped app's tag library
-    is a TemplateSyntaxError. The strings are literal and the test is what keeps
-    them honest.
-  {% endcomment %}
   <div class="card-raised">
-    <h2 class="section-header">Real published records</h2>
+    <h2 class="section-header">Public records</h2>
     <div class="table-scroll">
       <table class="data-table">
         <thead>
           <tr>
-            <th>What</th>
+            <th>Record</th>
             <th>Published by</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td>The Merced Subbasin boundary (5-022.04)</td>
-            <td>DWR Bulletin 118</td>
+            <td>The Merced Subbasin boundary (basin 5-022.04)</td>
+            <td>California Department of Water Resources (DWR), Bulletin 118</td>
           </tr>
           <tr>
             <td>The three Groundwater Sustainability Agency boundaries</td>
-            <td>DWR SGMA boundary service</td>
+            <td>DWR&rsquo;s SGMA boundary service</td>
           </tr>
           <tr>
-            <td>Rivers, canals and their names</td>
+            <td>Rivers and canals, with their names</td>
             <td>USGS 3D Hydrography Program</td>
           </tr>
           <tr>
-            <td>Monitoring stations</td>
-            <td>USGS, CDEC, DWR, NOAA and CIMIS</td>
-          </tr>
-          <tr>
-            <td>Field shapes</td>
+            <td>Field outlines</td>
             <td>DWR Statewide Crop Mapping, 2023</td>
           </tr>
           <tr>
-            <td>The City of Merced water system and its 61 facilities</td>
-            <td>EPA Envirofacts (SDWIS), PWSID CA2410009</td>
+            <td>Monitoring stations and their readings, one reading a day</td>
+            <td>CDEC, USGS, NOAA, CIMIS and DWR</td>
           </tr>
           <tr>
-            <td>Its 27 sampling points and their locations</td>
-            <td>State Water Board Division of Drinking Water, and the State Water Board GAMA Program</td>
+            <td>Crop evapotranspiration (ET) on each field, October 2024 to September 2025</td>
+            <td>OpenET, from satellite data</td>
           </tr>
           <tr>
-            <td>The City of Merced&rsquo;s published laboratory results from 2023 to 2026</td>
-            <td>State Water Board Division of Drinking Water, SDWIS4 export from the EDT Library</td>
+            <td>Rainfall on each field, October 2024 to September 2025</td>
+            <td>gridMET</td>
+          </tr>
+          <tr>
+            <td>The City of Merced water system (PWSID CA2410009) and its 61 facilities</td>
+            <td>EPA Envirofacts (SDWIS)</td>
+          </tr>
+          <tr>
+            <td>The water system&rsquo;s 27 sampling points and their locations</td>
+            <td>State Water Board Division of Drinking Water, and State Water Board GAMA Program</td>
+          </tr>
+          <tr>
+            <td>The water system&rsquo;s 22,367 laboratory results, June 2023 to May 2026</td>
+            <td>State Water Board Division of Drinking Water, in its SDWIS4 export on the EDT Library</td>
           </tr>
           <tr>
             <td>Drinking-water regulatory limits</td>
@@ -113,55 +119,54 @@
   <div class="card-raised">
     <h2 class="section-header">Invented sample data</h2>
     <p class="about-purpose">
-      Every district, agency, farm and owner in the groundwater and surface
-      water records is invented, so the accounting names no real water district.
-    </p>
-    <p class="about-purpose">
-      The drinking-water section shows real published laboratory results under
-      the City of Merced's real name. The accounting figures on this site belong
-      to invented organizations and say nothing about what the city pumps, owns
-      or owes.
+      The demonstration made up every organization and person in the water
+      accounting, and every figure recorded for them. Several of these records
+      are placed on real land, rivers and canals.
     </p>
     <div class="table-scroll">
       <table class="data-table">
         <thead>
           <tr>
-            <th>What</th>
-            <th>Why it is invented</th>
+            <th>Record</th>
+            <th>How the demonstration made it</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td>Agricultural wells and their construction details</td>
-            <td>Private well records are not published, so the demonstration&rsquo;s wells are invented.</td>
-          </tr>
-          <tr>
             <td>The names of the agencies and districts</td>
-            <td>The boundaries are real and the accounting inside them is invented, so each agency and district carries an invented name.</td>
-          </tr>
-          <tr>
-            <td>Water rights, points of diversion and deliveries</td>
-            <td>The water rights are invented, and their points of diversion lie on real rivers and canals.</td>
+            <td>Each agency and district has a made-up name. The three Groundwater Sustainability Agencies keep their real boundaries.</td>
           </tr>
           <tr>
             <td>Owners, addresses and parcel numbers</td>
-            <td>DWR&rsquo;s crop map shows field shapes without owners or parcel numbers, so every owner, address and parcel number here is invented.</td>
+            <td>The crop map gives the outline of each field and nothing about who owns it. Each field&rsquo;s owner, address and parcel number are made up.</td>
           </tr>
           <tr>
-            <td>Crops on the irrigated fields</td>
-            <td>The demonstration assigns each irrigated field a crop from a short list, so that OpenH2O can work out each field&rsquo;s water balance.</td>
+            <td>Crops</td>
+            <td>Each irrigated field was given a crop from a short list of San Joaquin Valley crops.</td>
           </tr>
           <tr>
-            <td>Water accounts, allocations and the whole ledger</td>
-            <td>These records show how OpenH2O's accounting works, and they hold no real organization's numbers.</td>
+            <td>Wells</td>
+            <td>The 45 wells and their construction details are made up.</td>
           </tr>
           <tr>
-            <td>Meters, calibration dates and account contacts</td>
-            <td>The demonstration invents meters, calibration dates and account contacts so that every detail page is complete.</td>
+            <td>Water rights, points of diversion and deliveries</td>
+            <td>The water rights and deliveries are made up. Each point of diversion is on a real river or canal and carries that waterway&rsquo;s name.</td>
           </tr>
           <tr>
-            <td>Managed recharge events</td>
-            <td>The recharge basin shapes are real, and the volumes are invented.</td>
+            <td>Water accounts, allocations and the Use Ledger</td>
+            <td>The accounts and allocations belong to the made-up organizations. OpenH2O calculated the groundwater figures on the Use Ledger from each field&rsquo;s crop ET and rainfall.</td>
+          </tr>
+          <tr>
+            <td>Crop ET and rainfall, October 2025 to September 2026</td>
+            <td>The demonstration derived these figures from the year before, with half the rainfall, to show a dry year.</td>
+          </tr>
+          <tr>
+            <td>Meters and account contacts</td>
+            <td>The meters and contacts are made up. Each meter&rsquo;s monthly readings add up to the metered groundwater on the Use Ledger.</td>
+          </tr>
+          <tr>
+            <td>Recharge sites and recharge events</td>
+            <td>Each recharge site uses the outline of a real piece of land beside a canal or river. The sites, their events and the volumes recharged are made up.</td>
           </tr>
         </tbody>
       </table>
@@ -169,17 +174,19 @@
   </div>
 
   <div class="card-raised">
-    <h2 class="section-header">How the drinking-water results are shown</h2>
+    <h2 class="section-header">The drinking-water results</h2>
     <p class="about-purpose">
-      The drinking-water section names a real utility and shows its real
-      laboratory results, detections included, as the Division of Drinking
-      Water published them.
+      The drinking-water section shows the City of Merced&rsquo;s laboratory
+      results under the city&rsquo;s real name, detections included, as the
+      Division of Drinking Water published them. The water accounting on this
+      site belongs to the made-up organizations and says nothing about what the
+      city pumps, owns or owes.
     </p>
     <p class="about-purpose">
-      The drinking-water section is not a compliance assessment. OpenH2O
-      records each result and each regulatory limit as separate records; it does not compare them and does
-      not publish a verdict. The regulator judges a water system against each
-      standard.
+      The drinking-water section is not a compliance assessment. OpenH2O keeps
+      each result and each regulatory limit as separate records; it does not compare them and does
+      not publish a verdict. Whether a water system meets a standard is for its
+      regulator to decide.
     </p>
   </div>
 
