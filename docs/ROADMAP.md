@@ -2,73 +2,70 @@
 
 # Roadmap
 
-OpenH2O already does the core job: it manages an agency's water data, and can
-prepare California's required reports when needed. This page is about what comes
-next — and, just as important, what's already finished.
+This page lists the parts of OpenH2O that are finished, the work that is planned, and
+ideas that have not been started. The [README](../README.md) describes everything
+OpenH2O does today.
 
-A bit of background. An earlier version of this roadmap compared OpenH2O against
-a more mature reference system (the Qanat / Groundwater Accounting Platform) and
-listed three big pieces of accounting math as missing. All three have since been
-built, so the list below reflects where the project actually stands.
+OpenH2O keeps an organization's water records and calculates its water accounts. A
+feature that writes figures in California's reporting format is under development
+and switched off by default. OpenH2O does not submit reports to the state.
 
-*For engineers: where a piece is built, the OpenH2O module that holds it is
-linked. The Qanat references are methodology to learn from, not code to copy —
-it's a different technology stack.*
+## Finished
 
-## Already built
+These parts of OpenH2O are built and tested. Each one ends with a link to its code.
 
-These were the three headline gaps in the old roadmap. They're done:
-
-- **The calculation engine.** The math that can turn a satellite
-  evapotranspiration (ET) estimate into a usable groundwater number — one
-  optional way to fill gaps where meters are sparse: subtract effective
-  rainfall, subtract the surface water that was delivered, and so on. Built and
-  tested. *(See
+- **The monthly calculation.** For each field and month, OpenH2O starts from
+  OpenET's satellite estimate of crop water use and subtracts the rain and canal
+  water the crop could use. On a field with a well and no meter volume for the
+  month, what is left is the groundwater consumed that month. Where a well's meter
+  volume for the month is on the ledger, OpenH2O uses that volume. The code is in
   [`accounting/steps.py`](../accounting/steps.py),
-  [`accounting/calculation.py`](../accounting/calculation.py), and
-  [`accounting/services.py`](../accounting/services.py).)*
-- **Multi-year allocations.** Unused water can roll forward to next year (losing
-  a little value if the agency sets a decay rate), and an over-use can be carried
-  as a debt against next year's budget. Built. *(See
-  [`accounting/models.py`](../accounting/models.py) and
-  [`accounting/carryover_math.py`](../accounting/carryover_math.py).)*
-- **Splitting shared water across parcels.** When one diversion serves several
-  fields, the water is divided among them by how much each crop actually needs.
-  Built. *(See [`accounting/allocation_math.py`](../accounting/allocation_math.py).)*
+  [`accounting/calculation.py`](../accounting/calculation.py) and
+  [`accounting/services.py`](../accounting/services.py).
+- **Carry-over between water years.** At the end of a water year, OpenH2O carries
+  each zone's unused allocation into the next water year as a credit, unless the
+  Delivery Settings page is set to let unused allocation expire. OpenH2O always
+  carries an overdrawn allocation into the next water year as a debt, whichever
+  choice is set. The code is in [`accounting/models.py`](../accounting/models.py)
+  and [`accounting/carryover_math.py`](../accounting/carryover_math.py).
+- **Dividing a canal delivery among fields.** OpenH2O keeps each headgate's delivery
+  as one monthly total and divides that total among the fields the headgate serves
+  in proportion to each field's crop water use after rain. No field receives more
+  canal water than its crop could use, and OpenH2O records any water left over
+  against the headgate. The code is in
+  [`accounting/allocation_math.py`](../accounting/allocation_math.py).
+- **A permanent web address for each record.** Each well, point of diversion, use
+  area, water right and other record has a permanent web address on its OpenH2O
+  site, such as `/id/well/12/`. A browser that opens the address shows the record's
+  page. Another program that requests the same address receives the record's
+  details as JSON-LD, a machine-readable format. Geoconnex, the Internet of Water's
+  national index of water features, can list these addresses once an organization
+  registers them, and [DATA-STANDARDS.md](DATA-STANDARDS.md) gives the steps. The
+  code is in [`core/identifiers.py`](../core/identifiers.py).
 
-## Next up: publishing open data
+## Planned: monthly volumes from meter readings
 
-OpenH2O already stores its data in a standards-friendly shape. The remaining work
-is the "out" side — web endpoints that publish that data so other systems can
-read it automatically, without anyone re-keying it. This is deliberately
-scheduled for later (on or after August 2026), but it is the next real feature
-work, not abandoned. Details in [DATA-STANDARDS.md](DATA-STANDARDS.md).
+Meter readings arrive on irregular dates. OpenH2O stores each reading, and the code is
+in [`measurements/models.py`](../measurements/models.py). Today a person enters each
+meter's monthly volume on the ledger, either by typing it or by importing a file. The
+planned step would turn a meter's readings into monthly volumes by spreading the
+water measured from one reading to the next over the days in between.
 
-- **OGC SensorThings API** — a standard web feed of sensor data that any
-  compliant tool can read.
-- **Frictionless Data Package** — a portable, self-describing bundle of the data
-  as files.
-- **WaDE 2.0** — the Western states' water-data exchange format.
-- **Geoconnex** — permanent web addresses for water features, so they can be
-  referenced nationally. (Needs an external registration step.)
+## Planned: publishing open data
 
-## Still to build: meter-reading interpolation
+OpenH2O maps every measurement it stores or receives to one shared vocabulary, which
+[DATA-STANDARDS.md](DATA-STANDARDS.md) describes. The work still to do is publishing
+the data in three open formats at web addresses where other systems can read it:
 
-One piece of accounting math genuinely isn't built yet. Real meter readings
-arrive on irregular dates; turning them into clean monthly volumes — spread out
-day by day between readings — is the missing step. OpenH2O stores the readings
-today ([`measurements/models.py`](../measurements/models.py)) but doesn't yet
-redistribute them over time. This becomes worth building the moment an agency
-brings a real meter dataset.
+- **OGC SensorThings API**, the Open Geospatial Consortium's standard web interface
+  for sensor data, which any compliant program can read.
+- **Frictionless Data Package**, a set of data files together with a file that
+  describes them.
+- **WaDE 2.0**, the Western States Water Council's Water Data Exchange format.
 
-## Nice to have, eventually
+## Ideas not yet started
 
-Lower-priority ideas, none of them started yet:
-
-- **Landowner self-reporting** — a form for landowners to report their own
-  monthly usage.
-- **Billing statements** — per-account usage and allocation statements.
-- **Sustainability-project intake** — richer tracking for land-fallowing,
-  repurposing, and recharge projects.
-- **Raster coverage warnings** — flag partial satellite coverage of a parcel
-  instead of quietly averaging over the gaps.
+- A form on which a landowner reports their own monthly water use.
+- A statement for each account that shows its water use against its allocation.
+- Project records for land fallowing and land repurposing.
+- A warning when satellite imagery covers only part of a parcel.
