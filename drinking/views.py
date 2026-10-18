@@ -232,8 +232,10 @@ def _sampling_points_head_line(
         return f"No sampling point matching {clause}; the map shows none"
 
     match_verb = "matches" if total_count == 1 else "match"
-    if not result_located_count:
-        tail = "the map shows none of them"
+    if not result_located_count and total_count == 1:
+        tail = "its facility has no location recorded, so the map shows none"
+    elif not result_located_count:
+        tail = "their facilities have no location recorded, so the map shows none"
     elif total_count == 1:
         tail = "the map shows it"
     else:

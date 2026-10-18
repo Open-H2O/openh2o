@@ -41,9 +41,15 @@ filtered" clause, which was true before this plan and is not true after it.
 </p>
 {% if q or facility_type or activity_status %}
 <p class="page-description">
+  {% if total_count and not result_located_count %}{# 2026-10-18: matches with no location (approved row). #}
+  The map follows the list: {{ total_count|intcomma }}
+  facilit{{ total_count|pluralize:"y,ies" }}{% if facility_type %} of that type{% endif %}{% if activity_status %} with that status{% endif %}
+  {% if q %}match{{ total_count|pluralize:"es," }} &ldquo;{{ q }}&rdquo;{% else %}{{ total_count|pluralize:"is,are" }} listed{% endif %}, and {% if total_count == 1 %}it has{% else %}they have{% endif %} no location recorded.
+  {% else %}
   The map follows the list: showing {{ total_count|intcomma }}
   facilit{{ total_count|pluralize:"y,ies" }}{% if q %} matching &ldquo;{{ q }}&rdquo;{% endif %}{% if facility_type %} of that type{% endif %}{% if activity_status %} with that status{% endif %},
-  {% if result_located_count == total_count %}all{% elif result_located_count %}{{ result_located_count|intcomma }} of them{% else %}none of them{% endif %} with a location.
+  {% if result_located_count == total_count %}all{% else %}{{ result_located_count|intcomma }} of them{% endif %} with a location.
+  {% endif %}
 </p>
 {% endif %}
 {% else %}

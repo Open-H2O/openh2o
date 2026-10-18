@@ -899,7 +899,7 @@ def allocations_list(request):
     facts_parts = []
     if not period_id:
         facts_parts.append(
-            "Totals are by water year and water type; nothing is added across them."
+            "Each total covers one water year and one water type."
         )
     if page_obj.paginator.num_pages > 1:
         facts_parts.append("Totals are for the whole filtered set, not just this page.")

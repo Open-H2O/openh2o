@@ -29,7 +29,7 @@
 <div class="ledger-card-head">
   <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">Diversion records</h2>
   <div class="text-secondary text-base">{{ diversion_records|length }} record{{ diversion_records|length|pluralize }} over {{ record_groups|length }} water year{{ record_groups|length|pluralize }}.</div>
-  <div class="text-secondary text-base">Acre-feet. Each year's row adds its own months; nothing is added across years.</div>
+  <div class="text-secondary text-base">Acre-feet. Each row is the total for one water year.</div>
 </div>
 {% if period_warning %}
 <p class="text-sm mb-md text-deficit" role="alert" style="padding: 0 var(--space-lg);">{{ period_warning }}</p>

@@ -360,15 +360,20 @@ def count(runs: list, headings: list) -> dict:
     }
 
 
+def file_text(rel: str, source: str) -> tuple:
+    """``(runs, headings)`` for one file's source, read as the surface its path names."""
+    if rel.endswith(".html"):
+        return template_text(source)
+    if rel.endswith(".py"):
+        return python_strings(source), []
+    if rel.endswith(".md"):
+        return guide_text(source)
+    raise ValueError(f"no surface reads {rel}")
+
+
 def count_file(rel: str, source: str) -> dict:
     """``{shape: n}`` for one file's source, read as the surface its path names."""
-    if rel.endswith(".html"):
-        return count(*template_text(source))
-    if rel.endswith(".py"):
-        return count(python_strings(source), [])
-    if rel.endswith(".md"):
-        return count(*guide_text(source))
-    raise ValueError(f"no surface reads {rel}")
+    return count(*file_text(rel, source))
 
 
 def surfaces(root: Path = REPO_ROOT) -> dict:

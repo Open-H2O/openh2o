@@ -277,7 +277,7 @@
           {% if over_delivery_shown_af > 0 %}
           <p class="text-secondary">
             <strong>Surface water in excess of ETAW:</strong>
-            <span class="td-num">{{ over_delivery_shown_af|floatformat:2|intcomma }}</span> AF, not a credit and not charged{% include "partials/_explainer_popout.html" with title="Surface water in excess of ETAW" text="This deployment shows the amount as its own line instead of a credit. It is recorded with the month's figures, not booked on the ledger and not charged to this field." link=wb_help_url link_label="How water balances work" %}
+            <span class="td-num">{{ over_delivery_shown_af|floatformat:2|intcomma }}</span> AF, neither credited nor charged{% include "partials/_explainer_popout.html" with title="Surface water in excess of ETAW" text="An administrator set Delivery Settings to show surface water in excess of ETAW as its own line. OpenH2O records it with the month's calculation, and neither credits it to the landowner nor charges it to this field." link=wb_help_url link_label="How water balances work" %}
           </p>
           {% endif %}
 

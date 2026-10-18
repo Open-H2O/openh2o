@@ -141,9 +141,9 @@ class SiteConfig(models.Model):
     # `shows_surface_settings` gate. `run_calculations` (148-04
     # Task 2) is the one reader; nothing here reaches the engine directly.
     OVER_DELIVERY_TREATMENT_CHOICES = [
-        ("not_credited", "Not credited"),
+        ("not_credited", "Not credited to anyone"),
         ("credited", "Credited to the landowner, less a share left in the basin"),
-        ("named_line", "Its own line, not a credit"),
+        ("named_line", "Shown on the field's page as its own line"),
     ]
     over_delivery_treatment = models.CharField(
         max_length=20,
@@ -159,9 +159,10 @@ class SiteConfig(models.Model):
         decimal_places=3,
         default=Decimal("0.100"),
         validators=[MinValueValidator(0), MaxValueValidator(1)],
-        help_text="The share of a credited over-delivery left in the basin "
-        "rather than credited to the landowner. Read only when the setting "
-        "above is credited. Default 10%, the Lower Tule convention.",
+        help_text="Under the credited choice, OpenH2O leaves this share of the "
+        "surface water in excess of ETAW in the basin, credited to no one, and "
+        "credits the rest to the landowner. Enter it as a fraction: the "
+        "default, 0.100, is 10 percent.",
     )
 
     # 150.2-02: `groundwater_efficiency` (a flat 80% for pumped groundwater,

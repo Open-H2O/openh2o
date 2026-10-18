@@ -210,7 +210,7 @@ class TestFieldPageLine:
         html = _field_page(parcel)
         assert FIELD_LABEL in html
         assert "5.50" in html, "4.0000 + 1.5000 named_line AF, the credited run excluded"
-        assert "AF, not a credit and not charged" in html
+        assert "AF, neither credited nor charged" in html
 
     def test_absent_for_a_field_with_no_named_line_run(self):
         parcel = ParcelFactory(parcel_number="R148-04-H")

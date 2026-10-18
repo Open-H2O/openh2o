@@ -8,10 +8,11 @@ of two clauses joined by ", and what", and a heading ending in ", by what". It
 reads every template (including the words passed into included partials), the
 Python files whose strings reach a screen, and the public guides.
 
-``BASELINE`` holds each file's count on 2026-10-09. A file may not gain a
-shape. A file that loses one must have its entry lowered in the same commit,
-so the table always states the truth. The counts are the to-do list for the
-rest of the writing work, and they reach zero when it is done.
+``BASELINE`` held each file's count from 2026-10-09 and was the to-do list for
+the writing work; it reached zero on 2026-10-18. ``EXCEPTIONS`` now holds each
+line a shape still matches on purpose, with its reason, and a line is excused
+only for the shapes its entry names. A file may not gain a shape, and an entry
+whose line has gone fails as well, so the list always states the truth.
 
 Before it was installed the scanner was run against the history: the About
 page at the commit before d247786 counts no paired heading, and at d247786 it
@@ -61,46 +62,128 @@ def _load():
 
 shapes = _load()
 
-#: Counts on 2026-10-09, measured on the working tree at the start of the
-#: writing work. Lower an entry when its file loses a shape; never raise one.
-#: Later the same evening About, the help pages, the footer and the Admin mode
-#: button took the approved wording, and their six entries
-#: came off. 2026-10-10: the "stand-in" shape joined at its counts that day.
+#: The guard reached zero on 2026-10-18 (150.1-03). What is left on the screens
+#: is held line by line in EXCEPTIONS below; BASELINE keeps only what still
+#: waits on a ruling, and is empty when none does. Lower an entry when its file
+#: loses a shape; never raise one.
 BASELINE: dict = {
-    "templates/drinking/partials/_onboard_result.html": {"stand-in": 1},
-    "templates/drinking/partials/_empty_drinking.html": {"stand-in": 1},
-    "templates/reporting/partials/_openet_prefill.html": {"em dash": 1},
-    "templates/reporting/partials/_report_detail_pane.html": {"em dash": 1, "stand-in": 1, "negation frame": 1},
-    "templates/reporting/report_list.html": {"em dash": 1},
-    "templates/reporting/report_prefill.html": {"em dash": 2},
-    "accounting/ledger_words.py": {"em dash": 1},
-    "accounting/views.py": {"negation frame": 1},
-    "core/models.py": {"negation frame": 2},
-    "reporting/validators.py": {"em dash": 16, "negation frame": 2},
-    "reporting/views.py": {"em dash": 1},
-    # 2026-10-11: the "district reader" and "California" shapes joined at their
-    # counts that day (150.4-01). 150.4-02, 150.1-02 and 150.1-03 lower them.
-    "templates/about.html": {"district reader": 1},
-    "templates/parcels/partials/_detail_pane.html": {"negation frame": 2},
-    "templates/reporting/partials/_handoff.html": {"district reader": 1},
-    "templates/reporting/partials/_status_section.html": {"district reader": 3},
-    "templates/surface/partials/_diversion_import_preview.html": {"California": 1},
-    # 2026-10-17: the reassurance, negation-frame and bold-verdict shapes joined
-    # at their counts that day (150.1-03). The guides' rewrites lower them.
-    "templates/404.html": {"negation frame": 1},
+    # Sent for a ruling 2026-10-18: listed as approved word for word, and it was not.
     "templates/accounting/partials/_methodology_preview.html": {"negation frame": 1},
-    "templates/drinking/partials/_facility_results.html": {"negation frame": 1},
-    "templates/drinking/partials/_onboard_review.html": {"negation frame": 2},
-    "templates/partials/_map_card_head.html": {"negation frame": 1},
-    "templates/reporting/partials/_report_actions.html": {"negation frame": 1},
-    "templates/surface/diversion_import.html": {"negation frame": 1},
-    "templates/surface/partials/_detail_pane.html": {"negation frame": 1},
-    "templates/surface/partials/_diversion_records.html": {"negation frame": 1},
-    "config/views.py": {"negation frame": 2},
-    "drinking/views.py": {"negation frame": 1},
-    "health/checks.py": {"negation frame": 2},
-    "infrastructure/views.py": {"negation frame": 1},
 }
+
+_REPORTS = (
+    "Reports is off by default and marked Under development (2026-10-12); its "
+    "words are rewritten when Reports is built, as 150.1-02 left its screens."
+)
+_APPROVED = (
+    "approved word for word on {}; its 'none' or 'not' is the fact the "
+    "sentence states, and it stays as approved (ruling 2026-10-18)."
+)
+_DEVELOPER = (
+    "an Http404 message, shown only on a server running with DEBUG on; the "
+    "public 404 page never prints it."
+)
+
+#: Each line a shape still matches, kept on purpose: (file, a fragment of the
+#: line as the scanner reads it, the shapes it is excused for, why). A line is
+#: excused only for the shapes named, so a new shape in the same line still
+#: fails, and an entry whose line is gone or no longer carries its shape fails
+#: too, the way an unused CALIFORNIA_NAMES entry does.
+EXCEPTIONS: tuple = (
+    # The four lines that name a real thing, not the reader (150.1-03 plan).
+    ("templates/about.html", "A groundwater agency, an irrigation district or a grower",
+     ("district reader",), "a list of the kinds of organization that use OpenH2O."),
+    ("templates/drinking/partials/_empty_drinking.html", "opens on that system",
+     ("stand-in",), "the water system the sentence has just named."),
+    ("templates/drinking/partials/_onboard_result.html", "EPA no longer has that system",
+     ("stand-in",), "the water system the person looked up."),
+    ("templates/surface/partials/_diversion_import_preview.html", "USE is California's total-use figure",
+     ("California",), "names the state's own figure in the state's diversion file."),
+    # Stored data.
+    ("accounting/ledger_words.py", "Incidental recharge \u2014 deep percolation",
+     ("em dash",), "LEGACY_INCIDENTAL_RECHARGE_WORDS matches the description older "
+     "ledger rows were written with; it is never printed as new copy."),
+    # Approved word for word, and kept (2026-10-18 09:34).
+    ("templates/drinking/partials/_onboard_review.html", "not for the agency that regulates it",
+     ("negation frame",), _APPROVED.format("2026-10-13")),
+    ("templates/drinking/partials/_onboard_review.html", "None of this system's facilities",
+     ("negation frame",), _APPROVED.format("2026-10-13")),
+    ("templates/surface/diversion_import.html", "rather than the application number",
+     ("negation frame",), _APPROVED.format("2026-10-14")),
+    ("templates/surface/partials/_detail_pane.html", "none of the canal's use areas",
+     ("negation frame",), _APPROVED.format("2026-10-13")),
+    ("health/checks.py", "none of the canal's use areas",
+     ("negation frame",), _APPROVED.format("2026-10-16")),
+    ("health/checks.py", ", not a public domain name",
+     ("negation frame",), _APPROVED.format("2026-10-16")),
+    # Developer messages.
+    ("config/views.py", "It is hidden rather than rewritten", ("negation frame",), _DEVELOPER),
+    ("infrastructure/views.py", "runs none of the modules", ("negation frame",), _DEVELOPER),
+    # Reports.
+    ("templates/reporting/partials/_handoff.html", "given your agency", ("district reader",), _REPORTS),
+    ("templates/reporting/partials/_openet_prefill.html", "Nothing was written to the water-use ledger",
+     ("em dash",), _REPORTS),
+    ("templates/reporting/partials/_report_actions.html", "A check, not a filing",
+     ("negation frame",), _REPORTS),
+    ("templates/reporting/partials/_report_detail_pane.html", "that system does not currently accept",
+     ("stand-in",), _REPORTS),
+    ("templates/reporting/partials/_report_detail_pane.html", "instead of typing them",
+     ("negation frame",), _REPORTS),
+    ("templates/reporting/partials/_report_detail_pane.html", "not what you pumped or diverted",
+     ("em dash",), _REPORTS),
+    ("templates/reporting/partials/_status_section.html", "your agency's own progress",
+     ("district reader",), _REPORTS),
+    ("templates/reporting/partials/_status_section.html", "the agency recorded filing",
+     ("district reader",), _REPORTS),
+    ("templates/reporting/partials/_status_section.html", "your agency's sign-off",
+     ("district reader",), _REPORTS),
+    ("templates/reporting/report_list.html", "Nothing here is submitted to the state",
+     ("em dash",), _REPORTS),
+    ("templates/reporting/report_prefill.html", "Prepare with OpenET", ("em dash",), _REPORTS),
+    ("reporting/validators.py", "No GEARS Correspondence ID on file", ("em dash",), _REPORTS),
+    ("reporting/validators.py", "the GEARS upload would be empty", ("em dash",), _REPORTS),
+    ("reporting/validators.py", "GEARS by-well requires metered", ("em dash",), _REPORTS),
+    ("reporting/validators.py", "have no well registration ID", ("em dash",), _REPORTS),
+    ("reporting/validators.py", "duplicate parcel-month reading", ("em dash",), _REPORTS),
+    ("reporting/validators.py", "well(s) have a hand-set parcel split", ("em dash",), _REPORTS),
+    ("reporting/validators.py", "metered parcel(s) have no well link", ("em dash",), _REPORTS),
+    ("reporting/validators.py", "GEARS by-ET requires", ("em dash",), _REPORTS),
+    ("reporting/validators.py", "the CalWATRS form would have nothing", ("em dash",), _REPORTS),
+    ("reporting/validators.py", "duplicate POD-month record", ("em dash",), _REPORTS),
+    ("reporting/validators.py", "their rows are withheld from the CalWATRS file", ("em dash",), _REPORTS),
+    ("reporting/validators.py", "point(s) of diversion have a hand-set parcel split", ("em dash",), _REPORTS),
+    ("reporting/validators.py", "reported gross as the state requires",
+     ("em dash", "negation frame"), _REPORTS),
+    ("reporting/validators.py", "will only contain wells with readings", ("em dash",), _REPORTS),
+    ("reporting/validators.py", "leaves their Area blank", ("em dash", "negation frame"), _REPORTS),
+    ("reporting/validators.py", "will only contain the diversions you entered", ("em dash",), _REPORTS),
+    ("reporting/views.py", "can't be generated", ("em dash",), _REPORTS),
+)
+
+
+def _unexcused():
+    """``({rel: {shape: n}}, [stale exception, ...])`` after EXCEPTIONS are taken out."""
+    out, used = {}, set()
+    for files in shapes.surfaces().values():
+        for rel in files:
+            runs, headings = shapes.file_text(rel, (REPO_ROOT / rel).read_text())
+            counts = shapes.count(runs, headings)
+            for run in runs:
+                excused = set()
+                for i, (erel, fragment, kept, _reason) in enumerate(EXCEPTIONS):
+                    if erel == rel and fragment in run:
+                        run_counts = shapes.count([run], [])
+                        if all(run_counts[shape] for shape in kept):
+                            used.add(i)
+                            excused.update(kept)
+                for shape in excused:
+                    counts[shape] -= shapes.count([run], [])[shape]
+            counts = {k: v for k, v in counts.items() if v}
+            if counts:
+                out[rel] = counts
+    stale = [f"{e[0]}: {e[1]!r} {e[2]}" for i, e in enumerate(EXCEPTIONS) if i not in used]
+    return out, stale
+
 
 _ADVICE = (
     "An em dash or double hyphen becomes a colon, a comma, a full stop or "
@@ -115,19 +198,19 @@ _ADVICE = (
 def test_no_file_gains_a_shape():
     gained = [
         f"{rel} {shape}: {BASELINE.get(rel, {}).get(shape, 0)} -> {n}"
-        for rel, counts in shapes.measured().items()
+        for rel, counts in _unexcused()[0].items()
         for shape, n in counts.items()
         if n > BASELINE.get(rel, {}).get(shape, 0)
     ]
     assert not gained, (
         "these files gained a sentence shape struck in review. " + _ADVICE
-        + " Never raise BASELINE to pass: " + "; ".join(gained)
+        + " Never raise BASELINE or add an EXCEPTIONS entry to pass: " + "; ".join(gained)
     )
 
 
 def test_every_baseline_is_tight():
     """A count with slack would let a shape come back where one was removed."""
-    now = shapes.measured()
+    now = _unexcused()[0]
     slack = [
         f"{rel} {shape}: baseline {ceiling}, now {now.get(rel, {}).get(shape, 0)}"
         for rel, counts in BASELINE.items()
@@ -138,6 +221,16 @@ def test_every_baseline_is_tight():
         "these files lost a shape. Lower (or delete) their BASELINE entry to "
         "the new count: " + "; ".join(slack)
     )
+
+
+def test_every_exception_still_matches_its_line():
+    """An exception whose line is gone, or no longer carries its shape, would hide a new one."""
+    stale = _unexcused()[1]
+    assert not stale, "these EXCEPTIONS entries match no line carrying their shape: " + "; ".join(stale)
+
+
+def test_every_exception_gives_a_reason():
+    assert all(len(reason) > 20 for *_rest, reason in EXCEPTIONS)
 
 
 def test_every_baseline_file_is_still_read():

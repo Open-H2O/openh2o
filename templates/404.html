@@ -20,14 +20,13 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Page not found</span>
   </nav>
-  <p class="page-description">There is no page at this address.</p>
 </div>
 {% endblock %}
 
 {% block content %}
 <div class="page-stack page-medium">
   <div class="card-raised empty-state">
-    <p class="empty-state-text">Nothing is served at <code class="text-mono">{{ request_path }}</code>.</p>
+    <p class="empty-state-text">OpenH2O has no page at <code class="text-mono">{{ request_path }}</code>.</p>
     <a href="{% url 'index' %}" class="btn-primary">Back to Home</a>
   </div>
 </div>
