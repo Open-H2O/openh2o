@@ -47,7 +47,7 @@
   {% if user_can_write %}
   <div class="card-raised">
     <h2 class="section-header mb-md">Preview on a sample use area</h2>
-    <p class="text-tertiary text-sm" style="margin-top: calc(-1 * var(--space-sm)); margin-bottom: var(--space-md);">The preview runs the saved plan on one use area for one month and writes nothing. A step's change shows here once it is saved.</p>
+    <p class="text-tertiary text-sm" style="margin-top: calc(-1 * var(--space-sm)); margin-bottom: var(--space-md);">The preview runs the saved steps above on one use area for one month and saves no figures. A change to a step shows here once you save it.</p>
     <form hx-post="{% url 'accounting:methodology_preview' %}"
           hx-target="#preview-pane" hx-swap="innerHTML"
           style="display: flex; flex-wrap: wrap; gap: var(--space-md); align-items: flex-end;">

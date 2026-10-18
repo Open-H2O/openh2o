@@ -66,10 +66,7 @@ shapes = _load()
 #: is held line by line in EXCEPTIONS below; BASELINE keeps only what still
 #: waits on a ruling, and is empty when none does. Lower an entry when its file
 #: loses a shape; never raise one.
-BASELINE: dict = {
-    # Sent for a ruling 2026-10-18: listed as approved word for word, and it was not.
-    "templates/accounting/partials/_methodology_preview.html": {"negation frame": 1},
-}
+BASELINE: dict = {}
 
 _REPORTS = (
     "Reports is off by default and marked Under development (2026-10-12); its "
