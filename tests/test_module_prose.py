@@ -176,7 +176,7 @@ class TestRenderedPages:
         # table tells the truth setup/services.py tells: use areas and
         # stations are brought in, wells and recharge sites are not.
         assert "Add surface diversions and recharge sites" in body
-        assert "The Setup Wizard brings in each parcel that overlaps your boundary" in body
+        assert "The Setup Wizard brings in every parcel that overlaps your boundary" in body
         assert "Each well needs a name and a location." in body
         # The state-report step (GEARS / CalWATRS) came off the page 2026-10-07.
         assert "Work out your state report figures" not in body
@@ -210,7 +210,7 @@ class TestRenderedPages:
         assert "recharge basins" not in body
         assert "CalWATRS" not in body
         assert "Surface diversions" not in body
-        assert "The Setup Wizard brings in each parcel that overlaps your boundary" in body, (
+        assert "The Setup Wizard brings in every parcel that overlaps your boundary" in body, (
             "The use-areas row lost its wizard clause when surface went."
         )
 
@@ -269,9 +269,9 @@ class TestRenderedPages:
 
         settings.OPENH2O_MODULES = NINE_MODULE_DRINKING
         drinking = admin_client.get("/help/getting-started/").content.decode()
-        assert "Give the Setup Wizard the boundary of the area you manage water for" in drinking
-        assert "brings in the groundwater subbasins and streams in and around" in drinking
-        assert "Run the Setup Wizard before Step 2, because the wizard does part of the work in it." in drinking
+        assert "The Setup Wizard needs a boundary, which is the outline of the land your records cover." in drinking
+        assert "the wizard brings in the groundwater subbasins and streams inside it and nearby." in drinking
+        assert "Run the wizard before Step 2, because it does part of that step." in drinking
 
         settings.OPENH2O_MODULES = list(mod.ALL_MODULE_NAMES)
         full = admin_client.get("/help/getting-started/").content.decode()
@@ -279,4 +279,4 @@ class TestRenderedPages:
             "brings in the groundwater subbasins, parcels, streams and monitoring stations"
             in full
         )
-        assert "Run the Setup Wizard before Steps 2, 3 and 6, because the wizard does part of the work in each." in full
+        assert "Run the wizard before Steps 2, 3 and 6, because it does part of each of those steps." in full

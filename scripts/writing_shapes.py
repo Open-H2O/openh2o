@@ -109,7 +109,7 @@ STAND_IN = re.compile(
 #: meant to be used nationally, and some of its users are growers or ditch
 #: tenders rather than districts (2026-10-11). The approved replacements read
 #: "An administrator can ...", "unless an administrator changes it" and "the
-#: area you manage water for". A district or
+#: land your records cover" (2026-10-18). A district or
 #: agency that is a real thing in the water world, and not the reader, does not
 #: match: "the regulating agency", "the primacy agency", "a GSA" under SGMA, "an
 #: irrigation district" as one kind of supplier, "the agency that regulates it".
@@ -161,6 +161,7 @@ CALIFORNIA_NAMES: tuple = (
     (r"SDWIS4 file holds every water system in California", "the Division of Drinking Water's file covers the state's systems (2026-10-14)"),
     (r"California.s Electronic\s+Annual\s+Report", "the eAR is California's report (2026-10-14)"),
     (r"open up California's water data", "the Consortium's purpose, in its own terms"),
+    (r"so the wizard finds none outside California", "the Setup Wizard's subbasin and parcel sources cover one state (2026-10-18)"),
     (r"California's reporting format", "the state's own format, the approved name for it (2026-10-12: \"California's reporting format, not layout\")"),
 )
 CALIFORNIA = re.compile(r"\bCalifornia\b")

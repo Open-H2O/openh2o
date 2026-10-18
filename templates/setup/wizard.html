@@ -72,7 +72,7 @@
           <option value="{{ b.pk }}">{{ b.name }}{% if b.area_sq_miles %} ({{ b.area_sq_miles|floatformat:1 }} sq mi){% endif %}</option>
           {% endfor %}
         </select>
-        <p class="form-help">Select the boundary of the area you manage water for.</p>
+        <p class="form-help">Select the boundary of the land your records cover.</p>
         {% else %}
         <select name="boundary_id" id="boundary_id" class="form-select" disabled aria-describedby="boundary-none-yet">
           <option value="">None yet</option>

@@ -187,7 +187,7 @@ _ADVICE = (
     "parentheses. A filler word comes out. A heading in two clauses becomes one "
     "plain question or one plain statement (DESIGN.md copy rule 15). A district "
     "reader names who really acts (\"An administrator can\", \"unless an "
-    "administrator changes it\", \"the area you manage water for\"); a general "
+    "administrator changes it\", \"the land your records cover\"); a general "
     "\"California\" says the general thing (DESIGN.md copy rule 11)."
 )
 
@@ -333,7 +333,7 @@ def test_the_approved_replacements_carry_no_district_reader():
         "<td>An administrator can reorder those steps or switch any of them off.</td>"
         "<td>75 percent unless an administrator changes it.</td>"
         "<td>An administrator or operator sets an allocation ceiling on Allocations.</td>"
-        "<p>Give the Setup Wizard the boundary of the area you manage water for.</p>"
+        "<p>The Setup Wizard needs a boundary, which is the outline of the land your records cover.</p>"
         "<p>OpenH2O is for anyone who keeps water records, anywhere in the United States: "
         "engineers and managers at water agencies and districts, growers, ditch tenders "
         "and drinking-water system operators.</p>"

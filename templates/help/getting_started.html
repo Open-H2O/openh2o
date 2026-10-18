@@ -38,7 +38,7 @@
   reworded.
   2026-10-11 (150.4-01): the national, role-neutral lens. Who acts is set
   in a sentence and in the help-page rows:
-  the Setup Wizard step names "the area you manage water for", not the district. Each actor traced to its view.
+  the Setup Wizard step names "the land your records cover" (2026-10-18), not the district. Each actor traced to its view.
 {% endcomment %}<div class="page-stack page-help help-page">
 
   <div class="card-raised">
@@ -57,37 +57,37 @@
           {% if 'drinking' in enabled_modules %}<tr>
             <td class="col-step"><span class="step-num">{{ steps.pwsid }}</span>Add your water system</td>
             <td class="col-where">Water Data &gt; Add a water system{% if user_can_write %}<br><a href="{% url 'drinking:onboard' %}" class="text-sm text-accent">Go to Add a water system &rarr;</a>{% endif %}</td>
-            <td>Enter your Public Water System ID (PWSID), and OpenH2O looks up the water system and its facilities in EPA&rsquo;s Envirofacts database. OpenH2O saves nothing until you review EPA&rsquo;s record and confirm it.</td>
+            <td>If you run a public water system, enter its Public Water System ID (PWSID). OpenH2O finds the system and its facilities in EPA&rsquo;s Envirofacts database and shows you EPA&rsquo;s record. OpenH2O saves the record when you confirm it.</td>
           </tr>{% endif %}
           {% if 'setup' in enabled_modules %}<tr>
             <td class="col-step"><span class="step-num"></span>Run the Setup Wizard</td>
             <td class="col-where">Administration &gt; Setup Wizard{% if user_can_write %}<br><a href="{% url 'setup:wizard' %}" class="text-sm text-accent">Run the Setup Wizard &rarr;</a>{% endif %}</td>
-            <td>Give the Setup Wizard the boundary of the area you manage water for, as a zipped shapefile, KML or GeoJSON file, or type the north, south, east and west limits of a rectangle around that area. The wizard then brings in the groundwater subbasins{% if 'parcels' in enabled_modules %}, parcels{% endif %}{% if 'datasync' in enabled_modules %}, streams and monitoring stations{% else %} and streams{% endif %} in and around your boundary. You choose which of these the wizard brings in before it starts. Run the Setup Wizard before Step{{ wizard_cited_count|pluralize }} {{ wizard_cited_steps }}, because the wizard does part of the work in {% if wizard_cited_count > 1 %}each{% else %}it{% endif %}.</td>
+            <td>The Setup Wizard needs a boundary, which is the outline of the land your records cover. Upload the boundary as a zipped shapefile, a KML file or a GeoJSON file, or type the north, south, east and west edges of a rectangle around the land. From the boundary, the wizard brings in the groundwater subbasins{% if 'parcels' in enabled_modules %}, parcels{% endif %}{% if 'datasync' in enabled_modules %}, streams and monitoring stations{% else %} and streams{% endif %} inside it and nearby. Before it starts, you choose which of these to bring in. The subbasins{% if 'parcels' in enabled_modules %} and parcels{% endif %} come from the California Department of Water Resources, so the wizard finds none outside California. Run the wizard before Step{{ wizard_cited_count|pluralize }} {{ wizard_cited_steps }}, because it does part of {% if wizard_cited_count > 1 %}each of those steps{% else %}that step{% endif %}.</td>
           </tr>{% endif %}
           <tr>
             <td class="col-step"><span class="step-num">{{ steps.zones }}</span>Create management zones</td>
             <td class="col-where">Administration &gt; Zones<br><a href="{% url 'geography:zone_list' %}" class="text-sm text-accent">Go to Zones &rarr;</a></td>
-            <td>{% if 'setup' in enabled_modules %}The Setup Wizard adds each DWR Bulletin 118 subbasin that overlaps your boundary as a zone. Draw any other management zones on the map{% else %}Draw your management zones on the map{% endif %}{% if 'parcels' in enabled_modules %}, and assign use areas to each zone after Step {{ steps.use_areas }}{% endif %}.{% if 'accounting' in enabled_modules %} Every allocation ceiling set in Step {{ steps.ceilings }} belongs to one zone.{% endif %}</td>
+            <td>{% if 'setup' in enabled_modules %}The Setup Wizard creates a zone for each groundwater subbasin that overlaps your boundary. Draw any other zones you use on the map.{% else %}Draw your zones on the map.{% endif %}{% if 'parcels' in enabled_modules %} After Step {{ steps.use_areas }}, assign each use area to its zone.{% endif %}{% if 'accounting' in enabled_modules %} Each allocation ceiling in Step {{ steps.ceilings }} applies to one zone.{% endif %}</td>
           </tr>
           {% if 'parcels' in enabled_modules %}<tr>
             <td class="col-step"><span class="step-num">{{ steps.use_areas }}</span>Import your use areas</td>
             <td class="col-where">Water Data &gt; Use Areas<br><a href="{% url 'parcels:list' %}" class="text-sm text-accent">Go to Use Areas &rarr;</a></td>
-            <td>{% if 'setup' in enabled_modules %}The Setup Wizard brings in each parcel that overlaps your boundary from DWR&rsquo;s statewide assessor parcel layer, with its Assessor Parcel Number (APN). OpenH2O calls each of these parcels a use area. To use your own parcel file instead, load it with the import_parcels command.{% else %}Load your parcel file with the import_parcels command.{% endif %} The file can be GeoJSON or a shapefile, with an APN for each parcel.</td>
+            <td>OpenH2O keeps its records by use area, and each parcel is one use area. {% if 'setup' in enabled_modules %}The Setup Wizard brings in every parcel that overlaps your boundary from the Department of Water Resources&rsquo; statewide map of assessor parcels, with its Assessor Parcel Number (APN). To load your own parcel file instead, run the import_parcels command on the server.{% else %}To load your parcel file, run the import_parcels command on the server.{% endif %} The file can be a GeoJSON file or a shapefile, and each parcel needs its APN.</td>
           </tr>{% endif %}
           {% if 'wells' in enabled_modules %}<tr>
             <td class="col-step"><span class="step-num">{{ steps.wells }}</span>Import your wells</td>
             <td class="col-where">Water Data &gt; Wells<br><a href="{% url 'wells:list' %}" class="text-sm text-accent">Go to Wells &rarr;</a></td>
-            <td>Add each well with Add well, or many at once with Import from a CSV, zipped shapefile, GeoJSON or KML file. Each well needs a name and a location.</td>
+            <td>Add wells one at a time with Add well, or many at once with Import, from a CSV file, a zipped shapefile, a GeoJSON file or a KML file. Each well needs a name and a location.</td>
           </tr>{% endif %}
           {% if 'surface' in enabled_modules %}<tr>
             <td class="col-step"><span class="step-num">{{ steps.surface }}</span>{% if 'recharge' in enabled_modules %}Add surface diversions and recharge sites{% else %}Add surface diversions{% endif %}</td>
             <td class="col-where">Administration &gt; Water Rights<br><a href="{% url 'surface:water_rights_list' %}" class="text-sm text-accent">Go to Water Rights &rarr;</a><br>Water Data &gt; Surface Diversions<br><a href="{% url 'surface:pod_list' %}" class="text-sm text-accent">Go to Surface Diversions &rarr;</a>{% if 'recharge' in enabled_modules %}<br>Water Data &gt; Recharge sites<br><a href="{% url 'recharge:list' %}" class="text-sm text-accent">Go to Recharge sites &rarr;</a>{% endif %}</td>
-            <td>Import your water rights from the State Water Board&rsquo;s rights list (CSV) on Water Rights, or add each right by hand. Add each point of diversion on Surface Diversions and link it to its water right.{% if 'recharge' in enabled_modules %} Add each recharge site on Recharge sites, and record each recharge event on the site&rsquo;s page.{% endif %}</td>
+            <td>On Water Rights, add each water right by hand, or import the State Water Board&rsquo;s water rights list as a CSV file. On Surface Diversions, add each point of diversion and link it to its water right.{% if 'recharge' in enabled_modules %} On Recharge sites, add each site, then record each recharge event on the site&rsquo;s page.{% endif %}</td>
           </tr>{% endif %}
           {% if 'datasync' in enabled_modules %}<tr>
             <td class="col-step"><span class="step-num">{{ steps.stations }}</span>Connect monitoring stations</td>
             <td class="col-where">Water Data &gt; Monitoring Stations<br><a href="{% url 'datasync:station_list' %}" class="text-sm text-accent">Go to Monitoring Stations &rarr;</a></td>
-            <td>{% if 'setup' in enabled_modules %}The Setup Wizard adds the stations it finds with syncing switched off. {% endif %}Switch on syncing for the stations you want, or add a station yourself with Add station. OpenH2O then pulls new readings for each of those stations on your server&rsquo;s schedule.</td>
+            <td>{% if 'setup' in enabled_modules %}The Setup Wizard adds the stations it finds near your boundary and leaves syncing off for each one. {% endif %}Switch syncing on for each station you want to follow, or add a station with Add station. OpenH2O then collects new readings from those stations on your server&rsquo;s schedule.</td>
           </tr>{% endif %}
           {% if 'accounting' in enabled_modules %}<tr>
             <td class="col-step"><span class="step-num">{{ steps.accounts }}</span>Set up water accounts</td>
@@ -107,7 +107,7 @@
           <tr>
             <td class="col-step"><span class="step-num">{{ steps.ledger }}</span>Record water use</td>
             <td class="col-where">Water Data &gt; Use Ledger<br><a href="{% url 'accounting:ledger_list' %}" class="text-sm text-accent">Go to Use Ledger &rarr;</a></td>
-            <td>Record meter readings, deliveries and adjustments one at a time with New entry, or many at once with Upload CSV. OpenH2O calculates each month&rsquo;s figures for a water year when you press Run the calculation on that water year&rsquo;s page, and every night when your server&rsquo;s scheduled jobs are installed.{% if 'wells' in enabled_modules %} OpenH2O records on the Use Ledger the ETAW met by groundwater that it calculates for each use area with a well and no meter reading.{% endif %}</td>
+            <td>Record meter readings, deliveries and adjustments one at a time with New entry, or many at once with Upload CSV. OpenH2O calculates each month&rsquo;s figures for a water year when you press Run the calculation on that water year&rsquo;s page, and every night once your server&rsquo;s scheduled jobs are installed.{% if 'wells' in enabled_modules %} For each use area that has a well and no meter reading, OpenH2O enters the use area&rsquo;s ETAW met by groundwater on the Use Ledger.{% endif %}</td>
           </tr>{% endif %}
         </tbody>
       </table>
