@@ -2,25 +2,34 @@
 
 # Data Standards & Interoperability
 
-OpenH2O is **born-compliant** — meaning standards-*interoperable* by construction, not a claim of SGMA compliance: rather than bolting standards on at export time, every measurement it stores or ingests is mapped, at the source, to a single canonical vocabulary. That one decision is what lets the platform publish to open data standards (OGC SensorThings, the USGS/EPA water vocabularies, UCUM units) without per-agency remapping, and it's the part of OpenH2O most directly reusable by another district's system.
+This guide is for anyone who exchanges water data between OpenH2O and another
+system. OpenH2O keeps one list of the kinds of measurement it handles, such as
+stream discharge or depth to groundwater. Each kind on the list carries an EPA WQX
+characteristic name and a UCUM unit, and seven of the eighteen also carry a USGS
+parameter code. Each outside data source's own parameter codes are mapped onto the
+same list, so a stream flow from USGS and a stream flow from CDEC are recorded as
+the same kind of measurement.
 
-This document is the reference for that vocabulary, the crosswalk, the conformance rules, and the publishing roadmap. If you operate a different platform and want to align with OpenH2O (or with the standards it targets), start here.
-
-> **Machine-readable crosswalk:** [crosswalk.csv](crosswalk.csv) in this folder. Regenerate it from any live deployment's registry with `python manage.py export_crosswalk`.
+The mapping is also published in this folder as [crosswalk.csv](crosswalk.csv). To
+write the same file from a running site, run
+`python manage.py export_crosswalk --output docs/crosswalk.csv`. Run the commands in
+this guide inside the `web` container, as
+`docker compose exec web python manage.py ...`.
 
 ---
 
-## 1. The canonical vocabulary (ObservedProperty)
+## 1. The kinds of measurement (ObservedProperty)
 
-Everything OpenH2O measures resolves to one of a small set of **observed properties**. Each one is tied to the three vocabularies that matter for interoperability:
+Each kind of measurement on the list is an *observed property*. Each one can carry
+three identifiers from outside vocabularies:
 
-- **USGS parameter code** — the federal water-data standard (the "pcode").
-- **EPA WQX CharacteristicName** — the Water Quality Exchange vocabulary.
-- **UCUM unit** — the Unified Code for Units of Measure (`unitsofmeasure.org`), so a unit is machine-parseable, not a free-text string like "cfs".
+- the **USGS parameter code**, the federal code for a kind of water measurement;
+- the **EPA WQX characteristic name**, from EPA's Water Quality Exchange;
+- the **UCUM unit**, from the Unified Code for Units of Measure
+  (`unitsofmeasure.org`). A program can parse a UCUM unit such as `[cft_i]/s`, but
+  it cannot parse a written abbreviation such as "cfs".
 
-UCUM codes are a published lookup; they are hand-authored and verified in the registry, never guessed at runtime.
-
-| Concept key | Name | USGS pcode | WQX characteristic | UCUM unit |
+| Key | Name | USGS code | WQX characteristic | UCUM unit |
 |---|---|---|---|---|
 | `discharge` | Stream Discharge | 00060 | Stream flow | `[cft_i]/s` |
 | `gage_height` | Gage Height | 00065 | Gage height | `[ft_i]` |
@@ -28,109 +37,190 @@ UCUM codes are a published lookup; they are hand-authored and verified in the re
 | `groundwater_level_depth` | Depth to Groundwater | 72019 | Depth to water level below land surface | `[ft_i]` |
 | `groundwater_level_elevation` | Groundwater Level Elevation | 72020 | Water level elevation above NAVD 1988 | `[ft_i]` |
 | `groundwater_level` | Groundwater Level | 62610 | Groundwater level | `[ft_i]` |
-| `reservoir_storage` | Reservoir Storage | — | Reservoir storage | `[acr_us].[ft_i]` |
-| `reservoir_elevation` | Reservoir Elevation | — | Reservoir water surface elevation | `[ft_i]` |
-| `reservoir_inflow` | Reservoir Inflow | — | Flow, inflow | `[cft_i]/s` |
-| `reservoir_outflow` | Reservoir Outflow | — | Flow, outflow | `[cft_i]/s` |
-| `evapotranspiration` | Evapotranspiration | — | Evapotranspiration | `mm` |
-| `reference_et` | Reference Evapotranspiration | — | Evapotranspiration, reference | `mm` |
+| `reservoir_storage` | Reservoir Storage | none | Reservoir storage | `[acr_us].[ft_i]` |
+| `reservoir_elevation` | Reservoir Elevation | none | Reservoir water surface elevation | `[ft_i]` |
+| `reservoir_inflow` | Reservoir Inflow | none | Flow, inflow | `[cft_i]/s` |
+| `reservoir_outflow` | Reservoir Outflow | none | Flow, outflow | `[cft_i]/s` |
+| `evapotranspiration` | Evapotranspiration | none | Evapotranspiration | `mm` |
+| `reference_et` | Reference Evapotranspiration | none | Evapotranspiration, reference | `mm` |
 | `precipitation` | Precipitation | 00045 | Precipitation | `mm` |
-| `air_temperature` | Air Temperature | — | Temperature, air | `Cel` |
-| `snowfall` | Snowfall | — | Snow depth | `mm` |
-| `solar_radiation` | Solar Radiation | — | Solar radiation | `W/m2` |
-| `wind_speed` | Wind Speed | — | Wind velocity | `m/s` |
+| `air_temperature` | Air Temperature | none | Temperature, air | `Cel` |
+| `snowfall` | Snowfall | none | Snow depth | `mm` |
+| `solar_radiation` | Solar Radiation | none | Solar radiation | `W/m2` |
+| `wind_speed` | Wind Speed | none | Wind velocity | `m/s` |
+| `extracted_volume` | Extracted Volume | none | Water withdrawal, volume | `[acr_us].[ft_i]` |
 
-A blank USGS pcode is intentional: reservoir sensors, ET, and weather concepts genuinely have no USGS parameter code. They stay flagged as "publish-incomplete-as-pcode" until a real code is assigned — that's the conformance gate doing its job, not a defect.
+Eleven of the eighteen have no USGS parameter code on OpenH2O's list yet. The UCUM
+units were looked up in the published UCUM tables and entered by hand.
 
-**Source of truth:** `standards/management/commands/seed_observed_properties.py` and `standards/models.py` (`ObservedProperty`).
+The list is defined in `standards/management/commands/seed_observed_properties.py`,
+and the model is `ObservedProperty` in `standards/models.py`.
 
 ---
 
-## 2. The source crosswalk (SourceParameter)
+## 2. Each source's codes (SourceParameter)
 
-Every external source speaks its own dialect. The crosswalk maps each source's native parameter code onto a canonical concept, carrying the source's own name and unit alongside (we augment, never overwrite, the original). The result: USGS `00060`, CDEC `20`, and a CNRFC streamflow forecast all resolve to the same `discharge` concept and can be compared and published together.
+Each outside source uses its own codes for what it measures. OpenH2O maps each
+source's code to a key on the list and stores the source's own name and unit with
+the mapping. USGS code `00060`, CDEC code `20` and CNRFC code `streamflow` all map
+to `discharge`, so their figures can be compared and published together.
 
-| Source | Native codes mapped | Notes |
+| Source | Codes mapped | Notes |
 |---|---|---|
-| **USGS** (NWIS) | `00060`, `00065`, `00010`, `72019`, `72020`, `62610` | Stream gauges + groundwater wells |
-| **CDEC** | `15`, `6`, `76`, `23`, `1`, `20`, `2` | Reservoirs + streams; `1` (River Stage) → `gage_height`, `20` (Flow) → `discharge` |
-| **DWR Water Data Library** | `gw_level` | Periodic (≈quarterly) groundwater levels |
-| **DWR SGMA portal** | `gw_level` | Same CNRA dataset, filtered to SGMA monitoring |
-| **CIMIS** | `day-eto`, `day-precip`, `day-sol-rad-avg`, `day-wind-spd-avg`, `day-air-tmp-avg` | Daily reference ET + weather |
-| **NOAA** (GHCND) | `PRCP`, `TMAX`, `TMIN`, `SNOW` | Daily climate; TMAX/TMIN both → `air_temperature` |
-| **CNRFC** | `streamflow`, `precip` | River-flow + precip forecasts |
-| **OpenET** | (geometry-based, not a station parameter) | ET per parcel polygon → `evapotranspiration` |
+| USGS National Water Information System (NWIS) | `00060`, `00065`, `00010`, `72019`, `72020`, `62610` | Stream gages and groundwater wells |
+| California Data Exchange Center (CDEC) | `15`, `6`, `76`, `23`, `1`, `20`, `2` | Reservoirs, streams and rain. Code `1` (River Stage) maps to `gage_height` and code `20` (Flow) to `discharge`. |
+| DWR Water Data Library | `gw_level` | The Periodic Groundwater Level Measurements dataset |
+| DWR SGMA Portal | `gw_level` | The same dataset, limited to wells in the SGMA monitoring program |
+| California Irrigation Management Information System (CIMIS) | `day-asce-eto`, `day-precip`, `day-sol-rad-avg`, `day-wind-spd-avg`, `day-air-tmp-avg` | Daily reference ET and weather |
+| NOAA Global Historical Climatology Network Daily (GHCND) | `PRCP`, `TMAX`, `TMIN`, `SNOW` | Daily climate. `TMAX` and `TMIN` both map to `air_temperature`. |
+| California Nevada River Forecast Center (CNRFC) | `streamflow`, `precip` | Forecasts of river flow and precipitation |
 
-The full denormalized table is in [crosswalk.csv](crosswalk.csv). A regression test (`tests/test_standards_registry.py`) locks every adapter code to a concept so the crosswalk can't silently drift when an adapter changes.
+DWR is the California Department of Water Resources. OpenET's evapotranspiration
+(ET) and GRIDMET's precipitation are not in this table. OpenH2O stores them for each
+parcel as inputs to the monthly water balance and does not map them to the list.
 
-**Source of truth:** the `CODE_TO_KEY` table in `seed_observed_properties.py`, built from each adapter's `PARAMETER_MAP` via `datasync/adapters/registry.py`.
-
----
-
-## 3. Provenance: quality flags and vertical datum
-
-Two fields make the data trustworthy enough to certify and to publish:
-
-- **Quality flag** (`provisional` / `approved` / `estimated`) on every measurement, following OGC SensorThings and USGS conventions. Newly synced data is provisional; a reviewer marks it approved; derived or gap-filled values are estimated.
-- **Vertical datum** (`NAVD88` / `NGVD29`) on groundwater wells. A depth-to-water reading is meaningless as an elevation without knowing the datum it was measured against — and you can't compare wells across a basin or build SensorThings geometry without it.
-
-**Source of truth:** `measurements/models.py` (`QUALITY_CHOICES`), `wells/models.py` (vertical datum).
-
-**Drinking-water lab limits, as reported.** A lab result imported in the state's SDWIS layout keeps the `MCL` and `DLR` its row carried (`SampleResult.mcl_as_reported`, `dlr_as_reported`, in the row's own units), with the file's name and the import date; the screens show the MCL beside the finding as what "the laboratory's file carried" and never compare the two (ISS-140, decided 2026-09-22).
+The mapping of codes to keys is `CODE_TO_KEY`, a table written by hand in
+`seed_observed_properties.py`. When `python manage.py seed_observed_properties`
+runs, it reads each source adapter's list of codes and looks up each code in
+`CODE_TO_KEY`. The test in `tests/test_standards_registry.py` fails when an adapter
+emits a code that `CODE_TO_KEY` does not map. [crosswalk.csv](crosswalk.csv) has one
+row for each mapping, with the source, the source's code, and the key's name, USGS
+code, WQX characteristic name and UCUM unit.
 
 ---
 
-## 4. The conformance gate
+## 3. Quality flags and vertical datum
 
-Before any data reaches a publish path, `check_conformance` audits the registry:
+- **Quality flag.** Each meter reading and sensor measurement carries a quality
+  flag of `provisional`, `approved` or `estimated`. A new record is provisional. No
+  screen sets the flag yet.
+- **Vertical datum.** OpenH2O stores each groundwater well's vertical datum as
+  `NAVD88` or `NGVD29`.
+
+The quality flags are defined in `measurements/models.py` (`QUALITY_CHOICES`), and
+the vertical datum in `wells/models.py`.
+
+## 4. Drinking-water lab limits
+
+When a drinking-water lab results file has `MCL` and `DLR` columns, OpenH2O stores
+each row's limits in that row's units. It also stores the file's name and the date
+of the import. The screens show the MCL from the lab's file beside each result, and
+they do not compare the result with the MCL.
+
+---
+
+## 5. The conformance check
+
+`check_conformance` checks the list and the mapping for gaps:
 
 ```bash
 python manage.py check_conformance
 ```
 
-It exits non-zero only on a **real** publishing blocker — an observed property missing its UCUM unit. A missing USGS pcode is reported as pending but is non-blocking (some concepts legitimately have none). Orphaned crosswalk rows and measurements with no observed property are flagged. Run it in CI to prevent regressions.
+The command exits with an error when a kind of measurement has no UCUM unit or a
+source code maps to no key, so a script can stop on either gap. It also lists the
+kinds of measurement that have no USGS code, and it counts the stored measurements
+that are linked to no kind of measurement. Neither of those reports makes the
+command exit with an error. Nothing runs the command automatically. Run it by hand
+after you change the list or an adapter.
 
-The rule is encoded as `ObservedProperty.is_publishable()`: publishable only when it has a UCUM unit. Every publish path — API, CSV, Frictionless — needs a unit contract, so this is the one hard gate.
-
----
-
-## 5. California's reporting format (under development)
-
-A feature under development writes figures in California's reporting format for two state systems, GEARS and CalWATRS. It is switched off by default. OpenH2O does not submit reports to the state, and neither system can currently accept a file produced here.
-
-- **GEARS** — two modes: *by-well* (monthly metered extraction) and *by-ET* (monthly consumptive use from OpenET). Unit: acre-feet.
-- **CalWATRS** — *Direct Use* and *To Storage* templates, by point of diversion. Units: acre-feet and CFS. Flags parcels with both groundwater and surface-water sources as combined-use, and marks missing water rights as `[INCOMPLETE]`. Its Measurement Method column carries the state's own 23 CCR 934(b) device vocabulary (a diversion record's `method`, and its device's type when the method is "a measuring device").
-
-**Source of truth:** `reporting/generators.py`, `reporting/models.py`.
+`ObservedProperty.is_publishable()` returns true only for a kind of measurement that
+has both a USGS code and a UCUM unit.
 
 ---
 
-## 6. Derived values: effective precipitation & the precip feed
+## 6. California's reporting format (under development)
 
-Two values OpenH2O computes (rather than ingests) are worth documenting plainly, because both are estimates, not measurements:
+A feature that writes figures in California's reporting format is under
+development and switched off by default. It writes OpenH2O's figures in the file
+layouts of GEARS and CalWATRS, two reporting systems run by state agencies. OpenH2O
+does not submit reports to the state, and neither system can currently accept a
+file that OpenH2O produces.
 
-- **Effective precipitation.** Not all rain is usable by a crop, so the calculation engine subtracts only the *effective* share of precipitation from gross ET. The method is configurable per agency (`accounting/precip_math.py`): a raw pass-through, a flat fraction of total rain, or the USDA-SCS / TR-21 soil-storage model. The USDA-SCS option caps effective precipitation at the month's ET, so Pe never exceeds `min(P, ET)` and the net consumptive use stays ≥ 0.
-- **Precipitation source.** Per-parcel precipitation is sampled from GRIDMET (`pr` band, mm), not a separate rain-gauge network. This is deliberate: the OpenET ensemble OpenH2O uses for ET is itself built on gridMET forcing, so drawing precip from the same source keeps ET and precip on consistent inputs (`datasync/adapters/gee.py`).
+- **GEARS.** OpenH2O writes two GEARS layouts: monthly metered extraction by well,
+  and monthly consumptive use from OpenET. Figures are in acre-feet.
+- **CalWATRS.** OpenH2O writes the Direct Use and To Storage layouts for each point
+  of diversion, in acre-feet and cubic feet per second. A parcel with both
+  groundwater and surface water is marked as combined use. A diversion with no water
+  right ID is left out of the file, and the check OpenH2O runs on each report lists
+  it as a warning. The Measurement Method column shows the method recorded for the
+  diversion. For a diversion measured by a device, the column shows the device's
+  type instead. A record with no method shows "Not stated".
 
-These are estimates used to fill gaps where direct measurements are absent; a district's own metered or recorded values always take precedence.
+The files are written by `reporting/generators.py`, and the models are in
+`reporting/models.py`.
 
 ---
 
-## 7. Publishing roadmap (open standards out)
+## 7. Estimated inputs to the water balance
 
-The data model already maps onto these standards; the serializers are the remaining work.
+Two inputs to the monthly water balance are estimates: effective precipitation,
+which OpenH2O calculates, and precipitation, which OpenH2O reads from GRIDMET.
 
-| Standard | What it is | Status |
+- **Effective precipitation.** The monthly water balance subtracts effective
+  precipitation from crop ET. The method is set on the Methodology Settings page.
+  The choices are all of the month's precipitation, a fixed fraction of it, or the
+  USDA-SCS (TR-21) method. The USDA-SCS method never estimates more than the
+  month's precipitation or the month's crop ET. The methods are in
+  `accounting/precip_math.py`.
+- **Precipitation.** OpenH2O reads each parcel's monthly precipitation in
+  millimeters from GRIDMET's daily `pr` band, through Google Earth Engine. The
+  adapter is `datasync/adapters/gee.py`. The OpenET ensemble dataset that OpenH2O
+  reads is built on GRIDMET weather data, so precipitation from GRIDMET comes from
+  the same weather data as the ET. The water balance uses GRIDMET precipitation even
+  where a rain gauge is nearby.
+
+---
+
+## 8. Publishing the data
+
+Geoconnex addresses are built. The other three standards in the table are planned.
+
+| Standard | What it is | Where OpenH2O stands |
 |---|---|---|
-| **OGC SensorThings API v1.1** | An OGC standard REST API for sensor data — any compliant tool can consume it | Schema foundation built (`Datastream` model, FeatureOfInterest from well screen + datum); read-only API endpoint planned |
-| **Frictionless Data Package** | A `datapackage.json` + typed CSV bundle for portable tabular data | Field alignment done in the registry; export path planned |
-| **WaDE 2.0** | The Water Data Exchange schema used by the Western States Water Council and the CA Water Data Consortium | Shares the registry's field alignment; export path planned |
-| **Geoconnex** | Persistent web identifiers (PIDs) for water features, for national federation | URIs resolve on every deployment (`/id/`): each boundary, zone, use area, well, point of diversion, recharge site, station, water system, facility, sampling point and water right has an address `/id/<kind>/<number>/` that sends a browser to the record's page and answers `Accept: application/ld+json` (or `?format=jsonld`) with schema.org JSON-LD in the shape the Geoconnex documentation asks for (`schema:Place`, a WKT geometry under `gsp:hasGeometry`, the record's crosswalk identifiers). Registration with the Internet of Water is a deployment's own step: (1) fork `internetofwater/geoconnex.us` and add a directory for your namespace under `namespaces/`, with a `README.md` naming your contact people and some of your identifiers; (2) add a CSV of one-to-one redirects whose `id` column is the geoconnex.us address, `target` is this deployment's `/id/` address for the same record, and `creator` is your email; (3) open a pull request, which the geoconnex.us administrators review and merge (live about 15 minutes later; register.geoconnex.us is a web form that files the same pull request). Before step 1, set "Where your record addresses are published" on Delivery Settings to `geoconnex.us/<your-namespace>`, so every record's published identifier is the geoconnex.us address; the deployment must be reachable from the public internet, since the harvester reads each `target` without signing in. Only records with a geometry are Geoconnex features: a water system, a water right, and any record whose location is blank are not registered. Source: docs.geoconnex.us, read 2026-09-23. No deployment of this platform is registered. |
+| OGC SensorThings API v1.1 | The Open Geospatial Consortium's standard web interface for sensor data | Planned. A `Datastream` model exists, and OpenH2O stores each well's screen depths and vertical datum. There is no SensorThings interface yet. |
+| Frictionless Data Package | A set of data files with a `datapackage.json` file that describes them | Planned |
+| WaDE 2.0 | The Western States Water Council's Water Data Exchange format | Planned |
+| Geoconnex | Permanent web addresses for water features, listed in a national index | Built, as the next paragraphs describe |
 
-The design principle is that all four read from the **same** conformance registry, so adding one is additive serialization, not remodeling.
+Each record on a site has a permanent address, `/id/<kind>/<number>/`. The kinds are
+`boundary`, `zone`, `use-area`, `well`, `point-of-diversion`, `recharge-site`,
+`station`, `water-system`, `facility`, `sampling-point` and `water-right`, and the
+number is the record's number on the site. A browser that opens the address goes to
+the record's page. A program that sends the header `Accept: application/ld+json`, or
+adds `?format=jsonld` to the address, receives the record as schema.org JSON-LD in
+the form Geoconnex specifies. A record with a location is published as a
+`schema:Place`. It carries its outline or point as WKT under `gsp:hasGeometry` and
+lists its identifiers from other systems. A water right is published as a
+`schema:Thing` with no location. The addresses are built in `core/identifiers.py`.
+
+To list your site's records in Geoconnex, register them with the Internet of Water.
+You can file the registration on GitHub, as the steps describe, or through the web
+form at register.geoconnex.us, which files the same pull request.
+
+1. On Delivery Settings, set "Where your record addresses are published" to
+   `geoconnex.us/<your-namespace>`. Every record's published address then begins
+   with geoconnex.us. The site must be reachable from the public internet, because
+   Geoconnex reads each record without signing in.
+2. Fork the `internetofwater/geoconnex.us` repository on GitHub and add a folder for
+   your namespace under `namespaces/`. In that folder, put a `README.md` that names
+   your contacts and gives some example identifiers.
+3. Add a CSV file of redirects. In each row, `id` is the geoconnex.us address,
+   `target` is the site's own `/id/` address for the same record, and `creator` is
+   your email address.
+4. Open a pull request. The geoconnex.us administrators review it, and the
+   addresses go live about 15 minutes after they merge it.
+
+Geoconnex lists only records with a location. Leave water systems, water rights and
+any other record with no location out of your redirect file. No site running
+OpenH2O is registered yet.
 
 ---
 
-## How another district can reuse this
+## Reusing the design in another platform
 
-If you run a different water platform, the highest-leverage thing to copy is **the pattern, not the code**: a single canonical observed-property registry that every adapter and every export references, with the unit contract enforced by a gate. Grab [crosswalk.csv](crosswalk.csv) as a starting vocabulary, and `standards/` as a worked reference implementation under the AGPL.
+If you run another water-data platform, you can copy the design: one list of the
+kinds of measurement, a mapping from every source's codes onto that list, and a check
+that every kind has a unit and every code has a key. You can start from
+[crosswalk.csv](crosswalk.csv) as a vocabulary. The `standards/` folder is a working
+example, and you can reuse its code under the AGPL.

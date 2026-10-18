@@ -155,6 +155,7 @@ CALIFORNIA_NAMES: tuple = (
     (r"In California, the \**Sustainable Groundwater Management Act", "SGMA spelled out (2026-10-17)"),
     (r"California DDW", "DDW is California's Division of Drinking Water"),
     (r"California.s Division of Drinking Water", "DDW spelled out"),
+    (r"California Central Valley Groundwater Surface Water Simulation", "C2VSim spelled out"),
     (r"California.s SDWIS format", "the lab file layout is California's Division of Drinking Water's (2026-10-14)"),
     (r"California.s Water Use Reported export", "the State Water Board's published diversion file (2026-10-14)"),
     (r"SDWIS4 file holds every water system in California", "the Division of Drinking Water's file covers the state's systems (2026-10-14)"),
