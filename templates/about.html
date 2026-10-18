@@ -14,7 +14,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">About</span>
   </nav>
-  <p class="page-description">This page explains what OpenH2O is, who it is for, where its accounting method comes from and who made it.</p>
+  <p class="page-description">This page explains what OpenH2O is, who it is for, where it comes from and who made it.</p>
 </div>
 {% endblock %}
 
@@ -83,22 +83,25 @@
     </div>
   </div>
 
+  {% comment %} 2026-10-18 (150.1-03): the method card and the Credits table
+     became one prose panel, and "Who made OpenH2O" lost its "What / The fact"
+     header row (a prose panel there put the page over the help shape's half). The first two
+     sentences of "Where OpenH2O comes from" are Brent's own (14:36 PDT); every
+     line is a sentence written subject first, with no "Name, for purpose"
+     line and no link title used as a subject. The demonstration row left with
+     the table: the demonstration notice at the top of each page links there. {% endcomment %}
   <div class="card-raised">
-    <h2 class="section-header">Where the accounting method comes from</h2>
-    <p class="text-secondary text-base">OpenH2O's water accounting is based on the method of the Groundwater Accounting Platform, which ESA (formerly Sitka Technology Group) develops and the California Water Data Consortium oversees.</p>
-    <p class="text-secondary text-base">OpenH2O was written from scratch in Python and does not use any of the Groundwater Accounting Platform's code.</p>
+    <h2 class="section-header">Where OpenH2O comes from</h2>
+    <p class="text-secondary text-base">OpenH2O's water accounting is modeled on the Groundwater Accounting Platform, which ESA (formerly Sitka Technology Group) develops with the support of the California Water Data Consortium.</p>
+    <p class="text-secondary text-base">OpenH2O is a separate program, written from scratch in Python.</p>
+    <p class="text-secondary text-base">Earlier versions of the Groundwater Accounting Platform ran at the Rosedale-Rio Bravo Water Storage District and at Nebraska's Natural Resources Districts.</p>
+    <p class="text-secondary text-base">OpenH2O reads satellite estimates of evapotranspiration (ET) from OpenET and station readings from public sources such as CDEC and USGS.</p>
   </div>
 
-  <div class="card-raised about-credits">
+  <div class="card-raised">
     <h2 class="section-header">Who made OpenH2O</h2>
     <div class="table-scroll">
-      <table class="data-table help-cases-table">
-        <thead>
-          <tr>
-            <th>What</th>
-            <th>The fact</th>
-          </tr>
-        </thead>
+      <table class="data-table help-cases-table about-facts-table">
         <tbody>
           <tr>
             <td class="col-name">Author</td>
@@ -106,50 +109,22 @@
           </tr>
           <tr>
             <td class="col-name">Source code</td>
-            <td><a href="https://github.com/Open-H2O/openh2o" class="text-link" target="_blank" rel="noopener noreferrer">github.com/Open-H2O/openh2o</a>, under the GNU Affero General Public License, version 3</td>
+            <td>The source code is on GitHub at <a href="https://github.com/Open-H2O/openh2o" class="text-link" target="_blank" rel="noopener noreferrer">github.com/Open-H2O/openh2o</a>.</td>
+          </tr>
+          <tr>
+            <td class="col-name">License</td>
+            <td>OpenH2O is released under the GNU Affero General Public License, version 3.</td>
           </tr>
           <tr>
             <td class="col-name">Built with</td>
-            <td>Django, PostGIS, MapLibre GL JS, HTMX and Docker, all open source</td>
+            <td>OpenH2O is built on open-source software, including Django, PostGIS, MapLibre GL JS, HTMX and Docker.</td>
           </tr>
           <tr>
-            <td class="col-name">Third-party licenses</td>
-            <td><a href="https://github.com/Open-H2O/openh2o/blob/main/THIRD-PARTY-NOTICES.md" class="text-link" target="_blank" rel="noopener noreferrer">Third-party licenses and notices</a> lists each library OpenH2O uses and its license.</td>
-          </tr>
-          <tr>
-            <td class="col-name">Demonstration data</td>
-            <td><a href="{% url 'demonstration_data' %}" class="text-link">What is real in this demonstration</a> lists which records are public and which are invented.</td>
+            <td class="col-name">Libraries</td>
+            <td>OpenH2O lists the license of every library it uses in the <a href="https://github.com/Open-H2O/openh2o/blob/main/THIRD-PARTY-NOTICES.md" class="text-link" target="_blank" rel="noopener noreferrer">third-party notices file</a> on GitHub.</td>
           </tr>
         </tbody>
       </table>
-    </div>
-
-    <div class="help-subsection">
-      <h3 class="concept-panel-title">Credits</h3>
-      <div class="table-scroll mt-md">
-        <table class="data-table help-cases-table">
-          <thead>
-            <tr>
-              <th>Credit</th>
-              <th>For</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="col-name">Groundwater Accounting Platform</td>
-              <td>The accounting method OpenH2O is based on</td>
-            </tr>
-            <tr>
-              <td class="col-name">Rosedale-Rio Bravo Water Storage District and Nebraska's Natural Resources Districts</td>
-              <td>Earlier versions of the Groundwater Accounting Platform ran at these agencies</td>
-            </tr>
-            <tr>
-              <td class="col-name">OpenET, CDEC and USGS</td>
-              <td>The satellite and gauge data OpenH2O reads</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
     </div>
   </div>
 
