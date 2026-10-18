@@ -1,5 +1,5 @@
-operator_file,record_kind,key,unit,period_convention,product_door,mechanical_crosswalks_that_apply
-EXAMPLE: the district's ditch tender's book,diversion volume,headgate name and date,cfs or miner's inches times hours,daily,/surface/diversion/import/ (the book layout),"M1, M2, M7"
+operator_file,record_kind,key,unit,period_convention,product_door,conversions_that_apply
+EXAMPLE: a ditch tender's book of deliveries,diversion volume,headgate name and month,cfs and hours,"monthly, by irrigation season",/surface/diversion/import/ (the book layout),"cfs and hours to acre-feet; the headgate's local name"
 ,water right,,,,,
 ,point of diversion,,,,,
 ,diversion volume,,,,,
