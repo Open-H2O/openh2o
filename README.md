@@ -59,8 +59,8 @@ the only option on a hosted server whose provider does not allow containers.
 process.
 
 A new installation starts with an empty database. The setup steps then load the
-Merced Subbasin demonstration, a real California basin with published records and
-invented sample data, which you can explore before you load your own. The
+demonstration, a real groundwater basin with published records and invented sample
+data, which you can explore before you load your own. The
 demonstration is labeled as demonstration data wherever it appears, and replacing
 it with your organization's own basin is the usual next step.
 
@@ -82,7 +82,7 @@ cp .env.example .env
 docker compose up -d --build         # start db + web + caddy
 docker compose exec web python manage.py migrate
 docker compose exec web python manage.py seed_data      # reference data
-docker compose exec web python manage.py seed_merced    # the Merced Subbasin demonstration
+docker compose exec web python manage.py seed_merced    # the demonstration data
 docker compose exec web python manage.py createsuperuser   # your login for the trial
 ```
 
@@ -102,7 +102,7 @@ closed through the `ACCESS_CONTROL_ENFORCED` setting. The public demo at
 openh2o.com turns that setting off.
 
 <!-- defines: seed_data -->
-You will see the **Merced Subbasin** demonstration, the same one running at
+You will see the demonstration, the same one running at
 [openh2o.com](https://openh2o.com). *Seeding* means loading a starting set of data
 into the empty database: small reference lists such as units and categories, or a
 whole demonstration dataset. The demonstration seed takes a few minutes to download
@@ -146,7 +146,7 @@ installation and through each of these jobs.
 ## What it looks like
 
 These screenshots are from the live demo at [openh2o.com](https://openh2o.com),
-which runs the Merced Subbasin dataset. Invented sample data carries a *Demo* label
+which runs the demonstration data. Invented sample data carries a *Demo* label
 and appears beside the real published records.
 
 **The dashboard** shows the water balance for the water year: supplies by source,
@@ -159,12 +159,12 @@ accounts are in surplus or in deficit.
 and canals, points of diversion, use areas, wells, recharge sites and
 drinking-water facilities, each as its own layer. On the demo, anyone can open the map without signing in.
 
-![The OpenH2O map over aerial imagery of the Merced Subbasin, with a Layers panel listing administrative, surface water and land use layers and a legend of three management areas](docs/screenshots/map.jpg)
+![The OpenH2O map over aerial imagery of the demonstration basin, with a Layers panel listing administrative, surface water and land use layers and a legend of three management areas](docs/screenshots/map.jpg)
 
 **The drinking-water page** shows each public water system under its EPA PWSID
 and names the source of every figure.
 
-![The OpenH2O drinking-water page for the City of Merced, showing its PWSID, system type, owner type and population served, each labeled with its EPA Envirofacts source](docs/screenshots/drinking-water.png)
+![The OpenH2O drinking-water page for a city's water system, showing its PWSID, system type, owner type and population served, each labeled with its EPA Envirofacts source](docs/screenshots/drinking-water.png)
 
 ---
 
