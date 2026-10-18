@@ -82,7 +82,6 @@ BASELINE: dict = {
     "reporting/views.py": {"em dash": 1},
     "DEPLOY.md": {"em dash": 124, "filler": 22, "stand-in": 3, "district reader": 27, "reassurance": 13, "negation frame": 38, "bold verdict": 27},
     "docs/AI-OPERATOR-GUIDE.md": {"filler": 11, "paired heading": 1, "stand-in": 1, "district reader": 40, "California": 1, "reassurance": 8, "negation frame": 22, "bold verdict": 13},
-    "docs/DATA-IMPORT.md": {"double hyphen": 8, "filler": 2, "stand-in": 1, "district reader": 5, "negation frame": 11, "bold verdict": 1},
     "docs/DATA-STANDARDS.md": {"em dash": 12, "filler": 1, "stand-in": 1, "district reader": 4, "reassurance": 2, "negation frame": 8, "bold verdict": 1},
     "docs/INSTALL-WITHOUT-DOCKER.md": {"em dash": 41, "filler": 7, "paired heading": 3, "stand-in": 3, "district reader": 7, "reassurance": 4, "negation frame": 13, "bold verdict": 20},
     "docs/water-budget-terms.md": {"filler": 1, "district reader": 2, "negation frame": 6},
