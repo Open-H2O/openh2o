@@ -160,7 +160,6 @@ CALIFORNIA_NAMES: tuple = (
     (r"California.s Water Use Reported export", "the State Water Board's published diversion file (2026-10-14)"),
     (r"SDWIS4 file holds every water system in California", "the Division of Drinking Water's file covers the state's systems (2026-10-14)"),
     (r"California.s Electronic\s+Annual\s+Report", "the eAR is California's report (2026-10-14)"),
-    (r"real,? (?:published )?California basin", "the demonstration's real geography"),
     (r"open up California's water data", "the Consortium's purpose, in its own terms"),
     (r"California's reporting format", "the state's own format, the approved name for it (2026-10-12: \"California's reporting format, not layout\")"),
 )

@@ -1,44 +1,42 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
-# Deploy: Open Water Accounting Platform
+# Deploying OpenH2O
 
-Complete deployment guide. Every command is copy-pasteable. Written for
-an AI or operator deploying on a fresh VPS with zero prior knowledge.
+<!-- defines: docker -->
+This guide gives every command for installing OpenH2O with Docker, from a fresh
+server to a site the organization uses every day. It is written for an AI agent or
+a person who has never used OpenH2O. The
+[AI operator guide](docs/AI-OPERATOR-GUIDE.md) says what to ask the organization and
+in what order to do the work. This guide is the reference for each step.
 
 ---
 
 ## 1. Server Requirements
 
-<!-- defines: docker -->
-<!-- defines: docker_compose -->
-<!-- defines: sudo -->
-Three of the names in the table below are pieces an operator actually meets, so
-they are worth a sentence each first. OpenH2O normally ships as three
-*containers* — a container is a sealed, pre-packed box holding one piece of the
-program plus everything it needs to run, so it behaves the same on any computer
-— and **Docker** is the software that builds and runs those boxes. This
-platform's three hold the web pages, the database, and the piece that manages
-the address and the encryption. **Docker Compose** is a helper tool, installed
-alongside Docker, that starts, stops and rebuilds all three boxes together from
-one instruction file (`docker-compose.yml`) instead of handling each by hand;
-every `docker compose …` line in this guide is that tool. And **`sudo`** in
-front of a command is Linux for "do the next thing with full administrator
-power" — needed for anything that changes the server itself, such as installing
-software, as opposed to changes that stay inside OpenH2O.
+<!-- defines: docker_compose --><!-- defines: sudo --><!-- defines: reverse_proxy --><!-- defines: cron -->
+OpenH2O runs as three *containers*. A container is a package that holds one part
+of a program and everything that part needs, so it runs the same way on any
+computer, and Docker is the software that runs containers. The three containers are
+the website, the database and Caddy. Caddy receives web traffic and handles the
+encryption (section 4). Docker Compose comes with Docker. It starts, stops and
+rebuilds the three containers together from one file, `docker-compose.yml`, and
+every command in this guide that begins `docker compose` runs it. A command that
+begins `sudo` runs with administrator rights. Installing software on the server
+needs those rights.
 
 | Requirement | Minimum |
 |-------------|---------|
-| OS | Ubuntu 22.04+ (tested on 24.04) |
-| RAM | 2 GB (4 GB recommended) |
+| Operating system | Ubuntu 22.04 or newer (the commands here are written for 24.04) |
+| Memory | 2 GB (4 GB recommended) |
 | Disk | 10 GB free |
-| Docker Engine | 24+ |
-| Docker Compose | v2 |
+| Docker Engine | 24 or newer |
+| Docker Compose | version 2 |
 | Git | any recent version |
 | make | any recent version (`sudo apt-get install -y make`) |
-| cron | any recent version (`sudo apt-get install -y cron`). <!-- defines: cron --> This is Linux's built-in scheduler: the thing that runs a command on a repeating clock — "every night at 2am" — with nobody there to press a button. Section 11 installs jobs into it to fetch new stream and weather readings and to check the platform's own health. A bare server does not always have it, and `make install-cron` has nothing to install into if it is missing |
-| Domain | Only if the instance must be reachable from outside its own machine or network. A single-computer or office-network deployment needs none — see [docs/AI-OPERATOR-GUIDE.md](docs/AI-OPERATOR-GUIDE.md) Phase 2 |
+| cron | any recent version (`sudo apt-get install -y cron`). Cron is the standard Linux scheduler, and section 11 installs OpenH2O's jobs in it |
+| Domain name | Needed only when people outside the office network must reach the site. Phase 2 of the [AI operator guide](docs/AI-OPERATOR-GUIDE.md) explains the choice. |
 
-Verify Docker is installed:
+Check that Docker is installed:
 
 ```bash
 docker --version
@@ -48,86 +46,74 @@ docker compose version
 # Expected: Docker Compose version v2.x
 ```
 
-If Docker is not installed:
+If Docker is not installed, install it and add your account to the `docker` group:
 
 ```bash
 curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker $USER
 ```
 
-**That second command does not take effect in the terminal you typed it in.**
-Linux decides which groups you belong to when a login session begins, so the
-session you are already sitting in still holds the old list. The very next
-`docker` command will fail with a flat `permission denied` that says nothing
-about groups at all — it reads exactly like a broken install or a mistyped
-password, and it is neither. Log out, log back in, and it works. If logging out
-is awkward, put `sudo` in front of each `docker` command until you next do.
+The second command takes effect at your next sign-in. Linux reads your groups only
+when you sign in, so a `docker` command in the same terminal still fails with
+`permission denied`. Sign out and sign in again. Until you do, put
+`sudo` in front of each `docker` command.
 
-Then confirm Docker can actually run something:
+Then confirm that Docker can run a container:
 
 ```bash
 docker run hello-world
 ```
 
-**If that fails and the error mentions "cgroup" or "bpf", stop here.** Some
-machines you rent are not a whole computer but a slice of one, walled off using
-the very technology Docker itself needs, and that wall is enforced by the
-machine's own host — one level up, outside anything you can see or change from
-inside. No Docker setting, reinstall or version will get past it. There are two
-real answers, and neither of them is more Docker: ask whoever provisioned the
-machine to allow containers, or install the platform without Docker at all —
-[docs/INSTALL-WITHOUT-DOCKER.md](docs/INSTALL-WITHOUT-DOCKER.md) is that path,
-written out end to end.
-The test itself is quick — the first run also downloads a small image — and it
-is worth doing before anything else, because the alternative is hours spent on
-Docker fixes that cannot work.
-
-**That path is also there if you simply do not want Docker on this machine.** It
-is not only the answer to a failure; an agency with a policy about what may be
-installed, or a preference for managing the pieces directly, can start there
-instead.
+If the command fails with a message about "cgroup" or "bpf", the server's provider
+is blocking containers. The provider sets that limit outside the server, so no
+change to Docker on the server can lift it. Ask the provider
+to allow containers, or install OpenH2O without Docker by following
+[docs/INSTALL-WITHOUT-DOCKER.md](docs/INSTALL-WITHOUT-DOCKER.md). Follow that guide
+too when the organization prefers not to install Docker.
 
 ---
 
 <!-- defines: repository -->
-
 ## 2. Clone the Repository
 
-Copy the whole program onto this server. A *repository* is a folder holding all
-of the program's files, kept on a website called GitHub with a complete history
-of every change ever made to it; *cloning* it means copying that folder down to
-this machine so it can be built and run here.
+OpenH2O's code is kept in a *repository* on GitHub. A repository is a folder of the
+program's files together with the history of every change to them. *Cloning* the
+repository copies that folder onto the server. Clone it into your home folder:
 
 ```bash
+cd ~
 git clone https://github.com/Open-H2O/openh2o.git
 cd openh2o
+pwd
 ```
+
+`pwd` prints the folder's full path, such as `/home/operator/openh2o`. Note it,
+because the schedule in section 11 needs it.
 
 ---
 
 ## 3. Environment Configuration
 
 <!-- defines: env_file -->
-This section fills in one file. `.env` is a plain text file of NAME=value lines
-holding this deployment's settings and passwords — the one file that makes this
-installation *this district's* rather than a generic copy, and one deliberately
-kept out of the published copy of the program precisely because it holds
-secrets. The repository ships an example of it to start from:
+OpenH2O reads its settings from a `.env` file, a plain text file with one
+`NAME=value` line for each setting. Each installation has its own `.env` file, which
+holds that site's settings and passwords. Git is set to ignore the file, so the
+passwords stay out of the published code. Start from the example file:
 
 ```bash
 cp .env.example .env
 ```
 
 <!-- defines: secret_key -->
-Generate a `SECRET_KEY`. That is an internal password the software makes up for
-itself and uses to scramble things like login session cookies; nobody ever types
-it, it simply has to exist and stay private:
+The site signs its sign-in cookies with a value called `SECRET_KEY`. Generate one,
+and generate a database password:
 
 ```bash
-python3 -c "import secrets; print(secrets.token_urlsafe(50))"
+python3 -c "import secrets; print(secrets.token_urlsafe(50))"   # SECRET_KEY
+python3 -c "import secrets; print(secrets.token_urlsafe(32))"   # POSTGRES_PASSWORD
 ```
 
-Edit `.env` and set these values at minimum:
+Edit `.env` and set these values before the first start:
 
 ```bash
 SECRET_KEY=<paste-generated-key-here>
@@ -135,103 +121,95 @@ POSTGRES_PASSWORD=<choose-a-strong-password>
 DJANGO_SETTINGS_MODULE=config.settings.production
 ```
 
-<!-- defines: allowed_hosts -->
-The last two settings — `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS` — are two
-safety lists. The program refuses to answer unless the web address in the
-request matches one of them, which is what stops a stranger tricking it into
-behaving as a different website; they have to carry this district's real address
-exactly, or the site turns every visitor away. (`CSRF` is the attack that second
-list exists to stop — somebody else's page quietly submitting a form to yours in
-a logged-in visitor's name.) What you put in them depends on
-**who can reach this instance**. That is the same question §4 and
-[docs/AI-OPERATOR-GUIDE.md](docs/AI-OPERATOR-GUIDE.md) Phase 2 branch on, and
-Phase 2 step 2 carries the authoritative table. The two shapes are:
+The example file sets `POSTGRES_PASSWORD=openh2o`, and the production settings
+refuse to start with that password. The database stores its password when it is
+first created, so set `POSTGRES_PASSWORD` before the first start. Changing the value
+in `.env` later does not change the password the database already holds. Docker
+Compose writes the password into the address the website uses to reach the
+database, so a password containing `@`, `:`, `/` or `#` breaks that connection. The
+second command above generates a password without those characters. The example
+file already sets `DJANGO_SETTINGS_MODULE` to `config.settings.production`. Leave
+that line as it is.
 
-**Reachable from the public internet, at a domain:**
+<!-- defines: allowed_hosts --><!-- defines: localhost -->
+Then set `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS`. `ALLOWED_HOSTS` lists the
+addresses the site answers at, and OpenH2O refuses a request made to any other
+address. `CSRF_TRUSTED_ORIGINS` lists the `https://` addresses from which OpenH2O
+accepts a submitted form, such as the sign-in form. What goes in them depends on who
+needs to reach the site. Section 4 and Phase 2 of the AI operator guide ask the same
+question.
+
+For a site that people reach from the internet at a domain:
 
 ```bash
-ALLOWED_HOSTS=your-domain.com,www.your-domain.com
-CSRF_TRUSTED_ORIGINS=https://your-domain.com,https://www.your-domain.com
+ALLOWED_HOSTS=your-domain.com
+CSRF_TRUSTED_ORIGINS=https://your-domain.com
 ```
 
-<!-- defines: localhost -->
-**Only this computer, or the office network.** `localhost` and `127.0.0.1` both
-mean "this same computer", as opposed to an address anyone else could type — so
-an instance nobody outside reaches names those, or names the machine's address
-on the office network. There is no public domain, so `CSRF_TRUSTED_ORIGINS`
-stays empty:
+A site on this computer only, or on the office network, has no domain, so
+`CSRF_TRUSTED_ORIGINS` stays empty. `localhost` and `127.0.0.1` are two names for the
+address a computer uses for itself, and no other computer can reach that address.
+For a site on the office network, list the computer's address on that network
+instead. `hostname -I` prints it:
 
 ```bash
 # only this computer
 ALLOWED_HOSTS=localhost,127.0.0.1
 CSRF_TRUSTED_ORIGINS=
 
-# or, on the office network, the machine's address on that network
+# or, on the office network, the computer's address on that network
 ALLOWED_HOSTS=192.168.1.40
 CSRF_TRUSTED_ORIGINS=
 ```
 
-Neither shape is a lesser deployment. `ALLOWED_HOSTS` is a safety list the
-program checks against the address in each request; it simply has to hold the
-address people will actually type, whatever that is.
+The production settings always add `127.0.0.1` and `localhost` to `ALLOWED_HOSTS`,
+so commands run on the server itself can reach the site.
 
-See `.env.example` for all available variables with documentation.
+Section 12 lists every setting the code reads, with its default.
 
 ---
 
-<!-- defines: reverse_proxy -->
 <!-- defines: tls_https -->
-
 ## 4. Caddy / HTTPS Configuration
 
-Two pieces sit between a visitor and this platform, and this section is about
-both of them.
+This section sets up two things: Caddy, and the encryption of the connection.
 
-The first is a **traffic router** — a middleman program that receives everything
-arriving from outside and relays it inward to the real program. The name for
-that arrangement is a *reverse proxy*, and the one shipped here is a program
-called **Caddy**, configured by the file named `Caddyfile`. A district that
-already runs a proxy of its own ends up with two in a row: theirs, outside your
-control, in front of this machine, and Caddy inside Docker in front of OpenH2O.
-That is a normal arrangement, not a fault to fix.
+The first is Caddy, a *reverse proxy*: a program that receives the traffic arriving
+from outside and passes it to the website behind it. Its settings are in the file
+named `Caddyfile`. Some organizations already run a proxy of their own in front of
+their servers. In that case the organization's proxy passes traffic to Caddy, and
+Caddy passes it to OpenH2O. OpenH2O supports this setup.
 
-The second is the **lock on the connection**. *HTTPS* is the padlock-icon,
-encrypted version of a web address; *TLS* is the encryption technology behind
-that padlock; and a *certificate* is the file that proves the address really is
-itself. A connection has to be unlocked somewhere before any program can read
-what it carries, and *where* that unlocking happens is what the rest of this
-section turns on.
+The second is the encryption. *HTTPS* is the encrypted connection a browser marks
+with a padlock. It depends on a *certificate*, a file that proves the address
+belongs to this site. The table shows what to do with the `Caddyfile`, depending
+on who needs to reach the site:
 
-So: what you do with the `Caddyfile` follows from exactly one question, **who
-can reach this instance?** Not how big the machine is, not whether it is a
-rented server or a computer in the office — only who can reach it.
-
-| Who can reach this instance | What to do with the `Caddyfile` | Follow |
+| Who needs to reach the site | What to do with the `Caddyfile` | Follow |
 |---|---|---|
-| Only this computer, or the office network | Leave it exactly as shipped | **Branch A** |
+| Only this computer, or the office network | Leave it as shipped | **Branch A** |
 | The public internet, and this server obtains its own certificate | Replace `:80` with your bare domain | **Branch B** |
-| The public internet, but something in front already handles the encryption | Leave `:80` as shipped, or write `http://your-domain.com` | **Branch C** |
+| The public internet, and something in front of the server handles the encryption | Leave `:80` as shipped, or write `http://your-domain.com` | **Branch C** |
 
-This is the same question [docs/AI-OPERATOR-GUIDE.md](docs/AI-OPERATOR-GUIDE.md)
-Phase 2 branches on. If the two ever seem to disagree, Phase 2 is the authority
-for the `.env` settings and this section is the authority for the `Caddyfile`.
+Phase 2 of [docs/AI-OPERATOR-GUIDE.md](docs/AI-OPERATOR-GUIDE.md) asks the same
+question. Follow Phase 2 for the `.env` settings and this section for the
+`Caddyfile`.
 
-⚠ **The `Caddyfile` examples in the branches below are cut down to the lines
-that differ between branches.** The shipped file carries more than they show — a
-security header, tuned retry timings for the moment after a restart, and a
-branded page for when the site is down — each with a comment saying why. Edit
-the shipped file rather than replacing it with one of these blocks, or you will
-quietly drop all three.
+⚠ The `Caddyfile` examples below are shortened. The shipped file carries more: two access logs (section 11 reads them), a
+security header, a caching rule for the styling and scripts, the header that tells
+OpenH2O a request arrived over HTTPS, retry timings for the first moments after a restart,
+and a page to show while the site is down. Edit the shipped file. If you replace it
+with one of the examples, you lose all of these.
 
 <!-- branch: no-public-access -->
 
-### Branch A — Only this computer, or the office network
+### Branch A: Only this computer, or the office network
 
-Leave the `Caddyfile` exactly as it ships. There is no domain to name and no
-certificate to obtain, so there is nothing in this file to change. You will reach
-the site at `http://localhost` or at the machine's address on the office network.
+Leave the `Caddyfile` as it ships. There is no domain to name and no certificate to
+obtain. You reach the site at `http://localhost`, or at the computer's address on
+the office network.
 
-Then set these three in `.env`:
+Then set these three settings in `.env`:
 
 ```bash
 SECURE_SSL_REDIRECT=False
@@ -239,39 +217,36 @@ SESSION_COOKIE_SECURE=False
 CSRF_COOKIE_SECURE=False
 ```
 
-Without them, **every login returns 403 while unauthenticated pages render
-perfectly** — which makes the site look like it works right up until someone
-tries to log in. The reason is that a browser never sends a `Secure` cookie over
-plain `http://`, and production settings mark the login cookies `Secure` by
-default. This is a supported, documented posture, not a workaround;
-[docs/AI-OPERATOR-GUIDE.md](docs/AI-OPERATOR-GUIDE.md) Phase 2 step 3 carries the
-full table. You still keep `DEBUG=False`, a real `ALLOWED_HOSTS`, a database
-password that is not one of the rejected defaults, and the closed-signup default.
+The production settings mark the sign-in cookies secure, and a browser sends a
+cookie marked secure only over HTTPS. Without these three lines, every sign-in over
+plain `http://` fails with a 403 error, even though the pages that need no sign-in
+still load. Phase 2, step 3 of the [AI operator guide](docs/AI-OPERATOR-GUIDE.md)
+gives the same settings. Keep `DEBUG` off, keep `ALLOWED_HOSTS` set to the site's
+own address and keep the strong database password.
 
-⚠ **Nothing above narrows who can reach the machine, and this branch is the one
-where that matters.** <!-- defines: port --> A *port* is a numbered door on the
-computer that one particular kind of traffic knocks on: port 80 is the plain,
-unencrypted web door — the one a browser uses when nobody types a number at all
-— and port 443 is the encrypted one. As shipped, `docker-compose.yml` opens both
-of those doors on every network the machine is attached to, so the site is
-reachable by anything that can reach the machine.
+<!-- defines: port -->
+⚠ These settings do not narrow who can reach the computer. A *port* is a numbered
+entry point on a computer for one kind of network traffic. Port 80 carries plain web
+traffic, which a browser uses for an `http://` address with no port number. Port 443
+carries encrypted web traffic. As shipped, `docker-compose.yml` opens both ports
+on every network the computer is connected to, so anything that can reach the
+computer can reach the site.
 
-If the answer was *"only this computer,"* change the two lines in
-`docker-compose.yml` that open them, from `80:80` and `443:443` to
-`127.0.0.1:80:80` and `127.0.0.1:443:443`, then confirm from a second machine
-that the address refuses the connection. If the answer was *"the office
-network,"* leave them and rely on the office network itself — but say so out
-loud to the agency rather than letting it be an accident.
+For a site on this computer only, change the two lines in `docker-compose.yml` from
+`80:80` and `443:443` to `127.0.0.1:80:80` and `127.0.0.1:443:443`, and run
+`docker compose up -d`. Then, from a second computer on the same network, run
+`curl -I http://` followed by this computer's network address, and confirm that the
+connection is refused. For a site on the office
+network, leave both lines as they are, and tell the organization that anyone on that
+network can reach the site.
 
 <!-- branch: own-certificate -->
 
-### Branch B — Public internet, and this server obtains its own certificate
+### Branch B: Public internet, and this server obtains its own certificate
 
-Replace `:80` with your domain written as a **bare address — no `http://` and no
-`https://` in front of it**. The bare form is exactly what tells Caddy to obtain
-a certificate for that name automatically, at no cost. Caddy tries two issuers
-by default — Let's Encrypt first, then ZeroSSL if that fails — so a certificate
-arriving from the second name is normal, not a sign anything went wrong.
+Replace `:80` with your domain, written as a bare address with no `http://` or
+`https://` in front of it. When the domain is written bare, Caddy obtains a free
+certificate for it on its own.
 
 ```caddy
 your-domain.com {
@@ -288,49 +263,37 @@ your-domain.com {
 }
 ```
 
-**Two things should already be true before you start the containers.** The first
-is a hard requirement; the second is strongly advised:
+<!-- defines: dns -->
+Before you start the containers, make sure of two things.
 
-1. **The DNS A record for that name must already point at this server's public <!-- defines: dns -->
-   IP.** *DNS* is the internet's phone book: it turns a web address into the
-   numeric address of one specific computer, and an *A record* is one entry in
-   that book, so "pointing the domain at this machine" means editing that one
-   entry wherever the domain was bought. Certificates are issued to a name only
-   after the issuer confirms the name really does lead to this machine, so the
-   phone-book entry has to be in place first, not afterwards.
-2. **Open both port 80 and port 443 to the internet** — the two doors Branch A
-   describes above. Port 443 is where the finished site is served. The issuer's
-   check can arrive at either door: Caddy enables both check methods by default
-   and picks between them, so a certificate can still be issued with port 80
-   closed. Opening both removes a variable rather than being strictly required.
-   Note that closing 80 also means anyone who types the address without
-   `https://` reaches nothing.
+1. **The domain's A record points at this server's public address.** DNS is the
+   internet's directory. It matches a domain name to the numeric address of a
+   computer. An *A record* is the DNS entry that holds that numeric address, and you
+   edit it at the company where the domain was bought. The certificate's issuer
+   checks that the name leads to this server before it issues a certificate, so the
+   A record has to be in place first.
+2. **Ports 80 and 443 are open to the internet.** The site is served on port 443. The
+   issuer's check can arrive on either port, so open both. With port 80 closed,
+   anyone who types the address without `https://` reaches nothing.
 
-Keep `SECURE_SSL_REDIRECT`, `SESSION_COOKIE_SECURE` and `CSRF_COOKIE_SECURE`
-switched **on** for this branch — they are on by default and they are correct
-here.
+Keep `SECURE_SSL_REDIRECT`, `SESSION_COOKIE_SECURE` and `CSRF_COOKIE_SECURE` on for
+this branch. They are on by default.
 
-> **Say plainly what this branch is: reasoned, not proven.** This project has
-> never once exercised it. Every machine we own is either behind a Cloudflare
-> Tunnel — which terminates the encryption itself, so Caddy never runs its own
-> certificate request — or is a rented server whose ports 80 and 443 are already
-> taken by something else. The instructions above follow Caddy's own published
-> documentation; they have not been watched working end to end. If you are the
-> first to run this branch and it
-> misbehaves, that is worth reporting: it is a genuine gap in what has been
-> tested, not something we checked and got wrong.
+No test in this project runs this branch from start to finish. The steps follow
+Caddy's own documentation. If something fails on this branch, please report it at
+github.com/Open-H2O/openh2o/issues.
 
 <!-- branch: upstream-terminator -->
 
-### Branch C — Public internet, but something in front already handles the encryption
+### Branch C: Public internet, and something in front of the server handles the encryption
 
-This is the branch for a Cloudflare Tunnel, an agency's existing proxy, or a load
-balancer — anything that receives the encrypted traffic, unwraps it, and forwards
-plain traffic on to this server. openh2o.com itself runs this way.
+This branch is for a tunnel service, the organization's own proxy or a load
+balancer: anything that receives the encrypted traffic, decrypts it and sends plain
+traffic on to this server.
 
-**Do not put a bare domain in the `Caddyfile` on this branch.** Either leave `:80`
-exactly as shipped, or, if the name genuinely has to appear, write it with the
-`http://` prefix:
+Leave `:80` as shipped. If you want the `Caddyfile` to answer only at your domain,
+write the domain with the `http://` prefix. Do not write a bare domain on this
+branch.
 
 ```caddy
 http://your-domain.com {
@@ -349,31 +312,19 @@ http://your-domain.com {
 }
 ```
 
-The `http://` prefix is the whole mechanism: it is what tells Caddy to serve that
-name as-is, over plain HTTP, and order no certificate. (Caddy's documentation,
-Caddyfile → Concepts → Addresses.)
-
-**The global `auto_https off` option is not a substitute, and it is worth
-knowing why.** It does switch the certificate automation off — that much is
-real — but it is a blunt instrument here. It is global, so it also turns off the
-plain-to-encrypted redirect for *every* site in the file, and by Caddy's own
-documentation it does not change the protocol a site is served on: an address
-written as a bare domain still gets served over HTTPS, now with no certificate
-behind it. Changing the address is what actually changes what is served, which
-is why the `http://` prefix is the instruction here.
+The `http://` prefix tells Caddy to serve that name over plain HTTP and to order no
+certificate. With a bare domain, Caddy orders a certificate. The service in front
+of the server still sends plain traffic, so the requests loop until they fail.
 
 <!-- defines: x_forwarded_proto -->
-Keep the `header_up X-Forwarded-Proto https` line. When the thing in front strips
-the encryption, it can attach a note saying "this was encrypted when the visitor
-sent it"; `X-Forwarded-Proto` is that note, and Django is configured to trust it
-rather than insisting on seeing encryption that will never reach it.
+Keep the `header_up X-Forwarded-Proto https` line. It makes Caddy add a header to
+each request it passes on. The `X-Forwarded-Proto` header tells OpenH2O that the
+visitor's connection was encrypted, and OpenH2O's production settings trust it.
+Without the header, OpenH2O sees plain traffic and redirects every request to HTTPS,
+so the requests loop.
 
-**The trap, in one sentence:** a bare domain here makes Caddy order a certificate
-through a check that has to reach this server from outside, while Django is
-simultaneously redirecting every plain request to HTTPS — and the request loops
-until it dies. The shipped `Caddyfile`'s own opening comment describes the
-second half of that, the redirect loop, and why the `X-Forwarded-Proto` line
-below prevents it. It is worth reading before you edit the file.
+Keep `SECURE_SSL_REDIRECT`, `SESSION_COOKIE_SECURE` and `CSRF_COOKIE_SECURE` on for
+this branch.
 
 ---
 
@@ -383,342 +334,312 @@ below prevents it. It is worth reading before you edit the file.
 docker compose up -d --build
 ```
 
-The three containers start in sequence, not together: the database has to report
-healthy before the web container starts, and the web container then does its own
-first-boot work — gathering up the site's styling and images, and building its
-database tables — before it reports healthy in turn and Caddy starts. Give it a
-minute or two on a first build, and check with:
+The three containers start one after another. The database has to report healthy
+before the website container starts. The website container then does its own
+start-up work in this order. It gathers the styling and images, runs the
+<!-- defines: migrations -->migrations that create or update the database tables (section 6),
+creates a cache table, and creates the administrator account if `.env` asks for one
+(section 7). It reports healthy after that, and Caddy starts. A first build takes a few minutes. Check with:
 
 ```bash
 docker compose ps
 ```
 
-Expected output once all three are up:
-
-```
-NAME              IMAGE                    STATUS                    PORTS
-openh2o-caddy-1   caddy:2-alpine          Up                        0.0.0.0:80->80/tcp, 0.0.0.0:443->443/tcp
-openh2o-db-1      postgis/postgis:16-3.4  Up (healthy)              5432/tcp
-openh2o-web-1     openh2o-web             Up (healthy)              8000/tcp
-```
-
-Only `db` and `web` report `(healthy)` — the Caddy image defines no health check
-of its own, so a bare `Up` is the correct and only reading for that row.
+Once all three are up, `db` and `web` show `Up (healthy)` and `caddy` shows `Up`.
+The compose file gives Caddy no health check, so its row shows only `Up`.
 
 ---
 
-<!-- defines: migrations -->
-
 ## 6. Run Migrations
 
-*Migrations* are the step where the program builds or updates the actual tables
-inside its database to match what this version of the software expects. Routine
-and expected after every install and every update; skip it and you are left with
-an empty, unusable database.
+<!-- defines: migrations -->
+The *migrations* create or update the database tables to match this version of
+OpenH2O. The website container runs them each time it starts, so after section 5 the
+tables are already in place. You can run them by hand at any time:
 
 ```bash
 docker compose exec web python manage.py migrate
 ```
 
-Expected: a list of applied migrations ending with `OK`.
+When the tables are up to date, the command reports that there are no migrations to
+apply.
 
 ---
 
 <!-- defines: superuser -->
-
 ## 7. Create Superuser
 
-A *superuser* is the one account inside OpenH2O that can do anything: add other
-staff accounts, change settings, see everything. It is separate from and
-unrelated to any login for the server itself, and it has to be created by hand
-before anyone can sign in at all — there is no "first visitor becomes the
-administrator" magic.
-
-```bash
-docker compose exec web python manage.py createsuperuser
-```
-
-Follow the prompts for username, email, and password.
-
-**Nobody hands you this password.** An agency's paperwork supplies the things
-only the agency can know — their web address, their data keys — and not this
-one, because this account does not exist until you create it here. So invent it
-properly: not blank, not reused from somewhere else, not something memorable.
-Generate it the same way §3 generates `SECRET_KEY`:
+The first account is a *superuser*. A superuser can do everything in OpenH2O,
+including adding the other staff accounts. It is an OpenH2O account and is separate
+from any login to the server, and nobody can sign in until it exists. You choose its
+password yourself, because the account does not exist until you create it. Generate
+a strong one:
 
 ```bash
 python3 -c "import secrets; print(secrets.token_urlsafe(18))"
 ```
 
-Then get it to the agency through a channel they already trust — the password
-manager they use, or handed over in person. Not a chat message, not left sitting
-in a file on the server. (§3's database password is under the same rule for the
-same reason: the platform refuses to start in its secure mode if that one is
-left empty or set to any of four well-known defaults, and that refusal is
-deliberate.)
+Give the password to the organization through its password manager, or hand it over
+in person. Do not send it in a chat message or leave it in a file on the server.
 
-**The email address you type at that prompt is probably not a mailbox anyone
-reads.** If you invent one — `admin@` the agency's own address is the usual
-guess — then the **"Forgot password?"** link on the login page sends its reset
-to an inbox that does not exist, and whoever is locked out simply never receives
-anything. Put a real, monitored address on the account before the agency starts
-depending on this deployment: **Django admin → Core → Users → (the account) →
-Personal info → Email address**. Then check §11's *Email / Password Reset* section for whether
-outgoing email is configured at all — until it is, that flow sends nothing no
-matter whose address is on the account.
+Create the account in one of two ways.
+
+Set `DJANGO_SUPERUSER_EMAIL` and `DJANGO_SUPERUSER_PASSWORD` in `.env`, then run
+`docker compose up -d`. Each time the website container starts, it creates the
+account if the account does not exist, and it sets the account's password to the one
+in `.env`. If the administrator later changes the password on the site, remove the
+password line from `.env`, or the next start sets it back.
+
+Or create the account at a prompt:
+
+```bash
+docker compose exec web python manage.py createsuperuser
+```
+
+Answer the prompts for a username, an email address and a password.
+
+Give the account an email address that someone reads. The **Forgot password?** link
+on the sign-in page sends its reset link to that address. If the address is an
+invented one, such as an `admin@` address nobody reads, the link reaches no one. To
+change the address later, an administrator clicks **Change email** beside the account
+on the Users page (`/users/`). The button changes the person's sign-in address in
+every place OpenH2O keeps it. Then read *Email / Password Reset* in section 11. The
+site sends reset links only after its email settings are in place.
 
 ---
 
 <!-- defines: seed_data -->
-
 ## 8. Seed Reference Data
 
-*Seeding* means loading a starting set of data into a database that is otherwise
-empty. It covers two different things here: the small reference lists such as
-units and categories that every deployment needs, which is this section, and a
-whole demonstration dataset so there is something to look at before the
-district's own records arrive, which is §9.
-
-These commands load required lookup tables (roles, the observed-property
-crosswalk, water types, well types, water right types, data source
-definitions, and report templates):
+*Seeding* a database means loading a starting set of records into it. This section
+loads the reference lists every site needs. Section 9 loads the demonstration data.
 
 ```bash
 docker compose exec web python manage.py seed_data
 ```
 
-This runs the seed commands in the order below on a deployment that has every
-module switched on. The first two always run; the rest belong to modules a
-deployment can switch off, and one whose module is off is skipped and said so in
-the output.
+`seed_data` runs these commands in this order. The first two always run. Each of
+the others belongs to a module of OpenH2O that a site can switch off (section 12).
+On a site without that module, `seed_data` skips the command and says so.
 
 - `seed_roles` (admin, manager, viewer)
-- `seed_observed_properties` (the standards crosswalk: every adapter's native
-  parameter code mapped to a canonical concept, which is what makes
-  `check_conformance` able to check anything)
-- `seed_water_types` (Groundwater, Surface Water, Recycled Water, etc.)
+- `seed_observed_properties` (the standards crosswalk, which maps each data source's
+  own parameter codes to a standard list of measured properties. `check_conformance`
+  checks the data against it.)
+- `seed_water_types` (Groundwater, Surface Water, Recycled Water and others)
 - `seed_well_types` (Production, Monitoring, Injection, Observation)
 - `seed_data_sources` (CDEC, USGS, OpenET, CIMIS, CNRFC, DWR, NOAA)
-- `seed_drinking` (federal MCL reference limits for the drinking-water module)
-- `seed_water_right_types` (Appropriative, Pre-1914, Riparian, etc.)
-- `seed_report_templates` (the reporting feature's formats; skipped while reporting is off, the default)
+- `seed_drinking` (the federal maximum contaminant levels for the drinking-water
+  module)
+- `seed_water_right_types` (Appropriative, Pre-1914, Riparian and others)
+- `seed_report_templates` (the report formats. Reporting is off by default, and this
+  command is skipped while it is off.)
 
-To run any seed command individually:
+To run one of them on its own:
 
 ```bash
 docker compose exec web python manage.py seed_roles
 ```
 
+Running `seed_data` again changes nothing that is already in place.
+
 ---
 
 ## 9. Load the Demonstration Dataset (Optional)
 
-For testing or demonstration, load the Merced Subbasin demo — a real California
-basin, the same dataset running at openh2o.com:
+The demonstration covers a real groundwater basin. It combines the basin's
+published records with invented sample data, and it gives the organization a
+complete site to explore.
 
 ```bash
 docker compose exec web python manage.py seed_merced
 ```
 
-This builds the full demonstration: real boundary and hydrography, GSA and
-district zones, water rights and points of diversion, hand-selected place-of-use
-parcels, cropland, recharge basins, and a year of ledger activity. One step does
-a live fetch of flowlines and monitoring stations from public APIs (a few
-minutes, no key required). For real satellite-ET figures, set an OpenET key (see
-section 11) and run the ET sync. Without a key the demo's face-value figures —
-water rights, deliveries, parcels, ledger activity — are all seeded and
-internally coherent, but **consumptive use is computed from satellite ET and has
-no fallback**, so those figures stay empty until a key is supplied.
+`seed_merced` needs a site that runs every module of OpenH2O. Set
+`OPENH2O_MODULES=all` in `.env` and run `docker compose up -d` first (section 12). It loads the basin's boundary, streams and
+canals, management zones, water rights and points of diversion, selected parcels,
+cropland, recharge basins and a year of ledger activity. One of its steps downloads
+streams and monitoring stations from public government services and needs no key.
+On a server with no internet connection, add `--skip-auto-populate` to leave that
+step out.
 
-⚠ **`run_calculations` needs one more thing that no seed command runs for you.**
-It will not start at all until an active calculation method exists, and the
-command that creates one — `seed_calculation_plan` — is run by neither
-`seed_data` nor `seed_merced`. Without it the command stops with an error naming
-exactly that. `seed_merced` prints a list of what is still missing when it
-finishes, and this is on it; that list is the authority, not this paragraph.
-With the method in place but no ET data behind it, `run_calculations` then
-reports every parcel as skipped ("no ET data").
+The demonstration's records stay on the site beside the organization's own records,
+and OpenH2O has no command that removes them. (The `make flush-demo` and
+`make teardown-demo` targets handle two older sample datasets, and they leave this
+one in place.) If the organization wants its site without the demonstration, load
+it on a second copy of OpenH2O.
+
+The demonstration's water rights, deliveries, parcels and ledger activity are all
+seeded. Its consumptive use figures come from satellite evapotranspiration (ET)
+data. That data needs an OpenET key (section 11) and a run of
+`sync_openet_parcels`, which Phase 4 of the AI operator guide shows. Until then,
+those figures stay empty.
+
+The nightly calculation, `run_accounting`, runs `run_calculations` month by month,
+and both need an active calculation method. Neither `seed_data` nor `seed_merced`
+creates one. Create it with:
+
+```bash
+docker compose exec web python manage.py seed_calculation_plan
+```
+
+When `seed_merced` finishes, it prints a list of what the site still needs, and
+`seed_calculation_plan` is on that list. If a method is in place but there is no ET
+data yet, `run_calculations` skips every parcel and reports that it has no ET
+data.
 
 <!-- defines: idempotent -->
-Each sub-step is *idempotent* — running it five times ends up the same as
-running it once, because it notices what is already done and skips it rather
-than duplicating or breaking anything — so re-running after an interruption is
-safe, with one deliberate
-exception. The operations step deletes and regenerates parcel and well geometry,
-so on a production instance (`DEBUG=False`) it refuses to run a *second* time
-over demo rows that already exist, rather than silently destroying hand-adjusted
-boundaries. A first-time seed on an empty database is unaffected and needs no
-flag. To rebuild the demo on purpose:
+Every step of `seed_merced` but one is *idempotent*: running it again gives the
+same result as running it once, because it skips what is already done. The
+exception deletes and redraws the demonstration's parcel outlines and well
+locations, so under the production settings `seed_merced` stops at that step when
+demonstration records already exist. A first run on an empty database needs no flag. To
+rebuild the demonstration:
 
 ```bash
 docker compose exec web python manage.py seed_merced --allow-prod-clobber
 ```
 
-**The bundled station catalog.** The seed above finds the basin's monitoring
-stations by calling the agencies that publish them, and it creates every one of
-them switched **off** — so a freshly seeded demonstration reports "0 of 0
-stations reporting" until somebody turns them on, and it needs a working
-connection to those agencies to find them at all. The demonstration's own list
-of stations also ships with the platform — 335 of them, 42 switched on, and 50
-of the 335 (all 42 of the active ones, plus 8 others) carrying the real date
-they last published a reading — and one command loads it:
+The populate step that downloads monitoring stations creates every station switched
+off, so a new demonstration shows no stations reporting until they are turned on.
+OpenH2O ships with the demonstration's own list of 335 stations. Of those, 42 are
+switched on, and each of the 42 carries the date it last published a reading. One
+command loads the list over the stations the populate step created:
 
 ```bash
 docker compose exec web python manage.py load_station_fixture
 ```
 
-That is the set openh2o.com shows. It calls nobody, so it works on a machine
-with no way out to the internet, and running it twice changes nothing. Run it
-after the reference data in §8, which is what creates the list of upstream
-services it names; it stops with a plain message rather than half-writing if
-that list is missing. `seed_merced` deliberately does not run it, and that is
-the reason this step exists as a step: a real agency standing this platform up
-against its own basin wants its **own** stations discovered, not Merced's.
+It downloads nothing, and a second run changes nothing. Run it after `seed_data`
+(section 8), because `seed_data` creates the data sources the station list refers
+to. Without them it stops with a
+message and writes nothing. For the organization's own area, turn on the area's own
+stations as Phase 4 of the AI operator guide describes.
 
-**Once the agency's own records are loaded** — by this route, by the setup
-wizard (§11), or through [docs/DATA-IMPORT.md](docs/DATA-IMPORT.md) — run the
-platform's two self-checks over the new data:
+The organization's own records come in through the Setup Wizard (section 11) and
+the imports in [docs/DATA-IMPORT.md](docs/DATA-IMPORT.md). Once they are loaded,
+run OpenH2O's two checks over them:
 
 ```bash
 docker compose exec web python manage.py check_conformance
 docker compose exec web python manage.py run_health_checks
 ```
 
-The first reports whether every kind of measurement now in the database is
-mapped to a known concept with a real unit — a reading with no unit behind it is
-a number nobody can file. The second reports on the deployment underneath it:
-database, disk, certificate, migrations, and whether the live data feeds are
-current. Both are covered in §11; this is simply the moment to run them, because
-new data is what changes their answers.
+`check_conformance` reports whether every kind of measurement in the database maps
+to a known property with a unit. `run_health_checks` checks the database, the disk,
+the certificate, the migrations and whether the data sources are current. Section 11
+covers both.
 
 ---
 
 ## 10. Verify Deployment
 
-**Do the last two checks at the address the agency will actually use**, not only
-at `http://localhost`. A site that answers on the machine itself and nowhere else
-looks identical to a working one from here. Per §4's branches, that address is:
-`http://localhost` or the machine's office-network address for **Branch A**, and
-`https://your-domain.com` for **Branch B** and **Branch C**.
+Run the checks at the address the organization will use: `http://localhost` or the
+computer's office-network address on Branch A, and `https://your-domain.com` on
+Branch B and Branch C. A site that answers only on the server itself looks the same
+from the server as a site that works.
 
-Run these checks in order:
-
-**HTTP response through Caddy:**
+**A response through Caddy:**
 
 ```bash
 curl -s -o /dev/null -w '%{http_code}' http://localhost
-# Expected: 200
+# Expected: 200 or 302
 ```
 
-⚠ **That `200` is the expected answer on Branch A and Branch C only.** Both
-leave the `Caddyfile` answering on `:80` for any address, which is what makes
-`localhost` work. **Branch B** names one domain in that file, so a request
-arriving as `localhost` matches nothing and is refused — correctly. On Branch B,
-run this check against the real domain over `https://` instead.
+This check works on Branch A and Branch C, where Caddy answers on port 80 at any
+address. On Branch B the `Caddyfile` names one domain, so Caddy refuses a request
+made to `localhost`. Run this check and the health API check below against the
+domain over `https://` instead.
 
 <!-- defines: postgis -->
-**PostGIS loaded.** *PostgreSQL* is the database program that stores every
-record the site shows, and *PostGIS* is an add-on that teaches it to understand
-maps, boundaries and points on a map. This check asks the database to say which
-version of that add-on it is running, which is the quickest way to prove it is
-switched on at all:
+**PostGIS:** PostgreSQL is the database that stores every record the site
+shows. PostGIS is its extension for maps, boundaries and locations. Check that
+PostGIS is installed:
 
 ```bash
 docker compose exec db psql -U openh2o -d openh2o -c "SELECT PostGIS_Version();"
-# Expected: 3.4 USE_GEOS=1 USE_PROJ=1 USE_STATS=1
+# Expected: a version string beginning 3.4
 ```
 
-**Health check API:**
+**The health API:**
 
 ```bash
+docker compose exec web python manage.py run_health_checks
 curl -s http://localhost/health/api/ | python3 -m json.tool
-# Expected: JSON with "status": "healthy" or "status": "warning"
+# Expected: "status" is "healthy" or "degraded"
 ```
 
-**Health dashboard:**
+The API reports `healthy`, `degraded` or `unhealthy`. It reports `unknown` until the
+health checks have run once, which is why the first command runs them.
 
-Visit `/health/` in a browser, at the address from the top of this section.
+**The Site health page:** open `/health/` in a browser, at the address above.
 
-**Django admin:**
+**The administration site:** open `/admin/` at the same address and sign in as the
+superuser.
 
-Visit `/admin/` at that same address and log in with your superuser credentials.
+**Sign-in without a browser:** on Branch B and Branch C, `CSRF_COOKIE_SECURE` stays
+on, so a sign-in sent over plain `http://` returns 403. On Branch A the setting is
+off, so a plain `http://` sign-in can succeed. Phase 2 of the
+[AI operator guide](docs/AI-OPERATOR-GUIDE.md) gives a sign-in check that works on
+every branch, under "To check sign-in without a browser".
 
-No browser? On **Branch B** and **Branch C**, where `CSRF_COOKIE_SECURE` stays
-on, a login sent over plain `http://` returns 403 by design: the browser-safety
-cookie is marked so that it travels only over an encrypted connection, so it
-never comes back and the check fails. That is correct behaviour, not a fault. On
-**Branch A** the three flags are deliberately off, so a plain-HTTP login can
-succeed. Either way, the headless check in
-[docs/AI-OPERATOR-GUIDE.md](docs/AI-OPERATOR-GUIDE.md) ("Verify login works
-(no browser)") works on every branch and is the one to use.
-
-**No errors in logs:**
+**The website's log:**
 
 ```bash
 docker compose logs web --tail=50
-# Look for: "Listening at: http://0.0.0.0:8000"
-# No tracebacks or errors
+# Look for gunicorn listening at http://0.0.0.0:8000, and no tracebacks or errors
 ```
 
-**The name this deployment sends mail under:**
-
-Every email this platform sends — password resets above all — carries the
-deployment's own name at the front of the subject line, where the person
-receiving it will read it before anything else. Nothing has to be configured for
-that: the platform works the name out for itself from the organization's name, set
-at `/admin/` under Core > Site configs, and the web address already in `ALLOWED_HOSTS`, and
-writes it down when §6's migration step runs. It is still worth one look, because
-a deployment that has been told neither introduces itself as `example.com`.
+**The name the site's emails go out under:** every email the site sends starts its
+subject line with the site's name. OpenH2O takes that name from the organization's
+name, which is set at `/admin/` under Core > Site configs. It takes the site's
+address from `ALLOWED_HOSTS`, and it saves both when the migrations run. Set the
+organization's name there after the superuser exists. Check what it saved:
 
 ```bash
 docker compose exec web python manage.py shell -c "from django.contrib.sites.models import Site; s = Site.objects.get_current(); print(s.name, '|', s.domain)"
 ```
 
-Expect the agency's name and this deployment's own web address.
-`docker compose exec web python manage.py check` reports the same thing as
-`openh2o.W002` if you would rather be told than look.
+The command should print the organization's name and the site's web address.
+`docker compose exec web python manage.py check` also reports a missing name or
+address, with the warning code `openh2o.W002`. If the name is missing, set the organization's name at
+`/admin/` under Core > Site configs, then run the migrations again (section 6). A
+site reached only at `localhost` keeps `example.com` as its address and keeps the
+warning, because OpenH2O skips `localhost` and `127.0.0.1` when it works out the
+address. On such a site the warning is harmless. A site on the office network takes
+the computer's address on that network.
 
-If the name is missing, it is because nobody has set the organization's name at
-`/admin/` under Core > Site configs yet; do that and run §6's migration step again,
-which is what applies it and which changes nothing else.
-
-**On Branch A the address will stay `example.com`, and that is expected.** The
-platform deliberately refuses to treat `localhost` or `127.0.0.1` as a public
-web address, so a single-computer deployment has none to derive and the warning
-stays. Nothing is broken and there is no value to fill in; on an instance that
-sends no outside email it changes nothing anyone sees.
-
-**Who can actually reach it:**
-
-Everything above proves the deployment answers. None of it proves that the
-people who can reach it are the people you intended in §4 — a site can answer
-perfectly and still be answering the whole internet. So confirm which network
-addresses can reach this machine's port 80.
-
-There is no one tool to check that with, and this guide will not pretend
-otherwise. A plain Ubuntu server usually has `ufw`; other Linux machines have
-`firewalld` or bare `iptables`; and on a rented server the rule that actually
-decides often is not on the machine at all but in the provider's control panel,
-under a name like "security group", "cloud firewall" or "networking". Check
-whichever one your machine has. On a machine using `ufw` it is:
+**Who can reach the site:** the checks above show that the site answers. They do not
+show who can reach it. A site can work correctly and still be open to the whole
+internet. Check which network addresses can reach ports 80 and 443. A plain Ubuntu
+server usually has `ufw`, and other Linux computers have `firewalld` or `iptables`.
+On a rented server, the controlling rule is often in the provider's control panel,
+under a name such as "security group", "cloud firewall" or "networking". Check
+whichever the server has. With `ufw`:
 
 ```bash
 sudo ufw status verbose
 ```
 
-Then hold the answer against the branch you chose in §4:
+⚠ Docker writes its own firewall rules for the ports in `docker-compose.yml`, and
+those rules take effect ahead of `ufw`. A `ufw` rule that blocks port 80 therefore
+does not block the site. To keep the site on this computer only, change the port
+lines in `docker-compose.yml` as Branch A describes, and test from a second
+computer.
 
-| §4 branch | Who should reach port 80 | What a wrong answer looks like |
+Compare the answer with the branch you chose in section 4:
+
+| Section 4 branch | Who should reach the site | A wrong answer |
 |---|---|---|
-| **Branch A** (`no-public-access`) | This computer only, or the office network only | Somebody outside the office can open the site |
-| **Branch B** (`own-certificate`) | The whole internet, on port 443, and port 80 as well unless you have a reason not to | Nothing outside can reach the machine on either door, so the certificate is never issued and the site never comes up |
-| **Branch C** (`upstream-terminator`) | Only the thing in front of it — the tunnel, proxy or load balancer | The whole internet reaches port 80 directly, going around the very thing that was meant to guard it |
+| **Branch A** (`no-public-access`) | This computer only, or the office network only | Someone outside the office can open the site |
+| **Branch B** (`own-certificate`) | The whole internet, on ports 443 and 80 | Nothing outside reaches the server on either port, so no certificate is issued and the site never comes up |
+| **Branch C** (`upstream-terminator`) | Only the service in front of the server | The whole internet reaches port 80 directly and goes around that service |
 
-A mismatch here is worth settling before handover rather than after. On
-**Branch C** in particular, if the machine answers on its own address as well as
-through the proxy, then `ALLOWED_HOSTS` is the only thing left between this
-deployment and the open internet — which it is built to do, but not built to do
-alone.
+Fix any wrong answer before you hand the site over. On Branch C, if the server
+answers at its own address as well as through the service in front, anyone can go
+around that service. `ALLOWED_HOSTS` does not stop them, because a visitor's own
+request names the address it is sent to. Close the ports to everything except the
+service in front.
 
 ---
 
@@ -726,40 +647,33 @@ alone.
 
 ### The Setup Wizard (`/setup/`)
 
-The platform ships a guided first-run flow at `/setup/`, reached at whatever
-address §4's branch gave you for this instance. It is
-the browser equivalent of the load-data commands: pick or **upload a map file
-holding the outline of the district's service area**, confirm it on a map, run
-the `auto_populate` discovery steps with progress on screen, and enable the
-monitoring stations that were found.
-
 <!-- defines: geojson -->
-That map file has to be in the *GeoJSON* format — a plain-text way of describing
-a shape drawn on a map, along with a few labelled facts about it such as a name
-and an area. It is non-proprietary and widely supported, which is why a GIS
-contractor can hand over one file and expect any capable program to read it.
+The Setup Wizard loads the organization's area through the browser. It asks for
+the boundary of the area the site covers and shows that boundary on a map for you to
+confirm. It then runs the populate steps, which download basins, parcels, streams
+and monitoring stations for the area from public services, shows their progress,
+and turns on the stations those steps find. The boundary can be a zipped shapefile,
+a KML file or a GeoJSON file. GeoJSON is a plain-text format for map shapes and the
+facts attached to them, such as a name and an area. You can also type the area's
+north, south, east and west edges by hand, or give no boundary at all.
 
-- **Where it is:** left sidebar, **Administration → Setup Wizard** — but the
-  whole Administration block is hidden until you switch the sidebar out of its
-  everyday view. The switch is a two-button toggle at the **bottom of the left
-  sidebar**, marked **Operations** and **Admin**; click **Admin**. A fresh
-  install opens on Operations, so an operator hunting for the wizard and not
-  finding it has almost always not clicked that yet.
-- **Who can see it:** you have to be signed in — an anonymous visitor is sent to
-  the login page whatever else is configured. Beyond that, an administrator can
-  always open it, and on an instance that has switched access control off, so
-  can any signed-in user. Set up your admin account (§7) before you expose the
-  site.
-- **What its last step does:** `setup/activate-stations/` bulk-enables **every
-  inactive station inside the chosen boundary** in one action. Station discovery
-  creates stations switched off, and syncing only pulls data for active ones, so
-  a basin stays empty until something turns them on. Over SSH the equivalent is
-  `docker compose exec web python manage.py activate_stations --boundary-name "<basin>"`.
+- **Where it is.** The wizard is in the left sidebar, under Administration. The Administration
+  section is hidden in the sidebar's everyday view. At the bottom of the sidebar, a
+  switch reads **Operations** and **Admin**. Click **Admin**, then **Setup Wizard**.
+  A new site opens in the Operations view, which is the usual reason someone cannot
+  find the wizard.
+- **Who can open it.** Only a signed-in administrator can open it. On a site with
+  `ACCESS_CONTROL_ENFORCED=False`, any signed-in person can open it. Create the
+  superuser (section 7) first.
+- **Its last step.** **Enable all** turns on every switched-off station inside the
+  boundary. The populate step creates stations switched off, and a sync fetches data
+  only for stations that are on. Over SSH, `activate_stations` does the same:
+  `docker compose exec web python manage.py activate_stations --boundary-name "<the boundary's name>"`.
 
 ### Upgrades
 
-**This block is the upgrade path for an agency running real data.** It updates
-the code and the database structure and leaves your records untouched.
+These commands upgrade a site that holds the organization's records. They update
+the code and the database tables and leave the records as they are:
 
 ```bash
 cd /path/to/openh2o
@@ -769,50 +683,30 @@ docker compose exec web python manage.py migrate
 docker compose exec web python manage.py collectstatic --noinput
 ```
 
-`make deploy` is **not** an upgrade path and must not be used here. It belongs to
-the maintainer's public demonstration site: it discards every local change in the
-checkout and then replaces the live database with the canned demonstration
-snapshot. It refuses to run unless the checkout carries a `.demo-host` marker
-file, which only that one demonstration host has. Before it changes anything it
-also refuses a commit whose `tests` run on GitHub did not pass (failed, still
-running, or never run), and it refuses when GitHub cannot be asked;
-`make ci-gate REF=<commit>` runs that check on its own.
+The website container already runs the migrations and gathers the styling and images
+when it starts, so the last two commands find nothing left to do. They do no harm. Back
+up the database and `.env` before you upgrade (Database Backup, below).
 
-On that host `make deploy` checks before it ships and nothing after. Two routes
-add the check after: `make release REF=<commit>` in the checkout, and
-`deploy.sh [<commit>]` from the maintainer's computer, which runs the same
-`scripts/release.sh` over SSH, read from `origin/main`. After `make deploy` the
-script asks the live home page for its title and for the new version. When
-either is missing, it puts back the previous commit, the previous web image
-(kept as `openh2o-web:previous`) and the previous demonstration snapshot in the
-same run, then exits 5. `--drill-smoke-missing-page` adds a page that does not
-exist to that check, so the rollback can be shown working. Run `make deploy`
-alone only to skip the check after.
+Never use `make deploy` to upgrade. It is the target for the project's own
+demonstration site, and it replaces that site's database with demonstration data.
+It refuses to run in a checkout without a file named `.demo-host`. Never create that
+file on a site that holds records.
 
 ### Protecting a Live Installation (`.production-lock`)
 
-Once this deployment holds the agency's real records, a single careless command
-can destroy them. `make up`, `make down`, `make build` and `make fresh` all
-rebuild or reset the stack, and `fresh` deletes the database outright — and
-`fresh` is exactly the name somebody reaches for when they want a clean start.
-
-The repository ships a guard against that, and it is opt-in: put an empty file
-named `.production-lock` in the checkout, and all four of those commands refuse
-to run.
+`make up`, `make down`, `make build` and `make fresh` stop, rebuild or reset the
+containers, and `make fresh` deletes the database. Once the site holds the
+organization's records, protect the site from these commands. Create an empty file named
+`.production-lock` in the checkout:
 
 ```bash
 touch .production-lock
 ```
 
-That is the whole mechanism. Nothing ever reads the file's contents, only
-whether it is there; the `guard-prod` target in the `Makefile` is what checks,
-and it prints what it refused and why. The file is listed in `.gitignore`, so a
-fresh clone never arrives carrying one — **every deployment that wants this
-protection has to create its own, and nothing prompts you to.** Do it as soon as
-real data lands.
-
-To run one of those commands deliberately, take the marker off, run it, and put
-it back:
+With the file in place, those four commands refuse to run and say why. Git ignores
+the file, so a new clone comes without one. Create it on each site as soon as real
+records arrive. To run one of the four commands anyway, remove the file, run the
+command and create the file again:
 
 ```bash
 rm .production-lock
@@ -820,116 +714,121 @@ make down
 touch .production-lock
 ```
 
-⚠ **`.production-lock` and `.demo-host` mean opposite things — they are not a
-pair of related switches.** `.production-lock` says *"this checkout is protected,
-refuse anything destructive."* `.demo-host` says the reverse: *"this checkout is
-the public demonstration and its database is disposable"*, which is precisely
-what lets `make deploy` overwrite it. Creating the wrong one arms the wrong
-behaviour on the wrong machine.
+The refusal message suggests `make deploy`. Never run it on an organization's site
+(see Upgrades). The file does not guard the demonstration targets, such as
+`make merced`, `make flush-demo`, `make teardown-demo` and `make reset-demo`, or
+`docker compose down -v`, which deletes the database. Never run those on a site that
+holds records.
 
+<!-- defines: cron -->
 ### Scheduled Jobs
 
-The jobs in `crontab.txt`:
+OpenH2O uses cron to fetch new readings, run its calculations and check its own
+health. The jobs are in `crontab.txt`:
 
 | Job | Schedule | Purpose |
 |-----|----------|---------|
-| `run-sync.sh cdec usgs` | Hourly | Live stream / reservoir telemetry (near-real-time flow & stage) |
-| `run-sync.sh dwr_wdl dwr_sgma noaa` | Daily 2:00 AM | Slower sources — groundwater, climate. CNRFC and OpenET ship switched off; add them here if you turn them on. CIMIS ships switched **on** but syncs nothing until its key is set |
-| `run_accounting --open-periods --trigger schedule` | Daily 3:30 AM | Calculates every reporting period that is not finalized, month by month, after the 2:00 AM sync has brought in new data. A finalized period is never touched. Its record shows on each period's page and on Site Health |
-| `run_health_checks` | Every 6 hours | Check database, disk, SSL, migrations, sync freshness |
-| `prune_old_data --confirm` | 1st of month 3:00 AM | Delete old staging records and sync logs |
+| `run-sync.sh cdec usgs` | Every hour | Stream and reservoir readings |
+| `run-sync.sh dwr_wdl dwr_sgma noaa` | Every day at 2:00 | Groundwater levels and climate data |
+| `run_accounting --open-periods --trigger schedule` | Every day at 3:30 | Calculates every reporting period that is not finalized, after the 2:00 sync. A finalized period is never changed. Each run's record shows on the period's page and on Site health |
+| `run_health_checks` | Every 6 hours | Checks the database, the disk, the certificate, the migrations and the data sources |
+| `prune_old_data --confirm` | The 1st of each month at 3:00 | Deletes sync logs, health-check results and published staging records older than a year |
 
-The nightly calculation can also be run by hand, for one water year or one
-month, with `docker compose exec web python manage.py run_accounting --period "WY 2025-2026"`
-or `--month 2026-03`. Only one calculation runs at a time: a second one waits
-for the first.
+The times are in the server's own time zone. The schedule does not sync CIMIS or
+OpenET. To keep CIMIS current once its key is set, add `cimis` to the end of the
+2:00 line. OpenET's figures arrive through `sync_openet_parcels`, which the
+organization runs when it wants figures for new months (Phase 4 of the AI operator
+guide).
 
-**`check_conformance` is deliberately not on that schedule, and that is a
-decision rather than an oversight.** It answers "is every measurement in here
-mapped to a known concept with a real unit?", and that answer only moves when
-somebody loads data or switches on a new source — so a clock is the wrong
-trigger. Run it by hand at the two moments it matters: right after the agency's
-own records are loaded (§9), and before the data is shared or published.
+You can also run the calculation by hand, for one water year or one month:
+`docker compose exec web python manage.py run_accounting --period "WY 2025-2026"` or
+`--month 2026-03`. Only one calculation runs at a time, and a second one waits for
+the first.
+
+`check_conformance` is not on the schedule, because its answer changes only when
+someone loads data or turns on a new source. Run it after the organization's own
+records are loaded (section 9), and before the data is shared or published. It exits
+with an error code when it finds a gap, so a script can stop on it.
 
 ```bash
 docker compose exec web python manage.py check_conformance
 ```
 
-It exits non-zero when it finds a real gap, so it can also gate a script.
+`scripts/run-sync.sh` runs `docker compose up -d` first, which starts the containers
+again if a restart of the server left them stopped. It then runs each sync and
+writes to `sync.log` in `$OPENH2O_LOG_DIR`. When a sync fails and `OPENH2O_NTFY_URL`
+is set, it sends an alert through ntfy, a service that sends notifications to a
+phone or a browser.
 
-`scripts/run-sync.sh` is a resilient wrapper: it runs `docker compose up -d`
-first (a no-op if the stack is already running, but it revives the container if
-an unattended-upgrade reboot left it stopped — the original cause of silent
-sync failures), logs to `$OPENH2O_LOG_DIR` (default `/opt/openh2o-logs`),
-and pings ntfy on failure if you set `OPENH2O_NTFY_URL` to a topic URL.
-
-Install the crontab. **Note:** `make install-cron` *appends*; if you are
-replacing older OpenH2O cron lines, edit `crontab -e` and remove the old
-entries first so you don't run two schedules.
+Before you install the schedule, edit the top of `crontab.txt`. Set `OPENH2O_DIR` to
+the folder `pwd` printed in section 2, and `OPENH2O_LOG_DIR` to a folder your own
+account can write logs to, such as `/home/operator/openh2o-logs`. The defaults are
+`/opt/openh2o` and `/opt/openh2o-logs`. For failure alerts, also add a line at the top
+of `crontab.txt` that reads `OPENH2O_NTFY_URL=` followed by the address of an ntfy
+topic, the channel your alerts go to. The setting has to be in the schedule, because
+a value in `.env` never reaches the script. Then install the schedule:
 
 ```bash
 make install-cron
-# verify:
+# check:
 make show-cron
 ```
 
-Edit `crontab.txt` to set `OPENH2O_DIR` (where you cloned the repo) and
-`OPENH2O_LOG_DIR` (a writable log directory) to match your deployment. The
-defaults are `/opt/openh2o` and `/opt/openh2o-logs`.
+`make install-cron` copies `crontab.txt` as it is at that moment, and it adds the
+lines to whatever is already installed. To change the schedule later, or to replace
+older OpenH2O lines, edit the installed schedule with `crontab -e`. Running
+`make install-cron` again adds the lines a second time, and every job would then run
+twice.
 
 <!-- defines: api_key -->
-
 ### External Data API Keys
 
-An *API key* is a long, password-like string that lets this program — rather
-than a person — fetch data automatically from another organisation's computers,
-without anybody logging in each time. Treat one exactly as you would a password.
+An *API key* is a long password that lets OpenH2O fetch data from another
+organization's service without a person signing in. Keep each key secret.
 
-CDEC, USGS, CNRFC and the DWR sources are public and need no credentials. Three
-sources require a key, set in `.env` (then `docker compose up -d` to reload):
+CDEC (the California Data Exchange Center), USGS and the Department of Water
+Resources' Water Data Library and SGMA Portal need no key. Three sources need a key.
+Set each key in `.env`, then run `docker compose up -d`:
 
-| Source | `.env` variable | Get a key from |
-|--------|-----------------|----------------|
-| CIMIS | `CIMIS_API_KEY` | https://cimis.water.ca.gov (register → App Key) |
-| NOAA | `NOAA_CDO_TOKEN` | https://www.ncdc.noaa.gov/cdo-web/token |
-| OpenET | `OPENET_API_KEY` | https://etdata.org (account → API key) |
+| Source | `.env` setting | Get a key from |
+|--------|----------------|----------------|
+| CIMIS (the California Irrigation Management Information System) | `CIMIS_API_KEY` | https://cimis.water.ca.gov (register, then App Key) |
+| NOAA's Climate Data Online | `NOAA_CDO_TOKEN` | https://www.ncdc.noaa.gov/cdo-web/token |
+| OpenET (satellite evapotranspiration) | `OPENET_API_KEY` | https://etdata.org (account, then API key) |
 
-Until a key is set, that source shows **"Needs API key"** on the monitoring
-page rather than a misleading failure, and is skipped by the sync.
+Until its key is set, CIMIS or NOAA shows as needing a key on the monitoring page,
+and a sync skips it. OpenET is not a station source. `sync_all` never syncs it, and
+its figures arrive through `sync_openet_parcels`.
 
 ### Map Basemaps (streamed, no tile server to host)
 
-The interactive maps do **not** self-host a basemap or run a tile server — both
-basemaps stream their tiles live from third-party services on every page load:
+The maps draw their background from two outside services on every page load:
 
 | Basemap | Streams from | Needs a key? |
 |---------|--------------|--------------|
-| Aerial (default) | Esri World Imagery + labels, `server.arcgisonline.com` | No |
-| Dark | OpenFreeMap vector tiles + fonts/sprites, `tiles.openfreemap.org`, with a Natural Earth raster underlay | No |
+| Aerial (the default) | Esri World Imagery and labels, `server.arcgisonline.com` | No |
+| Dark | OpenFreeMap vector tiles, `tiles.openfreemap.org`, over a Natural Earth layer | No |
 
-There is nothing to provision, configure, or back up for maps. The trade-off is a
-live external dependency: if Esri or OpenFreeMap is unreachable (outage, firewall,
-air-gapped network), the map backdrop fails to load. The platform's own data
-layers (parcels, wells, diversions, boundaries — served as GeoJSON from this
-deployment) still render on top. An operator who needs offline or self-hosted
-maps would have to stand up their own tile server and repoint `static/js/map-core.js`.
+There is nothing to set up or back up for the background. When Esri or OpenFreeMap
+cannot be reached, the background fails to load, and OpenH2O's own layers (parcels,
+wells, diversions and boundaries) still draw on top. The map program itself and the
+page scripting library load from `unpkg.com`, so on a network with no internet
+access, no map appears at all.
 
 <!-- defines: smtp -->
-
 ### Email / Password Reset (SMTP)
 
-*SMTP* is the agreed method for handing an outgoing email over to a mail
-provider, so a website can send messages — "you forgot your password" above all
-— instead of pretending to be its own mail server. The settings below are the
-login for whichever provider the district uses.
+*SMTP* is the standard way a program hands outgoing email to a mail provider. With
+an SMTP account, the site can send email. The most important email it sends is the
+password-reset link.
 
-Logged-in users can change their password with no setup — the **Change password**
-button on their own profile page (reached by clicking their email address in the
-header) works out of the box. The **"Forgot password?"** flow on the
-login page, however, emails a reset link, so it needs an outgoing mail server.
-Until SMTP is configured, that flow silently fails (no email is sent).
+A signed-in person can change their own password without any email setup. They
+click their email address at the top of the page to open their profile page, then
+click **Change password**. The **Forgot password?** link on the sign-in page emails a reset link,
+so it needs a mail provider. Until the site has SMTP settings, that link sends no
+email.
 
-Set these in `.env`, then `docker compose up -d` to reload:
+Set these in `.env`, then run `docker compose up -d`:
 
 ```bash
 EMAIL_HOST=smtp.your-provider.com
@@ -942,14 +841,14 @@ DEFAULT_FROM_EMAIL=noreply@your-domain.com
 
 Any SMTP provider works. Two common choices:
 
-- **Gmail:** host `smtp.gmail.com`, port `587`, user = your full Gmail address,
-  password = a 16-character **App Password** (Google Account → Security →
-  2-Step Verification → App passwords — *not* your normal login password).
-  Fine for a single agency; subject to Gmail's daily send limits.
-- **Transactional provider (Resend, Postmark, Amazon SES):** gives a real
-  `noreply@your-domain.com` sender and higher limits. Preferred for public sites.
+- **Gmail:** host `smtp.gmail.com`, port `587`, the full Gmail address as the user,
+  and a 16-character App Password as the password (Google Account, Security, 2-Step
+  Verification, App passwords). Gmail limits how much it sends in a day.
+- **A transactional email provider, a service built to send a website's email, such
+  as Resend, Postmark or Amazon SES:** these services send from an address at your
+  own domain and allow more email per day than Gmail.
 
-Verify by triggering a reset and watching the log:
+Send a test email:
 
 ```bash
 docker compose exec web python manage.py sendtestemail you@example.com
@@ -957,44 +856,33 @@ docker compose exec web python manage.py sendtestemail you@example.com
 
 #### Signup email verification
 
-The same SMTP settings also drive signup confirmation — whether a new account
-must click a link in an email before it can log in. It is controlled by
-`ACCOUNT_EMAIL_VERIFICATION`, which takes `none`, `optional` or `mandatory`.
+`ACCOUNT_EMAIL_VERIFICATION` decides whether a person who signs up must confirm
+their email address before they can sign in. It takes `none`, `optional` or
+`mandatory`.
 
-You normally do not set it. Left alone it follows `EMAIL_HOST` above: configure
-a mail server and new signups must confirm (`mandatory`); leave `EMAIL_HOST`
-empty and they are let straight in (`none`). **An instance with no mail server
-therefore never creates an account that can never be confirmed** — which matters
-if you are running this on a single office computer.
+Leave it unset. When it is unset, the site chooses a value from `EMAIL_HOST`. With a
+mail server, a person who signs up must confirm (`mandatory`). Without one, they sign
+in at once (`none`), so a site with no mail server never holds an account that is
+waiting for an email it cannot send.
+Accounts an administrator adds on the Users page and the account `ensure_superuser`
+creates are confirmed when they are made. If the setting is `mandatory` on a site
+with no mail server, each person who signs up waits for an email the site cannot
+send. A value other than the three stops the container at start with an
+error that names the value.
 
-Two cases where you should set it explicitly:
-
-- **A public demo with SMTP configured** wants `none`, so a visitor looking
-  around is not asked to confirm an address.
-- **An agency that wants confirmation before its mail server exists** can set
-  `mandatory` now and configure SMTP later — but until SMTP is real, the
-  confirmation goes to the container log instead of an inbox, and nobody but
-  you can complete a signup.
-
-A value that is not one of the three stops the container at boot with an error
-naming what you typed. That is deliberate: a silent fallback would read as
-"verification is on" while nothing was ever sent.
-
-Note that this only matters where signup is open at all. With
-`ACCESS_CONTROL_ENFORCED` at its default (`True`), public self-registration is
-closed and an administrator creates accounts directly, so verification never
-comes into play.
+This matters only where sign-up is open. `ACCESS_CONTROL_ENFORCED` is `True` by
+default. With that value, sign-up is closed and an administrator adds each account.
 
 ### Health Checks
 
-Run manually at any time:
+Run them at any time:
 
 ```bash
 docker compose exec web python manage.py run_health_checks
-# Or: make health
+# or: make health
 ```
 
-For JSON output (useful for monitoring integrations):
+For output a monitoring tool can read:
 
 ```bash
 docker compose exec web python manage.py run_health_checks --json
@@ -1002,14 +890,14 @@ docker compose exec web python manage.py run_health_checks --json
 
 ### Data Pruning
 
-Run a dry-run to see what would be deleted (default, no action taken):
+See what would be deleted, without deleting anything:
 
 ```bash
 docker compose exec web python manage.py prune_old_data
-# Or: make prune
+# or: make prune
 ```
 
-Actually delete old records (requires `--confirm`):
+To delete those records:
 
 ```bash
 docker compose exec web python manage.py prune_old_data --confirm
@@ -1017,396 +905,331 @@ docker compose exec web python manage.py prune_old_data --confirm
 
 ### Data Sync
 
-Sync external data (CDEC, USGS, CIMIS, etc.) manually:
+Sync every data source that is turned on, or one source:
 
 ```bash
 docker compose exec web python manage.py sync_all
-# Or sync one source:
 docker compose exec web python manage.py sync_source cdec
-# Or: make sync
+# or: make sync
 ```
 
-Sync runs against the live public APIs. Sources needing a key (CIMIS, NOAA,
-OpenET) are skipped until their key is set in `.env` — see "External Data API
-Keys" above.
+A sync fetches from the live public services. A source whose key is missing is
+skipped until the key is in `.env`.
 
 ### Running Tests
 
 ```bash
-docker compose exec web python -m pytest tests/ -v
-# Or: make test
+make test
 ```
+
+`make test` checks that the image matches the code, then runs the test suite with
+every section of OpenH2O switched on, under the development settings the tests are
+written for.
 
 ### Database Backup
 
 ```bash
-docker compose exec db pg_dump -U openh2o openh2o > backup-$(date +%Y%m%d).sql
+docker compose exec -T db pg_dump -U openh2o openh2o > backup-$(date +%Y%m%d).sql
 ```
+
+The dump holds every record. It leaves out two Docker volumes, the storage areas
+Docker keeps outside the containers. `media_files` holds uploaded files, such as
+feedback screenshots and the site's logo. `caddy_data` holds Caddy's certificates,
+which Caddy can obtain again. To copy the uploaded files as well:
+
+```bash
+docker compose cp web:/app/media ./media-backup-$(date +%Y%m%d)
+```
+
+Keep a copy of `.env` with the backups, because it holds `SECRET_KEY` and the
+database password, and store it as carefully as a password. Back up on a regular
+schedule, for example with a cron line like the ones in `crontab.txt`, and keep the
+backups on another computer or another disk. Back up before every upgrade. The
+commands here use the database name and user `openh2o`. If `.env` sets
+`POSTGRES_DB` or `POSTGRES_USER` to something else, use those names.
 
 ### Database Restore
 
+Restore into an empty database. Stop the website, delete and recreate the database,
+load the backup, then start the website again. Do this when no scheduled sync is
+due, because `run-sync.sh` starts the website container again:
+
 ```bash
+docker compose stop web
+docker compose exec db dropdb -U openh2o openh2o
+docker compose exec db createdb -U openh2o openh2o
 docker compose exec -T db psql -U openh2o -d openh2o < backup-20250101.sql
+docker compose start web
 ```
 
 ### View Logs
 
 ```bash
-docker compose logs web          # Django/Gunicorn
-docker compose logs db           # PostgreSQL
-docker compose logs caddy        # Caddy reverse proxy
-docker compose logs -f web       # Follow logs in real time
+docker compose logs web          # the website
+docker compose logs db           # the database
+docker compose logs caddy        # Caddy
+docker compose logs -f web       # follow the website's log as it is written
 ```
 
-Those four answer *is it broken*. The two below answer a different question —
-*has anyone opened this page, and when* — which for a public agency is also the
-record that answers a request about the agency's own system:
+Those logs show whether something is broken. Caddy also keeps a record of each
+visit, which shows when each page was opened:
 
 ```bash
-docker compose logs caddy | grep 'handled request'       # what visitors asked for, readable
-docker compose exec caddy cat /var/log/caddy/access.log  # the copy that survives a deploy
+docker compose logs caddy | grep 'handled request'       # recent visits
+docker compose exec caddy cat /var/log/caddy/access.log  # the copy that is kept
 ```
 
-**Why the same visits are written down twice, and why you need both.** The first
-command reads what the container has said since it last started, and a deploy
-(`docker compose up -d --build`) replaces that container and throws all of it
-away. The second reads a file kept on a storage area of its own, outside the
-container, so it is still there tomorrow and still there after the next deploy.
-The first is how you watch traffic arriving now and is the easier of the two to
-read; the second is the record you keep.
+The first command reads what the Caddy container has written since it last started.
+A rebuild (`docker compose up -d --build`) replaces the container and its log. The
+second command reads a file kept on its own Docker volume, and that file survives a
+rebuild.
+Use the first to watch visits as they arrive, and keep the second as the record.
 
-**Reading a line.** One line per request, in the order they arrived: the time,
-the address the request came from, what was asked for, and the three-digit code
-saying how it went — `200` served, `302` sent somewhere else, `404` not found,
-`500` the program failed. One person opening one page writes several lines,
-because the styling, the fonts and the map tiles are each their own request.
-
-The kept copy is written as one machine-readable record per line, which is
-thorough but dense to read by eye, and its time is a count of seconds rather
-than a date. To pull just what was asked for:
+Each line records one request: the time, the address it came from, the page or file
+asked for, and a three-digit status code. The common codes are `200` for served,
+`302` for sent to another page, `404` for not found and `500` for an error in
+OpenH2O. One person
+opening one page writes several lines, because the styling, the fonts and the map
+tiles are each a request of their own. The kept file has one machine-readable record
+per line, with its time as a count of seconds since 1 January 1970. To list the pages and files asked
+for:
 
 ```bash
 docker compose exec caddy grep -o '"uri":"[^"]*"' /var/log/caddy/access.log | tail -50
 ```
 
-**How much is kept, and it is less than it sounds.** The file holds ten
-megabytes; when it fills, it is set aside and compressed and a fresh one
-started, and five of those older copies are kept. That bounds the whole record
-at roughly fifty megabytes and needs nothing installed or scheduled. But each
-request costs about two kilobytes here — measured at 1,979 bytes on 2026-08-28,
-most of it the security header being written out again on every line — so fifty
-megabytes is on the order of **thirty thousand requests**, not millions. A busy
-public instance can turn that over in days. Read yours rather than guessing:
+When the kept file reaches 10 MB, Caddy sets it aside and starts a new one, and
+Caddy keeps five of the older files. The record therefore stays at 60 MB or less
+without anything to install or schedule. On a busy site, that much log covers a
+shorter span of time. Check how much yours holds:
 
 ```bash
 docker compose exec caddy ls -lh /var/log/caddy/
 ```
 
-If you need to keep visits for longer than that, copy the file somewhere else on
-a schedule (section 11 covers scheduling) rather than raising the limit here —
-the cap is what stops a quiet instance filling its own disk unattended.
+To keep visits for longer, copy the file elsewhere on a schedule. Leave the size
+limit as it is, because the limit stops the log from filling the disk.
 
-**What is deliberately not in there.** The platform checks its own health every
-few seconds, and that check never passes through Caddy — it is asked and
-answered inside the app container — so it does not bury the real visits here. It
-does appear in `docker compose logs web`, which is why that one is much noisier
-and this one is the cleaner record of who actually came to the site.
-
-### Public Demo Reset (golden snapshot)
-
-A **public** demo is single-tenant: one shared database, open self-signup, no
-per-visitor isolation. Any logged-in visitor's parcels, wells, and reports
-persist for everyone, and nothing prunes them. To keep the demo pristine, restore
-it on a schedule from a "golden" snapshot of the clean state.
-
-The golden snapshot is **built from the repository by `make deploy`** (see
-*The golden is a build output* below) — that is the path that keeps a deployment's
-demonstration reachable from its own source. These two targets are the manual
-handles beside it:
-
-```bash
-make snapshot-demo   # ESCAPE HATCH: stamp a golden from the LIVE database — the next deploy replaces it
-make reset-demo      # restore the demo to the current golden now (scripts/reset-demo.sh)
-```
-
-`snapshot-demo` writes two files side by side: `golden.dump` (the database) and
-`golden.meta` (a manifest stamping the schema **migration fingerprint**, the code
-version, a timestamp, and per-model row counts). `reset-demo` pauses web, drops +
-recreates the database from the dump, restarts web, and runs `migrate`. Wire it to
-cron for an unattended nightly reset, e.g.:
-
-```cron
-0 4 * * * cd /path/to/openh2o && OPENH2O_NTFY_URL=http://your-ntfy-host:8080/your-topic bash scripts/reset-demo.sh /path/to/golden.dump >> ~/openh2o-logs/reset-demo-cron.log 2>&1
-```
-
-Set `OPENH2O_NTFY_URL` (optional) to receive ntfy notifications — high-priority on
-a skipped/failed reset, a routine before→after row-count summary on success.
-
-**Where the snapshot lives — one directory per checkout, derived automatically.**
-Every demo script resolves its snapshot directory as
-`${OPENH2O_SNAPSHOT_DIR:-$HOME/$(basename "$OPENH2O_DIR")-demo-snapshot}`, so a
-checkout at `~/openh2o` uses `~/openh2o-demo-snapshot` and a checkout at
-`~/openh2o-staging` uses `~/openh2o-staging-demo-snapshot`. The scratch compose
-project that `rebuild-golden` and `verify-candidate` build in is derived the same
-way (`<checkout>-rebuild`). **Two deployments on one host therefore get two
-snapshot directories and two scratch projects, and neither can write or tear down
-the other's.** That separation is not cosmetic: `promote-golden` is the only step
-inside a deploy that writes `golden.dump` — `make snapshot-demo` writes one too,
-by hand, as the escape hatch described above — and before this derivation existed
-a deploy run in a staging checkout would have installed a staging-built database
-as production's golden. Each script echoes its resolved directory on startup, so the path that was
-actually used is in the log of the run that used it. Set `OPENH2O_SNAPSHOT_DIR`, or
-pass a path argument, to override.
-
-**Staleness guard (the safety net for the discipline below).** Before wiping,
-`reset-demo` compares the live schema's migration fingerprint against the one in
-`golden.meta`. If they differ — meaning a migration ran since the snapshot was
-taken — it **refuses to wipe, fires a high-priority ntfy, and exits**, so a legit
-change is never silently erased. The normal way past it is a deploy, which
-promotes a golden built at the current commit and therefore at the current
-fingerprint; `FORCE=1` bypasses the guard (which is what the deploy's own
-restore step uses, because it has just promoted a matching golden), and
-`make snapshot-demo` re-stamps from the live database as a last resort.
-
-**The golden is a BUILD OUTPUT, not a photocopy.** `make deploy` resets to the
-ref, **builds** the whole demonstration database from the repository's seed
-commands in a disposable compose stack, runs the four promotion gates against a
-restore of that build, promotes it to `golden.dump` only if every gate passes,
-*then* ships the code and restores the new golden into the live database. The
-order matters: Make aborts on the first non-zero line, so a refused promotion
-stops the deploy with the old code still serving, the old golden still installed,
-and the demo database untouched.
-
-`make deploy` no longer calls `snapshot-demo`. It used to — restore the golden,
-then immediately re-stamp a new golden from the database it had just restored.
-That closed loop is what let production's demonstration content drift out of
-reach of the repository for eight weeks: a fix to demo *content* reached staging
-(which rebuilds from the seeds) automatically and production (which only ever
-restored a photocopy) never.
-
-**Visitor-added data does not survive a deploy**, and does not survive the
-nightly reset either, by design.
-
-> **Discipline — to change what the demonstration shows, change the SEED.** Edit
-> the seed command or its committed fixture, commit it, and deploy. The next
-> deploy rebuilds from your commit, gates it, and promotes it, so the change
-> reaches every deployment that ships that commit — which is the whole point.
->
-> Two manual paths still write a golden from the live database, and what they
-> write is **temporary by construction — the next `make deploy` replaces it**:
-> `make calc-rebuild PERIOD=YYYY-MM` (recompute a period, then re-stamp) and
-> `make snapshot-demo` (the bare escape hatch). Reach for them when you need the
-> live demo corrected *now*; reach for a seed change when you need it corrected
-> *durably*.
+The website checks its own health every few seconds from inside its container, so
+those checks never pass through Caddy and stay out of this record. They do appear in
+`docker compose logs web`.
 
 ---
 
-<!-- defines: environment_variable -->
-<!-- defines: wsgi_gunicorn -->
-<!-- defines: oauth -->
-
+<!-- defines: environment_variable --><!-- defines: wsgi_gunicorn --><!-- defines: oauth -->
 ## 12. Environment Variables Reference
 
-An *environment variable* is a named value the operating system hands to a
-program as that program starts. The `.env` file from §3 is simply a convenient
-place to write a whole list of them down, and every name in the table below is
-one of them.
+An *environment variable* is a named value a program receives when it starts. Each
+line of `.env` sets one environment variable, and every name in the tables below is
+an environment variable.
 
-Two of those names carry ideas the table has no room to explain:
+Two terms in the tables need explaining:
 
-- **Gunicorn** is the program that actually listens for browser visits and hands
-  each one to the site's own code; *WSGI* is the agreed shape of that handover,
-  which is why one of the files named below is called `wsgi.py`.
-- **OAuth** is a way for staff to sign in with an existing Google account
-  instead of a separate OpenH2O password, by having Google vouch for who they
-  are. The *client ID* and *client secret* are the two values Google issues so
-  that it recognises this particular installation.
+- **Gunicorn** is the web server inside the website container. It receives each
+  request and hands it to OpenH2O's code. WSGI is the standard way a Python web
+  server makes that handover, which is why one of OpenH2O's files is named
+  `wsgi.py`.
+- **OAuth** lets staff sign in with an existing Google account in place of a
+  separate OpenH2O password. Google confirms who they are. The *client ID* and
+  *client secret* are the two values Google issues so that it recognizes this site.
+
+### The site and its security
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `SECRET_KEY` | Yes | none | Django secret key for signing |
-| `POSTGRES_DB` | No | `openh2o` | PostgreSQL database name |
-| `POSTGRES_USER` | No | `openh2o` | PostgreSQL username |
-| `POSTGRES_PASSWORD` | **Yes (prod)** | `openh2o` | PostgreSQL password. Production settings refuse to boot if it is left empty or set to any of four known-insecure defaults — `openh2o`, `postgres`, `password`, `changeme` — so a real deployment must set it. The check is that blocklist, not a strength test: it will accept a short password that is merely unusual |
-| `DJANGO_SETTINGS_MODULE` | **Yes — set it explicitly** | **split by entry point:** `manage.py` defaults to `config.settings.production`; `config/wsgi.py` and `config/asgi.py` default to `config.settings.local` | Always set `config.settings.production` for a real deployment, on any hardware. ⚠ This one variable is read before Django loads its settings, so unlike the rest of the file it is not picked up from `.env` on a host shell — running `manage.py` outside the container needs it exported into the shell first (`set -a`, source this file, `set +a`), or `manage.py` loads its own default instead |
-| `ALLOWED_HOSTS` | Yes (prod) | `[]` | Comma-separated list of allowed hostnames |
-| `CSRF_TRUSTED_ORIGINS` | No (but set it with a public domain) | `[]` | Comma-separated HTTPS origins. Nothing refuses to boot without it, and §3 tells single-computer and office-network deployments to leave it empty; a deployment served over HTTPS at a domain needs it, or logins from that domain are rejected |
-| `ACCESS_CONTROL_ENFORCED` | No | `True` | Two-tier access model. On (default) closes public self-signup and gates admin-only screens — the right posture for a real agency. Set `False` only for an open demo where anyone should be able to self-register. Your superuser is always an administrator, so you can't lock yourself out |
-| `TIME_ZONE` | No | `America/Los_Angeles` | Django timezone |
-| `DEFAULT_FROM_EMAIL` | No | `noreply@openh2o.com` | Sender address for emails |
-| `EMAIL_BACKEND` | No | console (dev), SMTP (prod) | Django email backend |
-| `EMAIL_HOST` | No | empty | SMTP server hostname |
-| `EMAIL_PORT` | No | `587` | SMTP port |
-| `EMAIL_USE_TLS` | No | `True` | Use TLS for SMTP |
-| `EMAIL_HOST_USER` | No | empty | SMTP username |
-| `EMAIL_HOST_PASSWORD` | No | empty | SMTP password |
-| `ACCOUNT_EMAIL_VERIFICATION` | No | **derived from `EMAIL_HOST`:** `mandatory` when a mail server is set, `none` when it is empty | Whether a new signup must confirm its email address before it can log in. `none` = let them straight in; `optional` = send the email but don't block; `mandatory` = block login until confirmed. The derivation means an install with no mail server can never lock out its own operator, while an agency that has configured SMTP gets confirmation without asking for it. Set it explicitly to override — an open demo with SMTP configured wants `none`. An unrecognised value stops the container at boot rather than falling back silently |
-| `GOOGLE_OAUTH_CLIENT_ID` | No | empty | Google OAuth client ID (see the note below — the keys are one of the two halves that make Google sign-in exist, and on their own they do nothing anyone can see) |
-| `GOOGLE_OAUTH_CLIENT_SECRET` | No | empty | Google OAuth client secret (see the note below) |
-| `DATASYNC_MOCK_MODE` | No | `False` | Use mock data for external sync adapters instead of live APIs |
-| `FEEDBACK_ENABLED` | No | `False` | Render the in-app feedback widget. Off by default; set `True` to turn it on (e.g. on a hosted/managed deployment with someone to read the reports) |
-| `FEEDBACK_ENDPOINT` | No | empty | Optional URL to also POST each stored report to (e.g. an n8n triage pipeline); blank = store-only |
-| `FEEDBACK_MAX_ATTACHMENTS` | No | `5` | Max screenshots allowed per report |
-| `FEEDBACK_MAX_ATTACHMENT_BYTES` | No | `8388608` | Max size per attachment (bytes; default 8 MB) |
-| `FEEDBACK_MAX_MESSAGE_CHARS` | No | `5000` | Max characters in a feedback message |
-| `FEEDBACK_MAX_DIAGNOSTICS_BYTES` | No | `65536` | Max size of the auto-captured diagnostics blob (bytes; default 64 KB) |
-| `FEEDBACK_RATE_LIMIT_PER_HOUR` | No | `20` | Max submissions accepted per client per hour |
+| `SECRET_KEY` | Yes | none | The key the site signs its cookies with. The site refuses to start without it |
+| `DJANGO_SETTINGS_MODULE` | Yes | `config.settings.production` in the compose file and `manage.py`. `config.settings.local` in `config/wsgi.py` and `config/asgi.py` | Use `config.settings.production` on every site. Outside Docker, the web server needs it in its environment, as [docs/INSTALL-WITHOUT-DOCKER.md](docs/INSTALL-WITHOUT-DOCKER.md) shows |
+| `ALLOWED_HOSTS` | Yes, under production | empty | The addresses the site answers at, separated by commas. The production settings refuse to start when it is empty, and they always add `127.0.0.1` and `localhost` |
+| `CSRF_TRUSTED_ORIGINS` | For a site at a domain | empty | The `https://` addresses from which the site accepts a submitted form, separated by commas. Leave it empty on a site without HTTPS |
+| `SECURE_SSL_REDIRECT` | No | `True` | Redirects plain `http://` requests to `https://`. Set `False` on Branch A |
+| `SESSION_COOKIE_SECURE` | No | `True` | Sends the sign-in cookie only over HTTPS. Set `False` on Branch A |
+| `CSRF_COOKIE_SECURE` | No | `True` | Sends the form-check cookie only over HTTPS. Set `False` on Branch A |
+| `ACCESS_CONTROL_ENFORCED` | No | `True` | Closes sign-up and keeps the administrator pages for administrators. Set `False` only on an open demonstration site, where anyone may sign up. A viewer stays read-only either way |
+| `OPENH2O_MODULES` | No | every module except `reporting` | The modules of OpenH2O the site runs, separated by commas, or `all`. The list must include `core`, `geography`, `measurements` and `standards`. A list that leaves out a module another module needs stops the site at start with an error that names the missing module. The demonstration needs `all` |
+| `TIME_ZONE` | No | `America/Los_Angeles` | The site's time zone |
+| `LOG_DIR` | No | `/app/logs` | The folder for the error log, `openh2o.log`, which rotates at 10 MB and keeps five files. Inside Docker it is on the `logs_data` volume |
+| `DJANGO_SUPERUSER_EMAIL`, `DJANGO_SUPERUSER_PASSWORD` | No | empty | Create the first administrator at each start, and set its password to this value (section 7) |
+| `DJANGO_SUPERUSER_USERNAME` | No | the email address | The username for that account |
+| `GUNICORN_WORKERS`, `GUNICORN_THREADS`, `GUNICORN_TIMEOUT` | No | `3`, `4`, `60` | How many requests the web server handles at once, and how many seconds it gives each one |
 
-**Google sign-in is configured in two separate places, and this file is only one
-of them.** Putting `GOOGLE_OAUTH_CLIENT_ID` and `GOOGLE_OAUTH_CLIENT_SECRET` in
-`.env` is half of it. The other half happens inside the Google account that
-issued those two values: that account's own control panel has to be told which
-web addresses are allowed to use them, and this deployment's address has to be
-one of the addresses on that list. **Expect that second login to belong to
-somebody else** — a district's Google account is usually held by whoever
-administers their email, not by the person standing this platform up. Find out
-who that is before you start, rather than halfway through.
+### The database
 
-**A half-finished setup does not look broken, and that is the expensive part.**
-With the two values set here and this deployment's address never added on
-Google's side, the sign-in button appears exactly as it should and behaves
-normally right up until somebody clicks it. Google then refuses, with an error
-about a "redirect" that means nothing at all to a reader who is not a web
-developer. If you cannot complete both halves, leave the feature switched off: a
-login page with no Google button is obviously a login page with no Google
-button, and a broken one is not obviously anything.
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `POSTGRES_DB` | No | `openh2o` | The database's name |
+| `POSTGRES_USER` | No | `openh2o` | The database user |
+| `POSTGRES_PASSWORD` | Yes, under production | `openh2o` | The database password. The production settings refuse to start when it is empty or is one of `openh2o`, `postgres`, `password` or `changeme`. They check those values only and do not measure strength. Set it before the first start (section 3), and avoid `@`, `:`, `/` and `#` |
+| `DATABASE_URL` | No | built by the compose file | The database's address. The compose file builds it from the three settings above and ignores a value in `.env`. Outside Docker, set it in `.env` |
 
-**A third switch decides whether Google sign-in exists here at all.** Setting
-the two keys makes it *possible* and changes nothing anyone can see. It becomes
-real — the **"Continue with Google"** button on the login and sign-up pages, and
-the web addresses that button leads to — only once the per-agency database flag
-`allow_google_oauth` is switched on, and it ships off. Turn it on at **Django
-admin → Core → Site configs → (your agency)**, tick **Allow google oauth**, and
-save.
+### Email
 
-**The keys and the switch are two halves of one thing, and either half missing
-gives the same result: there is no Google sign-in on this deployment.** No
-button appears, and the web addresses the button would have led to are not there
-either — somebody who types one in gets the ordinary "page not found", because
-there genuinely is no page. **So the order does not matter.** Tick the box now
-and paste the keys next week, or the other way round; nothing is broken in
-between and nothing is exposed in between. If you decide against the feature
-later, untick the box and it is gone again the moment you save.
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `EMAIL_HOST` | No | empty | The SMTP server |
+| `EMAIL_PORT` | No | `587` | The SMTP port |
+| `EMAIL_USE_TLS` | No | `True` | Encrypt the connection to the SMTP server |
+| `EMAIL_HOST_USER` | No | empty | The SMTP user |
+| `EMAIL_HOST_PASSWORD` | No | empty | The SMTP password |
+| `DEFAULT_FROM_EMAIL` | No | `noreply@openh2o.com` | The sender address. Set it to an address at your own domain |
+| `EMAIL_BACKEND` | No | SMTP under production; printing to the log under the development settings | How the site sends email |
+| `ACCOUNT_EMAIL_VERIFICATION` | No | follows `EMAIL_HOST`: `mandatory` with a mail server, `none` without | Whether a person who signs up must confirm their email address: `none` lets them in at once, `optional` sends the email without waiting, `mandatory` waits for the confirmation. Any other value stops the site at start |
 
-**Before you turn it on, know that on some deployments it changes what an
-existing password does.** Once Google sign-in is live, somebody who already has
-an OpenH2O account and clicks **"Continue with Google"** is signed straight into
-that same account whenever Google confirms the same address they registered
-with. **If that address has never been confirmed on this deployment, their
-OpenH2O password is *cleared* on the way through.** From then on that person
-signs in with Google, and the password they had been using stops working. Nobody
-loses their account or their data, and nobody is locked out. If the address
-*has* been confirmed here, nothing happens to the password at all.
+### Data sources
 
-**Which case you are in was decided by whether you set up a mail server.**
-`ACCOUNT_EMAIL_VERIFICATION` (covered in §11 "Signup email verification", and in
-the environment variable table in §12) derives to `mandatory` the moment
-`EMAIL_HOST` is set, so an agency with SMTP configured has every address
-confirmed and **no password is ever cleared**. With no mail server it derives to
-`none`, addresses stay unconfirmed, and the clearing described above is what
-your staff will meet. Read it back rather than guessing:
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `CIMIS_API_KEY` | For CIMIS | empty | CIMIS's key (section 11) |
+| `NOAA_CDO_TOKEN` | For NOAA | empty | NOAA's key (section 11) |
+| `OPENET_API_KEY` | For OpenET | empty | OpenET's key (section 11) |
+| `OPENET_MONTHLY_BUDGET` <!-- defines: openet_budget --> | No | `100` | OpenH2O stops sending OpenET requests when the month's count reaches this number. Raise it to the account's allowance |
+| `OPENET_CACHE_DAYS` | No | `30` | How long OpenH2O keeps an OpenET estimate before asking again |
+| `OPENET_MODE` | No | `api` | `api` fetches ET from OpenET's service. <!-- defines: google_earth_engine -->`gee` fetches the same data from Google Earth Engine, Google's service for analysing satellite imagery, as [docs/earth-engine-tier-setup.md](docs/earth-engine-tier-setup.md) describes |
+| `GEE_PROJECT`, `GEE_SERVICE_ACCOUNT_EMAIL`, `GEE_SERVICE_ACCOUNT_KEY_FILE` | With `OPENET_MODE=gee` | empty | The Google Earth Engine project, its service account and the path to the account's key file. The compose file makes the `secrets/` folder readable inside the container at `/run/secrets` |
+| `DATASYNC_MOCK_MODE` | No | `False` | Use sample data in place of the live public services |
+
+### Sign-in with Google, feedback and visitor statistics
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `GOOGLE_OAUTH_CLIENT_ID` | No | empty | Google's client ID for this site, described after this table |
+| `GOOGLE_OAUTH_CLIENT_SECRET` | No | empty | Google's client secret for this site, described after this table |
+| `FEEDBACK_ENABLED` | No | `False` | Shows the feedback form on every page. Turn it on where someone will read the reports |
+| `FEEDBACK_ENDPOINT` | No | empty | An address to send each stored report to as well. Blank keeps the reports on the site only |
+| `FEEDBACK_MAX_ATTACHMENTS` | No | `5` | The most screenshots one report may carry |
+| `FEEDBACK_MAX_ATTACHMENT_BYTES` | No | `8388608` | The largest screenshot, in bytes (8 MB) |
+| `FEEDBACK_MAX_MESSAGE_CHARS` | No | `5000` | The longest message, in characters |
+| `FEEDBACK_MAX_DIAGNOSTICS_BYTES` | No | `65536` | The largest block of browser details a report may carry, in bytes (64 KB) |
+| `FEEDBACK_RATE_LIMIT_PER_HOUR` | No | `20` | The most reports one visitor may send in an hour |
+| `UMAMI_SCRIPT_URL`, `UMAMI_WEBSITE_ID` | No | empty | Counts visitors with an Umami statistics server. Blank counts nothing |
+| `CSP_EXTRA_ORIGINS` | No | empty | Extra addresses the site's pages may load scripts from and connect to. Caddy reads this setting. Add the Umami server's address when the two settings above are set |
+
+Google sign-in needs three things: the client ID and client secret in `.env`, this
+site's address in the Google account that issued those two values, and a switch on
+the site itself.
+
+The Google account's control panel, Google Cloud Console, has to list this site's
+address among the addresses allowed to use the two values. That account usually
+belongs to whoever runs the organization's email, so find out who that is before you
+start. If the site's address is missing there, the **Continue with Google** button
+still appears once the other two are in place, and it looks normal. When someone
+clicks it, Google refuses, with an error about a "redirect" that means little to
+anyone but a web developer. If you cannot finish the Google side, leave the feature
+off.
+
+The switch is the setting `allow_google_oauth`, and it is off in a new installation.
+The **Continue with Google** button on the sign-in and sign-up pages, and the pages
+it leads to, appear only when the switch is on and the two values are set. With
+either missing, no button appears, and the pages it would lead to answer "page not
+found". Turn the switch on at `/admin/` under Core > Site configs: open the
+organization's entry, tick **Allow google oauth** and save. The order of the steps
+does not matter. You can tick the box now and add the values next week, or the
+other way round, and nothing breaks or opens in between. To turn the feature off
+later, untick the box and save.
+
+Turning on Google sign-in can clear an existing OpenH2O password. Once it is on, a
+person who already has an OpenH2O account and clicks **Continue with Google** signs
+straight in to that account whenever Google confirms the same email address. If that
+address has never been confirmed on this site, their OpenH2O password is *cleared*
+on the way in, and from then on they sign in with Google. They keep their account
+and their records, and nobody is locked out. If the address has been confirmed, the
+password stays as it was.
+
+Whether an address is confirmed depends on how the account was made and on
+`ACCOUNT_EMAIL_VERIFICATION` (section 11). Accounts an administrator adds on the
+Users page and the account `ensure_superuser` creates are confirmed when they are
+made. An account made with `createsuperuser` stays unconfirmed whatever the setting
+is. So does an account made by a person who signed up on a site whose
+`ACCOUNT_EMAIL_VERIFICATION` is `none`. On a site with a mail server, the unset
+setting becomes `mandatory`, so people who sign up there confirm their addresses.
+Check the setting:
 
 ```bash
 docker compose exec web python manage.py shell -c "from django.conf import settings; print(settings.ACCOUNT_EMAIL_VERIFICATION)"
 ```
 
-If that prints `none`, it is a change to how your staff get in, it happens the
-first time each of them uses the button, and nothing on screen warns them, so
-tell them before you save the switch, not after. If it prints `mandatory` or
-`optional` and your people have confirmed their addresses, the switch costs them
-nothing and there is nothing to announce.
+If any account was made with `createsuperuser`, or the command prints `none` and
+some accounts were made by sign-up, tell those people before you turn the switch
+on, because nothing on screen warns them. If every account was added on the Users
+page or by `ensure_superuser`, the switch changes nothing for anyone's password.
 
 ---
 
 ## 13. Troubleshooting
 
-**Container won't start:**
+**A container will not start:**
 
 ```bash
 docker compose logs <service-name>
-# Check for specific error messages
+# read the error message it ends on
 ```
 
-**Database connection refused:**
+**The database refuses connections:**
 
 ```bash
 docker compose ps
-# Verify db shows "healthy"
-# If not: docker compose logs db
+# db should show "healthy"
+# if not: docker compose logs db
 ```
 
 <!-- defines: private_ip -->
-**The log is full of rejected requests addressed by number instead of by the
-site's web address — is somebody attacking us?** By itself, that is not evidence
-of one. Every computer on a network also has a numeric address, and some ranges
-of those numbers — `192.168.…` and the like — only work inside one building or
-one provider's private network and mean nothing at all on the open internet.
-This document cannot tell you what is sending yours, and will not guess. What it
-can tell you is that a request being addressed by number is not, on its own,
-evidence of anything: the log lines themselves are not a sign of trouble.
-
-The rejection is `ALLOWED_HOSTS` doing precisely its job. A request whose
-address is not on that safety list is refused, and Django writes a line about a
-disallowed host into the log every time. That is the guard working, not the
-guard being defeated, and nothing needs fixing on account of it. If you would
-rather the checks succeed than be turned away — a monitoring tool you run
-yourself, say — add the number it uses to `ALLOWED_HOSTS` in `.env` and
-`docker compose up -d` to reload. Do not add it just to quieten the log.
+**The log fills with refused requests addressed to a number in place of the site's
+address.** On its own, this is no sign of an attack. Every computer on a network has
+a numeric *IP address*, and some ranges of them, such as `192.168.…`, work only
+inside one building or one provider's private network. A request addressed by number
+is refused because the number is not in `ALLOWED_HOSTS`, and Django writes a line
+about a disallowed host each time. That is the check doing its job, and nothing
+needs fixing. If a tool you run yourself, such as a monitor, addresses the site by
+number and should be let in, add its number to `ALLOWED_HOSTS` in `.env` and run
+`docker compose up -d`. Do not add a number only to quiet the log.
 
 <!-- defines: geospatial_libraries -->
-**"GDAL library not found" or GeoDjango errors:**
+**"GDAL library not found" or another map-library error:** GDAL, GEOS and PROJ are
+open-source libraries that OpenH2O uses for its map work: parcel outlines, well
+locations and distances. OpenH2O cannot start without them. The Docker build
+installs all three, so inside Docker this error means the build went wrong: read
+the first error in the build output. On an installation without Docker, install
+them as [docs/INSTALL-WITHOUT-DOCKER.md](docs/INSTALL-WITHOUT-DOCKER.md) describes.
 
-GDAL, GEOS and PROJ are widely-used open-source code libraries that do the
-actual geometry and map arithmetic — parcel boundaries, well locations,
-distances on a curved earth. Nobody ever interacts with them directly; the
-software simply will not start without them. The Dockerfile installs all three,
-which is why an error here is a build problem rather than something to
-configure. If building locally without Docker, install the system packages
-yourself:
-
-```bash
-# Ubuntu/Debian
-sudo apt-get install gdal-bin libgdal-dev libgeos-dev libproj-dev
-```
-
-**Port 80/443 already in use:**
+**Port 80 or 443 is already in use:**
 
 ```bash
 sudo lsof -i :80
-# Identify and stop the conflicting service, or change ports in docker-compose.yml
+# stop the program holding the port, or change the ports in docker-compose.yml
 ```
 
-**Migrations fail with "relation already exists":**
+**The migrations fail with "relation already exists":**
 
 ```bash
 docker compose exec web python manage.py migrate --fake-initial
 ```
 
-<!-- defines: collectstatic -->
-**Static files not loading (404 on /static/):**
+`--fake-initial` marks a first migration as applied when its tables already exist,
+which happens when a database was restored or built by hand. Back up first.
 
-The site's images, fonts, styling and scripts are its *static files*, and they
-have to be gathered into one folder before they can be served. `collectstatic`
-is the step that gathers them, and a piece of code called WhiteNoise is what
-then hands them to a visitor's browser. A page that loads with no styling at all
-usually means that gathering step has not run:
+<!-- defines: collectstatic -->
+**The pages load without styling (404 on /static/):** the site's styling, scripts,
+fonts and images are its *static files*. The website container gathers them into a
+Docker volume at each start with `collectstatic`, and Caddy serves them from that
+volume. Gather them again and restart Caddy:
 
 ```bash
 docker compose exec web python manage.py collectstatic --noinput
 docker compose restart caddy
 ```
 
-**Rebuild from scratch (destroys database):**
+**Rebuild from scratch. This deletes the database, so back it up first:**
 
 ```bash
 docker compose down -v
 docker compose up -d --build
-docker compose exec web python manage.py migrate
-docker compose exec web python manage.py createsuperuser
 docker compose exec web python manage.py seed_data
 ```
 
-**Check Django configuration for errors:**
+When the website container starts, it runs the migrations. It also creates the
+superuser if `.env` holds the two settings from section 7. Otherwise create it with
+`docker compose exec web python manage.py createsuperuser`.
+
+**Check the settings for problems:**
 
 ```bash
 docker compose exec web python manage.py check --deploy
