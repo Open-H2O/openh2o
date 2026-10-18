@@ -72,7 +72,7 @@
           {% if 'parcels' in enabled_modules %}<tr>
             <td class="col-step"><span class="step-num">{{ steps.use_areas }}</span>Import your use areas</td>
             <td class="col-where">Water Data &gt; Use Areas<br><a href="{% url 'parcels:list' %}" class="text-sm text-accent">Go to Use Areas &rarr;</a></td>
-            <td>OpenH2O keeps its records by use area, and each parcel is one use area. {% if 'setup' in enabled_modules %}The Setup Wizard brings in every parcel that overlaps your boundary from the Department of Water Resources&rsquo; statewide map of assessor parcels, with its Assessor Parcel Number (APN). To load your own parcel file instead, run the import_parcels command on the server.{% else %}To load your parcel file, run the import_parcels command on the server.{% endif %} The file can be a GeoJSON file or a shapefile, and each parcel needs its APN.</td>
+            <td>OpenH2O keeps its records by use area, and each parcel is one use area. {% if 'setup' in enabled_modules %}The Setup Wizard brings in every parcel that overlaps your boundary, with its Assessor Parcel Number (APN), from the California Department of Water Resources&rsquo; parcel map, which covers all 58 counties. To load your own parcel file instead, run the import_parcels command on the server.{% else %}To load your parcel file, run the import_parcels command on the server.{% endif %} The file can be a GeoJSON file or a shapefile, and each parcel needs its APN.</td>
           </tr>{% endif %}
           {% if 'wells' in enabled_modules %}<tr>
             <td class="col-step"><span class="step-num">{{ steps.wells }}</span>Import your wells</td>
