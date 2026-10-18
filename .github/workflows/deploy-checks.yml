@@ -1,0 +1,280 @@
+# deploy-checks.yml: two checks run before a production release and weekly, never on push.
+#
+#   old tests  the released commit's tests/ and conftest.py run against the candidate's code.
+#              A failure means a test was changed so that it would pass; it blocks unless a
+#              commit in the range says why:  Test-Change: <test file or folder>: <reason>
+#   fix tests  each commit in the range whose subject says "fix" and that adds or changes a test
+#              and changes code: its test files run on the commit before it, where they must
+#              fail. Excused only by:  Fix-Test: <commit>: <reason>
+#
+# deploy.sh asks for exactly its own pair (the candidate, and the commit in the live page footer)
+# through scripts/regress-gate.sh, which dispatches this workflow (inputs base and head, both
+# 40-character commits) when there is no run titled `deploy checks <head> from <base>` yet, and
+# refuses the release unless it finishes green. The run's log names every failure and prints the
+# exact lines that would excuse it; add them in an empty commit (`git commit --allow-empty`),
+# push, and release that commit.
+#
+# Weekly: Mondays 12:30 UTC (05:30 Pacific until 2026-11-01, 04:30 after); base = the last main
+# commit at or before 7 days earlier.
+#
+# Jobs: `plan` resolves the pair and lists the fix commits; `old-tests` runs the whole suite once;
+# `fix-tests` runs one job per fix, at most 10 at a time; `verdict` gathers them, so the run's
+# conclusion is the check's. Each suite run builds the web image from its own tree (the code is
+# copied into the image, never mounted) and runs pytest inside it against PostGIS, as tests.yml
+# does. The engine is scripts/regress.py, a verbatim copy whose first comment line names its
+# source commit; it is read from the commit this workflow runs from, never from the candidate.
+
+name: Deploy checks
+
+on:
+  workflow_dispatch:
+    inputs:
+      base:
+        description: the released commit (40 characters)
+        required: true
+        type: string
+      head:
+        description: the candidate commit (40 characters)
+        required: true
+        type: string
+  schedule:
+    - cron: '30 12 * * 1'
+
+run-name: ${{ github.event_name == 'schedule' && 'deploy checks weekly' || format('deploy checks {0} from {1}', inputs.head, inputs.base) }}
+
+defaults:
+  run:
+    shell: bash
+
+permissions:
+  contents: read
+
+env:
+  # Throwaway values for CI only, not secrets. Same as tests.yml.
+  DJANGO_SETTINGS_MODULE: config.settings.local
+  SECRET_KEY: ci-tests-not-a-secret
+  POSTGRES_DB: openh2o
+  POSTGRES_USER: openh2o
+  POSTGRES_PASSWORD: openh2o
+  DC_TESTS: --tests tests --tests conftest.py
+
+jobs:
+  plan:
+    name: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      base: ${{ steps.plan.outputs.base }}
+      head: ${{ steps.plan.outputs.head }}
+      fixes: ${{ steps.plan.outputs.fixes }}
+      count: ${{ steps.plan.outputs.count }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.head || github.sha }}
+          fetch-depth: 0
+
+      - name: Plan
+        id: plan
+        env:
+          DC_BASE: ${{ inputs.base || 'weekly' }}
+          DC_HEAD: ${{ inputs.head || github.sha }}
+        run: |
+          git show "$GITHUB_SHA:scripts/regress.py" > "$RUNNER_TEMP/regress.py"
+          # shellcheck disable=SC2086
+          python3 -I "$RUNNER_TEMP/regress.py" plan --repo "$GITHUB_WORKSPACE" \
+            --base "$DC_BASE" --head "$DC_HEAD" $DC_TESTS > "$RUNNER_TEMP/plan.json"
+          python3 -I - "$RUNNER_TEMP/plan.json" <<'PY' | tee -a "$GITHUB_OUTPUT"
+          import json, sys
+          p = json.load(open(sys.argv[1]))
+          fixes = [f["commit"] for f in p["fixes"]]
+          if len(fixes) > 256:
+              sys.exit(f"{len(fixes)} fix commits is more than one matrix holds (256); check a shorter range")
+          print(f"base={p['base']}")
+          print(f"head={p['head']}")
+          print(f"fixes={json.dumps(fixes)}")
+          print(f"count={len(fixes)}")
+          PY
+          {
+            echo '### Plan'; echo; echo '```'
+            python3 -I -c "import json,sys; p=json.load(open(sys.argv[1])); print(p['title']); print(p['commits'], 'commits;', p['old_test_files'], 'old test files;', len(p['fixes']), 'fixes with a test;', len(p['fixes_without_test']), 'without')" "$RUNNER_TEMP/plan.json"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  old-tests:
+    name: old tests
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.plan.outputs.head }}
+          fetch-depth: 0
+
+      - name: The engine and the suite script
+        run: |
+          git show "$GITHUB_SHA:scripts/regress.py" > "$RUNNER_TEMP/regress.py"
+          printf '%s\n' SECRET_KEY=ci-tests-not-a-secret DJANGO_SETTINGS_MODULE=config.settings.local \
+            POSTGRES_DB=openh2o POSTGRES_USER=openh2o POSTGRES_PASSWORD=openh2o OPENH2O_MODULES=all > "$RUNNER_TEMP/ci.env"
+          cat > "$RUNNER_TEMP/suite.sh" <<'SH'
+          # One suite run in the engine's tree (the working folder): suite.sh <junit> <pytest paths...>
+          # The web image is built from this tree, so the tree's own code and requirements are tested.
+          set -uo pipefail
+          junit=$1; shift
+          proj="dc-$(basename "$PWD" | tr -c 'a-z0-9\n' '-')"
+          dc() { docker compose -p "$proj" "$@"; }
+          cp "$RUNNER_TEMP/ci.env" .env
+          export APP_VERSION=deploy-checks
+          trap 'dc down -v --rmi local >/dev/null 2>&1' EXIT
+          dc build -q web || exit 3
+          dc up -d --wait db web || { dc logs web --tail 100; exit 3; }
+          dc exec -T -e OPENH2O_MODULES=all web python -m pytest "$@" --ds=config.settings.local \
+            -m "not network" -p no:cacheprovider -q -o junit_family=xunit1 --junitxml=/tmp/deploy-checks.xml
+          rc=$?
+          dc cp web:/tmp/deploy-checks.xml "$junit" >/dev/null 2>&1
+          exit "$rc"
+          SH
+
+      - name: Old tests on the candidate's code
+        env:
+          DC_BASE: ${{ needs.plan.outputs.base }}
+          DC_HEAD: ${{ needs.plan.outputs.head }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/deploy-checks"
+          set +e
+          # shellcheck disable=SC2086
+          python3 -I "$RUNNER_TEMP/regress.py" check --repo "$GITHUB_WORKSPACE" --base "$DC_BASE" --head "$DC_HEAD" \
+            $DC_TESTS --only-old \
+            --command "bash $RUNNER_TEMP/suite.sh {junit} --continue-on-collection-errors tests/" \
+            --fail-exits 1,2 --timeout 3600 \
+            --out "$RUNNER_TEMP/deploy-checks/deploy-checks.json" 2>&1 | tee "$RUNNER_TEMP/deploy-checks/log.txt"
+          rc=${PIPESTATUS[0]}
+          {
+            echo '### Old tests'; echo; echo '```'
+            grep -E '^(regress:|  FAILED|Test-Change:|Fix-Test:)' "$RUNNER_TEMP/deploy-checks/log.txt" | head -80
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$rc"
+
+      - name: Upload the record
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: deploy-checks-old-tests-attempt-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/deploy-checks/deploy-checks.json
+            ${{ runner.temp }}/deploy-checks/log.txt
+          retention-days: 90
+          if-no-files-found: warn
+
+  fix-tests:
+    name: fix ${{ matrix.fix }}
+    needs: plan
+    if: ${{ needs.plan.outputs.count != '0' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 130
+    strategy:
+      fail-fast: false
+      max-parallel: 10
+      matrix:
+        fix: ${{ fromJSON(needs.plan.outputs.fixes) }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.plan.outputs.head }}
+          fetch-depth: 0
+
+      - name: The engine and the suite script
+        run: |
+          git show "$GITHUB_SHA:scripts/regress.py" > "$RUNNER_TEMP/regress.py"
+          printf '%s\n' SECRET_KEY=ci-tests-not-a-secret DJANGO_SETTINGS_MODULE=config.settings.local \
+            POSTGRES_DB=openh2o POSTGRES_USER=openh2o POSTGRES_PASSWORD=openh2o OPENH2O_MODULES=all > "$RUNNER_TEMP/ci.env"
+          cat > "$RUNNER_TEMP/suite.sh" <<'SH'
+          # One suite run in the engine's tree (the working folder): suite.sh <junit> <pytest paths...>
+          # The web image is built from this tree, so the tree's own code and requirements are tested.
+          set -uo pipefail
+          junit=$1; shift
+          proj="dc-$(basename "$PWD" | tr -c 'a-z0-9\n' '-')"
+          dc() { docker compose -p "$proj" "$@"; }
+          cp "$RUNNER_TEMP/ci.env" .env
+          export APP_VERSION=deploy-checks
+          trap 'dc down -v --rmi local >/dev/null 2>&1' EXIT
+          dc build -q web || exit 3
+          dc up -d --wait db web || { dc logs web --tail 100; exit 3; }
+          dc exec -T -e OPENH2O_MODULES=all web python -m pytest "$@" --ds=config.settings.local \
+            -m "not network" -p no:cacheprovider -q -o junit_family=xunit1 --junitxml=/tmp/deploy-checks.xml
+          rc=$?
+          dc cp web:/tmp/deploy-checks.xml "$junit" >/dev/null 2>&1
+          exit "$rc"
+          SH
+
+
+      - name: The fix's tests on the commit before it
+        env:
+          DC_BASE: ${{ needs.plan.outputs.base }}
+          DC_HEAD: ${{ needs.plan.outputs.head }}
+          DC_FIX: ${{ matrix.fix }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/deploy-checks"
+          set +e
+          # shellcheck disable=SC2086
+          python3 -I "$RUNNER_TEMP/regress.py" check --repo "$GITHUB_WORKSPACE" --base "$DC_BASE" --head "$DC_HEAD" \
+            $DC_TESTS --only-fix "$DC_FIX" \
+            --command "bash $RUNNER_TEMP/suite.sh {junit} --continue-on-collection-errors tests/" \
+            --subset "bash $RUNNER_TEMP/suite.sh {junit} {files}" \
+            --fail-exits 1,2 --timeout 3600 \
+            --out "$RUNNER_TEMP/deploy-checks/deploy-checks.json" 2>&1 | tee "$RUNNER_TEMP/deploy-checks/log.txt"
+          rc=${PIPESTATUS[0]}
+          {
+            echo "### Fix $DC_FIX"; echo; echo '```'
+            grep -E '^(regress:|  [0-9a-f]{12} |Fix-Test:)' "$RUNNER_TEMP/deploy-checks/log.txt" | head -40
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$rc"
+
+      - name: Upload the record
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: deploy-checks-fix-${{ matrix.fix }}-attempt-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/deploy-checks/deploy-checks.json
+            ${{ runner.temp }}/deploy-checks/log.txt
+          retention-days: 90
+          if-no-files-found: warn
+
+  verdict:
+    name: verdict
+    needs: [plan, old-tests, fix-tests]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Gather the records
+        if: ${{ needs.plan.result == 'success' }}
+        uses: actions/download-artifact@v8
+        with:
+          pattern: deploy-checks-*-attempt-${{ github.run_attempt }}
+          path: records
+
+      - name: Verdict
+        env:
+          PLAN: ${{ needs.plan.result }}
+          OLD: ${{ needs.old-tests.result }}
+          FIX: ${{ needs.fix-tests.result }}
+          COUNT: ${{ needs.plan.outputs.count }}
+        run: |
+          {
+            echo '### Verdict'; echo; echo '```'
+            echo "plan: $PLAN; old tests: $OLD; fix tests: $FIX ($COUNT fix commits with a test)"
+            for f in records/*/deploy-checks.json; do
+              [ -f "$f" ] || continue
+              python3 -I -c 'import json,sys; r=json.load(open(sys.argv[1])); print(sys.argv[2], r["result"], "exit", r["exit"])' "$f" "$(basename "$(dirname "$f")")"
+            done
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+          [ "$PLAN" = success ] || exit 1
+          [ "$OLD" = success ] || exit 1
+          if [ "$COUNT" = 0 ]; then [ "$FIX" = skipped ] || exit 1; else [ "$FIX" = success ] || exit 1; fi
+          echo "deploy checks: PASS"
