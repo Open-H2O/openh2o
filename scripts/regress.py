@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copied verbatim from vanderoffice/testing-program regress/regress.py at 012b959af956738825a53ed2ae58a4d89c86fc94; change it there.
+# Copied verbatim from vanderoffice/testing-program regress/regress.py at 617f9acf50b0390ea4c28a98fce2e1bf15039aa6; change it there.
 """regress.py: the testing program's checks for rules 6 and 8, run before a deploy and weekly.
 
   old tests   the deployed commit's (base's) tests, run against the candidate's (head's) code.
@@ -495,7 +495,7 @@ class Engine:
             say(f"note: {line}")
         if not old_bad and not fix_bad:
             self.record.update(result="pass", exit=0)
-            say(f"PASS: no unexcused old test failing on new code, no unexcused fix whose test passes before the fix"
+            say("PASS: no unexcused old test failing on new code, no unexcused fix whose test passes before the fix"
                 + (f"; {len(self.record['reasons_used'])} recorded reason(s) used" if self.record["reasons_used"] else ""))
             return 0
         self.record.update(result="rule-broken", exit=1)
