@@ -155,7 +155,9 @@ def test_provenance_page_is_explicit_about_the_invented_half(client_logged_in):
     html = client_logged_in.get(reverse("demonstration_data")).content.decode()
     assert "Invented sample data" in html
     assert "City of Merced" in html
-    assert "names no real water district" in html
+    # Wording from the maintainer, 2026-10-18 ("It names no? why is it worded
+    # so strangely?"); the claim is what is pinned, not the old phrase.
+    assert "does not represent any real water district" in html
     # The tripwire. This is the one page that connects the demo's invented
     # accounting to a named agency, so a real district reappearing here is the
     # defect coming back. Kept as a literal so it fails loudly, not cleverly.
