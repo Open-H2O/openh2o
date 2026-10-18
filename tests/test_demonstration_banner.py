@@ -171,9 +171,6 @@ def test_provenance_page_is_explicit_about_the_invented_half(client_logged_in):
     assert "names of the agencies and districts" in html
 
 
-@pytest.mark.django_db
-def test_provenance_page_disclaims_compliance_determination(client_logged_in):
-    """The sharpest gotcha risk on real chemistry under a real utility's name."""
-    html = client_logged_in.get(reverse("demonstration_data")).content.decode()
-    assert "does not compare them" in html
-    assert "not a compliance assessment" in html.lower()
+# The compliance-assessment test was removed with its paragraph on the maintainer's
+# ruling, 2026-10-18 16:54 PDT ("Delete ... The drinking-water section is not a
+# compliance assessment. ...").

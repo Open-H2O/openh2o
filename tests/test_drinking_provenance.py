@@ -408,7 +408,5 @@ class TestTheAboutPageSaysTheSameWordsAsTheScreens:
         text = _page_text(_client(), reverse("demonstration_data")).lower()
         assert "label" in text
 
-    def test_the_record_versus_limit_claim_is_untouched(self):
-        """Load-bearing, and Phase 98 built the result page around it."""
-        text = _page_text(_client(), reverse("demonstration_data"))
-        assert "it does not compare them and does" in text
+    # test_the_record_versus_limit_claim_is_untouched was removed with the
+    # paragraph it pinned, on the maintainer's ruling 2026-10-18 16:54 PDT.
