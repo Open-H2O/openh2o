@@ -116,9 +116,11 @@ class SiteConfig(models.Model):
     allow_google_oauth = models.BooleanField(default=False)
     demonstration_mode = models.BooleanField(
         default=False,
-        help_text="When on, every report surface and generated file is stamped "
-        "'demonstration — not submittable'. Off for a real deployment; "
-        "the Merced demo seed turns it on.",
+        help_text="When Demonstration mode is on, every page shows the "
+        "demonstration notice, and the first line of a ledger export says the "
+        "file comes from the demonstration. Loading the demonstration data "
+        "turns it on. Leave it on for as long as the demonstration data is on "
+        "the site.",
     )
 
     # --- Agency-wide delivery accounting policy (Phase 55-02) ---

@@ -20,6 +20,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from django.db.models import Sum
 
 from accounting.allocation_math import apportion_shared_supply
+from accounting.ledger_words import DEMONSTRATION_FILE_LINE
 from accounting.models import CalculationRun
 from accounting.services import billable_ledger, runs_in_period
 from core.csv_safe import safe_row
@@ -370,7 +371,7 @@ def generate_gears_csv(reporting_period, method="by_well"):
     writer = csv.writer(output, quoting=csv.QUOTE_MINIMAL)
 
     if getattr(SiteConfig.objects.first(), "demonstration_mode", False):
-        writer.writerow(["DEMONSTRATION DATA — sample values, not an official submission"])
+        writer.writerow([DEMONSTRATION_FILE_LINE])
 
     if method == "by_well":
         writer.writerow([
@@ -528,7 +529,7 @@ def generate_calwatrs_csv(reporting_period, template_type="a1"):
     writer = csv.writer(output, quoting=csv.QUOTE_MINIMAL)
 
     if getattr(SiteConfig.objects.first(), "demonstration_mode", False):
-        writer.writerow(["DEMONSTRATION DATA — sample values, not an official submission"])
+        writer.writerow([DEMONSTRATION_FILE_LINE])
 
     writer.writerow([
         "Water Right ID", "Holder Name", "POD Name", "Source Fraction",

@@ -54,7 +54,7 @@ PERIOD_START = date(2025, 10, 1)
 PERIOD_END = date(2026, 9, 30)
 
 BANNER = "Crop ET has not been calculated for"
-ALL_CLEAR = "All clear"
+ALL_CLEAR = "Nothing needs attention right now."
 NOT_CALCULATED = "Not calculated"
 
 # A moment inside the fixture's water year (see the clock note in the render).

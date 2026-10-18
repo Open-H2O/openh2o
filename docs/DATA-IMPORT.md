@@ -274,7 +274,7 @@ Dry run.
 | `transaction_date` | no | The date the entry was recorded. |
 | `description` | no | Any text. |
 
-Water taken against the allocation is a negative amount (meter readings, ET estimates, surface diversions, calculated rows); water added to it is positive (allocations, recharge credits); manual entries, CSV-import rows and adjustments carry the sign you give them.
+On the ledger, water taken against the allocation is a negative amount and water added to it is a positive amount. The table below gives the sign for each source type. Manual entries, CSV imports and adjustments keep the sign you give them.
 
 When an amount's sign does not match its source type, OpenH2O reverses the sign and
 lists every row it changed.

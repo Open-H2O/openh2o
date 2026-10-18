@@ -46,36 +46,29 @@ from parcels.models import (
 )
 
 
-def sign_rule_sentence(*, recharge_enabled=True, surface_enabled=True):
-    """The one sign rule, said the same way at every door (ISS-196).
+#: The first line of a ledger file downloaded from a demonstration site
+#: (2026-10-18). The import skips it, so a downloaded export
+#: re-imports as it is.
+DEMONSTRATION_FILE_LINE = (
+    "This file comes from the OpenH2O demonstration. Its figures are sample data."
+)
 
-    Every screen that shows a ledger figure, the CLI importer, the web
-    upload preview and `docs/DATA-IMPORT.md` all quote this sentence
-    verbatim rather than composing their own version of it, so the rule
-    cannot drift between doors the way it did before 146-01: the document
-    said "positive = supply, negative = usage" while the screens said
-    "negative amounts are water delivered or pumped", and neither one named
-    a `source_type` code that actually exists.
 
-    With the defaults (both flags ``True``) this returns the sentence
-    exactly as written. Each flag drops its own module's example from the
-    sentence's own list the same module-neutral way the ledger page's page
-    description already handles "and recharge" one line above
-    (`templates/accounting/ledger_list.html`): a deployment with no
-    `recharge` module has no recharge credits to name, and one with no
-    `surface` module has no surface diversions
-    (`tests/droppability/checks.py::test_kept_pages_never_name_a_dropped_module`).
+def sign_rule_sentence():
+    """The ledger's sign rule as `docs/DATA-IMPORT.md` states it (ISS-196).
+
+    Since 149.1-05 (2026-10-07) no screen prints it: the ledger list and the
+    create form carry their own one-line rule. The import guide quotes it
+    word for word, and `tests/test_ledger_import_sign_report.py` holds the
+    guide to it. The wording was approved on 2026-10-18; it
+    names no module's source type, so it reads the same on every deployment,
+    and the sign of each code is in the guide's table beside it.
     """
-    positive_examples = "allocations, recharge credits" if recharge_enabled else "allocations"
-    negative_examples = "meter readings, ET estimates"
-    if surface_enabled:
-        negative_examples += ", surface diversions"
-    negative_examples += ", calculated rows"
     return (
-        f"Water taken against the allocation is a negative amount "
-        f"({negative_examples}); water added to it is positive "
-        f"({positive_examples}); manual entries, CSV-import rows and "
-        f"adjustments carry the sign you give them."
+        "On the ledger, water taken against the allocation is a negative "
+        "amount and water added to it is a positive amount. The table below "
+        "gives the sign for each source type. Manual entries, CSV imports and "
+        "adjustments keep the sign you give them."
     )
 
 

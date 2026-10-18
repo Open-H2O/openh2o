@@ -63,6 +63,7 @@ from accounting.models import (
 from accounting.ledger_words import (
     DELIVERY_SHARE_BY_FIXED,
     DELIVERY_SHARE_BY_USE,
+    DEMONSTRATION_FILE_LINE,
 )
 from accounting.precip_math import METHOD_LABELS
 from core.access import admin_required
@@ -1697,9 +1698,6 @@ def ledger_list(request):
         # test_kept_pages_never_name_a_dropped_module), so the template
         # drops the clause rather than the view rewriting the whole sentence.
         "recharge_enabled": is_enabled("recharge"),
-        # sign_rule_sentence() (ISS-196) names "surface diversions" among its
-        # negative examples; same guard, same reason.
-        "surface_enabled": is_enabled("surface"),
     }
 
     if request.headers.get("HX-Request"):
@@ -1799,8 +1797,8 @@ def csv_template(request):
     response = HttpResponse(content_type="text/csv")
     response["Content-Disposition"] = 'attachment; filename="ledger_import_template.csv"'
     writer = csv_module.writer(response)
-    if getattr(SiteConfig.objects.first(), "demonstration_mode", False):
-        writer.writerow(["DEMONSTRATION DATA — sample values, not an official submission"])
+    # A blank template holds no figures, so it carries no demonstration line
+    # (2026-10-18).
     writer.writerow([
         "parcel_number",
         "effective_date",
@@ -1849,7 +1847,7 @@ def ledger_export(request):
     response["Content-Disposition"] = 'attachment; filename="ledger_export.csv"'
     writer = csv_module.writer(response)
     if getattr(SiteConfig.objects.first(), "demonstration_mode", False):
-        writer.writerow(["DEMONSTRATION DATA — sample values, not an official submission"])
+        writer.writerow([DEMONSTRATION_FILE_LINE])
     # Round-trip contract: emit EXACTLY the columns the importer reads
     # (import_ledger_csv / parse_ledger_csv), in their order, so a downloaded
     # export re-imports losslessly. Previously this wrote a water_type *name* and a

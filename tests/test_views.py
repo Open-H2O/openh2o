@@ -525,7 +525,7 @@ class TestDashboardAttentionStrip:
         response = auth_client.get(reverse("accounting:dashboard"))
         html = response.content.decode()
         assert response.status_code == 200
-        assert "All clear" in html
+        assert "Nothing needs attention right now." in html
         assert "Needs attention" not in html
 
 

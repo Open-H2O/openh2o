@@ -2,7 +2,7 @@
   "Needs attention": the exception counts a returning admin should see first.
   Each is a row that routes to the screen where you act on it, and only
   renders when its count is non-zero; when everything's fine the band is one
-  quiet "All clear" line. Counts come from the dashboard view
+  quiet "Nothing needs attention right now." line. Counts come from the dashboard view
   (periods_to_close / stations_down / accounts_over_budget / unmet_demand_count
   / attention_total). Included by the period card inside the HTMX-swapped
   dashboard content, so the period-dependent counts stay correct.
@@ -13,7 +13,7 @@
   card's width ("6 fields with water use recorded, no supply reported" broke
   onto two chip lines in the mock-up) and a row wraps like any list line.
 
-  ISS-099: "All clear" is a CLAIM, and it is only true if the exception counters
+  ISS-099: the all-clear line is a CLAIM, and it is only true if the exception counters
   above it could have seen a problem. When the calculation engine has never run,
   every consumptive-use figure on the page is 0.00 for want of a measurement, so
   `accounts_over_budget` is structurally zero — no account can exceed its
@@ -72,7 +72,7 @@
 {% else %}
 <div class="attention-clear">
   <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-  All clear — nothing needs attention right now.
+  Nothing needs attention right now.
 </div>
 {% endif %}
 {% endif %}

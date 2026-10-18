@@ -34,13 +34,19 @@ Rules enforced here, in order:
    (parcel, effective_date, source_type, amount) and collapse exact duplicates
    within the file. Re-importing the same CSV writes nothing the second time,
    while a genuinely corrected amount (a different key) still lands.
+
+A ledger export from a demonstration site starts with one line saying so
+(``DEMONSTRATION_FILE_LINE``). The import skips that line, and only that line,
+so the site's own export re-imports as downloaded (2026-10-18).
 """
 import csv
+import itertools
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
 from django.db import transaction
 
+from accounting.ledger_words import DEMONSTRATION_FILE_LINE
 from accounting.locks import finalized_message
 from accounting.models import ReportingPeriod, WaterType
 from parcels.models import (
@@ -112,6 +118,12 @@ def import_ledger_rows(
     # the whole story on any door again.
     sign_normalized_rows = []
 
+    first_line = text_file.readline()
+    first_data_line = 2
+    if first_line.lstrip('\ufeff').strip().strip('"') == DEMONSTRATION_FILE_LINE:
+        first_data_line = 3
+    elif first_line:
+        text_file = itertools.chain([first_line], text_file)
     reader = csv.DictReader(text_file, delimiter=delimiter)
 
     if reader.fieldnames is None:
@@ -132,7 +144,7 @@ def import_ledger_rows(
     )
     picked_is_finalized = bool(reporting_period and reporting_period.is_finalized)
 
-    for line_num, row in enumerate(reader, start=2):
+    for line_num, row in enumerate(reader, start=first_data_line):
         row = {k.strip().lower(): v.strip() for k, v in row.items() if k}
 
         row_errors = []
