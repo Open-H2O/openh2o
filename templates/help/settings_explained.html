@@ -52,7 +52,7 @@
           <tr>
             <td class="col-name">Calculation steps</td>
             <td>The order of the calculation steps, and which of them are switched on.</td>
-            <td>All five steps, switched on, in the order {% if show_methods %}<a class="prose-link" href="{% url 'methods' %}">Methods behind the numbers</a>{% else %}Methods behind the numbers{% endif %} describes.</td>
+            <td>{% if show_methods %}All five steps, switched on, in the order <a class="prose-link" href="{% url 'methods' %}">Methods behind the numbers</a> describes.{% else %}All five steps, switched on.{% endif %}</td>
           </tr>
           <tr>
             <td class="col-name">Effective precipitation method</td>

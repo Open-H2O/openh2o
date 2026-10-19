@@ -494,6 +494,9 @@ EXPECTED_UNREACHABLE = {
     "/nav-mode/": "HTTP 302",
     "/setup/confirm/": "HTTP 302",
     "/setup/run/": "HTTP 302",
+    # A page folded into another keeps its address as a permanent redirect
+    # (2026-10-18: Surface delivery settings into Settings explained).
+    "/help/surface-deliveries/": "HTTP 301",
     # django-allauth. Sign-in, sign-up and password-set redirect because the
     # crawler is already signed in — that is the correct behaviour, and it is
     # why `templates/account/` is swept at source instead. The social-account
