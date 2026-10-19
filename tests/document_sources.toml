@@ -246,7 +246,7 @@ files = [
   "static/js/map-core.js",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "efe5113"
 
 [[section]]
 document = "README.md"
@@ -520,7 +520,7 @@ files = [
   "standards/management/commands/check_conformance.py",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "efe5113"
 
 [[section]]
 document = "DEPLOY.md"
@@ -547,7 +547,7 @@ files = [
   "config/settings/base.py",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "efe5113"
 
 [[section]]
 document = "DEPLOY.md"
@@ -837,7 +837,7 @@ files = [
   "docker-compose.yml",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "efe5113"
 
 [[section]]
 document = "DEPLOY.md"
@@ -920,7 +920,7 @@ files = [
 labels = [
   { text = "Delivery Settings", where = "core/modules.py" },
 ]
-checked_at = "6de4a92"
+checked_at = "efe5113"
 
 [[section]]
 document = "docs/ROADMAP.md"
@@ -1068,7 +1068,7 @@ labels = [
   { text = "Import", where = "templates/surface/water_rights_list.html" },
   { text = "Import water rights", where = "templates/surface/right_import.html" },
 ]
-checked_at = "6de4a92"
+checked_at = "efe5113"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1320,7 +1320,7 @@ files = [
   "core/modules.py",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "efe5113"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
@@ -1613,7 +1613,7 @@ files = [
   "data/merced/stations.json",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "efe5113"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -2132,7 +2132,7 @@ labels = [
   { text = "Glossary", where = "templates/help/glossary.html" },
   { text = "How water balances work", where = "templates/help/water_balances.html" },
 ]
-checked_at = "6de4a92"
+checked_at = "efe5113"
 
 [[section]]
 document = "templates/about_demonstration_data.html"
@@ -2192,7 +2192,7 @@ files = [
 labels = [
   { text = "Use Ledger", where = "core/modules.py" },
 ]
-checked_at = "6de4a92"
+checked_at = "efe5113"
 
 [[section]]
 document = "templates/about_demonstration_data.html"
@@ -2335,7 +2335,7 @@ files = [
   "parcels/services.py",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "efe5113"
 
 [[section]]
 document = "templates/help/water_balances.html"
@@ -2344,7 +2344,7 @@ files = ["templates/accounting/partials/_dashboard_content.html", "accounting/vi
 labels = [
   { text = "Dashboard", where = "core/modules.py" },
 ]
-checked_at = "6de4a92"
+checked_at = "efe5113"
 
 [[section]]
 document = "templates/help/methods.html"
@@ -2369,7 +2369,7 @@ files = [
   "templates/accounting/partials/_dashboard_content.html",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "efe5113"
 
 [[section]]
 document = "templates/help/methods.html"
@@ -2476,7 +2476,7 @@ files = [
   "accounting/views.py",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "efe5113"
 
 [[section]]
 document = "templates/help/settings_explained.html"
@@ -2541,7 +2541,7 @@ files = [
   "templates/accounting/partials/_active_accounts_table.html",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "efe5113"
 
 [[section]]
 document = "templates/help/budgets_allocations.html"
