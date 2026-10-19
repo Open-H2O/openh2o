@@ -42,8 +42,8 @@
       <table class="data-table help-cases-table">
         <thead>
           <tr>
-            <th>Step</th>
-            <th>How OpenH2O does it</th>
+            <th>Topic</th>
+            <th>How it works</th>
           </tr>
         </thead>
         <tbody>
@@ -53,27 +53,31 @@
           </tr>
           <tr>
             <td class="col-name">ETAW</td>
-            <td>OpenH2O subtracts effective precipitation from crop ET. The method for effective precipitation is set on <a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a>, and the default is the USDA-SCS method.</td>
+            <td>ETAW is crop ET minus effective precipitation. By default, effective precipitation is estimated with the USDA-SCS method.</td>
           </tr>
           <tr>
             <td class="col-name">ETAW met by surface water</td>
-            <td>OpenH2O multiplies the month&rsquo;s surface water delivery by the field&rsquo;s irrigation efficiency. The result, up to the month&rsquo;s ETAW, is ETAW met by surface water. The part of the delivery lost to irrigation efficiency is deep percolation.</td>
+            <td>The field&rsquo;s surface water delivery is its share of a headgate total, divided as the next table describes. OpenH2O multiplies the delivery by the field&rsquo;s irrigation efficiency, and ETAW met by surface water is that product or the month&rsquo;s ETAW, whichever is smaller.</td>
+          </tr>
+          <tr>
+            <td class="col-name">Deep percolation from a delivery</td>
+            <td>The share of the delivery that the crop cannot use at the field&rsquo;s irrigation efficiency is deep percolation.</td>
           </tr>
           <tr>
             <td class="col-name">ETAW met by groundwater</td>
-            <td>On a field with a well, the ETAW that surface water does not meet is ETAW met by groundwater. On a field with no well, the dashboard counts it as water use with no supply reported.</td>
+            <td>On a field with a well, the ETAW that surface water does not meet is ETAW met by groundwater. On a field with no well, that ETAW appears on the dashboard as water use with no supply reported.</td>
           </tr>
           <tr>
             <td class="col-name">Groundwater extraction</td>
-            <td>Where the well has a meter, the meter reading is the extraction. Otherwise OpenH2O divides ETAW met by groundwater by the field&rsquo;s irrigation efficiency, and the difference is deep percolation.</td>
+            <td>Where the well has a meter, the meter reading is the extraction. Otherwise OpenH2O divides ETAW met by groundwater by the field&rsquo;s irrigation efficiency to get the extraction, and the extraction minus ETAW met by groundwater is deep percolation.</td>
           </tr>
           <tr>
             <td class="col-name">A field with no crop</td>
-            <td>OpenH2O treats a field with no crop on file as having no irrigated water use and sets its figures for the month to zero.</td>
+            <td>When a field has no crop on file, OpenH2O sets all its figures for the month to zero.</td>
           </tr>
           <tr>
             <td class="col-name">The surplus</td>
-            <td>When effective precipitation and ETAW met by surface water together exceed crop ET, OpenH2O records the surplus in two parts: effective precipitation in excess of crop ET, and surface water in excess of ETAW. {% if show_settings %}<a class="prose-link" href="{% url 'settings_explained' %}">Settings explained</a>{% else %}Settings explained{% endif %} describes the setting that decides what happens to surface water in excess of ETAW.</td>
+            <td>When effective precipitation plus the delivery times irrigation efficiency exceeds crop ET, OpenH2O records the surplus in two parts: effective precipitation in excess of crop ET, and surface water in excess of ETAW. What happens to surface water in excess of ETAW depends on a setting described in {% if show_settings %}<a class="prose-link" href="{% url 'settings_explained' %}">Settings explained</a>{% else %}Settings explained{% endif %}.</td>
           </tr>
         </tbody>
       </table>
@@ -86,22 +90,22 @@
       <table class="data-table help-cases-table">
         <thead>
           <tr>
-            <th>Step</th>
-            <th>How OpenH2O does it</th>
+            <th>Topic</th>
+            <th>How it works</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td class="col-name">Canal losses</td>
-            <td>OpenH2O first takes the canal&rsquo;s evaporation, seepage and spill off the total taken at the headgate. Evaporation and spill are written off, and seepage goes to the zone&rsquo;s seepage pool.</td>
+            <td>OpenH2O first subtracts the canal&rsquo;s evaporation, seepage and spill from the headgate total. Evaporation and spill are charged to no one, and seepage goes to the zone&rsquo;s seepage pool.</td>
           </tr>
           <tr>
             <td class="col-name">Default losses</td>
-            <td>Until a canal&rsquo;s own losses are entered on its point of diversion, seepage is 25 percent for an unlined canal, 5 percent for a lined canal and 0 for a pipe. Evaporation is 1 percent for an open canal and 0 for a pipe.</td>
+            <td>If no losses are entered on the point of diversion, OpenH2O uses 25 percent seepage for an unlined canal, 5 percent for a lined canal and none for a pipe. It uses 1 percent evaporation for an open canal, none for a pipe, and no spill.</td>
           </tr>
           <tr>
             <td class="col-name">Fields&rsquo; own records</td>
-            <td>Next, OpenH2O subtracts any delivery recorded for a field itself, and divides only the remainder among the other fields.</td>
+            <td>Next, OpenH2O subtracts any delivery recorded for an individual field.</td>
           </tr>
           <tr>
             <td class="col-name">The division</td>
@@ -109,11 +113,11 @@
           </tr>
           <tr>
             <td class="col-name">Water left over</td>
-            <td>Water left after every field has received its ETAW divided by its irrigation efficiency is shown on the point of diversion&rsquo;s page, and no field is charged with it.</td>
+            <td>If water remains after every field has received its ETAW divided by its irrigation efficiency, OpenH2O shows it on the point of diversion&rsquo;s page and charges it to no field.</td>
           </tr>
           <tr>
             <td class="col-name">A month with no ETAW</td>
-            <td>In a month when no field on the headgate has any ETAW, OpenH2O divides the remainder by the shares entered on the point of diversion, or evenly when no shares are entered.</td>
+            <td>In a month when no field on the headgate has any ETAW, OpenH2O divides the remainder according to the shares entered on the point of diversion, or evenly when none are entered.</td>
           </tr>
         </tbody>
       </table>
@@ -126,26 +130,26 @@
       <table class="data-table help-cases-table">
         <thead>
           <tr>
-            <th>Case</th>
-            <th>How OpenH2O does it</th>
+            <th>Topic</th>
+            <th>How it works</th>
           </tr>
         </thead>
         <tbody>
           <tr>
+            <td class="col-name">A recorded volume</td>
+            <td>When a volume is entered for the month, even zero, OpenH2O uses it and makes no estimate.</td>
+          </tr>
+          <tr>
             <td class="col-name">The estimate</td>
-            <td>When a diversion has no meter and no volume recorded for a month, OpenH2O estimates the month&rsquo;s delivery as the water its fields needed, plus the canal&rsquo;s losses. A field&rsquo;s need is its ETAW divided by its irrigation efficiency, or its own recorded delivery where it has one.</td>
+            <td>When a diversion has no meter and no volume recorded for a month, OpenH2O estimates the delivery as the water its fields need plus the canal&rsquo;s losses. A field&rsquo;s need is its ETAW divided by its irrigation efficiency, or its own recorded delivery where it has one.</td>
           </tr>
           <tr>
             <td class="col-name">The water right&rsquo;s limits</td>
-            <td>Where the diversion&rsquo;s water right has a face value, the estimate stops at the face value left for the water year. A month wholly outside the right&rsquo;s direct diversion season is estimated at zero.</td>
+            <td>Where the diversion&rsquo;s water right has a face value, the estimate cannot exceed the face value remaining for the water year. A month wholly outside the right&rsquo;s direct diversion season is estimated at zero. When a diversion has no water right on file, its estimate has no limit.</td>
           </tr>
           <tr>
             <td class="col-name">No estimate</td>
-            <td>OpenH2O estimates no delivery at a diversion whose water right is inactive or revoked. A diversion with no water right is estimated without a limit.</td>
-          </tr>
-          <tr>
-            <td class="col-name">A recorded volume</td>
-            <td>A volume entered for the month, including zero, takes the place of the estimate.</td>
+            <td>OpenH2O estimates no delivery at a diversion whose water right is inactive or revoked.</td>
           </tr>
         </tbody>
       </table>
