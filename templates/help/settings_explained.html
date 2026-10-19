@@ -38,7 +38,7 @@
 <div class="page-stack page-help help-page">
 
   <div class="card-raised">
-    <h2 class="section-header">On Methodology Settings</h2>
+    <h2 class="section-header">Methodology Settings</h2>
     <div class="table-scroll">
       <table class="data-table help-cases-table">
         <thead>
@@ -50,15 +50,15 @@
         <tbody>
           <tr>
             <td class="col-name">Calculation steps</td>
-            <td>OpenH2O runs the steps on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a>{% else %}Methodology Settings{% endif %} in the order listed. An administrator can reorder them or switch any of them off.</td>
+            <td>OpenH2O runs the calculation steps in the order {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a>{% else %}Methodology Settings{% endif %} lists them. By default, all five steps are on, in the order {% if show_methods %}<a class="prose-link" href="{% url 'methods' %}">Methods behind the numbers</a>{% else %}Methods behind the numbers{% endif %} describes. An administrator can reorder them or switch any of them off.</td>
           </tr>
           <tr>
             <td class="col-name">Effective precipitation</td>
-            <td>Effective precipitation can be all of the month&rsquo;s rain, a fixed percentage of it, or an estimate by the USDA-SCS method. The USDA-SCS method is the default, with 3.0 inches of soil moisture storage. The fixed percentage is 70 percent unless an administrator changes it.</td>
+            <td>Effective precipitation can be all of the month&rsquo;s rain, a fixed percentage of it, or an estimate by the USDA-SCS method. The default is the USDA-SCS method. Its default soil moisture storage is 3.0 inches, and the default fixed percentage is 70 percent.</td>
           </tr>
           <tr>
             <td class="col-name">Lowest remainder</td>
-            <td>Crop ET less effective precipitation and the delivery times irrigation efficiency cannot fall below this value, which is 0 acre-feet by default.</td>
+            <td>OpenH2O subtracts effective precipitation and the delivery times irrigation efficiency from crop ET. The result never falls below this value. The default is 0 acre-feet.</td>
           </tr>
         </tbody>
       </table>
@@ -66,7 +66,7 @@
   </div>
 
   <div class="card-raised">
-    <h2 class="section-header">On Delivery Settings</h2>
+    <h2 class="section-header">Delivery Settings</h2>
     <div class="table-scroll">
       <table class="data-table help-cases-table">
         <thead>
@@ -78,31 +78,23 @@
         <tbody>
           <tr>
             <td class="col-name">Default irrigation efficiency</td>
-            <td>A field with no irrigation method on file uses this efficiency, 75 percent unless an administrator changes it on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}. A field with an irrigation method on file uses the efficiency of its method. Each field has one efficiency for its surface water and its groundwater.</td>
+            <td>A field with no irrigation method on file uses this efficiency, which is 75 percent by default. A field with an irrigation method on file uses the efficiency of its method. A field uses the same efficiency for its surface water and its groundwater.</td>
           </tr>
           <tr>
             <td class="col-name">Surface water in excess of ETAW</td>
-            <td>By default, OpenH2O credits surface water in excess of ETAW to no one. An administrator can instead credit it to the landowner, less a share left in the basin (10 percent by default), or show it as a separate line on the field&rsquo;s page without crediting it.</td>
+            <td>By default, OpenH2O gives no credit for surface water in excess of ETAW. An administrator can instead show it as a separate line on the field&rsquo;s page without crediting it, or credit it to the landowner after leaving a share in the basin. That share is 10 percent by default.{% if 'wells' in enabled_modules %} A field with a well receives the credit on its own ledger, and a field without a well has it added to its zone&rsquo;s shared account.{% endif %}</td>
           </tr>
-          {% if 'wells' in enabled_modules %}<tr>
-            <td class="col-name">Where a credit goes</td>
-            <td>When surface water in excess of ETAW is credited, a field with a well receives the credit on its own ledger. A field without a well has the credit added to its zone&rsquo;s shared account.</td>
-          </tr>{% endif %}
           <tr>
             <td class="col-name">Unused allocation</td>
-            <td>At the end of a water year, OpenH2O carries each zone&rsquo;s unused allocation into the next water year as a credit. An administrator can choose instead to let unused allocation expire. An overdrawn allocation is always carried into the next water year as a debt.</td>
-          </tr>
-          <tr>
-            <td class="col-name">One zone</td>
-            <td>An administrator can set a different year-end choice for one zone on that zone&rsquo;s page.</td>
+            <td>By default, OpenH2O carries each zone&rsquo;s unused allocation into the next water year as a credit. An administrator can instead let it expire at the end of the water year, and can set a different choice for one zone on that zone&rsquo;s page. An overdrawn allocation is always carried into the next water year as a debt.</td>
           </tr>
           <tr>
             <td class="col-name">Reporting year</td>
-            <td>When a diversion record file gives a year and a month but no date, OpenH2O places each record in a calendar month by the reporting year chosen here: a water year starting in October (the default), a calendar year, or a season starting in a month an administrator chooses.</td>
+            <td>Some diversion record files give a year and a month but no date. OpenH2O reads that year as a reporting year to place each record in a calendar month. The reporting year can be a water year starting in October, which is the default, a calendar year, or a season starting in a month an administrator chooses.</td>
           </tr>
           <tr>
             <td class="col-name">Record addresses</td>
-            <td>Each record&rsquo;s permanent address is published under the web address entered here, or under this site&rsquo;s own address when it is left blank. It changes no figure.</td>
+            <td>OpenH2O publishes each record&rsquo;s permanent address under the web address entered in this field. When the field is blank, OpenH2O uses this site&rsquo;s own address. This setting changes no figure.</td>
           </tr>
         </tbody>
       </table>
@@ -110,7 +102,7 @@
   </div>
 
   <div class="card-raised">
-    <h2 class="section-header">In the server&rsquo;s configuration</h2>
+    <h2 class="section-header">Server configuration</h2>
     <div class="table-scroll">
       <table class="data-table help-cases-table">
         <thead>
@@ -121,8 +113,8 @@
         </thead>
         <tbody>
           <tr>
-            <td class="col-name">Sign-in</td>
-            <td>Sign-in is required unless it is switched off in the server&rsquo;s configuration. While it is required, only an administrator can change the settings on Methodology Settings and Delivery Settings.</td>
+            <td class="col-name">Access control</td>
+            <td>Access control is on unless the server&rsquo;s configuration switches it off. While it is on, only an administrator can change Methodology Settings and Delivery Settings, and people cannot create their own accounts. While it is off, anyone who is signed in can change them.</td>
           </tr>
         </tbody>
       </table>
@@ -146,7 +138,7 @@
           </tr>
           <tr>
             <td class="col-name">The year-end choice</td>
-            <td>OpenH2O writes the carry-over when the rollover_allocations command is run for the water year that closed. A changed choice applies the next time that happens.</td>
+            <td>OpenH2O writes the carry-over when the rollover_allocations command is run on the server for the water year that closed. A changed choice applies from the next run.</td>
           </tr>
           <tr>
             <td class="col-name">The reporting year</td>
@@ -170,7 +162,7 @@
       </a>
       <a href="{{ delivery_url }}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Delivery Settings</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">This page holds the default irrigation efficiency, the treatment of surface water in excess of ETAW, the year-end choice and the reporting year.</p>
+        <p class="text-secondary text-sm">This page holds the default irrigation efficiency, the treatment of surface water in excess of ETAW, the year-end choice, the reporting year and record addresses.</p>
       </a>{% endif %}
     </div>
   </div>
