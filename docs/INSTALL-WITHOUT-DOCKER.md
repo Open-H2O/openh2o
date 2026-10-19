@@ -475,8 +475,9 @@ LOGS=/var/log/openh2o
 0 3 1 * *   cd $OPENH2O_DIR && .venv/bin/python manage.py prune_old_data --confirm >> $LOGS/prune.log 2>&1
 ```
 
-These are the jobs in `crontab.txt`, at the same times. `manage.py` reads `.env` by
-itself, so the jobs need no other settings. The last job deletes sync logs,
+These are the jobs in `crontab.txt`, at the same times, except the nightly backup.
+The backup script runs through Docker, so it does not work on this path. Section 11
+shows how to back up by hand. `manage.py` reads `.env` by itself, so the jobs need no other settings. The last job deletes sync logs,
 health-check results and published staging records older than a year. The jobs
 sync a data source only after that source's stations are turned on. Phase 4 of the
 [AI operator guide](AI-OPERATOR-GUIDE.md) describes turning stations on and explains

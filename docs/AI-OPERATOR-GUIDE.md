@@ -529,6 +529,8 @@ once. To change the schedule after that, edit it with `crontab -e`. The schedule
 runs these jobs:
 
 - Every hour, it syncs CDEC and USGS.
+- Every day at 1:25, it backs up the database and the uploaded files into the
+  `backups` folder in the checkout (Keeping it running, below).
 - Every day at 2:00, it syncs the Water Data Library, the SGMA Portal and NOAA.
 - Every day at 3:30, it calculates every reporting period that is not finalized.
 - Every 6 hours, it runs the health checks.
@@ -544,7 +546,8 @@ on ntfy, a service that sends notifications to a phone or a browser.
 
 Windows has no cron, and this guide does not yet give Windows steps for the
 schedule. On a Windows computer, tell the organization that the syncs, the nightly
-calculation and the health checks every 6 hours will not run on their own.
+backup, the nightly calculation and the health checks every 6 hours will not run on
+their own.
 
 ### Turn on the monitoring stations
 

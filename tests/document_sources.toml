@@ -1735,6 +1735,7 @@ checked_at = "6de4a92"
 document = "docs/AI-OPERATOR-GUIDE.md"
 heading = "Keys and the schedule"
 files = [
+  "scripts/backup.sh",
   "datasync/freshness.py",
   "datasync/adapters/cimis.py",
   "datasync/adapters/noaa.py",
@@ -2043,6 +2044,7 @@ checked_at = "6de4a92"
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
 heading = "Scheduled jobs"
 files = [
+  "scripts/backup.sh",
   "crontab.txt",
   "scripts/run-sync.sh",
   "manage.py",
