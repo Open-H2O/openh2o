@@ -26,13 +26,13 @@ help: ## Show this help message
 # Docker Compose
 # ---------------------------------------------------------------------------
 
-up: guard-prod ## Start all services (refuses in prod — use `make deploy`)
+up: guard-prod ## Start all services (refuses under .production-lock; to upgrade a live site use `make upgrade`)
 	$(COMPOSE) up -d --build
 
 down: guard-prod ## Stop all services (refuses in prod)
 	$(COMPOSE) down
 
-build: guard-prod ## Rebuild containers without starting (refuses in prod — use `make deploy`)
+build: guard-prod ## Rebuild containers without starting (refuses under .production-lock; to upgrade a live site use `make upgrade`)
 	$(COMPOSE) build
 
 # Which ref `deploy` ships. A deliberate branch-deploy door: it lets a release be
@@ -326,9 +326,9 @@ guard-prod:
 	@if [ -f .production-lock ]; then \
 		echo ""; \
 		echo "  REFUSING: this is a PROTECTED (production) checkout."; \
-		echo "  '$(MAKECMDGOALS)' rebuilds or resets prod — it can interrupt the live demo, and a reset would wipe its data."; \
-		echo "  To SHIP code to prod safely (rebuild web only, no logout): make deploy"; \
-		echo "  To do DEV work: use the staging checkout instead (~/openh2o-staging)."; \
+		echo "  '$(MAKECMDGOALS)' stops, rebuilds or resets this site, and a reset deletes its records."; \
+		echo "  To upgrade this site to a new version: make upgrade (it backs up first)."; \
+		echo "  For development work, use a separate checkout that has no .production-lock."; \
 		echo "  To override here on purpose: rm .production-lock  (then recreate it after)."; \
 		echo ""; \
 		exit 1; \

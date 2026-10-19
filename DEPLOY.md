@@ -674,20 +674,59 @@ north, south, east and west edges by hand, or give no boundary at all.
 
 ### Upgrades
 
-These commands upgrade a site that holds the organization's records. They update
-the code and the database tables and leave the records as they are:
+To upgrade a site that holds the organization's records, run one command in the
+checkout:
 
 ```bash
 cd /path/to/openh2o
-git pull origin main
-docker compose up -d --build
-docker compose exec web python manage.py migrate
-docker compose exec web python manage.py collectstatic --noinput
+make upgrade
 ```
 
-The website container already runs the migrations and gathers the styling and images
-when it starts, so the last two commands find nothing left to do. They do no harm. Back
-up the database and `.env` before you upgrade (Database Backup, below).
+`make upgrade` updates the code and the database tables and leaves the records as they
+are. It runs these steps in order and stops at the first one that fails:
+
+1. It fetches the new version and compares it with the files edited on this server,
+   usually `crontab.txt` and the `Caddyfile`. If the new version changes a file edited
+   here, it stops before it changes anything and names the file.
+2. It backs up the database and the uploaded files, as the nightly backup does
+   (Database Backup, below). If the backup fails, it stops and changes nothing.
+3. It moves the code to the new version. If this checkout has commits of its own, it
+   stops here.
+4. It rebuilds and restarts the containers. The website applies the database updates as
+   it starts.
+5. It waits for the website to answer, runs the health checks, and prints the old
+   version, the new version and the name of the backup.
+
+The footer of every page then shows the version the site runs. `make upgrade` runs on a
+site that carries `.production-lock` (below).
+
+When it stops at the first step, save a copy of your edits to the file it names, run
+`git checkout -- <file>` with that file's name and run `make upgrade` again. Then make
+your edits again in the new version of the file. Do not copy the saved file over it,
+because that would undo the update's own changes. After editing the `Caddyfile`, run
+`docker compose restart caddy`. Edits to `crontab.txt` need not be made again, because
+the installed schedule is a copy and already holds them.
+
+When the website does not answer after the rebuild, `make upgrade` prints the website's
+last 50 log lines, the version the site ran before and the names of the backup files it
+took before it changed anything. Read those lines for the error, correct it, and run
+`docker compose up -d`.
+
+A site installed before `make upgrade` existed has no `scripts/upgrade.sh`. Its first
+upgrade takes three commands:
+
+```bash
+git checkout -- crontab.txt
+git pull --ff-only
+make upgrade
+```
+
+The first command discards your edits to `crontab.txt`, which the installed schedule
+already holds. Leave it out on a site that never edited `crontab.txt`. If
+`git pull` names another file it would overwrite, such as the `Caddyfile`, treat it as
+above. On this first upgrade, `make upgrade` prints the same version as old and new,
+because `git pull` has already moved the code. Afterwards, add the nightly backup to the
+installed schedule (Scheduled Jobs, below).
 
 Never use `make deploy` to upgrade. It is the target for the project's own
 demonstration site, and it replaces that site's database with demonstration data.
@@ -716,8 +755,8 @@ make down
 touch .production-lock
 ```
 
-The refusal message suggests `make deploy`. Never run it on an organization's site
-(see Upgrades). The file does not guard the demonstration targets, such as
+`make upgrade` still runs with the file in place, because upgrading the site is its
+purpose. The file does not guard the demonstration targets, such as
 `make merced`, `make flush-demo`, `make teardown-demo` and `make reset-demo`, or
 `docker compose down -v`, which deletes the database. Never run those on a site that
 holds records.
@@ -731,6 +770,7 @@ health. The jobs are in `crontab.txt`:
 | Job | Schedule | Purpose |
 |-----|----------|---------|
 | `run-sync.sh cdec usgs` | Every hour | Stream and reservoir readings |
+| `backup.sh` | Every day at 1:25 | Backs up the database and the uploaded files into the `backups` folder (Database Backup, below) |
 | `run-sync.sh dwr_wdl dwr_sgma noaa` | Every day at 2:00 | Groundwater levels and climate data |
 | `run_accounting --open-periods --trigger schedule` | Every day at 3:30 | Calculates every reporting period that is not finalized, after the 2:00 sync. A finalized period is never changed. Each run's record shows on the period's page and on Site health |
 | `run_health_checks` | Every 6 hours | Checks the database, the disk, the certificate, the migrations and the data sources |
@@ -780,7 +820,8 @@ make show-cron
 lines to whatever is already installed. To change the schedule later, or to replace
 older OpenH2O lines, edit the installed schedule with `crontab -e`. Running
 `make install-cron` again adds the lines a second time, and every job would then run
-twice.
+twice. If `crontab -l` shows no `backup.sh` line, run `crontab -e` and copy that line in
+from `crontab.txt`.
 
 <!-- defines: api_key -->
 ### External Data API Keys
@@ -930,39 +971,57 @@ written for.
 
 ### Database Backup
 
-```bash
-docker compose exec -T db pg_dump -U openh2o openh2o > backup-$(date +%Y%m%d).sql
-```
-
-The dump holds every record. It leaves out two Docker volumes, the storage areas
-Docker keeps outside the containers. `media_files` holds uploaded files, such as
-feedback screenshots and the site's logo. `caddy_data` holds Caddy's certificates,
-which Caddy can obtain again. To copy the uploaded files as well:
+The schedule backs up the site every night at 1:25 with `scripts/backup.sh`, and
+`make upgrade` runs the same script before it changes anything. To back up by hand, run
+it in the checkout:
 
 ```bash
-docker compose cp web:/app/media ./media-backup-$(date +%Y%m%d)
+scripts/backup.sh
 ```
 
-Keep a copy of `.env` with the backups, because it holds `SECRET_KEY` and the
-database password, and store it as carefully as a password. Back up on a regular
-schedule, for example with a cron line like the ones in `crontab.txt`, and keep the
-backups on another computer or another disk. Back up before every upgrade. The
-commands here use the database name and user `openh2o`. If `.env` sets
-`POSTGRES_DB` or `POSTGRES_USER` to something else, use those names.
+It prints one line saying what it wrote, or why it failed. It writes into the `backups` folder in the checkout. The date and time in each name are
+when the backup started:
+
+- `openh2o-<date>-<time>.dump` holds every record in the database, in PostgreSQL's own
+  backup format.
+- `media-<date>-<time>.tar.gz` holds the uploaded files, such as feedback screenshots
+  and the site's logo.
+- `last-backup.json` records the newest backup that worked: the two file names, their
+  sizes and the number of tables in the dump.
+
+Before it keeps a dump, the script reads it back and counts the tables in it.
+When the dump cannot be read, or holds fewer tables than the database, the script
+deletes it, writes the reason to `last-backup-failure.json` and stops with an error.
+When `OPENH2O_NTFY_URL` is set in the schedule, it also sends an alert. After each
+backup that works, it deletes all but the newest 14 of each kind of file. To keep a
+different number, add a line such as `OPENH2O_BACKUP_KEEP=30` at the top of the
+schedule: in `crontab.txt` before you install it, or with `crontab -e` afterwards. The schedule writes the script's log to
+`backup.log` in `$OPENH2O_LOG_DIR`. A run by hand writes it to `backups/logs`.
+
+The `backups` folder is on the same disk as the database, so a failed disk takes both.
+Copy the folder to another disk or another computer on a schedule, or mount another
+disk at `backups`. Keep a copy of `.env` too, apart from the backups. It holds
+`SECRET_KEY` and the database password, so store it as carefully as a password. Caddy's
+certificates are not backed up, because Caddy obtains them again.
 
 ### Database Restore
 
-Restore into an empty database. Stop the website, delete and recreate the database,
-load the backup, then start the website again. Do this when no scheduled sync is
-due, because `run-sync.sh` starts the website container again:
+`scripts/restore.sh` replaces every record on the site with a backup's. Give it the
+dump and, to restore the uploaded files as well, the media file with the same date and
+time:
 
 ```bash
-docker compose stop web
-docker compose exec db dropdb -U openh2o openh2o
-docker compose exec db createdb -U openh2o openh2o
-docker compose exec -T db psql -U openh2o -d openh2o < backup-20250101.sql
-docker compose start web
+scripts/restore.sh backups/openh2o-20261019-012500.dump backups/media-20261019-012500.tar.gz --yes
 ```
+
+Without `--yes`, it says what it would replace and stops. Without the media file, the
+uploaded files stay as they are. The script first backs up the site as it is and prints
+that backup's name, so restoring that file undoes a restore of the wrong one. This
+backup deletes no older backup, so the file being restored stays in place. Then it
+stops the website, empties the database, loads the backup and starts the website again.
+The scheduled syncs and backups skip their turn while it runs. As the website starts, it
+brings a backup taken on an older version up to the version the site runs. At the end,
+the script prints the number of rows in each table and runs the health checks.
 
 ### View Logs
 

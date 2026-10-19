@@ -609,14 +609,25 @@ checked_at = "6de4a92"
 [[section]]
 document = "DEPLOY.md"
 heading = "Upgrades"
-files = ["Makefile", "entrypoint.sh", "docker-compose.yml"]
+files = [
+  "Makefile",
+  "scripts/upgrade.sh",
+  "scripts/backup.sh",
+  "entrypoint.sh",
+  "docker-compose.yml",
+  "templates/base.html",
+  "crontab.txt",
+]
 labels = []
 checked_at = "6de4a92"
 
 [[section]]
 document = "DEPLOY.md"
 heading = "Protecting a Live Installation (`.production-lock`)"
-files = ["Makefile", ".gitignore"]
+files = [
+  "Makefile",
+  ".gitignore",
+]
 labels = []
 checked_at = "6de4a92"
 
@@ -624,6 +635,7 @@ checked_at = "6de4a92"
 document = "DEPLOY.md"
 heading = "Scheduled Jobs"
 files = [
+  "scripts/backup.sh",
   "crontab.txt",
   "scripts/run-sync.sh",
   "Makefile",
@@ -754,11 +766,13 @@ checked_at = "6de4a92"
 document = "DEPLOY.md"
 heading = "Database Backup"
 files = [
+  "scripts/backup.sh",
+  "crontab.txt",
+  "scripts/upgrade.sh",
   "docker-compose.yml",
   "config/settings/base.py",
   "core/models.py",
   "feedback/models.py",
-  "crontab.txt",
 ]
 labels = []
 checked_at = "6de4a92"
@@ -766,7 +780,13 @@ checked_at = "6de4a92"
 [[section]]
 document = "DEPLOY.md"
 heading = "Database Restore"
-files = ["docker-compose.yml", "scripts/run-sync.sh"]
+files = [
+  "scripts/restore.sh",
+  "scripts/backup.sh",
+  "scripts/run-sync.sh",
+  "entrypoint.sh",
+  "docker-compose.yml",
+]
 labels = []
 checked_at = "6de4a92"
 
@@ -1796,6 +1816,7 @@ checked_at = "6de4a92"
 document = "docs/AI-OPERATOR-GUIDE.md"
 heading = "Keeping it running"
 files = [
+  "scripts/backup.sh",
   "crontab.txt",
   "health/checks.py",
   "health/models.py",
@@ -1860,6 +1881,7 @@ checked_at = "6de4a92"
 document = "docs/AI-OPERATOR-GUIDE.md"
 heading = "Guardrails"
 files = [
+  "scripts/upgrade.sh",
   ".gitignore",
   "docker-compose.yml",
   "Makefile",

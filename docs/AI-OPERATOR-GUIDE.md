@@ -698,9 +698,13 @@ page where someone at the organization corrects them.
 | Calculation | A calculation has waited more than 15 minutes to start, or it stopped before it finished. Run it with `docker compose exec web python manage.py run_accounting --request` and the request number from the card's JSON details, or ask the organization to run it again from the water year's page. |
 | Cache Duplication | OpenH2O holds two OpenET estimates for the same months at some use areas. No figure changes, because OpenH2O uses the newer estimate. Report it as a bug at github.com/Open-H2O/openh2o/issues and attach the card's JSON details. |
 
-Back up the database on a schedule of the organization's choosing. The commands to
-back up and restore it are under Database Backup and Database Restore in section 11
-of DEPLOY.md.
+The schedule backs up the database and the uploaded files every night at 1:25 into the
+`backups` folder in the checkout, and checks that each backup can be read back. That
+folder is on the same disk as the database. Ask the organization where a second copy
+should live, such as another disk or another computer, and set up the copy. Database
+Backup, Database Restore and Upgrades in section 11 of DEPLOY.md give the commands to
+back up by hand, to restore a backup and to upgrade. Those commands need Docker. Without
+Docker, follow section 11 of the no-Docker install guide.
 
 On an installation without Docker, load the variables in `.env` into the terminal as
 the [no-Docker install guide](INSTALL-WITHOUT-DOCKER.md) shows. Run each command
@@ -735,10 +739,10 @@ them, so an error that names one of them means the build went wrong.
   them, so they stay out of the published code.
 - **Never** run `make fresh` on a site that holds records, because it deletes the
   database. For a routine rebuild, run `docker compose up -d --build`. To upgrade,
-  run the four commands under Upgrades in section 11 of DEPLOY.md. A live site
-  should carry the `.production-lock` file that section 11 describes. With that
-  file in place, `make up`, `make down`, `make build` and `make fresh` refuse to
-  run. Their message suggests `make deploy`, but that command serves only the
+  run `make upgrade` (Upgrades in section 11 of DEPLOY.md). On a live site, create
+  the `.production-lock` file that section 11 describes. With that file in place,
+  `make up`, `make down`, `make build` and `make fresh` refuse to run, and
+  `make upgrade` still runs. Never run `make deploy`, which serves only the
   project's own demonstration site and will not run anywhere else.
 - **Leave** `ACCOUNT_EMAIL_VERIFICATION` unset. When it is unset, it follows
   `EMAIL_HOST`. A person who signs up must confirm their email address when the site
