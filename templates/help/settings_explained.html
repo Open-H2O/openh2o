@@ -12,7 +12,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Settings explained</span>
   </nav>
-  <p class="page-description">This page lists each setting that changes a figure, where it is set, its default and when a change takes effect.</p>
+  <p class="page-description">This page lists OpenH2O&rsquo;s settings, where each one is set, its default and when a change takes effect.</p>
 </div>
 {% endblock %}
 
@@ -54,11 +54,11 @@
           </tr>
           <tr>
             <td class="col-name">Effective precipitation</td>
-            <td>The method can count all of the month&rsquo;s rain, a fixed percentage of it (70 percent by default), or use the USDA-SCS method, which is the default. The USDA-SCS method assumes 3.0 inches of soil moisture storage unless an administrator changes it.</td>
+            <td>Effective precipitation can be all of the month&rsquo;s rain, a fixed percentage of it, or an estimate by the USDA-SCS method. The USDA-SCS method is the default, with 3.0 inches of soil moisture storage. The fixed percentage is 70 percent unless an administrator changes it.</td>
           </tr>
           <tr>
             <td class="col-name">Lowest remainder</td>
-            <td>The remainder after effective precipitation and surface water cannot fall below this value, which is 0 acre-feet by default.</td>
+            <td>Crop ET less effective precipitation and the delivery times irrigation efficiency cannot fall below this value, which is 0 acre-feet by default.</td>
           </tr>
         </tbody>
       </table>
@@ -82,7 +82,7 @@
           </tr>
           <tr>
             <td class="col-name">Surface water in excess of ETAW</td>
-            <td>By default, OpenH2O credits that water to no one. An administrator can instead credit it to the landowner, less a share left in the basin (10 percent by default), or show it as a separate line on the field&rsquo;s page without crediting it.</td>
+            <td>By default, OpenH2O credits surface water in excess of ETAW to no one. An administrator can instead credit it to the landowner, less a share left in the basin (10 percent by default), or show it as a separate line on the field&rsquo;s page without crediting it.</td>
           </tr>
           {% if 'wells' in enabled_modules %}<tr>
             <td class="col-name">Where a credit goes</td>
@@ -90,7 +90,7 @@
           </tr>{% endif %}
           <tr>
             <td class="col-name">Unused allocation</td>
-            <td>At the end of a water year, OpenH2O carries each zone&rsquo;s unused allocation into the next water year as a credit, unless the setting lets unused allocation expire. An overdrawn allocation is always carried into the next water year as a debt.</td>
+            <td>At the end of a water year, OpenH2O carries each zone&rsquo;s unused allocation into the next water year as a credit. An administrator can choose instead to let unused allocation expire. An overdrawn allocation is always carried into the next water year as a debt.</td>
           </tr>
           <tr>
             <td class="col-name">One zone</td>
@@ -98,11 +98,11 @@
           </tr>
           <tr>
             <td class="col-name">Reporting year</td>
-            <td>When a diversion record file gives a year and a month but no date, this setting decides which calendar month each record belongs to: a water year starting in October (the default), a calendar year, or a season starting in a month an administrator chooses.</td>
+            <td>When a diversion record file gives a year and a month but no date, OpenH2O places each record in a calendar month by the reporting year chosen here: a water year starting in October (the default), a calendar year, or a season starting in a month an administrator chooses.</td>
           </tr>
           <tr>
             <td class="col-name">Record addresses</td>
-            <td>This setting sets the web address under which each record&rsquo;s permanent address is published. It changes no figure.</td>
+            <td>Each record&rsquo;s permanent address is published under the web address entered here, or under this site&rsquo;s own address when it is left blank. It changes no figure.</td>
           </tr>
         </tbody>
       </table>
@@ -122,7 +122,7 @@
         <tbody>
           <tr>
             <td class="col-name">Sign-in</td>
-            <td>Sign-in is required unless the server&rsquo;s configuration turns it off. While it is required, only an administrator can change the settings on Methodology Settings and Delivery Settings. It changes no figure.</td>
+            <td>Sign-in is required unless it is switched off in the server&rsquo;s configuration. While it is required, only an administrator can change the settings on Methodology Settings and Delivery Settings.</td>
           </tr>
         </tbody>
       </table>
