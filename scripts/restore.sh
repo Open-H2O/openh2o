@@ -32,14 +32,14 @@
 #      run_health_checks and prints every table's row count.
 #
 # Environment (all optional):
-#   OPENH2O_DIR            the checkout (default /opt/openh2o)
-#   OPENH2O_LOG_DIR        where restore.log and backup.log go (default /opt/openh2o-logs)
+#   OPENH2O_DIR            the checkout (default: the folder above scripts/)
+#   OPENH2O_LOG_DIR        where restore.log goes (default: backups/logs in the checkout)
 #   RESTORE_WAIT_TRIES     how many health polls to make (default 90)
 #   RESTORE_WAIT_SECS      seconds between polls (default 5)
 set -uo pipefail
 
-OPENH2O_DIR="${OPENH2O_DIR:-/opt/openh2o}"
-LOG_DIR="${OPENH2O_LOG_DIR:-/opt/openh2o-logs}"
+OPENH2O_DIR="${OPENH2O_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
+LOG_DIR="${OPENH2O_LOG_DIR:-$OPENH2O_DIR/backups/logs}"
 TRIES="${RESTORE_WAIT_TRIES:-90}"
 SECS="${RESTORE_WAIT_SECS:-5}"
 

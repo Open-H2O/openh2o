@@ -23,8 +23,8 @@
 # never written here. A dump is written as .partial and renamed only when the whole run passes.
 #
 # Environment (all optional):
-#   OPENH2O_DIR          the checkout (default /opt/openh2o)
-#   OPENH2O_LOG_DIR      where backup.log goes (default /opt/openh2o-logs)
+#   OPENH2O_DIR          the checkout (default: the folder above scripts/)
+#   OPENH2O_LOG_DIR      where the log goes (default: backups/logs in the checkout)
 #   OPENH2O_NTFY_URL     an ntfy topic URL; a failed backup posts there
 #   OPENH2O_BACKUP_KEEP  how many dumps and media files to keep (default 14)
 #   OPENH2O_IGNORE_RESTORE_MARKER=1  set by restore.sh for its own safety backup
@@ -32,8 +32,8 @@
 # Usage:  backup.sh
 set -uo pipefail
 
-OPENH2O_DIR="${OPENH2O_DIR:-/opt/openh2o}"
-LOG_DIR="${OPENH2O_LOG_DIR:-/opt/openh2o-logs}"
+OPENH2O_DIR="${OPENH2O_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
+LOG_DIR="${OPENH2O_LOG_DIR:-$OPENH2O_DIR/backups/logs}"
 NTFY_URL="${OPENH2O_NTFY_URL:-}"
 KEEP="${OPENH2O_BACKUP_KEEP:-14}"
 
