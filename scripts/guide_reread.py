@@ -10,8 +10,9 @@ itself is done by a person or an agent, against the diff and the code.
 
 What counts as a change:
 
-- any edit to a listed file, comments included: a re-read costs a reader's
-  time, and a missed change costs a false sentence;
+- any edit to a listed file or to a file that shows one of the section's
+  labels, comments included: a re-read costs a reader's time, and a missed
+  change costs a false sentence;
 - an edit to the section's own text (an edited section is read again);
 - nothing under ``tests/``.
 
@@ -89,7 +90,9 @@ def to_reread(entries: list[dict], end: str = "HEAD", since: str | None = None) 
     for entry in entries:
         start = since or entry["checked_at"]
         changed = changed_files(start, end)
-        reasons = sorted(path for path in entry["files"] if path in changed)
+        # A label's screen is code the section rests on as well.
+        paths = set(entry["files"]) | {label["where"] for label in entry.get("labels", [])}
+        reasons = sorted(path for path in paths if path in changed)
         if entry["document"] in changed:
             before = section_texts(entry["document"], start).get(entry["heading"])
             after = section_texts(entry["document"], end).get(entry["heading"])

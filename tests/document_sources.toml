@@ -474,7 +474,10 @@ checked_at = "6de4a92"
 [[section]]
 document = "DEPLOY.md"
 heading = "6. Run Migrations"
-files = ["entrypoint.sh"]
+files = [
+  "entrypoint.sh",
+  "Dockerfile",
+]
 labels = []
 checked_at = "6de4a92"
 
@@ -665,6 +668,7 @@ files = [
   "templates/base.html",
   "templates/geography/map.html",
   "Caddyfile",
+  "templates/parcels/list.html",
 ]
 labels = [
   { text = "Aerial", where = "static/js/map-core.js" },
@@ -741,6 +745,7 @@ files = [
   "scripts/assert-image-fresh.sh",
   "config/settings/local.py",
   "core/modules.py",
+  "docker-compose.yml",
 ]
 labels = []
 checked_at = "6de4a92"
@@ -1629,6 +1634,10 @@ files = [
   "drinking/forms.py",
   "drinking/importer.py",
   "core/modules.py",
+  "drinking/models.py",
+  "drinking/ps_codes.py",
+  "templates/drinking/partials/_production_import_preview.html",
+  "templates/drinking/schedule.html",
 ]
 labels = [
   { text = "Known locally as", where = "templates/surface/partials/_detail_pane.html" },
@@ -1770,6 +1779,7 @@ files = [
   "core/apps.py",
   "core/checks.py",
   "templates/partials/_sidebar.html",
+  "core/urls.py",
 ]
 labels = [
   { text = "Users", where = "core/modules.py" },
@@ -1798,6 +1808,7 @@ files = [
   "docker-compose.yml",
   "config/settings/base.py",
   "Caddyfile",
+  "datasync/management/commands/seed_data_sources.py",
 ]
 labels = [
   { text = "Site health", where = "templates/health/dashboard.html" },
@@ -1856,6 +1867,8 @@ files = [
   "core/forms.py",
   "templates/base.html",
   "templates/base_auth.html",
+  "config/settings/production.py",
+  "core/adapters.py",
 ]
 labels = [
   { text = "Source code", where = "templates/base.html" },
