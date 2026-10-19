@@ -979,8 +979,8 @@ it in the checkout:
 scripts/backup.sh
 ```
 
-It prints one line saying what it wrote, or why it failed. It writes into the `backups` folder in the checkout. The date and time in each name are
-when the backup started:
+It prints one line saying what it wrote, or why it failed. It writes into the `backups`
+folder in the checkout. The date and time in each name are when the backup started:
 
 - `openh2o-<date>-<time>.dump` holds every record in the database, in PostgreSQL's own
   backup format.
@@ -995,8 +995,9 @@ deletes it, writes the reason to `last-backup-failure.json` and stops with an er
 When `OPENH2O_NTFY_URL` is set in the schedule, it also sends an alert. After each
 backup that works, it deletes all but the newest 14 of each kind of file. To keep a
 different number, add a line such as `OPENH2O_BACKUP_KEEP=30` at the top of the
-schedule: in `crontab.txt` before you install it, or with `crontab -e` afterwards. The schedule writes the script's log to
-`backup.log` in `$OPENH2O_LOG_DIR`. A run by hand writes it to `backups/logs`.
+schedule: in `crontab.txt` before you install it, or with `crontab -e` afterwards. The
+schedule writes the script's log to `backup.log` in `$OPENH2O_LOG_DIR`. A run by hand
+writes it to `backups/logs`.
 
 The `backups` folder is on the same disk as the database, so a failed disk takes both.
 Copy the folder to another disk or another computer on a schedule, or mount another
