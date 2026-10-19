@@ -107,9 +107,10 @@ STAND_IN = re.compile(
 
 #: A phrase that puts the reader in a water district or agency. OpenH2O is
 #: meant to be used nationally, and some of its users are growers or ditch
-#: tenders rather than districts (2026-10-11). The approved replacements read
-#: "An administrator can ...", "unless an administrator changes it" and "the
-#: land your records cover" (2026-10-18). A district or
+#: tenders rather than districts (2026-10-11). Rewrite the whole sentence about
+#: the thing itself ("the land your records cover", approved 2026-10-18); an
+#: actor put in front of the old words ("An administrator can instead ...") was
+#: struck on 2026-10-18 18:35. A district or
 #: agency that is a real thing in the water world, and not the reader, does not
 #: match: "the regulating agency", "the primacy agency", "a GSA" under SGMA, "an
 #: irrigation district" as one kind of supplier, "the agency that regulates it".
@@ -186,13 +187,23 @@ REASSURANCE = re.compile(
 NEGATION_FRAME = re.compile(
     r"\b(?:rather than|instead of|none of|nothing (?:has|is|to do)|never (?:makes|has|is))\b"
     r"|, not (?:a |an |the |for |only )|\bnot [a-z]+, but\b", re.I)
+#: "can instead" listing the alternatives to a default ("An administrator can
+#: instead show it as a separate line ..."), struck 2026-10-18 18:35 ("bad AI
+#: grammar"). Replayed before it was installed against 247 struck and 1,321
+#: approved sentences: 2 struck, 1 approved (the 2026-10-10 wording of the
+#: same sentence, struck in place today). Name the choices, or say what the
+#: default is and what else is possible, without an actor and "can instead".
+#: A broader "a verb with no and a bare noun" check ("changes no figure",
+#: "names no real water district") was replayed too and does not separate:
+#: 4 struck, 6 approved; it is not counted.
+CAN_INSTEAD = re.compile(r"\bcan (?:choose )?instead\b", re.I)
 #: A paragraph that opens with a whole sentence in bold, announcing a verdict
 #: before the facts ("**A new installation holds none of your records.**").
 BOLD_VERDICT = re.compile(r"^\*\*[^*]{8,}[.]\*\*")
 
 SHAPES: tuple = ("em dash", "double hyphen", "filler", "paired heading", "trailing heading",
                  "stand-in", "district reader", "California", "reassurance", "negation frame",
-                 "bold verdict")
+                 "bold verdict", "can instead")
 
 
 # -- Templates ----------------------------------------------------------------
@@ -358,6 +369,7 @@ def count(runs: list, headings: list) -> dict:
         "reassurance": len(REASSURANCE.findall(text)),
         "negation frame": len(NEGATION_FRAME.findall(text)),
         "bold verdict": sum(1 for run in runs if BOLD_VERDICT.match(run)),
+        "can instead": len(CAN_INSTEAD.findall(text)),
     }
 
 

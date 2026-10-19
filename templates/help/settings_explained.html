@@ -44,21 +44,35 @@
         <thead>
           <tr>
             <th>Setting</th>
-            <th>What it does</th>
+            <th>What it sets</th>
+            <th>Default</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td class="col-name">Calculation steps</td>
-            <td>OpenH2O runs the calculation steps in the order {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a>{% else %}Methodology Settings{% endif %} lists them. By default, all five steps are on, in the order {% if show_methods %}<a class="prose-link" href="{% url 'methods' %}">Methods behind the numbers</a>{% else %}Methods behind the numbers{% endif %} describes. An administrator can reorder them or switch any of them off.</td>
+            <td>The order of the calculation steps, and which of them are switched on.</td>
+            <td>All five steps, switched on, in the order {% if show_methods %}<a class="prose-link" href="{% url 'methods' %}">Methods behind the numbers</a>{% else %}Methods behind the numbers{% endif %} describes.</td>
           </tr>
           <tr>
-            <td class="col-name">Effective precipitation</td>
-            <td>Effective precipitation can be all of the month&rsquo;s rain, a fixed percentage of it, or an estimate by the USDA-SCS method. The default is the USDA-SCS method. Its default soil moisture storage is 3.0 inches, and the default fixed percentage is 70 percent.</td>
+            <td class="col-name">Effective precipitation method</td>
+            <td>All of the month&rsquo;s rain, a fixed percentage of it, or the USDA-SCS method.</td>
+            <td>The USDA-SCS method</td>
+          </tr>
+          <tr>
+            <td class="col-name">Fixed percentage</td>
+            <td>The share of the month&rsquo;s rain counted under the fixed percentage method.</td>
+            <td>70 percent</td>
+          </tr>
+          <tr>
+            <td class="col-name">Soil moisture storage</td>
+            <td>The soil moisture storage the USDA-SCS method assumes.</td>
+            <td>3.0 inches</td>
           </tr>
           <tr>
             <td class="col-name">Lowest remainder</td>
-            <td>OpenH2O subtracts effective precipitation and the delivery times irrigation efficiency from crop ET. The result never falls below this value. The default is 0 acre-feet.</td>
+            <td>The lowest value that crop ET less effective precipitation and the delivery times irrigation efficiency can reach.</td>
+            <td>0 acre-feet</td>
           </tr>
         </tbody>
       </table>
@@ -72,29 +86,40 @@
         <thead>
           <tr>
             <th>Setting</th>
-            <th>What it does</th>
+            <th>What it sets</th>
+            <th>Default</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td class="col-name">Default irrigation efficiency</td>
-            <td>A field with no irrigation method on file uses this efficiency, which is 75 percent by default. A field with an irrigation method on file uses the efficiency of its method. A field uses the same efficiency for its surface water and its groundwater.</td>
+            <td>The efficiency of a field with no irrigation method on file. A field with an irrigation method on file uses the efficiency of its method, for both its surface water and its groundwater.</td>
+            <td>75 percent</td>
           </tr>
           <tr>
             <td class="col-name">Surface water in excess of ETAW</td>
-            <td>By default, OpenH2O gives no credit for surface water in excess of ETAW. An administrator can instead show it as a separate line on the field&rsquo;s page without crediting it, or credit it to the landowner after leaving a share in the basin. That share is 10 percent by default.{% if 'wells' in enabled_modules %} A field with a well receives the credit on its own ledger, and a field without a well has it added to its zone&rsquo;s shared account.{% endif %}</td>
+            <td>Not credited to anyone; shown on the field&rsquo;s page as its own line; or credited to the landowner, less a share left in the basin.{% if 'wells' in enabled_modules %} A credit goes to the field&rsquo;s own ledger when the field has a well, and to its zone&rsquo;s shared account when it does not.{% endif %}</td>
+            <td>Not credited to anyone</td>
           </tr>
           <tr>
-            <td class="col-name">Unused allocation</td>
-            <td>By default, OpenH2O carries each zone&rsquo;s unused allocation into the next water year as a credit. An administrator can instead let it expire at the end of the water year, and can set a different choice for one zone on that zone&rsquo;s page. An overdrawn allocation is always carried into the next water year as a debt.</td>
+            <td class="col-name">Share left in the basin</td>
+            <td>The share of surface water in excess of ETAW left in the basin when the rest is credited to the landowner.</td>
+            <td>10 percent</td>
+          </tr>
+          <tr>
+            <td class="col-name">Unused allocation at year-end</td>
+            <td>Carried into the next water year as a credit, or left to expire. A zone&rsquo;s own page can hold a different choice for that zone. An overdrawn allocation is always carried into the next water year as a debt.</td>
+            <td>Carried into the next water year</td>
           </tr>
           <tr>
             <td class="col-name">Reporting year</td>
-            <td>Some diversion record files give a year and a month but no date. OpenH2O reads that year as a reporting year to place each record in a calendar month. The reporting year can be a water year starting in October, which is the default, a calendar year, or a season starting in a month an administrator chooses.</td>
+            <td>For a diversion record file that gives a year and a month but no date, the year the file uses: a water year starting in October, a calendar year, or a season starting in a chosen month.</td>
+            <td>Water year</td>
           </tr>
           <tr>
             <td class="col-name">Record addresses</td>
-            <td>OpenH2O publishes each record&rsquo;s permanent address under the web address entered in this field. When the field is blank, OpenH2O uses this site&rsquo;s own address. This setting changes no figure.</td>
+            <td>The web address under which each record&rsquo;s permanent address is published.</td>
+            <td>This site&rsquo;s own address</td>
           </tr>
         </tbody>
       </table>
@@ -108,13 +133,15 @@
         <thead>
           <tr>
             <th>Setting</th>
-            <th>What it does</th>
+            <th>What it sets</th>
+            <th>Default</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td class="col-name">Access control</td>
-            <td>Access control is on unless it is switched off in the server&rsquo;s configuration. While it is on, only an administrator can change Methodology Settings and Delivery Settings, and people cannot create their own accounts. While it is off, anyone who is signed in can change them.</td>
+            <td>Whether only an administrator can change Methodology Settings and Delivery Settings. While access control is on, people also cannot create their own accounts. While it is off, anyone who is signed in can change those settings.</td>
+            <td>On</td>
           </tr>
         </tbody>
       </table>

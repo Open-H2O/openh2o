@@ -186,9 +186,10 @@ _ADVICE = (
     "An em dash or double hyphen becomes a colon, a comma, a full stop or "
     "parentheses. A filler word comes out. A heading in two clauses becomes one "
     "plain question or one plain statement (DESIGN.md copy rule 15). A district "
-    "reader names who really acts (\"An administrator can\", \"unless an "
-    "administrator changes it\", \"the land your records cover\"); a general "
-    "\"California\" says the general thing (DESIGN.md copy rule 11)."
+    "reader is rewritten as a whole sentence about the thing itself (\"the land "
+    "your records cover\"), not by putting an actor in front of the old words; a "
+    "general \"California\" says the general thing (DESIGN.md copy rule 11). "
+    "\"X can instead ...\" names the choices instead."
 )
 
 
@@ -418,3 +419,8 @@ def test_a_planted_negation_frame_is_caught():
 def test_an_approved_sentence_is_not_a_bold_verdict():
     approved = "The demonstration uses a real California basin.\n"
     assert shapes.count_file("docs/planted.md", approved)["bold verdict"] == 0
+
+
+def test_a_planted_can_instead_is_caught():
+    struck = "<td>An administrator can instead let it expire at the end of the water year.</td>"
+    assert _template(struck)["can instead"] == 1
