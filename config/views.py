@@ -420,7 +420,6 @@ EXPLAINER_MODULES = {
     "water_balances": ("accounting", "parcels", "surface", "wells"),
     "methods": ("accounting", "parcels", "surface", "wells"),
     "settings_explained": ("accounting", "surface"),
-    "surface_deliveries": ("accounting", "surface", "recharge"),
     "budgets_allocations": ("accounting", "parcels", "surface", "recharge"),
 }
 
@@ -454,8 +453,14 @@ def budgets_allocations(request):
 
 @public_in_open_demo
 def surface_deliveries(request):
-    """Explainer: the two agency delivery settings, in plain language."""
-    return _explainer(request, "surface_deliveries", "help/surface_deliveries.html")
+    """The old Surface delivery settings address, forwarded to Settings explained.
+
+    The page was folded into Settings explained on 2026-10-18 (150.1-03: one
+    fact on one page); a permanent redirect keeps every shared link working.
+    """
+    if not explainer_is_available("settings_explained"):
+        raise Http404("This deployment does not serve Settings explained.")
+    return redirect("settings_explained", permanent=True)
 
 
 @public_in_open_demo
@@ -522,7 +527,6 @@ _GLOSSARY_HELP_POINTERS = {
     "Allocations & Ceilings": "budgets_allocations",
     "Methods Behind the Numbers": "methods",
     "How Water Balances Work": "water_balances",
-    "Surface Delivery Settings": "surface_deliveries",
     "Settings explained": "settings_explained",
 }
 
@@ -614,7 +618,7 @@ def glossary(request):
         "CIMIS": "California Irrigation Management Information System, weather station data for agriculture.",
         "Closing Balance": "OpenH2O's water balance for one use area and water year, with supplies on one side, uses on the other and the residual between them. See Help > How Water Balances Work.",
         "DLR": "Detection Limit for purposes of Reporting. The platform stores the DLR a laboratory's file carries on each result row exactly as reported, in the row's own units, and shows it under Limit (file) on the result's page.",
-        "Delivery Settings": "The administrator's page for irrigation efficiency, surface water in excess of ETAW, the year-end choice, the reporting year and record addresses. See Help > Surface Delivery Settings.",
+        "Delivery Settings": "The administrator's page for irrigation efficiency, surface water in excess of ETAW, the year-end choice, the reporting year and record addresses. See Help > Settings explained.",
         "Data Source": "One record per outside agency or service the platform reads data from, holding its name, code, address, how often it is read and when it was last read.",
         "ELAP": "Environmental Laboratory Accreditation Program, California's accreditation of laboratories. Each result holds the ELAP certification number of the laboratory that ran it, shown on the result's page.",
         "Crop ET (Evapotranspiration)": "The figure OpenET estimates from satellite data for each field and month. See Help > How Water Balances Work.",

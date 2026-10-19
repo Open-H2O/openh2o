@@ -33,8 +33,7 @@
   subject (config/views.py EXPLAINER_MODULES), so it is 404'd rather than
   served wherever any one of them is off; the guards below are only for the
   cards it points out to.
-{% endcomment %}{% url 'accounting:methodology_settings' as methodology_url %}
-{% explainer_available "water_balances" as show_water_balances %}{% explainer_available "settings_explained" as show_settings %}<div class="page-stack page-help help-page">
+{% endcomment %}{% explainer_available "water_balances" as show_water_balances %}{% explainer_available "settings_explained" as show_settings %}<div class="page-stack page-help help-page">
 
   <div class="card-raised">
     <h2 class="section-header">How OpenH2O calculates a month</h2>

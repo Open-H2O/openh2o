@@ -78,15 +78,11 @@
       </a>{% endif %}
       {% explainer_available "methods" as show_methods %}{% if show_methods %}<a href="{% url 'methods' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Methods Behind the Numbers</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">This page explains the settings behind each figure and how OpenH2O divides and estimates surface water deliveries.</p>
+        <p class="text-secondary text-sm">This page explains how OpenH2O calculates each month&rsquo;s figures for a field.</p>
       </a>{% endif %}
       {% explainer_available "settings_explained" as show_settings_explained %}{% if show_settings_explained %}<a href="{% url 'settings_explained' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Settings explained</span><span class="text-accent">&rarr;</span></div>
         <p class="text-secondary text-sm">This page explains each setting that changes a figure.</p>
-      </a>{% endif %}
-      {% explainer_available "surface_deliveries" as show_surface_deliveries %}{% if show_surface_deliveries %}<a href="{% url 'surface_deliveries' %}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between;"><span>Surface Delivery Settings</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">This page explains the surface water delivery settings on Delivery Settings.</p>
       </a>{% endif %}
       {% explainer_available "budgets_allocations" as show_budgets_allocations %}{% if show_budgets_allocations %}<a href="{% url 'budgets_allocations' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Allocations &amp; Ceilings</span><span class="text-accent">&rarr;</span></div>

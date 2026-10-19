@@ -36,7 +36,6 @@ ENFORCED: list = [
     "templates/help/budgets_allocations.html",
     "templates/help/methods.html",
     "templates/help/settings_explained.html",
-    "templates/help/surface_deliveries.html",
     "templates/help/water_balances.html",
     "templates/help/getting_started.html",
     # glossary.html is measured as it renders, in

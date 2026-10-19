@@ -118,7 +118,6 @@ _PAGES = (
     ("/help/water-balances/", ("accounting", "parcels", "surface", "wells")),
     ("/help/methods/", ("accounting", "parcels", "surface", "wells")),
     ("/help/settings/", ("accounting", "surface")),
-    ("/help/surface-deliveries/", ("accounting", "surface", "recharge")),
     ("/help/budgets-allocations/", ("accounting", "parcels", "surface", "recharge")),
     ("/setup/", "setup"),
     # `health` owns this page, and it had a row in `_ANON_PAGES` but none here —
@@ -1716,17 +1715,6 @@ _EXPLAINER_PROSE_NAMES = {
     "water_balances": ("water balances",),
     "methods": ("methods",),
     "settings_explained": ("configs & settings", "settings explained"),
-    # DELIBERATELY EMPTY, and written down rather than left out — same rule as
-    # _FORBIDDEN_VOCABULARY's empty tuples. This explainer has NO unambiguous
-    # prose name. It needs `recharge` on top of `accounting`+`surface`, so it can
-    # be hidden on a deployment that still HAS surface deliveries — where "surface
-    # deliveries" is ordinary English for canal water and "Surface delivery
-    # settings" is the correct heading for two settings the deployment really
-    # runs (settings_explained.html). Every phrase that would catch a pointer to
-    # the page also catches a true sentence about the thing. Its links are guarded
-    # individually instead; this row exists to say that out loud rather than let
-    # the omission look like coverage.
-    "surface_deliveries": (),
     "budgets_allocations": ("allocations & ceilings", "budgets & allocations"),
 }
 

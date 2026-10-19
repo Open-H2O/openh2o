@@ -44,7 +44,6 @@ class TestExplainerGate:
             "water_balances": "/help/water-balances/",
             "methods": "/help/methods/",
             "settings_explained": "/help/settings/",
-            "surface_deliveries": "/help/surface-deliveries/",
             "budgets_allocations": "/help/budgets-allocations/",
         }
         rows = dict(checks._PAGES)
@@ -79,6 +78,9 @@ class TestExplainerGate:
         )
         for url_name in ("water_balances", "methods", "settings_explained",
                          "surface_deliveries", "budgets_allocations"):
+            # surface_deliveries is the old address of a page folded into
+            # Settings explained (2026-10-18); it forwards there, and 404s
+            # with it.
             response = admin_client.get(reverse(url_name))
             assert response.status_code == 404, (
                 f"{url_name} returned {response.status_code} with its subject "
@@ -201,3 +203,10 @@ class TestGettingStartedNumbering:
         monkeypatch.setattr(config_views, "is_enabled", lambda name: name in nine)
         result = config_views._getting_started_numbering()
         assert result["steps"] == {"pwsid": 1, "zones": 2}
+
+
+def test_the_old_surface_delivery_settings_address_forwards_to_settings_explained(admin_client):
+    """Folded into Settings explained on 2026-10-18 (150.1-03, one fact on one page)."""
+    response = admin_client.get("/help/surface-deliveries/")
+    assert response.status_code == 301
+    assert response["Location"] == reverse("settings_explained")

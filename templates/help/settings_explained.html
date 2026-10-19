@@ -12,114 +12,97 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Settings explained</span>
   </nav>
-  <p class="page-description">This page lists each setting that changes a figure, where it is set and what a change does to months already calculated.</p>
+  <p class="page-description">This page lists each setting that changes a figure, where it is set, its default and when a change takes effect.</p>
 </div>
 {% endblock %}
 
 {% block content %}
 {% comment %}
-  2026-10-10 (150.1): rebuilt from facts, each checked
-  against the code: the floor step (accounting/steps.py clamp_floor, editable
-  in accounting/views.py methodology_step_config), the reporting-year rule
-  (surface/diversion_import.py, read only when a file gives a year and a
-  month but no date), sign-in (config/settings/base.py
-  ACCESS_CONTROL_ENFORCED, default on; admin_required on every settings
-  view and zone_recovery_horizon), the year-end choice read when
-  rollover_allocations runs. The other rows are sentences taken from
-  Methods behind the numbers and Surface delivery settings,
-  word for word; "The surplus" is there so "that surplus" in the next row
-  has its antecedent, as on Methods.
+  2026-10-18 (150.1-03): written whole, grouped by the screen each setting is
+  on, after the maintainer ruled one fact on one page (17:26 PDT). Methods
+  behind the numbers says how the figures are calculated; this page alone says
+  what each setting is, its default and when a change takes effect. The old
+  Surface delivery settings page was folded in here, and its address forwards
+  to this one (config/views.py surface_deliveries). Facts read in the code:
+  accounting/views.py methodology_step_config (the editable knobs and their
+  defaults), core/forms.py DeliverySettingsForm, run_calculations.py
+  _over_delivery_decision (where a credit goes), rollover_allocations.py
+  (expiry and debt), config/settings/base.py ACCESS_CONTROL_ENFORCED.
 
   The page names `accounting` and `surface` as its subject (config/views.py
-  EXPLAINER_MODULES). `wells` is not among them, so the pumped-water row is
-  guarded on it. The url-as-var lines fail silently to the empty string, so
-  the links they feed are guarded on the module that serves them.
-  2026-10-11 (150.4-01): the national, role-neutral lens. Who acts is set
-  in a sentence and in the help-page rows:
-  "An administrator" acts in place of "a district" (Methodology Settings, Delivery Settings and the zone page are @admin_required). Each actor traced to its view.
+  EXPLAINER_MODULES). `wells` is not among them, so the credit row is guarded
+  on it.
 {% endcomment %}{% url 'accounting:methodology_settings' as methodology_url %}
 {% url 'accounting:delivery_settings' as delivery_url %}
-{% url 'surface_deliveries' as surface_help_url %}
-{% url 'methods' as methods_url %}
+{% explainer_available "methods" as show_methods %}
 <div class="page-stack page-help help-page">
 
   <div class="card-raised">
-    <h2 class="section-header">Settings that change a figure</h2>
+    <h2 class="section-header">On Methodology Settings</h2>
     <div class="table-scroll">
       <table class="data-table help-cases-table">
         <thead>
           <tr>
             <th>Setting</th>
-            <th>How it works</th>
+            <th>What it does</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td class="col-name">Calculation steps</td>
-            <td>OpenH2O calculates each month&rsquo;s figures by following the steps listed on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a>{% else %}Methodology Settings{% endif %}. An administrator can reorder those steps or switch any of them off.</td>
+            <td>OpenH2O runs the steps on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a>{% else %}Methodology Settings{% endif %} in the order listed. An administrator can reorder them or switch any of them off.</td>
           </tr>
           <tr>
             <td class="col-name">Effective precipitation</td>
-            <td>{% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a>{% else %}Methodology Settings{% endif %} also sets the method for estimating effective precipitation: all of the month&rsquo;s rain, a fixed percentage of it, or the USDA-SCS soil-storage method, which is the default.</td>
+            <td>The method can count all of the month&rsquo;s rain, a fixed percentage of it (70 percent by default), or use the USDA-SCS method, which is the default. The USDA-SCS method assumes 3.0 inches of soil moisture storage unless an administrator changes it.</td>
           </tr>
           <tr>
             <td class="col-name">Lowest remainder</td>
-            <td>A step on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a>{% else %}Methodology Settings{% endif %} sets the lowest value the remainder can fall to, zero acre-feet unless an administrator changes it.</td>
+            <td>The remainder after effective precipitation and surface water cannot fall below this value, which is 0 acre-feet by default.</td>
           </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card-raised">
+    <h2 class="section-header">On Delivery Settings</h2>
+    <div class="table-scroll">
+      <table class="data-table help-cases-table">
+        <thead>
           <tr>
-            <td class="col-name">Irrigation efficiency</td>
-            <td>Each field&rsquo;s irrigation efficiency comes from its irrigation method on file. A field with no irrigation method on file uses the default efficiency on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}, 75 percent unless an administrator changes it.{% if 'surface' in enabled_modules %} OpenH2O uses the same irrigation efficiency for a field&rsquo;s surface water and its groundwater.{% endif %}</td>
+            <th>Setting</th>
+            <th>What it does</th>
           </tr>
+        </thead>
+        <tbody>
           <tr>
-            <td class="col-name">The surplus</td>
-            <td>When effective precipitation and the delivery times irrigation efficiency together exceed crop ET, OpenH2O sets the remainder to zero and records the surplus in two parts: effective precipitation in excess of crop ET, and surface water in excess of ETAW.</td>
+            <td class="col-name">Default irrigation efficiency</td>
+            <td>A field with no irrigation method on file uses this efficiency, 75 percent unless an administrator changes it on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}. A field with an irrigation method on file uses the efficiency of its method. Each field has one efficiency for its surface water and its groundwater.</td>
           </tr>
           <tr>
             <td class="col-name">Surface water in excess of ETAW</td>
-            <td>A setting on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %} determines how OpenH2O treats surface water in excess of ETAW. By default, OpenH2O credits that water to no one. An administrator can instead credit it to the landowner, less a share left in the basin (10 percent by default), or show it as a separate line on the field&rsquo;s page without crediting it.</td>
+            <td>By default, OpenH2O credits that water to no one. An administrator can instead credit it to the landowner, less a share left in the basin (10 percent by default), or show it as a separate line on the field&rsquo;s page without crediting it.</td>
           </tr>
           {% if 'wells' in enabled_modules %}<tr>
-            <td class="col-name">Groundwater extraction</td>
-            <td>Where a well has no meter reading, OpenH2O estimates groundwater extraction by dividing ETAW met by groundwater by the field&rsquo;s irrigation efficiency. OpenH2O records the difference as deep percolation.</td>
+            <td class="col-name">Where a credit goes</td>
+            <td>When surface water in excess of ETAW is credited, a field with a well receives the credit on its own ledger. A field without a well has the credit added to its zone&rsquo;s shared account.</td>
           </tr>{% endif %}
           <tr>
             <td class="col-name">Unused allocation</td>
-            <td>At the end of a water year, OpenH2O carries each zone&rsquo;s unused allocation into the next water year as a credit, unless {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %} is set to let unused allocation expire.</td>
+            <td>At the end of a water year, OpenH2O carries each zone&rsquo;s unused allocation into the next water year as a credit, unless the setting lets unused allocation expire. An overdrawn allocation is always carried into the next water year as a debt.</td>
           </tr>
           <tr>
             <td class="col-name">One zone</td>
-            <td>An administrator can set a different choice for one zone on that zone&rsquo;s page.</td>
+            <td>An administrator can set a different year-end choice for one zone on that zone&rsquo;s page.</td>
           </tr>
           <tr>
             <td class="col-name">Reporting year</td>
-            <td>When a diversion record file gives a year and a month but no date, a setting on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %} decides which calendar month each record belongs to: a water year starting in October, a calendar year, or a season starting in a month an administrator chooses.</td>
+            <td>When a diversion record file gives a year and a month but no date, this setting decides which calendar month each record belongs to: a water year starting in October (the default), a calendar year, or a season starting in a month an administrator chooses.</td>
           </tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="help-table-notes mt-md">
-      <p class="text-secondary text-sm">When sign-in is required, only an administrator can change the settings on this page.</p>
-    </div>
-  </div>
-
-  <div class="card-raised">
-    <h2 class="section-header">Settings that change no figure</h2>
-    <div class="table-scroll">
-      <table class="data-table help-cases-table">
-        <thead>
-          <tr>
-            <th>Setting</th>
-            <th>How it works</th>
-          </tr>
-        </thead>
-        <tbody>
           <tr>
             <td class="col-name">Record addresses</td>
-            <td>{% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %} also sets the web address that each record&rsquo;s permanent address is published under.</td>
-          </tr>
-          <tr>
-            <td class="col-name">Sign-in</td>
-            <td>Whether sign-in is required is set in the server&rsquo;s configuration, not on a screen, and changes no figure.</td>
+            <td>This setting sets the web address under which each record&rsquo;s permanent address is published. It changes no figure.</td>
           </tr>
         </tbody>
       </table>
@@ -127,27 +110,47 @@
   </div>
 
   <div class="card-raised">
-    <h2 class="section-header">What a change does to the months</h2>
+    <h2 class="section-header">In the server&rsquo;s configuration</h2>
     <div class="table-scroll">
       <table class="data-table help-cases-table">
         <thead>
           <tr>
             <th>Setting</th>
-            <th>How it works</th>
+            <th>What it does</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td class="col-name">Past months</td>
-            <td>Each calculated month stores the settings it was calculated with. A changed setting affects a past month only when that month is recalculated.</td>
+            <td class="col-name">Sign-in</td>
+            <td>Sign-in is required unless the server&rsquo;s configuration turns it off. While it is required, only an administrator can change the settings on Methodology Settings and Delivery Settings. It changes no figure.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card-raised">
+    <h2 class="section-header">When a change takes effect</h2>
+    <div class="table-scroll">
+      <table class="data-table help-cases-table">
+        <thead>
+          <tr>
+            <th>Change</th>
+            <th>When it takes effect</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-name">A setting that changes a figure</td>
+            <td>Each calculated month keeps the settings it was calculated with. A changed setting affects a past month only when that month is recalculated.</td>
           </tr>
           <tr>
-            <td class="col-name">Year-end choice</td>
-            <td>A change to the year-end choice takes effect the next time the carry-over is written.</td>
+            <td class="col-name">The year-end choice</td>
+            <td>OpenH2O writes the carry-over when the rollover_allocations command is run for the water year that closed. A changed choice applies the next time that happens.</td>
           </tr>
           <tr>
-            <td class="col-name">Reporting year</td>
-            <td>A change to the reporting year applies to files imported after the change, and records already imported keep their months.</td>
+            <td class="col-name">The reporting year</td>
+            <td>A changed reporting year applies to files imported after the change. Records already imported keep their months.</td>
           </tr>
         </tbody>
       </table>
@@ -157,21 +160,17 @@
   <div class="card-raised">
     <h2 class="section-header">Where to go next</h2>
     <div class="card-grid card-grid--fit mt-md">
+      {% if show_methods %}<a href="{% url 'methods' %}" class="card-raised card-link">
+        <div class="concept-panel-title" style="justify-content: space-between;"><span>Methods Behind the Numbers</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm">This page explains how OpenH2O calculates each month&rsquo;s figures for a field.</p>
+      </a>{% endif %}
       {% if 'accounting' in enabled_modules %}<a href="{{ methodology_url }}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Methodology Settings</span><span class="text-accent">&rarr;</span></div>
         <p class="text-secondary text-sm">This page holds the calculation steps and the rain method.</p>
       </a>
       <a href="{{ delivery_url }}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Delivery Settings</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">This page holds the default irrigation efficiency and the treatment of surface water in excess of ETAW.</p>
-      </a>{% endif %}
-      {% explainer_available "surface_deliveries" as show_surface_help %}{% if show_surface_help %}<a href="{{ surface_help_url }}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between;"><span>Surface Delivery Settings</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">This page explains the surface water delivery settings on Delivery Settings.</p>
-      </a>{% endif %}
-      {% explainer_available "methods" as show_methods %}{% if show_methods %}<a href="{{ methods_url }}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between;"><span>Methods Behind the Numbers</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">This page explains the settings behind each figure and how OpenH2O divides and estimates surface water deliveries.</p>
+        <p class="text-secondary text-sm">This page holds the default irrigation efficiency, the treatment of surface water in excess of ETAW, the year-end choice and the reporting year.</p>
       </a>{% endif %}
     </div>
   </div>

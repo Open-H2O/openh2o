@@ -24,7 +24,6 @@ DEMO_PUBLIC_URL_NAMES = (
     "getting_started",
     "glossary",
     "budgets_allocations",
-    "surface_deliveries",
     "water_balances",
     "methods",
     "settings_explained",

@@ -117,7 +117,7 @@
   {% comment %}Each card is guarded on its own page's availability (config/views.py
   EXPLAINER_MODULES), never on the link alone, and the card set as a whole
   renders when any card can. Every line is a sentence already on an approved
-  page or in the 12:49 facts.{% endcomment %}{% explainer_available "water_balances" as show_water_balances %}{% explainer_available "methods" as show_methods %}{% explainer_available "settings_explained" as show_settings %}{% explainer_available "budgets_allocations" as show_budgets %}{% explainer_available "surface_deliveries" as show_surface_help %}{% if show_water_balances or show_methods or show_settings or show_budgets or show_surface_help %}<div class="card-raised">
+  page or in the 12:49 facts.{% endcomment %}{% explainer_available "water_balances" as show_water_balances %}{% explainer_available "methods" as show_methods %}{% explainer_available "settings_explained" as show_settings %}{% explainer_available "budgets_allocations" as show_budgets %}{% if show_water_balances or show_methods or show_settings or show_budgets %}<div class="card-raised">
     <h2 class="section-header">Where to go next</h2>
     <div class="card-grid card-grid--fit mt-md">
       {% if show_water_balances %}<a href="{% url 'water_balances' %}" class="card-raised card-link">
@@ -126,7 +126,7 @@
       </a>{% endif %}
       {% if show_methods %}<a href="{% url 'methods' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Methods Behind the Numbers</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">This page explains the settings behind each figure and how OpenH2O divides and estimates surface water deliveries.</p>
+        <p class="text-secondary text-sm">This page explains how OpenH2O calculates each month&rsquo;s figures for a field.</p>
       </a>{% endif %}
       {% if show_settings %}<a href="{% url 'settings_explained' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Settings explained</span><span class="text-accent">&rarr;</span></div>
@@ -135,10 +135,6 @@
       {% if show_budgets %}<a href="{% url 'budgets_allocations' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Allocations &amp; Ceilings</span><span class="text-accent">&rarr;</span></div>
         <p class="text-secondary text-sm">This page explains how OpenH2O divides a zone&rsquo;s allocation ceiling among the accounts in the zone.</p>
-      </a>{% endif %}
-      {% if show_surface_help %}<a href="{% url 'surface_deliveries' %}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between;"><span>Surface Delivery Settings</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">This page explains the surface water delivery settings on Delivery Settings.</p>
       </a>{% endif %}
     </div>
   </div>{% endif %}

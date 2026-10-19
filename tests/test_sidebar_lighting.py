@@ -116,7 +116,6 @@ EXPECTED_LIT = {
     "/help/glossary/": "Glossary",
     "/help/methods/": "Methods behind the numbers",
     "/help/settings/": "Settings explained",
-    "/help/surface-deliveries/": "Settings explained",
     "/help/water-balances/": "How water balances work",
     "/infrastructure/add/": "Infrastructure",
     "/infrastructure/import/": "Infrastructure",
