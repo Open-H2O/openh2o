@@ -329,8 +329,10 @@ date, an analyte and a result. A row with a blank result is imported as a
 non-detect when its "Less than reporting level" column is marked and it gives a
 reporting level.
 
-A PS Code is the code of a sampling point. OpenH2O builds each point's PS Code from
-the PWSID, the facility ID and the point number. A PS Code that matches no sampling
+A PS Code is the code of a sampling point. For a California water system, OpenH2O
+builds each point's PS Code from the PWSID, the facility ID and the point number. For
+a system in another state, enter each point's code exactly as it appears in the lab
+results file. A PS Code that matches no sampling
 point on the site is a row error. OpenH2O does not create a sampling point from a lab
 file, because a mistyped code would then add a monitoring location that does not
 exist. Add the sampling point first with Add sampling points on the Drinking Water

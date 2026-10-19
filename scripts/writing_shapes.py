@@ -163,6 +163,8 @@ CALIFORNIA_NAMES: tuple = (
     (r"California.s Electronic\s+Annual\s+Report", "the eAR is California's report (2026-10-14)"),
     (r"open up California's water data", "the Consortium's purpose, in its own terms"),
     (r"so the wizard finds none outside California", "the Setup Wizard's subbasin and parcel sources cover one state (2026-10-18)"),
+    (r"California water system", "a PS Code is built from the PWSID only in California's format; another state's code is typed as the lab file has it (ISS-077, 2026-10-19)"),
+    (r"California PS Code", "the same: only California's PS Codes begin with the PWSID (ISS-077, 2026-10-19)"),
     (r"California's reporting format", "the state's own format, the approved name for it (2026-10-12: \"California's reporting format, not layout\")"),
 )
 CALIFORNIA = re.compile(r"\bCalifornia\b")
