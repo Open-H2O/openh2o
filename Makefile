@@ -16,7 +16,7 @@ export APP_VERSION = $(VERSION)
         seed-data-sources seed-report-templates seed-water-right-types \
         seed-well-types demo flush-demo merced teardown-demo \
         check test test-droppable guard-fresh fresh snapshot-demo reset-demo calc-rebuild verify-clean install-cron show-cron sync guard-prod guard-demo-host deploy rebuild-golden \
-        verify-candidate promote-golden ci-gate release
+        verify-candidate promote-golden ci-gate release upgrade
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | \
@@ -190,6 +190,14 @@ deploy: guard-demo-host ## REFUSES unless this checkout is the demo host (.demo-
 	@echo "  and was promoted to golden (the previous golden is backed up beside it as"
 	@echo "  golden.dump.bak-pre-<version>-<date>). The live database now holds that build,"
 	@echo "  and so will every nightly reset until the next deploy."
+
+# An agency's upgrade, and NOT `make deploy` (the demonstration host's own target, above). It is
+# deliberately not behind guard-prod: upgrading a live site is its job, so it runs under a
+# .production-lock too. scripts/upgrade.sh backs up first, stops if the backup fails, and
+# computes the new version itself AFTER it updates the code, because APP_VERSION at the top of
+# this file is worked out when make starts, before the update.
+upgrade: ## Back up, update the code, rebuild and check; stops if the backup fails (an agency's upgrade; allowed under .production-lock)
+	@bash scripts/upgrade.sh
 
 # `make deploy` checks before it ships and nothing after. `make release` (and deploy.sh, which
 # runs the same script from origin/main) runs it, then asks the live home page for its title and

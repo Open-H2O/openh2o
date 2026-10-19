@@ -16,7 +16,7 @@ DEPLOY = Path(__file__).resolve().parent / "deploy"
 
 
 @pytest.mark.skipif(shutil.which("bash") is None, reason="needs bash")
-@pytest.mark.parametrize("name", ["test_backup.sh", "test_restore.sh"])
+@pytest.mark.parametrize("name", ["test_backup.sh", "test_restore.sh", "test_upgrade.sh"])
 def test_deploy_script_tests_pass(name):
     result = subprocess.run(
         ["bash", str(DEPLOY / name)], capture_output=True, text=True, timeout=300
