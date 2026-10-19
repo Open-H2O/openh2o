@@ -284,7 +284,7 @@ def about(request):
 
 
 def demonstration_data(request):
-    """Source-by-source account of what is real in this demo and what is not.
+    """The demonstration data sources page: the publisher of each public record and the sample data.
 
     Deliberately reachable with the demonstration flag OFF and on a real agency
     deployment. A page that vanished when the flag flipped would break every

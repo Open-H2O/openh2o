@@ -153,7 +153,8 @@ def test_provenance_page_is_explicit_about_the_invented_half(client_logged_in):
     it is genuine published record.
     """
     html = client_logged_in.get(reverse("demonstration_data")).content.decode()
-    assert "Invented sample data" in html
+    # Heading renamed on the maintainer's approval, 2026-10-18 17:03 PDT.
+    assert ">Sample data</h2>" in html
     assert "City of Merced" in html
     # Wording from the maintainer, 2026-10-18 ("It names no? why is it worded
     # so strangely?"); the claim is what is pinned, not the old phrase.
