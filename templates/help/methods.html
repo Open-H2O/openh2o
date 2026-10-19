@@ -34,7 +34,7 @@
   served wherever any one of them is off; the guards below are only for the
   cards it points out to.
 {% endcomment %}{% url 'accounting:methodology_settings' as methodology_url %}
-<div class="page-stack page-help help-page">
+{% explainer_available "water_balances" as show_water_balances %}{% explainer_available "settings_explained" as show_settings %}<div class="page-stack page-help help-page">
 
   <div class="card-raised">
     <h2 class="section-header">How OpenH2O calculates a month</h2>
@@ -42,8 +42,8 @@
       <table class="data-table help-cases-table">
         <thead>
           <tr>
-            <th>Figure</th>
-            <th>How OpenH2O calculates it</th>
+            <th>Step</th>
+            <th>How OpenH2O does it</th>
           </tr>
         </thead>
         <tbody>
@@ -57,11 +57,11 @@
           </tr>
           <tr>
             <td class="col-name">ETAW met by surface water</td>
-            <td>OpenH2O multiplies the month&rsquo;s surface water delivery by the field&rsquo;s irrigation efficiency, and that much of the ETAW is met by surface water. The rest of the delivery is deep percolation.</td>
+            <td>OpenH2O multiplies the month&rsquo;s surface water delivery by the field&rsquo;s irrigation efficiency. The result, up to the month&rsquo;s ETAW, is ETAW met by surface water. The part of the delivery lost to irrigation efficiency is deep percolation.</td>
           </tr>
           <tr>
             <td class="col-name">ETAW met by groundwater</td>
-            <td>The ETAW that surface water does not meet is met by groundwater on a field with a well. On a field with no well, the dashboard counts it as water use with no supply reported.</td>
+            <td>On a field with a well, the ETAW that surface water does not meet is ETAW met by groundwater. On a field with no well, the dashboard counts it as water use with no supply reported.</td>
           </tr>
           <tr>
             <td class="col-name">Groundwater extraction</td>
@@ -69,11 +69,11 @@
           </tr>
           <tr>
             <td class="col-name">A field with no crop</td>
-            <td>A field with no crop on file has no irrigated water use, so its figures for the month are zero.</td>
+            <td>OpenH2O treats a field with no crop on file as having no irrigated water use and sets its figures for the month to zero.</td>
           </tr>
           <tr>
             <td class="col-name">The surplus</td>
-            <td>When effective precipitation and ETAW met by surface water together exceed crop ET, OpenH2O records the surplus in two parts: effective precipitation in excess of crop ET, and surface water in excess of ETAW.</td>
+            <td>When effective precipitation and ETAW met by surface water together exceed crop ET, OpenH2O records the surplus in two parts: effective precipitation in excess of crop ET, and surface water in excess of ETAW. {% if show_settings %}<a class="prose-link" href="{% url 'settings_explained' %}">Settings explained</a>{% else %}Settings explained{% endif %} describes the setting that decides what happens to surface water in excess of ETAW.</td>
           </tr>
         </tbody>
       </table>
@@ -101,7 +101,7 @@
           </tr>
           <tr>
             <td class="col-name">Fields&rsquo; own records</td>
-            <td>A delivery recorded for a field itself comes off next. OpenH2O divides only the remainder among the other fields.</td>
+            <td>Next, OpenH2O subtracts any delivery recorded for a field itself, and divides only the remainder among the other fields.</td>
           </tr>
           <tr>
             <td class="col-name">The division</td>
@@ -133,7 +133,7 @@
         <tbody>
           <tr>
             <td class="col-name">The estimate</td>
-            <td>For a month with no meter and no recorded volume, OpenH2O estimates the delivery as the water its fields needed, with the canal&rsquo;s losses added. A field&rsquo;s need is its ETAW divided by its irrigation efficiency, or its own recorded delivery where it has one.</td>
+            <td>When a diversion has no meter and no volume recorded for a month, OpenH2O estimates the month&rsquo;s delivery as the water its fields needed, plus the canal&rsquo;s losses. A field&rsquo;s need is its ETAW divided by its irrigation efficiency, or its own recorded delivery where it has one.</td>
           </tr>
           <tr>
             <td class="col-name">The water right&rsquo;s limits</td>
@@ -152,7 +152,7 @@
     </div>
   </div>
 
-  {% explainer_available "water_balances" as show_water_balances %}{% explainer_available "settings_explained" as show_settings %}<div class="card-raised">
+  <div class="card-raised">
     <h2 class="section-header">Where to go next</h2>
     <div class="card-grid card-grid--fit mt-md">
       {% if show_water_balances %}<a href="{% url 'water_balances' %}" class="card-raised card-link">
