@@ -1,0 +1,2599 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# What each section of the guides and help pages rests on (Phase 150.6, 2026-10-19).
+#
+# One [[section]] per heading of each of the twenty documents in
+# scripts/guide_names.py DOCUMENTS, in document order. "(top)" is the text
+# before a document's first heading. For each section:
+#
+#   files       the code a sentence in the section would become false over, if
+#               that file changed what it does. Never a file that is merely
+#               related, never tests/. A section that makes no claim about the
+#               code has files = [] and says why in why_none.
+#   labels      the screen labels the section names, each with the file that
+#               puts it on screen, written as the screen shows them.
+#               tests/test_guide_names.py fails when a label leaves its file.
+#   checked_at  the commit the section was last read against the code.
+#               scripts/guide_reread.py lists the sections whose files (or whose
+#               own text) changed since then; after a re-read,
+#               `python3 scripts/guide_reread.py --mark-read DOCUMENT#HEADING`
+#               moves it to HEAD. Nothing else edits it.
+#
+# Built by six readers who each read a group of documents against the code at
+# 6de4a92, the commit at which every document had been approved.
+# tests/test_document_sources.py fails when a document gains or loses a
+# heading this file does not have, or when a path here no longer exists.
+
+[[section]]
+document = "README.md"
+heading = "(top)"
+files = []
+why_none = "SPDX licence comment and the logo image only; no claim about how OpenH2O behaves."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "README.md"
+heading = "OpenH2O (Open Water Accounting Platform)"
+files = ["core/modules.py", "datasync/adapters/openet.py"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "README.md"
+heading = "Who this is for"
+files = ["core/modules.py", "accounting/services.py"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "README.md"
+heading = "A note on terms"
+files = ["accounting/steps.py"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "README.md"
+heading = "Three ways to deploy"
+files = [
+  "docker-compose.yml",
+  "config/settings/production.py",
+  "Caddyfile",
+  "core/management/commands/seed_merced.py",
+  "core/management/commands/seed_merced_base.py",
+  "templates/partials/_demonstration_banner.html",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "README.md"
+heading = "Quick start (single computer)"
+files = [
+  ".env.example",
+  "docker-compose.yml",
+  "Caddyfile",
+  "Makefile",
+  "config/settings/base.py",
+  "config/settings/local.py",
+  "config/settings/production.py",
+  "core/management/commands/seed_data.py",
+  "core/management/commands/seed_merced.py",
+  "geography/management/commands/auto_populate.py",
+  "core/access.py",
+  "core/adapters.py",
+  "accounting/management/commands/run_calculations.py",
+  "accounting/management/commands/seed_calculation_plan.py",
+  "accounting/calculation.py",
+  "datasync/management/commands/sync_openet_parcels.py",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "README.md"
+heading = "The AI agent keeps working after setup"
+files = [
+  "parcels/management/commands/import_parcels.py",
+  "wells/management/commands/import_wells.py",
+  "accounting/management/commands/import_ledger_csv.py",
+  "accounting/ledger_import.py",
+  "surface/management/commands/import_diversion_records.py",
+  "drinking/management/commands/import_production.py",
+  "infrastructure/importer.py",
+  "datasync/management/commands/sync_openet_parcels.py",
+  "datasync/management/commands/prune_dataless_stations.py",
+  "health/management/commands/run_health_checks.py",
+  "health/checks.py",
+  "crontab.txt",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "README.md"
+heading = "What it looks like"
+files = [
+  "accounting/views.py",
+  "templates/accounting/partials/_dashboard_content.html",
+  "templates/geography/map.html",
+  "static/js/map-engine.js",
+  "geography/views.py",
+  "core/access.py",
+  "templates/drinking/overview.html",
+  "drinking/provenance.py",
+  "templates/partials/_demo_marker.html",
+  "templates/partials/_demonstration_banner.html",
+]
+labels = [
+  { text = "DEMO", where = "templates/partials/_demo_marker.html" },
+  { text = "Supplies by source", where = "templates/accounting/partials/_dashboard_content.html" },
+  { text = "Layers", where = "static/js/map-engine.js" },
+  { text = "Boundary", where = "templates/geography/map.html" },
+  { text = "Management Areas", where = "templates/geography/map.html" },
+  { text = "Surface service areas", where = "templates/geography/map.html" },
+  { text = "Points of Diversion", where = "templates/geography/map.html" },
+  { text = "Use Areas", where = "templates/geography/map.html" },
+  { text = "Wells", where = "templates/geography/map.html" },
+  { text = "Recharge Sites", where = "templates/geography/map.html" },
+  { text = "Drinking Water Facilities", where = "templates/geography/map.html" },
+  { text = "PWSID", where = "templates/drinking/overview.html" },
+  { text = "System type", where = "templates/drinking/overview.html" },
+  { text = "Owner type", where = "templates/drinking/overview.html" },
+  { text = "Population served", where = "templates/drinking/overview.html" },
+  { text = "EPA Envirofacts", where = "drinking/provenance.py" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "README.md"
+heading = "What it does"
+files = [
+  "parcels/models.py",
+  "wells/models.py",
+  "accounting/models.py",
+  "surface/models.py",
+  "recharge/models.py",
+  "drinking/models.py",
+  "drinking/importer.py",
+  "drinking/views.py",
+  "drinking/envirofacts.py",
+  "drinking/envirofacts_mapping.py",
+  "config/settings/base.py",
+  "docker-compose.yml",
+  "datasync/management/commands/seed_data_sources.py",
+  "datasync/adapters/base.py",
+  "datasync/adapters/usgs.py",
+  "datasync/adapters/cdec.py",
+  "datasync/adapters/dwr_wdl.py",
+  "datasync/adapters/dwr_sgma.py",
+  "datasync/adapters/cimis.py",
+  "datasync/adapters/noaa.py",
+  "datasync/adapters/openet.py",
+  "datasync/freshness.py",
+  "crontab.txt",
+  "standards/models.py",
+  "core/modules.py",
+  "health/checks.py",
+  "health/views.py",
+  "static/js/map-core.js",
+  "feedback/views.py",
+  "feedback/forwarder.py",
+  "templates/partials/_feedback_widget.html",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "README.md"
+heading = "Data standards & interoperability"
+files = [
+  "standards/models.py",
+  "standards/management/commands/seed_observed_properties.py",
+  "standards/management/commands/check_conformance.py",
+  "measurements/models.py",
+  "wells/models.py",
+  "crontab.txt",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "README.md"
+heading = "Tech stack"
+files = [
+  "Caddyfile",
+  "crontab.txt",
+  "docker-compose.yml",
+  "pyproject.toml",
+  "requirements.lock",
+  "Dockerfile",
+  "templates/base.html",
+  "config/settings/base.py",
+  "static/js/map-core.js",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "README.md"
+heading = "Repository layout"
+files = [
+  "config/settings/base.py",
+  "config/settings/local.py",
+  "config/settings/production.py",
+  "core/models.py",
+  "core/modules.py",
+  "geography/models.py",
+  "parcels/models.py",
+  "wells/models.py",
+  "measurements/models.py",
+  "accounting/models.py",
+  "surface/models.py",
+  "recharge/models.py",
+  "drinking/models.py",
+  "infrastructure/views.py",
+  "datasync/adapters/__init__.py",
+  "setup/views.py",
+  "standards/models.py",
+  "standards/management/commands/check_conformance.py",
+  "health/checks.py",
+  "health/management/commands/prune_old_data.py",
+  "feedback/views.py",
+  "feedback/forwarder.py",
+  "static/css/tokens.css",
+  "static/js/map-core.js",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "README.md"
+heading = "Cost to run"
+files = ["config/settings/base.py", "datasync/adapters/__init__.py", "datasync/adapters/openet_gee.py"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "README.md"
+heading = "Testing"
+files = ["Makefile", "pyproject.toml", "config/settings/production.py"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "README.md"
+heading = "Contributing"
+files = []
+why_none = "Pointer to CONTRIBUTING.md and a licensing statement; no claim about code behaviour."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "README.md"
+heading = "License"
+files = []
+why_none = "Licence notice pointing to LICENSE and NOTICE."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "README.md"
+heading = "Acknowledgments"
+files = []
+why_none = "History and credit for the Groundwater Accounting Platform; no claim about code behaviour."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "CONTRIBUTING.md"
+heading = "Contributing to OpenH2O"
+files = []
+why_none = "A welcome paragraph with no claim about the code."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "CONTRIBUTING.md"
+heading = "License of contributions"
+files = ["templates/base.html", "templates/base_auth.html"]
+labels = [
+  { text = "Source code", where = "templates/base.html" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "CONTRIBUTING.md"
+heading = "Getting set up"
+files = [
+  ".env.example",
+  "config/settings/local.py",
+  "docker-compose.yml",
+  "core/management/commands/seed_data.py",
+  "Makefile",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "CONTRIBUTING.md"
+heading = "Ground rules"
+files = [
+  "pyproject.toml",
+  "Makefile",
+  "config/settings/production.py",
+  "standards/management/commands/check_conformance.py",
+  "Dockerfile",
+  "static/css/tokens.css",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "CONTRIBUTING.md"
+heading = "Adding a data adapter"
+files = [
+  "datasync/adapters/__init__.py",
+  "datasync/adapters/base.py",
+  "datasync/adapters/registry.py",
+  "standards/management/commands/seed_observed_properties.py",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "CONTRIBUTING.md"
+heading = "Reporting bugs and ideas"
+files = [
+  "templates/partials/_sidebar.html",
+  "templates/partials/_feedback_widget.html",
+  "feedback/models.py",
+  "feedback/views.py",
+  "feedback/forwarder.py",
+  "core/context_processors.py",
+  "config/settings/base.py",
+]
+labels = [
+  { text = "Send feedback", where = "templates/partials/_sidebar.html" },
+  { text = "Data looks wrong", where = "templates/partials/_feedback_widget.html" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "SECURITY.md"
+heading = "Security Policy"
+files = []
+why_none = "Heading line only."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "SECURITY.md"
+heading = "Reporting a vulnerability"
+files = []
+why_none = "Describes GitHub's private reporting process. The Security tab and its button are GitHub screens, not OpenH2O's."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "SECURITY.md"
+heading = "Scope"
+files = []
+why_none = "States what reports are in scope. It names no behaviour that a specific file implements."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "SECURITY.md"
+heading = "Supported versions"
+files = [".github/workflows/clean-install.yml", ".github/workflows/tests.yml", "Makefile"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "Deploying OpenH2O"
+files = []
+why_none = "Orientation only: says who the guide is for and points to the AI operator guide. It makes no claim about how the code behaves."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "1. Server Requirements"
+files = [
+  "docker-compose.yml",
+  "Caddyfile",
+  "Makefile",
+  "crontab.txt",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "2. Clone the Repository"
+files = ["crontab.txt"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "3. Environment Configuration"
+files = [
+  ".env.example",
+  ".gitignore",
+  "config/settings/base.py",
+  "config/settings/production.py",
+  "docker-compose.yml",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "4. Caddy / HTTPS Configuration"
+files = ["Caddyfile", "docker-compose.yml", "error-pages/503.html"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "Branch A: Only this computer, or the office network"
+files = ["Caddyfile", "docker-compose.yml", "config/settings/production.py"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "Branch B: Public internet, and this server obtains its own certificate"
+files = ["Caddyfile", "docker-compose.yml", "config/settings/production.py"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "Branch C: Public internet, and something in front of the server handles the encryption"
+files = ["Caddyfile", "config/settings/production.py"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "5. Build and Start"
+files = [
+  "docker-compose.yml",
+  "Dockerfile",
+  "entrypoint.sh",
+  "core/management/commands/ensure_superuser.py",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "6. Run Migrations"
+files = ["entrypoint.sh"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "7. Create Superuser"
+files = [
+  "core/management/commands/ensure_superuser.py",
+  "entrypoint.sh",
+  "core/models.py",
+  "core/forms.py",
+  "core/views.py",
+  "core/modules.py",
+  "core/access.py",
+  "templates/account/login.html",
+  "templates/core/users_list.html",
+  "config/settings/base.py",
+]
+labels = [
+  { text = "Forgot password?", where = "templates/account/login.html" },
+  { text = "Change email", where = "templates/core/users_list.html" },
+  { text = "Users", where = "core/modules.py" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "8. Seed Reference Data"
+files = [
+  "core/management/commands/seed_data.py",
+  "core/modules.py",
+  "core/management/commands/seed_roles.py",
+  "standards/management/commands/seed_observed_properties.py",
+  "accounting/management/commands/seed_water_types.py",
+  "wells/management/commands/seed_well_types.py",
+  "datasync/management/commands/seed_data_sources.py",
+  "drinking/management/commands/seed_drinking.py",
+  "surface/management/commands/seed_water_right_types.py",
+  "reporting/management/commands/seed_report_templates.py",
+  "standards/management/commands/check_conformance.py",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "9. Load the Demonstration Dataset (Optional)"
+files = [
+  "core/management/commands/seed_merced.py",
+  "core/management/commands/seed_merced_operations.py",
+  "core/management/commands/seed_merced_ledgers.py",
+  "geography/management/commands/auto_populate.py",
+  "datasync/management/commands/load_station_fixture.py",
+  "data/merced/stations.json",
+  "accounting/management/commands/seed_calculation_plan.py",
+  "accounting/management/commands/run_accounting.py",
+  "accounting/engine_run.py",
+  "accounting/management/commands/run_calculations.py",
+  "datasync/management/commands/sync_openet_parcels.py",
+  "standards/management/commands/check_conformance.py",
+  "health/management/commands/run_health_checks.py",
+  "health/checks.py",
+  "Makefile",
+  "core/management/commands/teardown_demo.py",
+  "core/management/commands/seed_demo_data.py",
+  "core/modules.py",
+  "config/settings/base.py",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "10. Verify Deployment"
+files = [
+  "Caddyfile",
+  "docker-compose.yml",
+  "entrypoint.sh",
+  "config/settings/production.py",
+  "config/urls.py",
+  "health/views.py",
+  "health/urls.py",
+  "health/management/commands/run_health_checks.py",
+  "core/site_identity.py",
+  "core/apps.py",
+  "core/checks.py",
+  "core/models.py",
+  "core/admin.py",
+]
+labels = [
+  { text = "Site health", where = "templates/health/dashboard.html" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "11. Ongoing Operations"
+files = []
+why_none = "Heading only (lines 646-647). The claims sit in the subsections that follow."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "The Setup Wizard (`/setup/`)"
+files = [
+  "setup/views.py",
+  "setup/services.py",
+  "setup/boundaries.py",
+  "core/modules.py",
+  "core/access.py",
+  "core/context_processors.py",
+  "templates/partials/_sidebar.html",
+  "templates/setup/wizard.html",
+  "templates/setup/partials/_station_review.html",
+  "geography/management/commands/auto_populate.py",
+  "datasync/management/commands/activate_stations.py",
+  "datasync/management/commands/sync_source.py",
+]
+labels = [
+  { text = "Administration", where = "core/modules.py" },
+  { text = "Operations", where = "templates/partials/_sidebar.html" },
+  { text = "Admin", where = "templates/partials/_sidebar.html" },
+  { text = "Setup Wizard", where = "core/modules.py" },
+  { text = "Enable all", where = "templates/setup/partials/_station_review.html" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "Upgrades"
+files = ["Makefile", "entrypoint.sh", "docker-compose.yml"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "Protecting a Live Installation (`.production-lock`)"
+files = ["Makefile", ".gitignore"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "Scheduled Jobs"
+files = [
+  "crontab.txt",
+  "scripts/run-sync.sh",
+  "Makefile",
+  "accounting/management/commands/run_accounting.py",
+  "accounting/engine_run.py",
+  "accounting/views.py",
+  "health/checks.py",
+  "health/management/commands/run_health_checks.py",
+  "health/management/commands/prune_old_data.py",
+  "standards/management/commands/check_conformance.py",
+  "datasync/management/commands/seed_data_sources.py",
+  "datasync/management/commands/sync_openet_parcels.py",
+]
+labels = [
+  { text = "Site health", where = "templates/health/dashboard.html" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "External Data API Keys"
+files = [
+  "datasync/adapters/base.py",
+  "datasync/adapters/cimis.py",
+  "datasync/adapters/noaa.py",
+  "datasync/adapters/openet.py",
+  "datasync/freshness.py",
+  "datasync/management/commands/sync_all.py",
+  "datasync/management/commands/sync_source.py",
+  "datasync/management/commands/seed_data_sources.py",
+  "datasync/management/commands/sync_openet_parcels.py",
+  "docker-compose.yml",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "Map Basemaps (streamed, no tile server to host)"
+files = [
+  "static/js/map-core.js",
+  "templates/base.html",
+  "templates/geography/map.html",
+  "Caddyfile",
+]
+labels = [
+  { text = "Aerial", where = "static/js/map-core.js" },
+  { text = "Dark", where = "static/js/map-core.js" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "Email / Password Reset (SMTP)"
+files = [
+  "config/settings/base.py",
+  "config/settings/production.py",
+  "docker-compose.yml",
+  "templates/partials/_header.html",
+  "templates/core/profile.html",
+  "templates/account/login.html",
+]
+labels = [
+  { text = "Change password", where = "templates/core/profile.html" },
+  { text = "Forgot password?", where = "templates/account/login.html" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "Signup email verification"
+files = [
+  "config/settings/base.py",
+  "core/adapters.py",
+  "core/forms.py",
+  "core/management/commands/ensure_superuser.py",
+  "entrypoint.sh",
+]
+labels = [
+  { text = "Users", where = "core/modules.py" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "Health Checks"
+files = ["health/management/commands/run_health_checks.py", "Makefile"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "Data Pruning"
+files = ["health/management/commands/prune_old_data.py", "Makefile"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "Data Sync"
+files = [
+  "datasync/management/commands/sync_all.py",
+  "datasync/management/commands/sync_source.py",
+  "datasync/adapters/base.py",
+  "datasync/adapters/cimis.py",
+  "datasync/adapters/noaa.py",
+  "config/settings/base.py",
+  "Makefile",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "Running Tests"
+files = [
+  "Makefile",
+  "scripts/assert-image-fresh.sh",
+  "config/settings/local.py",
+  "core/modules.py",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "Database Backup"
+files = [
+  "docker-compose.yml",
+  "config/settings/base.py",
+  "core/models.py",
+  "feedback/models.py",
+  "crontab.txt",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "Database Restore"
+files = ["docker-compose.yml", "scripts/run-sync.sh"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "View Logs"
+files = [
+  "docker-compose.yml",
+  "Caddyfile",
+  "entrypoint.sh",
+  "Dockerfile",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "12. Environment Variables Reference"
+files = ["config/wsgi.py", "entrypoint.sh", "config/settings/base.py"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "The site and its security"
+files = [
+  "config/settings/base.py",
+  "config/settings/production.py",
+  "docker-compose.yml",
+  "manage.py",
+  "config/wsgi.py",
+  "config/asgi.py",
+  "core/modules.py",
+  "core/adapters.py",
+  "core/access.py",
+  "core/management/commands/ensure_superuser.py",
+  "entrypoint.sh",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "The database"
+files = ["docker-compose.yml", "config/settings/production.py", "config/settings/base.py"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "Email"
+files = ["config/settings/base.py", "config/settings/production.py", "config/settings/local.py"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "Data sources"
+files = [
+  "config/settings/base.py",
+  "datasync/adapters/base.py",
+  "datasync/adapters/cimis.py",
+  "datasync/adapters/noaa.py",
+  "datasync/adapters/openet.py",
+  "datasync/adapters/__init__.py",
+  "datasync/adapters/gee.py",
+  "datasync/models.py",
+  "docker-compose.yml",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "Sign-in with Google, feedback and visitor statistics"
+files = [
+  "config/settings/base.py",
+  "core/oauth.py",
+  "config/urls.py",
+  "core/context_processors.py",
+  "core/models.py",
+  "core/admin.py",
+  "core/forms.py",
+  "core/management/commands/ensure_superuser.py",
+  "templates/account/login.html",
+  "templates/account/signup.html",
+  "templates/base.html",
+  "feedback/views.py",
+  "feedback/forwarder.py",
+  "Caddyfile",
+  "docker-compose.yml",
+]
+labels = [
+  { text = "Continue with Google", where = "templates/account/login.html" },
+  { text = "Continue with Google", where = "templates/account/signup.html" },
+  { text = "Users", where = "core/modules.py" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "DEPLOY.md"
+heading = "13. Troubleshooting"
+files = [
+  "docker-compose.yml",
+  "Dockerfile",
+  "entrypoint.sh",
+  "Caddyfile",
+  "config/settings/base.py",
+  "config/settings/production.py",
+  "core/checks.py",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/README.md"
+heading = "docs/"
+files = ["standards/management/commands/check_conformance.py", "static/css/tokens.css"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/ROADMAP.md"
+heading = "Roadmap"
+files = ["core/modules.py"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/ROADMAP.md"
+heading = "Finished"
+files = [
+  "accounting/steps.py",
+  "accounting/calculation.py",
+  "accounting/services.py",
+  "accounting/management/commands/run_calculations.py",
+  "accounting/models.py",
+  "accounting/carryover_math.py",
+  "accounting/management/commands/rollover_allocations.py",
+  "core/constants.py",
+  "core/models.py",
+  "core/forms.py",
+  "core/modules.py",
+  "accounting/allocation_math.py",
+  "surface/services.py",
+  "surface/models.py",
+  "core/identifiers.py",
+  "core/views.py",
+  "config/urls.py",
+]
+labels = [
+  { text = "Delivery Settings", where = "core/modules.py" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/ROADMAP.md"
+heading = "Planned: monthly volumes from meter readings"
+files = [
+  "measurements/models.py",
+  "parcels/models.py",
+  "accounting/forms.py",
+  "accounting/ledger_import.py",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/ROADMAP.md"
+heading = "Planned: publishing open data"
+files = ["standards/models.py", "standards/management/commands/seed_observed_properties.py", "config/urls.py"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/ROADMAP.md"
+heading = "Ideas not yet started"
+files = []
+why_none = "Lists features that are not built; no existing file makes any sentence true."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/DATA-IMPORT.md"
+heading = "Importing Your Organization's Data"
+files = [
+  "setup/views.py",
+  "setup/services.py",
+  "geography/management/commands/auto_populate.py",
+  "accounting/views.py",
+  "accounting/forms.py",
+  "infrastructure/views.py",
+  "surface/views.py",
+  "drinking/views.py",
+  "docker-compose.yml",
+  "setup/management/commands/import_boundary.py",
+  "parcels/management/commands/import_parcels.py",
+  "wells/management/commands/import_wells.py",
+  "surface/management/commands/import_diversion_records.py",
+  "accounting/management/commands/import_ledger_csv.py",
+  "drinking/management/commands/import_production.py",
+]
+labels = [
+  { text = "Setup Wizard", where = "templates/setup/wizard.html" },
+  { text = "Upload CSV", where = "templates/accounting/ledger_list.html" },
+  { text = "Use ledger", where = "templates/accounting/ledger_list.html" },
+  { text = "Dry run", where = "templates/accounting/csv_upload.html" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/DATA-IMPORT.md"
+heading = "1. The demonstration data"
+files = ["core/management/commands/seed_merced.py", "core/management/commands/seed_data.py", "geography/management/commands/auto_populate.py"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/DATA-IMPORT.md"
+heading = "2. The Setup Wizard"
+files = [
+  "setup/views.py",
+  "setup/boundaries.py",
+  "setup/services.py",
+  "setup/urls.py",
+  "core/geofiles.py",
+  "templates/setup/wizard.html",
+  "templates/setup/confirm.html",
+  "setup/management/commands/import_boundary.py",
+]
+labels = [
+  { text = "Setup Wizard", where = "templates/setup/wizard.html" },
+  { text = "Select an existing boundary", where = "templates/setup/wizard.html" },
+  { text = "Upload a boundary file", where = "templates/setup/wizard.html" },
+  { text = "Type an extent", where = "templates/setup/wizard.html" },
+  { text = "Start without one", where = "templates/setup/wizard.html" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/DATA-IMPORT.md"
+heading = "3. File imports"
+files = []
+why_none = "Heading line only; no claim about the code."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/DATA-IMPORT.md"
+heading = "Parcels: `import_parcels`"
+files = ["parcels/management/commands/import_parcels.py", "parcels/models.py", "infrastructure/views.py"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/DATA-IMPORT.md"
+heading = "Wells: `import_wells`"
+files = ["wells/management/commands/import_wells.py", "wells/models.py"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/DATA-IMPORT.md"
+heading = "Wells, points of diversion, storage ponds and recharge sites: the Import screen"
+files = [
+  "infrastructure/views.py",
+  "infrastructure/importer.py",
+  "infrastructure/urls.py",
+  "core/geofiles.py",
+  "templates/wells/list.html",
+  "templates/surface/pod_list.html",
+  "templates/recharge/list.html",
+  "templates/infrastructure/partials/_import_mapping.html",
+]
+labels = [
+  { text = "Import", where = "templates/wells/list.html" },
+  { text = "Import", where = "templates/surface/pod_list.html" },
+  { text = "Import", where = "templates/recharge/list.html" },
+  { text = "Wells", where = "templates/wells/list.html" },
+  { text = "Surface diversions", where = "templates/surface/pod_list.html" },
+  { text = "Recharge sites", where = "templates/recharge/list.html" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/DATA-IMPORT.md"
+heading = "Water rights: the Water Rights Import screen"
+files = [
+  "surface/importer.py",
+  "surface/views.py",
+  "surface/urls.py",
+  "surface/models.py",
+  "templates/surface/water_rights_list.html",
+  "templates/surface/partials/_right_import_mapping.html",
+  "templates/surface/partials/_right_import_result.html",
+]
+labels = [
+  { text = "Water Rights", where = "templates/surface/water_rights_list.html" },
+  { text = "Import", where = "templates/surface/water_rights_list.html" },
+  { text = "Import water rights", where = "templates/surface/right_import.html" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/DATA-IMPORT.md"
+heading = "Diversion records: the diversion import screen and `import_diversion_records`"
+files = [
+  "surface/diversion_import.py",
+  "surface/views.py",
+  "surface/urls.py",
+  "surface/management/commands/import_diversion_records.py",
+  "surface/models.py",
+  "surface/estimate.py",
+  "accounting/locks.py",
+  "core/models.py",
+  "core/forms.py",
+  "templates/accounting/delivery_settings.html",
+  "templates/surface/pod_list.html",
+  "templates/surface/partials/_diversion_import_preview.html",
+]
+labels = [
+  { text = "Import diversion records", where = "templates/surface/pod_list.html" },
+  { text = "Surface diversions", where = "templates/surface/pod_list.html" },
+  { text = "Delivery settings", where = "templates/accounting/delivery_settings.html" },
+  { text = "Diversion records", where = "templates/accounting/delivery_settings.html" },
+  { text = "Data status", where = "templates/surface/partials/_diversion_import_preview.html" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/DATA-IMPORT.md"
+heading = "Ledger entries: `import_ledger_csv` or the Upload CSV page"
+files = [
+  "accounting/ledger_import.py",
+  "accounting/management/commands/import_ledger_csv.py",
+  "accounting/views.py",
+  "accounting/forms.py",
+  "accounting/services.py",
+  "accounting/urls.py",
+  "accounting/locks.py",
+  "accounting/models.py",
+  "parcels/models.py",
+  "templates/accounting/csv_upload.html",
+  "templates/accounting/ledger_list.html",
+  "templates/accounting/partials/_csv_upload_results.html",
+]
+labels = [
+  { text = "Upload CSV", where = "templates/accounting/ledger_list.html" },
+  { text = "Use ledger", where = "templates/accounting/ledger_list.html" },
+  { text = "Dry run", where = "templates/accounting/csv_upload.html" },
+  { text = "Water years", where = "templates/accounting/periods_list.html" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/DATA-IMPORT.md"
+heading = "Drinking water: lab sample results"
+files = [
+  "drinking/importer.py",
+  "drinking/views.py",
+  "drinking/urls.py",
+  "drinking/ps_codes.py",
+  "drinking/models.py",
+  "templates/drinking/results.html",
+  "templates/drinking/overview.html",
+]
+labels = [
+  { text = "Import lab results", where = "templates/drinking/results.html" },
+  { text = "Sample results", where = "templates/drinking/results.html" },
+  { text = "Add sampling points", where = "templates/drinking/overview.html" },
+  { text = "Drinking water", where = "templates/drinking/overview.html" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/DATA-IMPORT.md"
+heading = "Drinking water: production by month"
+files = [
+  "surface/diversion_import.py",
+  "drinking/production_import.py",
+  "drinking/views.py",
+  "drinking/urls.py",
+  "drinking/management/commands/import_production.py",
+  "drinking/models.py",
+  "templates/drinking/production.html",
+  "templates/drinking/partials/_production_import_preview.html",
+]
+labels = [
+  { text = "Production", where = "templates/drinking/production.html" },
+  { text = "Import", where = "templates/drinking/production.html" },
+  { text = "Add month", where = "templates/drinking/production.html" },
+  { text = "Unit for rows with a blank unit", where = "templates/drinking/partials/_production_import_preview.html" },
+  { text = "Report year", where = "templates/drinking/partials/_production_import_preview.html" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/DATA-IMPORT.md"
+heading = "4. Filling in from public sources"
+files = []
+why_none = "Heading line only; no claim about the code."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/DATA-IMPORT.md"
+heading = "From a boundary"
+files = [
+  "geography/management/commands/auto_populate.py",
+  "setup/services.py",
+  "setup/views.py",
+  "setup/management/commands/import_boundary.py",
+]
+labels = [
+  { text = "Setup Wizard", where = "templates/setup/wizard.html" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/DATA-IMPORT.md"
+heading = "From a PWSID, for a drinking-water system"
+files = [
+  "drinking/views.py",
+  "drinking/urls.py",
+  "drinking/envirofacts.py",
+  "drinking/envirofacts_mapping.py",
+  "templates/drinking/partials/_onboard_review.html",
+]
+labels = [
+  { text = "Add a water system", where = "templates/drinking/onboard.html" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/DATA-IMPORT.md"
+heading = "What is entered by hand"
+files = [
+  "surface/urls.py",
+  "accounting/urls.py",
+  "drinking/urls.py",
+  "templates/surface/partials/_device_panel.html",
+  "templates/drinking/overview.html",
+  "config/urls.py",
+  "measurements/admin.py",
+  "datasync/admin.py",
+]
+labels = [
+  { text = "Add sampling points", where = "templates/drinking/overview.html" },
+  { text = "Drinking water", where = "templates/drinking/overview.html" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/DATA-IMPORT.md"
+heading = "A sensible order"
+files = [
+  "core/management/commands/seed_data.py",
+  "core/management/commands/seed_merced.py",
+  "setup/views.py",
+  "setup/services.py",
+  "parcels/management/commands/import_parcels.py",
+  "wells/management/commands/import_wells.py",
+  "templates/wells/list.html",
+  "infrastructure/importer.py",
+  "drinking/importer.py",
+  "accounting/urls.py",
+  "accounting/management/commands/import_ledger_csv.py",
+]
+labels = [
+  { text = "Setup Wizard", where = "templates/setup/wizard.html" },
+  { text = "Wells", where = "templates/wells/list.html" },
+  { text = "Import", where = "templates/wells/list.html" },
+  { text = "Upload CSV", where = "templates/accounting/ledger_list.html" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/DATA-STANDARDS.md"
+heading = "Data Standards & Interoperability"
+files = ["standards/management/commands/seed_observed_properties.py", "standards/management/commands/export_crosswalk.py", "docker-compose.yml"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/DATA-STANDARDS.md"
+heading = "1. The kinds of measurement (ObservedProperty)"
+files = ["standards/management/commands/seed_observed_properties.py", "standards/models.py"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/DATA-STANDARDS.md"
+heading = "2. Each source's codes (SourceParameter)"
+files = [
+  "standards/management/commands/seed_observed_properties.py",
+  "standards/models.py",
+  "standards/management/commands/export_crosswalk.py",
+  "datasync/adapters/registry.py",
+  "datasync/adapters/usgs.py",
+  "datasync/adapters/cdec.py",
+  "datasync/adapters/dwr_wdl.py",
+  "datasync/adapters/dwr_sgma.py",
+  "datasync/adapters/cimis.py",
+  "datasync/adapters/noaa.py",
+  "datasync/adapters/cnrfc.py",
+  "datasync/models.py",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/DATA-STANDARDS.md"
+heading = "3. Quality flags and vertical datum"
+files = ["measurements/models.py", "measurements/admin.py", "wells/models.py"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/DATA-STANDARDS.md"
+heading = "4. Drinking-water lab limits"
+files = [
+  "drinking/importer.py",
+  "drinking/models.py",
+  "templates/drinking/partials/_limit_as_reported.html",
+  "templates/drinking/result_detail.html",
+  "templates/drinking/partials/_result_results.html",
+  "templates/drinking/sampling_point_detail.html",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/DATA-STANDARDS.md"
+heading = "5. The conformance check"
+files = [
+  "standards/management/commands/check_conformance.py",
+  "standards/models.py",
+  "measurements/models.py",
+  "Makefile",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/DATA-STANDARDS.md"
+heading = "6. California's reporting format (under development)"
+files = [
+  "reporting/generators.py",
+  "reporting/validators.py",
+  "reporting/models.py",
+  "core/modules.py",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/DATA-STANDARDS.md"
+heading = "7. Estimated inputs to the water balance"
+files = [
+  "accounting/precip_math.py",
+  "accounting/steps.py",
+  "accounting/management/commands/seed_calculation_plan.py",
+  "datasync/adapters/gee.py",
+  "datasync/management/commands/sync_precip_parcels.py",
+  "templates/accounting/methodology_settings.html",
+]
+labels = [
+  { text = "Methodology Settings", where = "templates/accounting/methodology_settings.html" },
+  { text = "USDA-SCS (TR-21)", where = "accounting/precip_math.py" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/DATA-STANDARDS.md"
+heading = "8. Publishing the data"
+files = [
+  "core/identifiers.py",
+  "core/views.py",
+  "config/urls.py",
+  "core/forms.py",
+  "core/models.py",
+  "standards/models.py",
+  "wells/models.py",
+  "templates/accounting/delivery_settings.html",
+]
+labels = [
+  { text = "Delivery settings", where = "templates/accounting/delivery_settings.html" },
+  { text = "Where your record addresses are published", where = "core/forms.py" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/DATA-STANDARDS.md"
+heading = "Reusing the design in another platform"
+files = ["standards/management/commands/check_conformance.py", "standards/management/commands/seed_observed_properties.py"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/water-budget-terms.md"
+heading = "Water budget terms"
+files = ["accounting/models.py", "accounting/management/commands/run_calculations.py"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/water-budget-terms.md"
+heading = "Term by term"
+files = [
+  "accounting/models.py",
+  "accounting/steps.py",
+  "accounting/precip_math.py",
+  "accounting/management/commands/run_calculations.py",
+  "accounting/management/commands/seed_calculation_plan.py",
+  "accounting/services.py",
+  "surface/models.py",
+  "surface/services.py",
+  "parcels/services.py",
+  "core/models.py",
+  "core/forms.py",
+]
+labels = [
+  { text = "Methodology Settings", where = "templates/accounting/methodology_settings.html" },
+  { text = "Delivery settings", where = "templates/accounting/delivery_settings.html" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/water-budget-terms.md"
+heading = "Sources"
+files = []
+why_none = "A list of outside source links (DWR handbook, C2VSimFG package); no claim about OpenH2O's code."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/earth-engine-tier-setup.md"
+heading = "Earth Engine Tier Setup"
+files = [
+  "config/settings/base.py",
+  "datasync/adapters/__init__.py",
+  "datasync/adapters/openet.py",
+  "datasync/adapters/openet_gee.py",
+  "datasync/adapters/gee.py",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/earth-engine-tier-setup.md"
+heading = "What Earth Engine costs"
+files = ["scripts/benchmarks/gee_eecu_bench.py", "datasync/adapters/gee.py"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/earth-engine-tier-setup.md"
+heading = "Setup steps"
+files = []
+why_none = "Explains how the steps are organized and how to install gcloud; no claim about OpenH2O code."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/earth-engine-tier-setup.md"
+heading = "1. Create a Google Cloud project and turn on the Earth Engine API"
+files = ["datasync/adapters/gee.py", "scripts/benchmarks/gee_eecu_bench.py"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/earth-engine-tier-setup.md"
+heading = "2. Register the project for Earth Engine in the browser"
+files = []
+why_none = "A Google registration done in the browser; nothing in OpenH2O code is involved."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/earth-engine-tier-setup.md"
+heading = "3. Create a service account and download its key"
+files = ["datasync/adapters/gee.py"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/earth-engine-tier-setup.md"
+heading = "4. Put the key on the server and switch OpenH2O to the Earth Engine tier"
+files = [
+  ".gitignore",
+  "docker-compose.yml",
+  "config/settings/base.py",
+  "datasync/adapters/__init__.py",
+  "datasync/adapters/gee.py",
+  "datasync/management/commands/prove_gee_auth.py",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/earth-engine-tier-setup.md"
+heading = "5. Get ET for every parcel"
+files = ["datasync/management/commands/sync_openet_parcels.py", "datasync/adapters/__init__.py", "accounting/management/commands/sync_openet_to_ledger.py"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/earth-engine-tier-setup.md"
+heading = "Sources"
+files = []
+why_none = "A list of outside links only."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/AI-OPERATOR-GUIDE.md"
+heading = "AI Operator Guide"
+files = []
+why_none = "Orientation only: who the guide is for, a pointer to DEPLOY.md, and how the checkpoints work. It makes no claim about how OpenH2O behaves."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/AI-OPERATOR-GUIDE.md"
+heading = "What you need before you start"
+files = [
+  "docker-compose.yml",
+  "datasync/freshness.py",
+  "datasync/adapters/cimis.py",
+  "datasync/adapters/noaa.py",
+  "datasync/adapters/openet.py",
+  "config/settings/base.py",
+  "config/settings/production.py",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/AI-OPERATOR-GUIDE.md"
+heading = "The shape of the job"
+files = ["docker-compose.yml"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/AI-OPERATOR-GUIDE.md"
+heading = "The steps that run long"
+files = [
+  "Dockerfile",
+  "core/management/commands/seed_merced.py",
+  "geography/management/commands/auto_populate.py",
+  "geography/services/arcgis.py",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/AI-OPERATOR-GUIDE.md"
+heading = "Phase 1: Start the platform"
+files = [
+  ".env.example",
+  ".gitignore",
+  "config/settings/base.py",
+  "config/settings/production.py",
+  "core/modules.py",
+  "reporting/generators.py",
+  "docker-compose.yml",
+  "Dockerfile",
+  "entrypoint.sh",
+  "Caddyfile",
+  "core/management/commands/ensure_superuser.py",
+  "core/management/commands/seed_data.py",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/AI-OPERATOR-GUIDE.md"
+heading = "Phase 2: Secure it"
+files = [
+  "config/settings/base.py",
+  "config/settings/production.py",
+  "config/settings/local.py",
+  ".env.example",
+  "docker-compose.yml",
+  "Caddyfile",
+  "entrypoint.sh",
+  "core/management/commands/ensure_superuser.py",
+  "core/adapters.py",
+  "core/checks.py",
+  "config/urls.py",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/AI-OPERATOR-GUIDE.md"
+heading = "Phase 3: Load data"
+files = ["core/management/commands/seed_merced.py", "core/management/commands/teardown_demo.py", "setup/views.py"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/AI-OPERATOR-GUIDE.md"
+heading = "The Setup Wizard"
+files = [
+  "setup/views.py",
+  "setup/services.py",
+  "setup/boundaries.py",
+  "core/access.py",
+  "core/modules.py",
+  "templates/partials/_sidebar.html",
+  "templates/setup/wizard.html",
+  "templates/setup/confirm.html",
+  "templates/setup/run.html",
+  "templates/setup/partials/_station_review.html",
+  "setup/management/commands/import_boundary.py",
+  "geography/management/commands/auto_populate.py",
+  "geography/services/arcgis.py",
+  "datasync/management/commands/activate_stations.py",
+]
+labels = [
+  { text = "Admin", where = "templates/partials/_sidebar.html" },
+  { text = "Operations", where = "templates/partials/_sidebar.html" },
+  { text = "Setup Wizard", where = "core/modules.py" },
+  { text = "Administration", where = "core/modules.py" },
+  { text = "Select an existing boundary", where = "templates/setup/wizard.html" },
+  { text = "Upload a boundary file", where = "templates/setup/wizard.html" },
+  { text = "Type an extent", where = "templates/setup/wizard.html" },
+  { text = "Start without one", where = "templates/setup/wizard.html" },
+  { text = "I have my own data", where = "templates/setup/run.html" },
+  { text = "Enable all", where = "templates/setup/partials/_station_review.html" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/AI-OPERATOR-GUIDE.md"
+heading = "Option A: The demonstration data"
+files = [
+  "core/management/commands/seed_merced.py",
+  "core/management/commands/seed_merced_operations.py",
+  "geography/management/commands/auto_populate.py",
+  "datasync/management/commands/load_station_fixture.py",
+  "data/merced/stations.json",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/AI-OPERATOR-GUIDE.md"
+heading = "Look at the organization's records first"
+files = [
+  "docs/crosswalk-worksheet.csv",
+  "surface/diversion_import.py",
+  "surface/models.py",
+  "surface/forms.py",
+  "surface/views.py",
+  "templates/surface/partials/_diversion_import_preview.html",
+  "core/models.py",
+  "core/forms.py",
+  "accounting/views.py",
+  "templates/accounting/delivery_settings.html",
+  "drinking/views.py",
+  "drinking/production_import.py",
+  "drinking/forms.py",
+  "drinking/importer.py",
+  "core/modules.py",
+]
+labels = [
+  { text = "Known locally as", where = "templates/surface/partials/_detail_pane.html" },
+  { text = "Add device", where = "templates/surface/partials/_device_panel.html" },
+  { text = "Delivery Settings", where = "core/modules.py" },
+  { text = "Diversion records", where = "templates/accounting/delivery_settings.html" },
+  { text = "Unit for rows with a blank unit", where = "templates/drinking/partials/_production_import_preview.html" },
+  { text = "Drinking Water", where = "core/modules.py" },
+  { text = "Schedule", where = "core/modules.py" },
+  { text = "+ Add row", where = "templates/drinking/schedule.html" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/AI-OPERATOR-GUIDE.md"
+heading = "Option B: The organization's own records"
+files = [
+  "setup/management/commands/import_boundary.py",
+  "geography/management/commands/auto_populate.py",
+  "parcels/management/commands/import_parcels.py",
+  "infrastructure/views.py",
+  "infrastructure/importer.py",
+  "templates/infrastructure/import.html",
+  "wells/management/commands/import_wells.py",
+  "surface/views.py",
+  "surface/diversion_import.py",
+  "surface/management/commands/import_diversion_records.py",
+  "drinking/views.py",
+  "drinking/envirofacts.py",
+  "drinking/importer.py",
+  "drinking/production_import.py",
+  "drinking/management/commands/import_production.py",
+  "accounting/management/commands/import_ledger_csv.py",
+  "accounting/views.py",
+  "accounting/services.py",
+  "core/forms.py",
+  "measurements/admin.py",
+  "datasync/admin.py",
+]
+labels = [
+  { text = "Use Ledger", where = "core/modules.py" },
+  { text = "Upload CSV", where = "templates/accounting/ledger_list.html" },
+  { text = "Dry run", where = "templates/accounting/csv_upload.html" },
+  { text = "Delivery Settings", where = "core/modules.py" },
+  { text = "Diversion records", where = "templates/accounting/delivery_settings.html" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/AI-OPERATOR-GUIDE.md"
+heading = "Phase 4: Connect live data sources"
+files = []
+why_none = "Heading line only; the claims sit in the three subsections below it."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/AI-OPERATOR-GUIDE.md"
+heading = "Ask before you spend the OpenET allowance"
+files = [
+  "datasync/urls.py",
+  "config/urls.py",
+  "config/settings/base.py",
+  "datasync/models.py",
+  "datasync/adapters/openet.py",
+  "datasync/views.py",
+  "templates/datasync/partials/_monitoring_content.html",
+  "datasync/management/commands/sync_openet_parcels.py",
+  "accounting/management/commands/sync_openet_to_ledger.py",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/AI-OPERATOR-GUIDE.md"
+heading = "Keys and the schedule"
+files = [
+  "datasync/freshness.py",
+  "datasync/adapters/cimis.py",
+  "datasync/adapters/noaa.py",
+  "datasync/adapters/openet.py",
+  "datasync/adapters/cdec.py",
+  "datasync/adapters/usgs.py",
+  "datasync/adapters/dwr_wdl.py",
+  "datasync/adapters/dwr_sgma.py",
+  ".env.example",
+  "docker-compose.yml",
+  "crontab.txt",
+  "Makefile",
+  "scripts/run-sync.sh",
+  "datasync/management/commands/sync_source.py",
+  "datasync/management/commands/seed_data_sources.py",
+  "accounting/management/commands/run_accounting.py",
+  "health/management/commands/run_health_checks.py",
+  "health/management/commands/prune_old_data.py",
+]
+labels = [
+  { text = "Needs API key", where = "datasync/freshness.py" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/AI-OPERATOR-GUIDE.md"
+heading = "Turn on the monitoring stations"
+files = [
+  "geography/management/commands/auto_populate.py",
+  "datasync/management/commands/sync_source.py",
+  "datasync/management/commands/activate_stations.py",
+  "datasync/management/commands/prune_dataless_stations.py",
+  "datasync/freshness.py",
+  "setup/views.py",
+  "templates/setup/partials/_station_review.html",
+  "datasync/views.py",
+  "templates/datasync/partials/_freshness_map.html",
+]
+labels = [
+  { text = "Enable all", where = "templates/setup/partials/_station_review.html" },
+  { text = "Setup Wizard", where = "core/modules.py" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/AI-OPERATOR-GUIDE.md"
+heading = "Phase 5: Bring in the people"
+files = [
+  "core/access.py",
+  "core/views.py",
+  "core/forms.py",
+  "core/modules.py",
+  "templates/core/users_list.html",
+  "templates/core/user_form.html",
+  "core/adapters.py",
+  "config/settings/base.py",
+  "config/settings/production.py",
+  "core/management/commands/seed_roles.py",
+  "core/models.py",
+  "core/admin.py",
+  "core/site_identity.py",
+  "core/apps.py",
+  "core/checks.py",
+  "templates/partials/_sidebar.html",
+]
+labels = [
+  { text = "Users", where = "core/modules.py" },
+  { text = "Administration", where = "core/modules.py" },
+  { text = "Admin", where = "templates/partials/_sidebar.html" },
+  { text = "Administrator", where = "templates/core/users_list.html" },
+  { text = "Operator", where = "templates/core/users_list.html" },
+  { text = "Viewer", where = "templates/core/users_list.html" },
+  { text = "+ Add user", where = "templates/core/users_list.html" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/AI-OPERATOR-GUIDE.md"
+heading = "Keeping it running"
+files = [
+  "crontab.txt",
+  "health/checks.py",
+  "health/models.py",
+  "health/views.py",
+  "templates/health/dashboard.html",
+  "health/management/commands/run_health_checks.py",
+  "scripts/run-sync.sh",
+  "accounting/management/commands/run_accounting.py",
+  "datasync/freshness.py",
+  "docker-compose.yml",
+  "config/settings/base.py",
+  "Caddyfile",
+]
+labels = [
+  { text = "Site health", where = "templates/health/dashboard.html" },
+  { text = "Attention needed", where = "templates/health/dashboard.html" },
+  { text = "Action required", where = "templates/health/dashboard.html" },
+  { text = "Database", where = "health/models.py" },
+  { text = "Disk", where = "health/models.py" },
+  { text = "Database name", where = "health/models.py" },
+  { text = "SSL", where = "health/models.py" },
+  { text = "Migrations", where = "health/models.py" },
+  { text = "Sync Freshness", where = "health/models.py" },
+  { text = "Calculation", where = "health/models.py" },
+  { text = "Cache Duplication", where = "health/models.py" },
+  { text = "Ledger Integrity", where = "health/models.py" },
+  { text = "Use areas without an account", where = "health/models.py" },
+  { text = "Point of diversion shares", where = "health/models.py" },
+  { text = "Unallocated Delivery", where = "health/models.py" },
+  { text = "Period Alignment", where = "health/models.py" },
+  { text = "ET / Meter Agreement", where = "health/models.py" },
+  { text = "Needs API key", where = "datasync/freshness.py" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/AI-OPERATOR-GUIDE.md"
+heading = "Troubleshooting by symptom"
+files = [
+  "config/settings/production.py",
+  "config/settings/base.py",
+  "core/modules.py",
+  "Dockerfile",
+  "Caddyfile",
+  "error-pages/503.html",
+  "docker-compose.yml",
+  "datasync/freshness.py",
+  "templates/datasync/partials/_monitoring_content.html",
+  "datasync/management/commands/sync_source.py",
+]
+labels = [
+  { text = "Needs API key", where = "datasync/freshness.py" },
+  { text = "No stations wired", where = "datasync/freshness.py" },
+  { text = "None activated", where = "datasync/freshness.py" },
+  { text = "None up to date", where = "datasync/freshness.py" },
+  { text = "OpenH2O is temporarily unavailable", where = "error-pages/503.html" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/AI-OPERATOR-GUIDE.md"
+heading = "Guardrails"
+files = [
+  ".gitignore",
+  "docker-compose.yml",
+  "Makefile",
+  "config/settings/base.py",
+  "core/forms.py",
+  "templates/base.html",
+  "templates/base_auth.html",
+]
+labels = [
+  { text = "Source code", where = "templates/base.html" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/INSTALL-WITHOUT-DOCKER.md"
+heading = "Installing OpenH2O without Docker"
+files = ["docker-compose.yml"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/INSTALL-WITHOUT-DOCKER.md"
+heading = "1. When to take this path"
+files = []
+why_none = "Orientation sentence only; it makes no claim about how OpenH2O behaves."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/INSTALL-WITHOUT-DOCKER.md"
+heading = "The computer cannot run containers"
+files = []
+why_none = "Describes Docker's own error messages and hosting-provider limits, plus a pointer to DEPLOY.md; nothing here rests on OpenH2O code."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/INSTALL-WITHOUT-DOCKER.md"
+heading = "The organization prefers not to install Docker"
+files = []
+why_none = "Organizational policy reasons only; no claim about the code."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/INSTALL-WITHOUT-DOCKER.md"
+heading = "What is different on this path"
+files = ["Dockerfile", "docker-compose.yml", "Caddyfile"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/INSTALL-WITHOUT-DOCKER.md"
+heading = "2. What to install"
+files = [
+  "Dockerfile",
+  "docker-compose.yml",
+  "pyproject.toml",
+  "config/settings/base.py",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/INSTALL-WITHOUT-DOCKER.md"
+heading = "3. The database"
+files = ["config/settings/production.py"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/INSTALL-WITHOUT-DOCKER.md"
+heading = "4. Copy OpenH2O onto the computer"
+files = []
+why_none = "A git clone of the public repository and a pwd; no claim about how OpenH2O's code behaves."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/INSTALL-WITHOUT-DOCKER.md"
+heading = "5. The Python packages"
+files = ["requirements.lock"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/INSTALL-WITHOUT-DOCKER.md"
+heading = "If the install reports a build failure"
+files = ["requirements.lock"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/INSTALL-WITHOUT-DOCKER.md"
+heading = "6. Build the site's styling"
+files = ["scripts/build-css.sh", "static/css/input.css", "config/settings/base.py"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/INSTALL-WITHOUT-DOCKER.md"
+heading = "7. Settings"
+files = [
+  ".env.example",
+  ".gitignore",
+  "config/settings/base.py",
+  "config/settings/production.py",
+  "config/wsgi.py",
+  "manage.py",
+  "Dockerfile",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/INSTALL-WITHOUT-DOCKER.md"
+heading = "8. Start OpenH2O and keep it running"
+files = []
+why_none = "Heading only; the content is in the subsections that follow."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/INSTALL-WITHOUT-DOCKER.md"
+heading = "The first account"
+files = ["core/management/commands/ensure_superuser.py", "config/settings/production.py"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/INSTALL-WITHOUT-DOCKER.md"
+heading = "The four steps"
+files = [
+  "entrypoint.sh",
+  "config/settings/base.py",
+  "core/management/commands/ensure_superuser.py",
+  "core/management/commands/seed_data.py",
+  "core/management/commands/seed_merced.py",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/INSTALL-WITHOUT-DOCKER.md"
+heading = "The background service"
+files = [
+  "config/wsgi.py",
+  "config/settings/local.py",
+  "config/settings/production.py",
+  "config/views.py",
+  "requirements.lock",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/INSTALL-WITHOUT-DOCKER.md"
+heading = "Scheduled jobs"
+files = [
+  "crontab.txt",
+  "scripts/run-sync.sh",
+  "manage.py",
+  "config/settings/base.py",
+  "datasync/management/commands/sync_source.py",
+  "accounting/management/commands/run_accounting.py",
+  "health/management/commands/run_health_checks.py",
+  "health/management/commands/prune_old_data.py",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/INSTALL-WITHOUT-DOCKER.md"
+heading = "9. Who can reach it"
+files = ["config/settings/production.py", "config/settings/base.py"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/INSTALL-WITHOUT-DOCKER.md"
+heading = "The production settings"
+files = [
+  "config/settings/production.py",
+  "config/settings/base.py",
+  "config/settings/local.py",
+  "core/adapters.py",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/INSTALL-WITHOUT-DOCKER.md"
+heading = "10. The access log"
+files = ["config/settings/production.py", "config/settings/base.py"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/INSTALL-WITHOUT-DOCKER.md"
+heading = "11. Upgrades and backups"
+files = ["requirements.lock", "static/css/input.css"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "docs/INSTALL-WITHOUT-DOCKER.md"
+heading = "12. What has been tested"
+files = []
+why_none = "The only code claim is that a test under tests/ checks the guide against the Docker build; tests/ is excluded from this list."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/about.html"
+heading = "(top)"
+files = ["config/views.py", "core/templatetags/prose.py"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/about.html"
+heading = "Who OpenH2O is for"
+files = [
+  "core/context_processors.py",
+  "core/templatetags/prose.py",
+  "parcels/models.py",
+  "accounting/services.py",
+  "surface/models.py",
+  "drinking/models.py",
+  "datasync/views.py",
+  "recharge/models.py",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/about.html"
+heading = "Where OpenH2O comes from"
+files = ["datasync/adapters/openet.py", "datasync/adapters/cdec.py", "datasync/adapters/usgs.py"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/about.html"
+heading = "Who made OpenH2O"
+files = [
+  "pyproject.toml",
+  "Dockerfile",
+  "docker-compose.yml",
+  "templates/base.html",
+  "templates/geography/map.html",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/about.html"
+heading = "Where to go next"
+files = [
+  "config/views.py",
+  "core/templatetags/nav.py",
+  "templates/help/getting_started.html",
+  "templates/help/glossary.html",
+  "templates/help/water_balances.html",
+]
+labels = [
+  { text = "Getting started", where = "templates/help/getting_started.html" },
+  { text = "Glossary", where = "templates/help/glossary.html" },
+  { text = "How water balances work", where = "templates/help/water_balances.html" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/about_demonstration_data.html"
+heading = "(top)"
+files = []
+why_none = "Page title, breadcrumb and a one-line description; the code the page's comment cites backs the sections below."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/about_demonstration_data.html"
+heading = "About the demonstration data"
+files = [
+  "core/management/commands/seed_merced.py",
+  "core/management/commands/seed_merced_base.py",
+  "geography/management/commands/auto_populate.py",
+  "core/management/commands/seed_merced_parcels_from_selection.py",
+  "core/management/commands/seed_merced_ledgers.py",
+  "drinking/management/commands/seed_merced_drinking.py",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/about_demonstration_data.html"
+heading = "Public records"
+files = [
+  "core/management/commands/seed_merced_base.py",
+  "core/management/commands/seed_merced_gsas.py",
+  "geography/management/commands/auto_populate.py",
+  "core/management/commands/seed_merced_parcels_from_selection.py",
+  "datasync/management/commands/load_station_fixture.py",
+  "datasync/management/commands/load_openet_fixture.py",
+  "drinking/management/commands/seed_merced_drinking.py",
+  "drinking/management/commands/seed_drinking.py",
+  "drinking/provenance.py",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/about_demonstration_data.html"
+heading = "Sample data"
+files = [
+  "core/management/commands/seed_merced_gsas.py",
+  "core/management/commands/seed_merced_parcels_from_selection.py",
+  "core/management/commands/seed_merced_details.py",
+  "core/management/commands/seed_merced_cropland.py",
+  "core/management/commands/seed_merced_operations.py",
+  "core/management/commands/seed_merced_ledgers.py",
+  "core/management/commands/seed_merced_recharge_events.py",
+  "core/management/commands/seed_merced_measurements.py",
+  "core/management/commands/seed_merced_basins_from_selection.py",
+  "accounting/management/commands/run_calculations.py",
+  "datasync/management/commands/synthesize_dry_year.py",
+]
+labels = [
+  { text = "Use Ledger", where = "core/modules.py" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/about_demonstration_data.html"
+heading = "The drinking-water results"
+files = [
+  "drinking/provenance.py",
+  "drinking/templatetags/drinking_display.py",
+  "drinking/importer.py",
+  "drinking/management/commands/seed_merced_drinking.py",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/help/getting_started.html"
+heading = "(top)"
+files = []
+why_none = "Title, breadcrumb and a one-line description of the page itself; the code comment block is not shown to readers."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/help/getting_started.html"
+heading = "How to set up OpenH2O"
+files = [
+  "config/views.py",
+  "core/modules.py",
+  "drinking/views.py",
+  "drinking/envirofacts.py",
+  "setup/services.py",
+  "setup/views.py",
+  "setup/boundaries.py",
+  "core/geofiles.py",
+  "geography/management/commands/auto_populate.py",
+  "geography/views.py",
+  "parcels/management/commands/import_parcels.py",
+  "infrastructure/importer.py",
+  "templates/wells/list.html",
+  "surface/views.py",
+  "surface/importer.py",
+  "templates/recharge/list.html",
+  "recharge/views.py",
+  "datasync/views.py",
+  "templates/datasync/station_list.html",
+  "datasync/management/commands/sync_source.py",
+  "scripts/run-sync.sh",
+  "crontab.txt",
+  "accounting/models.py",
+  "accounting/forms.py",
+  "accounting/views.py",
+  "templates/accounting/ledger_list.html",
+  "templates/accounting/period_detail.html",
+  "accounting/management/commands/run_accounting.py",
+  "accounting/management/commands/run_calculations.py",
+]
+labels = [
+  { text = "Water Data", where = "core/modules.py" },
+  { text = "Administration", where = "core/modules.py" },
+  { text = "Add a water system", where = "core/modules.py" },
+  { text = "Setup Wizard", where = "core/modules.py" },
+  { text = "Zones", where = "core/modules.py" },
+  { text = "Use Areas", where = "core/modules.py" },
+  { text = "Wells", where = "core/modules.py" },
+  { text = "Water Rights", where = "core/modules.py" },
+  { text = "Surface Diversions", where = "core/modules.py" },
+  { text = "Recharge sites", where = "core/modules.py" },
+  { text = "Monitoring Stations", where = "core/modules.py" },
+  { text = "Accounts", where = "core/modules.py" },
+  { text = "Water Years", where = "core/modules.py" },
+  { text = "Allocations", where = "core/modules.py" },
+  { text = "Use Ledger", where = "core/modules.py" },
+  { text = "Add well", where = "templates/wells/list.html" },
+  { text = "Import", where = "templates/wells/list.html" },
+  { text = "Add station", where = "templates/datasync/station_list.html" },
+  { text = "New entry", where = "templates/accounting/ledger_list.html" },
+  { text = "Upload CSV", where = "templates/accounting/ledger_list.html" },
+  { text = "Run the calculation", where = "templates/accounting/period_detail.html" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/help/getting_started.html"
+heading = "Where to go next"
+files = []
+why_none = "Link cards to the other Help pages, each with a one-line description of that page; pointers are checked separately."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/help/water_balances.html"
+heading = "(top)"
+files = []
+why_none = "Title, breadcrumb and a one-line description of the page; the comment block is not reader text."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/help/water_balances.html"
+heading = "How a month is calculated"
+files = [
+  "accounting/steps.py",
+  "accounting/management/commands/seed_calculation_plan.py",
+  "accounting/precip_math.py",
+  "parcels/services.py",
+  "accounting/engine_run.py",
+  "accounting/services.py",
+  "accounting/management/commands/run_calculations.py",
+  "templates/help/partials/_the_subtraction.html",
+]
+labels = [
+  { text = "Methodology Settings", where = "templates/accounting/methodology_settings.html" },
+  { text = "Delivery settings", where = "templates/accounting/delivery_settings.html" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/help/water_balances.html"
+heading = "What the remainder becomes"
+files = [
+  "accounting/management/commands/run_calculations.py",
+  "accounting/recharge_policy.py",
+  "parcels/services.py",
+  "accounting/services.py",
+  "templates/accounting/partials/_needs_attention.html",
+  "templates/accounting/partials/_dashboard_content.html",
+]
+labels = [
+  { text = "water use recorded, no supply reported", where = "templates/accounting/partials/_needs_attention.html" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/help/water_balances.html"
+heading = "How surface water deliveries are divided"
+files = [
+  "surface/services.py",
+  "accounting/allocation_math.py",
+  "surface/estimate.py",
+  "accounting/engine_run.py",
+  "parcels/services.py",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/help/water_balances.html"
+heading = "Where to go next"
+files = ["templates/accounting/partials/_dashboard_content.html", "accounting/views.py"]
+labels = [
+  { text = "Dashboard", where = "core/modules.py" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/help/methods.html"
+heading = "(top)"
+files = []
+why_none = "Title, breadcrumb and a one-line description of the page; the comment block is not reader text."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/help/methods.html"
+heading = "How OpenH2O calculates a month"
+files = [
+  "accounting/steps.py",
+  "accounting/precip_math.py",
+  "accounting/management/commands/seed_calculation_plan.py",
+  "accounting/management/commands/run_calculations.py",
+  "accounting/engine_run.py",
+  "parcels/services.py",
+  "accounting/recharge_policy.py",
+  "core/models.py",
+  "templates/accounting/partials/_dashboard_content.html",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/help/methods.html"
+heading = "How a headgate total is divided"
+files = [
+  "surface/services.py",
+  "surface/models.py",
+  "accounting/allocation_math.py",
+  "accounting/engine_run.py",
+  "parcels/services.py",
+  "templates/surface/partials/_detail_pane.html",
+]
+labels = [
+  { text = "Canal losses", where = "templates/surface/partials/_detail_pane.html" },
+  { text = "Fields' own records", where = "templates/surface/partials/_detail_pane.html" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/help/methods.html"
+heading = "Diversions with no meter"
+files = [
+  "surface/estimate.py",
+  "surface/services.py",
+  "parcels/services.py",
+  "accounting/engine_run.py",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/help/methods.html"
+heading = "Where to go next"
+files = []
+why_none = "Link cards to other Help pages with one-line descriptions of those pages; pointers are checked separately."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/help/settings_explained.html"
+heading = "(top)"
+files = []
+why_none = "Title, breadcrumb and a one-line description of the page; the comment block is not reader text."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/help/settings_explained.html"
+heading = "Methodology Settings"
+files = [
+  "accounting/management/commands/seed_calculation_plan.py",
+  "accounting/views.py",
+  "accounting/precip_math.py",
+  "accounting/steps.py",
+  "templates/accounting/partials/_methodology_steps.html",
+]
+labels = [
+  { text = "Methodology Settings", where = "templates/accounting/methodology_settings.html" },
+  { text = "Fraction", where = "templates/accounting/partials/_methodology_steps.html" },
+  { text = "Soil storage (in)", where = "templates/accounting/partials/_methodology_steps.html" },
+  { text = "Floor (AF)", where = "templates/accounting/partials/_methodology_steps.html" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/help/settings_explained.html"
+heading = "Delivery Settings"
+files = [
+  "core/forms.py",
+  "core/models.py",
+  "core/constants.py",
+  "accounting/views.py",
+  "parcels/services.py",
+  "accounting/steps.py",
+  "accounting/management/commands/run_calculations.py",
+  "accounting/recharge_policy.py",
+  "accounting/services.py",
+  "geography/views.py",
+  "accounting/management/commands/rollover_allocations.py",
+  "surface/diversion_import.py",
+  "core/identifiers.py",
+]
+labels = [
+  { text = "Delivery settings", where = "templates/accounting/delivery_settings.html" },
+  { text = "Default irrigation efficiency", where = "core/forms.py" },
+  { text = "Surface water in excess of ETAW", where = "core/forms.py" },
+  { text = "Not credited to anyone", where = "core/models.py" },
+  { text = "Shown on the field's page as its own line", where = "core/models.py" },
+  { text = "Credited to the landowner, less a share left in the basin", where = "core/models.py" },
+  { text = "Share left in the basin", where = "core/forms.py" },
+  { text = "When a zone doesn't use its full allocation by the end of the water year", where = "core/forms.py" },
+  { text = "Which months does a reporting year cover?", where = "core/forms.py" },
+  { text = "Where your record addresses are published", where = "core/forms.py" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/help/settings_explained.html"
+heading = "Server configuration"
+files = [
+  "config/settings/base.py",
+  "core/access.py",
+  "core/adapters.py",
+  "accounting/views.py",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/help/settings_explained.html"
+heading = "When a change takes effect"
+files = [
+  "accounting/management/commands/run_calculations.py",
+  "accounting/models.py",
+  "accounting/management/commands/rollover_allocations.py",
+  "accounting/services.py",
+  "surface/diversion_import.py",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/help/settings_explained.html"
+heading = "Where to go next"
+files = [
+  "templates/accounting/methodology_settings.html",
+  "templates/accounting/partials/_methodology_steps.html",
+  "templates/accounting/delivery_settings.html",
+  "core/forms.py",
+]
+labels = [
+  { text = "Methodology Settings", where = "templates/accounting/methodology_settings.html" },
+  { text = "Delivery settings", where = "templates/accounting/delivery_settings.html" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/help/budgets_allocations.html"
+heading = "(top)"
+files = []
+why_none = "Title, breadcrumb and a one-line description of the page; the comment block is not reader text."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/help/budgets_allocations.html"
+heading = "From a zone’s ceiling to an account’s allocation"
+files = ["accounting/models.py", "accounting/views.py", "core/access.py"]
+labels = [
+  { text = "Allocations", where = "core/modules.py" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/help/budgets_allocations.html"
+heading = "Worked example"
+files = ["accounting/views.py"]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/help/budgets_allocations.html"
+heading = "What counts against an allocation"
+files = [
+  "accounting/views.py",
+  "accounting/services.py",
+  "accounting/carryover_math.py",
+  "geography/views.py",
+  "templates/accounting/partials/_active_accounts_table.html",
+]
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/help/budgets_allocations.html"
+heading = "Where to go next"
+files = ["templates/accounting/allocations_list.html", "accounting/views.py"]
+labels = [
+  { text = "Allocations", where = "core/modules.py" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/help/glossary.html"
+heading = "(top)"
+files = []
+why_none = "Title, breadcrumb and a one-line description of the page; the comment block is not reader text."
+labels = []
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/help/glossary.html"
+heading = "Terms"
+files = [
+  "config/views.py",
+  "core/modules.py",
+  "accounting/models.py",
+  "accounting/views.py",
+  "accounting/steps.py",
+  "accounting/management/commands/seed_calculation_plan.py",
+  "accounting/management/commands/run_calculations.py",
+  "accounting/locks.py",
+  "parcels/services.py",
+  "parcels/models.py",
+  "core/forms.py",
+  "drinking/models.py",
+  "drinking/importer.py",
+  "drinking/views.py",
+  "drinking/envirofacts.py",
+  "templates/drinking/partials/_result_value.html",
+  "datasync/models.py",
+  "datasync/freshness.py",
+  "health/models.py",
+  "recharge/models.py",
+  "surface/models.py",
+  "wells/models.py",
+  "geography/models.py",
+]
+labels = [
+  { text = "Up to date", where = "templates/datasync/partials/_station_list_results.html" },
+  { text = "Slightly behind", where = "templates/datasync/partials/_station_list_results.html" },
+  { text = "Dormant", where = "templates/datasync/partials/_station_list_results.html" },
+  { text = "Methodology Settings", where = "templates/accounting/methodology_settings.html" },
+  { text = "Delivery settings", where = "templates/accounting/delivery_settings.html" },
+  { text = "Use Ledger", where = "core/modules.py" },
+  { text = "Water Years", where = "core/modules.py" },
+  { text = "Add a water system", where = "core/modules.py" },
+  { text = "Sampling Points", where = "core/modules.py" },
+  { text = "Monitoring Stations", where = "core/modules.py" },
+  { text = "Site Health", where = "core/modules.py" },
+]
+checked_at = "6de4a92"
+
+[[section]]
+document = "templates/help/glossary.html"
+heading = "Where to go next"
+files = []
+why_none = "Link cards to other Help pages with one-line descriptions of those pages; pointers are checked separately."
+labels = []
+checked_at = "6de4a92"
