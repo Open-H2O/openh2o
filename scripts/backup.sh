@@ -27,7 +27,13 @@
 #   OPENH2O_LOG_DIR      where the log goes (default: backups/logs in the checkout)
 #   OPENH2O_NTFY_URL     an ntfy topic URL; a failed backup posts there
 #   OPENH2O_BACKUP_KEEP  how many dumps and media files to keep (default 14)
-#   OPENH2O_IGNORE_RESTORE_MARKER=1  set by restore.sh for its own safety backup
+#   OPENH2O_IGNORE_RESTORE_MARKER=1  set by restore.sh for its own safety backup, which runs
+#                        while the marker exists and deletes no old backup (the file being
+#                        restored may be the oldest one kept)
+#
+# Run by hand in a terminal, it also prints one line saying what it wrote or why it failed.
+# On the schedule it prints nothing, so cron sends no mail; the log and the two JSON files
+# are the record there.
 #
 # Usage:  backup.sh
 set -uo pipefail
@@ -80,6 +86,7 @@ fail() {  # fail <step> <reason>
     >backups/last-backup-failure.json.tmp \
     && mv backups/last-backup-failure.json.tmp backups/last-backup-failure.json
   alert "OpenH2O backup FAILED at $step on $(hostname): $reason (see $LOG)"
+  [ -t 2 ] && echo "Backup failed at $step: $reason. Details: backups/last-backup-failure.json and $LOG" >&2
   exit 1
 }
 
@@ -125,8 +132,11 @@ prune() {  # prune <glob prefix> <suffix>
   ls -1 backups 2>/dev/null | grep -E "^$1-[0-9]{8}-[0-9]{6}$2\$" | sort -r \
     | tail -n +"$((KEEP + 1))" | while read -r old; do rm -f "backups/$old"; log "pruned $old"; done
 }
-prune openh2o '\.dump'
-prune media '\.tar\.gz'
+if [ "${OPENH2O_IGNORE_RESTORE_MARKER:-0}" != 1 ]; then
+  prune openh2o '\.dump'
+  prune media '\.tar\.gz'
+fi
 
 log "<<< backup OK: $DUMP ($table_data of $base_tables tables), $MEDIA"
+[ -t 1 ] && echo "Backup OK: backups/$DUMP ($table_data tables) and backups/$MEDIA"
 exit 0

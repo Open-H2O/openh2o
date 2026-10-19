@@ -108,6 +108,10 @@ OPENH2O_IGNORE_RESTORE_MARKER=1 bash "$OPENH2O_DIR/scripts/backup.sh" >>"$LOG" 2
 safety=$(sed -n 's/.*"dump_file": *"\([^"]*\)".*/\1/p' backups/last-backup.json 2>/dev/null)
 log "safety backup: backups/${safety:-unknown}"
 
+# Checked again: nothing may have removed the file between the start and now.
+[ -r "$dump" ] || { log "Restore stopped: $dump is no longer readable. Nothing was changed."; exit 1; }
+[ -z "$media" ] || [ -r "$media" ] || { log "Restore stopped: $media is no longer readable. Nothing was changed."; exit 1; }
+
 web_stopped=1
 docker compose stop web >>"$LOG" 2>&1 || stopped "could not stop the web container"
 

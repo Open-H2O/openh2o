@@ -143,6 +143,8 @@ setup 9; : > "$CO/.restore-in-progress"; run
 check "9 skipped while a restore runs" '[ $RC = 0 ] && [ ! -s "$S/calls.log" ] && [ "$(count "\.dump")" = 0 ] && grep -q "restore in progress, backup skipped" "$LOGS/backup.log"'
 OUT=$(cd "$CO" && PATH="$T/bin:$PATH" OPENH2O_DIR="$CO" OPENH2O_LOG_DIR="$LOGS" OPENH2O_IGNORE_RESTORE_MARKER=1 "$SH" scripts/backup.sh 2>&1); RC=$?
 check "9 restore.sh's own safety backup still runs" '[ $RC = 0 ] && [ "$(count "\.dump")" = 1 ]'
+setup 9b; old 5; OUT=$(cd "$CO" && PATH="$T/bin:$PATH" OPENH2O_DIR="$CO" OPENH2O_LOG_DIR="$LOGS" OPENH2O_BACKUP_KEEP=3 OPENH2O_IGNORE_RESTORE_MARKER=1 "$SH" scripts/backup.sh 2>&1); RC=$?
+check "9 the safety backup deletes no old backup, so the oldest can still be restored" '[ $RC = 0 ] && [ "$(count "^openh2o-.*\.dump$")" = 6 ] && [ -f "$CO/backups/openh2o-20200101-120000.dump" ]'
 
 # (10) the folder is ignored by git and by the image build. The image carries neither ignore
 # file (nor .git), and the suite runs inside the image, so there the check is on the effect:
