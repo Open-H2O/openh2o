@@ -63,7 +63,11 @@ static/img/logo-alternatives/
 CLAUDE.local.md
 
 # Nightly backups (scripts/backup.sh): database dumps and uploaded files, never committed.
-backups/
+# The folder itself ships (backups/.gitkeep) so the clone's own user owns it: on a Linux
+# server Docker creates a missing bind-mount folder owned by root, and the backup could
+# then never write there.
+backups/*
+!backups/.gitkeep
 
 # Written by scripts/restore.sh while a restore runs; the scheduled sync and backup skip while it exists.
 .restore-in-progress

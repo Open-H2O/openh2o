@@ -73,6 +73,7 @@ if ! bash "$OPENH2O_DIR/scripts/backup.sh"; then
   exit 1
 fi
 backup_file=$(sed -n 's/.*"dump_file": *"\([^"]*\)".*/\1/p' backups/last-backup.json 2>/dev/null)
+media_file=$(sed -n 's/.*"media_file": *"\([^"]*\)".*/\1/p' backups/last-backup.json 2>/dev/null)
 
 # 3. Update the code.
 old_sha=$(git rev-parse HEAD)
@@ -100,8 +101,9 @@ while [ "$i" -lt "$TRIES" ]; do
 done
 if [ "$healthy" != 1 ]; then
   docker compose logs --tail 50 web
-  echo "Upgrade failed: the web container did not become healthy. To go back, restore the backup:" >&2
-  echo "  scripts/restore.sh backups/$backup_file backups/<the media file beside it> --yes" >&2
+  echo "Upgrade failed: the web container did not become healthy. Its last 50 log lines are above." >&2
+  echo "The version before the upgrade was $old_version ($old_sha)." >&2
+  echo "The backup taken before anything changed: backups/$backup_file and backups/$media_file" >&2
   exit 1
 fi
 

@@ -136,7 +136,7 @@ check "5 a changed Caddyfile restarts caddy after the build" '[ $RC = 0 ] && cal
 # (6) a health timeout exits non-zero, shows the log and names the backup.
 setup 9; : > "$S/unhealthy"; run
 check "6 a health timeout exits 1" '[ $RC = 1 ] && says "did not become healthy"'
-check "6 it shows the web log and names the backup to restore from" 'says "web log line" && says "scripts/restore.sh backups/openh2o-SAFETY.dump"'
+check "6 it shows the web log and names the old version and the backup" 'says "web log line" && says "before the upgrade was v2.17-273-g1111111" && says "backups/openh2o-SAFETY.dump"'
 check "6 it does not go on to the health checks" 'not_called run_health_checks'
 
 # (7) run_health_checks failing is an error too.
