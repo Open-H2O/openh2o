@@ -12,7 +12,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Allocations &amp; Ceilings</span>
   </nav>
-  <p class="page-description">This page explains how OpenH2O calculates each account&rsquo;s groundwater allocation from its zone&rsquo;s ceiling, and what is charged against it.</p>
+  <p class="page-description">This page explains how OpenH2O divides a zone&rsquo;s groundwater ceiling among its accounts and what counts against each account&rsquo;s allocation.</p>
 </div>
 {% endblock %}
 
@@ -52,23 +52,19 @@
         <tbody>
           <tr>
             <td class="col-name">Ceilings</td>
-            <td>An administrator or operator enters each allocation ceiling on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{% url 'accounting:allocations_list' %}">Allocations</a>{% else %}Allocations{% endif %}, for one zone, one water type and one water year.</td>
+            <td>Each allocation ceiling covers one zone, one water type and one water year. An administrator or operator enters it on the {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{% url 'accounting:allocations_list' %}">Allocations</a>{% else %}Allocations{% endif %} screen.</td>
           </tr>
           <tr>
             <td class="col-name">An account&rsquo;s share</td>
-            <td>OpenH2O shares a zone&rsquo;s groundwater ceiling equally among the zone&rsquo;s use areas. An account&rsquo;s allocation in the zone is the ceiling times the number of the account&rsquo;s use areas in the zone, divided by the number of use areas in the zone.</td>
+            <td>OpenH2O divides a zone&rsquo;s groundwater ceiling equally among the zone&rsquo;s use areas, and each account receives one share for every use area it holds there.</td>
           </tr>
           <tr>
             <td class="col-name">Why use areas are counted</td>
-            <td>OpenH2O counts use areas because acreage may be missing from parcel records.</td>
+            <td>OpenH2O counts use areas because parcel records do not always include acreage. A small use area and a large one therefore receive the same share.</td>
           </tr>
           <tr>
             <td class="col-name">More than one zone</td>
             <td>An account with use areas in several zones receives the sum of its shares from each zone.</td>
-          </tr>
-          <tr>
-            <td class="col-name">Surface water ceilings</td>
-            <td>OpenH2O leaves a surface water ceiling undivided. On the zone&rsquo;s page, OpenH2O compares it with the deliveries recorded on the zone&rsquo;s use areas for the water year.</td>
           </tr>
         </tbody>
       </table>
@@ -82,7 +78,7 @@
         <thead>
           <tr>
             <th>Figure</th>
-            <th>In the example</th>
+            <th>Value</th>
           </tr>
         </thead>
         <tbody>
@@ -92,7 +88,7 @@
           </tr>
           <tr>
             <td class="col-name">Use areas in the zone</td>
-            <td class="col-figure">600</td>
+            <td class="col-figure">500</td>
           </tr>
           <tr>
             <td class="col-name">The account&rsquo;s use areas in the zone</td>
@@ -100,7 +96,7 @@
           </tr>
           <tr>
             <td class="col-name">The account&rsquo;s groundwater allocation</td>
-            <td class="col-figure">12,000 &times; 30 / 600 = 600 acre-feet</td>
+            <td class="col-figure">12,000 &times; 30 / 500 = 720 acre-feet</td>
           </tr>
         </tbody>
       </table>
@@ -108,7 +104,7 @@
   </div>
 
   <div class="card-raised">
-    <h2 class="section-header">What is charged against an allocation</h2>
+    <h2 class="section-header">What counts against an allocation</h2>
     <div class="table-scroll">
       <table class="data-table help-cases-table">
         <thead>
@@ -120,11 +116,11 @@
         <tbody>
           {% if 'wells' in enabled_modules %}<tr>
             <td class="col-name">Groundwater extraction</td>
-            <td>OpenH2O charges a groundwater allocation with groundwater extraction: the meter reading where a well has a meter, and OpenH2O&rsquo;s estimate where it has none.</td>
+            <td>Groundwater extracted on an account&rsquo;s use areas counts against its allocation. OpenH2O uses the meter reading for a well with a meter and its own estimate for a well without one.</td>
           </tr>{% endif %}
           <tr>
             <td class="col-name">Surface water deliveries</td>
-            <td>OpenH2O counts surface water deliveries only against a surface water ceiling.</td>
+            <td>OpenH2O counts surface water deliveries only against the zone&rsquo;s surface water ceiling, which it leaves undivided. OpenH2O shows the ceiling and the deliveries side by side on the zone&rsquo;s page.</td>
           </tr>
           {% if 'wells' in enabled_modules %}<tr>
             <td class="col-name">Remaining allocation</td>
@@ -132,7 +128,7 @@
           </tr>{% endif %}
           <tr>
             <td class="col-name">Carry-over</td>
-            <td>OpenH2O adds the carry-over from the previous water year to a zone&rsquo;s remaining groundwater allocation, but not to an account&rsquo;s.</td>
+            <td>OpenH2O adds the carry-over from the previous water year to a zone&rsquo;s remaining groundwater allocation only. The accounts&rsquo; remaining allocations therefore do not add up to the zone&rsquo;s.</td>
           </tr>
           <tr>
             <td class="col-name">A zone with no ceiling</td>
