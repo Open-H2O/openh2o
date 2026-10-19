@@ -148,16 +148,18 @@ fi
 
 rm -f .restore-in-progress
 
-log "running the health checks"
-health_out=$(docker compose exec -T web python manage.py run_health_checks 2>&1)
-health_rc=$?
-printf '%s\n' "$health_out" | tee -a "$LOG"
-
+# Counted before the health checks, which write rows of their own, so these numbers are the
+# restored backup's and can be compared with it table by table.
 log "row counts, table by table"
 docker compose exec -T db sh -c 'psql -At -F " " -U "$POSTGRES_USER" -d "$POSTGRES_DB"' <<'SQL' 2>&1 | tee -a "$LOG"
 select table_name, (xpath('/row/c/text()', query_to_xml(format('select count(*) as c from %I.%I', table_schema, table_name), false, true, '')))[1]::text
 from information_schema.tables where table_schema = 'public' and table_type = 'BASE TABLE' order by 1;
 SQL
+
+log "running the health checks"
+health_out=$(docker compose exec -T web python manage.py run_health_checks 2>&1)
+health_rc=$?
+printf '%s\n' "$health_out" | tee -a "$LOG"
 
 if [ "$health_rc" != 0 ]; then
   log "Restore finished, but run_health_checks reported a problem (exit $health_rc). Read its output above."

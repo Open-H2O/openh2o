@@ -98,12 +98,13 @@ check "5 the safety backup runs first, with the marker bypass" 'grep -qF "marker
 check "5 order: backup, stop web, recreate db, pg_restore, media, start web, health" '
   a=$(at "backup.sh"); b=$(at "compose stop web"); c=$(at "dropdb"); d=$(at "pg_restore"); e=$(at "compose run"); f=$(at "compose start web"); g=$(at "run_health_checks")
   [ "$a" -gt 0 ] && [ "$a" -lt "$b" ] && [ "$b" -lt "$c" ] && [ "$c" -lt "$d" ] && [ "$d" -lt "$e" ] && [ "$e" -lt "$f" ] && [ "$f" -lt "$g" ]'
-check "5 the marker existed during every step up to the health checks, and is gone for them" 'g=$(at run_health_checks); ! head -n $((g - 1)) "$S/calls.log" | grep -qF "marker=0" && sed -n "${g}p" "$S/calls.log" | grep -qF "marker=0"'
+check "5 the marker existed during every step up to the row counts, and is gone from them on" 'g=$(at "psql -At -F"); ! head -n $((g - 1)) "$S/calls.log" | grep -qF "marker=0" && sed -n "${g}p" "$S/calls.log" | grep -qF "marker=0"'
 check "5 the database is recreated from template0 through the postgres database, with the container user and name" 'grep -F dropdb "$S/calls.log" | grep -qF -- "-d postgres" && grep -F createdb "$S/calls.log" | grep -qF -- "-T template0" && grep -F createdb "$S/calls.log" | grep -qF "\$POSTGRES_USER" && grep -F createdb "$S/calls.log" | grep -qF "\$POSTGRES_DB"'
 check "5 pg_restore uses --no-owner --exit-on-error" 'grep -F "pg_restore" "$S/calls.log" | grep -qF -- "--no-owner --exit-on-error"'
 check "5 the media unpack is a one-off with no dependencies and the sh entrypoint" 'grep -F "compose run" "$S/calls.log" | grep -qF -- "--rm --no-deps -T --entrypoint sh web"'
 check "5 run_health_checks runs in the web container" 'grep -F run_health_checks "$S/calls.log" | grep -qF "compose exec -T web python manage.py run_health_checks"'
 check "5 the row counts are printed" 'says "core_user 3"'
+check "5 the counts come before the health checks, which write rows of their own" '[ "$(at "psql -At -F")" -lt "$(at run_health_checks)" ]'
 check "5 no hard-coded database user or name in the script" '! grep -qE "(-U|-d) openh2o" "$REPO/scripts/restore.sh"'
 
 # (6) no media file: no one-off run.
