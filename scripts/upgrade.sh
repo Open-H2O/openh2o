@@ -18,9 +18,8 @@
 #   4. The new version is `git describe --tags --always`, worked out AFTER step 3 (the Makefile's
 #      own APP_VERSION is fixed when make starts, before the update). No --dirty: a site whose
 #      Caddyfile names its own domain is not running a different version. Then
-#      APP_VERSION=<new> docker compose up -d --build for the whole stack, and
-#      `docker compose restart caddy` when the Caddyfile differs between the old and new commit
-#      (up --build does not reload it).
+#      APP_VERSION=<new> docker compose up -d --build for the whole stack, then
+#      `docker compose restart caddy` every time (up --build does not reload the Caddyfile).
 #   5. Waits for the web container to report healthy (bounded). On timeout it prints the last 50
 #      log lines, names the backup to restore from, and exits 1.
 #   6. run_health_checks, then prints the old version, the new version and the backup file name.
@@ -80,15 +79,16 @@ old_sha=$(git rev-parse HEAD)
 old_version=$(git describe --tags --always)
 git merge --ff-only '@{upstream}' \
   || { echo "Upgrade stopped: this branch cannot fast-forward to the update (it has commits of its own). Nothing was rebuilt. The backup is backups/$backup_file." >&2; exit 1; }
-new_sha=$(git rev-parse HEAD)
 
 # 4. Rebuild the whole stack stamped with the new version.
 new_version=$(git describe --tags --always)
 APP_VERSION="$new_version" docker compose up -d --build \
   || { echo "Upgrade stopped: docker compose up --build failed. The backup is backups/$backup_file." >&2; exit 1; }
-if ! git diff --quiet "$old_sha" "$new_sha" -- Caddyfile; then
-  docker compose restart caddy
-fi
+# Caddy reads the Caddyfile only when it starts, and `up -d --build` leaves it running. Restart
+# it every time rather than only when the Caddyfile changed between old_sha and new_sha: on a
+# site that ran `git pull` by hand first (an older site's one-time path to this command),
+# both are the same commit and a changed Caddyfile would go unread.
+docker compose restart caddy
 
 # 5. Wait for the website to be healthy.
 healthy=0 i=0

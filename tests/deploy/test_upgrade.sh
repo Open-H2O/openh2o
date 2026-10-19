@@ -102,7 +102,7 @@ check "1 order: fetch, backup, merge, build, health checks" '
 check "1 the merge is a fast-forward only, to the fetched upstream" 'called "git merge --ff-only @{upstream}"'
 check "1 up -d --build gets APP_VERSION set to the NEW describe (computed after the merge)" 'called "docker compose up -d --build APP_VERSION=$NEW_V"'
 check "1 the describe has no --dirty" '! grep -qF -- "--dirty" "$S/calls.log" && ! grep -v "^ *#" "$REPO/scripts/upgrade.sh" | grep -q "describe.*--dirty"'
-check "1 caddy is not restarted when the Caddyfile is unchanged" 'not_called "restart caddy"'
+check "1 caddy is restarted after the build even when this update leaves the Caddyfile alone" 'called "docker compose restart caddy" && [ "$(at "up -d --build")" -lt "$(at "restart caddy")" ]'
 check "1 it prints old version, new version and the backup file" 'says "Old version: $OLD_V" && says "New version: $NEW_V" && says "backups/openh2o-SAFETY.dump"'
 
 # (2) a failed backup stops before the merge and the build.
@@ -129,7 +129,7 @@ check "3b it never discards anything (no checkout, reset or stash)" 'not_called 
 setup 7; : > "$S/ff_fail"; run
 check "4 a non-fast-forward exits 1, after the backup, before any build" '[ $RC = 1 ] && called backup.sh && called "git merge" && not_called "docker" && says "cannot fast-forward"'
 
-# (5) caddy restarts only when the Caddyfile changed.
+# (5) caddy restarts when the Caddyfile changed (as it does every time; see case 1).
 setup 8; : > "$S/caddy_changed"; run
 check "5 a changed Caddyfile restarts caddy after the build" '[ $RC = 0 ] && called "docker compose restart caddy" && [ "$(at "up -d --build")" -lt "$(at "restart caddy")" ]'
 
