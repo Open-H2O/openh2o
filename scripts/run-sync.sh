@@ -38,6 +38,13 @@ cd "$OPENH2O_DIR" 2>/dev/null || {
   exit 1
 }
 
+# A restore (scripts/restore.sh) is replacing the database. The `up -d` below would start the
+# website in the middle of it, so stand aside until the marker is gone.
+if [ -f .restore-in-progress ]; then
+  echo "$(ts) restore in progress, sync skipped" >>"$LOG"
+  exit 0
+fi
+
 # Guarantee the container is up. `up -d` without --build is near-instant when
 # everything is already running, and revives it if a reboot left it stopped.
 docker compose up -d >>"$LOG" 2>&1 || {
