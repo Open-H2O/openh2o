@@ -11,16 +11,20 @@ logged against the dashboard.
 """
 
 import json
+from datetime import timedelta
 from decimal import Decimal
 
 import pytest
 from django.test import override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 from core import modules as mod
 from tests.factories import ParcelLedgerFactory
 from tests.test_module_prose import compose_urlconf_under_the_full_module_set
 from health.checks import (
+    _when,
+    check_backup,
     check_database,
     check_disk,
     check_docker,
@@ -286,6 +290,7 @@ EXPECTED_CATEGORIES = {
     "ssl",
     "docker",
     "migrations",
+    "backup",
 }
 
 
@@ -317,6 +322,152 @@ class TestRunAllChecks:
         results = run_all_checks()
         actual_categories = {r["category"] for r in results}
         assert actual_categories == EXPECTED_CATEGORIES
+
+
+class TestCheckBackup:
+    """The Backup card reads the files scripts/backup.sh leaves in
+    OPENH2O_BACKUP_STATUS_DIR (151-02). One test per state; each pins the
+    status and the key facts, never a whole sentence."""
+
+    @staticmethod
+    def _success(folder, ago, **over):
+        finished = timezone.now() - ago
+        record = {
+            "finished_at": finished.isoformat(),
+            "dump_file": "openh2o-20261019-082230.dump",
+            "dump_bytes": 8801097,
+            "table_data_entries": 140,
+            "base_tables": 140,
+            "media_file": "media-20261019-082230.tar.gz",
+            "media_bytes": 43745,
+        }
+        record.update(over)
+        (folder / "last-backup.json").write_text(json.dumps(record))
+        return finished
+
+    @staticmethod
+    def _failure(folder, ago, step="dump", reason="pg_dump failed"):
+        failed = timezone.now() - ago
+        (folder / "last-backup-failure.json").write_text(
+            json.dumps({"failed_at": failed.isoformat(), "step": step, "reason": reason})
+        )
+        return failed
+
+    def test_missing_folder_is_yellow(self, tmp_path):
+        with override_settings(OPENH2O_BACKUP_STATUS_DIR=str(tmp_path / "nope")):
+            r = check_backup()
+        assert r["category"] == "backup"
+        assert r["status"] == "yellow"
+        assert "backups folder" in r["message"]
+        assert "operator guide" in r["message"]
+
+    def test_empty_folder_is_yellow_no_backup_yet(self, tmp_path):
+        with override_settings(OPENH2O_BACKUP_STATUS_DIR=str(tmp_path)):
+            r = check_backup()
+        assert r["status"] == "yellow"
+        assert "no record of a backup" in r["message"]
+
+    def test_recent_success_is_green_with_when_size_and_read_back(self, tmp_path):
+        finished = self._success(tmp_path, timedelta(hours=5))
+        with override_settings(OPENH2O_BACKUP_STATUS_DIR=str(tmp_path)):
+            r = check_backup()
+        assert r["status"] == "green"
+        assert _when(finished) in r["message"]
+        assert "8.8 MB" in r["message"]
+        assert "all 140 of the database's tables" in r["message"]
+        assert r["details"]["dump_bytes"] == 8801097
+        assert r["details"]["table_data_entries"] == 140
+        assert r["details"]["base_tables"] == 140
+        assert r["details"]["finished_at"] == finished.isoformat()
+        assert 4.9 < r["details"]["age_hours"] < 5.1
+
+    def test_success_just_under_36_hours_is_green(self, tmp_path):
+        self._success(tmp_path, timedelta(hours=35))
+        with override_settings(OPENH2O_BACKUP_STATUS_DIR=str(tmp_path)):
+            assert check_backup()["status"] == "green"
+
+    def test_old_success_is_yellow_and_says_when(self, tmp_path):
+        finished = self._success(tmp_path, timedelta(hours=37))
+        with override_settings(OPENH2O_BACKUP_STATUS_DIR=str(tmp_path)):
+            r = check_backup()
+        assert r["status"] == "yellow"
+        assert _when(finished) in r["message"]
+        assert r["details"]["age_hours"] > 36
+
+    def test_success_that_listed_fewer_tables_is_yellow(self, tmp_path):
+        self._success(tmp_path, timedelta(hours=2), table_data_entries=120)
+        with override_settings(OPENH2O_BACKUP_STATUS_DIR=str(tmp_path)):
+            r = check_backup()
+        assert r["status"] == "yellow"
+        assert "missing 20 of the database's 140 tables" in r["message"]
+        assert r["details"]["table_data_entries"] == 120
+        assert r["details"]["base_tables"] == 140
+
+    def test_failure_newer_than_success_is_red_with_step(self, tmp_path):
+        self._success(tmp_path, timedelta(hours=30))
+        failed = self._failure(tmp_path, timedelta(hours=6), step="media", reason="tar failed")
+        with override_settings(OPENH2O_BACKUP_STATUS_DIR=str(tmp_path)):
+            r = check_backup()
+        assert r["status"] == "red"
+        assert "copying the uploaded files" in r["message"]
+        assert _when(failed) in r["message"]
+        assert r["details"]["reason"] == "tar failed"
+        assert r["details"]["step"] == "media"
+        assert r["details"]["failed_at"] == failed.isoformat()
+
+    def test_failure_with_no_success_is_red(self, tmp_path):
+        self._failure(tmp_path, timedelta(hours=1), step="dump")
+        with override_settings(OPENH2O_BACKUP_STATUS_DIR=str(tmp_path)):
+            r = check_backup()
+        assert r["status"] == "red"
+        assert "copying the database" in r["message"]
+
+    def test_failure_older_than_success_is_ignored(self, tmp_path):
+        self._failure(tmp_path, timedelta(hours=20))
+        self._success(tmp_path, timedelta(hours=2))
+        with override_settings(OPENH2O_BACKUP_STATUS_DIR=str(tmp_path)):
+            assert check_backup()["status"] == "green"
+
+    @pytest.mark.parametrize(
+        "content",
+        [
+            "{not json",
+            "[]",
+            json.dumps({"dump_bytes": 5}),
+            json.dumps({"finished_at": "last Tuesday", "dump_bytes": 5,
+                        "table_data_entries": 1, "base_tables": 1}),
+            json.dumps({"finished_at": "2026-10-19T08:22:32-07:00", "dump_bytes": "big",
+                        "table_data_entries": 1, "base_tables": 1}),
+        ],
+    )
+    def test_malformed_success_record_is_yellow_not_a_crash(self, tmp_path, content):
+        (tmp_path / "last-backup.json").write_text(content)
+        with override_settings(OPENH2O_BACKUP_STATUS_DIR=str(tmp_path)):
+            r = check_backup()
+        assert r["status"] == "yellow"
+        assert "cannot read the record" in r["message"]
+
+    def test_malformed_failure_record_is_yellow_not_a_crash(self, tmp_path):
+        self._success(tmp_path, timedelta(hours=1))
+        (tmp_path / "last-backup-failure.json").write_text(json.dumps({"step": "dump"}))
+        with override_settings(OPENH2O_BACKUP_STATUS_DIR=str(tmp_path)):
+            r = check_backup()
+        assert r["status"] == "yellow"
+        assert "cannot read the record" in r["message"]
+
+    def test_a_directory_where_the_file_should_be_is_yellow(self, tmp_path):
+        (tmp_path / "last-backup.json").mkdir()
+        with override_settings(OPENH2O_BACKUP_STATUS_DIR=str(tmp_path)):
+            r = check_backup()
+        assert r["status"] == "yellow"
+        assert "cannot read the record" in r["message"]
+
+    def test_the_check_is_in_the_roster_and_runs_by_category(self):
+        assert "backup" in [r["category"] for r in run_all_checks()]
+        assert "backup" in dict(HealthCheckResult.CATEGORY_CHOICES)
+        from health.views import HOST_LEVEL_CATEGORIES
+
+        assert "backup" in HOST_LEVEL_CATEGORIES
 
 
 class TestHealthDemoMode:
@@ -505,13 +656,13 @@ class TestSkippedChecksDoNotRaiseTheScore:
     @pytest.mark.django_db
     def test_reduced_deployment_counts_only_applicable_checks(self, client, operator):
         # The shape a nine-module drinking-water deployment actually produces:
-        # 4 green + 1 yellow applicable, 9 module-gated checks skipped.
-        _persist(["green"] * 4 + ["yellow"] + ["skipped"] * 9)
+        # 4 green + 1 yellow applicable, 10 module-gated checks skipped.
+        _persist(["green"] * 4 + ["yellow"] + ["skipped"] * 10)
         ctx = client.get(reverse("health:dashboard")).context
 
-        assert ctx["total"] == 14
+        assert ctx["total"] == 15
         assert ctx["applicable"] == 5
-        assert ctx["skipped"] == 9
+        assert ctx["skipped"] == 10
         assert ctx["green_count"] == 4
 
     @pytest.mark.django_db
@@ -524,13 +675,13 @@ class TestSkippedChecksDoNotRaiseTheScore:
         went UP as the platform went away. The denominator must be `applicable`,
         so the reduced fraction can only be lower.
         """
-        _persist(["green"] * 12 + ["yellow"] * 2)
+        _persist(["green"] * 13 + ["yellow"] * 2)
         full = client.get(reverse("health:dashboard")).context
         full_fraction = full["green_count"] / full["applicable"]
-        assert (full["green_count"], full["applicable"]) == (12, 14)
+        assert (full["green_count"], full["applicable"]) == (13, 15)
 
         HealthCheckResult.objects.all().delete()
-        _persist(["green"] * 4 + ["yellow"] + ["skipped"] * 9)
+        _persist(["green"] * 4 + ["yellow"] + ["skipped"] * 10)
         reduced = client.get(reverse("health:dashboard")).context
         reduced_fraction = reduced["green_count"] / reduced["applicable"]
         assert (reduced["green_count"], reduced["applicable"]) == (4, 5)
@@ -547,7 +698,7 @@ class TestSkippedChecksDoNotRaiseTheScore:
     def test_lone_yellow_still_degrades_a_mostly_skipped_deployment(
         self, client, operator
     ):
-        _persist(["green"] * 4 + ["yellow"] + ["skipped"] * 9)
+        _persist(["green"] * 4 + ["yellow"] + ["skipped"] * 10)
         assert client.get(reverse("health:dashboard")).context["overall_status"] == (
             "degraded"
         )
@@ -555,7 +706,7 @@ class TestSkippedChecksDoNotRaiseTheScore:
     @pytest.mark.django_db
     def test_skipped_rows_alongside_green_roll_up_healthy(self, client, operator):
         """Skipped checks do not block a healthy verdict — they simply do not vote."""
-        _persist(["green"] * 5 + ["skipped"] * 9)
+        _persist(["green"] * 5 + ["skipped"] * 10)
         assert client.get(reverse("health:dashboard")).context["overall_status"] == (
             "healthy"
         )
@@ -568,7 +719,7 @@ class TestSkippedChecksDoNotRaiseTheScore:
         module-gated — but the empty case has to be defined rather than falling
         through to "healthy".
         """
-        _persist(["skipped"] * 14)
+        _persist(["skipped"] * 15)
         assert client.get(reverse("health:dashboard")).context["overall_status"] == (
             "unknown"
         )
@@ -580,7 +731,7 @@ class TestHealthApiRollupExcludesSkipped:
 
     @pytest.mark.django_db
     def test_reduced_set_returns_degraded_200(self, client, operator):
-        _persist(["green"] * 4 + ["yellow"] + ["skipped"] * 9)
+        _persist(["green"] * 4 + ["yellow"] + ["skipped"] * 10)
         resp = client.get(reverse("health:api"))
         assert resp.status_code == 200
         assert json.loads(resp.content)["status"] == "degraded"
@@ -589,23 +740,23 @@ class TestHealthApiRollupExcludesSkipped:
     def test_skipped_rows_are_still_listed_for_authenticated_callers(
         self, client, operator
     ):
-        _persist(["green"] * 4 + ["yellow"] + ["skipped"] * 9)
+        _persist(["green"] * 4 + ["yellow"] + ["skipped"] * 10)
         checks = json.loads(client.get(reverse("health:api")).content)["checks"]
-        assert len(checks) == 14
-        assert sum(1 for c in checks if c["status"] == "skipped") == 9
+        assert len(checks) == 15
+        assert sum(1 for c in checks if c["status"] == "skipped") == 10
 
     @pytest.mark.django_db
     def test_green_plus_skipped_is_neither_degraded_nor_unhealthy(
         self, client, operator
     ):
-        _persist(["green"] * 5 + ["skipped"] * 9)
+        _persist(["green"] * 5 + ["skipped"] * 10)
         resp = client.get(reverse("health:api"))
         assert resp.status_code == 200
         assert json.loads(resp.content)["status"] == "healthy"
 
     @pytest.mark.django_db
     def test_all_skipped_is_unknown(self, client, operator):
-        _persist(["skipped"] * 14)
+        _persist(["skipped"] * 15)
         resp = client.get(reverse("health:api"))
         assert resp.status_code == 200
         assert json.loads(resp.content)["status"] == "unknown"
@@ -616,7 +767,7 @@ class TestCategoryCountIsRegistryDerived:
 
     @pytest.mark.django_db
     def test_total_equals_the_category_registry(self, client, operator):
-        _persist(["green"] * 14)
+        _persist(["green"] * 15)
         ctx = client.get(reverse("health:dashboard")).context
         assert ctx["total"] == len(HealthCheckResult.CATEGORY_CHOICES)
         assert ctx["total"] == len(EXPECTED_CATEGORIES)
@@ -632,11 +783,11 @@ class TestCategoryCountIsRegistryDerived:
         its own denominator — now live in the "This run" card and the panel,
         so this test follows them there instead of asserting stale text.
         """
-        _persist(["green"] * 4 + ["yellow"] + ["skipped"] * 9)
+        _persist(["green"] * 4 + ["yellow"] + ["skipped"] * 10)
         html = client.get(reverse("health:dashboard")).content.decode()
-        assert "of OpenH2O's 14 checks on this site's records and server." in html
+        assert "of OpenH2O's 15 checks on this site's records and server." in html
         assert "8 categories" not in html
-        assert "14: 5 applicable, 9 not applicable" in html
+        assert "15: 5 applicable, 10 not applicable" in html
         assert "of 5 checks that apply" in html
         assert '<div class="budget-seg-value">4</div>' in html
 
@@ -733,14 +884,14 @@ class TestCliSummaryDenominator:
 
         fake = [
             {"category": c, "status": s, "message": f"{c}", "details": {}}
-            for c, s in zip(ALL_CATEGORIES, ["green"] * 4 + ["yellow"] + ["skipped"] * 9)
+            for c, s in zip(ALL_CATEGORIES, ["green"] * 4 + ["yellow"] + ["skipped"] * 10)
         ]
         monkeypatch.setattr(cmd, "run_all_checks", lambda: fake)
         out = StringIO()
         call_command("run_health_checks", stdout=out)
         printed = out.getvalue()
 
-        assert "Summary: 4/5 healthy (5 applicable of 14, 9 skipped)" in printed
+        assert "Summary: 4/5 healthy (5 applicable of 15, 10 skipped)" in printed
         assert "12/13" not in printed
 
     @pytest.mark.django_db
@@ -751,14 +902,14 @@ class TestCliSummaryDenominator:
 
         fake = [
             {"category": c, "status": s, "message": f"{c}", "details": {}}
-            for c, s in zip(ALL_CATEGORIES, ["green"] * 12 + ["yellow"] * 2)
+            for c, s in zip(ALL_CATEGORIES, ["green"] * 13 + ["yellow"] * 2)
         ]
         monkeypatch.setattr(cmd, "run_all_checks", lambda: fake)
         out = StringIO()
         call_command("run_health_checks", stdout=out)
         printed = out.getvalue()
 
-        assert "Summary: 12/14 healthy (14 applicable of 14)" in printed
+        assert "Summary: 13/15 healthy (15 applicable of 15)" in printed
         assert "skipped" not in printed
 
     @pytest.mark.django_db
@@ -771,7 +922,7 @@ class TestCliSummaryDenominator:
 
         fake = [
             {"category": c, "status": s, "message": f"{c}", "details": {}}
-            for c, s in zip(ALL_CATEGORIES, ["green"] * 13 + ["skipped"])
+            for c, s in zip(ALL_CATEGORIES, ["green"] * 14 + ["skipped"])
         ]
         monkeypatch.setattr(cmd, "run_all_checks", lambda: fake)
         out = StringIO()

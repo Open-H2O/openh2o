@@ -145,6 +145,62 @@ class TestStates:
         assert req.status == "running"
 
 
+class TestStoppedSchedule:
+    """151-02: a site with an open water year whose newest finished calculation
+    is 48 hours old or older is yellow; a failed run stays red."""
+
+    def test_open_period_and_last_run_47_hours_ago_is_green(self):
+        p = _period()
+        _request("succeeded", period=p, months=["2026-01"],
+                 finished_ago=dt.timedelta(hours=47))
+        assert check_calculation()["status"] == "green"
+
+    def test_open_period_and_last_run_49_hours_ago_is_yellow(self):
+        p = _period()
+        req = _request("succeeded", period=p, months=["2026-01"],
+                       finished_ago=dt.timedelta(hours=49))
+        r = check_calculation()
+        assert r["status"] == "yellow"
+        assert _stamp(req) in r["message"]
+        assert "WY 2026 is still open" in r["message"]
+        assert 48 < r["details"]["age_hours"] < 50
+        assert r["details"]["request_id"] == req.pk
+
+    def test_a_run_in_progress_is_not_a_stopped_schedule(self):
+        # The clean reader's point (151-02): a calculation still running is not
+        # one that stopped, however old the last finished run.
+        p = _period()
+        _request("succeeded", period=p, months=["2026-01"],
+                 finished_ago=dt.timedelta(days=5))
+        _request("running", period=p, started_ago=dt.timedelta(minutes=20))
+        assert check_calculation()["status"] == "green"
+
+    def test_all_periods_finalized_and_last_run_30_days_ago_is_green(self):
+        p = _period()
+        ReportingPeriod.objects.filter(pk=p.pk).update(is_finalized=True)
+        _request("succeeded", period=p, months=["2026-01"],
+                 finished_ago=dt.timedelta(days=30))
+        assert check_calculation()["status"] == "green"
+
+    def test_failed_run_3_days_ago_stays_red(self):
+        p = _period()
+        _request("failed", period=p, finished_ago=dt.timedelta(days=3),
+                 outcome="The calculation stopped at March 2026.")
+        r = check_calculation()
+        assert r["status"] == "red"
+        assert r["message"] == "The calculation stopped at March 2026."
+
+    def test_any_trigger_counts_as_the_newest_run(self):
+        # A manual run 1 hour ago keeps the card green even though the
+        # scheduled one is old: the newest finished request decides.
+        p = _period()
+        _request("succeeded", period=p, months=["2026-01"],
+                 finished_ago=dt.timedelta(days=5))
+        _request("succeeded", period=p, months=["2026-01"],
+                 finished_ago=dt.timedelta(hours=1))
+        assert check_calculation()["status"] == "green"
+
+
 class TestModuleOff:
     def test_skipped_and_excluded_from_counts(self, settings, client, django_user_model):
         # parcels and accounting are an inseparable pair, and switching the

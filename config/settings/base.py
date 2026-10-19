@@ -364,6 +364,13 @@ ACCOUNT_EMAIL_VERIFICATION = resolve_email_verification(
 _google_client_id = env("GOOGLE_OAUTH_CLIENT_ID", default="")
 _google_client_secret = env("GOOGLE_OAUTH_CLIENT_SECRET", default="")
 
+# -- Backup status -----------------------------------------------------------
+# The folder holding last-backup.json and last-backup-failure.json, written by
+# scripts/backup.sh. The Backup card on Site health reads these files (never a
+# database row, which a restore would roll back). docker-compose.yml mounts the
+# checkout's backups/ folder here, read-only.
+OPENH2O_BACKUP_STATUS_DIR = os.environ.get("OPENH2O_BACKUP_STATUS_DIR", "/backups")
+
 # -- Datasync ----------------------------------------------------------------
 
 DATASYNC_MOCK_MODE = env.bool("DATASYNC_MOCK_MODE", default=False)

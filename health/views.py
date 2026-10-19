@@ -77,9 +77,9 @@ WHERE_TO_LOOK = {
     ),
 }
 
-# The six categories with no record page in the platform (database, disk,
-# ssl, docker, migrations, cache_duplication all measure the host, not a
-# module's data). A yellow or red row in one of these carries no `where` and
+# The seven categories with no record page in the platform (database, disk,
+# ssl, docker, migrations, cache_duplication and backup all measure the host,
+# not a module's data). A yellow or red row in one of these carries no `where` and
 # instead tells the reader the fix is on the host, not in the platform.
 HOST_LEVEL_CATEGORIES = {
     "database",
@@ -88,6 +88,7 @@ HOST_LEVEL_CATEGORIES = {
     "docker",
     "migrations",
     "cache_duplication",
+    "backup",
 }
 
 _OVERALL_WORDS = {

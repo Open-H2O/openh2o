@@ -5,7 +5,7 @@ System self-check records.
 Defines HealthCheckResult: one timestamped row per subsystem check (database,
 disk, sync freshness, ledger integrity, orphans, cache duplication, POD
 fractions, unallocated delivery, period alignment, ET/meter agreement, SSL,
-Docker, migrations) with a green/yellow/red/skipped status, a message, and JSON
+Docker, migrations, calculation, backup) with a green/yellow/red/skipped status, a message, and JSON
 details. The health dashboard reads the latest row per category to report
 overall system status.
 
@@ -39,6 +39,7 @@ class HealthCheckResult(models.Model):
         ("docker", "Database name"),
         ("migrations", "Migrations"),
         ("calculation", "Calculation"),
+        ("backup", "Backup"),
     ]
     STATUS_CHOICES = [
         ("green", "Green"),

@@ -1149,6 +1149,7 @@ Two terms in the tables need explaining:
 | `GEE_PROJECT`, `GEE_SERVICE_ACCOUNT_EMAIL`, `GEE_SERVICE_ACCOUNT_KEY_FILE` | With `OPENET_MODE=gee` | empty | The Google Earth Engine project, its service account and the path to the account's key file. The compose file makes the `secrets/` folder readable inside the container at `/run/secrets` |
 | `DATASYNC_MOCK_MODE` | No | `False` | Use sample data in place of the live public services |
 | `HEALTH_DEMO_MODE` | No | `False` | Reports the data freshness check and the zero-amount ledger check as passing, on a demonstration site whose database is restored from a stored copy every night. Leave it off on a site that keeps real records |
+| `OPENH2O_BACKUP_STATUS_DIR` | No | `/backups` | The folder where OpenH2O reads the record of the last backup for Site health's Backup card. With Docker, leave it unset: the compose file mounts the checkout's `backups` folder at `/backups` |
 
 ### Sign-in with Google, feedback and visitor statistics
 

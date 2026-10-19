@@ -10,9 +10,11 @@ certificate expiry, the expected database, and pending migrations;
 ``run_all_checks`` runs them all in order.
 """
 import ipaddress
+import json
 import shutil
 import ssl
 import socket
+from pathlib import Path
 from decimal import Decimal
 from io import StringIO
 from datetime import datetime, timedelta
@@ -1143,7 +1145,7 @@ def check_calculation():
     if not is_enabled("accounting"):
         return not_applicable("calculation", "accounting", "the calculation")
 
-    from accounting.models import CalculationRequest
+    from accounting.models import CalculationRequest, ReportingPeriod
 
     now = timezone.now()
 
@@ -1223,6 +1225,40 @@ def check_calculation():
             "details": {},
         }
 
+    # 151-02: a failed latest run stays red (below, it is worse). Otherwise an
+    # open water year with no finished calculation for two days means the
+    # nightly calculation may have stopped.
+    # A run in progress (one stuck past two hours was caught above) is not a
+    # stopped schedule.
+    in_progress = CalculationRequest.objects.filter(
+        status__in=("queued", "running")
+    ).exists()
+    if (
+        last.status != "failed"
+        and not in_progress
+        and (now - last.finished_at) >= CALCULATION_STALE_AFTER
+    ):
+        open_years = list(
+            ReportingPeriod.objects.filter(is_finalized=False)
+            .order_by("start_date")
+            .values_list("name", flat=True)
+        )
+        if open_years:
+            still = "is" if len(open_years) == 1 else "are"
+            d = details_for(
+                last, age_hours=round((now - last.finished_at).total_seconds() / 3600, 1)
+            )
+            with_where(d, last)
+            return {
+                "category": "calculation",
+                "status": "yellow",
+                "message": (
+                    f"OpenH2O has not calculated since {_when(last.finished_at)}, "
+                    f"and {_and(open_years)} {still} still open. {_HAND_OFF}"
+                ),
+                "details": d,
+            }
+
     # Row 7: "OpenH2O last calculated 12 months of WY 2025-2026 on ...".
     months = len(last.months or [])
     what = f"{months} month{'' if months == 1 else 's'}"
@@ -1243,6 +1279,168 @@ def check_calculation():
     return {"category": "calculation", "status": status, "message": msg, "details": d}
 
 
+BACKUP_STALE_AFTER = timedelta(hours=36)
+
+# The line every card the organization cannot fix itself ends with (Brent,
+# 2026-10-16, Site health message C row 9).
+_HAND_OFF = (
+    "Pass this card to the AI that maintains the site; the fix is in "
+    "OpenH2O's operator guide."
+)
+
+# scripts/backup.sh's step names, as the red card says them.
+_BACKUP_STEPS = {
+    "dump": "while copying the database",
+    "read-back": "while checking that the database backup can be read",
+    "media": "while copying the uploaded files",
+    "record": "while recording the result",
+}
+CALCULATION_STALE_AFTER = timedelta(hours=48)
+
+
+def _read_backup_record(path: Path):
+    """The parsed JSON object in ``path``, or None when the file is absent.
+
+    Raises ValueError for anything unreadable: a directory, bad JSON, or JSON
+    that is not an object.
+    """
+    if not path.exists():
+        return None
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ValueError(str(exc)) from exc
+    if not isinstance(data, dict):
+        raise ValueError("not a JSON object")
+    return data
+
+
+def _record_time(value):
+    """An aware datetime from an ISO string; ValueError when it is not one."""
+    if not isinstance(value, str):
+        raise ValueError("not a date")
+    parsed = datetime.fromisoformat(value)
+    if timezone.is_naive(parsed):
+        parsed = timezone.make_aware(parsed)
+    return parsed
+
+
+def check_backup():
+    """Whether the site has a recent backup that read back (151-02).
+
+    Reads the two files scripts/backup.sh leaves in OPENH2O_BACKUP_STATUS_DIR:
+    last-backup.json (a good run) and last-backup-failure.json (a failed run,
+    removed by the next good one). Files, not database rows, because a restore
+    would roll a row back to the moment of the backup. Never raises: a record
+    that cannot be read is a yellow card.
+    """
+    folder = Path(getattr(settings, "OPENH2O_BACKUP_STATUS_DIR", "/backups"))
+    if not folder.is_dir():
+        return {
+            "category": "backup",
+            "status": "yellow",
+            "message": (
+                "OpenH2O cannot find the backups folder, so it cannot tell "
+                f"whether this site has a backup. {_HAND_OFF}"
+            ),
+            "details": {"folder": str(folder)},
+        }
+
+    unreadable = {
+        "category": "backup",
+        "status": "yellow",
+        "message": f"OpenH2O cannot read the record of the last backup. {_HAND_OFF}",
+        "details": {"folder": str(folder)},
+    }
+    try:
+        success = _read_backup_record(folder / "last-backup.json")
+        failure = _read_backup_record(folder / "last-backup-failure.json")
+        finished = None
+        if success is not None:
+            finished = _record_time(success["finished_at"])
+            dump_bytes = int(success["dump_bytes"])
+            entries = int(success["table_data_entries"])
+            base_tables = int(success["base_tables"])
+        failed = None
+        if failure is not None:
+            failed = _record_time(failure["failed_at"])
+            step = str(failure["step"])
+            reason = str(failure["reason"])
+    except (ValueError, KeyError, TypeError, OverflowError, OSError):
+        return unreadable
+
+    if failure is not None and (finished is None or failed > finished):
+        return {
+            "category": "backup",
+            "status": "red",
+            "message": (
+                f"The backup on {_when(failed)} failed "
+                f"{_BACKUP_STEPS.get(step, f'at its {step} step')}. {_HAND_OFF}"
+            ),
+            "details": {
+                "failed_at": failed.isoformat(),
+                "step": step,
+                "reason": reason,
+                **(
+                    {"finished_at": finished.isoformat()}
+                    if finished is not None
+                    else {}
+                ),
+            },
+        }
+
+    if success is None:
+        return {
+            "category": "backup",
+            "status": "yellow",
+            "message": (
+                f"OpenH2O has no record of a backup on this site yet. {_HAND_OFF}"
+            ),
+            "details": {"folder": str(folder)},
+        }
+
+    age = timezone.now() - finished
+    details = {
+        "finished_at": finished.isoformat(),
+        "dump_bytes": dump_bytes,
+        "table_data_entries": entries,
+        "base_tables": base_tables,
+        "age_hours": round(age.total_seconds() / 3600, 1),
+    }
+    size = f"{dump_bytes / 1_000_000:.1f} MB"
+    if entries < base_tables:
+        return {
+            "category": "backup",
+            "status": "yellow",
+            "message": (
+                f"The backup on {_when(finished)} is missing "
+                f"{base_tables - entries} of the database's {base_tables} "
+                f"tables. {_HAND_OFF}"
+            ),
+            "details": details,
+        }
+    if age >= BACKUP_STALE_AFTER:
+        return {
+            "category": "backup",
+            "status": "yellow",
+            "message": (
+                f"OpenH2O has not backed up this site since {_when(finished)}. "
+                f"{_HAND_OFF}"
+            ),
+            "details": details,
+        }
+    return {
+        "category": "backup",
+        "status": "green",
+        "message": (
+            f"OpenH2O backed up this site on {_when(finished)}. The database "
+            f"backup is {size} and contains all {base_tables} of the database's "
+            "tables."
+        ),
+        "details": details,
+    }
+
+
 def run_all_checks():
     return [
         check_database(),
@@ -1259,4 +1457,5 @@ def run_all_checks():
         check_docker(),
         check_migrations(),
         check_calculation(),
+        check_backup(),
     ]

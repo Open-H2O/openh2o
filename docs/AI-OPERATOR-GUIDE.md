@@ -684,7 +684,7 @@ you to look at the site, run
 result, including each card's JSON details. `--category` runs a single check. A card
 that needs work is marked Attention needed or Action required.
 
-The table gives the fix for the eight cards about the server, the schedule and
+The table gives the fix for the nine cards about the server, the schedule and
 OpenH2O's stored data. The other six cards are Ledger Integrity, Use areas without
 an account, Point of diversion shares, Unallocated Delivery, Period Alignment and
 ET / Meter Agreement. They concern the organization's records, and each links to the
@@ -698,7 +698,8 @@ page where someone at the organization corrects them.
 | SSL | The certificate expires in under 30 days, or OpenH2O cannot read it. Where the `Caddyfile` names the domain, Caddy renews the certificate by itself, so this card means the renewal is failing. Check that the domain's A record still points at this computer and that ports 80 and 443 are open, then read `docker compose logs caddy`. Where a tunnel or the organization's own proxy handles the encryption, renew the certificate there. On a site with no public domain, the card says there is no certificate to check, and it needs no fix. |
 | Migrations | The database is missing updates this version of OpenH2O needs. Run `docker compose exec web python manage.py migrate`. |
 | Sync Freshness | A data source with a station turned on has not synced for more than 48 hours. After 7 days, or when it has never synced, the card changes to Action required. Run `crontab -l` to check that the schedule is installed. Then run `docker compose exec web python manage.py sync_source` with the source's code, such as `usgs`, and read what it prints. The scheduled syncs write to `sync.log` in the log folder set in `crontab.txt`. The card leaves out a source whose key is missing, and the monitoring dashboard shows that source as "needs key". |
-| Calculation | A calculation has waited more than 15 minutes to start, or it stopped before it finished. Run it with `docker compose exec web python manage.py run_accounting --request` and the request number from the card's JSON details, or ask the organization to run it again from the water year's page. |
+| Calculation | A calculation has waited more than 15 minutes to start, or it stopped before it finished. Run it with `docker compose exec web python manage.py run_accounting --request` and the request number from the card's JSON details, or ask the organization to run it again from the water year's page. The card also asks for attention when no calculation has finished in 48 hours while a water year is still open. For that, run `crontab -l` to check that the schedule is installed, and read `calculation.log` in the log folder set in `crontab.txt`. |
+| Backup | The card asks for attention or action when OpenH2O cannot find the backups folder or read the record of the last backup, or when the last backup failed, ran 36 hours ago or more, or is missing tables. A failed backup's reason is in the card's JSON details; read it first. When OpenH2O cannot find the folder, check that `docker-compose.yml` mounts the checkout's `backups` folder at `/backups`, then run `docker compose up -d`. Otherwise run `crontab -l` to check that the schedule is installed, read `backup.log` in the log folder set in `crontab.txt`, then run `scripts/backup.sh` and read what it prints. |
 | Cache Duplication | OpenH2O holds two OpenET estimates for the same months at some use areas. No figure changes, because OpenH2O uses the newer estimate. Report it as a bug at github.com/Open-H2O/openh2o/issues and attach the card's JSON details. |
 
 The schedule backs up the database and the uploaded files every night at 1:25 into the
