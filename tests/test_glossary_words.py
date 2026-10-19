@@ -89,7 +89,7 @@ class TestTheNewEntries:
         (ISS-140, ruled "beside"). 2026-10-18: the definition says the MCL is
         stored as reported and stops; its "never compares a finding with it"
         went the way of the demonstration page's "does not compare them",
-        which Brent deleted the same day. What stays pinned is that the entry
+        deleted in review the same day. What stays pinned is that the entry
         claims no comparison."""
         text = entries["MCL"]["text"]
         assert "exactly as reported" in text
