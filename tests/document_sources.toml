@@ -65,7 +65,7 @@ files = [
   "templates/partials/_demonstration_banner.html",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "README.md"
@@ -89,7 +89,7 @@ files = [
   "datasync/management/commands/sync_openet_parcels.py",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "README.md"
@@ -109,7 +109,7 @@ files = [
   "crontab.txt",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "README.md"
@@ -183,7 +183,7 @@ files = [
   "templates/partials/_feedback_widget.html",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "README.md"
@@ -197,7 +197,7 @@ files = [
   "crontab.txt",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "README.md"
@@ -214,7 +214,7 @@ files = [
   "static/js/map-core.js",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "README.md"
@@ -260,7 +260,7 @@ document = "README.md"
 heading = "Testing"
 files = ["Makefile", "pyproject.toml", "config/settings/production.py"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "README.md"
@@ -314,7 +314,7 @@ files = [
   "Makefile",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "CONTRIBUTING.md"
@@ -328,7 +328,7 @@ files = [
   "static/css/tokens.css",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "CONTRIBUTING.md"
@@ -389,7 +389,7 @@ document = "SECURITY.md"
 heading = "Supported versions"
 files = [".github/workflows/clean-install.yml", ".github/workflows/tests.yml", "Makefile"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "DEPLOY.md"
@@ -409,14 +409,14 @@ files = [
   "crontab.txt",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "DEPLOY.md"
 heading = "2. Clone the Repository"
 files = ["crontab.txt"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "DEPLOY.md"
@@ -429,28 +429,28 @@ files = [
   "docker-compose.yml",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "DEPLOY.md"
 heading = "4. Caddy / HTTPS Configuration"
 files = ["Caddyfile", "docker-compose.yml", "error-pages/503.html"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "DEPLOY.md"
 heading = "Branch A: Only this computer, or the office network"
 files = ["Caddyfile", "docker-compose.yml", "config/settings/production.py"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "DEPLOY.md"
 heading = "Branch B: Public internet, and this server obtains its own certificate"
 files = ["Caddyfile", "docker-compose.yml", "config/settings/production.py"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "DEPLOY.md"
@@ -469,7 +469,7 @@ files = [
   "core/management/commands/ensure_superuser.py",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "DEPLOY.md"
@@ -547,7 +547,7 @@ files = [
   "config/settings/base.py",
 ]
 labels = []
-checked_at = "efe5113"
+checked_at = "182c09b"
 
 [[section]]
 document = "DEPLOY.md"
@@ -570,7 +570,7 @@ files = [
 labels = [
   { text = "Site health", where = "templates/health/dashboard.html" },
 ]
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "DEPLOY.md"
@@ -619,7 +619,7 @@ files = [
   "crontab.txt",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "DEPLOY.md"
@@ -629,7 +629,7 @@ files = [
   ".gitignore",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "DEPLOY.md"
@@ -652,7 +652,7 @@ files = [
 labels = [
   { text = "Site health", where = "templates/health/dashboard.html" },
 ]
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "DEPLOY.md"
@@ -670,7 +670,7 @@ files = [
   "docker-compose.yml",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "DEPLOY.md"
@@ -703,7 +703,7 @@ labels = [
   { text = "Change password", where = "templates/core/profile.html" },
   { text = "Forgot password?", where = "templates/account/login.html" },
 ]
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "DEPLOY.md"
@@ -725,14 +725,14 @@ document = "DEPLOY.md"
 heading = "Health Checks"
 files = ["health/management/commands/run_health_checks.py", "Makefile"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "DEPLOY.md"
 heading = "Data Pruning"
 files = ["health/management/commands/prune_old_data.py", "Makefile"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "DEPLOY.md"
@@ -747,7 +747,7 @@ files = [
   "Makefile",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "DEPLOY.md"
@@ -760,7 +760,7 @@ files = [
   "docker-compose.yml",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "DEPLOY.md"
@@ -775,7 +775,7 @@ files = [
   "feedback/models.py",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "DEPLOY.md"
@@ -788,7 +788,7 @@ files = [
   "docker-compose.yml",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "DEPLOY.md"
@@ -800,7 +800,7 @@ files = [
   "Dockerfile",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "DEPLOY.md"
@@ -826,14 +826,14 @@ files = [
   "entrypoint.sh",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "DEPLOY.md"
 heading = "The database"
 files = ["docker-compose.yml", "config/settings/production.py", "config/settings/base.py"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "DEPLOY.md"
@@ -857,7 +857,7 @@ files = [
   "docker-compose.yml",
 ]
 labels = []
-checked_at = "efe5113"
+checked_at = "182c09b"
 
 [[section]]
 document = "DEPLOY.md"
@@ -884,7 +884,7 @@ labels = [
   { text = "Continue with Google", where = "templates/account/signup.html" },
   { text = "Users", where = "core/modules.py" },
 ]
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "DEPLOY.md"
@@ -899,7 +899,7 @@ files = [
   "core/checks.py",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "docs/README.md"
@@ -995,7 +995,7 @@ labels = [
   { text = "Use ledger", where = "templates/accounting/ledger_list.html" },
   { text = "Dry run", where = "templates/accounting/csv_upload.html" },
 ]
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1268,7 +1268,7 @@ document = "docs/DATA-STANDARDS.md"
 heading = "Data Standards & Interoperability"
 files = ["standards/management/commands/seed_observed_properties.py", "standards/management/commands/export_crosswalk.py", "docker-compose.yml"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
@@ -1328,7 +1328,7 @@ files = [
   "Makefile",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
@@ -1484,7 +1484,7 @@ files = [
   "datasync/management/commands/prove_gee_auth.py",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "docs/earth-engine-tier-setup.md"
@@ -1522,14 +1522,14 @@ files = [
   "config/settings/production.py",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
 heading = "The shape of the job"
 files = ["docker-compose.yml"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1561,7 +1561,7 @@ files = [
   "core/management/commands/seed_data.py",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1580,7 +1580,7 @@ files = [
   "config/urls.py",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1758,7 +1758,7 @@ files = [
 labels = [
   { text = "Needs API key", where = "datasync/freshness.py" },
 ]
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1852,7 +1852,7 @@ labels = [
   { text = "ET / Meter Agreement", where = "health/models.py" },
   { text = "Needs API key", where = "datasync/freshness.py" },
 ]
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1876,7 +1876,7 @@ labels = [
   { text = "None up to date", where = "datasync/freshness.py" },
   { text = "OpenH2O is temporarily unavailable", where = "error-pages/503.html" },
 ]
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1896,14 +1896,14 @@ files = [
 labels = [
   { text = "Source code", where = "templates/base.html" },
 ]
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
 heading = "Installing OpenH2O without Docker"
 files = ["docker-compose.yml"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -1934,7 +1934,7 @@ document = "docs/INSTALL-WITHOUT-DOCKER.md"
 heading = "What is different on this path"
 files = ["Dockerfile", "docker-compose.yml", "Caddyfile"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -1946,7 +1946,7 @@ files = [
   "config/settings/base.py",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -1997,7 +1997,7 @@ files = [
   "Dockerfile",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -2055,7 +2055,7 @@ files = [
   "health/management/commands/prune_old_data.py",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -2139,7 +2139,7 @@ files = [
   "templates/geography/map.html",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "templates/about.html"
@@ -2295,7 +2295,7 @@ labels = [
   { text = "Upload CSV", where = "templates/accounting/ledger_list.html" },
   { text = "Run the calculation", where = "templates/accounting/period_detail.html" },
 ]
-checked_at = "6de4a92"
+checked_at = "182c09b"
 
 [[section]]
 document = "templates/help/getting_started.html"
