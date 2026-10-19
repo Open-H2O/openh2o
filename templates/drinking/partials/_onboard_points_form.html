@@ -44,16 +44,19 @@
       <label class="form-label" for="point-facility">Facility <span class="required-mark">*</span></label>
       <select id="point-facility" name="facility" class="form-input" required>
         {% for facility in facilities %}
-        <option value="{{ facility.pk }}" data-prefix="{{ system.pwsid }}_{{ facility.facility_id }}_">
+        <option value="{{ facility.pk }}"{% if california_codes %} data-prefix="{{ system.pwsid }}_{{ facility.facility_id }}_"{% endif %}>
           {% if facility.facility_type %}{{ facility.get_facility_type_display }}{% else %}Facility{% endif %}{% if facility.name and not facility.name_adds_nothing %}, {{ facility.name }}{% endif %} ({{ facility.facility_id }})
         </option>
         {% endfor %}
       </select>
+      {% if california_codes %}
       {% with first=facilities.0 %}
       <div class="form-help" id="point-facility-prefix">Codes here begin <span class="text-mono">{{ system.pwsid }}_{{ first.facility_id }}_</span></div>
       {% endwith %}
+      {% endif %}
     </div>
 
+    {% if california_codes %}
     <div class="form-group">
       <label class="form-label" for="point-number">Point number or label <span class="required-mark">*</span></label>
       {% comment %}
@@ -67,6 +70,15 @@
       <div class="form-help">Enter the last segment of the PS Code. Letters are allowed: <span class="text-mono">LCR</span> and <span class="text-mono">900</span> are both published codes.</div>
     </div>
 
+    {% else %}
+    <div class="form-group">
+      <label class="form-label" for="point-ps-code">Sampling point code <span class="required-mark">*</span></label>
+      <input type="text" id="point-ps-code" name="ps_code" required
+             class="form-input" autocomplete="off" spellcheck="false">
+      <div class="form-help">Enter the code exactly as it appears in your lab results file.</div>
+    </div>
+
+    {% endif %}
     <div class="form-group">
       <label class="form-label" for="point-name">Name</label>
       <input type="text" id="point-name" name="name"
@@ -98,6 +110,7 @@
   (the selected option's own `data-prefix`), never fetched again from the
   server on a change event.
 {% endcomment %}
+{% if california_codes %}
 <script>
 document.getElementById("point-facility").addEventListener("change", function () {
   var opt = this.options[this.selectedIndex];
@@ -106,3 +119,4 @@ document.getElementById("point-facility").addEventListener("change", function ()
     "Codes here begin <span class=\"text-mono\">" + prefix + "</span>";
 });
 </script>
+{% endif %}

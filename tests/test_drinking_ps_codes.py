@@ -129,3 +129,25 @@ class TestRejection:
         # The boundary itself fits — the column is 60, not 59.
         composed = compose_ps_code("CA1010001", "A" * 25, "B" * 24)
         assert len(composed) == 60
+
+
+class TestWhichSystemsUseCaliforniasFormat:
+    """The platform stores no primacy agency, so the PWSID's prefix decides.
+
+    California PWSIDs are ``CA`` plus seven digits; any other prefix is another
+    state's, and the underscore composition is California DDW's own format.
+    """
+
+    @pytest.mark.parametrize(
+        "pwsid", ["CA2410011", "ca2410011", " CA1010001 ", "CA1010001"]
+    )
+    def test_california_pwsids(self, pwsid):
+        from drinking.ps_codes import uses_california_ps_codes
+
+        assert uses_california_ps_codes(pwsid) is True
+
+    @pytest.mark.parametrize("pwsid", ["CO0101234", "co0101234", "083090017", "", None])
+    def test_other_pwsids_and_blanks(self, pwsid):
+        from drinking.ps_codes import uses_california_ps_codes
+
+        assert uses_california_ps_codes(pwsid) is False

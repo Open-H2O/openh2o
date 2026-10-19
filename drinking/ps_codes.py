@@ -42,8 +42,24 @@ MAX_PS_CODE_LENGTH = 60
 _SEGMENT = re.compile(r"^[A-Z0-9-]+$")
 
 
+def uses_california_ps_codes(pwsid):
+    """True when this PWSID belongs to a California system.
+
+    ``WaterSystem`` stores no primacy agency, so the PWSID decides: California's
+    are ``CA`` plus seven digits (``CA2410011``), and any other prefix is
+    another state's. The underscore composition ``compose_ps_code`` builds is
+    California DDW's format, so only a California system gets it; another
+    state's sampling point code is taken exactly as that state's lab file
+    writes it. Case-insensitive, outer whitespace ignored.
+    """
+    return (pwsid or "").strip().upper().startswith("CA")
+
+
 def compose_ps_code(pwsid, facility_id, point_number):
-    """Build the ``{pwsid}_{facility_id}_{point_number}`` composite.
+    """Build California's (DDW's) ``{pwsid}_{facility_id}_{point_number}`` code.
+
+    Used for a system whose PWSID marks it as California's
+    (``uses_california_ps_codes``); another state's code is not composed.
 
     Segments are stripped and upper-cased — DDW publishes fixed-width padded
     fields, and operator input arrives however it arrives, but the stored code

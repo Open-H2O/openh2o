@@ -200,3 +200,101 @@ class TestRouteGuard:
         # served, and not silently dropped either.
         assert response.url.startswith("/accounts/login/")
         assert "next=" in response.url
+
+
+class TestAnotherStatesSystem:
+    """A system whose PWSID is not California's takes the code as typed.
+
+    There is no stored primacy agency, so the PWSID prefix decides. For a
+    non-California system the one field is the code exactly as the state's lab
+    file writes it: stored as typed (outer whitespace only), refused only when
+    empty, too long, or already used.
+    """
+
+    @pytest.fixture
+    def colorado(self, db):
+        system = WaterSystem.objects.create(pwsid="CO0101234", name="MESA WATER")
+        SystemFacility.objects.create(
+            system=system, facility_id="WELL3", name="WELL 3"
+        )
+        return system
+
+    def _post(self, client, system, code, **extra):
+        facility = system.facilities.get()
+        return client.post(
+            reverse("drinking:onboard_points_add", args=[system.pwsid]),
+            {"facility": facility.pk, "ps_code": code, **extra},
+        )
+
+    def test_typed_code_is_stored_unchanged(self, client_logged_in, colorado):
+        response = self._post(
+            client_logged_in, colorado, "  co-0101234 Well 3 \n", name="Well 3"
+        )
+        assert response.status_code == 200
+        point = SamplingPoint.objects.get()
+        assert point.ps_code == "co-0101234 Well 3"
+        assert point.facility == colorado.facilities.get()
+
+    def test_underscores_and_spaces_are_allowed(self, client_logged_in, colorado):
+        self._post(client_logged_in, colorado, "a_b c/d")
+        assert SamplingPoint.objects.get().ps_code == "a_b c/d"
+
+    def test_empty_code_is_refused(self, client_logged_in, colorado):
+        response = self._post(client_logged_in, colorado, "   ")
+        assert response.status_code == 200
+        assert not SamplingPoint.objects.exists()
+
+    def test_over_long_code_is_refused_with_a_sentence(
+        self, client_logged_in, colorado
+    ):
+        from drinking.ps_codes import MAX_PS_CODE_LENGTH
+
+        response = self._post(client_logged_in, colorado, "X" * (MAX_PS_CODE_LENGTH + 1))
+        assert response.status_code == 200
+        assert not SamplingPoint.objects.exists()
+        assert str(MAX_PS_CODE_LENGTH).encode() in response.content
+
+    def test_code_at_the_limit_is_stored(self, client_logged_in, colorado):
+        from drinking.ps_codes import MAX_PS_CODE_LENGTH
+
+        self._post(client_logged_in, colorado, "X" * MAX_PS_CODE_LENGTH)
+        assert SamplingPoint.objects.count() == 1
+
+    def test_duplicate_code_is_refused_without_an_error(
+        self, client_logged_in, colorado
+    ):
+        self._post(client_logged_in, colorado, "co-0101234 Well 3", name="First")
+        response = self._post(
+            client_logged_in, colorado, "co-0101234 Well 3", name="Second"
+        )
+        assert response.status_code == 200
+        assert b"is already on file. OpenH2O changed nothing." in response.content
+        assert SamplingPoint.objects.count() == 1
+        assert SamplingPoint.objects.get().name == "First"
+
+    def test_code_used_on_another_system_is_refused(
+        self, client_logged_in, colorado, system
+    ):
+        dst = system.facilities.get(facility_id="DST")
+        SamplingPoint.objects.create(facility=dst, ps_code="shared-code")
+        response = self._post(client_logged_in, colorado, "shared-code")
+        assert response.status_code == 200
+        assert b"is already on file" in response.content
+        assert SamplingPoint.objects.filter(ps_code="shared-code").count() == 1
+
+    def test_the_page_offers_the_one_field_not_the_california_pieces(
+        self, client_logged_in, colorado
+    ):
+        response = client_logged_in.get(
+            reverse("drinking:onboard_points", args=["CO0101234"])
+        )
+        assert response.status_code == 200
+        assert b'name="ps_code"' in response.content
+        assert b'name="point_number"' not in response.content
+
+    def test_a_california_page_still_offers_point_number(
+        self, client_logged_in, system
+    ):
+        response = client_logged_in.get(reverse("drinking:onboard_points", args=[PWSID]))
+        assert b'name="point_number"' in response.content
+        assert b'name="ps_code"' not in response.content

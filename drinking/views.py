@@ -43,7 +43,11 @@ from drinking.forms import (
     SystemFacilityForm,
     SystemProductionForm,
 )
-from drinking.ps_codes import compose_ps_code
+from drinking.ps_codes import (
+    MAX_PS_CODE_LENGTH,
+    compose_ps_code,
+    uses_california_ps_codes,
+)
 from drinking.models import (
     ACTIVITY_STATUS_CHOICES,
     FACILITY_TYPE_CHOICES,
@@ -1067,9 +1071,12 @@ def _unknown_ps_code_routes(validated):
     ``sampling_point_id`` — rather than by matching the error string, so a
     reworded message cannot silently switch this off.
 
-    The PWSID is the first segment of the composite by construction. A code too
-    malformed to split is still reported, just without a link: it is a typo in
-    the file, not a missing sampling point.
+    A California code's PWSID is its first segment by construction (DDW's
+    ``{pwsid}_{facility_id}_{point_number}``). Another state's code is stored as
+    its lab file writes it and need not contain a PWSID at all (ISS-077), so a
+    first segment counts as a PWSID only when it looks like California's or
+    names a system this site carries. Any other code is still reported, without
+    a link.
     """
     unknown = sorted(
         {
@@ -1085,7 +1092,10 @@ def _unknown_ps_code_routes(validated):
     onboarded = set(WaterSystem.objects.values_list("pwsid", flat=True))
     routes = []
     for ps_code in unknown:
-        pwsid = ps_code.split("_")[0] if "_" in ps_code else ""
+        first = ps_code.split("_")[0] if "_" in ps_code else ""
+        pwsid = (
+            first if first in onboarded or uses_california_ps_codes(first) else ""
+        )
         routes.append(
             {
                 "ps_code": ps_code,
@@ -1639,6 +1649,7 @@ def _points_listed_context(system, facilities):
         "point_groups": point_groups,
         "point_count": point_count,
         "n_with": n_with,
+        "california_codes": uses_california_ps_codes(system.pwsid),
     }
 
 
@@ -1753,13 +1764,32 @@ def onboard_points_add(request, pwsid):
     name = (request.POST.get("name") or "").strip()
     point_type = (request.POST.get("point_type") or "").strip()
 
-    # Composition is the validator. Rather than re-implementing the rules here
-    # (and drifting from them), the ValueError text is shown as-is — it already
-    # names which part was wrong and why.
-    try:
-        ps_code = compose_ps_code(system.pwsid, facility.facility_id, point_number)
-    except ValueError as exc:
-        return _listed(error=str(exc))
+    if uses_california_ps_codes(system.pwsid):
+        # Composition is the validator. Rather than re-implementing the rules
+        # here (and drifting from them), the ValueError text is shown as-is: it
+        # already names which part was wrong and why.
+        try:
+            ps_code = compose_ps_code(
+                system.pwsid, facility.facility_id, point_number
+            )
+        except ValueError as exc:
+            return _listed(error=str(exc))
+    else:
+        # Another state's lab file writes the code its own way, so it is stored
+        # as typed (outer whitespace only). Uniqueness is the same
+        # ``get_or_create`` below, which reports a duplicate instead of raising.
+        ps_code = (request.POST.get("ps_code") or "").strip()
+        if not ps_code:
+            return _listed(
+                error="Enter the sampling point code."
+            )
+        if len(ps_code) > MAX_PS_CODE_LENGTH:
+            return _listed(
+                error=(
+                    f"A sampling point code can have up to {MAX_PS_CODE_LENGTH} "
+                    f"characters, and this one has {len(ps_code)}."
+                )
+            )
 
     if point_type and point_type not in dict(POINT_TYPE_CHOICES):
         return _listed(

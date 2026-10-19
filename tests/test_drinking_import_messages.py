@@ -277,11 +277,26 @@ class TestThePreviewsOtherLines:
         assert "Correct the rows below in the file and upload the file again." in body
         assert "matches no sampling point in OpenH2O." in body
         assert "Where to add the sampling point" in body
-        assert "This PS Code is not in the form" in body
-        assert "Correct the code in the file." in body
+        assert "or correct the code in the file." in body
+        assert "PWSID_facility_point" not in body
         assert "New analytes OpenH2O will add:" in body
         assert "Rows with a note" in body
         assert "Will create" not in body
+
+    def test_another_states_code_is_not_read_as_a_pwsid(self, auth_client):
+        # ISS-077: outside California a code is the lab file's own, so its
+        # first segment is not a PWSID unless it looks like one or names a
+        # system on the site.
+        from tests.factories import SamplingPointFactory
+
+        SamplingPointFactory()
+        body = _preview(
+            auth_client, "lab.csv",
+            "PS Code,Sample Date,Analyte Name,Result\n"
+            "WELL3_RAW,2024-03-05,Nitrate,1\n",
+        ).content.decode()
+        assert "No water system in OpenH2O has the PWSID" not in body
+        assert "or correct the code in the file." in body
 
     def test_column_labels(self):
         assert importer.FIELD_LABELS["lab_cert_no"] == "ELAP certificate number"
