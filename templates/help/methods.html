@@ -12,99 +12,68 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Methods Behind the Numbers</span>
   </nav>
-  <p class="page-description">This page explains the settings behind each figure and how OpenH2O divides and estimates surface water deliveries.</p>
+  <p class="page-description">This page explains how OpenH2O calculates each month&rsquo;s figures for a field.</p>
 </div>
 {% endblock %}
 
 {% block content %}
 {% comment %}
-  2026-10-10: rebuilt from thirteen facts, each checked against the code: the calculation
-  plan and its step knobs (accounting/models.py CalculationStep, accounting/
-  steps.py, accounting/views.py methodology_step_*), the delivery settings
-  (core/models.py SiteConfig), over-delivery credit routing (accounting/
-  management/commands/run_calculations.py _over_delivery_decision), the canal
-  split (surface/services.py allocate_district_delivery) and the unmetered
-  estimate (surface/estimate.py). The page says those thirteen things and
-  nothing else; the worked example lives on How water balances work.
+  2026-10-18 (150.1-03): written whole, in the order OpenH2O works out a
+  month, after the maintainer ruled one fact on one page (17:26 PDT): this page
+  says how the figures are calculated, and Settings explained alone says what
+  each setting is, where it is set and its default. Facts read in the code:
+  accounting/management/commands/seed_calculation_plan.py (the default
+  steps), accounting/precip_math.py, run_calculations.py (the groundwater
+  estimate), surface/services.py allocate_district_delivery (the headgate
+  split, whose column names on a point of diversion's page this page reuses),
+  surface/models.py (the lining defaults) and surface/estimate.py (the
+  unmetered estimate).
 
   This page names `accounting`, `parcels`, `surface` and `wells` as its
   subject (config/views.py EXPLAINER_MODULES), so it is 404'd rather than
   served wherever any one of them is off; the guards below are only for the
-  links and cards it points out to. The `{% templatetag openblock %} url ...
-  as var {% templatetag closeblock %}` form fails silently to the empty
-  string, so the defect those guards close is a dead link, not a 500.
-  2026-10-11 (150.4-01): the national, role-neutral lens. Who acts is set
-  in a sentence and in the help-page rows:
-  "An administrator" acts in place of "a district" (Methodology Settings and Delivery Settings are @admin_required). Each actor traced to its view.
-  2026-10-13 (150.1-02): the unmetered estimate rows rewritten when a diversion with no linked right began to be estimated with no cap.
+  cards it points out to.
 {% endcomment %}{% url 'accounting:methodology_settings' as methodology_url %}
-{% url 'accounting:delivery_settings' as delivery_url %}
-{% url 'water_balances' as water_balances_url %}
-{% url 'glossary' as glossary_url %}
 <div class="page-stack page-help help-page">
 
   <div class="card-raised">
-    <h2 class="section-header">The settings behind each figure</h2>
+    <h2 class="section-header">How OpenH2O calculates a month</h2>
     <div class="table-scroll">
       <table class="data-table help-cases-table">
         <thead>
           <tr>
-            <th>Topic</th>
-            <th>How it works</th>
+            <th>Figure</th>
+            <th>How OpenH2O calculates it</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td class="col-name">Calculation steps</td>
-            <td>OpenH2O calculates each month's figures by following the steps listed on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a>{% else %}Methodology Settings{% endif %}. An administrator can reorder those steps or switch any of them off.</td>
+            <td class="col-name">Crop ET</td>
+            <td>OpenH2O reads each field&rsquo;s crop ET for the month from OpenET.</td>
           </tr>
           <tr>
-            <td class="col-name">Effective precipitation</td>
-            <td>{% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a>{% else %}Methodology Settings{% endif %} also sets the method for estimating effective precipitation: all of the month's rain, a fixed percentage of it, or the USDA-SCS soil-storage method, which is the default.</td>
+            <td class="col-name">ETAW</td>
+            <td>OpenH2O subtracts effective precipitation from crop ET. The method for effective precipitation is set on <a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a>, and the default is the USDA-SCS method.</td>
           </tr>
           <tr>
-            <td class="col-name">Irrigation efficiency</td>
-            <td>Each field's irrigation efficiency comes from its irrigation method on file. A field with no irrigation method on file uses the default efficiency on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %}, 75 percent unless an administrator changes it.{% if 'surface' in enabled_modules %} OpenH2O uses the same irrigation efficiency for a field's surface water and its groundwater.{% endif %}</td>
+            <td class="col-name">ETAW met by surface water</td>
+            <td>OpenH2O multiplies the month&rsquo;s surface water delivery by the field&rsquo;s irrigation efficiency, and that much of the ETAW is met by surface water. The rest of the delivery is deep percolation.</td>
           </tr>
           <tr>
-            <td class="col-name">Delivery lost to efficiency</td>
-            <td>OpenH2O records the share of a surface water delivery lost to irrigation efficiency as deep percolation and does not charge or credit any account for it.</td>
+            <td class="col-name">ETAW met by groundwater</td>
+            <td>The ETAW that surface water does not meet is met by groundwater on a field with a well. On a field with no well, the dashboard counts it as water use with no supply reported.</td>
           </tr>
           <tr>
             <td class="col-name">Groundwater extraction</td>
-            <td>Where a well has no meter reading, OpenH2O estimates groundwater extraction by dividing ETAW met by groundwater by the field's irrigation efficiency. OpenH2O records the difference as deep percolation.</td>
+            <td>Where the well has a meter, the meter reading is the extraction. Otherwise OpenH2O divides ETAW met by groundwater by the field&rsquo;s irrigation efficiency, and the difference is deep percolation.</td>
           </tr>
           <tr>
-            <td class="col-name">Past months</td>
-            <td>Each calculated month stores the settings it was calculated with. A changed setting affects a past month only when that month is recalculated.</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="card-raised">
-    <h2 class="section-header">When effective precipitation and surface water exceed crop ET</h2>
-    <div class="table-scroll">
-      <table class="data-table help-cases-table">
-        <thead>
-          <tr>
-            <th>Topic</th>
-            <th>How it works</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="col-name">The remainder</td>
-            <td>When effective precipitation and the delivery times irrigation efficiency together exceed crop ET, OpenH2O sets the remainder to zero and records the surplus in two parts: effective precipitation in excess of crop ET, and surface water in excess of ETAW.</td>
+            <td class="col-name">A field with no crop</td>
+            <td>A field with no crop on file has no irrigated water use, so its figures for the month are zero.</td>
           </tr>
           <tr>
-            <td class="col-name">Surface water in excess of ETAW</td>
-            <td>A setting on {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %} determines how OpenH2O treats surface water in excess of ETAW. By default, OpenH2O credits that water to no one. An administrator can instead credit it to the landowner, less a share left in the basin (10 percent by default), or show it as a separate line on the field's page without crediting it.</td>
-          </tr>
-          <tr>
-            <td class="col-name">Where a credit goes</td>
-            <td>When surface water in excess of ETAW is credited, a field with a well receives the credit on its own ledger. A field without a well has the credit added to its zone's shared account.</td>
+            <td class="col-name">The surplus</td>
+            <td>When effective precipitation and ETAW met by surface water together exceed crop ET, OpenH2O records the surplus in two parts: effective precipitation in excess of crop ET, and surface water in excess of ETAW.</td>
           </tr>
         </tbody>
       </table>
@@ -117,18 +86,34 @@
       <table class="data-table help-cases-table">
         <thead>
           <tr>
-            <th>Topic</th>
-            <th>How it works</th>
+            <th>Step</th>
+            <th>How OpenH2O does it</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td class="col-name">Canal losses</td>
-            <td>Before dividing a headgate total among the fields it serves, OpenH2O deducts the canal's losses. Evaporation and spill are written off, and seepage goes to the zone's seepage pool. Each point of diversion can state whether its canal is unlined, lined or pipe. While a canal's losses are set to the platform default, OpenH2O sets seepage at 25 percent of the headgate total for an unlined canal, 5 percent for a lined canal and 0 for a pipe.</td>
+            <td>OpenH2O first takes the canal&rsquo;s evaporation, seepage and spill off the total taken at the headgate. Evaporation and spill are written off, and seepage goes to the zone&rsquo;s seepage pool.</td>
           </tr>
           <tr>
-            <td class="col-name">Fixed shares</td>
-            <td>In a month when no field on the headgate has any ETAW, OpenH2O divides the total by each field's fixed share on file.</td>
+            <td class="col-name">Default losses</td>
+            <td>Until a canal&rsquo;s own losses are entered on its point of diversion, seepage is 25 percent for an unlined canal, 5 percent for a lined canal and 0 for a pipe. Evaporation is 1 percent for an open canal and 0 for a pipe.</td>
+          </tr>
+          <tr>
+            <td class="col-name">Fields&rsquo; own records</td>
+            <td>A delivery recorded for a field itself comes off next. OpenH2O divides only the remainder among the other fields.</td>
+          </tr>
+          <tr>
+            <td class="col-name">The division</td>
+            <td>OpenH2O divides the remainder among the other fields in proportion to each field&rsquo;s ETAW. No field receives more than its ETAW divided by its irrigation efficiency.</td>
+          </tr>
+          <tr>
+            <td class="col-name">Water left over</td>
+            <td>Water left after every field has received its ETAW divided by its irrigation efficiency is shown on the point of diversion&rsquo;s page, and no field is charged with it.</td>
+          </tr>
+          <tr>
+            <td class="col-name">A month with no ETAW</td>
+            <td>In a month when no field on the headgate has any ETAW, OpenH2O divides the remainder by the shares entered on the point of diversion, or evenly when no shares are entered.</td>
           </tr>
         </tbody>
       </table>
@@ -141,40 +126,44 @@
       <table class="data-table help-cases-table">
         <thead>
           <tr>
-            <th>Topic</th>
-            <th>How it works</th>
+            <th>Case</th>
+            <th>How OpenH2O does it</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td class="col-name">The estimate</td>
-            <td>For an unmetered diversion, OpenH2O estimates the month's delivery from the ETAW of the fields the diversion serves and adds the canal's losses. Where the diversion's water right has a face value, OpenH2O caps the estimate at the face value remaining for the water year.</td>
+            <td>For a month with no meter and no recorded volume, OpenH2O estimates the delivery as the water its fields needed, with the canal&rsquo;s losses added. A field&rsquo;s need is its ETAW divided by its irrigation efficiency, or its own recorded delivery where it has one.</td>
           </tr>
           <tr>
-            <td class="col-name">When there is no estimate</td>
-            <td>OpenH2O estimates no delivery at a diversion whose water right is inactive or revoked.</td>
+            <td class="col-name">The water right&rsquo;s limits</td>
+            <td>Where the diversion&rsquo;s water right has a face value, the estimate stops at the face value left for the water year. A month wholly outside the right&rsquo;s direct diversion season is estimated at zero.</td>
+          </tr>
+          <tr>
+            <td class="col-name">No estimate</td>
+            <td>OpenH2O estimates no delivery at a diversion whose water right is inactive or revoked. A diversion with no water right is estimated without a limit.</td>
+          </tr>
+          <tr>
+            <td class="col-name">A recorded volume</td>
+            <td>A volume entered for the month, including zero, takes the place of the estimate.</td>
           </tr>
         </tbody>
       </table>
     </div>
   </div>
 
-  <div class="card-raised">
+  {% explainer_available "water_balances" as show_water_balances %}{% explainer_available "settings_explained" as show_settings %}<div class="card-raised">
     <h2 class="section-header">Where to go next</h2>
     <div class="card-grid card-grid--fit mt-md">
-      {% explainer_available "water_balances" as show_water_balances %}{% if show_water_balances %}<a href="{{ water_balances_url }}" class="card-raised card-link">
+      {% if show_water_balances %}<a href="{% url 'water_balances' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>How Water Balances Work</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">This page works through one field's month with real figures.</p>
+        <p class="text-secondary text-sm">This page works through one field&rsquo;s month with real figures.</p>
       </a>{% endif %}
-      {% if 'accounting' in enabled_modules %}<a href="{{ methodology_url }}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between;"><span>Methodology Settings</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">This page holds the calculation steps and the rain method.</p>
-      </a>
-      <a href="{{ delivery_url }}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between;"><span>Delivery Settings</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">This page holds the default irrigation efficiency and the treatment of surface water in excess of ETAW.</p>
+      {% if show_settings %}<a href="{% url 'settings_explained' %}" class="card-raised card-link">
+        <div class="concept-panel-title" style="justify-content: space-between;"><span>Settings explained</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm">This page explains each setting that changes a figure.</p>
       </a>{% endif %}
-      <a href="{{ glossary_url }}" class="card-raised card-link">
+      <a href="{% url 'glossary' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Glossary</span><span class="text-accent">&rarr;</span></div>
         <p class="text-secondary text-sm">This page explains the words used on these screens.</p>
       </a>
