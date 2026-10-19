@@ -113,6 +113,8 @@ EXCEPTIONS: tuple = (
      ("negation frame",), _APPROVED.format("2026-10-16")),
     ("health/checks.py", ", not a public domain name",
      ("negation frame",), _APPROVED.format("2026-10-16")),
+    ("templates/help/budgets_allocations.html", "When none of the zones an account",
+     ("negation frame",), _APPROVED.format("2026-10-19")),
     # Developer messages.
     ("config/views.py", "It is hidden rather than rewritten", ("negation frame",), _DEVELOPER),
     ("infrastructure/views.py", "runs none of the modules", ("negation frame",), _DEVELOPER),

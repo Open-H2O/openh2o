@@ -111,7 +111,7 @@
         <tbody>
           <tr>
             <td class="col-name">A headgate total</td>
-            <td>OpenH2O keeps each headgate's delivery as one monthly total and divides that total among the fields the headgate serves in proportion to each field's ETAW.</td>
+            <td>OpenH2O keeps each headgate's delivery as one monthly total. It subtracts the canal's losses and any delivery recorded for an individual field, then divides the remainder among the other fields in proportion to each field's ETAW, up to what each field can use.</td>
           </tr>
           <tr>
             <td class="col-name">A field's own record</td>
@@ -134,7 +134,7 @@
     <div class="card-grid card-grid--fit mt-md">
       {% if 'accounting' in enabled_modules %}<a href="{% url 'accounting:dashboard' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Dashboard</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">The dashboard shows each field's water balance.</p>
+        <p class="text-secondary text-sm">The dashboard shows the water balance of each water account and each zone.</p>
       </a>{% endif %}
       <a href="{% url 'glossary' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Glossary</span><span class="text-accent">&rarr;</span></div>

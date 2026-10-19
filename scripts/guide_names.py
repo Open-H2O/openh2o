@@ -135,8 +135,6 @@ EXCEPTIONS: tuple = (
     ("docs/AI-OPERATOR-GUIDE.md", "SERVER_NAME", "an argument of Django's test client, not a setting"),
     ("docs/INSTALL-WITHOUT-DOCKER.md", "CAP_NET_BIND_SERVICE", "a Linux capability systemd grants, not a setting"),
     ("DEPLOY.md", "APP_VERSION", "the build stamps it into the image (Dockerfile ARG); nobody sets it in .env"),
-    ("DEPLOY.md", "HEALTH_DEMO_MODE", "a switch for a demonstration copy whose database is restored every night; "
-     "whether section 12 lists it is being decided (2026-10-19)"),
 )
 
 

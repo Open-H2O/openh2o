@@ -172,8 +172,8 @@ hold up to 500 rows and 25 MB.
 | `APPLICATION_NUMBER` | yes | Becomes the right's ID. A right already on the site is skipped and left as it is. |
 | `WATER_RIGHT_TYPE` | yes | A type not yet on the site is added under the name the file uses. |
 | `PRIMARY_OWNER_NAME` | yes | The holder of the right. |
-| `FACE_VALUE_AMOUNT` / `FACE_VALUE_UNITS` | no | OpenH2O records a face value in acre-feet per year. A face value in other units is left out, and the preview names the right. |
-| `MAX_DD_APPL` / `MAX_DD_UNITS` | no | OpenH2O records a maximum rate in cubic feet per second. A rate in other units is left out, and the preview names the right. |
+| `FACE_VALUE_AMOUNT` / `FACE_VALUE_UNITS` | no | OpenH2O records a face value in acre-feet per year. A face value in other units is left out, and the import results list the right under "Imported with a note". |
+| `MAX_DD_APPL` / `MAX_DD_UNITS` | no | OpenH2O records a maximum rate in cubic feet per second. A rate in other units is left out, and the import results list the right under "Imported with a note". |
 | `PRIORITY_DATE` | no | Written as `YYYY-MM-DD` or `M/D/YYYY`. A blank date stays blank. |
 | `LICENSE_ID`, `PERMIT_ID`, `USE_CODE`, `USE_NET_ACREAGE`, `WATERSHED`, `SOURCE_NAME`, `WATER_RIGHT_STATUS` | no | Copied to the right's license number, permit number, purpose of use, net acreage, watershed, source and status, as eWRIMS records them. |
 | `DIRECT_SEASON_START_MONTH_1` / `DIRECT_DIV_SEASON_START_DAY_1` / `DIRECT_DIV_SEASON_END_MONTH_1` / `DIRECT_DIV_SEASON_END_DAY_1` | no | The direct diversion season. |

@@ -144,8 +144,8 @@ file that OpenH2O produces.
   groundwater and surface water is marked as combined use. A diversion with no water
   right ID is left out of the file, and the check OpenH2O runs on each report lists
   it as a warning. The Measurement Method column shows the method recorded for the
-  diversion. For a diversion measured by a device, the column shows the device's
-  type instead. A record with no method shows "Not stated".
+  diversion. For a diversion measured by a device, the column adds the device's
+  type after the method. A record with no method shows "Not stated".
 
 The files are written by `reporting/generators.py`, and the models are in
 `reporting/models.py`.

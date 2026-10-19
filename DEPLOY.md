@@ -441,7 +441,7 @@ To run one of them on its own:
 docker compose exec web python manage.py seed_roles
 ```
 
-Running `seed_data` again changes nothing that is already in place.
+Running `seed_data` again adds nothing twice. It does switch each data source back on or off as it was first seeded, and it puts the federal drinking-water limits back to their seeded values.
 
 ---
 
@@ -458,10 +458,12 @@ docker compose exec web python manage.py seed_merced
 `seed_merced` needs a site that runs every module of OpenH2O. Set
 `OPENH2O_MODULES=all` in `.env` and run `docker compose up -d` first (section 12). It loads the basin's boundary, streams and
 canals, management zones, water rights and points of diversion, selected parcels,
-cropland, recharge basins and a year of ledger activity. One of its steps downloads
+cropland, recharge basins and two water years of ledger activity, one finalized and one open. One of its steps downloads
 streams and monitoring stations from public government services and needs no key.
-On a server with no internet connection, add `--skip-auto-populate` to leave that
-step out.
+On a server with no internet connection, first load the stored streams with
+`python manage.py seed_merced_base` and
+`python manage.py loaddata data/merced/flowlines.json`, then add
+`--skip-auto-populate` to leave the download out.
 
 The demonstration's records stay on the site beside the organization's own records,
 and OpenH2O has no command that removes them. (The `make flush-demo` and
@@ -1086,6 +1088,7 @@ Two terms in the tables need explaining:
 | `OPENET_MODE` | No | `api` | `api` fetches ET from OpenET's service. <!-- defines: google_earth_engine -->`gee` fetches the same data from Google Earth Engine, Google's service for analysing satellite imagery, as [docs/earth-engine-tier-setup.md](docs/earth-engine-tier-setup.md) describes |
 | `GEE_PROJECT`, `GEE_SERVICE_ACCOUNT_EMAIL`, `GEE_SERVICE_ACCOUNT_KEY_FILE` | With `OPENET_MODE=gee` | empty | The Google Earth Engine project, its service account and the path to the account's key file. The compose file makes the `secrets/` folder readable inside the container at `/run/secrets` |
 | `DATASYNC_MOCK_MODE` | No | `False` | Use sample data in place of the live public services |
+| `HEALTH_DEMO_MODE` | No | `False` | Reports the data freshness check and the zero-amount ledger check as passing, on a demonstration site whose database is restored from a stored copy every night. Leave it off on a site that keeps real records |
 
 ### Sign-in with Google, feedback and visitor statistics
 

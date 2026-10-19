@@ -368,8 +368,10 @@ docker compose exec web python manage.py load_station_fixture  # the demonstrati
 records and invented sample data. It gives the organization a complete site to
 explore while you gather its own records. One of its steps downloads streams and
 monitoring stations from public government services and needs no key. On a
-computer with no internet connection, add `--skip-auto-populate` to leave that step
-out.
+computer with no internet connection, first load the stored streams with
+`python manage.py seed_merced_base` and
+`python manage.py loaddata data/merced/flowlines.json`, then add
+`--skip-auto-populate` to leave the download out.
 
 The populate step creates every station it finds switched off, so the
 demonstration's monitoring pages show no stations reporting until the stations are

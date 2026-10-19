@@ -245,7 +245,7 @@ openh2o/
   surface/       Surface-water rights, points of diversion, diversions
   recharge/      Managed aquifer recharge sites and events
   drinking/      Drinking-water systems, facilities, sampling points, lab results
-  infrastructure/ Unified CRUD for wells, PODs, recharge sites
+  infrastructure/ Adding and importing wells, points of diversion and recharge sites
   datasync/      External data adapters (7 sources + OpenET)
   setup/         First-run setup wizard (watershed, sources, imports)
   reporting/     California's reporting format (under development, off by default)

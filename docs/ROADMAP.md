@@ -24,18 +24,22 @@ These parts of OpenH2O are built and tested. Each one ends with a link to its co
   [`accounting/services.py`](../accounting/services.py).
 - **Carry-over between water years.** At the end of a water year, OpenH2O carries
   each zone's unused allocation into the next water year as a credit, unless the
-  Delivery Settings page is set to let unused allocation expire. OpenH2O always
+  Delivery Settings page, or the zone's own page, is set to let unused allocation
+  expire. A zone's own choice overrides the Delivery Settings page. OpenH2O always
   carries an overdrawn allocation into the next water year as a debt, whichever
   choice is set. The code is in [`accounting/models.py`](../accounting/models.py)
   and [`accounting/carryover_math.py`](../accounting/carryover_math.py).
 - **Dividing a canal delivery among fields.** OpenH2O keeps each headgate's delivery
-  as one monthly total and divides that total among the fields the headgate serves
-  in proportion to each field's crop water use after rain. No field receives more
-  canal water than its crop could use, and OpenH2O records any water left over
-  against the headgate. The code is in
+  as one monthly total. It subtracts the canal's losses and any delivery recorded
+  for an individual field, then divides the remainder among the other fields in
+  proportion to each field's ETAW. No field receives more than its ETAW divided by
+  its irrigation efficiency, and OpenH2O records any water left over against the
+  headgate. In a month when no field has any ETAW, it divides the remainder by the
+  shares entered on the point of diversion. The code is in
   [`accounting/allocation_math.py`](../accounting/allocation_math.py).
-- **A permanent web address for each record.** Each well, point of diversion, use
-  area, water right and other record has a permanent web address on its OpenH2O
+- **A permanent web address for each record.** Each boundary, zone, use area, well,
+  point of diversion, recharge site, monitoring station, water system, facility,
+  sampling point and water right has a permanent web address on its OpenH2O
   site, such as `/id/well/12/`. A browser that opens the address shows the record's
   page. Another program that requests the same address receives the record's
   details as JSON-LD, a machine-readable format. Geoconnex, the Internet of Water's
