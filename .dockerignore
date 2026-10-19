@@ -10,3 +10,5 @@ caddy_config
 staticfiles
 .gitignore
 .dockerignore
+backups/
+.restore-in-progress

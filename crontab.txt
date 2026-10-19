@@ -18,6 +18,11 @@
 #                      finalized, month by month, so figures follow the day's new
 #                      data. Never touches a finalized period. Writes a record the
 #                      period page and Site Health read.
+#   backup.sh        - Nightly 1:25 AM: dump the database (checked by reading it back) and
+#                      the uploaded files into backups/ in the checkout, keep the newest 14
+#                      of each, and alert via ntfy on failure if OPENH2O_NTFY_URL is set.
+#                      Copy backups/ to another disk or computer as well. Restore with
+#                      scripts/restore.sh.
 #   run_health_checks - Check database, disk, SSL, migrations, and sync freshness
 #   prune_old_data    - Delete staging records and logs older than retention thresholds
 
@@ -26,6 +31,10 @@ OPENH2O_LOG_DIR=/opt/openh2o-logs
 
 # Hourly: live stream / reservoir telemetry (near-real-time flow & stage)
 0 * * * * $OPENH2O_DIR/scripts/run-sync.sh cdec usgs
+
+# Daily 1:25 AM: back up the database and the uploaded files, before the sync and the
+# accounting run touch anything. A dump that cannot be read back fails and alerts.
+25 1 * * * $OPENH2O_DIR/scripts/backup.sh
 
 # Daily 2:00 AM: slower periodic sources — groundwater (DWR WDL/SGMA) and climate (NOAA)
 # (cimis/cnrfc/openet dropped 59-01: deactivated sources, no useful markers — see seed_data_sources.py)

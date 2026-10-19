@@ -61,3 +61,9 @@ static/img/logo-alternatives/
 
 # A maintainer's own agent notes, never published.
 CLAUDE.local.md
+
+# Nightly backups (scripts/backup.sh): database dumps and uploaded files, never committed.
+backups/
+
+# Written by scripts/restore.sh while a restore runs; the scheduled sync and backup skip while it exists.
+.restore-in-progress
