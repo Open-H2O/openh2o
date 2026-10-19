@@ -89,7 +89,7 @@ files = [
   "datasync/management/commands/sync_openet_parcels.py",
 ]
 labels = []
-checked_at = "182c09b"
+checked_at = "924eea5"
 
 [[section]]
 document = "README.md"
@@ -109,7 +109,7 @@ files = [
   "crontab.txt",
 ]
 labels = []
-checked_at = "182c09b"
+checked_at = "924eea5"
 
 [[section]]
 document = "README.md"
@@ -183,7 +183,7 @@ files = [
   "templates/partials/_feedback_widget.html",
 ]
 labels = []
-checked_at = "182c09b"
+checked_at = "924eea5"
 
 [[section]]
 document = "README.md"
@@ -214,7 +214,7 @@ files = [
   "static/js/map-core.js",
 ]
 labels = []
-checked_at = "182c09b"
+checked_at = "924eea5"
 
 [[section]]
 document = "README.md"
@@ -246,14 +246,14 @@ files = [
   "static/js/map-core.js",
 ]
 labels = []
-checked_at = "efe5113"
+checked_at = "924eea5"
 
 [[section]]
 document = "README.md"
 heading = "Cost to run"
 files = ["config/settings/base.py", "datasync/adapters/__init__.py", "datasync/adapters/openet_gee.py"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "924eea5"
 
 [[section]]
 document = "README.md"
@@ -358,7 +358,7 @@ labels = [
   { text = "Send feedback", where = "templates/partials/_sidebar.html" },
   { text = "Data looks wrong", where = "templates/partials/_feedback_widget.html" },
 ]
-checked_at = "6de4a92"
+checked_at = "924eea5"
 
 [[section]]
 document = "SECURITY.md"
@@ -429,7 +429,7 @@ files = [
   "docker-compose.yml",
 ]
 labels = []
-checked_at = "182c09b"
+checked_at = "924eea5"
 
 [[section]]
 document = "DEPLOY.md"
@@ -501,7 +501,7 @@ labels = [
   { text = "Change email", where = "templates/core/users_list.html" },
   { text = "Users", where = "core/modules.py" },
 ]
-checked_at = "6de4a92"
+checked_at = "924eea5"
 
 [[section]]
 document = "DEPLOY.md"
@@ -547,7 +547,7 @@ files = [
   "config/settings/base.py",
 ]
 labels = []
-checked_at = "182c09b"
+checked_at = "924eea5"
 
 [[section]]
 document = "DEPLOY.md"
@@ -570,7 +570,7 @@ files = [
 labels = [
   { text = "Site health", where = "templates/health/dashboard.html" },
 ]
-checked_at = "182c09b"
+checked_at = "924eea5"
 
 [[section]]
 document = "DEPLOY.md"
@@ -652,7 +652,7 @@ files = [
 labels = [
   { text = "Site health", where = "templates/health/dashboard.html" },
 ]
-checked_at = "182c09b"
+checked_at = "924eea5"
 
 [[section]]
 document = "DEPLOY.md"
@@ -703,7 +703,7 @@ labels = [
   { text = "Change password", where = "templates/core/profile.html" },
   { text = "Forgot password?", where = "templates/account/login.html" },
 ]
-checked_at = "182c09b"
+checked_at = "924eea5"
 
 [[section]]
 document = "DEPLOY.md"
@@ -718,7 +718,7 @@ files = [
 labels = [
   { text = "Users", where = "core/modules.py" },
 ]
-checked_at = "6de4a92"
+checked_at = "924eea5"
 
 [[section]]
 document = "DEPLOY.md"
@@ -747,7 +747,7 @@ files = [
   "Makefile",
 ]
 labels = []
-checked_at = "182c09b"
+checked_at = "924eea5"
 
 [[section]]
 document = "DEPLOY.md"
@@ -775,7 +775,7 @@ files = [
   "feedback/models.py",
 ]
 labels = []
-checked_at = "182c09b"
+checked_at = "924eea5"
 
 [[section]]
 document = "DEPLOY.md"
@@ -807,7 +807,7 @@ document = "DEPLOY.md"
 heading = "12. Environment Variables Reference"
 files = ["config/wsgi.py", "entrypoint.sh", "config/settings/base.py"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "924eea5"
 
 [[section]]
 document = "DEPLOY.md"
@@ -826,21 +826,21 @@ files = [
   "entrypoint.sh",
 ]
 labels = []
-checked_at = "182c09b"
+checked_at = "924eea5"
 
 [[section]]
 document = "DEPLOY.md"
 heading = "The database"
 files = ["docker-compose.yml", "config/settings/production.py", "config/settings/base.py"]
 labels = []
-checked_at = "182c09b"
+checked_at = "924eea5"
 
 [[section]]
 document = "DEPLOY.md"
 heading = "Email"
 files = ["config/settings/base.py", "config/settings/production.py", "config/settings/local.py"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "924eea5"
 
 [[section]]
 document = "DEPLOY.md"
@@ -857,7 +857,7 @@ files = [
   "docker-compose.yml",
 ]
 labels = []
-checked_at = "182c09b"
+checked_at = "924eea5"
 
 [[section]]
 document = "DEPLOY.md"
@@ -884,7 +884,7 @@ labels = [
   { text = "Continue with Google", where = "templates/account/signup.html" },
   { text = "Users", where = "core/modules.py" },
 ]
-checked_at = "182c09b"
+checked_at = "924eea5"
 
 [[section]]
 document = "DEPLOY.md"
@@ -899,7 +899,7 @@ files = [
   "core/checks.py",
 ]
 labels = []
-checked_at = "182c09b"
+checked_at = "924eea5"
 
 [[section]]
 document = "docs/README.md"
@@ -995,7 +995,7 @@ labels = [
   { text = "Use ledger", where = "templates/accounting/ledger_list.html" },
   { text = "Dry run", where = "templates/accounting/csv_upload.html" },
 ]
-checked_at = "182c09b"
+checked_at = "924eea5"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1159,7 +1159,7 @@ labels = [
   { text = "Add sampling points", where = "templates/drinking/overview.html" },
   { text = "Drinking water", where = "templates/drinking/overview.html" },
 ]
-checked_at = "6de4a92"
+checked_at = "924eea5"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1181,7 +1181,7 @@ labels = [
   { text = "Unit for rows with a blank unit", where = "templates/drinking/partials/_production_import_preview.html" },
   { text = "Report year", where = "templates/drinking/partials/_production_import_preview.html" },
 ]
-checked_at = "6de4a92"
+checked_at = "924eea5"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1218,7 +1218,7 @@ files = [
 labels = [
   { text = "Add a water system", where = "templates/drinking/onboard.html" },
 ]
-checked_at = "6de4a92"
+checked_at = "924eea5"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1433,7 +1433,7 @@ files = [
   "datasync/adapters/gee.py",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "924eea5"
 
 [[section]]
 document = "docs/earth-engine-tier-setup.md"
@@ -1484,7 +1484,7 @@ files = [
   "datasync/management/commands/prove_gee_auth.py",
 ]
 labels = []
-checked_at = "182c09b"
+checked_at = "924eea5"
 
 [[section]]
 document = "docs/earth-engine-tier-setup.md"
@@ -1522,7 +1522,7 @@ files = [
   "config/settings/production.py",
 ]
 labels = []
-checked_at = "182c09b"
+checked_at = "924eea5"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1561,7 +1561,7 @@ files = [
   "core/management/commands/seed_data.py",
 ]
 labels = []
-checked_at = "182c09b"
+checked_at = "924eea5"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1580,7 +1580,7 @@ files = [
   "config/urls.py",
 ]
 labels = []
-checked_at = "182c09b"
+checked_at = "924eea5"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1669,7 +1669,7 @@ labels = [
   { text = "Schedule", where = "core/modules.py" },
   { text = "+ Add row", where = "templates/drinking/schedule.html" },
 ]
-checked_at = "6de4a92"
+checked_at = "924eea5"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1704,7 +1704,7 @@ labels = [
   { text = "Delivery Settings", where = "core/modules.py" },
   { text = "Diversion records", where = "templates/accounting/delivery_settings.html" },
 ]
-checked_at = "6de4a92"
+checked_at = "924eea5"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1729,7 +1729,7 @@ files = [
   "accounting/management/commands/sync_openet_to_ledger.py",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "924eea5"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1811,7 +1811,7 @@ labels = [
   { text = "Viewer", where = "templates/core/users_list.html" },
   { text = "+ Add user", where = "templates/core/users_list.html" },
 ]
-checked_at = "6de4a92"
+checked_at = "924eea5"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1852,7 +1852,7 @@ labels = [
   { text = "ET / Meter Agreement", where = "health/models.py" },
   { text = "Needs API key", where = "datasync/freshness.py" },
 ]
-checked_at = "182c09b"
+checked_at = "924eea5"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1876,7 +1876,7 @@ labels = [
   { text = "None up to date", where = "datasync/freshness.py" },
   { text = "OpenH2O is temporarily unavailable", where = "error-pages/503.html" },
 ]
-checked_at = "182c09b"
+checked_at = "924eea5"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1896,7 +1896,7 @@ files = [
 labels = [
   { text = "Source code", where = "templates/base.html" },
 ]
-checked_at = "182c09b"
+checked_at = "924eea5"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -1946,7 +1946,7 @@ files = [
   "config/settings/base.py",
 ]
 labels = []
-checked_at = "182c09b"
+checked_at = "924eea5"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -1982,7 +1982,7 @@ document = "docs/INSTALL-WITHOUT-DOCKER.md"
 heading = "6. Build the site's styling"
 files = ["scripts/build-css.sh", "static/css/input.css", "config/settings/base.py"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "924eea5"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -1997,7 +1997,7 @@ files = [
   "Dockerfile",
 ]
 labels = []
-checked_at = "182c09b"
+checked_at = "924eea5"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -2025,7 +2025,7 @@ files = [
   "core/management/commands/seed_merced.py",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "924eea5"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -2038,7 +2038,7 @@ files = [
   "requirements.lock",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "924eea5"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -2055,14 +2055,14 @@ files = [
   "health/management/commands/prune_old_data.py",
 ]
 labels = []
-checked_at = "182c09b"
+checked_at = "924eea5"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
 heading = "9. Who can reach it"
 files = ["config/settings/production.py", "config/settings/base.py"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "924eea5"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -2074,14 +2074,14 @@ files = [
   "core/adapters.py",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "924eea5"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
 heading = "10. The access log"
 files = ["config/settings/production.py", "config/settings/base.py"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "924eea5"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -2103,7 +2103,7 @@ document = "templates/about.html"
 heading = "(top)"
 files = ["config/views.py", "core/templatetags/prose.py"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "924eea5"
 
 [[section]]
 document = "templates/about.html"
@@ -2156,7 +2156,7 @@ labels = [
   { text = "Glossary", where = "templates/help/glossary.html" },
   { text = "How water balances work", where = "templates/help/water_balances.html" },
 ]
-checked_at = "efe5113"
+checked_at = "924eea5"
 
 [[section]]
 document = "templates/about_demonstration_data.html"
@@ -2295,7 +2295,7 @@ labels = [
   { text = "Upload CSV", where = "templates/accounting/ledger_list.html" },
   { text = "Run the calculation", where = "templates/accounting/period_detail.html" },
 ]
-checked_at = "182c09b"
+checked_at = "924eea5"
 
 [[section]]
 document = "templates/help/getting_started.html"
@@ -2500,7 +2500,7 @@ files = [
   "accounting/views.py",
 ]
 labels = []
-checked_at = "efe5113"
+checked_at = "924eea5"
 
 [[section]]
 document = "templates/help/settings_explained.html"
@@ -2625,7 +2625,7 @@ labels = [
   { text = "Monitoring Stations", where = "core/modules.py" },
   { text = "Site Health", where = "core/modules.py" },
 ]
-checked_at = "6de4a92"
+checked_at = "924eea5"
 
 [[section]]
 document = "templates/help/glossary.html"
