@@ -39,7 +39,7 @@ ENFORCED: list = [
     "templates/help/water_balances.html",
     "templates/help/getting_started.html",
     # glossary.html is measured as it renders, in
-    # test_the_glossary_holds_the_shape_as_it_renders below: its 49 definitions
+    # test_the_glossary_holds_the_shape_as_it_renders below: its 43 definitions
     # come from config/views.py into table cells, so the template source holds
     # almost no table words. When the "Whose word" badges were removed
     # (2026-10-10) the source's share rose to 0.53 from words that

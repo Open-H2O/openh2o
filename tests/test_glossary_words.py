@@ -86,8 +86,15 @@ class TestTheNewEntries:
 
     def test_the_mcl_entry_claims_no_comparison(self, entries):
         """The platform shows the file's MCL beside a finding and judges nothing
-        (ISS-140, ruled "beside"); the definition must say exactly that."""
-        assert "never compares a finding with it" in entries["MCL"]["text"]
+        (ISS-140, ruled "beside"). 2026-10-18: the definition says the MCL is
+        stored as reported and stops; its "never compares a finding with it"
+        went the way of the demonstration page's "does not compare them",
+        which Brent deleted the same day. What stays pinned is that the entry
+        claims no comparison."""
+        text = entries["MCL"]["text"]
+        assert "exactly as reported" in text
+        assert "exceed" not in text.lower()
+        assert "compar" not in text.lower()
 
 
 def _source_list():

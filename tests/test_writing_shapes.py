@@ -364,7 +364,7 @@ def test_a_planted_generic_california_is_caught_on_every_surface():
 def test_a_california_proper_name_is_not_counted():
     names = (
         "<p>California Data Exchange Center, real-time data.</p>"
-        "<p>the California law requiring groundwater management.</p>"
+        "<p>California's 2014 law under which GSAs manage groundwater basins.</p>"
         "<p>ELAP is California's Environmental Laboratory Accreditation Program.</p>"
     )
     assert _template(names)["California"] == 0

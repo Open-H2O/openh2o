@@ -18,29 +18,22 @@
 
 {% block content %}
 {% comment %}
-  2026-10-10 (150.1): twenty definitions in config/views.py::glossary were
-  rewritten in two batches; the description and the card lines are sentences
-  taken from the other help pages. Membership is unchanged. The "Whose word"
-  column was removed.
+  2026-10-18 (150.1-03): the definitions in config/views.py::glossary were
+  rewritten whole; each defines a word a screen uses and points to the Help
+  page that explains it. The heading and the column headers were renamed.
 
-  149.1-04 (2026-10-07): carried to the shape used on Methods
-  behind the numbers (149.1-01) and the pages after it, from the reader's
-  three questions outward (what the platform means by "allocation" and what
-  it holds against one; where "groundwater extracted" is explained in full;
-  which entries are the state's and the programs' names and which are this
-  platform's own). The whole page is one table: the term, what the platform
-  means by it, and the Help page that explains it, empty where there is none.
-
-  The letter headings are rows the template renders where the first letter
-  changes ({% templatetag openblock %} ifchanged {% templatetag closeblock %}),
-  so the jump nav's anchors exist without a script. The entries, their order
-  and their pointers come from config/views.py::glossary, which drops a
-  pointer to a page this deployment does not serve, so every link below is
-  to a page that is there. The link cards are guarded the same way.
+  The whole page is one table: the term, its definition, and the Help page
+  that explains it, empty where there is none. The letter headings are rows
+  the template renders where the first letter changes
+  ({% templatetag openblock %} ifchanged {% templatetag closeblock %}), so the
+  jump nav's anchors exist without a script. The entries, their order and
+  their pointers come from config/views.py::glossary, which drops a pointer to
+  a page this deployment does not serve, so every link below is to a page that
+  is there. The link cards are guarded the same way.
 {% endcomment %}<div class="page-stack page-help help-page">
 
   <div class="card-raised">
-    <h2 class="section-header">What the words on these screens mean</h2>
+    <h2 class="section-header">Terms</h2>
     <nav class="jump-nav mb-md" aria-label="Jump to a letter">
       {% for letter in letters %}<a href="#letter-{{ letter }}">{{ letter }}</a>{% endfor %}
     </nav>
@@ -50,8 +43,8 @@
         <thead>
           <tr>
             <th>Term</th>
-            <th>What this platform means by it</th>
-            <th>Explained in full</th>
+            <th>Definition</th>
+            <th>Help page</th>
           </tr>
         </thead>
         <tbody>
