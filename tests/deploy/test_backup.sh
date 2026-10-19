@@ -144,10 +144,16 @@ check "9 skipped while a restore runs" '[ $RC = 0 ] && [ ! -s "$S/calls.log" ] &
 OUT=$(cd "$CO" && PATH="$T/bin:$PATH" OPENH2O_DIR="$CO" OPENH2O_LOG_DIR="$LOGS" OPENH2O_IGNORE_RESTORE_MARKER=1 "$SH" scripts/backup.sh 2>&1); RC=$?
 check "9 restore.sh's own safety backup still runs" '[ $RC = 0 ] && [ "$(count "\.dump")" = 1 ]'
 
-# (10) the folder is ignored by git and by the image build.
-check "10 .gitignore keeps the dumps out, .dockerignore keeps backups/ out of the image" 'grep -qx "backups/\*" "$REPO/.gitignore" && grep -qx "backups/" "$REPO/.dockerignore"'
-check "10 the backups folder itself ships, so Docker never creates it owned by root" 'grep -qx "!backups/.gitkeep" "$REPO/.gitignore" && git -C "$REPO" ls-files --error-unmatch backups/.gitkeep >/dev/null 2>&1'
-check "10 the restore marker is in both too" 'grep -qx ".restore-in-progress" "$REPO/.gitignore" && grep -qx ".restore-in-progress" "$REPO/.dockerignore"'
+# (10) the folder is ignored by git and by the image build. The image carries neither ignore
+# file (nor .git), and the suite runs inside the image, so there the check is on the effect:
+# the image holds no backups folder and no restore marker.
+if [ -f "$REPO/.dockerignore" ]; then
+  check "10 .gitignore keeps the dumps out, .dockerignore keeps backups/ out of the image" 'grep -qx "backups/\*" "$REPO/.gitignore" && grep -qx "backups/" "$REPO/.dockerignore"'
+  check "10 the backups folder itself ships, so Docker never creates it owned by root" 'grep -qx "!backups/.gitkeep" "$REPO/.gitignore" && git -C "$REPO" ls-files --error-unmatch backups/.gitkeep >/dev/null 2>&1'
+  check "10 the restore marker is in both too" 'grep -qx ".restore-in-progress" "$REPO/.gitignore" && grep -qx ".restore-in-progress" "$REPO/.dockerignore"'
+else
+  check "10 (inside the image) no backups folder and no restore marker were built in" '[ ! -e "$REPO/backups" ] && [ ! -e "$REPO/.restore-in-progress" ]'
+fi
 check "10 the shipped schedule has the backup line" 'grep -qE "^25 1 \* \* \* \\\$OPENH2O_DIR/scripts/backup\.sh\$" "$REPO/crontab.txt"'
 check "10 the website gets the folder read-only" 'grep -qF -- "- ./backups:/backups:ro" "$REPO/docker-compose.yml"'
 
