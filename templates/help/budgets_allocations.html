@@ -12,7 +12,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Allocations &amp; Ceilings</span>
   </nav>
-  <p class="page-description">This page explains how OpenH2O turns a zone&rsquo;s groundwater ceiling into each account&rsquo;s allocation, and what counts against it.</p>
+  <p class="page-description">This page explains how OpenH2O calculates each account&rsquo;s groundwater allocation from its zone&rsquo;s ceiling, and what is charged against it.</p>
 </div>
 {% endblock %}
 
@@ -60,7 +60,7 @@
           </tr>
           <tr>
             <td class="col-name">Why use areas are counted</td>
-            <td>The share follows the number of use areas because acreage may be missing from parcel records.</td>
+            <td>OpenH2O counts use areas because acreage may be missing from parcel records.</td>
           </tr>
           <tr>
             <td class="col-name">More than one zone</td>
@@ -68,7 +68,7 @@
           </tr>
           <tr>
             <td class="col-name">Surface water ceilings</td>
-            <td>A surface water ceiling stays with its zone. The zone&rsquo;s page compares it with the deliveries recorded on the zone&rsquo;s use areas for the water year.</td>
+            <td>OpenH2O leaves a surface water ceiling undivided. On the zone&rsquo;s page, OpenH2O compares it with the deliveries recorded on the zone&rsquo;s use areas for the water year.</td>
           </tr>
         </tbody>
       </table>
@@ -108,7 +108,7 @@
   </div>
 
   <div class="card-raised">
-    <h2 class="section-header">What counts against an allocation</h2>
+    <h2 class="section-header">What is charged against an allocation</h2>
     <div class="table-scroll">
       <table class="data-table help-cases-table">
         <thead>
@@ -120,11 +120,11 @@
         <tbody>
           {% if 'wells' in enabled_modules %}<tr>
             <td class="col-name">Groundwater extraction</td>
-            <td>A groundwater allocation is charged with groundwater extraction: the meter reading where a well has a meter, and OpenH2O&rsquo;s estimate where it has none.</td>
+            <td>OpenH2O charges a groundwater allocation with groundwater extraction: the meter reading where a well has a meter, and OpenH2O&rsquo;s estimate where it has none.</td>
           </tr>{% endif %}
           <tr>
             <td class="col-name">Surface water deliveries</td>
-            <td>Surface water deliveries count only against a surface water ceiling.</td>
+            <td>OpenH2O counts surface water deliveries only against a surface water ceiling.</td>
           </tr>
           {% if 'wells' in enabled_modules %}<tr>
             <td class="col-name">Remaining allocation</td>
@@ -132,11 +132,11 @@
           </tr>{% endif %}
           <tr>
             <td class="col-name">Carry-over</td>
-            <td>A zone&rsquo;s remaining groundwater allocation includes the carry-over from the previous water year. An account&rsquo;s remaining allocation leaves the carry-over out.</td>
+            <td>OpenH2O adds the carry-over from the previous water year to a zone&rsquo;s remaining groundwater allocation, but not to an account&rsquo;s.</td>
           </tr>
           <tr>
             <td class="col-name">A zone with no ceiling</td>
-            <td>When a zone has no groundwater ceiling for the water year, its accounts&rsquo; allocations show a dash.</td>
+            <td>When a zone has no groundwater ceiling for the water year, OpenH2O shows a dash for its accounts&rsquo; allocations.</td>
           </tr>
         </tbody>
       </table>
