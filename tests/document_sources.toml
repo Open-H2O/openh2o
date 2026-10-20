@@ -30,28 +30,28 @@ heading = "(top)"
 files = []
 why_none = "SPDX licence comment and the logo image only; no claim about how OpenH2O behaves."
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "README.md"
 heading = "OpenH2O (Open Water Accounting Platform)"
 files = ["core/modules.py", "datasync/adapters/openet.py"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "README.md"
 heading = "Who this is for"
 files = ["core/modules.py", "accounting/services.py"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "README.md"
 heading = "A note on terms"
 files = ["accounting/steps.py"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "README.md"
@@ -65,7 +65,7 @@ files = [
   "templates/partials/_demonstration_banner.html",
 ]
 labels = []
-checked_at = "182c09b"
+checked_at = "41b90b6"
 
 [[section]]
 document = "README.md"
@@ -89,7 +89,7 @@ files = [
   "datasync/management/commands/sync_openet_parcels.py",
 ]
 labels = []
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "README.md"
@@ -109,7 +109,7 @@ files = [
   "crontab.txt",
 ]
 labels = []
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "README.md"
@@ -144,7 +144,7 @@ labels = [
   { text = "Population served", where = "templates/drinking/overview.html" },
   { text = "EPA Envirofacts", where = "drinking/provenance.py" },
 ]
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "README.md"
@@ -183,7 +183,7 @@ files = [
   "templates/partials/_feedback_widget.html",
 ]
 labels = []
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "README.md"
@@ -197,7 +197,7 @@ files = [
   "crontab.txt",
 ]
 labels = []
-checked_at = "182c09b"
+checked_at = "41b90b6"
 
 [[section]]
 document = "README.md"
@@ -214,7 +214,7 @@ files = [
   "static/js/map-core.js",
 ]
 labels = []
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "README.md"
@@ -246,21 +246,21 @@ files = [
   "static/js/map-core.js",
 ]
 labels = []
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "README.md"
 heading = "Cost to run"
 files = ["config/settings/base.py", "datasync/adapters/__init__.py", "datasync/adapters/openet_gee.py"]
 labels = []
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "README.md"
 heading = "Testing"
 files = ["Makefile", "pyproject.toml", "config/settings/production.py"]
 labels = []
-checked_at = "182c09b"
+checked_at = "41b90b6"
 
 [[section]]
 document = "README.md"
@@ -268,7 +268,7 @@ heading = "Contributing"
 files = []
 why_none = "Pointer to CONTRIBUTING.md and a licensing statement; no claim about code behaviour."
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "README.md"
@@ -276,7 +276,7 @@ heading = "License"
 files = []
 why_none = "Licence notice pointing to LICENSE and NOTICE."
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "README.md"
@@ -284,7 +284,7 @@ heading = "Acknowledgments"
 files = []
 why_none = "History and credit for the Groundwater Accounting Platform; no claim about code behaviour."
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "CONTRIBUTING.md"
@@ -292,7 +292,7 @@ heading = "Contributing to OpenH2O"
 files = []
 why_none = "A welcome paragraph with no claim about the code."
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "CONTRIBUTING.md"
@@ -301,7 +301,7 @@ files = ["templates/base.html", "templates/base_auth.html"]
 labels = [
   { text = "Source code", where = "templates/base.html" },
 ]
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "CONTRIBUTING.md"
@@ -314,7 +314,7 @@ files = [
   "Makefile",
 ]
 labels = []
-checked_at = "182c09b"
+checked_at = "41b90b6"
 
 [[section]]
 document = "CONTRIBUTING.md"
@@ -328,7 +328,7 @@ files = [
   "static/css/tokens.css",
 ]
 labels = []
-checked_at = "182c09b"
+checked_at = "41b90b6"
 
 [[section]]
 document = "CONTRIBUTING.md"
@@ -340,7 +340,7 @@ files = [
   "standards/management/commands/seed_observed_properties.py",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "CONTRIBUTING.md"
@@ -358,7 +358,7 @@ labels = [
   { text = "Send feedback", where = "templates/partials/_sidebar.html" },
   { text = "Data looks wrong", where = "templates/partials/_feedback_widget.html" },
 ]
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "SECURITY.md"
@@ -397,7 +397,7 @@ heading = "Deploying OpenH2O"
 files = []
 why_none = "Orientation only: says who the guide is for and points to the AI operator guide. It makes no claim about how the code behaves."
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
@@ -409,14 +409,14 @@ files = [
   "crontab.txt",
 ]
 labels = []
-checked_at = "182c09b"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
 heading = "2. Clone the Repository"
 files = ["crontab.txt"]
 labels = []
-checked_at = "182c09b"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
@@ -429,35 +429,35 @@ files = [
   "docker-compose.yml",
 ]
 labels = []
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
 heading = "4. Caddy / HTTPS Configuration"
 files = ["Caddyfile", "docker-compose.yml", "error-pages/503.html"]
 labels = []
-checked_at = "182c09b"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
 heading = "Branch A: Only this computer, or the office network"
 files = ["Caddyfile", "docker-compose.yml", "config/settings/production.py"]
 labels = []
-checked_at = "182c09b"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
 heading = "Branch B: Public internet, and this server obtains its own certificate"
 files = ["Caddyfile", "docker-compose.yml", "config/settings/production.py"]
 labels = []
-checked_at = "182c09b"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
 heading = "Branch C: Public internet, and something in front of the server handles the encryption"
 files = ["Caddyfile", "config/settings/production.py"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
@@ -469,7 +469,7 @@ files = [
   "core/management/commands/ensure_superuser.py",
 ]
 labels = []
-checked_at = "182c09b"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
@@ -479,7 +479,7 @@ files = [
   "Dockerfile",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
@@ -501,7 +501,7 @@ labels = [
   { text = "Change email", where = "templates/core/users_list.html" },
   { text = "Users", where = "core/modules.py" },
 ]
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
@@ -520,7 +520,7 @@ files = [
   "standards/management/commands/check_conformance.py",
 ]
 labels = []
-checked_at = "efe5113"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
@@ -547,7 +547,7 @@ files = [
   "config/settings/base.py",
 ]
 labels = []
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
@@ -570,7 +570,7 @@ files = [
 labels = [
   { text = "Site health", where = "templates/health/dashboard.html" },
 ]
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
@@ -578,7 +578,7 @@ heading = "11. Ongoing Operations"
 files = []
 why_none = "Heading only (lines 646-647). The claims sit in the subsections that follow."
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
@@ -604,7 +604,7 @@ labels = [
   { text = "Setup Wizard", where = "core/modules.py" },
   { text = "Enable all", where = "templates/setup/partials/_station_review.html" },
 ]
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
@@ -619,7 +619,7 @@ files = [
   "crontab.txt",
 ]
 labels = []
-checked_at = "182c09b"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
@@ -629,7 +629,7 @@ files = [
   ".gitignore",
 ]
 labels = []
-checked_at = "182c09b"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
@@ -652,7 +652,7 @@ files = [
 labels = [
   { text = "Site health", where = "templates/health/dashboard.html" },
 ]
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
@@ -670,7 +670,7 @@ files = [
   "docker-compose.yml",
 ]
 labels = []
-checked_at = "182c09b"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
@@ -686,7 +686,7 @@ labels = [
   { text = "Aerial", where = "static/js/map-core.js" },
   { text = "Dark", where = "static/js/map-core.js" },
 ]
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
@@ -703,7 +703,7 @@ labels = [
   { text = "Change password", where = "templates/core/profile.html" },
   { text = "Forgot password?", where = "templates/account/login.html" },
 ]
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
@@ -718,21 +718,21 @@ files = [
 labels = [
   { text = "Users", where = "core/modules.py" },
 ]
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
 heading = "Health Checks"
 files = ["health/management/commands/run_health_checks.py", "Makefile"]
 labels = []
-checked_at = "182c09b"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
 heading = "Data Pruning"
 files = ["health/management/commands/prune_old_data.py", "Makefile"]
 labels = []
-checked_at = "182c09b"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
@@ -747,7 +747,7 @@ files = [
   "Makefile",
 ]
 labels = []
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
@@ -760,7 +760,7 @@ files = [
   "docker-compose.yml",
 ]
 labels = []
-checked_at = "182c09b"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
@@ -775,7 +775,7 @@ files = [
   "feedback/models.py",
 ]
 labels = []
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
@@ -788,7 +788,7 @@ files = [
   "docker-compose.yml",
 ]
 labels = []
-checked_at = "182c09b"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
@@ -800,14 +800,14 @@ files = [
   "Dockerfile",
 ]
 labels = []
-checked_at = "182c09b"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
 heading = "12. Environment Variables Reference"
 files = ["config/wsgi.py", "entrypoint.sh", "config/settings/base.py"]
 labels = []
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
@@ -826,21 +826,21 @@ files = [
   "entrypoint.sh",
 ]
 labels = []
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
 heading = "The database"
 files = ["docker-compose.yml", "config/settings/production.py", "config/settings/base.py"]
 labels = []
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
 heading = "Email"
 files = ["config/settings/base.py", "config/settings/production.py", "config/settings/local.py"]
 labels = []
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
@@ -857,7 +857,7 @@ files = [
   "docker-compose.yml",
 ]
 labels = []
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
@@ -884,7 +884,7 @@ labels = [
   { text = "Continue with Google", where = "templates/account/signup.html" },
   { text = "Users", where = "core/modules.py" },
 ]
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
@@ -899,7 +899,7 @@ files = [
   "core/checks.py",
 ]
 labels = []
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/README.md"
@@ -913,7 +913,7 @@ document = "docs/ROADMAP.md"
 heading = "Roadmap"
 files = ["core/modules.py"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/ROADMAP.md"
@@ -940,7 +940,7 @@ files = [
 labels = [
   { text = "Delivery Settings", where = "core/modules.py" },
 ]
-checked_at = "efe5113"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/ROADMAP.md"
@@ -952,14 +952,14 @@ files = [
   "accounting/ledger_import.py",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/ROADMAP.md"
 heading = "Planned: publishing open data"
 files = ["standards/models.py", "standards/management/commands/seed_observed_properties.py", "config/urls.py"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/ROADMAP.md"
@@ -967,7 +967,7 @@ heading = "Ideas not yet started"
 files = []
 why_none = "Lists features that are not built; no existing file makes any sentence true."
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -995,14 +995,14 @@ labels = [
   { text = "Use ledger", where = "templates/accounting/ledger_list.html" },
   { text = "Dry run", where = "templates/accounting/csv_upload.html" },
 ]
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
 heading = "1. The demonstration data"
 files = ["core/management/commands/seed_merced.py", "core/management/commands/seed_data.py", "geography/management/commands/auto_populate.py"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1024,7 +1024,7 @@ labels = [
   { text = "Type an extent", where = "templates/setup/wizard.html" },
   { text = "Start without one", where = "templates/setup/wizard.html" },
 ]
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1032,21 +1032,21 @@ heading = "3. File imports"
 files = []
 why_none = "Heading line only; no claim about the code."
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
 heading = "Parcels: `import_parcels`"
 files = ["parcels/management/commands/import_parcels.py", "parcels/models.py", "infrastructure/views.py"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
 heading = "Wells: `import_wells`"
 files = ["wells/management/commands/import_wells.py", "wells/models.py"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1069,7 +1069,7 @@ labels = [
   { text = "Surface diversions", where = "templates/surface/pod_list.html" },
   { text = "Recharge sites", where = "templates/recharge/list.html" },
 ]
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1088,7 +1088,7 @@ labels = [
   { text = "Import", where = "templates/surface/water_rights_list.html" },
   { text = "Import water rights", where = "templates/surface/right_import.html" },
 ]
-checked_at = "efe5113"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1114,7 +1114,7 @@ labels = [
   { text = "Diversion records", where = "templates/accounting/delivery_settings.html" },
   { text = "Data status", where = "templates/surface/partials/_diversion_import_preview.html" },
 ]
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1139,7 +1139,7 @@ labels = [
   { text = "Dry run", where = "templates/accounting/csv_upload.html" },
   { text = "Water years", where = "templates/accounting/periods_list.html" },
 ]
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1159,7 +1159,7 @@ labels = [
   { text = "Add sampling points", where = "templates/drinking/overview.html" },
   { text = "Drinking water", where = "templates/drinking/overview.html" },
 ]
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1181,7 +1181,7 @@ labels = [
   { text = "Unit for rows with a blank unit", where = "templates/drinking/partials/_production_import_preview.html" },
   { text = "Report year", where = "templates/drinking/partials/_production_import_preview.html" },
 ]
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1189,7 +1189,7 @@ heading = "4. Filling in from public sources"
 files = []
 why_none = "Heading line only; no claim about the code."
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1203,7 +1203,7 @@ files = [
 labels = [
   { text = "Setup Wizard", where = "templates/setup/wizard.html" },
 ]
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1218,7 +1218,7 @@ files = [
 labels = [
   { text = "Add a water system", where = "templates/drinking/onboard.html" },
 ]
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1237,7 +1237,7 @@ labels = [
   { text = "Add sampling points", where = "templates/drinking/overview.html" },
   { text = "Drinking water", where = "templates/drinking/overview.html" },
 ]
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1261,21 +1261,21 @@ labels = [
   { text = "Import", where = "templates/wells/list.html" },
   { text = "Upload CSV", where = "templates/accounting/ledger_list.html" },
 ]
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
 heading = "Data Standards & Interoperability"
 files = ["standards/management/commands/seed_observed_properties.py", "standards/management/commands/export_crosswalk.py", "docker-compose.yml"]
 labels = []
-checked_at = "182c09b"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
 heading = "1. The kinds of measurement (ObservedProperty)"
 files = ["standards/management/commands/seed_observed_properties.py", "standards/models.py"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
@@ -1295,14 +1295,14 @@ files = [
   "datasync/models.py",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
 heading = "3. Quality flags and vertical datum"
 files = ["measurements/models.py", "measurements/admin.py", "wells/models.py"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
@@ -1316,7 +1316,7 @@ files = [
   "templates/drinking/sampling_point_detail.html",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
@@ -1328,7 +1328,7 @@ files = [
   "Makefile",
 ]
 labels = []
-checked_at = "182c09b"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
@@ -1340,7 +1340,7 @@ files = [
   "core/modules.py",
 ]
 labels = []
-checked_at = "efe5113"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
@@ -1357,7 +1357,7 @@ labels = [
   { text = "Methodology Settings", where = "templates/accounting/methodology_settings.html" },
   { text = "USDA-SCS (TR-21)", where = "accounting/precip_math.py" },
 ]
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
@@ -1376,21 +1376,21 @@ labels = [
   { text = "Delivery settings", where = "templates/accounting/delivery_settings.html" },
   { text = "Where your record addresses are published", where = "core/forms.py" },
 ]
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
 heading = "Reusing the design in another platform"
 files = ["standards/management/commands/check_conformance.py", "standards/management/commands/seed_observed_properties.py"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/water-budget-terms.md"
 heading = "Water budget terms"
 files = ["accounting/models.py", "accounting/management/commands/run_calculations.py"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/water-budget-terms.md"
@@ -1412,7 +1412,7 @@ labels = [
   { text = "Methodology Settings", where = "templates/accounting/methodology_settings.html" },
   { text = "Delivery settings", where = "templates/accounting/delivery_settings.html" },
 ]
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/water-budget-terms.md"
@@ -1420,7 +1420,7 @@ heading = "Sources"
 files = []
 why_none = "A list of outside source links (DWR handbook, C2VSimFG package); no claim about OpenH2O's code."
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/earth-engine-tier-setup.md"
@@ -1433,14 +1433,14 @@ files = [
   "datasync/adapters/gee.py",
 ]
 labels = []
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/earth-engine-tier-setup.md"
 heading = "What Earth Engine costs"
 files = ["scripts/benchmarks/gee_eecu_bench.py", "datasync/adapters/gee.py"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/earth-engine-tier-setup.md"
@@ -1448,14 +1448,14 @@ heading = "Setup steps"
 files = []
 why_none = "Explains how the steps are organized and how to install gcloud; no claim about OpenH2O code."
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/earth-engine-tier-setup.md"
 heading = "1. Create a Google Cloud project and turn on the Earth Engine API"
 files = ["datasync/adapters/gee.py", "scripts/benchmarks/gee_eecu_bench.py"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/earth-engine-tier-setup.md"
@@ -1463,14 +1463,14 @@ heading = "2. Register the project for Earth Engine in the browser"
 files = []
 why_none = "A Google registration done in the browser; nothing in OpenH2O code is involved."
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/earth-engine-tier-setup.md"
 heading = "3. Create a service account and download its key"
 files = ["datasync/adapters/gee.py"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/earth-engine-tier-setup.md"
@@ -1484,14 +1484,14 @@ files = [
   "datasync/management/commands/prove_gee_auth.py",
 ]
 labels = []
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/earth-engine-tier-setup.md"
 heading = "5. Get ET for every parcel"
 files = ["datasync/management/commands/sync_openet_parcels.py", "datasync/adapters/__init__.py", "accounting/management/commands/sync_openet_to_ledger.py"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/earth-engine-tier-setup.md"
@@ -1499,7 +1499,7 @@ heading = "Sources"
 files = []
 why_none = "A list of outside links only."
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1507,7 +1507,7 @@ heading = "AI Operator Guide"
 files = []
 why_none = "Orientation only: who the guide is for, a pointer to DEPLOY.md, and how the checkpoints work. It makes no claim about how OpenH2O behaves."
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1522,14 +1522,14 @@ files = [
   "config/settings/production.py",
 ]
 labels = []
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
 heading = "The shape of the job"
 files = ["docker-compose.yml"]
 labels = []
-checked_at = "182c09b"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1541,7 +1541,7 @@ files = [
   "geography/services/arcgis.py",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1561,7 +1561,7 @@ files = [
   "core/management/commands/seed_data.py",
 ]
 labels = []
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1580,14 +1580,14 @@ files = [
   "config/urls.py",
 ]
 labels = []
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
 heading = "Phase 3: Load data"
 files = ["core/management/commands/seed_merced.py", "core/management/commands/teardown_demo.py", "setup/views.py"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1620,7 +1620,7 @@ labels = [
   { text = "I have my own data", where = "templates/setup/run.html" },
   { text = "Enable all", where = "templates/setup/partials/_station_review.html" },
 ]
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1633,7 +1633,7 @@ files = [
   "data/merced/stations.json",
 ]
 labels = []
-checked_at = "efe5113"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1669,7 +1669,7 @@ labels = [
   { text = "Schedule", where = "core/modules.py" },
   { text = "+ Add row", where = "templates/drinking/schedule.html" },
 ]
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1704,7 +1704,7 @@ labels = [
   { text = "Delivery Settings", where = "core/modules.py" },
   { text = "Diversion records", where = "templates/accounting/delivery_settings.html" },
 ]
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1712,7 +1712,7 @@ heading = "Phase 4: Connect live data sources"
 files = []
 why_none = "Heading line only; the claims sit in the three subsections below it."
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1729,7 +1729,7 @@ files = [
   "accounting/management/commands/sync_openet_to_ledger.py",
 ]
 labels = []
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1758,7 +1758,7 @@ files = [
 labels = [
   { text = "Needs API key", where = "datasync/freshness.py" },
 ]
-checked_at = "182c09b"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1778,7 +1778,7 @@ labels = [
   { text = "Enable all", where = "templates/setup/partials/_station_review.html" },
   { text = "Setup Wizard", where = "core/modules.py" },
 ]
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1811,7 +1811,7 @@ labels = [
   { text = "Viewer", where = "templates/core/users_list.html" },
   { text = "+ Add user", where = "templates/core/users_list.html" },
 ]
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1852,7 +1852,7 @@ labels = [
   { text = "ET / Meter Agreement", where = "health/models.py" },
   { text = "Needs API key", where = "datasync/freshness.py" },
 ]
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1876,7 +1876,7 @@ labels = [
   { text = "None up to date", where = "datasync/freshness.py" },
   { text = "OpenH2O is temporarily unavailable", where = "error-pages/503.html" },
 ]
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1896,14 +1896,14 @@ files = [
 labels = [
   { text = "Source code", where = "templates/base.html" },
 ]
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
 heading = "Installing OpenH2O without Docker"
 files = ["docker-compose.yml"]
 labels = []
-checked_at = "182c09b"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -1911,7 +1911,7 @@ heading = "1. When to take this path"
 files = []
 why_none = "Orientation sentence only; it makes no claim about how OpenH2O behaves."
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -1919,7 +1919,7 @@ heading = "The computer cannot run containers"
 files = []
 why_none = "Describes Docker's own error messages and hosting-provider limits, plus a pointer to DEPLOY.md; nothing here rests on OpenH2O code."
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -1927,14 +1927,14 @@ heading = "The organization prefers not to install Docker"
 files = []
 why_none = "Organizational policy reasons only; no claim about the code."
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
 heading = "What is different on this path"
 files = ["Dockerfile", "docker-compose.yml", "Caddyfile"]
 labels = []
-checked_at = "182c09b"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -1946,14 +1946,14 @@ files = [
   "config/settings/base.py",
 ]
 labels = []
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
 heading = "3. The database"
 files = ["config/settings/production.py"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -1961,28 +1961,28 @@ heading = "4. Copy OpenH2O onto the computer"
 files = []
 why_none = "A git clone of the public repository and a pwd; no claim about how OpenH2O's code behaves."
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
 heading = "5. The Python packages"
 files = ["requirements.lock"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
 heading = "If the install reports a build failure"
 files = ["requirements.lock"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
 heading = "6. Build the site's styling"
 files = ["scripts/build-css.sh", "static/css/input.css", "config/settings/base.py"]
 labels = []
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -1997,7 +1997,7 @@ files = [
   "Dockerfile",
 ]
 labels = []
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -2005,14 +2005,14 @@ heading = "8. Start OpenH2O and keep it running"
 files = []
 why_none = "Heading only; the content is in the subsections that follow."
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
 heading = "The first account"
 files = ["core/management/commands/ensure_superuser.py", "config/settings/production.py"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -2025,7 +2025,7 @@ files = [
   "core/management/commands/seed_merced.py",
 ]
 labels = []
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -2038,7 +2038,7 @@ files = [
   "requirements.lock",
 ]
 labels = []
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -2055,14 +2055,14 @@ files = [
   "health/management/commands/prune_old_data.py",
 ]
 labels = []
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
 heading = "9. Who can reach it"
 files = ["config/settings/production.py", "config/settings/base.py"]
 labels = []
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -2074,21 +2074,21 @@ files = [
   "core/adapters.py",
 ]
 labels = []
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
 heading = "10. The access log"
 files = ["config/settings/production.py", "config/settings/base.py"]
 labels = []
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
 heading = "11. Upgrades and backups"
 files = ["requirements.lock", "static/css/input.css"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -2096,14 +2096,14 @@ heading = "12. What has been tested"
 files = []
 why_none = "The only code claim is that a test under tests/ checks the guide against the Docker build; tests/ is excluded from this list."
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "templates/about.html"
 heading = "(top)"
 files = ["config/views.py", "core/templatetags/prose.py"]
 labels = []
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "templates/about.html"
@@ -2119,14 +2119,14 @@ files = [
   "recharge/models.py",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "templates/about.html"
 heading = "Where OpenH2O comes from"
 files = ["datasync/adapters/openet.py", "datasync/adapters/cdec.py", "datasync/adapters/usgs.py"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "templates/about.html"
@@ -2139,7 +2139,7 @@ files = [
   "templates/geography/map.html",
 ]
 labels = []
-checked_at = "182c09b"
+checked_at = "41b90b6"
 
 [[section]]
 document = "templates/about.html"
@@ -2156,7 +2156,7 @@ labels = [
   { text = "Glossary", where = "templates/help/glossary.html" },
   { text = "How water balances work", where = "templates/help/water_balances.html" },
 ]
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "templates/about_demonstration_data.html"
@@ -2236,7 +2236,7 @@ heading = "(top)"
 files = []
 why_none = "Title, breadcrumb and a one-line description of the page itself; the code comment block is not shown to readers."
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "templates/help/getting_started.html"
@@ -2295,7 +2295,7 @@ labels = [
   { text = "Upload CSV", where = "templates/accounting/ledger_list.html" },
   { text = "Run the calculation", where = "templates/accounting/period_detail.html" },
 ]
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "templates/help/getting_started.html"
@@ -2303,7 +2303,7 @@ heading = "Where to go next"
 files = []
 why_none = "Link cards to the other Help pages, each with a one-line description of that page; pointers are checked separately."
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "templates/help/water_balances.html"
@@ -2376,7 +2376,7 @@ heading = "(top)"
 files = []
 why_none = "Title, breadcrumb and a one-line description of the page; the comment block is not reader text."
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "templates/help/methods.html"
@@ -2393,7 +2393,7 @@ files = [
   "templates/accounting/partials/_dashboard_content.html",
 ]
 labels = []
-checked_at = "efe5113"
+checked_at = "41b90b6"
 
 [[section]]
 document = "templates/help/methods.html"
@@ -2410,7 +2410,7 @@ labels = [
   { text = "Canal losses", where = "templates/surface/partials/_detail_pane.html" },
   { text = "Fields' own records", where = "templates/surface/partials/_detail_pane.html" },
 ]
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "templates/help/methods.html"
@@ -2422,7 +2422,7 @@ files = [
   "accounting/engine_run.py",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "templates/help/methods.html"
@@ -2430,7 +2430,7 @@ heading = "Where to go next"
 files = []
 why_none = "Link cards to other Help pages with one-line descriptions of those pages; pointers are checked separately."
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "templates/help/settings_explained.html"
@@ -2438,7 +2438,7 @@ heading = "(top)"
 files = []
 why_none = "Title, breadcrumb and a one-line description of the page; the comment block is not reader text."
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "templates/help/settings_explained.html"
@@ -2456,7 +2456,7 @@ labels = [
   { text = "Soil storage (in)", where = "templates/accounting/partials/_methodology_steps.html" },
   { text = "Floor (AF)", where = "templates/accounting/partials/_methodology_steps.html" },
 ]
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "templates/help/settings_explained.html"
@@ -2488,7 +2488,7 @@ labels = [
   { text = "Which months does a reporting year cover?", where = "core/forms.py" },
   { text = "Where your record addresses are published", where = "core/forms.py" },
 ]
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "templates/help/settings_explained.html"
@@ -2500,7 +2500,7 @@ files = [
   "accounting/views.py",
 ]
 labels = []
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "templates/help/settings_explained.html"
@@ -2513,7 +2513,7 @@ files = [
   "surface/diversion_import.py",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "templates/help/settings_explained.html"
@@ -2528,7 +2528,7 @@ labels = [
   { text = "Methodology Settings", where = "templates/accounting/methodology_settings.html" },
   { text = "Delivery settings", where = "templates/accounting/delivery_settings.html" },
 ]
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "templates/help/budgets_allocations.html"
@@ -2536,7 +2536,7 @@ heading = "(top)"
 files = []
 why_none = "Title, breadcrumb and a one-line description of the page; the comment block is not reader text."
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "templates/help/budgets_allocations.html"
@@ -2545,14 +2545,14 @@ files = ["accounting/models.py", "accounting/views.py", "core/access.py"]
 labels = [
   { text = "Allocations", where = "core/modules.py" },
 ]
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "templates/help/budgets_allocations.html"
 heading = "Worked example"
 files = ["accounting/views.py"]
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "templates/help/budgets_allocations.html"
@@ -2565,7 +2565,7 @@ files = [
   "templates/accounting/partials/_active_accounts_table.html",
 ]
 labels = []
-checked_at = "efe5113"
+checked_at = "41b90b6"
 
 [[section]]
 document = "templates/help/budgets_allocations.html"
@@ -2574,7 +2574,7 @@ files = ["templates/accounting/allocations_list.html", "accounting/views.py"]
 labels = [
   { text = "Allocations", where = "core/modules.py" },
 ]
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "templates/help/glossary.html"
@@ -2582,7 +2582,7 @@ heading = "(top)"
 files = []
 why_none = "Title, breadcrumb and a one-line description of the page; the comment block is not reader text."
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
 
 [[section]]
 document = "templates/help/glossary.html"
@@ -2625,7 +2625,7 @@ labels = [
   { text = "Monitoring Stations", where = "core/modules.py" },
   { text = "Site Health", where = "core/modules.py" },
 ]
-checked_at = "924eea5"
+checked_at = "41b90b6"
 
 [[section]]
 document = "templates/help/glossary.html"
@@ -2633,4 +2633,4 @@ heading = "Where to go next"
 files = []
 why_none = "Link cards to other Help pages with one-line descriptions of those pages; pointers are checked separately."
 labels = []
-checked_at = "6de4a92"
+checked_at = "41b90b6"
