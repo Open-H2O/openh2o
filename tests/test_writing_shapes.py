@@ -28,6 +28,14 @@ so that OpenH2O reads nationally and for any reader, not only a district. Replay
 49 district-reader lines and 3 of its 4 generic-California lines (the misses
 sit inside ``<script>``).
 
+"No" put where "not" belongs ("sends no email") joined on 2026-10-20
+(151.2-01). Replayed first against 72 struck and 767 approved sentences: it hits
+the three struck for it, one of the 39 account sentences approved that morning
+(the same "sends no email"), and 25 approved sentences of the same shape that
+were approved before the shape was struck. The product counted 51 such lines
+(templates 16, screen Python 2, guides 33). They wait in ``BASELINE`` until
+they are taken up page by page; the check stops new ones.
+
 The other three shapes (a phrase posing as a statement, a thing acting like a
 person, a slogan) need a reader and are not counted here.
 
@@ -64,9 +72,36 @@ shapes = _load()
 
 #: The guard reached zero on 2026-10-18 (150.1-03). What is left on the screens
 #: is held line by line in EXCEPTIONS below; BASELINE keeps only what still
-#: waits on a ruling, and is empty when none does. Lower an entry when its file
-#: loses a shape; never raise one.
-BASELINE: dict = {}
+#: waits on a ruling. Since 2026-10-20 that is the "no for not" lines that were
+#: on the site when the shape was added: each is reworded with the page it sits
+#: on, read against what the code does, when that page is taken up (ruled on
+#: 2026-10-20: the check goes in now, the sentences later). Lower an entry
+#: when its file loses a shape; never raise one.
+BASELINE: dict = {
+    "templates/accounting/methodology_settings.html": {"no for not": 1},
+    "templates/accounting/partials/_account_balances.html": {"no for not": 1},
+    "templates/drinking/import.html": {"no for not": 2},
+    "templates/drinking/partials/_import_preview.html": {"no for not": 1},
+    "templates/drinking/partials/_import_result.html": {"no for not": 1},
+    "templates/drinking/partials/_onboard_review.html": {"no for not": 1},
+    "templates/drinking/partials/_production_import_preview.html": {"no for not": 1},
+    "templates/drinking/partials/_production_import_result.html": {"no for not": 1},
+    "templates/drinking/partials/_sampling_point_results.html": {"no for not": 1},
+    "templates/help/methods.html": {"no for not": 2},
+    "templates/help/partials/_the_subtraction.html": {"no for not": 1},
+    "templates/infrastructure/partials/_import_result.html": {"no for not": 1},
+    "templates/surface/partials/_diversion_import_preview.html": {"no for not": 1},
+    "templates/surface/partials/_water_right_detail_pane.html": {"no for not": 1},
+    "accounting/ledger_words.py": {"no for not": 1},
+    "health/checks.py": {"no for not": 1},
+    "CONTRIBUTING.md": {"no for not": 1},
+    "DEPLOY.md": {"no for not": 9},
+    "README.md": {"no for not": 1},
+    "docs/AI-OPERATOR-GUIDE.md": {"no for not": 16},
+    "docs/DATA-IMPORT.md": {"no for not": 4},
+    "docs/INSTALL-WITHOUT-DOCKER.md": {"no for not": 1},
+    "docs/water-budget-terms.md": {"no for not": 1},
+}
 
 _REPORTS = (
     "Reports is off by default and marked Under development (2026-10-12); its "
@@ -191,7 +226,8 @@ _ADVICE = (
     "reader is rewritten as a whole sentence about the thing itself (\"the land "
     "your records cover\"), not by putting an actor in front of the old words; a "
     "general \"California\" says the general thing (DESIGN.md copy rule 11). "
-    "\"X can instead ...\" names the choices instead."
+    "\"X can instead ...\" names the choices instead. \"No\" on the object "
+    "becomes \"not\" on the verb (\"does not send email\")."
 )
 
 
@@ -426,3 +462,59 @@ def test_an_approved_sentence_is_not_a_bold_verdict():
 def test_a_planted_can_instead_is_caught():
     struck = "<td>An administrator can instead let it expire at the end of the water year.</td>"
     assert _template(struck)["can instead"] == 1
+
+
+# -- "No" put where "not" belongs (151.2-01) ------------------------------------
+
+def test_the_three_struck_no_sentences_are_caught():
+    struck = (
+        "<p>The water accounting is sample data made up for the demonstration, and it "
+        "names no real water district.</p>"
+        "<td>This setting changes no figure.</td>"
+        "<p>This site sends no email. Ask an administrator to set a temporary password for you.</p>"
+    )
+    assert _template(struck)["no for not"] == 3
+
+
+def test_the_approved_account_sentences_carry_no_for_not():
+    """The New cells of the 2026-10-20 account rows that hold "no" or "not", rows 11 to 37."""
+    approved = (
+        "<p>This page sets a temporary password for jane@example.com. Their current password "
+        "stops working when you click Set temporary password. OpenH2O will ask them to choose a "
+        "new password the next time they sign in. OpenH2O does not email the person about the "
+        "change.</p>"
+        "<p>The person signs in with their email address and the starting password you set here. "
+        "OpenH2O will ask them to choose a new password the first time they sign in. OpenH2O does "
+        "not email them.</p>"
+        "<p>The link works once and expires in three days. If you did not ask for this, you can "
+        "ignore this email. Your password has not changed.</p>"
+    )
+    assert _template(approved)["no for not"] == 0
+    python = (
+        'A = "ensure_superuser: skipped. .env does not set both DJANGO_SUPERUSER_EMAIL and '
+        'DJANGO_SUPERUSER_PASSWORD."\n'
+        'B = "change_email: changed jane@example.com to jane.doe@example.org. The password did not change."\n'
+        'C = "change_email: no account has the email address jane@example.com."\n'
+    )
+    assert shapes.count_file("planted.py", python)["no for not"] == 0
+
+
+def test_no_in_plain_english_is_not_counted():
+    plain = (
+        "<p>There is no map for this facility.</p>"
+        "<p>This file has no map features.</p>"
+        "<p>No one has signed in yet.</p>"
+        "<p>The station no longer publishes.</p>"
+        "<p>A use area with no meter is estimated.</p>"
+        "<p>Automatic HTTPS with almost no setup</p>"
+        "<p>Run docker image prune to remove images no container uses.</p>"
+    )
+    assert _template(plain)["no for not"] == 0
+
+
+def test_a_planted_no_for_not_is_caught_on_every_surface():
+    assert _template("<p>The import adds no result.</p>")["no for not"] == 1
+    python = 'MESSAGE = "The import adds no result."\n'
+    assert shapes.count_file("planted.py", python)["no for not"] == 1
+    guide = "The import adds no result.\n"
+    assert shapes.count_file("planted.md", guide)["no for not"] == 1

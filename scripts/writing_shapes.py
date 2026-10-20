@@ -15,7 +15,9 @@ them can be found by pattern, and this script counts those four:
   district or agency ("your district", "a district can", "unless the
   district", "agency-wide");
 - "California" said where a general statement works, outside the proper
-  names in ``CALIFORNIA_NAMES``.
+  names in ``CALIFORNIA_NAMES``;
+- "no" put on the object where "not" belongs on the verb ("sends no email"
+  for "does not send email").
 
 A phrase posing as a statement, a thing acting like a person and a slogan need
 a reader. This script does not try to find them.
@@ -195,17 +197,45 @@ NEGATION_FRAME = re.compile(
 #: approved sentences: 2 struck, 1 approved (the 2026-10-10 wording of the
 #: same sentence, struck in place today). Name the choices, or say what the
 #: default is and what else is possible, without an actor and "can instead".
-#: A broader "a verb with no and a bare noun" check ("changes no figure",
-#: "names no real water district") was replayed too and does not separate:
-#: 4 struck, 6 approved; it is not counted.
+#: The broader "verb + no + noun" check replayed beside it is NO_FOR_NOT below.
 CAN_INSTEAD = re.compile(r"\bcan (?:choose )?instead\b", re.I)
 #: A paragraph that opens with a whole sentence in bold, announcing a verdict
 #: before the facts ("**A new installation holds none of your records.**").
 BOLD_VERDICT = re.compile(r"^\*\*[^*]{8,}[.]\*\*")
 
+#: "No" put on the object where plain English puts "not" on the verb: "This
+#: site sends no email." for "This site does not send email." Struck on
+#: 2026-10-18 ("names no real water district", "changes no figure") and on
+#: 2026-10-20 ("sends no email"). Replayed on 2026-10-20 before it was
+#: installed, against 72 struck and 767 approved sentences: it hits the three
+#: struck for it and one of the 39 account sentences approved that morning
+#: (the same "sends no email"). Its 25 approved hits are this shape too,
+#: approved between 2026-10-10 and 2026-10-18 before it was struck, which is
+#: why the 2026-10-18 replay did not separate. The word before "no" has to be
+#: the verb, so be, have, "there", a preposition or conjunction, an -ly word
+#: and "almost" are skipped, and so is "images" ("remove images no container
+#: uses" is a relative clause). "No one", "no longer" and "no more" are plain
+#: English. "has no", "with no" and "there is no" are left to a reader.
+NO_FOR_NOT = re.compile(r"\b([A-Za-z]+)[^\S\n]+no[^\S\n]+([A-Za-z]+)")
+_NOT_THE_VERB = frozenset({
+    "is", "are", "was", "were", "be", "been", "has", "have", "had", "there", "with", "of",
+    "to", "by", "in", "for", "at", "and", "or", "if", "that", "on", "as", "but", "when",
+    "because", "so", "where", "whether", "while", "means", "yes", "almost", "images"})
+_NOT_THE_OBJECT = frozenset({
+    "one", "longer", "more", "less", "later", "earlier", "sooner", "matter", "other", "fewer"})
+
+
+def no_for_not_count(text: str) -> int:
+    """Each "verb no noun" in ``text`` where "not" belongs on the verb."""
+    return sum(
+        1 for m in NO_FOR_NOT.finditer(text)
+        if not (m.group(1).lower() in _NOT_THE_VERB or m.group(1).lower().endswith("ly")
+                or m.group(2).lower() in _NOT_THE_OBJECT))
+
+
 SHAPES: tuple = ("em dash", "double hyphen", "filler", "paired heading", "trailing heading",
                  "stand-in", "district reader", "California", "reassurance", "negation frame",
-                 "bold verdict", "can instead")
+                 "bold verdict", "can instead", "no for not")
 
 
 # -- Templates ----------------------------------------------------------------
@@ -372,6 +402,7 @@ def count(runs: list, headings: list) -> dict:
         "negation frame": len(NEGATION_FRAME.findall(text)),
         "bold verdict": sum(1 for run in runs if BOLD_VERDICT.match(run)),
         "can instead": len(CAN_INSTEAD.findall(text)),
+        "no for not": no_for_not_count(text),
     }
 
 
