@@ -633,6 +633,19 @@ checked_at = "41b90b6"
 
 [[section]]
 document = "DEPLOY.md"
+heading = "Handing a site over"
+files = [
+  "core/management/commands/ensure_superuser.py",
+  "core/management/commands/change_email.py",
+  "core/views.py",
+  "core/forms.py",
+  "templates/core/users_list.html",
+]
+labels = []
+checked_at = "451618b"
+
+[[section]]
+document = "DEPLOY.md"
 heading = "Scheduled Jobs"
 files = [
   "scripts/backup.sh",
