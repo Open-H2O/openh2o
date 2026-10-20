@@ -796,9 +796,10 @@ administrator account. Before handing the site over:
 1. Add the organization's administrator with **+ Add user** on the Users page. Then
    choose **Host administrator** as their role. If two people at the organization
    will share the job, add both.
-2. In `.env`, set the two lines from section 7 to the new host administrator's email
-   address and a new password. OpenH2O reads these lines only after the database is
-   wiped. The site then gets back the organization's account, not the consultant's.
+2. In `.env`, change the two lines from section 7 to the new host administrator's email
+   address and a new password. OpenH2O uses these lines only when the site has no host
+   administrator, such as after the database is wiped. It then creates the host
+   administrator from them, so a wiped site comes back with the organization's account.
 3. The organization's host administrator signs in and chooses a new password. Then
    they click **Deactivate** beside the consultant's account.
 
