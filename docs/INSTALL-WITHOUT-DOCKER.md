@@ -357,11 +357,12 @@ OpenH2O. Run it after every install and every update. `createcachetable` creates
 one more table, where OpenH2O keeps short-lived values. `ensure_superuser` creates
 the first account.
 
-Once the account exists, remove the `DJANGO_SUPERUSER_PASSWORD` line from `.env`, so
-the password is not left in the file. If `ensure_superuser` runs again with the line
-in place, it sets the account's password back to the one in `.env`. You can also
-create the account with `.venv/bin/python manage.py createsuperuser`, which asks for
-each value. Section 7 of [DEPLOY.md](../DEPLOY.md) covers changing the account's
+`ensure_superuser` creates the account only when the site has no active host
+administrator. While the site has one, it does not change any account. After you
+first sign in, change the password on your profile page. Keep both lines in `.env`,
+so a wiped database gets the account back the next time the four steps run. You can
+also create the account with `.venv/bin/python manage.py createsuperuser`, which asks
+for each value. Section 7 of [DEPLOY.md](../DEPLOY.md) covers changing the account's
 email address later.
 
 <!-- defines: seed_data -->

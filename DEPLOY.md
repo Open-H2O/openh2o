@@ -371,24 +371,30 @@ apply.
 
 The first account is a *superuser*. A superuser can do everything in OpenH2O,
 including adding the other staff accounts. It is an OpenH2O account and is separate
-from any login to the server, and nobody can sign in until it exists. You choose its
-password yourself, because the account does not exist until you create it. Generate
-a strong one:
+from any login to the server, and nobody can sign in until it exists. The Users page
+calls it a *host administrator*. A host administrator is an administrator who can
+also use the administration site at `/admin/`. You choose its password yourself,
+because the account does not exist until you create it. Generate a strong one:
 
 ```bash
 python3 -c "import secrets; print(secrets.token_urlsafe(18))"
 ```
 
 Give the password to the organization through its password manager, or hand it over
-in person. Do not send it in a chat message or leave it in a file on the server.
+in person. Do not send it in a chat message.
 
 Create the account in one of two ways.
 
 Set `DJANGO_SUPERUSER_EMAIL` and `DJANGO_SUPERUSER_PASSWORD` in `.env`, then run
-`docker compose up -d`. Each time the website container starts, it creates the
-account if the account does not exist, and it sets the account's password to the one
-in `.env`. If the administrator later changes the password on the site, remove the
-password line from `.env`, or the next start sets it back.
+`docker compose up -d`. When the website container starts and the site has no active
+host administrator, it creates the account from these two lines. This happens at the
+first start and after the database is wiped. While the site has an active host
+administrator, the container does not change any account. A password changed on the
+site stays changed.
+
+After you first sign in, change the password on your profile page. The password in
+`.env` then stops working. Keep both lines in `.env` anyway, so a wiped site gets the
+account back at its next start.
 
 Or create the account at a prompt:
 
@@ -401,10 +407,31 @@ Answer the prompts for a username, an email address and a password.
 Give the account an email address that someone reads. The **Forgot password?** link
 on the sign-in page sends its reset link to that address. If the address is an
 invented one, such as an `admin@` address nobody reads, the link reaches no one. To
-change the address later, an administrator clicks **Change email** beside the account
-on the Users page (`/users/`). The button changes the person's sign-in address in
-every place OpenH2O keeps it. Then read *Email / Password Reset* in section 11. The
-site sends reset links only after its email settings are in place.
+change the address later, another host administrator clicks **Change email** beside
+the account on the Users page (`/users/`). The button changes the person's sign-in
+address in every place OpenH2O keeps it. Then read *Email / Password Reset* in
+section 11. The site sends reset links only after its email settings are in place.
+
+On a site with only one host administrator, change the address on the server:
+
+```bash
+docker compose exec web python manage.py change_email jane@example.com jane.doe@example.org
+```
+
+A site is safer with two host administrators. Each can change the other's email
+address or set a temporary password for the other. If one person leaves, the site
+still has a host administrator. To make someone a host administrator, choose **Host
+administrator** as their role on the Users page.
+
+If the only host administrator forgets the password on a site that sends no email,
+set a new password on the server:
+
+```bash
+docker compose exec web python manage.py changepassword jane@example.com
+```
+
+Use the account's username. The username is the email address unless the account
+was given a different one.
 
 ---
 
@@ -761,6 +788,25 @@ purpose. The file does not guard the demonstration targets, such as
 `docker compose down -v`, which deletes the database. Never run those on a site that
 holds records.
 
+### Handing a site over
+
+A consultant who sets up a site for an organization starts with their own host
+administrator account. Before handing the site over:
+
+1. Add the organization's administrator with **+ Add user** on the Users page. Then
+   choose **Host administrator** as their role. If two people at the organization
+   will share the job, add both.
+2. In `.env`, set the two lines from section 7 to the new host administrator's email
+   address and a new password. OpenH2O reads these lines only after the database is
+   wiped. The site then gets back the organization's account, not the consultant's.
+3. The organization's host administrator signs in and chooses a new password. Then
+   they click **Deactivate** beside the consultant's account.
+
+The change history keeps the consultant's work under the consultant's name. Anyone
+who can sign in to the server can still change any account's password or email
+address with the commands in section 7. The organization should know who holds the
+server's logins after the handover.
+
 <!-- defines: cron -->
 ### Scheduled Jobs
 
@@ -868,8 +914,9 @@ password-reset link.
 A signed-in person can change their own password without any email setup. They
 click their email address at the top of the page to open their profile page, then
 click **Change password**. The **Forgot password?** link on the sign-in page emails a reset link,
-so it needs a mail provider. Until the site has SMTP settings, that link sends no
-email.
+so it needs a mail provider. Until the site has SMTP settings, the reset page says
+the site sends no email. If someone forgets their password, an administrator can set
+a temporary password for them on the Users page.
 
 Set these in `.env`, then run `docker compose up -d`:
 
@@ -1110,7 +1157,7 @@ Two terms in the tables need explaining:
 | `OPENH2O_MODULES` | No | every module except `reporting` | The modules of OpenH2O the site runs, separated by commas, or `all`. The list must include `core`, `geography`, `measurements` and `standards`. A list that leaves out a module another module needs stops the site at start with an error that names the missing module. The demonstration needs `all` |
 | `TIME_ZONE` | No | `America/Los_Angeles` | The site's time zone |
 | `LOG_DIR` | No | `/app/logs` | The folder for the error log, `openh2o.log`, which rotates at 10 MB and keeps five files. Inside Docker it is on the `logs_data` volume |
-| `DJANGO_SUPERUSER_EMAIL`, `DJANGO_SUPERUSER_PASSWORD` | No | empty | Create the first administrator at each start, and set its password to this value (section 7) |
+| `DJANGO_SUPERUSER_EMAIL`, `DJANGO_SUPERUSER_PASSWORD` | No | empty | Create the first host administrator when the site has none (section 7) |
 | `DJANGO_SUPERUSER_USERNAME` | No | the email address | The username for that account |
 | `GUNICORN_WORKERS`, `GUNICORN_THREADS`, `GUNICORN_TIMEOUT` | No | `3`, `4`, `60` | How many requests the web server handles at once, and how many seconds it gives each one |
 

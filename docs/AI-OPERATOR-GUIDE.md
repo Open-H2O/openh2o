@@ -259,16 +259,20 @@ warns about them. If it does, switch the site to the production settings.
 5. **Create the administrator account.** <!-- defines: superuser --> The first
    account is a *superuser*, an account that can do everything in OpenH2O,
    including adding the other staff accounts. It is an OpenH2O account and is
-   separate from any login to the computer. Nobody can sign in until it exists.
-   Give it an email address that someone reads, because password-reset emails go
-   to that address once the site has SMTP settings. Create it in one of two ways:
+   separate from any login to the computer. The Users page calls it a *host
+   administrator*. A host administrator can also use the administration site at
+   `/admin/`. Nobody can sign in until it exists. Give it an email address that
+   someone reads, because password-reset emails go to that address once the site
+   has SMTP settings. Create it in one of two ways:
    - Run `docker compose exec web python manage.py createsuperuser` and answer its
      questions.
    - Or set `DJANGO_SUPERUSER_EMAIL` and `DJANGO_SUPERUSER_PASSWORD` in `.env` and
-     run `docker compose up -d`. From then on, every time the website container
-     starts, it creates the account if the account does not exist and resets its
-     password to the one in `.env`. If the administrator later changes the password
-     on the site, remove the password line from `.env`.
+     run `docker compose up -d`. The website container creates the account from
+     those two settings when the site has no active host administrator. While the
+     site has one, the container does not change any account. After the
+     administrator first signs in, they change the password on their profile page.
+     Keep both lines in `.env`, so a wiped site gets the account back at its next
+     start.
 
 ✋ **Checkpoint:** the site loads at the address the organization will use. For a
 public site the address is `https://` and the domain. For one computer it is
@@ -624,18 +628,23 @@ behind it.
 
 ## Phase 5: Bring in the people
 
-OpenH2O has three roles. An administrator sets each person's role on the Users page
-(`/users/`), under Administration in the Admin view of the sidebar.
+OpenH2O has four roles. An administrator sets each person's role on the Users page
+(`/users/`), under Administration in the Admin view of the sidebar. Only a host
+administrator can make someone a host administrator.
 
-- An **Administrator** can do everything, including managing users, running the
-  Setup Wizard, changing the methodology and delivery settings and finalizing a
-  reporting period. The superuser from Phase 2 is an administrator.
+- An **Administrator** manages users, runs the Setup Wizard, changes the
+  methodology and delivery settings and finalizes a reporting period.
+- A **Host administrator** can do everything an administrator does. They can also
+  use `/admin/` and change other host administrators' accounts. The superuser from
+  Phase 2 is a host administrator. Recommend a second one, so each can change the
+  other's email address and password.
 - An **Operator** works with the records on every other page.
 - A **Viewer** reads every page and changes nothing.
 
 Sign-up is closed by default, so each person gets an account from an administrator.
-The administrator clicks **+ Add user** on the Users page and sets the person's
-first password there. Ask the person you are working for who should administer the
+The administrator clicks **+ Add user** on the Users page and sets a starting
+password there. The person chooses a new password the first time they sign in. Ask
+the person you are working for who should administer the
 site, who should work with the records and who only needs to read them.
 
 `ACCESS_CONTROL_ENFORCED` is on by default. When `.env` sets it to `False`, every
@@ -669,6 +678,10 @@ run `docker compose exec web python manage.py migrate` and check again.
 `manage.py check` also reports a missing name or address, as `openh2o.W002`. A site
 reached only at `localhost` keeps `example.com` as its address and keeps the
 warning, because OpenH2O skips `localhost` when it works out the address.
+
+If a consultant set up the site, finish with *Handing a site over* in section 11 of
+DEPLOY.md. The organization's host administrator then deactivates the consultant's
+account.
 
 ✋ **Done when:** a member of the organization's staff can sign in and see and manage
 the organization's records without you.
@@ -731,7 +744,7 @@ them, so an error that names one of them means the build went wrong.
 | The Docker build fails on GDAL, GEOS or PROJ | The build could not install the map libraries. | Read the first error in the build output, then see the troubleshooting section of DEPLOY.md. |
 | The site loads at its public domain, but without HTTPS | The shipped `Caddyfile` serves plain web traffic on port 80 and names no domain, so pointing DNS at the computer produces no certificate. | Name the domain in the `Caddyfile` as section 4 of DEPLOY.md describes, then run `docker compose restart caddy`. |
 | A source on the monitoring dashboard shows "needs key", "no stations" or "no recent data" | "Needs key": its key is missing from `.env`. "No stations": it has no station turned on. "No recent data": the source publishes rarely, as the groundwater sources do, or its sync is failing. | Add the key to `.env` and run `docker compose up -d`. Turn the stations on as Phase 4 describes. Run `sync_source` for the source with an earlier `--start` and read what it prints. |
-| A password-reset email never arrives | The site has no SMTP settings. | Add `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` and `DEFAULT_FROM_EMAIL` to `.env` and run `docker compose up -d`. Until then, set a person's password with `docker compose exec web python manage.py changepassword` and the person's email address. |
+| The reset page says the site sends no email, or a reset email never arrives | The site has no SMTP settings. | Add `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` and `DEFAULT_FROM_EMAIL` to `.env` and run `docker compose up -d`. Until then, an administrator sets a temporary password for the person on the Users page. For the only host administrator, run `docker compose exec web python manage.py changepassword` with the account's username. The username is the email address unless the account was given a different one. |
 | 502 Bad Gateway after the computer restarts | The website container is still starting, or Docker did not start with the computer. | Set Docker to start when the computer starts. The compose file sets `restart: unless-stopped`, so the containers start again when Docker does. Run `docker compose ps`. If `web` is not `Up (healthy)`, run `docker compose up -d` and read `docker compose logs web`. |
 
 ---
