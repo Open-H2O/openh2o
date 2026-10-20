@@ -46,8 +46,10 @@ _NO_DELIVERY_BACKENDS = (
 
 
 def site_sends_email() -> bool:
-    """False on a site with no mail server (150.1-02): its reset page took an address and said a link was
-    sent while the email only reached the server log."""
+    """False on a site with no mail server (150.1-02; ISS-259: production defaults to the SMTP backend, so a
+    site with no EMAIL_HOST showed the form and then a 500)."""
+    if not settings.EMAIL_HOST:
+        return False
     return settings.EMAIL_BACKEND not in _NO_DELIVERY_BACKENDS
 
 

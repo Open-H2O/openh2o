@@ -12,4 +12,9 @@ urlpatterns = [
     path("<int:pk>/role/", views.user_set_role, name="user_set_role"),
     path("<int:pk>/toggle-active/", views.user_toggle_active, name="user_toggle_active"),
     path("<int:pk>/email/", views.user_email_edit, name="user_email_edit"),
+    path(
+        "<int:pk>/temporary-password/",
+        views.user_temp_password,
+        name="user_temp_password",
+    ),
 ]

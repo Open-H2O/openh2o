@@ -7,6 +7,7 @@ from django import forms
 from django.contrib.auth.password_validation import validate_password
 from django.core.validators import EmailValidator
 
+from core.account_forms import BLANK_AGAIN, BLANK_NEW, MISMATCH
 from core.constants import RECOVERY_HORIZON_CHOICES
 from core.history import CHANGE_NOTE_HELP, NOTE_MAX_LENGTH
 from core.models import SiteConfig, User
@@ -55,6 +56,9 @@ class ProfileForm(forms.ModelForm):
 ROLE_ADMINISTRATOR = "administrator"
 ROLE_OPERATOR = "operator"
 ROLE_VIEWER = "viewer"
+# 151-04 (ISS-260): a host administrator is is_staff. Offered on the Users page
+# only to a reader who is one, so it is not in ROLE_CHOICES (Add user keeps three).
+ROLE_HOST_ADMINISTRATOR = "host_administrator"
 ROLE_CHOICES = [
     (ROLE_ADMINISTRATOR, "Administrator"),
     (ROLE_OPERATOR, "Operator"),
@@ -68,9 +72,14 @@ ROLE_HELP = (
 )
 
 
+HOST_ADMINISTRATOR_CHOICE = (ROLE_HOST_ADMINISTRATOR, "Host administrator")
+
+
 def role_of(user):
-    """The role value for ``user``, one of ROLE_CHOICES."""
-    if user.agency_admin or user.is_staff:
+    """The role value for ``user``: ROLE_CHOICES, or ``host_administrator``."""
+    if user.is_staff:
+        return ROLE_HOST_ADMINISTRATOR
+    if user.agency_admin:
         return ROLE_ADMINISTRATOR
     if user.read_only:
         return ROLE_VIEWER
@@ -79,9 +88,18 @@ def role_of(user):
 
 def apply_role(user, role):
     """Set ``user``'s role flags for ``role``; returns the fields changed."""
-    user.agency_admin = role == ROLE_ADMINISTRATOR
-    user.read_only = role == ROLE_VIEWER
-    return ["agency_admin", "read_only"]
+    if role == ROLE_HOST_ADMINISTRATOR:
+        user.is_staff = True
+        user.is_superuser = True
+        user.agency_admin = False
+        user.read_only = False
+    else:
+        # Any other role on a host administrator takes the host rank away.
+        user.is_staff = False
+        user.is_superuser = False
+        user.agency_admin = role == ROLE_ADMINISTRATOR
+        user.read_only = role == ROLE_VIEWER
+    return ["is_staff", "is_superuser", "agency_admin", "read_only"]
 
 
 class UserCreateForm(forms.ModelForm):
@@ -176,6 +194,7 @@ class UserCreateForm(forms.ModelForm):
         user.is_active = True
         apply_role(user, self.cleaned_data["role"])
         user.set_password(self.cleaned_data["password"])
+        user.must_choose_password = True
         if commit:
             user.save()
             EmailAddress.objects.update_or_create(
@@ -188,7 +207,79 @@ class UserCreateForm(forms.ModelForm):
 class UserRoleForm(forms.Form):
     """The Users screen's per-row role control (147-02)."""
 
-    role = forms.ChoiceField(choices=ROLE_CHOICES)
+    role = forms.ChoiceField(choices=ROLE_CHOICES + [HOST_ADMINISTRATOR_CHOICE])
+
+
+class _TwoPasswordsForm(forms.Form):
+    """Two password boxes that must match and pass Django's checks (151-04).
+
+    The mismatch sentence and the refusals are the ones Change password and
+    Add user already use (core/account_forms.py, core/password_validation.py).
+    ``user`` is passed to the checks so the similarity check runs.
+    """
+
+    password1 = forms.CharField(
+        widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}),
+        error_messages={"required": BLANK_NEW},
+    )
+    password2 = forms.CharField(
+        widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}),
+        error_messages={"required": BLANK_AGAIN},
+    )
+
+    def __init__(self, *args, user, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned = super().clean()
+        one, two = cleaned.get("password1"), cleaned.get("password2")
+        if one and two and one != two:
+            self.add_error("password2", MISMATCH)
+        elif one and two:
+            self.check_password(one)
+        return cleaned
+
+    def check_password(self, password):
+        # The username copies the email, so Django would name the username,
+        # which nobody here sees; check against what Add user checks.
+        try:
+            validate_password(password, user=User(
+                email=self.user.email,
+                first_name=self.user.first_name,
+                last_name=self.user.last_name,
+            ))
+        except forms.ValidationError as error:
+            self.add_error("password1", error)
+
+
+class TemporaryPasswordForm(_TwoPasswordsForm):
+    """An administrator sets another person's temporary password (151-04)."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["password1"].label = "Temporary password"
+        self.fields["password1"].error_messages["required"] = "Enter the temporary password."
+        self.fields["password2"].label = "Confirm temporary password"
+        self.fields["password2"].error_messages["required"] = "Enter the temporary password again."
+
+
+SAME_AS_CURRENT = "The new password must be different from your current password."
+
+
+class ChoosePasswordForm(_TwoPasswordsForm):
+    """A person replaces the password an administrator set (151-04)."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["password1"].label = "New password"
+        self.fields["password2"].label = "Confirm new password"
+
+    def check_password(self, password):
+        if self.user.check_password(password):
+            self.add_error("password1", SAME_AS_CURRENT)
+            return
+        super().check_password(password)
 
 
 def email_on_file(email, exclude_user=None):

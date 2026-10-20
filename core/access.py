@@ -106,7 +106,7 @@ UNSAFE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 #: moved route cannot quietly fall out of (or into) the list.
 #: ``tests/test_viewer_role.py`` pins this set.
 VIEWER_ALLOWED_URL_NAMES = frozenset(
-    {"feedback:submit", "set_nav_mode", "profile"}
+    {"feedback:submit", "set_nav_mode", "profile", "choose_password"}
 )
 
 #: allauth's own account views (sign out, password change, email addresses,
@@ -197,3 +197,55 @@ def read_only_response(request):
         {"read_only_message": READ_ONLY_MESSAGE},
         status=403,
     )
+
+
+# -- Choosing your own password (151-04) ---------------------------------------
+
+
+class MustChoosePasswordMiddleware:
+    """Send a person whose password an administrator set to Choose a new password.
+
+    Applies to an authenticated user with ``must_choose_password``: every
+    request except the choose page itself, sign-out, static and media files and
+    the health endpoints is redirected there. ``/admin/`` is not exempt, so a
+    flagged host administrator chooses first. Sits after
+    :class:`ReadOnlyMiddleware`, which already lets a viewer POST the choose
+    page. An HTMX request gets ``HX-Redirect``, since a 302 would swap the page
+    into the fragment.
+    """
+
+    EXEMPT_VIEW_NAMES = frozenset({"choose_password", "account_logout"})
+    EXEMPT_PREFIXES = ("/health/",)
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        user = getattr(request, "user", None)
+        if getattr(user, "is_authenticated", False) and getattr(
+            user, "must_choose_password", False
+        ):
+            if not self._exempt(request):
+                from django.http import HttpResponse
+                from django.urls import reverse
+
+                target = reverse("choose_password")
+                if request.headers.get("HX-Request"):
+                    response = HttpResponse(status=200)
+                    response["HX-Redirect"] = target
+                    return response
+                return redirect(target)
+        return self.get_response(request)
+
+    def _exempt(self, request):
+        from django.urls import Resolver404, resolve
+
+        path = request.path_info
+        static_url = settings.STATIC_URL or "/static/"
+        media_url = settings.MEDIA_URL or "/media/"
+        if path.startswith((static_url, media_url) + self.EXEMPT_PREFIXES):
+            return True
+        try:
+            return resolve(path).view_name in self.EXEMPT_VIEW_NAMES
+        except Resolver404:
+            return False

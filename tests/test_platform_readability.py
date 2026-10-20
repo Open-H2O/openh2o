@@ -501,6 +501,11 @@ EXPECTED_UNREACHABLE = {
     # crawler is already signed in — that is the correct behaviour, and it is
     # why `templates/account/` is swept at source instead. The social-account
     # routes 404 or 301 because no provider is configured on this platform.
+    # 151-04: /accounts/ sends a signed-in person to their profile, and the
+    # choose-a-new-password page sends anyone without the flag home. Its
+    # template is swept at source.
+    "/accounts/": "HTTP 302",
+    "/profile/choose-password/": "HTTP 302",
     "/accounts/3rdparty/login/error/": "HTTP 401",
     "/accounts/3rdparty/signup/": "HTTP 302",
     "/accounts/google/login/": "HTTP 404",

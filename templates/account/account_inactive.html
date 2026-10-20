@@ -1,0 +1,11 @@
+{% extends "base_auth.html" %}
+{% block title %}Account inactive - Open Water Accounting Platform{% endblock %}
+{% block content %}
+<div class="card-raised w-full" style="max-width: 420px;">
+    <h1 class="auth-title">Account inactive</h1>
+    <p class="text-sm mb-md text-secondary">An administrator has deactivated this account. Ask an administrator to reactivate it if you need it again.</p>
+    <p class="text-sm text-center text-secondary">
+        <a href="{% url 'account_login' %}" class="link-accent">Back to login</a>
+    </p>
+</div>
+{% endblock %}

@@ -51,7 +51,9 @@ class TestTheRosterWordsItsOwnRow:
             "You cannot change your own role, status or email address. "
             "Another administrator can."
         ) in html
-        assert "Host administrator; managed outside this page." in html
+        # 151-04 row 4: a host administrator's row, as another administrator sees it.
+        assert "Only a host administrator can change this account." in html
+        assert "managed outside this page" not in html
         # The old shape left the cell reading "You" and nothing else.
         assert ">You<" not in html
 

@@ -40,14 +40,12 @@ def _form(**data):
 
 def test_page_words(admin_client):
     body = admin_client.get(reverse("core:user_create")).content.decode().replace("&#x27;", "'")
+    assert "Add an account for each person who needs to sign in." in body
     assert (
-        "This page adds an account for one person, who signs in with an email "
-        "address and the password you set here."
-    ) in body
-    assert (
-        # ISS-248: the word "yourself" is not used.
-        "OpenH2O does not email the person you add. They can sign in right away "
-        "and change the password on their profile page."
+        # 151-04 rows 19 and 20.
+        "The person signs in with their email address and the starting password "
+        "you set here. OpenH2O will ask them to choose a new password the first "
+        "time they sign in. OpenH2O does not email them."
     ) in body
     assert "Sign-in &amp; Security" not in body and "Sign-in & Security" not in body
     assert 'placeholder="name@example.com"' in body

@@ -48,6 +48,17 @@ class AccessControlledAccountAdapter(DefaultAccountAdapter):
         "enter_current_password": "The current password does not match your account.",
     }
 
+    def send_mail(self, template_prefix, email, context):
+        # ISS-259: the SMTP backend with no EMAIL_HOST can only fail, so a
+        # reset posted straight to the view (past the page's no-email
+        # sentence) sends nothing instead of ending in a 500.
+        if (
+            settings.EMAIL_BACKEND == "django.core.mail.backends.smtp.EmailBackend"
+            and not settings.EMAIL_HOST
+        ):
+            return
+        return super().send_mail(template_prefix, email, context)
+
     def is_open_for_signup(self, request):
         return not settings.ACCESS_CONTROL_ENFORCED
 

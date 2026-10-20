@@ -689,4 +689,18 @@ def profile(request):
             return redirect("profile")
     else:
         form = ProfileForm(instance=request.user)
-    return render(request, "core/profile.html", {"form": form})
+    # 151-04: a host administrator's sign-in card depends on whether another
+    # active host administrator can change their address on the Users page.
+    from core.models import User
+
+    other_host_exists = (
+        request.user.is_staff
+        and User.objects.filter(is_staff=True, is_active=True)
+        .exclude(pk=request.user.pk)
+        .exists()
+    )
+    return render(
+        request,
+        "core/profile.html",
+        {"form": form, "other_host_exists": other_host_exists},
+    )

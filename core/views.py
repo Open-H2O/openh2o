@@ -28,10 +28,14 @@ from django.views.decorators.http import require_POST, require_safe
 
 from core.access import admin_required
 from core.forms import (
+    HOST_ADMINISTRATOR_CHOICE,
     ROLE_ADMINISTRATOR,
     ROLE_CHOICES,
+    ROLE_HOST_ADMINISTRATOR,
     UserCreateForm,
     UserEmailForm,
+    ChoosePasswordForm,
+    TemporaryPasswordForm,
     UserRoleForm,
     apply_role,
     role_of,
@@ -44,7 +48,28 @@ ROLE_SENTENCES = {
     "administrator": "an administrator",
     "operator": "an operator",
     "viewer": "a viewer (read only)",
+    "host_administrator": "a host administrator",
 }
+
+# 151-04 (ISS-260), account sentences rows 8 and 9.
+HOST_ROW_REFUSED = (
+    "Only a host administrator can change a host administrator's account."
+)
+
+
+def _refuse_host_row(request, target):
+    """True, with the refusal message, when ``request.user`` may not act on ``target``.
+
+    The Users page already hides the controls; this is the check that holds
+    when a request is posted past the page (ISS-260: an agency administrator
+    deactivated a host administrator that way). There is no last-host-
+    administrator guard: nobody acts on their own row and only a host
+    administrator acts on a host administrator's, so it cannot fire.
+    """
+    if target.is_staff and not request.user.is_staff:
+        messages.error(request, HOST_ROW_REFUSED)
+        return True
+    return False
 
 
 def _administrators():
@@ -68,7 +93,14 @@ def users_list(request):
     return render(
         request,
         "core/users_list.html",
-        {"users": users, "role_choices": ROLE_CHOICES},
+        {
+            "users": users,
+            "role_choices": (
+                ROLE_CHOICES + [HOST_ADMINISTRATOR_CHOICE]
+                if request.user.is_staff
+                else ROLE_CHOICES
+            ),
+        },
     )
 
 
@@ -105,18 +137,15 @@ def user_set_role(request, pk):
     if target == request.user:
         messages.error(request, "You can't change your own role.")
         return redirect("core:users_list")
-    # Django staff/superusers get their admin status from is_staff, which is
-    # managed in the developer back-end, not here. Changing agency_admin on
-    # them would be a confusing no-op for access.
-    if target.is_staff:
-        messages.error(
-            request,
-            "That user is a system administrator; manage them in the Django admin.",
-        )
+    if _refuse_host_row(request, target):
         return redirect("core:users_list")
     role = form.cleaned_data["role"]
+    # Only a host administrator sets or removes the host rank.
+    if role == ROLE_HOST_ADMINISTRATOR and not request.user.is_staff:
+        messages.error(request, HOST_ROW_REFUSED)
+        return redirect("core:users_list")
     if (
-        role != ROLE_ADMINISTRATOR
+        role not in (ROLE_ADMINISTRATOR, ROLE_HOST_ADMINISTRATOR)
         and target.is_administrator
         and _administrators().count() <= 1
     ):
@@ -136,6 +165,8 @@ def user_toggle_active(request, pk):
     if target == request.user:
         messages.error(request, "You can't deactivate your own account.")
         return redirect("core:users_list")
+    if _refuse_host_row(request, target):
+        return redirect("core:users_list")
     if target.is_active and target.is_administrator and _administrators().count() <= 1:
         messages.error(request, "You can't deactivate the last administrator.")
         return redirect("core:users_list")
@@ -153,12 +184,15 @@ def user_email_edit(request, pk):
 
     ISS-248: only an administrator changes an address, and there is one
     address per person. Not your own (the role and status rule, for the same reason: a mistyped
-    address would lock you out with no one to fix it), and not a host
-    administrator's, which the Users page already leaves to the host.
+    address would lock you out with no one to fix it). A host
+    administrator's address is changed only by another host administrator
+    (151-04, ISS-260).
     """
     target = get_object_or_404(User, pk=pk)
-    if target == request.user or target.is_staff:
+    if target == request.user:
         raise Http404
+    if _refuse_host_row(request, target):
+        return redirect("core:users_list")
     old_email = target.email
     if request.method == "POST":
         form = UserEmailForm(request.POST, target=target)
@@ -174,6 +208,60 @@ def user_email_edit(request, pk):
     return render(
         request, "core/user_email_form.html", {"form": form, "target": target}
     )
+
+
+@login_required
+@admin_required
+def user_temp_password(request, pk):
+    """Set a temporary password for another person (151-04, S3 A).
+
+    Their current password stops working; the next sign-in lands on the Choose
+    a new password page (core.access.MustChoosePasswordMiddleware).
+    """
+    target = get_object_or_404(User, pk=pk)
+    if target == request.user:
+        raise Http404
+    if _refuse_host_row(request, target):
+        return redirect("core:users_list")
+    if request.method == "POST":
+        form = TemporaryPasswordForm(request.POST, user=target)
+        if form.is_valid():
+            target.set_password(form.cleaned_data["password1"])
+            target.must_choose_password = True
+            target.save(update_fields=["password", "must_choose_password"])
+            messages.success(
+                request,
+                f"You set a temporary password for {target.email}. OpenH2O will "
+                "ask them to choose a new password the next time they sign in.",
+            )
+            return redirect("core:users_list")
+    else:
+        form = TemporaryPasswordForm(user=target)
+    return render(
+        request, "core/user_temp_password.html", {"form": form, "target": target}
+    )
+
+
+@login_required
+def choose_password(request):
+    """The page a person with an administrator-set password must pass (151-04, S7 A)."""
+    from django.contrib.auth import update_session_auth_hash
+
+    user = request.user
+    if not user.must_choose_password:
+        return redirect("/")
+    if request.method == "POST":
+        form = ChoosePasswordForm(request.POST, user=user)
+        if form.is_valid():
+            user.set_password(form.cleaned_data["password1"])
+            user.must_choose_password = False
+            user.save(update_fields=["password", "must_choose_password"])
+            update_session_auth_hash(request, user)
+            messages.success(request, "You changed your password.")
+            return redirect("/")
+    else:
+        form = ChoosePasswordForm(user=user)
+    return render(request, "core/choose_password.html", {"form": form})
 
 
 # ---------------------------------------------------------------------------

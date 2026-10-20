@@ -2,10 +2,11 @@
 from django.conf import settings
 from django.contrib import admin
 from django.http import Http404
+from django.shortcuts import redirect
 from django.urls import include, path
 
 from core.modules import enabled_modules, url_specs_for
-from core.views import change_history, persistent_identifier
+from core.views import change_history, choose_password, persistent_identifier
 from core.oauth import (
     google_callback_guard,
     google_login_by_token_guard,
@@ -27,6 +28,10 @@ _module_urls = [
 
 def _removed_page(request, *args, **kwargs):
     raise Http404
+
+
+def _accounts_root(request):
+    return redirect("profile" if request.user.is_authenticated else "account_login")
 
 
 # Everything below is hand-written and NOT module-owned: the Django admin,
@@ -56,6 +61,8 @@ urlpatterns = [
     # page). Declared before allauth's mount for the same reason as the guards
     # above, and unnamed for the same reason.
     path("accounts/email/", _removed_page),
+    # allauth's own /accounts/ sent a signed-in person to the removed email page.
+    path("accounts/", _accounts_root),
     path("accounts/", include("allauth.urls")),
 ] + _module_urls + [
     path("about/", about, name="about"),
@@ -74,6 +81,7 @@ urlpatterns = [
     path("help/methods/", methods, name="methods"),
     path("help/settings/", settings_explained, name="settings_explained"),
     path("profile/", profile, name="profile"),
+    path("profile/choose-password/", choose_password, name="choose_password"),
     path("nav-mode/", set_nav_mode, name="set_nav_mode"),
     path("search/", global_search, name="global_search"),
     # Persistent identifiers (146-06, ISS-019). Top-level rather than under

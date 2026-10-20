@@ -68,11 +68,11 @@
         {% comment %} ISS-248: only an
              administrator changes an address, on the Users page, and the email
              page is gone. {% endcomment %}
-        {% comment %} No email line for a host
-             administrator. Its address and password come from the server's
-             settings at every start (ensure_superuser), and the Users page
-             leaves its row alone, so neither line would be true for it. {% endcomment %}
-        {% if not user.is_staff %}
+        {% if user.is_staff %}
+        <p class="text-sm text-secondary mb-md">
+            {% if other_host_exists %}Another host administrator can change your email address on the Users page.{% else %}You are this site's only host administrator. You can change your email address with the change_email command on the server.{% endif %}
+        </p>
+        {% else %}
         <p class="text-sm text-secondary mb-md">
             {% if user.is_administrator %}Another administrator can change your email address on the Users page.{% else %}Ask an administrator to change your email address.{% endif %}
         </p>

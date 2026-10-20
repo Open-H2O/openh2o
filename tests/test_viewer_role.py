@@ -183,7 +183,9 @@ def test_an_inactive_viewer_is_not_special_cased(viewer):
 
 
 def test_the_allowlist_is_exactly_this():
-    assert VIEWER_ALLOWED_URL_NAMES == frozenset({"feedback:submit", "set_nav_mode", "profile"})
+    assert VIEWER_ALLOWED_URL_NAMES == frozenset(
+        {"feedback:submit", "set_nav_mode", "profile", "choose_password"}
+    )
     assert VIEWER_ALLOWED_URL_NAME_PREFIX == "account_"
     assert viewer_may_post("account_logout") is True
     assert viewer_may_post("account_change_password") is True

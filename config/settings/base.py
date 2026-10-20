@@ -116,6 +116,9 @@ MIDDLEWARE = [
     # Refuses every unsafe request from a Viewer (read-only) account, on every
     # route, whatever ACCESS_CONTROL_ENFORCED says (Phase 147, core/access.py).
     "core.access.ReadOnlyMiddleware",
+    # Sends a person whose password an administrator set to Choose a new
+    # password until they have (151-04, core/access.py).
+    "core.access.MustChoosePasswordMiddleware",
     # Turns a write refused by the finalized-period lock into the 409 page in
     # plain words instead of a 500 (Phase 147, accounting/locks.py).
     "accounting.locks.FinalizedPeriodMiddleware",
@@ -268,6 +271,8 @@ ACCOUNT_FORMS = {
 # that added a second one is gone (config/urls.py); this holds the rule for
 # any allauth path that could still add one.
 ACCOUNT_MAX_EMAIL_ADDRESSES = 1
+# Brent 2026-10-20: no email to an address with no account.
+ACCOUNT_EMAIL_UNKNOWN_ACCOUNTS = False
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
 SOCIALACCOUNT_PROVIDERS = {}

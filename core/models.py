@@ -43,6 +43,12 @@ class User(AbstractUser):
     read_only = models.BooleanField(default=False, verbose_name="Viewer (read only)")
     phone = models.CharField(max_length=20, blank=True)
     title = models.CharField(max_length=100, blank=True)
+    # 151-04: an administrator set this person's password (Add user, or Set
+    # temporary password). core.access.MustChoosePasswordMiddleware sends them
+    # to the Choose a new password page until they replace it. Not in the
+    # tracked fields above: like the password hash, it is not a change of who
+    # a person is or what they may do.
+    must_choose_password = models.BooleanField(default=False)
 
     def clean(self):
         super().clean()

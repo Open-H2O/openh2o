@@ -74,12 +74,20 @@ def test_profile_card_for_an_administrator():
 
 
 def test_profile_card_for_a_host_administrator():
-    # Neither line is true for the account the
-    # server's settings create, so it shows only the Change password button.
+    # 151-04 rows 22 and 23: the line depends on whether another active host
+    # administrator exists.
     host = _person("probe.host@example.com", is_staff=True, is_superuser=True)
     body = _body(_client(host).get(reverse("profile")))
-    assert "change your email address" not in body
+    assert (
+        "You are this site's only host administrator. You can change your email "
+        "address with the change_email command on the server."
+    ) in body
+    assert "Another host administrator can change your email address" not in body
     assert ">Change password</a>" in body
+    _person("probe.host2@example.com", is_staff=True, is_superuser=True)
+    body = _body(_client(host).get(reverse("profile")))
+    assert "Another host administrator can change your email address on the Users page." in body
+    assert "only host administrator" not in body
 
 
 def test_saving_the_profile_shows_no_unapproved_sentence():
@@ -327,11 +335,14 @@ def test_change_email_moves_the_sign_in_name(admin):
 
 
 def test_change_email_is_not_for_your_own_or_a_host_account(admin):
+    # 151-04: a host account is refused with the Users page sentence (row 8)
+    # rather than a 404; your own account is still a 404.
     host = User.objects.create_user(username="host@example.com", email="host@example.com",
                                     password="x", is_staff=True)
     client = _client(admin)
     assert client.get(reverse("core:user_email_edit", args=[admin.pk])).status_code == 404
-    assert client.get(reverse("core:user_email_edit", args=[host.pk])).status_code == 404
+    response = client.get(reverse("core:user_email_edit", args=[host.pk]))
+    assert response.status_code == 302 and response.url == reverse("core:users_list")
 
 
 def test_change_email_is_for_administrators_only():

@@ -17,7 +17,7 @@ def _get(name):
 
 @pytest.mark.django_db
 class TestResetPage:
-    @override_settings(EMAIL_BACKEND=SMTP)
+    @override_settings(EMAIL_BACKEND=SMTP, EMAIL_HOST="mail.example.org")
     def test_with_a_mail_server(self):
         body = _get("account_reset_password")
         assert (
@@ -30,7 +30,7 @@ class TestResetPage:
     @override_settings(EMAIL_BACKEND=CONSOLE)
     def test_with_no_mail_server(self):
         body = _get("account_reset_password")
-        assert "This site sends no email. Ask an administrator to reset your password." in body
+        assert "This site sends no email. Ask an administrator to set a temporary password for you." in body
         assert 'name="email"' not in body
         assert "Back to login" in body
 

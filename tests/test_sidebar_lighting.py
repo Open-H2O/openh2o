@@ -149,6 +149,7 @@ EXPECTED_LIT = {
     "/users/": "Users",
     "/users/add/": "Users",
     "/users/<int:pk>/email/": "Users",
+    "/users/<int:pk>/temporary-password/": "Users",
     "/wells/": "Wells",
     "/wells/<int:pk>/": "Wells",
 }
