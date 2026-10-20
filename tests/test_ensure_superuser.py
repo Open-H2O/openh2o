@@ -2,12 +2,12 @@
 """
 Tests for the ``ensure_superuser`` startup command.
 
-This command runs on EVERY container boot (Dockerfile CMD, after migrate). The
-critical property: a normal rebuild must be a no-op for an unchanged admin
-password. It previously called ``set_password`` unconditionally, which re-hashed
-the same password with a fresh salt every boot, rotating the user's
-``get_session_auth_hash()`` and silently logging the admin out after every prod
-rebuild (Django ties session validity to that hash). These tests pin the fix.
+This command runs on EVERY container boot (Dockerfile CMD, after migrate). Since
+151-04 it makes the first host administrator once and then leaves the site
+alone: a rebuild is a no-op while an active host administrator exists, so the
+password is never put back and the session-auth hash never moves (an unchanged
+hash was the earlier fix for admins being logged out after every rebuild). The
+rule's own cases are in ``test_first_account_151_04.py``.
 """
 
 import pytest
@@ -35,8 +35,8 @@ class TestEnsureSuperuser:
         assert u.check_password(PASSWORD)
 
     def test_rerun_does_not_rotate_session_auth_hash(self, monkeypatch):
-        """The regression: a second run on an unchanged password must NOT move
-        the session-auth hash — otherwise every rebuild logs the admin out."""
+        """A second run must NOT move the session-auth hash, or every rebuild
+        logs the admin out."""
         _set_env(monkeypatch)
         call_command("ensure_superuser")  # create
 
@@ -48,10 +48,10 @@ class TestEnsureSuperuser:
 
         assert hash_after_rerun == hash_after_create
 
-    def test_changed_password_does_update(self, monkeypatch):
-        """A genuinely changed DJANGO_SUPERUSER_PASSWORD still takes effect (and
-        rotating the hash then is correct — a real password change ends old
-        sessions)."""
+    def test_changed_env_password_does_not_override_the_site(self, monkeypatch):
+        """Rewritten in 151-04 (was test_changed_password_does_update): a
+        changed DJANGO_SUPERUSER_PASSWORD no longer takes effect once a host
+        administrator exists."""
         _set_env(monkeypatch)
         call_command("ensure_superuser")
 
@@ -60,8 +60,8 @@ class TestEnsureSuperuser:
 
         User = get_user_model()
         u = User.objects.get(email=EMAIL)
-        assert u.check_password("A-different-pass-9!")
-        assert not u.check_password(PASSWORD)
+        assert u.check_password(PASSWORD)
+        assert not u.check_password("A-different-pass-9!")
 
     def test_noop_without_env(self, monkeypatch):
         monkeypatch.delenv("DJANGO_SUPERUSER_EMAIL", raising=False)

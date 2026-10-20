@@ -1,79 +1,80 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Idempotently ensure an admin superuser exists, built from environment vars.
+"""Make the site's first host administrator from the settings file, once.
 
 This runs on every container start (wired into the Dockerfile CMD, right after
-``migrate``). It reads ``DJANGO_SUPERUSER_EMAIL`` and
-``DJANGO_SUPERUSER_PASSWORD``; if either is missing it does nothing, so any
-environment without those variables (local dev, CI) is left untouched.
+``migrate``). It acts only when the site has no active host administrator
+(``is_staff`` and ``is_active``): then it reads ``DJANGO_SUPERUSER_EMAIL`` and
+``DJANGO_SUPERUSER_PASSWORD`` and creates that account. When a host
+administrator exists it touches nothing, and it never changes an existing
+account's password.
 
-Why this exists: the database lives in the ``db_data`` Docker volume. A normal
-rebuild leaves it alone, but ``make fresh`` runs ``docker compose down -v``,
-which deletes that volume and the entire database with it -- including the admin
-account. Recreating it by hand every time is the bug behind "my login keeps
-getting erased." With this command in the startup chain, the admin is restored
-automatically from the saved email + password on the very next boot, even after
-a full wipe.
+Why: the settings file's password used to be put back at every start, so a
+password changed on the site was undone, and a changed address in the file made
+a second host administrator (S1/S2 rulings, 2026-10-20).
+
+Why this exists at all: the database lives in the ``db_data`` Docker volume. A
+normal rebuild leaves it alone, but ``make fresh`` runs ``docker compose down
+-v``, which deletes that volume and the account with it, and the demonstration's
+nightly reset restores a golden database with zero accounts. This command then
+makes the host administrator again.
 """
 
 import os
 
+from allauth.account.models import EmailAddress
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
-    help = "Create or update the admin superuser from DJANGO_SUPERUSER_* env vars."
+    help = "Create the first host administrator from .env when the site has none."
 
     def handle(self, *args, **options):
-        email = os.environ.get("DJANGO_SUPERUSER_EMAIL", "").strip()
-        password = os.environ.get("DJANGO_SUPERUSER_PASSWORD", "").strip()
-        username = os.environ.get("DJANGO_SUPERUSER_USERNAME", "").strip() or email
+        User = get_user_model()
 
-        if not email or not password:
+        if User.objects.filter(is_staff=True, is_active=True).exists():
             self.stdout.write(
-                "ensure_superuser: DJANGO_SUPERUSER_EMAIL / "
-                "DJANGO_SUPERUSER_PASSWORD not set -- skipping."
+                "ensure_superuser: skipped. This site already has a host administrator."
             )
             return
 
-        User = get_user_model()
-        user, created = User.objects.get_or_create(
-            email=email,
-            defaults={"username": username},
-        )
+        email = os.environ.get("DJANGO_SUPERUSER_EMAIL", "").strip()
+        password = os.environ.get("DJANGO_SUPERUSER_PASSWORD", "").strip()
+        if not email or not password:
+            self.stdout.write(
+                "ensure_superuser: skipped. .env does not set both "
+                "DJANGO_SUPERUSER_EMAIL and DJANGO_SUPERUSER_PASSWORD."
+            )
+            return
+
+        if (
+            User.objects.filter(email__iexact=email).exists()
+            or EmailAddress.objects.filter(email__iexact=email).exists()
+        ):
+            self.stdout.write(
+                f"ensure_superuser: skipped. {email} already has an account. "
+                "Set DJANGO_SUPERUSER_EMAIL in .env to a different address."
+            )
+            return
+
         # The custom User model is an AbstractUser, so it still carries a unique
-        # username field even though login is by email -- keep it populated.
-        user.username = user.username or username or email
-        user.is_staff = True
-        user.is_superuser = True
-        user.is_active = True
-        # Only (re)hash the password when it actually changed. Calling
-        # set_password unconditionally re-hashes with a fresh salt on EVERY
-        # container boot, which rotates the user's session-auth hash — and
-        # Django invalidates all of a user's sessions whenever that hash moves.
-        # The result was the admin being silently logged out after every prod
-        # rebuild. Guarding on check_password makes a normal rebuild a true
-        # no-op for the password, while a genuinely changed
-        # DJANGO_SUPERUSER_PASSWORD still updates (and correctly ends old
-        # sessions, which is the desired behavior for a real password change).
-        if created or not user.check_password(password):
-            user.set_password(password)
+        # username field even though login is by email.
+        username = os.environ.get("DJANGO_SUPERUSER_USERNAME", "").strip() or email
+        user = User(
+            username=username,
+            email=email,
+            is_staff=True,
+            is_superuser=True,
+            is_active=True,
+        )
+        user.set_password(password)
         user.save()
 
-        # django-allauth authenticates by email via its EmailAddress table.
-        # Guarantee a verified, primary row so the admin can log in by email
-        # even when this user was just (re)created from scratch.
-        try:
-            from allauth.account.models import EmailAddress
+        # allauth signs in by its EmailAddress table: a verified, primary row.
+        EmailAddress.objects.create(user=user, email=email, verified=True, primary=True)
 
-            EmailAddress.objects.update_or_create(
-                email=email,
-                defaults={"user": user, "verified": True, "primary": True},
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"ensure_superuser: created the host administrator {email}."
             )
-        except Exception as exc:  # pragma: no cover - defensive, allauth optional
-            self.stdout.write(
-                self.style.WARNING(f"ensure_superuser: could not sync EmailAddress ({exc}).")
-            )
-
-        verb = "Created" if created else "Updated"
-        self.stdout.write(self.style.SUCCESS(f"ensure_superuser: {verb} admin {email}."))
+        )
