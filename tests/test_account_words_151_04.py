@@ -32,7 +32,7 @@ def _body(response):
 @override_settings(EMAIL_BACKEND=SMTP, EMAIL_HOST="")
 def test_iss259_reset_page_without_a_mail_host_and_a_direct_post():
     page = _body(Client().get(reverse("account_reset_password")))
-    assert "This site sends no email. Ask an administrator to set a temporary password for you." in page
+    assert "This site does not send email. Ask an administrator to set a temporary password for you." in page
     assert 'name="email"' not in page
     _person("jane@example.com")
     response = Client().post(

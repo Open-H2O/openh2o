@@ -2,7 +2,7 @@
 """Make the site's first host administrator from the settings file, once.
 
 This runs on every container start (wired into the Dockerfile CMD, right after
-``migrate``). It acts only when the site has no active host administrator
+``migrate``). It acts only when the site does not have an active host administrator
 (``is_staff`` and ``is_active``): then it reads ``DJANGO_SUPERUSER_EMAIL`` and
 ``DJANGO_SUPERUSER_PASSWORD`` and creates that account. When a host
 administrator exists it touches nothing, and it never changes an existing

@@ -357,7 +357,7 @@ OpenH2O. Run it after every install and every update. `createcachetable` creates
 one more table, where OpenH2O keeps short-lived values. `ensure_superuser` creates
 the first account.
 
-`ensure_superuser` creates the account only when the site has no active host
+`ensure_superuser` creates the account only when the site does not have an active host
 administrator. While the site has one, it does not change any account. After you
 first sign in, change the password on your profile page. Keep both lines in `.env`,
 so a wiped database gets the account back the next time the four steps run. You can

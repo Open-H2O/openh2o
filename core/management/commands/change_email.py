@@ -30,7 +30,7 @@ class Command(BaseCommand):
         user = get_user_model().objects.filter(email__iexact=current).first()
         if user is None:
             self.stderr.write(
-                f"change_email: no account has the email address {current}."
+                f"change_email: {current} does not belong to any account."
             )
             sys.exit(1)
 

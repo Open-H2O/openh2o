@@ -268,7 +268,7 @@ warns about them. If it does, switch the site to the production settings.
      questions.
    - Or set `DJANGO_SUPERUSER_EMAIL` and `DJANGO_SUPERUSER_PASSWORD` in `.env` and
      run `docker compose up -d`. The website container creates the account from
-     those two settings when the site has no active host administrator. While the
+     those two settings when the site does not have an active host administrator. While the
      site has one, the container does not change any account. After the
      administrator first signs in, they change the password on their profile page.
      Keep both lines in `.env`, so a wiped site gets the account back at its next
@@ -744,7 +744,7 @@ them, so an error that names one of them means the build went wrong.
 | The Docker build fails on GDAL, GEOS or PROJ | The build could not install the map libraries. | Read the first error in the build output, then see the troubleshooting section of DEPLOY.md. |
 | The site loads at its public domain, but without HTTPS | The shipped `Caddyfile` serves plain web traffic on port 80 and names no domain, so pointing DNS at the computer produces no certificate. | Name the domain in the `Caddyfile` as section 4 of DEPLOY.md describes, then run `docker compose restart caddy`. |
 | A source on the monitoring dashboard shows "needs key", "no stations" or "no recent data" | "Needs key": its key is missing from `.env`. "No stations": it has no station turned on. "No recent data": the source publishes rarely, as the groundwater sources do, or its sync is failing. | Add the key to `.env` and run `docker compose up -d`. Turn the stations on as Phase 4 describes. Run `sync_source` for the source with an earlier `--start` and read what it prints. |
-| The reset page says the site sends no email, or a reset email never arrives | The site has no SMTP settings. | Add `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` and `DEFAULT_FROM_EMAIL` to `.env` and run `docker compose up -d`. Until then, an administrator sets a temporary password for the person on the Users page. For the only host administrator, run `docker compose exec web python manage.py changepassword` with the account's username. The username is the email address unless the account was given a different one. |
+| The reset page says the site does not send email, or a reset email never arrives | The site has no SMTP settings. | Add `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` and `DEFAULT_FROM_EMAIL` to `.env` and run `docker compose up -d`. Until then, an administrator sets a temporary password for the person on the Users page. For the only host administrator, run `docker compose exec web python manage.py changepassword` with the account's username. The username is the email address unless the account was given a different one. |
 | 502 Bad Gateway after the computer restarts | The website container is still starting, or Docker did not start with the computer. | Set Docker to start when the computer starts. The compose file sets `restart: unless-stopped`, so the containers start again when Docker does. Run `docker compose ps`. If `web` is not `Up (healthy)`, run `docker compose up -d` and read `docker compose logs web`. |
 
 ---

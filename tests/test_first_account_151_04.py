@@ -155,6 +155,6 @@ def test_change_email_unknown_address(capsys):
     assert exc.value.code != 0
     captured = capsys.readouterr()
     assert captured.err.strip() == (
-        f"change_email: no account has the email address {EMAIL}."
+        f"change_email: {EMAIL} does not belong to any account."
     )
     assert captured.out == ""

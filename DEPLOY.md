@@ -386,7 +386,7 @@ in person. Do not send it in a chat message.
 Create the account in one of two ways.
 
 Set `DJANGO_SUPERUSER_EMAIL` and `DJANGO_SUPERUSER_PASSWORD` in `.env`, then run
-`docker compose up -d`. When the website container starts and the site has no active
+`docker compose up -d`. When the website container starts and the site does not have an active
 host administrator, it creates the account from these two lines. This happens at the
 first start and after the database is wiped. While the site has an active host
 administrator, the container does not change any account. A password changed on the
@@ -423,7 +423,7 @@ address or set a temporary password for the other. If one person leaves, the sit
 still has a host administrator. To make someone a host administrator, choose **Host
 administrator** as their role on the Users page.
 
-If the only host administrator forgets the password on a site that sends no email,
+If the only host administrator forgets the password on a site that does not send email,
 set a new password on the server:
 
 ```bash
@@ -915,7 +915,7 @@ A signed-in person can change their own password without any email setup. They
 click their email address at the top of the page to open their profile page, then
 click **Change password**. The **Forgot password?** link on the sign-in page emails a reset link,
 so it needs a mail provider. Until the site has SMTP settings, the reset page says
-the site sends no email. If someone forgets their password, an administrator can set
+the site does not send email. If someone forgets their password, an administrator can set
 a temporary password for them on the Users page.
 
 Set these in `.env`, then run `docker compose up -d`:

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """The sign-in pages' sentences (150.1-02), and the code change with
 them: on a site with no mail server the reset page said a link was sent while the email only reached the
-server log, so it now says the site sends no email.
+server log, so it now says the site does not send email.
 """
 import pytest
 from django.test import Client, override_settings
@@ -25,12 +25,12 @@ class TestResetPage:
             "your password."
         ) in body
         assert 'name="email"' in body
-        assert "This site sends no email." not in body
+        assert "This site does not send email." not in body
 
     @override_settings(EMAIL_BACKEND=CONSOLE)
     def test_with_no_mail_server(self):
         body = _get("account_reset_password")
-        assert "This site sends no email. Ask an administrator to set a temporary password for you." in body
+        assert "This site does not send email. Ask an administrator to set a temporary password for you." in body
         assert 'name="email"' not in body
         assert "Back to login" in body
 
