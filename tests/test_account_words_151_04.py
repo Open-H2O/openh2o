@@ -4,7 +4,6 @@
 
 Addresses are fictional (example.com, example.org).
 """
-import pytest
 from allauth.account.models import EmailAddress
 from django.contrib.sites.models import Site
 from django.core import mail
