@@ -24,15 +24,19 @@ a reader. This script does not try to find them.
 
 It reads three surfaces:
 
-1. Every template under ``templates/``, with comments, ``<script>`` and
-   ``<style>`` removed, a ``{{ }}`` figure read as one word, and the text a
-   reader sees in ``title``, ``placeholder``, ``aria-label`` and ``alt``
-   attributes kept. The words passed into an included partial
-   (``{% include "..." with text="..." %}``) are read too, because the
-   partial puts them on screen.
-2. String literals in ``SCREEN_PYTHON``, the Python files whose strings reach
-   a screen or a downloaded file. Docstrings and strings passed to a logger
-   are not read.
+1. Every template under ``templates/``, the ``.html`` pages and the ``.txt``
+   emails and messages, with comments, ``<script>`` and ``<style>`` removed, a
+   ``{{ }}`` figure read as one word, and the text a reader sees in ``title``,
+   ``placeholder``, ``aria-label`` and ``alt`` attributes kept. Words passed to
+   a tag or filter that puts them on screen are read too: an included
+   partial's ``text=`` and the like, ``{% source_label ... detail="..." %}``,
+   the nouns of ``{% module_nouns %}``, and the argument of the ``default``,
+   ``default_if_none``, ``blank`` and ``yesno`` filters.
+2. String literals in every application Python file: each top-level package
+   except ``tests``, outside its ``migrations``, ``management``, ``settings``
+   and ``tests`` folders, less the files in ``NOT_SCREEN_PYTHON``, whose
+   strings never reach a screen. Docstrings and strings passed to a logger are
+   not read. A new importer or model is read the day it is added (ISS-261).
 3. The public guides in ``GUIDES``, outside fenced code blocks.
 
 It runs on the host with the standard library only, so it can be pointed at
@@ -54,24 +58,24 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 TEMPLATES = REPO_ROOT / "templates"
 
-#: Python files whose strings reach a screen or a downloaded file. Management
-#: commands and logging are read in a terminal, so they are not here.
-SCREEN_PYTHON: tuple = (
-    "accounting/ledger_words.py",
-    "accounting/views.py",
-    "config/views.py",
-    "core/models.py",
-    "datasync/freshness.py",
-    "drinking/glossary.py",
-    "drinking/ps_codes.py",
-    "drinking/views.py",
-    "health/checks.py",
-    "infrastructure/views.py",
-    "reporting/generators.py",
-    "reporting/validators.py",
-    "reporting/views.py",
-    "setup/boundaries.py",
-    "surface/views.py",
+#: Folders inside an application package whose strings are read in a
+#: terminal or by the tests, never on a screen: management commands,
+#: migrations, settings and an app's own tests.
+NOT_APPLICATION_PARTS: tuple = ("migrations", "management", "settings", "tests")
+
+#: Application Python files whose strings never reach a screen, each with its
+#: reason. Every other application file is read. A file that puts even one
+#: string on a screen stays read, and its terminal-only strings are listed in
+#: the test's EXCEPTIONS, line by line. Measured 2026-10-20 (151.3-01, ISS-261).
+NOT_SCREEN_PYTHON: tuple = (
+    ("core/checks.py", "Django system checks, printed by manage.py check and at start-up in a "
+     "terminal or the container log; no view imports them."),
+    ("core/domain_vocabulary.py", "the term list tests/test_domain_vocabulary.py checks the "
+     "pages against; no view or template imports it."),
+    ("core/operator_vocabulary.py", "the term list tests/test_operator_vocabulary.py checks the "
+     "operator documents against; no view or template imports it."),
+    ("core/water_vocabulary.py", "reads DESIGN.md's vocabulary table for "
+     "tests/test_water_vocabulary.py; no view imports it."),
 )
 
 #: The public guides. Dated records in ``docs/`` (audits, proposals, ledgers)
@@ -262,6 +266,17 @@ _INCLUDE = re.compile(r"\{%\s*include\b(.*?)%\}", re.S)
 #: The include arguments that carry words onto the screen.
 _INCLUDE_ARG = re.compile(
     r"""\b(?:text|title|label|link_label|add_label|what)\s*=\s*(?:"([^"]*)"|'([^']*)')""")
+#: Words handed to a filter that prints them when the value is empty
+#: (``|default:"Not stated"``, ``|blank:"None on file"``, ``|yesno:"Yes,No"``).
+_FILTER_WORDS = re.compile(
+    r"""\|\s*(?:default|default_if_none|blank|yesno)\s*:\s*(?:"([^"]*)"|'([^']*)')""")
+#: ``{% source_label "GAMA" detail="..." %}`` prints its detail beside the label.
+_SOURCE_DETAIL = re.compile(
+    r"""\{%\s*source_label\b[^%]*?\bdetail\s*=\s*(?:"([^"]*)"|'([^']*)')""", re.S)
+#: ``{% module_nouns "wells:wells" "parcels:use areas" %}`` joins the nouns of
+#: the switched-on modules into one phrase.
+_MODULE_NOUNS = re.compile(r"\{%\s*module_nouns\b(.*?)%\}", re.S)
+_MODULE_NOUN = re.compile(r"""(?:"[\w.]+:([^"]*)"|'[\w.]+:([^']*)')""")
 
 
 def _strip_not_copy(source: str) -> str:
@@ -278,6 +293,20 @@ def include_arguments(source: str) -> list:
             words = html.unescape(match.group(1) if match.group(1) is not None else match.group(2))
             if re.search(r"[A-Za-z]", words):
                 found.append(" ".join(words.split()))
+    return found
+
+
+def tag_arguments(source: str) -> list:
+    """The words passed to the filters and tags above, comments removed first."""
+    source = _strip_not_copy(source)
+    found = []
+    matches = [*_FILTER_WORDS.finditer(source), *_SOURCE_DETAIL.finditer(source)]
+    for tag in _MODULE_NOUNS.finditer(source):
+        matches.extend(_MODULE_NOUN.finditer(tag.group(1)))
+    for match in matches:
+        words = html.unescape(match.group(1) if match.group(1) is not None else match.group(2))
+        if re.search(r"[A-Za-z]", words):
+            found.append(" ".join(words.split()))
     return found
 
 
@@ -302,8 +331,16 @@ def template_text(source: str) -> tuple:
         headings.append(" ".join(_runs(match.group(1))))
     for match in _HEADING_TAG.finditer(source):
         headings.append(" ".join(_runs(match.group(2))))
-    runs = _runs(source) + include_arguments(source)
+    runs = _runs(source) + include_arguments(source) + tag_arguments(source)
     return runs, [h for h in headings if h]
+
+
+def email_text(source: str) -> tuple:
+    """``(runs, [])`` for a ``.txt`` template: each line of the email is a run."""
+    runs = []
+    for line in _strip_not_copy(source).splitlines():
+        runs.extend(_runs(line))
+    return runs + tag_arguments(source), []
 
 
 # -- Python -------------------------------------------------------------------
@@ -410,6 +447,8 @@ def file_text(rel: str, source: str) -> tuple:
     """``(runs, headings)`` for one file's source, read as the surface its path names."""
     if rel.endswith(".html"):
         return template_text(source)
+    if rel.endswith(".txt"):
+        return email_text(source)
     if rel.endswith(".py"):
         return python_strings(source), []
     if rel.endswith(".md"):
@@ -422,12 +461,29 @@ def count_file(rel: str, source: str) -> dict:
     return count(*file_text(rel, source))
 
 
+def screen_python(root: Path = REPO_ROOT) -> list:
+    """Every application Python file outside ``NOT_APPLICATION_PARTS`` and ``NOT_SCREEN_PYTHON``."""
+    not_screen = {rel for rel, _reason in NOT_SCREEN_PYTHON}
+    found = []
+    for package in sorted(p.parent for p in root.glob("*/__init__.py")):
+        if package.name == "tests":
+            continue
+        for path in package.rglob("*.py"):
+            rel = path.relative_to(root)
+            if set(rel.parts[1:-1]) & set(NOT_APPLICATION_PARTS) or str(rel) in not_screen:
+                continue
+            found.append(str(rel))
+    return sorted(found)
+
+
 def surfaces(root: Path = REPO_ROOT) -> dict:
     """``{surface: [relative path, ...]}`` for every file this script reads."""
-    templates = sorted(str(p.relative_to(root)) for p in (root / "templates").rglob("*.html"))
+    templates = sorted(
+        str(p.relative_to(root)) for pattern in ("*.html", "*.txt")
+        for p in (root / "templates").rglob(pattern))
     return {
         "templates": templates,
-        "screen python": [p for p in SCREEN_PYTHON if (root / p).exists()],
+        "screen python": screen_python(root),
         "guides": [p for p in GUIDES if (root / p).exists()],
     }
 

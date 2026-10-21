@@ -5,8 +5,10 @@ Since 2026-10-09 the shapes struck in review are fixed everywhere. DESIGN.md cop
 counts the four a pattern can find: an em dash or a double hyphen between two
 words, the filler words (actually, genuinely, really, simply), a heading made
 of two clauses joined by ", and what", and a heading ending in ", by what". It
-reads every template (including the words passed into included partials), the
-Python files whose strings reach a screen, and the public guides.
+reads every template, the .html pages and the .txt emails (including the words
+passed into included partials, ``source_label``, ``module_nouns`` and four
+filters), every application Python file except the few whose strings never
+reach a screen (``NOT_SCREEN_PYTHON``), and the public guides.
 
 ``BASELINE`` held each file's count from 2026-10-09 and was the to-do list for
 the writing work; it reached zero on 2026-10-18. ``EXCEPTIONS`` now holds each
@@ -35,6 +37,15 @@ the three struck for it, one of the 39 account sentences approved that morning
 were approved before the shape was struck. The product counted 51 such lines
 (templates 16, screen Python 2, guides 33). They wait in ``BASELINE`` until
 they are taken up page by page; the check stops new ones.
+
+On 2026-10-20 (151.3-01, ISS-261) the guard stopped reading Python by an
+allow-list of 15 files and started reading every application file. The 172
+files it had not read carried 102 hits: 4 on a screen, held in ``BASELINE``
+with the 1 hit a filter's words carried; 57 on strings no product page prints
+(help text only the Django admin shows, start-up errors, the module records),
+held line by line in ``EXCEPTIONS``; and 41 in the four files of
+``NOT_SCREEN_PYTHON``. The measure, file by file, is
+``.planning/phases/151.3-language-review-first-pass/151.3-01-ISS261-MEASURE.md``.
 
 The other three shapes (a phrase posing as a statement, a thing acting like a
 person, a slogan) need a reader and are not counted here.
@@ -75,8 +86,15 @@ shapes = _load()
 #: waits on a ruling. The "no for not" lines counted on 2026-10-20 were all
 #: reworded the same day on the owner's approval (the saved ledger words with
 #: parcels migration 0014). Lower an entry when its file loses a shape; never
-#: raise one.
-BASELINE: dict = {}
+#: raise one. The five below are on a screen and were outside the guard's reach
+#: until 2026-10-20 (ISS-261); the language review fixes each in the segment
+#: that holds its page.
+BASELINE: dict = {
+    "accounting/calculation.py": {"em dash": 2},
+    "accounting/engine_run.py": {"negation frame": 1},
+    "drinking/provenance.py": {"California": 1},
+    "templates/drinking/partials/_onboard_review.html": {"no for not": 1},
+}
 
 _REPORTS = (
     "Reports is off by default and marked Under development (2026-10-12); its "
@@ -89,6 +107,31 @@ _APPROVED = (
 _DEVELOPER = (
     "an Http404 message, shown only on a server running with DEBUG on; the "
     "public 404 page never prints it."
+)
+#: Strings in a screen file that no product page prints (ISS-261, 2026-10-20).
+_ADMIN_HELP = (
+    "help text on a column no OpenH2O form shows; only the Django admin's "
+    "change form prints it, and the admin is outside the product's pages."
+)
+_NOWHERE_HELP = (
+    "help text on a column no form shows, on a model the Django admin does not "
+    "register; nothing prints it."
+)
+_ADMIN_CHECK = (
+    "a SampleResult model check that no OpenH2O form or importer runs; only the "
+    "Django admin's change form does."
+)
+_SYNC_LOG = (
+    "stored in a sync log's error_message, which no page prints; only the "
+    "Django admin shows it."
+)
+_START_UP = (
+    "printed in the start-up error when OPENH2O_MODULES leaves out a required "
+    "module, read in a terminal."
+)
+_MODULE_RECORD = (
+    "a SCHEMA_EXCEPTIONS record read by tests/test_composition_rule.py; no page "
+    "prints it."
 )
 
 #: Each line a shape still matches, kept on purpose: (file, a fragment of the
@@ -167,6 +210,87 @@ EXCEPTIONS: tuple = (
     ("reporting/validators.py", "leaves their Area blank", ("em dash", "negation frame"), _REPORTS),
     ("reporting/validators.py", "will only contain the diversions you entered", ("em dash",), _REPORTS),
     ("reporting/views.py", "can't be generated", ("em dash",), _REPORTS),
+    # Strings in a screen file that no product page prints (ISS-261, 2026-10-20).
+    ("accounting/models.py", "Surplus banked (acre-feet, positive). The pr",
+     ("em dash",), _ADMIN_HELP),
+    ("accounting/models.py", "148-02 (Q1, an over-delivery is nobody's cre",
+     ("em dash", "filler"), _ADMIN_HELP),
+    ("accounting/models.py", "148-04: the SiteConfig.over_delivery_treatme",
+     ("em dash", "no for not"), _ADMIN_HELP),
+    ("accounting/models.py", "148-04: the amount this run actually credite",
+     ("em dash", "filler"), _ADMIN_HELP),
+    ("accounting/models.py", "148-04: True when over_delivery_credited_af",
+     ("em dash", "negation frame"), _ADMIN_HELP),
+    ("accounting/models.py", "Net consumptive use = gross ET − effective p",
+     ("em dash",), _ADMIN_HELP),
+    ("accounting/models.py", "How the ET − precip − surface residual was r",
+     ("em dash",), _ADMIN_HELP),
+    ("accounting/models.py", "148-02 Task 4 (Q2): the estimated field's pu",
+     ("em dash", "double hyphen"), _ADMIN_HELP),
+    ("accounting/models.py", "148-02 Task 4 (Q2): gw_extracted_af minus fi",
+     ("double hyphen",), _ADMIN_HELP),
+    ("accounting/models.py", "sha256[:12] of the ordered enabled steps + c",
+     ("em dash",), _ADMIN_HELP),
+    ("accounting/models.py", "The months to calculate, oldest first, each",
+     ("filler",), _NOWHERE_HELP),
+    ("core/modules.py", "core owns AUTH_USER_MODEL; disabling it is a",
+     ("negation frame",), _START_UP),
+    ("core/modules.py", "Move the join to the optional side — a wells",
+     ("em dash", "negation frame"), _MODULE_RECORD),
+    ("core/modules.py", "A wells.WellMeasurement link table plus a da",
+     ("em dash",), _MODULE_RECORD),
+    ("core/modules.py", "The surface-water counterpart of the arrow a",
+     ("negation frame",), _MODULE_RECORD),
+    ("core/modules.py", "A parcels.ParcelMeasurement link table plus",
+     ("em dash",), _MODULE_RECORD),
+    ("core/modules.py", "A wells.WellDatastream link table, which als",
+     ("negation frame",), _MODULE_RECORD),
+    ("core/modules.py", "The same Thing slot as the arrow above, for",
+     ("negation frame",), _MODULE_RECORD),
+    ("core/modules.py", "A datasync.StationDatastream link table, wit",
+     ("em dash",), _MODULE_RECORD),
+    ("core/modules.py", "Move the ParcelZone model itself into parcel",
+     ("em dash",), _MODULE_RECORD),
+    ("core/modules.py", "A drinking-water facility very often IS a we",
+     ("em dash", "district reader", "negation frame", "no for not"), _MODULE_RECORD),
+    ("core/modules.py", "A wells.WellFacility link table plus a data",
+     ("em dash", "negation frame"), _MODULE_RECORD),
+    ("core/modules.py", "Same entanglement as ParcelLedger.water_type",
+     ("em dash", "negation frame"), _MODULE_RECORD),
+    ("core/modules.py", "A wells.WellDeliveryAccount link table plus",
+     ("negation frame",), _MODULE_RECORD),
+    ("datasync/adapters/base.py", " fetched but 0 staged — all records dropped",
+     ("em dash",), _SYNC_LOG),
+    ("drinking/models.py", "EPA WATER_SYSTEM.population_served_count — t",
+     ("em dash",), _ADMIN_HELP),
+    ("drinking/models.py", "EPA WATER_SYSTEM.service_connections_count —",
+     ("em dash",), _ADMIN_HELP),
+    ("drinking/models.py", "The ADMINISTRATOR'S MAILING state, NOT the p",
+     ("em dash", "negation frame"), _ADMIN_HELP),
+    ("drinking/models.py", "State-assigned facility ID — the segment DDW",
+     ("em dash",), _ADMIN_HELP),
+    ("drinking/models.py", "Entered on this deployment's facility form r",
+     ("negation frame",), _ADMIN_HELP),
+    ("drinking/models.py", "Primary Station Code, the composite {pwsid}_",
+     ("em dash",), _ADMIN_HELP),
+    ("drinking/models.py", "DDW's four-digit analyte code. NULL when no",
+     ("em dash",), _ADMIN_HELP),
+    ("drinking/models.py", "1 to 12. Null means the year was reported as",
+     ("double hyphen", "negation frame"), _ADMIN_HELP),
+    ("drinking/models.py", "The non-detect flag does not apply to a pres",
+     ("em dash",), _ADMIN_CHECK),
+    ("reporting/models.py", "The geography.Boundary representing this age",
+     ("district reader",), _REPORTS),
+    ("reporting/models.py", "Legal name of the agency as it appears on st",
+     ("district reader",), _REPORTS),
+    ("reporting/models.py", "Correspondence ID mailed by SWRCB to bind th",
+     ("district reader",), _REPORTS),
+    ("reporting/models.py", "User-edited OpenET pre-fill values, keyed by",
+     ("district reader",), _REPORTS),
+    ("standards/models.py", "The SensorThings Sensor — the instrument/pro",
+     ("em dash",), _ADMIN_HELP),
+    ("surface/models.py", "CalWATRS PIN mailed by SWRCB for this water",
+     ("district reader",), _ADMIN_HELP),
 )
 
 
@@ -242,6 +366,13 @@ def test_every_exception_still_matches_its_line():
 
 def test_every_exception_gives_a_reason():
     assert all(len(reason) > 20 for *_rest, reason in EXCEPTIONS)
+
+
+def test_every_not_screen_file_exists_and_gives_a_reason():
+    """A file the scanner skips has to be there, and has to say why it is skipped."""
+    for rel, reason in shapes.NOT_SCREEN_PYTHON:
+        assert (REPO_ROOT / rel).exists(), f"NOT_SCREEN_PYTHON names a missing file: {rel}"
+        assert len(reason) > 20, rel
 
 
 def test_every_baseline_file_is_still_read():
@@ -493,3 +624,57 @@ def test_a_planted_no_for_not_is_caught_on_every_surface():
     assert shapes.count_file("planted.py", python)["no for not"] == 1
     guide = "The import adds no result.\n"
     assert shapes.count_file("planted.md", guide)["no for not"] == 1
+
+
+# -- Every screen surface (151.3-01, ISS-261) ---------------------------------
+
+def _package(root: Path, rel: str, source: str) -> None:
+    path = root / rel
+    path.parent.mkdir(parents=True, exist_ok=True)
+    (path.parent / "__init__.py").touch()
+    path.write_text(source)
+
+
+def test_a_new_application_file_is_read_and_a_not_screen_one_is_not(tmp_path):
+    """The Python surface is every application file, so a new importer is read the day it lands."""
+    planted = 'MESSAGE = "Row 4 was skipped \u2014 the date is blank."\n'
+    _package(tmp_path, "newapp/importer.py", planted)
+    _package(tmp_path, "newapp/models.py", 'x = Field(help_text="The total \u2014 as stored.")\n')
+    _package(tmp_path, "newapp/management/commands/run.py", planted)
+    _package(tmp_path, "newapp/migrations/0001_initial.py", planted)
+    _package(tmp_path, "core/checks.py", 'W = Warning("Settings are local \u2014 not for real records.")\n')
+    (tmp_path / "templates").mkdir()
+    read = shapes.surfaces(tmp_path)["screen python"]
+    assert "newapp/importer.py" in read and "newapp/models.py" in read
+    assert "core/checks.py" not in read
+    assert not [rel for rel in read if "/management/" in rel or "/migrations/" in rel]
+    assert shapes.measured(tmp_path) == {
+        "newapp/importer.py": {"em dash": 1}, "newapp/models.py": {"em dash": 1}}
+
+
+def test_the_words_a_filter_or_source_label_prints_are_read():
+    assert _template('<td>{{ right.source|default:"Not stated \u2014 ask" }}</td>')["em dash"] == 1
+    assert _template("<td>{{ x|blank:'None on file \u2014 yet' }}</td>")["em dash"] == 1
+    assert _template('{{ ok|yesno:"Yes,No,Not really known" }}')["filler"] == 1
+    assert _template('{% source_label "GAMA" detail="EPA sends no coordinates" %}')["no for not"] == 1
+    nouns = '{% module_nouns "wells:wells" "parcels:your district\'s use areas" %}'
+    assert _template(nouns)["district reader"] == 1
+
+
+def test_an_email_template_is_read_line_by_line():
+    email = (
+        "{% autoescape off %}Someone asked to reset the password for {{ email }}.\n\n"
+        "{{ password_reset_url }}\n\n"
+        "The link works once \u2014 and then it simply expires.{% endautoescape %}\n"
+    )
+    runs, _ = shapes.file_text("templates/account/email/planted.txt", email)
+    assert runs == ["Someone asked to reset the password for X .", "X",
+                    "The link works once \u2014 and then it simply expires."]
+    counts = shapes.count_file("templates/account/email/planted.txt", email)
+    assert (counts["em dash"], counts["filler"]) == (1, 1)
+
+
+def test_the_emails_are_on_the_template_surface():
+    read = shapes.surfaces()["templates"]
+    assert "templates/account/email/password_reset_key_message.txt" in read
+    assert "templates/account/messages/password_changed.txt" in read
