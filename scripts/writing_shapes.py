@@ -250,14 +250,18 @@ _NOT_COPY = (
     re.compile(r"<!--.*?-->", re.S),
     re.compile(r"<script.*?</script>", re.S),
     re.compile(r"<style.*?</style>", re.S),
+    # A block whose name ends in ``_class`` holds CSS class names (``page_head_class``).
+    re.compile(r"\{%\s*block\s+\w+_class\s*%\}.*?\{%\s*endblock\b[^%]*%\}", re.S),
 )
 _SEEN_ATTR = re.compile(r"""\b(?:title|placeholder|aria-label|alt)\s*=\s*"([^"]*)\"""")
+#: Any attribute up to its value so far, to tell which attribute a filter sits in.
+_OPEN_ATTR = re.compile(r"""([\w:-]+)\s*=\s*["'][^"']*$""")
 #: Tags that sit inside a sentence. Every other tag ends a run of text.
 _INLINE = re.compile(
     r"</?(?:a|abbr|b|bdi|cite|code|data|dfn|em|i|kbd|mark|q|s|small|span|strong"
     r"|sub|sup|time|u|var|wbr)\b[^>]*>", re.I)
-#: An alternative arm of an if or for tag starts a new run of text.
-_BRANCH = re.compile(r"\{%\s*(?:elif|else|empty)\b.*?%\}", re.S)
+#: An alternative arm of an if or for tag, or a block's start or end, starts a new run of text.
+_BRANCH = re.compile(r"\{%\s*(?:elif|else|empty|block|endblock)\b.*?%\}", re.S)
 _HEADING_TAG = re.compile(r"<(h[1-6]|summary|legend|caption)\b[^>]*>(.*?)</\1\s*>", re.S | re.I)
 _TITLE_BLOCK = re.compile(
     r"\{%\s*block\s+(?:title|head_title|page_title|page_heading|heading)\s*%\}(.*?)"
@@ -296,6 +300,16 @@ def include_arguments(source: str) -> list:
     return found
 
 
+def _unread_attribute(source: str, at: int) -> bool:
+    """True when position ``at`` sits inside the value of an attribute no reader sees
+    (``autocomplete="{{ x|default:'new-password' }}"``)."""
+    tag_start = source.rfind("<", 0, at)
+    if tag_start < source.rfind(">", 0, at):
+        return False
+    opened = _OPEN_ATTR.search(source[tag_start:at])
+    return bool(opened) and opened.group(1).lower() not in {"title", "placeholder", "aria-label", "alt"}
+
+
 def tag_arguments(source: str) -> list:
     """The words passed to the filters and tags above, comments removed first."""
     source = _strip_not_copy(source)
@@ -304,6 +318,8 @@ def tag_arguments(source: str) -> list:
     for tag in _MODULE_NOUNS.finditer(source):
         matches.extend(_MODULE_NOUN.finditer(tag.group(1)))
     for match in matches:
+        if _unread_attribute(source, match.start()):
+            continue
         words = html.unescape(match.group(1) if match.group(1) is not None else match.group(2))
         if re.search(r"[A-Za-z]", words):
             found.append(" ".join(words.split()))
@@ -316,10 +332,18 @@ def _runs(source: str) -> list:
     source = re.sub(r"\{\{.*?\}\}", " X ", source, flags=re.S)
     source = _BRANCH.sub("\n", source)
     source = re.sub(r"\{%.*?%\}", " ", source, flags=re.S)
-    source = _SEEN_ATTR.sub(lambda m: ">\n" + m.group(1) + "\n<", source)
-    source = _INLINE.sub(" ", source)
-    source = re.sub(r"<[^>]+>", "\n", source)
-    runs = (" ".join(html.unescape(run).split()) for run in source.split("\n"))
+    attributes = []
+
+    def pull(match):
+        attributes.append(match.group(1))
+        return ""
+
+    # An attribute's words are a run of their own, after the text; the tag stays whole.
+    source = _SEEN_ATTR.sub(pull, source)
+    # An inline tag joins its words as the browser does: Open<span>H2O</span> is OpenH2O.
+    source = _INLINE.sub("", source)
+    source = re.sub(r"<[^>]*>", "\n", source)
+    runs = (" ".join(html.unescape(run).split()) for run in [*source.split("\n"), *attributes])
     return [run for run in runs if run]
 
 

@@ -678,3 +678,39 @@ def test_the_emails_are_on_the_template_surface():
     read = shapes.surfaces()["templates"]
     assert "templates/account/email/password_reset_key_message.txt" in read
     assert "templates/account/messages/password_changed.txt" in read
+
+
+# -- No markup read as words (151.3-02) ---------------------------------------
+
+def test_a_block_ends_a_run_and_a_class_block_is_not_words():
+    source = (
+        "{% block title %}Change password - Open Water Accounting Platform{% endblock %}"
+        "{% block page_heading %}Change password{% endblock %}"
+        "{% block page_head_class %}page-head--medium{% endblock %}"
+    )
+    runs, _ = shapes.template_text(source)
+    assert runs == ["Change password - Open Water Accounting Platform", "Change password"]
+
+
+def test_an_attributes_words_are_a_run_of_their_own():
+    source = (
+        '<nav class="breadcrumb" aria-label="Breadcrumb">'
+        '<a href="/">Home</a> / <a href="/profile/">Your profile</a> / Change password</nav>'
+    )
+    runs, _ = shapes.template_text(source)
+    assert runs == ["Home / Your profile / Change password", "Breadcrumb"]
+    assert not [run for run in runs if "<" in run or ">" in run]
+
+
+def test_an_inline_tag_joins_its_words_as_the_browser_does():
+    runs, _ = shapes.template_text('<span class="brand">Open<span class="accent">H2O</span></span>')
+    assert runs == ["OpenH2O"]
+    runs, _ = shapes.template_text("<p>Read the <a href='/methods/'>methods</a> page.</p>")
+    assert runs == ["Read the methods page."]
+
+
+def test_a_filter_inside_an_attribute_no_reader_sees_is_not_words():
+    source = """<input autocomplete="{{ x|default:'new-password' }}" class="{{ y|default:'wide' }}">"""
+    assert shapes.template_text(source)[0] == []
+    seen = """<td>{{ x|default:"Not stated" }}</td><abbr title="{{ y|default:'Not stated yet' }}">GW</abbr>"""
+    assert shapes.template_text(seen)[0] == ["X", "GW", "X", "Not stated", "Not stated yet"]
