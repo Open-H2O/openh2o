@@ -76,7 +76,7 @@ class TestTheWizardSaysWhyItSentYouBack:
         boundary.delete()
         resp = client.get(reverse("setup:confirm"), follow=True)
         body = resp.content.decode()
-        assert "The boundary this session chose no longer exists" in body
+        assert "The boundary you chose no longer exists" in body
 
 
 @pytest.mark.django_db

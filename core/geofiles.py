@@ -183,9 +183,10 @@ def _parse_shapefile_zip(uploaded):
             for chunk in uploaded.chunks():
                 written += len(chunk)
                 if written > MAX_UPLOAD_BYTES:
+                    limit_mb = MAX_UPLOAD_BYTES // (1024 * 1024)
                     raise ImportError(
-                        f"Archive exceeds the {MAX_UPLOAD_BYTES // (1024 * 1024)} MB "
-                        "upload cap."
+                        f"This zip file is more than {limit_mb} MB. "
+                        f"OpenH2O imports files of up to {limit_mb} MB."
                     )
                 f.write(chunk)
 

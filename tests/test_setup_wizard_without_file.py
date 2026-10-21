@@ -8,7 +8,7 @@ re-decided here):
       and the "Select an existing boundary" control is disabled with a
       "None yet" note until a boundary exists to select;
   (b) step 3 never runs a populate step nobody checked, and reports an unchosen
-      step as "skipped: your choice", not an error;
+      step as "Skipped: you unchecked this step", not an error;
   (c) "Start without one" writes nothing: no Boundary, no SiteConfig row.
 
 ``_seed_session`` is the mechanism ``tests/test_setup_polish.py`` and
@@ -149,7 +149,7 @@ class TestTypedExtent:
         assert Boundary.objects.count() == 1
         boundary = Boundary.objects.get()
         assert boundary.name == "Hand-Typed District"
-        assert boundary.description == "Typed extent, entered on the Setup Wizard"
+        assert boundary.description == "Extent typed on the Setup Wizard"
         assert boundary.geometry.srid == 4326
         assert boundary.geometry.geom_type == "MultiPolygon"
         # One rectangle, one ring, four distinct corners (a closed ring repeats
@@ -237,7 +237,7 @@ class TestStepThreePicker:
             assert poll.status_code == 200
             final_body = poll.content.decode()
 
-        assert final_body.count("skipped: your choice") == len(steps)
+        assert final_body.count("Skipped: you unchecked this step") == len(steps)
         assert "wizard-step--error" not in final_body
 
         # Nothing was populated.
@@ -264,7 +264,7 @@ class TestStepThreePicker:
             final_body = poll.content.decode()
 
         # Every step but the kept one is reported as a choice, not an error.
-        assert final_body.count("skipped: your choice") == len(steps) - 1
+        assert final_body.count("Skipped: you unchecked this step") == len(steps) - 1
         assert "wizard-step--error" not in final_body
 
     def test_a_fresh_confirm_clears_a_prior_run_s_step_choice(self):

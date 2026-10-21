@@ -8,7 +8,7 @@
   <nav class="breadcrumb" aria-label="Breadcrumb">
     <span class="breadcrumb-current">Dashboard</span>
   </nav>
-  <p class="page-description">This page shows recorded supplies and uses by account and zone for the water year. Crop ET, OpenET&rsquo;s satellite estimate, is one estimated input.</p>
+  <p class="page-description">This page shows the water year's recorded supplies and uses by account and zone. Crop ET is OpenET's satellite estimate.</p>
 </div>
 {% endblock %}
 
@@ -40,12 +40,12 @@
   <div class="card-raised empty-state">
     <h2 class="section-header-flush mb-sm">Welcome to OpenH2O</h2>
     <p class="text-secondary text-sm mb-lg" style="max-width: 500px; margin-left: auto; margin-right: auto;">
-      This dashboard shows deliveries, measurements and usage by account and zone. Complete these steps to get started:
+      Complete these steps first:
     </p>
     <div class="onboarding-steps">
       <div class="onboarding-step">
         <span class="step-badge step-badge-active">1</span>
-        <span class="text-sm">{% if user_can_write %}<a href="{% url 'accounting:period_create' %}" class="link-accent">Create a water year</a>{% else %}Create a water year{% endif %} (e.g., WY 2024-2025)</span>
+        <span class="text-sm">{% if user_can_write %}<a href="{% url 'accounting:period_create' %}" class="link-accent">Create a water year</a>{% else %}Create a water year{% endif %}, such as WY 2025-2026</span>
       </div>
       <div class="onboarding-step">
         <span class="step-badge">2</span>
@@ -53,7 +53,7 @@
       </div>
       <div class="onboarding-step">
         <span class="step-badge">3</span>
-        <span class="text-secondary text-sm">Add ledger entries (deliveries, measurements, ET estimates) or upload CSV</span>
+        <span class="text-secondary text-sm">Add Use ledger entries for deliveries, measurements and ET estimates, or upload a CSV file</span>
       </div>
     </div>
   </div>

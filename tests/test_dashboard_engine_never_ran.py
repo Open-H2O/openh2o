@@ -53,7 +53,7 @@ pytestmark = pytest.mark.django_db
 PERIOD_START = date(2025, 10, 1)
 PERIOD_END = date(2026, 9, 30)
 
-BANNER = "Crop ET has not been calculated for"
+BANNER = "OpenH2O has not calculated crop ET for"
 ALL_CLEAR = "Nothing needs attention right now."
 NOT_CALCULATED = "Not calculated"
 
@@ -224,7 +224,7 @@ def test_the_banner_names_the_methodology_step_first_when_no_plan_exists():
 
     html = _dashboard(period)
 
-    assert "There is no calculation plan yet." in html
+    assert "This site has no calculation plan yet." in html
     assert "Set up a calculation plan" in html
 
 

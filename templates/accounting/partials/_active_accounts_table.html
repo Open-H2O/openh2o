@@ -43,8 +43,8 @@ budget); a unit stated once in the caller's own subtitle, never on a column.
       <th class="th-right"><span class="th-stack">Effective precipitation</span></th>
       <th class="th-right">Total</th>
       {% if has_allocations %}
-      <th class="th-right col-sep">Allocation{% include "partials/_explainer_popout.html" with title="GW allocation" text="This account's share of the water year's groundwater allocation, pro-rated by how many of its use areas fall in each groundwater zone. Surface-water allocation is a separate budget and is not counted here." link=budgets_help_url link_label="How budgets & allocations work" %}</th>
-      <th class="th-right">Remaining{% include "partials/_explainer_popout.html" with title="GW remaining" text="Groundwater allocation minus pumping. A field with a meter counts its meter readings; a field without one counts its estimated pumping, its ETAW met by groundwater divided by its irrigation efficiency. A negative number means the account pumped more than its groundwater allocation this water year." link=budgets_help_url link_label="How budgets & allocations work" %}</th>
+      <th class="th-right col-sep">Allocation{% include "partials/_explainer_popout.html" with title="Groundwater allocation" text="This account's share of the water year's groundwater allocation, pro-rated by how many of its use areas fall in each groundwater zone. Surface-water allocation is a separate budget and is not counted here." link=budgets_help_url link_label="How budgets & allocations work" %}</th>
+      <th class="th-right">Remaining{% include "partials/_explainer_popout.html" with title="Groundwater remaining" text="Groundwater allocation minus pumping. A field with a meter counts its meter readings; a field without one counts its estimated pumping, its ETAW met by groundwater divided by its irrigation efficiency. A negative number means the account pumped more than its groundwater allocation this water year." link=budgets_help_url link_label="How budgets & allocations work" %}</th>
       {% endif %}
     </tr>
   </thead>

@@ -366,7 +366,7 @@ def test_the_accounts_footer_equals_the_panel():
     assert '>-42.50<span class="budget-seg-unit">' in html
     # And the Zones table has no footer: a parcel can lie in more than one zone.
     assert "<tfoot>" not in _zones_table(html)
-    assert "A parcel can lie in more than one zone, so rows are not added." in html
+    assert "A parcel can lie in more than one zone, so the table has no total row." in html
 
 
 def test_no_leaf_header_carries_a_unit_and_each_card_states_it_once():
@@ -377,7 +377,10 @@ def test_no_leaf_header_carries_a_unit_and_each_card_states_it_once():
 
     main = html[html.index("<main"):html.index("</main>")]
     assert "(AF)</th>" not in main
-    assert main.count("All figures in acre-feet (AF).") == 3
+    # Accounts and zones say it with the water year (151.3-01, approved 2026-10-20);
+    # the fields card keeps its own sentence.
+    assert main.count("Figures are acre-feet (AF) for ") == 2
+    assert main.count("All figures in acre-feet (AF).") == 1
 
 
 def test_the_footer_dashes_when_the_engine_never_ran():
@@ -408,8 +411,8 @@ def test_zone_rows_are_grouped_by_groundwater_budget():
 
     budgeted = "Zones with a groundwater budget for Water Year 2025-2026"
     unbudgeted = (
-        "Zones with no groundwater budget for Water Year 2025-2026: "
-        "allocation, carry-over and remaining are not applicable"
+        "Zones without a groundwater budget for Water Year 2025-2026. "
+        "Allocation, Added and Remaining do not apply."
     )
     assert table.count(budgeted) == 1
     assert table.count(unbudgeted) == 1

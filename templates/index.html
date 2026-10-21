@@ -9,7 +9,7 @@
 carried no count and linked nowhere, and its dot touched "System running"
 because it leaned on `gap-2`/`flex`/`items-center`, utilities this stylesheet
 never compiled (ISS-166). The status moves to the head's meta slot, the shape
-every record page already uses.{% endcomment %}{% block page_meta %}<span class="badge badge-dot badge-green" title="The web process is answering requests.">System running</span>{% endblock %}
+every record page already uses.{% endcomment %}{% block page_meta %}<span class="badge badge-dot badge-green" title="The site is answering requests.">System running</span>{% endblock %}
 
 {% block content %}
 {% comment %}Phase 89-02, updated 143-09: the second sentence is a promise
@@ -21,7 +21,7 @@ no forbidden noun appears, so no word list can see it. This is the PUBLIC
 landing page, which is the half of `/` the harness could not read at all
 before 88-01. 149.1-06 (R-139): only a visitor who is not signed in sees this
 page, so it says what the site is and that the records open after logging in,
-never "your water data".{% endcomment %}{% any_module_enabled "parcels" "wells" "surface" "recharge" "accounting" "datasync" as has_entity_cards %}<p class="page-description">OpenH2O is open-source water accounting for anyone who keeps water records.{% if has_entity_cards %} Log in to open the records each card counts.{% endif %}</p>
+never "your water data".{% endcomment %}{% any_module_enabled "parcels" "wells" "surface" "recharge" "accounting" "datasync" as has_entity_cards %}<p class="page-description">OpenH2O is open-source water accounting for anyone who keeps water records.{% if has_entity_cards %} Log in to see the records behind each count.{% endif %}</p>
 
 {% comment %}143-09 (R-138, R-140): the two entity sections used to split
 "Water data" from "Accounting & monitoring" over two separate grids, which
@@ -71,7 +71,7 @@ a byte-identical full render.{% endcomment %}{% if 'parcels' in enabled_modules 
     up to date; this card counts every station on record.{% endcomment %}{% if 'datasync' in enabled_modules %}<a href="{% url 'datasync:station_list' %}" class="dashboard-card">
         <div class="dashboard-card-label">Monitoring stations</div>
         <div class="dashboard-card-value">{{ station_count }}</div>
-        <div class="dashboard-card-sublabel">{{ active_station_count }} syncing · view stations</div>
+        <div class="dashboard-card-sublabel">{{ active_station_count }} syncing · View stations</div>
     </a>{% endif %}
 </div>{% endif %}
 {% comment %}143-09 (R-140): "Methodology settings" GOES from this template.
@@ -80,5 +80,5 @@ this template ONLY to anonymous visitors (a signed-in user gets home.html),
 so the card was dead markup nobody could ever see rendered. The "Signed in
 as" branch a few lines below the old System status card was dead for the
 same reason and went with it.{% endcomment %}
-<p class="text-base mt-md"><strong>Run your own:</strong> start from <a href="https://github.com/Open-H2O/openh2o" class="text-link" target="_blank" rel="noopener noreferrer">the repository</a> and its <a href="https://github.com/Open-H2O/openh2o/blob/main/docs/AI-OPERATOR-GUIDE.md" class="text-link" target="_blank" rel="noopener noreferrer">operator guide</a>.</p>
+<p class="text-base mt-md">To run your own OpenH2O site, start from <a href="https://github.com/Open-H2O/openh2o" class="text-link" target="_blank" rel="noopener noreferrer">the repository</a> and its <a href="https://github.com/Open-H2O/openh2o/blob/main/docs/AI-OPERATOR-GUIDE.md" class="text-link" target="_blank" rel="noopener noreferrer">operator guide</a>.</p>
 {% endblock %}

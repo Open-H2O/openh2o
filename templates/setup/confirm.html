@@ -17,7 +17,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Confirm</span>
   </nav>
-  <p class="page-description">Check the boundary on the map and what Populate brings in, then continue to Populate.</p>
+  <p class="page-description">Check the boundary on the map and the data Populate will load, then continue to Populate.</p>
 </div>
 {% endblock %}
 
@@ -85,7 +85,7 @@
     step in setup/services.py wizard_steps() order, each row behind the module
     its step fills (_STEP_MODULE: parcels -> 'parcels', stations -> 'datasync';
     basins and flowlines are geography's and always run). The What column is the
-    step label the picker and the progress rows print; the Written as column is
+    step label the picker and the progress rows print; the Added as column is
     the sidebar's or the map's name for what the step creates
     (geography/management/commands/auto_populate.py: Zone zone_type='subbasin',
     Parcel by APN, Flowline, MonitoredStation with is_active=False). What it
@@ -99,7 +99,7 @@
           <tr>
             <th>What</th>
             <th>From</th>
-            <th>Written as</th>
+            <th>Added as</th>
           </tr>
         </thead>
         <tbody>
@@ -121,7 +121,7 @@
           {% if 'datasync' in enabled_modules %}<tr>
             <td class="col-name">Monitoring Stations</td>
             <td>USGS, CDEC, DWR, CIMIS and NOAA station lists near this boundary; CIMIS and NOAA need an API key</td>
-            <td>Monitoring stations, switched off until you switch them on</td>
+            <td>Monitoring stations. OpenH2O syncs a station only after you switch it on.</td>
           </tr>{% endif %}
         </tbody>
       </table>

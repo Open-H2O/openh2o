@@ -234,7 +234,7 @@ def test_a_period_with_no_such_field_says_so_in_one_sentence(basin, viewer):
     assert resp.context["unmet_demand_count"] == 0
     section = _section(resp.content.decode())
     assert (
-        f"No field recorded water use without a reported supply in {quiet.name}."
+        f"In {quiet.name}, no field had water use recorded and no supply reported."
         in section
     )
     assert PILL_WORDS not in resp.content.decode()

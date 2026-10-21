@@ -151,7 +151,7 @@ def setup_wizard(request):
                 boundary = Boundary.objects.create(
                     name=geom_name,
                     geometry=geom,
-                    description="Typed extent, entered on the Setup Wizard",
+                    description="Extent typed on the Setup Wizard",
                     **attrs,
                 )
                 request.session[SESSION_KEY_BOUNDARY] = boundary.pk
@@ -185,8 +185,8 @@ def setup_confirm(request):
         del request.session[SESSION_KEY_BOUNDARY]
         messages.info(
             request,
-            "The boundary this session chose no longer exists. Choose or "
-            "upload one, then confirm it.",
+            "The boundary you chose no longer exists. Choose or "
+            "upload a boundary, then confirm it.",
         )
         return redirect("setup:wizard")
 
@@ -232,8 +232,8 @@ def setup_run(request):
     except Boundary.DoesNotExist:
         messages.info(
             request,
-            "The boundary this session chose no longer exists. Choose or "
-            "upload one, then confirm it.",
+            "The boundary you chose no longer exists. Choose or "
+            "upload a boundary, then confirm it.",
         )
         return redirect("setup:wizard")
 
@@ -301,7 +301,7 @@ def setup_progress(request):
                 "count": 0,
                 "errors": [],
                 "success": True,
-                "note": "skipped: your choice",
+                "note": "Skipped: you unchecked this step",
             })
             step_index += 1
         elif step_name == "stations":

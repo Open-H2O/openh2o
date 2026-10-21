@@ -163,12 +163,12 @@ def run_station_provider_step(boundary: Boundary, code: str) -> tuple:
         # _discover_provider is fail-soft, but guard the wizard against any
         # unforeseen error so the poll always returns a renderable result.
         logger.exception("Provider '%s' discovery failed for boundary %s", code, boundary.pk)
-        return 0, ["Couldn't reach this data provider."], "failed"
+        return 0, ["the stations from this data provider did not load."], "failed"
 
     if status == "timed_out":
-        return count, ["The data provider didn't respond in time and was skipped."], status
+        return count, ["This data provider did not answer in time, so OpenH2O skipped it."], status
     if status == "failed":
-        return count, ["Couldn't reach this data provider."], status
+        return count, ["the stations from this data provider did not load."], status
     return count, [], status
 
 

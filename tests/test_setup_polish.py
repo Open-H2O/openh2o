@@ -269,7 +269,7 @@ def test_step_result_empty_success_is_distinct_from_failure(db):
     empty = {"label": "Stations", "success": True, "count": 0, "errors": []}
     html = render_to_string("setup/partials/_step_result.html", {"result": empty})
     assert "wizard-step--complete" in html
-    assert "None found" in html
+    assert "No new records for this boundary." in html
     assert "wizard-step--error" not in html
 
 
@@ -365,7 +365,7 @@ def test_stations_phase_polls_one_provider_per_request(db, settings, monkeypatch
     assert "wizard-step--error" in first
     # The error message renders through a {{ }} variable, so its apostrophe is
     # HTML-escaped — assert on the apostrophe-free part (cf. the upload tests).
-    assert "reach this data provider." in first
+    assert "the stations from this data provider did not load." in first
     assert "what's next" not in first.lower()  # still polling, not finished
     assert "Checking" in first                  # spinner names the next provider
 
@@ -378,7 +378,7 @@ def test_stations_phase_polls_one_provider_per_request(db, settings, monkeypatch
 
 def test_step_result_skip_note_is_a_clean_row_not_an_error(db):
     """A provider's clean skip (e.g. no API key) renders its note on a green row,
-    not a red error and not the generic 'None found' empty-success text."""
+    not a red error and not the generic 'No new records' empty-success text."""
     skipped = {
         "label": "NOAA Weather Stations",
         "success": True,
@@ -390,7 +390,7 @@ def test_step_result_skip_note_is_a_clean_row_not_an_error(db):
     assert "wizard-step--complete" in html
     assert "no API key configured" in html
     assert "wizard-step--error" not in html
-    assert "None found" not in html  # the note replaces the empty-success text
+    assert "No new records" not in html  # the note replaces the empty-success text
 
 
 def test_completion_panel_routes_to_next_steps(db):
@@ -416,7 +416,7 @@ def test_completion_panel_routes_to_next_steps(db):
     # and one line names the step that comes next there (zones), in its order.
     # The four hand-numbered links left with the list.
     assert reverse("getting_started") in html
-    assert "Create management zones" in html
+    assert "create management zones" in html
     assert reverse("parcels:list") not in html
     # The old single-link dead-end to the station list is gone from the panel.
     assert "Go to Stations" not in html

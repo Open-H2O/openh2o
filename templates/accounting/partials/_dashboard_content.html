@@ -32,7 +32,7 @@
 <div class="page-grid-dashboard-top">
 <div class="budget-panel budget-panel--centered">
   <div class="budget-panel-head">
-    <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Supplies come from the period's ledger rows, surface and groundwater by source; rain and crop ET come from its calculation runs." link=wb_help_url link_label="How water balances work" %}</span>
+    <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Surface water and groundwater supplies are the water year's Use ledger entries. Effective precipitation and crop ET come from the water year's calculation runs." link=wb_help_url link_label="How water balances work" %}</span>
     <span class="budget-panel-period">{{ selected_period.name }}</span>
   </div>
   <div class="budget-panel-body">
@@ -40,7 +40,6 @@
       <div class="budget-seg">
         <div class="budget-seg-label">Supplies</div>
         <div class="budget-seg-value text-supply">{{ grand_supply_total|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
-        <div class="budget-seg-caption">water on record for the period</div>
         {% comment %}
           The parts of the figure above, under it (143-01 resumed, 2026-09-11):
           the breakdown used to sit in its own column at the panel's far right,
@@ -133,7 +132,7 @@
   (`period_detail`, its page title is the period's name).
 {% endcomment %}
 <div class="card-raised empty-state">
-  <p class="empty-state-text text-secondary m-0"><strong class="text-primary">Crop ET has not been calculated for {{ selected_period.name }}.</strong>{% if not has_calculation_plan %} There is no calculation plan yet.{% endif %}</p>
+  <p class="empty-state-text text-secondary m-0"><strong class="text-primary">OpenH2O has not calculated crop ET for {{ selected_period.name }}.</strong>{% if not has_calculation_plan %} This site has no calculation plan yet.{% endif %}</p>
   {% if user_can_write %}
   <div class="form-footer" style="justify-content: center; margin-top: var(--space-md);">
     {% if not has_calculation_plan %}
@@ -150,7 +149,7 @@
 {% comment %} No allocations for this period: the fact and the one action. {% endcomment %}
 <div class="card-raised">
   <p class="text-secondary text-sm m-0">
-    {% if user_can_write %}No allocation is set for this water year. <a href="{% url 'accounting:allocation_create' %}" class="link-accent">Create an allocation</a>.{% else %}No allocation is set for this water year.{% endif %}
+    {% if user_can_write %}This water year has no allocation. <a href="{% url 'accounting:allocation_create' %}" class="link-accent">Create an allocation</a>.{% else %}This water year has no allocation.{% endif %}
   </p>
 </div>
 {% endif %}
@@ -183,7 +182,7 @@
 <div class="card-raised" id="active-accounts">
   <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
     <h2 class="section-header-flush">Active water accounts</h2>
-    <span class="text-tertiary text-xs">One row per active water account, {{ selected_period.name }}; select an account number to open it. All figures in acre-feet (AF).</span>
+    <span class="text-tertiary text-xs">One row per active water account. Select an account number to open the account. Figures are acre-feet (AF) for {{ selected_period.name }}.</span>
   </div>
   {% include "accounting/partials/_active_accounts_table.html" %}
 </div>
@@ -191,7 +190,7 @@
 <div class="card-raised">
   <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
     <h2 class="section-header-flush">Zones</h2>
-    <span class="text-tertiary text-xs">One row per zone, {{ selected_period.name }}. A parcel can lie in more than one zone, so rows are not added. All figures in acre-feet (AF).</span>
+    <span class="text-tertiary text-xs">One row per zone. A parcel can lie in more than one zone, so the table has no total row. Figures are acre-feet (AF) for {{ selected_period.name }}.</span>
   </div>
   {% if zone_summaries %}
   <div class="table-scroll">
@@ -239,7 +238,7 @@
       {% if has_allocations %}
       {% ifchanged row.has_groundwater_budget %}
       <tr class="row-group">
-        <td colspan="10">{% if row.has_groundwater_budget %}Zones with a groundwater budget for {{ selected_period.name }}{% else %}Zones with no groundwater budget for {{ selected_period.name }}: allocation, carry-over and remaining are not applicable{% endif %}</td>
+        <td colspan="10">{% if row.has_groundwater_budget %}Zones with a groundwater budget for {{ selected_period.name }}{% else %}Zones without a groundwater budget for {{ selected_period.name }}. Allocation, Added and Remaining do not apply.{% endif %}</td>
       </tr>
       {% endifchanged %}
       {% endif %}
@@ -295,7 +294,7 @@
   </table>
   </div>
   {% else %}
-  <p class="text-tertiary text-sm">No zone is configured yet.</p>
+  <p class="text-tertiary text-sm">This site has no zones yet.</p>
   {% endif %}
 </div>
 
@@ -381,7 +380,7 @@
   </table>
   </div>
   {% else %}
-  <p class="text-tertiary text-sm">No field recorded water use without a reported supply in {{ selected_period.name }}.</p>
+  <p class="text-tertiary text-sm">In {{ selected_period.name }}, no field had water use recorded and no supply reported.</p>
   {% endif %}
 </div>
 {% endif %}
