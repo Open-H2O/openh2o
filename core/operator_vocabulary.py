@@ -222,8 +222,8 @@ TERMS: tuple = (
         reported_by=(RUN_001, RUN_002, RUN_003, RUN_004),
         plain_english=(
             "A numbered door on the server that a particular kind of traffic "
-            "knocks on. Port 80 is the plain, unencrypted web door — the one a "
-            "browser uses when you type no number at all. Port 443 is the "
+            "knocks on. Port 80 is the plain, unencrypted web door, the one a "
+            "browser uses when you do not type a port number. Port 443 is the "
             "encrypted one."
         ),
     ),

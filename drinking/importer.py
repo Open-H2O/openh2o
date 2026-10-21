@@ -532,8 +532,8 @@ def _parse_result(raw_result, raw_lt_rl, raw_rl, errors):
             # would take it and `_result_value.html` would render it as
             # "< None", so it is refused here instead.
             errors.append(
-                "This row reports the result as below the reporting level and "
-                "gives no reporting level."
+                "This row reports the result as below the reporting level "
+                "but does not give a reporting level."
             )
             return None
         # No flag: the lab did not report a finding. That is not the same claim

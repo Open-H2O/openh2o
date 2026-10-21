@@ -46,7 +46,7 @@ records and invented sample data. It gives you a complete site to explore
 while you gather your own records. Run `seed_data` first, because the demonstration
 needs the reference lists it loads. One step of `seed_merced` downloads streams and
 monitoring stations from public government services. The download takes a few
-minutes and needs no key.
+minutes and does not need a key.
 
 ---
 
@@ -126,7 +126,7 @@ docker compose exec web python manage.py import_wells /tmp/wells.csv
 | Casing diameter (in) | `casing_diameter_in` | none | |
 | Capacity (gpm) | `capacity_gpm` | none | |
 | Year pumping began | `year_pumping_began` | none | |
-| Well type | `well_type` | none | Matched to the name of a well type already on the site, with capital and small letters treated alike. When the value matches no well type on the site, the well is imported without a type and the command reports a warning. |
+| Well type | `well_type` | none | Matched to the name of a well type already on the site, with capital and small letters treated alike. When the value does not match any well type on the site, the well is imported without a type and the command reports a warning. |
 
 The command ignores any column that is not in this table and names each one once in
 its report. The rest of the file is imported. With `--dry-run`, the command lists
@@ -332,7 +332,7 @@ reporting level.
 A PS Code is the code of a sampling point. For a California water system, OpenH2O
 builds each point's PS Code from the PWSID, the facility ID and the point number. For
 a system in another state, enter each point's code exactly as it appears in the lab
-results file. A PS Code that matches no sampling
+results file. A PS Code that does not match any sampling
 point on the site is a row error. OpenH2O does not create a sampling point from a lab
 file, because a mistyped code would then add a monitoring location that does not
 exist. Add the sampling point first with Add sampling points on the Drinking Water
@@ -353,7 +353,7 @@ OpenH2O reads two layouts and tells them apart by their column headings:
 | Layout | Recognized by | How OpenH2O reads it |
 |---|---|---|
 | California's Electronic Annual Report (eAR) production export | The columns `PWSID`, `Year`, `Month`, `TypeCode` and `Quantity as in Units Reported` | Each row is one month of one type of water. `TypeCode` is one of `GW`, `SW`, `Purchased`, `Sold`, `Recycled`, `NonPotable` and `NonPotableSold`, and any other code is a row error. `Units of Measure As Reported` is `G`, `MG`, `AF`, `CCF` or blank. A blank unit is a row error until you choose a unit for blank rows in the mapping step. The export can repeat a row up to five times, and OpenH2O keeps one copy and reports how many it dropped. `PWSID` must match the water system on the site. |
-| A monthly log kept on Section 5 of the eAR template | A `Date/Month` column and at least one of the six source columns | `Date/Month` holds the twelve month names. The rows `Maximum Day`, `Annual Total` and `Percent Treated` are skipped, and the preview names them. Each source has its own column: "Water Produced from Groundwater (Wells)", "...Surface Water", "Finished Water Purchased...", "Water Sold to Another PWS", "Non-potable..." and "Recycled". The "Total Amount of Potable Water" column is a total on the printed form, and OpenH2O does not read it. The log names no system, year or unit, so on the preview you enter the report year and choose one unit for the whole file. Gallons is the default. |
+| A monthly log kept on Section 5 of the eAR template | A `Date/Month` column and at least one of the six source columns | `Date/Month` holds the twelve month names. The rows `Maximum Day`, `Annual Total` and `Percent Treated` are skipped, and the preview names them. Each source has its own column: "Water Produced from Groundwater (Wells)", "...Surface Water", "Finished Water Purchased...", "Water Sold to Another PWS", "Non-potable..." and "Recycled". The "Total Amount of Potable Water" column is a total on the printed form, and OpenH2O does not read it. The log does not name the system, year or unit, so on the preview you enter the report year and choose one unit for the whole file. Gallons is the default. |
 
 OpenH2O converts units with the same figures as the other imports: 325,851 gallons
 per acre-foot, 1,000,000 gallons per MG and 748.05 gallons per CCF.

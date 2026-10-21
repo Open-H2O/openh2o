@@ -397,7 +397,7 @@ class TestPageAfterCreate:
         rows = [{"name": "", importer.GEOMETRY_COL: '{"type": "Point", "coordinates": [-120.5, 37.3]}'}]
         body = self._commit(auth_client, rows, {"name": "name", "geometry": importer.GEOMETRY_COL},
                             infra_type="storage")
-        assert "OpenH2O created no storage pond records." in body
+        assert "OpenH2O did not create any storage pond records." in body
         assert "1 map feature total" in body
         assert ">Feature<" in body
         assert '<td class="text-mono">1</td>' in body

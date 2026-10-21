@@ -441,8 +441,8 @@ class PointOfDiversion(models.Model):
         "lined": "Default for a lined canal. Two irrigation districts whose "
         "canals are about 90 percent lined report canal seepage of about 4 and "
         "6 percent in their published water management plans.",
-        "pipe": "Default for a pipe. FAO Irrigation and Drainage Paper 61 gives "
-        "pipelines no seepage.",
+        "pipe": "Default for a pipe. FAO Irrigation and Drainage Paper 61 puts "
+        "pipeline seepage at zero.",
     }
     _SEEPAGE_NOTE_NO_LINING = (
         "Default with no lining stated. Set the lining to give this point a "

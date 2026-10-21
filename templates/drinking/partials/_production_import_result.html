@@ -24,7 +24,7 @@ and why.
     149.1-06: one line with the counts, or "Nothing to import." when the
     file gave nothing to create, skip or report; each arm its own <p>.
   {% endcomment %}
-  <p class="text-base text-secondary mt-md">{% if created %}OpenH2O imported {{ created }} production record{{ created|pluralize }}.{% else %}OpenH2O imported no production records.{% endif %}</p>
+  <p class="text-base text-secondary mt-md">{% if created %}OpenH2O imported {{ created }} production record{{ created|pluralize }}.{% else %}OpenH2O did not import any production records.{% endif %}</p>
 
   {% if skipped_rows %}
   <h3 class="section-header-sm mt-lg">Rows that are not monthly figures</h3>

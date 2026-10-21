@@ -219,7 +219,7 @@ CSRF_COOKIE_SECURE=False
 
 The production settings mark the sign-in cookies secure, and a browser sends a
 cookie marked secure only over HTTPS. Without these three lines, every sign-in over
-plain `http://` fails with a 403 error, even though the pages that need no sign-in
+plain `http://` fails with a 403 error, even though the pages that do not need a sign-in
 still load. Phase 2, step 3 of the [AI operator guide](docs/AI-OPERATOR-GUIDE.md)
 gives the same settings. Keep `DEBUG` off, keep `ALLOWED_HOSTS` set to the site's
 own address and keep the strong database password.
@@ -312,7 +312,7 @@ http://your-domain.com {
 }
 ```
 
-The `http://` prefix tells Caddy to serve that name over plain HTTP and to order no
+The `http://` prefix tells Caddy to serve that name over plain HTTP and not to order a
 certificate. With a bare domain, Caddy orders a certificate. The service in front
 of the server still sends plain traffic, so the requests loop until they fail.
 
@@ -346,7 +346,7 @@ docker compose ps
 ```
 
 Once all three are up, `db` and `web` show `Up (healthy)` and `caddy` shows `Up`.
-The compose file gives Caddy no health check, so its row shows only `Up`.
+The compose file does not give Caddy a health check, so its row shows only `Up`.
 
 ---
 
@@ -486,7 +486,7 @@ docker compose exec web python manage.py seed_merced
 `OPENH2O_MODULES=all` in `.env` and run `docker compose up -d` first (section 12). It loads the basin's boundary, streams and
 canals, management zones, water rights and points of diversion, selected parcels,
 cropland, recharge basins and two water years of ledger activity, one finalized and one open. One of its steps downloads
-streams and monitoring stations from public government services and needs no key.
+streams and monitoring stations from public government services and does not need a key.
 On a server with no internet connection, first load the stored streams with
 `python manage.py seed_merced_base` and
 `python manage.py loaddata data/merced/flowlines.json`, then add
@@ -522,7 +522,7 @@ Every step of `seed_merced` but one is *idempotent*: running it again gives the
 same result as running it once, because it skips what is already done. The
 exception deletes and redraws the demonstration's parcel outlines and well
 locations, so under the production settings `seed_merced` stops at that step when
-demonstration records already exist. A first run on an empty database needs no flag. To
+demonstration records already exist. A first run on an empty database does not need a flag. To
 rebuild the demonstration:
 
 ```bash
@@ -530,7 +530,7 @@ docker compose exec web python manage.py seed_merced --allow-prod-clobber
 ```
 
 The populate step that downloads monitoring stations creates every station switched
-off, so a new demonstration shows no stations reporting until they are turned on.
+off, so a new demonstration does not show any stations reporting until they are turned on.
 OpenH2O ships with the demonstration's own list of 335 stations. Of those, 42 are
 switched on, and each of the 42 carries the date it last published a reading. One
 command loads the list over the stations the populate step created:
@@ -684,7 +684,7 @@ and monitoring stations for the area from public services, shows their progress,
 and turns on the stations those steps find. The boundary can be a zipped shapefile,
 a KML file or a GeoJSON file. GeoJSON is a plain-text format for map shapes and the
 facts attached to them, such as a name and an area. You can also type the area's
-north, south, east and west edges by hand, or give no boundary at all.
+north, south, east and west edges by hand, or start without a boundary.
 
 - **Where it is.** The wizard is in the left sidebar, under Administration. The Administration
   section is hidden in the sidebar's everyday view. At the bottom of the sidebar, a
@@ -877,7 +877,7 @@ An *API key* is a long password that lets OpenH2O fetch data from another
 organization's service without a person signing in. Keep each key secret.
 
 CDEC (the California Data Exchange Center), USGS and the Department of Water
-Resources' Water Data Library and SGMA Portal need no key. Three sources need a key.
+Resources' Water Data Library and SGMA Portal do not need a key. Three sources need a key.
 Set each key in `.env`, then run `docker compose up -d`:
 
 | Source | `.env` setting | Get a key from |
@@ -1066,7 +1066,7 @@ scripts/restore.sh backups/openh2o-20261019-012500.dump backups/media-20261019-0
 Without `--yes`, it says what it would replace and stops. Without the media file, the
 uploaded files stay as they are. The script first backs up the site as it is and prints
 that backup's name, so restoring that file undoes a restore of the wrong one. This
-backup deletes no older backup, so the file being restored stays in place. Then it
+backup does not delete older backups, so the file being restored stays in place. Then it
 stops the website, empties the database, loads the backup and starts the website again.
 The scheduled syncs and backups skip their turn while it runs. As the website starts, it
 brings a backup taken on an older version up to the version the site runs. At the end,

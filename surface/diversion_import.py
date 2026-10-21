@@ -337,7 +337,7 @@ def resolve_point(row_l, whole_file_point, *, right_cache, right_points_cache):
             f"tell which one this row belongs to. Add an APPL_POD column, or {choose}"
         )
     return None, (
-        "This row names no point of diversion. Add a point column to the file, "
+        "This row does not name a point of diversion. Add a point column to the file, "
         f"or {choose}"
     )
 

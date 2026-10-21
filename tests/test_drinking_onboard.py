@@ -251,7 +251,7 @@ class TestLookupFailureModes:
         ).content.decode()
 
         assert "No system with that PWSID" in body
-        assert "lists no water system with the PWSID" in body
+        assert "does not list a water system with the PWSID" in body
         assert WaterSystem.objects.count() == 0
 
     def test_a_timeout_never_reads_as_not_found(self, client_in, monkeypatch):

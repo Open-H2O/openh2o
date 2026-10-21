@@ -72,36 +72,11 @@ shapes = _load()
 
 #: The guard reached zero on 2026-10-18 (150.1-03). What is left on the screens
 #: is held line by line in EXCEPTIONS below; BASELINE keeps only what still
-#: waits on a ruling. Since 2026-10-20 that is the "no for not" lines that were
-#: on the site when the shape was added: each is reworded with the page it sits
-#: on, read against what the code does, when that page is taken up (ruled on
-#: 2026-10-20: the check goes in now, the sentences later). Lower an entry
-#: when its file loses a shape; never raise one.
-BASELINE: dict = {
-    "templates/accounting/methodology_settings.html": {"no for not": 1},
-    "templates/accounting/partials/_account_balances.html": {"no for not": 1},
-    "templates/drinking/import.html": {"no for not": 2},
-    "templates/drinking/partials/_import_preview.html": {"no for not": 1},
-    "templates/drinking/partials/_import_result.html": {"no for not": 1},
-    "templates/drinking/partials/_onboard_review.html": {"no for not": 1},
-    "templates/drinking/partials/_production_import_preview.html": {"no for not": 1},
-    "templates/drinking/partials/_production_import_result.html": {"no for not": 1},
-    "templates/drinking/partials/_sampling_point_results.html": {"no for not": 1},
-    "templates/help/methods.html": {"no for not": 2},
-    "templates/help/partials/_the_subtraction.html": {"no for not": 1},
-    "templates/infrastructure/partials/_import_result.html": {"no for not": 1},
-    "templates/surface/partials/_diversion_import_preview.html": {"no for not": 1},
-    "templates/surface/partials/_water_right_detail_pane.html": {"no for not": 1},
-    "accounting/ledger_words.py": {"no for not": 1},
-    "health/checks.py": {"no for not": 1},
-    "CONTRIBUTING.md": {"no for not": 1},
-    "DEPLOY.md": {"no for not": 9},
-    "README.md": {"no for not": 1},
-    "docs/AI-OPERATOR-GUIDE.md": {"no for not": 16},
-    "docs/DATA-IMPORT.md": {"no for not": 4},
-    "docs/INSTALL-WITHOUT-DOCKER.md": {"no for not": 1},
-    "docs/water-budget-terms.md": {"no for not": 1},
-}
+#: waits on a ruling. The "no for not" lines counted on 2026-10-20 were all
+#: reworded the same day on the owner's approval (the saved ledger words with
+#: parcels migration 0014). Lower an entry when its file loses a shape; never
+#: raise one.
+BASELINE: dict = {}
 
 _REPORTS = (
     "Reports is off by default and marked Under development (2026-10-12); its "

@@ -28,7 +28,7 @@ make test                   # confirm a green baseline
 - **Run the suite with `make test` before you open a pull request.** It uses the local settings, because the production settings refuse to start without a strong database password.
 - **Keep the standards check passing.** If you change the data model or an adapter, run `python manage.py check_conformance` and update the crosswalk if it reports a gap (see [docs/DATA-STANDARDS.md](docs/DATA-STANDARDS.md)).
 - **Keep to the stack's limits.** OpenH2O has no Node.js build step, does not use Celery or Redis, and serves one organization per site. The "Key Constraints" section of [CLAUDE.md](CLAUDE.md) gives the reasons.
-- **Use the design tokens.** Interface work uses the one typeface and the tokens in `static/css/tokens.css`. Add no new fonts or one-off colors.
+- **Use the design tokens.** Interface work uses the one typeface and the tokens in `static/css/tokens.css`. Do not add new fonts or one-off colors.
 - **Give every new source file the SPDX header:** `# SPDX-License-Identifier: AGPL-3.0-or-later`.
 
 ## Adding a data adapter

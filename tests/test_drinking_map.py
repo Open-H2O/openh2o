@@ -341,7 +341,7 @@ class TestTheEmptyStateIsASentence:
         # 150.1-02: no GAMA (only the demo seed's coordinates came from it), and where
         # a location is entered.
         assert "no facility on this site has a location recorded" in html
-        assert "epa publishes no facility coordinates" in html
+        assert "epa does not publish facility coordinates" in html
         assert "/admin/ under drinking water &gt; system facilities" in html
         assert "gama" not in html
 

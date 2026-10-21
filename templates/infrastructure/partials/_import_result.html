@@ -19,7 +19,7 @@ Outcome of an import. Three shapes:
   </div>
 
   <p class="text-base text-secondary mt-md">
-    {% if created %}OpenH2O created {{ created }} {{ record_noun }} record{{ created|pluralize }}.{% else %}OpenH2O created no {{ record_noun }} records.{% endif %}
+    {% if created %}OpenH2O created {{ created }} {{ record_noun }} record{{ created|pluralize }}.{% else %}OpenH2O did not create any {{ record_noun }} records.{% endif %}
     {% if noted %}{{ noted|length }} of them {{ noted|length|pluralize:"has a note,have notes" }} below.{% endif %}
     {% if skipped %}Correct these rows in the file and upload the file again. OpenH2O skips every row already on file.{% endif %}
   </p>

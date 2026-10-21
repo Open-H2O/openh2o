@@ -34,7 +34,7 @@
     <span class="badge badge-grey">{{ total }} row{{ total|pluralize }} read</span>
   </div>
 
-  <p class="text-base text-secondary mt-md">{% if counts.results %}OpenH2O imported {{ counts.results }} sample result{{ counts.results|pluralize }} and added {{ counts.events }} sample event{{ counts.events|pluralize }}.{% else %}OpenH2O imported no sample results.{% endif %}</p>
+  <p class="text-base text-secondary mt-md">{% if counts.results %}OpenH2O imported {{ counts.results }} sample result{{ counts.results|pluralize }} and added {{ counts.events }} sample event{{ counts.events|pluralize }}.{% else %}OpenH2O did not import any sample results.{% endif %}</p>
   {% if counts.limits_filled %}
   <p class="text-base text-secondary mt-sm">OpenH2O added this file&rsquo;s MCL and DLR to {{ counts.limits_filled }} result{{ counts.limits_filled|pluralize }} already on file.</p>
   {% endif %}

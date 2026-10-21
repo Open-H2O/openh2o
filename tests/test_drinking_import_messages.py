@@ -154,8 +154,8 @@ class TestRowErrors:
     def test_below_the_reporting_level_with_no_level(self, db):
         row = self._one(Result="", **{"Less Than Reporting Level": "Y"})
         assert (
-            "This row reports the result as below the reporting level and gives "
-            "no reporting level."
+            "This row reports the result as below the reporting level but does "
+            "not give a reporting level."
         ) in row["errors"]
 
     def test_an_unreadable_result(self, db):
@@ -275,7 +275,7 @@ class TestThePreviewsOtherLines:
         assert ">Blank<" in body
         assert "Not recorded" not in body
         assert "Correct the rows below in the file and upload the file again." in body
-        assert "matches no sampling point in OpenH2O." in body
+        assert "not match any sampling point in OpenH2O." in body
         assert "Where to add the sampling point" in body
         assert "or correct the code in the file." in body
         assert "PWSID_facility_point" not in body
@@ -504,7 +504,7 @@ class TestTheProductionRowErrors:
         ).content.decode()
         for line in ("3 rows from an eAR export", "1 to import", "1 repeated in this file",
                      "1 with errors", "Rows with errors", "What is wrong",
-                     "OpenH2O applies this unit to every row that gives no unit.",
+                     "OpenH2O applies this unit to every row that does not give a unit.",
                      ">Not chosen<"):
             assert line in body, line
         rows = json.dumps([{"PWSID": "CA2410009", "Year": "2024", "Month": "May",

@@ -84,7 +84,7 @@ NO_FEATURES_SENTENCE = "This file has no map features."
 
 # --- The zip sentences, shared with the bulk import (message Z) --------------
 
-NO_SHP_SENTENCE = "This zip file holds no shapefile (.shp)."
+NO_SHP_SENTENCE = "This zip file does not contain a shapefile (.shp)."
 UNSAFE_PATH_SENTENCE = (
     "This zip file contains the path '../evil.shp', which points outside the zip "
     "file. Remove '../evil.shp' from the zip file, then upload the zip file again."

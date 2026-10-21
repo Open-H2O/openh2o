@@ -58,7 +58,7 @@ NOT_SHAPEFILE_MESSAGE = (
     f"OpenH2O cannot read the shapefile in this zip file. {_CHECK_IN_GIS}"
 )
 NO_FEATURES_MESSAGE = "This file has no map features."
-NO_SHP_MESSAGE = "This zip file holds no shapefile (.shp)."
+NO_SHP_MESSAGE = "This zip file does not contain a shapefile (.shp)."
 
 
 def too_large_message(size):

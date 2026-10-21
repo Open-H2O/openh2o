@@ -64,7 +64,7 @@ def test_the_help_sentence_is_the_approved_one(client_in):
     body = client_in.get(reverse("methods")).content.decode()
     # Replaced (150.1-02) when a diversion with no linked right began to be estimated.
     assert (
-        "OpenH2O estimates no delivery at a diversion whose water right is "
+        "OpenH2O does not estimate a delivery at a diversion whose water right is "
         "inactive or revoked."
     ) in body
     assert "curtail" not in body.lower()

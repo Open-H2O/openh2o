@@ -912,7 +912,7 @@ class TestRealDDWNonDetects:
             }
         )
         assert row["errors"], "a flagged blank with no level must not pass"
-        assert any("gives no reporting level" in e for e in row["errors"])
+        assert any("does not give a reporting level" in e for e in row["errors"])
         assert row["data"].get("result_value") is None
 
     def test_the_retired_less_than_prefix_still_works(self, ddw_system):

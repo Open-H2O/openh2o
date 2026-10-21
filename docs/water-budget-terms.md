@@ -12,7 +12,7 @@ handbook and an IWFM model work with larger areas: a water budget zone in the
 handbook, and a subregion in an IWFM model.
 
 The handbook is a draft. The copy the Department of Water Resources publishes is
-marked "DRAFT," and we found no final version to cite. Page numbers on this page are
+marked "DRAFT," and we did not find a final version to cite. Page numbers on this page are
 the handbook's printed page numbers.
 
 The IWFM columns come from the C2VSimFG v1.5 model package, the fine-grid version of

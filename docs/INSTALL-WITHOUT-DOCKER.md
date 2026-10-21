@@ -583,7 +583,7 @@ rights, as for the unit file, and write this into it:
 
 This keeps eight weeks of records and compresses the older ones. `copytruncate`
 copies each file aside and then empties the original, so the web server keeps
-writing to the file it opened and needs no restart. Check the file now, without
+writing to the file it opened and does not need a restart. Check the file now, without
 waiting a week. This command reports what logrotate would do and changes nothing:
 
 ```bash

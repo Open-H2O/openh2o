@@ -263,7 +263,7 @@ def test_page_says_not_stated_when_no_lining(auth_client):
 def test_page_pipe_notes(auth_client):
     pod = PointOfDiversionFactory(lining="pipe", loss_basis="default")
     html = auth_client.get(reverse("surface:pod_detail", args=[pod.pk])).content.decode()
-    assert "gives pipelines no seepage" in html
+    assert "puts pipeline seepage at zero" in html
     assert "A closed pipe has no open water surface" in html
     assert "Default for an open canal" not in html
 

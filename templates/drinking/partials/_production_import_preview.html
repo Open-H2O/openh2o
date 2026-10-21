@@ -30,7 +30,7 @@ pressed.
         <option value="{{ value }}"{% if unit_for_blank == value %} selected{% endif %}>{{ label }}</option>
         {% endfor %}
       </select>
-      <div class="form-help">OpenH2O applies this unit to every row that gives no unit.</div>
+      <div class="form-help">OpenH2O applies this unit to every row that does not give a unit.</div>
     </div>
     {% else %}
     <div class="form-row-2col">

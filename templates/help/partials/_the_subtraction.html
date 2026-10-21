@@ -151,7 +151,7 @@
     <li>Subtract effective precipitation, estimated from gridMET rainfall. The result is ETAW.</li>
     <li>Subtract the delivery on record times the field's irrigation efficiency. What is left is ETAW met by groundwater.</li>
     <li>Divide ETAW met by groundwater by the field's irrigation efficiency. The result is the estimated groundwater extraction, which OpenH2O charges against the groundwater allocation.</li>
-    <li>In a month with a meter reading on record, the reading stands. The same arithmetic runs for comparison but writes no groundwater row and no estimated extraction.</li>
+    <li>In a month with a meter reading on record, the reading stands. The same arithmetic runs for comparison but does not write a groundwater row or an estimated extraction.</li>
   </ol>
   {% endif %}
 </div>

@@ -46,10 +46,10 @@ Ask the person for three things.
 
 2. **Who needs to reach the site.** Ask this directly and write the answer down,
    because Phase 2 depends on it. There are three answers.
-   - <!-- defines: localhost --> *Only this one computer.* The site needs no domain
+   - <!-- defines: localhost --> *Only this one computer.* The site does not need a domain
      name. Its address is `localhost`, the name a computer uses for itself, and
      `127.0.0.1` is the same address in numbers. No other computer can reach it.
-   - *Other computers in the office.* The site needs no domain name. It answers at
+   - *Other computers in the office.* The site does not need a domain name. It answers at
      the computer's address on the office network, such as `192.168.1.40`. Tell the
      person that anyone on that network will be able to reach the site.
    - <!-- defines: tls_https --><!-- defines: dns --> *People outside the office,
@@ -72,7 +72,7 @@ Ask the person for three things.
 
 If the organization wants people outside the office to reach the site and has no
 server or domain yet, help it rent a virtual server and register a domain. If it
-wants the site on one computer or on the office network, it needs no server or
+wants the site on one computer or on the office network, it does not need a server or a
 domain, and the result is a complete OpenH2O installation.
 
 ---
@@ -185,7 +185,7 @@ loads the reference lists every site needs, such as units and categories. Phase 
 seeds the demonstration data.
 
 ✋ **Checkpoint:** `docker compose ps` shows `db` and `web` as `Up (healthy)` and
-`caddy` as `Up`. The compose file gives Caddy no health check, so its row shows only
+`caddy` as `Up`. The compose file does not give Caddy a health check, so its row shows only
 `Up`. Wait until all three rows show these states before you go on.
 
 ---
@@ -231,11 +231,11 @@ warns about them. If it does, switch the site to the production settings.
    assume HTTPS. `SECURE_SSL_REDIRECT`, `SESSION_COOKIE_SECURE` and
    `CSRF_COOKIE_SECURE` are all on by default. A browser sends a cookie marked
    secure only over `https://`. With these settings on and no HTTPS, every sign-in
-   fails with a 403 error, even though the pages that need no sign-in still load.
+   fails with a 403 error, even though the pages that do not need a sign-in still load.
 
    | Who needs to reach it | What to do |
    |---|---|
-   | People outside | Choose one of the two setups in section 4 of [DEPLOY.md](../DEPLOY.md). In the first, Caddy obtains the certificate: point the domain's A record at this computer and name the domain in the `Caddyfile`. In the second, a tunnel, the organization's own proxy or a load balancer in front of this computer handles the encryption, and the `Caddyfile` stays as shipped. The shipped `Caddyfile` names no domain, so pointing DNS at the computer produces no certificate by itself. Keep the three settings on. |
+   | People outside | Choose one of the two setups in section 4 of [DEPLOY.md](../DEPLOY.md). In the first, Caddy obtains the certificate: point the domain's A record at this computer and name the domain in the `Caddyfile`. In the second, a tunnel, the organization's own proxy or a load balancer in front of this computer handles the encryption, and the `Caddyfile` stays as shipped. The shipped `Caddyfile` does not name a domain, so pointing DNS at the computer does not produce a certificate by itself. Keep the three settings on. |
    | Only this computer, or the office network | There is no certificate to obtain. Turn the three settings off in `.env`: <br>`SECURE_SSL_REDIRECT=False`<br>`SESSION_COOKIE_SECURE=False`<br>`CSRF_COOKIE_SECURE=False` |
 
    After you change `.env`, run `docker compose up -d` so the website container reads
@@ -371,14 +371,14 @@ docker compose exec web python manage.py load_station_fixture  # the demonstrati
 `seed_merced` loads the demonstration, a real groundwater basin with published
 records and invented sample data. It gives the organization a complete site to
 explore while you gather its own records. One of its steps downloads streams and
-monitoring stations from public government services and needs no key. On a
+monitoring stations from public government services and does not need a key. On a
 computer with no internet connection, first load the stored streams with
 `python manage.py seed_merced_base` and
 `python manage.py loaddata data/merced/flowlines.json`, then add
 `--skip-auto-populate` to leave the download out.
 
 The populate step creates every station it finds switched off, so the
-demonstration's monitoring pages show no stations reporting until the stations are
+demonstration's monitoring pages do not show any stations reporting until the stations are
 turned on. `load_station_fixture` loads the demonstration's own station list, which
 ships with OpenH2O. The list holds 335 stations. 42 of them are switched on, and
 each of those carries the date it last published a reading. The command downloads
@@ -390,7 +390,7 @@ To rebuild the demonstration later on the same site, add `--allow-prod-clobber` 
 outlines and well locations. Because of that step, under the production settings
 `seed_merced` will not run over existing demonstration records unless you add the
 flag. Under the development settings it redraws them without asking, including any
-outline someone has edited. A first run needs no flag.
+outline someone has edited. A first run does not need a flag.
 
 ### Look at the organization's records first
 
@@ -510,7 +510,7 @@ stores the estimates, and `--to-ledger` also writes them to the ledger.
 ### Keys and the schedule
 
 USGS, CDEC (the California Data Exchange Center) and the Department of Water
-Resources' Water Data Library and SGMA Portal need no key. CIMIS (the California
+Resources' Water Data Library and SGMA Portal do not need a key. CIMIS (the California
 Irrigation Management Information System) needs `CIMIS_API_KEY`. NOAA's climate data
 needs `NOAA_CDO_TOKEN`, and OpenET needs `OPENET_API_KEY`. The comments in
 `.env.example` say where to get each key. Add each key to `.env` and run
@@ -599,7 +599,7 @@ stations report, keep those, and remove the rest before you hand the site over.
    ```
 
    Note each station that returns nothing. Such a station has stopped publishing,
-   and its settings need no change.
+   and its settings do not need to change.
 
 3. **Remove the stations that have no usable data.** This command deletes every
    switched-on station with too few readings to draw a chart. With
@@ -708,7 +708,7 @@ page where someone at the organization corrects them.
 | Database | OpenH2O cannot reach the database. Run `docker compose ps`. If `db` is not `Up (healthy)`, run `docker compose up -d` and read `docker compose logs db`. |
 | Disk | The disk is over 80% full. Over 90%, the card changes to Action required. Run `docker system df` to see what Docker holds, and `docker image prune` to remove images no container uses. Ask the organization before you delete anything else. On a Mac, Docker Desktop keeps OpenH2O on a virtual disk with a size limit set in Docker Desktop's settings. If pruning does not free enough space, raise that limit. |
 | Database name | OpenH2O is connected to a database other than the one its settings name. With Docker, the database's name comes from `POSTGRES_DB` in `.env`, and the compose file builds the connection from it. Check `POSTGRES_DB`, then run `docker compose up -d`. Without Docker, the name comes from `DATABASE_URL` in `.env`. |
-| SSL | The certificate expires in under 30 days, or OpenH2O cannot read it. Where the `Caddyfile` names the domain, Caddy renews the certificate by itself, so this card means the renewal is failing. Check that the domain's A record still points at this computer and that ports 80 and 443 are open, then read `docker compose logs caddy`. Where a tunnel or the organization's own proxy handles the encryption, renew the certificate there. On a site with no public domain, the card says there is no certificate to check, and it needs no fix. |
+| SSL | The certificate expires in under 30 days, or OpenH2O cannot read it. Where the `Caddyfile` names the domain, Caddy renews the certificate by itself, so this card means the renewal is failing. Check that the domain's A record still points at this computer and that ports 80 and 443 are open, then read `docker compose logs caddy`. Where a tunnel or the organization's own proxy handles the encryption, renew the certificate there. On a site with no public domain, the card says there is no certificate to check, and nothing needs fixing. |
 | Migrations | The database is missing updates this version of OpenH2O needs. Run `docker compose exec web python manage.py migrate`. |
 | Sync Freshness | A data source with a station turned on has not synced for more than 48 hours. After 7 days, or when it has never synced, the card changes to Action required. Run `crontab -l` to check that the schedule is installed. Then run `docker compose exec web python manage.py sync_source` with the source's code, such as `usgs`, and read what it prints. The scheduled syncs write to `sync.log` in the log folder set in `crontab.txt`. The card leaves out a source whose key is missing, and the monitoring dashboard shows that source as "needs key". |
 | Calculation | A calculation has waited more than 15 minutes to start, or it stopped before it finished. Run it with `docker compose exec web python manage.py run_accounting --request` and the request number from the card's JSON details, or ask the organization to run it again from the water year's page. The card also asks for attention when no calculation has finished in 48 hours while a water year is still open. For that, run `crontab -l` to check that the schedule is installed, and read `calculation.log` in the log folder set in `crontab.txt`. |
@@ -742,7 +742,7 @@ them, so an error that names one of them means the build went wrong.
 |---|---|---|
 | The `web` container will not start, and its log mentions `ImproperlyConfigured` | The production checks refused a setting. The database password is empty or a common default, `ALLOWED_HOSTS` is empty or `SECRET_KEY` is missing. Or `ACCOUNT_EMAIL_VERIFICATION` holds a value other than `none`, `optional` or `mandatory`. Or `OPENH2O_MODULES` names an unknown section or leaves out a section that another one needs. | Read `docker compose logs web`, where the message names the setting. Correct it in `.env` and run `docker compose up -d`. |
 | The Docker build fails on GDAL, GEOS or PROJ | The build could not install the map libraries. | Read the first error in the build output, then see the troubleshooting section of DEPLOY.md. |
-| The site loads at its public domain, but without HTTPS | The shipped `Caddyfile` serves plain web traffic on port 80 and names no domain, so pointing DNS at the computer produces no certificate. | Name the domain in the `Caddyfile` as section 4 of DEPLOY.md describes, then run `docker compose restart caddy`. |
+| The site loads at its public domain, but without HTTPS | The shipped `Caddyfile` serves plain web traffic on port 80 and does not name a domain, so pointing DNS at the computer does not produce a certificate. | Name the domain in the `Caddyfile` as section 4 of DEPLOY.md describes, then run `docker compose restart caddy`. |
 | A source on the monitoring dashboard shows "needs key", "no stations" or "no recent data" | "Needs key": its key is missing from `.env`. "No stations": it has no station turned on. "No recent data": the source publishes rarely, as the groundwater sources do, or its sync is failing. | Add the key to `.env` and run `docker compose up -d`. Turn the stations on as Phase 4 describes. Run `sync_source` for the source with an earlier `--start` and read what it prints. |
 | The reset page says the site does not send email, or a reset email never arrives | The site has no SMTP settings. | Add `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` and `DEFAULT_FROM_EMAIL` to `.env` and run `docker compose up -d`. Until then, an administrator sets a temporary password for the person on the Users page. For the only host administrator, run `docker compose exec web python manage.py changepassword` with the account's username. The username is the email address unless the account was given a different one. |
 | 502 Bad Gateway after the computer restarts | The website container is still starting, or Docker did not start with the computer. | Set Docker to start when the computer starts. The compose file sets `restart: unless-stopped`, so the containers start again when Docker does. Run `docker compose ps`. If `web` is not `Up (healthy)`, run `docker compose up -d` and read `docker compose logs web`. |
@@ -765,8 +765,8 @@ them, so an error that names one of them means the build went wrong.
   `EMAIL_HOST`. A person who signs up must confirm their email address when the site
   has a mail server, and need not when it has none. If it is set to `mandatory` on a
   site with no mail server, each person who signs up waits for an email the site
-  cannot send. Accounts an administrator adds on the Users page need no
-  confirmation.
+  cannot send. A person an administrator adds on the Users page does not need to
+  confirm their email address.
 - **Do not** weaken the production checks to get the site to start. Correct the
   setting that the message names.
 - **Keep** the link that offers users the source code. If the organization changes
