@@ -381,8 +381,8 @@ def check_ledger_integrity():
             months = "that month" if zero_count == 1 else "those months"
             msg += (
                 f" {_count(zero_count, 'calculated ledger row', 'calculated ledger rows')} "
-                f"{have} no ETAW met by groundwater, so OpenH2O estimates no "
-                f"groundwater extraction for {months}."
+                f"{have} no ETAW met by groundwater, so the estimated groundwater "
+                f"extraction for {months} is zero."
             )
 
     return {

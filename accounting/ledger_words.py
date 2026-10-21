@@ -259,9 +259,16 @@ PUMPING_ESTIMATE_WORDS = (
 #: 150.1-02 (2026-10-11): reworded in ETAW terms. It names no supply: on 41 of the
 #: demo's 117 zero months effective precipitation alone met crop ET, so a
 #: sentence naming surface water would be false there.
+#:
+#: 151.2-02 (2026-10-20): reworded to say the estimated groundwater extraction
+#: is zero, where it used to read as if no estimate were made. The row is written with an amount
+#: of 0 and the run stamps an extraction of 0, so an estimate is made and it is
+#: zero; "does not estimate" would have said the month was skipped.
+#: parcels/migrations/0014_parcelledger_zero_extraction_words.py carries the
+#: new words onto rows already saved.
 NO_PUMPING_DERIVED_WORDS = (
-    "No ETAW met by groundwater this month, so OpenH2O estimates no "
-    "groundwater extraction."
+    "No ETAW met by groundwater this month, so the estimated groundwater "
+    "extraction is zero."
 )
 
 

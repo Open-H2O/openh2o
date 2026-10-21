@@ -503,15 +503,15 @@ class TestHealthDemoMode:
         """143-05 (R-043, second half): Site Health and the Use Ledger must
         tell the same story about a zero-amount calculated row, not two
         different words for the same fact. The ledger's Description cell
-        says 'No ETAW met by groundwater this month, so OpenH2O estimates no
-        groundwater extraction.' (150.1-02, 2026-10-11); this
+        says 'No ETAW met by groundwater this month, so the estimated
+        groundwater extraction is zero.' (151.2-02, 2026-10-20); this
         message carries the same claim, not the old bare 'calculated rows have
         zero amount' framing."""
         ParcelLedgerFactory(amount_acre_feet=Decimal("0"), source_type="calculated")
         result = check_ledger_integrity()
         message = result["message"]
         assert "no etaw met by groundwater" in message.lower()
-        assert "so openh2o estimates no groundwater extraction" in message.lower()
+        assert "so the estimated groundwater extraction for that month is zero" in message.lower()
 
 
 # ---------------------------------------------------------------------------
