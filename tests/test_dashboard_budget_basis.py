@@ -377,10 +377,10 @@ def test_no_leaf_header_carries_a_unit_and_each_card_states_it_once():
 
     main = html[html.index("<main"):html.index("</main>")]
     assert "(AF)</th>" not in main
-    # Accounts and zones say it with the water year (151.3-01, approved 2026-10-20);
-    # the fields card keeps its own sentence.
+    # Accounts and zones say it with the water year; the fields card prints the
+    # year just before its own (151.3-01, approved 2026-10-20).
     assert main.count("Figures are acre-feet (AF) for ") == 2
-    assert main.count("All figures in acre-feet (AF).") == 1
+    assert main.count("Figures are acre-feet (AF).") == 1
 
 
 def test_the_footer_dashes_when_the_engine_never_ran():

@@ -183,7 +183,7 @@ class TestRenderedPages:
 
     def test_the_home_map_sublabel_no_longer_enumerates(self, admin_client):
         body = admin_client.get("/").content.decode()
-        assert "Your records and public data in one view" in body
+        assert "Your records and public layers in one view" in body
         assert "Every well, parcel, and diversion" not in body
 
     def test_the_home_report_card_names_both_families_when_both_are_on(
