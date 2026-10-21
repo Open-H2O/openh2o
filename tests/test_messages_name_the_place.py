@@ -184,8 +184,9 @@ class TestTheNoZoneMessageSaysThereIsNoScreen:
             {"start_date": "2024-02-01", "volume_acre_feet": "12.5"},
         ).content.decode()
         message = (
-            "Event saved. This site has no zone, so no ledger entries were "
-            "written. No screen sets a recharge site's zone yet."
+            "Event saved. This site has no zone, so OpenH2O did not deposit the "
+            "recharge to a basin recharge pool. No page sets a recharge site's "
+            "zone yet."
         )
         assert message.replace("'", "&#x27;") in body
         flash = _fragment(body, "Event saved.", 160)

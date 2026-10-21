@@ -367,8 +367,9 @@ def recharge_event_create(request, pk):
         # form and the Zones pages never touch it), so the sentence says so
         # rather than sending the reader to a page that cannot do it.
         ledger_msg = (
-            "Event saved. This site has no zone, so no ledger entries were "
-            "written. No screen sets a recharge site's zone yet."
+            "Event saved. This site has no zone, so OpenH2O did not deposit the "
+            "recharge to a basin recharge pool. No page sets a recharge site's "
+            "zone yet."
         )
 
     events = list(

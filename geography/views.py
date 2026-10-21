@@ -590,7 +590,7 @@ def zone_create(request):
             if not geometry:
                 return render(request, "geography/zone_create.html", {
                     "form": form,
-                    "error": "A polygon boundary is required. Draw a polygon on the map.",
+                    "error": "This zone has no boundary yet. Click the map to draw it, then press Finish.",
                 })
 
             zone.geometry = geometry

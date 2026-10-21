@@ -221,7 +221,7 @@ class TestFieldPageLine:
         )
 
         html = _field_page(parcel)
-        assert FIELD_LABEL not in html
+        assert "AF, neither credited nor charged" not in html
 
 
 class TestNoRecharge:

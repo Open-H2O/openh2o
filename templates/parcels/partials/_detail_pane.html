@@ -62,7 +62,7 @@
     {% endcomment %}
     <div class="budget-panel">
       <div class="budget-panel-head">
-        <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Surface water, groundwater extraction and managed recharge come from the period's ledger rows; rain, crop ET, deep percolation and storage change come from its calculation runs. Residual is supplies minus uses; a Residual badge is green within a quarter of crop ET, orange beyond it." link=methods_help_url link_label="Methods behind the numbers" %}</span>
+        <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Surface water, groundwater extraction and managed recharge come from the water year's Use ledger entries. Effective precipitation, crop ET, deep percolation and storage change come from the water year's calculation runs. The residual is supplies minus uses. The Residual badge is green within a quarter of crop ET and orange beyond it." link=methods_help_url link_label="Methods behind the numbers" %}</span>
         {% include "parcels/partials/_period_control.html" %}
       </div>
       {% comment %}
@@ -236,8 +236,8 @@
           </p>
           {% elif over_delivery_total_af > 0 %}
           <p class="text-secondary">
-            <strong>Surface water in excess of ETAW (added in the residual above):</strong>
-            <span class="td-num">{{ over_delivery_total_af|floatformat:2|intcomma }}</span> AF
+            <strong>Surface water in excess of ETAW:</strong>
+            <span class="td-num">{{ over_delivery_total_af|floatformat:2|intcomma }}</span> AF, added in the residual above
           </p>
           {% endif %}
 
@@ -261,7 +261,7 @@
           {% if unmet_demand_af > 0 %}
           <p class="text-secondary">
             <strong>Water use recorded, no supply reported:</strong>
-            <span class="td-num">{{ unmet_demand_af|floatformat:2|intcomma }}</span> AF, subtracted in the residual above{% include "partials/_explainer_popout.html" with title="Water use recorded, no supply reported" text="The part of ETAW that no surface water on record met, on a field with no well, summed from this period's calculation runs. It is never booked as pumping." link=wb_help_url link_label="How water balances work" %}
+            <span class="td-num">{{ unmet_demand_af|floatformat:2|intcomma }}</span> AF, subtracted in the residual above{% include "partials/_explainer_popout.html" with title="Water use recorded, no supply reported" text="This figure is the ETAW that recorded surface water did not meet on a field without a well, summed over the water year's calculation runs. OpenH2O never counts this water as pumping." link=wb_help_url link_label="How water balances work" %}
           </p>
           {% endif %}
 
@@ -299,7 +299,7 @@
           <div class="budget-breakdown-group">
             <div class="budget-breakdown-title">Not in this residual</div>
             {% if 'surface' in enabled_modules %}
-            <div class="budget-breakdown-row"><span>Canal losses</span><b>taken off the headgate total</b></div>
+            <div class="budget-breakdown-row"><span>Canal losses</span><b>deducted from the headgate total</b></div>
             {% endif %}
             <div class="budget-breakdown-row"><span>Deep percolation</span><b>counted under Uses</b></div>
           </div>
@@ -326,11 +326,11 @@
     {% endif %}
     {% else %}
     <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-      <h2 class="section-header-flush" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Surface water, groundwater extraction and managed recharge come from the period's ledger rows; rain, crop ET, deep percolation and storage change come from its calculation runs. Residual is supplies minus uses; a Residual badge is green within a quarter of crop ET, orange beyond it." link=methods_help_url link_label="Methods behind the numbers" %}</h2>
+      <h2 class="section-header-flush" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Surface water, groundwater extraction and managed recharge come from the water year's Use ledger entries. Effective precipitation, crop ET, deep percolation and storage change come from the water year's calculation runs. The residual is supplies minus uses. The Residual badge is green within a quarter of crop ET and orange beyond it." link=methods_help_url link_label="Methods behind the numbers" %}</h2>
       {% include "parcels/partials/_period_control.html" %}
     </div>
     <div class="alert-warning">
-      ET has not been computed for this use area in this period, so there is no balance yet. Recorded supplies:
+      OpenH2O has not calculated crop ET for this use area in this water year, so there is no balance yet. Recorded supplies:
       <span class="text-supply">surface {{ consumptive_balance.supplies.surface|floatformat:2 }}</span> &middot;
       <span class="text-supply">groundwater {{ consumptive_balance.supplies.groundwater|floatformat:2 }}</span> AF.
     </div>
@@ -365,7 +365,7 @@
             {% elif ef.name == "area_acres" %}
               {% include "partials/_help_tooltip.html" with label="Area (acres)" text="Calculated from the parcel boundary when no figure is entered. OpenH2O uses the area to convert crop ET and rainfall from depth to acre-feet. No allocation is calculated from it." %}
             {% elif ef.name == "irrigation_method" %}
-              {% include "partials/_help_tooltip.html" with label="Irrigation method" text="Each irrigation method's efficiency comes from a groundwater agency's published table. A field with a method on file uses the method's efficiency in place of the default on Delivery Settings." %}
+              {% include "partials/_help_tooltip.html" with label="Irrigation method" text="Each irrigation method's efficiency comes from a groundwater agency's published table. For a field with an irrigation method on file, OpenH2O uses the method's efficiency in place of the default on Delivery Settings." %}
             {% endif %}
           </div>
           <div id="field-{{ ef.name }}" class="field-row">

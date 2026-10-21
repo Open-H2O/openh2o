@@ -14,7 +14,7 @@
 <div class="field-group{% if not half %} field-grid-2-span{% endif %}">
   <div class="field-label field-row">
     Identifier
-    {% include "partials/_help_tooltip.html" with label="Identifier" text="This record's permanent address. It opens this page in a browser, and gives a machine-readable description to software that asks for one." %}
+    {% include "partials/_help_tooltip.html" with label="Identifier" text="This identifier is the record's permanent address. A browser opens the record's page from it, and software that requests JSON-LD receives a machine-readable description." %}
   </div>
   <div class="field-row" style="align-items: center;">
     <span class="field-value-mono" style="overflow-wrap: anywhere;">{{ identifier_uri }}</span>

@@ -99,10 +99,10 @@ map to them.
   <p class="empty-state-text" style="max-width: 460px;">No use areas yet.</p>
   {% if 'setup' in enabled_modules %}
   <p class="text-tertiary text-sm" style="max-width: 460px; margin-top: var(--space-sm);">
-    The Setup Wizard brings in use areas from the statewide parcel layer; there is no add form.
+    The Setup Wizard loads use areas from the statewide parcel layer; there is no add form.
   </p>
   <div class="form-footer" style="margin-top: var(--space-md);">
-    <a href="{% url 'setup:wizard' %}" class="btn-primary">Set up your watershed &rarr;</a>
+    <a href="{% url 'setup:wizard' %}" class="btn-primary">Open the Setup Wizard &rarr;</a>
   </div>
   {% else %}
   <p class="text-tertiary text-sm" style="max-width: 460px; margin-top: var(--space-sm);">

@@ -15,7 +15,7 @@
 <div class="ledger-card-head">
   <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">Event history</h2>
   <div class="text-secondary text-base">{{ events|length }} event{{ events|length|pluralize }} over {{ event_groups|length }} water year{{ event_groups|length|pluralize }}.</div>
-  <div class="text-secondary text-base">Acre-feet. Each year's row adds its own events.</div>
+  <div class="text-secondary text-base">Volumes are in acre-feet. Each water year has its own total.</div>
 </div>
 {% if ledger_msg %}
 <p class="text-tertiary text-sm mb-sm" style="padding: 0 var(--space-lg);">{{ ledger_msg }}</p>

@@ -168,13 +168,13 @@
             </div>
             <div class="budget-op"></div>
             <div class="budget-seg">
-              <div class="budget-seg-label">Water year before</div>
+              <div class="budget-seg-label">Earlier water year</div>
               {% if previous_totals %}
               <div class="budget-seg-value">{{ previous_totals.volume|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
               <div class="budget-seg-caption">{{ previous_totals.count }} event{{ previous_totals.count|pluralize }}, {{ previous_totals.period_name }}</div>
               {% else %}
               <div class="budget-seg-value text-tertiary">&mdash;</div>
-              <div class="budget-seg-caption">no earlier water year holds an event</div>
+              <div class="budget-seg-caption">no events recorded</div>
               {% endif %}
             </div>
           </div>

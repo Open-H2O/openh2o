@@ -18,7 +18,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Create</span>
   </nav>
-  <p class="page-description">Draw a polygon on the map to define the zone boundary. Use areas can be assigned to zones after creation.</p>
+  <p class="page-description">Draw the zone's boundary on the map. After you create the zone, assign use areas to it on its page.</p>
 </div>
 {% endblock %}
 
@@ -47,7 +47,7 @@
           <div class="form-group">
             <label class="field-label" for="id_zone_type">Type</label>
             {{ form.zone_type }}
-            <div class="form-help">Pick Management area for the zone a use area's groundwater allocation and basin pool belong to.</div>
+            <div class="form-help">Pick Management area for a zone that holds its use areas' groundwater allocations and basin recharge pool.</div>
             <div class="form-help">Pick Subbasin for a Department of Water Resources (DWR) Bulletin 118 subbasin.</div>
             <div class="form-help">Pick Other area for anything else, such as the land a canal or ditch serves.</div>
           </div>
@@ -86,7 +86,7 @@
         <div id="zone-draw-map" style="height: 480px; width: 100%;"></div>
         <!-- Coordinate display -->
         <div class="coord-display" id="coord-display">
-          <span class="text-xs text-tertiary">Click map to draw zone polygon</span>
+          <span class="text-xs text-tertiary">Click the map to draw the zone's boundary.</span>
         </div>
       </div>
     </div>
@@ -203,7 +203,7 @@
     map.getSource('finished').setData({ type: 'FeatureCollection', features: [] });
     document.getElementById('geometry_json').value = '';
     document.getElementById('draw-finish').style.display = 'none';
-    document.getElementById('coord-display').textContent = 'Click map to draw zone polygon';
+    document.getElementById('coord-display').textContent = 'Click the map to draw the zone\'s boundary.';
   }
 
   document.getElementById('draw-polygon').addEventListener('click', function() { clearDrawing(); });

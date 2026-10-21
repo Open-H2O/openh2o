@@ -18,7 +18,7 @@ class RechargeEventForm(forms.ModelForm):
         ]
         # 149.1-07 (R-127): the event's water type is the water type its volume
         # is credited as, and the Event history column above this form says so.
-        labels = {"water_type": "Credited to"}
+        labels = {"water_type": "Credited to", "volume_acre_feet": "Volume (AF)"}
         widgets = {
             "start_date": forms.DateInput(
                 attrs={"class": "form-input", "type": "date"}

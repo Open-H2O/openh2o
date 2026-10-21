@@ -69,7 +69,7 @@ count line (`.map-card-head > p` is the flex row). The words are unchanged.
   </p>
   {% else %}
   <p class="text-base text-secondary">
-    <span>{{ total_count|intcomma }} of {{ all_count|intcomma }}{% if q %} match{{ total_count|pluralize:"es," }} &ldquo;{{ q }}&rdquo;{% endif %}{% if filter_words %} {{ filter_words }}{% endif %}; {% if not result_located_count %}{% if total_count == 1 %}it has{% else %}they have{% endif %} no location recorded, so the map shows none{% else %}the map shows {% if result_located_count == total_count %}{% if total_count == 1 %}it{% else %}those {{ total_count|intcomma }}{% endif %}{% elif result_located_count == 1 %}the one of them with a location{% else %}the {{ result_located_count|intcomma }} of them with a location{% endif %}{% endif %}</span>
+    <span>{{ total_count|intcomma }} of {{ all_count|intcomma }}{% if q %} match{{ total_count|pluralize:"es," }} &ldquo;{{ q }}&rdquo;{% endif %}{% if filter_words %} {{ filter_words }}{% endif %}; {% if not result_located_count %}{% if total_count == 1 %}it has{% else %}they have{% endif %} no recorded location, so the map shows none{% else %}the map shows {% if result_located_count == total_count %}{% if total_count == 1 %}it{% else %}those {{ total_count|intcomma }}{% endif %}{% elif result_located_count == 1 %}the only one with a location{% else %}the {{ result_located_count|intcomma }} with a location{% endif %}{% endif %}</span>
     <span><span class="swatch-{{ swatch|default:'dot' }}" style="color: var(--color-entity-{{ swatch_token }});"></span>{{ key_label }}</span>
   </p>
   {% endif %}

@@ -164,7 +164,7 @@ class TestParcelBalanceCard:
         assert resp.status_code == 200
         assert resp.context["run_periods"] == []          # nothing to audit yet
         body = resp.content.decode()
-        assert "ET has not been computed" in body          # honest open state
+        assert "OpenH2O has not calculated crop ET" in body          # honest open state
         # surface supply still shown honestly, no fabricated closing term.
         assert resp.context["consumptive_balance"]["supplies"]["surface"] == Decimal("9")
         # no dangling drill-down link when there are no runs.

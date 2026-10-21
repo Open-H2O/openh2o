@@ -114,7 +114,7 @@ class TestZoneUseAreasFooter:
         html = response.content.decode()
 
         assert "All 3 use areas" in html
-        assert "2 of 3 with an area on record" in html
+        assert "2 of 3 with an area on file" in html
         assert "30.50" in html
 
     def test_a_zone_with_no_use_areas_gets_no_footer(self, viewer):
