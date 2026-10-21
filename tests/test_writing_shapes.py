@@ -707,6 +707,8 @@ def test_an_inline_tag_joins_its_words_as_the_browser_does():
     assert runs == ["OpenH2O"]
     runs, _ = shapes.template_text("<p>Read the <a href='/methods/'>methods</a> page.</p>")
     assert runs == ["Read the methods page."]
+    runs, _ = shapes.template_text("<div><span>Canal losses</span><b>taken off the headgate total</b></div>")
+    assert runs == ["Canal losses taken off the headgate total"]
 
 
 def test_a_filter_inside_an_attribute_no_reader_sees_is_not_words():

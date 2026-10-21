@@ -260,6 +260,7 @@ _OPEN_ATTR = re.compile(r"""([\w:-]+)\s*=\s*["'][^"']*$""")
 _INLINE = re.compile(
     r"</?(?:a|abbr|b|bdi|cite|code|data|dfn|em|i|kbd|mark|q|s|small|span|strong"
     r"|sub|sup|time|u|var|wbr)\b[^>]*>", re.I)
+_TOUCHING = re.compile(r"(</[a-z]+\s*>)(?=<(?:a|abbr|b|bdi|cite|code|data|dfn|em|i|kbd|mark|q|s|small|span|strong|sub|sup|time|u|var)\b)", re.I)
 #: An alternative arm of an if or for tag, or a block's start or end, starts a new run of text.
 _BRANCH = re.compile(r"\{%\s*(?:elif|else|empty|block|endblock)\b.*?%\}", re.S)
 _HEADING_TAG = re.compile(r"<(h[1-6]|summary|legend|caption)\b[^>]*>(.*?)</\1\s*>", re.S | re.I)
@@ -341,6 +342,8 @@ def _runs(source: str) -> list:
     # An attribute's words are a run of their own, after the text; the tag stays whole.
     source = _SEEN_ATTR.sub(pull, source)
     # An inline tag joins its words as the browser does: Open<span>H2O</span> is OpenH2O.
+    # Two inline tags touching (</span><b>) are a label and its value, kept apart.
+    source = _TOUCHING.sub(r"\1 ", source)
     source = _INLINE.sub("", source)
     source = re.sub(r"<[^>]*>", "\n", source)
     runs = (" ".join(html.unescape(run).split()) for run in [*source.split("\n"), *attributes])
