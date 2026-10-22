@@ -86,7 +86,7 @@
         <div id="zone-draw-map" style="height: 480px; width: 100%;"></div>
         <!-- Coordinate display -->
         <div class="coord-display" id="coord-display">
-          <span class="text-xs text-tertiary">Click the map to draw the zone's boundary.</span>
+          <span class="text-xs text-tertiary">Click the map to place the boundary's first corner.</span>
         </div>
       </div>
     </div>
@@ -203,7 +203,7 @@
     map.getSource('finished').setData({ type: 'FeatureCollection', features: [] });
     document.getElementById('geometry_json').value = '';
     document.getElementById('draw-finish').style.display = 'none';
-    document.getElementById('coord-display').textContent = 'Click the map to draw the zone\'s boundary.';
+    document.getElementById('coord-display').textContent = 'Click the map to place the boundary\'s first corner.';
   }
 
   document.getElementById('draw-polygon').addEventListener('click', function() { clearDrawing(); });
