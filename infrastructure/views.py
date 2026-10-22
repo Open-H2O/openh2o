@@ -751,7 +751,7 @@ def parcel_create_inline(request):
 
     if not parcel_number or not geometry_json:
         return JsonResponse(
-            {"error": "Enter the parcel number, then draw the parcel on the map."},
+            {"error": "Draw the use area on the map, then enter its parcel number."},
             status=400,
         )
 
@@ -759,8 +759,8 @@ def parcel_create_inline(request):
         # parcel_number is unique: this was an IntegrityError, a server error.
         return JsonResponse(
             {"error": (
-                f"Parcel {parcel_number} is already on file. Choose it with the "
-                "parcel search above, or enter a different parcel number."
+                f"A use area with parcel number {parcel_number} is already on file. "
+                "Choose it with Search use areas above, or enter a different parcel number."
             )},
             status=400,
         )
@@ -771,7 +771,7 @@ def parcel_create_inline(request):
             geom = MultiPolygon(geom, srid=4326)
     except Exception:
         return JsonResponse(
-            {"error": "OpenH2O cannot read the parcel you drew. Draw the parcel again."},
+            {"error": "OpenH2O cannot read the outline you drew. Draw the use area again."},
             status=400,
         )
 

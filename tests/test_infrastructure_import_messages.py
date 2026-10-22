@@ -431,15 +431,15 @@ class TestParcelCreateMessages:
         assert self._post(auth_client, parcel_number="024-100-001", geometry_json=self.SQUARE)[0] == 200
         assert self._post(auth_client, parcel_number="024-100-001", geometry_json=self.SQUARE) == (
             400,
-            "Parcel 024-100-001 is already on file. Choose it with the parcel search "
-            "above, or enter a different parcel number.",
+            "A use area with parcel number 024-100-001 is already on file. "
+            "Choose it with Search use areas above, or enter a different parcel number.",
         )
         assert Parcel.objects.filter(parcel_number="024-100-001").count() == 1
 
     def test_missing_and_unreadable(self, auth_client):
         assert self._post(auth_client, parcel_number="", geometry_json=self.SQUARE) == (
-            400, "Enter the parcel number, then draw the parcel on the map.",
+            400, "Draw the use area on the map, then enter its parcel number.",
         )
         assert self._post(auth_client, parcel_number="X-1", geometry_json="not geometry") == (
-            400, "OpenH2O cannot read the parcel you drew. Draw the parcel again.",
+            400, "OpenH2O cannot read the outline you drew. Draw the use area again.",
         )

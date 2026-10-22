@@ -327,7 +327,7 @@
           </summary>
           <div class="mt-md">
             <div class="form-group">
-              <label class="field-label">Search existing parcel</label>
+              <label class="field-label">Search use areas</label>
               <input type="search" placeholder="Parcel number or owner name..."
                      hx-get="{% url 'infrastructure:parcel_search' %}"
                      hx-trigger="input changed delay:300ms"
@@ -338,7 +338,7 @@
             </div>
             <div class="row-start" style="gap: var(--space-sm);">
               <button type="button" id="btn-parcel-map" class="btn-secondary btn-sm">Select on map</button>
-              <button type="button" id="btn-parcel-draw" class="btn-secondary btn-sm">Draw new parcel</button>
+              <button type="button" id="btn-parcel-draw" class="btn-secondary btn-sm">Draw a new use area</button>
             </div>
             <div id="parcel-draw-form" style="display: none;">
               <div class="mt-sm">
@@ -351,7 +351,7 @@
                   <input type="text" id="new-parcel-owner" class="form-input" placeholder="Optional">
                 </div>
                 <div class="row-start" style="gap: var(--space-sm);">
-                  <button type="button" id="save-new-parcel" class="btn-primary btn-sm">Save parcel</button>
+                  <button type="button" id="save-new-parcel" class="btn-primary btn-sm">Save use area</button>
                   <button type="button" id="cancel-new-parcel" class="btn-secondary btn-sm">Cancel</button>
                 </div>
               </div>
@@ -610,11 +610,11 @@
     var n = vertices.length;
     var hint;
     if (n < 3) {
-      hint = n + ' of 3 minimum — click to add more corners';
+      hint = n + ' of 3 corners placed. Click to add more.';
     } else {
-      hint = n + ' corners — double-click or press Finish to complete';
+      hint = n + ' corners placed. Double-click or press Finish to complete.';
     }
-    if (parcelMode === 'draw') hint = 'Parcel: ' + hint;
+    if (parcelMode === 'draw') hint = 'Use area: ' + hint;
     updateCoordDisplay(lngLat.lng, lngLat.lat, hint);
     document.getElementById('draw-finish').style.display = n >= 3 ? '' : 'none';
   }
@@ -641,7 +641,7 @@
       map.getSource('parcel-highlight').setData({ type: 'Feature', geometry: geojson, properties: {} });
       map.getSource('drawing').setData({ type: 'FeatureCollection', features: [] });
       document.getElementById('draw-finish').style.display = 'none';
-      setCoordText(numVerts + ' vertices — enter parcel details below');
+      setCoordText(numVerts + ' corners placed. Enter the use area\'s details below.');
       document.getElementById('parcel-draw-form').style.display = '';
       document.getElementById('new-parcel-number').focus();
       vertices = [];
@@ -653,7 +653,7 @@
     map.getSource('drawing').setData({ type: 'FeatureCollection', features: [] });
     updateGeometry(geojson);
     document.getElementById('draw-finish').style.display = 'none';
-    setCoordText(numVerts + ' vertices, polygon complete');
+    setCoordText('Outline complete, ' + numVerts + ' corners');
     vertices = [];
   }
 
@@ -748,7 +748,7 @@
         .then(function(data) {
           if (data.features.length === 0) {
             btn.textContent = 'Select on map';
-            setCoordText('No parcels in database yet');
+            setCoordText('No use area has an outline on the map yet.');
             return;
           }
           map.getSource('parcels').setData(data);
@@ -778,7 +778,7 @@
     var btn = document.getElementById('btn-parcel-map');
     btn.textContent = 'Cancel selection';
     btn.classList.add('active');
-    setCoordText('Click a parcel to select it');
+    setCoordText('Click a use area to select it');
     document.getElementById('infra-map').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
@@ -805,8 +805,8 @@
     if (parcelMode !== 'select') return;
     map.getCanvas().style.cursor = 'pointer';
     var props = e.features[0].properties;
-    var label = props.parcel_number || 'Parcel';
-    if (props.owner_name) label += ' — ' + props.owner_name;
+    var label = props.parcel_number || 'Use area';
+    if (props.owner_name) label += ' · ' + props.owner_name;
     parcelPopup.setLngLat(e.lngLat)
       .setHTML('<div style="color:#111;font-size:13px;padding:2px 6px;">' + label + '</div>')
       .addTo(map);
@@ -830,7 +830,7 @@
     document.getElementById('draw-point').disabled = true;
     document.getElementById('draw-polygon').disabled = true;
     document.getElementById('draw-clear').disabled = true;
-    setCoordText('Click the map to place parcel corners (at least 3). Double-click last corner to finish.');
+    setCoordText('Click the map to place the use area\'s corners (at least 3). Double-click the last corner to finish.');
     document.getElementById('infra-map').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   });
 
@@ -869,10 +869,10 @@
         exitParcelMode();
       })
       .catch(function(err) {
-        btn.textContent = 'Save Parcel';
+        btn.textContent = 'Save use area';
         btn.disabled = false;
         // The server's sentence when there is one, else this.
-        setCoordText((err && err.message) || 'OpenH2O could not save the parcel. Try again.');
+        setCoordText((err && err.message) || 'OpenH2O could not save the use area. Try again.');
       });
   });
 
@@ -898,7 +898,7 @@
     selectBtn.textContent = 'Select on map';
     selectBtn.classList.remove('active');
     var drawBtn = document.getElementById('btn-parcel-draw');
-    drawBtn.textContent = 'Draw new parcel';
+    drawBtn.textContent = 'Draw a new use area';
     drawBtn.classList.remove('active');
     document.getElementById('draw-clear').disabled = false;
     updateDrawModeForType();
@@ -906,7 +906,7 @@
     parcelDrawGeometry = null;
     setCoordText(placeHint());
     var saveBtn = document.getElementById('save-new-parcel');
-    saveBtn.textContent = 'Save Parcel';
+    saveBtn.textContent = 'Save use area';
     saveBtn.disabled = false;
   }{% endif %}
 })();
