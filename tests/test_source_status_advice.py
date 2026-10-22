@@ -23,7 +23,7 @@ class TestNoneActivatedIsItsOwnState:
             total_stations=15,
         )
         assert status == "none_activated"
-        assert freshness.status_label(status) == "None activated"
+        assert freshness.status_label(status) == "Syncing off"
 
     def test_a_source_with_no_stations_at_all_still_says_so(self):
         status = freshness.classify_source_status(

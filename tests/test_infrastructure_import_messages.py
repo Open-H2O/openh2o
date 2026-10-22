@@ -383,7 +383,7 @@ class TestPageAfterCreate:
         assert "OpenH2O created 2 well records." in body
         assert "1 of them has a note below." in body
         assert (
-            "Correct these rows in the file and upload the file again. OpenH2O skips "
+            "In the file, correct the rows OpenH2O did not import, then upload the file again. OpenH2O skips "
             "every row already on file."
         ) in body
         assert "Imported with a note" in body

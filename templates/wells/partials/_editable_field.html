@@ -10,7 +10,7 @@ second wrapping div breaking the grid's direct-child selectors).
   <div class="field-label field-row">
     {{ ef.label }}
     {% if ef.name == "status" %}
-      {% include "partials/_help_tooltip.html" with label="Status" text="Whether this well is active, inactive, destroyed or proposed. OpenH2O does not use a well's status in any calculation." %}
+      {% include "partials/_help_tooltip.html" with label="Status" text="Whether this well is active, inactive, destroyed or proposed. A well's status does not change any pumping or water balance figure." %}
     {% elif ef.name == "depth_ft" %}
       {% include "partials/_help_tooltip.html" with label="Total Depth" text="Depth of the well bore in feet below ground surface." %}
     {% elif ef.name == "dwr_extraction_method" %}

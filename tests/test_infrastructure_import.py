@@ -220,9 +220,8 @@ class TestValidateRows:
         results = importer.validate_rows(rows, self._mapping(), "well", set())
         assert results[0]["errors"] == []
         assert results[0]["warnings"] == [
-            "OpenH2O imported this well without its pump type, which the file gives "
-            "as 'rocket'. OpenH2O records a pump type only as submersible, turbine, "
-            "centrifugal or other."
+            "OpenH2O imported this well without a pump type. The file gives 'rocket'; "
+            "the pump types OpenH2O accepts are submersible, turbine, centrifugal and other."
         ]
         assert "pump_type" not in results[0]["data"]
 

@@ -139,22 +139,19 @@ def _station_list_head_line(*, total_count, q, source, active, reporting):
     if clauses:
         noun += " " + " ".join(clauses)
 
+    parts = [noun]
     if active == "0":
-        sync_state = "not syncing"
-    elif active == "all":
-        sync_state = "syncing and not"
-    else:
-        sync_state = "syncing"
-
-    tail = sync_state
+        parts.append("not syncing")
+    elif active != "all":
+        parts.append("syncing")
     if reporting == "fresh":
-        tail += ", up to date"
+        parts.append("up to date")
     elif reporting == "stale":
-        tail += ", slightly behind"
+        parts.append("slightly behind")
     elif reporting == "dead":
-        tail += ", dormant"
+        parts.append("dormant")
 
-    return f"{noun}, {tail}"
+    return ", ".join(parts)
 
 
 @login_required

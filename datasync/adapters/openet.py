@@ -135,7 +135,7 @@ class OpenETAdapter(BaseAdapter):
 
         key = self._get_api_key()
         if not key:
-            return _fallback("this deployment has no OpenET key set up")
+            return _fallback("no OpenET key is set up")
 
         try:
             # Short timeout and a single attempt: this sits behind a page

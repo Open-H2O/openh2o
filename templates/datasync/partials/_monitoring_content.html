@@ -29,8 +29,8 @@
     {% comment %} 150.1-02. {% endcomment %}
     <p class="text-secondary text-base mb-md">
       {{ n_sources }} station sources. Satellite estimates of crop water use come from
-      OpenET, which is not a station source. This site has used <span{% if openet_low %} class="text-deficit"{% endif %}>{{ openet_used }}</span> of its {{ openet_limit }} OpenET requests this month,
-      {% if openet_source == "provider" %}as OpenET counts them{% else %}as OpenH2O counts them, because {{ openet_fallback_reason }}{% endif %}; the count resets on the 1st.
+      OpenET, which is not a station source. {% if openet_source == "provider" %}By OpenET's count, this site's OpenET account has used <span{% if openet_low %} class="text-deficit"{% endif %}>{{ openet_used }}</span> of its {{ openet_limit }} requests this month.{% else %}This site has used <span{% if openet_low %} class="text-deficit"{% endif %}>{{ openet_used }}</span> of its {{ openet_limit }} OpenET requests this month.{% endif %}
+      {% if openet_source != "provider" %}The figure is OpenH2O's own count, because {{ openet_fallback_reason }}. {% endif %}The count resets on the 1st of each month.
     </p>
     {% if source_status_list %}
     <div class="health-grid">
@@ -136,7 +136,7 @@
     </div>
     {% else %}
     <div class="card-raised empty-state">
-      <p class="empty-state-text text-secondary">No active station is up to date or slightly behind; switch stations on from <a href="{% url 'datasync:station_list' %}" class="text-gold">Monitoring stations</a>.</p>
+      <p class="empty-state-text text-secondary">No station is syncing. Turn syncing on for a station on <a href="{% url 'datasync:station_list' %}" class="text-gold">Monitoring stations</a>.</p>
     </div>
     {% endif %}
   </div>

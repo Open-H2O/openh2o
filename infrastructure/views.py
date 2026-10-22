@@ -99,8 +99,8 @@ logger = logging.getLogger(__name__)
 #: Shape 6's own correction found it. `supported_add_types()` is the list of
 #: truth for what this screen actually takes; use areas are a different door.
 UNSUPPORTED_IMPORT_TYPE_MESSAGE = (
-    "use areas are imported with `import_parcels` (docs/DATA-IMPORT.md); the "
-    "screen importer takes wells, points of diversion, storage and recharge sites"
+    "The bulk import page does not import this type. Load use areas from a "
+    "parcel file with the import_parcels command, as docs/DATA-IMPORT.md describes."
 )
 
 
@@ -254,7 +254,7 @@ def infrastructure_add(request):
     if infra_type == "well":
         location = _parse_point(geometry_json)
         if not location:
-            return _error("well", "A point location is required for wells.")
+            return _error("well", "Place the well on the map.")
         try:
             depth_ft = coerce_decimal(request.POST.get("depth_ft"), "Depth (ft)", min_value=0)
             capacity_gpm = coerce_decimal(request.POST.get("capacity_gpm"), "Capacity (gpm)", min_value=0)
@@ -301,7 +301,7 @@ def infrastructure_add(request):
 
         location = _parse_point(geometry_json)
         if not location:
-            return _error("diversion", "A point location is required for diversions.")
+            return _error("diversion", "Place the diversion on the map.")
         try:
             max_rate_cfs = coerce_decimal(request.POST.get("max_rate_cfs"), "Max Rate (cfs)", min_value=0)
         except FieldValidationError as exc:
@@ -343,7 +343,9 @@ def infrastructure_add(request):
         geometry = _parse_polygon(geometry_json)
 
         if not location and not geometry:
-            return _error(infra_type, "A location or polygon is required.")
+            if infra_type == "storage" and request.POST.get("storage_type") == "storage_tank":
+                return _error(infra_type, "Place the tank on the map.")
+            return _error(infra_type, "Draw the outline on the map.")
 
         if geometry and not location:
             location = geometry.centroid

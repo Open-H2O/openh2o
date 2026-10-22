@@ -294,7 +294,7 @@ class TestInfrastructureAddValidation:
         # geometry from it, so the well branch's own "a point is required"
         # guard is what the operator sees, never a 500, never a stray row.
         assert resp.status_code == 200
-        assert b"A point location is required for wells." in resp.content
+        assert b"Place the well on the map." in resp.content
         assert Well.objects.count() == 0
 
     def test_the_typed_coordinate_inputs_are_on_the_add_page(self, auth_client):

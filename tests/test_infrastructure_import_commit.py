@@ -230,7 +230,7 @@ def test_unsupported_type_is_404_not_the_well_importer(auth_client, bad_type):
     assert body == UNSUPPORTED_IMPORT_TYPE_MESSAGE
     assert "import_parcels" in body
     assert "docs/DATA-IMPORT.md" in body
-    assert "wells, points of diversion, storage and recharge sites" in body
+    assert "The bulk import page does not import this type." in body
 
 
 @pytest.mark.django_db

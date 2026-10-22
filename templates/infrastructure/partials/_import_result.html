@@ -21,7 +21,7 @@ Outcome of an import. Three shapes:
   <p class="text-base text-secondary mt-md">
     {% if created %}OpenH2O created {{ created }} {{ record_noun }} record{{ created|pluralize }}.{% else %}OpenH2O did not create any {{ record_noun }} records.{% endif %}
     {% if noted %}{{ noted|length }} of them {{ noted|length|pluralize:"has a note,have notes" }} below.{% endif %}
-    {% if skipped %}Correct these rows in the file and upload the file again. OpenH2O skips every row already on file.{% endif %}
+    {% if skipped %}In the file, correct the rows OpenH2O did not import, then upload the file again. OpenH2O skips every row already on file.{% endif %}
   </p>
 
   {% if noted %}
@@ -49,7 +49,8 @@ Outcome of an import. Three shapes:
   {% endif %}
 
   {% if skipped %}
-  <table class="data-table mt-md">
+  <h3 class="section-header-sm mt-lg">Rows OpenH2O did not import</h3>
+  <table class="data-table mt-sm">
     <thead>
       <tr>
         <th style="width: 6rem;">{% if map_file %}Feature{% else %}Row{% endif %}</th>

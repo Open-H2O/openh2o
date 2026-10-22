@@ -144,7 +144,7 @@
         <div class="field-group">
           <div class="field-label field-row">
             Measurement method
-            {% include "partials/_help_tooltip.html" with label="Measurement Method" text="OpenH2O keeps the method first recorded for this well read-only. The three DWR fields below record how the well's pumping is measured. OpenH2O uses the month's meter reading where there is one and otherwise estimates the pumping, whatever these fields say." %}
+            {% include "partials/_help_tooltip.html" with label="Measurement Method" text="OpenH2O keeps the method first recorded for this well read-only. The three DWR fields below record how the well's pumping is measured. OpenH2O counts the month's metered pumping where there is any and otherwise estimates the pumping, whatever these fields say." %}
           </div>
           <div class="field-value">{{ measurement_method_display }}</div>
         </div>
@@ -304,7 +304,7 @@
         <div>
           {% for group in meter_history %}
             {# The unit stated ONCE, here, in this meter's own facts line (rule 4); no unit on either header below. #}
-            <p class="text-tertiary text-xs" style="margin: {% if forloop.first %}0{% else %}var(--space-lg){% endif %} 0 var(--space-sm) 0;">Meter {{ group.meter }} &middot; reads in {{ group.meter.get_unit_display|lower }} ({{ group.unit }}) &middot; pumped is the read less the previous read.</p>
+            <p class="text-tertiary text-xs" style="margin: {% if forloop.first %}0{% else %}var(--space-lg){% endif %} 0 var(--space-sm) 0;">Meter {{ group.meter }} &middot; reads in {{ group.meter.get_unit_display|lower }} ({{ group.unit }}) &middot; pumped is the change from the previous read.</p>
             <div class="table-scroll">
             <table class="data-table text-sm data-table--grouped">
               <thead>

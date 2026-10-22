@@ -79,14 +79,14 @@ SOURCE_DISPLAY = {
 STATUS_META = {
     "healthy": {"label": "Healthy", "tone": "fresh"},
     "needs_key": {"label": "Needs API key", "tone": "info"},
-    "no_stations": {"label": "No stations wired", "tone": "neutral"},
+    "no_stations": {"label": "No stations", "tone": "neutral"},
     # Distinct from "no_stations" and the distinction is the whole of ISS-107.
     # CIMIS carries 15 stations and none is switched on; the old single state
     # made the card read "No stations wired" directly above its own body text
     # printing "0 active / 15 total", and then advise discovery — which
     # `discover_stations.py` creates rows with is_active=False, so following the
     # advice changes nothing at all.
-    "none_activated": {"label": "None activated", "tone": "neutral"},
+    "none_activated": {"label": "Syncing off", "tone": "neutral"},
     "no_data": {"label": "None up to date", "tone": "stale"},
     "running": {"label": "Syncing…", "tone": "stale"},
     "failed": {"label": "Last sync failed", "tone": "dead"},

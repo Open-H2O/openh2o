@@ -18,7 +18,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Add {{ preselect_label }}</span>
   </nav>
-  <p class="page-description">Name it and place it on the map.</p>
+  <p class="page-description">Name the {{ preselect_long_label }} and place it on the map.</p>
   {% if other_add_types %}
   {% comment %}The button that got here already said which kind of thing it adds, so this
      page does not ask again. It still has to offer a way across: `storage` has
@@ -70,7 +70,7 @@
              inputs that place the marker the same way a click does; shown
              only in point mode (setDrawMode, below).{% endcomment %}
         <div class="coord-display coord-display-row" id="coord-display">
-          <span class="text-xs text-tertiary" id="coord-display-text">Click map to place geometry</span>
+          <span class="text-xs text-tertiary" id="coord-display-text">{% if preselect_type == "well" or preselect_type == "diversion" %}Click the map to set the location.{% else %}Click the map to draw the outline.{% endif %}</span>
           <div class="coord-inputs" id="coord-inputs">
             <div class="form-group">
               <label class="field-label" for="latitude">Latitude</label>
@@ -323,7 +323,7 @@
               <polyline points="9 18 15 12 9 6"/>
             </svg>
             <span>Link to a use area</span>
-            <span class="text-sm text-tertiary" id="parcel-status">Optional. Open to search for a use area, pick one on the map, or draw one.</span>
+            <span class="text-sm text-tertiary" id="parcel-status">Optional: search for a use area, select one on the map, or draw a new one.</span>
           </summary>
           <div class="mt-md">
             <div class="form-group">
@@ -664,7 +664,7 @@
     map.getSource('finished').setData({ type: 'FeatureCollection', features: [] });
     document.getElementById('geometry_json').value = '';
     document.getElementById('draw-finish').style.display = 'none';
-    setCoordText('Click map to place geometry');
+    setCoordText(placeHint());
     if (latInput) latInput.value = '';
     if (lngInput) lngInput.value = '';
     hideCoordWarning();
@@ -679,7 +679,14 @@
     var coordInputs = document.getElementById('coord-inputs');
     if (coordInputs) coordInputs.style.display = mode === 'point' ? '' : 'none';
     if (mode !== 'point') hideCoordWarning();
+    // The line under the map follows the mode while nothing is placed, a
+    // storage type switch included (151.3-03).
+    if (!document.getElementById('geometry_json').value) setCoordText(placeHint());
     try { map.getCanvas().style.cursor = 'crosshair'; } catch(e) {}
+  }
+
+  function placeHint() {
+    return drawMode === 'polygon' ? 'Click the map to draw the outline.' : 'Click the map to set the location.';
   }
 
   function updateGeometry(geojson) {
@@ -897,7 +904,7 @@
     updateDrawModeForType();
     savedDrawMode = null;
     parcelDrawGeometry = null;
-    setCoordText('Click map to place geometry');
+    setCoordText(placeHint());
     var saveBtn = document.getElementById('save-new-parcel');
     saveBtn.textContent = 'Save Parcel';
     saveBtn.disabled = false;

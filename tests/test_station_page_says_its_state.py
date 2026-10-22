@@ -91,8 +91,7 @@ class TestDormantStationSaysWhyItIsEmpty:
         body = resp.content.decode()
         assert "No published readings yet." not in body
         assert (
-            "Probe Dormant Source Three has no sync runs yet. This station has "
-            "no data records yet." in body
+            "OpenH2O has not run a sync from Probe Dormant Source Three yet." in body
         )
         # rule 6: the dashboard's old vocabulary never appears on this page.
         assert "On schedule" not in body

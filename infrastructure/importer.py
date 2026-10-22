@@ -50,7 +50,7 @@ from core.geofiles import (  # noqa: F401  re-exported under their old names (15
     _parse_shapefile_zip,
     _validate_zip_entries,
 )
-from core.modules import is_enabled
+from core.modules import MODULE_REGISTRY, is_enabled
 from parcels.models import Parcel
 from wells.models import MEASUREMENT_METHOD_CHOICES, PUMP_TYPE_CHOICES
 
@@ -422,14 +422,13 @@ _CHOICE_LOOKUP = {
 }
 _CHOICE_NOTES = {
     "pump_type": (
-        "OpenH2O imported this well without its pump type, which the file gives "
-        "as '{val}'. OpenH2O records a pump type only as submersible, turbine, "
-        "centrifugal or other."
+        "OpenH2O imported this well without a pump type. The file gives '{val}'; "
+        "the pump types OpenH2O accepts are submersible, turbine, centrifugal and other."
     ),
     "measurement_method": (
-        "OpenH2O imported this well without its measurement method, which the "
-        "file gives as '{val}'. OpenH2O records a measurement method only as "
-        "certified meter, unmetered estimate, power conversion or ET method."
+        "OpenH2O imported this well without a measurement method. The file gives "
+        "'{val}'; the methods OpenH2O accepts are certified meter, unmetered "
+        "estimate, power conversion and ET method."
     ),
 }
 
@@ -868,7 +867,7 @@ def commit_rows(valid_results, infra_type):
             module = _COMMIT_TYPE_MODULE.get(infra_type)
             if module is not None and not is_enabled(module):
                 result["errors"].append(
-                    f"the {module} module is not enabled on this deployment."
+                    f"OpenH2O is running without the {MODULE_REGISTRY[module].label} module."
                 )
                 continue
             try:
