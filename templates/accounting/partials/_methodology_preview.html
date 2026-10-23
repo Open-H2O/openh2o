@@ -55,7 +55,7 @@ nothing. Reuses the gross→net waterfall shape from calculation_run_detail.html
     </table>
     {% else %}
     <p class="text-tertiary text-sm m-0">
-      No enabled step gave a breakdown for this parcel and month; ETAW met by groundwater {{ final_af|floatformat:4 }} AF.
+      No step is enabled, so the preview has no steps to show. ETAW met by groundwater: {{ final_af|floatformat:4 }} AF.
     </p>
     {% endif %}
 

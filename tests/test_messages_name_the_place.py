@@ -269,5 +269,5 @@ class TestTheIdentifierCardSaysWhatItIsFor:
         body = admin_client.get(reverse("accounting:delivery_settings")).content.decode()
         assert '<h2 class="section-header">Web addresses for your records</h2>' in body
         assert "Record addresses" not in body
-        assert body.count("Set it before registering with Geoconnex") == 1
+        assert body.count("Set it before you register this site with Geoconnex") == 1
 

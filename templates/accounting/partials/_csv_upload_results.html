@@ -46,11 +46,11 @@
     <h3 class="section-header-sm">Import notes</h3>
     {% if results.sign_normalized %}
     <p class="text-base m-0">
+      OpenH2O {% if dry_run %}would correct{% else %}corrected{% endif %} the sign of
       <strong>{{ results.sign_normalized }}</strong>
-      row{{ results.sign_normalized|pluralize }}
-      {% if dry_run %}would have their{% else %}had their{% endif %} sign
-      corrected to the ledger convention: use is recorded as a debit, supply as a
-      credit. Magnitudes are unchanged.
+      row{{ results.sign_normalized|pluralize }} to the ledger convention, which
+      records use as a debit and supply as a credit. The amounts are otherwise
+      unchanged.
     </p>
     {% if results.sign_normalized_rows %}
     {% comment %} ISS-196: the count above names WHICH rows, never just how
@@ -80,9 +80,11 @@
     {% if results.skipped_duplicate %}
     <p class="text-base m-0">
       <strong>{{ results.skipped_duplicate }}</strong>
-      row{{ results.skipped_duplicate|pluralize }} already existed with the same
-      parcel, date, source and amount, and {% if dry_run %}would be{% else %}were{% endif %}
-      skipped. Re-importing the same file does not double your entries.
+      row{{ results.skipped_duplicate|pluralize }}
+      repeat{{ results.skipped_duplicate|pluralize:"s," }} the use area, date, source
+      and amount of an entry already in the Use Ledger or of an earlier row in the
+      file, and {% if dry_run %}would not be{% else %}{{ results.skipped_duplicate|pluralize:"was,were" }} not{% endif %} imported.
+      Importing the same file again does not double your entries.
     </p>
     {% endif %}
   </div>
@@ -115,7 +117,7 @@
   {% if results.preview %}
   <div class="card-raised">
     <h3 class="section-header-sm">
-      Preview (first {{ results.preview|length }} {% if dry_run %}validated{% else %}created{% endif %} entries)
+      {% if results.preview|length == 1 %}The valid row{% else %}The first {{ results.preview|length }} valid rows{% endif %}, signed to the ledger convention
     </h3>
     <table class="data-table">
       <thead>

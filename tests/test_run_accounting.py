@@ -54,8 +54,8 @@ FEB = date(2024, 2, 1)
 ET_MM = 304.8  # exactly 10.0000 AF over 10 acres
 
 NO_DATA_MARCH = (
-    "No crop water use data for March 2024 yet; it will be calculated when "
-    "the data arrives."
+    "OpenH2O has no crop water use data for March 2024 yet and will calculate "
+    "that month when the data arrives."
 )
 
 _WITHOUT_SURFACE = tuple(
@@ -210,7 +210,7 @@ def test_finalized_period_is_refused_and_nothing_changes(world):
     req = CalculationRequest.objects.get()
     assert req.status == "failed"
     assert req.outcome == (
-        "Winter 2024 is finalized. An administrator can reopen it on the period page."
+        "Winter 2024 is finalized. An administrator can reopen it on the water year page."
     )
     assert req.months_done == 0
     assert _snapshot() == before
@@ -256,9 +256,10 @@ def test_a_failing_month_keeps_the_earlier_month_and_changes_nothing_in_itself(
     assert req.status == "failed"
     assert req.months_done == 1
     assert req.outcome == (
-        "The calculation stopped at February 2024 with an error the platform did "
-        "not expect. Nothing in February 2024 was changed. The details are on "
-        "Site Health for an administrator. January 2024 was calculated and kept."
+        "The calculation stopped at February 2024 on an unexpected error. "
+        "OpenH2O changed nothing in February 2024. An administrator can read "
+        "the details on Site Health. The month before, January 2024, stays as "
+        "calculated."
     )
     assert req.error_detail.startswith("RuntimeError: boom\nMonth: 2024-02\n")
     # January is there; February is exactly as the fixture left it.
@@ -291,7 +292,7 @@ def test_months_with_no_data_at_all_are_a_note_and_not_a_failure(world):
 
     assert req.status == "succeeded"
     assert req.months == []
-    assert req.outcome == "There was no crop water use data to calculate yet."
+    assert req.outcome == "No month was calculated."
     assert req.notes == [NO_DATA_MARCH]
     assert CalculationRun.objects.count() == 0
 
@@ -303,8 +304,8 @@ def test_months_to_run_names_a_range_when_several_months_are_left_out(world):
 
     assert months == ["2024-01", "2024-02"]
     assert notes == [
-        "No crop water use data for March 2024 through April 2024 yet; they "
-        "will be calculated when the data arrives."
+        "OpenH2O has no crop water use data for March 2024 through April 2024 "
+        "yet and will calculate those months when the data arrives."
     ]
 
 

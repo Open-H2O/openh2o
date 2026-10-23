@@ -90,8 +90,6 @@ shapes = _load()
 #: until 2026-10-20 (ISS-261); the language review fixes each in the segment
 #: that holds its page.
 BASELINE: dict = {
-    "accounting/calculation.py": {"em dash": 2},
-    "accounting/engine_run.py": {"negation frame": 1},
     "drinking/provenance.py": {"California": 1},
     "templates/drinking/partials/_onboard_review.html": {"no for not": 1},
 }

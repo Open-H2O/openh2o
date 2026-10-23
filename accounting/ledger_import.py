@@ -170,7 +170,7 @@ def import_ledger_rows(
                     parcel_cache[parcel_number] = None
             parcel = parcel_cache[parcel_number]
             if parcel is None:
-                row_errors.append(f"parcel not found: {parcel_number}")
+                row_errors.append(f"unknown parcel_number: {parcel_number}")
 
         # Amount
         amount = None
@@ -254,7 +254,7 @@ def import_ledger_rows(
                     water_type_cache[water_type_code] = None
             water_type = water_type_cache[water_type_code]
             if water_type is None:
-                row_errors.append(f"water_type not found: {water_type_code}")
+                row_errors.append(f"unknown water_type_code: {water_type_code}")
 
         # Optional transaction date
         transaction_date = None

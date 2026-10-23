@@ -43,7 +43,7 @@
 
     <div class="card-raised page-grid-account-info">
       <h2 class="section-header">
-        Period information
+        Water year details
       </h2>
 
       <div class="field-grid-2">
@@ -139,7 +139,7 @@
         {% endif %}
         <div class="budget-panel-note">The Use ledger holds <a href="{% url 'accounting:ledger_list' %}?period={{ period.pk }}" class="prose-link">{{ ledger_count|intcomma }} entr{{ ledger_count|pluralize:"y,ies" }}</a> for this water year.</div>
       {% else %}
-      <p class="text-tertiary text-base">No allocation is set for this water year.</p>
+      <p class="text-tertiary text-base">This water year has no allocations.</p>
       {% endif %}
     </div>
 
@@ -171,9 +171,9 @@
         <div>
           <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">{% if period.is_finalized %}Reopen this water year{% else %}Finalize this water year{% endif %}</h2>
           {% if period.is_finalized %}
-          <p class="text-secondary text-base m-0">While it is finalized, this water year's ledger entries, allocations, diversion records and calculation results cannot be added, changed or removed. Reopening asks for a reason, which is kept in the change history.</p>
+          <p class="text-secondary text-base m-0">While this water year is finalized, OpenH2O does not let anyone add, change or remove its ledger entries, allocations, diversion records or calculation results. An administrator can reopen it with a reason.</p>
           {% else %}
-          <p class="text-secondary text-base m-0">Finalizing stops this water year's ledger entries, allocations, diversion records and calculation results from being added, changed or removed until an administrator reopens it. Reopening asks for a reason, which is kept in the change history.</p>
+          <p class="text-secondary text-base m-0">Finalizing stops this water year's ledger entries, allocations, diversion records and calculation results from being added, changed or removed until an administrator reopens it with a reason, which OpenH2O keeps in the change history.</p>
           {% endif %}
         </div>
         <form method="post" action="{% url 'accounting:period_finalize' period.pk %}" class="period-close-form">
@@ -188,9 +188,9 @@
             <p class="text-secondary text-sm" style="margin-top: var(--space-xs);">{{ finalize_form.note.help_text }}</p>
             {% if finalize_form.note.errors %}<p class="form-error-text">{{ finalize_form.note.errors|striptags }}</p>{% endif %}
           </div>
-          <button type="submit" class="btn-secondary">Reopen period</button>
+          <button type="submit" class="btn-secondary">Reopen water year</button>
           {% else %}
-          <button type="submit" class="btn-primary">Finalize period</button>
+          <button type="submit" class="btn-primary">Finalize water year</button>
           {% endif %}
         </form>
       </div>
@@ -242,7 +242,7 @@
       {% else %}
       <div style="padding: var(--space-lg);">
         <h2 class="section-header mb-md">Allocations</h2>
-        <p class="text-tertiary text-base">No allocation is set for this water year.</p>
+        <p class="text-tertiary text-base">This water year has no allocations.</p>
       </div>
       {% endif %}
     </div>

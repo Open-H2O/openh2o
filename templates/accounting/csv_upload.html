@@ -13,7 +13,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">CSV Upload</span>
   </nav>
-  <p class="page-description">Download the template, fill it in, then upload it; a dry run checks the file and writes nothing.</p>
+  <p class="page-description">Download the template, fill it in, then upload it. Select Dry run to check a file before you import it.</p>
 </div>
 {% endblock %}
 
@@ -65,14 +65,14 @@
         {% if form.reporting_period.errors %}
         <div class="form-help text-furnace">{{ form.reporting_period.errors|join:", " }}</div>
         {% endif %}
-        <div class="form-help">All imported entries will be assigned to this water year.</div>
+        <div class="form-help">Every imported entry goes into this water year.</div>
       </div>
 
       <!-- Dry Run -->
       <div class="row-start">
         {{ form.dry_run }}
         <label for="{{ form.dry_run.id_for_label }}" class="text-secondary text-base label-pointer">
-          Dry run (validate only, do not create records)
+          Dry run: check the file without saving any entries
         </label>
       </div>
 
@@ -112,12 +112,12 @@
         <tr>
           <td class="text-mono">amount_acre_feet</td>
           <td><span class="badge badge-pill badge-green">Yes</span></td>
-          <td class="text-secondary">The importer corrects the sign to match source_type, and names every row it changed</td>
+          <td class="text-secondary">OpenH2O corrects the sign to match source_type and lists each row it changed</td>
         </tr>
         <tr>
           <td class="text-mono">source_type</td>
           <td><span class="badge badge-pill badge-green">Yes</span></td>
-          <td class="text-secondary">Must match a valid source type choice; see docs/DATA-IMPORT.md for which sign each one carries</td>
+          <td class="text-secondary">One of meter_reading, et_estimate, manual_entry, csv_import, surface_diversion, recharge, allocation, adjustment or calculated. Rows of allocation or recharge are positive; rows of meter_reading, et_estimate, surface_diversion or calculated are zero or negative; rows of manual_entry, csv_import or adjustment keep the sign you give them</td>
         </tr>
         <tr>
           <td class="text-mono">water_type_code</td>

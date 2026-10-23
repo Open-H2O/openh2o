@@ -68,14 +68,14 @@ class PeriodFinalizeForm(forms.Form):
         self.reopening = reopening
         super().__init__(*args, **kwargs)
         if reopening:
-            self.fields["note"].label = "Reason for reopening (why)"
+            self.fields["note"].label = "Reason for reopening"
             self.fields["note"].help_text = (
-                f"Required, {REOPEN_NOTE_MIN_LENGTH}-{NOTE_MAX_LENGTH} characters. "
-                "Saved with this change in the change history, which everyone "
-                "signed in can read."
+                f"Required, {REOPEN_NOTE_MIN_LENGTH} to {NOTE_MAX_LENGTH} characters. "
+                "OpenH2O saves the reason with this change in the change "
+                "history, which every signed-in user can read."
             )
         else:
-            self.fields["note"].label = "Note (why)"
+            self.fields["note"].label = "Reason for finalizing"
             self.fields["note"].help_text = CHANGE_NOTE_HELP
 
     def clean_note(self):
@@ -83,8 +83,8 @@ class PeriodFinalizeForm(forms.Form):
         if self.reopening:
             if len(note) < REOPEN_NOTE_MIN_LENGTH:
                 raise forms.ValidationError(
-                    "Reopening a finalized period needs a reason, at least "
-                    f"{REOPEN_NOTE_MIN_LENGTH} characters."
+                    f"Give a reason of at least {REOPEN_NOTE_MIN_LENGTH} "
+                    "characters to reopen a finalized water year."
                 )
             if len(note) > NOTE_MAX_LENGTH:
                 raise forms.ValidationError(
@@ -193,9 +193,8 @@ class WaterAccountForm(forms.ModelForm):
                 empty_label="None",
                 widget=forms.Select(attrs={"class": "form-select"}),
                 label="Delivery point of diversion",
-                help_text="This account's delivery point of diversion, if "
-                "it has one. An account is delivered through a point of "
-                "diversion or a well, never both.",
+                help_text="Choose the point of diversion that delivers water to "
+                "this account, if it has one.",
                 initial=initial_pod,
             )
 
@@ -206,7 +205,7 @@ class WaterAccountForm(forms.ModelForm):
         if delivery_well and delivery_pod:
             self.add_error(
                 "delivery_pod",
-                "An account can be delivered through a point of diversion or "
+                "An account can take its water from a point of diversion or "
                 "a well, not both.",
             )
         return cleaned
@@ -236,7 +235,7 @@ class CsvUploadForm(forms.Form):
     reporting_period = forms.ModelChoiceField(
         queryset=ReportingPeriod.objects.order_by("-start_date"),
         required=False,
-        empty_label="No period (unassigned)",
+        empty_label="No water year",
         widget=forms.Select(attrs={"class": "form-select"}),
     )
     dry_run = forms.BooleanField(required=False, initial=False)

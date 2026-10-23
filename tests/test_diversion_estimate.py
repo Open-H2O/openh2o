@@ -218,9 +218,9 @@ def test_face_value_less_what_was_used_earlier_this_water_year_caps_the_month():
     assert capped[0]["estimate_af"] == Decimal("70.0000")
     assert capped[0]["above_af"] == Decimal("28.0392")
     assert _sentences(notes)[-1] == (
-        "Estimated 70.00 AF at Alder Ditch Headgate for January 2024; 28.04 AF of "
-        "the fields' use is above what the water right allows this season and is "
-        "counted as water use recorded, no supply reported."
+        "OpenH2O estimated 70.00 AF at Alder Ditch Headgate for January 2024. "
+        "Of the fields' use, 28.04 AF is above what the water right allows and "
+        "counts as water use recorded, no supply reported."
     )
 
 
@@ -234,10 +234,10 @@ def test_the_note_says_groundwater_where_the_fields_have_wells_and_both_where_th
     wells = _sentences(_run())[-1]
 
     assert mixed.endswith(
-        "is counted as groundwater where a field has a well, otherwise as water "
-        "use recorded, no supply reported."
+        "and counts as groundwater on fields with a well and, on fields without "
+        "one, as water use recorded, no supply reported."
     )
-    assert wells.endswith("is counted as groundwater.")
+    assert wells.endswith("and counts as groundwater.")
 
 
 def test_an_estimate_at_or_under_what_remains_is_not_capped():
@@ -579,8 +579,8 @@ def test_points_are_grouped_by_the_status_of_their_right():
 
     assert _estimates().count() == 0
     assert _sentences(notes) == [
-        "No delivery was estimated for C Gate: the water right is inactive.",
-        "No delivery was estimated for A Gate and B Gate: the water right is revoked.",
+        "OpenH2O did not estimate a delivery for C Gate because the water right is inactive.",
+        "OpenH2O did not estimate a delivery for A Gate and B Gate because the water right is revoked.",
     ]
 
 
@@ -591,8 +591,8 @@ def test_canal_losses_that_leave_nothing_write_nothing_and_say_so():
 
     assert _estimates(pod).count() == 0
     assert _sentences(notes) == [
-        "No delivery was estimated for Alder Ditch Headgate: its canal losses add "
-        "up to the whole of the water diverted."
+        "OpenH2O did not estimate a delivery for Alder Ditch Headgate because the "
+        "canal losses there take all of the water diverted."
     ]
 
 
@@ -993,5 +993,5 @@ def test_a_revoked_right_still_gets_no_estimate():
 
     assert _estimates(pod).count() == 0
     assert _sentences(notes) == [
-        "No delivery was estimated for Revoked Gate: the water right is revoked."
+        "OpenH2O did not estimate a delivery for Revoked Gate because the water right is revoked."
     ]

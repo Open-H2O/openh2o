@@ -196,8 +196,9 @@ def months_to_run(reporting_period=None, months=None):
     if left_out:
         many = len(left_out) > 1
         notes.append(
-            f"No crop water use data for {_range_label(left_out)} yet; "
-            f"{'they' if many else 'it'} will be calculated when the data arrives."
+            f"OpenH2O has no crop water use data for {_range_label(left_out)} "
+            f"yet and will calculate {'those months' if many else 'that month'} "
+            f"when the data arrives."
         )
     return to_run, notes
 
@@ -382,26 +383,25 @@ def _note_sentences(raw, *, tabled=False):
             "groundwater": "groundwater",
             "unmet": "water use recorded, no supply reported",
             "mixed": (
-                "groundwater where a field has a well, otherwise as water use "
-                "recorded, no supply reported"
+                "groundwater on fields with a well and, on fields without one, "
+                "as water use recorded, no supply reported"
             ),
         }[note["residual"]]
         info.append(
-            f"Estimated {_amount(note['estimate_af'])} AF at {note['pod']} for "
-            f"{month_label(note['month'])}; {_amount(note['above_af'])} AF of the "
-            f"fields' use is above what the water right allows this season and "
-            f"is counted as {where}."
+            f"OpenH2O estimated {_amount(note['estimate_af'])} AF at {note['pod']} for "
+            f"{month_label(note['month'])}. Of the fields' use, "
+            f"{_amount(note['above_af'])} AF is above what the water right "
+            f"allows and counts as {where}."
         )
     for status, pods in sorted(not_active.items()):
         info.append(
-            f"No delivery was estimated for {_names(pods)}: the water right is "
-            f"{status}."
+            f"OpenH2O did not estimate a delivery for {_names(pods)} because "
+            f"the water right is {status}."
         )
     if losses_too_large:
         info.append(
-            f"No delivery was estimated for {_names(losses_too_large)}: "
-            f"{'their' if len(losses_too_large) > 1 else 'its'} canal losses add "
-            f"up to the whole of the water diverted."
+            f"OpenH2O did not estimate a delivery for {_names(losses_too_large)} "
+            f"because the canal losses there take all of the water diverted."
         )
     return attention, info
 
@@ -422,8 +422,8 @@ _TABLE_LABELS = {
     "spill": ("Canal spill subtracted from the water diverted", ""),
     "estimate": (
         "Delivery estimated at an unmetered point of diversion",
-        ", from the ETAW of the fields it serves divided by each field's "
-        "irrigation efficiency. An estimate, not a measurement.",
+        " as the ETAW of the fields it serves divided by each field's "
+        "irrigation efficiency",
     ),
 }
 
@@ -570,9 +570,9 @@ def _unexpected(exc, month):
     tail = "".join(traceback.format_exc().splitlines(keepends=True)[-TRACEBACK_TAIL_LINES:])
     detail = f"{type(exc).__name__}: {exc}\nMonth: {month}\n{tail}"
     return _Stopped(
-        f"The calculation stopped at {label} with an error the platform did not "
-        f"expect. Nothing in {label} was changed. The details are on Site Health "
-        f"for an administrator.",
+        f"The calculation stopped at {label} on an unexpected error. OpenH2O "
+        f"changed nothing in {label}. An administrator can read the details on "
+        f"Site Health.",
         detail,
     )
 
@@ -589,10 +589,10 @@ def _explain_failure(exc, month):
         if isinstance(exc, CanalLossesTooLarge):
             label = month_label(month)
             return _Stopped(
-                f"{exc.sentence} Nothing in {label} was changed.",
+                f"{exc.sentence} OpenH2O changed nothing in {label}.",
                 f"{type(exc).__name__}: {exc}\nMonth: {month}",
             )
-    if isinstance(exc, ValueError) and "no active CalculationPlan" in text:
+    if isinstance(exc, ValueError) and "no calculation plan is active" in text:
         return _Stopped(_NO_PLAN, f"{type(exc).__name__}: {exc}\nMonth: {month}")
     if isinstance(exc, CommandError) and "is finalized" in text:
         period = _finalized_period_among([month])
@@ -602,8 +602,8 @@ def _explain_failure(exc, month):
 
 
 _NO_PLAN = (
-    "No calculation method is set up on this site yet, so there is nothing to "
-    "calculate with. An administrator can set one up."
+    "No calculation method is set up on this site yet. An administrator can "
+    "set one up."
 )
 
 
@@ -649,8 +649,8 @@ def execute(request_obj):
         _finish(
             request_obj,
             "failed",
-            "The calculation stopped with an error the platform did not expect. "
-            "The details are on Site Health for an administrator.",
+            "The calculation stopped on an unexpected error. An administrator "
+            "can read the details on Site Health.",
             notes,
             detail=f"{type(exc).__name__}: {exc}\n{tail}",
         )
@@ -685,11 +685,13 @@ def _run(request_obj, notes):
         except Exception as exc:
             stop = _explain_failure(exc, month)
             if index == 1:
-                stop.sentence += f" {month_label(to_run[0])} was calculated and kept."
+                stop.sentence += (
+                    f" The month before, {month_label(to_run[0])}, stays as calculated."
+                )
             elif index > 1:
                 stop.sentence += (
-                    f" The {index} earlier months, {month_label(to_run[0])} to "
-                    f"{month_label(to_run[index - 1])}, were calculated and kept."
+                    f" The months before, {month_label(to_run[0])} through "
+                    f"{month_label(to_run[index - 1])}, stay as calculated."
                 )
             raise stop from exc
         request_obj.months_done = index + 1
@@ -701,7 +703,7 @@ def _run(request_obj, notes):
     attention, info = _note_sentences(raw, tabled=True)
     notes.extend(attention + skipped + info + _note_table(raw))
     if not to_run:
-        outcome = "There was no crop water use data to calculate yet."
+        outcome = "No month was calculated."
     elif len(to_run) == 1:
         outcome = f"Calculated {month_label(to_run[0])}."
     else:
@@ -929,4 +931,4 @@ def recalculation_sentence(months):
     else:
         labels = [month_label(m) for m in months]
         where = ", ".join(labels[:-1]) + f" and {labels[-1]}"
-    return f"The fields this water serves are being recalculated for {where}."
+    return f"OpenH2O is recalculating the fields this water serves for {where}."

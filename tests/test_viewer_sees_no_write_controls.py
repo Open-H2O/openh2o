@@ -408,10 +408,10 @@ def test_an_administrator_sees_the_finalize_control_and_an_operator_does_not():
     admin_client.force_login(administrator)
     admin_response = admin_client.get(period_url)
     assert admin_response.status_code == 200
-    assert "Finalize period" in admin_response.content.decode()
+    assert "Finalize water year" in admin_response.content.decode()
 
     operator_client = Client()
     operator_client.force_login(operator)
     operator_response = operator_client.get(period_url)
     assert operator_response.status_code == 200
-    assert "Finalize period" not in operator_response.content.decode()
+    assert "Finalize water year" not in operator_response.content.decode()

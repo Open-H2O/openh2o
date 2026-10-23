@@ -70,8 +70,8 @@ NO_WELL_SENTENCE = (
     "to estimate."
 )
 METERED_SENTENCE = (
-    "This field has a meter reading for {month}, so the groundwater extraction "
-    "is the reading and OpenH2O estimates nothing."
+    "This field has a meter reading for {month}, so OpenH2O takes the "
+    "groundwater extraction from the meter and does not estimate it."
 )
 
 

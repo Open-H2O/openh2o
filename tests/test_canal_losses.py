@@ -492,7 +492,7 @@ def test_a_month_that_loses_everything_fails_with_a_named_sentence(engine_world)
     assert req.outcome == (
         "In January 2024, the evaporation, seepage and spill shares at Test "
         "Canal Headgate add up to 100% of the diverted water and leave "
-        "nothing for the fields. Nothing in January 2024 was changed."
+        "nothing for the fields. OpenH2O changed nothing in January 2024."
     )
     assert not _split_rows().exists()
     assert not CanalMonthLoss.objects.exists()

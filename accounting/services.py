@@ -303,7 +303,7 @@ def create_recharge_ledger_entries(recharge_event, zone=None, parcel=None):
             source_type="recharge",
             description=(
                 f"Recharge from {recharge_event.recharge_site.name}: "
-                f"{volume} AF personal credit (has-well parcel)"
+                f"{volume} AF credited to this use area"
             ),
             reporting_period=None,
             water_type=water_type,

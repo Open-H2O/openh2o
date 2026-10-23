@@ -102,7 +102,7 @@ def test_v1_a_file_all_in_a_finalized_year_shows_the_message_once_with_its_count
 
     assert resp.status_code == 200
     body = resp.content.decode()
-    message = f"{period.name} is finalized. An administrator can reopen it on the period page."
+    message = f"{period.name} is finalized. An administrator can reopen it on the water year page."
     assert len(resp.context["errors"]) == 12, "the commit's own error list is unchanged"
     assert body.count(message) == 1
     assert "12 rows: 2, 3, 4 ..." in body

@@ -78,9 +78,8 @@ def test_the_labels_are_the_approved_words():
         "Canal evaporation subtracted from the water diverted"
     )
     assert groups["estimate"]["lead"] + groups["estimate"]["rest"] == (
-        "Delivery estimated at an unmetered point of diversion, from the ETAW of "
-        "the fields it serves divided by each field's irrigation efficiency. An "
-        "estimate, not a measurement."
+        "Delivery estimated at an unmetered point of diversion as the ETAW of "
+        "the fields it serves divided by each field's irrigation efficiency"
     )
     assert "curtailed" not in groups
 
@@ -89,7 +88,7 @@ def test_tabled_sentences_leave_out_only_what_the_table_carries():
     _attention, tabled = _note_sentences(RAW, tabled=True)
     _attention, plain = _note_sentences(RAW)
 
-    assert tabled == ["No delivery was estimated for Old Gate: the water right is revoked."]
+    assert tabled == ["OpenH2O did not estimate a delivery for Old Gate because the water right is revoked."]
     assert len(plain) == 4
 
 
@@ -120,7 +119,7 @@ def test_the_water_year_page_shows_sentences_above_one_table(auth_client):
         reporting_period=period,
         status="succeeded",
         outcome="Calculated 2 months, October 2025 to November 2025.",
-        notes=["No delivery was estimated for Old Gate: the water right is revoked."]
+        notes=["OpenH2O did not estimate a delivery for Old Gate because the water right is revoked."]
         + _note_table(RAW),
     )
 
@@ -129,7 +128,7 @@ def test_the_water_year_page_shows_sentences_above_one_table(auth_client):
     ).content.decode()
 
     assert "What the calculation found" in html
-    assert "<li>No delivery was estimated for Old Gate" in html
+    assert "<li>OpenH2O did not estimate a delivery for Old Gate" in html
     assert html.count('class="data-table calculation-notes-table"') == 1
     assert "Canal evaporation subtracted from the water diverted" in html
     assert ">43.40<" in html

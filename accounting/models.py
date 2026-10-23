@@ -128,8 +128,9 @@ class WaterAccount(models.Model):
         choices=UNIT_KIND_CHOICES,
         null=True,
         blank=True,
-        help_text="Which real thing this account stands for: a farm unit "
-        "that holds fields, a place of use under a right, or a right itself.",
+        help_text="Choose what this account represents: a farm unit that "
+        "holds fields, a place of use under a water right, the water right "
+        "itself, or Other.",
     )
     # `delivery_pod` (a point of diversion) is NOT a field here. `accounting`
     # is schema-resident and `surface` is truly removable, so a column here
@@ -154,8 +155,9 @@ class WaterAccount(models.Model):
         null=True,
         blank=True,
         related_name="delivery_accounts",
-        help_text="This account's delivery well, if it has one. An account "
-        "is delivered through a point of diversion or a well, never both.",
+        help_text="Choose the well that delivers water to this account, if it "
+        "has one. An account takes its water from a point of diversion or a "
+        "well, never both.",
     )
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -183,8 +185,8 @@ class WaterAccount(models.Model):
                 if WaterAccountDeliveryPoint.objects.filter(account_id=self.pk).exists():
                     raise ValidationError(
                         {
-                            "delivery_well": "An account can be delivered "
-                            "through a point of diversion or a well, not both."
+                            "delivery_well": "An account can take its water "
+                            "from a point of diversion or a well, not both."
                         }
                     )
 

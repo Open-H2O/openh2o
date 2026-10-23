@@ -85,7 +85,7 @@ def test_diversion_settings_render_when_surface_is_enabled(admin_client):
     body = resp.content.decode()
     assert "Diversion records" in body
     assert "Which months does a reporting year cover?" in body
-    assert "Used when a file gives a year and a month but no date." in body
+    assert "OpenH2O applies this rule to a diversion file that gives a year and a month but no date." in body
     # 146-03 Task 6: the USE-row question moved to the import screen and no
     # longer renders here.
     assert "USE row" not in body

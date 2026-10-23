@@ -168,7 +168,7 @@
     <h2 class="receipt-headline">No groundwater extraction estimated for {{ month_label }}</h2>
     <p class="text-secondary receipt-lead">
       {% if run.residual_disposition == "metered" %}
-      This field has a meter reading for {{ month_label }}, so the groundwater extraction is the reading and OpenH2O estimates nothing.
+      This field has a meter reading for {{ month_label }}, so OpenH2O takes the groundwater extraction from the meter and does not estimate it.
       {% else %}
       This field has no well on record, so there is no groundwater extraction to estimate.
       {% endif %}

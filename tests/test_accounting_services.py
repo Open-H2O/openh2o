@@ -460,7 +460,7 @@ class TestParseLedgerCsv:
         )
         result = parse_ledger_csv(self._csv_file(csv_text))
         assert result["error_count"] == 1
-        assert "parcel not found" in result["errors"][0]["messages"][0]
+        assert "unknown parcel_number" in result["errors"][0]["messages"][0]
 
     def test_invalid_amount(self):
         ParcelFactory(parcel_number="P-003")

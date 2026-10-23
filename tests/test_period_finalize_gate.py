@@ -169,7 +169,7 @@ def test_reopen_without_a_note_is_refused_with_the_form_error(administrator):
 
     assert response.status_code == 200
     assert (
-        "Reopening a finalized period needs a reason, at least 10 characters."
+        "Give a reason of at least 10 characters to reopen a finalized water year."
         in response.content.decode()
     )
     period.refresh_from_db()
@@ -185,7 +185,7 @@ def test_reopen_with_a_9_character_note_is_refused_with_the_form_error(administr
 
     assert response.status_code == 200
     assert (
-        "Reopening a finalized period needs a reason, at least 10 characters."
+        "Give a reason of at least 10 characters to reopen a finalized water year."
         in response.content.decode()
     )
     period.refresh_from_db()
@@ -250,8 +250,8 @@ def test_the_period_page_shows_the_control_to_an_administrator_and_not_an_operat
 
     admin_response = _client(administrator).get(detail_url)
     assert admin_response.status_code == 200
-    assert "Finalize period" in admin_response.content.decode()
+    assert "Finalize water year" in admin_response.content.decode()
 
     operator_response = _client(operator).get(detail_url)
     assert operator_response.status_code == 200
-    assert "Finalize period" not in operator_response.content.decode()
+    assert "Finalize water year" not in operator_response.content.decode()

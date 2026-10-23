@@ -249,7 +249,7 @@ def test_clamp_floor_without_ctx_falls_back_to_all_rain():
 @pytest.mark.django_db
 def test_evaluate_chain_raises_without_active_plan():
     parcel = _parcel("EV-0")
-    with pytest.raises(ValueError, match="no active CalculationPlan"):
+    with pytest.raises(ValueError, match="no calculation plan is active"):
         evaluate_chain(parcel, "2024-06")
 
 
@@ -303,7 +303,7 @@ def test_evaluate_chain_raises_on_enabled_unregistered_step():
         config={},
         label="enabled-but-unregistered",
     )
-    with pytest.raises(ValueError, match="not registered"):
+    with pytest.raises(ValueError, match="has no step of type"):
         evaluate_chain(parcel, "2024-06")
 
 

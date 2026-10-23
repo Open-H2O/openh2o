@@ -1965,7 +1965,7 @@ def _step_detail_summary(step, *, delivery_split=None):
     if step_type == "subtract_effective_precip":
         method = detail.get("method", "usda_scs")
         method_label = METHOD_LABELS.get(method, "Method not recorded")
-        af_clause = f"{_fmt(detail.get('effective_precip_af'))} AF taken off"
+        af_clause = f"{_fmt(detail.get('effective_precip_af'))} AF subtracted"
         # A pre-38 run recorded no precip_mm; fall back to the AF clause alone
         # rather than printing a dash where an inches figure should be.
         pe_in = _mm_to_in(detail.get("effective_precip_mm"))
@@ -1973,8 +1973,8 @@ def _step_detail_summary(step, *, delivery_split=None):
         if pe_in is None or p_in is None:
             return f"{method_label}: {af_clause}"
         return (
-            f"{method_label}: {pe_in:.4f} in effective of {p_in:.4f} in rain, "
-            f"{af_clause}"
+            f"{method_label}: {pe_in:.4f} in of the {p_in:.4f} in of rain "
+            f"counted as effective; {af_clause}"
         )
     if step_type == "subtract_surface_water":
         # 148-02: with the field's efficiency applied, the subtracted figure is
@@ -1986,7 +1986,7 @@ def _step_detail_summary(step, *, delivery_split=None):
             whose = (
                 "the field's irrigation method"
                 if detail.get("efficiency_source") == "method"
-                else "the deployment's default"
+                else "the Delivery Settings default"
             )
             # 150.1-02 (2026-10-11): written as the formula with its real
             # signs; "the crop could use" is gone.
@@ -2001,7 +2001,7 @@ def _step_detail_summary(step, *, delivery_split=None):
                 f"irrigation efficiency {_fmt(detail.get('efficiency'), 2)} ({whose}) "
                 f"= {_fmt(detail.get('consumed_af'))} AF"
             )
-        return f"{_fmt(detail.get('surface_water_af'))} AF delivered, all of it taken off"
+        return f"{_fmt(detail.get('surface_water_af'))} AF delivered and subtracted in full"
     if step_type == "facility_only_zero":
         return "no crop on record, set to zero" if detail.get("facility_only") else "has a crop on record, unchanged"
     if step_type == "clamp_floor":

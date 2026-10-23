@@ -56,7 +56,7 @@ pytestmark = pytest.mark.django_db
 
 User = get_user_model()
 
-REFUSAL = "WY 2024-2025 is finalized. An administrator can reopen it on the period page."
+REFUSAL = "WY 2024-2025 is finalized. An administrator can reopen it on the water year page."
 REASON = "a test of the recorded override"
 
 CLOSED_DAY = dt.date(2025, 3, 1)
@@ -505,4 +505,4 @@ def test_run_calculations_force_writes_through_the_override_with_its_reason():
     # Outside the command, the same row is locked again.
     assert _refused_sql(
         'UPDATE "accounting_calculationrun" SET id = id WHERE id = %s', [run.pk]
-    ) == (LOCK_SQLSTATE, "WY2024 June is finalized. An administrator can reopen it on the period page.")
+    ) == (LOCK_SQLSTATE, "WY2024 June is finalized. An administrator can reopen it on the water year page.")

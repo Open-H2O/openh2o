@@ -15,7 +15,7 @@
        the calculation plan (its "What it decides" cell). What a change does to
        a month already calculated is said once, under the steps card's heading,
        beside the Save step buttons it governs. {% endcomment %}
-  <p class="page-description">The calculation plan decides the order of the steps, which steps are on, the rain method and its fraction, and the floor.</p>
+  <p class="page-description">The calculation plan sets the order of the steps, which steps run, the rain method and its fraction, and the floor.</p>
 </div>
 {% endblock %}
 
@@ -30,7 +30,7 @@
   {% if plan is None %}
   <div class="card-raised">
     <h2 class="section-header mb-md">No active methodology</h2>
-    <p class="text-secondary text-sm m-0">No calculation plan is active. Whoever operates your deployment loads the default with the <code>seed_calculation_plan</code> command; then reload this page.</p>
+    <p class="text-secondary text-sm m-0">No calculation plan is active. Load the default plan with the <code>seed_calculation_plan</code> command, then reload this page.</p>
   </div>
   {% else %}
 
@@ -39,7 +39,7 @@
       <h2 class="section-header m-0">{{ plan.name }}</h2>
       <span class="text-tertiary text-sm">{{ steps|length }} step{{ steps|length|pluralize }}{% if user_can_write %}: reorder, enable or disable, and set each step's parameters{% endif %}</span>
     </div>
-    {% explainer_available "settings_explained" as show_settings_help %}<p class="text-secondary text-sm mb-md">A change applies to months calculated after it; a month already calculated keeps its figures until it is calculated again.{% if show_settings_help %} <a href="{% url 'settings_explained' %}" class="text-sm text-accent">Settings explained &rarr;</a> &middot;{% endif %} <a href="{% url 'glossary' %}" class="text-sm text-accent">Glossary &rarr;</a></p>
+    {% explainer_available "settings_explained" as show_settings_help %}<p class="text-secondary text-sm mb-md">Each calculated month stores the settings it was calculated with. A changed setting affects a past month only when that month is recalculated.{% if show_settings_help %} <a href="{% url 'settings_explained' %}" class="text-sm text-accent">Settings explained &rarr;</a> &middot;{% endif %} <a href="{% url 'glossary' %}" class="text-sm text-accent">Glossary &rarr;</a></p>
 
     {% include "accounting/partials/_methodology_steps.html" %}
   </div>
@@ -52,7 +52,7 @@
           hx-target="#preview-pane" hx-swap="innerHTML"
           style="display: flex; flex-wrap: wrap; gap: var(--space-md); align-items: flex-end;">
       <div class="field-group mb-0">
-        <label class="form-label" for="preview-parcel">Parcel</label>
+        <label class="form-label" for="preview-parcel">Use area</label>
         <select name="parcel_id" id="preview-parcel" class="form-select">
           {% for p in parcels %}
           <option value="{{ p.id }}">{{ p.parcel_number }}{% if p.owner_name %} &middot; {{ p.owner_name }}{% endif %}</option>

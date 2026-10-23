@@ -503,8 +503,8 @@ def test_a_metered_calculation_page_shows_no_extracted_figure(admin_client):
     assert "= pumped" not in html
     assert "No groundwater extraction estimated for May 2025" in html
     assert (
-        "This field has a meter reading for May 2025, so the groundwater "
-        "extraction is the reading and OpenH2O estimates nothing."
+        "This field has a meter reading for May 2025, so OpenH2O takes the "
+        "groundwater extraction from the meter and does not estimate it."
     ) in html
 
 

@@ -43,7 +43,7 @@ def _run(parcel, period="2026-08", config_hash="abc123def456"):
 
     et_gross: 127.0 mm of ET (= 5.0000 in) over 10.00 ac, ÷ 12 in/ft = 4.1667 AF.
     subtract_effective_precip: usda_scs, 25.4 mm rain (= 1.0000 in), 12.7 mm
-    effective (= 0.5000 in), 1.0000 AF taken off.
+    effective (= 0.5000 in), 1.0000 AF subtracted.
     """
     breakdown = [
         {
@@ -189,7 +189,7 @@ class TestThePreviewNamesItsInches:
         }
         assert (
             _step_detail_summary(precip_step)
-            == "USDA-SCS (TR-21): 0.5000 in effective of 1.0000 in rain, 1.0000 AF taken off"
+            == "USDA-SCS (TR-21): 0.5000 in of the 1.0000 in of rain counted as effective; 1.0000 AF subtracted"
         )
 
 
@@ -240,22 +240,22 @@ def test_surface_step_summary_writes_delivery_times_efficiency():
     # 150.1-02 (2026-10-11): the formula with its real signs.
     assert _step_detail_summary(step) == (
         "123.1769 AF delivered × irrigation efficiency 0.75 "
-        "(the deployment's default) = 92.3827 AF"
+        "(the Delivery Settings default) = 92.3827 AF"
     )
     assert _step_detail_summary(step, delivery_split="use") == (
         "123.1769 AF delivered, divided up from the canal total in proportion "
         "to each field's ETAW, × irrigation efficiency 0.75 "
-        "(the deployment's default) = 92.3827 AF"
+        "(the Delivery Settings default) = 92.3827 AF"
     )
     assert _step_detail_summary(step, delivery_split="fixed") == (
         "123.1769 AF delivered, divided up from the canal total by this use "
         "area's share of the canal on file, × irrigation efficiency 0.75 "
-        "(the deployment's default) = 92.3827 AF"
+        "(the Delivery Settings default) = 92.3827 AF"
     )
     by_method = {"step_type": "subtract_surface_water", "detail": dict(step["detail"], efficiency_source="method")}
     assert _step_detail_summary(by_method).endswith("(the field's irrigation method) = 92.3827 AF")
     old = {"step_type": "subtract_surface_water", "detail": {"surface_water_af": "5"}}
-    assert _step_detail_summary(old) == "5.0000 AF delivered, all of it taken off"
+    assert _step_detail_summary(old) == "5.0000 AF delivered and subtracted in full"
 
 
 def test_floor_step_summary_says_banked_only_on_an_old_banking_run():

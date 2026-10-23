@@ -23,7 +23,7 @@
        test_kept_pages_never_name_a_dropped_module). {% endcomment %}
   <div class="ledger-card-head">
     <div class="text-secondary text-base">
-      {% if period_auto_defaulted %}Showing <strong class="text-secondary">{{ auto_default_period_name }}</strong>, the most recent period with {% if auto_default_calculated %}calculated records{% else %}activity{% endif %}{% else %}{{ period_name }}{% endif %}{% if active_filter_labels %} &middot; filtered: {{ active_filter_labels|join:", " }}{% endif %} &middot; {{ total_count|intcomma }} entr{{ total_count|pluralize:"y,ies" }}
+      {% if period_auto_defaulted %}Showing <strong class="text-secondary">{{ auto_default_period_name }}</strong>, the latest water year with {% if auto_default_calculated %}calculations{% else %}activity{% endif %}{% else %}{{ period_name }}{% endif %}{% if active_filter_labels %} &middot; filtered: {{ active_filter_labels|join:", " }}{% endif %} &middot; {{ total_count|intcomma }} entr{{ total_count|pluralize:"y,ies" }}
     </div>
     {% if total_count %}
     <div class="text-secondary text-base">
@@ -151,7 +151,7 @@
         <td colspan="3" class="text-xs">
           {% comment %} 150-04 T1 (rule C1): the figures wrap as a row of parts. The flex row is a div inside the cell, not the cell itself: a td set to display:flex stops being a table cell, and its colspan with it. {% endcomment %}
           <div class="tfoot-figures">
-          <span class="text-secondary">Credits</span> <span class="text-tertiary">(allocation and recharge entries)</span>
+          <span class="text-secondary">Allocation and recharge credits</span>
           <span class="td-num-bold text-supply">+{{ ledger_total_credits|floatformat:2|intcomma }}</span>
           &middot; <span class="text-secondary">Delivered and pumped</span>
           <span class="td-num-bold">{{ ledger_total_water|floatformat:2|intcomma }}</span>

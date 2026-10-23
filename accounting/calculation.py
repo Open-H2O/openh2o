@@ -38,7 +38,10 @@ def evaluate_chain(parcel, period):
     """
     plan = CalculationPlan.active()
     if plan is None:
-        raise ValueError("no active CalculationPlan — run seed_calculation_plan")
+        raise ValueError(
+            "no calculation plan is active. Load the default plan with the "
+            "seed_calculation_plan command."
+        )
 
     running_af = Decimal("0")
     ctx = {}
@@ -48,8 +51,8 @@ def evaluate_chain(parcel, period):
         fn = STEP_REGISTRY.get(step.step_type)
         if fn is None:
             raise ValueError(
-                f"enabled step '{step.step_type}' (order {step.order}) is not "
-                f"registered in STEP_REGISTRY — cannot evaluate the chain"
+                f"step {step.order} of the calculation plan is enabled, "
+                f"but OpenH2O has no step of type {step.step_type}."
             )
         running_af, record = fn(running_af, parcel, period, ctx, step.config or {})
         # The configured label and step_type are authoritative for the audit trail.

@@ -15,6 +15,7 @@ import pytest
 from django.contrib.auth.hashers import make_password
 from django.test import Client
 from django.urls import reverse
+from django.utils.html import escape
 
 from accounting.ledger_words import NO_PUMPING_DERIVED_WORDS
 from tests.factories import (
@@ -264,7 +265,7 @@ class TestLedgerFooter:
 
         # 100.0000 allocation + 25.0000 recharge = +125.00 of credits.
         assert response.context["ledger_total_credits"] == Decimal("125.0000")
-        assert "Credits" in html and "+125.00" in html
+        assert "Allocation and recharge credits" in html and "+125.00" in html
         # 40.0000 delivered + 10.0000 pumped = 50.00 of water, as a magnitude.
         assert response.context["ledger_total_water"] == Decimal("50.0000")
         assert "Delivered and pumped" in html and "50.00" in html
@@ -465,7 +466,8 @@ class TestLedgerZeroRowSentence:
         resp = auth_client.get(_ledger_url(period=str(period.pk)))
         assert resp.status_code == 200
         html = resp.content.decode()
-        assert html.count(NO_PUMPING_DERIVED_WORDS) == 1
+        # The page escapes the apostrophe in "month's".
+        assert html.count(escape(NO_PUMPING_DERIVED_WORDS)) == 1
         assert 'class="td-num text-tertiary"' in html
 
 

@@ -14,7 +14,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Water Years</span>
   </nav>
-  <p class="page-description">Water years define the time window your water data is organized and reported within. The usual water year runs October through September.</p>
+  <p class="page-description">OpenH2O organizes and reports your water data by water year.</p>
 </div>
 {% endblock %}
 
@@ -30,7 +30,7 @@
         type="text"
         id="filter-search" name="q"
         value="{{ q }}"
-        placeholder="Period name..."
+        placeholder="Water year name..."
         hx-get="{% url 'accounting:periods_list' %}"
         hx-target="#results"
         hx-trigger="keyup changed delay:300ms"

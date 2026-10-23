@@ -452,8 +452,8 @@ class DeliverySettingsForm(forms.Form):
         # dropped module's noun (tests/droppability).
         help_text="Under the credited choice, OpenH2O leaves this share of the "
         "surface water in excess of ETAW in the basin, credited to no one, and "
-        "credits the rest to the landowner. 10 percent unless an administrator "
-        "changes it. A changed setting affects a past month only when that "
+        "credits the rest to the landowner. The share is 10 percent unless an "
+        "administrator changes it. A changed setting affects a past month only when that "
         "month is recalculated.",
         widget=forms.NumberInput(
             attrs={"class": "form-input", "style": "width: 6rem;", "step": "1"}
@@ -478,15 +478,15 @@ class DeliverySettingsForm(forms.Form):
     diversion_report_year_rule = forms.ChoiceField(
         choices=SiteConfig.DIVERSION_REPORT_YEAR_RULE_CHOICES,
         label="Which months does a reporting year cover?",
-        help_text="Used when a file gives a year and a month but no date.",
+        help_text="OpenH2O applies this rule to a diversion file that gives a year and a month but no date.",
         widget=forms.RadioSelect,
     )
     season_start_month = forms.IntegerField(
         required=False,
         min_value=1,
         max_value=12,
-        label="If the report year above is a season, which month does it start?",
-        help_text="1-12. Used only when the report year rule above is a season.",
+        label="If a reporting year is a single irrigation season, which month does the season start?",
+        help_text="Enter a month number from 1 to 12.",
         widget=forms.NumberInput(
             attrs={"class": "form-input", "style": "width: 6rem;", "step": "1", "min": "1", "max": "12"}
         ),
@@ -498,11 +498,11 @@ class DeliverySettingsForm(forms.Form):
         required=False,
         max_length=200,
         label="Where your record addresses are published",
-        help_text="Each record here has a permanent address ending in "
-        "/id/<kind>/<number>/, shown on its page. Leave this "
-        "blank to use this site's own address. Set it before registering "
-        "with Geoconnex (the Internet of Water's public index of water "
-        "records) so the addresses never change.",
+        help_text="Each record's page shows its permanent address, which "
+        "ends in /id/<kind>/<number>/. Leave this blank to use this "
+        "site's own address. Set it before you register this site with "
+        "Geoconnex, the Internet of Water's public index of water "
+        "records, so that the addresses never change.",
         widget=forms.TextInput(
             attrs={"class": "form-input", "placeholder": "water.example.org"}
         ),
@@ -606,23 +606,21 @@ class DeliverySettingsForm(forms.Form):
         if self.has_wells:
             credited = (
                 "The landowner's share is a credit on the field's ledger. "
-                "A field with no well has its share go to the zone's shared "
-                "account, because it has no well to pump it back."
+                "A field with no well cannot pump its share back, so the share "
+                "goes to the zone's shared account."
             )
         else:
             credited = (
-                "The landowner's share is a credit on the field's ledger. "
-                "The share goes to the zone's shared account."
+                "The landowner's share goes to the zone's shared account."
             )
         descriptions = {
             "not_credited": (
-                "The amount is recorded with the month's figures and nothing "
-                "else happens. This is the default."
+                "Nothing else happens to the amount. This is the default."
             ),
             "credited": credited,
             "named_line": (
-                "Not a credit and not charged. The field's water balance "
-                "reads the same as under the other two choices."
+                "OpenH2O neither credits nor charges the amount. The field's "
+                "water balance is the same under each of the three choices."
             ),
         }
         return [

@@ -267,8 +267,8 @@ PUMPING_ESTIMATE_WORDS = (
 #: parcels/migrations/0014_parcelledger_zero_extraction_words.py carries the
 #: new words onto rows already saved.
 NO_PUMPING_DERIVED_WORDS = (
-    "No ETAW met by groundwater this month, so the estimated groundwater "
-    "extraction is zero."
+    "Groundwater did not meet any of this month's ETAW, so the estimated "
+    "groundwater extraction is zero."
 )
 
 

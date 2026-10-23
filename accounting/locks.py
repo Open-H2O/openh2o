@@ -50,7 +50,7 @@ LOCK_TRIGGER_NAME = "finalized_period_lock"
 LOCK_SQLSTATE = "OH409"
 
 #: The sentence after the period's name, in the database and in Python alike.
-REOPEN_SENTENCE = "is finalized. An administrator can reopen it on the period page."
+REOPEN_SENTENCE = "is finalized. An administrator can reopen it on the water year page."
 
 #: Every locked table, as ``app_label.ModelName``. The every-path test is
 #: parametrized over this tuple, and :data:`LOCK_TRIGGER_URIS` is built from it.
