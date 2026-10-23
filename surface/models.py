@@ -62,8 +62,8 @@ class WaterRight(models.Model):
         max_length=50,
         blank=True,
         help_text="Enter the right's WATER_RIGHT_STATUS from the state's rights "
-        "list, such as Licensed, Permitted or Claimed. The Status field above "
-        "is OpenH2O's own.",
+        "list, such as Licensed, Permitted or Claimed. The Status field is "
+        "OpenH2O's own.",
     )
     permit_number = models.CharField(
         max_length=50,
@@ -610,8 +610,8 @@ class MeasuringDevice(models.Model):
         choices=DEVICE_TYPE_CHOICES,
         help_text="934(b)(1)(C): type of measuring device. The regulation "
         "names inline flow meters, submerged orifice gates, rectangular "
-        "weirs, V-notch weirs and broad-crested weirs. OpenH2O also offers "
-        "Rated gate, Staff gage rating and Other.",
+        "weirs, V-notch weirs and broad-crested weirs. OpenH2O adds rated "
+        "gates, staff gage ratings and a choice of Other for any other device.",
     )
     make = models.CharField(
         max_length=100,

@@ -72,7 +72,7 @@ def test_the_help_sentence_is_the_approved_one(client_in):
 
 def test_the_water_rights_page_description_is_the_approved_one(client_in):
     body = client_in.get(reverse("surface:water_rights_list")).content.decode()
-    assert "The right's page also lists its diversion records.</p>" in body
+    assert "which shows its points of diversion on a map and lists its diversion records.</p>" in body
     assert "curtail" not in body.lower()
 
 
