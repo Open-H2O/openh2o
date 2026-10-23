@@ -61,9 +61,9 @@ class WaterRight(models.Model):
     state_status = models.CharField(
         max_length=50,
         blank=True,
-        help_text="WATER_RIGHT_STATUS in the state's rights list (Licensed, "
-        "Permitted, Claimed...). Separate from the Status field above, which "
-        "this platform tracks on its own.",
+        help_text="Enter the right's WATER_RIGHT_STATUS from the state's rights "
+        "list, such as Licensed, Permitted or Claimed. The Status field above "
+        "is OpenH2O's own.",
     )
     permit_number = models.CharField(
         max_length=50,
@@ -312,9 +312,9 @@ class PointOfDiversion(models.Model):
         max_digits=5,
         decimal_places=4,
         default=Decimal("0"),
-        help_text="Share of the diverted volume lost to canal seepage. While "
-        "the basis is the platform's default and the lining is stated, OpenH2O "
-        "replaces this figure with the lining's default when you save.",
+        help_text="Share of the diverted volume lost to canal seepage. When "
+        "the basis is Platform default and the lining is stated, OpenH2O sets "
+        "this share to the default for that lining when you save.",
     )
     spill_fraction = models.DecimalField(
         max_digits=5,
@@ -406,9 +406,8 @@ class PointOfDiversion(models.Model):
         ]
         if fractions and sum(fractions) >= 1:
             raise ValidationError(
-                "Evaporation, seepage and spill together cannot exceed the "
-                "whole of what was diverted, or equal it: some water has to "
-                "reach the fields."
+                "The evaporation, seepage and spill shares must add up to "
+                "less than 1."
             )
 
     def apply_lining_default(self):
@@ -459,7 +458,7 @@ class PointOfDiversion(models.Model):
     )
     _SPILL_NOTE = (
         "No default. Spill depends on how the canal is operated, so OpenH2O "
-        "uses none until a figure is entered for this canal."
+        "subtracts spill only after you enter a share for this canal."
     )
 
     def seepage_default_note(self):
@@ -603,17 +602,16 @@ class MeasuringDevice(models.Model):
     nickname = models.CharField(
         max_length=100,
         blank=True,
-        help_text="This platform's own name for the device, shown in place of "
-        "make and model wherever one is set. Not a 934(b) field.",
+        help_text="A local name for the device, which OpenH2O shows in place "
+        "of its make and model. Section 934(b) does not require one.",
     )
     device_type = models.CharField(
         max_length=30,
         choices=DEVICE_TYPE_CHOICES,
-        help_text="934(b)(1)(C): type of measuring device. The state's own "
-        "list is inline flow meters, submerged orifice gates, rectangular "
-        "weirs, v-notch weirs and broad crested weirs; rated gate and staff "
-        "gage rating are added here as common devices that list does not "
-        "name, and Other covers anything else.",
+        help_text="934(b)(1)(C): type of measuring device. The regulation "
+        "names inline flow meters, submerged orifice gates, rectangular "
+        "weirs, V-notch weirs and broad-crested weirs. OpenH2O also offers "
+        "Rated gate, Staff gage rating and Other.",
     )
     make = models.CharField(
         max_length=100,
@@ -679,15 +677,15 @@ class MeasuringDevice(models.Model):
         null=True,
         blank=True,
         help_text="934(d): date of the calibration report, certification or "
-        "field test that stands as this device's evidence of proper "
-        "functioning, due on or before the first annual report after "
-        "installation and at least once every five years after that.",
+        "field test that is this device's evidence of proper functioning. "
+        "One is due by the first annual report after installation, "
+        "and a new one at least every five years after that.",
     )
     state_device_id = models.CharField(
         max_length=50,
         blank=True,
-        help_text="The number the state's own registry generates for this "
-        "device, once filed there. Not itself a 934(b) field.",
+        help_text="The number the state's device registry gives this device. "
+        "Section 934(b) does not require it.",
     )
     location = models.PointField(
         srid=4326,
@@ -719,7 +717,7 @@ class MeasuringDevice(models.Model):
         the plain statement that none was given."""
         if self.accuracy_percent is None:
             return "no accuracy stated"
-        return f"±{self.accuracy_percent:.2f}% by the device's stated accuracy"
+        return f"Stated as ±{self.accuracy_percent:.2f}%"
 
     def needs_evidence(self):
         """True when 934(d)'s five-year evidence window is blank or has passed."""

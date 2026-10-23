@@ -209,7 +209,7 @@ def test_form_checks_the_sum_on_the_lining_default():
     )
     assert not form.is_valid()
     messages = form.non_field_errors()
-    assert sum("cannot exceed the whole" in m for m in messages) == 1
+    assert sum("must add up to less than 1" in m for m in messages) == 1
 
 
 class _UserFactory:

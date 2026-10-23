@@ -519,7 +519,7 @@ def _recalculate_months(request, trigger, months):
 
 
 def _with_replaced(replaced_month, line):
-    """The recalculation line, led by "This replaces the estimate for <Month>." when one gave way."""
+    """The recalculation line, led by "This record replaces OpenH2O's estimate for <Month>." when one gave way."""
     if replaced_month is None:
         return line
     sentence = replaced_sentence(replaced_month)
@@ -581,7 +581,7 @@ def _render_diversion_records_section(
 #: The message a unique-constraint violation on (point_of_diversion, month,
 #: diversion_type) shows instead of the raw IntegrityError a bare .save()
 #: would otherwise raise as a 500 (146-02 Task 3, ISS-181).
-_DUPLICATE_RECORD_ERROR = "A record for that month and type exists; edit that one."
+_DUPLICATE_RECORD_ERROR = "A record for this month and diversion type is already on file. Edit that record instead."
 
 
 @login_required
@@ -634,11 +634,9 @@ def diversion_record_create(request, pk):
                 # The record saved, but with no reporting period it is invisible to
                 # every period-scoped filing — say so now, not at filing time.
                 period_warning = (
-                    f"Saved, but no water year covers {month:%B %Y}; this "
-                    "record will not appear in any CalWATRS filing until a period "
-                    "covering that month exists. It attaches automatically once "
-                    "such a period is created, or you can open and save it "
-                    "yourself after one exists."
+                    f"Saved. No water year covers {month:%B %Y} yet. OpenH2O "
+                    "will add this record to the water year covering "
+                    f"{month:%B %Y} when that water year is created."
                 )
             # Saved cleanly — hand back a blank form for the next entry.
             form = DiversionRecordForm(pod=pod)

@@ -362,7 +362,7 @@
         <p class="text-tertiary text-xs mt-sm"><span class="badge badge-amber">Does not add up</span> marks a month whose canal losses plus the three columns after them differ from the water taken at the headgate.</p>
         {% endif %}
         {% if group.totals.uncalculated %}
-        <p class="text-tertiary text-xs mt-sm">{{ group.totals.uncalculated }} month{{ group.totals.uncalculated|pluralize }} not yet calculated; the headgate total above includes {{ group.totals.uncalculated|pluralize:"it,them" }}, the other columns do not.</p>
+        <p class="text-tertiary text-xs mt-sm">OpenH2O has not yet calculated {{ group.totals.uncalculated }} month{{ group.totals.uncalculated|pluralize }}. The headgate total above includes {{ group.totals.uncalculated|pluralize:"that month,those months" }}, but the canal loss columns and the three columns after them do not.</p>
         {% endif %}
       </details>
       {% endfor %}

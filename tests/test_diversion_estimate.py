@@ -18,6 +18,7 @@ estimator's own formula. The worked example used throughout:
 
 from datetime import date
 from decimal import Decimal
+from html import unescape
 
 import pytest
 from django.apps import apps
@@ -209,8 +210,8 @@ def test_face_value_less_what_was_used_earlier_this_water_year_caps_the_month():
     record = _estimate_of(pod)
     assert record.volume_acre_feet == Decimal("70.0000")
     assert record.notes == (
-        "Estimated from the fields' crop water use: 98.04 AF. Capped at 70.00 AF, "
-        "what remained of the water right this water year."
+        "Estimated from the fields' crop water use: 98.04 AF. Capped at the 70.00 AF "
+        "of face value left on the water right this water year."
     )
     capped = [n for n in notes if n["kind"] == "estimate_capped"]
     assert len(capped) == 1
@@ -276,7 +277,7 @@ def test_a_month_outside_the_direct_season_writes_zero_and_a_note():
     assert _estimate_of(pod).volume_acre_feet == Decimal("0.0000")
     assert _estimate_of(pod).notes == (
         "Estimated from the fields' crop water use: 98.04 AF. Set to 0.00 AF "
-        "because this month is outside the water right's direct season."
+        "because this month falls outside the water right's direct diversion season."
     )
     capped = [n for n in notes if n["kind"] == "estimate_capped"]
     assert capped[0]["above_af"] == Decimal("98.0392")
@@ -656,7 +657,9 @@ def test_typing_a_volume_for_an_estimated_month_replaces_the_estimate():
     typed = DiversionRecord.objects.get(point_of_diversion=pod, month=JAN)
     assert typed.volume_acre_feet == Decimal("12.0000")
     assert typed.method == ""
-    assert "This replaces the estimate for January 2024." in response.content.decode()
+    assert "This record replaces OpenH2O's estimate for January 2024." in unescape(
+        response.content.decode()
+    )
 
 
 def test_a_refused_typed_volume_keeps_the_estimate():
@@ -675,7 +678,7 @@ def test_a_refused_typed_volume_keeps_the_estimate():
 
     assert response.status_code == 200
     assert _estimates(pod).count() == 1
-    assert "This replaces the estimate" not in response.content.decode()
+    assert "This record replaces OpenH2O" not in unescape(response.content.decode())
 
 
 def test_editing_a_volume_onto_an_estimated_month_replaces_the_estimate():
@@ -699,7 +702,9 @@ def test_editing_a_volume_onto_an_estimated_month_replaces_the_estimate():
     assert _estimates(pod).count() == 0
     moving.refresh_from_db()
     assert moving.month == JAN
-    assert "This replaces the estimate for January 2024." in response.content.decode()
+    assert "This record replaces OpenH2O's estimate for January 2024." in unescape(
+        response.content.decode()
+    )
 
 
 def test_a_typed_record_for_another_month_leaves_the_estimate_alone():
@@ -835,8 +840,8 @@ def test_the_calwatrs_worksheet_marks_an_estimated_month():
 # month) went with the curtailment feature, 150.5-01; a typed 0 does its work.
 
 ESTIMATE_LINE = (
-    "This record is the platform's estimate. Save it with a changed volume and "
-    "it becomes a typed record; save it unchanged and it stays an estimate."
+    "OpenH2O estimated this volume. If you save a different volume, the record "
+    "is no longer an estimate; if you save it unchanged, it stays an estimate."
 )
 
 
@@ -887,7 +892,9 @@ def test_an_edited_estimate_at_a_point_with_a_device_in_service_becomes_a_device
     assert response.status_code == 200
     record.refresh_from_db()
     assert record.method == "device"
-    assert "Its method is now a measuring device." in response.content.decode()
+    assert "The record's method is now a measuring device." in unescape(
+        response.content.decode()
+    )
 
 
 def test_an_estimate_saved_unchanged_stays_an_estimate():
@@ -901,7 +908,7 @@ def test_an_estimate_saved_unchanged_stays_an_estimate():
     record.refresh_from_db()
     assert record.method == ESTIMATE
     assert record.volume_acre_feet == Decimal("98.0392")
-    assert "Its method is now" not in response.content.decode()
+    assert "The record's method is now" not in unescape(response.content.decode())
 
 
 def test_an_estimate_saved_with_another_method_keeps_the_method_posted():
@@ -934,7 +941,7 @@ def test_the_edit_form_says_what_saving_an_estimate_does_and_the_save_says_which
 
     assert estimate_form.count(ESTIMATE_LINE) == 1
     assert ESTIMATE_LINE not in typed_form
-    assert "Its method is now a measurement methodology on file." in saved
+    assert "The record's method is now a measurement methodology on file." in unescape(saved)
 
 
 def test_a_device_link_that_is_not_current_does_not_count():

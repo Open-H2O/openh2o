@@ -100,7 +100,7 @@ MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MB, the same ceiling every other impor
 USE_RULE_CHOICES = [
     ("drop", "Ignore them"),
     ("returned", "Count the difference as water returned to the stream"),
-    ("as_direct", "Count them as water taken directly"),
+    ("as_direct", "Count them as direct diversion"),
 ]
 
 #: The state's own Water Use Reported header, upper-cased for comparison

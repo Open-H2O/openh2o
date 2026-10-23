@@ -218,7 +218,7 @@ class TestDuplicateRecordIsAFormError:
         )
 
         assert resp.status_code == 200
-        assert "a record for that month and type exists" in resp.content.decode().lower()
+        assert "a record for this month and diversion type is already on file" in resp.content.decode().lower()
         assert DiversionRecord.objects.filter(point_of_diversion=pod).count() == 1
 
     def test_edit_into_a_duplicate_month_and_type_is_a_form_error_not_a_500(self, auth_client):
@@ -243,6 +243,6 @@ class TestDuplicateRecordIsAFormError:
         )
 
         assert resp.status_code == 200
-        assert "a record for that month and type exists" in resp.content.decode().lower()
+        assert "a record for this month and diversion type is already on file" in resp.content.decode().lower()
         movable.refresh_from_db()
         assert movable.month == date(2024, 4, 1), "the move must not have been saved"

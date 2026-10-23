@@ -350,9 +350,9 @@ def _month_losses(pod, month, diverted):
     )
     if total_fraction >= 1:
         raise CanalLossesTooLarge(
-            f"In {month:%B %Y}, evaporation, seepage and spill at {pod.name} "
-            f"add up to {percent_words(total_fraction)}% of the water it "
-            f"diverts, which leaves nothing for the fields."
+            f"In {month:%B %Y}, the evaporation, seepage and spill shares at "
+            f"{pod.name} add up to {percent_words(total_fraction)}% of the "
+            f"diverted water and leave nothing for the fields."
         )
     evaporation = (diverted * pod.evaporation_fraction).quantize(_Q)
     seepage = (diverted * pod.seepage_fraction).quantize(_Q)

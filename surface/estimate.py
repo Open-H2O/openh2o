@@ -117,7 +117,7 @@ def discard_estimate(point, month, diversion_type="direct_use", *, exclude_pk=No
 
 def replaced_sentence(month):
     """The line a saving page adds when a typed volume took an estimate's place."""
-    return f"This replaces the estimate for {month:%B %Y}."
+    return f"This record replaces OpenH2O's estimate for {month:%B %Y}."
 
 
 def typed_method_for(point, month):
@@ -136,7 +136,7 @@ def typed_method_for(point, month):
 def saved_as_sentence(method):
     """The line the edit page adds when an estimate became a typed record."""
     label = dict(DiversionRecord.METHOD_CHOICES)[method]
-    return f"Its method is now {label[0].lower()}{label[1:]}."
+    return f"The record's method is now {label[0].lower()}{label[1:]}."
 
 
 # --------------------------------------------------------------------------
@@ -348,8 +348,8 @@ def estimate_month(first, notes):
         elif not _in_direct_season(right, first, last):
             written = Decimal("0.0000")
             cap_text = (
-                " Set to 0.00 AF because this month is outside the water "
-                "right's direct season."
+                " Set to 0.00 AF because this month falls outside the water "
+                "right's direct diversion season."
             )
         elif right.face_value_acre_feet is not None:
             remaining = right.face_value_acre_feet - _already_used(right, first)
@@ -357,8 +357,8 @@ def estimate_month(first, notes):
             if allowed < headgate:
                 written = allowed
                 cap_text = (
-                    f" Capped at {allowed:,.2f} AF, what remained of the water "
-                    f"right this water year."
+                    f" Capped at the {allowed:,.2f} AF of face value left on "
+                    f"the water right this water year."
                 )
 
         _store(

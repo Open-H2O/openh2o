@@ -25,16 +25,16 @@ pressed.
 
     <div class="form-row-2col">
       <div class="form-group">
-        <label class="form-label" for="diversion-import-point">Whole-file point of diversion</label>
+        <label class="form-label" for="diversion-import-point">Point of diversion for the whole file</label>
         <select id="diversion-import-point" name="point" class="form-select">
-          <option value="">(use each row's own point column)</option>
+          <option value="">Use each row's own point or water right</option>
           {% for point in points %}
           <option value="{{ point.pk }}"{% if selected_point.pk == point.pk %} selected{% endif %}>
             {{ point.name }}{% if point.local_name %} (known locally as {{ point.local_name }}){% endif %}
           </option>
           {% endfor %}
         </select>
-        <div class="form-help">This point is used only for a row that does not name a point of its own.</div>
+        <div class="form-help">OpenH2O assigns this point to rows that do not name a point, unless the row's water right has only one point.</div>
       </div>
       <div class="form-group">
         <label class="form-label" for="diversion-import-method">Method</label>
@@ -64,8 +64,8 @@ pressed.
          sees it. {% endcomment %}
     {% if use_rows_present %}
     <div class="form-group">
-      <p class="text-secondary text-base m-0" style="margin-bottom: var(--space-sm);">Some rows in this file are typed USE. What should they count as?</p>
-      <p class="text-secondary text-sm" style="margin-bottom: var(--space-sm);">This file has {{ use_rows_present }} of them. USE is California's total-use figure and usually repeats the direct figure for the same month, so ignoring them is the usual answer.</p>
+      <p class="text-secondary text-base m-0" style="margin-bottom: var(--space-sm);">How should OpenH2O count this file's USE rows?</p>
+      <p class="text-secondary text-sm" style="margin-bottom: var(--space-sm);">This file has {{ use_rows_present }} USE row{{ use_rows_present|pluralize }}. USE is the state's total-use figure and most often repeats the DIRECT figure for the same month. Where it does, counting USE rows as direct diversion would add that month's water twice.</p>
       {% for value, label in use_rule_choices %}
       <label class="radio-option">
         <input type="radio" name="use_rule" value="{{ value }}"{% if use_rule == value %} checked{% endif %}>
@@ -89,14 +89,14 @@ pressed.
 </div>
 
 <div class="card-raised">
-  <h3 class="section-header-sm">What this would do</h3>
+  <h3 class="section-header-sm">What the import would do</h3>
   <div class="row-start" style="gap: var(--space-sm); margin-top: var(--space-md);">
-    <span class="badge badge-green">Create {{ created }}</span>
+    <span class="badge badge-green">New records {{ created }}</span>
     <span class="badge badge-grey">{{ total_af }} AF</span>
     {% if skipped_duplicates %}<span class="badge badge-orange">Already on file {{ skipped_duplicates }}</span>{% endif %}
     {% if unresolved_rows %}<span class="badge badge-orange">Unresolved {{ unresolved_rows|length }}</span>{% endif %}
     {% if errors %}<span class="badge badge-orange">Errors {{ errors|length }}</span>{% endif %}
-    {% if use_rows_dropped %}<span class="badge badge-grey">USE rows dropped {{ use_rows_dropped }}</span>{% endif %}
+    {% if use_rows_dropped %}<span class="badge badge-grey">USE rows ignored {{ use_rows_dropped }}</span>{% endif %}
   </div>
 </div>
 
@@ -111,7 +111,7 @@ pressed.
         <td>{{ c.point }}</td>
         <td class="text-mono">{{ c.month }}</td>
         <td>{{ c.diversion_type }}</td>
-        <td class="text-mono">{{ c.row_count }} rows combined into one month ({{ c.rows|join:", " }})</td>
+        <td class="text-mono">{{ c.rows|join:", " }}</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -143,7 +143,7 @@ pressed.
 <div class="card-raised">
   <h3 class="section-header-sm">Unresolved rows</h3>
   <table class="data-table mt-md">
-    <thead><tr><th style="width: 6rem;">Row</th><th>Why</th></tr></thead>
+    <thead><tr><th style="width: 6rem;">Row</th><th>Reason</th></tr></thead>
     <tbody>
       {% for row in unresolved_rows %}
       <tr><td class="text-mono">{{ row.line }}</td><td>{{ row.reason }}</td></tr>

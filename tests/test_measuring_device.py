@@ -89,7 +89,7 @@ def test_add_device_creates_current_link_with_two_rights(auth_client):
     detail = auth_client.get(reverse("surface:pod_detail", args=[pod.pk]))
     body = detail.content.decode()
     assert "Headgate 3 flow meter" in body
-    assert "±5.00% by the device" in body and "stated accuracy" in body
+    assert "Stated as ±5.00%" in body
 
 
 def test_device_str_is_nickname_else_make_model(db):

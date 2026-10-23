@@ -68,7 +68,7 @@ def test_form_rejects_fraction_sum_over_one():
     )
     assert not form.is_valid()
     assert any(
-        "cannot exceed the whole" in msg for msg in form.non_field_errors()
+        "must add up to less than 1" in msg for msg in form.non_field_errors()
     )
 
 
@@ -88,7 +88,7 @@ def test_form_rejects_a_fraction_sum_at_exactly_one():
         instance=pod,
     )
     assert not form.is_valid()
-    assert any("or equal it" in msg for msg in form.non_field_errors())
+    assert any("must add up to less than 1" in msg for msg in form.non_field_errors())
 
 
 def test_form_accepts_a_fraction_sum_just_under_one():
@@ -121,7 +121,7 @@ def test_view_re_renders_the_form_with_the_error_and_saves_nothing(auth_client):
         },
     )
     assert resp.status_code == 200
-    assert b"cannot exceed the whole" in resp.content
+    assert b"must add up to less than 1" in resp.content
     pod.refresh_from_db()
     assert pod.evaporation_fraction == Decimal("0.0100")  # unchanged default
 

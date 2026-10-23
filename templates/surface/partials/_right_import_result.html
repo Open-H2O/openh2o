@@ -22,7 +22,7 @@ infrastructure/partials/_import_result.html:
     {% comment %} OpenH2O records a right, it never grants one. {% endcomment %}
     OpenH2O created {{ created }} water right record{{ created|pluralize }}.
     {% if noted %}{{ noted|length }} of them {{ noted|length|pluralize:"has a note,have notes" }} below.{% endif %}
-    {% if skipped %}{{ skipped|length }} row{{ skipped|length|pluralize }} were skipped because of the problems below. Fix them in your file and re-import just those.{% elif not noted %}Every row was valid.{% endif %}
+    {% if skipped %}OpenH2O skipped {{ skipped|length }} row{{ skipped|length|pluralize }} because of the problems below.{% elif not noted %}Every row was valid.{% endif %}
   </p>
 
   {% if noted %}

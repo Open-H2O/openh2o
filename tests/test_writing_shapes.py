@@ -147,8 +147,6 @@ EXCEPTIONS: tuple = (
      ("stand-in",), "the water system the sentence has just named."),
     ("templates/drinking/partials/_onboard_result.html", "EPA no longer has that system",
      ("stand-in",), "the water system the person looked up."),
-    ("templates/surface/partials/_diversion_import_preview.html", "USE is California's total-use figure",
-     ("California",), "names the state's own figure in the state's diversion file."),
     # Stored data.
     ("accounting/ledger_words.py", "Incidental recharge \u2014 deep percolation",
      ("em dash",), "LEGACY_INCIDENTAL_RECHARGE_WORDS matches the description older "

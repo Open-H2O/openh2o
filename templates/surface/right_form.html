@@ -13,7 +13,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">{% if water_right %}Edit{% else %}New{% endif %}</span>
   </nav>
-  <p class="page-description">Enter the right's ID, holder, priority date and the state's rights-list fields: face value, maximum rate, season, permit number, license number and use.</p>
+  <p class="page-description">Enter the right's ID, holder and priority date, and the face value, maximum rate, seasons, permit number, license number and purpose of use as the state's rights list gives them.</p>
 </div>
 {% endblock %}
 
@@ -47,7 +47,7 @@
       <div class="form-group">
         <label class="form-label" for="{{ form.right_type.id_for_label }}">{{ form.right_type.label }}</label>
         {{ form.right_type }}
-        <div class="form-help">"Appropriative, Licensed" is this field plus State Status below: there is no separate seeded type for it.</div>
+        <div class="form-help">For a licensed appropriative right, choose Post-1914 Appropriative here and enter Licensed under State status below.</div>
         {% for error in form.right_type.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
       </div>
 

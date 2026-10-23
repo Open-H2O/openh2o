@@ -23,6 +23,7 @@ The two corrections from the main session that this file proves:
 """
 import csv
 import io
+from html import unescape
 import json
 from datetime import date
 from decimal import Decimal
@@ -390,7 +391,7 @@ def test_preview_shows_use_question_when_file_has_use_rows(auth_client, db):
 
     assert resp.status_code == 200
     body = resp.content.decode()
-    assert "Some rows in this file are typed USE" in body
+    assert "How should OpenH2O count this file's USE rows?" in unescape(body)
 
 
 def test_preview_hides_use_question_for_the_direct_only_shape1_fixture(auth_client, shape1_points):
@@ -403,7 +404,7 @@ def test_preview_hides_use_question_for_the_direct_only_shape1_fixture(auth_clie
 
     assert resp.status_code == 200
     body = resp.content.decode()
-    assert "Some rows in this file are typed USE" not in body
+    assert "this file's USE rows" not in unescape(body)
 
 
 def test_commit_with_a_different_use_rule_saves_it_back_to_site_config(auth_client, db):

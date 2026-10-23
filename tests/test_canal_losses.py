@@ -440,8 +440,8 @@ def test_shares_that_take_the_whole_refuse_the_month_and_write_nothing():
 
     assert isinstance(caught.value, ValueError)
     assert caught.value.sentence == (
-        "In January 2024, evaporation, seepage and spill at Plain Canal "
-        "Headgate add up to 100% of the water it diverts, which leaves "
+        "In January 2024, the evaporation, seepage and spill shares at Plain "
+        "Canal Headgate add up to 100% of the diverted water and leave "
         "nothing for the fields."
     )
     assert not _split_rows().exists()
@@ -490,8 +490,8 @@ def test_a_month_that_loses_everything_fails_with_a_named_sentence(engine_world)
     req.refresh_from_db()
     assert req.status == "failed"
     assert req.outcome == (
-        "In January 2024, evaporation, seepage and spill at Test Canal "
-        "Headgate add up to 100% of the water it diverts, which leaves "
+        "In January 2024, the evaporation, seepage and spill shares at Test "
+        "Canal Headgate add up to 100% of the diverted water and leave "
         "nothing for the fields. Nothing in January 2024 was changed."
     )
     assert not _split_rows().exists()

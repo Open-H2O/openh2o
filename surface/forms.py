@@ -228,25 +228,25 @@ class PointOfDiversionForm(forms.ModelForm):
         labels = {
             "local_name": "Known locally as",
             "evaporation_fraction": "Evaporation share (0 to 1)",
-            "evaporation_band_percent": "Evaporation band (%)",
+            "evaporation_band_percent": "Evaporation uncertainty (±%)",
             "seepage_fraction": "Seepage share (0 to 1)",
-            "seepage_band_percent": "Seepage band (%)",
+            "seepage_band_percent": "Seepage uncertainty (±%)",
             "spill_fraction": "Spill share (0 to 1)",
-            "spill_band_percent": "Spill band (%)",
+            "spill_band_percent": "Spill uncertainty (±%)",
             "spill_device": "Spill measured at",
-            "loss_basis": "How these shares were set",
+            "loss_basis": "Basis of the loss shares",
             "lining": "Lining",
         }
         # 150.3-01 (the district wording was replaced by the national words).
         help_texts = {
-            "lining": "While the basis is the platform's default, OpenH2O sets "
-            "the seepage share from the lining: 25 percent for an unlined "
-            "canal, 5 percent for a lined canal and 0 for a pipe. A share "
-            "marked as measured or estimated is never replaced.",
+            "lining": "When the basis is Platform default, OpenH2O sets the "
+            "seepage share from the lining: 25 percent for an unlined canal, "
+            "5 percent for a lined canal and 0 for a pipe. OpenH2O does not "
+            "change a measured or estimated share.",
             "seepage_fraction": "Share of the diverted volume lost to canal "
-            "seepage. While the basis is the platform's default and the "
-            "lining is stated, OpenH2O replaces this figure with the lining's "
-            "default when you save.",
+            "seepage. When the basis is Platform default and the lining is "
+            "stated, OpenH2O sets this share to the default for that lining "
+            "when you save.",
             # The basis now sits above the three shares, beside the lining.
             "loss_basis": "How the three shares below were set: measured on "
             "this canal, estimated for this canal, or the platform's default.",

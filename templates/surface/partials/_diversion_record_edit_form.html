@@ -27,7 +27,7 @@
     <h3 class="text-sm font-semibold text-secondary m-0">Edit diversion record: {{ edit_record.month|date:"M Y" }}</h3>
   </div>
   {% if edit_record.method == "estimated_from_use" %}
-  <p class="text-xs text-secondary m-0 form-span-2">This record is the platform's estimate. Save it with a changed volume and it becomes a typed record; save it unchanged and it stays an estimate.</p>
+  <p class="text-xs text-secondary m-0 form-span-2">OpenH2O estimated this volume. If you save a different volume, the record is no longer an estimate; if you save it unchanged, it stays an estimate.</p>
   {% endif %}
   {% if edit_form.non_field_errors %}
   <div class="text-xs form-span-2" style="color: var(--furnace-400);">{{ edit_form.non_field_errors|join:", " }}</div>

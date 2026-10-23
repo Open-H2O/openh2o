@@ -116,8 +116,9 @@ class TestPodRecordsGroupedByWaterYear:
 
     def test_current_year_subtotal_row_carries_the_three_summed_figures(self):
         html = _pod_page(self._two_year_pod())
-        subtotals = _row_subtotal_blocks(html)
-        (current_row,) = [b for b in subtotals if CURRENT_NAME in b]
+        # Newest water year first; each subtotal row closes its group.
+        current_row = _row_subtotal_blocks(html)[0]
+        assert "Total" in current_row
         assert "300.00" in current_row
         assert "25.00" in current_row
         assert "275.00" in current_row
@@ -140,8 +141,7 @@ class TestPodRecordsGroupedByWaterYear:
         assert re.search(
             r'<tr class="row-group">\s*<td colspan="7">' + re.escape(PRIOR_NAME), html
         )
-        subtotals = _row_subtotal_blocks(html)
-        (prior_row,) = [b for b in subtotals if PRIOR_NAME in b]
+        prior_row = _row_subtotal_blocks(html)[1]
         assert "50.00" in prior_row
 
 

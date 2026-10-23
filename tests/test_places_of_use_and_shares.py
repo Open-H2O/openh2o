@@ -178,7 +178,7 @@ def test_pod_share_editor_accepts_half(auth_client):
     assert resp.status_code == 200
     pp.refresh_from_db()
     assert pp.fraction == Decimal("0.5000")
-    assert b"share 0.5000" in resp.content
+    assert b">0.5000</span>" in resp.content
 
 
 def test_pod_share_editor_rejects_zero(auth_client):
