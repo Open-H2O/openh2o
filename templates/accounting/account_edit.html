@@ -29,9 +29,12 @@
 
     {% if form.errors %}
     <div class="form-error-box">
-      {% for field, errors in form.errors.items %}
-        {% for error in errors %}
-          <p class="form-error-text">{{ field|capfirst }}: {{ error }}</p>
+      {% for error in form.non_field_errors %}
+          <p class="form-error-text">{{ error }}</p>
+      {% endfor %}
+      {% for field in form %}
+        {% for error in field.errors %}
+          <p class="form-error-text">{{ field.label }}: {{ error }}</p>
         {% endfor %}
       {% endfor %}
     </div>

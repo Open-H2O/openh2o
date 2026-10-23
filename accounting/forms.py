@@ -106,6 +106,7 @@ class AllocationPlanForm(forms.ModelForm):
         ]
         labels = {
             "allocation_acre_feet": "Allocation (AF)",
+            "reporting_period": "Water year",
         }
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-input"}),
@@ -148,6 +149,7 @@ class WaterAccountForm(forms.ModelForm):
             "contact_email",
             "notes",
         ]
+        labels = {"unit_kind": "Account type"}
         widgets = {
             "account_number": forms.TextInput(attrs={"class": "form-input"}),
             "name": forms.TextInput(attrs={"class": "form-input"}),
@@ -254,6 +256,11 @@ class ParcelLedgerForm(forms.ModelForm):
             "description",
             "reporting_period",
         ]
+        labels = {
+            "parcel": "Use area",
+            "amount_acre_feet": "Amount (AF)",
+            "reporting_period": "Water year",
+        }
         widgets = {
             "parcel": forms.Select(attrs={"class": "form-select"}),
             "transaction_date": forms.DateInput(
