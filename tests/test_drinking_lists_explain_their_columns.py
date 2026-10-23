@@ -140,7 +140,7 @@ class TestFacilitiesListNamesWhyACellIsEmpty:
             client_in.get(reverse("drinking:facilities")).content.decode()
         )
         assert (
-            "3 facilities: 1 sources, 1 treatment plants, 1 distribution"
+            "3 facilities: 1 source, 1 treatment plant, 1 distribution system"
         ) in text
 
 

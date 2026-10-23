@@ -33,9 +33,11 @@
     {% endif %}
   </nav>
   {% if facility and not facility.added_by_hand %}
-  <p class="page-description">This facility came from EPA's record when the system was onboarded, so its ID, name, type and status stay as published. What you call it, and the well it draws from, are yours to set.</p>
-  {% else %}
-  <p class="page-description">Sources, treatment plants and other facilities are entered here by hand. Use the facility ID the state assigned. The local name is yours to choose.</p>
+  <p class="page-description">OpenH2O added this facility from EPA's record with the water system, so its ID, name, type and status stay as EPA published them. {% if 'wells' in enabled_modules %}You set the local name and the metered well.{% else %}You set the local name.{% endif %}</p>
+  {% elif facility %}
+  <p class="page-description">OpenH2O did not take this facility from EPA's record, so you can change every field.</p>
+  {% elif system %}
+  <p class="page-description">This page adds a facility to {{ system.name }} by hand.</p>
   {% endif %}
 </div>
 {% endblock %}
@@ -57,9 +59,8 @@
   <div class="card-raised">
     <h2 class="card-header-ruled">No water system yet</h2>
     <p class="text-base text-secondary mt-md">
-      A facility belongs to a water system, and none is onboarded on this
-      deployment yet. <a href="{% url 'drinking:onboard' %}">Onboard a system</a>
-      first.
+      A facility belongs to a water system.
+      <a href="{% url 'drinking:onboard' %}">Add a water system</a> first.
     </p>
   </div>
   {% else %}
@@ -83,7 +84,7 @@
       <div class="form-group">
         <label class="form-label" for="{{ form.facility_id.id_for_label }}">{{ form.facility_id.label }}</label>
         {{ form.facility_id }}
-        <div class="form-help">The state assigns this ID within {{ system.name }}. Enter it exactly as the state issued it. A lab file names the facility by it.</div>
+        <div class="form-help">The state assigns this ID within {{ system.name }}. Enter it exactly as the state issued it.</div>
         {% for error in form.facility_id.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
       </div>
       <div class="form-group">
@@ -94,7 +95,7 @@
       <div class="form-group form-span-2">
         <label class="form-label" for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
         {{ form.name }}
-        <div class="form-help">Enter the name as the state writes it, when you have it. Leave it blank if the state has not named it yet.</div>
+        <div class="form-help">Enter the name as the state writes it. Leave this blank if the state has not named the facility yet.</div>
         {% for error in form.name.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
       </div>
       {% endif %}
@@ -127,7 +128,7 @@
       <div class="form-group form-span-2">
         <label class="form-label" for="{{ form.well.id_for_label }}">{{ form.well.label }}</label>
         {{ form.well }}
-        <div class="form-help">Optional. This links the facility to its record in Wells.</div>
+        <div class="form-help">Optional. Choose a well to link this facility to the well's record in Wells.</div>
       </div>
       {% endif %}
 

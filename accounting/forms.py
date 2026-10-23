@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Forms for reporting periods, allocation plans, and water accounts."""
 from django import forms
+from django.core.exceptions import NON_FIELD_ERRORS
 
 from accounting.models import AllocationPlan, ReportingPeriod, WaterAccount
 from core.history import CHANGE_NOTE_HELP, NOTE_MAX_LENGTH
@@ -108,6 +109,12 @@ class AllocationPlanForm(forms.ModelForm):
             "allocation_acre_feet": "Allocation (AF)",
             "reporting_period": "Water year",
         }
+        error_messages = {
+            NON_FIELD_ERRORS: {
+                "unique_together": "This zone already has an allocation of "
+                "this water type for this water year.",
+            },
+        }
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-input"}),
             "zone": forms.Select(attrs={"class": "form-select"}),
@@ -150,6 +157,11 @@ class WaterAccountForm(forms.ModelForm):
             "notes",
         ]
         labels = {"unit_kind": "Account type"}
+        error_messages = {
+            "account_number": {
+                "unique": "Another account already has this account number.",
+            },
+        }
         widgets = {
             "account_number": forms.TextInput(attrs={"class": "form-input"}),
             "name": forms.TextInput(attrs={"class": "form-input"}),

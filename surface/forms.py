@@ -303,6 +303,10 @@ class MeasuringDeviceForm(forms.ModelForm):
             "installed_on", "installer_contact", "last_evidence_on",
             "state_device_id", "status", "water_rights", "notes",
         ]
+        labels = {
+            "last_evidence_on": "Last evidence of proper functioning",
+            "state_device_id": "State device ID",
+        }
         widgets = {
             "nickname": forms.TextInput(attrs={"class": "form-input"}),
             "device_type": forms.Select(attrs={"class": "form-select"}),

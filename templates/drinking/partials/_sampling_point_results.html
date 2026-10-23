@@ -132,5 +132,5 @@ seed's coordinates came from it; a facility otherwise gets a location only at
   routes the partial's own fallback to onboarding. Before this, both branches
   landed on the Django-admin dead end.
 {% endcomment %}
-{% include "drinking/partials/_empty_drinking.html" with what="No sampling points yet." points_link=True points_pwsid=points_pwsid %}
+{% include "drinking/partials/_empty_drinking.html" with what="No sampling points yet." points_link=True points_pwsid=points_pwsid has_system=has_system %}
 {% endif %}

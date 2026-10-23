@@ -33,11 +33,11 @@ filter it no longer contradicts the table — it replaces the old "it is not
 filtered" clause, which was true before this plan and is not true after it.
 {% endcomment %}{% if mapped_facility_count %}
 <p class="page-description">
-  The map shows {{ mapped_facility_count|intcomma }} of the
+  The map shows the {{ mapped_facility_count|intcomma }} of
   {{ total_facility_count|intcomma }} facilit{{ total_facility_count|pluralize:"y,ies" }}
-  in this inventory. The state&rsquo;s Groundwater Ambient Monitoring and
-  Assessment Program (GAMA) publishes coordinates for groundwater sources only,
-  so the treatment plants and the distribution system are not on it.
+  in this inventory that have a location recorded. The state&rsquo;s Groundwater
+  Ambient Monitoring and Assessment Program (GAMA) publishes coordinates for
+  groundwater sources only.
 </p>
 {% if q or facility_type or activity_status %}
 <p class="page-description">
@@ -52,13 +52,13 @@ filtered" clause, which was true before this plan and is not true after it.
   {% endif %}
 </p>
 {% endif %}
-{% else %}
+{% elif total_facility_count %}{# 151.3-06: a site with no facilities shows the empty page below, not this #}
 <p class="page-description">
-  No facility in this inventory has a published location, so there is no map
-  of it yet. The state&rsquo;s Groundwater Ambient Monitoring and Assessment
-  Program (GAMA) publishes coordinates for groundwater sources only; EPA&rsquo;s
-  Envirofacts record, which onboarding reads, carries none. A new system has no
-  map until its sources are located.
+  No facility on this site has a location recorded, so this page cannot show
+  a map yet. The state&rsquo;s Groundwater Ambient Monitoring and Assessment
+  Program (GAMA) publishes coordinates for groundwater sources only, and EPA&rsquo;s
+  Envirofacts record carries none. An administrator enters a facility&rsquo;s
+  location at /admin/ under Drinking Water &gt; System Facilities.
 </p>
 {% endif %}
 
@@ -74,8 +74,8 @@ filtered" clause, which was true before this plan and is not true after it.
   narrowed the table to.
   {% endcomment %}
   <div class="ledger-card-head">
-    <div class="text-secondary text-base">{{ total_count }} facilit{{ total_count|pluralize:"y,ies" }}: {{ n_source }} sources, {{ n_tp }} treatment plants, {{ n_ds }} distribution</div>
-    <div class="text-secondary text-base">Water type comes with EPA&rsquo;s record for a source facility; treatment plants and the distribution system carry none.{% if 'wells' in enabled_modules %} Well names the metered well this deployment has linked to a source.{% endif %}</div>
+    <div class="text-secondary text-base">{{ total_count }} facilit{{ total_count|pluralize:"y,ies" }}: {{ n_source }} source{{ n_source|pluralize }}, {{ n_tp }} treatment plant{{ n_tp|pluralize }}, {{ n_ds }} distribution system{{ n_ds|pluralize }}</div>
+    <div class="text-secondary text-base">EPA&rsquo;s record gives a water type for source facilities only.{% if 'wells' in enabled_modules %} The Well column names each well facility&rsquo;s metered well, or says Not linked.{% endif %}</div>
   </div>
   <table class="data-table">
     <thead>

@@ -246,7 +246,7 @@
         theirs, so the line states it and passes no judgement on it.
       {% endcomment %}
       {% if system.next_due_row %}
-      <p class="text-secondary text-base mt-md" style="margin-bottom: 0;">Next due: {{ system.next_due_row.label }} on {{ system.next_due_row.next_due|date:"F j, Y" }}{% if system.next_due_passed %}, past the date you set{% endif %}. <a href="{% url 'drinking:schedule' %}" class="text-accent">Schedule &rarr;</a></p>
+      <p class="text-secondary text-base mt-md" style="margin-bottom: 0;">Next due: {{ system.next_due_row.label }} on {{ system.next_due_row.next_due|date:"F j, Y" }}.{% if system.next_due_passed %} That date has passed.{% endif %} <a href="{% url 'drinking:schedule' %}" class="text-accent">Schedule &rarr;</a></p>
       {% endif %}
 
   </div>

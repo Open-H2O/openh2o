@@ -319,7 +319,7 @@ class TestTheCoverageSentenceIsComputed:
     def test_it_counts_what_is_actually_located(self, client_in, mapped_system):
         """Add a location; the page must say a different number."""
         html = _get(client_in, "drinking:facilities")
-        assert "2 of the 3" in html, (
+        assert "the 2 of 3" in html, (
             "the page does not state the facility coverage it actually has"
         )
 
@@ -327,7 +327,7 @@ class TestTheCoverageSentenceIsComputed:
         mapped_system["unlocated"].save(update_fields=["location"])
 
         html = _get(client_in, "drinking:facilities")
-        assert "3 of the 3" in html, "the coverage sentence is a hardcoded literal"
+        assert "the 3 of 3" in html, "the coverage sentence is a hardcoded literal"
 
     def test_it_says_why_the_rest_are_missing(self, client_in, mapped_system):
         """The gap is a fact about the public record, not a defect here.
@@ -370,7 +370,7 @@ class TestTheUnmappedPageIsASentence:
 
     def test_it_says_so_and_names_the_publisher(self, client_in, unmapped_system):
         html = _get(client_in, "drinking:facilities").lower()
-        assert "no facility in this inventory has a published location" in html
+        assert "no facility on this site has a location recorded" in html
         assert "groundwater sources" in html
         assert "envirofacts" in html
 
@@ -444,7 +444,7 @@ class TestTheMapIsUnfilteredAndSaysSo:
     ):
         """The other direction, through the same path."""
         partial = _get_htmx(client_in, "drinking:facilities")
-        assert "2 of the 3" in partial
+        assert "the 2 of 3" in partial
         assert "The map follows the list" not in partial
 
     def test_the_htmx_partial_never_carries_the_map_host(
@@ -591,7 +591,7 @@ class TestTheEmptyStateDoorsOpen:
             client_in, "drinking:sampling_points"
         )
 
-    def test_two_systems_fall_back_to_onboarding(self, client_in, db):
+    def test_two_systems_send_the_operator_to_drinking_water(self, client_in, db):
         """No honest default with two, and picking the first is silently wrong.
 
         Scoped to `btn-primary` — the empty state's own button. Unscoped, the
@@ -604,6 +604,9 @@ class TestTheEmptyStateDoorsOpen:
         doors = _hrefs_with_class(
             client_in, "drinking:sampling_points", "btn-primary"
         )
-        assert reverse("drinking:onboard") in doors
+        # 151.3-06 (Brent, row 3): the site has systems, so the door is Drinking Water, where each
+        # system has its own Add sampling points, not Add a water system.
+        assert reverse("drinking:overview") in doors
+        assert reverse("drinking:onboard") not in doors
         assert reverse("drinking:onboard_points", args=["CA2410009"]) not in doors
         assert reverse("drinking:onboard_points", args=["CA9999999"]) not in doors

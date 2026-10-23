@@ -205,7 +205,7 @@ class TestTheOverviewLine:
     ):
         _row(system, group_label="Nitrate", next_due=date.today() - timedelta(days=13))
         html = client_in.get(reverse("drinking:overview")).content.decode()
-        assert ", past the date you set." in html
+        assert "That date has passed." in html
 
     def test_no_row_puts_nothing_on_the_overview(self, client_in, system):
         html = client_in.get(reverse("drinking:overview")).content.decode()

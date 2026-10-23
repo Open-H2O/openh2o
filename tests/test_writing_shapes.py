@@ -141,8 +141,6 @@ EXCEPTIONS: tuple = (
     # The four lines that name a real thing, not the reader (150.1-03 plan).
     ("templates/about.html", "A groundwater agency, an irrigation district or a grower",
      ("district reader",), "a list of the kinds of organization that use OpenH2O."),
-    ("templates/drinking/partials/_empty_drinking.html", "opens on that system",
-     ("stand-in",), "the water system the sentence has just named."),
     ("templates/drinking/partials/_onboard_result.html", "EPA no longer has that system",
      ("stand-in",), "the water system the person looked up."),
     # Stored data.

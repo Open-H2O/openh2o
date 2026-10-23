@@ -414,6 +414,10 @@ class DeliverySettingsForm(forms.Form):
     efficiency_percent = forms.IntegerField(
         min_value=1,
         max_value=100,
+        error_messages={
+            "min_value": "Enter a percent from 1 to 100.",
+            "max_value": "Enter a percent from 1 to 100.",
+        },
         label="Default irrigation efficiency",
         # 90-02: said "soaks back into the aquifer as recharge", which named the
         # `recharge` module's noun on deployments that do not run it. The
@@ -446,6 +450,10 @@ class DeliverySettingsForm(forms.Form):
         required=False,
         min_value=0,
         max_value=100,
+        error_messages={
+            "min_value": "Enter a percent from 0 to 100.",
+            "max_value": "Enter a percent from 0 to 100.",
+        },
         label="Share left in the basin",
         # 148-04: the sentence about fields without a well is in the
         # template, behind the `wells` gate: a kept page may not name a
@@ -485,6 +493,10 @@ class DeliverySettingsForm(forms.Form):
         required=False,
         min_value=1,
         max_value=12,
+        error_messages={
+            "min_value": "No month is numbered %(show_value)s.",
+            "max_value": "No month is numbered %(show_value)s.",
+        },
         label="If a reporting year is a single irrigation season, which month does the season start?",
         help_text="Enter a month number from 1 to 12.",
         widget=forms.NumberInput(
@@ -661,7 +673,8 @@ class DeliverySettingsForm(forms.Form):
         if self.shows_surface_settings:
             treatment = cleaned.get("over_delivery_treatment")
             leave_behind = cleaned.get("over_delivery_leave_behind_percent")
-            if treatment == "credited" and leave_behind is None:
+            if (treatment == "credited" and leave_behind is None
+                    and "over_delivery_leave_behind_percent" not in self.errors):
                 self.add_error(
                     "over_delivery_leave_behind_percent",
                     "Enter the share left in the basin when crediting the "
@@ -673,6 +686,7 @@ class DeliverySettingsForm(forms.Form):
             if (
                 cleaned.get("diversion_report_year_rule") == "season"
                 and not cleaned.get("season_start_month")
+                and "season_start_month" not in self.errors
             ):
                 self.add_error(
                     "season_start_month", "Enter the season's starting month."

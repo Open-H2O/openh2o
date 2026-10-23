@@ -210,7 +210,7 @@
           {% elif facility.well %}
             {{ facility.well.name }}
           {% else %}
-            <span class="value-empty" title="This deployment links a source facility to its well record when both exist.">Not linked</span>
+            <span class="value-empty" title="{% if 'wells' in enabled_modules %}{% if facility.added_by_hand %}Choose the metered well with Edit facility above.{% else %}Choose the metered well with Edit local name above.{% endif %}{% else %}This site does not run Wells.{% endif %}">Not linked</span>
           {% endif %}
         </div>
       </div>
@@ -245,7 +245,7 @@
       <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">Sampling points</h2>
       {% if points %}
       <div class="text-secondary text-base">{{ points|length }} sampling point{{ points|length|pluralize }} on this facility.</div>
-      <div class="text-secondary text-base">Sample results counts the laboratory findings recorded at each point.</div>
+      <div class="text-secondary text-base">The Sample results column counts the lab results on file for each point.</div>
       {% endif %}
     </div>
     {% if points %}
@@ -280,7 +280,7 @@
       </table>
     </div>
     {% else %}
-    <p class="text-secondary text-sm" style="padding: var(--space-md) var(--space-lg);">No sampling points on this facility yet. Sampling points are added in the onboarding builder, never by an import.</p>
+    <p class="text-secondary text-sm" style="padding: var(--space-md) var(--space-lg);">No sampling points on this facility yet.{% if user_can_write %} Add them on <a href="{% url 'drinking:onboard_points' facility.system.pwsid %}">Sampling points for {{ facility.system.name }}</a>. A lab results import never adds one.{% endif %}</p>
     {% endif %}
   </div>
 

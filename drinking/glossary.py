@@ -53,11 +53,10 @@ import re
 #: No em dash in a value (INAC, 150.1-02).
 SHORTHAND = {
     "RAW": "Untreated water.",
-    "STBY": "Standby. A source held in reserve, not normally running.",
+    "STBY": "Standby.",
     "INAC": "Inactive. Not currently in service.",
     "INACTIVE": "Not currently in service.",
     "DESTROYED": "The facility has been decommissioned or destroyed.",
-    "BLENDED": "Water from more than one source, mixed together.",
     "EFFLUENT": "Effluent.",
     "GAC": "Granular activated carbon.",
     "IX": "Ion exchange.",

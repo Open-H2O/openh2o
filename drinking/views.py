@@ -348,6 +348,8 @@ def facilities(request):
             # `activity_status`. This sentence is about what the platform
             # HOLDS, not about what the current search matched.
             "total_facility_count": SystemFacility.objects.count(),
+            # 151.3-06 (Brent, 10:52): the page names both publishers once a facility was added by hand.
+            "any_added_by_hand": SystemFacility.objects.filter(added_by_hand=True).exists(),
             "mapped_facility_count": SystemFacility.objects.filter(
                 location__isnull=False
             ).count(),
@@ -485,6 +487,7 @@ def sampling_points(request):
             "point_type_choices": POINT_TYPE_CHOICES,
             "has_any": has_any_point,
             "points_pwsid": points_pwsid,
+            "has_system": WaterSystem.objects.exists(),
             "point_total_count": point_total_count,
             "mapped_point_count": mapped_point_count,
             "unmapped_point_count": point_total_count - mapped_point_count,

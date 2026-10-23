@@ -139,6 +139,14 @@ class SystemFacilityForm(forms.ModelForm):
             "water_type": forms.Select(attrs={"class": "form-select"}),
             "well": forms.Select(attrs={"class": "form-select"}),
         }
+        error_messages = {
+            "local_name": {
+                "max_length": (
+                    "A local name can have up to %(limit_value)d characters, "
+                    "and this one has %(show_value)d."
+                ),
+            },
+        }
         labels = {
             "facility_id": "Facility ID",
             "name": "The state's name",
@@ -163,9 +171,14 @@ class SystemFacilityForm(forms.ModelForm):
             if self.instance.pk:
                 clash = clash.exclude(pk=self.instance.pk)
             if clash.exists():
+                if self.instance.pk:  # on Edit, the facility to change is this one
+                    raise forms.ValidationError(
+                        f"{self._system.name} already has a facility {facility_id}. "
+                        "Enter a different facility ID."
+                    )
                 raise forms.ValidationError(
                     f"{self._system.name} already has a facility {facility_id}. "
-                    "Open that one to change it."
+                    f"Open facility {facility_id} on Facilities to change it."
                 )
         return facility_id
 
@@ -199,6 +212,14 @@ class FacilityLocalNameForm(forms.ModelForm):
             "well": forms.Select(attrs={"class": "form-select"}),
         }
         labels = {"local_name": "Local name", "well": "Metered well"}
+        error_messages = {
+            "local_name": {
+                "max_length": (
+                    "A local name can have up to %(limit_value)d characters, "
+                    "and this one has %(show_value)d."
+                ),
+            },
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
