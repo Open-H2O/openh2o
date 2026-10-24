@@ -133,7 +133,7 @@ def test_a_delete_after_an_earlier_insert_reads_removed(operator, administrator)
     )
     assert [r.action for r in rows] == ["removed", "added"]
     removed = rows[0]
-    assert removed.who == "a command: prune_links"
+    assert removed.who == "the prune_links command"
     assert ("Fraction", "0.40", "") in [(c.name, c.before, c.after) for c in removed.changes]
 
 
@@ -143,7 +143,7 @@ def test_a_command_change_names_the_command(operator):
         type(parcel).objects.filter(pk=parcel.pk).update(area_acres=Decimal("13.00"))
 
     row = changes_for(parcel)[0]
-    assert row.who == "a command: recalc_parcel_areas"
+    assert row.who == "the recalc_parcel_areas command"
     assert [(c.before, c.after) for c in row.changes] == [("12.50", "13.00")]
 
 

@@ -332,7 +332,7 @@ etc.) are gathered silently at submit time.
         var ref = (res && res.ref) ? ' (ref #' + res.ref + ')' : '';
         toast('Thanks for your feedback!' + ref, 'success');
       })
-      .catch(function () { toast('Sorry, that didn\'t send. Please try again.', 'error'); })
+      .catch(function () { toast('Your feedback did not send. Please try again.', 'error'); })
       .finally(function () { sendBtn.disabled = false; sendBtn.textContent = 'Send feedback'; });
   });
 })();

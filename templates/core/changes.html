@@ -11,7 +11,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Change History</span>
   </nav>
-  <p class="page-description">Every change to a figure or a link that moves one is listed. Each row shows who made the change and, for an edit, the value before and after.</p>
+  <p class="page-description">OpenH2O lists changes to figures and to the links that move them. Each row shows who made the change and, for an edit, the value before and after.</p>
 </div>
 {% endblock %}
 
@@ -34,7 +34,7 @@
       <label class="form-label" for="filter-person">Person</label>
       <select id="filter-person" name="person" class="form-select">
         <option value="">Everyone</option>
-        <option value="{{ command_filter }}" {% if person == command_filter %}selected{% endif %}>Commands</option>
+        <option value="{{ command_filter }}" {% if person == command_filter %}selected{% endif %}>Any command</option>
         {% for value, name in people %}
         <option value="{{ value }}" {% if person == value %}selected{% endif %}>{{ name }}</option>
         {% endfor %}

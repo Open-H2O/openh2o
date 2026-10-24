@@ -73,7 +73,7 @@
           <td class="th-right">
             {% if u == request.user %}
               {% comment %} 151-04: a host administrator's own row names the page, not "Another administrator can", since only another host administrator can. {% endcomment %}
-              <span class="value-empty">{% if request.user.is_staff %}You cannot change your own role, status or email address on this page.{% else %}You cannot change your own role, status or email address. Another administrator can.{% endif %}</span>
+              <span class="value-empty">{% if request.user.is_staff %}You cannot change your own role, status or email address on this page.{% else %}You cannot change your own role, status or email address. {% if request.user.is_administrator %}Another administrator can.{% else %}An administrator can.{% endif %}{% endif %}</span>
             {% elif u.is_staff and not request.user.is_staff %}
               <span class="value-empty">Only a host administrator can change this account.</span>
             {% elif not user_can_write %}

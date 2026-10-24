@@ -734,14 +734,17 @@ def check_pod_fractions():
             "has any ETAW. In such a month, the use areas together receive more "
             "or less water than the canal delivered."
         )
+    elif n_points == 0:
+        status = "green"
+        msg = "No point of diversion serves a use area yet."
     elif n_points == 1:
         status = "green"
-        msg = "At the 1 point of diversion, the use areas' shares add up to 100%."
+        msg = "At the one point of diversion that serves use areas, their shares add up to 100%."
     else:
         status = "green"
         msg = (
-            f"At each of the {n_points} points of diversion, the use areas' "
-            "shares add up to 100%."
+            f"At each of the {n_points} points of diversion that serve use "
+            "areas, their shares add up to 100%."
         )
 
     return {
@@ -1200,8 +1203,8 @@ def check_calculation():
             "status": "yellow",
             # Row 9: the cause is in the guide's Calculation row.
             "message": (
-                f"A calculation has waited to start since "
-                f"{_when(waiting.requested_at)}. Pass this card to the AI that "
+                f"The calculation requested on {_when(waiting.requested_at)} "
+                "has not started. Pass this card to the AI that "
                 "maintains the site; the fix is in OpenH2O's operator guide."
             ),
             "details": with_where(details_for(waiting), waiting),

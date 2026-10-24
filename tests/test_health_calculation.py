@@ -113,8 +113,8 @@ class TestStates:
         r = check_calculation()
         assert r["status"] == "yellow"
         assert r["message"] == (
-            f"A calculation has waited to start since {when}. Pass this card "
-            "to the AI that maintains the site; the fix is in OpenH2O's "
+            f"The calculation requested on {when} has not started. Pass this "
+            "card to the AI that maintains the site; the fix is in OpenH2O's "
             "operator guide."
         )
 

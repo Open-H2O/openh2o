@@ -528,7 +528,7 @@ def who_for(metadata, people):
         return f"former user #{user}"
     command = metadata.get("command")
     if command:
-        return f"a command: {command}"
+        return f"the {command} command"
     return "not recorded"
 
 

@@ -13,7 +13,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Demonstration data</span>
   </nav>
-  <p class="page-description">This page lists the source of each record on this demonstration site.</p>
+  <p class="page-description">This page lists the source of each record in OpenH2O&rsquo;s demonstration data.</p>
 </div>
 {% endblock %}
 
@@ -43,14 +43,16 @@
   <div class="card-raised">
     <h2 class="section-header">About the demonstration data</h2>
     <p class="about-purpose">
-      This site shows OpenH2O at work on a real groundwater basin, the Merced
+      OpenH2O&rsquo;s demonstration uses a real groundwater basin, the Merced
       Subbasin in the San Joaquin Valley. The basin&rsquo;s boundaries, rivers,
       canals and fields, its monitoring stations and the drinking-water results
-      are public records. The water accounting data is made up and does not represent any real water district.
+      are public records. The demonstration&rsquo;s water accounting data is made up and does not represent any real water district.
     </p>
+    {% if site_config.demonstration_mode %}
     <p class="about-purpose">
       This site is for demonstration purposes only.
     </p>
+    {% endif %}
   </div>
 
   <div class="card-raised">
