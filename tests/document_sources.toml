@@ -1190,7 +1190,7 @@ files = [
 labels = [
   { text = "Production", where = "templates/drinking/production.html" },
   { text = "Import", where = "templates/drinking/production.html" },
-  { text = "Add month", where = "templates/drinking/production.html" },
+  { text = "Enter water produced, purchased or sold", where = "templates/drinking/production.html" },
   { text = "Unit for rows with a blank unit", where = "templates/drinking/partials/_production_import_preview.html" },
   { text = "Report year", where = "templates/drinking/partials/_production_import_preview.html" },
 ]

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}Add production - Open Water Accounting Platform{% endblock %}
-{% block page_title %}Add production{% endblock %}
+{% block title %}Enter water produced, purchased or sold - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Enter water produced, purchased or sold{% endblock %}
 {% block page_head_class %}page-head--medium{% endblock %}
 
 {% block breadcrumbs %}
@@ -11,7 +11,7 @@
     <span class="breadcrumb-separator">/</span>
     <a href="{% url 'drinking:production' %}">Production</a>
     <span class="breadcrumb-separator">/</span>
-    <span class="breadcrumb-current">Add month</span>
+    <span class="breadcrumb-current">Enter water produced, purchased or sold</span>
   </nav>
   <p class="page-description">Enter a monthly or whole-year figure for one type of water, or use <a href="{% url 'drinking:production_import' %}">Import</a> to bring in a whole file.</p>
 </div>
@@ -80,7 +80,7 @@
       </div>
 
       <div class="form-footer">
-        <button type="submit" class="btn-primary">Save month</button>
+        <button type="submit" class="btn-primary">Save</button>
         <a href="{% url 'drinking:production' %}" class="btn-secondary">Cancel</a>
       </div>
     </form>

@@ -360,7 +360,7 @@ per acre-foot, 1,000,000 gallons per MG and 748.05 gallons per CCF.
 
 A row whose month and type of water are already on the site is skipped and counted,
 so importing the same file twice saves nothing the second time. To enter one month
-by hand, use Add month on the Production page.
+by hand, use Enter water produced, purchased or sold on the Production page.
 
 The import screen saves the figures to the site's water system. The command's
 `--pwsid` names the system when the site keeps more than one. For a file in the eAR

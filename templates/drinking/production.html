@@ -37,7 +37,7 @@
     </p>
     <div class="row-start mt-lg" style="gap: var(--space-sm);">
       <a href="{% url 'drinking:production_import' %}" class="btn-primary">Import a file</a>
-      <a href="{% url 'drinking:production_add' %}" class="btn-secondary">+ Add month</a>
+      <a href="{% url 'drinking:production_add' %}" class="btn-secondary">+ Enter water produced, purchased or sold</a>
     </div>
   </div>
   {% else %}
@@ -52,7 +52,7 @@
       </select>
     </div>
     <div class="row-start" style="gap: var(--space-sm); margin-left: auto;">
-      <a href="{% url 'drinking:production_add' %}" class="btn-secondary">+ Add month</a>
+      <a href="{% url 'drinking:production_add' %}" class="btn-secondary">+ Enter water produced, purchased or sold</a>
       <a href="{% url 'drinking:production_import' %}" class="btn-primary">Import</a>
     </div>
   </div>
