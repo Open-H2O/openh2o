@@ -210,7 +210,7 @@
           {% elif facility.well %}
             {{ facility.well.name }}
           {% else %}
-            <span class="value-empty" title="{% if 'wells' in enabled_modules %}{% if facility.added_by_hand %}Choose the metered well with Edit facility above.{% else %}Choose the metered well with Edit local name above.{% endif %}{% else %}This site does not run Wells.{% endif %}">Not linked</span>
+            <span class="value-empty" title="{% if 'wells' in enabled_modules %}{% if facility.added_by_hand %}Choose the metered well with Edit facility above.{% else %}The Edit local name button above also sets the metered well.{% endif %}{% else %}This site does not run Wells.{% endif %}">Not linked</span>
           {% endif %}
         </div>
       </div>
@@ -245,7 +245,6 @@
       <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">Sampling points</h2>
       {% if points %}
       <div class="text-secondary text-base">{{ points|length }} sampling point{{ points|length|pluralize }} on this facility.</div>
-      <div class="text-secondary text-base">The Sample results column counts the lab results on file for each point.</div>
       {% endif %}
     </div>
     {% if points %}

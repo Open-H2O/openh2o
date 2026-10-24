@@ -33,11 +33,9 @@ filter it no longer contradicts the table — it replaces the old "it is not
 filtered" clause, which was true before this plan and is not true after it.
 {% endcomment %}{% if mapped_facility_count %}
 <p class="page-description">
-  The map shows the {{ mapped_facility_count|intcomma }} of
-  {{ total_facility_count|intcomma }} facilit{{ total_facility_count|pluralize:"y,ies" }}
-  in this inventory that have a location recorded. The state&rsquo;s Groundwater
-  Ambient Monitoring and Assessment Program (GAMA) publishes coordinates for
-  groundwater sources only.
+  Only facilities with a location recorded are on the map. The state&rsquo;s
+  Groundwater Ambient Monitoring and Assessment Program (GAMA) publishes
+  coordinates for groundwater sources only.
 </p>
 {% if q or facility_type or activity_status %}
 <p class="page-description">

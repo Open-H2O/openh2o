@@ -33,7 +33,7 @@
     {% endif %}
   </nav>
   {% if facility and not facility.added_by_hand %}
-  <p class="page-description">OpenH2O added this facility from EPA's record with the water system, so its ID, name, type and status stay as EPA published them. {% if 'wells' in enabled_modules %}You set the local name and the metered well.{% else %}You set the local name.{% endif %}</p>
+  <p class="page-description">OpenH2O added this facility from EPA's record with the water system, so its ID, name, type and status stay as EPA published them.</p>
   {% elif facility %}
   <p class="page-description">OpenH2O did not take this facility from EPA's record, so you can change every field.</p>
   {% elif system %}
@@ -128,7 +128,7 @@
       <div class="form-group form-span-2">
         <label class="form-label" for="{{ form.well.id_for_label }}">{{ form.well.label }}</label>
         {{ form.well }}
-        <div class="form-help">Optional. Choose a well to link this facility to the well's record in Wells.</div>
+        <div class="form-help">Optional. OpenH2O links the facility to the chosen well's record in Wells.</div>
       </div>
       {% endif %}
 

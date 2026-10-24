@@ -319,7 +319,7 @@ class TestTheCoverageSentenceIsComputed:
     def test_it_counts_what_is_actually_located(self, client_in, mapped_system):
         """Add a location; the page must say a different number."""
         html = _get(client_in, "drinking:facilities")
-        assert "the 2 of 3" in html, (
+        assert "2 of them on the map" in html, (
             "the page does not state the facility coverage it actually has"
         )
 
@@ -327,7 +327,7 @@ class TestTheCoverageSentenceIsComputed:
         mapped_system["unlocated"].save(update_fields=["location"])
 
         html = _get(client_in, "drinking:facilities")
-        assert "the 3 of 3" in html, "the coverage sentence is a hardcoded literal"
+        assert "3 facilities, all on the map" in html, "the coverage sentence is a hardcoded literal"
 
     def test_it_says_why_the_rest_are_missing(self, client_in, mapped_system):
         """The gap is a fact about the public record, not a defect here.
@@ -444,7 +444,7 @@ class TestTheMapIsUnfilteredAndSaysSo:
     ):
         """The other direction, through the same path."""
         partial = _get_htmx(client_in, "drinking:facilities")
-        assert "the 2 of 3" in partial
+        assert "2 of them on the map" in partial
         assert "The map follows the list" not in partial
 
     def test_the_htmx_partial_never_carries_the_map_host(
