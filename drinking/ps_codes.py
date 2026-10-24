@@ -76,7 +76,7 @@ def compose_ps_code(pwsid, facility_id, point_number):
     segments = []
     for label, raw in (
         ("PWSID", pwsid),
-        ("facility id", facility_id),
+        ("facility ID", facility_id),
         ("point number", point_number),
     ):
         value = (raw or "").strip().upper()

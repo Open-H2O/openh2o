@@ -185,13 +185,33 @@ class TestErrorEnvelope:
         assert type(excinfo.value) is envirofacts.EnvirofactsError
         assert message in str(excinfo.value)
 
-    def test_non_list_non_dict_payload_names_the_received_type(self, monkeypatch):
+    def test_non_list_non_dict_payload_says_it_is_not_a_list_of_records(self, monkeypatch):
+        """151.3-07: the message no longer names Python's type for the payload."""
         _respond_with(monkeypatch, json.dumps("a bare string"))
 
         with pytest.raises(envirofacts.EnvirofactsError) as excinfo:
             envirofacts.fetch_water_system(PWSID)
 
-        assert "str" in str(excinfo.value)
+        assert str(excinfo.value) == f"EPA's answer for WATER_SYSTEM/{PWSID} is not a list of records."
+
+    def test_dict_payload_without_error_names_its_fields(self, monkeypatch):
+        _respond_with(monkeypatch, {"rows": [], "count": 0})
+
+        with pytest.raises(envirofacts.EnvirofactsError) as excinfo:
+            envirofacts.fetch_water_system(PWSID)
+
+        assert str(excinfo.value) == (
+            f"EPA's answer for WATER_SYSTEM/{PWSID} is not a list of records. "
+            "Its fields include count and rows."
+        )
+
+    def test_empty_dict_payload_names_no_fields(self, monkeypatch):
+        _respond_with(monkeypatch, {})
+
+        with pytest.raises(envirofacts.EnvirofactsError) as excinfo:
+            envirofacts.fetch_water_system(PWSID)
+
+        assert str(excinfo.value) == f"EPA's answer for WATER_SYSTEM/{PWSID} is not a list of records."
 
 
 # ── Transport failures ──────────────────────────────────────────────────────

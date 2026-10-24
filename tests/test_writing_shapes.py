@@ -86,12 +86,11 @@ shapes = _load()
 #: waits on a ruling. The "no for not" lines counted on 2026-10-20 were all
 #: reworded the same day on the owner's approval (the saved ledger words with
 #: parcels migration 0014). Lower an entry when its file loses a shape; never
-#: raise one. The five below are on a screen and were outside the guard's reach
+#: raise one. The ones below are on a screen and were outside the guard's reach
 #: until 2026-10-20 (ISS-261); the language review fixes each in the segment
 #: that holds its page.
 BASELINE: dict = {
     "drinking/provenance.py": {"California": 1},
-    "templates/drinking/partials/_onboard_review.html": {"no for not": 1},
 }
 
 _REPORTS = (
@@ -138,11 +137,9 @@ _MODULE_RECORD = (
 #: fails, and an entry whose line is gone or no longer carries its shape fails
 #: too, the way an unused CALIFORNIA_NAMES entry does.
 EXCEPTIONS: tuple = (
-    # The four lines that name a real thing, not the reader (150.1-03 plan).
+    # A line that names a real thing, not the reader (150.1-03 plan).
     ("templates/about.html", "A groundwater agency, an irrigation district or a grower",
      ("district reader",), "a list of the kinds of organization that use OpenH2O."),
-    ("templates/drinking/partials/_onboard_result.html", "EPA no longer has that system",
-     ("stand-in",), "the water system the person looked up."),
     # Stored data.
     ("accounting/ledger_words.py", "Incidental recharge \u2014 deep percolation",
      ("em dash",), "LEGACY_INCIDENTAL_RECHARGE_WORDS matches the description older "

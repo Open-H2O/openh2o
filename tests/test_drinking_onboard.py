@@ -265,7 +265,7 @@ class TestLookupFailureModes:
             reverse("drinking:onboard_lookup"), {"pwsid": PWSID}
         ).content.decode()
 
-        assert "EPA did not answer in time" in body
+        assert "No usable answer from EPA" in body
         assert "may still be correct" in body
         assert "No system with that PWSID" not in body
         assert WaterSystem.objects.count() == 0
@@ -391,7 +391,7 @@ class TestCommit:
         monkeypatch.setattr(envirofacts, "fetch_water_system", boom)
         response = client_in.post(reverse("drinking:onboard_commit"))
 
-        assert "EPA did not answer in time" in response.content.decode()
+        assert "No usable answer from EPA" in response.content.decode()
         assert WaterSystem.objects.count() == 0
 
 

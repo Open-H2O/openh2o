@@ -51,7 +51,7 @@
       </select>
       {% if california_codes %}
       {% with first=facilities.0 %}
-      <div class="form-help" id="point-facility-prefix">Codes here begin <span class="text-mono">{{ system.pwsid }}_{{ first.facility_id }}_</span></div>
+      <div class="form-help" id="point-facility-prefix">PS Codes for this facility begin <span class="text-mono">{{ system.pwsid }}_{{ first.facility_id }}_</span></div>
       {% endwith %}
       {% endif %}
     </div>
@@ -67,7 +67,7 @@
       <input type="text" id="point-number" name="point_number" required
              class="form-input" autocomplete="off" spellcheck="false"
              placeholder="e.g. LCR or 010">
-      <div class="form-help">Enter the last segment of the PS Code. Letters are allowed: <span class="text-mono">LCR</span> and <span class="text-mono">900</span> are both published codes.</div>
+      <div class="form-help">Enter the last part of the PS Code, such as <span class="text-mono">900</span> or <span class="text-mono">LCR</span>.</div>
     </div>
 
     {% else %}
@@ -116,7 +116,7 @@ document.getElementById("point-facility").addEventListener("change", function ()
   var opt = this.options[this.selectedIndex];
   var prefix = opt ? opt.getAttribute("data-prefix") : "";
   document.getElementById("point-facility-prefix").innerHTML =
-    "Codes here begin <span class=\"text-mono\">" + prefix + "</span>";
+    "PS Codes for this facility begin <span class=\"text-mono\">" + prefix + "</span>";
 });
 </script>
 {% endif %}

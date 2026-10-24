@@ -121,7 +121,7 @@
     <summary class="text-sm text-tertiary">Columns recognized in your file ({{ recognised|length }})</summary>
     <table class="data-table mt-sm">
       <thead>
-        <tr><th>Field</th><th>Your column</th></tr>
+        <tr><th>OpenH2O&rsquo;s name</th><th>Your column</th></tr>
       </thead>
       <tbody>
         {% for label, column in recognised %}
@@ -184,7 +184,7 @@
   </table>
   {% endif %}
 
-  <h3 class="text-base mt-lg">All rows{% if shown_count < row_count %} (first {{ shown_count }}){% endif %}</h3>
+  <h3 class="text-base mt-lg">{% if shown_count < row_count %}The first {{ shown_count }} of {{ row_count }} rows{% else %}All rows{% endif %}</h3>
   <table class="data-table mt-sm">
     <thead>
       <tr>
@@ -227,7 +227,7 @@
     <input type="hidden" name="source_file" value="{{ source_file }}">
     <div class="row-start" style="gap: var(--space-sm);">
       <button type="submit" class="btn-primary" {% if not committable and not limits_fill_count %}disabled{% endif %}>
-        {% if committable or not limits_fill_count %}Import {{ committable }} result{{ committable|pluralize }}{% else %}Add limits to {{ limits_fill_count }} result{{ limits_fill_count|pluralize }}{% endif %}
+        {% if committable or not limits_fill_count %}Import {{ committable }} result{{ committable|pluralize }}{% else %}Add the MCL and DLR to {{ limits_fill_count }} result{{ limits_fill_count|pluralize }}{% endif %}
       </button>
       <a href="{% url 'drinking:import' %}" class="btn-secondary">Choose a different file</a>
       <span id="commit-spinner" class="htmx-indicator text-tertiary text-sm">Saving&hellip;</span>

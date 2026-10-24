@@ -488,7 +488,7 @@ def test_production_year_table_shows_twelve_months_and_the_total(auth_client, le
     # Le Grand's five other sources were zero every month: named once in the
     # head line, not drawn as columns of zeros.
     assert "from groundwater." in body
-    assert "Reported as zero every month: surface water, purchased, sold" in body
+    assert "Zero or not reported in every month: surface water, purchased, sold" in body
 
 
 def test_a_surface_water_system_gets_its_surface_water_column(auth_client, le_grand):

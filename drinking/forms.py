@@ -280,7 +280,7 @@ class SamplingScheduleForm(forms.ModelForm):
         cleaned = super().clean()
         if not cleaned.get("group_label") and not cleaned.get("analyte"):
             raise forms.ValidationError(
-                "Say what is sampled: type it, or choose one analyte."
+                "Enter what is sampled, or choose one analyte."
             )
         return cleaned
 

@@ -849,7 +849,7 @@ def validate_rows(rows, mapping):
         # limit this importer cannot read is simply not stored.
         for field, label, without in (
             ("mcl_as_reported", "MCL", "an MCL"),
-            ("dlr_as_reported", "DLR", "a detection limit for purposes of reporting"),
+            ("dlr_as_reported", "DLR", "a DLR"),
         ):
             raw_limit = src(field)
             value = _decimal_or_none(raw_limit)

@@ -20,7 +20,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">{% if row %}Edit{% else %}Add row{% endif %}</span>
   </nav>
-  <p class="page-description">Each row is something sampled on a cycle. Name it in your own words or choose an analyte. Type the dates from your checklist.</p>
+  <p class="page-description">Each row is one item on your sampling checklist. Name what is sampled or choose an analyte, then set its frequency and dates.</p>
 </div>
 {% endblock %}
 
@@ -37,8 +37,7 @@
   <div class="card-raised">
     <h2 class="card-header-ruled">No water system yet</h2>
     <p class="text-base text-secondary mt-md">
-      A schedule belongs to a water system, and none is onboarded on this
-      deployment yet. <a href="{% url 'drinking:onboard' %}">Onboard a system</a>
+      A schedule belongs to a water system. <a href="{% url 'drinking:onboard' %}">Add a water system</a>
       first.
     </p>
   </div>
@@ -86,7 +85,7 @@
       <div class="form-group">
         <label class="form-label" for="{{ form.next_due.id_for_label }}">{{ form.next_due.label }}</label>
         {{ form.next_due }}
-        <div class="form-help">Enter the date from your checklist. The platform does not work it out from the frequency.</div>
+        <div class="form-help">Enter the date from your checklist. OpenH2O does not calculate the next date from the frequency.</div>
         {% for error in form.next_due.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
       </div>
 

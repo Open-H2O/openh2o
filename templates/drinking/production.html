@@ -73,7 +73,7 @@
   {% endcomment %}
   <div class="card-raised table-scroll" style="padding: 0;">
     <div class="ledger-card-head">
-      <div class="text-secondary text-base">{{ year }}: {{ grand_total_gallons_whole|intcomma }} gallons produced or purchased{% if shown_labels %}, from {{ shown_labels|join:", " }}{% endif %}.{% if sold_total_gallons_whole %} {{ sold_total_gallons_whole|intcomma }} gallons sold.{% endif %}{% if zero_labels %} Reported as zero every month: {{ zero_labels|join:", " }}.{% endif %}</div>
+      <div class="text-secondary text-base">{{ year }}: {{ grand_total_gallons_whole|intcomma }} gallons produced or purchased{% if shown_labels %}, from {{ shown_labels|join:", " }}{% endif %}.{% if sold_total_gallons_whole %} {{ sold_total_gallons_whole|intcomma }} gallons sold.{% endif %}{% if zero_labels %} Zero or not reported in every month: {{ zero_labels|join:", " }}.{% endif %}</div>
     </div>
     <table class="data-table">
       <thead>

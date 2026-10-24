@@ -177,14 +177,14 @@ def _payload(table, pwsid):
         ) from exc
     except requests.RequestException as exc:
         raise EnvirofactsUnavailable(
-            f"EPA's Envirofacts service did not respond usefully: {exc}"
+            f"OpenH2O's request to EPA's Envirofacts service failed: {exc}"
         ) from exc
 
     try:
         payload = resp.json()
     except ValueError as exc:
         raise EnvirofactsError(
-            f"Envirofacts returned a body that is not JSON for {table}/{pwsid}."
+            f"EPA's answer for {table}/{pwsid} is not JSON."
         ) from exc
 
     # The error envelope is a different TYPE than the success envelope: success
@@ -194,14 +194,16 @@ def _payload(table, pwsid):
             # Verbatim: the server's own message is the most actionable thing
             # we have, and paraphrasing it hides which table actually failed.
             raise EnvirofactsError(str(payload["error"]))
+        # An empty object names no fields, so the second sentence is left off.
+        names = sorted(payload)[:5]
+        fields = ", ".join(names[:-1]) + " and " + names[-1] if len(names) > 1 else "".join(names)
         raise EnvirofactsError(
-            f"Envirofacts returned an unexpected object for {table}/{pwsid}: "
-            f"{sorted(payload)[:5]}"
+            f"EPA's answer for {table}/{pwsid} is not a list of records."
+            + (f" Its fields include {fields}." if fields else "")
         )
     if not isinstance(payload, list):
         raise EnvirofactsError(
-            f"Envirofacts returned an unexpected payload type "
-            f"{type(payload).__name__} for {table}/{pwsid}."
+            f"EPA's answer for {table}/{pwsid} is not a list of records."
         )
     return payload
 

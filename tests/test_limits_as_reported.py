@@ -222,8 +222,8 @@ class TestTheImporterReadsTheLimitsAsReported:
         assert preview.context["committable"] == 0
         assert preview.context["limits_fill_count"] == LE_GRAND_ROWS
         body = preview.content.decode()
-        assert f"Add limits to {LE_GRAND_ROWS} results" in body
-        assert "disabled" not in body.split("Add limits to")[0].rsplit("<button", 1)[1]
+        assert f"Add the MCL and DLR to {LE_GRAND_ROWS} results" in body
+        assert "disabled" not in body.split("Add the MCL and DLR to")[0].rsplit("<button", 1)[1]
         commit = client_in.post(reverse("drinking:import_commit"), {
             "rows_json": preview.context["rows_json"],
             "source_file": preview.context["source_file"],

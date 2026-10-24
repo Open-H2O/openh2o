@@ -22,7 +22,7 @@
 <div class="card-raised">
   <h2 class="card-header-ruled">
     {% if error_kind == "not_found" %}No system with that PWSID
-    {% elif error_kind == "unavailable" %}EPA did not answer in time
+    {% elif error_kind == "unavailable" %}No usable answer from EPA
     {% elif error_kind == "service_error" %}EPA answered with an error
     {% else %}Nothing to look up{% endif %}
   </h2>
@@ -35,7 +35,7 @@
   </p>
   {% elif error_kind == "unavailable" %}
   <p class="text-base text-secondary mt-md">
-    EPA's Envirofacts service did not answer. Your PWSID may still be correct;
+    OpenH2O could not get the record for <span class="text-mono">{{ pwsid }}</span> from EPA's Envirofacts service. Your PWSID may still be correct;
     try again in a few minutes.
   </p>
   {% elif error_kind == "service_error" %}
@@ -85,7 +85,7 @@
 <div class="card-raised">
   <div class="onboard-status onboard-status--preview">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-    <span>Preview, read from EPA</span>
+    <span>Preview</span>
   </div>
   <h2 class="card-header-ruled">Not saved yet</h2>
 
@@ -117,7 +117,7 @@
       <tbody>
         <tr>
           <td class="col-name">Water system</td>
-          <td>{% if already_onboarded %}Updated from EPA's current record. OpenH2O already has this system and its {{ existing_facility_count }} facilit{{ existing_facility_count|pluralize:"y,ies" }}.{% else %}Created, with its name, status, types, primary source and mailing address{% endif %}</td>
+          <td>{% if already_onboarded %}Updated from EPA's current record. OpenH2O already has this system and its {{ existing_facility_count }} facilit{{ existing_facility_count|pluralize:"y,ies" }}.{% else %}Created with the name, status, system type, owner type, primary source and mailing address in EPA's record{% endif %}</td>
           <td>State classification and regulating agency. OpenH2O fills a blank regulating agency from the Regulating Agency column of an imported lab file.</td>
         </tr>
         <tr>
@@ -174,7 +174,7 @@
     Identity. Every value is the regulator's own published vocabulary, shown as
     published, matching the overview page.
   {% endcomment %}
-  <h3 class="section-header mt-lg">{{ name|default:"(EPA sent no system name)" }}</h3>
+  <h3 class="section-header mt-lg">{{ name|default:"(EPA lists this system without a name)" }}</h3>
   <div class="form-grid-2col">
     <div class="field-group">
       <div class="field-label">PWSID</div>

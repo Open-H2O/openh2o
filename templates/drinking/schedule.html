@@ -21,7 +21,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Schedule</span>
   </nav>
-  <p class="page-description">This checklist shows what you sample, how often, when you last sampled it and when it is next due. You type both dates yourself; the platform does not calculate them.</p>
+  <p class="page-description">This checklist shows what you sample, how often, when you last sampled it and when it is next due. OpenH2O shows the Last done and Next due dates as entered and does not calculate them.</p>
 </div>
 {% endblock %}
 
@@ -32,20 +32,18 @@
   <div class="card-raised">
     <h2 class="card-header-ruled">No water system yet</h2>
     <p class="text-base text-secondary mt-md">
-      {% if user_can_write %}A schedule belongs to a water system, and none is onboarded on this
-      deployment yet. <a href="{% url 'drinking:onboard' %}">Onboard a system</a>
-      first.{% else %}A schedule belongs to a water system, and none is onboarded on this
-      deployment yet.{% endif %}
+      {% if user_can_write %}A schedule belongs to a water system. <a href="{% url 'drinking:onboard' %}">Add a water system</a>
+      first.{% else %}A schedule belongs to a water system.{% endif %}
     </p>
   </div>
   {% elif not rows %}
   <div class="card-raised">
     <h2 class="card-header-ruled">Nothing on the schedule yet</h2>
-    <p class="text-base text-secondary mt-md">
-      Add one row per item on your sampling checklist, with its frequency
-      and the dates you work to.
-    </p>
     {% if user_can_write %}
+    <p class="text-base text-secondary mt-md">
+      Add a row for each item on your sampling checklist and enter its
+      frequency and dates.
+    </p>
     <div class="row-start mt-lg">
       <a href="{% url 'drinking:schedule_add' %}" class="btn-primary">+ Add row</a>
     </div>

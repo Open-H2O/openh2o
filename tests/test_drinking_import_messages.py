@@ -232,7 +232,7 @@ class TestPreviewNotes:
             "OpenH2O cannot read the MCL 'ten' and will import this result "
             "without an MCL.",
             "OpenH2O cannot read the DLR 'n/a' and will import this result "
-            "without a detection limit for purposes of reporting.",
+            "without a DLR.",
             "OpenH2O cannot read the Analysis Date '2024-99-99' and will import "
             "this result without an analysis date.",
         ]
