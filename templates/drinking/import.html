@@ -37,19 +37,19 @@
   </div>
   {% else %}
   <div class="card-raised">
-    {% comment %} Was "Import lab results", the page title word for word (Phase 143-02,
+    {% comment %} The card heading is not the page title word for word (DESIGN.md
          copy rule 13). The card is the file step; the header says so. {% endcomment %}
     <h2 class="card-header-ruled">Choose the file</h2>
     {% comment %}
-      "or a CLIP lab submission" cut in 101-02: CLIP is defined
-      nowhere in this repository, and the clause named a second source of the
-      same column layout. 149.1-06: the card's first line says what file the
-      page takes, what the preview shows and what the commit writes; the
-      columns are the table below, read from drinking/importer.py.
-      150.1-02: the description, this line, the file label and its help.
-      The picker accepts .tab and .txt as parse_upload does: it accepted only
-      .csv, so the Division of Drinking Water's SDWIS4 .tab file could not be
-      chosen. SDWIS4 is 2.19 GB for every California system (ISSUES.md), so
+      The description does not say "or a CLIP lab submission": CLIP is defined
+      nowhere in this repository, and the clause would name a second source of the
+      same column layout. The card's one line says nothing is saved until
+      Import on the preview; the page description and the file label say what
+      file the page takes, and the columns are the table below, read from
+      drinking/importer.py.
+      The picker accepts .csv, .tab and .txt as parse_upload does, so the
+      Division of Drinking Water's SDWIS4 .tab file can be chosen. That file
+      holds every water system in California, so
       the help says to upload only the rows for systems on file.
     {% endcomment %}
     <p class="text-base text-secondary mt-md">OpenH2O saves nothing until you press Import on the preview.</p>
@@ -87,8 +87,8 @@
   </div>
 
   {% comment %}
-    150.1-02: this table, and the column table's heading, intro and
-    cells. Row 2 states the rule; the error row deleted (the preview's error table says it).
+    This table's wording, and the column table's heading, intro and
+    cells, are settled sentences. Row 2 states the rule; there is no error row (the preview's error table says it).
   {% endcomment %}
   <div class="card-raised">
     <h2 class="card-header-ruled">What OpenH2O saves from a lab file</h2>
@@ -126,7 +126,7 @@
   <div id="import-area"></div>
 
   {% comment %}
-    149.1-06: the columns the file carries, one row per field in
+    The columns the file carries, one row per field in
     drinking/importer.py's ALIASES, the four REQUIRED_FIELDS first, each named
     by the state file's own header. sampling_point_name is left out: it is
     matched and never read. Never a sentence of names.

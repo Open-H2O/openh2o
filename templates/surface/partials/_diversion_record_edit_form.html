@@ -1,5 +1,5 @@
 {% comment %}
-  146-02 Task 3 (ISS-181): editing one diversion record. Rendered in place of
+  Editing one diversion record. Rendered in place of
   "Add diversion record" (see _diversion_records.html) while a row's Edit
   action is active -- the two forms share field ids, so this codebase shows
   exactly one of them at a time rather than giving this one a second auto_id
@@ -10,11 +10,11 @@
   a different water year. Cancel is a plain link back to the POD page: one
   row's edit is not worth a second HTMX route just to back out of it.
 
-  150-02 (ISS-226): an estimate's form says in one line what saving it does
+  An estimate's form says in one line what saving it does
   (surface/views.py::diversion_record_edit turns a changed volume into a
   typed record, so the next run leaves it).
 
-  150-04 (F7, ISS-201, rule B): the same two-track grid and field pairs as
+  The same two-track grid and field pairs as
   _diversion_form.html, at the records card's full width.
 {% endcomment %}
 <form hx-post="{% url 'surface:diversion_record_edit' pod.pk edit_record.pk %}"

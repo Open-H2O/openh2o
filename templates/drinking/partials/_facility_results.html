@@ -1,5 +1,5 @@
 {% load humanize %}{% load placeholders %}{% comment %}
-The count line is NOT here (143-07). It is the map card's head, above the map
+The count line is NOT here. It is the map card's head, above the map
 and outside #results, and on an htmx swap this partial re-renders that head
 out of band (hx-swap-oob on the same id) so the count follows the list without
 the map being torn down. On a full page render the page includes the head once
@@ -27,10 +27,10 @@ coordinates at all.
 
 `mapped_facility_count` / `total_facility_count` are deliberately UNFILTERED —
 this first sentence is about what the platform HOLDS. The second sentence
-(143-07, Ruling A) is the located-subset sentence: the map now FOLLOWS the
+is the located-subset sentence: the map FOLLOWS the
 list (OH2O.followResults, wired in _drinking_overview_map.html), so under a
-filter it no longer contradicts the table — it replaces the old "it is not
-filtered" clause, which was true before this plan and is not true after it.
+filter it does not contradict the table, and no clause says the map is
+unfiltered.
 {% endcomment %}{% if mapped_facility_count %}
 <p class="page-description">
   Only facilities with a location recorded are on the map. The state&rsquo;s
@@ -50,7 +50,7 @@ filtered" clause, which was true before this plan and is not true after it.
   {% endif %}
 </p>
 {% endif %}
-{% elif total_facility_count %}{# 151.3-06: a site with no facilities shows the empty page below, not this #}
+{% elif total_facility_count %}{# A site with no facilities shows the empty page below, not this #}
 <p class="page-description">
   No facility on this site has a location recorded, so this page cannot show
   a map yet. The state&rsquo;s Groundwater Ambient Monitoring and Assessment
@@ -92,7 +92,7 @@ filtered" clause, which was true before this plan and is not true after it.
       <tr>
         <td class="text-mono"><a href="{% url 'drinking:facility_detail' facility.pk %}" class="data-table-link">{{ facility.facility_id }}</a></td>
         {% comment %}
-          146-04 Task 3 (D9): the operator's own name leads when there is one,
+          The operator's own name leads when there is one,
           with the state's name under it, because the state's is the one a lab
           file and a state report carry and it must stay findable.
         {% endcomment %}
@@ -131,7 +131,7 @@ filtered" clause, which was true before this plan and is not true after it.
           The quality-to-quantity join made visible: ONE physical well, sampled
           on this side and metered on the wells side. Guarded on enabled_modules
           so dropping `wells` degrades to plain text rather than NoReverseMatch
-          (the 77-02 template-guard rule). R-063: only a Well facility carries
+          (the template-guard rule). Only a Well facility carries
           this field at all, so every other facility type's cell says the
           field does not apply; a well with no link reads "Not linked", never
           "Not recorded" -- the field applies to this facility and is simply
@@ -190,11 +190,11 @@ filtered" clause, which was true before this plan and is not true after it.
 
 {% else %}
 {% comment %}
-  123-02: `onboard_link`, where before this include passed neither flag and fell
-  through to the Django-admin dead end — a screen that is not the answer and
-  that most operators cannot reach. The superseded reason was that onboarding is
-  offered on the overview, "which is where an operator with no system at all
-  lands"; an operator who followed the Facilities link and found nothing has
+  `onboard_link` is passed here; without a flag this include would fall
+  through to the line that says no screen adds the record, which is not
+  true of facilities. Sending the reader back to the overview, where onboarding
+  is also offered, is no answer either: an operator with no system at all
+  lands there, but one who followed the Facilities link and found nothing has
   already left that page, and telling them to go back is not a door.
 
   Onboarding IS the right door here: it writes the system AND its facilities

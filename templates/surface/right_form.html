@@ -31,11 +31,11 @@
     </div>
     {% endif %}
 
-    {% comment %} 150-04 (S4, rule B): one two-track grid in
-         place of the old paired rows. The holder, the two seasons and the
-         notes span both tracks. 2026-10-12: the CalWATRS PIN that sat beside the
-         maximum rate is gone (the PIN was a one-time item for the first
-         year of reporting and is no longer relevant). {% endcomment %}
+    {% comment %} One two-track grid, fields
+         paired across the two tracks. The holder, the two seasons and the
+         notes span both tracks. There is no CalWATRS PIN field beside the
+         maximum rate: the PIN was a one-time item for the first
+         year of reporting. {% endcomment %}
     <form method="post" class="form-grid">
       {% csrf_token %}
 
@@ -116,8 +116,8 @@
 
 
       {% comment %}
-        146-02 Task 1: four month selects, four day fields, per season, laid
-        out "from <month> <day> to <month> <day>" (the plan's own layout).
+        Four month selects, four day fields, per season, laid
+        out "from <month> <day> to <month> <day>".
         `.form-help` under each group cites the state's own column names, per
         copy rule 11 -- this describes the software's fields, never what a
         diversion or a storage season means.

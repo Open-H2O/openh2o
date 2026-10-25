@@ -1,7 +1,7 @@
 {% load humanize accounting_extras %}{% comment %}
-The Active water accounts table (Phase 142, R-007/R-008; ISS-159 #1), shared
+The Active water accounts table, shared
 by the dashboard's own card (_dashboard_content.html) and the accounts list
-(143-13: the accounts list becomes the dashboard's Active water accounts
+(the accounts list is the dashboard's Active water accounts
 table with a search). Extracted here
 so the two pages render the SAME markup over the SAME context keys
 (account_summaries, has_allocations, engine_has_never_run, grand_*) rather
@@ -31,7 +31,7 @@ budget); a unit stated once in the caller's own subtitle, never on a column.
       <th rowspan="2" class="th-right"><span class="th-stack">Crop ET</span></th>
       <th rowspan="2" class="th-right">Balance{% include "partials/_explainer_popout.html" with title="Balance" text="This account's total supplies minus its crop ET for the period. A positive balance means the supplies on record were more than crop ET." link=wb_help_url link_label="How water balances work" %}</th>
       {% if has_allocations %}
-      {% comment %}148-02 Task 4 (Q2): the label stays "Groundwater budget", same as the Zones table's identical group
+      {% comment %}The label is "Groundwater budget", same as the Zones table's identical group
            header in _dashboard_content.html -- one label, both tables (rule
            12).{% endcomment %}
       <th colspan="2" class="th-group-label col-sep">Groundwater budget</th>
@@ -60,8 +60,8 @@ budget); a unit stated once in the caller's own subtitle, never on a column.
         {% endif %}
       </td>
       {% comment %}
-        ISS-099: three of these columns are demand-derived, and all three are
-        dashed together when this row has no calculation runs. Consumptive use
+        Three of these columns are demand-derived, and all three are
+        dashed together when this row has no calculation runs. Crop ET
         is the missing measurement itself; Balance is supplies minus it, so with
         no measurement it silently equals the full supply and reads as surplus;
         Remaining is allocation minus it, so it reads as a completely unused
@@ -101,7 +101,7 @@ budget); a unit stated once in the caller's own subtitle, never on a column.
     The footer sums the rows actually rendered above (the current filter, if
     any), so a footer under a search reads as that search's total, never the
     whole district's. Dashed for the two demand-derived cells when the engine
-    has never run, for the same reason the rows above are (ISS-099). Blank in
+    has never run, for the same reason the rows above are. Blank in
     the budget cells: an allocation is not a total of anything on this table.
   {% endcomment %}
   <tfoot>
@@ -127,6 +127,6 @@ budget); a unit stated once in the caller's own subtitle, never on a column.
 <p class="text-tertiary text-sm mb-sm">No active accounts yet.</p>
 <a href="{% url 'accounting:account_create' %}" class="link-accent text-sm">+ New account</a>
 {% endif %}
-{% comment %}150.1-02, Dashboard: the heading "Water balance", the row "Total", the empty-site line, the over-budget count, the Remaining pop-out and the fields-table pop-out are approved sentences. A balance that prints 0.00 is "Balanced" (ISS-237). Notes sit at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
-{% comment %}"Effective precipitation" for the figure that read "Rain" (CalculationRun.effective_precip_af) (150.1-02). Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
-{% comment %}The Balance pop-out (150.1-02, Water year page).{% endcomment %}
+{% comment %}Dashboard: the heading "Water balance", the row "Total", the empty-site line, the over-budget count, the Remaining pop-out and the fields-table pop-out are approved sentences. A balance that prints 0.00 is "Balanced". Notes sit at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
+{% comment %}"Effective precipitation" (CalculationRun.effective_precip_af). Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
+{% comment %}The Balance pop-out on the Water year page.{% endcomment %}

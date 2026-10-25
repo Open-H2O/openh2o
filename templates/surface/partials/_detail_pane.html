@@ -32,14 +32,14 @@
 {% endif %}
 
 {% comment %}
-  143-10 (R-115, R-055, R-112). Composed as a page at 1,730 CSS px, reusing
-  the account page's grid UNCHANGED (143-03's .page-grid-account*): Diversion
+  Composed as a page at 1,730 CSS px, reusing
+  the account page's grid UNCHANGED (.page-grid-account*): Diversion
   point information beside Water diverted at one height (the
-  zone-lead layout of 143-06, copied here), the records table full width below,
-  then the linked-parcels row and the compliance strip. The previous
-  .page-grid-2col put POD info, water journey, records and compliance in one
-  tall left column beside a right column that ended a third of the way down
-  (R-112) -- no worked shape here to copy from; the account grid is.
+  zone-lead layout, copied here), the records table full width below,
+  then the full-width cards for the device, canal losses and the rest. A plain
+  .page-grid-2col would put POD info, the re-diversion chain and records in one
+  tall left column beside a right column that ends a third of the way down;
+  the account grid is the worked shape to copy.
 {% endcomment %}
 {% if user_can_write %}
 <div class="row-start" style="gap: var(--space-sm); margin-bottom: var(--space-md);">
@@ -97,14 +97,14 @@
       </div>
 
       {% comment %}
-        Water Journey (Phase 67-03) joins THIS card under its own header
-        rather than a separate one (143-10): only shown for a POD that is
+        Water Journey joins THIS card under its own header
+        rather than a separate one: only shown for a POD that is
         part of a re-diversion chain, so an ordinary diversion point's card
         ends at its fields.
       {% endcomment %}
       {% if rediverted_from or rediversions %}
       <h2 class="section-header mt-lg mb-md">Re-diversion</h2>
-      {# 150.1-02: heading "Re-diversion"; "Each row below is one hop." deleted. #}
+      {# The heading is "Re-diversion", with no per-row sentence. #}
 
       {% if rediverted_from %}
       <div class="field-group">
@@ -179,7 +179,7 @@
             <div class="budget-seg budget-seg--result">
               <div class="budget-seg-label">Retained</div>
               <div class="budget-seg-value {% if current_totals.retained >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ current_totals.retained|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
-              {% comment %}146-02 Task 3 (ISS-181): omit the clause with no current period, or this read "Diverted less returned, ." literally.{% endcomment %}
+              {% comment %}Omit the clause with no current period, or this would read "Diverted less returned, ." literally.{% endcomment %}
               <div class="budget-seg-notes"><p class="text-tertiary">Diverted less returned{% if current_period %}, {{ current_period.name }}{% endif %}.</p></div>
             </div>
           </div>
@@ -215,15 +215,15 @@
     </div>
 
     {% comment %}
-      Measuring device, full width (146-03 Task 1, S3). Its own partial, same
+      Measuring device, full width. Its own partial, same
       reason _pod_water_right_panel.html is: device_mark_removed re-renders
       just this card via HTMX.
     {% endcomment %}
     {% include "surface/partials/_device_panel.html" %}
 
     {% comment %}
-      Canal losses, full width (146-03 Task 3; convention 4 and convention 11
-      of the design-implications document, 2026-09-18). Read-only here --
+      Canal losses, full width.
+      Read-only here --
       the fractions and bands are edited on the POD's own edit page
       (surface:pod_edit), not inline, the same shape the identity card above
       uses.
@@ -262,7 +262,7 @@
     </div>
 
     {% comment %}
-      Where the water went, month by month (149-02 Task 2b).
+      Where the water went, month by month.
       Read-only: every figure comes from stored rows through
       surface.services.canal_water_by_month (CanalMonthLoss, the split's own
       ledger rows, UnallocatedDelivery); nothing is recomputed here. One table
@@ -276,10 +276,10 @@
       the other fields", and since 2026-10-13 the Water year page's approved
       unallocated label), the totals label and the "Not yet calculated" / "Does not add
       up" flags. A month whose parts do not sum to the headgate figure is
-      flagged, never hidden; 149.1-05 adds one line under the table, shown only
-      when a month is flagged, saying what the flag marks.
+      flagged, never hidden; one line under the table, shown only
+      when a month is flagged, says what the flag marks.
     {% endcomment %}
-    {% comment %} 150-04 V9: the card is rendered only for a point with a direct-use record (canal_water is empty otherwise); a recharge-only point gets none. 150.1-02: nor does a point with no linked use area, whose months the calculation never splits (accounting/engine_run.py _points_of_diversion). {% endcomment %}
+    {% comment %} The card is rendered only for a point with a direct-use record (canal_water is empty otherwise); a recharge-only point gets none. Nor does a point with no linked use area, whose months the calculation never splits (accounting/engine_run.py _points_of_diversion). {% endcomment %}
     {% if canal_water and pod_parcels %}
     <div class="card-raised page-grid-account-full" id="where-the-water-went">
       <h2 class="section-header mb-md">Where the water went</h2>
@@ -371,7 +371,7 @@
 
     {% comment %}Linked use areas + Recharge areas filled, side by side; the use
        areas alone take the full width rather than half a row with nothing beside it.
-       150-04 (W5, rule A1): side by side, each card ends at its content, so an
+       Side by side, each card ends at its content, so an
        empty "Linked use areas" card is not stretched to the table beside it.{% endcomment %}
     <div class="{% if basin_links and 'recharge' in enabled_modules %}page-grid-2col page-grid-2col--align-start {% endif %}page-grid-account-full">
 
@@ -413,7 +413,7 @@
         {% endif %}
       </div>
 
-      <!-- Recharge Areas Filled card (Phase 62) -->
+      <!-- Recharge Areas Filled card -->
       {% comment %}
         The module check is not redundant with the emptiness check: it keeps this
         partial self-defending. `basin_links` is a reverse accessor from
@@ -450,8 +450,8 @@
     </div>
 
     {% comment %}
-      Water right, full width under the row above (R-117: GO, no longer
-      collapsed). 146-02 D2: the panel is its own partial so pod_link_right
+      Water right, full width under the row above (shown open, not
+      collapsed). The panel is its own partial so pod_link_right
       can re-render just this card on save.
     {% endcomment %}
     {% include "surface/partials/_pod_water_right_panel.html" %}

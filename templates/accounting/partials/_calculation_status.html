@@ -1,5 +1,5 @@
 {% comment %}
-  The Calculation card's status block (149-01). It polls itself every 3 seconds
+  The Calculation card's status block. It polls itself every 3 seconds
   ONLY while the latest calculation for this period is waiting or running; the
   finished render carries no hx-trigger, so polling stops by itself. No hx-on
   and no inline script (the content security policy allows neither). The

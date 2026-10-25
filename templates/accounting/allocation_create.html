@@ -24,7 +24,7 @@
   <a href="{% url 'accounting:allocations_list' %}" class="back-link">&larr; Back to Allocations</a>
 
   <div class="card-raised">
-    {% comment %} Was "Create allocation", the page title said again in other words (Phase 143-02, copy rule 13: a label under a heading says the remainder). {% endcomment %}
+    {% comment %} The card heading says the remainder; the page title already names the form (DESIGN.md copy rule 13). {% endcomment %}
     <h2 class="card-header-ruled">Details</h2>
 
     {% if form.errors %}
@@ -40,7 +40,7 @@
     </div>
     {% endif %}
 
-    {% comment %} 150-04 (rule B): a two-track grid; the name and the notes span
+    {% comment %} A two-track grid (`.form-grid`); the name and the notes span
          both tracks, the zone sits beside the water type and the water year
          beside the allocation. {% endcomment %}
     <form method="post" class="form-grid">

@@ -11,7 +11,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Methodology Settings</span>
   </nav>
-  {% comment %} 149.1-05: one line, in Configs & settings explained's words for
+  {% comment %} One line, in Configs & settings explained's words for
        the calculation plan (its "What it decides" cell). What a change does to
        a month already calculated is said once, under the steps card's heading,
        beside the Save step buttons it governs. {% endcomment %}
@@ -22,11 +22,11 @@
 {% block content %}
 <div class="page-stack">
 
-  {% comment %} 149.1-05: the 34-word honesty banner is now the one line under
-       the steps card's heading, and the "What is a methodology?" card (62
-       words, rule 11) is gone; Configs & settings explained says it. Its links
+  {% comment %} The honesty note is the one line under
+       the steps card's heading; there is no "What is a methodology?" card, because
+       Configs & settings explained says it. Its links
        are the two help pages at the end of that line; "Why satellite ET?"
-       pointed off the platform and is dropped. {% endcomment %}
+       points off the platform and is left out. {% endcomment %}
   {% if plan is None %}
   <div class="card-raised">
     <h2 class="section-header mb-md">No active methodology</h2>

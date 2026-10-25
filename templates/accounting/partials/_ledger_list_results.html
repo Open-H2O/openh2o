@@ -1,11 +1,11 @@
 {% load humanize accounting_extras %}
-{# overflow:hidden removed deliberately — it would clip the sticky <thead> (Phase 63). #}
+{# overflow:hidden is left off deliberately: it would clip the sticky <thead>. #}
 <div class="card-raised table-scroll-mobile" style="padding: 0;">
-  {% comment %} Subtitle line (143-05): the first
-       read (candidate B) put one sentence here at 12px, which was too small
-       and too wordy; larger, more visible facts that are just more clearly
-       stated work better than a header doing math. The settled shape is two short facts at 14px (text-base, not
-       the 12px text-xs the first read used): a period/count line (names the
+  {% comment %} Subtitle line: two short, plainly stated facts read better
+       than a header doing math, and 12px is too small
+       for this line.
+       The shape is two short facts at 14px (text-base,
+       not text-xs): a period/count line (names the
        period or "All periods", folds in the auto-default note on a bare
        landing, says "filtered" plus the active filter names when any facet
        other than period is set, states the entry count once with intcomma),
@@ -37,14 +37,14 @@
         {% comment %} Sortable columns re-request the partial carrying the full filter state
            (hx-include=#ledger-filters) with a toggled direction. ▲/▼ marks the
            active column; Date also shows ▼ in the default newest-first state.
-           Column order (143-05): Date, Use area, Water,
+           Column order: Date, Use area, Water,
            Amount, Description: a row reads as a sentence, naming when, where,
            which water and how it was recorded, how much, then the note. The
-           Source and Water type columns merged into one "Water" column
-           (`accounting/ledger_words.py::ledger_row_words`, task1-baseline's
-           second ruling): two badge-styled columns read as "very confusing"
-           to a reader who does not think in this platform's own field
-           names. The merged header keeps the "source" sort key; there is no longer a
+           Source and Water type columns are one "Water" column
+           (`accounting/ledger_words.py::ledger_row_words`):
+           two badge-styled columns would confuse
+           a reader who does not think in this platform's own field
+           names. The merged header keeps the "source" sort key; there is no
            separate water-type sort. {% endcomment %}
         <th class="th-sortable" role="button" tabindex="0"
             hx-get="{% url 'accounting:ledger_list' %}"
@@ -89,10 +89,10 @@
     </thead>
     <tbody>
       {% for entry in page_obj %}
-      {% comment %} A calculated row at zero (R-043): the amount cell is
-           text-tertiary (a real zero, not a suppression). The engine has
-           written the Description cell's own sentence since 143-11 (ISS-170,
-           accounting/ledger_words.py); the stored entry.description is
+      {% comment %} A calculated row at zero: the amount cell is
+           text-tertiary (a real zero, not a suppression). The engine
+           writes the Description cell's own sentence
+           (accounting/ledger_words.py); the stored entry.description is
            what is shown, unchanged; this template composes nothing. {% endcomment %}
       <tr>
         <td class="text-secondary" style="white-space: nowrap;">
@@ -136,11 +136,11 @@
        the rows shown), named by KIND and never netted. Credits are allocation and
        recharge entries: paper or banked water. The water figure is canal
        deliveries and pumping, stored negative and shown as a magnitude. The two
-       are not addable, so the footer carries no net: it used to, and it stated
-       the same year as the dashboard with the opposite sign (ISS-155; DESIGN.md
-       rule 12, review question 3). The dense-table "how much, in total?" footer
-       (Bucket 2) still applies to each kind on its own. The sign sentence that
-       used to live here moved to the subtitle line above the table (143-05),
+       are not addable, so the footer carries no net: a net would state
+       the same year as the dashboard with the opposite sign (DESIGN.md
+       rule 12). The dense-table "how much, in total?" footer
+       (Bucket 2) still applies to each kind on its own. The sign sentence is
+       in the subtitle line above the table,
        where a reader meets it before the rows. {% endcomment %}
     {% if total_count %}
     <tfoot>
@@ -149,7 +149,7 @@
           All {{ total_count|intcomma }} entr{{ total_count|pluralize:"y,ies" }}
         </td>
         <td colspan="3" class="text-xs">
-          {% comment %} 150-04 T1 (rule C1): the figures wrap as a row of parts. The flex row is a div inside the cell, not the cell itself: a td set to display:flex stops being a table cell, and its colspan with it. {% endcomment %}
+          {% comment %} The figures wrap as a row of parts. The flex row is a div inside the cell, not the cell itself: a td set to display:flex stops being a table cell, and its colspan with it. {% endcomment %}
           <div class="tfoot-figures">
           <span class="text-secondary">Allocation and recharge credits</span>
           <span class="td-num-bold text-supply">+{{ ledger_total_credits|floatformat:2|intcomma }}</span>
@@ -163,12 +163,12 @@
   </table>
 </div>
 
-{% comment %} One paging control (143-05): Previous / Page N of M / Next, plus
-     Rows per page (name="page_size", the same HTMX wiring the old filter-card
-     control carried). Rendered unconditionally, not just when there is more
+{% comment %} One paging control: Previous / Page N of M / Next, plus
+     Rows per page (name="page_size", wired through HTMX the same way as the
+     filter card's controls). Rendered unconditionally, not just when there is more
      than one page, so Rows per page stays reachable on a small filtered set;
      Previous/Next are disabled rather than removed when there is nowhere to
-     go. The jump-to-page input is gone from the whole page (R-017). {% endcomment %}
+     go. The page has no jump-to-page input. {% endcomment %}
 <div class="ledger-paging">
   {% if page_obj.has_previous %}
   {# HTMX paging swaps just the results, carrying sort+filters+page_size via the form. #}

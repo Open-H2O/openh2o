@@ -12,9 +12,9 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Delivery Settings</span>
   </nav>
-  {% comment %}90-02: the description promised "surface deliveries" on deployments
-  with no Surface module — the page had no `_PAGES` row until this plan, so no
-  assertion had ever read it. The sharing half of the sentence goes with the
+  {% comment %}The description says "surface deliveries" only on deployments
+  with the Surface module,
+  since the sharing half of the sentence goes with the
   setting it describes.{% endcomment %}<p class="page-description">{% if 'surface' in enabled_modules %}These settings decide how the platform shares surface deliveries across farms and what{% else %}These settings decide what{% endif %} happens to a zone's unused water at year-end.</p>
 </div>
 {% endblock %}
@@ -26,17 +26,17 @@
 
   <!-- Intro + learn-more -->
   <div class="card-raised">
-    {% comment %}90-02: "These two settings" counted a setting that is not always
-    shown, and the Learn-more link pointed at an explainer that 404s when the
-    deployment does not run every domain it explains — a live dead link, found
-    the moment this page got a `_PAGES` row. The predicate is the same one the
+    {% comment %}The intro avoids "These two settings", since one setting is not always
+    shown, and the Learn-more link appears only when its explainer is
+    available (it is not when the deployment omits a domain it explains).
+    The predicate is the same one the
     view and the sidebar read.{% endcomment %}{% explainer_available "settings_explained" as show_delivery_help %}<p class="text-secondary text-base m-0">These settings apply to the whole site. An administrator sets them once; the year-end choice alone can differ for a single zone (set that on the zone's own page).{% if show_delivery_help %} <a href="{% url 'settings_explained' %}" class="text-sm text-accent">Learn more &rarr;</a>{% endif %}</p>
   </div>
 
   {% if user_can_write %}
-  {% comment %} 150-04 (S5): the cards were tried two and three across at the wide
-       measure (rule B2) and read DO NOT SHIP 2 on their unequal heights, worse than the
-       single column's DO NOT SHIP 3 on its margins (VERDICTS-150-04.md); the column stays. {% endcomment %}
+  {% comment %} The cards stay in one column: `.card-columns` (two or three across) was tried
+       here and its unequal card heights read worse than the single column; see
+       DESIGN.md on `.card-columns`. {% endcomment %}
   <form method="post" class="page-stack">
     {% csrf_token %}
 
@@ -46,10 +46,10 @@
     </div>
     {% endif %}
 
-    {% comment %} Setting: efficiency. `parcels` owns it since 150.2-01 (see DeliverySettingsForm) and
-         the numbering follows the fields that are actually shown — the 88-03
-         defect was a step eyebrow that kept counting a step nobody could see.
-         146-03 Task 3: card position is computed in the view now that a third
+    {% comment %} Setting: efficiency. `parcels` owns it (see DeliverySettingsForm) and
+         the numbering follows the fields that are actually shown, so a step
+         eyebrow never counts a step nobody can see.
+         Card position is computed in the view, since a third
          card (Diversion records) can sit between this one and recovery horizon. {% endcomment %}
     {% if form.shows_efficiency %}
     <div class="card-raised">
@@ -66,9 +66,9 @@
     </div>
     {% endif %}
 
-    {% comment %} Setting: surface water in excess of ETAW (148-04,
-         built 2026-09-28; the words settled by
-         148-03 the same day). `surface` owns both fields
+    {% comment %} Setting: surface water in excess of ETAW. `surface` owns both
+         fields, and the form shows them only
+         with that module on
          (`shows_surface_settings`): only canal water can be over-delivered. Its position is
          computed in the view like every other optional card. Each choice is a
          label line with what it does on a quieter line under it
@@ -123,10 +123,10 @@
     </div>
 
     {% comment %} Setting: diversion records. `surface` owns this field, same gate as the
-         surface settings (146-03 Task 3, the 145-01 memo's crosswalk layer). The
-         USE-row question that used to sit here moved to the import screen,
-         shown only when an uploaded file actually has USE rows (146-03
-         Task 6). {% endcomment %}
+         surface settings. The
+         USE-row question is on the import screen,
+         shown only when an uploaded file actually has USE rows.
+         {% endcomment %}
     {% if form.shows_diversion_settings %}
     <div class="card-raised">
       <span class="step-eyebrow">Setting {{ diversion_number }} of {{ settings_total }}</span>
@@ -153,10 +153,10 @@
     </div>
     {% endif %}
 
-    {% comment %} Setting: record addresses (146-06 Task 1, ISS-019). `core` owns
+    {% comment %} Setting: record addresses. `core` owns
          SiteConfig.identifier_host, so this card is shown on every deployment.
          The addresses themselves are derived (core/identifiers.py); this is the
-         one stored piece. 150-03 (ISS-224): titled by what the setting is for,
+         one stored piece. Titled by what the setting is for,
          read from its own help text, which already says what it does and that
          it matters before registering with Geoconnex, so no second line restates
          it. {% endcomment %}

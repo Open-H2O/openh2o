@@ -1,10 +1,10 @@
 {% load humanize accounting_extras %}
 {% url 'water_balances' as wb_help_url %}
 {% comment %}
-  Phase 143 (R-037, R-038, R-039, R-040), carrying the pattern DESIGN.md →
+  This fragment carries the pattern DESIGN.md →
   *Tables that explain their numbers* records from the dashboard.
 
-  143-03 (2026-09-11): this fragment renders TWO cards, the balance card (its
+  This fragment renders TWO cards, the balance card (its
   own heading and water-year control, then the panel) and the use-area
   breakdown card, because the page places them differently -- the balance
   beside Account information, the seven-column table full width beneath --
@@ -47,11 +47,11 @@
         <div class="budget-seg-value text-supply">{{ balance.supply_total|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
         <div class="budget-seg-caption">water on record for the period</div>
         {% comment %}
-          R-037: these three used to sit in a bare `.budget-panel-foot` with
-          nothing saying they are the parts of the Supplies figure above them;
-          then (143-01) in a column at the panel's far right. They sit under
-          their figure now (143-01 resumed, 2026-09-11). Titled "by source",
-          not "of which" (that idiom was dropped in 142-01).
+          These three sit under their figure, not in a bare `.budget-panel-foot`,
+          so it is plain they are the parts of the Supplies figure above them.
+          Titled "Supplies by source", not "of which", the same
+          title the dashboard's Water balance panel gives the same three
+          rows.
         {% endcomment %}
         <div class="budget-breakdown-group">
           <div class="budget-breakdown-title">Supplies by source</div>
@@ -66,10 +66,10 @@
         <div class="budget-seg-value text-usage">{{ balance.consumptive_use_gross|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
         <div class="budget-seg-caption">OpenET satellite estimate</div>
         {% comment %}
-          143-03: the parts of this figure are its coverage -- how many of the
+          The parts of this figure are its coverage -- how many of the
           account's use areas the estimate reaches, and the calculation runs
-          the sum came from. The cell used to stop at its caption, beside a
-          Supplies cell three lines taller (the reader's worst fault, 10:55).
+          the sum came from. Without them the cell would stop at its caption, beside a
+          Supplies cell three lines taller.
         {% endcomment %}
         <div class="budget-breakdown-group">
           <div class="budget-breakdown-title">Estimate coverage</div>
@@ -107,12 +107,12 @@
 
   "Use area" in the heading AND the column: the card beside this one says
   "Assigned use areas" and the pane header offers to open one, so "Per-Parcel"
-  here was a second name for the one thing (copy rule 12). The wider divergence
-  between "use area" and the dashboard's "Field" is ISS-169, not this plan.
+  here would be a second name for the one thing (copy rule 12). The wider divergence
+  between "use area" and the dashboard's "Field" is a separate open inconsistency.
 
-  R-040: the rows are ordered in the VIEW, by use-area number. They used to come
-  back by date added, and all 18 of this account's assignments were added on one
-  day, so the database broke the tie however it liked and two use areas were
+  The rows are ordered in the VIEW, by use-area number. Ordering by date added
+  would leave the tie to the database whenever assignments are added on one
+  day, and use areas could be
   stranded at the end looking like an error.
 {% endcomment %}
 <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
@@ -206,5 +206,5 @@
 <p class="text-tertiary text-sm">No use area is assigned to this account.</p>
 {% endif %}
 </div>
-{% comment %}ISS-237: a use area whose balance prints 0.00 counts as Balanced, not surplus or deficit, and takes the plain text colour (accounting.services.balance_state). Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
-{% comment %}Account page sentences (150.1-02): both Balance pop-outs and "Effective precipitation" for the figure that read "Rain" (it is CalculationRun.effective_precip_af). Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
+{% comment %}A use area whose balance prints 0.00 counts as Balanced, not surplus or deficit, and takes the plain text colour (accounting.services.balance_state). Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
+{% comment %}Account page sentences: both Balance pop-outs and "Effective precipitation" (CalculationRun.effective_precip_af). Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}

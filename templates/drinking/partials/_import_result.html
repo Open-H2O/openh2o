@@ -19,9 +19,9 @@
   <h2 class="card-header-ruled">Import complete</h2>
 
   {% comment %}
-    150.1-02: the badges (a repeat in the file counted apart from already on file), the
+    The badges (a repeat in the file counted apart from already on file), the
     count, limits and analyte lines, the regulating agency lines naming the
-    water system, and the table of rows not imported.
+    water system, and the table of rows not imported are settled sentences.
   {% endcomment %}
   <div class="row-start" style="gap: var(--space-sm); margin-top: var(--space-md); flex-wrap: wrap;">
     <span class="badge badge-green">{{ counts.results }} result{{ counts.results|pluralize }}</span>
@@ -43,7 +43,7 @@
   {% endif %}
 
   {% comment %}
-    146-04 Task 3: the regulating agency, read once off the file. Three
+    The regulating agency, read once off the file. Three
     outcomes, from drinking/importer.py::record_regulating_agency; nothing
     renders when the file carries no Regulating Agency column.
   {% endcomment %}

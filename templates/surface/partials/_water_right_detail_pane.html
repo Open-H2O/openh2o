@@ -35,7 +35,7 @@
 
     <!-- Right Info card -->
     <div class="card-raised page-grid-account-info">
-      {# 150-02: the Edit link sits in the card's head, as the account card's does; a button floating between the map and the cards read as orphaned (page verdict, round 1). #}
+      {# The Edit link sits in the card's head, as the account card's does; a button floating between the map and the cards would read as orphaned. #}
       <div class="row-between">
         <h2 class="section-header">Right information</h2>
         {% if user_can_write %}<a href="{% url 'surface:water_right_edit' water_right.pk %}" class="text-tertiary text-xs">Edit</a>{% endif %}
@@ -68,7 +68,7 @@
         <div class="field-group">
           <div class="field-label field-row">
             Storage season
-            {# 150.1-02: the column-name pop-out deleted; nothing reads the storage season. #}
+            {# No column-name pop-out: nothing reads the storage season. #}
           </div>
           <div class="field-value">{{ water_right.storage_season_display|blank }}</div>
         </div>
@@ -76,7 +76,7 @@
         <div class="field-group">
           <div class="field-label field-row">
             Max rate (cfs)
-            {# 150.1-02: pop-out deleted; nothing reads the right's max rate. #}
+            {# No pop-out: nothing reads the right's max rate. #}
           </div>
           <div class="field-value">{% if water_right.max_rate_cfs %}{{ water_right.max_rate_cfs|floatformat:2 }} cfs{% else %}{{ ""|blank }}{% endif %}</div>
         </div>
@@ -94,7 +94,7 @@
         <div class="field-group">
           <div class="field-label field-row">
             Net acreage
-            {# 150.1-02: pop-out deleted; nothing reads the net acreage. #}
+            {# No pop-out: nothing reads the net acreage. #}
           </div>
           <div class="field-value">{% if water_right.net_acreage %}{{ water_right.net_acreage|floatformat:2|intcomma }}{% else %}{{ ""|blank }}{% endif %}</div>
         </div>
@@ -102,7 +102,7 @@
         <div class="field-group">
           <div class="field-label field-row">
             Priority date
-            {# 150.1-02: pop-out deleted; it explained seniority, and nothing reads the priority date. #}
+            {# No pop-out: nothing reads the priority date. #}
           </div>
           <div class="field-value">
             {% if water_right.priority_date %}{{ water_right.priority_date|date:"M d, Y" }}{% else %}&mdash;{% endif %}
@@ -157,9 +157,9 @@
       table from below -- no second query. Without a face value, the period
       page's shape: one --result (Recorded alone), no operators.
 
-      150-02 Task 5: under the panel, every water year on record is set
+      Under the panel, every water year on record is set
       against the face value (surface/face_value.py, face_value_years), and
-      the card is its content's height (ISS-201): the modifier drops the
+      the card is its content's height: the modifier drops the
       stretch to the information card's height that left the panel centred
       in blank fill, on this page only.
     {% endcomment %}
@@ -199,7 +199,7 @@
               <div class="budget-seg budget-seg--result">
                 <div class="budget-seg-label">Remaining</div>
                 <div class="budget-seg-value {% if remaining >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ remaining|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
-                {# 150.1-02: the note under Remaining deleted; the row already shows the subtraction. #}
+                {# No note under Remaining: the row already shows the subtraction. #}
               </div>
             </div>
             {% if pod_breakdown %}
@@ -264,9 +264,9 @@
         those groups, so the two never disagree). Total is the group's own
         sum; a year past the face value leads with the amount over it, in
         deficit orange; a right with no face value leaves the last cell empty.
-        150-02 round 1: a reader found "Recorded" meaning two things (the
+        "Recorded" would mean two things (the
         equation's Recorded, which holds the estimates, and a table column
-        that did not), so the table carries Total and Of it estimated only;
+        that does not), so the table carries Total and Of it estimated only;
         the typed part is the difference and gets no column of its own.
       {% endcomment %}
       <div class="row-between" style="margin-top: var(--space-lg); margin-bottom: var(--space-xs);">
@@ -374,7 +374,7 @@
       {% endif %}
     </div>
 
-    {% comment %} 146-02 D3: places of use, full width under points of diversion. {% endcomment %}
+    {% comment %} Places of use, full width under points of diversion. {% endcomment %}
     {% include "surface/partials/_places_of_use.html" %}
 
   </div>

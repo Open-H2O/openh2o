@@ -11,19 +11,19 @@
 
 {% url 'water_balances' as wb_help_url %}
 {% comment %}
-  Phase 142 (R-003, R-004, R-005, R-006; ISS-159 #2). The panel is named for
+  The panel is named for
   the thing it summarises, the result is the only lead figure, the supply
-  breakdown reads as "of which", and the population is stated in the foot
+  breakdown is titled "Supplies by source", and the population is stated in the foot
   because these totals are the sum of ACTIVE ACCOUNTS ONLY (views.py, grand_*
-  accumulate inside the active-accounts loop), not the basin. The "How this
-  summary works" inset that used to follow is gone: its two claims now live in
+  accumulate inside the active-accounts loop), not the basin. There is no "How this
+  summary works" inset: its two claims live in
   the captions here and in the tables' group headers below.
 
   Captions explain where the platform got each number (DESIGN.md rule 11),
   never what the water is.
 {% endcomment %}
 {% comment %}
-  143-04 (2026-09-11): the panel and the period card share the top row
+  The panel and the period card share the top row
   (`.page-grid-dashboard-top`), the way the account page pairs its
   information card with its balance panel. The panel's three figure blocks
   are centred in equal cells (`.budget-panel--centered`), so the water balance
@@ -41,10 +41,10 @@
         <div class="budget-seg-label">Supplies</div>
         <div class="budget-seg-value text-supply">{{ grand_supply_total|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
         {% comment %}
-          The parts of the figure above, under it (143-01 resumed, 2026-09-11):
-          the breakdown used to sit in its own column at the panel's far right,
-          ~1,300px from the figure at 2560. The title is "By source"
-          (142-01, DESIGN.md copy rule 13).
+          The parts of the figure above sit under it:
+          a separate column at the panel's far right would sit
+          ~1,300px from the figure at 2560. The title says "by source"
+          (DESIGN.md copy rule 13).
         {% endcomment %}
         <div class="budget-breakdown-group">
           <div class="budget-breakdown-title">Supplies by source</div>
@@ -57,7 +57,7 @@
       <div class="budget-seg">
         <div class="budget-seg-label">Crop ET</div>
         {% comment %}
-          ISS-099: with no calculation runs behind it this is not a zero, it is a
+          With no calculation runs behind it this is not a zero, it is a
           blank. Rendering 0.00 here is what made the balance below read as a
           healthy surplus on an unmeasured basin. The supplies term keeps its real
           figure — ledger rows exist and are genuinely measured — so the panel
@@ -70,11 +70,11 @@
         {% endif %}
         <div class="budget-seg-caption">OpenET satellite estimate</div>
         {% comment %}
-          143-04: the parts of this figure are its coverage, as on the account
+          The parts of this figure are its coverage, as on the account
           page -- how many of the active accounts the estimate reaches, and
           the calculation runs the sum came from. Counts, not figures: no
           new formatted-number site, so the figure ledger's ids hold. The cell
-          used to stop at its caption beside a Supplies cell three lines taller.
+          would stop at its caption beside a Supplies cell three lines taller.
         {% endcomment %}
         <div class="budget-breakdown-group">
           <div class="budget-breakdown-title">Estimate coverage</div>
@@ -92,8 +92,8 @@
         {% endif %}
         <div class="budget-seg-caption">supplies minus crop ET</div>
         {% comment %}
-          143-04: the balance judged account by account, counted only among
-          accounts with an estimate (the table below dashes the rest, ISS-099).
+          The balance judged account by account, counted only among
+          accounts with an estimate (the table below dashes the rest).
           Absent while the engine has never run: with no estimate there is no
           balance to sort, and the banner beneath says so.
         {% endcomment %}
@@ -116,14 +116,14 @@
 
 {% if engine_has_never_run %}
 {% comment %}
-  ISS-099: the engine has produced nothing for this period, so every demand
+  The engine has produced nothing for this period, so every demand
   figure above and below is absent rather than zero. Same shape as the
   no-allocations line beneath it, deliberately: both say "a setup step has not
   happened yet", and the same idea must look the same (DESIGN.md).
 
-  149.1-05: the empty-state pattern (the first-run block's), the period named,
-  the one action as the button (a fresh reader needed the period named and the
-  action out of the sentence). The button is a write
+  The empty-state pattern (the first-run block's), the period named,
+  the one action as the button (the period is named and the
+  action sits outside the sentence). The button is a write
   action, so it sits behind user_can_write like the first-run block's.
   Two branches because the order matters and the failure is otherwise cryptic:
   without an active calculation plan `run_calculations` does not quietly
@@ -155,16 +155,16 @@
 {% endif %}
 
 {% comment %}
-  Phase 142 (R-007, R-008; ISS-159 #1). Both tables read as the equation the
-  panel above states: Supplies (Surface, Groundwater, Rain, Total) minus
-  Consumptive use equals Balance, then one vertical rule, then the Groundwater
+  Both tables read as the equation the
+  panel above states: Supplies (Surface, Groundwater, Effective precipitation, Total) minus
+  Crop ET equals Balance, then one vertical rule, then the Groundwater
   budget, which is an allocation on paper from a different framework and not
   water that moved. Two header rows: group labels over their columns, leaf
   labels under them. The unit is stated once in each card's subtitle, never on
   a column, because every numeric column on this page is acre-feet; short leaf
   headers are also what lets both tables fit a 1440-pixel window.
 
-  Rules Phase 143 inherits: equation order; group headers where columns sum;
+  Rules both tables follow: equation order; group headers where columns sum;
   one separator where the kind of number changes; a unit once per single-unit
   table; a footer only where rows are addable (the accounts table adds -- one
   quantity, one period, every active account -- and its footer IS the panel's
@@ -172,12 +172,12 @@
   zone, and its subtitle says so).
 {% endcomment %}
 {% comment %}
-  143-04 (2026-09-11): the "Account details" / "Zone details" / "Field
-  details" eyebrows that stood over these three cards are gone. Each labelled
-  ONE card whose own heading said the same thing a line below, and at 1,730
-  each sat alone in a 116px band between the panel and its table -- the
-  second fault on the page. The anchors the
-  attention strip routes to moved onto the cards themselves.
+  The "Account details" / "Zone details" / "Field
+  details" eyebrows over these three cards are left out. Each would label
+  ONE card whose own heading says the same thing a line below, and at 1,730
+  each would sit alone in a 116px band between the panel and its table.
+  The anchors the
+  attention strip routes to are on the cards themselves.
 {% endcomment %}
 <div class="card-raised" id="active-accounts">
   <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
@@ -202,14 +202,14 @@
         <th rowspan="2" class="th-right"><span class="th-stack">Crop ET</span></th>
         <th rowspan="2" class="th-right">Balance</th>
         {% if has_allocations %}
-        {% comment %}148-02 Task 4 (Q2): the label stays "Groundwater budget"
-             (after "Extraction budget" was tried): Remaining is now spent in EXTRACTED terms (a calculated row's stamped extraction estimate, not the
+        {% comment %}The label is "Groundwater budget"
+             (not "Extraction budget"): Remaining is spent in EXTRACTED terms (a calculated row's stamped extraction estimate, not the
              Supplies "Groundwater" column beside it, which stays consumed),
-             and "budget" alone no longer said which of the two it spends. The bare
-             word "Extracted" over Allocation read as allocation extracted, and
-             "Groundwater budget, spent by extraction" widened the two budget
-             columns into dead space and wrapped (reader, 2026-09-24). The smallest label change; 150 leads the page with both
-             figures named outright.{% endcomment %}
+             and "budget" alone does not say which of the two it spends. The bare
+             word "Extracted" over Allocation reads as allocation extracted, and
+             "Groundwater budget, spent by extraction" widens the two budget
+             columns into dead space and wraps, so the group label stays
+             the short one.{% endcomment %}
         <th colspan="3" class="th-group-label col-sep">Groundwater budget</th>
         {% endif %}
       </tr>
@@ -228,7 +228,7 @@
     <tbody>
       {% for row in zone_summaries %}
       {% comment %}
-        R-010 (142-01): two kinds of row, said once. The view orders budgeted
+        Two kinds of row, said once. The view orders budgeted
         zones first, so one divider opens each group. Only when the budget
         columns exist: with no allocations at all every row is unbudgeted and
         the columns are absent, so there is nothing to explain. Nothing here
@@ -245,16 +245,16 @@
       <tr>
         <td><a href="{% url 'geography:zone_detail' row.zone.pk %}" class="data-table-link">{{ row.zone.name }}</a></td>
         {% comment %}
-          ISS-099, same three demand-derived columns as the account table above.
-          Carried forward is NOT dashed for that reason: it is last year's
-          closing position, already computed and stored, and true whatever this
+          Same three demand-derived columns as the account table above.
+          Added is NOT dashed for that reason: it is stored credit (zone_carryover:
+          recharge, seepage, carry-over), already computed, and true whatever this
           period's engine has or has not done.
 
-          A second reason for a dash, 136-01: the three budget cells are the
+          A second reason for a dash: the three budget cells are the
           GROUNDWATER budget, and a zone with no groundwater plan (the surface
           service areas carry surface plans only) has none. Its allocation,
-          carry-over and remaining are absent, not zero, so all three dash.
-          Remaining keeps the ISS-099 dash as well: it now subtracts groundwater
+          added and remaining are absent, not zero, so all three dash.
+          Remaining keeps the engine-never-ran dash as well: it subtracts groundwater
           use, which includes the `calculated` rows the engine writes, so with
           no engine run it would understate pumping on every unmetered field and
           read as a fuller budget than the truth.
@@ -299,12 +299,12 @@
 </div>
 
 {% comment %}
-  ISS-157, surface 2. The engine writes `unmet_demand_af` on any month where a
+  The engine writes `unmet_demand_af` on any month where a
   field with no well used more water than its deliveries, its rainfall and its
   pumping on record explain — it books the leftover as a figure rather than
-  inventing pumping through a well that does not exist. Two help pages have
-  explained the concept since Phase 130 and the field's own page has shown its
-  own number since 137-01. This is the list.
+  inventing pumping through a well that does not exist. Two help pages
+  explain the concept and the field's own page shows its
+  own number. This is the list.
 
   ⛔ THE WORDING IS SETTLED and it is arithmetic, then stop.
   The platform knows the books did not close; it knows nothing whatever about
@@ -316,7 +316,7 @@
   ⛔ Do not spell the banned words even in a comment: the phase verification is a
   literal `grep -rnwi` over these two template trees, and a comment fails it.
 
-  Absent entirely when the engine has never run here (ISS-099, view-side): the
+  Absent entirely when the engine has never run here (view-side): the
   shortfall is an engine output, so with no run there is nothing to list and the
   empty state below would be a claim rather than a finding.
 {% endcomment %}
@@ -348,10 +348,10 @@
           exception (DESIGN.md rule 4). The phrase is a settled product term and
           the field's own page prints it exactly this way; Title-Casing it here
           would make one quantity read as two names on two screens, which is the
-          defect rule 12 exists to end. No unit on either header (Phase 142): the
+          defect rule 12 exists to end. No unit on either header: the
           card's subtitle states it once for the whole table.
 
-          142-01: the column used to repeat the
+          The column does not repeat the
           card's title word for word. The card title keeps the settled phrase,
           which stays the quantity's name on the field's own page; this header
           says the arithmetic in four words. Still nothing about why.
@@ -386,12 +386,12 @@
 {% endif %}
 {% endif %}
 {% comment %}
-  Module-contributed dashboard cards used to render here. 78-02 moved them up to
+  Module-contributed dashboard cards do not render here; they are in
   `accounting/dashboard.html`, OUTSIDE the `periods.exists` gate — this partial
   is only included once an accounting reporting period exists, so a card left
-  here was invisible to any deployment that does not do groundwater accounting.
+  here would be invisible to any deployment that does not do groundwater accounting.
   See the block there.
 {% endcomment %}
-{% comment %}150.1-02, Dashboard: the heading "Water balance", the row "Total", the empty-site line, the over-budget count, the Remaining pop-out and the fields-table pop-out are approved sentences. A balance that prints 0.00 is "Balanced" (ISS-237). Notes sit at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
-{% comment %}"Effective precipitation" for the figure that read "Rain" (CalculationRun.effective_precip_af) (150.1-02). Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
-{% comment %}The zones table's "Added" column (was "Carried fwd") (150.1-02). The column is zone_carryover, which adds managed recharge, canal seepage and year-end carry-over; the zone page lists them by kind. Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
+{% comment %}Dashboard: the heading "Water balance", the row "Total", the empty-site line, the over-budget count, the Remaining pop-out and the fields-table pop-out are approved sentences. A balance that prints 0.00 is "Balanced". Notes sit at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
+{% comment %}"Effective precipitation" (CalculationRun.effective_precip_af). Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
+{% comment %}The zones table's "Added" column. The column is zone_carryover, which adds managed recharge, canal seepage and year-end carry-over; the zone page lists them by kind. Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}

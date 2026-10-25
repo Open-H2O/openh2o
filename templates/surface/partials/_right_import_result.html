@@ -1,5 +1,5 @@
 {% comment %}
-Outcome of a water rights import (146-02 Task 1). Same two shapes as
+Outcome of a water rights import. Same two shapes as
 infrastructure/partials/_import_result.html:
   - error: a file/parse problem before any rows were considered
   - success: how many were created, and an honest list of any skipped rows + why
@@ -26,7 +26,7 @@ infrastructure/partials/_import_result.html:
   </p>
 
   {% if noted %}
-  {% comment %} 150.1-02: a right created without a face value or rate given in another unit. {% endcomment %}
+  {% comment %} Imported with a note: a right created without a face value or rate given in another unit. {% endcomment %}
   <h3 class="section-header-sm mt-lg">Imported with a note</h3>
   <table class="data-table mt-md">
     <thead>

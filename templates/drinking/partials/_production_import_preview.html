@@ -1,5 +1,5 @@
 {% comment %}
-Mapping/preview step for the production import (146-04 Task 2, D7). Same
+Mapping/preview step for the production import. Same
 two-button idiom as the diversion and water-rights importers: one form,
 whose hidden rows_json and mapping-step settings are shared by two submit
 buttons -- "Update preview" re-runs the same dry-run against changed
@@ -105,7 +105,7 @@ pressed.
 </div>
 {% endif %}
 
-{% comment %} 150-04 V2: the file's own rows under its own column names, the first 50 at most (drinking/views/production.py::PRODUCTION_PREVIEW_ROW_LIMIT). {% endcomment %}
+{% comment %} The file's own rows under its own column names, the first 50 at most (drinking/views/production.py::PRODUCTION_PREVIEW_ROW_LIMIT). {% endcomment %}
 {% if preview_rows %}
 <div class="card-raised">
   {% if row_count > preview_rows|length %}

@@ -1,5 +1,5 @@
 {% load humanize %}{% load placeholders %}{% comment %}
-The count line is NOT here (143-07). It is the map card's head, above the map
+The count line is NOT here. It is the map card's head, above the map
 and outside #results, and on an htmx swap this partial re-renders that head
 out of band (hx-swap-oob on the same id) so the count follows the list without
 the map being torn down. On a full page render the page includes the head once
@@ -22,7 +22,7 @@ No "wells" in these sentences: the word belongs to a module a drinking-water
 utility may not run, and the droppability vocabulary gate fails a kept page
 that names a domain the deployment does not have.
 
-150.1-02: No GAMA: OpenH2O has no GAMA import, and only the Merced
+No GAMA: OpenH2O has no GAMA import, and only the Merced
 seed's coordinates came from it; a facility otherwise gets a location only at
 /admin/ (SystemFacilityAdmin, the Location field).
 {% endcomment %}{% if mapped_facility_count %}
@@ -45,9 +45,9 @@ seed's coordinates came from it; a facility otherwise gets a location only at
 {% if page_obj.object_list %}
 <div class="card-raised table-scroll" style="padding: 0;">
   {% comment %}
-  R-067, R-068. The card head above the table (shape 1, the ledger list's
+  The card head above the table (shape 1, the ledger list's
   own no-h2 form). The line explaining the "Sample results" and "Latest
-  Sample" columns was deleted (150.1-02): the headings say it.
+  Sample" columns is not needed: the headings say it.
   {% endcomment %}
   <div class="ledger-card-head">
     <div class="text-secondary text-base">{{ total_count }} sampling point{{ total_count|pluralize }}</div>
@@ -125,12 +125,12 @@ seed's coordinates came from it; a facility otherwise gets a location only at
 
 {% else %}
 {% comment %}
-  123-02: `points_link`, not `onboard_link`. Onboarding creates facilities and
+  `points_link`, not `onboard_link`. Onboarding creates facilities and
   deliberately never creates a sampling point, so it is the wrong door here even
   though it is the right one on the facilities page. `points_pwsid` comes from
   drinking/views/sampling_points.py::sampling_points and is empty when no system exists, which
-  routes the partial's own fallback to onboarding. Before this, both branches
-  landed on the Django-admin dead end.
+  routes the partial's own fallback to onboarding. Neither branch
+  lands on the Django-admin dead end.
 {% endcomment %}
 {% include "drinking/partials/_empty_drinking.html" with what="No sampling points yet." points_link=True points_pwsid=points_pwsid has_system=has_system %}
 {% endif %}

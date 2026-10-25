@@ -8,8 +8,8 @@ list re-renders in place. Loaded by methodology_settings.html via {% include %}.
   <div class="methodology-step{% if not step.enabled %} methodology-step--off{% endif %}">
 
     {% comment %} Header row: number badge, the step's name, status, reorder and
-         enable controls. 149.1-05 (R-049): the name is the live label, printed
-         once; the bracketed step-type duplicate is gone, and the box that
+         enable controls. The name is the live label, printed
+         once, with no bracketed step-type duplicate, and the box that
          edits the name is labelled "Step name". {% endcomment %}
     <div class="row-between" style="align-items: flex-start;">
       <div class="flex" style="align-items: center; gap: var(--space-sm);">
@@ -42,10 +42,10 @@ list re-renders in place. Loaded by methodology_settings.html via {% include %}.
 
     {% comment %} Config form: only the knobs relevant to this step_type. The header
          above is separated by a ruled divider.
-         147-02: a viewer reads the step (the header row above) but never
+         A viewer reads the step (the header row above) but never
          this form -- every field in it exists to be POSTed back.
-         150-04 (F2, F3, rule B): a step with options is a two-track
-         `.form-grid`: the step name spans both tracks (it was cut off in a
+         A step with options is a two-track
+         `.form-grid`: the step name spans both tracks (it would be cut off in a
          12rem track of an inline auto-fit grid), the method and its one live
          field share the next row, Save in the ruled footer. A step with no
          options is one row (`.form-grid--row`): the name, the "no options"

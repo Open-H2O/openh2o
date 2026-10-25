@@ -10,8 +10,8 @@
   The mini-map draws this point at its FACILITY's coordinate, because that is
   the only coordinate that exists — GAMA publishes the position of the source,
   not of the tap. Every piece of copy around the map says so out loud. Drawing
-  it silently would be the row-scale version of the lie 99-01 refused when it
-  left unlocated facilities out of the overview map instead of putting them at
+  it silently would be the row-scale version of the lie the overview map avoids when it
+  leaves unlocated facilities out instead of putting them at
   (0, 0).
 
   The results table here is deliberately CAPPED and says so. A point in the
@@ -23,7 +23,7 @@
   place the platform decides how a lab finding reads. A presence/absence result
   must read "Absent", never 0 and never "< RL".
 
-  150.1-02: No GAMA label on the map: only the Merced
+  No GAMA label on the map: only the Merced
   seed's coordinates came from GAMA, and a facility otherwise gets a location
   at /admin/.
 
@@ -75,7 +75,7 @@
     {% comment %}
       ROW-LEVEL. The dot on this map is not the point's own position: it is
       the FACILITY's coordinate, borrowed, and the caption and the popup both
-      say so. The GAMA label that sat under the caption was removed (150.1-02): only the Merced
+      say so. There is no GAMA label under the caption: only the Merced
       seed's coordinates came from GAMA, and on any other site an
       administrator enters the location at /admin/.
     {% endcomment %}
@@ -115,7 +115,7 @@
         <div class="field-value">{{ point.facility.system.name }} <span class="text-mono text-secondary">({{ point.facility.system.pwsid }})</span></div>
       </div>
       {% comment %}
-        143-08 Task 3 (R-069). "Facility" folded into the point's own grid
+        "Facility" sits in the point's own grid
         instead of a second section: the point's identity is PS_CODE_COMPOSED,
         but this one field's publisher differs (EPA's own record), so it
         carries its own label rather than inheriting the section's.

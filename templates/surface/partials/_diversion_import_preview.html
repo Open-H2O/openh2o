@@ -1,5 +1,5 @@
 {% comment %}
-Mapping/preview step for the diversion import (146-03 Task 4, D4). Same two-
+Mapping/preview step for the diversion import. Same two-
 button idiom as the infrastructure and water-rights importers: one form,
 whose hidden rows_json and settings selects are shared by two submit
 buttons -- "Update preview" re-runs the same dry-run against changed
@@ -15,7 +15,7 @@ pressed.
 {% endif %}
 
 <div class="card-raised">
-  {% comment %} 150.1-02: the heading names the file kind, and the year sentence shows for a Water Use Reported file only (a book's dates are read as written). {% endcomment %}
+  {% comment %} The heading names the file kind, and the year sentence shows for a Water Use Reported file only (a book's dates are read as written). {% endcomment %}
   <h2 class="card-header-ruled">{{ row_count }} row{{ row_count|pluralize }} from {% if layout == "state" %}a Water Use Reported export{% else %}a book of deliveries{% endif %}</h2>
   {% if layout == "state" %}<p class="text-base text-secondary mt-md">{{ rule_sentence }}</p>{% endif %}
 
@@ -58,7 +58,7 @@ pressed.
       <div class="form-help">The data status you choose here applies to every record this file creates. The data status does not change any figure OpenH2O calculates.</div>
     </div>
 
-    {% comment %} 146-03 Task 6: the USE-row question moved here from the
+    {% comment %} The USE-row question is here, not on the
          deployment settings page, and only renders when this file actually
          has USE rows -- a reader who never uploads a file with one never
          sees it. {% endcomment %}
@@ -159,7 +159,7 @@ pressed.
   <table class="data-table mt-md">
     <thead><tr><th style="width: 6rem;">Row</th><th>Problem</th></tr></thead>
     <tbody>
-      {% comment %} 150-04 V1: one row per distinct message (surface/views.py::_group_row_errors), its row count and first rows; `errors` itself still goes to the commit unchanged. {% endcomment %}
+      {% comment %} One row per distinct message (surface/views.py::_group_row_errors), its row count and first rows; `errors` itself still goes to the commit unchanged. {% endcomment %}
       {% for group in error_groups %}
       <tr><td class="text-mono">{% if group.count == 1 %}{{ group.first_rows.0 }}{% else %}{{ group.count }} rows: {{ group.first_rows|join:", " }}{% if group.more %} ...{% endif %}{% endif %}</td><td class="text-furnace">{{ group.message }}</td></tr>
       {% endfor %}

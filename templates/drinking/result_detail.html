@@ -15,14 +15,14 @@
   database, so the assertion is real rather than vacuous.
 
   **The limit the laboratory's FILE carried does appear, beside the finding**
-  (ISS-140). It is the state
+  It is the state
   export's own MCL cell for this row, stored as reported. Nothing on the page
   compares it with the finding, colours by it or names a verdict.
 
-  150.1-02: one source label for the lab file, beside
-  The finding, naming the file (`result_source`), where three section labels
-  named the State Water Board for any file; the facility's label follows
-  `added_by_hand` as the facility page does; the CCR line no longer explains
+  One source label for the lab file, beside
+  The finding, naming the file (`result_source`). The page has no section labels that
+  name the State Water Board for any file. The facility's label follows
+  `added_by_hand` as the facility page does; the CCR line does not explain
   what a Consumer Confidence Report is.
 
   {% comment %}, never {# #}: the hash form comments only to the end of its
@@ -55,17 +55,17 @@
   </div>
 
   {% comment %}
-    143-08 Task 3 (R-055). The account-grid shape (`.page-grid-account*`,
-    143-03/143-06/143-10): row one is the analysis and the sample beside the
+    The account-grid shape (`.page-grid-account*`,
+    see static/css/app.css): row one is the analysis and the sample beside the
     finding at the only large size, row two is the record it belongs to full
-    width. "The finding" used to be a sixteen-field grid with Result as one
-    equal field among Unit, Result type and Reporting level -- the defect this
-    plan closes. It is now the panel: the number itself, what the method could
+    width. "The finding" is a panel, not a sixteen-field grid with Result as one
+    equal field among Unit, Result type and Reporting level.
+    It holds the number itself, what the method could
     even see (Reporting level), and what this same tap read last time
     (Previous finding), matching the lead-panel-never-holds-one-lone-figure
-    ruling (DESIGN.md rule 11) the recharge site page carries. Result, Unit,
+    rule (DESIGN.md rule 11) the recharge site page carries. Result, Unit,
     Result type and Reporting level all LEAVE the field grid below -- they are
-    on the panel now.
+    on the panel.
   {% endcomment %}
   <div class="page-grid-account">
 
@@ -171,8 +171,8 @@
             </div>
             <div class="budget-op"></div>
             {% comment %}
-              ISS-140 (146-04
-              Task 1): the MCL the laboratory's file carried on this row, as
+              The limit as reported:
+              the MCL the laboratory's file carried on this row, as
               reported, beside the finding. Deliberately the SAME markup
               whichever side of it the finding falls: no class, colour or word
               changes with the comparison, because this page makes none

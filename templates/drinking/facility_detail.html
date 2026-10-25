@@ -7,7 +7,7 @@
   DESIGN.md "Kinds of page") reached from the Facility ID cell on
   drinking:overview.
 
-  Phase 99 gave the module its own geometry, so this page now carries the same
+  The module has its own geometry, so this page carries the same
   mini-map every other entity detail page in the platform has. The map card is
   hidden by OH2O.detailPaneMap itself when the facility has no coordinate — 40
   of the 61 facilities in the demonstration — and a sentence stands in its place
@@ -24,7 +24,7 @@
 
 {% comment %}
   The heading leads with the operator's own name when there is one, the way
-  the Facilities list's name cell does (146-04 Task 3); the state's name stays
+  the Facilities list's name cell does; the state's name stays
   on the card below as "Name on record".
 {% endcomment %}
 {% block title %}{% if facility.local_name %}{{ facility.local_name }}{% elif facility.name %}{{ facility.name }}{% else %}Facility {{ facility.facility_id }}{% endif %} - Open Water Accounting Platform{% endblock %}
@@ -75,12 +75,12 @@
       ROW-LEVEL, and this is the one place on the page where the section label
       would be wrong. Everything in the identity card below is EPA's, and EPA
       publishes NO coordinate for a facility at all — this dot came from GAMA,
-      through the 99-01 backfill (drinking/migrations/0006, and the comment on
+      through a backfill (drinking/migrations/0006, and the comment on
       SystemFacility.location says so in the model too). A reader who inherits
       the card's publisher for the position has been misled by this page.
 
       The caption lives INSIDE the map card because the map LEADS this page
-      (99-02's ruling) — this is NOT a resurrected in-card "Location" section.
+      as a caption on the map, NOT a "Location" section in the identity card.
 
       The label stands alone: a sentence introducing it ("The position drawn
       here is published separately from the identity below") restated what the
@@ -110,7 +110,7 @@
       {% if facility.facility_type %}{{ facility.get_facility_type_display }}{% else %}Facility{% endif %}{% if facility.name and not facility.name_adds_nothing %}: <span class="text-secondary">{{ facility.name }}</span>{% endif %} {% if facility.added_by_hand %}{% source_label "OPERATOR_ENTERED" %}{% else %}{% source_label "EPA_SDWIS" %}{% endif %}
     </h2>
     {% comment %}
-      146-04 Task 3 (D9). A facility typed in on this deployment's form is the
+      A facility typed in on this deployment's form is the
       operator's, not EPA's, so the label above names the operator for it; the
       pill would otherwise claim a publisher that never saw the row. The edit
       link is the one write door on this page: the form decides how much of
@@ -121,10 +121,10 @@
     <div class="field-grid-auto mt-md">
       {% if not geojson %}
       {% comment %}
-        149.1-07 (R-065), round 2: the no-map fact is a row of the record (a
-        fact beside the thing it governs), not a line under the card; the fresh
-        reader found the line under the card and called it a paragraph.
-        150-04 (W3, rule D3): the two rows lead the grid and span its width,
+        The no-map fact is a row of the record (a
+        fact beside the thing it governs), not a line under the card, which reads
+        as a paragraph.
+        The two rows lead the grid and span its width,
         where the map card stands on a located facility; as the tenth field of
         a two-column grid the Map row was "in the right-hand column, easy to
         miss". `.field-grid-2-span` is `grid-column: 1 / -1`, unscoped, so it
@@ -178,7 +178,7 @@
       </div>
       {% endif %}
       {% comment %}
-        143-08 Task 3 (R-064). "Water system" folded in here: it is the SAME
+        "Water system" sits here: it is the SAME
         publisher (EPA_SDWIS) as every field above it, so a second heading and
         a second pill three inches down would be an identical badge repeated
         rather than new information.
@@ -228,12 +228,12 @@
   </div>
 
   {% comment %}
-    149.1-07 (R-065). The no-map fact, one line in the map's place after the
-    record, so the identity card leads; it was a four-line panel above it. Only
-    an unlocated facility shows it: a located one has the map card above.
-    Measured on staging 2026-07-29 before this sentence was written: of the 40
-    unlocated facilities, 29 are treatment plants, 1 is the distribution system,
-    and 10 ARE groundwater sources. So the line may NOT say "this is a
+    The no-map fact is the Map and Positions from rows that lead the identity
+    card's grid above, so the identity card leads. Only
+    an unlocated facility shows them: a located one has the map card above.
+    An unlocated facility can be a treatment plant, the distribution system
+    or a groundwater source, so the
+    rows may NOT say "this is a
     treatment plant, which is why". It states the fact and then says where
     coordinates come from; it never asserts a cause it cannot see. The GAMA
     expansion keeps the program's own name, as on the sampling point page

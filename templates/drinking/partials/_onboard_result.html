@@ -11,7 +11,7 @@
   Caller supplies `expired`, or `error_kind` + `error` + `pwsid`, or `result` +
   `pwsid` + `epa_facility_count`.
 
-  150.1-02. The expired review also follows a second Create press from another
+  The expired review also follows a second Create press from another
   tab: onboard_commit deletes the session's PWSID after a commit.
 {% endcomment %}
 {% if expired %}
@@ -110,9 +110,9 @@
     sampling points looks finished and is not: the lab import matches rows on PS
     Code, and a PS Code lives on a sampling point.
 
-    149.1-06 (2026-10-07): one line, and the one action is the Add sampling
+    One line, and the one action is the Add sampling
     points button under it. The sentence "This system has its facilities but no
-    sampling points" (S-0753) left: this partial also renders after a refresh,
+    sampling points" is not used: this partial also renders after a refresh,
     when the system may already carry points (commit_system never deletes one),
     and the line cannot see the count.
   {% endcomment %}

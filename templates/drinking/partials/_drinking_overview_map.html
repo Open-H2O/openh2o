@@ -1,9 +1,9 @@
 {% comment %}
 Drinking-water overview map: every LOCATED facility at once.
 
-TWO pages now include this, and the caller names its own host: the
-drinking:sampling_points inventory (host `drinking-overview-map`) and, since
-123-02, the drinking:facilities inventory (host `drinking-facilities-map`). The
+TWO pages include this, and the caller names its own host: the
+drinking:sampling_points inventory (host `drinking-overview-map`) and
+the drinking:facilities inventory (host `drinking-facilities-map`). The
 two ids are NOT interchangeable — tests/test_drinking_map.py asserts
 `drinking-overview-map` present on one page and absent on the other, so reusing
 it here would break that pair in opposite directions. Everything below is
@@ -140,7 +140,7 @@ Variables:
             }
           });
 
-          // The always-on label per facility (the overview map card, 143-07):
+          // The always-on label per facility (the overview map card):
           // its name beside the dot on whichever side has room; a label that
           // would collide yields and the dot stays.
           OH2O.addDetailLabel(map, SRC, 'drinking', {
@@ -152,7 +152,7 @@ Variables:
             }
           });
 
-          // Filter to the list's pks (143-07) and frame them: now, and after
+          // Filter to the list's pks and frame them: now, and after
           // every htmx swap of #results. Both pages that include this
           // partial target #results with every control, and both results
           // partials emit the same results-map-pks id, so the defaults fit

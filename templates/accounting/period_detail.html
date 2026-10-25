@@ -29,14 +29,14 @@
   </div>
 
   {% comment %}
-    143-06 (R-034): the old "Summary" tile row (Allocations count, Ledger
-    entries count, in `.stat-card-value-sm`) goes. This page now leads with
+    There is no "Summary" tile row (Allocations count, Ledger
+    entries count, in `.stat-card-value-sm`). This page leads with
     what the period IS (dates, finalized status, unchanged) beside the ONE
     figure it exists for -- its allocations by water type -- in the account
-    page's own grid (143-03's `.page-grid-account` shape: information beside
+    page's own grid (the `.page-grid-account` shape: information beside
     the lead panel at one height, the wide table full width below). The
-    Allocations table keeps the list's own columns, link and footer (R-032,
-    R-033, R-041/ISS-164): zone as the link, no Name column, one water year
+    Allocations table keeps the list's own columns, link and footer:
+    zone as the link, no Name column, one water year
     already, so it never needs a row-group divider.
   {% endcomment %}
   <div class="page-grid-account">
@@ -101,7 +101,7 @@
       {% if allocation_subtotals %}
         {% comment %}
           Each water type's figure sits in the account page's `.budget-panel`
-          shape (143-03) with NO `--result` (rule 8 names one lead figure per
+          shape with NO `--result` (rule 8 names one lead figure per
           page; a period with two water types has two peers, and elevating
           either one over the other would be a decision this table does not
           make). Exactly one type in the period gets the large `--result`
@@ -143,7 +143,7 @@
       {% endif %}
     </div>
 
-    {% comment %}149-01: the Calculation card. Same two-column shape as the finalize / reopen card below it (the `.period-close` grid): what it does and the one primary button on the left, what the last run said on the right. Operators and administrators get the button; a viewer, and any finalized year, see the last outcome and no button.{% endcomment %}
+    {% comment %}The Calculation card. Same two-column shape as the finalize / reopen card below it (the `.period-close` grid): what it does and the one primary button on the left, what the last run said on the right. Operators and administrators get the button; a viewer, and any finalized year, see the last outcome and no button.{% endcomment %}
     <div class="card-raised page-grid-account-full">
       <div class="period-close">
         <div>
@@ -165,7 +165,7 @@
     </div>
 
     {% if user_is_admin %}
-    {% comment %}Finalize / reopen (Phase 75 made it prominent; 147-02: administrators only, and reopening asks for a reason, kept with the change history via core.history.change_note). Its own full-width card since 147-02's page verdict: inside Period information, the note box made that card twice the allocations card's natural height and stretched the figures beside it over blank fill (measured 511 against 255 px at 1,730).{% endcomment %}
+    {% comment %}Finalize / reopen (administrators only, and reopening asks for a reason, kept with the change history via core.history.change_note). Its own full-width card, because inside Period information the note box made that card twice the allocations card's natural height and stretched the figures beside it over blank fill.{% endcomment %}
     <div class="card-raised page-grid-account-full">
       <div class="period-close">
         <div>
@@ -178,7 +178,7 @@
         </div>
         <form method="post" action="{% url 'accounting:period_finalize' period.pk %}" class="period-close-form">
           {% csrf_token %}
-          {% comment %} 147-02: finalizing carries
+          {% comment %} Finalizing carries
                no optional note box. Reopening still requires a reason, kept
                in the change history, so its box stays. {% endcomment %}
           {% if period.is_finalized %}
@@ -250,4 +250,4 @@
   </div>
 </div>
 {% endblock %}
-{% comment %}The Calculation card's two sentences and the total row's "surface water" (was the slug "surface-water") (150.1-02, Water year page). Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
+{% comment %}The Calculation card's two sentences and the total row's "surface water" are settled sentences on the Water year page. Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}

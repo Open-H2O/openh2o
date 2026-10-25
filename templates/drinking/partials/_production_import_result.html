@@ -1,5 +1,5 @@
 {% comment %}
-Outcome of a production import commit (146-04 Task 2, D7). Same two shapes
+Outcome of a production import commit. Same two shapes
 as the other importers' result partials: an error before any rows were
 considered, or a success summary with an honest count of what was skipped
 and why.
@@ -21,7 +21,7 @@ and why.
   </div>
 
   {% comment %}
-    149.1-06: one line with the counts, or "Nothing to import." when the
+    One line with the counts, or "Nothing to import." when the
     file gave nothing to create, skip or report; each arm its own <p>.
   {% endcomment %}
   <p class="text-base text-secondary mt-md">{% if created %}OpenH2O imported {{ created }} production record{{ created|pluralize }}.{% else %}OpenH2O did not import any production records.{% endif %}</p>

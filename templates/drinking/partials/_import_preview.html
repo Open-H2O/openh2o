@@ -16,7 +16,7 @@
 
   Caller supplies: recognised, preview_rows, error_rows, warning_rows,
   row_count, error_count, duplicate_count, new_analytes, committable, rows_json,
-  agency (150-04 V3).
+  agency (for the regulating-agency line).
 {% endcomment %}
 <div class="card-raised">
   <h2 class="card-header-ruled">Preview</h2>
@@ -32,20 +32,20 @@
   </div>
 
   {% comment %}
-    150.1-02: the count sentence and "A row already recorded, or repeated in this file,
-    is skipped and never written twice." deleted; the badges and each row's
+    The page has no count sentence and no "A row already recorded, or repeated in this file,
+    is skipped and never written twice." line; the badges and each row's
     note say both. A repeat inside the file has its own badge.
-    Also: the limits sentence
-    deleted (each row's note says it), the error line, the unknown PS Code
-    box, the new analytes line, "Rows with a note", the status column (a row
-    OpenH2O skips reads Will skip) and blank file cells read Blank.
+    The limits sentence is absent too (each row's note says it). The error
+    line, the unknown PS Code box, the new analytes line, "Rows with a note",
+    the status column (a row OpenH2O skips reads Will skip) and the Blank an
+    empty file cell reads are settled sentences.
   {% endcomment %}
   {% if error_count %}
   <p class="text-base text-secondary mt-md">Correct the rows below in the file and upload the file again.</p>
   {% endif %}
 
   {% comment %}
-    150-04 V3: the regulating-agency line, decided before the commit by
+    The regulating-agency line, decided before the commit by
     drinking/importer.py::regulating_agency_outcomes, the function the commit
     itself calls. The words are the commit report's own
     (_import_result.html) in the future tense; nothing renders when the file carries no Regulating Agency

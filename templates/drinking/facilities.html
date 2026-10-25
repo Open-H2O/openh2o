@@ -7,7 +7,7 @@
 {% block page_title %}Facilities{% endblock %}
 
 {% comment %}
-123-02: this page loads no map library today, and that is the real cost of
+Loading a map library is the real cost of
 putting a map here. Both blocks are copied from
 templates/drinking/sampling_points.html:8-16 — same versions, same order —
 because two Bucket-3 maps loading two different MapLibre builds is a drift
@@ -107,7 +107,7 @@ nobody would notice until one of them broke.
   </div>
 
   {% comment %}
-  The overview map card (143-07): the head (the count line and the key on one
+  The overview map card: the head (the count line and the key on one
   row, partials/_map_card_head.html) above the map. The map and the list are
   both FACILITIES here — a 1:1 correspondence the Sampling Points page does
   not have — so the shared head partial's own branches say the count with no
@@ -118,20 +118,20 @@ nobody would notice until one of them broke.
   selects, and pagination), so a map inside it would be torn down and rebuilt
   on every keystroke.
 
-  FOLLOWS THE LIST (143-07, Ruling A). Before this it was unfiltered by
-  ruling: `drinking:facilities_geojson` took no parameters and the sentence
-  in `_facility_results.html` named the resulting divergence instead. The
-  endpoint still takes no parameters — the filtering happens client-side, the
-  same way every other Bucket-3 map's does — but OH2O.followResults now
-  narrows what it DRAWS to the list's own pks, so the located-subset sentence
-  replaces the old "it is not filtered" clause.
+  FOLLOWS THE LIST. The endpoint
+  `drinking:facilities_geojson` takes no parameters, so the filtering happens
+  client-side, the same way every other Bucket-3 map's does:
+  OH2O.followResults narrows what the map DRAWS to the list's own pks, and
+  the sentence in `_facility_results.html` names the located subset of
+  the list, so the map and the table do not contradict each other.
+  
 
   A `{# #}` comment would NOT work here: Django's inline comment closes at the
   end of its line, so a multi-line one renders its second line onward as page
   text. That has shipped to openh2o.com once, and
   `test_no_template_ships_a_multi_line_django_comment` now guards it.
   {% endcomment %}
-  {% comment %} 150-04 V6: no records at all, no map card: its head would only say nothing has a location. {% endcomment %}{% if all_count %}
+  {% comment %} No records at all, no map card: its head would only say nothing has a location. {% endcomment %}{% if all_count %}
   <div class="card-raised" style="padding: 0; overflow: hidden;">
     {% include "partials/_map_card_head.html" with head_id="facilities-map-head" title="Facilities" noun="facility" noun_plural="facilities" key_label="Facility" swatch="dot" swatch_token="blue-bright" %}
     {% if located_count %}

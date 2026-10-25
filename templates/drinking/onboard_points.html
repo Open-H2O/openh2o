@@ -29,11 +29,11 @@
     3. Facilities that have sampling points come first; the rest are behind a
        toggle instead of 21 identical empty boxes.
 
-  143-08 Task 4 (2026-09-15, design A) replaced the mechanism point 3 built:
-  23 per-facility panels, 21 more behind a `<details>`, became one form with
-  a facility select and one grouped table of what is listed. Every facility
-  is one click away in the select rather than 47 of them defaulting to
-  hidden, so the toggle this comment used to describe is gone.
+  In place of the toggle in point 3, the page is one form with
+  a facility select and one grouped table of what is listed.
+  Every facility is one click away in the select,
+  so none of them is hidden by
+  default.
 {% endcomment %}
 {% block content %}
 <div class="page-stack page-wide">
@@ -61,11 +61,11 @@
     Body prose caps at 75ch (DESIGN.md copy rule 6), inline as the six sibling
     drinking templates do it. The container stays at 1400px because the
     add-a-point form's five-column grid and the grouped table below need that
-    width; only the prose was over-wide, measured at 127ch on staging before
-    this pass.
+    width; only the prose needs the cap, since the container's width would
+    otherwise carry it well past 75ch.
 
-    149.1-06 (2026-10-07): the "What this page is for" card's three paragraphs
-    left. What a sampling point record is, and where its PS Code comes from, is
+    There is no "What this page is for" card; what a sampling point record is,
+    and where its PS Code comes from, is
     the page description; the code's last segment is the Point number box's
     help and its first two the "Codes here begin" line under the facility box
     (_onboard_points_form.html); the unmatched-row rule is the Sampling points
@@ -73,11 +73,11 @@
   {% endcomment %}
 
   {% comment %}
-    143-08 Task 4 (R-073, design A). One
-    "Add a sampling point" form for the whole system, replacing the 23
-    identical per-facility panels and the `<details>` that hid the rest. A
-    facility select stands in for the toggle, since every facility is always
-    one click away in it rather than 47 of them being buried by default. The
+    One
+    "Add a sampling point" form for the whole system, not one
+    identical panel per facility with a `<details>` hiding the rest. A
+    facility select stands in for a toggle, since every facility is always
+    one click away in it and none is hidden by default. The
     grouped table of what is already listed sits below, its own card, so a
     reader sees what is done and what to add next in one scroll.
   {% endcomment %}
@@ -130,7 +130,7 @@
       {% comment %}
         The label names the DESTINATION, which is the Sampling Points page, so
         it says "points" even though this builder's teaching prose deliberately
-        says "places" (80-03's plain-English rewrite, kept). A control that
+        says "places" (plain English). A control that
         navigates to a named page carries that page's name; DESIGN.md rule 4.
       {% endcomment %}
       <a href="{% url 'drinking:sampling_points' %}" class="btn-secondary">View all sampling points</a>

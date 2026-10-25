@@ -79,8 +79,8 @@
   </div>
 
   {% comment %}
-    149.1-06 (2026-10-07): the four "It does / It does not" paragraphs became
-    one cases table, What / Brought in from EPA / Left for you, from the reader's
+    One cases table instead of four "It does / It does not" paragraphs:
+    What / Brought in from EPA / Left for you, from the reader's
     question "what does onboarding bring in, and what is left for me to add?".
     Each row says what drinking/envirofacts_mapping.py::commit_system writes:
     _SYSTEM_REFRESHABLE_FIELDS (EPA's two totals among them, beside the eight
@@ -88,17 +88,17 @@
     state facility ID (UnmappableFacility). Sampling points are created only on
     the builder (views.py::onboard_points_add).
 
-    89-02: the third drinking-water page to name wells on a deployment that has
-    none, after the two 88-03 fixed, and the third with no row in the
-    droppability harness's page table, which is why the gate stayed green
-    through all three. A "does not do X" row about a join that cannot exist
+    Wells must not be named on a deployment that has none. The droppability
+    vocabulary check reads this page (`/drinking/onboard/` in
+    tests/droppability/checks.py), so an unguarded well row fails it.
+    A "does not do X" row about a join that cannot exist
     here is not reassurance, it is a claim that the platform meters wells, so
     the well row keeps its guard.
 
-    150.1-02: the Population row used to promise that the
+    The Population row does not promise that the
     counts by category fill "until a source that breaks them down is imported";
     no import fills them (only /admin/ and the demo seed), so the row says so.
-    "A second lookup refreshes" was false: a lookup saves nothing, Refresh does.
+    "A second lookup refreshes" would be false: a lookup saves nothing, Refresh does.
   {% endcomment %}
   <div class="card-raised">
     <h2 class="card-header-ruled">What comes from EPA</h2>

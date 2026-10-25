@@ -1,6 +1,6 @@
 {% load placeholders humanize %}{% comment %}
-  The POD page's "Water right" panel (146-02 D2). Every path that creates a
-  point of diversion can now name its right from here: a select of every
+  The POD page's "Water right" panel. Every path that creates a
+  point of diversion can name its right from here: a select of every
   WaterRight, ordered by right_id, blank option "No right linked", posted via
   HTMX to surface:pod_link_right. On save this whole panel re-renders (this
   same template), so the identity fields below the control are always the
@@ -11,10 +11,10 @@
   home the link/unlink view can re-render without also rebuilding the rest of
   the POD page.
 
-  150-03: with no right linked, the line names where rights are kept and
-  links the list (ISS-182; the list is readable by every account, so the link
+  With no right linked, the line names where rights are kept and
+  links the list (the list is readable by every account, so the link
   needs no write gate). The CalWATRS line shows only where the reporting
-  module is on (ISS-194): a deployment without it files nothing to CalWATRS.
+  module is on: a deployment without it files nothing to CalWATRS.
 {% endcomment %}
 <div class="card-raised page-grid-account-full" id="pod-water-right-panel">
   <h2 class="section-header">Water right</h2>
@@ -53,7 +53,7 @@
         <div style="margin-top: 2px;">{% include "surface/partials/_status_badge.html" with status=water_right.status %}</div>
       </div>
     </div>
-    {% comment %} 150.1-02: both "Recharge diversion" sentences deleted
+    {% comment %} No "Recharge diversion" sentences
          (point 6 mostly delivers to fields, the recharge card sits above this one, and recharge credit comes
          from recharge events, not diversion records). A point without a right reads like any other.
          Line count held for the figure ledger. {% endcomment %}

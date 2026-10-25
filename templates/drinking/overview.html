@@ -13,23 +13,23 @@
     <span class="breadcrumb-current">Drinking Water</span>
   </nav>
   {% comment %}
-    Phase 88 softened `drinking.requires` to ("standards",), so this page runs
-    on a deployment with no Wells module. The clause naming wells goes with it
-    — with `wells` on, the sentence is byte-identical to what it replaced.
+    `drinking.requires` is ("standards",), so this page runs
+    on a deployment with no Wells module. The description below names no
+    wells, so it reads true with or without `wells`.
   {% endcomment %}
-  {% comment %}89-02: two defects in one sentence, and the vocabulary gate could
-  see neither. 88-03 guarded ", and the wells behind them" and left the comma
-  before "its facilities" doing the work of a three-item list, so a wells-less
-  deployment read "…this agency operates, its facilities." — a list with a
-  missing item rather than a pair. And the second sentence positions Drinking
-  Water AGAINST "the rest of the platform", which on a drinking-water-only
-  deployment is nothing: the contrast is an Accounting claim with no forbidden
-  noun in it.
-  The contrast sentence below this comment was struck 2026-09-17 (143.1-01).
-  150.1-02: this page's wording. Three sentences were false: the splits note promised an eAR
-  import that does not exist; "Facilities are EPA's record" (facility_add adds
-  one by hand); the builder's "one per facility you choose" (a facility can
-  carry several points). The well-link sentence went: nothing here shows one.{% endcomment %}<p class="page-description">This page shows each public water system on this site, with counts of its facilities, sampling points and sample results.</p>
+  {% comment %}The description names no wells. A clause naming them would need a
+  module guard, and a guarded clause that left its comma behind before
+  "its facilities" would read "…this agency operates, its facilities." on a
+  wells-less deployment: a list with a missing item rather than a pair.
+  It sets Drinking Water against nothing: a sentence contrasting it with "the
+  rest of the platform" is an Accounting claim, and on a drinking-water-only
+  deployment there is no rest of the platform. Such a contrast carries no
+  forbidden noun, so the vocabulary gate would not catch it.
+  The wording also avoids three false claims: a note promising an eAR
+  import for the splits (no such import exists); "Facilities are EPA's record"
+  (facility_add adds one by hand); and the builder as "one per facility you
+  choose" (a facility can carry several points).
+  It names no well link: nothing here shows one.{% endcomment %}<p class="page-description">This page shows each public water system on this site, with counts of its facilities, sampling points and sample results.</p>
 </div>
 {% endblock %}
 
@@ -38,12 +38,12 @@
 
   {% for system in systems %}
   {% comment %}
-    143-08 (R-062). One card. The three counts sit at the foot of the identity
+    One card. The three counts sit at the foot of the identity
     card under a head of their own, "Records for this system", so they read
     as what THIS deployment holds rather than floating under the population
-    section. Task 4 first built them as a second card beside the identity
-    card (the account-grid shape), but three boxes inside a larger box left empty
-    space, so they sit in the box to the left that holds the City of Merced
+    section. They are not a second card beside the identity
+    card (the account-grid shape): three boxes inside a larger box would leave empty
+    space, so they sit in the identity card, the box that holds the system's own
     data. The three tiles
     keep every anchor, class and comment they carried:
     tests/test_drinking_module_shows_what_to_do.py pins their shape.
@@ -83,12 +83,12 @@
       </div>
       <div class="field-group">
         {% comment %}
-          146-04 Task 3: onboarding never writes this field (EPA's record
+          Onboarding never writes this field (EPA's record
           carries a state code, not a DDW district); the lab import fills it
           from the file's Regulating Agency column, so when it holds a value
           the card's EPA label above does not describe it. "an imported lab
           file", not the State Water Board: any lab file in that format can
-          fill it (150.1-02).
+          fill it.
         {% endcomment %}
         <div class="field-label">Regulating agency{% if system.regulating_agency %} {% source_label "LAB_FILE" %}{% endif %}</div>
         <div class="field-value">{{ system.regulating_agency|blank }}</div>
@@ -186,24 +186,24 @@
     are lifted from partials/_dashboard_card.html; both already exist in
     app.css, so nothing here adds CSS.
 
-    The values carry `|intcomma`. Measured on staging: the result count reads
-    22367, and an unseparated five-digit number sitting under two separated ones
-    on the same page reads as an oversight. This page got separators first and
-    the dashboard card was left alone as out of scope; on 2026-08-02 the same
-    argument was accepted there too, so the two surfaces now agree.
+    The values carry `|intcomma`, as the dashboard card's do: a result count
+    can run to five digits, and an unseparated five-digit number sitting under two
+    separated ones on the same page reads as an oversight. Both surfaces
+    separate their counts the same way, so a count reads the same on either
+    page.
 
-    143-08 (R-062): the tile row is headed "Records for this system", the
+    The tile row is headed "Records for this system", the
     same `section-header` the sections above it use, with the facts line
-    under it; the tiles below are otherwise byte-identical to before.
+    under it and the tiles below it.
     {% endcomment %}
     <h2 class="section-header mt-lg">Records for this system</h2>
     <p class="text-secondary text-base mb-md">Facilities come from EPA's record or you add them by hand. You add the sampling points. Sample results come from imported lab files.</p>
       {% comment %}
-      123-02: the whole tile is the anchor, not just the digits. The page has
-      always advertised the affordance (`.card-raised:hover`, app.css:98-102
-      lights the entire tile) while only the number was clickable, so the target
-      was 40% of what the hover promised. Measured pixel-identical at 1024 (0.0%,
-      max channel delta 0); no CSS was added and none is needed.
+      The whole tile is the anchor, not just the digits. The hover state
+      lights the entire tile (`.card-raised:hover`, app.css:98-102), so the
+      anchor covers everything the hover promises.
+      Making the whole tile the anchor changes nothing visible,
+      so no CSS is needed for it.
 
       The inner element is a `<span class="data-table-link">`, NOT an `<a>`. An
       anchor nested inside an anchor is invalid HTML: browsers reparent the inner
@@ -241,7 +241,7 @@
       </div>
 
       {% comment %}
-        146-04 Task 4 (D8): one line, the earliest date on the operator's
+        One line, the earliest date on the operator's
         schedule, and nothing at all when no row carries a date. The date is
         theirs, so the line states it and passes no judgement on it.
       {% endcomment %}
@@ -252,14 +252,14 @@
   </div>
 
   {% comment %}
-  123-02: what to DO, in order. The page above says what this system IS; three
+  What to DO, in order. The page above says what this system IS; three
   counts route to three lists and nothing on it named a next step. The three
-  cards below are the same `.step-card` idiom the Help page has shipped since
-  Phase 92 (templates/help/getting_started.html:78-88) — badge holds an ICON,
-  the numeral lives in the eyebrow — reused exactly, with no CSS added and no
-  new component invented. `.step-card` carries no accent stripe (app.css:1519
-  records it as removed decoration), so the 2026-07-17 stripe rejection does
-  not arise here.
+  cards below use the existing `.step-card` idiom (static/css/app.css, under
+  Help Pages): the badge holds an ICON and
+  the numeral lives in the eyebrow, with no CSS added and no
+  new component invented. `.step-card` carries no accent stripe (the note
+  above it in app.css calls a stripe beside the badge redundant decoration),
+  so these cards carry none either.
 
   Siblings of the identity card, not children of it: a card inside a card reads
   as one panel with a nested box, and `.page-stack` already spaces siblings.

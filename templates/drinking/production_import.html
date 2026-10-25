@@ -26,11 +26,11 @@
   <div class="card-raised">
     <h2 class="card-header-ruled">Production by month and source</h2>
     {% comment %}
-      149.1-06: the first line says what file the page takes, what the preview
-      shows and what the import writes; the two layouts' columns are the
-      tables below, read from drinking/production_import.py.
-      150.1-02: the description, these two lines, the file label, its help and the
-      loading line.
+      The card's one line says nothing is saved until Import on the
+      preview; the page description and the file label say what file the
+      page takes, and the two layouts' columns are the tables below, read
+      from drinking/production_import.py. The description, this line, the
+      file label, its help and the loading line are settled sentences.
     {% endcomment %}
     <p class="text-base text-secondary mt-md">OpenH2O saves nothing until you press Import on the preview.</p>
     <p class="text-base text-secondary mt-sm">OpenH2O skips a row whose month and type of water are already on file.</p>
@@ -71,7 +71,7 @@
   <div id="production-import-area"></div>
 
   {% comment %}
-    149.1-06: the columns each layout carries, from production_import.py:
+    The columns each layout carries, from production_import.py:
     _EAR_REQUIRED and _process_ear_row for the eAR export;
     _OPERATOR_SOURCE_COLUMNS and _process_operator_log_row for the log, whose
     "Total Amount of Potable Water" column is never read.

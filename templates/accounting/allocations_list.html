@@ -15,10 +15,10 @@
     <span class="breadcrumb-current">Allocations</span>
   </nav>
   {% comment %}
-    137-03 page pass. This sentence used to end "Compare actual usage against
-    the allocated amount", a comparison this page has never drawn: the table
+    The sentence names the Dashboard for the comparison of actual usage against
+    the allocated amount, a comparison this page does not draw: the table
     lists the plans and nothing else. The comparison lives on the dashboard's
-    zone table, so the sentence now says where instead of promising it here.
+    zone table, so the sentence says where instead of promising it here.
   {% endcomment %}
   <p class="page-description">Each allocation sets the volume of water for one zone and one water type in a water year. The <a href="{% url 'accounting:dashboard' %}" class="prose-link">Dashboard</a> shows each zone's groundwater use against its groundwater allocation.</p>
 </div>
@@ -28,10 +28,10 @@
 <div class="page-stack">
 
   {% comment %}
-    143-06: one row, the ledger's shape (Period, then Search) -- the filter
-    card used to put Search first; the Period select now leads because a
+    One row, the ledger's shape (Period, then Search).
+    The Period select leads because a
     bare landing already has one chosen (the current water year) and this
-    reorders the row to match what a reader sees selected.
+    orders the row to match what a reader sees selected.
   {% endcomment %}
   <div class="card-raised toolbar-row">
     <!-- Period filter -->

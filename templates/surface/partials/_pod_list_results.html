@@ -1,5 +1,5 @@
 {% load placeholders %}{% comment %}
-The count line is NOT here (143-07). It is the map card's head, above the map
+The count line is NOT here. It is the map card's head, above the map
 and outside #results, and on an htmx swap this partial re-renders that head
 out of band (hx-swap-oob on the same id) so the count follows the list without
 the map being torn down. On a full page render the page includes the head once

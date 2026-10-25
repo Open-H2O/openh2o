@@ -24,8 +24,8 @@
   <a href="{% url 'accounting:periods_list' %}" class="back-link">&larr; Back to Water Years</a>
 
   <div class="card-raised">
-    {% comment %} "Create reporting period" used to sit here: a second name for the thing the
-         page title already names, in a vocabulary the title does not use (Phase 143-02,
+    {% comment %} The card heading is "Details", not a second name for the thing the
+         page title already names, in a vocabulary the title does not use (DESIGN.md
          copy rule 13: a label under a heading says the remainder). {% endcomment %}
     <h2 class="card-header-ruled">Details</h2>
 
@@ -42,7 +42,7 @@
     </div>
     {% endif %}
 
-    {% comment %} 150-04 (rule B): a two-track grid; the two dates share a row,
+    {% comment %} A two-track grid; the two dates share a row,
          the name and the notes span both tracks. {% endcomment %}
     <form method="post" class="form-grid">
       {% csrf_token %}

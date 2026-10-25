@@ -65,8 +65,8 @@
 
 {% else %}
 {% comment %}
-  119-01: see the matching note on the Use Areas partial — `.empty-state`
-  centres (app.css:1808), which wedges a multi-line paragraph in a narrow
+  See the matching note on the Use Areas partial: `.empty-state`
+  centres (app.css `.empty-state`), which wedges a multi-line paragraph in a narrow
   column. Left-aligned for the whole panel.
 {% endcomment %}
 <div class="card-raised empty-state" style="text-align: left;">
@@ -83,13 +83,13 @@
   <a href="{% url 'surface:water_rights_list' %}" class="btn-secondary btn-sm mt-sm">Clear the search</a>
   {% else %}
   {% comment %}
-    Deliberately NOT the shared actionable empty state in `templates/partials/`,
-    which was included here until Phase 119 carrying the Surface Diversions
-    description and a "+ Add Diversion" label. This page lists water rights;
+    Deliberately NOT the shared actionable empty state
+    (`templates/partials/_empty_onboarding.html`), whose caller passes an add
+    label and an infrastructure type. This page lists water rights;
     that partial offers infrastructure's add and import forms, and those create
     a point of diversion — a different entity, in a different table, on a
     different screen. Shaped after `drinking/partials/_empty_drinking.html`, the
-    shipped precedent for an empty state whose honest answer is the admin.
+    precedent for an empty state of one line and the one action.
   {% endcomment %}
   <p class="empty-state-text" style="max-width: 460px;">No water rights yet.</p>
   {% if user_can_write %}
