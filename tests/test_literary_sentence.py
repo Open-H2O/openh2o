@@ -247,7 +247,7 @@ SETTLED = [
         'Envirofacts carries the facilities but not the points beneath them, so onboarding deliberately creates none — inventing them would let one federal record decide the structure a lab file is matched against.',
         'Envirofacts carries the facilities but not their sampling points, so onboarding creates none.'),
     Row('S-0146',
-        'drinking/views.py',
+        'drinking/views/onboard.py',
         '<x> is carried here but has no facilities, so there is nothing to hang a sampling point on. Re-run the lookup to refresh its facilities from EPA.',
         '<x> has no facilities, so no sampling point can be added. Re-run the lookup to refresh its facilities from EPA.'),
     Row('S-0050',

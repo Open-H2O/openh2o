@@ -70,6 +70,8 @@ openh2o/
 │   │   └── seed_roles.py
 │   ├── apps.py
 │   └── models.py
+├── accounting/views/        # Accounting pages, one module per screen (dashboard, ledger, periods, ...)
+├── drinking/views/          # Drinking water pages, one module per screen (facilities, results, ...)
 ├── static/
 │   └── css/
 │       ├── tokens.css       # VanderDev design tokens

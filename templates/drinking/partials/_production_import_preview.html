@@ -105,7 +105,7 @@ pressed.
 </div>
 {% endif %}
 
-{% comment %} 150-04 V2: the file's own rows under its own column names, the first 50 at most (drinking/views.py::PRODUCTION_PREVIEW_ROW_LIMIT). {% endcomment %}
+{% comment %} 150-04 V2: the file's own rows under its own column names, the first 50 at most (drinking/views/production.py::PRODUCTION_PREVIEW_ROW_LIMIT). {% endcomment %}
 {% if preview_rows %}
 <div class="card-raised">
   {% if row_count > preview_rows|length %}

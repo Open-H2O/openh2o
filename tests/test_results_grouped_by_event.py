@@ -4,7 +4,7 @@
 sample event) and R-069 (the sampling-point page's own history folded into
 its head, its table grouped the same way).
 
-``group_results_by_event`` (``drinking/views.py``) is the ONE place both
+``group_results_by_event`` (``drinking/views/common.py``) is the ONE place both
 tables fold a contiguous run of results into one block per sample event; it
 is tested directly here, in addition to through both pages, so a future edit
 to either template cannot silently diverge from the helper's own contract.
@@ -26,7 +26,7 @@ from django.test import Client
 from django.urls import reverse
 
 from drinking.models import SampleResult
-from drinking.views import group_results_by_event
+from drinking.views.common import group_results_by_event
 from tests.factories import (
     AnalyteFactory,
     SampleEventFactory,

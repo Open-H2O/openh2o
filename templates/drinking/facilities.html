@@ -46,7 +46,7 @@ nobody would notice until one of them broke.
 
   {% comment %}
   Both selects are built in the view from the types PRESENT in the database, not
-  from the models' full choices tables. Read drinking/views.py::_present_choices
+  from the models' full choices tables. Read drinking/views/facilities.py::_present_choices
   before changing that — a full FACILITY_TYPE_CHOICES list renders the option
   text "Well", "Clear Well" and "Wellhead" on every load, including an empty
   database, and the droppability vocabulary gate reads option text as page prose.

@@ -564,7 +564,7 @@ class TestConsumerConfidenceReportLink:
     def test_publication_follows_the_july_1_deadline(
         self, sample_year, today, published
     ):
-        from drinking.views import _ccr_is_published
+        from drinking.views.results import _ccr_is_published
 
         assert _ccr_is_published(sample_year, today) is published
 

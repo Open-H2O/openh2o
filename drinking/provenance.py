@@ -21,7 +21,7 @@ sentence so a rename fails loudly instead of silently un-labelling a page.
 **Why there is no ``provenance`` FIELD and no migration.** Measured at planning
 time and re-measured here: ``drinking/urls.py`` exposes reads plus the three
 ingest paths and nothing else, there is no ``drinking/forms.py``, and no
-``ModelForm`` anywhere in ``drinking/views.py``. Every field on ``WaterSystem``,
+``ModelForm`` anywhere in ``drinking/views/``. Every field on ``WaterSystem``,
 ``SystemFacility``, ``SamplingPoint``, ``SampleEvent`` and ``SampleResult`` is
 written by exactly one of the code paths named below and is never subsequently
 edited through the UI, so a template-level statement of publisher cannot go

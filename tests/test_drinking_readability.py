@@ -504,7 +504,7 @@ class TestCopyRules:
             if spelling in text.lower():
                 offenders.append(name)
         for template in DRINKING_TEMPLATES:
-            #: `recognised` is also a CONTEXT KEY set in drinking/views.py. The
+            #: `recognised` is also a CONTEXT KEY set in drinking/views/lab_import.py. The
             #: rule binds rendered text, so a variable name is not a violation;
             #: the rendered-page half of this test is what covers that word.
             source = re.sub(r"\{[%{][^%}]*[%}]\}", " ", template_prose(template))

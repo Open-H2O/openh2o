@@ -34,7 +34,8 @@ from django.contrib.auth.hashers import make_password
 from django.test import Client
 from django.urls import reverse
 
-from drinking import envirofacts, views
+from drinking import envirofacts
+from drinking.views import onboard
 from drinking.models import SystemFacility, WaterSystem
 
 FIXTURES = Path(__file__).resolve().parent.parent / "drinking" / "fixtures"
@@ -173,14 +174,14 @@ class TestLookupReview:
         client_in.post(reverse("drinking:onboard_lookup"), {"pwsid": PWSID})
 
         session = dict(client_in.session)
-        assert session[views.SESSION_KEY_ONBOARD_PWSID] == PWSID
+        assert session[onboard.SESSION_KEY_ONBOARD_PWSID] == PWSID
         assert [k for k in session if k.startswith("drinking_onboard")] == [
-            views.SESSION_KEY_ONBOARD_PWSID
+            onboard.SESSION_KEY_ONBOARD_PWSID
         ]
 
     def test_pwsid_is_normalized(self, client_in, epa):
         client_in.post(reverse("drinking:onboard_lookup"), {"pwsid": "  ca1010001 "})
-        assert client_in.session[views.SESSION_KEY_ONBOARD_PWSID] == PWSID
+        assert client_in.session[onboard.SESSION_KEY_ONBOARD_PWSID] == PWSID
 
     def test_an_already_onboarded_system_reads_as_a_refresh(self, client_in, epa):
         WaterSystem.objects.create(pwsid=PWSID, name="Already here")
@@ -307,7 +308,7 @@ class TestLookupFailureModes:
     def test_a_failed_lookup_leaves_no_pwsid_in_the_session(self, client_in, monkeypatch):
         self._raise(monkeypatch, envirofacts.PwsidNotFound(PWSID))
         client_in.post(reverse("drinking:onboard_lookup"), {"pwsid": PWSID})
-        assert views.SESSION_KEY_ONBOARD_PWSID not in client_in.session
+        assert onboard.SESSION_KEY_ONBOARD_PWSID not in client_in.session
 
 
 # -- Task 3: commit + result -------------------------------------------------
@@ -359,7 +360,7 @@ class TestCommit:
 
     def test_the_session_is_cleared_after_a_successful_commit(self, client_in, epa):
         self._lookup_then_commit(client_in)
-        assert views.SESSION_KEY_ONBOARD_PWSID not in client_in.session
+        assert onboard.SESSION_KEY_ONBOARD_PWSID not in client_in.session
 
     def test_the_skipped_facility_is_reported_on_the_result_too(self, client_in, epa):
         """Not only on the review — someone who clicked past it still needs the record."""

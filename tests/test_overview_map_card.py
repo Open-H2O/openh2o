@@ -121,7 +121,7 @@ def _build_sampling_points():
     SamplingPointFactory(name="Beta Point", facility=beta_facility)
     SamplingPointFactory(name="Gamma Point", facility=gamma_facility)
     # The map draws FACILITIES: the matching pk is the matching POINT's
-    # facility pk, not the point's own pk (drinking/views.py::sampling_points).
+    # facility pk, not the point's own pk (drinking/views/sampling_points.py::sampling_points).
     return alpha, [alpha_facility.pk]
 
 

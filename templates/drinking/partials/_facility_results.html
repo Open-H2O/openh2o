@@ -20,7 +20,7 @@ The MAP itself stays outside #results and must not be moved in here: four
 controls on this page swap #results wholesale, and a map inside is destroyed and
 rebuilt on every keystroke.
 
-Every number is computed in `drinking/views.py::facilities` on each render and
+Every number is computed in `drinking/views/facilities.py::facilities` on each render and
 NEVER written down — the demonstration happens to be 21 of 61, and an
 Envirofacts-onboarded system starts at zero because EPA publishes no
 coordinates at all.
@@ -67,7 +67,7 @@ filtered" clause, which was true before this plan and is not true after it.
   no-h2 form: `accounting/partials/_ledger_list_results.html`, this page's
   own page_title already names the thing). The population line's three type
   counts come from ONE `values("facility_type").annotate(Count)` query in
-  `drinking/views.py::facilities` -- never a per-row loop -- so an htmx swap
+  `drinking/views/facilities.py::facilities` -- never a per-row loop -- so an htmx swap
   keeps them current with whatever `q` / `facility_type` / `activity_status`
   narrowed the table to.
   {% endcomment %}
