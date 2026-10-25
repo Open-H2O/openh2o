@@ -55,14 +55,17 @@ reversal (`prior_is_pre_148_02`) as one case of the same computation rather
 than a second, separate step.
 """
 
+from __future__ import annotations
+
 import datetime as dt
 import re
 from contextlib import ExitStack
 from decimal import Decimal
+from typing import TYPE_CHECKING, Any
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 
 from accounting.calculation import evaluate_chain, plan_config_hash
 from accounting.carryover_math import water_year_of
@@ -92,6 +95,9 @@ from accounting.services import (
 from core.models import SiteConfig
 from parcels.models import Parcel, ParcelLedger
 from parcels.services import field_efficiency
+
+if TYPE_CHECKING:
+    from geography.models import Zone
 
 # The reason recorded on every change a forced recompute of a finalized period
 # writes, so the change history says why a filed figure moved.
@@ -225,6 +231,76 @@ def _resolve_leftover(parcel, period, final_af, breakdown, *, commit):
     return final_af, {"deposited": Decimal("0"), "drawn": Decimal("0")}
 
 
+def _effective_precip_stamp(breakdown: list[dict[str, Any]]) -> Decimal | None:
+    """Effective precip AF off the breakdown at 4dp, or None when the step did not run."""
+    quant = Decimal("0.0001")
+    precip_step = next(
+        (s for s in breakdown if s["step_type"] == "subtract_effective_precip"), None
+    )
+
+    effective_precip_af = None
+    if precip_step is not None:
+        effective_precip_af = Decimal(
+            str(precip_step["detail"]["effective_precip_af"])
+        ).quantize(quant)
+    return effective_precip_af
+
+
+def _surface_water_stamps(
+    breakdown: list[dict[str, Any]],
+) -> tuple[Decimal | None, Decimal | None, Decimal | None]:
+    """Surface water consumed, delivered and efficiency off the breakdown (None when absent)."""
+    quant = Decimal("0.0001")
+    surface_step = next(
+        (s for s in breakdown if s["step_type"] == "subtract_surface_water"), None
+    )
+
+    # 148-02: surface_water_af keeps its name and holds the CONSUMED part
+    # (delivered x efficiency, when the apply_efficiency knob is on; the
+    # delivered magnitude itself when it is off). surface_delivered_af and
+    # surface_efficiency are only present in the step detail when the knob is
+    # on ("delivered_af" / "efficiency" keys). An old breakdown, or the knob
+    # off, stores null for both, exactly as it always has for the one column.
+    surface_water_af = None
+    surface_delivered_af = None
+    surface_efficiency = None
+    if surface_step is not None:
+        detail = surface_step["detail"]
+        surface_water_af = Decimal(str(detail["surface_water_af"])).quantize(quant)
+        if "delivered_af" in detail:
+            surface_delivered_af = Decimal(
+                str(detail["delivered_af"])
+            ).quantize(quant)
+        if detail.get("efficiency") is not None:
+            surface_efficiency = Decimal(str(detail["efficiency"])).quantize(
+                Decimal("0.001")
+            )
+    return surface_water_af, surface_delivered_af, surface_efficiency
+
+
+def _groundwater_stamps(
+    residual_disposition: str,
+    final_af: Decimal,
+    groundwater_application_efficiency: Decimal,
+    groundwater_efficiency_source: str,
+) -> tuple[Decimal | None, Decimal | None, Decimal | None, str]:
+    """The extraction split and efficiency stamp: ``(extracted, deep_percolation, efficiency, source)``."""
+    # 148-02 Task 4 (Q2): only a `groundwater`-disposition run (has a well, no
+    # meter) ever gets an extraction estimate -- a metered run's meter IS the
+    # number, and a no-well run has no pump to have extracted anything.
+    gw_extracted_af = None
+    deep_percolation_gw_af = None
+    efficiency_stamp = None
+    source_stamp = ""
+    if residual_disposition == "groundwater":
+        gw_extracted_af, deep_percolation_gw_af = _groundwater_extraction(
+            final_af, groundwater_application_efficiency
+        )
+        efficiency_stamp = groundwater_application_efficiency
+        source_stamp = groundwater_efficiency_source
+    return gw_extracted_af, deep_percolation_gw_af, efficiency_stamp, source_stamp
+
+
 def _persist_calculation_run(
     parcel, period, gross_af, net_af, breakdown, info, plan_id, plan_name, plan_hash,
     *, residual_disposition, unmet_demand_af, groundwater_application_efficiency,
@@ -258,39 +334,10 @@ def _persist_calculation_run(
     MUST be called inside the per-parcel transaction.atomic() block.
     """
     quant = Decimal("0.0001")
-    precip_step = next(
-        (s for s in breakdown if s["step_type"] == "subtract_effective_precip"), None
+    effective_precip_af = _effective_precip_stamp(breakdown)
+    surface_water_af, surface_delivered_af, surface_efficiency = (
+        _surface_water_stamps(breakdown)
     )
-    surface_step = next(
-        (s for s in breakdown if s["step_type"] == "subtract_surface_water"), None
-    )
-
-    effective_precip_af = None
-    if precip_step is not None:
-        effective_precip_af = Decimal(
-            str(precip_step["detail"]["effective_precip_af"])
-        ).quantize(quant)
-
-    # 148-02: surface_water_af keeps its name and holds the CONSUMED part
-    # (delivered x efficiency, when the apply_efficiency knob is on; the
-    # delivered magnitude itself when it is off). surface_delivered_af and
-    # surface_efficiency are only present in the step detail when the knob is
-    # on ("delivered_af" / "efficiency" keys). An old breakdown, or the knob
-    # off, stores null for both, exactly as it always has for the one column.
-    surface_water_af = None
-    surface_delivered_af = None
-    surface_efficiency = None
-    if surface_step is not None:
-        detail = surface_step["detail"]
-        surface_water_af = Decimal(str(detail["surface_water_af"])).quantize(quant)
-        if "delivered_af" in detail:
-            surface_delivered_af = Decimal(
-                str(detail["delivered_af"])
-            ).quantize(quant)
-        if detail.get("efficiency") is not None:
-            surface_efficiency = Decimal(str(detail["efficiency"])).quantize(
-                Decimal("0.001")
-            )
 
     # Net consumptive use is the source-agnostic spine: gross ET minus effective
     # precip ONLY (never surface). It is recorded for every ET-bearing parcel
@@ -310,19 +357,12 @@ def _persist_calculation_run(
     over_delivery_af = _incidental_recharge_af(breakdown).quantize(quant)
 
     final_af = net_af.quantize(quant)
-    # 148-02 Task 4 (Q2): only a `groundwater`-disposition run (has a well, no
-    # meter) ever gets an extraction estimate -- a metered run's meter IS the
-    # number, and a no-well run has no pump to have extracted anything.
-    gw_extracted_af = None
-    deep_percolation_gw_af = None
-    efficiency_stamp = None
-    source_stamp = ""
-    if residual_disposition == "groundwater":
-        gw_extracted_af, deep_percolation_gw_af = _groundwater_extraction(
-            final_af, groundwater_application_efficiency
+    gw_extracted_af, deep_percolation_gw_af, efficiency_stamp, source_stamp = (
+        _groundwater_stamps(
+            residual_disposition, final_af, groundwater_application_efficiency,
+            groundwater_efficiency_source,
         )
-        efficiency_stamp = groundwater_application_efficiency
-        source_stamp = groundwater_efficiency_source
+    )
 
     CalculationRun.objects.filter(parcel=parcel, period=period).delete()
     CalculationRun.objects.create(
@@ -353,6 +393,511 @@ def _persist_calculation_run(
         methodology_plan_name=plan_name,
         config_hash=plan_hash,
     )
+
+
+def _parcels_in_scope(parcel_number: str | None) -> QuerySet[Parcel]:
+    """The parcels this run covers: all of them, or the one named by --parcel."""
+    parcels = (
+        Parcel.objects.select_related("irrigation__method")
+        .all()
+        .order_by("parcel_number")
+    )
+    if parcel_number:
+        parcels = parcels.filter(parcel_number=parcel_number)
+        if not parcels.exists():
+            raise CommandError(
+                f"no parcel with parcel_number={parcel_number!r}"
+            )
+    return parcels
+
+
+def _metered_parcel_ids(year: int, month: int) -> set[int]:
+    """Ids of the parcels that carry an authoritative meter reading for the month."""
+    # 58-03: the engine now runs on EVERY parcel — including metered ones. A
+    # parcel that carries an authoritative meter_reading row for this period is
+    # NO LONGER skipped (it was, in 54-01). Instead it gets an ET-bearing
+    # reference CalculationRun (what the crop actually consumed, the district
+    # reference value for the dashboard + reports) but NO calculated groundwater
+    # row — the meter reading already measured that groundwater, so a calculated
+    # row would double-count it (the same 54-01 reasoning, now expressed as a
+    # disposition instead of an exclusion). `metered_row_ids` is still the
+    # authoritative-reading detector; we carry it INTO the loop as a per-parcel
+    # `is_metered` flag rather than dropping those parcels up front.
+    return set(
+        ParcelLedger.objects.filter(
+            source_type="meter_reading",
+            effective_date__year=year,
+            effective_date__month=month,
+        ).values_list("parcel_id", flat=True)
+    )
+
+
+def _prior_run_state(
+    parcel: Parcel, period: str
+) -> tuple[CalculationRun | None, Decimal, bool]:
+    """The parcel-month's earlier run, its incidental recharge, and whether it predates 148-02."""
+    prior_run = CalculationRun.objects.filter(
+        parcel=parcel, period=period
+    ).first()
+    prior_clamp = (
+        next(
+            (s for s in prior_run.breakdown if s["step_type"] == "clamp_floor"),
+            None,
+        )
+        if prior_run
+        else None
+    )
+    prior_incidental = (
+        Decimal(str(prior_clamp["detail"].get("incidental_recharge_af", "0")))
+        if prior_clamp
+        else Decimal("0")
+    )
+    # A run written by THIS (148-02) engine always carries
+    # over_delivery_af in its clamp_floor detail (see steps.py). Its
+    # absence, alongside a positive incidental_recharge_af, means the
+    # prior run predates this change and deposited that amount to the
+    # basin pool — reverse it exactly once. A second re-run sees a
+    # prior breakdown that already carries over_delivery_af (this
+    # engine's own last write) and reverses nothing, so a re-run never
+    # double-reverses.
+    prior_is_pre_148_02 = (
+        prior_clamp is not None
+        and "over_delivery_af" not in prior_clamp["detail"]
+        and prior_incidental > 0
+    )
+    return prior_run, prior_incidental, prior_is_pre_148_02
+
+
+def _dry_run_extra(
+    breakdown: list[dict[str, Any]],
+    net_af: Decimal,
+    incidental_af: Decimal,
+    credit_note: str | None,
+    *,
+    is_metered: bool,
+    routes_personal: bool,
+    gw_efficiency: Decimal,
+) -> str:
+    """The trailing "; ..." fragments of a --dry-run parcel line."""
+    extra = ""
+    if incidental_af > 0:
+        extra += (
+            f"; {incidental_af.quantize(Decimal('0.0001'))} AF canal "
+            f"water beyond the month's use, would be recorded on the run"
+        )
+    if credit_note:
+        extra += f"; {credit_note}"
+    # 148-02: a canal-served field's line also names what was
+    # delivered, the field's own efficiency (and where it came
+    # from), and what that leaves the crop to use. "delivered_af"
+    # is only in the detail when apply_efficiency is on; delivered
+    # 0 never reaches this line because subtract_surface_water
+    # itself skips the efficiency lookup at 0.
+    surface_step = next(
+        (s for s in breakdown if s["step_type"] == "subtract_surface_water"),
+        None,
+    )
+    if surface_step is not None and "delivered_af" in surface_step["detail"]:
+        sd = surface_step["detail"]
+        delivered = Decimal(str(sd["delivered_af"]))
+        if delivered > 0:
+            surface_eff = Decimal(str(sd["efficiency"]))
+            consumed = Decimal(str(sd["consumed_af"]))
+            extra += (
+                f"; canal delivered {delivered} AF x {surface_eff} "
+                f"({sd['efficiency_source']}) = {consumed} AF the "
+                f"crop could use"
+            )
+    # 148-02 Task 4 (Q2): an estimated field (has a well, no
+    # meter) also names the extraction split the run would stamp
+    # -- what the pump had to lift beyond what the crop consumed.
+    # Metered and no-well parcels never divide (a meter is the
+    # number; there is no pump to have extracted anything).
+    if not is_metered and routes_personal:
+        consumed_af = net_af.quantize(Decimal("0.0001"))
+        extracted_af, deep_percolation_af = _groundwater_extraction(
+            consumed_af, gw_efficiency
+        )
+        extra += (
+            f"; groundwater consumed {consumed_af} AF / "
+            f"{gw_efficiency} = {extracted_af} AF "
+            f"extracted, {deep_percolation_af} AF deep percolation"
+        )
+    return extra
+
+
+def _dry_run_line(
+    parcel: Parcel,
+    gross_af: Decimal,
+    net_af: Decimal,
+    extra: str,
+    *,
+    is_metered: bool,
+    routes_personal: bool,
+) -> tuple[str, str]:
+    """The --dry-run output line for one parcel, with its summary bucket."""
+    if is_metered:
+        return "metered", (
+            f"  {parcel.parcel_number}: gross {gross_af} AF -> "
+            f"net {net_af} AF (metered — ET reference run, meter "
+            f"authoritative, no GW row){extra}"
+        )
+    if routes_personal:
+        return "written", (
+            f"  {parcel.parcel_number}: gross {gross_af} AF -> "
+            f"net {net_af} AF (would write {-net_af} AF GW){extra}"
+        )
+    unmet_preview = max(Decimal("0"), net_af).quantize(
+        Decimal("0.0001")
+    )
+    return "unmet", (
+        f"  {parcel.parcel_number}: gross {gross_af} AF -> "
+        f"net {net_af} AF (no well — would record {unmet_preview} AF "
+        f"unmet demand, no GW row){extra}"
+    )
+
+
+def _live_line(
+    parcel: Parcel,
+    gross_af: Decimal,
+    net_af: Decimal,
+    unmet_demand_af: Decimal,
+    extra: str,
+    *,
+    is_metered: bool,
+    routes_personal: bool,
+) -> tuple[str, str]:
+    """The output line for one parcel written for real, with its summary bucket."""
+    if is_metered:
+        return "metered", (
+            f"  {parcel.parcel_number}: gross {gross_af} AF -> "
+            f"net {net_af} AF (metered — ET reference run, meter "
+            f"authoritative, no GW row){extra}"
+        )
+    if routes_personal:
+        return "written", (
+            f"  {parcel.parcel_number}: gross {gross_af} AF -> "
+            f"net {net_af} AF (wrote {-net_af} AF GW){extra}"
+        )
+    return "unmet", (
+        f"  {parcel.parcel_number}: gross {gross_af} AF -> "
+        f"net {net_af} AF (no well — recorded {unmet_demand_af} AF "
+        f"unmet demand, no GW row){extra}"
+    )
+
+
+def _write_residual_row(
+    parcel: Parcel,
+    eff_date: dt.date,
+    net_af: Decimal,
+    reporting_period: ReportingPeriod | None,
+    gw_water_type: WaterType,
+    *,
+    is_metered: bool,
+    routes_personal: bool,
+) -> tuple[str, Decimal]:
+    """Resolve the residual by archetype; returns ``(disposition, unmet_demand_af)``."""
+    # 54-01 / 58-03: the residual (ET − precip − surface, surfaced as
+    # net_af) resolves by archetype. Always delete the stale calculated
+    # row first so an archetype flip (well → no-well, or → metered)
+    # clears it, THEN decide:
+    #   * metered  — the parcel carries an authoritative meter_reading;
+    #     the meter OWNS its groundwater, so the engine writes NO
+    #     calculated row (that would double-count the meter). The run is
+    #     kept purely as the ET reference value (gross ET / net CU) for
+    #     the dashboard + reports. This branch wins FIRST.
+    #   * groundwater — has a well, no meter: the residual is its pumped
+    #     groundwater estimate, written as the one `calculated` row.
+    #   * unmet_demand — no well: the residual is under-irrigation or a
+    #     bad surface number, recorded on the run, NEVER a phantom GW row.
+    ParcelLedger.objects.filter(
+        parcel=parcel,
+        effective_date=eff_date,
+        source_type="calculated",
+    ).delete()
+    if is_metered:
+        residual_disposition = "metered"
+        unmet_demand_af = Decimal("0")
+        # No calculated row: the meter reading is the authoritative
+        # groundwater record. The reference run is still persisted below.
+    elif routes_personal:
+        residual_disposition = "groundwater"
+        unmet_demand_af = Decimal("0")
+        # ISS-158: the zero stays a zero. Nothing else in this
+        # branch changes; only which sentence describes it.
+        amount = (-net_af).quantize(Decimal("0.0001"))
+        description = (
+            NO_PUMPING_DERIVED_WORDS
+            if amount == 0
+            else PUMPING_ESTIMATE_WORDS
+        )
+        ParcelLedger.objects.create(
+            parcel=parcel,
+            transaction_date=dt.date.today(),
+            effective_date=eff_date,
+            amount_acre_feet=amount,
+            source_type="calculated",
+            description=description,
+            reporting_period=reporting_period,
+            water_type=gw_water_type,
+        )
+    else:
+        residual_disposition = "unmet_demand"
+        unmet_demand_af = max(Decimal("0"), net_af).quantize(
+            Decimal("0.0001")
+        )
+    return residual_disposition, unmet_demand_af
+
+
+def _write_over_delivery_credit(
+    parcel: Parcel,
+    eff_date: dt.date,
+    credited_af: Decimal | None,
+    over_delivery_leave_behind: Decimal,
+    reporting_period: ReportingPeriod | None,
+    gw_water_type: WaterType,
+    *,
+    routes_personal: bool,
+) -> None:
+    """Clear the field's stale credit row, then write the personal credit when one applies."""
+    # 148-04: the delete-by-prefix runs unconditionally, every
+    # treatment, every run — it clears THIS field's own stale
+    # credit row (a switch away from "credited", or a re-run of
+    # "credited" itself, which is delete-then-insert) and cleans
+    # up a row an older engine wrote (either wording,
+    # INCIDENTAL_RECHARGE_WORDS or the pre-143-11
+    # LEGACY_INCIDENTAL_RECHARGE_WORDS), BEFORE deciding whether
+    # to write a fresh one.
+    ParcelLedger.objects.filter(
+        Q(description__startswith=INCIDENTAL_RECHARGE_WORDS)
+        | Q(description__startswith=LEGACY_INCIDENTAL_RECHARGE_WORDS)
+        | Q(description__startswith=LEGACY_CANAL_CREDIT_WORDS),
+        parcel=parcel,
+        effective_date=eff_date,
+        source_type="recharge",
+    ).delete()
+    if routes_personal and credited_af is not None:
+        # "credited", has a well: a personal, recoverable credit —
+        # exactly the pre-148-02 shape, less the leave-behind share.
+        ParcelLedger.objects.create(
+            parcel=parcel,
+            transaction_date=dt.date.today(),
+            effective_date=eff_date,
+            amount_acre_feet=credited_af,
+            source_type="recharge",
+            description=over_delivery_credit_words(
+                over_delivery_leave_behind
+            ),
+            reporting_period=reporting_period,
+            water_type=gw_water_type,
+        )
+
+
+def _adjust_basin_pool(
+    pool_zone: Zone | None,
+    gw_water_type: WaterType,
+    period: str,
+    credited_af: Decimal | None,
+    credit_pooled: bool,
+    prior_run: CalculationRun | None,
+    prior_incidental: Decimal,
+    prior_is_pre_148_02: bool,
+    *,
+    routes_personal: bool,
+) -> None:
+    """Move the zone's basin pool by the signed delta against what the prior run pooled."""
+    # 148-04: the basin-pool side, unified. A no-well field's
+    # credited share joins its zone's shared pool; a field that
+    # is NOT currently pooling (every other case — "not_credited",
+    # "named_line", a has-well field under "credited", or a
+    # no-well field with nothing to credit) still needs its PRIOR
+    # pooled amount taken back down if a past run left one. Both
+    # are one signed delta against `prior_pooled`, which folds in
+    # the pre-148-02 one-time reversal as the first of its three
+    # cases rather than a second, separate step — a re-run's
+    # "prior" is always THIS engine's own last write once it has
+    # run once, so `prior_is_pre_148_02` is only ever true the
+    # first time.
+    prior_pooled = (
+        prior_incidental
+        if prior_is_pre_148_02 and not routes_personal
+        else (
+            (prior_run.over_delivery_credited_af or Decimal("0"))
+            if prior_run is not None
+            and prior_run.over_delivery_credit_pooled
+            else Decimal("0")
+        )
+    )
+    new_pooled = credited_af if credit_pooled else Decimal("0")
+    if pool_zone is not None:
+        delta = new_pooled - prior_pooled
+        if delta != 0:
+            pool_row = deposit_to_basin_pool(
+                pool_zone,
+                gw_water_type,
+                water_year_of(period),
+                delta,
+                origin=INCIDENTAL_RECHARGE_POOL,
+            )
+            # An a→b→a (or any) round trip must leave the table as
+            # it found it — an exact-zero row left standing is a
+            # phantom the pool's readers would have to explain.
+            if pool_row.amount_af == Decimal("0"):
+                pool_row.delete()
+
+
+def _commit_parcel_month(
+    parcel: Parcel,
+    period: str,
+    eff_date: dt.date,
+    final_af: Decimal,
+    breakdown: list[dict[str, Any]],
+    gross_af: Decimal,
+    months_matched: int,
+    *,
+    plan_id: int | None,
+    plan_name: str,
+    plan_hash: str,
+    gw_efficiency: Decimal,
+    gw_efficiency_source: str,
+    over_delivery_treatment: str,
+    over_delivery_leave_behind: Decimal,
+    leave_behind_stamp: Decimal | None,
+    credited_af: Decimal | None,
+    credit_pooled: bool,
+    reporting_period: ReportingPeriod | None,
+    gw_water_type: WaterType,
+    is_metered: bool,
+    routes_personal: bool,
+    pool_zone: Zone | None,
+    prior_run: CalculationRun | None,
+    prior_incidental: Decimal,
+    prior_is_pre_148_02: bool,
+) -> tuple[Decimal, Decimal]:
+    """Write one parcel-month's rows in a single transaction; returns ``(net_af, unmet_demand_af)``."""
+    with transaction.atomic():
+        net_af, info = _resolve_leftover(
+            parcel, period, final_af, breakdown, commit=True,
+        )
+        # ISS-025 invariant, explicit at the write site: a `calculated`
+        # row is only ever written for a parcel with real matched ET. The
+        # gate above already guarantees months_matched>0; assert it here so
+        # a future refactor of that gate can never silently resurrect a
+        # filed 0-AF row. A can't-happen guard, not flow control.
+        if months_matched <= 0:  # pragma: no cover - guaranteed by the gate
+            raise CommandError(
+                f"internal invariant violated: refusing to write a "
+                f"`calculated` row for {parcel.parcel_number} {period} "
+                f"with months_matched={months_matched}"
+            )
+        residual_disposition, unmet_demand_af = _write_residual_row(
+            parcel, eff_date, net_af, reporting_period, gw_water_type,
+            is_metered=is_metered, routes_personal=routes_personal,
+        )
+        # 38-05: persist the reconstructable audit record in the SAME
+        # transaction, delete-then-insert per (parcel, period). For a well
+        # parcel it stays 1:1 with the calculated row; for a no-well parcel
+        # it is the ONLY record of the parcel-month (consumptive use + unmet
+        # demand, no groundwater row). Input magnitudes are pulled off the
+        # breakdown the command already has (no re-derivation); steps absent
+        # from the chain store NULL.
+        _persist_calculation_run(
+            parcel, period, gross_af, net_af, breakdown, info,
+            plan_id, plan_name, plan_hash,
+            residual_disposition=residual_disposition,
+            unmet_demand_af=unmet_demand_af,
+            groundwater_application_efficiency=gw_efficiency,
+            groundwater_efficiency_source=gw_efficiency_source,
+            over_delivery_treatment=over_delivery_treatment,
+            over_delivery_leave_behind=leave_behind_stamp,
+            over_delivery_credited_af=credited_af,
+            over_delivery_credit_pooled=credit_pooled,
+        )
+        _write_over_delivery_credit(
+            parcel, eff_date, credited_af, over_delivery_leave_behind,
+            reporting_period, gw_water_type, routes_personal=routes_personal,
+        )
+        _adjust_basin_pool(
+            pool_zone, gw_water_type, period, credited_af, credit_pooled,
+            prior_run, prior_incidental, prior_is_pre_148_02,
+            routes_personal=routes_personal,
+        )
+    return net_af, unmet_demand_af
+
+
+def _assess_et(
+    parcel: Parcel, period: str, site_config: SiteConfig
+) -> tuple[Decimal, list[dict[str, Any]], Decimal, str, Decimal, int, Decimal] | None:
+    """Evaluate the chain for one parcel-month; ``None`` when it has no matched ET.
+
+    Returns ``(final_af, breakdown, gw_efficiency, gw_efficiency_source,
+    incidental_af, months_matched, gross_af)``.
+    """
+    final_af, breakdown = evaluate_chain(parcel, period)
+    # 150.2-02 (2026-10-11: one irrigation efficiency per
+    # field): ETAW met by groundwater is divided by the field's own
+    # irrigation efficiency, the same lookup its canal water uses.
+    gw_efficiency, gw_efficiency_source = field_efficiency(
+        parcel, config=site_config
+    )
+    incidental_af = _incidental_recharge_af(breakdown)
+
+    et_step = next(
+        (s for s in breakdown if s["step_type"] == "et_gross"), None
+    )
+    # ISS-025: gate on months_matched (items actually date-matched for THIS
+    # month), NOT rows (the span-row count). A cache row can span the period
+    # yet carry no item dated in it (months_matched==0, rows>0); gating on
+    # rows would file a fabricated 0-AF `calculated` row for a parcel with
+    # no real ET — the silent-zero trap Phase 38 exists to kill.
+    months_matched = (
+        et_step["detail"].get("months_matched", 0) if et_step else 0
+    )
+    has_et = bool(et_step and months_matched > 0)
+    if not has_et:
+        return None
+
+    gross_af = Decimal(et_step["output_af"]) if et_step else Decimal("0")
+    return (
+        final_af, breakdown, gw_efficiency, gw_efficiency_source,
+        incidental_af, months_matched, gross_af,
+    )
+
+
+def _over_delivery_routing(
+    parcel: Parcel, period: str
+) -> tuple[bool, Zone | None, CalculationRun | None, Decimal, bool]:
+    """Where the parcel's over-delivery goes, and what its earlier run pooled.
+
+    Returns ``(routes_personal, pool_zone, prior_run, prior_incidental,
+    prior_is_pre_148_02)``.
+    """
+    # 148-04: `over_delivery_treatment` decides what happens to this
+    # month's over-delivery — routes_personal / pool_zone say WHERE
+    # (has-well -> the field's own ledger; no well -> its zone's
+    # shared pool). `pool_zone` is read REGARDLESS of the parcel's
+    # CURRENT well status: a field that gained a well since a prior
+    # (b) run must still be able to find the zone that holds its old
+    # deposit, to take it back down to 0 (see prior_pooled, below).
+    routes_personal = recharge_routes_to_personal(parcel)
+    pool_zone = _parcel_pool_zone(parcel)
+    prior_run, prior_incidental, prior_is_pre_148_02 = _prior_run_state(
+        parcel, period
+    )
+    return routes_personal, pool_zone, prior_run, prior_incidental, prior_is_pre_148_02
+
+
+def _live_extra(incidental_af: Decimal, credit_note: str | None) -> str:
+    """The trailing "; ..." fragments of a written parcel line."""
+    extra = ""
+    if incidental_af > 0:
+        extra += (
+            f"; {incidental_af.quantize(Decimal('0.0001'))} AF canal "
+            f"water beyond the month's use, recorded on the run"
+        )
+    if credit_note:
+        extra += f"; {credit_note}"
+    return extra
 
 
 class Command(BaseCommand):
@@ -409,88 +954,16 @@ class Command(BaseCommand):
         eff_date = dt.date(year, month, 1)
         dry_run = options["dry_run"]
 
-        parcels = (
-            Parcel.objects.select_related("irrigation__method")
-            .all()
-            .order_by("parcel_number")
-        )
-        if options.get("parcel"):
-            parcels = parcels.filter(parcel_number=options["parcel"])
-            if not parcels.exists():
-                raise CommandError(
-                    f"no parcel with parcel_number={options['parcel']!r}"
-                )
-
-        # 58-03: the engine now runs on EVERY parcel — including metered ones. A
-        # parcel that carries an authoritative meter_reading row for this period is
-        # NO LONGER skipped (it was, in 54-01). Instead it gets an ET-bearing
-        # reference CalculationRun (what the crop actually consumed, the district
-        # reference value for the dashboard + reports) but NO calculated groundwater
-        # row — the meter reading already measured that groundwater, so a calculated
-        # row would double-count it (the same 54-01 reasoning, now expressed as a
-        # disposition instead of an exclusion). `metered_row_ids` is still the
-        # authoritative-reading detector; we carry it INTO the loop as a per-parcel
-        # `is_metered` flag rather than dropping those parcels up front.
-        metered_row_ids = set(
-            ParcelLedger.objects.filter(
-                source_type="meter_reading",
-                effective_date__year=year,
-                effective_date__month=month,
-            ).values_list("parcel_id", flat=True)
-        )
-
-        # --unmetered-only is now a deprecated alias: the engine runs on ALL
-        # parcels by default and resolves each by archetype (well → calculated GW
-        # row; no-well → unmet demand; metered → ET reference run, no GW row). The
-        # flag is redundant. Accept it, warn, and otherwise change nothing.
-        if options.get("unmetered_only"):
-            self.stderr.write(
-                self.style.WARNING(
-                    "--unmetered-only is deprecated; the engine now runs on all "
-                    "parcels by default and resolves each residual by archetype "
-                    "(well, no-well, or metered). The flag changes nothing."
-                )
-            )
+        parcels = _parcels_in_scope(options.get("parcel"))
+        metered_row_ids = _metered_parcel_ids(year, month)
+        self._warn_unmetered_only_deprecated(options)
 
         reporting_period = ReportingPeriod.objects.filter(
             start_date__lte=eff_date, end_date__gte=eff_date
         ).first()
-
-        # Finalized-period write guard (ISS-020 #1). A finalized ReportingPeriod
-        # is a number already filed with the state; re-running would silently
-        # overwrite it. Refuse unless --force, and shout when forced. Guard ONCE
-        # before the loop: finalization is a property of the period, not the
-        # parcel, so a per-parcel raise would half-write the period. dry_run is
-        # always allowed (it writes nothing — previewing a finalized recompute is
-        # safe). A month with no ReportingPeriod has nothing to finalize: proceed.
-        if (
-            reporting_period is not None
-            and reporting_period.is_finalized
-            and not dry_run
-        ):
-            if not options["force"]:
-                filed = (
-                    f" (filed {reporting_period.finalized_at:%Y-%m-%d})"
-                    if reporting_period.finalized_at
-                    else ""
-                )
-                raise CommandError(
-                    f"Refusing to recompute {period}: reporting period "
-                    f"'{reporting_period.name}' is finalized{filed}. "
-                    f"Re-running would overwrite the filed number. "
-                    f"Pass --force to override."
-                )
-            self.stderr.write(
-                self.style.WARNING(
-                    f"--force: OVERWRITING finalized period {period} "
-                    f"('{reporting_period.name}'). A number already filed with "
-                    f"the state is being recomputed — this changes a filed figure."
-                )
-            )
-            # The recorded door through the finalized-period lock (147-02):
-            # every write below carries override=True and this reason in the
-            # change history, and only the lock triggers are switched off.
-            self._history.enter_context(override(FORCE_REASON))
+        self._guard_finalized_period(
+            reporting_period, period, dry_run=dry_run, force=options["force"]
+        )
 
         # Snapshot the methodology ONCE: the active plan is identical for every
         # parcel in a single run, so hashing per-parcel would be wasted work and
@@ -516,350 +989,188 @@ class Command(BaseCommand):
         # 150.2-02: the default irrigation efficiency, handed to
         # field_efficiency for each field with no irrigation method on file.
         site_config = SiteConfig.objects.first() or SiteConfig()
-        over_delivery_treatment = site_config.over_delivery_treatment
-        over_delivery_leave_behind = site_config.over_delivery_leave_behind
 
-        written = 0
-        unmet = 0
-        metered = 0
+        counts = {"written": 0, "unmet": 0, "metered": 0}
         skipped_no_et = 0
         over_delivered = 0
         for parcel in parcels:
-            is_metered = parcel.id in metered_row_ids
-            final_af, breakdown = evaluate_chain(parcel, period)
-            # 150.2-02 (2026-10-11: one irrigation efficiency per
-            # field): ETAW met by groundwater is divided by the field's own
-            # irrigation efficiency, the same lookup its canal water uses.
-            gw_efficiency, gw_efficiency_source = field_efficiency(
-                parcel, config=site_config
+            outcome, was_over_delivered = self._process_parcel(
+                parcel, period, eff_date,
+                dry_run=dry_run,
+                is_metered=parcel.id in metered_row_ids,
+                reporting_period=reporting_period,
+                plan_id=plan_id, plan_name=plan_name, plan_hash=plan_hash,
+                gw_water_type=gw_water_type,
+                site_config=site_config,
             )
-            incidental_af = _incidental_recharge_af(breakdown)
-
-            et_step = next(
-                (s for s in breakdown if s["step_type"] == "et_gross"), None
-            )
-            # ISS-025: gate on months_matched (items actually date-matched for THIS
-            # month), NOT rows (the span-row count). A cache row can span the period
-            # yet carry no item dated in it (months_matched==0, rows>0); gating on
-            # rows would file a fabricated 0-AF `calculated` row for a parcel with
-            # no real ET — the silent-zero trap Phase 38 exists to kill.
-            months_matched = (
-                et_step["detail"].get("months_matched", 0) if et_step else 0
-            )
-            has_et = bool(et_step and months_matched > 0)
-            if not has_et:
+            if outcome is None:
                 skipped_no_et += 1
                 continue
-
-            gross_af = Decimal(et_step["output_af"]) if et_step else Decimal("0")
-
-            # 148-04: `over_delivery_treatment` decides what happens to this
-            # month's over-delivery — routes_personal / pool_zone say WHERE
-            # (has-well -> the field's own ledger; no well -> its zone's
-            # shared pool). `pool_zone` is read REGARDLESS of the parcel's
-            # CURRENT well status: a field that gained a well since a prior
-            # (b) run must still be able to find the zone that holds its old
-            # deposit, to take it back down to 0 (see prior_pooled, below).
-            routes_personal = recharge_routes_to_personal(parcel)
-            pool_zone = _parcel_pool_zone(parcel)
-            prior_run = CalculationRun.objects.filter(
-                parcel=parcel, period=period
-            ).first()
-            prior_clamp = (
-                next(
-                    (s for s in prior_run.breakdown if s["step_type"] == "clamp_floor"),
-                    None,
-                )
-                if prior_run
-                else None
-            )
-            prior_incidental = (
-                Decimal(str(prior_clamp["detail"].get("incidental_recharge_af", "0")))
-                if prior_clamp
-                else Decimal("0")
-            )
-            # A run written by THIS (148-02) engine always carries
-            # over_delivery_af in its clamp_floor detail (see steps.py). Its
-            # absence, alongside a positive incidental_recharge_af, means the
-            # prior run predates this change and deposited that amount to the
-            # basin pool — reverse it exactly once. A second re-run sees a
-            # prior breakdown that already carries over_delivery_af (this
-            # engine's own last write) and reverses nothing, so a re-run never
-            # double-reverses.
-            prior_is_pre_148_02 = (
-                prior_clamp is not None
-                and "over_delivery_af" not in prior_clamp["detail"]
-                and prior_incidental > 0
-            )
-
-            # 148-04: decide what this parcel-month's over-delivery becomes
-            # under the setting read once above — a pure computation, shared
-            # by the --dry-run preview and the real write below, so the two
-            # can never say something different happened.
-            over = incidental_af.quantize(Decimal("0.0001"))
-            credited_af, credit_pooled, leave_behind_stamp, credit_note = (
-                _over_delivery_decision(
-                    over, over_delivery_treatment, over_delivery_leave_behind,
-                    routes_personal=routes_personal, pool_zone=pool_zone,
-                )
-            )
-
-            if dry_run:
-                net_af, info = _resolve_leftover(
-                    parcel, period, final_af, breakdown, commit=False,
-                )
-                extra = ""
-                if incidental_af > 0:
-                    extra += (
-                        f"; {incidental_af.quantize(Decimal('0.0001'))} AF canal "
-                        f"water beyond the month's use, would be recorded on the run"
-                    )
-                if credit_note:
-                    extra += f"; {credit_note}"
-                # 148-02: a canal-served field's line also names what was
-                # delivered, the field's own efficiency (and where it came
-                # from), and what that leaves the crop to use. "delivered_af"
-                # is only in the detail when apply_efficiency is on; delivered
-                # 0 never reaches this line because subtract_surface_water
-                # itself skips the efficiency lookup at 0.
-                surface_step = next(
-                    (s for s in breakdown if s["step_type"] == "subtract_surface_water"),
-                    None,
-                )
-                if surface_step is not None and "delivered_af" in surface_step["detail"]:
-                    sd = surface_step["detail"]
-                    delivered = Decimal(str(sd["delivered_af"]))
-                    if delivered > 0:
-                        surface_eff = Decimal(str(sd["efficiency"]))
-                        consumed = Decimal(str(sd["consumed_af"]))
-                        extra += (
-                            f"; canal delivered {delivered} AF x {surface_eff} "
-                            f"({sd['efficiency_source']}) = {consumed} AF the "
-                            f"crop could use"
-                        )
-                # 148-02 Task 4 (Q2): an estimated field (has a well, no
-                # meter) also names the extraction split the run would stamp
-                # -- what the pump had to lift beyond what the crop consumed.
-                # Metered and no-well parcels never divide (a meter is the
-                # number; there is no pump to have extracted anything).
-                if not is_metered and routes_personal:
-                    consumed_af = net_af.quantize(Decimal("0.0001"))
-                    extracted_af, deep_percolation_af = _groundwater_extraction(
-                        consumed_af, gw_efficiency
-                    )
-                    extra += (
-                        f"; groundwater consumed {consumed_af} AF / "
-                        f"{gw_efficiency} = {extracted_af} AF "
-                        f"extracted, {deep_percolation_af} AF deep percolation"
-                    )
-                if is_metered:
-                    self.stdout.write(
-                        f"  {parcel.parcel_number}: gross {gross_af} AF -> "
-                        f"net {net_af} AF (metered — ET reference run, meter "
-                        f"authoritative, no GW row){extra}"
-                    )
-                    metered += 1
-                elif routes_personal:
-                    self.stdout.write(
-                        f"  {parcel.parcel_number}: gross {gross_af} AF -> "
-                        f"net {net_af} AF (would write {-net_af} AF GW){extra}"
-                    )
-                    written += 1
-                else:
-                    unmet_preview = max(Decimal("0"), net_af).quantize(
-                        Decimal("0.0001")
-                    )
-                    self.stdout.write(
-                        f"  {parcel.parcel_number}: gross {gross_af} AF -> "
-                        f"net {net_af} AF (no well — would record {unmet_preview} AF "
-                        f"unmet demand, no GW row){extra}"
-                    )
-                    unmet += 1
-                continue
-
-            with transaction.atomic():
-                net_af, info = _resolve_leftover(
-                    parcel, period, final_af, breakdown, commit=True,
-                )
-                # ISS-025 invariant, explicit at the write site: a `calculated`
-                # row is only ever written for a parcel with real matched ET. The
-                # gate above already guarantees months_matched>0; assert it here so
-                # a future refactor of that gate can never silently resurrect a
-                # filed 0-AF row. A can't-happen guard, not flow control.
-                if months_matched <= 0:  # pragma: no cover - guaranteed by the gate
-                    raise CommandError(
-                        f"internal invariant violated: refusing to write a "
-                        f"`calculated` row for {parcel.parcel_number} {period} "
-                        f"with months_matched={months_matched}"
-                    )
-                # 54-01 / 58-03: the residual (ET − precip − surface, surfaced as
-                # net_af) resolves by archetype. Always delete the stale calculated
-                # row first so an archetype flip (well → no-well, or → metered)
-                # clears it, THEN decide:
-                #   * metered  — the parcel carries an authoritative meter_reading;
-                #     the meter OWNS its groundwater, so the engine writes NO
-                #     calculated row (that would double-count the meter). The run is
-                #     kept purely as the ET reference value (gross ET / net CU) for
-                #     the dashboard + reports. This branch wins FIRST.
-                #   * groundwater — has a well, no meter: the residual is its pumped
-                #     groundwater estimate, written as the one `calculated` row.
-                #   * unmet_demand — no well: the residual is under-irrigation or a
-                #     bad surface number, recorded on the run, NEVER a phantom GW row.
-                ParcelLedger.objects.filter(
-                    parcel=parcel,
-                    effective_date=eff_date,
-                    source_type="calculated",
-                ).delete()
-                if is_metered:
-                    residual_disposition = "metered"
-                    unmet_demand_af = Decimal("0")
-                    # No calculated row: the meter reading is the authoritative
-                    # groundwater record. The reference run is still persisted below.
-                elif routes_personal:
-                    residual_disposition = "groundwater"
-                    unmet_demand_af = Decimal("0")
-                    # ISS-158: the zero stays a zero. Nothing else in this
-                    # branch changes; only which sentence describes it.
-                    amount = (-net_af).quantize(Decimal("0.0001"))
-                    description = (
-                        NO_PUMPING_DERIVED_WORDS
-                        if amount == 0
-                        else PUMPING_ESTIMATE_WORDS
-                    )
-                    ParcelLedger.objects.create(
-                        parcel=parcel,
-                        transaction_date=dt.date.today(),
-                        effective_date=eff_date,
-                        amount_acre_feet=amount,
-                        source_type="calculated",
-                        description=description,
-                        reporting_period=reporting_period,
-                        water_type=gw_water_type,
-                    )
-                else:
-                    residual_disposition = "unmet_demand"
-                    unmet_demand_af = max(Decimal("0"), net_af).quantize(
-                        Decimal("0.0001")
-                    )
-                # 38-05: persist the reconstructable audit record in the SAME
-                # transaction, delete-then-insert per (parcel, period). For a well
-                # parcel it stays 1:1 with the calculated row; for a no-well parcel
-                # it is the ONLY record of the parcel-month (consumptive use + unmet
-                # demand, no groundwater row). Input magnitudes are pulled off the
-                # breakdown the command already has (no re-derivation); steps absent
-                # from the chain store NULL.
-                _persist_calculation_run(
-                    parcel, period, gross_af, net_af, breakdown, info,
-                    plan_id, plan_name, plan_hash,
-                    residual_disposition=residual_disposition,
-                    unmet_demand_af=unmet_demand_af,
-                    groundwater_application_efficiency=gw_efficiency,
-                    groundwater_efficiency_source=gw_efficiency_source,
-                    over_delivery_treatment=over_delivery_treatment,
-                    over_delivery_leave_behind=leave_behind_stamp,
-                    over_delivery_credited_af=credited_af,
-                    over_delivery_credit_pooled=credit_pooled,
-                )
-                # 148-04: the delete-by-prefix runs unconditionally, every
-                # treatment, every run — it clears THIS field's own stale
-                # credit row (a switch away from "credited", or a re-run of
-                # "credited" itself, which is delete-then-insert) and cleans
-                # up a row an older engine wrote (either wording,
-                # INCIDENTAL_RECHARGE_WORDS or the pre-143-11
-                # LEGACY_INCIDENTAL_RECHARGE_WORDS), BEFORE deciding whether
-                # to write a fresh one.
-                ParcelLedger.objects.filter(
-                    Q(description__startswith=INCIDENTAL_RECHARGE_WORDS)
-                    | Q(description__startswith=LEGACY_INCIDENTAL_RECHARGE_WORDS)
-                    | Q(description__startswith=LEGACY_CANAL_CREDIT_WORDS),
-                    parcel=parcel,
-                    effective_date=eff_date,
-                    source_type="recharge",
-                ).delete()
-                if routes_personal and credited_af is not None:
-                    # "credited", has a well: a personal, recoverable credit —
-                    # exactly the pre-148-02 shape, less the leave-behind share.
-                    ParcelLedger.objects.create(
-                        parcel=parcel,
-                        transaction_date=dt.date.today(),
-                        effective_date=eff_date,
-                        amount_acre_feet=credited_af,
-                        source_type="recharge",
-                        description=over_delivery_credit_words(
-                            over_delivery_leave_behind
-                        ),
-                        reporting_period=reporting_period,
-                        water_type=gw_water_type,
-                    )
-
-                # 148-04: the basin-pool side, unified. A no-well field's
-                # credited share joins its zone's shared pool; a field that
-                # is NOT currently pooling (every other case — "not_credited",
-                # "named_line", a has-well field under "credited", or a
-                # no-well field with nothing to credit) still needs its PRIOR
-                # pooled amount taken back down if a past run left one. Both
-                # are one signed delta against `prior_pooled`, which folds in
-                # the pre-148-02 one-time reversal as the first of its three
-                # cases rather than a second, separate step — a re-run's
-                # "prior" is always THIS engine's own last write once it has
-                # run once, so `prior_is_pre_148_02` is only ever true the
-                # first time.
-                prior_pooled = (
-                    prior_incidental
-                    if prior_is_pre_148_02 and not routes_personal
-                    else (
-                        (prior_run.over_delivery_credited_af or Decimal("0"))
-                        if prior_run is not None
-                        and prior_run.over_delivery_credit_pooled
-                        else Decimal("0")
-                    )
-                )
-                new_pooled = credited_af if credit_pooled else Decimal("0")
-                if pool_zone is not None:
-                    delta = new_pooled - prior_pooled
-                    if delta != 0:
-                        pool_row = deposit_to_basin_pool(
-                            pool_zone,
-                            gw_water_type,
-                            water_year_of(period),
-                            delta,
-                            origin=INCIDENTAL_RECHARGE_POOL,
-                        )
-                        # An a→b→a (or any) round trip must leave the table as
-                        # it found it — an exact-zero row left standing is a
-                        # phantom the pool's readers would have to explain.
-                        if pool_row.amount_af == Decimal("0"):
-                            pool_row.delete()
-            extra = ""
-            if incidental_af > 0:
-                extra += (
-                    f"; {incidental_af.quantize(Decimal('0.0001'))} AF canal "
-                    f"water beyond the month's use, recorded on the run"
-                )
+            counts[outcome] += 1
+            if was_over_delivered:
                 over_delivered += 1
-            if credit_note:
-                extra += f"; {credit_note}"
-            if is_metered:
-                self.stdout.write(
-                    f"  {parcel.parcel_number}: gross {gross_af} AF -> "
-                    f"net {net_af} AF (metered — ET reference run, meter "
-                    f"authoritative, no GW row){extra}"
-                )
-                metered += 1
-            elif routes_personal:
-                self.stdout.write(
-                    f"  {parcel.parcel_number}: gross {gross_af} AF -> "
-                    f"net {net_af} AF (wrote {-net_af} AF GW){extra}"
-                )
-                written += 1
-            else:
-                self.stdout.write(
-                    f"  {parcel.parcel_number}: gross {gross_af} AF -> "
-                    f"net {net_af} AF (no well — recorded {unmet_demand_af} AF "
-                    f"unmet demand, no GW row){extra}"
-                )
-                unmet += 1
 
+        self._write_summary(
+            period, dry_run, counts, skipped_no_et, over_delivered
+        )
+
+    def _warn_unmetered_only_deprecated(self, options: dict[str, Any]) -> None:
+        """Print the deprecation warning when the ignored --unmetered-only flag is passed."""
+        # --unmetered-only is now a deprecated alias: the engine runs on ALL
+        # parcels by default and resolves each by archetype (well → calculated GW
+        # row; no-well → unmet demand; metered → ET reference run, no GW row). The
+        # flag is redundant. Accept it, warn, and otherwise change nothing.
+        if options.get("unmetered_only"):
+            self.stderr.write(
+                self.style.WARNING(
+                    "--unmetered-only is deprecated; the engine now runs on all "
+                    "parcels by default and resolves each residual by archetype "
+                    "(well, no-well, or metered). The flag changes nothing."
+                )
+            )
+
+    def _guard_finalized_period(
+        self,
+        reporting_period: ReportingPeriod | None,
+        period: str,
+        *,
+        dry_run: bool,
+        force: bool,
+    ) -> None:
+        """Refuse to recompute a finalized period unless forced; open the override when forced."""
+        # Finalized-period write guard (ISS-020 #1). A finalized ReportingPeriod
+        # is a number already filed with the state; re-running would silently
+        # overwrite it. Refuse unless --force, and shout when forced. Guard ONCE
+        # before the loop: finalization is a property of the period, not the
+        # parcel, so a per-parcel raise would half-write the period. dry_run is
+        # always allowed (it writes nothing — previewing a finalized recompute is
+        # safe). A month with no ReportingPeriod has nothing to finalize: proceed.
+        if (
+            reporting_period is not None
+            and reporting_period.is_finalized
+            and not dry_run
+        ):
+            if not force:
+                filed = (
+                    f" (filed {reporting_period.finalized_at:%Y-%m-%d})"
+                    if reporting_period.finalized_at
+                    else ""
+                )
+                raise CommandError(
+                    f"Refusing to recompute {period}: reporting period "
+                    f"'{reporting_period.name}' is finalized{filed}. "
+                    f"Re-running would overwrite the filed number. "
+                    f"Pass --force to override."
+                )
+            self.stderr.write(
+                self.style.WARNING(
+                    f"--force: OVERWRITING finalized period {period} "
+                    f"('{reporting_period.name}'). A number already filed with "
+                    f"the state is being recomputed — this changes a filed figure."
+                )
+            )
+            # The recorded door through the finalized-period lock (147-02):
+            # every write below carries override=True and this reason in the
+            # change history, and only the lock triggers are switched off.
+            self._history.enter_context(override(FORCE_REASON))
+
+    def _process_parcel(
+        self,
+        parcel: Parcel,
+        period: str,
+        eff_date: dt.date,
+        *,
+        dry_run: bool,
+        is_metered: bool,
+        reporting_period: ReportingPeriod | None,
+        plan_id: int | None,
+        plan_name: str,
+        plan_hash: str,
+        gw_water_type: WaterType,
+        site_config: SiteConfig,
+    ) -> tuple[str | None, bool]:
+        """Calculate (and, unless dry-run, write) one parcel-month and print its line.
+
+        Returns ``(outcome, was_over_delivered)``: ``outcome`` is "written",
+        "unmet" or "metered" for the summary counts, or ``None`` when the
+        parcel has no matched ET and was skipped.
+        """
+        over_delivery_treatment = site_config.over_delivery_treatment
+        over_delivery_leave_behind = site_config.over_delivery_leave_behind
+
+        assessment = _assess_et(parcel, period, site_config)
+        if assessment is None:
+            return None, False
+        (final_af, breakdown, gw_efficiency, gw_efficiency_source,
+         incidental_af, months_matched, gross_af) = assessment
+
+        routes_personal, pool_zone, prior_run, prior_incidental, prior_is_pre_148_02 = (
+            _over_delivery_routing(parcel, period)
+        )
+
+        # 148-04: decide what this parcel-month's over-delivery becomes
+        # under the setting read once above — a pure computation, shared
+        # by the --dry-run preview and the real write below, so the two
+        # can never say something different happened.
+        over = incidental_af.quantize(Decimal("0.0001"))
+        credited_af, credit_pooled, leave_behind_stamp, credit_note = (
+            _over_delivery_decision(
+                over, over_delivery_treatment, over_delivery_leave_behind,
+                routes_personal=routes_personal, pool_zone=pool_zone,
+            )
+        )
+
+        if dry_run:
+            net_af, info = _resolve_leftover(
+                parcel, period, final_af, breakdown, commit=False,
+            )
+            extra = _dry_run_extra(
+                breakdown, net_af, incidental_af, credit_note,
+                is_metered=is_metered, routes_personal=routes_personal,
+                gw_efficiency=gw_efficiency,
+            )
+            outcome, line = _dry_run_line(
+                parcel, gross_af, net_af, extra,
+                is_metered=is_metered, routes_personal=routes_personal,
+            )
+            self.stdout.write(line)
+            return outcome, False
+
+        net_af, unmet_demand_af = _commit_parcel_month(
+            parcel, period, eff_date, final_af, breakdown, gross_af, months_matched,
+            plan_id=plan_id, plan_name=plan_name, plan_hash=plan_hash,
+            gw_efficiency=gw_efficiency,
+            gw_efficiency_source=gw_efficiency_source,
+            over_delivery_treatment=over_delivery_treatment,
+            over_delivery_leave_behind=over_delivery_leave_behind,
+            leave_behind_stamp=leave_behind_stamp,
+            credited_af=credited_af, credit_pooled=credit_pooled,
+            reporting_period=reporting_period, gw_water_type=gw_water_type,
+            is_metered=is_metered, routes_personal=routes_personal,
+            pool_zone=pool_zone, prior_run=prior_run,
+            prior_incidental=prior_incidental,
+            prior_is_pre_148_02=prior_is_pre_148_02,
+        )
+        extra = _live_extra(incidental_af, credit_note)
+        outcome, line = _live_line(
+            parcel, gross_af, net_af, unmet_demand_af, extra,
+            is_metered=is_metered, routes_personal=routes_personal,
+        )
+        self.stdout.write(line)
+        return outcome, incidental_af > 0
+
+    def _write_summary(
+        self,
+        period: str,
+        dry_run: bool,
+        counts: dict[str, int],
+        skipped_no_et: int,
+        over_delivered: int,
+    ) -> None:
+        """Print the one-paragraph run summary."""
+        written = counts["written"]
+        unmet = counts["unmet"]
+        metered = counts["metered"]
         verb = "Would write" if dry_run else "Wrote"
         self.stdout.write(
             self.style.SUCCESS(

@@ -24,13 +24,27 @@ Diversion/recharge ledger integration utilities and balance calculations.
 #   Well.capacity_gpm                    max_digits=8,  decimal_places=2 → max 999,999 GPM
 #   PointOfDiversion.max_rate_cfs        max_digits=10, decimal_places=4 → max 999,999 CFS
 
+from __future__ import annotations
+
 import io
 import logging
-from datetime import datetime
+from collections.abc import Iterable
+from datetime import date, datetime
 from decimal import ROUND_HALF_UP, Decimal
+from typing import IO, TYPE_CHECKING, Any, cast
 
 from django.db import transaction
-from django.db.models import Case, DecimalField, F, OuterRef, Q, Subquery, Sum, When
+from django.db.models import (
+    Case,
+    DecimalField,
+    F,
+    OuterRef,
+    Q,
+    QuerySet,
+    Subquery,
+    Sum,
+    When,
+)
 from django.utils import timezone
 
 from geography.models import ParcelZone
@@ -51,9 +65,15 @@ from accounting.models import (
     AllocationPlan,
     CalculationRun,
     ReportingPeriod,
+    WaterAccount,
     WaterAccountParcel,
     WaterType,
 )
+
+if TYPE_CHECKING:
+    from geography.models import Zone
+    from recharge.models import RechargeEvent
+    from surface.models import DiversionRecord, PointOfDiversion, PointOfDiversionParcel
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +85,7 @@ INCIDENTAL_RECHARGE_POOL = "incidental_recharge_pool"
 CONVEYANCE_SEEPAGE_POOL = "conveyance_seepage_pool"
 
 
-def parcel_pool_zone(parcel):
+def parcel_pool_zone(parcel: Parcel) -> Zone | None:
     """The parcel's GSA management-area zone — where its basin pool lives (ISS-053).
 
     A no-well parcel's incidental recharge is deposited to this zone's basin pool
@@ -85,8 +105,12 @@ def parcel_pool_zone(parcel):
 
 
 def deposit_to_basin_pool(
-    zone, water_type, water_year, amount_af, origin=BASIN_RECHARGE_POOL
-):
+    zone: Zone,
+    water_type: WaterType,
+    water_year: int,
+    amount_af: Decimal | float | str,
+    origin: str = BASIN_RECHARGE_POOL,
+) -> AllocationCarryover:
     """Add ``amount_af`` to the GSA basin recharge pool for a (zone, water_type, year).
 
     The basin pool is an ``AllocationCarryover`` row marked with a pool ``origin``
@@ -129,7 +153,50 @@ def deposit_to_basin_pool(
         return row
 
 
-def create_diversion_ledger_entries(diversion_record, parcel=None):
+def _fraction_split_entries(
+    diversion_record: DiversionRecord, pod: PointOfDiversion, pod_parcels: list[PointOfDiversionParcel]
+) -> list[ParcelLedger]:
+    """Unsaved ledger entries splitting the consumed volume across the POD's parcels by fraction."""
+    # Distribute by fraction with rounding residual on last entry. Only the
+    # consumed magnitude is apportioned, so returned water never reaches the
+    # spine; the description still shows gross volume_acre_feet.
+    total_volume = diversion_record.consumed_acre_feet()
+    today = timezone.now().date()
+    entries = []
+    distributed = Decimal("0")
+
+    for i, pod_parcel in enumerate(pod_parcels):
+        if i == len(pod_parcels) - 1:
+            amount = total_volume - distributed
+        else:
+            amount = (total_volume * pod_parcel.fraction).quantize(
+                Decimal("0.0001")
+            )
+            distributed += amount
+
+        entries.append(
+            ParcelLedger(
+                parcel=pod_parcel.parcel,
+                transaction_date=today,
+                effective_date=diversion_record.month,
+                amount_acre_feet=-amount,
+                source_type="surface_diversion",
+                description=(
+                    f"Diversion from {pod.name}: "
+                    f"{diversion_record.volume_acre_feet} AF "
+                    f"({diversion_record.get_diversion_type_display()}) "
+                    f"fraction={pod_parcel.fraction}"
+                ),
+                reporting_period=diversion_record.reporting_period,
+                water_type=None,
+            )
+        )
+    return entries
+
+
+def create_diversion_ledger_entries(
+    diversion_record: DiversionRecord, parcel: Parcel | None = None
+) -> list[ParcelLedger]:
     """Create negative ledger entries for a surface water diversion.
 
     Distributes the diversion volume across all parcels linked to the point of
@@ -175,40 +242,7 @@ def create_diversion_ledger_entries(diversion_record, parcel=None):
     )
 
     if pod_parcels:
-        # Distribute by fraction with rounding residual on last entry. Only the
-        # consumed magnitude is apportioned, so returned water never reaches the
-        # spine; the description still shows gross volume_acre_feet.
-        total_volume = diversion_record.consumed_acre_feet()
-        today = timezone.now().date()
-        entries = []
-        distributed = Decimal("0")
-
-        for i, pod_parcel in enumerate(pod_parcels):
-            if i == len(pod_parcels) - 1:
-                amount = total_volume - distributed
-            else:
-                amount = (total_volume * pod_parcel.fraction).quantize(
-                    Decimal("0.0001")
-                )
-                distributed += amount
-
-            entries.append(
-                ParcelLedger(
-                    parcel=pod_parcel.parcel,
-                    transaction_date=today,
-                    effective_date=diversion_record.month,
-                    amount_acre_feet=-amount,
-                    source_type="surface_diversion",
-                    description=(
-                        f"Diversion from {pod.name}: "
-                        f"{diversion_record.volume_acre_feet} AF "
-                        f"({diversion_record.get_diversion_type_display()}) "
-                        f"fraction={pod_parcel.fraction}"
-                    ),
-                    reporting_period=diversion_record.reporting_period,
-                    water_type=None,
-                )
-            )
+        entries = _fraction_split_entries(diversion_record, pod, pod_parcels)
 
         return list(ParcelLedger.objects.bulk_create(entries))
 
@@ -240,13 +274,19 @@ def create_diversion_ledger_entries(diversion_record, parcel=None):
 
 
 # Backward-compatible alias
-def create_diversion_ledger_entry(diversion_record, parcel=None):
+def create_diversion_ledger_entry(
+    diversion_record: DiversionRecord, parcel: Parcel | None = None
+) -> ParcelLedger | None:
     """Deprecated alias for create_diversion_ledger_entries. Returns a single entry."""
     entries = create_diversion_ledger_entries(diversion_record, parcel=parcel)
     return entries[0] if entries else None
 
 
-def create_recharge_ledger_entries(recharge_event, zone=None, parcel=None):
+def create_recharge_ledger_entries(
+    recharge_event: RechargeEvent,
+    zone: Zone | None = None,
+    parcel: Parcel | None = None,
+) -> list[ParcelLedger]:
     """Route a managed recharge event to the GSA basin pool — or one has-well parcel.
 
     The old behaviour smeared the event volume area-weighted across EVERY parcel
@@ -326,7 +366,7 @@ def create_recharge_ledger_entries(recharge_event, zone=None, parcel=None):
 # ---------------------------------------------------------------------------
 
 
-def _parse_date(date_str):
+def _parse_date(date_str: str) -> date | None:
     """Parse a date string in YYYY-MM-DD or MM/DD/YYYY format. Returns None on failure."""
     for fmt in ("%Y-%m-%d", "%m/%d/%Y"):
         try:
@@ -336,7 +376,11 @@ def _parse_date(date_str):
     return None
 
 
-def parse_ledger_csv(csv_file, reporting_period=None, dry_run=False):
+def parse_ledger_csv(
+    csv_file: IO[Any],
+    reporting_period: ReportingPeriod | None = None,
+    dry_run: bool = False,
+) -> dict[str, Any]:
     """Parse a CSV file and create ledger entries (web-upload entry point).
 
     A thin adapter over ``accounting.ledger_import.import_ledger_rows``, which is
@@ -369,6 +413,7 @@ def parse_ledger_csv(csv_file, reporting_period=None, dry_run=False):
                 "after"}): the row named, not just counted (ISS-196).
     """
     # Wrap binary upload files in a text reader; already-text files pass through
+    text_file: IO[Any]
     if hasattr(csv_file, "read"):
         try:
             text_file = io.TextIOWrapper(csv_file, encoding="utf-8-sig")
@@ -390,7 +435,7 @@ def parse_ledger_csv(csv_file, reporting_period=None, dry_run=False):
 # ---------------------------------------------------------------------------
 
 
-def et_mm_to_acre_feet(et_mm, area_acres):
+def et_mm_to_acre_feet(et_mm: Decimal | float | str, area_acres: Decimal) -> Decimal:
     """Convert evapotranspiration in mm to acre-feet consumed.
 
     ET (AF) = ET (mm) × area (acres) / 304.8
@@ -411,7 +456,7 @@ def et_mm_to_acre_feet(et_mm, area_acres):
 # ---------------------------------------------------------------------------
 
 
-def billable_ledger(queryset):
+def billable_ledger(queryset: QuerySet[ParcelLedger]) -> QuerySet[ParcelLedger]:
     """Return the billable subset of a ParcelLedger queryset.
 
     The calculation engine (Phase 38) writes a netted ``calculated`` row per
@@ -473,7 +518,7 @@ def billable_ledger(queryset):
 # ---------------------------------------------------------------------------
 
 
-def current_period_id():
+def current_period_id() -> int | None:
     """The reporting period a bare landing should default to.
 
     The most recent period with CALCULATED ledger rows, then the most recent
@@ -508,7 +553,7 @@ def current_period_id():
     return period_id
 
 
-def attach_orphans_to_period(period):
+def attach_orphans_to_period(period: ReportingPeriod) -> dict[str, int]:
     """Attach every orphaned row inside ``period``'s dates to it (146-02, ISS-181).
 
     A DiversionRecord, UnallocatedDelivery or ParcelLedger row saved before
@@ -567,7 +612,7 @@ def attach_orphans_to_period(period):
     return counts
 
 
-def parcel_balance(parcel, reporting_period=None):
+def parcel_balance(parcel: Parcel, reporting_period: ReportingPeriod | None = None) -> Decimal:
     """Sum of all ledger entries for a parcel.
 
     Args:
@@ -585,7 +630,9 @@ def parcel_balance(parcel, reporting_period=None):
     return result["total"] or Decimal("0")
 
 
-def parcel_balance_breakdown(parcel, reporting_period=None):
+def parcel_balance_breakdown(
+    parcel: Parcel, reporting_period: ReportingPeriod | None = None
+) -> dict[str, Decimal]:
     """supply/usage/net for ONE parcel, routed through billable_ledger.
 
     The per-parcel sibling of account_balance / zone_balance: it walks the SAME
@@ -608,7 +655,7 @@ def parcel_balance_breakdown(parcel, reporting_period=None):
 _Q4 = Decimal("0.0001")
 
 
-def _recorded_usage(queryset):
+def _recorded_usage(queryset: QuerySet[ParcelLedger]) -> Decimal:
     """The pre-148-02-Task-4 usage computation: recorded magnitude, at face
     value, of every negative non-``surface_diversion`` row.
 
@@ -626,7 +673,7 @@ def _recorded_usage(queryset):
     return abs(usage_neg or Decimal("0"))
 
 
-def charged_groundwater(queryset):
+def charged_groundwater(queryset: QuerySet[ParcelLedger]) -> Decimal:
     """The budget-spend magnitude for a ParcelLedger queryset (148-02 Task 4, Q2).
 
     **The budget spends extraction, not consumption.** Every negative,
@@ -680,7 +727,7 @@ def charged_groundwater(queryset):
     return (other_usage + calculated_charged).quantize(_Q4)
 
 
-def _balance_dict(queryset):
+def _balance_dict(queryset: QuerySet[ParcelLedger]) -> dict[str, Decimal]:
     """Compute supply/usage/net from a ParcelLedger queryset.
 
     Returns:
@@ -729,7 +776,9 @@ def _balance_dict(queryset):
     }
 
 
-def account_balance(water_account, reporting_period=None):
+def account_balance(
+    water_account: WaterAccount, reporting_period: ReportingPeriod | None = None
+) -> dict[str, Decimal]:
     """Aggregate balance across all parcels assigned to a water account.
 
     Uses active assignments only (removed_date is null).
@@ -753,7 +802,7 @@ def account_balance(water_account, reporting_period=None):
     return _balance_dict(billable_ledger(qs))
 
 
-def zone_balance(zone, reporting_period=None):
+def zone_balance(zone: Zone, reporting_period: ReportingPeriod | None = None) -> dict[str, Decimal]:
     """Aggregate balance across all parcels in a zone.
 
     Args:
@@ -791,7 +840,9 @@ MASS_BALANCE_TOLERANCE = Decimal("0.01")
 REALISTIC_RESIDUAL_BAND = Decimal("0.25")
 
 
-def residual_band_status(residual_af, gross_et_af, *, closes):
+def residual_band_status(
+    residual_af: Decimal, gross_et_af: Decimal | None, *, closes: bool
+) -> str:
     """Classify a mass-balance residual for presentation (58-03).
 
     Returns one of ``"closes"`` (≈0, the books balance), ``"realistic"`` (a small,
@@ -808,7 +859,9 @@ def residual_band_status(residual_af, gross_et_af, *, closes):
     return "large"
 
 
-def runs_in_period(queryset, reporting_period):
+def runs_in_period(
+    queryset: QuerySet[CalculationRun], reporting_period: ReportingPeriod | None
+) -> QuerySet[CalculationRun]:
     """Narrow a ``CalculationRun`` queryset to one reporting period, by DATE.
 
     THE single way to ask "which runs belong to this period" (math eval item 6).
@@ -840,7 +893,9 @@ def runs_in_period(queryset, reporting_period):
     )
 
 
-def _calculation_runs_for_period(parcel, reporting_period):
+def _calculation_runs_for_period(
+    parcel: Parcel, reporting_period: ReportingPeriod | None
+) -> QuerySet[CalculationRun]:
     """CalculationRun rows for one parcel within a reporting period.
 
     Thin per-parcel wrapper over ``runs_in_period``; see it for the membership
@@ -851,7 +906,7 @@ def _calculation_runs_for_period(parcel, reporting_period):
     )
 
 
-def parcel_net_consumptive_use(parcel, reporting_period=None):
+def parcel_net_consumptive_use(parcel: Parcel, reporting_period: ReportingPeriod | None = None) -> Decimal:
     """Sum a parcel's net consumptive use over a reporting period (Decimal AF).
 
     Net consumptive use (gross ET − effective precip) is the source-agnostic
@@ -868,7 +923,7 @@ def parcel_net_consumptive_use(parcel, reporting_period=None):
     return total
 
 
-def parcel_run_periods(parcel, reporting_period=None):
+def parcel_run_periods(parcel: Parcel, reporting_period: ReportingPeriod | None = None) -> list[str]:
     """The distinct ``"YYYY-MM"`` months a parcel has a CalculationRun for.
 
     The per-parcel audit drill-down (57-03): each month a parcel was engine-run
@@ -886,7 +941,7 @@ def parcel_run_periods(parcel, reporting_period=None):
     )
 
 
-def parcel_receipt_periods(parcel, reporting_period=None):
+def parcel_receipt_periods(parcel: Parcel, reporting_period: ReportingPeriod | None = None) -> list[str]:
     """The months a parcel has a calculation receipt for, sorted ``"YYYY-MM"``.
 
     148-03 (2026-09-28): the calculation page answers one question,
@@ -906,7 +961,190 @@ def parcel_receipt_periods(parcel, reporting_period=None):
     )
 
 
-def parcel_mass_balance(parcel, reporting_period=None):
+def _billable_parcel_ledger(
+    parcel: Parcel, reporting_period: ReportingPeriod | None
+) -> QuerySet[ParcelLedger]:
+    """The parcel's billable ledger rows, on the SAME basis as parcel_balance_breakdown."""
+    qs = ParcelLedger.objects.filter(parcel=parcel)
+    if reporting_period is not None:
+        qs = qs.filter(reporting_period=reporting_period)
+    return billable_ledger(qs)
+
+
+def _mass_balance_ledger_terms(
+    billable: QuerySet[ParcelLedger],
+) -> tuple[Decimal, Decimal, Decimal]:
+    """The ledger-sourced terms: ``(gw_recovered, surface, recharge)``."""
+    gw_recovered = _balance_dict(billable)["usage"]
+    surface = abs(
+        billable.filter(source_type="surface_diversion").aggregate(
+            s=Sum("amount_acre_feet")
+        )["s"]
+        or Decimal("0")
+    )
+    # 148-02 Task 3, revised 148-04: real recharge only (managed recharge's
+    # personal-path row), EXCLUDING an over-delivery credit row (either
+    # prefix) even when "credited" writes one again — decision 3, the
+    # physical balance never moves with the credit policy. abs() mirrors
+    # `surface` above for the same defensive reason, though the
+    # supply-row-positive constraint already keeps these rows non-negative.
+    recharge = abs(
+        billable.filter(source_type="recharge")
+        .exclude(
+            Q(description__startswith=INCIDENTAL_RECHARGE_WORDS)
+            | Q(description__startswith=LEGACY_INCIDENTAL_RECHARGE_WORDS)
+            | Q(description__startswith=LEGACY_CANAL_CREDIT_WORDS)
+        )
+        .aggregate(s=Sum("amount_acre_feet"))["s"]
+        or Decimal("0")
+    )
+    return gw_recovered, surface, recharge
+
+
+def _mass_balance_run_terms(
+    parcel: Parcel, reporting_period: ReportingPeriod | None
+) -> tuple[Decimal, Decimal, Decimal, Decimal, Decimal, Decimal, set[Decimal | None]]:
+    """The CalculationRun-sourced terms, summed over the period's runs.
+
+    Returns ``(precip, et, delta_storage, deep_percolation_surface,
+    deep_percolation_gw, surface_usable, efficiencies)``.
+    """
+    # CalculationRun-sourced terms: ET, effective precip, banking, percolation.
+    precip = Decimal("0")
+    et = Decimal("0")
+    delta_storage = Decimal("0")
+    deep_percolation_surface = Decimal("0")
+    deep_percolation_gw = Decimal("0")
+    # 150-02 Task 3: two figures the panel prints and the identity does not
+    # read: the canal water the crop could use (the runs' own column, summed)
+    # and the efficiencies that made it, one per delivered month.
+    surface_usable = Decimal("0")
+    efficiencies = set()
+    for run in _calculation_runs_for_period(parcel, reporting_period):
+        surface_usable += run.surface_water_af or Decimal("0")
+        if run.surface_delivered_af:
+            efficiencies.add(run.surface_efficiency)
+        et += run.gross_et_af or Decimal("0")
+        precip += run.effective_precip_af or Decimal("0")
+        delta_storage += (run.banked_af or Decimal("0")) - (
+            run.drawn_af or Decimal("0")
+        )
+        # 148-02: the part of a canal delivery the crop could NOT use. Neither
+        # crop use nor a credit, and never manufactured (ISS-158). Only present
+        # on a run whose apply_efficiency knob was on and something was
+        # delivered (surface_delivered_af not null); an old run, or the knob
+        # off, contributes 0 here, exactly like every other absent term above.
+        if run.surface_delivered_af is not None:
+            consumed = run.surface_water_af or Decimal("0")
+            deep_percolation_surface += run.surface_delivered_af - consumed
+        # 148-02 Task 4 (Q2): the groundwater sibling of the term above --
+        # pumped water that returned to the aquifer rather than reaching the
+        # crop. Null on a metered or no-well run (same absent-term convention).
+        deep_percolation_gw += run.deep_percolation_gw_af or Decimal("0")
+    return (
+        precip, et, delta_storage, deep_percolation_surface,
+        deep_percolation_gw, surface_usable, efficiencies,
+    )
+
+
+def _groundwater_source_flags(billable: QuerySet[ParcelLedger]) -> tuple[bool, bool]:
+    """Whether the period's groundwater is the engine's estimate, and whether it is a meter reading."""
+    # 137-01: is the groundwater term a RECORDED number or the engine's own
+    # plug? Where a field has a well and no meter, `run_calculations` writes the
+    # ET − precip − surface leftover as a `calculated` ledger row, and that row
+    # then re-enters this balance as a supply — so the books close by
+    # construction, not by agreement. A `calculated` row in the period is
+    # exactly that state. Measured 2026-09-06: 113 of 152 field-years close, and
+    # every one of them had a plug available; not one field-year carrying a
+    # meter closes. The screen labels the derived figure rather than letting a
+    # 0.00 residual read as a reconciliation.
+    gw_is_estimated = billable.filter(source_type="calculated").exists()
+    # 148-03: the badge's three cases are defined by what the field HAS, not
+    # by `gw_is_estimated` alone, which is false on a field with no well as
+    # well as on a metered one. A meter row in the period is the third case:
+    # the groundwater figure is a reading, nothing in the balance was built
+    # from the other side, and the residual is a difference between records.
+    gw_is_metered = billable.filter(source_type="meter_reading").exists()
+    return gw_is_estimated, gw_is_metered
+
+
+def _mass_balance_result(
+    gw_recovered: Decimal,
+    surface: Decimal,
+    recharge: Decimal,
+    run_terms: tuple[Decimal, Decimal, Decimal, Decimal, Decimal, Decimal, set[Decimal | None]],
+    gw_is_estimated: bool,
+    gw_is_metered: bool,
+) -> dict[str, Any]:
+    """Assemble the balance identity, its flags and the panel-only figures."""
+    (
+        precip, et, delta_storage, deep_percolation_surface,
+        deep_percolation_gw, surface_usable, efficiencies,
+    ) = run_terms
+    runoff = Decimal("0")  # bookkeeping boundary: no surface-hydrology model.
+
+    inputs = {"surface": surface, "precip": precip, "gw_recovered": gw_recovered}
+    outputs = {
+        "et": et,
+        "recharge": recharge,
+        "runoff": runoff,
+        "delta_storage": delta_storage,
+        "deep_percolation_surface_af": deep_percolation_surface,
+        "deep_percolation_gw_af": deep_percolation_gw,
+    }
+    # 137-01: the two operands the parcel pane's balance panel states. Summed
+    # here rather than in the template so the screen adds the same rows the
+    # residual is computed from — a template that summed its own three cells
+    # could drift from `residual_af` without any test noticing.
+    inputs_total = cast(Decimal, sum(inputs.values()))
+    outputs_total = cast(Decimal, sum(outputs.values()))
+    residual = inputs_total - outputs_total
+    closes = abs(residual) <= MASS_BALANCE_TOLERANCE
+    return {
+        "inputs": inputs,
+        "inputs_total": inputs_total,
+        # True when the groundwater supply above is the engine's estimate rather
+        # than a meter reading. Recharge carries no separate flag of its own —
+        # the template gates its "(estimated)" label on the value being non-zero.
+        "gw_is_estimated": gw_is_estimated,
+        # True when a meter reading is among the groundwater supply rows, so
+        # the pane prints no badge word (148-03; the word Balanced retired).
+        "gw_is_metered": gw_is_metered,
+        "outputs": outputs,
+        "outputs_total": outputs_total,
+        # 148-02: the two deep-percolation outputs as the one row the balance
+        # panel lists, so the rows under Uses add up to Uses. Kept outside
+        # `outputs` so outputs_total does not count it twice.
+        "deep_percolation_af": deep_percolation_surface + deep_percolation_gw,
+        # 150-02 Task 3: the panel's "the crop could use" row under Surface,
+        # the sum of the period's CalculationRun.surface_water_af. Not an
+        # input or an output: it is a part of `surface`, and the rest of that
+        # delivery is `deep_percolation_surface_af` above.
+        "surface_usable_af": surface_usable,
+        # The one irrigation efficiency, as a percent (0.750 -> 75.0), that
+        # every month with a delivery ran at; None when the months ran at
+        # different ones (the month table then carries each month's), when
+        # one ran with none stamped, or when nothing was delivered.
+        "surface_efficiency_percent": (
+            next(iter(efficiencies)) * 100  # type: ignore[operator]  # None excluded by the test below
+            if len(efficiencies) == 1 and None not in efficiencies
+            else None
+        ),
+        "residual_af": residual,
+        "closes": closes,
+        # 58-03: presentation classification — "closes" / "realistic" / "large".
+        # A small realistic residual (meter pump loss, minor supplement) is normal,
+        # not a warning; only a "large" residual (e.g. curtailment shortfall) flags.
+        "band_status": residual_band_status(residual, et, closes=closes),
+        # True when supplies exceeded measured use (a minor surplus / return flow);
+        # False when measured use exceeded supplies (a shortfall). Drives the badge.
+        "is_surplus": residual >= 0,
+    }
+
+
+def parcel_mass_balance(
+    parcel: Parcel, reporting_period: ReportingPeriod | None = None
+) -> dict[str, Any]:
     """The closing water mass balance for one parcel over a reporting period.
 
     Proves the per-parcel books close (ISS-053): every unit of water flowing in
@@ -996,148 +1234,16 @@ def parcel_mass_balance(parcel, reporting_period=None):
         only and outside the identity (150-02 Task 3): ``surface_usable_af``
         and ``surface_efficiency_percent``.
     """
-    # Ledger-sourced terms, on the SAME billable basis as parcel_balance_breakdown.
-    qs = ParcelLedger.objects.filter(parcel=parcel)
-    if reporting_period is not None:
-        qs = qs.filter(reporting_period=reporting_period)
-    billable = billable_ledger(qs)
-
-    gw_recovered = _balance_dict(billable)["usage"]
-    surface = abs(
-        billable.filter(source_type="surface_diversion").aggregate(
-            s=Sum("amount_acre_feet")
-        )["s"]
-        or Decimal("0")
-    )
-    # 148-02 Task 3, revised 148-04: real recharge only (managed recharge's
-    # personal-path row), EXCLUDING an over-delivery credit row (either
-    # prefix) even when "credited" writes one again — decision 3, the
-    # physical balance never moves with the credit policy. abs() mirrors
-    # `surface` above for the same defensive reason, though the
-    # supply-row-positive constraint already keeps these rows non-negative.
-    recharge = abs(
-        billable.filter(source_type="recharge")
-        .exclude(
-            Q(description__startswith=INCIDENTAL_RECHARGE_WORDS)
-            | Q(description__startswith=LEGACY_INCIDENTAL_RECHARGE_WORDS)
-            | Q(description__startswith=LEGACY_CANAL_CREDIT_WORDS)
-        )
-        .aggregate(s=Sum("amount_acre_feet"))["s"]
-        or Decimal("0")
+    billable = _billable_parcel_ledger(parcel, reporting_period)
+    gw_recovered, surface, recharge = _mass_balance_ledger_terms(billable)
+    run_terms = _mass_balance_run_terms(parcel, reporting_period)
+    gw_is_estimated, gw_is_metered = _groundwater_source_flags(billable)
+    return _mass_balance_result(
+        gw_recovered, surface, recharge, run_terms, gw_is_estimated, gw_is_metered
     )
 
-    # CalculationRun-sourced terms: ET, effective precip, banking, percolation.
-    precip = Decimal("0")
-    et = Decimal("0")
-    delta_storage = Decimal("0")
-    deep_percolation_surface = Decimal("0")
-    deep_percolation_gw = Decimal("0")
-    # 150-02 Task 3: two figures the panel prints and the identity does not
-    # read: the canal water the crop could use (the runs' own column, summed)
-    # and the efficiencies that made it, one per delivered month.
-    surface_usable = Decimal("0")
-    efficiencies = set()
-    for run in _calculation_runs_for_period(parcel, reporting_period):
-        surface_usable += run.surface_water_af or Decimal("0")
-        if run.surface_delivered_af:
-            efficiencies.add(run.surface_efficiency)
-        et += run.gross_et_af or Decimal("0")
-        precip += run.effective_precip_af or Decimal("0")
-        delta_storage += (run.banked_af or Decimal("0")) - (
-            run.drawn_af or Decimal("0")
-        )
-        # 148-02: the part of a canal delivery the crop could NOT use. Neither
-        # crop use nor a credit, and never manufactured (ISS-158). Only present
-        # on a run whose apply_efficiency knob was on and something was
-        # delivered (surface_delivered_af not null); an old run, or the knob
-        # off, contributes 0 here, exactly like every other absent term above.
-        if run.surface_delivered_af is not None:
-            consumed = run.surface_water_af or Decimal("0")
-            deep_percolation_surface += run.surface_delivered_af - consumed
-        # 148-02 Task 4 (Q2): the groundwater sibling of the term above --
-        # pumped water that returned to the aquifer rather than reaching the
-        # crop. Null on a metered or no-well run (same absent-term convention).
-        deep_percolation_gw += run.deep_percolation_gw_af or Decimal("0")
 
-    runoff = Decimal("0")  # bookkeeping boundary: no surface-hydrology model.
-
-    # 137-01: is the groundwater term a RECORDED number or the engine's own
-    # plug? Where a field has a well and no meter, `run_calculations` writes the
-    # ET − precip − surface leftover as a `calculated` ledger row, and that row
-    # then re-enters this balance as a supply — so the books close by
-    # construction, not by agreement. A `calculated` row in the period is
-    # exactly that state. Measured 2026-09-06: 113 of 152 field-years close, and
-    # every one of them had a plug available; not one field-year carrying a
-    # meter closes. The screen labels the derived figure rather than letting a
-    # 0.00 residual read as a reconciliation.
-    gw_is_estimated = billable.filter(source_type="calculated").exists()
-    # 148-03: the badge's three cases are defined by what the field HAS, not
-    # by `gw_is_estimated` alone, which is false on a field with no well as
-    # well as on a metered one. A meter row in the period is the third case:
-    # the groundwater figure is a reading, nothing in the balance was built
-    # from the other side, and the residual is a difference between records.
-    gw_is_metered = billable.filter(source_type="meter_reading").exists()
-
-    inputs = {"surface": surface, "precip": precip, "gw_recovered": gw_recovered}
-    outputs = {
-        "et": et,
-        "recharge": recharge,
-        "runoff": runoff,
-        "delta_storage": delta_storage,
-        "deep_percolation_surface_af": deep_percolation_surface,
-        "deep_percolation_gw_af": deep_percolation_gw,
-    }
-    # 137-01: the two operands the parcel pane's balance panel states. Summed
-    # here rather than in the template so the screen adds the same rows the
-    # residual is computed from — a template that summed its own three cells
-    # could drift from `residual_af` without any test noticing.
-    inputs_total = sum(inputs.values())
-    outputs_total = sum(outputs.values())
-    residual = inputs_total - outputs_total
-    closes = abs(residual) <= MASS_BALANCE_TOLERANCE
-    return {
-        "inputs": inputs,
-        "inputs_total": inputs_total,
-        # True when the groundwater supply above is the engine's estimate rather
-        # than a meter reading. Recharge carries no separate flag of its own —
-        # the template gates its "(estimated)" label on the value being non-zero.
-        "gw_is_estimated": gw_is_estimated,
-        # True when a meter reading is among the groundwater supply rows, so
-        # the pane prints no badge word (148-03; the word Balanced retired).
-        "gw_is_metered": gw_is_metered,
-        "outputs": outputs,
-        "outputs_total": outputs_total,
-        # 148-02: the two deep-percolation outputs as the one row the balance
-        # panel lists, so the rows under Uses add up to Uses. Kept outside
-        # `outputs` so outputs_total does not count it twice.
-        "deep_percolation_af": deep_percolation_surface + deep_percolation_gw,
-        # 150-02 Task 3: the panel's "the crop could use" row under Surface,
-        # the sum of the period's CalculationRun.surface_water_af. Not an
-        # input or an output: it is a part of `surface`, and the rest of that
-        # delivery is `deep_percolation_surface_af` above.
-        "surface_usable_af": surface_usable,
-        # The one irrigation efficiency, as a percent (0.750 -> 75.0), that
-        # every month with a delivery ran at; None when the months ran at
-        # different ones (the month table then carries each month's), when
-        # one ran with none stamped, or when nothing was delivered.
-        "surface_efficiency_percent": (
-            next(iter(efficiencies)) * 100
-            if len(efficiencies) == 1 and None not in efficiencies
-            else None
-        ),
-        "residual_af": residual,
-        "closes": closes,
-        # 58-03: presentation classification — "closes" / "realistic" / "large".
-        # A small realistic residual (meter pump loss, minor supplement) is normal,
-        # not a warning; only a "large" residual (e.g. curtailment shortfall) flags.
-        "band_status": residual_band_status(residual, et, closes=closes),
-        # True when supplies exceeded measured use (a minor surplus / return flow);
-        # False when measured use exceeded supplies (a shortfall). Drives the badge.
-        "is_surplus": residual >= 0,
-    }
-
-
-def parcel_unmet_demand(parcel, reporting_period=None):
+def parcel_unmet_demand(parcel: Parcel, reporting_period: ReportingPeriod | None = None) -> Decimal:
     """Consumptive use on this field that no supply on record explains (AF).
 
     The engine already records this and always has: where a field has NO well,
@@ -1173,7 +1279,7 @@ def parcel_unmet_demand(parcel, reporting_period=None):
     return total.quantize(Decimal("0.0001"))
 
 
-def parcel_over_delivery_shown(parcel, reporting_period=None):
+def parcel_over_delivery_shown(parcel: Parcel, reporting_period: ReportingPeriod | None = None) -> Decimal:
     """Canal water beyond what this field's crop could use, shown but not credited (AF).
 
     148-04 decision (c): under the "named_line" over-delivery treatment a run
@@ -1199,7 +1305,7 @@ def parcel_over_delivery_shown(parcel, reporting_period=None):
     return total.quantize(Decimal("0.0001"))
 
 
-def parcel_over_delivery_total(parcel, reporting_period=None):
+def parcel_over_delivery_total(parcel: Parcel, reporting_period: ReportingPeriod | None = None) -> Decimal:
     """Canal water beyond what this field's crop could use, every month, every setting (AF).
 
     148-03: the field page's residual is real on a field with no meter and no
@@ -1225,7 +1331,7 @@ def parcel_over_delivery_total(parcel, reporting_period=None):
     return total.quantize(Decimal("0.0001"))
 
 
-def balance_state(value):
+def balance_state(value: Decimal | float | str | None) -> str | None:
     """``"surplus"``, ``"deficit"`` or ``"balanced"`` for a water balance in AF.
 
     Judged on the two decimal places every page prints (ISS-237). A field with
@@ -1245,7 +1351,9 @@ def balance_state(value):
     return "balanced"
 
 
-def unmet_demand_by_parcel(reporting_period):
+def unmet_demand_by_parcel(
+    reporting_period: ReportingPeriod | None,
+) -> tuple[list[dict[str, Any]], Decimal]:
     """Fields whose water use no reported supply explains, one row per field.
 
     The district-wide half of ``parcel_unmet_demand`` (ISS-157). Same rows, same
@@ -1311,7 +1419,48 @@ def unmet_demand_by_parcel(reporting_period):
 # supplies once, here.
 
 
-def consumptive_use_balance(parcel_ids, reporting_period=None):
+def _consumptive_supply_terms(
+    parcel_ids: list[int], reporting_period: ReportingPeriod | None
+) -> tuple[Decimal, Decimal, Decimal]:
+    """Ledger-sourced supplies: ``(groundwater, groundwater_charged, surface)``."""
+    # Ledger-sourced supplies, on the SAME billable basis as the mass balance.
+    qs = ParcelLedger.objects.filter(parcel_id__in=parcel_ids)
+    if reporting_period is not None:
+        qs = qs.filter(reporting_period=reporting_period)
+    billable = billable_ledger(qs)
+
+    groundwater = _recorded_usage(billable)
+    groundwater_charged = charged_groundwater(billable)
+    surface = abs(
+        billable.filter(source_type="surface_diversion").aggregate(
+            s=Sum("amount_acre_feet")
+        )["s"]
+        or Decimal("0")
+    )
+    return groundwater, groundwater_charged, surface
+
+
+def _consumptive_run_terms(
+    parcel_ids: list[int], reporting_period: ReportingPeriod | None
+) -> tuple[Decimal, Decimal, Decimal, int]:
+    """CalculationRun-sourced terms: ``(gross, net, precip, run_count)``."""
+    # CalculationRun-sourced consumptive-use terms, summed per parcel-month.
+    gross = Decimal("0")
+    net = Decimal("0")
+    precip = Decimal("0")
+    run_count = 0
+    for parcel in Parcel.objects.filter(id__in=parcel_ids):
+        for run in _calculation_runs_for_period(parcel, reporting_period):
+            gross += run.gross_et_af or Decimal("0")
+            net += run.net_consumptive_use_af or Decimal("0")
+            precip += run.effective_precip_af or Decimal("0")
+            run_count += 1
+    return gross, net, precip, run_count
+
+
+def consumptive_use_balance(
+    parcel_ids: Iterable[int], reporting_period: ReportingPeriod | None = None
+) -> dict[str, Any]:
     """Estimated consumptive use vs. the supplies that met it, for a parcel set.
 
     Frames a collection of parcels as **consumptive use (gross ET and net CU)
@@ -1374,32 +1523,12 @@ def consumptive_use_balance(parcel_ids, reporting_period=None):
     """
     parcel_ids = list(parcel_ids)
 
-    # Ledger-sourced supplies, on the SAME billable basis as the mass balance.
-    qs = ParcelLedger.objects.filter(parcel_id__in=parcel_ids)
-    if reporting_period is not None:
-        qs = qs.filter(reporting_period=reporting_period)
-    billable = billable_ledger(qs)
-
-    groundwater = _recorded_usage(billable)
-    groundwater_charged = charged_groundwater(billable)
-    surface = abs(
-        billable.filter(source_type="surface_diversion").aggregate(
-            s=Sum("amount_acre_feet")
-        )["s"]
-        or Decimal("0")
+    groundwater, groundwater_charged, surface = _consumptive_supply_terms(
+        parcel_ids, reporting_period
     )
-
-    # CalculationRun-sourced consumptive-use terms, summed per parcel-month.
-    gross = Decimal("0")
-    net = Decimal("0")
-    precip = Decimal("0")
-    run_count = 0
-    for parcel in Parcel.objects.filter(id__in=parcel_ids):
-        for run in _calculation_runs_for_period(parcel, reporting_period):
-            gross += run.gross_et_af or Decimal("0")
-            net += run.net_consumptive_use_af or Decimal("0")
-            precip += run.effective_precip_af or Decimal("0")
-            run_count += 1
+    gross, net, precip, run_count = _consumptive_run_terms(
+        parcel_ids, reporting_period
+    )
 
     supply_total = surface + groundwater + precip
     return {
@@ -1425,12 +1554,16 @@ def consumptive_use_balance(parcel_ids, reporting_period=None):
     }
 
 
-def parcel_consumptive_balance(parcel, reporting_period=None):
+def parcel_consumptive_balance(
+    parcel: Parcel, reporting_period: ReportingPeriod | None = None
+) -> dict[str, Any]:
     """Consumptive-use balance for ONE parcel (the single-parcel wrapper)."""
     return consumptive_use_balance([parcel.id], reporting_period)
 
 
-def account_consumptive_balance(water_account, reporting_period=None):
+def account_consumptive_balance(
+    water_account: WaterAccount, reporting_period: ReportingPeriod | None = None
+) -> dict[str, Any]:
     """Consumptive-use balance across a water account's active parcels.
 
     Uses the same active-assignment selection as ``account_balance``
@@ -1444,7 +1577,9 @@ def account_consumptive_balance(water_account, reporting_period=None):
     return consumptive_use_balance(list(parcel_ids), reporting_period)
 
 
-def zone_consumptive_balance(zone, reporting_period=None):
+def zone_consumptive_balance(
+    zone: Zone, reporting_period: ReportingPeriod | None = None
+) -> dict[str, Any]:
     """Consumptive-use balance across a zone's parcels.
 
     Uses the same ParcelZone selection as ``zone_balance``.
@@ -1467,7 +1602,7 @@ def zone_consumptive_balance(zone, reporting_period=None):
 # reporting_period=None (38-06), so a FK filter would silently drop them.
 
 
-def water_year_periods(water_year, anchor_month=10):
+def water_year_periods(water_year: int, anchor_month: int = 10) -> list[ReportingPeriod]:
     """ReportingPeriods belonging to ``water_year`` (labelled by their end_date).
 
     The period is assigned to the water year its END month falls in, so a
@@ -1484,7 +1619,9 @@ def water_year_periods(water_year, anchor_month=10):
     return result
 
 
-def water_year_usage_by_type(zone, date_start, date_end):
+def water_year_usage_by_type(
+    zone: Zone, date_start: date, date_end: date
+) -> dict[str, Decimal]:
     """Billable usage (positive AF) in a zone over [date_start, date_end], by water-type code.
 
     Mirrors the dashboard's basis: ``billable_ledger`` is applied so a netted
@@ -1517,7 +1654,7 @@ def water_year_usage_by_type(zone, date_start, date_end):
     )
     qs = billable_ledger(qs).select_related("water_type")
 
-    buckets = {}
+    buckets: dict[str, Decimal] = {}
     for row in qs:
         if row.source_type in ("et_estimate", "calculated"):
             code = "GW"
@@ -1547,7 +1684,7 @@ def water_year_usage_by_type(zone, date_start, date_end):
     return buckets
 
 
-def zone_carryover(zone, water_year):
+def zone_carryover(zone: Zone, water_year: int) -> Decimal:
     """Signed sum of carried-forward budget for a zone in a water year (AF).
 
     Positive = net surplus rolled in; negative = net debt borrowed against this
@@ -1573,7 +1710,9 @@ ZONE_CREDIT_LABELS = (
 )
 
 
-def zone_credit_sources(zone, reporting_period):
+def zone_credit_sources(
+    zone: Zone, reporting_period: ReportingPeriod
+) -> list[tuple[str, Decimal]]:
     """``[(label, AF), ...]`` for each kind of row in the zone's carry-over sum.
 
     The same rows, water year and sum as `zone_groundwater_budget`'s
@@ -1595,7 +1734,9 @@ def zone_credit_sources(zone, reporting_period):
     ]
 
 
-def zone_groundwater_budget(zone, reporting_period):
+def zone_groundwater_budget(
+    zone: Zone, reporting_period: ReportingPeriod
+) -> dict[str, Decimal | None]:
     """A zone's groundwater budget for one period — the ONE computation of it.
 
     Called by the dashboard's zone row and by the district page's Allocation vs.
@@ -1675,7 +1816,7 @@ def zone_groundwater_budget(zone, reporting_period):
     }
 
 
-def resolve_recovery_horizon(zone, *, agency_default=None):
+def resolve_recovery_horizon(zone: Zone, *, agency_default: str | None = None) -> str:
     """A zone's effective recovery horizon: its own override, else the agency default.
 
     A surface district is its own Zone (seed_merced_ledgers DISTRICT_ZONE_PREFIX),
@@ -1700,7 +1841,7 @@ def resolve_recovery_horizon(zone, *, agency_default=None):
 # -- 148-03: the help pages' shared "where this field's water came from" table --
 
 
-def example_field_month():
+def example_field_month() -> dict[str, Any] | None:
     """The one real field-month `templates/help/partials/_the_subtraction.html`
     teaches its arithmetic from.
 
@@ -1751,7 +1892,7 @@ def example_field_month():
     return _subtraction_context(run)
 
 
-def stamped_groundwater_efficiency(run):
+def stamped_groundwater_efficiency(run: CalculationRun) -> Decimal | None:
     """The irrigation efficiency a run divided ETAW met by groundwater by.
 
     150.2-02: the run's own ``groundwater_application_efficiency`` stamp.
@@ -1768,7 +1909,7 @@ def stamped_groundwater_efficiency(run):
     return None
 
 
-def groundwater_efficiency_method_name(run):
+def groundwater_efficiency_method_name(run: CalculationRun) -> str | None:
     """The irrigation method named for a run's stamped groundwater
     efficiency, or None. Read off the field's method now, as the surface
     row's method name is: the run stamps the source, not the name."""
@@ -1778,7 +1919,7 @@ def groundwater_efficiency_method_name(run):
     return link.method.name if link is not None else None
 
 
-def _subtraction_context(run):
+def _subtraction_context(run: CalculationRun) -> dict[str, Any]:
     """The template variables `_the_subtraction.html` reads, for one run.
 
     Split out of ``example_field_month`` so the selection rule and the

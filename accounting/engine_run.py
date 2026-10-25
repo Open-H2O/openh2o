@@ -51,6 +51,8 @@ Words a person reads (``outcome``, ``notes``) are plain sentences. The
 traceback and the exception text go in ``error_detail`` for an administrator.
 """
 
+from __future__ import annotations
+
 import datetime as dt
 import io
 import logging
@@ -58,6 +60,7 @@ import re
 import traceback
 from collections import defaultdict
 from decimal import Decimal
+from typing import Any
 
 import pghistory
 from django.core.management import call_command
@@ -262,6 +265,104 @@ def _amount(value):
     return f"{Decimal(value):,.2f}"
 
 
+def _own_over_headgate_sentence(note: dict[str, Any]) -> str:
+    """The attention sentence for a field's own deliveries exceeding the headgate."""
+    if Decimal(note.get("lost_af") or 0) > 0:
+        where = (
+            f"more than reached the fields from the headgate after "
+            f"canal losses in {month_label(note['month'])}."
+        )
+    else:
+        where = (
+            f"more than the headgate recorded for "
+            f"{month_label(note['month'])}."
+        )
+    return (
+        f"Fields' own delivery records at {note['pod']} add up to "
+        f"{_amount(note['excess_af'])} AF {where}"
+    )
+
+
+def _unexplained_sentence(unexplained: dict[str, Decimal]) -> str:
+    """One sentence naming the canals with unexplained headgate water, largest first."""
+    # The canals are named with their amounts, largest first, and what
+    # happens to the water.
+    total = sum(unexplained.values(), Decimal("0"))
+    each = ", ".join(
+        f"{pod} {_amount(af)}"
+        for pod, af in sorted(unexplained.items(), key=lambda kv: (-kv[1], kv[0]))
+    )
+    # The ETAW terms replace the earlier 10-06 phrase.
+    return (
+        f"{_amount(total)} AF of headgate water was left after each field "
+        f"received its ETAW divided by its irrigation efficiency ({each}). "
+        f"OpenH2O lists it on Site Health under Unallocated Delivery."
+    )
+
+
+def _canal_losses_sentence(evaporation: Decimal, spill: Decimal, loss_points: set[str]) -> str:
+    """One sentence for the evaporation and spill subtracted at the period's points."""
+    # Working copy (149-02). Only the losses that are above zero are
+    # named. "Subtracted", not "wrote off": the losses come off the water
+    # diverted (surface/services.py).
+    parts = []
+    if evaporation > 0:
+        parts.append(f"{_amount(evaporation)} AF of canal evaporation")
+    if spill > 0:
+        parts.append(
+            f"{_amount(spill)} AF of {'spill' if parts else 'canal spill'}"
+        )
+    count = len(loss_points)
+    return (
+        f"OpenH2O subtracted {' and '.join(parts)} from the water diverted "
+        f"at {count} point{'s' if count != 1 else ''} of diversion in the "
+        f"months calculated."
+    )
+
+
+def _seepage_no_zone_sentence(note: dict[str, Any]) -> str:
+    """The sentence for canal seepage that had no zone to go to."""
+    return (
+        f"OpenH2O credited the {_amount(note['amount_af'])} AF of canal seepage "
+        f"at {note['pod']} in {month_label(note['month'])} to no zone, because "
+        f"no management area contains the point or the field that received "
+        f"the most of that month's delivery."
+    )
+
+
+def _unmetered_estimate_sentence(estimated_points: set[str], estimated_months: set[str]) -> str:
+    """One sentence for the delivery estimated at unmetered points of diversion."""
+    points, months = len(estimated_points), len(estimated_months)
+    # The wording is "1 unmetered point of diversion". The basis is
+    # ETAW / efficiency (surface/estimate.py).
+    return (
+        f"OpenH2O estimated the delivery at {points} unmetered "
+        f"point{'s' if points != 1 else ''} of diversion for {months} "
+        f"month{'s' if months != 1 else ''}, from the ETAW of the fields "
+        f"{'it serves' if points == 1 else 'they serve'} divided by each "
+        f"field's irrigation efficiency. These figures are estimates, not "
+        f"measurements."
+    )
+
+
+def _capped_estimate_sentence(note: dict[str, Any]) -> str:
+    """The sentence for an estimate capped at what the water right allows."""
+    where = {
+        "groundwater": "groundwater",
+        "unmet": "water use recorded, no supply reported",
+        "mixed": (
+            "groundwater on fields with a well and, on fields without one, "
+            "as water use recorded, no supply reported"
+        ),
+    }[note["residual"]]
+    return (
+        f"OpenH2O estimated {_amount(note['estimate_af'])} AF at {note['pod']} for "
+        f"{month_label(note['month'])}. Of the fields' use, "
+        f"{_amount(note['above_af'])} AF is above what the water right "
+        f"allows and counts as {where}."
+    )
+
+
 def _note_sentences(raw, *, tabled=False):
     """Plain sentences for what the canal division raised: ``(attention, info)``.
 
@@ -294,20 +395,7 @@ def _note_sentences(raw, *, tabled=False):
     not_active = defaultdict(set)
     for note in raw:
         if note.get("kind") == "own_over_headgate":
-            if Decimal(note.get("lost_af") or 0) > 0:
-                where = (
-                    f"more than reached the fields from the headgate after "
-                    f"canal losses in {month_label(note['month'])}."
-                )
-            else:
-                where = (
-                    f"more than the headgate recorded for "
-                    f"{month_label(note['month'])}."
-                )
-            attention.append(
-                f"Fields' own delivery records at {note['pod']} add up to "
-                f"{_amount(note['excess_af'])} AF {where}"
-            )
+            attention.append(_own_over_headgate_sentence(note))
         elif note.get("kind") == "unallocated":
             unexplained[note["pod"]] += Decimal(note["amount_af"])
         elif note.get("kind") == "canal_losses":
@@ -327,72 +415,17 @@ def _note_sentences(raw, *, tabled=False):
             not_active[note["status"]].add(note["pod"])
     info = []
     if unexplained and not tabled:
-        # The canals are named with their amounts, largest first, and what
-        # happens to the water.
-        total = sum(unexplained.values(), Decimal("0"))
-        each = ", ".join(
-            f"{pod} {_amount(af)}"
-            for pod, af in sorted(unexplained.items(), key=lambda kv: (-kv[1], kv[0]))
-        )
-        # The ETAW terms replace the earlier 10-06 phrase.
-        info.append(
-            f"{_amount(total)} AF of headgate water was left after each field "
-            f"received its ETAW divided by its irrigation efficiency ({each}). "
-            f"OpenH2O lists it on Site Health under Unallocated Delivery."
-        )
+        info.append(_unexplained_sentence(unexplained))
     if loss_points and not tabled:
-        # Working copy (149-02). Only the losses that are above zero are
-        # named. "Subtracted", not "wrote off": the losses come off the water
-        # diverted (surface/services.py).
-        parts = []
-        if evaporation > 0:
-            parts.append(f"{_amount(evaporation)} AF of canal evaporation")
-        if spill > 0:
-            parts.append(
-                f"{_amount(spill)} AF of {'spill' if parts else 'canal spill'}"
-            )
-        count = len(loss_points)
-        info.append(
-            f"OpenH2O subtracted {' and '.join(parts)} from the water diverted "
-            f"at {count} point{'s' if count != 1 else ''} of diversion in the "
-            f"months calculated."
-        )
+        info.append(_canal_losses_sentence(evaporation, spill, loss_points))
     for note in sorted(no_zone, key=lambda n: (n["month"], n["pod"])):
-        info.append(
-            f"OpenH2O credited the {_amount(note['amount_af'])} AF of canal seepage "
-            f"at {note['pod']} in {month_label(note['month'])} to no zone, because "
-            f"no management area contains the point or the field that received "
-            f"the most of that month's delivery."
-        )
+        info.append(_seepage_no_zone_sentence(note))
     # Estimates for a ditch with no meter (149-02). Working copy. They keep a
     # run green: an estimate is information, never a fault.
     if estimated_points and not tabled:
-        points, months = len(estimated_points), len(estimated_months)
-        # The wording is "1 unmetered point of diversion". The basis is
-        # ETAW / efficiency (surface/estimate.py).
-        info.append(
-            f"OpenH2O estimated the delivery at {points} unmetered "
-            f"point{'s' if points != 1 else ''} of diversion for {months} "
-            f"month{'s' if months != 1 else ''}, from the ETAW of the fields "
-            f"{'it serves' if points == 1 else 'they serve'} divided by each "
-            f"field's irrigation efficiency. These figures are estimates, not "
-            f"measurements."
-        )
+        info.append(_unmetered_estimate_sentence(estimated_points, estimated_months))
     for note in sorted(capped, key=lambda n: (n["month"], n["pod"])):
-        where = {
-            "groundwater": "groundwater",
-            "unmet": "water use recorded, no supply reported",
-            "mixed": (
-                "groundwater on fields with a well and, on fields without one, "
-                "as water use recorded, no supply reported"
-            ),
-        }[note["residual"]]
-        info.append(
-            f"OpenH2O estimated {_amount(note['estimate_af'])} AF at {note['pod']} for "
-            f"{month_label(note['month'])}. Of the fields' use, "
-            f"{_amount(note['above_af'])} AF is above what the water right "
-            f"allows and counts as {where}."
-        )
+        info.append(_capped_estimate_sentence(note))
     for status, pods in sorted(not_active.items()):
         info.append(
             f"OpenH2O did not estimate a delivery for {_names(pods)} because "

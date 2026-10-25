@@ -20,19 +20,152 @@ Usage:
   python manage.py sync_openet_to_ledger --start-date 2024-01-01 --end-date 2024-12-31 --dry-run
 """
 
+from __future__ import annotations
+
 import logging
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
+from typing import Any
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.db.models import QuerySet
 from django.utils import timezone
 
 from accounting.services import et_mm_to_acre_feet
 from datasync.models import OpenETCache
-from parcels.models import ParcelLedger
+from parcels.models import Parcel, ParcelLedger
 
 logger = logging.getLogger(__name__)
+
+
+def _parse_date_range(options: dict[str, Any]) -> tuple[date, date]:
+    """The validated ``(start_date, end_date)`` from the command options."""
+    try:
+        start_date = datetime.strptime(options["start_date"], "%Y-%m-%d").date()
+        end_date = datetime.strptime(options["end_date"], "%Y-%m-%d").date()
+    except ValueError as exc:
+        raise CommandError(f"Invalid date format: {exc}. Use YYYY-MM-DD.") from exc
+
+    if end_date < start_date:
+        raise CommandError("--end-date must be >= --start-date.")
+    return start_date, end_date
+
+
+def _cache_records_in_range(start_date: date, end_date: date) -> QuerySet[OpenETCache]:
+    """The ET cache records overlapping the range, ordered by parcel then start."""
+    # Find all OpenETCache records that overlap the requested date range
+    # variable="ET" only. This command writes every row it reads into the
+    # ledger as source_type="et_estimate", so an unscoped read files whatever
+    # else lives in OpenETCache as consumptive use. Non-ET rows are currently
+    # spared only because they key their value under a different name and hit
+    # the `et_value is None` continue below; that is a naming accident, and
+    # the ensemble-spread bounds are close enough to ET in shape that relying
+    # on it is not acceptable.
+    return OpenETCache.objects.filter(
+        variable="ET",
+        start_date__lte=end_date,
+        end_date__gte=start_date,
+        parcel__isnull=False,
+    ).select_related("parcel").order_by("parcel_id", "start_date")
+
+
+def _monthly_et_totals(
+    cache: OpenETCache, start_date: date, end_date: date
+) -> dict[str, Decimal]:
+    """The cache record's ET in mm summed by ``YYYY-MM``, for months inside the range."""
+    # Aggregate et_data entries by month.
+    # et_data items: {date: "YYYY-MM" or "YYYY-MM-DD", et: float, unit: "mm"}
+    monthly_totals: dict[str, Decimal] = {}
+    for item in cache.et_data:
+        raw_date = item.get("date", "")
+        et_value = item.get("et")
+        if et_value is None:
+            continue
+        # Normalize to YYYY-MM month key
+        if len(raw_date) >= 7:
+            month_key = raw_date[:7]  # "YYYY-MM"
+        else:
+            continue
+
+        # Only include months within the requested range
+        try:
+            item_month = datetime.strptime(month_key, "%Y-%m").date().replace(day=1)
+        except ValueError:
+            continue
+        if item_month < start_date.replace(day=1) or item_month > end_date:
+            continue
+
+        monthly_totals[month_key] = monthly_totals.get(month_key, Decimal("0")) + Decimal(str(et_value))
+    return monthly_totals
+
+
+def _new_month_entries(
+    parcel: Parcel,
+    monthly_totals: dict[str, Decimal],
+    seen: set[tuple[int, str]],
+    counters: dict[str, int],
+) -> list[ParcelLedger]:
+    """Unsaved ledger rows for the parcel's months that have none yet; updates ``counters``."""
+    entries: list[ParcelLedger] = []
+    for month_key, total_et_mm in monthly_totals.items():
+        try:
+            effective_date = datetime.strptime(month_key, "%Y-%m").date()
+        except ValueError:
+            counters["errors"] += 1
+            continue
+
+        # Check for existing ParcelLedger entry for this parcel+month+source_type
+        already_exists = ParcelLedger.objects.filter(
+            parcel=parcel,
+            source_type="et_estimate",
+            effective_date__year=effective_date.year,
+            effective_date__month=effective_date.month,
+        ).exists()
+
+        if already_exists:
+            counters["skipped_existing"] += 1
+            continue
+
+        # Intra-run guard: a second overlapping cache row for the same
+        # parcel-month would otherwise append a duplicate (the DB check
+        # above can't see this run's not-yet-written rows).
+        run_key = (parcel.id, month_key)
+        if run_key in seen:
+            counters["skipped_existing"] += 1
+            continue
+        seen.add(run_key)
+
+        # Convert mm to acre-feet (negative: ET is consumption)
+        amount_af = et_mm_to_acre_feet(total_et_mm, parcel.area_acres)
+
+        entries.append(
+            ParcelLedger(
+                parcel=parcel,
+                transaction_date=timezone.now().date(),
+                effective_date=effective_date,
+                amount_acre_feet=amount_af.quantize(Decimal("0.0001")),
+                source_type="et_estimate",
+                description=(
+                    f"OpenET ET estimate: {total_et_mm:.2f}mm over "
+                    f"{parcel.area_acres} acres = {abs(amount_af):.4f} AF "
+                    f"({month_key})"
+                ),
+                reporting_period=None,
+                water_type=None,
+            )
+        )
+        counters["created"] += 1
+    return entries
+
+
+def _write_in_batches(entries_to_create: list[ParcelLedger]) -> None:
+    """Bulk-create the rows in one transaction, 500 at a time."""
+    batch_size = 500
+    with transaction.atomic():
+        for i in range(0, len(entries_to_create), batch_size):
+            batch = entries_to_create[i: i + batch_size]
+            ParcelLedger.objects.bulk_create(batch)
 
 
 class Command(BaseCommand):
@@ -57,33 +190,13 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        try:
-            start_date = datetime.strptime(options["start_date"], "%Y-%m-%d").date()
-            end_date = datetime.strptime(options["end_date"], "%Y-%m-%d").date()
-        except ValueError as exc:
-            raise CommandError(f"Invalid date format: {exc}. Use YYYY-MM-DD.") from exc
-
-        if end_date < start_date:
-            raise CommandError("--end-date must be >= --start-date.")
+        start_date, end_date = _parse_date_range(options)
 
         dry_run = options["dry_run"]
         if dry_run:
             self.stdout.write(self.style.WARNING("[DRY RUN] No database writes will occur."))
 
-        # Find all OpenETCache records that overlap the requested date range
-        # variable="ET" only. This command writes every row it reads into the
-        # ledger as source_type="et_estimate", so an unscoped read files whatever
-        # else lives in OpenETCache as consumptive use. Non-ET rows are currently
-        # spared only because they key their value under a different name and hit
-        # the `et_value is None` continue below; that is a naming accident, and
-        # the ensemble-spread bounds are close enough to ET in shape that relying
-        # on it is not acceptable.
-        cache_qs = OpenETCache.objects.filter(
-            variable="ET",
-            start_date__lte=end_date,
-            end_date__gte=start_date,
-            parcel__isnull=False,
-        ).select_related("parcel").order_by("parcel_id", "start_date")
+        cache_qs = _cache_records_in_range(start_date, end_date)
 
         counters = {
             "created": 0,
@@ -116,90 +229,19 @@ class Command(BaseCommand):
                 counters["skipped_no_data"] += 1
                 continue
 
-            # Aggregate et_data entries by month.
-            # et_data items: {date: "YYYY-MM" or "YYYY-MM-DD", et: float, unit: "mm"}
-            monthly_totals: dict[str, Decimal] = {}
-            for item in cache.et_data:
-                raw_date = item.get("date", "")
-                et_value = item.get("et")
-                if et_value is None:
-                    continue
-                # Normalize to YYYY-MM month key
-                if len(raw_date) >= 7:
-                    month_key = raw_date[:7]  # "YYYY-MM"
-                else:
-                    continue
-
-                # Only include months within the requested range
-                try:
-                    item_month = datetime.strptime(month_key, "%Y-%m").date().replace(day=1)
-                except ValueError:
-                    continue
-                if item_month < start_date.replace(day=1) or item_month > end_date:
-                    continue
-
-                monthly_totals[month_key] = monthly_totals.get(month_key, Decimal("0")) + Decimal(str(et_value))
+            monthly_totals = _monthly_et_totals(cache, start_date, end_date)
 
             if not monthly_totals:
                 counters["skipped_no_data"] += 1
                 continue
 
-            for month_key, total_et_mm in monthly_totals.items():
-                try:
-                    effective_date = datetime.strptime(month_key, "%Y-%m").date()
-                except ValueError:
-                    counters["errors"] += 1
-                    continue
-
-                # Check for existing ParcelLedger entry for this parcel+month+source_type
-                already_exists = ParcelLedger.objects.filter(
-                    parcel=parcel,
-                    source_type="et_estimate",
-                    effective_date__year=effective_date.year,
-                    effective_date__month=effective_date.month,
-                ).exists()
-
-                if already_exists:
-                    counters["skipped_existing"] += 1
-                    continue
-
-                # Intra-run guard: a second overlapping cache row for the same
-                # parcel-month would otherwise append a duplicate (the DB check
-                # above can't see this run's not-yet-written rows).
-                run_key = (parcel.id, month_key)
-                if run_key in seen:
-                    counters["skipped_existing"] += 1
-                    continue
-                seen.add(run_key)
-
-                # Convert mm to acre-feet (negative: ET is consumption)
-                amount_af = et_mm_to_acre_feet(total_et_mm, parcel.area_acres)
-
-                entries_to_create.append(
-                    ParcelLedger(
-                        parcel=parcel,
-                        transaction_date=timezone.now().date(),
-                        effective_date=effective_date,
-                        amount_acre_feet=amount_af.quantize(Decimal("0.0001")),
-                        source_type="et_estimate",
-                        description=(
-                            f"OpenET ET estimate: {total_et_mm:.2f}mm over "
-                            f"{parcel.area_acres} acres = {abs(amount_af):.4f} AF "
-                            f"({month_key})"
-                        ),
-                        reporting_period=None,
-                        water_type=None,
-                    )
-                )
-                counters["created"] += 1
+            entries_to_create.extend(
+                _new_month_entries(parcel, monthly_totals, seen, counters)
+            )
 
         # Write to database in batches
         if not dry_run and entries_to_create:
-            batch_size = 500
-            with transaction.atomic():
-                for i in range(0, len(entries_to_create), batch_size):
-                    batch = entries_to_create[i: i + batch_size]
-                    ParcelLedger.objects.bulk_create(batch)
+            _write_in_batches(entries_to_create)
         elif dry_run:
             self.stdout.write(
                 self.style.WARNING(
@@ -207,7 +249,10 @@ class Command(BaseCommand):
                 )
             )
 
-        # Summary
+        self._write_summary(counters)
+
+    def _write_summary(self, counters: dict[str, int]) -> None:
+        """Print the end-of-run counts."""
         self.stdout.write("")
         self.stdout.write(self.style.SUCCESS("sync_openet_to_ledger complete"))
         self.stdout.write(f"  Created:           {counters['created']}")

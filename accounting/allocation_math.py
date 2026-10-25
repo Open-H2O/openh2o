@@ -65,7 +65,10 @@ The same Decimal-only, 4dp-quantized, last-key-residual conventions apply, so a
 shared-supply split agrees with the rest of the ledger to the cent.
 """
 
+from __future__ import annotations
+
 from decimal import Decimal
+from typing import Any
 
 _Q = Decimal("0.0001")
 
@@ -126,6 +129,113 @@ def _place_residual_under_caps(shares, caps, target):
     return shares
 
 
+def _validated_efficiency(
+    efficiency: Decimal | float | str | dict[Any, Any],
+) -> tuple[Decimal | None, dict[Any, Decimal] | None]:
+    """Validate the efficiency argument; returns ``(eff, eff_map)`` with exactly one set."""
+    if isinstance(efficiency, dict):
+        eff_map = {}
+        for key, value in efficiency.items():
+            e = _dec(value)
+            if e <= 0 or e > 1:
+                raise ValueError(
+                    f"efficiency for {key!r} must be in (0, 1], got {value!r}"
+                )
+            eff_map[key] = e
+        eff = None
+    else:
+        eff = _dec(efficiency)
+        if eff <= 0 or eff > 1:
+            raise ValueError(f"efficiency must be in (0, 1], got {efficiency!r}")
+        eff_map = None
+    return eff, eff_map
+
+
+def _validated_demand(demand_by_parcel: dict[Any, Any]) -> dict[Any, Decimal]:
+    """Coerce every demand to Decimal, failing closed on a negative one."""
+    demand = {}
+    for key, value in demand_by_parcel.items():
+        d = _dec(value)
+        if d < 0:
+            raise ValueError(f"demand for {key!r} must be >= 0, got {value!r}")
+        demand[key] = d
+    return demand
+
+
+def _require_efficiency_for_demand(
+    demand: dict[Any, Decimal], eff_map: dict[Any, Decimal] | None
+) -> None:
+    """Raise when an efficiency mapping lacks a key that has positive demand."""
+    if eff_map is not None:
+        missing = [key for key, d in demand.items() if d > 0 and key not in eff_map]
+        if missing:
+            raise ValueError(
+                f"efficiency mapping is missing key(s) with positive demand: "
+                f"{missing!r}"
+            )
+
+
+def _demand_caps(
+    demand: dict[Any, Decimal],
+    eff: Decimal | None,
+    eff_map: dict[Any, Decimal] | None,
+) -> dict[Any, Decimal]:
+    """Each parcel's delivery ceiling, ``demand / efficiency`` rounded to the nearest 4dp."""
+    def _eff_for(key):
+        return eff_map[key] if eff_map is not None else eff
+
+    # Quantize the caps up front: they are what the ample branch hands out, so the
+    # ample/short boundary compares against the SAME 4dp sum we'd return — a raw
+    # sum (e.g. 53.33333...) would make a delivery of exactly sum(caps) fall a
+    # rounding-hair short and wrongly take the short branch.
+    #
+    # Rounded to the nearest, NOT down (149-01, measured on the demonstration):
+    # a cap within half a unit of demand / eff, multiplied back by eff (<= 1),
+    # lands within half a unit of demand, so the field's consumed figure at four
+    # decimals equals its demand exactly. Rounding down instead gave 0.0001 AF
+    # short on 87 field-months, trading ISS-221's 0.0001 AF of over-delivery for
+    # 0.0001 AF of groundwater. ISS-221 itself is the engine comparing this
+    # four-decimal figure with an unrounded one; accounting/steps.py
+    # (subtract_surface_water) settles it there.
+    caps = {key: _q(d / _eff_for(key)) for key, d in demand.items() if d > 0}
+    return caps
+
+
+def _water_fill(
+    demand: dict[Any, Decimal], caps: dict[Any, Decimal], total: Decimal
+) -> dict[Any, Decimal]:
+    """Split ``total`` by demand weight, holding any parcel that passes its cap at the cap."""
+    # SHORT: distribute the whole delivery by DEMAND weight (demand_p / total_demand,
+    # NOT the cap, and NOT efficiency-weighted even when efficiency is a mapping;
+    # the ruling is explicit that a mixed-method headgate's short split stays a
+    # pure demand split), WATER-FILLING against the caps (ISS-222). With one
+    # shared efficiency a demand share can never pass its cap when the total is
+    # short, but with mixed efficiencies it can: two fields of equal demand at
+    # efficiencies 0.95 and 0.60 have very different caps, and an even demand
+    # split hands the 0.95 field more than it can consume. So any field whose
+    # share passes its cap is held at its cap, removed, and the rest of the
+    # delivery is re-divided by demand among the fields still under theirs,
+    # repeating until none passes. The result still sums EXACTLY to
+    # delivery_total (total < sum(caps) on this branch, so there is always room).
+    # The 4dp rounding residual goes to the field with the most headroom below
+    # its cap, never above a cap.
+    raw = {}
+    active = set(caps)
+    remaining = total
+    while active:
+        active_demand = sum((demand[k] for k in active), Decimal("0"))
+        trial = {k: remaining * (demand[k] / active_demand) for k in active}
+        over = {k for k in active if trial[k] > caps[k]}
+        if not over:
+            raw.update(trial)
+            break
+        for k in over:
+            raw[k] = caps[k]
+            remaining -= caps[k]
+        active -= over
+    return raw
+
+
 def allocate_by_demand(delivery_total, demand_by_parcel, efficiency):
     """Split a recorded delivery total across parcels by ET demand, capped.
 
@@ -158,31 +268,12 @@ def allocate_by_demand(delivery_total, demand_by_parcel, efficiency):
     """
     total = _dec(delivery_total)
 
-    if isinstance(efficiency, dict):
-        eff_map = {}
-        for key, value in efficiency.items():
-            e = _dec(value)
-            if e <= 0 or e > 1:
-                raise ValueError(
-                    f"efficiency for {key!r} must be in (0, 1], got {value!r}"
-                )
-            eff_map[key] = e
-        eff = None
-    else:
-        eff = _dec(efficiency)
-        if eff <= 0 or eff > 1:
-            raise ValueError(f"efficiency must be in (0, 1], got {efficiency!r}")
-        eff_map = None
+    eff, eff_map = _validated_efficiency(efficiency)
 
     if total < 0:
         raise ValueError(f"delivery_total must be >= 0, got {delivery_total!r}")
 
-    demand = {}
-    for key, value in demand_by_parcel.items():
-        d = _dec(value)
-        if d < 0:
-            raise ValueError(f"demand for {key!r} must be >= 0, got {value!r}")
-        demand[key] = d
+    demand = _validated_demand(demand_by_parcel)
 
     total_demand = sum(demand.values(), Decimal("0"))
 
@@ -196,31 +287,9 @@ def allocate_by_demand(delivery_total, demand_by_parcel, efficiency):
     if total == 0:
         return {key: Decimal("0.0000") for key in demand}
 
-    if eff_map is not None:
-        missing = [key for key, d in demand.items() if d > 0 and key not in eff_map]
-        if missing:
-            raise ValueError(
-                f"efficiency mapping is missing key(s) with positive demand: "
-                f"{missing!r}"
-            )
+    _require_efficiency_for_demand(demand, eff_map)
 
-    def _eff_for(key):
-        return eff_map[key] if eff_map is not None else eff
-
-    # Quantize the caps up front: they are what the ample branch hands out, so the
-    # ample/short boundary compares against the SAME 4dp sum we'd return — a raw
-    # sum (e.g. 53.33333...) would make a delivery of exactly sum(caps) fall a
-    # rounding-hair short and wrongly take the short branch.
-    #
-    # Rounded to the nearest, NOT down (149-01, measured on the demonstration):
-    # a cap within half a unit of demand / eff, multiplied back by eff (<= 1),
-    # lands within half a unit of demand, so the field's consumed figure at four
-    # decimals equals its demand exactly. Rounding down instead gave 0.0001 AF
-    # short on 87 field-months, trading ISS-221's 0.0001 AF of over-delivery for
-    # 0.0001 AF of groundwater. ISS-221 itself is the engine comparing this
-    # four-decimal figure with an unrounded one; accounting/steps.py
-    # (subtract_surface_water) settles it there.
-    caps = {key: _q(d / _eff_for(key)) for key, d in demand.items() if d > 0}
+    caps = _demand_caps(demand, eff, eff_map)
     total_caps = sum(caps.values(), Decimal("0"))
 
     # AMPLE: the delivery covers every cap. Each parcel gets exactly its OWN cap
@@ -230,34 +299,7 @@ def allocate_by_demand(delivery_total, demand_by_parcel, efficiency):
     if total >= total_caps:
         return dict(caps)
 
-    # SHORT: distribute the whole delivery by DEMAND weight (demand_p / total_demand,
-    # NOT the cap, and NOT efficiency-weighted even when efficiency is a mapping;
-    # the ruling is explicit that a mixed-method headgate's short split stays a
-    # pure demand split), WATER-FILLING against the caps (ISS-222). With one
-    # shared efficiency a demand share can never pass its cap when the total is
-    # short, but with mixed efficiencies it can: two fields of equal demand at
-    # efficiencies 0.95 and 0.60 have very different caps, and an even demand
-    # split hands the 0.95 field more than it can consume. So any field whose
-    # share passes its cap is held at its cap, removed, and the rest of the
-    # delivery is re-divided by demand among the fields still under theirs,
-    # repeating until none passes. The result still sums EXACTLY to
-    # delivery_total (total < sum(caps) on this branch, so there is always room).
-    # The 4dp rounding residual goes to the field with the most headroom below
-    # its cap, never above a cap.
-    raw = {}
-    active = set(caps)
-    remaining = total
-    while active:
-        active_demand = sum((demand[k] for k in active), Decimal("0"))
-        trial = {k: remaining * (demand[k] / active_demand) for k in active}
-        over = {k for k in active if trial[k] > caps[k]}
-        if not over:
-            raw.update(trial)
-            break
-        for k in over:
-            raw[k] = caps[k]
-            remaining -= caps[k]
-        active -= over
+    raw = _water_fill(demand, caps, total)
     shares = {key: min(_q(raw[key]), caps[key]) for key in caps}
     return _place_residual_under_caps(shares, caps, total)
 
