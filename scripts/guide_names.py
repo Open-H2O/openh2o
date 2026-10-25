@@ -54,6 +54,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 GUIDES: tuple = (
     "README.md",
     "CONTRIBUTING.md",
+    "ARCHITECTURE.md",
     "SECURITY.md",
     "DEPLOY.md",
     "docs/README.md",

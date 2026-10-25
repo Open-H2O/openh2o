@@ -51,7 +51,7 @@ document = "README.md"
 heading = "A note on terms"
 files = ["accounting/steps.py"]
 labels = []
-checked_at = "71c50e2"
+checked_at = "2677bc5"
 
 [[section]]
 document = "README.md"
@@ -65,7 +65,7 @@ files = [
   "templates/partials/_demonstration_banner.html",
 ]
 labels = []
-checked_at = "71c50e2"
+checked_at = "2677bc5"
 
 [[section]]
 document = "README.md"
@@ -198,7 +198,7 @@ files = [
   "crontab.txt",
 ]
 labels = []
-checked_at = "71c50e2"
+checked_at = "2677bc5"
 
 [[section]]
 document = "README.md"
@@ -215,7 +215,7 @@ files = [
   "static/js/map-core.js",
 ]
 labels = []
-checked_at = "71c50e2"
+checked_at = "2677bc5"
 
 [[section]]
 document = "README.md"
@@ -254,7 +254,7 @@ document = "README.md"
 heading = "Cost to run"
 files = ["config/settings/base.py", "datasync/adapters/__init__.py", "datasync/adapters/openet_gee.py"]
 labels = []
-checked_at = "71c50e2"
+checked_at = "2677bc5"
 
 [[section]]
 document = "README.md"
@@ -362,6 +362,165 @@ labels = [
 checked_at = "41b90b6"
 
 [[section]]
+document = "ARCHITECTURE.md"
+heading = "How the OpenH2O code fits together"
+files = []
+why_none = "Says who the page is for and points at README.md and DEPLOY.md; no claim about the code."
+labels = []
+checked_at = "d9f5bfb"
+
+[[section]]
+document = "ARCHITECTURE.md"
+heading = "What OpenH2O is"
+files = ["docker-compose.yml", "Dockerfile", "config/settings/base.py"]
+labels = []
+checked_at = "2677bc5"
+
+[[section]]
+document = "ARCHITECTURE.md"
+heading = "Limits of the stack"
+files = [
+  "Dockerfile",
+  "templates/base.html",
+  "config/settings/base.py",
+  "accounting/engine_run.py",
+  "crontab.txt",
+  "Caddyfile",
+  "core/models.py",
+]
+labels = []
+checked_at = "2677bc5"
+
+[[section]]
+document = "ARCHITECTURE.md"
+heading = "How a request is served"
+files = [
+  "config/urls.py",
+  "core/modules.py",
+  "accounting/urls.py",
+  "accounting/views/__init__.py",
+  "drinking/views/__init__.py",
+  "accounting/views/common.py",
+  "drinking/views/common.py",
+  "config/settings/base.py",
+  "static/css/input.css",
+  "Dockerfile",
+  "templates/base.html",
+]
+labels = []
+checked_at = "2677bc5"
+
+[[section]]
+document = "ARCHITECTURE.md"
+heading = "Apps and modules"
+files = [
+  "core/modules.py",
+  "config/settings/base.py",
+  "config/urls.py",
+  "Makefile",
+]
+labels = []
+checked_at = "2677bc5"
+
+[[section]]
+document = "ARCHITECTURE.md"
+heading = "The calculation"
+files = [
+  "crontab.txt",
+  "accounting/views/periods.py",
+  "accounting/views/ledger.py",
+  "surface/views.py",
+  "accounting/engine_run.py",
+  "accounting/management/commands/run_accounting.py",
+  "accounting/management/commands/run_calculations.py",
+  "accounting/calculation.py",
+  "accounting/steps.py",
+  "accounting/models.py",
+  "accounting/views/settings_pages.py",
+  "surface/estimate.py",
+  "surface/services.py",
+  "health/checks.py",
+  "core/models.py",
+  "core/forms.py",
+]
+labels = []
+checked_at = "2677bc5"
+
+[[section]]
+document = "ARCHITECTURE.md"
+heading = "Change history"
+files = [
+  "core/history.py",
+  "core/changes.py",
+  "core/views.py",
+  "config/settings/base.py",
+  "config/urls.py",
+]
+labels = []
+checked_at = "2677bc5"
+
+[[section]]
+document = "ARCHITECTURE.md"
+heading = "Data sources"
+files = [
+  "datasync/adapters/__init__.py",
+  "datasync/adapters/base.py",
+  "datasync/adapters/openet.py",
+  "datasync/adapters/openet_gee.py",
+  "datasync/management/commands/sync_source.py",
+  "scripts/run-sync.sh",
+  "crontab.txt",
+]
+labels = []
+checked_at = "2677bc5"
+
+[[section]]
+document = "ARCHITECTURE.md"
+heading = "Maps"
+files = [
+  "static/js/map-core.js",
+  "surface/views.py",
+  "drinking/views/sampling_points.py",
+  "templates/surface/partials/_pods_overview_map.html",
+  "templates/surface/partials/_pod_list_results.html",
+  "templates/datasync/partials/_freshness_map.html",
+  "templates/drinking/partials/_drinking_overview_map.html",
+  "templates/partials/_map_card_head.html",
+]
+labels = []
+checked_at = "2677bc5"
+
+[[section]]
+document = "ARCHITECTURE.md"
+heading = "Tests"
+files = [
+  "Makefile",
+  "Dockerfile",
+  "config/settings/production.py",
+  ".github/workflows/tests.yml",
+  ".github/workflows/clean-install.yml",
+  "scripts/assert-image-fresh.sh",
+  "scripts/guide_reread.py",
+]
+labels = []
+checked_at = "2677bc5"
+
+[[section]]
+document = "ARCHITECTURE.md"
+heading = "Adding a page"
+files = ["accounting/urls.py", "core/modules.py"]
+labels = []
+checked_at = "2677bc5"
+
+[[section]]
+document = "ARCHITECTURE.md"
+heading = "Where decisions are written"
+files = []
+why_none = "Names where reasons and guides are written (DESIGN.md, docs/, templates/help/, CLAUDE.md); no claim about how the code behaves."
+labels = []
+checked_at = "d9f5bfb"
+
+[[section]]
 document = "SECURITY.md"
 heading = "Security Policy"
 files = []
@@ -410,14 +569,14 @@ files = [
   "crontab.txt",
 ]
 labels = []
-checked_at = "71c50e2"
+checked_at = "2677bc5"
 
 [[section]]
 document = "DEPLOY.md"
 heading = "2. Clone the Repository"
 files = ["crontab.txt"]
 labels = []
-checked_at = "41b90b6"
+checked_at = "2677bc5"
 
 [[section]]
 document = "DEPLOY.md"
@@ -437,7 +596,7 @@ document = "DEPLOY.md"
 heading = "4. Caddy / HTTPS Configuration"
 files = ["Caddyfile", "docker-compose.yml", "error-pages/503.html"]
 labels = []
-checked_at = "71c50e2"
+checked_at = "2677bc5"
 
 [[section]]
 document = "DEPLOY.md"
@@ -451,7 +610,7 @@ document = "DEPLOY.md"
 heading = "Branch B: Public internet, and this server obtains its own certificate"
 files = ["Caddyfile", "docker-compose.yml", "config/settings/production.py"]
 labels = []
-checked_at = "71c50e2"
+checked_at = "2677bc5"
 
 [[section]]
 document = "DEPLOY.md"
@@ -480,7 +639,7 @@ files = [
   "Dockerfile",
 ]
 labels = []
-checked_at = "71c50e2"
+checked_at = "2677bc5"
 
 [[section]]
 document = "DEPLOY.md"
@@ -571,7 +730,7 @@ files = [
 labels = [
   { text = "Site health", where = "templates/health/dashboard.html" },
 ]
-checked_at = "71c50e2"
+checked_at = "2677bc5"
 
 [[section]]
 document = "DEPLOY.md"
@@ -620,7 +779,7 @@ files = [
   "crontab.txt",
 ]
 labels = []
-checked_at = "71c50e2"
+checked_at = "2677bc5"
 
 [[section]]
 document = "DEPLOY.md"
@@ -789,7 +948,7 @@ files = [
   "feedback/models.py",
 ]
 labels = []
-checked_at = "71c50e2"
+checked_at = "2677bc5"
 
 [[section]]
 document = "DEPLOY.md"
@@ -814,7 +973,7 @@ files = [
   "Dockerfile",
 ]
 labels = []
-checked_at = "71c50e2"
+checked_at = "2677bc5"
 
 [[section]]
 document = "DEPLOY.md"
@@ -913,7 +1072,7 @@ files = [
   "core/checks.py",
 ]
 labels = []
-checked_at = "71c50e2"
+checked_at = "2677bc5"
 
 [[section]]
 document = "docs/README.md"
@@ -1311,7 +1470,7 @@ files = [
   "datasync/models.py",
 ]
 labels = []
-checked_at = "71c50e2"
+checked_at = "2677bc5"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
@@ -1557,7 +1716,7 @@ files = [
   "geography/services/arcgis.py",
 ]
 labels = []
-checked_at = "71c50e2"
+checked_at = "2677bc5"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1956,7 +2115,7 @@ document = "docs/INSTALL-WITHOUT-DOCKER.md"
 heading = "What is different on this path"
 files = ["Dockerfile", "docker-compose.yml", "Caddyfile"]
 labels = []
-checked_at = "71c50e2"
+checked_at = "2677bc5"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -1968,7 +2127,7 @@ files = [
   "config/settings/base.py",
 ]
 labels = []
-checked_at = "71c50e2"
+checked_at = "2677bc5"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -2019,7 +2178,7 @@ files = [
   "Dockerfile",
 ]
 labels = []
-checked_at = "71c50e2"
+checked_at = "2677bc5"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -2077,7 +2236,7 @@ files = [
   "health/management/commands/prune_old_data.py",
 ]
 labels = []
-checked_at = "71c50e2"
+checked_at = "2677bc5"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -2178,7 +2337,7 @@ labels = [
   { text = "Glossary", where = "templates/help/glossary.html" },
   { text = "How water balances work", where = "templates/help/water_balances.html" },
 ]
-checked_at = "71c50e2"
+checked_at = "2677bc5"
 
 [[section]]
 document = "templates/about_demonstration_data.html"

@@ -20,14 +20,14 @@ docker compose exec web python manage.py seed_data
 make test                   # confirm a green baseline
 ```
 
-[CLAUDE.md](CLAUDE.md) gives an orientation to the codebase, and [DEPLOY.md](DEPLOY.md) covers production deployment.
+[ARCHITECTURE.md](ARCHITECTURE.md) explains how the code fits together, and [DEPLOY.md](DEPLOY.md) covers production deployment. [CLAUDE.md](CLAUDE.md) is the file AI coding tools read.
 
 ## Ground rules
 
 - **Add tests.** Anything with logic needs a test in [tests/](tests/): a model method, a view, a data adapter or a report generator. The tests use pytest and factory_boy.
 - **Run the suite with `make test` before you open a pull request.** It uses the local settings, because the production settings refuse to start without a strong database password.
 - **Keep the standards check passing.** If you change the data model or an adapter, run `python manage.py check_conformance` and update the crosswalk if it reports a gap (see [docs/DATA-STANDARDS.md](docs/DATA-STANDARDS.md)).
-- **Keep to the stack's limits.** OpenH2O has no Node.js build step, does not use Celery or Redis, and serves one organization per site. The "Key Constraints" section of [CLAUDE.md](CLAUDE.md) gives the reasons.
+- **Keep to the stack's limits.** OpenH2O has no Node.js build step, does not use Celery or Redis, and serves one organization per site. "Limits of the stack" in [ARCHITECTURE.md](ARCHITECTURE.md) gives the reasons.
 - **Use the design tokens.** Interface work uses the one typeface and the tokens in `static/css/tokens.css`. Do not add new fonts or one-off colors.
 - **Give every new source file the SPDX header:** `# SPDX-License-Identifier: AGPL-3.0-or-later`.
 
