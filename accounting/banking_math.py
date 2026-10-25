@@ -2,9 +2,8 @@
 """Pure WaterCredit banking math — depreciation, elapsed months, and expiry.
 
 Intentionally Django-free (imports only ``decimal`` + the standard library), the
-same split that gave 38-03's effective-precip math a real RED->GREEN cycle in
-bare local Python. This is the cross-month, money-sensitive core of the banking
-mechanism: how much a deposited surplus is worth after it has aged some months,
+same split that keeps the effective-precip math testable in bare local Python. This is the cross-month,
+money-sensitive core of the banking mechanism: how much a deposited surplus is worth after it has aged some months,
 and whether it has expired. The thin DB-bound orchestration that reads/writes
 WaterCredit + WaterCreditDraw rows lives in run_calculations (tested in the running container).
 

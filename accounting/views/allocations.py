@@ -41,16 +41,13 @@ def _allocation_subtotals(
     # ForeignKey, not an M2M, so the queryset has no row duplication and
     # aggregates directly without the ledger's pk-refilter.
     #
-    # **Subtotalled by (period, water type), and never summed across either axis
-    # (ISS-156, then R-041/ISS-164).** This footer printed one number until
-    # 2026-09-06: 159,671.46 AF for WY 2025-2026, which was 148,500.00 AF of a
-    # surface-water district's diversion entitlement plus 11,171.46 AF of a
-    # groundwater sustainability agency's pumping allowance. "All periods" then
-    # went on to add the SAME entitlement across two water years into
-    # 304,200.00 AF, a quantity nobody manages. Different agencies, different
-    # law, and different years never add either — so nobody could act on the one
-    # figure the old footer gave them. The arithmetic was never wrong; the label
-    # was, and shared units are not what makes two rows addable.
+    # **Subtotalled by (period, water type), and never summed across either axis.**
+    # A single footer total would add a surface-water district's diversion
+    # entitlement to a groundwater sustainability agency's pumping allowance,
+    # and "All periods" would add the SAME entitlement across two water years,
+    # a quantity nobody manages. Different agencies, different law, and
+    # different years never add, so nobody could act on one figure. Shared
+    # units are not what makes two rows addable.
     allocation_subtotals = list(
         queryset.values(
             "reporting_period_id",
@@ -136,7 +133,7 @@ def _allocations_facts_line(period_id: str, page_obj: Page) -> str:
 def allocations_list(request):
     """Paginated list of allocation plans with HTMX search and period filter.
 
-    143-06 (R-032, R-033, R-041/ISS-164, R-034): "period" absent entirely (a
+    "period" absent entirely (a
     bare landing) is distinct from "period=" (the explicit "All periods"
     choice the Period select always sends), the same distinction the ledger
     view makes — only the former gets the current-period auto-default, via
@@ -153,7 +150,7 @@ def allocations_list(request):
         if default_period_id is not None:
             period_id = str(default_period_id)
 
-    # Zone as the link (R-033, "link-zone"): the
+    # Zone as the link: the
     # allocation's own record is read against its use on the zone page, which
     # already draws on the same helper the dashboard's zone row calls
     # (zone_groundwater_budget) -- an allocation page of its own would show one

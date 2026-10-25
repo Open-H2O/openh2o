@@ -37,7 +37,7 @@ from parcels.models import Parcel, ParcelLedger
 
 # Whitelist of sortable columns → ORM fields. An unbounded order_by() fed from a
 # GET param is a 500 / injection vector, so we map a small set of safe keys and
-# fail closed to the newest-first default for anything else (Phase 63).
+# fail closed to the newest-first default for anything else.
 LEDGER_SORTABLE = {
     "date": "effective_date",
     "parcel": "parcel__parcel_number",
@@ -58,13 +58,10 @@ LEDGER_PAGE_SIZES = (25, 100, 500)
 #: to stay that way. A ``surface_diversion`` row written before the module was
 #: switched off is still a real row, ``accounting/ledger_words.py::
 #: ledger_row_words`` still names it, and hiding it would be lying about the
-#: ledger, the same call 88-03 made for
-#: ``/drinking/``'s Well column. What this table gates is the OFFER: on a
+#: ledger. What this table gates is the OFFER: on a
 #: deployment with no Surface module, a "Surface Diversion" option in the filter
 #: invites an operator to filter for a row type this deployment can never
-#: produce. Same class as 89-02's guarded enumerations; 90-02 is simply where a
-#: gate could first SEE it, because ``/accounting/ledger/`` had no ``_PAGES`` row
-#: until then and so had never been read by any assertion.
+#: produce.
 #:
 #: **Declared, never derived.** A source type absent from this table is offered
 #: in every configuration, which is the safe direction to fail;
@@ -77,7 +74,7 @@ LEDGER_SOURCE_TYPE_OWNERS = {
 }
 
 
-#: 143-05 (2026-09-12): the Source FILTER's option words.
+#: The Source FILTER's option words.
 #: The filter still narrows on the stored ``source_type`` value; only the
 #: option LABELS changed, to the shortest true words
 #: (a filter option is one word or a short phrase, not the fuller
@@ -127,7 +124,7 @@ def _ledger_filters(request: HttpRequest) -> dict[str, str]:
     # truthy value means "on"; the chip sends "1".
     active_areas = request.GET.get("active_areas", "").strip()
 
-    # Phase 63 navigation params: sort column + direction, Zone facet, page size.
+    # Navigation params: sort column + direction, Zone facet, page size.
     sort = request.GET.get("sort", "").strip()
     direction = request.GET.get("dir", "desc").strip()
     if direction not in ("asc", "desc"):
@@ -166,7 +163,7 @@ def _ledger_default_period(
     Returns (period_id, auto_defaulted, auto_default_period_name,
     auto_default_calculated, default_period_id).
     """
-    # ISS-022: landing on the ledger with no filters at all should not bury the
+    # Landing on the ledger with no filters at all should not bury the
     # audit trail. The "How was this calculated?" links only render on
     # calculated rows, so default to the most recent period that HAS calculated
     # rows (falling back to the most recent period with any rows, then to no
@@ -176,9 +173,9 @@ def _ledger_default_period(
     # the auto-default target on a bare landing AND the destination of the "This
     # Period" preset chip, so the two always point at the same period.
     #
-    # 143-06: the three-fallback derivation itself moved to
+    # The three-fallback derivation itself lives in
     # accounting.services.current_period_id(), which the allocations view (and
-    # 143-10's zone view) call too, so "current period" cannot mean two things
+    # the zone view) call too, so "current period" cannot mean two things
     # on two screens. calculated_period_id stays a query of its own here only
     # because auto_default_calculated below needs to know which fallback rung
     # produced the default, a distinction the shared helper has no reason to
@@ -256,7 +253,7 @@ def _apply_ledger_sort(
     """Re-order by a whitelisted sort key, with a stable tiebreak."""
     # Sort: only a whitelisted key re-orders; everything else keeps the
     # newest-first default set on the queryset above. A stable
-    # parcel__parcel_number, -created_at tiebreak (143-05) keeps pagination
+    # parcel__parcel_number, -created_at tiebreak keeps pagination
     # deterministic when the sort field ties, and reproduces the same
     # use-area ordering the default view carries; skipped for the "parcel"
     # key itself, which already sorts by that field.
@@ -274,20 +271,19 @@ def _apply_ledger_sort(
 def _ledger_footer_totals(queryset: QuerySet[ParcelLedger]) -> dict[str, Decimal | None]:
     """The credits and water subtotals over the whole filtered set."""
     # Two subtotals over the WHOLE filtered set (every matching row, not just the
-    # visible page), named by kind and never netted (136-01, ISS-155). Credits
+    # visible page), named by kind and never netted. Credits
     # are the allocation and recharge rows, paper or banked water (DESIGN.md
     # rule 12, "Credit"). The water figure is every other source type: canal
     # deliveries, pumping and the corrections an operator makes to them,
     # stored negative by the ledger's convention and handed to the template as
-    # a positive magnitude. 150-04 V10: the two are told apart by SOURCE TYPE,
+    # a positive magnitude. The two are told apart by SOURCE TYPE,
     # never by sign. Splitting on the sign put a positive manual correction
     # under Credits; manual entries, CSV imports and adjustments are
     # deliberately unconstrained in sign (parcels/models.py), so a sign says
     # nothing about which kind a row is. The two are not addable, so there is
-    # no net: this footer used to print one, and it stated WY 2025-2026 at
-    # -1,504.32 AF while the dashboard read the same 1,130 rows as +1,249.07 AF,
-    # because the dashboard calls a delivery a supply and this footer called it
-    # a debit (DESIGN.md rule 12, review question 3). Re-filter by PK to drop
+    # no net: a net would disagree with the dashboard, which calls a
+    # delivery a supply where this footer would call it a debit (DESIGN.md
+    # rule 12, review question 3). Re-filter by PK to drop
     # the zone M2M join, whose row duplication (a parcel in N zones) would
     # otherwise multiply amounts in SUM.
     credit_rows = Q(source_type__in=ParcelLedger.POSITIVE_SOURCE_TYPES)
@@ -352,7 +348,7 @@ def ledger_list(request):
     period_present = "period" in request.GET
     page_size = _ledger_page_size(request)
 
-    # 143-05 (R-020): the tiebreak orders by use-area number ascending, not
+    # The tiebreak orders by use-area number ascending, not
     # just -created_at, so within one date a reader sees a field's meter
     # reading beside its delivery instead of raw seed-insertion order.
     queryset = ParcelLedger.objects.select_related(
@@ -380,7 +376,7 @@ def ledger_list(request):
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
-    # 143-05: the subtitle line names the period and the active filters
+    # The subtitle line names the period and the active filters
     # instead of the template re-deriving them from raw ids. period_name is
     # "All periods" on an explicit ?period= (or no period at all); on a bare
     # auto-defaulted landing the template folds in the separate auto-default
@@ -432,7 +428,7 @@ def ledger_list(request):
 
 
 def _recalculate_ledger_months(request, months):
-    """Start the calculation for the months a saved delivery row touches (149-01).
+    """Start the calculation for the months a saved delivery row touches.
 
     A field's own delivery record changes what is left of the canal total for
     its neighbours, so the month is recalculated. Adds the one line beneath

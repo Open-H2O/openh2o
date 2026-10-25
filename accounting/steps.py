@@ -16,14 +16,14 @@ where:
   - period     : a "YYYY-MM" string.
   - ctx        : a shared dict the evaluator threads through every step (scratch
     space for cross-step data; unused by the simple primitives but part of the
-    contract 38-03/38-04 steps will lean on).
+    contract the precip and surface steps lean on).
   - config     : the step's JSON config dict (knobs).
 
 step_record is a JSON-serializable dict
     {"step_type", "label", "input_af", "output_af", "detail"}
-so 38-04's CalculationRun can persist the breakdown verbatim.
+so CalculationRun can persist the breakdown verbatim.
 
-subtract_effective_precip (added 38-03, TDD) nets effective rainfall out of gross
+subtract_effective_precip nets effective rainfall out of gross
 ET. Its contested USDA-SCS / TR-21 math lives in the Django-free
 accounting/precip_math.py (proven against published vectors); this module is only
 the thin DB-bound wrapper that reads precip + ET from the cache and converts to AF.
@@ -33,7 +33,7 @@ OpenETCache shape (verified against live deployment data, 2026-05-31):
       ET     rows: [{"et": 170.02,  "date": "2024-06", "unit": "mm"}, ...]   var="ET"/model="Ensemble"
       precip rows: [{"precip": 75.0, "date": "2024-02", "unit": "mm"}, ...]   var="precip"/model="GRIDMET"
   - a single cache row can span multiple months (e.g. Jun–Aug in one row)
-  - the precip value key is "precip", NOT "et" or "value" (38-01 build_precip_data)
+  - the precip value key is "precip", NOT "et" or "value" (as build_precip_data writes it)
 _read_cache_mm honors all of this for BOTH faucets so et_gross and the precip step
 can never drift on the read; getting any string wrong silently zeroes the parcel.
 """
@@ -60,8 +60,7 @@ def _item_in_span(item_date, start_date, end_date):
     Compared at month granularity: the item's month-first-day must be >= the
     span start's month-first-day and <= the span end_date. A malformed or
     unparseable date returns False (treated as out-of-span so it is caught and
-    logged rather than silently summed). See ISS-032 / F-math-03.
-    """
+    logged rather than silently summed).    """
     import datetime as dt
 
     parts = item_date.split("-")
@@ -90,8 +89,7 @@ def _read_cache_mm(parcel, period, variable, model, key):
     """Total OpenETCache <key> values (mm) for one parcel-month.
 
     The single shared cache read behind BOTH et_gross and the precip step, so the
-    two can never drift on the variable/model/key strings (the silent-zero trap of
-    38-01/38-02: a wrong string matches zero rows and quietly zeroes the parcel).
+    two can never drift on the variable/model/key strings (the silent-zero trap: a wrong string matches zero rows and quietly zeroes the parcel).
     Matches rows whose [start_date, end_date] span covers the period, then totals the
     et_data list items whose "date" starts with the period and whose <key> is set.
 
@@ -131,7 +129,7 @@ def _read_cache_mm(parcel, period, variable, model, key):
             if not isinstance(item, dict):
                 continue
             item_date = str(item.get("date", ""))
-            # F-math-03 (ISS-032): an item whose date falls OUTSIDE its own cache
+            # An item whose date falls OUTSIDE its own cache
             # row's [start_date, end_date] span is malformed data. The period
             # predicates downstream can only be trusted if each row's items live
             # within the row's span (surface water matches the DB effective_date,
@@ -200,7 +198,7 @@ def et_gross(running_af, parcel, period, ctx, config):
 
     # Stash the gross-ET magnitude in the shared ctx so a downstream step can
     # decompose a below-floor surplus into genuine rain surplus vs. surface
-    # over-delivery (clamp_floor / ISS-052). Cross-step data is exactly what ctx
+    # over-delivery (clamp_floor). Cross-step data is exactly what ctx
     # is for; the detail dict below is unchanged so audit/tests stay stable.
     ctx["et_gross_af"] = af
 
@@ -222,7 +220,7 @@ def subtract_surface_water(running_af, parcel, period, ctx, config):
     negative number); take the absolute value of their sum. Does NOT floor the
     result — clamp_floor owns the floor.
 
-    ``apply_efficiency`` (148-02, S1): missing or ``False`` reproduces today's
+    ``apply_efficiency``: missing or ``False`` reproduces today's
     behavior exactly, so the whole delivered magnitude is subtracted, and
     ``detail["surface_water_af"]`` is that delivered figure. ``True``: only the
     part of the delivery the crop could actually use is subtracted:
@@ -262,8 +260,7 @@ def subtract_surface_water(running_af, parcel, period, ctx, config):
         efficiency_source = None
         consumed_af = Decimal("0.0000")
     else:
-        # Imported lazily, as it was while the lookup lived in `surface`;
-        # since 150.2-01 it reads `parcels` tables only, which every
+        # Imported lazily, so this module loads without `parcels`; it reads `parcels` tables only, which every
         # deployment with accounting has.
         from parcels.services import field_efficiency
 
@@ -278,7 +275,7 @@ def subtract_surface_water(running_af, parcel, period, ctx, config):
         "consumed_af": str(consumed_af),
         "surface_water_af": str(consumed_af),
     }
-    # ISS-221 (149-01): the canal split sizes a field's share from its crop
+    # The canal split sizes a field's share from its crop
     # use as STORED, four decimals worked from rounded ET and rounded rain,
     # while this chain carries the unrounded figure. The two can disagree by
     # less than one unit in the fourth decimal, which then rounds to 0.0001 AF
@@ -319,50 +316,50 @@ def clamp_floor(running_af, parcel, period, ctx, config):
     Side-effect-FREE by contract: this primitive is also called by --dry-run and
     the live preview screen, so it must never write anything. It only SIGNALS
     the surplus magnitude in step_record["detail"]; run_calculations reads that
-    and clears any legacy banking state inside its own transaction (148-02).
+    and clears any legacy banking state inside its own transaction.
 
     A *total surplus* is the chain coming in BELOW the floor (effective precip +
     surface water exceeded gross ET): total_surplus = max(0, floor - running_af).
-    ISS-052 splits that total into two physically distinct parts, and 148-02
-    retires the bank that used to sit under the first one:
+    The total splits into two physically distinct parts, and there is no
+    bank under the first one:
 
-      - **rain_surplus_af** (renamed from precip_surplus_af, 148-02): genuine
+      - **rain_surplus_af** genuine
         rainfall that exceeded crop ET on its own (max(0, Pe - ET)). Under the
         extraction basis, rain-fed use is never extraction, so this is
-        information about the month, not a credit; the rain bank that used to
-        carry it forward as a WaterCredit is retired (see
+        information about the month, not a credit; nothing carries it forward as a WaterCredit (see
         run_calculations._resolve_leftover). It is still computed and recorded
         here so a reader can see that a below-floor month was genuine rain, not
         surface over-delivery.
       - **incidental_recharge_af** — the remainder, which is surface water
         delivered beyond crop demand. Physically this is deep percolation that
         recharges the aquifer, NOT crop use and NOT a credit. run_calculations
-        writes it as a positive groundwater recharge ledger row (or to the GSA
-        basin pool for a no-well parcel).
+        records it as ``over_delivery_af`` on the run and, under the
+        'credited' setting, writes it as a positive groundwater recharge
+        ledger row (or to the GSA basin pool for a no-well parcel).
 
     The genuine-rain portion is CAPPED at the total surplus
     (min(total_surplus, max(0, Pe - ET))) so a parcel whose running was forced to
     the floor by an earlier step (e.g. facility_only_zero) never records a
     phantom rain surplus. ET and Pe are read from the shared ctx (stashed by
     et_gross and subtract_effective_precip). If either is absent (a plan
-    without those steps, or an isolated unit call), we fall back to the pre-052
+    without those steps, or an isolated unit call), we fall back to the earlier
     behavior: the whole surplus is treated as rain surplus and incidental
     recharge is zero, so existing chains and tests are unchanged.
 
-    148-02: the `bank`, `depreciation_rate` and `expiry_months` config keys are
+    The `bank`, `depreciation_rate` and `expiry_months` config keys are
     gone: a below-floor month is no longer bankable, so those levers would do
     nothing. An old plan whose config still carries them is unaffected; they
     are simply never read, and none of the three appears in the detail below.
 
-    148-02 Task 3 (Q1, an over-delivery is nobody's credit under the default):
+    An over-delivery is nobody's credit under the default.
     `incidental_recharge_af` KEEPS its key here — an old run's stored breakdown
     still reads it, and `deposit_to_basin_pool` / `create_recharge_ledger_entries`'s
-    managed-recharge callers are untouched by this rename. `over_delivery_af` is
-    added beside it, same value, same meaning — the run's own column
+    managed-recharge callers keep reading it. `over_delivery_af` sits
+    beside it, same value, same meaning — the run's own column
     (`CalculationRun.over_delivery_af`) is read off this key, not
     `incidental_recharge_af`, so the field name a reader sees on the run says
-    what it is: canal water the crop could use beyond its net use. 148-04:
-    this primitive stays side-effect-free either way — it only ever signals
+    what it is: canal water the crop could use beyond its net use.
+    This primitive stays side-effect-free either way — it only ever signals
     the magnitude; whether that magnitude becomes a recharge credit (the
     'credited' setting), stays informational only (the default, or
     'named_line'), is decided by `run_calculations` reading
@@ -374,7 +371,7 @@ def clamp_floor(running_af, parcel, period, ctx, config):
     if total_surplus < 0:
         total_surplus = Decimal("0")
 
-    # Split the surplus (ISS-052). ctx carries the gross-ET and effective-precip
+    # Split the surplus. ctx carries the gross-ET and effective-precip
     # magnitudes when the full chain ran; absent them, fall back to "all surplus
     # is rain" so legacy/no-precip plans behave exactly as before.
     et_af = ctx.get("et_gross_af")
@@ -395,7 +392,7 @@ def clamp_floor(running_af, parcel, period, ctx, config):
         "surplus_af": str(total_surplus),
         "rain_surplus_af": str(rain_surplus_af),
         "incidental_recharge_af": str(incidental_recharge_af),
-        # 148-02 Task 3: same value as incidental_recharge_af, under the name
+        # Same value as incidental_recharge_af, under the name
         # CalculationRun.over_delivery_af is read from. incidental_recharge_af
         # stays for an old run's stored breakdown.
         "over_delivery_af": str(incidental_recharge_af),
@@ -442,8 +439,8 @@ def subtract_effective_precip(running_af, parcel, period, ctx, config):
     new_running = running_af - pe_af
 
     # Stash the effective-precip magnitude for clamp_floor's surplus split
-    # (genuine rain surplus banks; surface over-delivery routes to recharge —
-    # ISS-052). Kept OUT of the detail dict below so the pinned audit-key set
+    # (genuine rain surplus is information only; surface over-delivery is
+    # signalled as incidental recharge). Kept OUT of the detail dict below so the pinned audit-key set
     # (test_detail_dict_carries_the_audit_keys) is unchanged.
     ctx["effective_precip_af"] = pe_af
 
@@ -459,8 +456,7 @@ def subtract_effective_precip(running_af, parcel, period, ctx, config):
     )
 
 
-# Maps step_type -> primitive. subtract_effective_precip joined the registry in
-# 38-03 (implemented test-first against published TR-21 vectors).
+# Maps step_type -> primitive.
 STEP_REGISTRY = {
     "et_gross": et_gross,
     "subtract_effective_precip": subtract_effective_precip,

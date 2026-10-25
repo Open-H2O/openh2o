@@ -28,12 +28,11 @@ def _account_summary_row(account, selected_period, has_allocations, groundwater_
         # Allocation: pro-rated by account's parcel count in each zone.
         # Formula: for each zone, allocation * (account_parcels / total_parcels).
         # Uses parcel count (not area) because area data may be incomplete.
-        # GROUNDWATER plans only (136-01): six of the eleven demonstration
-        # accounts also sit in a surface-water service area, and summing
-        # every plan gave MER-ACCT-001 2,901.42 AF of groundwater
-        # allocation plus 16,200.00 AF of surface entitlement as one
-        # number. Subtracting pumping from that would print a surface
-        # entitlement as spare groundwater.
+        # GROUNDWATER plans only: an account can also sit in a surface-water
+        # service area, and summing every plan would add its groundwater
+        # allocation to its surface entitlement as one number. Subtracting
+        # pumping from that would print a surface entitlement as spare
+        # groundwater.
         parcel_ids = WaterAccountParcel.objects.filter(
             water_account=account,
             removed_date__isnull=True,
@@ -61,27 +60,20 @@ def _account_summary_row(account, selected_period, has_allocations, groundwater_
                     * Decimal(account_parcels_in_zone)
                     / Decimal(total_parcels_in_zone)
                 )
-        # Budget basis, 136-01 (ISS-151; option A, 2026-09-05): a
-        # groundwater budget is spent by GROUNDWATER USE, the metered or
-        # calculated pumping the Groundwater column already shows. This
-        # REVERSES 57-02, which deliberately subtracted gross ET on the
-        # reasoning that "a budget is consumed by measured consumptive
-        # use (gross ET), NOT by the old groundwater-only usage". Gross
-        # ET is what the crop transpires whatever the water's source,
-        # and it FALLS in a drought (every demonstration zone, 2026-09-05
-        # measurement), so no basin could ever cross its budget because
-        # of one. Pumping rises in a drought; that is what the column is
-        # for. An account whose zones carry no groundwater plan has no
+        # Budget basis: a groundwater budget is spent by GROUNDWATER USE,
+        # the metered or calculated pumping the Groundwater column already
+        # shows, not by gross ET. Gross ET is what the crop transpires
+        # whatever the water's source, and it falls in a drought, so no
+        # basin could ever cross its budget because of one. Pumping rises
+        # in a drought; that is what the column is for. An account whose zones carry no groundwater plan has no
         # groundwater budget: absent, not zero, so the template dashes it
         # rather than printing its pumping as an overdraft of nothing.
         #
-        # 148-02 Task 4 (Q2): spends `groundwater_charged`, not
-        # `supplies["groundwater"]` -- the Groundwater column a few lines
-        # below still shows the CONSUMED figure (what reached the crop);
-        # this is the budget, which a calculated row now spends at its
-        # run's stamped EXTRACTED figure instead (an old run with no
-        # extraction estimate, or a meter, charges as recorded -- both
-        # unchanged from before this task).
+        # Spends `groundwater_charged`, not `supplies["groundwater"]`: the
+        # Groundwater column a few lines below shows the CONSUMED figure
+        # (what reached the crop); the budget spends a calculated row at
+        # its run's stamped EXTRACTED figure instead (an old run with no
+        # extraction estimate, or a meter, charges as recorded).
         if groundwater_plans.exists():
             remaining = allocation - cu["groundwater_charged"]
         else:
@@ -93,7 +85,7 @@ def _account_summary_row(account, selected_period, has_allocations, groundwater_
 
     return {
         "account": account,
-        # ISS-099: a row with no runs behind it has no consumptive-use
+        # A row with no runs behind it has no consumptive-use
         # measurement, and 0.00 would read as one. The template shows a
         # dash instead, for the derived Net and Remaining columns too,
         # since both subtract a demand figure that does not exist.

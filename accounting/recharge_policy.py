@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Link-driven recharge archetype + routing policy (Phase 52.6, ISS-053).
+"""Link-driven recharge archetype + routing policy.
 
 The policy layer that decides whether a unit of managed/incidental recharge
 becomes a *personal* (recoverable) groundwater credit on a parcel, or flows to
 the GSA-level basin pool. It is a PURE decision layer — no ledger writes, no
-Decimal math, no engine state — so the rest of Phase 52.6 is thin wiring around
+Decimal math, no engine state — so the rest of the recharge code is thin wiring around
 these two functions.
 
 The decision falls out entirely of a parcel's own links, sorting it into one of
@@ -17,7 +17,7 @@ three archetypes:
 * ``BASIN`` — no well, no crop (a fallow recharge basin). Dedicated infiltration
   straight to the basin pool.
 
-ISS-053 is the bug this prevents: a surface-only parcel (e.g. MER-APN-031 — a
+The bug this prevents: a surface-only parcel (e.g. MER-APN-031 — a
 point of diversion and a crop, but no well) was receiving a per-parcel
 groundwater recharge credit it has no well to pump against. The single
 discriminator for personal-vs-pool is therefore ``has_well``: CONJUNCTIVE routes
@@ -66,10 +66,10 @@ def recharge_routes_to_personal(parcel_or_archetype):
     Accepts either a ``Parcel`` instance (which it classifies first) or a bare
     archetype string. Personal recovery requires a well, so only ``CONJUNCTIVE``
     routes personal; ``BASIN`` and ``FLOOD_MAR`` route to the GSA basin pool.
-    This is the ISS-053 guard: no parcel earns a personal groundwater credit
+    This is the guard: no parcel earns a personal groundwater credit
     without a well to pump it back.
 
-    148-02 Task 3 (Q1, an over-delivery is nobody's credit under the default):
+    An over-delivery is nobody's credit under the default:
     under ``SiteConfig.over_delivery_treatment == "not_credited"`` (the
     default) or ``"named_line"``, ``run_calculations`` does not call this to
     route an over-delivery anywhere — that amount lands only on
@@ -77,8 +77,8 @@ def recharge_routes_to_personal(parcel_or_archetype):
     managed-recharge path (``accounting.services.create_recharge_ledger_entries``,
     a real ``RechargeEvent`` deliberately spread onto a basin), which the
     routing question still applies to unchanged, for ``run_calculations``'s
-    own one-time reversal of a pre-148-02 pool deposit, and — 148-04 — for the
-    "credited" treatment, which calls this again exactly as the pre-148-02
+    own one-time reversal of an older engine's pool deposit, and for the
+    "credited" treatment, which calls this again as the earlier rain-bank
     engine did: a has-well field's credited share is a personal recharge row,
     a no-well field's credited share joins its zone's basin pool.
     """

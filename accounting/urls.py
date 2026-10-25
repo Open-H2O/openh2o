@@ -71,9 +71,9 @@ urlpatterns = [
         calculation_runs.calculation_run_detail,
         name="calculation_run_detail",
     ),
-    # Delivery Settings (staff-only agency efficiency + year-end policy, 55-03)
+    # Delivery Settings (staff-only agency efficiency + year-end policy)
     path("delivery-settings/", settings_pages.delivery_settings, name="delivery_settings"),
-    # Methodology Settings (staff-only self-serve methodology tuning, 38-07)
+    # Methodology Settings (staff-only self-serve methodology tuning)
     path("methodology/", settings_pages.methodology_settings, name="methodology_settings"),
     path(
         "methodology/step/<int:step_id>/toggle/",

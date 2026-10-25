@@ -30,7 +30,7 @@ _BALANCE_CLASS = {"surplus": "text-surplus", "deficit": "text-deficit", "balance
 def balance_class(value):
     """``{{ balance|balance_class }}`` -- the colour class for a water balance.
 
-    Judged on the two decimals the page prints (ISS-237): a balance that prints
+    Judged on the two decimals the page prints: a balance that prints
     0.00 is balanced and takes the plain text colour, never green or orange.
     """
     return _BALANCE_CLASS.get(_balance_state(value), "")

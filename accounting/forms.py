@@ -8,7 +8,7 @@ from core.history import CHANGE_NOTE_HELP, NOTE_MAX_LENGTH
 from core.modules import is_enabled
 from parcels.models import ParcelLedger
 
-#: Shortest reason accepted for reopening a finalized period (147-02, 2026-09-23).
+#: Shortest reason accepted for reopening a finalized period.
 #: Finalizing takes the same box with no minimum.
 REOPEN_NOTE_MIN_LENGTH = 10
 
@@ -42,14 +42,14 @@ class ReportingPeriodForm(forms.ModelForm):
 
 
 class PeriodFinalizeForm(forms.Form):
-    """The note behind finalizing or reopening a reporting period (147-02).
+    """The note behind finalizing or reopening a reporting period.
 
     Reopening a finalized period requires a reason, 10-500 characters, kept
     with the reopening save via ``core.history.change_note`` so it lands on
     the period's change-history event. The field still accepts an optional
     note when finalizing (not reopening) -- the backend recording keeps
-    working -- but 147-02 removed that box from
-    the period page; only the required reopening reason still renders.
+    working -- but the period page no longer shows that box;
+    only the required reopening reason still renders.
     ``reopening`` is passed explicitly by the view rather than read from the
     posted data, so a form cannot choose for itself which rule to enforce.
     """
@@ -130,14 +130,14 @@ class AllocationPlanForm(forms.ModelForm):
 
 
 class WaterAccountForm(forms.ModelForm):
-    """Create or edit a water account, including Q8's unit kind and delivery.
+    """Create or edit a water account, including its unit kind and delivery.
 
     `unit_kind` is nullable at the model (accounts predating the field) but
-    required here (146-05 Task 3). `delivery_well` is a real field on
+    required here. `delivery_well` is a real field on
     `WaterAccount` (`wells` is schema-resident, so the arrow is safe -- see
     `core.modules.SCHEMA_EXCEPTIONS`); it is dropped from the form entirely
     when `wells` is disabled, rather than shown and refused, the same
-    "gated by is_enabled" the plan asks for. `delivery_pod` is NOT a model
+    "gated by is_enabled" check the other optional modules use. `delivery_pod` is NOT a model
     field -- `surface` is truly removable, so that link lives on
     `surface.WaterAccountDeliveryPoint` instead (one row per account) and this
     form adds it as a plain `ModelChoiceField` only when `surface` is enabled,
@@ -190,7 +190,7 @@ class WaterAccountForm(forms.ModelForm):
         else:
             del self.fields["delivery_well"]
 
-        # Local import: `surface` is optional and truly removable (Phase 87),
+        # Local import: `surface` is optional and truly removable,
         # so this must not run at module scope -- the same guard
         # `accounting/views/accounts.py` already uses for the same module.
         self.surface_enabled = is_enabled("surface")

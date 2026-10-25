@@ -83,7 +83,7 @@ class ReportingPeriod(models.Model):
         return self.name
 
 
-#: Q8 (146-05 Task 3): which real thing an account stands for. Plain labels for
+#: Which real thing an account stands for. Plain labels for
 #: the form's select; UNIT_KIND_SENTENCES below builds the identity-card's
 #: full sentence ("A farm unit"), which is a different, article-carrying
 #: reading of the same value and is not derivable from the option label alone
@@ -119,7 +119,7 @@ class WaterAccount(models.Model):
     contact_name = models.CharField(max_length=200, blank=True)
     contact_email = models.EmailField(blank=True)
     verification_key = models.CharField(max_length=100, blank=True)
-    # Q8 (146-05 Task 3): which real thing this account stands for, and how it
+    # Which real thing this account stands for, and how it
     # is delivered. `unit_kind` is nullable at the model (accounts predating
     # this field, and any future bulk-import path that does not set it) but
     # REQUIRED on the create/edit forms (WaterAccountForm.__init__).
@@ -164,7 +164,7 @@ class WaterAccount(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def clean(self):
-        """Extra guard against both delivery paths at once (Q8).
+        """Extra guard against both delivery paths at once.
 
         The form is the entry boundary and carries this same check against
         the submitted data (`WaterAccountForm.clean`) -- a DB check
@@ -172,7 +172,7 @@ class WaterAccount(models.Model):
         `WaterAccountDeliveryPoint` (`surface`) live in, so this is the
         model-level half for any caller that saves outside the form (the
         admin site, among others). Guarded, function-scope import: `surface`
-        is optional and truly removable (Phase 87), so this must not run at
+        is optional and truly removable, so this must not run at
         module scope.
         """
         super().clean()
@@ -192,7 +192,7 @@ class WaterAccount(models.Model):
 
     def unit_kind_sentence(self):
         """'A farm unit', 'A place of use', 'A water right', 'Other', or
-        'Not stated' -- the identity card's leading clause (Q8)."""
+        'Not stated' -- the identity card's leading clause."""
         if not self.unit_kind:
             return "Not stated"
         return UNIT_KIND_SENTENCES.get(self.unit_kind, self.get_unit_kind_display())
@@ -213,7 +213,7 @@ class WaterAccountParcel(models.Model):
 
     class Meta:
         unique_together = [("water_account", "parcel", "reporting_period")]
-        # A finalized water year is closed to change (147-02, accounting/locks.py).
+        # A finalized water year is closed to change (accounting/locks.py).
         triggers = [finalized_period_lock(period_column="reporting_period_id")]
 
     def __str__(self):
@@ -235,7 +235,7 @@ class AllocationPlan(models.Model):
 
     class Meta:
         unique_together = [("zone", "water_type", "reporting_period")]
-        # A finalized water year is closed to change (147-02, accounting/locks.py).
+        # A finalized water year is closed to change (accounting/locks.py).
         triggers = [finalized_period_lock(period_column="reporting_period_id")]
         verbose_name = "Allocation Plan"
         verbose_name_plural = "Allocation Plans"
@@ -249,7 +249,7 @@ class CalculationPlan(models.Model):
     """A named, config-as-data recipe for deriving net consumptive use.
 
     Mirrors the standards.ObservedProperty controlled-vocabulary pattern: the
-    methodology lives in rows an agency can tune from a screen (Phase 38-06)
+    methodology lives in rows an agency can tune from a screen
     rather than in code. Single-tenant, so exactly one plan is active at a time.
     The ordered, enabled CalculationStep rows are walked by
     accounting.calculation.evaluate_chain.
@@ -261,7 +261,7 @@ class CalculationPlan(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        help_text="Reserved for future per-water-type scoping; unused in 38-02.",
+        help_text="Reserved for future per-water-type scoping; unused.",
     )
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -281,8 +281,8 @@ class CalculationStep(models.Model):
 
     step_type names a primitive in accounting.steps.STEP_REGISTRY. config holds
     that primitive's per-step knobs (model/variable, floor, bank, ...). Disabled
-    steps are skipped by the evaluator, which is how 38-02 ships the contested
-    effective-precipitation math seeded-but-dark until 38-03 turns it on.
+    steps are skipped by the evaluator, so a contested step can be seeded
+    but left off until an agency turns it on.
     """
 
     STEP_TYPE_CHOICES = [
@@ -358,7 +358,7 @@ class WaterCredit(models.Model):
 
     class Meta:
         ordering = ["origin_period"]
-        # A finalized water year is closed to change (147-02, accounting/locks.py).
+        # A finalized water year is closed to change (accounting/locks.py).
         triggers = [finalized_period_lock(month_text_column="origin_period")]
 
     def __str__(self):
@@ -370,7 +370,7 @@ class WaterCreditDraw(models.Model):
     """A consumption record: how much of a WaterCredit a later deficit month drew.
 
     Tracked as rows rather than a mutable balance so re-runs stay idempotent (the
-    runner deletes this period's draws then recomputes) and so 38-05's audit trail
+    runner deletes this period's draws then recomputes) and so the audit trail
     has the per-period drawdown to read. ``amount_af`` is the depreciated value
     actually drawn in ``draw_period`` (not the credit's full principal).
     """
@@ -390,7 +390,7 @@ class WaterCreditDraw(models.Model):
 
     class Meta:
         ordering = ["draw_period"]
-        # A finalized water year is closed to change (147-02, accounting/locks.py).
+        # A finalized water year is closed to change (accounting/locks.py).
         triggers = [finalized_period_lock(month_text_column="draw_period")]
 
     def __str__(self):
@@ -413,7 +413,7 @@ class AllocationCarryover(models.Model):
     contributes to), labelled by the calendar year that year ENDS in — so a
     rollover of the closed WY ending 2025 writes rows with ``water_year=2026``.
     ``source_water_year`` records the closed year it was derived from (provenance
-    for the audit trail; aids ISS-020). ``depreciation_rate`` / ``expires_period``
+    for the audit trail). ``depreciation_rate`` / ``expires_period``
     mirror WaterCredit so a carried-forward surplus can age or lapse on the same
     levers — the decay itself is never re-derived here, it delegates to
     carryover_math.available_with_carryover (which delegates to banking_math).
@@ -423,7 +423,7 @@ class AllocationCarryover(models.Model):
     re-running never double-banks. The unique_together makes a stray duplicate
     impossible.
 
-    ``origin`` (Phase 52.6-02, ISS-053) marks what KIND of row this is. The
+    ``origin`` marks what KIND of row this is. The
     historic rollover rows are ``allocation_carryover`` (the default, so existing
     rows keep their meaning). The GSA-level *basin recharge pool* — recharge that
     physically infiltrates the shared aquifer but belongs to no single parcel —
@@ -436,7 +436,7 @@ class AllocationCarryover(models.Model):
       on a no-well parcel (the calc engine owns it: per-parcel-month delta so a
       re-run never double-increments).
     * ``conveyance_seepage_pool`` — water a canal loses to seepage on its way to
-      the fields (149-02; the canal split owns it: a per point-and-month delta
+      the fields (the canal split owns it: a per point-and-month delta
       against ``surface.CanalMonthLoss`` so a re-run never double-deposits).
 
     The pool origins are summed for display/recovery (``zone_carryover`` adds
@@ -496,9 +496,9 @@ class AllocationCarryover(models.Model):
     class Meta:
         ordering = ["-water_year", "zone", "water_type"]
         # ``origin`` is part of the key so a zone-year can hold BOTH a rollover
-        # carryover AND its basin-pool rows without colliding (52.6-02).
+        # carryover AND its basin-pool rows without colliding.
         unique_together = [("zone", "water_type", "water_year", "origin")]
-        # A finalized water year is closed to change (147-02, accounting/locks.py).
+        # A finalized water year is closed to change (accounting/locks.py).
         triggers = [finalized_period_lock(water_year_column="water_year")]
         verbose_name = "Allocation carryover"
         verbose_name_plural = "Allocation carryovers"
@@ -512,10 +512,10 @@ class AllocationCarryover(models.Model):
 
 @track_changes()
 class CalculationRun(models.Model):
-    """The reconstructable audit record for one `calculated` ledger row (38-05).
+    """The reconstructable audit record for one `calculated` ledger row.
 
     Persisted once per (parcel, period) by run_calculations for every ET-bearing
-    parcel. As of 54-01 it is NO LONGER 1:1 with a calculated ledger row: a parcel
+    parcel. It is NOT 1:1 with a calculated ledger row: a parcel
     WITH a well still gets both (run + a calculated groundwater row), but a no-well
     parcel gets a run with NO calculated row — its residual is recorded as
     ``unmet_demand_af`` with ``residual_disposition="unmet_demand"`` instead of a
@@ -534,7 +534,7 @@ class CalculationRun(models.Model):
     carry no unique constraint), so a hard constraint buys nothing and would only
     complicate future multi-period scoping.
 
-    42-01 adds three provenance fields (methodology_plan_id, methodology_plan_name,
+    Three provenance fields (methodology_plan_id, methodology_plan_name,
     config_hash) — an immutable snapshot of the CalculationPlan in force at run
     time, so the filed number can name the recipe that made it even after the live
     plan is edited or deleted. They are copied values, deliberately NOT a FK, for
@@ -575,7 +575,7 @@ class CalculationRun(models.Model):
         help_text="Surface water subtracted (AF); null if no surface-water step ran. "
         "With the apply_efficiency knob on, this is the CONSUMED part of a canal "
         "delivery (delivered x efficiency); with the knob off, or on an old run "
-        "from before 148-02, it is the delivered magnitude itself.",
+        "that predates the efficiency step, it is the delivered magnitude itself.",
     )
     surface_delivered_af = models.DecimalField(
         max_digits=12,
@@ -584,7 +584,7 @@ class CalculationRun(models.Model):
         blank=True,
         help_text="Recorded delivery for the month (AF), before the field's "
         "efficiency is applied. Null when no surface-water step ran or the run "
-        "predates 148-02.",
+        "predates the efficiency step.",
     )
     surface_efficiency = models.DecimalField(
         max_digits=4,
@@ -593,30 +593,30 @@ class CalculationRun(models.Model):
         blank=True,
         help_text="The field-efficiency factor applied to this run's surface "
         "delivery. Null when the apply_efficiency knob is off, nothing was "
-        "delivered, or the step ran on a plan from before 148-02.",
+        "delivered, or the step ran on a plan that predates the efficiency step.",
     )
     over_delivery_af = models.DecimalField(
         max_digits=12,
         decimal_places=4,
         default=Decimal("0"),
-        help_text="148-02 (Q1, an over-delivery is nobody's credit under the "
-        "default): the month's canal water the crop could use beyond its net "
+        help_text="An over-delivery is nobody's credit under the default: "
+        "the month's canal water the crop could use beyond its net "
         "use, read off the clamp_floor step's incidental_recharge_af. Under "
-        "the default (not_credited) and under named_line, no ledger row is "
-        "written for it and it is never a personal or pooled deposit — the "
-        "amount is recorded here only. 148-04: under 'credited', see "
+        "the default (not_credited) and under named_line, the engine "
+        "does not write a ledger row for it and it is never a personal or pooled "
+        "deposit. The amount is recorded here only. Under 'credited', see "
         "over_delivery_treatment / over_delivery_credited_af / "
-        "over_delivery_credit_pooled for what this run actually did with it. "
+        "over_delivery_credit_pooled for what this run did with it. "
         "0 on a run with no over-delivery.",
     )
     over_delivery_treatment = models.CharField(
         max_length=20,
         choices=SiteConfig.OVER_DELIVERY_TREATMENT_CHOICES,
         default="not_credited",
-        help_text="148-04: the SiteConfig.over_delivery_treatment setting in "
-        "force when THIS run was written — read once at compute time, never "
-        "re-read, so a later change to the setting moves no figure on this "
-        "run until it is re-run (ISS-177, the same rule that protects "
+        help_text="The SiteConfig.over_delivery_treatment setting in "
+        "force when THIS run was written. It is read once at compute time and not "
+        "re-read, so a later change to the setting does not move a figure on this "
+        "run until it is re-run (the same rule that protects "
         "gw_extracted_af). Default 'not_credited' so a run written before "
         "this setting existed reads as what it always was.",
     )
@@ -625,7 +625,7 @@ class CalculationRun(models.Model):
         decimal_places=3,
         null=True,
         blank=True,
-        help_text="148-04: the SiteConfig.over_delivery_leave_behind share in "
+        help_text="The SiteConfig.over_delivery_leave_behind share in "
         "force when this run was written. Stamped whenever "
         "over_delivery_treatment is 'credited' on this run, whether or not "
         "there was an over-delivery to apply it to this month; null under "
@@ -636,7 +636,7 @@ class CalculationRun(models.Model):
         decimal_places=4,
         null=True,
         blank=True,
-        help_text="148-04: the amount this run actually credited — to the "
+        help_text="The amount this run credited, to the "
         "field's own ledger (over_delivery_credit_pooled False) or to its "
         "zone's shared pool (over_delivery_credit_pooled True). Null unless "
         "'credited' treatment credited something this run: a month with no "
@@ -645,11 +645,11 @@ class CalculationRun(models.Model):
     )
     over_delivery_credit_pooled = models.BooleanField(
         default=False,
-        help_text="148-04: True when over_delivery_credited_af went to the "
-        "field's zone's shared basin pool rather than the field's own ledger "
-        "— a no-well field has no well to pump a personal credit back with, "
-        "so its credited share joins the zone's shared account instead "
-        "(ISS-053's routing rule, applied again under 'credited'). False "
+        help_text="True when over_delivery_credited_af went to the "
+        "field's zone's shared basin pool, not to the field's own ledger. "
+        "A no-well field has no well to pump a personal credit back with, "
+        "so its credited share joins the zone's shared account. "
+        "(the same routing rule, applied under 'credited'). False "
         "(the default) on every run that credited nothing, or credited the "
         "field itself.",
     )
@@ -667,8 +667,7 @@ class CalculationRun(models.Model):
     residual_disposition = models.CharField(
         max_length=20,
         choices=[
-            # 148-02 Task 4 (Q2): relabeled from "Groundwater extraction" --
-            # the calculated row this disposition writes carries the CONSUMED
+            # The calculated row this disposition writes carries the CONSUMED
             # amount (final_af), never the extracted one; gw_extracted_af below
             # is a separate, derived figure. "(estimated)" names what the two
             # groundwater fields on this run both are: an ET-based estimate,
@@ -689,12 +688,12 @@ class CalculationRun(models.Model):
         decimal_places=4,
         null=True,
         blank=True,
-        help_text="148-02 Task 4 (Q2): the estimated field's pumped magnitude -- "
+        help_text="The estimated field's pumped magnitude: "
         "final_af divided by groundwater_application_efficiency, the field's own "
-        "irrigation efficiency AT COMPUTE TIME (150.2-02; stamped beside this "
-        "figure, never re-derived from a setting that may have moved since — a "
+        "irrigation efficiency AT COMPUTE TIME (stamped beside this "
+        "figure, never re-derived from a setting that may have moved since). A "
         "finalized period's billable groundwater must not move when someone tunes "
-        "the setting, ISS-177). Null on a metered run (the meter is the number) "
+        "the setting. Null on a metered run (the meter is the number) "
         "or a no-well run (unmet demand, never a phantom extraction). 0 on a "
         "zero-residual estimated month.",
     )
@@ -703,11 +702,11 @@ class CalculationRun(models.Model):
         decimal_places=3,
         null=True,
         blank=True,
-        help_text="150.2-02: the field's irrigation efficiency this run divided "
+        help_text="The field's irrigation efficiency this run divided "
         "ETAW met by groundwater by (its irrigation method's, else the Delivery "
         "Settings default, read when the run was computed). The same figure the "
         "field's canal water is multiplied by: one field, one irrigation system. "
-        "Null on a metered or no-well run, and on a run from before 150.2-02.",
+        "Null on a metered or no-well run, and on a run that predates this stamp.",
     )
     groundwater_efficiency_source = models.CharField(
         max_length=10,
@@ -717,7 +716,7 @@ class CalculationRun(models.Model):
             ("method", "The field's irrigation method"),
             ("agency", "Delivery Settings default"),
         ],
-        help_text="150.2-02: where groundwater_application_efficiency came from "
+        help_text="Where groundwater_application_efficiency came from "
         "when this run was computed, the same 'method' / 'agency' values the "
         "surface step records as its efficiency_source. Blank wherever that "
         "stamp is null.",
@@ -727,7 +726,7 @@ class CalculationRun(models.Model):
         decimal_places=4,
         null=True,
         blank=True,
-        help_text="148-02 Task 4 (Q2): gw_extracted_af minus final_af -- the "
+        help_text="gw_extracted_af minus final_af: the "
         "pumped water the crop did not consume, returning to the aquifer. "
         "Neither crop use nor a credit; feeds parcel_mass_balance's own output "
         "term of the same name so an estimated field-year still closes. Null "
@@ -784,7 +783,7 @@ class CalculationRun(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
-        # A finalized water year is closed to change (147-02, accounting/locks.py).
+        # A finalized water year is closed to change (accounting/locks.py).
         triggers = [
             finalized_period_lock(
                 date_column="period_start", fallback_month_text_column="period"
@@ -819,7 +818,7 @@ class CalculationRun(models.Model):
 
 
 class CalculationRequest(models.Model):
-    """One request to calculate some months, and what came of it (149-01).
+    """One request to calculate some months, and what came of it.
 
     The record the calculation leaves behind: who asked (a person pressing the
     button, the nightly schedule, a saved diversion record, or a technician at

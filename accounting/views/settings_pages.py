@@ -17,16 +17,16 @@ from accounting.views.calculation_runs import _delivery_split_kind, _step_detail
 
 
 # Methodology tuning is an administrator's job, gated by the shared, switch-aware
-# @admin_required from core.access (ISS-021). It honors the two-tier model and
+# @admin_required from core.access. It honors the two-tier model and
 # deliberately bounces an authenticated non-admin back into the app rather than
 # to Django's /admin/ login (which staff_member_required would do).
 
 
 # ---------------------------------------------------------------------------
-# Delivery Settings — agency-wide efficiency + year-end-unused-water policy (55-03)
+# Delivery Settings — agency-wide efficiency + year-end-unused-water policy
 # ---------------------------------------------------------------------------
 #
-# Plans 01-02 put two agency-wide knobs on the SiteConfig singleton
+# Two agency-wide knobs live on the SiteConfig singleton
 # (default_irrigation_efficiency + default_recovery_horizon). This staff-only
 # page is their plain-language home: two questions a non-coder analyst answers
 # once for the whole agency. Mirrors methodology_settings' @login_required +
@@ -63,17 +63,17 @@ def delivery_settings(request):
 
     # The eyebrows count what is rendered, not what the form class declares:
     # the surface cards are gone when that module is (see
-    # DeliverySettingsForm). A hardcoded "of 2" is the 88-03 defect.
+    # DeliverySettingsForm). A hardcoded "of 2" would be wrong when a module is off.
     #
-    # 146-03 Task 3 adds a third possible card ("Diversion records", the same
-    # `surface` gate) after "efficiency" and "recovery horizon" -- each
+    # A third possible card ("Diversion records", the same
+    # `surface` gate) follows "efficiency" and "recovery horizon" -- each
     # card's own position is computed here, in DISPLAY order, rather than
     # assumed in the template (recovery horizon is no longer always last).
     position = 0
     if form.shows_efficiency:
         position += 1
     efficiency_number = position or None
-    # 148-04: the over-delivery card follows the efficiency card, behind the
+    # The over-delivery card follows the efficiency card, behind the
     # `surface` gate (only canal water can be over-delivered).
     over_delivery_number = None
     if form.shows_surface_settings:
@@ -85,7 +85,7 @@ def delivery_settings(request):
     if form.shows_diversion_settings:
         position += 1
         diversion_number = position
-    # 146-06 Task 1: record addresses belong to `core`, so this card is always
+    # Record addresses belong to `core`, so this card is always
     # shown and always last.
     position += 1
     identifier_number = position
@@ -107,7 +107,7 @@ def delivery_settings(request):
 
 
 # ---------------------------------------------------------------------------
-# Methodology Settings — the self-serve face of the calculation engine (38-07)
+# Methodology Settings — the self-serve face of the calculation engine
 # ---------------------------------------------------------------------------
 #
 # Staff tune the config-as-data methodology (reorder / enable-disable steps, edit
@@ -218,7 +218,7 @@ def methodology_step_move(request, step_id, direction):
         ordered[idx + 1], ordered[idx] = ordered[idx], ordered[idx + 1]
     # No-op cleanly at the ends (first can't move up, last can't move down).
 
-    # Only the steps whose place actually changes are written (147-01): every
+    # Only the steps whose place actually changes are written: every
     # write is recorded in the change history, and a step that stays put has
     # no change to record.
     moving = [s for i, s in enumerate(ordered, start=1) if s.order != i]
@@ -240,7 +240,7 @@ def methodology_step_move(request, step_id, direction):
 def methodology_step_config(request, step_id):
     """Edit one step's config knobs (+ its audit label), then re-render the list.
 
-    The cardinal rule (38-02 silent-zero trap): MERGE the posted keys into the
+    The cardinal rule (the silent-zero trap): MERGE the posted keys into the
     existing config dict, never replace it — so et_gross's model/variable plumbing
     survives a save on a different step. Only the knobs relevant to the step_type
     are touched; the rest of the dict is left exactly as it was.
@@ -259,7 +259,7 @@ def methodology_step_config(request, step_id):
             request.POST.get("soil_storage_in"), config.get("soil_storage_in", 3.0)
         )
     elif step.step_type == "clamp_floor":
-        # 148-02: the rain bank is retired -- floor is the step's only knob.
+        # The floor is the step's only knob.
         config["floor"] = _to_float(request.POST.get("floor"), config.get("floor", 0))
     # et_gross / subtract_surface_water / facility_only_zero: no editable knobs;
     # their config is left untouched (et_gross keeps its model/variable plumbing).
@@ -278,7 +278,7 @@ def methodology_step_config(request, step_id):
 def methodology_preview(request):
     """Live preview of the CURRENTLY-SAVED methodology on one sample parcel.
 
-    Calls evaluate_chain, which is side-effect-FREE by the 38-04 design contract:
+    Calls evaluate_chain, which is side-effect-FREE by contract:
     it reads the active DB plan and writes NOTHING — no ledger row, no
     WaterCredit, no CalculationRun (run_calculations is the only writer). So the
     self-serve loop is: edit a knob → Save → Preview, and the preview reflects the

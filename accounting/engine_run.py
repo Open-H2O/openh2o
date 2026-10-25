@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""One orchestrator for the calculation: every month in order, with a record (149-01).
+"""One orchestrator for the calculation: every month in order, with a record.
 
-The calculation used to be a sequence only the demonstration build knew: crop
+The calculation is one sequence: crop
 water use for a month, then the canal division, then the groundwater / no-supply
 residual against what the canal division left. A screen, the nightly schedule,
 a saved diversion record and the command line all now run the SAME sequence
@@ -292,7 +292,6 @@ def _unexplained_sentence(unexplained: dict[str, Decimal]) -> str:
         f"{pod} {_amount(af)}"
         for pod, af in sorted(unexplained.items(), key=lambda kv: (-kv[1], kv[0]))
     )
-    # The ETAW terms replace the earlier 10-06 phrase.
     return (
         f"{_amount(total)} AF of headgate water was left after each field "
         f"received its ETAW divided by its irrigation efficiency ({each}). "
@@ -302,7 +301,7 @@ def _unexplained_sentence(unexplained: dict[str, Decimal]) -> str:
 
 def _canal_losses_sentence(evaporation: Decimal, spill: Decimal, loss_points: set[str]) -> str:
     """One sentence for the evaporation and spill subtracted at the period's points."""
-    # Working copy (149-02). Only the losses that are above zero are
+    # Only the losses that are above zero are
     # named. "Subtracted", not "wrote off": the losses come off the water
     # diverted (surface/services.py).
     parts = []
@@ -373,8 +372,8 @@ def _note_sentences(raw, *, tabled=False):
     Delivery card already reports it, and on a district that diverts more than
     its crops use it is true every month, so it must not turn every run yellow.
 
-    Two more information sentences came with canal losses (149-02): the
-    evaporation and spill every point wrote off this period, in ONE sentence,
+    Two more information sentences cover canal losses: the
+    evaporation and spill subtracted at every point this period, in ONE sentence,
     and one sentence for each point-month whose seepage had no zone to go to.
 
     ``tabled=True`` (2026-10-12: the notes as one table) leaves out the
@@ -420,7 +419,7 @@ def _note_sentences(raw, *, tabled=False):
         info.append(_canal_losses_sentence(evaporation, spill, loss_points))
     for note in sorted(no_zone, key=lambda n: (n["month"], n["pod"])):
         info.append(_seepage_no_zone_sentence(note))
-    # Estimates for a ditch with no meter (149-02). Working copy. They keep a
+    # Estimates for a ditch with no meter. They keep a
     # run green: an estimate is information, never a fault.
     if estimated_points and not tabled:
         info.append(_unmetered_estimate_sentence(estimated_points, estimated_months))
@@ -874,7 +873,7 @@ def run_queue():
 
 
 # --------------------------------------------------------------------------
-# Starting a run from a screen or a saved record (149-01 Task 3)
+# Starting a run from a screen or a saved record
 # --------------------------------------------------------------------------
 
 

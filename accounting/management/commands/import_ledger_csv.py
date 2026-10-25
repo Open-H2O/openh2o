@@ -67,7 +67,7 @@ class Command(BaseCommand):
             try:
                 reporting_period = ReportingPeriod.objects.get(name=period_name)
             except ReportingPeriod.DoesNotExist:
-                # 150-03 (ISS-182): name the place a water year is created. A
+                # Name the place a water year is created. A
                 # command line has no link, so the path is the place.
                 raise CommandError(
                     f"Water year not found: {period_name}. Create it first under "
@@ -76,7 +76,7 @@ class Command(BaseCommand):
                     "existing water year's name."
                 )
 
-        # ISS-029 finalized-period write guard. A finalized ReportingPeriod is a
+        # Finalized-period write guard. A finalized ReportingPeriod is a
         # number already filed with the state; importing into it would silently
         # rewrite a filed figure. Mirror the run_calculations guard: refuse up
         # front when the operator explicitly targets a finalized period. dry_run
@@ -140,7 +140,7 @@ class Command(BaseCommand):
                     f"ledger convention (usage debits, supply credits)"
                 )
             )
-            # ISS-196: name every row the count above summarizes, one line
+            # Name every row the count above summarizes, one line
             # each, so "10 row(s)" is never the whole story a clerk gets.
             for row in result["sign_normalized_rows"]:
                 self.stdout.write(

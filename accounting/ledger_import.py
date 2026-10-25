@@ -23,13 +23,13 @@ Rules enforced here, in order:
    coercion is COUNTED and reported to the operator — normalizing is a judgement
    about the file, and it must never be silent. The web upload's dry-run preview
    surfaces the count before anything is written.
-3. FINALIZED-PERIOD GUARD (ISS-029, 147-02). A row dated inside a finalized
+3. FINALIZED-PERIOD GUARD. A row dated inside a finalized
    period, or any row when the period picked for the whole file is finalized,
    is refused as a row error in plain words. It runs on every import, the
    preview included, whether or not a period was picked (the web upload with a
    period picked used to skip it entirely). The database refuses the same
    rows anyway (accounting/locks.py); this says which ones before writing.
-4. DEDUP (ISS-029 idempotency). The ledger is an append-only journal, so we never
+4. DEDUP (idempotent re-import). The ledger is an append-only journal, so we never
    delete — we skip a row that already exists with the same
    (parcel, effective_date, source_type, amount) and collapse exact duplicates
    within the file. Re-importing the same CSV writes nothing the second time,
@@ -361,7 +361,7 @@ def _drop_duplicates(
 
 def _finalized_spans() -> list[tuple[date, date, str]]:
     """The ``(start, end, name)`` of every finalized reporting period."""
-    # Finalized periods are loaded once, for every import (147-02): with or
+    # Finalized periods are loaded once, for every import: with or
     # without a period picked, and for the preview as well as the commit, so
     # the preview never counts a row the commit would refuse.
     return list(
@@ -395,11 +395,11 @@ def import_ledger_rows(
     errors = []
     entries_to_create = []
     preview = []
-    # ISS-196: the count alone never named which rows it touched. One entry
+    # The count alone would not name which rows it touched. One entry
     # per coerced row -- the line number, the source_type that decided the
     # sign, and the value before and after -- printed by the CLI and listed
     # by the web upload, so "10 row(s) had their sign normalized" is never
-    # the whole story on any door again.
+    # the whole story on any door.
     sign_normalized_rows: list[dict[str, Any]] = []
 
     reader, first_data_line = _open_ledger_reader(text_file, delimiter)
@@ -448,7 +448,7 @@ def import_ledger_rows(
             for i in range(0, len(survivors), batch_size):
                 ParcelLedger.objects.bulk_create(survivors[i : i + batch_size])
 
-    # 149-01: the months a hand-or-file delivery row landed in, so the screen
+    # The months a hand-or-file delivery row landed in, so the screen
     # that saved them can start the recalculation for exactly those months.
     surface_months = sorted(
         {

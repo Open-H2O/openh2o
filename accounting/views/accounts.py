@@ -196,12 +196,10 @@ def _account_assignments(account):
     fixed in one place would have left the table re-shuffling itself the moment
     an operator assigned or removed a use area.
 
-    R-040 (143-01): the order used to be ``-added_date``, which is not an order a
-    reader can name. Measured 2026-09-08 on the demonstration data: all 18 of
-    account 12's assignments carry the same ``added_date``, so the tie broke
-    however PostgreSQL liked and two use areas were stranded at the end of both
-    tables, reading as an error. They are not a different kind of row — same
-    period, same day, same everything.
+    The order is the use-area number, which a reader can name. Ordering by
+    ``-added_date`` would not do: assignments made together share one
+    ``added_date``, so the tie would break however PostgreSQL liked and some use
+    areas would be stranded at the end of the table, reading as an error.
     """
     return (
         WaterAccountParcel.objects.filter(water_account=account, removed_date__isnull=True)
@@ -212,7 +210,7 @@ def _account_assignments(account):
 
 def _account_delivery_sentence(account):
     """"A farm unit" or "A farm unit · delivered through <point or well>"
-    (Q8, 146-05 Task 3): the identity card's leading clause, plus its
+    The identity card's leading clause, plus its
     delivery system when one is set. Computed once here rather than in the
     template -- the same discipline `wells/views.py::_dwr_extraction_line`
     uses for the well page's identity line.
@@ -221,7 +219,7 @@ def _account_delivery_sentence(account):
     schema-resident, so reading it needs no guard); the point-of-diversion
     side lives on `surface.WaterAccountDeliveryPoint` instead and is read
     through a guarded, function-scope import -- `surface` is optional and
-    truly removable (Phase 87).
+    truly removable.
     """
     parts = [account.unit_kind_sentence()]
     delivery = None
@@ -283,8 +281,7 @@ def _parcel_balance_rows(
     """One consumptive-balance row per assigned use area."""
     # Per-parcel breakdown, same consumptive lens. parcel_consumptive_balance
     # reuses the billable primitive (groundwater supply == _balance_dict usage),
-    # so per-parcel rows sum to the account total (57-01 case #5 proves the helper
-    # is additive) and the page stays internally consistent. The conjunctive-vs-
+    # so per-parcel rows sum to the account total (the helper is additive) and the page stays internally consistent. The conjunctive-vs-
     # surface-only story is now VISIBLE: a canal-district parcel shows real
     # consumptive use met entirely by surface; a conjunctive parcel shows surface +
     # groundwater.
@@ -308,13 +305,13 @@ def _parcel_balance_rows(
 
 def _use_area_state_counts(parcel_balances: list[dict]) -> dict[str, int]:
     """How many use areas the estimate covers, and how many sit in surplus, deficit or balance."""
-    # The parts of the panel's other two figures (143-03, 2026-09-11): how many
+    # The parts of the panel's other two figures: how many
     # of the account's use areas the consumptive-use estimate actually covers,
     # and how the balance splits across them. Counts, not AF: they are read off
     # the per-use-area rows the table below already renders, so they cannot
     # disagree with it.
     use_areas_estimated = sum(1 for pb in parcel_balances if pb["calculation_runs"])
-    # ISS-237: judged on the two decimals the page prints; 0.00 is balanced.
+    # Judged on the two decimals the page prints; 0.00 is balanced.
     use_area_states = [balance_state(pb["net_vs_supply"]) for pb in parcel_balances]
     use_areas_in_surplus = use_area_states.count("surplus")
     use_areas_in_deficit = use_area_states.count("deficit")
@@ -329,7 +326,7 @@ def _use_area_state_counts(parcel_balances: list[dict]) -> dict[str, int]:
 
 def _use_area_map_counts(assignments: QuerySet[WaterAccountParcel]) -> tuple[int, int]:
     """The map card head's counts of use areas: all, and those with a location."""
-    # The account's map card (ISS-175, 150-02): the head's two counts, read off
+    # The account's map card: the head's two counts, read off
     # the rows the loop above already fetched (select_related parcel, so no
     # query). Counted by use area, not by row, because the map draws each use
     # area once; `?account=` on parcels:geojson selects the same active rows.
@@ -362,7 +359,7 @@ def _account_detail_context(account, period_param=None):
 
     # Account-level balance, in the corrected v1.10 lens: estimated consumptive
     # use (gross ET) against the surface / groundwater / precip supplies that met
-    # it (57-02). account_consumptive_balance selects the SAME active assignments
+    # it. account_consumptive_balance selects the SAME active assignments
     # account_balance did, so the roll-up partitions identically.
     balance = account_consumptive_balance(account, reporting_period=selected_period)
 
@@ -430,11 +427,10 @@ def account_create(request):
 
 @login_required
 def account_edit(request, pk):
-    """Edit a water account, including Q8's unit kind and delivery system.
+    """Edit a water account, including its unit kind and delivery system.
 
-    146-05 Task 3's door: "the account create and edit forms" -- no account
-    edit route existed before this (only the create form and the assign/
-    remove-parcel actions), so this is new.
+    The create form and the assign/remove-parcel actions are separate
+    routes; this one edits the account's own fields.
     """
     account = get_object_or_404(WaterAccount, pk=pk)
     if request.method == "POST":
@@ -459,7 +455,7 @@ def assign_parcel(request, pk):
     parcel = get_object_or_404(Parcel, pk=parcel_id)
 
     # This door writes the undated assignment (no reporting period), which
-    # no finalized year locks (147-02: an assignment is locked only when it
+    # no finalized year locks (an assignment is locked only when it
     # names a finalized period), so it has nothing to refuse.
     wap, created = WaterAccountParcel.objects.get_or_create(
         water_account=account,

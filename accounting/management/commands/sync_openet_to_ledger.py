@@ -207,7 +207,7 @@ class Command(BaseCommand):
         }
 
         entries_to_create = []
-        # ISS-030 / F-functional-26: track (parcel_id, month_key) appended in
+        # Track (parcel_id, month_key) appended in
         # THIS run. Two OpenETCache rows can overlap and both carry the same
         # parcel-month; neither has a ledger row yet, so the DB existence check
         # below passes for both. The seen set makes a parcel-month write once.

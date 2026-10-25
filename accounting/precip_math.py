@@ -9,11 +9,11 @@ wrapper that turns parcel-month rows into ``(P, ET)`` lives in
 
 "Effective precipitation" is the share of rainfall that actually contributes to
 crop ET — what you may credit against gross satellite ET to get *net* consumptive
-use. Over-crediting it directly understates billable groundwater, so the doctrine
-(Phase 29-03) is that the math is proven against published reference values before
+use. Over-crediting it directly understates billable groundwater, so the rule
+is that the math is proven against published reference values before
 any parcel's bill depends on it.
 
-Three methods (see 38-DESIGN.md Step 3):
+Three methods:
   - raw      : Pe = P                (subtract all rainfall — crude, over-credits)
   - fraction : Pe = fraction * P     (flat haircut; default fraction 0.70)
   - usda_scs : USDA-SCS / TR-21, capped at both P and ET   (default)
@@ -96,7 +96,7 @@ def effective_precip_inches(
         etf = float(et) * mm_per_in
         # TR-21's P**0.824 term is only defined for non-negative rainfall.
         p_pow = math.pow(pf, 0.824) if pf > 0 else 0.0
-        # ISS-032: the TR-21 core is evaluated in binary float (math.pow needs a
+        # The TR-21 core is evaluated in binary float (math.pow needs a
         # fractional power, which Decimal lacks natively) before re-Decimalizing.
         # The float error here is ~1e-12 relative — orders of magnitude below the
         # ledger's 1e-4 AF resolution — and the result is hard-capped at min(P, ET)

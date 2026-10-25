@@ -42,7 +42,7 @@ Every returned Decimal is quantized to four places, the ledger's precision.
 
 THE TWO RESOLVERS AT THE FOOT
 -----------------------------
-``field_month_delivery_band`` and ``field_month_meter_band`` (150-02 Task 3)
+``field_month_delivery_band`` and ``field_month_meter_band``
 are the only functions here that read the database: they find the records
 behind one field's month on the field page and hand them to the pure
 functions above. Their imports are function-scoped and guarded on

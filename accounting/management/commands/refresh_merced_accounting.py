@@ -1,13 +1,13 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Refresh the Merced demo's ACCOUNTING layer under the corrected v1.10 model.
 
-WHY this command exists — the ordering trap. Phases 54-57 rebuilt the accounting
-model around estimated consumptive use: net consumptive use (gross ET minus
-effective precip) is the source-agnostic spine (54-01), unmetered district
-deliveries are allocated to crop-varied parcels BY ET demand (55), and the
-per-parcel books are meant to close (``parcel_mass_balance``). But the live demo
-was seeded BEFORE that work, so its persisted ``CalculationRun`` rows carry
-``net_consumptive_use_af = 0``. A naive single re-seed therefore CANNOT close the
+WHY this command exists — the ordering trap. The accounting model is built
+around estimated consumptive use: net consumptive use (gross ET minus
+effective precip) is the source-agnostic spine, unmetered district
+deliveries are allocated to crop-varied parcels BY ET demand, and the
+per-parcel books are meant to close (``parcel_mass_balance``). But a demo
+seeded before that model existed has persisted ``CalculationRun`` rows that
+carry ``net_consumptive_use_af = 0``. A naive single re-seed therefore CANNOT close the
 per-parcel books, because of an ordering dependency:
 
   * Demand-weighted surface allocation (``allocate_district_delivery``) needs each
@@ -17,7 +17,7 @@ per-parcel books, because of an ordering dependency:
     does not match each parcel's ET demand, so per-parcel mass balance won't close.
 
 Because net consumptive use is computed gross-ET-minus-precip and is INDEPENDENT
-of surface delivery (54-01), the fix is a deterministic TWO-PASS refresh:
+of surface delivery, the fix is a deterministic TWO-PASS refresh:
 
   1. ``run_calculations`` — populate ``net_consumptive_use_af`` for every
      parcel-month from the OpenET cache. Valid to run before surface is allocated,
@@ -39,8 +39,7 @@ year would run pass 2 again and destroy the first year's supply rows — silentl
 because a wiped ledger looks like an empty year rather than like an error.
 ``--period`` is therefore REPEATABLE: the engine passes run over the UNION of
 every named period's months inside ONE invocation, with exactly one pass 2
-between them. Phase 133-01 (2026-09-05) added the second water year and this is
-the constraint that shaped it.
+between them. That lets a second water year be refreshed without wiping the first.
 
 For the general sequence on any period (crop water use, canal division, crop
 water use again, month by month, recorded as a request) see ``run_accounting``
@@ -158,13 +157,13 @@ class Command(BaseCommand):
 
         # The demonstration's prior water year is finalized, and every pass
         # below writes into it on purpose: through the recorded door
-        # (147-02, accounting/locks.py), with the same reason the engine's
+        # (accounting/locks.py), with the same reason the engine's
         # own --force records.
         with override(FORCE_REASON):
             self._refresh(label, months)
 
     def _refresh(self, label, months):
-        # Pass 1 — populate net_consumptive_use_af (surface-independent, 54-01).
+        # Pass 1 — populate net_consumptive_use_af (surface-independent).
         self.stdout.write(self.style.MIGRATE_HEADING(
             f"\n=== Pass 1/3: run_calculations — populate net consumptive use "
             f"({len(months)} months) ==="

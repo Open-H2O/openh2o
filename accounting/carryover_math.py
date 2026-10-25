@@ -2,14 +2,14 @@
 """Pure multi-year carry-over & borrow-forward math.
 
 Intentionally Django-free (imports only ``decimal`` + accounting.banking_math,
-itself Django-free), the same split that gave 38-03's effective-precip math and
-the WaterCredit banking math a real RED->GREEN cycle in bare local Python. This
+itself Django-free), the same split that keeps the effective-precip math and
+the WaterCredit banking math testable in bare local Python. This
 is the money-sensitive core of multi-year allocations: at each water year's end
 the unused budget rolls FORWARD as a surplus (which may depreciate), and an
 overdraw becomes a DEBT borrowed against the next year (capped at what that year
 actually holds). Get it wrong and an agency is silently misbilled, so it is
 proven in isolation here; the DB-bound orchestration (which zone/parcel the
-amounts belong to) is deferred to 39-02.
+amounts belong to) lives in the rollover_allocations command.
 
 Three deliberate rules, each encoded below:
 
@@ -31,7 +31,7 @@ Depreciation is NEVER re-derived here — it delegates to
 ``banking_math.depreciated_value`` so the carry-over decay and the WaterCredit
 decay can never drift apart (negative-rate 0-floor, geometric shape, and all).
 
-Periods are zero-padded "YYYY-MM" strings (38-04 convention). Decimal
+Periods are zero-padded "YYYY-MM" strings (the convention the ledger uses). Decimal
 throughout, quantized to 4 decimal places to match the ledger; a float anywhere
 reintroduces binary-float drift on money.
 """

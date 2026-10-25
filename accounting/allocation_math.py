@@ -2,9 +2,9 @@
 """Pure demand-weighted, efficiency-capped allocation of a delivery total.
 
 Intentionally Django-free (imports only ``decimal`` + the standard library), the
-same split that gave 38-03's effective-precip math and the WaterCredit banking
-math a real RED->GREEN cycle in bare local Python. This is the heart of Phase 55
-— the missing v1.10 capability: an unmetered district records ONE surface
+same split that keeps the effective-precip math and the WaterCredit banking
+math testable in bare local Python. This is the heart of the unmetered-district
+case: an unmetered district records ONE surface
 delivery total for a period, but the parcels that diversion serves grow different
 crops with different water demand. This kernel splits that one total across the
 parcels by each parcel's estimated ET demand, never giving any parcel more than it
@@ -14,7 +14,7 @@ It generalizes the throwaway month-axis helper ``_demand_aware_deliveries``
 (core/management/commands/seed_merced_ledgers.py) onto the PARCEL axis. The math
 is mirrored, NOT imported, so this module stands alone with zero Django/seed
 dependencies; the DB wiring (which DiversionRecord, which parcels, the negative
-sign convention) is Plan 02's concern.
+sign convention) lives in the callers.
 
 Three deliberate rules, each encoded below:
 
@@ -23,13 +23,14 @@ Three deliberate rules, each encoded below:
      needs a delivery of ``D / eff``. No parcel is ever allocated more than this
      ceiling — that ceiling is what kills the pre-052 over-delivery spikes.
 
-  2. AMPLE vs SHORT. (Caps are rounded DOWN to 4dp, ISS-221, so a cap times
-     its efficiency never exceeds the demand it was built from.) When the recorded delivery covers every parcel's cap, each
+  2. AMPLE vs SHORT. (Caps are rounded to the NEAREST 4dp, so a cap times its
+     efficiency, at most 1, lands within half a unit of the demand it was
+     built from.) When the recorded delivery covers every parcel's cap, each
      parcel simply gets its cap and the leftover above ``sum(caps)`` is left for
-     the caller to route (the recovery-horizon surplus of Plan 02/03) — so an
+     the caller to route (the recovery-horizon surplus) — so an
      ample result sums to ``sum(caps)``, NOT to ``delivery_total``. When the
      delivery is SHORT, the WHOLE delivery is distributed by demand weight,
-     water-filled against the caps (ISS-222): a parcel whose demand share would
+     water-filled against the caps: a parcel whose demand share would
      pass its cap is held at the cap and the rest is re-divided by demand among
      the others. Every parcel lands at or below its cap and the result sums
      EXACTLY to ``delivery_total``.
@@ -47,7 +48,7 @@ last-parcel-residual convention would), so the two layers agree to the cent and
 no share is pushed above its cap. Keys may be ints (parcel ids) or Parcel instances;
 sorting by ``str(key)`` keeps the function agnostic to key type.
 
-``apportion_shared_supply`` (Phase 56) is the sibling splitter: where
+``apportion_shared_supply`` is the sibling splitter: where
 ``allocate_by_demand`` splits a delivery TOTAL into volumes, this splits a single
 SHARED source (one well or point-of-diversion serving several parcels) into
 normalized weights that sum to exactly 1.0000. It follows a measurement-first
@@ -101,7 +102,7 @@ def _place_residual(shares, target):
 def _place_residual_under_caps(shares, caps, target):
     """Force ``shares`` to sum to EXACTLY ``target`` without crossing any cap.
 
-    The capped sibling of ``_place_residual`` (ISS-221). A positive residual
+    The capped sibling of ``_place_residual``. A positive residual
     goes to the key with the most headroom below its cap (ties by sorted
     ``str(key)``, last one wins, the same end ``_place_residual`` uses), and
     spills to the next-most-headroom key if one key cannot take all of it. A
@@ -189,14 +190,13 @@ def _demand_caps(
     # sum (e.g. 53.33333...) would make a delivery of exactly sum(caps) fall a
     # rounding-hair short and wrongly take the short branch.
     #
-    # Rounded to the nearest, NOT down (149-01, measured on the demonstration):
-    # a cap within half a unit of demand / eff, multiplied back by eff (<= 1),
-    # lands within half a unit of demand, so the field's consumed figure at four
-    # decimals equals its demand exactly. Rounding down instead gave 0.0001 AF
-    # short on 87 field-months, trading ISS-221's 0.0001 AF of over-delivery for
-    # 0.0001 AF of groundwater. ISS-221 itself is the engine comparing this
-    # four-decimal figure with an unrounded one; accounting/steps.py
-    # (subtract_surface_water) settles it there.
+    # Rounded to the nearest, NOT down: a cap within half a unit of
+    # demand / eff, multiplied back by eff (<= 1), lands within half a unit of
+    # demand, so the field's consumed figure at four decimals equals its demand
+    # exactly. Rounding down instead came out 0.0001 AF short on some field-months
+    # of the demonstration data, trading 0.0001 AF of over-delivery for 0.0001 AF
+    # of groundwater. The engine compares this four-decimal figure with an
+    # unrounded one; accounting/steps.py (subtract_surface_water) handles that.
     caps = {key: _q(d / _eff_for(key)) for key, d in demand.items() if d > 0}
     return caps
 
@@ -207,8 +207,7 @@ def _water_fill(
     """Split ``total`` by demand weight, holding any parcel that passes its cap at the cap."""
     # SHORT: distribute the whole delivery by DEMAND weight (demand_p / total_demand,
     # NOT the cap, and NOT efficiency-weighted even when efficiency is a mapping;
-    # the ruling is explicit that a mixed-method headgate's short split stays a
-    # pure demand split), WATER-FILLING against the caps (ISS-222). With one
+    # a mixed-method headgate's short split stays a pure demand split), WATER-FILLING against the caps. With one
     # shared efficiency a demand share can never pass its cap when the total is
     # short, but with mixed efficiencies it can: two fields of equal demand at
     # efficiencies 0.95 and 0.60 have very different caps, and an even demand
@@ -246,7 +245,7 @@ def allocate_by_demand(delivery_total, demand_by_parcel, efficiency):
         efficiency: irrigation efficiency, EITHER one number, ``0 < eff <= 1``
             (e.g. ``0.75``, applied to every parcel alike, today's behavior),
             OR a mapping ``{parcel_key: eff}`` keyed like ``demand_by_parcel``
-            (148-02: a mixed-method headgate, where a center pivot and a furrow
+            (a mixed-method headgate, where a center pivot and a furrow
             field sharing one point of diversion get their OWN caps). Every
             value in a mapping is validated the same way a lone number is.
 
@@ -277,8 +276,8 @@ def allocate_by_demand(delivery_total, demand_by_parcel, efficiency):
 
     total_demand = sum(demand.values(), Decimal("0"))
 
-    # No demand signal at all: the caller decides the fallback (Plan 02 uses the
-    # static PointOfDiversionParcel.fraction split). Never divide by zero.
+    # No demand signal at all: the caller decides the fallback (the diversion
+    # code uses the static PointOfDiversionParcel.fraction split). Never divide by zero.
     if total_demand <= 0:
         return {}
 

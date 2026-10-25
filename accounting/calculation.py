@@ -4,10 +4,10 @@
 evaluate_chain walks the active CalculationPlan's enabled steps in order,
 threading a positive consumptive-use magnitude (acre-feet) and a shared ctx dict
 through each primitive, and returns the final residual magnitude plus a per-step
-breakdown suitable for persisting (38-04) or display.
+breakdown suitable for persisting or display.
 
 plan_config_hash distills that same plan into a short, stable methodology
-fingerprint stamped onto every CalculationRun (42-01), so a filed number can
+fingerprint stamped onto every CalculationRun, so a filed number can
 name the recipe that made it even after the live plan is later edited. It is a
 methodology fingerprint, NOT a security hash.
 """

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""A finalized water year is closed to change, on every path (147-02).
+"""A finalized water year is closed to change, on every path.
 
 The period page promises that finalizing "locks this water year's allocations
 and ledger against further edits". Before this module that was true only for

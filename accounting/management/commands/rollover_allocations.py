@@ -11,7 +11,7 @@ Idempotent like run_calculations: the rows this command owns for the target year
 (delete-then-insert inside one transaction) are cleared and rewritten, so running
 twice yields identical totals and never double-banks.
 
-ISS-020 guard: this command operates on a CLOSED prior water year and only READS
+Finalized-year guard: this command operates on a CLOSED prior water year and only READS
 its allocations + usage, then WRITES new carry-over rows for the NEXT year. It
 never mutates a finalized period's ledger rows, so a re-run cannot rewrite filed
 numbers. If the source year is not yet finalized the carry-over is provisional and
@@ -98,7 +98,7 @@ def _budget_results(
 def _decide_expiring_surplus(results: list[_Result]) -> list[_Decided]:
     """Append, to each result, whether a same-water-year district lets its surplus expire."""
     # Resolve the agency-wide default recovery horizon ONCE; a district may
-    # override it on its Zone (55-02). A SURPLUS in a "same_water_year"
+    # override it on its Zone. A SURPLUS in a "same_water_year"
     # (expire) district is use-it-or-lose-it and is NOT carried; a DEBT is
     # ALWAYS carried, because an overdraw is a real obligation that does not
     # vanish on a policy that only governs surplus recovery.
@@ -123,9 +123,9 @@ def _replace_carryover_rows(decided: list[_Decided], source_wy: int, target_wy: 
         # target-year rows are exactly this command's output — clearing
         # them makes a re-run identical (idempotent, no duplicates). The
         # contract is unchanged; expire districts just insert FEWER rows.
-        # ISS-055: scope the delete to this command's OWN origin so a
+        # Scope the delete to this command's OWN origin so a
         # basin_recharge_pool deposit that lands in the target year (the
-        # Phase 62 re-seed) is never collateral damage of the rollover.
+        # demonstration re-seed) is never collateral damage of the rollover.
         AllocationCarryover.objects.filter(
             water_year=target_wy, origin="allocation_carryover"
         ).delete()

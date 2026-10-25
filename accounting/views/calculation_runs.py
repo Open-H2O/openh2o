@@ -31,7 +31,7 @@ def _fmt(value, places=4):
 def _mm_to_in(mm):
     """Convert a millimeter breakdown value to inches (÷25.4), or None if missing.
 
-    Kept out of a template filter on purpose (ISS-142 / DESIGN.md rule 10): a new
+    Kept out of a template filter on purpose (DESIGN.md rule 10): a new
     `floatformat` site would renumber the accounting figure ledger, and this
     conversion feeds a derivation sentence in `_step_detail_summary`, not a
     figure of its own. The ledger already covers the mm and AF figures this
@@ -48,11 +48,11 @@ def _mm_to_in(mm):
 def _delivery_split_kind(parcel, period):
     """How the month's canal delivery to this field was arrived at, off its ledger rows.
 
-    148-03: the calculation page's canal line says, in the ruled words, when
+    The calculation page's canal line says, in the ledger's own words, when
     the field's delivered figure was divided up from a headgate's canal total
     rather than read from the field's own gate record. The run stores no such
-    flag, so this reads the month's ``surface_diversion`` rows (149-01: the
-    ones the canal split wrote, ``divided_from_headgate``, no longer told
+    flag, so this reads the month's ``surface_diversion`` rows (the
+    ones the canal split wrote, ``divided_from_headgate``, not told
     apart by the wording of their description). ``"fixed"`` when any of them
     carries the fixed-share tail ``delivery_share_words`` writes (in the
     middle of the sentence, followed by the percentage and the "because"
@@ -91,7 +91,7 @@ def _step_detail_summary(step, *, delivery_split=None):
     step_type = step.get("step_type")
 
     if step_type == "et_gross":
-        # R-047 / ISS-142: the inches figure closes the arithmetic a reader can
+        # The inches figure closes the arithmetic a reader can
         # check by hand (4.8058 in × 109.80 ac ÷ 12 in/ft = 43.9731 AF, the Out
         # cell). Four places on et_in (this page's four-place convention); et_mm
         # and area keep their existing two places (unchanged figures).
@@ -116,10 +116,10 @@ def _step_detail_summary(step, *, delivery_split=None):
             f"counted as effective; {af_clause}"
         )
     if step_type == "subtract_surface_water":
-        # 148-02: with the field's efficiency applied, the subtracted figure is
-        # the delivery times the efficiency, not the delivery; say both. 148-03: a
+        # With the field's efficiency applied, the subtracted figure is
+        # the delivery times the efficiency, not the delivery; say both. A
         # delivery that was a share of a headgate total says how the share
-        # was made, in the ruled words (`delivery_split`, read off the month's
+        # was made, in the ledger's own words (`delivery_split`, read off the month's
         # ledger rows by `_delivery_split_kind`; the run stores no split flag).
         if detail.get("delivered_af") is not None and detail.get("efficiency"):
             whose = (
@@ -127,8 +127,7 @@ def _step_detail_summary(step, *, delivery_split=None):
                 if detail.get("efficiency_source") == "method"
                 else "the Delivery Settings default"
             )
-            # 150.1-02 (2026-10-11): written as the formula with its real
-            # signs; "the crop could use" is gone.
+            # Written as the formula with its real signs.
             if delivery_split == "use":
                 split = f", {DELIVERY_SHARE_BY_USE},"
             elif delivery_split == "fixed":
@@ -147,7 +146,7 @@ def _step_detail_summary(step, *, delivery_split=None):
         surplus = Decimal(str(detail.get("surplus_af", "0") or "0"))
         base = f"floor {_fmt(detail.get('floor'), 2)}"
         if surplus > 0:
-            # A run from before 148-02 with banking on did bank it; a new run
+            # A run from an older engine with banking on did bank it; a new run
             # carries the figure as information only.
             if detail.get("bank"):
                 return f"{base}; {_fmt(surplus)} AF surplus banked"
@@ -157,10 +156,10 @@ def _step_detail_summary(step, *, delivery_split=None):
 
 
 def _over_delivery_left_af(run):
-    """148-04: what the run's own two stamped figures leave in the basin.
+    """What the run's own two stamped figures leave in the basin.
 
     ``over_delivery_af`` and ``over_delivery_credited_af`` are both read off
-    THIS run, never the live setting (ISS-177, the same rule that protects
+    THIS run, never the live setting (the same rule that protects
     ``gw_extracted_af``), so a later change to Delivery Settings moves
     nothing this page says about a run already computed. None whenever
     nothing was actually credited this run: not_credited, named_line, or a
@@ -174,7 +173,7 @@ def _over_delivery_left_af(run):
 
 
 def _over_delivery_share_pct(run):
-    """148-04: the stamped leave-behind share, as a percent number for the
+    """The stamped leave-behind share, as a percent number for the
     template's own ``floatformat:0`` (never a pre-formatted string, so the
     figure ledger can trace the site the same way it traces every other
     number on this page)."""
@@ -239,11 +238,10 @@ def _rainfall_acre_feet(rainfall_mm: object, area_acres: object) -> Decimal | No
 def _receipt_context(parcel, run, period):
     """The equation panel's figures for one run with a well and no meter reading.
 
-    150.1-02 (2026-10-11): the page is rebuilt as three equations in the
+    The page shows three equations in the
     engineer's terms (crop ET, effective
     precipitation, ETAW, ETAW met by surface water, ETAW met by groundwater,
-    groundwater irrigation efficiency (retired by 150.2-02 for the field's
-    irrigation efficiency), groundwater extraction (estimated),
+    the field's irrigation efficiency, groundwater extraction (estimated),
     surface water in excess of ETAW):
 
         Crop ET - Effective precipitation = ETAW
@@ -254,7 +252,7 @@ def _receipt_context(parcel, run, period):
     Every figure is the run's own stamped column or is worked from them; the
     two percentages are read back off the run (the irrigation efficiency its
     canal water was multiplied by; the one ETAW met by groundwater was
-    divided by, 150.2-02's stamp), never off the live setting, so a change to
+    divided by), never off the live setting, so a change to
     Delivery Settings moves nothing a month already run says about itself.
 
     ``surface_water_af`` is the delivery times the irrigation efficiency, NOT
@@ -268,7 +266,7 @@ def _receipt_context(parcel, run, period):
     floor = facts["floor"]
     irrigation_method_name = _irrigation_method_name(parcel, irrigation_efficiency_source)
 
-    # 150.2-02: the field's irrigation efficiency the run stamped (a run from
+    # The field's irrigation efficiency the run stamped (a run from
     # before the stamp reads it back off final_af / gw_extracted_af).
     from accounting.services import (
         groundwater_efficiency_method_name,
@@ -321,7 +319,7 @@ def _receipt_context(parcel, run, period):
         # "use" / "fixed" / None, off the month's ledger rows (the run stores
         # no split flag): whether the delivery was a share of a headgate total.
         "delivery_split": _delivery_split_kind(parcel, period),
-        # 148-04: what happened to surface water in excess of ETAW, by the
+        # What happened to surface water in excess of ETAW, by the
         # run's own stamp. None whenever nothing was credited.
         "over_delivery_left_af": _over_delivery_left_af(run),
         "over_delivery_share_pct": _over_delivery_share_pct(run),
@@ -338,7 +336,7 @@ def calculation_run_detail(request, parcel_id, period):
     pk through the list and survives re-runs. Most-recent run wins if more than one
     ever exists; 404 when none.
 
-    148-03: only a month with a well and no meter reading
+    Only a month with a well and no meter reading
     (``residual_disposition == "groundwater"``) has a receipt. A metered or
     no-well month is a short page (one sentence and a link back to the field),
     not a 404: the field page no longer links those months, but a direct URL
@@ -361,7 +359,7 @@ def calculation_run_detail(request, parcel_id, period):
             run.period_start.strftime("%B %Y") if run.period_start else period
         ),
         # The run's config_hash (a 12-character fingerprint) is NOT printed:
-        # no page compares two runs by it (143-09).
+        # no page compares two runs by it.
         "methodology_plan_name": run.methodology_plan_name,
         "receipt": False,
     }

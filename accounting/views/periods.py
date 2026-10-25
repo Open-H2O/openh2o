@@ -71,7 +71,7 @@ _CALCULATION_BADGE = {
 def _calculation_card_context(period):
     """What the period page's Calculation card shows: the latest run for this period.
 
-    149-01. ``error_detail`` is deliberately never put here: it is for an
+    ``error_detail`` is deliberately never put here: it is for an
     administrator on Site Health, not for the period page's readers.
     """
     latest = (
@@ -109,7 +109,7 @@ def _calculation_card_context(period):
 
 def _period_detail_context(period, finalize_form=None):
     """The period page's context, shared by ``period_detail`` and by
-    ``period_finalize`` re-rendering the same page on a rejected note (147-02).
+    ``period_finalize`` re-rendering the same page on a rejected note.
 
     ``finalize_form`` lets ``period_finalize`` hand back the bound form
     carrying its validation error; a fresh unbound one is built otherwise.
@@ -143,8 +143,7 @@ def _period_detail_context(period, finalize_form=None):
 def period_detail(request, pk):
     """Detail view for a single reporting period.
 
-    143-06 (R-034): the old "Summary" tile row (Allocations count, Ledger
-    entries count) goes. The period leads with what it IS (its dates, its
+    The period leads with what it IS (its dates, its
     finalized status) and the one figure it exists for — its allocations by
     water type, in the same ``.budget-panel`` shape and the same subtotal
     grouping the allocations list uses for one period, so the two screens
@@ -161,7 +160,7 @@ def period_detail(request, pk):
 @login_required
 @require_POST
 def period_calculate(request, pk):
-    """Start the calculation for an open reporting period (149-01).
+    """Start the calculation for an open reporting period.
 
     Operators and administrators may press it; a viewer's POST never gets here
     (``core.access.ReadOnlyMiddleware`` refuses every viewer write, whichever
@@ -202,9 +201,8 @@ def period_calculation_status(request, pk):
 def period_create(request):
     """Create a new reporting period.
 
-    146-02 Task 3 (ISS-181): a record saved before this period existed can
-    now attach to it the moment it is saved, instead of waiting on an edit
-    that had no control to trigger it. The counts are shown once, in the
+    A record saved before this period existed can attach to it the moment
+    the period is saved, with no separate edit step. The counts are shown once, in the
     success message on the period page this redirects to.
     """
     if request.method == "POST":
@@ -230,11 +228,11 @@ def period_create(request):
 @admin_required
 @require_POST
 def period_finalize(request, pk):
-    """Toggle finalized status on a reporting period, administrators only (147-02).
+    """Toggle finalized status on a reporting period, administrators only.
 
-    Reopening keeps 147-01's history intact (the earlier finalizer stays on
+    Reopening keeps the history intact (the earlier finalizer stays on
     the change history; only the live ``finalized_by``/``finalized_at`` are
-    nulled) and now requires a reason, 10-500 characters, via
+    nulled) and requires a reason, 10-500 characters, via
     ``PeriodFinalizeForm``; finalizing takes the same note, optional. Either
     way the note is attached with ``change_note`` so it lands on the period's
     change-history event. An invalid note re-renders the period page with the

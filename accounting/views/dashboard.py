@@ -83,12 +83,12 @@ def _account_rollup(
     grand_supply_surface = Decimal("0")
     grand_supply_groundwater = Decimal("0")
     grand_supply_precip = Decimal("0")
-    # 143-04 (2026-09-11): the parts of the panel's Consumptive use and Balance
+    # The parts of the panel's Consumptive use and Balance
     # figures, as COUNTS over the same population as the totals (active
     # accounts, this period). Coverage is how many of those accounts the
     # estimate reaches and how many calculation runs the sum came from;
     # surplus/deficit is judged ONLY among accounts with an estimate, on the
-    # ISS-099 rule the table below already applies: an account with no runs
+    # rule the table below already applies: an account with no runs
     # has no balance and is dashed, so it is neither in surplus nor in deficit.
     accounts_with_estimates = 0
     grand_calculation_runs = 0
@@ -101,7 +101,7 @@ def _account_rollup(
     # the Zone Details block sums every parcel in each zone regardless of
     # account status. The two describe deliberately different populations, so
     # the dashboard labels this block "Active Water Accounts" to keep the two
-    # columns from being read as one (ISS-032 / F-math-03 stream-2).
+    # columns from being read as one.
     active_accounts = WaterAccount.objects.filter(status="active").order_by("account_number")
     for account in active_accounts:
         row = _account_summary_row(
@@ -116,7 +116,7 @@ def _account_rollup(
         grand_calculation_runs += row["calculation_runs"]
         if row["calculation_runs"] > 0:
             accounts_with_estimates += 1
-            # ISS-237: judged on the two decimals the page prints.
+            # Judged on the two decimals the page prints.
             state = balance_state(row["net_vs_supply"])
             if state == "surplus":
                 accounts_in_surplus += 1
@@ -144,18 +144,17 @@ def _zone_summary_rows(selected_period: ReportingPeriod, has_allocations: bool) 
     zone_summaries = []
     for zone in Zone.objects.order_by("name"):
         zcu = zone_consumptive_balance(zone, reporting_period=selected_period)
-        # 136-01: groundwater plans only, and a zone that carries none (the
-        # five surface service areas hold SW plans only) has no groundwater
+        # Groundwater plans only, and a zone that carries none (a surface
+        # service area holds SW plans only) has no groundwater
         # budget. Its three budget cells are absent rather than zero, so the
         # template renders a dash; a surface allocation minus pumping is not
         # a number anyone manages.
         #
-        # 137-02: the three budget cells come from `zone_groundwater_budget`,
-        # which the district page's Allocation vs. use table now calls too.
-        # They used to be computed here and again over there, and the two
-        # answers differed — the district page added no carry-over and spent
-        # the groundwater allocation against canal deliveries as well as
-        # pumping (ISS-154). One quantity, one computation.
+        # The three budget cells come from `zone_groundwater_budget`,
+        # which the district page's Allocation vs. use table calls too, so a
+        # budget computed twice cannot give two answers (carry-over added or
+        # not, canal deliveries spent against it or not). One quantity, one
+        # computation.
         budget = zone_groundwater_budget(zone, selected_period)
         zone_allocation = budget["allocation"] if has_allocations else None
         if zone_allocation is not None:
@@ -166,7 +165,7 @@ def _zone_summary_rows(selected_period: ReportingPeriod, has_allocations: bool) 
             zone_remaining = None
         zone_summaries.append({
             "zone": zone,
-            # ISS-099, same rule as the account rows above. Counted per zone
+            # Same rule as the account rows above. Counted per zone
             # rather than inherited from the deployment-wide flag: a zone
             # whose parcels were all added after the last engine run has no
             # measurement of its own even where the rest of the basin does.
@@ -181,7 +180,7 @@ def _zone_summary_rows(selected_period: ReportingPeriod, has_allocations: bool) 
             "allocation": zone_allocation,
             "carryover": zone_carryover_af,
             "remaining": zone_remaining,
-            # 142-01 (R-010): the generic, truthful grouping key is not the
+            # The generic, truthful grouping key is not the
             # zone's type but whether a groundwater plan exists for the
             # period -- exactly what dashes the three budget cells above.
             "has_groundwater_budget": zone_allocation is not None,
@@ -196,11 +195,10 @@ def _zone_summary_rows(selected_period: ReportingPeriod, has_allocations: bool) 
 
 def _engine_run_status(selected_period: ReportingPeriod | None) -> tuple[bool, bool]:
     """Whether the engine has never run for the period, and whether an active plan exists."""
-    # ISS-099 — "the engine has never run here", told apart from "demand really
+    # "The engine has never run here", told apart from "demand really
     # was zero". Both render 0.00, and the second is a finding while the first is
     # a missing step, so a dashboard that cannot tell them apart reports a basin
-    # in perfect balance when nobody has measured it. That is what staging showed
-    # for two days after its 2026-07-28 rebuild.
+    # in perfect balance when nobody has measured it.
     #
     # Asked over EVERY parcel's runs, deliberately NOT by summing the per-row
     # `calculation_runs` above: those rows cover only parcels attached to an
@@ -242,7 +240,7 @@ def _station_counts(attention_now: datetime) -> tuple[int, int]:
     # source's OWN expected cadence (reuses the Monitoring screen's classifier so
     # the two never disagree). "dead" = down; "stale" (amber) is not counted here.
     # Guarded on the module rather than on the row count: `datasync` is
-    # schema-resident from Phase 88, so with it switched off the table is still
+    # schema-resident, so with it switched off the table is still
     # there and still answers — with a zero that reads as "every station is
     # healthy" instead of "this deployment has no stations". `stations_down`
     # stays a local zero so `attention_total` still adds up, but the CONTEXT KEY
@@ -267,7 +265,7 @@ def _station_counts(attention_now: datetime) -> tuple[int, int]:
 
 def _latest_data_dates(selected_period: ReportingPeriod | None) -> tuple[date | None, datetime | None]:
     """When water was last recorded and last estimated for the period, as (ledger date, run time)."""
-    # 143-04 (2026-09-11): the period card's "Latest data" band -- when water
+    # The period card's "Latest data" band -- when water
     # was last recorded and when it was last estimated, for THIS period. Both
     # scoped the way the figures above are: the ledger by reporting period,
     # the runs by `runs_in_period`, the one membership rule. None reads as
@@ -308,12 +306,12 @@ def _period_budget_sections(
             reporting_period=selected_period,
         ).exists()
 
-        # 136-01 (ISS-151, option A, 2026-09-05): the budget columns on
+        # The budget columns on
         # both tables are the GROUNDWATER budget, so only groundwater plans
         # count towards an allocation and only groundwater use is subtracted
         # from it. Like with like. Resolved once, by code, because the water
         # types are seeded reference data whose ids differ between deployments
-        # (STATE.md records exactly this for another table). A deployment with
+        # (for example, the ids of another seeded table differ too). A deployment with
         # no groundwater type has no groundwater budget to show: allocations
         # read as absent rather than guessed.
         groundwater_type = WaterType.objects.filter(code__iexact="GW").first()
@@ -329,13 +327,13 @@ def _unmet_demand(
     selected_period: ReportingPeriod | None, engine_has_never_run: bool
 ) -> tuple[list, Decimal]:
     """The fields that recorded water use no reported supply explains, and their total."""
-    # ISS-157, surface 2: WHICH fields recorded water use that no reported supply
-    # explains. The figure has been stored on every calculation run since the
-    # engine was written and the field's own page shows it (137-01); this is the
+    # WHICH fields recorded water use that no reported supply
+    # explains. The figure is stored on every calculation run and the
+    # field's own page shows it; this is the
     # district-wide list, which is the half a water master acts on.
     #
     # Stood down when the engine has never run here, on the same rule as the
-    # attention strip (ISS-099): the shortfall is an engine OUTPUT, so with no
+    # attention strip: the shortfall is an engine OUTPUT, so with no
     # run there is nothing to list — and "no field recorded water use without a
     # reported supply" would then be a claim the database never made.
     unmet_demand_rows = []
@@ -382,7 +380,7 @@ def dashboard(request):
     last_ledger_date, last_run_at = _latest_data_dates(selected_period)
 
     # Active accounts whose groundwater use has passed their groundwater
-    # allocation this period (136-01). Only meaningful once the period has
+    # allocation this period. Only meaningful once the period has
     # groundwater allocations; remaining is None otherwise, so those accounts
     # never count.
     accounts_over_budget = sum(
