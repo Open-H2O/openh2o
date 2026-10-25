@@ -16,10 +16,13 @@ accounting/views/accounts.py, reused as a shape rather than imported), and
 pod_parcel_edit_share is the inline fraction editor on a POD's linked use
 areas (the wells:edit_field GET/PATCH pattern, wells/views.py).
 """
+from __future__ import annotations
+
 import json
 import logging
 from datetime import date
 from decimal import Decimal
+from typing import Any
 from urllib.parse import parse_qs
 
 from django.contrib.auth.decorators import login_required
@@ -244,6 +247,50 @@ def _pod_detail_context(pod):
     # ledger land on the same idea of "current" (surface `requires`
     # accounting, core/modules.py, so this import needs no module gate).
     record_groups = _group_diversion_records(diversion_records)
+    current_period, current_totals = _current_period_and_totals(record_groups)
+
+    pod_parcels = _pod_parcel_links(pod)
+    basin_links = _pod_basin_links(pod)
+
+    # One-hop water journey (Phase 67-03). rediverted_from is the upstream source
+    # this POD re-diverts; rediversions is the reverse — downstream PODs that draw
+    # on this POD's return flow. One hop only — no route-resolver graph this phase.
+    rediverted_from = pod.rediverted_from
+    rediversions = pod.rediversions.order_by("name")
+
+    # Water right info (may be None). all_water_rights feeds the "Water right"
+    # panel's select (146-02 D2) -- ordered by right_id, same as the water
+    # rights list, so a district with a handful of rights reads them in the
+    # order it already knows them.
+    water_right = pod.water_right
+    all_water_rights = WaterRight.objects.order_by("right_id")
+
+    # Inline form for adding diversion records
+    form = DiversionRecordForm(pod=pod)
+
+    return {
+        "pod": pod,
+        "diversion_records": diversion_records,
+        "record_groups": record_groups,
+        "current_period": current_period,
+        "current_totals": current_totals,
+        "pod_parcels": pod_parcels,
+        "basin_links": basin_links,
+        "rediverted_from": rediverted_from,
+        "rediversions": rediversions,
+        "water_right": water_right,
+        "all_water_rights": all_water_rights,
+        "form": form,
+        "geojson": _pod_geojson(pod),
+        "canal_water": canal_water_by_month(pod),
+        **_device_panel_context(pod),
+    }
+
+
+def _current_period_and_totals(
+    record_groups: list[dict[str, Any]],
+) -> tuple[ReportingPeriod | None, dict[str, Any] | None]:
+    """The current reporting period and its group in ``record_groups`` (each None when absent)."""
     current_period_pk = compute_current_period_id()
     current_period = (
         ReportingPeriod.objects.filter(pk=current_period_pk).first()
@@ -257,17 +304,24 @@ def _pod_detail_context(pod):
         ),
         None,
     )
+    return current_period, current_totals
 
+
+def _pod_parcel_links(pod: PointOfDiversion) -> list[PointOfDiversionParcel]:
+    """The POD's linked use areas, by parcel number."""
     # Linked use areas (parcel connections). 146-02 D3: the share is now shown
     # and edited as the raw fraction (four decimals, "share 1.0000"), not a
     # rounded whole percent -- see _pod_parcel_share_value.html.
-    pod_parcels = list(
+    return list(
         PointOfDiversionParcel.objects
         .filter(point_of_diversion=pod)
         .select_related("parcel")
         .order_by("parcel__parcel_number")
     )
 
+
+def _pod_basin_links(pod: PointOfDiversion) -> Any:
+    """The recharge areas this POD fills, by name; an empty list when the recharge module is off."""
     # Recharge areas this diversion fills (Phase 62). For a dual-purpose Merced
     # River diversion this lists the Flood-MAR areas it floods, right next to the
     # cropland it irrigates above.
@@ -287,23 +341,11 @@ def _pod_detail_context(pod):
             .select_related("recharge_site")
             .order_by("recharge_site__name")
         )
+    return basin_links
 
-    # One-hop water journey (Phase 67-03). rediverted_from is the upstream source
-    # this POD re-diverts; rediversions is the reverse — downstream PODs that draw
-    # on this POD's return flow. One hop only — no route-resolver graph this phase.
-    rediverted_from = pod.rediverted_from
-    rediversions = pod.rediversions.order_by("name")
 
-    # Water right info (may be None). all_water_rights feeds the "Water right"
-    # panel's select (146-02 D2) -- ordered by right_id, same as the water
-    # rights list, so a district with a handful of rights reads them in the
-    # order it already knows them.
-    water_right = pod.water_right
-    all_water_rights = WaterRight.objects.order_by("right_id")
-
-    # Inline form for adding diversion records
-    form = DiversionRecordForm(pod=pod)
-
+def _pod_geojson(pod: PointOfDiversion) -> dict[str, Any] | None:
+    """The POD as a one-feature collection for the detail map, or None without a location."""
     # GeoJSON for the persistent detail map. A FeatureCollection (not a bare
     # Feature) because OH2O.detailPaneMap frames the map off geojson.features.
     # Python object (not a json.dumps string): the template escapes it via
@@ -318,24 +360,7 @@ def _pod_detail_context(pod):
                 fields=["name", "stream_name"],
             )
         )
-
-    return {
-        "pod": pod,
-        "diversion_records": diversion_records,
-        "record_groups": record_groups,
-        "current_period": current_period,
-        "current_totals": current_totals,
-        "pod_parcels": pod_parcels,
-        "basin_links": basin_links,
-        "rediverted_from": rediverted_from,
-        "rediversions": rediversions,
-        "water_right": water_right,
-        "all_water_rights": all_water_rights,
-        "form": form,
-        "geojson": geojson,
-        "canal_water": canal_water_by_month(pod),
-        **_device_panel_context(pod),
-    }
+    return geojson
 
 
 @login_required
@@ -1271,19 +1296,7 @@ def _water_right_detail_context(water_right):
         .order_by("-month", "point_of_diversion__name")
     )
     record_groups = _group_diversion_records(all_records)
-    current_period_pk = compute_current_period_id()
-    current_period = (
-        ReportingPeriod.objects.filter(pk=current_period_pk).first()
-        if current_period_pk is not None
-        else None
-    )
-    current_totals = next(
-        (
-            g for g in record_groups
-            if g["period_key"] == (current_period.pk if current_period else None)
-        ),
-        None,
-    )
+    current_period, current_totals = _current_period_and_totals(record_groups)
 
     # Remaining = face value less the current period's recorded volume,
     # across every point of diversion under this right -- never re-derived
@@ -1307,12 +1320,35 @@ def _water_right_detail_context(water_right):
         current_totals and current_totals["against_face_value"]["months_estimated"]
     )
 
+    return {
+        "water_right": water_right,
+        "pods": pods,
+        "record_groups": record_groups,
+        "record_count": len(all_records),
+        "current_period": current_period,
+        "current_totals": current_totals,
+        "remaining": remaining,
+        "face_value_years": face_value_years,
+        "current_holds_estimate": current_holds_estimate,
+        "pod_breakdown": _pod_breakdown(current_totals),
+        "pods_geojson": _right_pods_geojson(pods),
+        # 146-02 D3: this right's places of use. Gated on `parcels` for the
+        # same reason `basin_links` above is gated on `recharge` -- surface
+        # requires parcels (core/modules.py), so this is always True in a
+        # valid deployment; the guard is defensive documentation, not a
+        # reachable branch.
+        "places_of_use": _water_right_places_of_use(water_right) if is_enabled("parcels") else [],
+    }
+
+
+def _pod_breakdown(current_totals: dict[str, Any] | None) -> list[dict[str, Any]]:
+    """The current period's recorded volume per point of diversion, by POD name."""
     # "By point of diversion": the current period's rows broken down by the
     # POD that recorded them, so the panel's Recorded segment can show where
     # the sum came from without a second query against the database.
     pod_breakdown = []
     if current_totals:
-        totals_by_pod = {}
+        totals_by_pod: dict[str, Decimal] = {}
         for record in current_totals["rows"]:
             name = record.point_of_diversion.name
             totals_by_pod[name] = totals_by_pod.get(name, Decimal("0")) + abs(
@@ -1322,7 +1358,11 @@ def _water_right_detail_context(water_right):
             {"name": name, "total": total}
             for name, total in sorted(totals_by_pod.items())
         ]
+    return pod_breakdown
 
+
+def _right_pods_geojson(pods: Any) -> dict[str, Any] | None:
+    """The right's located PODs as a feature collection for the detail map, or None when none has a location."""
     # GeoJSON for the PODs this right serves — a FeatureCollection (the right maps
     # multiple diversion points, so OH2O.detailPaneMap frames the map across all of
     # them via geojson.features). Python object (not a dumped string): the template
@@ -1343,26 +1383,7 @@ def _water_right_detail_context(water_right):
         # injects it below — this map's popup needs it to link out.
         for f in pods_geojson["features"]:
             f["properties"]["pk"] = f.get("id")
-
-    return {
-        "water_right": water_right,
-        "pods": pods,
-        "record_groups": record_groups,
-        "record_count": len(all_records),
-        "current_period": current_period,
-        "current_totals": current_totals,
-        "remaining": remaining,
-        "face_value_years": face_value_years,
-        "current_holds_estimate": current_holds_estimate,
-        "pod_breakdown": pod_breakdown,
-        "pods_geojson": pods_geojson,
-        # 146-02 D3: this right's places of use. Gated on `parcels` for the
-        # same reason `basin_links` above is gated on `recharge` -- surface
-        # requires parcels (core/modules.py), so this is always True in a
-        # valid deployment; the guard is defensive documentation, not a
-        # reachable branch.
-        "places_of_use": _water_right_places_of_use(water_right) if is_enabled("parcels") else [],
-    }
+    return pods_geojson
 
 
 def _water_right_places_of_use(water_right):

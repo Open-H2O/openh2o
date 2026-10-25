@@ -6,7 +6,10 @@ flagging duplicates), then promotes this run's pending rows into the Parcel
 table. Run it to load a county/agency parcel layer; use --dry-run to preview
 without writing Parcel rows.
 """
+from __future__ import annotations
+
 import os
+from typing import Any
 
 from django.contrib.gis.gdal import DataSource
 from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Polygon
@@ -58,6 +61,41 @@ class Command(BaseCommand):
         if not os.path.exists(file_path):
             raise CommandError(f"File not found: {file_path}")
 
+        self._detect_format(file_path, fmt)
+
+        if dry_run:
+            self.stdout.write(self.style.WARNING("[DRY RUN] No records will be promoted."))
+
+        layer = self._open_layer(file_path)
+        staged_ids, staged_pending, staged_duplicate, staged_error = self._stage_features(
+            layer, parcel_number_field
+        )
+
+        # Promote pending staging records to Parcel table
+        imported_count = 0
+        if not dry_run:
+            promoted, failed = self._promote_staged(staged_ids, owner_field)
+            imported_count += promoted
+            staged_error += failed
+        else:
+            imported_count = staged_pending  # Would-be count
+
+        # ISS-030: clear this run's staging scratch so the table can't accumulate
+        # across imports or bleed a leftover row into a later run. Duplicate/error
+        # diagnostics were already written to stdout above. Done for dry-run too —
+        # a dry-run that left `pending` rows behind would be promoted by the next
+        # real import.
+        if staged_ids:
+            ParcelStaging.objects.filter(id__in=staged_ids).delete()
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Imported {imported_count} parcels, {staged_duplicate} duplicates skipped, {staged_error} errors"
+            )
+        )
+
+    def _detect_format(self, file_path: str, fmt: str | None) -> str:
+        """Return the explicit format, or the one the file extension implies."""
         # Auto-detect format from extension
         if fmt is None:
             ext = os.path.splitext(file_path)[1].lower()
@@ -69,24 +107,28 @@ class Command(BaseCommand):
                 raise CommandError(
                     f"Cannot detect format from extension '{ext}'. Use --format."
                 )
+        return fmt
 
-        if dry_run:
-            self.stdout.write(self.style.WARNING("[DRY RUN] No records will be promoted."))
+    def _open_layer(self, file_path: str) -> Any:
+        """Open the file with GDAL and return its first layer."""
+        try:
+            ds = DataSource(file_path)
+        except Exception as exc:
+            raise CommandError(f"Failed to open file with GDAL: {exc}")
 
+        return ds[0]
+
+    def _stage_features(
+        self, layer: Any, parcel_number_field: str
+    ) -> tuple[list[int], int, int, int]:
+        """Stage every feature; return (staged ids, pending, duplicate, error counts)."""
         staged_pending = 0
         staged_duplicate = 0
         staged_error = 0
         # ISS-030: track the staging rows THIS invocation creates, so promotion
         # is scoped to this run (never a leftover `pending` row from an aborted
         # earlier import) and so this run can clear its own scratch afterward.
-        staged_ids = []
-
-        try:
-            ds = DataSource(file_path)
-        except Exception as exc:
-            raise CommandError(f"Failed to open file with GDAL: {exc}")
-
-        layer = ds[0]
+        staged_ids: list[int] = []
 
         for feature in layer:
             parcel_number = None
@@ -106,32 +148,8 @@ class Command(BaseCommand):
                     staged_error += 1
                     continue
 
-                # Extract properties as dict
-                raw_data = {}
-                for field_name in layer.fields:
-                    try:
-                        raw_data[field_name] = feature[field_name].value
-                    except Exception:
-                        raw_data[field_name] = None
-
-                # Extract and normalise geometry
-                geom = None
-                try:
-                    geom_wkt = feature.geom.wkt
-                    geos_geom = GEOSGeometry(geom_wkt, srid=feature.geom.srid or 4326)
-                    # Transform to SRID 4326 if needed
-                    if geos_geom.srid != 4326:
-                        geos_geom.transform(4326)
-                    # Wrap Polygon in MultiPolygon
-                    if isinstance(geos_geom, Polygon):
-                        geos_geom = MultiPolygon(geos_geom)
-                    geom = geos_geom
-                except Exception as exc:
-                    self.stdout.write(
-                        self.style.WARNING(
-                            f"  {parcel_number}: geometry error — {exc}. Staging without geometry."
-                        )
-                    )
+                raw_data = self._feature_properties(layer, feature)
+                geom = self._feature_geometry(feature, parcel_number)
 
                 # Duplicate detection
                 is_duplicate = Parcel.objects.filter(parcel_number=parcel_number).exists()
@@ -158,52 +176,73 @@ class Command(BaseCommand):
                 )
                 staged_error += 1
 
-        # Promote pending staging records to Parcel table
+        return staged_ids, staged_pending, staged_duplicate, staged_error
+
+    def _feature_properties(self, layer: Any, feature: Any) -> dict[str, Any]:
+        """Return the feature's attribute values keyed by field name."""
+        # Extract properties as dict
+        raw_data: dict[str, Any] = {}
+        for field_name in layer.fields:
+            try:
+                raw_data[field_name] = feature[field_name].value
+            except Exception:
+                raw_data[field_name] = None
+        return raw_data
+
+    def _feature_geometry(self, feature: Any, parcel_number: str) -> MultiPolygon | None:
+        """Return the feature geometry as a 4326 MultiPolygon, or None (with a warning) if unusable."""
+        # Extract and normalise geometry
+        geom = None
+        try:
+            geom_wkt = feature.geom.wkt
+            geos_geom = GEOSGeometry(geom_wkt, srid=feature.geom.srid or 4326)
+            # Transform to SRID 4326 if needed
+            if geos_geom.srid != 4326:
+                geos_geom.transform(4326)
+            # Wrap Polygon in MultiPolygon
+            if isinstance(geos_geom, Polygon):
+                geos_geom = MultiPolygon(geos_geom)
+            geom = geos_geom
+        except Exception as exc:
+            self.stdout.write(
+                self.style.WARNING(
+                    f"  {parcel_number}: geometry error — {exc}. Staging without geometry."
+                )
+            )
+        return geom
+
+    def _promote_staged(self, staged_ids: list[int], owner_field: str) -> tuple[int, int]:
+        """Create a Parcel for each pending row this run staged; return (imported, failed) counts."""
         imported_count = 0
-        if not dry_run:
-            # ISS-030: promote ONLY the rows this invocation staged — not every
-            # global `pending` row. A leftover `pending` row from an aborted
-            # prior import must never be materialized by an unrelated later run.
-            pending_qs = ParcelStaging.objects.filter(
-                id__in=staged_ids, status="pending"
-            )
-            with transaction.atomic():
-                for staging in pending_qs:
-                    try:
-                        owner_name = staging.raw_data.get(owner_field, "") or ""
-                        Parcel.objects.create(
-                            parcel_number=staging.parcel_number,
-                            owner_name=str(owner_name).strip(),
-                            geometry=staging.geometry,
-                            status="active",
-                        )
-                        staging.status = "imported"
-                        staging.imported_at = timezone.now()
-                        staging.save(update_fields=["status", "imported_at"])
-                        imported_count += 1
-                    except Exception as exc:
-                        staging.status = "rejected"
-                        staging.error_message = str(exc)
-                        staging.save(update_fields=["status", "error_message"])
-                        staged_error += 1
-                        self.stdout.write(
-                            self.style.ERROR(
-                                f"  Failed to promote {staging.parcel_number}: {exc}"
-                            )
-                        )
-        else:
-            imported_count = staged_pending  # Would-be count
-
-        # ISS-030: clear this run's staging scratch so the table can't accumulate
-        # across imports or bleed a leftover row into a later run. Duplicate/error
-        # diagnostics were already written to stdout above. Done for dry-run too —
-        # a dry-run that left `pending` rows behind would be promoted by the next
-        # real import.
-        if staged_ids:
-            ParcelStaging.objects.filter(id__in=staged_ids).delete()
-
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"Imported {imported_count} parcels, {staged_duplicate} duplicates skipped, {staged_error} errors"
-            )
+        failed_count = 0
+        # ISS-030: promote ONLY the rows this invocation staged — not every
+        # global `pending` row. A leftover `pending` row from an aborted
+        # prior import must never be materialized by an unrelated later run.
+        pending_qs = ParcelStaging.objects.filter(
+            id__in=staged_ids, status="pending"
         )
+        with transaction.atomic():
+            for staging in pending_qs:
+                try:
+                    owner_name = staging.raw_data.get(owner_field, "") or ""
+                    Parcel.objects.create(
+                        parcel_number=staging.parcel_number,
+                        owner_name=str(owner_name).strip(),
+                        geometry=staging.geometry,
+                        status="active",
+                    )
+                    staging.status = "imported"
+                    staging.imported_at = timezone.now()
+                    staging.save(update_fields=["status", "imported_at"])
+                    imported_count += 1
+                except Exception as exc:
+                    staging.status = "rejected"
+                    staging.error_message = str(exc)
+                    staging.save(update_fields=["status", "error_message"])
+                    failed_count += 1
+                    self.stdout.write(
+                        self.style.ERROR(
+                            f"  Failed to promote {staging.parcel_number}: {exc}"
+                        )
+                    )
+        return imported_count, failed_count

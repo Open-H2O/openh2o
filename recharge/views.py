@@ -8,8 +8,11 @@ endpoint. Creating a RechargeEvent here hands off to the accounting service,
 which credits groundwater either to the GSA basin pool for the site's zone or to
 a has-well parcel on the conjunctive path.
 """
+from __future__ import annotations
+
 import json
 from decimal import Decimal
+from typing import Any
 
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
@@ -179,6 +182,40 @@ def _recharge_site_detail_context(site):
     # gate).
     periods = ReportingPeriod.objects.all()
     event_groups = _group_recharge_events(events, periods)
+    current_period, current_totals, previous_totals = _current_and_previous_totals(
+        event_groups
+    )
+
+    # The diversion(s) that fill this basin (Phase 62): each link names the POD
+    # and, through it, the real waterway it sits on. A data field on this page,
+    # not a flow line on the map.
+    pod_links = (
+        site.pod_links.select_related(
+            "point_of_diversion", "point_of_diversion__source_flowline"
+        ).order_by("point_of_diversion__name")
+    )
+
+    measurement_groups, total_measurement_count = _measurement_groups(site)
+
+    return {
+        "site": site,
+        "events": events,
+        "event_groups": event_groups,
+        "current_period": current_period,
+        "current_totals": current_totals,
+        "previous_totals": previous_totals,
+        "pod_links": pod_links,
+        "measurement_groups": measurement_groups,
+        "total_measurement_count": total_measurement_count,
+        "event_form": RechargeEventForm(),
+        "geojson": _site_geojson(site),
+    }
+
+
+def _current_and_previous_totals(
+    event_groups: list[dict[str, Any]],
+) -> tuple[ReportingPeriod | None, dict[str, Any] | None, dict[str, Any] | None]:
+    """The current period, its event group, and the water year before it that holds events."""
     current_period_pk = compute_current_period_id()
     current_period = (
         ReportingPeriod.objects.filter(pk=current_period_pk).first()
@@ -201,16 +238,11 @@ def _recharge_site_detail_context(site):
         later = [g for g in event_groups if g["period_key"] is not None]
         index = later.index(current_totals)
         previous_totals = later[index + 1] if index + 1 < len(later) else None
+    return current_period, current_totals, previous_totals
 
-    # The diversion(s) that fill this basin (Phase 62): each link names the POD
-    # and, through it, the real waterway it sits on. A data field on this page,
-    # not a flow line on the map.
-    pod_links = (
-        site.pod_links.select_related(
-            "point_of_diversion", "point_of_diversion__source_flowline"
-        ).order_by("point_of_diversion__name")
-    )
 
+def _measurement_groups(site: RechargeSite) -> tuple[list[dict[str, Any]], int]:
+    """The site's recent readings grouped by measurement type, and the total reading count."""
     # 143-10 (R-126): recent readings grouped by what they measure, most
     # recent SIX of each, the unit read off the first row (never assumed --
     # the same column carries mg/L, ft, cfs and in/hr depending on the
@@ -235,7 +267,11 @@ def _recharge_site_detail_context(site):
             "rows": type_rows[:6],
             "total_count": len(type_rows),
         })
+    return measurement_groups, total_measurement_count
 
+
+def _site_geojson(site: RechargeSite) -> dict[str, Any] | None:
+    """The site's basin polygon (else its point location) as a feature collection, or None."""
     # GeoJSON for the persistent detail map. Prefer the polygon basin geometry;
     # fall back to a point location. OH2O.detailPaneMap auto-detects polygon
     # (fill + outline) vs point (glow + marker) from the geometry type, so the
@@ -254,20 +290,7 @@ def _recharge_site_detail_context(site):
                 fields=["name", "site_type", "status"],
             )
         )
-
-    return {
-        "site": site,
-        "events": events,
-        "event_groups": event_groups,
-        "current_period": current_period,
-        "current_totals": current_totals,
-        "previous_totals": previous_totals,
-        "pod_links": pod_links,
-        "measurement_groups": measurement_groups,
-        "total_measurement_count": total_measurement_count,
-        "event_form": RechargeEventForm(),
-        "geojson": geojson,
-    }
+    return geojson
 
 
 @login_required

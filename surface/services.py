@@ -54,9 +54,13 @@ the per-parcel lookup only runs when no override is given. Shared-well /
 shared-POD apportionment is Phase 56, out of scope here.
 """
 
+from __future__ import annotations
+
 import logging
+from collections.abc import Iterable
 from datetime import date
 from decimal import Decimal
+from typing import TYPE_CHECKING, Any
 
 from django.db import transaction
 from django.db.models import Q
@@ -71,28 +75,34 @@ from accounting.services import (
     deposit_to_basin_pool,
     parcel_pool_zone,
 )
-from parcels.models import ParcelLedger
+from parcels.models import Parcel, ParcelLedger
 from parcels.services import field_efficiency
 from surface.models import (
     CanalMonthLoss,
     DiversionRecord,
+    PointOfDiversion,
     PointOfDiversionParcel,
     UnallocatedDelivery,
 )
+
+if TYPE_CHECKING:
+    from django.db.models import QuerySet
+
+    from geography.models import Zone
 
 logger = logging.getLogger(__name__)
 
 _Q = Decimal("0.0001")
 
 
-def _resolve_efficiency(efficiency, parcel):
+def _resolve_efficiency(efficiency: Decimal | float | None, parcel: Parcel) -> Decimal:
     """The explicit override if given, else this parcel's own field_efficiency."""
     if efficiency is not None:
         return Decimal(str(efficiency))
     return field_efficiency(parcel)[0]
 
 
-def _month_demand(parcel, month):
+def _month_demand(parcel: Parcel, month: date) -> Decimal:
     """A parcel's net consumptive use (AF) for the diversion record's month.
 
     Reads ``CalculationRun.net_consumptive_use_af`` for the parcel-month — the
@@ -111,7 +121,11 @@ def _month_demand(parcel, month):
     return total
 
 
-def _records_for_period(point_of_diversion, reporting_period, months=None):
+def _records_for_period(
+    point_of_diversion: PointOfDiversion,
+    reporting_period: ReportingPeriod | None,
+    months: Iterable[date] | None = None,
+) -> QuerySet[DiversionRecord]:
     """DiversionRecords on this POD that belong to the reporting period.
 
     The ``reporting_period`` FK on a record is nullable, so a record counts if
@@ -144,7 +158,13 @@ def _records_for_period(point_of_diversion, reporting_period, months=None):
     return qs.order_by("month").distinct()
 
 
-def _demand_rows(record, shares, pod, sw_type, loss_fraction=None):
+def _demand_rows(
+    record: DiversionRecord,
+    shares: dict[Parcel, Decimal],
+    pod: PointOfDiversion,
+    sw_type: WaterType | None,
+    loss_fraction: Decimal | None = None,
+) -> list[ParcelLedger]:
     """Unsaved demand-weighted ledger rows (NEGATIVE) for one diversion record."""
     today = timezone.now().date()
     return [
@@ -167,8 +187,13 @@ def _demand_rows(record, shares, pod, sw_type, loss_fraction=None):
 
 
 def _fraction_rows(
-    record, served_links, pod, sw_type, total=None, loss_fraction=None
-):
+    record: DiversionRecord,
+    served_links: list[PointOfDiversionParcel],
+    pod: PointOfDiversion,
+    sw_type: WaterType | None,
+    total: Decimal | None = None,
+    loss_fraction: Decimal | None = None,
+) -> list[ParcelLedger]:
     """Unsaved static-fraction fallback rows (NEGATIVE) — the no-ET-demand path.
 
     Builds unsaved instances rather than writing, so ``dry_run`` can preview it
@@ -243,11 +268,11 @@ def _fraction_rows(
     return rows
 
 
-def _next_month(month):
+def _next_month(month: date) -> date:
     return date(month.year + (month.month == 12), month.month % 12 + 1, 1)
 
 
-def _month_start(day):
+def _month_start(day: date) -> date:
     """The first of ``day``'s calendar month.
 
     A month is a calendar month here, never one exact date: the demonstration
@@ -257,7 +282,7 @@ def _month_start(day):
     return day.replace(day=1)
 
 
-def _in_months(field, starts):
+def _in_months(field: str, starts: Iterable[date]) -> Q:
     """``Q`` matching ``field`` inside any of the calendar months ``starts``."""
     q = Q(pk__in=[])
     for start in starts:
@@ -265,14 +290,14 @@ def _in_months(field, starts):
     return q
 
 
-def _own_magnitudes(served, month):
+def _own_magnitudes(served: list[Parcel], month: date) -> dict[int, Decimal]:
     """``{parcel_pk: AF}`` for served fields with a recorded delivery of their own.
 
     A field's own delivery is any ``surface_diversion`` row for the month whose
     ``divided_from_headgate`` is False (typed on the ledger form or imported).
     The value is the magnitude of the field's own rows for the month, summed.
     """
-    sums = {}
+    sums: dict[int, Decimal] = {}
     rows = ParcelLedger.objects.filter(
         parcel__in=served,
         source_type="surface_diversion",
@@ -285,7 +310,9 @@ def _own_magnitudes(served, month):
     return {pk: abs(total) for pk, total in sums.items()}
 
 
-def _own_total_for_pod(pod, own, month):
+def _own_total_for_pod(
+    pod: PointOfDiversion, own: dict[int, Decimal], month: date
+) -> Decimal:
     """This point of diversion's share of its served fields' own deliveries (AF).
 
     A field served by one point contributes its whole own delivery. A field
@@ -300,7 +327,7 @@ def _own_total_for_pod(pod, own, month):
     links = PointOfDiversionParcel.objects.filter(
         parcel_id__in=list(own)
     ).values_list("parcel_id", "point_of_diversion_id")
-    serving = {}
+    serving: dict[int, set[int]] = {}
     for parcel_id, pod_id in links:
         serving.setdefault(parcel_id, set()).add(pod_id)
     pod_ids = {pod_id for ids in serving.values() for pod_id in ids} | {pod.pk}
@@ -331,12 +358,14 @@ class CanalLossesTooLarge(ValueError):
     reached only by data saved some other way.
     """
 
-    def __init__(self, sentence):
+    def __init__(self, sentence: str) -> None:
         super().__init__(sentence)
         self.sentence = sentence
 
 
-def _month_losses(pod, month, diverted):
+def _month_losses(
+    pod: PointOfDiversion, month: date, diverted: Decimal
+) -> dict[str, Decimal]:
     """The month's canal losses off the top of ``diverted`` (149-02).
 
     Each loss is the point's own fraction of the consumed total, to four
@@ -367,7 +396,7 @@ def _month_losses(pod, month, diverted):
     }
 
 
-def _zone_containing(pod):
+def _zone_containing(pod: PointOfDiversion) -> Zone | None:
     """The management-area zone that contains the point's location, or None."""
     from geography.models import Zone
 
@@ -380,7 +409,9 @@ def _zone_containing(pod):
     )
 
 
-def _seepage_zone(contained, month_shares):
+def _seepage_zone(
+    contained: Zone | None, month_shares: dict[Parcel, Decimal] | None
+) -> Zone | None:
     """The zone a point-month's seepage goes to, or None.
 
     The zone that contains the point; failing that, the pool zone of the
@@ -396,7 +427,7 @@ def _seepage_zone(contained, month_shares):
     return parcel_pool_zone(biggest)
 
 
-def _settle_seepage(zone, water_year, delta):
+def _settle_seepage(zone: Zone, water_year: int, delta: Decimal) -> None:
     """One signed change to the seepage pool; a row that nets to zero is removed."""
     if delta == 0:
         return
@@ -410,7 +441,12 @@ def _settle_seepage(zone, water_year, delta):
         row.delete()
 
 
-def _store_month_loss(pod, month, loss, zone):
+def _store_month_loss(
+    pod: PointOfDiversion,
+    month: date,
+    loss: dict[str, Decimal] | None,
+    zone: Zone | None,
+) -> None:
     """Write (or clear) one point-month's ``CanalMonthLoss`` and settle its seepage.
 
     The pool change is a signed delta against what the previous row for this
@@ -464,15 +500,402 @@ def _store_month_loss(pod, month, loss, zone):
     )
 
 
+def _surface_water_type() -> WaterType | None:
+    """The Surface Water type stamped on every split row, or None on an unseeded database."""
+    # Surface deliveries are, by definition, Surface Water. Resolve the type ONCE
+    # and stamp it on every row so the ledger's Water Type column is populated for
+    # surface rows the way it already is for groundwater. .filter().first() (not
+    # .get()) so a fresh DB without the seeded type yields None rather than raising;
+    # the seed commands (e.g. seed_merced_ledgers) create it.
+    return WaterType.objects.filter(code="SW").first()
+
+
+def _served_links(pod: PointOfDiversion) -> list[PointOfDiversionParcel]:
+    """The point's parcel links in creation order, each with its parcel loaded."""
+    return list(
+        PointOfDiversionParcel.objects.filter(point_of_diversion=pod)
+        .select_related("parcel")
+        .order_by("id")
+    )
+
+
+def _plan_allocation(
+    pod: PointOfDiversion,
+    reporting_period: ReportingPeriod | None,
+    months: list[date] | None,
+    efficiency: Decimal | float | None,
+    notes: list[dict[str, Any]] | None,
+) -> tuple[
+    list[DiversionRecord],
+    list[Parcel],
+    list[ParcelLedger],
+    list[UnallocatedDelivery],
+    dict[date, dict[str, Decimal]],
+]:
+    """Work out every month's rows, unallocated surplus and canal losses; writes nothing.
+
+    Returns ``(records, served parcels, rows to write, surplus rows, losses by month)``.
+    """
+    sw_type = _surface_water_type()
+    served_links = _served_links(pod)
+    served = [link.parcel for link in served_links]
+
+    # Per-parcel cap (148-02, S1): each served parcel's own field_efficiency,
+    # unless the caller passed an explicit override, which wins for every
+    # parcel. Resolved once here, not per record, since the served list and
+    # each parcel's method do not change across a POD's diversion records.
+    eff_by_parcel = {p: _resolve_efficiency(efficiency, p) for p in served}
+
+    records = list(_records_for_period(pod, reporting_period, months))
+    by_month: dict[date, list[DiversionRecord]] = {}
+    for record in records:
+        by_month.setdefault(_month_start(record.month), []).append(record)
+
+    to_write: list[ParcelLedger] = []
+    unallocated: list[UnallocatedDelivery] = []
+    losses: dict[date, dict[str, Decimal]] = {}
+    for month, month_records in by_month.items():
+        losses[month] = _allocate_month(
+            pod,
+            month,
+            month_records,
+            served_links,
+            eff_by_parcel,
+            sw_type,
+            notes,
+            to_write,
+            unallocated,
+        )
+    return records, served, to_write, unallocated, losses
+
+
+def _allocate_month(
+    pod: PointOfDiversion,
+    month: date,
+    month_records: list[DiversionRecord],
+    served_links: list[PointOfDiversionParcel],
+    eff_by_parcel: dict[Parcel, Decimal],
+    sw_type: WaterType | None,
+    notes: list[dict[str, Any]] | None,
+    to_write: list[ParcelLedger],
+    unallocated: list[UnallocatedDelivery],
+) -> dict[str, Decimal]:
+    """Divide one calendar month's records; extend ``to_write`` and ``unallocated``, return the month's losses."""
+    served = [link.parcel for link in served_links]
+    month_total = sum(
+        (r.consumed_acre_feet() for r in month_records), Decimal("0")
+    )
+    # Canal losses come off the top (149-02). Computed for every month
+    # before anything is divided or written, so a point whose shares leave
+    # nothing for the fields raises with nothing changed.
+    loss = _month_losses(pod, month, month_total)
+    available = loss["available_af"]
+    lost = loss["diverted_af"] - available
+    if notes is not None and (loss["evaporation_af"] or loss["spill_af"]):
+        notes.append(
+            {
+                "kind": "canal_losses",
+                "pod": pod.name,
+                "month": month,
+                "evaporation_af": loss["evaporation_af"],
+                "spill_af": loss["spill_af"],
+            }
+        )
+
+    own = _own_magnitudes(served, month)
+    own_total = _own_total_for_pod(pod, own, month)
+    loss["own_af"] = own_total
+    if own_total > available:
+        _report_own_over_headgate(
+            pod, month, own_total, available, lost, month_total, notes
+        )
+        return loss
+
+    free_links = [link for link in served_links if link.parcel.pk not in own]
+    free = [link.parcel for link in free_links]
+    remainders = _record_remainders(
+        month_records, available, own_total, month_total
+    )
+    for record in month_records:
+        delivery_total = remainders[record.pk]
+        if delivery_total == 0:
+            # Nothing to divide: the own records already account for the
+            # headgate, or the point delivered nothing (a typed 0, which is
+            # how a month with no delivery is recorded since 150.5-01). A
+            # split row of 0 would put a delivery on each field's ledger
+            # that never happened.
+            continue
+        rows, path, surplus = _split_record(
+            pod,
+            record,
+            delivery_total,
+            served,
+            free,
+            free_links,
+            eff_by_parcel,
+            sw_type,
+            loss["loss_fraction"],
+        )
+        to_write.extend(rows)
+        if surplus > 0:
+            _record_unallocated(
+                pod, record, delivery_total, surplus, unallocated, notes
+            )
+        logger.info(
+            "allocate_district_delivery POD=%s month=%s: %s (%d parcels, %s AF)",
+            pod.name,
+            record.month,
+            path,
+            len(free),
+            delivery_total,
+        )
+    return loss
+
+
+def _report_own_over_headgate(
+    pod: PointOfDiversion,
+    month: date,
+    own_total: Decimal,
+    available: Decimal,
+    lost: Decimal,
+    month_total: Decimal,
+    notes: list[dict[str, Any]] | None,
+) -> None:
+    """Note and log a month whose fields' own deliveries exceed what the headgate has left."""
+    excess = own_total - available
+    if notes is not None:
+        notes.append(
+            {
+                "kind": "own_over_headgate",
+                "pod": pod.name,
+                "month": month,
+                "excess_af": excess,
+                "lost_af": lost,
+            }
+        )
+    logger.warning(
+        "allocate_district_delivery POD=%s month=%s: the fields' own "
+        "delivery records add up to %s AF, %s AF more than the %s AF "
+        "left of the headgate's %s AF after canal losses. No split "
+        "rows written for this month.",
+        pod.name,
+        month,
+        own_total,
+        excess,
+        available,
+        month_total,
+    )
+
+
+def _record_remainders(
+    month_records: list[DiversionRecord],
+    available: Decimal,
+    own_total: Decimal,
+    month_total: Decimal,
+) -> dict[int, Decimal]:
+    """Each record's part (by pk) of the month's remainder to divide among the free fields."""
+    # Each record's part of the month's remainder. With no own records and
+    # no losses it is the record's whole consumed total (the pre-149
+    # behavior, exactly).
+    remainders: dict[int, Decimal] = {}
+    if own_total == 0 and available == month_total:
+        for record in month_records:
+            remainders[record.pk] = record.consumed_acre_feet()
+    else:
+        remainder_total = available - own_total
+        running = Decimal("0")
+        for record in month_records[:-1]:
+            part = (
+                remainder_total * record.consumed_acre_feet() / month_total
+            ).quantize(_Q)
+            remainders[record.pk] = part
+            running += part
+        remainders[month_records[-1].pk] = remainder_total - running
+    return remainders
+
+
+def _split_record(
+    pod: PointOfDiversion,
+    record: DiversionRecord,
+    delivery_total: Decimal,
+    served: list[Parcel],
+    free: list[Parcel],
+    free_links: list[PointOfDiversionParcel],
+    eff_by_parcel: dict[Parcel, Decimal],
+    sw_type: WaterType | None,
+    loss_fraction: Decimal,
+) -> tuple[list[ParcelLedger], str, Decimal]:
+    """Split one record's remainder over the free fields; return (rows, path taken, surplus)."""
+    demand_by_parcel = {p: _month_demand(p, record.month) for p in free}
+    shares = allocate_by_demand(
+        delivery_total,
+        demand_by_parcel,
+        {p: eff_by_parcel[p] for p in free},
+    )
+
+    if shares:
+        rows = _demand_rows(record, shares, pod, sw_type, loss_fraction)
+        path = "demand-weighted"
+
+        # T4 (math eval 2026-07-18): in the AMPLE case the kernel hands
+        # out each parcel's cap and documents that the caller routes the
+        # leftover — and this, the only caller, never did. The surplus
+        # vanished: no row, no pool, no log, so the internal ledger
+        # silently disagreed with the DiversionRecord CalWATRS files
+        # from. Record it explicitly against the POD instead of
+        # dropping it or inventing a destination. (149-01: against the
+        # remainder, the headgate water the own records do not cover.)
+        surplus = delivery_total - sum(shares.values(), Decimal("0"))
+    else:
+        rows = _fraction_rows(
+            record,
+            free_links,
+            pod,
+            sw_type,
+            delivery_total,
+            loss_fraction,
+        )
+        path = "static-fraction fallback (no ET demand)"
+        # Every served field has its own record: nobody is left for the
+        # remainder to go to, so it is unexplained headgate water.
+        surplus = delivery_total if served and not free else Decimal("0")
+    return rows, path, surplus
+
+
+def _record_unallocated(
+    pod: PointOfDiversion,
+    record: DiversionRecord,
+    delivery_total: Decimal,
+    surplus: Decimal,
+    unallocated: list[UnallocatedDelivery],
+    notes: list[dict[str, Any]] | None,
+) -> None:
+    """Queue an ``UnallocatedDelivery`` for a record's surplus, note it and log a warning."""
+    unallocated.append(
+        UnallocatedDelivery(
+            point_of_diversion=pod,
+            reporting_period=record.reporting_period,
+            month=record.month,
+            amount_acre_feet=surplus,
+            delivery_acre_feet=delivery_total,
+        )
+    )
+    if notes is not None:
+        notes.append(
+            {
+                "kind": "unallocated",
+                "pod": pod.name,
+                "month": record.month,
+                "amount_af": surplus,
+            }
+        )
+    logger.warning(
+        "allocate_district_delivery POD=%s month=%s: %s AF of %s AF "
+        "delivered is not explained by crop demand — recorded as "
+        "unallocated delivery. Check the diversion volume, the ET "
+        "estimate, and any non-crop use at this POD.",
+        pod.name,
+        record.month,
+        surplus,
+        delivery_total,
+    )
+
+
+def _seepage_zones(
+    pod: PointOfDiversion,
+    to_write: list[ParcelLedger],
+    losses: dict[date, dict[str, Decimal]],
+    notes: list[dict[str, Any]] | None,
+) -> dict[date, Zone | None]:
+    """Where each month's seepage goes, noting the months that have no zone to take it."""
+    # Where each month's seepage goes: read-only, so a dry run can say so too.
+    contained = _zone_containing(pod)
+    month_shares: dict[date, dict[Parcel, Decimal]] = {}
+    for row in to_write:
+        per_parcel = month_shares.setdefault(_month_start(row.effective_date), {})
+        # split rows are stored negative; a share is the magnitude
+        per_parcel[row.parcel] = (
+            per_parcel.get(row.parcel, Decimal("0")) - row.amount_acre_feet
+        )
+    seepage_zones: dict[date, Zone | None] = {}
+    for month, loss in losses.items():
+        zone = _seepage_zone(contained, month_shares.get(month))
+        seepage_zones[month] = zone
+        if zone is None and loss["seepage_af"] > 0 and notes is not None:
+            notes.append(
+                {
+                    "kind": "seepage_no_zone",
+                    "pod": pod.name,
+                    "month": month,
+                    "amount_af": loss["seepage_af"],
+                }
+            )
+    return seepage_zones
+
+
+def _store_allocation(
+    pod: PointOfDiversion,
+    months: list[date] | None,
+    records: list[DiversionRecord],
+    served: list[Parcel],
+    to_write: list[ParcelLedger],
+    unallocated: list[UnallocatedDelivery],
+    losses: dict[date, dict[str, Decimal]],
+    seepage_zones: dict[date, Zone | None],
+) -> list[ParcelLedger]:
+    """Replace this point's split rows, surplus rows and canal-loss rows for the months touched."""
+    # Idempotency: this service owns the rows IT wrote (divided_from_headgate)
+    # for its served parcels in the months it just allocated. Delete them up
+    # front (ONCE for the whole month set — not per record, so two records
+    # sharing a month don't clobber each other), then write fresh, mirroring
+    # run_calculations. A field's own recorded delivery is never touched.
+    #
+    # Only THIS point's shares are replaced (``divided_from_point_pk``), so a
+    # field two points serve keeps the other point's share. A split row written
+    # before 149-01 carries no point and is replaced by whichever serving point
+    # runs first, as every split row was before.
+    #
+    # When ``months`` is given, every asked-for month is cleared even if the
+    # point has no record left in it: a deleted diversion record must take its
+    # shares with it, not leave them standing.
+    months_to_clear = {_month_start(record.month) for record in records}
+    if months is not None:
+        months_to_clear |= {_month_start(m) for m in months}
+    with transaction.atomic():
+        if served and months_to_clear:
+            ParcelLedger.objects.filter(
+                Q(divided_from_point_pk=pod.pk) | Q(divided_from_point_pk__isnull=True),
+                _in_months("effective_date", months_to_clear),
+                parcel__in=served,
+                source_type="surface_diversion",
+                divided_from_headgate=True,
+            ).delete()
+        # Unallocated surplus is owned by this service for the same POD-months,
+        # and is cleared on every run so a re-allocation that now balances does
+        # not leave a stale surplus behind.
+        if months_to_clear:
+            UnallocatedDelivery.objects.filter(
+                _in_months("month", months_to_clear), point_of_diversion=pod
+            ).delete()
+            if unallocated:
+                UnallocatedDelivery.objects.bulk_create(unallocated)
+        # Canal losses and the seepage pool, for every month named or recorded
+        # (a month with no record left has its row removed and its seepage
+        # taken back out of the pool).
+        for month in sorted(months_to_clear):
+            _store_month_loss(pod, month, losses.get(month), seepage_zones.get(month))
+        return list(ParcelLedger.objects.bulk_create(to_write))
+
+
 def allocate_district_delivery(
-    point_of_diversion,
-    reporting_period,
+    point_of_diversion: PointOfDiversion,
+    reporting_period: ReportingPeriod | None,
     *,
-    efficiency=None,
-    dry_run=False,
-    months=None,
-    notes=None,
-):
+    efficiency: Decimal | float | None = None,
+    dry_run: bool = False,
+    months: Iterable[date] | None = None,
+    notes: list[dict[str, Any]] | None = None,
+) -> list[ParcelLedger]:
     """Allocate a POD's recorded diversions across served parcels by ET demand.
 
     For each ``DiversionRecord`` on ``point_of_diversion`` in ``reporting_period``,
@@ -549,266 +972,132 @@ def allocate_district_delivery(
     pod = point_of_diversion
     if months is not None:
         months = list(months)  # read twice below; a generator would be spent
-
-    # Surface deliveries are, by definition, Surface Water. Resolve the type ONCE
-    # and stamp it on every row so the ledger's Water Type column is populated for
-    # surface rows the way it already is for groundwater. .filter().first() (not
-    # .get()) so a fresh DB without the seeded type yields None rather than raising;
-    # the seed commands (e.g. seed_merced_ledgers) create it.
-    sw_type = WaterType.objects.filter(code="SW").first()
-
-    served_links = list(
-        PointOfDiversionParcel.objects.filter(point_of_diversion=pod)
-        .select_related("parcel")
-        .order_by("id")
+    records, served, to_write, unallocated, losses = _plan_allocation(
+        pod, reporting_period, months, efficiency, notes
     )
-    served = [link.parcel for link in served_links]
-
-    # Per-parcel cap (148-02, S1): each served parcel's own field_efficiency,
-    # unless the caller passed an explicit override, which wins for every
-    # parcel. Resolved once here, not per record, since the served list and
-    # each parcel's method do not change across a POD's diversion records.
-    eff_by_parcel = {p: _resolve_efficiency(efficiency, p) for p in served}
-
-    records = list(_records_for_period(pod, reporting_period, months))
-    by_month = {}
-    for record in records:
-        by_month.setdefault(_month_start(record.month), []).append(record)
-
-    to_write = []
-    unallocated = []
-    losses = {}
-    for month, month_records in by_month.items():
-        month_total = sum(
-            (r.consumed_acre_feet() for r in month_records), Decimal("0")
-        )
-        # Canal losses come off the top (149-02). Computed for every month
-        # before anything is divided or written, so a point whose shares leave
-        # nothing for the fields raises with nothing changed.
-        loss = _month_losses(pod, month, month_total)
-        losses[month] = loss
-        available = loss["available_af"]
-        lost = loss["diverted_af"] - available
-        if notes is not None and (loss["evaporation_af"] or loss["spill_af"]):
-            notes.append(
-                {
-                    "kind": "canal_losses",
-                    "pod": pod.name,
-                    "month": month,
-                    "evaporation_af": loss["evaporation_af"],
-                    "spill_af": loss["spill_af"],
-                }
-            )
-
-        own = _own_magnitudes(served, month)
-        own_total = _own_total_for_pod(pod, own, month)
-        loss["own_af"] = own_total
-        if own_total > available:
-            excess = own_total - available
-            if notes is not None:
-                notes.append(
-                    {
-                        "kind": "own_over_headgate",
-                        "pod": pod.name,
-                        "month": month,
-                        "excess_af": excess,
-                        "lost_af": lost,
-                    }
-                )
-            logger.warning(
-                "allocate_district_delivery POD=%s month=%s: the fields' own "
-                "delivery records add up to %s AF, %s AF more than the %s AF "
-                "left of the headgate's %s AF after canal losses. No split "
-                "rows written for this month.",
-                pod.name,
-                month,
-                own_total,
-                excess,
-                available,
-                month_total,
-            )
-            continue
-
-        free_links = [link for link in served_links if link.parcel.pk not in own]
-        free = [link.parcel for link in free_links]
-
-        # Each record's part of the month's remainder. With no own records and
-        # no losses it is the record's whole consumed total (the pre-149
-        # behavior, exactly).
-        remainders = {}
-        if own_total == 0 and available == month_total:
-            for record in month_records:
-                remainders[record.pk] = record.consumed_acre_feet()
-        else:
-            remainder_total = available - own_total
-            running = Decimal("0")
-            for record in month_records[:-1]:
-                part = (
-                    remainder_total * record.consumed_acre_feet() / month_total
-                ).quantize(_Q)
-                remainders[record.pk] = part
-                running += part
-            remainders[month_records[-1].pk] = remainder_total - running
-
-        for record in month_records:
-            delivery_total = remainders[record.pk]
-            if delivery_total == 0:
-                # Nothing to divide: the own records already account for the
-                # headgate, or the point delivered nothing (a typed 0, which is
-                # how a month with no delivery is recorded since 150.5-01). A
-                # split row of 0 would put a delivery on each field's ledger
-                # that never happened.
-                continue
-            demand_by_parcel = {p: _month_demand(p, record.month) for p in free}
-            shares = allocate_by_demand(
-                delivery_total,
-                demand_by_parcel,
-                {p: eff_by_parcel[p] for p in free},
-            )
-
-            if shares:
-                to_write.extend(
-                    _demand_rows(
-                        record, shares, pod, sw_type, loss["loss_fraction"]
-                    )
-                )
-                path = "demand-weighted"
-
-                # T4 (math eval 2026-07-18): in the AMPLE case the kernel hands
-                # out each parcel's cap and documents that the caller routes the
-                # leftover — and this, the only caller, never did. The surplus
-                # vanished: no row, no pool, no log, so the internal ledger
-                # silently disagreed with the DiversionRecord CalWATRS files
-                # from. Record it explicitly against the POD instead of
-                # dropping it or inventing a destination. (149-01: against the
-                # remainder, the headgate water the own records do not cover.)
-                surplus = delivery_total - sum(shares.values(), Decimal("0"))
-            else:
-                to_write.extend(
-                    _fraction_rows(
-                        record,
-                        free_links,
-                        pod,
-                        sw_type,
-                        delivery_total,
-                        loss["loss_fraction"],
-                    )
-                )
-                path = "static-fraction fallback (no ET demand)"
-                # Every served field has its own record: nobody is left for the
-                # remainder to go to, so it is unexplained headgate water.
-                surplus = (
-                    delivery_total if served and not free else Decimal("0")
-                )
-
-            if surplus > 0:
-                unallocated.append(
-                    UnallocatedDelivery(
-                        point_of_diversion=pod,
-                        reporting_period=record.reporting_period,
-                        month=record.month,
-                        amount_acre_feet=surplus,
-                        delivery_acre_feet=delivery_total,
-                    )
-                )
-                if notes is not None:
-                    notes.append(
-                        {
-                            "kind": "unallocated",
-                            "pod": pod.name,
-                            "month": record.month,
-                            "amount_af": surplus,
-                        }
-                    )
-                logger.warning(
-                    "allocate_district_delivery POD=%s month=%s: %s AF of %s AF "
-                    "delivered is not explained by crop demand — recorded as "
-                    "unallocated delivery. Check the diversion volume, the ET "
-                    "estimate, and any non-crop use at this POD.",
-                    pod.name,
-                    record.month,
-                    surplus,
-                    delivery_total,
-                )
-            logger.info(
-                "allocate_district_delivery POD=%s month=%s: %s (%d parcels, %s AF)",
-                pod.name,
-                record.month,
-                path,
-                len(free),
-                delivery_total,
-            )
-
-    # Where each month's seepage goes: read-only, so a dry run can say so too.
-    contained = _zone_containing(pod)
-    month_shares = {}
-    for row in to_write:
-        per_parcel = month_shares.setdefault(_month_start(row.effective_date), {})
-        # split rows are stored negative; a share is the magnitude
-        per_parcel[row.parcel] = (
-            per_parcel.get(row.parcel, Decimal("0")) - row.amount_acre_feet
-        )
-    seepage_zones = {}
-    for month, loss in losses.items():
-        zone = _seepage_zone(contained, month_shares.get(month))
-        seepage_zones[month] = zone
-        if zone is None and loss["seepage_af"] > 0 and notes is not None:
-            notes.append(
-                {
-                    "kind": "seepage_no_zone",
-                    "pod": pod.name,
-                    "month": month,
-                    "amount_af": loss["seepage_af"],
-                }
-            )
-
+    seepage_zones = _seepage_zones(pod, to_write, losses, notes)
     if dry_run:
         return to_write
-
-    # Idempotency: this service owns the rows IT wrote (divided_from_headgate)
-    # for its served parcels in the months it just allocated. Delete them up
-    # front (ONCE for the whole month set — not per record, so two records
-    # sharing a month don't clobber each other), then write fresh, mirroring
-    # run_calculations. A field's own recorded delivery is never touched.
-    #
-    # Only THIS point's shares are replaced (``divided_from_point_pk``), so a
-    # field two points serve keeps the other point's share. A split row written
-    # before 149-01 carries no point and is replaced by whichever serving point
-    # runs first, as every split row was before.
-    #
-    # When ``months`` is given, every asked-for month is cleared even if the
-    # point has no record left in it: a deleted diversion record must take its
-    # shares with it, not leave them standing.
-    months_to_clear = {_month_start(record.month) for record in records}
-    if months is not None:
-        months_to_clear |= {_month_start(m) for m in months}
-    with transaction.atomic():
-        if served and months_to_clear:
-            ParcelLedger.objects.filter(
-                Q(divided_from_point_pk=pod.pk) | Q(divided_from_point_pk__isnull=True),
-                _in_months("effective_date", months_to_clear),
-                parcel__in=served,
-                source_type="surface_diversion",
-                divided_from_headgate=True,
-            ).delete()
-        # Unallocated surplus is owned by this service for the same POD-months,
-        # and is cleared on every run so a re-allocation that now balances does
-        # not leave a stale surplus behind.
-        if months_to_clear:
-            UnallocatedDelivery.objects.filter(
-                _in_months("month", months_to_clear), point_of_diversion=pod
-            ).delete()
-            if unallocated:
-                UnallocatedDelivery.objects.bulk_create(unallocated)
-        # Canal losses and the seepage pool, for every month named or recorded
-        # (a month with no record left has its row removed and its seepage
-        # taken back out of the pool).
-        for month in sorted(months_to_clear):
-            _store_month_loss(pod, month, losses.get(month), seepage_zones.get(month))
-        return list(ParcelLedger.objects.bulk_create(to_write))
+    return _store_allocation(
+        pod, months, records, served, to_write, unallocated, losses, seepage_zones
+    )
 
 
-def canal_water_by_month(pod):
+def _consumed_by_month(pod: PointOfDiversion) -> dict[date, dict[str, Any]]:
+    """Per calendar month with a direct-use record: its consumed total and whether any record is an estimate."""
+    zero = Decimal("0")
+    records = list(
+        DiversionRecord.objects.filter(
+            point_of_diversion=pod, diversion_type="direct_use"
+        ).order_by("month")
+    )
+    by_month: dict[date, dict[str, Any]] = {}
+    for record in records:
+        entry = by_month.setdefault(
+            _month_start(record.month),
+            {"consumed": zero, "estimated": False},
+        )
+        entry["consumed"] += record.consumed_acre_feet()
+        if record.method == "estimated_from_use":
+            entry["estimated"] = True
+    return by_month
+
+
+def _divided_by_month(pod: PointOfDiversion) -> dict[date, Decimal]:
+    """The magnitude of this point's split ledger rows, summed per calendar month."""
+    divided: dict[date, Decimal] = {}
+    for amount, day in ParcelLedger.objects.filter(
+        divided_from_headgate=True,
+        divided_from_point_pk=pod.pk,
+        source_type="surface_diversion",
+    ).values_list("amount_acre_feet", "effective_date"):
+        key = _month_start(day)
+        divided[key] = divided.get(key, Decimal("0")) + abs(amount)
+    return divided
+
+
+def _unallocated_by_month(pod: PointOfDiversion) -> dict[date, Decimal]:
+    """This point's unallocated delivery, summed per calendar month."""
+    beyond: dict[date, Decimal] = {}
+    for amount, day in UnallocatedDelivery.objects.filter(
+        point_of_diversion=pod
+    ).values_list("amount_acre_feet", "month"):
+        key = _month_start(day)
+        beyond[key] = beyond.get(key, Decimal("0")) + amount
+    return beyond
+
+
+def _period_of(month: date, periods: list[ReportingPeriod]) -> ReportingPeriod | None:
+    """The first of ``periods`` that spans ``month``, or None."""
+    month_end = date(month.year + (month.month == 12), month.month % 12 + 1, 1)
+    for period in periods:
+        if period.start_date < month_end and period.end_date >= month:
+            return period
+    return None
+
+
+def _canal_month_row(
+    month: date,
+    info: dict[str, Any],
+    loss: CanalMonthLoss | None,
+    divided: dict[date, Decimal],
+    beyond: dict[date, Decimal],
+) -> dict[str, Any]:
+    """One month's row for the canal page, from its stored loss row or, lacking one, its records."""
+    tolerance = Decimal("0.0001")
+    zero = Decimal("0")
+    if loss is None:
+        row = {
+            "month": month,
+            "headgate": info["consumed"],
+            "evaporation": None,
+            "seepage": None,
+            "spill": None,
+            "losses": None,
+            "own": None,
+            "divided": None,
+            "beyond": None,
+            "calculated": False,
+            "adds_up": True,
+        }
+    else:
+        losses = loss.evaporation_af + loss.seepage_af + loss.spill_af
+        row = {
+            "month": month,
+            "headgate": loss.diverted_af,
+            "evaporation": loss.evaporation_af,
+            "seepage": loss.seepage_af,
+            "spill": loss.spill_af,
+            "losses": losses,
+            "own": loss.own_af,
+            "divided": divided.get(month, zero),
+            "beyond": beyond.get(month, zero),
+            "calculated": True,
+        }
+        parts = losses + row["own"] + row["divided"] + row["beyond"]
+        row["adds_up"] = abs(row["headgate"] - parts) <= tolerance
+    row["estimated"] = info["estimated"]
+    return row
+
+
+def _add_group_totals(ordered: list[dict[str, Any]]) -> None:
+    """Give each period group its ``totals`` (None figures count as nothing)."""
+    zero = Decimal("0")
+    figure_keys = (
+        "headgate", "evaporation", "seepage", "spill", "losses", "own",
+        "divided", "beyond",
+    )
+    for group in ordered:
+        rows = group["rows"]
+        totals = {key: sum((r[key] or zero for r in rows), zero) for key in figure_keys}
+        totals["count"] = len(rows)
+        totals["uncalculated"] = sum(1 for r in rows if not r["calculated"])
+        totals["estimated"] = any(r["estimated"] for r in rows)
+        totals["adds_up"] = all(r["adds_up"] for r in rows)
+        group["totals"] = totals
+
+
+def canal_water_by_month(pod: PointOfDiversion) -> list[dict[str, Any]]:
     """Where one canal's water went, month by month (149-02 Task 2b). Read-only.
 
     Returns one dict per reporting period that has a direct-use diversion
@@ -840,90 +1129,24 @@ def canal_water_by_month(pod):
     figures count as nothing), plus ``count``, ``uncalculated`` (months not yet
     calculated) and ``adds_up`` over the calculated months only.
     """
-    tolerance = Decimal("0.0001")
-    zero = Decimal("0")
-
-    records = list(
-        DiversionRecord.objects.filter(
-            point_of_diversion=pod, diversion_type="direct_use"
-        ).order_by("month")
-    )
-    if not records:
+    by_month = _consumed_by_month(pod)
+    if not by_month:
         return []
-
-    by_month = {}
-    for record in records:
-        entry = by_month.setdefault(
-            _month_start(record.month),
-            {"consumed": zero, "estimated": False},
-        )
-        entry["consumed"] += record.consumed_acre_feet()
-        if record.method == "estimated_from_use":
-            entry["estimated"] = True
 
     stored = {
         loss.month: loss for loss in CanalMonthLoss.objects.filter(point_of_diversion=pod)
     }
-    divided = {}
-    for amount, day in ParcelLedger.objects.filter(
-        divided_from_headgate=True,
-        divided_from_point_pk=pod.pk,
-        source_type="surface_diversion",
-    ).values_list("amount_acre_feet", "effective_date"):
-        key = _month_start(day)
-        divided[key] = divided.get(key, zero) + abs(amount)
-    beyond = {}
-    for amount, day in UnallocatedDelivery.objects.filter(
-        point_of_diversion=pod
-    ).values_list("amount_acre_feet", "month"):
-        key = _month_start(day)
-        beyond[key] = beyond.get(key, zero) + amount
+    divided = _divided_by_month(pod)
+    beyond = _unallocated_by_month(pod)
 
     periods = list(ReportingPeriod.objects.order_by("-start_date"))
 
-    def period_of(month):
-        month_end = date(month.year + (month.month == 12), month.month % 12 + 1, 1)
-        for period in periods:
-            if period.start_date < month_end and period.end_date >= month:
-                return period
-        return None
-
-    groups = {}
+    groups: dict[int | None, dict[str, Any]] = {}
     for month in sorted(by_month):
-        info = by_month[month]
-        loss = stored.get(month)
-        if loss is None:
-            row = {
-                "month": month,
-                "headgate": info["consumed"],
-                "evaporation": None,
-                "seepage": None,
-                "spill": None,
-                "losses": None,
-                "own": None,
-                "divided": None,
-                "beyond": None,
-                "calculated": False,
-                "adds_up": True,
-            }
-        else:
-            losses = loss.evaporation_af + loss.seepage_af + loss.spill_af
-            row = {
-                "month": month,
-                "headgate": loss.diverted_af,
-                "evaporation": loss.evaporation_af,
-                "seepage": loss.seepage_af,
-                "spill": loss.spill_af,
-                "losses": losses,
-                "own": loss.own_af,
-                "divided": divided.get(month, zero),
-                "beyond": beyond.get(month, zero),
-                "calculated": True,
-            }
-            parts = losses + row["own"] + row["divided"] + row["beyond"]
-            row["adds_up"] = abs(row["headgate"] - parts) <= tolerance
-        row["estimated"] = info["estimated"]
-        period = period_of(month)
+        row = _canal_month_row(
+            month, by_month[month], stored.get(month), divided, beyond
+        )
+        period = _period_of(month, periods)
         group = groups.setdefault(
             period.pk if period else None,
             {
@@ -939,18 +1162,7 @@ def canal_water_by_month(pod):
     if None in groups:
         ordered.append(groups[None])
 
-    figure_keys = (
-        "headgate", "evaporation", "seepage", "spill", "losses", "own",
-        "divided", "beyond",
-    )
-    for group in ordered:
-        rows = group["rows"]
-        totals = {key: sum((r[key] or zero for r in rows), zero) for key in figure_keys}
-        totals["count"] = len(rows)
-        totals["uncalculated"] = sum(1 for r in rows if not r["calculated"])
-        totals["estimated"] = any(r["estimated"] for r in rows)
-        totals["adds_up"] = all(r["adds_up"] for r in rows)
-        group["totals"] = totals
+    _add_group_totals(ordered)
     if ordered and not any(g["is_open"] for g in ordered):
         ordered[0]["is_open"] = True  # nothing open: the newest year still opens
     return ordered

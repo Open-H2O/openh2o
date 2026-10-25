@@ -8,7 +8,10 @@ against its supplies for a reporting period (consumptive balance + mass
 balance), lists the recent ledger rows, shows zone memberships and the wells
 that irrigate it, and inline-edits the parcel's editable fields.
 """
+from __future__ import annotations
+
 import json
+from typing import Any
 from urllib.parse import parse_qs
 
 from django.contrib.auth.decorators import login_required
@@ -182,6 +185,63 @@ def _parcel_detail_context(parcel, period_id=None):
     zone_memberships = parcel.parcel_zones.select_related("zone").all()
     related_wells = parcel.wellirrigatedparcel_set.select_related("well").all()
 
+    all_periods = list(ReportingPeriod.objects.order_by("-start_date"))
+    balance_period = _balance_period(parcel, all_periods, period_id)
+
+    # The corrected v1.10 lens (57-01) + the closing identity (52.6-03), both
+    # read from the same source fields so the card is internally consistent.
+    consumptive_balance = parcel_consumptive_balance(parcel, balance_period)
+    mass_balance = parcel_mass_balance(parcel, balance_period)
+    # Months this parcel was engine-run — each links to its own audit waterfall
+    # (Task 2). Empty when ET was never computed (surface-only ISS-054 case),
+    # which the template renders as an honest "ET not yet computed" state rather
+    # than a scary red residual.
+    run_periods = parcel_run_periods(parcel, balance_period)
+    # 148-03: the months that link to a calculation receipt are only those
+    # with a well and no meter; a field with none shows no link block at all.
+    receipt_periods = parcel_receipt_periods(parcel, balance_period)
+    # ISS-157: what the platform already stored and no screen had ever shown.
+    unmet_demand_af = parcel_unmet_demand(parcel, balance_period)
+    # 148-04 (c): canal water beyond what the crop could use, on a run stamped
+    # to show it as its own named line rather than a credit.
+    over_delivery_shown_af = parcel_over_delivery_shown(parcel, balance_period)
+    # 148-03: the same figure under every setting value, the cause line under
+    # a residual that is real (a field with no meter and no closing estimate).
+    over_delivery_total_af = parcel_over_delivery_total(parcel, balance_period)
+
+    recent_ledger = _recent_ledger(parcel, balance_period)
+    geojson = _parcel_geojson(parcel)
+    editable_fields = _editable_fields()
+    editable_fields_with_values = _editable_fields_with_values(parcel, editable_fields)
+
+    context = {
+        "parcel": parcel,
+        "zone_memberships": zone_memberships,
+        "related_wells": related_wells,
+        "recent_ledger": recent_ledger,
+        "balance_period": balance_period,
+        # Every period, newest first — the options of the pane's period control.
+        "all_periods": all_periods,
+        "consumptive_balance": consumptive_balance,
+        "mass_balance": mass_balance,
+        "run_periods": run_periods,
+        "receipt_periods": receipt_periods,
+        "unmet_demand_af": unmet_demand_af,
+        "over_delivery_shown_af": over_delivery_shown_af,
+        "over_delivery_total_af": over_delivery_total_af,
+        "editable_fields": editable_fields,
+        "editable_fields_with_values": editable_fields_with_values,
+        # Pass the Python object (or None); the template escapes it via
+        # json_script so operator free-text can't break out of <script>.
+        "geojson": geojson,
+    }
+    return context
+
+
+def _balance_period(
+    parcel: Parcel, all_periods: list[ReportingPeriod], period_id: str | None
+) -> ReportingPeriod | None:
+    """The reporting period the parcel pane opens on, by the four steps below."""
     # Which period the pane opens on (ISS-147). Four steps, in order, and the
     # ORDER is the whole fix:
     #
@@ -201,7 +261,6 @@ def _parcel_detail_context(parcel, period_id=None):
     # ⛔ Step 2 is NOT "the most recent period". Flipping the default outright
     # would hide the wet year with no way back, which is ISS-147's own warning;
     # the control below is the way back, and step 1 is what it drives.
-    all_periods = list(ReportingPeriod.objects.order_by("-start_date"))
     by_pk = {period.pk: period for period in all_periods}
 
     balance_period = None
@@ -234,28 +293,11 @@ def _parcel_detail_context(parcel, period_id=None):
 
     if balance_period is None and all_periods:
         balance_period = all_periods[0]
+    return balance_period
 
-    # The corrected v1.10 lens (57-01) + the closing identity (52.6-03), both
-    # read from the same source fields so the card is internally consistent.
-    consumptive_balance = parcel_consumptive_balance(parcel, balance_period)
-    mass_balance = parcel_mass_balance(parcel, balance_period)
-    # Months this parcel was engine-run — each links to its own audit waterfall
-    # (Task 2). Empty when ET was never computed (surface-only ISS-054 case),
-    # which the template renders as an honest "ET not yet computed" state rather
-    # than a scary red residual.
-    run_periods = parcel_run_periods(parcel, balance_period)
-    # 148-03: the months that link to a calculation receipt are only those
-    # with a well and no meter; a field with none shows no link block at all.
-    receipt_periods = parcel_receipt_periods(parcel, balance_period)
-    # ISS-157: what the platform already stored and no screen had ever shown.
-    unmet_demand_af = parcel_unmet_demand(parcel, balance_period)
-    # 148-04 (c): canal water beyond what the crop could use, on a run stamped
-    # to show it as its own named line rather than a credit.
-    over_delivery_shown_af = parcel_over_delivery_shown(parcel, balance_period)
-    # 148-03: the same figure under every setting value, the cause line under
-    # a residual that is real (a field with no meter and no closing estimate).
-    over_delivery_total_af = parcel_over_delivery_total(parcel, balance_period)
 
+def _recent_ledger(parcel: Parcel, balance_period: ReportingPeriod | None) -> Any:
+    """The parcel's ten most recent ledger rows in ``balance_period`` (its whole history when None)."""
     # ISS-165 / R-107. This queryset used to run above, before `balance_period`
     # was resolved, and filtered on the parcel ONLY. So the water balance and the
     # ledger card beside it — two surfaces a hand's width apart on one screen —
@@ -277,8 +319,11 @@ def _parcel_detail_context(parcel, period_id=None):
     if balance_period is not None:
         recent_ledger = recent_ledger.filter(reporting_period=balance_period)
     recent_ledger = recent_ledger.order_by("-effective_date", "-created_at")[:10]
+    return recent_ledger
 
 
+def _parcel_geojson(parcel: Parcel) -> dict[str, Any] | None:
+    """The parcel as a one-feature collection for the detail map, or None without geometry."""
     geojson = None
     if parcel.geometry:
         geojson = json.loads(
@@ -289,9 +334,14 @@ def _parcel_detail_context(parcel, period_id=None):
                 fields=["parcel_number", "owner_name"],
             )
         )
+    return geojson
 
+
+def _editable_fields_with_values(
+    parcel: Parcel, editable_fields: dict[str, dict[str, Any]]
+) -> list[dict[str, Any]]:
+    """Each editable field's metadata with the parcel's current value and display text."""
     # Build editable field list with current values for the template
-    editable_fields = _editable_fields()
     editable_fields_with_values = []
     for fname, fmeta in editable_fields.items():
         value, display = _field_value(parcel, fname)
@@ -303,29 +353,7 @@ def _parcel_detail_context(parcel, period_id=None):
             "value": value,
             "display": display,
         })
-
-    context = {
-        "parcel": parcel,
-        "zone_memberships": zone_memberships,
-        "related_wells": related_wells,
-        "recent_ledger": recent_ledger,
-        "balance_period": balance_period,
-        # Every period, newest first — the options of the pane's period control.
-        "all_periods": all_periods,
-        "consumptive_balance": consumptive_balance,
-        "mass_balance": mass_balance,
-        "run_periods": run_periods,
-        "receipt_periods": receipt_periods,
-        "unmet_demand_af": unmet_demand_af,
-        "over_delivery_shown_af": over_delivery_shown_af,
-        "over_delivery_total_af": over_delivery_total_af,
-        "editable_fields": editable_fields,
-        "editable_fields_with_values": editable_fields_with_values,
-        # Pass the Python object (or None); the template escapes it via
-        # json_script so operator free-text can't break out of <script>.
-        "geojson": geojson,
-    }
-    return context
+    return editable_fields_with_values
 
 
 @login_required

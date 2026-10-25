@@ -48,9 +48,12 @@ A row whose well name matches an existing well's is not a hard duplicate
 imports as a second row, reported by name so the count is never silently 0,
 and `--skip-duplicates` skips it instead.
 """
+from __future__ import annotations
+
 import csv
 import os
 from decimal import Decimal, InvalidOperation
+from typing import Any
 
 from django.contrib.gis.gdal import DataSource
 from django.contrib.gis.geos import Point
@@ -165,27 +168,13 @@ class Command(BaseCommand):
                 )
             )
 
-        # Auto-detect format from extension
-        if fmt is None:
-            ext = os.path.splitext(file_path)[1].lower()
-            if ext == ".csv":
-                fmt = "csv"
-            elif ext == ".shp":
-                fmt = "shapefile"
-            else:
-                raise CommandError(
-                    f"Cannot detect format from extension '{ext}'. Use --format."
-                )
+        fmt = self._detect_format(file_path, fmt)
 
         if dry_run:
             self.stdout.write(self.style.WARNING("[DRY RUN] No records will be written."))
 
         known_columns = {name_field, lat_field, lon_field, reg_id_field, *EXTRA_COLUMNS.values()}
         self._report_columns(file_path, fmt, known_columns, dry_run)
-
-        imported_count = 0
-        duplicate_count = 0
-        error_count = 0
 
         # WellType is seeded reference data (like WaterRightType for the
         # rights importer): looked up, never created here.
@@ -197,84 +186,115 @@ class Command(BaseCommand):
             )
         )
 
+        outcomes = []
         with transaction.atomic():
             for idx, rec in enumerate(records, start=1):
-                try:
-                    name = rec.get("name") or ""
-                    reg_id = rec.get("reg_id") or None
-                    location = rec.get("location")
-
-                    # Skip records with no coordinates
-                    if location is None:
-                        self.stdout.write(
-                            self.style.WARNING(
-                                f"  Record {idx}: missing coordinates -- skipped."
-                            )
-                        )
-                        error_count += 1
-                        continue
-
-                    # Fall back to reg_id or sequential name
-                    if not name:
-                        name = reg_id or f"Well {idx}"
-
-                    # Duplicate detection by registration ID: well_registration_id
-                    # is unique in the database, so this is a hard skip regardless
-                    # of --skip-duplicates.
-                    if reg_id:
-                        if Well.objects.filter(well_registration_id=reg_id).exists():
-                            self.stdout.write(
-                                self.style.WARNING(
-                                    f"  {name} (reg_id={reg_id}): duplicate registration id -- skipped."
-                                )
-                            )
-                            duplicate_count += 1
-                            continue
-
-                    # Same-name warning (ISS-190): not a hard duplicate, since
-                    # only well_registration_id is unique, but silently
-                    # importing a second row under an existing name is exactly
-                    # what shape 4's walk found ("0 duplicates skipped").
-                    if Well.objects.filter(name=name).exists():
-                        if skip_duplicates:
-                            self.stdout.write(
-                                self.style.WARNING(
-                                    f"  a well named {name} exists; skipped (--skip-duplicates)."
-                                )
-                            )
-                            duplicate_count += 1
-                            continue
-                        self.stdout.write(
-                            self.style.WARNING(
-                                f"  a well named {name} exists; imported as a "
-                                "second row; pass --skip-duplicates to skip."
-                            )
-                        )
-
-                    extra_fields = self._coerce_extra_fields(
-                        rec, idx, name, type_by_name
+                outcomes.append(
+                    self._import_record(
+                        idx, rec, skip_duplicates, dry_run, type_by_name
                     )
+                )
 
-                    if not dry_run:
-                        Well.objects.create(
-                            name=name,
-                            well_registration_id=reg_id,
-                            location=location,
-                            **extra_fields,
-                        )
-                    imported_count += 1
-
-                except Exception as exc:
-                    self.stdout.write(
-                        self.style.ERROR(f"  Record {idx}: error -- {exc}")
-                    )
-                    error_count += 1
-
+        imported_count = outcomes.count("imported")
+        duplicate_count = outcomes.count("duplicate")
+        error_count = outcomes.count("error")
         self.stdout.write(
             self.style.SUCCESS(
                 f"Imported {imported_count} wells, {duplicate_count} duplicates skipped, {error_count} errors"
             )
         )
+
+    def _detect_format(self, file_path: str, fmt: str | None) -> str:
+        """Return the explicit format, or the one the file extension implies."""
+        # Auto-detect format from extension
+        if fmt is None:
+            ext = os.path.splitext(file_path)[1].lower()
+            if ext == ".csv":
+                fmt = "csv"
+            elif ext == ".shp":
+                fmt = "shapefile"
+            else:
+                raise CommandError(
+                    f"Cannot detect format from extension '{ext}'. Use --format."
+                )
+        return fmt
+
+    def _import_record(
+        self,
+        idx: int,
+        rec: dict[str, Any],
+        skip_duplicates: bool,
+        dry_run: bool,
+        type_by_name: dict[str, Any],
+    ) -> str:
+        """Create one well from a record; returns "imported", "duplicate" or "error"."""
+        try:
+            name = rec.get("name") or ""
+            reg_id = rec.get("reg_id") or None
+            location = rec.get("location")
+
+            # Skip records with no coordinates
+            if location is None:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"  Record {idx}: missing coordinates -- skipped."
+                    )
+                )
+                return "error"
+
+            # Fall back to reg_id or sequential name
+            if not name:
+                name = reg_id or f"Well {idx}"
+
+            # Duplicate detection by registration ID: well_registration_id
+            # is unique in the database, so this is a hard skip regardless
+            # of --skip-duplicates.
+            if reg_id:
+                if Well.objects.filter(well_registration_id=reg_id).exists():
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"  {name} (reg_id={reg_id}): duplicate registration id -- skipped."
+                        )
+                    )
+                    return "duplicate"
+
+            # Same-name warning (ISS-190): not a hard duplicate, since
+            # only well_registration_id is unique, but silently
+            # importing a second row under an existing name is exactly
+            # what shape 4's walk found ("0 duplicates skipped").
+            if Well.objects.filter(name=name).exists():
+                if skip_duplicates:
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"  a well named {name} exists; skipped (--skip-duplicates)."
+                        )
+                    )
+                    return "duplicate"
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"  a well named {name} exists; imported as a "
+                        "second row; pass --skip-duplicates to skip."
+                    )
+                )
+
+            extra_fields = self._coerce_extra_fields(
+                rec, idx, name, type_by_name
+            )
+
+            if not dry_run:
+                Well.objects.create(
+                    name=name,
+                    well_registration_id=reg_id,
+                    location=location,
+                    **extra_fields,
+                )
+            return "imported"
+
+        except Exception as exc:
+            self.stdout.write(
+                self.style.ERROR(f"  Record {idx}: error -- {exc}")
+            )
+            return "error"
 
     def _coerce_extra_fields(self, rec, idx, name, type_by_name):
         """Turn the raw string values EXTRA_COLUMNS collected into Well kwargs."""

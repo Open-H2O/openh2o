@@ -69,11 +69,14 @@ Rules enforced here, in order:
    validated.  The reporting period covering each row's month is attached
    the same way ``surface/views.py::diversion_record_create`` does.
 """
+from __future__ import annotations
+
 import calendar
 import csv
 import io
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
+from typing import Any
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -520,8 +523,49 @@ _BOOK_TYPE_MAP = {
 
 def _process_book_row(line_num, row, *, whole_file_point, right_cache, right_points_cache):
     row_l = _lower_row(row)
-    errors = []
+    errors: list[str] = []
 
+    month_date = _book_month(row_l, errors)
+    kind = _book_kind(row_l, errors)
+
+    conversions: list[dict[str, Any]] = []
+    amount = _book_amount(row_l, line_num, errors, conversions)
+
+    returned = Decimal("0")
+    returned_raw = row_l.get("returned", "")
+    if returned_raw:
+        try:
+            returned = Decimal(returned_raw)
+        except InvalidOperation:
+            errors.append(f"The returned value '{returned_raw}' is not a number.")
+
+    max_flow_cfs = _book_max_flow(row_l)
+
+    if errors:
+        return {"line": line_num, "errors": errors}
+
+    point, point_reason = resolve_point(
+        row_l, whole_file_point, right_cache=right_cache,
+        right_points_cache=right_points_cache,
+    )
+
+    return {
+        "line": line_num,
+        "point": point,
+        "point_reason": point_reason,
+        "month": month_date,
+        "kind": kind,
+        "amount_af": amount,
+        "returned_af": returned,
+        "max_flow_cfs": max_flow_cfs,
+        "conversions": conversions,
+        "note": None,
+        "errors": [],
+    }
+
+
+def _book_month(row_l: dict[str, str], errors: list[str]) -> date | None:
+    """The first of the row's month from its date or month column; appends to ``errors`` when unusable."""
     month_date = None
     month_source = None
     for key in ("date", "month"):
@@ -536,7 +580,11 @@ def _process_book_row(line_num, row, *, whole_file_point, right_cache, right_poi
             break
     if month_source is None:
         errors.append("This row has no date or month.")
+    return month_date
 
+
+def _book_kind(row_l: dict[str, str], errors: list[str]) -> str | None:
+    """The diversion type the row names (direct when blank); appends to ``errors`` when unrecognised."""
     type_written = row_l.get("type", "").strip()
     type_raw = type_written.lower()
     if not type_raw:
@@ -549,8 +597,19 @@ def _process_book_row(line_num, row, *, whole_file_point, right_cache, right_poi
             "Use direct, storage or use."
         )
         kind = None
+    return kind
 
-    conversions = []
+
+def _book_amount(
+    row_l: dict[str, str],
+    line_num: int,
+    errors: list[str],
+    conversions: list[dict[str, Any]],
+) -> Decimal | None:
+    """The row's volume in acre-feet from acre_feet/af, a unit volume, or cfs and hours.
+
+    Appends to ``errors`` and ``conversions`` as it goes.
+    """
     amount = None
     acre_feet_col = "acre_feet" if row_l.get("acre_feet", "") else "af"
     acre_feet_raw = row_l.get(acre_feet_col, "")
@@ -603,43 +662,19 @@ def _process_book_row(line_num, row, *, whole_file_point, right_cache, right_poi
             "This row has no volume. Fill in the acre_feet, af or volume column, "
             "or both the flow_cfs and hours columns."
         )
+    return amount
 
-    returned = Decimal("0")
-    returned_raw = row_l.get("returned", "")
-    if returned_raw:
-        try:
-            returned = Decimal(returned_raw)
-        except InvalidOperation:
-            errors.append(f"The returned value '{returned_raw}' is not a number.")
 
+def _book_max_flow(row_l: dict[str, str]) -> Decimal | None:
+    """The row's flow_cfs as a peak flow rate, or None when absent or not a number."""
     max_flow_cfs = None
+    flow_cfs_raw = row_l.get("flow_cfs", "")
     if flow_cfs_raw:
         try:
             max_flow_cfs = Decimal(flow_cfs_raw)
         except InvalidOperation:
             max_flow_cfs = None
-
-    if errors:
-        return {"line": line_num, "errors": errors}
-
-    point, point_reason = resolve_point(
-        row_l, whole_file_point, right_cache=right_cache,
-        right_points_cache=right_points_cache,
-    )
-
-    return {
-        "line": line_num,
-        "point": point,
-        "point_reason": point_reason,
-        "month": month_date,
-        "kind": kind,
-        "amount_af": amount,
-        "returned_af": returned,
-        "max_flow_cfs": max_flow_cfs,
-        "conversions": conversions,
-        "note": None,
-        "errors": [],
-    }
+    return max_flow_cfs
 
 
 # ---------------------------------------------------------------------------
@@ -662,9 +697,43 @@ def build_rows(columns, rows, layout, *, whole_file_point=None, method="",
     the save.
     """
     site_config = site_config or _default_site_config()
-    right_cache = {}
-    right_points_cache = {}
 
+    use_rows_present = _count_use_rows(rows, layout)
+    groups, use_groups, errors, unresolved, conversions, notes = _group_rows(
+        rows, layout, whole_file_point, site_config
+    )
+
+    # The USE rule (J3): drop, returned, or as_direct. An explicit `use_rule`
+    # (146-03 Task 6: the import screen's own question) overrides the
+    # deployment's remembered default on SiteConfig.
+    applied_use_rule = use_rule if use_rule is not None else site_config.diversion_use_type_rule
+    use_rows_dropped = _apply_use_rule(groups, use_groups, applied_use_rule, errors)
+
+    combined_rows, candidates, total_af = _candidates_from_groups(groups)
+
+    return {
+        "candidates": candidates,
+        "total_af": total_af.quantize(_FOUR_PLACES),
+        "combined_rows": combined_rows,
+        "unresolved_rows": unresolved,
+        "errors": errors,
+        "conversions": conversions,
+        "notes": notes,
+        "use_rows_present": use_rows_present,
+        "use_rows_dropped": use_rows_dropped,
+        "rule_sentence": rule_sentence(site_config),
+        "settings": {
+            "method": method,
+            "data_state": data_state,
+            "diversion_use_type_rule": applied_use_rule,
+            "diversion_report_year_rule": site_config.diversion_report_year_rule,
+            "season_start_month": site_config.season_start_month,
+        },
+    }
+
+
+def _count_use_rows(rows: list[dict[str, str]], layout: str | None) -> int:
+    """How many raw rows of a state-layout file type USE (0 for any other layout)."""
     # Every row the FILE types USE, counted off the raw rows before any of
     # them is resolved to a point. The import screen's own USE question is
     # shown on this count, and a row whose point is not yet chosen still
@@ -676,14 +745,34 @@ def build_rows(columns, rows, layout, *, whole_file_point=None, method="",
         for raw_row in rows:
             if _lower_row(raw_row).get("diversion_type", "").strip().upper() == "USE":
                 use_rows_present += 1
+    return use_rows_present
 
-    errors = []
-    unresolved = []
-    conversions = []
-    notes = []
-    use_rows_dropped = 0
-    groups = {}       # (point.pk, month, kind) -> group dict
-    use_groups = {}    # (point.pk, month) -> group dict
+
+def _group_rows(
+    rows: list[dict[str, str]],
+    layout: str | None,
+    whole_file_point: PointOfDiversion | None,
+    site_config: SiteConfig,
+) -> tuple[
+    dict[tuple[Any, ...], dict[str, Any]],
+    dict[tuple[Any, ...], dict[str, Any]],
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+]:
+    """Parse each row and group the good ones by point and month.
+
+    Returns ``(groups, use_groups, errors, unresolved, conversions, notes)``.
+    """
+    right_cache: dict[Any, Any] = {}
+    right_points_cache: dict[Any, Any] = {}
+    errors: list[dict[str, Any]] = []
+    unresolved: list[dict[str, Any]] = []
+    conversions: list[dict[str, Any]] = []
+    notes: list[dict[str, Any]] = []
+    groups: dict[tuple[Any, ...], dict[str, Any]] = {}       # (point.pk, month, kind) -> group dict
+    use_groups: dict[tuple[Any, ...], dict[str, Any]] = {}    # (point.pk, month) -> group dict
 
     for line_num, row in enumerate(rows, start=2):
         if layout == "state":
@@ -740,10 +829,17 @@ def build_rows(columns, rows, layout, *, whole_file_point=None, method="",
                 else max(g["max_flow"], entry["max_flow_cfs"])
             )
 
-    # The USE rule (J3): drop, returned, or as_direct. An explicit `use_rule`
-    # (146-03 Task 6: the import screen's own question) overrides the
-    # deployment's remembered default on SiteConfig.
-    applied_use_rule = use_rule if use_rule is not None else site_config.diversion_use_type_rule
+    return groups, use_groups, errors, unresolved, conversions, notes
+
+
+def _apply_use_rule(
+    groups: dict[tuple[Any, ...], dict[str, Any]],
+    use_groups: dict[tuple[Any, ...], dict[str, Any]],
+    applied_use_rule: str,
+    errors: list[dict[str, Any]],
+) -> int:
+    """Fold the USE groups into ``groups`` by the rule; returns how many USE rows were dropped."""
+    use_rows_dropped = 0
     for (pt_pk, month), use_group in use_groups.items():
         if applied_use_rule == "drop":
             use_rows_dropped += len(use_group["lines"])
@@ -779,7 +875,13 @@ def build_rows(columns, rows, layout, *, whole_file_point=None, method="",
         returned_amount = min(returned_amount, direct_group["amount"])
         direct_group["returned"] += returned_amount
         direct_group["lines"].extend(use_group["lines"])
+    return use_rows_dropped
 
+
+def _candidates_from_groups(
+    groups: dict[tuple[Any, ...], dict[str, Any]],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], Decimal]:
+    """Turn the groups into candidate field-sets; returns (combined rows, candidates, total AF)."""
     combined_rows = []
     candidates = []
     total_af = Decimal("0")
@@ -803,26 +905,7 @@ def build_rows(columns, rows, layout, *, whole_file_point=None, method="",
             "max_flow_rate_cfs": g["max_flow"],
             "source_lines": sorted(g["lines"]),
         })
-
-    return {
-        "candidates": candidates,
-        "total_af": total_af.quantize(_FOUR_PLACES),
-        "combined_rows": combined_rows,
-        "unresolved_rows": unresolved,
-        "errors": errors,
-        "conversions": conversions,
-        "notes": notes,
-        "use_rows_present": use_rows_present,
-        "use_rows_dropped": use_rows_dropped,
-        "rule_sentence": rule_sentence(site_config),
-        "settings": {
-            "method": method,
-            "data_state": data_state,
-            "diversion_use_type_rule": applied_use_rule,
-            "diversion_report_year_rule": site_config.diversion_report_year_rule,
-            "season_start_month": site_config.season_start_month,
-        },
-    }
+    return combined_rows, candidates, total_af
 
 
 # ---------------------------------------------------------------------------
@@ -838,8 +921,45 @@ def commit_rows(built, *, method="", data_state="provisional", dry_run=False):
     Validation runs in both modes, so a dry-run preview shows the same
     errors a real commit would refuse -- only the ``.save()`` is skipped.
     """
-    candidates = built["candidates"]
     errors = list(built["errors"])
+    survivors, skipped_duplicates = _vet_candidates(
+        built["candidates"], errors, method, data_state
+    )
+
+    if dry_run:
+        return {
+            "created": len(survivors),
+            "skipped_duplicates": skipped_duplicates,
+            "periods_attached": {},
+            "months_created": [],
+            "replaced_estimates": [],
+            "errors": errors,
+        }
+
+    created, periods_attached, months_created, replaced_estimates = _save_survivors(
+        survivors, errors
+    )
+
+    return {
+        "created": created,
+        "skipped_duplicates": skipped_duplicates,
+        "periods_attached": periods_attached,
+        "months_created": sorted(months_created),
+        "replaced_estimates": sorted(replaced_estimates),
+        "errors": errors,
+    }
+
+
+def _vet_candidates(
+    candidates: list[dict[str, Any]],
+    errors: list[dict[str, Any]],
+    method: str,
+    data_state: str,
+) -> tuple[list[tuple[dict[str, Any], DiversionRecord]], int]:
+    """Drop duplicates, locked months and invalid records; returns (survivors, duplicates skipped).
+
+    Refused rows are appended to ``errors``.
+    """
     skipped_duplicates = 0
 
     point_ids = {c["point"].pk for c in candidates}
@@ -898,21 +1018,21 @@ def commit_rows(built, *, method="", data_state="provisional", dry_run=False):
             })
             continue
         survivors.append((c, record))
+    return survivors, skipped_duplicates
 
-    if dry_run:
-        return {
-            "created": len(survivors),
-            "skipped_duplicates": skipped_duplicates,
-            "periods_attached": {},
-            "months_created": [],
-            "replaced_estimates": [],
-            "errors": errors,
-        }
 
+def _save_survivors(
+    survivors: list[tuple[dict[str, Any], DiversionRecord]],
+    errors: list[dict[str, Any]],
+) -> tuple[int, dict[str, int], set[str], set[str]]:
+    """Save each record in its own savepoint; returns (created, periods attached, months, replaced estimates).
+
+    A record that fails to save is appended to ``errors`` and the rest carry on.
+    """
     created = 0
-    periods_attached = {}
-    months_created = set()
-    replaced_estimates = set()
+    periods_attached: dict[str, int] = {}
+    months_created: set[str] = set()
+    replaced_estimates: set[str] = set()
     with transaction.atomic():
         for c, record in survivors:
             try:
@@ -941,15 +1061,7 @@ def commit_rows(built, *, method="", data_state="provisional", dry_run=False):
                         f"record. Details: {type(exc).__name__}: {exc}"
                     ),
                 })
-
-    return {
-        "created": created,
-        "skipped_duplicates": skipped_duplicates,
-        "periods_attached": periods_attached,
-        "months_created": sorted(months_created),
-        "replaced_estimates": sorted(replaced_estimates),
-        "errors": errors,
-    }
+    return created, periods_attached, months_created, replaced_estimates
 
 
 def _default_site_config():

@@ -26,12 +26,15 @@ engine's own names so a reader who knows one door reads the other for free:
                                       -> [{index, data, errors, warnings}]
   commit_rows(valid_results)        -> int (number created)
 """
+from __future__ import annotations
+
 import csv
 import io
 import math
 import re
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
+from typing import Any
 
 from django.db import transaction
 
@@ -312,123 +315,159 @@ def validate_rows(rows, mapping, existing_right_ids):
     """
     type_by_name = {t.name.lower(): t for t in WaterRightType.objects.all()}
     existing = {r for r in (existing_right_ids or set())}
-    seen_in_batch = set()
+    seen_in_batch: set[str] = set()
 
-    results = []
-    for index, row in enumerate(rows):
-        errors = []
-        warnings = []
-        data = {}
+    return [
+        _validate_row(index, row, mapping, type_by_name, existing, seen_in_batch)
+        for index, row in enumerate(rows)
+    ]
 
-        def src(field):
-            col = mapping.get(field)
-            if not col:
-                return ""
-            return (row.get(col) or "").strip()
 
-        def blank(field):
-            errors.append(f"{_column(mapping, field)} is blank or not matched to a column.")
+def _src(row: dict[str, Any], mapping: dict[str, str], field: str) -> str:
+    """The row's stripped value for ``field`` through the column mapping, or "" when unmapped or blank."""
+    col = mapping.get(field)
+    if not col:
+        return ""
+    return (row.get(col) or "").strip()
 
-        right_id = src("right_id")
-        if not right_id:
-            blank("right_id")
-        elif right_id in existing:
-            errors.append(
-                f"Water right {right_id} is already on file. OpenH2O does not "
-                "overwrite a water right on import."
+
+def _blank(errors: list[str], mapping: dict[str, str], field: str) -> None:
+    """Add the "blank or not matched to a column" error for ``field``."""
+    errors.append(f"{_column(mapping, field)} is blank or not matched to a column.")
+
+
+def _validate_row(
+    index: int,
+    row: dict[str, Any],
+    mapping: dict[str, str],
+    type_by_name: dict[str, WaterRightType],
+    existing: set[str],
+    seen_in_batch: set[str],
+) -> dict[str, Any]:
+    """Validate one row into {index, data, errors, warnings}."""
+    errors: list[str] = []
+    warnings: list[str] = []
+    data: dict[str, Any] = {}
+
+    _read_identity(row, mapping, type_by_name, existing, seen_in_batch, data, errors)
+    _read_quantities(row, mapping, data, errors, warnings)
+
+    return {"index": index, "data": data, "errors": errors, "warnings": warnings}
+
+
+def _read_identity(
+    row: dict[str, Any],
+    mapping: dict[str, str],
+    type_by_name: dict[str, WaterRightType],
+    existing: set[str],
+    seen_in_batch: set[str],
+    data: dict[str, Any],
+    errors: list[str],
+) -> None:
+    """Read the right id (deduped), type, holder and plain text fields into ``data``."""
+    right_id = _src(row, mapping, "right_id")
+    if not right_id:
+        _blank(errors, mapping, "right_id")
+    elif right_id in existing:
+        errors.append(
+            f"Water right {right_id} is already on file. OpenH2O does not "
+            "overwrite a water right on import."
+        )
+    elif right_id in seen_in_batch:
+        errors.append(f"Water right {right_id} appears earlier in this file.")
+    else:
+        seen_in_batch.add(right_id)
+    data["right_id"] = right_id
+
+    type_raw = _src(row, mapping, "right_type_name")
+    if not type_raw:
+        _blank(errors, mapping, "right_type_name")
+    else:
+        right_type, new_type_name = _resolve_right_type(type_raw, type_by_name)
+        if right_type is not None:
+            data["right_type"] = right_type
+        else:
+            data["new_right_type_name"] = new_type_name
+
+    holder_name = _src(row, mapping, "holder_name")
+    if not holder_name:
+        _blank(errors, mapping, "holder_name")
+    data["holder_name"] = holder_name
+
+    for field in ("state_status", "source_name", "watershed", "license_number",
+                  "permit_number", "purpose_of_use"):
+        val = _src(row, mapping, field)
+        if val:
+            data[field] = val
+
+
+def _read_quantities(
+    row: dict[str, Any],
+    mapping: dict[str, str],
+    data: dict[str, Any],
+    errors: list[str],
+    warnings: list[str],
+) -> None:
+    """Read face value, maximum rate, acreage, priority date and whole-number fields into ``data``."""
+    # --- face value + its unit ---
+    # A face value in another unit leaves the right in, without the face
+    # value.
+    face_value_raw = _src(row, mapping, "face_value_acre_feet")
+    if face_value_raw:
+        units = _src(row, mapping, "face_value_units")
+        if units and units != FACE_VALUE_UNITS_EXPECTED:
+            warnings.append(
+                "OpenH2O imported this right without its face value, which "
+                f"the file gives in {units}. OpenH2O records a face value in "
+                "acre-feet per year."
             )
-        elif right_id in seen_in_batch:
-            errors.append(f"Water right {right_id} appears earlier in this file.")
         else:
-            seen_in_batch.add(right_id)
-        data["right_id"] = right_id
-
-        type_raw = src("right_type_name")
-        if not type_raw:
-            blank("right_type_name")
-        else:
-            right_type, new_type_name = _resolve_right_type(type_raw, type_by_name)
-            if right_type is not None:
-                data["right_type"] = right_type
-            else:
-                data["new_right_type_name"] = new_type_name
-
-        holder_name = src("holder_name")
-        if not holder_name:
-            blank("holder_name")
-        data["holder_name"] = holder_name
-
-        for field in ("state_status", "source_name", "watershed", "license_number",
-                      "permit_number", "purpose_of_use"):
-            val = src(field)
-            if val:
-                data[field] = val
-
-        # --- face value + its unit ---
-        # A face value in another unit leaves the right in, without the face
-        # value.
-        face_value_raw = src("face_value_acre_feet")
-        if face_value_raw:
-            units = src("face_value_units")
-            if units and units != FACE_VALUE_UNITS_EXPECTED:
-                warnings.append(
-                    "OpenH2O imported this right without its face value, which "
-                    f"the file gives in {units}. OpenH2O records a face value in "
-                    "acre-feet per year."
-                )
-            else:
-                try:
-                    data["face_value_acre_feet"] = Decimal(face_value_raw)
-                except (InvalidOperation, ValueError):
-                    errors.append(
-                        f"{_column(mapping, 'face_value_acre_feet')} "
-                        f"'{face_value_raw}' is not a number."
-                    )
-
-        # --- max rate + its unit --- (message E row 6)
-        rate_raw = src("max_rate_cfs")
-        if rate_raw:
-            units = src("max_rate_units")
-            if units and units != MAX_DD_UNITS_EXPECTED:
-                warnings.append(
-                    "OpenH2O imported this right without its maximum rate, which "
-                    f"the file gives in {units}. OpenH2O records a maximum rate in "
-                    "cubic feet per second."
-                )
-            else:
-                try:
-                    data["max_rate_cfs"] = Decimal(rate_raw)
-                except (InvalidOperation, ValueError):
-                    errors.append(
-                        f"{_column(mapping, 'max_rate_cfs')} '{rate_raw}' is not a number."
-                    )
-
-        net_acreage_raw = src("net_acreage")
-        if net_acreage_raw:
             try:
-                data["net_acreage"] = Decimal(net_acreage_raw)
+                data["face_value_acre_feet"] = Decimal(face_value_raw)
             except (InvalidOperation, ValueError):
                 errors.append(
-                    f"{_column(mapping, 'net_acreage')} '{net_acreage_raw}' is not a number."
+                    f"{_column(mapping, 'face_value_acre_feet')} "
+                    f"'{face_value_raw}' is not a number."
                 )
 
-        data["priority_date"] = _parse_priority_date(
-            src("priority_date"), _column(mapping, "priority_date"), errors
-        )
+    # --- max rate + its unit --- (message E row 6)
+    rate_raw = _src(row, mapping, "max_rate_cfs")
+    if rate_raw:
+        units = _src(row, mapping, "max_rate_units")
+        if units and units != MAX_DD_UNITS_EXPECTED:
+            warnings.append(
+                "OpenH2O imported this right without its maximum rate, which "
+                f"the file gives in {units}. OpenH2O records a maximum rate in "
+                "cubic feet per second."
+            )
+        else:
+            try:
+                data["max_rate_cfs"] = Decimal(rate_raw)
+            except (InvalidOperation, ValueError):
+                errors.append(
+                    f"{_column(mapping, 'max_rate_cfs')} '{rate_raw}' is not a number."
+                )
 
-        for field in _INT_FIELDS:
-            val = src(field)
-            if val:
-                try:
-                    data[field] = int(Decimal(val))
-                except (InvalidOperation, ValueError):
-                    errors.append(f"{_column(mapping, field)} '{val}' is not a number.")
+    net_acreage_raw = _src(row, mapping, "net_acreage")
+    if net_acreage_raw:
+        try:
+            data["net_acreage"] = Decimal(net_acreage_raw)
+        except (InvalidOperation, ValueError):
+            errors.append(
+                f"{_column(mapping, 'net_acreage')} '{net_acreage_raw}' is not a number."
+            )
 
-        results.append(
-            {"index": index, "data": data, "errors": errors, "warnings": warnings}
-        )
+    data["priority_date"] = _parse_priority_date(
+        _src(row, mapping, "priority_date"), _column(mapping, "priority_date"), errors
+    )
 
-    return results
+    for field in _INT_FIELDS:
+        val = _src(row, mapping, field)
+        if val:
+            try:
+                data[field] = int(Decimal(val))
+            except (InvalidOperation, ValueError):
+                errors.append(f"{_column(mapping, field)} '{val}' is not a number.")
 
 
 # ---------------------------------------------------------------------------

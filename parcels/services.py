@@ -1,8 +1,19 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Lookups about a use area that every deployment needs, canals or not."""
 
+from __future__ import annotations
 
-def field_efficiency(parcel, config=None):
+from decimal import Decimal
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from core.models import SiteConfig
+    from parcels.models import Parcel
+
+
+def field_efficiency(
+    parcel: Parcel, config: SiteConfig | None = None
+) -> tuple[Decimal, str]:
     """One parcel's own field efficiency, and where it came from (148-02, S1).
 
     Returns ``(Decimal, source)``. ``source`` is ``"method"`` when the parcel

@@ -48,8 +48,11 @@ when a diversion record is saved lives in the views (``surface.views``,
 so its own writes cannot start a run.
 """
 
+from __future__ import annotations
+
 from datetime import date, timedelta
 from decimal import Decimal
+from typing import TYPE_CHECKING, Any
 
 from django.db.models import Q
 
@@ -62,6 +65,7 @@ from surface.models import (
     PointOfDiversion,
     PointOfDiversionDevice,
     PointOfDiversionParcel,
+    WaterRight,
 )
 from surface.services import (
     _in_months,
@@ -71,6 +75,9 @@ from surface.services import (
     _own_magnitudes,
     _own_total_for_pod,
 )
+
+if TYPE_CHECKING:
+    from parcels.models import Parcel
 
 _Q = Decimal("0.0001")
 ESTIMATE_METHOD = "estimated_from_use"
@@ -264,126 +271,160 @@ def estimate_month(first, notes):
     ).first()
     text_month = f"{first.year}-{first.month:02d}"
 
+    for point in _estimable_points(first):
+        _estimate_point(point, first, last, period, text_month, notes)
+
+
+def _estimable_points(first: date) -> Any:
+    """Every point that serves a field or already holds an estimate record this month, by pk."""
     ids = set(
         PointOfDiversionParcel.objects.values_list("point_of_diversion_id", flat=True)
     )
     ids |= set(_estimate_records(first).values_list("point_of_diversion_id", flat=True))
-    points = (
+    return (
         PointOfDiversion.objects.filter(pk__in=ids)
         .select_related("water_right")
         .order_by("pk")
     )
 
-    for point in points:
-        links = list(
-            PointOfDiversionParcel.objects.filter(point_of_diversion=point)
-            .select_related("parcel")
-            .order_by("id")
-        )
-        served = [link.parcel for link in links]
-        if point.status != "active" or not served:
-            _drop(point, first)
-            continue
-        if _device_in_service(point, first, last) or _has_typed_record(point, first):
-            _drop(point, first)
-            continue
 
-        # A point with no linked right is estimated with no cap (150.1-02
-        # screen 8): requiring a right shut out anyone
-        # whose right is not on file, or who has none).
-        right = point.water_right
-        if right is not None and right.status in ("revoked", "inactive"):
-            _drop(point, first)
-            notes.append(
-                {
-                    "kind": "estimate_right_not_active",
-                    "pod": point.name,
-                    "status": right.get_status_display().lower(),
-                }
-            )
-            continue
-        fractions = (
-            point.evaporation_fraction + point.seepage_fraction + point.spill_fraction
-        )
-        if fractions >= 1:
-            # Nothing would reach the fields. Write nothing; a record already
-            # there makes the canal split stop the month with its own sentence.
-            notes.append({"kind": "estimate_losses_too_large", "pod": point.name})
-            continue
+def _estimate_point(
+    point: PointOfDiversion,
+    first: date,
+    last: date,
+    period: ReportingPeriod | None,
+    text_month: str,
+    notes: list[dict[str, Any]],
+) -> None:
+    """Estimate, or clear, one point's delivery for the month and note what happened."""
+    links = list(
+        PointOfDiversionParcel.objects.filter(point_of_diversion=point)
+        .select_related("parcel")
+        .order_by("id")
+    )
+    served = [link.parcel for link in links]
+    if point.status != "active" or not served:
+        _drop(point, first)
+        return
+    if _device_in_service(point, first, last) or _has_typed_record(point, first):
+        _drop(point, first)
+        return
 
-        own = _own_magnitudes(served, first)
-        own_total = _own_total_for_pod(point, own, first)
-        free = [field for field in served if field.pk not in own]
-        if own_total == 0 and not CalculationRun.objects.filter(
-            parcel__in=free, period=text_month
-        ).exists():
-            # No crop water use for any of its fields yet: nothing to estimate from.
-            _drop(point, first)
-            continue
-
-        need = Decimal("0")
-        for field in free:
-            efficiency = field_efficiency(field)[0]
-            if efficiency and efficiency > 0:
-                # Each field's cap to four places, as the split rounds it.
-                need += (_month_demand(field, first) / efficiency).quantize(_Q)
-        field_need = need + own_total
-        headgate = (field_need / (1 - fractions)).quantize(_Q)
-        # The largest headgate figure whose water left after the canal's
-        # losses (rounded as the split rounds them) does not exceed what the
-        # fields need, so rounding never leaves 0.0001 AF beyond what the crops
-        # could use on the canal's page.
-        while headgate > 0 and _month_losses(point, first, headgate)["available_af"] > field_need:
-            headgate -= _Q
-        if headgate == 0:
-            # The fields used no water this month: the estimate is no delivery,
-            # and a 0.00 AF record would only be noise on the canal's page.
-            _drop(point, first)
-            continue
-
-        written = headgate
-        cap_text = ""
-        if right is None:
-            pass
-        elif not _in_direct_season(right, first, last):
-            written = Decimal("0.0000")
-            cap_text = (
-                " Set to 0.00 AF because this month falls outside the water "
-                "right's direct diversion season."
-            )
-        elif right.face_value_acre_feet is not None:
-            remaining = right.face_value_acre_feet - _already_used(right, first)
-            allowed = max(Decimal("0"), remaining).quantize(_Q)
-            if allowed < headgate:
-                written = allowed
-                cap_text = (
-                    f" Capped at the {allowed:,.2f} AF of face value left on "
-                    f"the water right this water year."
-                )
-
-        _store(
-            point,
-            first,
-            written,
-            f"Estimated from the fields' crop water use: {headgate:,.2f} AF.{cap_text}",
-            period,
-        )
+    # A point with no linked right is estimated with no cap (150.1-02
+    # screen 8): requiring a right shut out anyone
+    # whose right is not on file, or who has none).
+    right = point.water_right
+    if right is not None and right.status in ("revoked", "inactive"):
+        _drop(point, first)
         notes.append(
             {
-                "kind": "estimate_written",
+                "kind": "estimate_right_not_active",
+                "pod": point.name,
+                "status": right.get_status_display().lower(),
+            }
+        )
+        return
+    fractions = (
+        point.evaporation_fraction + point.seepage_fraction + point.spill_fraction
+    )
+    if fractions >= 1:
+        # Nothing would reach the fields. Write nothing; a record already
+        # there makes the canal split stop the month with its own sentence.
+        notes.append({"kind": "estimate_losses_too_large", "pod": point.name})
+        return
+
+    headgate = _fields_headgate(point, served, first, text_month, fractions)
+    if not headgate:
+        # None: no crop water use for any of its fields yet, nothing to estimate from.
+        # Zero: the fields used no water this month, so the estimate is no
+        # delivery, and a 0.00 AF record would only be noise on the canal's page.
+        _drop(point, first)
+        return
+
+    written, cap_text = _cap_to_right(right, headgate, first, last)
+    _store(
+        point,
+        first,
+        written,
+        f"Estimated from the fields' crop water use: {headgate:,.2f} AF.{cap_text}",
+        period,
+    )
+    notes.append(
+        {
+            "kind": "estimate_written",
+            "pod": point.name,
+            "month": first,
+            "estimate_af": written,
+        }
+    )
+    if written < headgate:
+        notes.append(
+            {
+                "kind": "estimate_capped",
                 "pod": point.name,
                 "month": first,
                 "estimate_af": written,
+                "above_af": headgate - written,
+                "residual": _residual_words(served),
             }
         )
-        if written < headgate:
-            notes.append(
-                {
-                    "kind": "estimate_capped",
-                    "pod": point.name,
-                    "month": first,
-                    "estimate_af": written,
-                    "above_af": headgate - written,
-                    "residual": _residual_words(served),
-                }
+
+
+def _fields_headgate(
+    point: PointOfDiversion,
+    served: list[Parcel],
+    first: date,
+    text_month: str,
+    fractions: Decimal,
+) -> Decimal | None:
+    """The headgate volume (AF) that covers the fields' need after canal losses, or None with no crop use yet."""
+    own = _own_magnitudes(served, first)
+    own_total = _own_total_for_pod(point, own, first)
+    free = [field for field in served if field.pk not in own]
+    if own_total == 0 and not CalculationRun.objects.filter(
+        parcel__in=free, period=text_month
+    ).exists():
+        # No crop water use for any of its fields yet: nothing to estimate from.
+        return None
+
+    need = Decimal("0")
+    for field in free:
+        efficiency = field_efficiency(field)[0]
+        if efficiency and efficiency > 0:
+            # Each field's cap to four places, as the split rounds it.
+            need += (_month_demand(field, first) / efficiency).quantize(_Q)
+    field_need = need + own_total
+    headgate = (field_need / (1 - fractions)).quantize(_Q)
+    # The largest headgate figure whose water left after the canal's
+    # losses (rounded as the split rounds them) does not exceed what the
+    # fields need, so rounding never leaves 0.0001 AF beyond what the crops
+    # could use on the canal's page.
+    while headgate > 0 and _month_losses(point, first, headgate)["available_af"] > field_need:
+        headgate -= _Q
+    return headgate
+
+
+def _cap_to_right(
+    right: WaterRight | None, headgate: Decimal, first: date, last: date
+) -> tuple[Decimal, str]:
+    """The volume to write after the water right's season and face-value caps, and the sentence saying so."""
+    written = headgate
+    cap_text = ""
+    if right is None:
+        pass
+    elif not _in_direct_season(right, first, last):
+        written = Decimal("0.0000")
+        cap_text = (
+            " Set to 0.00 AF because this month falls outside the water "
+            "right's direct diversion season."
+        )
+    elif right.face_value_acre_feet is not None:
+        remaining = right.face_value_acre_feet - _already_used(right, first)
+        allowed = max(Decimal("0"), remaining).quantize(_Q)
+        if allowed < headgate:
+            written = allowed
+            cap_text = (
+                f" Capped at the {allowed:,.2f} AF of face value left on "
+                f"the water right this water year."
             )
+    return written, cap_text
