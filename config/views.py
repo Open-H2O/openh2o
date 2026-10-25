@@ -20,18 +20,8 @@ from core.models import SiteConfig
 from core.modules import is_enabled
 
 
-def index(request):
-    """Signed-in users get the task-first home; visitors get the public landing.
-
-    Both share the same entity counts. The home page wraps them in a Command
-    Console layout: a status hero (who/where + live data health), the primary
-    task cards, and the counts demoted to an at-a-glance stat bar. The public
-    landing shows the same counts as the demo's headline numbers.
-
-    150-01: the signed-in page also counts water rights, water systems and
-    sample results, and asks whether a water year exists. Those are built
-    after the anonymous return, so the public landing's queries do not grow.
-    """
+def _public_counts() -> dict:
+    """The entity counts both the public landing and the signed-in home show."""
     context = {}
     # Phase 89 puts `parcels` and `accounting` on the same footing as the four
     # below. They were the last two counts built unconditionally, and they were
@@ -83,9 +73,11 @@ def index(request):
         from recharge.models import RechargeSite
 
         context["recharge_site_count"] = RechargeSite.objects.count()
-    if not request.user.is_authenticated:
-        return render(request, "index.html", context)
+    return context
 
+
+def _add_signed_in_context(context: dict) -> None:
+    """Add what only the signed-in home page shows (hero data and counters) to ``context``."""
     # Status-hero data — every value is real, never decorative.
     site_config = SiteConfig.objects.first()
     context["agency_name"] = site_config.agency_name if site_config else "OpenH2O"
@@ -122,6 +114,25 @@ def index(request):
 
         context["water_system_count"] = WaterSystem.objects.count()
         context["sample_result_count"] = SampleResult.objects.count()
+
+
+def index(request):
+    """Signed-in users get the task-first home; visitors get the public landing.
+
+    Both share the same entity counts. The home page wraps them in a Command
+    Console layout: a status hero (who/where + live data health), the primary
+    task cards, and the counts demoted to an at-a-glance stat bar. The public
+    landing shows the same counts as the demo's headline numbers.
+
+    150-01: the signed-in page also counts water rights, water systems and
+    sample results, and asks whether a water year exists. Those are built
+    after the anonymous return, so the public landing's queries do not grow.
+    """
+    context = _public_counts()
+    if not request.user.is_authenticated:
+        return render(request, "index.html", context)
+
+    _add_signed_in_context(context)
     return render(request, "home.html", context)
 
 
@@ -155,16 +166,8 @@ SEARCH_MIN_LEN = 2       # below this the dropdown stays closed (too noisy)
 SEARCH_GROUP_LIMIT = 6   # max hits shown per entity type, so it stays scannable
 
 
-def _search_groups(q):
-    """Run the per-entity searches and return a list of result groups.
-
-    Each group is ``{"key", "label", "results": [{"label", "sublabel", "url"}]}``;
-    ``key`` selects the matching glyph in the template. Empty groups are dropped
-    so the dropdown only shows entity types that actually matched.
-    """
-    limit = SEARCH_GROUP_LIMIT
-    groups = []
-
+def _parcel_search_group(q: str, limit: int) -> dict | None:
+    """The "Use Areas" result group, or None when off or nothing matched."""
     # Phase 89: the same crash site as the wells group below, and the last two
     # groups that were still unguarded. Schema-resident means the parcels tables
     # SURVIVE the demotion and keep answering the query, while
@@ -179,12 +182,16 @@ def _search_groups(q):
             Q(parcel_number__icontains=q) | Q(owner_name__icontains=q)
         ).order_by("parcel_number")[:limit]
         if parcels:
-            groups.append({"key": "parcels", "label": "Use Areas", "results": [
+            return {"key": "parcels", "label": "Use Areas", "results": [
                 {"label": p.parcel_number, "sublabel": p.owner_name,
                  "url": reverse("parcels:detail", args=[p.pk])}
                 for p in parcels
-            ]})
+            ]}
+    return None
 
+
+def _well_search_group(q: str, limit: int) -> dict | None:
+    """The "Wells" result group, or None when off or nothing matched."""
     # Guarded, and this is a crash site rather than a cosmetic one: the tables
     # are still there under demotion and would answer the query, but
     # `reverse("wells:detail")` raises NoReverseMatch because the routes are
@@ -198,12 +205,16 @@ def _search_groups(q):
             | Q(state_well_number__icontains=q)
         ).order_by("name")[:limit]
         if wells:
-            groups.append({"key": "wells", "label": "Wells", "results": [
+            return {"key": "wells", "label": "Wells", "results": [
                 {"label": w.name, "sublabel": w.well_registration_id,
                  "url": reverse("wells:detail", args=[w.pk])}
                 for w in wells
-            ]})
+            ]}
+    return None
 
+
+def _diversion_search_group(q: str, limit: int) -> dict | None:
+    """The "Surface Diversions" result group, or None when off or nothing matched."""
     if is_enabled("surface"):
         # Local import + guard: `surface` is an optional module (Phase 87). Global
         # search is `config`, which stays enabled, so without the guard this would
@@ -214,12 +225,16 @@ def _search_groups(q):
             Q(name__icontains=q) | Q(stream_name__icontains=q)
         ).order_by("name")[:limit]
         if diversions:
-            groups.append({"key": "surface", "label": "Surface Diversions", "results": [
+            return {"key": "surface", "label": "Surface Diversions", "results": [
                 {"label": d.name, "sublabel": d.stream_name,
                  "url": reverse("surface:pod_detail", args=[d.pk])}
                 for d in diversions
-            ]})
+            ]}
+    return None
 
+
+def _station_search_group(q: str, limit: int) -> dict | None:
+    """The "Monitoring Stations" result group, or None when off or nothing matched."""
     if is_enabled("datasync"):
         # Same NoReverseMatch exposure as the wells group above.
         stations = MonitoredStation.objects.select_related("data_source").filter(
@@ -228,33 +243,63 @@ def _search_groups(q):
             | Q(usgs_site_id__icontains=q)
         ).order_by("station_name")[:limit]
         if stations:
-            groups.append({"key": "stations", "label": "Monitoring Stations", "results": [
+            return {"key": "stations", "label": "Monitoring Stations", "results": [
                 {"label": s.station_name, "sublabel": s.external_station_id,
                  "url": reverse("datasync:station_detail", args=[s.pk])}
                 for s in stations
-            ]})
+            ]}
+    return None
 
+
+def _account_search_group(q: str, limit: int) -> dict | None:
+    """The "Accounts" result group, or None when off or nothing matched."""
     if is_enabled("accounting"):
         accounts = WaterAccount.objects.filter(
             Q(account_number__icontains=q) | Q(name__icontains=q)
         ).order_by("name")[:limit]
         if accounts:
-            groups.append({"key": "accounts", "label": "Accounts", "results": [
+            return {"key": "accounts", "label": "Accounts", "results": [
                 {"label": a.name, "sublabel": a.account_number,
                  "url": reverse("accounting:account_detail", args=[a.pk])}
                 for a in accounts
-            ]})
+            ]}
+    return None
 
+
+def _zone_search_group(q: str, limit: int) -> dict | None:
+    """The "Zones" result group, or None when nothing matched."""
     zones = Zone.objects.filter(
         Q(name__icontains=q) | Q(basin_code__icontains=q)
     ).order_by("name")[:limit]
     if zones:
-        groups.append({"key": "zones", "label": "Zones", "results": [
+        return {"key": "zones", "label": "Zones", "results": [
             {"label": z.name, "sublabel": z.get_zone_type_display(),
              "url": reverse("geography:zone_detail", args=[z.pk])}
             for z in zones
-        ]})
+        ]}
+    return None
 
+
+def _search_groups(q):
+    """Run the per-entity searches and return a list of result groups.
+
+    Each group is ``{"key", "label", "results": [{"label", "sublabel", "url"}]}``;
+    ``key`` selects the matching glyph in the template. Empty groups are dropped
+    so the dropdown only shows entity types that actually matched.
+    """
+    limit = SEARCH_GROUP_LIMIT
+    groups = []
+    for search in (
+        _parcel_search_group,
+        _well_search_group,
+        _diversion_search_group,
+        _station_search_group,
+        _account_search_group,
+        _zone_search_group,
+    ):
+        group = search(q, limit)
+        if group is not None:
+            groups.append(group)
     return groups
 
 
@@ -559,6 +604,28 @@ def _split_help_pointer(definition):
     return definition, None, None
 
 
+def _glossary_entries(terms: dict[str, str]) -> list[dict]:
+    """The glossary table rows: terms sorted, help pointers split off, reporting terms gated."""
+    if not is_enabled("reporting"):
+        # Reporting is off unless a site names it (2026-10-12): with it off, no
+        # page names the state's reporting systems, the glossary included.
+        terms.pop("GEARS", None)
+        terms.pop("CalWATRS", None)
+    entries = []
+    for term, definition in sorted(terms.items(), key=lambda item: item[0].casefold()):
+        text, pointer_page, pointer_url = _split_help_pointer(
+            _without_unavailable_help_pointers(definition)
+        )
+        entries.append({
+            "term": term,
+            "letter": term[0].upper(),
+            "text": text,
+            "pointer_page": pointer_page,
+            "pointer_url": pointer_url,
+        })
+    return entries
+
+
 @public_in_open_demo
 def glossary(request):
     """Glossary of the terms this platform uses, for the operator running it.
@@ -651,23 +718,7 @@ def glossary(request):
         "Zone / Management Zone": "OpenH2O's record of one area that has its own allocation ceilings. It holds the zone's name, type, outline on the map and the use areas assigned to it. See Help > Allocations & Ceilings.",
         "Well": "OpenH2O's record of one well, with its state well number, well completion report (WCR) number, local ID, meters, depth, casing and screen interval, and the use areas it irrigates.",
     }
-    if not is_enabled("reporting"):
-        # Reporting is off unless a site names it (2026-10-12): with it off, no
-        # page names the state's reporting systems, the glossary included.
-        terms.pop("GEARS", None)
-        terms.pop("CalWATRS", None)
-    entries = []
-    for term, definition in sorted(terms.items(), key=lambda item: item[0].casefold()):
-        text, pointer_page, pointer_url = _split_help_pointer(
-            _without_unavailable_help_pointers(definition)
-        )
-        entries.append({
-            "term": term,
-            "letter": term[0].upper(),
-            "text": text,
-            "pointer_page": pointer_page,
-            "pointer_url": pointer_url,
-        })
+    entries = _glossary_entries(terms)
     # The jump nav's letters, in the order their group rows appear in the table.
     letters = list(dict.fromkeys(entry["letter"] for entry in entries))
     return render(request, "help/glossary.html", {"entries": entries, "letters": letters})

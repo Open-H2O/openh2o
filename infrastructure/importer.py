@@ -25,6 +25,7 @@ import io
 import json
 import math
 import zipfile
+from collections.abc import Callable
 from decimal import Decimal, InvalidOperation
 
 from django.contrib.gis.gdal import GDALException
@@ -511,23 +512,14 @@ def existing_names(infra_type):
     return set()
 
 
-def validate_rows(rows, mapping, infra_type, existing_reg_ids, existing_names=None):
-    """Validate + coerce a batch into writer-ready `data` dicts.
+def _diversion_lookups(
+    infra_type: str, mapping: dict[str, str]
+) -> tuple[dict[str, int], dict[str, int]]:
+    """The water-right and parcel lookups a diversion import needs, built once.
 
-    Returns a list of {index, data, errors, warnings}. A row with any errors is
-    skipped by commit_rows; warnings (e.g. an off-list choice value) are kept.
-    `existing_names` (from `existing_names()`) makes a row whose name is already
-    on file an error; a name repeated in the file is an error either way.
+    Returns ``(existing_rights, existing_parcels)``: right_id -> pk and
+    parcel_number -> pk, each empty unless that column is mapped.
     """
-    results = []
-    seen_reg_ids = set()
-    existing = {r for r in (existing_reg_ids or set())}
-    names_on_file = set(existing_names or ())
-    seen_names = set()
-
-    decimal_fields = _DECIMAL_FIELDS.get(infra_type, [])
-    choice_fields = _CHOICE_FIELDS.get(infra_type, {})
-
     # 146-02 D2/D3: built once, not per row. `surface` is a truly-optional
     # module (Phase 87), so its model is imported locally and only when a
     # diversion row is actually being validated -- the same guard commit_rows
@@ -545,123 +537,209 @@ def validate_rows(rows, mapping, infra_type, existing_reg_ids, existing_names=No
     existing_parcels = {}
     if infra_type == "diversion" and mapping.get("parcel_number"):
         existing_parcels = dict(Parcel.objects.values_list("parcel_number", "pk"))
+    return existing_rights, existing_parcels
+
+
+def _check_row_name(
+    name: str, names_on_file: set[str], seen_names: set[str], errors: list[str]
+) -> None:
+    """Required name: blank, already on file, or repeated earlier in the file is an error."""
+    if not name:
+        errors.append("The name is blank.")
+    elif name in names_on_file:
+        errors.append(f"The name {name} is already on file.")
+    elif name in seen_names:
+        errors.append(f"The name {name} appears earlier in this file.")
+    if name:
+        seen_names.add(name)
+
+
+def _check_registration_id(
+    src: Callable[[str], str],
+    existing: set[str],
+    seen_reg_ids: set[str],
+    errors: list[str],
+    data: dict,
+) -> None:
+    """Well registration id: an error if on file or repeated earlier in the file."""
+    reg = src("well_registration_id")
+    if reg:
+        if reg in existing:
+            errors.append(f"Registration ID {reg} is already on file.")
+        elif reg in seen_reg_ids:
+            errors.append(f"Registration ID {reg} appears earlier in this file.")
+        seen_reg_ids.add(reg)
+        data["well_registration_id"] = reg
+
+
+def _read_numbers(
+    src: Callable[[str], str], infra_type: str, errors: list[str], data: dict
+) -> None:
+    """Read the year (wells) and the decimal fields; a value that is not a number is an error."""
+    # --- year_pumping_began (int, wells) ---
+    if infra_type == "well":
+        year = src("year_pumping_began")
+        if year:
+            try:
+                data["year_pumping_began"] = int(Decimal(year))
+            except (InvalidOperation, ValueError):
+                errors.append(
+                    f"The year pumping began is '{year}', which is not a year."
+                )
+
+    # --- numeric/decimal fields ---
+    for field in _DECIMAL_FIELDS.get(infra_type, []):
+        val = src(field)
+        if val:
+            try:
+                data[field] = Decimal(val)
+            except (InvalidOperation, ValueError):
+                errors.append(
+                    f"The {FIELD_NOUNS.get(field, field)} is '{val}', which is "
+                    "not a number."
+                )
+
+
+def _read_choices_and_strings(
+    src: Callable[[str], str], infra_type: str, warnings: list[str], data: dict
+) -> None:
+    """Read the choice fields (off-list values are noted) and the plain string fields."""
+    # --- choice fields: read in any case; off-list = imported without, noted ---
+    for field in _CHOICE_FIELDS.get(infra_type, {}):
+        val = src(field)
+        if val:
+            code = _CHOICE_LOOKUP[field].get(val.lower())
+            if code is None:
+                warnings.append(_CHOICE_NOTES[field].format(val=val))
+            else:
+                data[field] = code
+
+    # --- plain string passthrough fields ---
+    for field in _STRING_FIELDS.get(infra_type, []):
+        val = src(field)
+        if val:
+            data[field] = val
+
+
+def _resolve_water_right(
+    src: Callable[[str], str],
+    existing_rights: dict[str, int],
+    errors: list[str],
+    data: dict,
+) -> None:
+    """Diversion water right: look the application number up, or add a row error."""
+    # --- water right (diversion only, 146-02 D2) ---
+    # An unresolved value is a row error naming the value -- never
+    # silently None, which is how a diversion used to lose its right on
+    # a typo'd APPL_ID with nobody the wiser until CalWATRS filing.
+    right_val = src("water_right")
+    if right_val:
+        right_pk = existing_rights.get(right_val)
+        if right_pk is None:
+            errors.append(
+                f"No water right on file has the application number "
+                f"{right_val}. Import the water right first, or correct "
+                "the number in the file."
+            )
+        else:
+            data["water_right_id"] = right_pk
+
+
+def _resolve_parcel(
+    src: Callable[[str], str],
+    existing_parcels: dict[str, int],
+    warnings: list[str],
+    data: dict,
+) -> None:
+    """Diversion parcel number: a match links a use area, a miss is only a warning."""
+    # --- parcel_number -> a PointOfDiversionParcel at fraction 1.0
+    #     (diversion only, 146-02 D3). Present-but-unmatched is not an
+    #     error (a operator's PARCEL_NUMBER may name a use area not yet
+    #     entered) -- only a MATCH links anything, and the preview says
+    #     so via the "warnings" list rather than staying silent either way.
+    parcel_val = src("parcel_number")
+    if parcel_val:
+        parcel_pk = existing_parcels.get(parcel_val)
+        # A match needs no note.
+        if parcel_pk is not None:
+            data["_pod_parcel_id"] = parcel_pk
+        else:
+            warnings.append(
+                f"No use area on file has the parcel number {parcel_val}, "
+                "so OpenH2O imported this point of diversion without a "
+                "use area."
+            )
+
+
+def _validate_row(
+    index: int,
+    row: dict,
+    mapping: dict[str, str],
+    infra_type: str,
+    existing: set[str],
+    seen_reg_ids: set[str],
+    names_on_file: set[str],
+    seen_names: set[str],
+    existing_rights: dict[str, int],
+    existing_parcels: dict[str, int],
+) -> dict:
+    """Validate + coerce one row into a {index, data, errors, warnings} result."""
+    errors = []
+    warnings = []
+    data = {}
+
+    def src(field):
+        col = mapping.get(field)
+        if not col:
+            return ""
+        return (row.get(col) or "").strip()
+
+    # --- name (required for every type) ---
+    name = src("name")
+    _check_row_name(name, names_on_file, seen_names, errors)
+    data["name"] = name
+
+    # --- location: geometry column OR lat+lon pair ---
+    location = _resolve_location(row, mapping, errors, map_row=GEOMETRY_COL in row)
+    if location is not None:
+        data["location"] = location
+
+    # --- duplicate registration id (wells) ---
+    if infra_type == "well":
+        _check_registration_id(src, existing, seen_reg_ids, errors, data)
+
+    _read_numbers(src, infra_type, errors, data)
+    _read_choices_and_strings(src, infra_type, warnings, data)
+
+    if infra_type == "diversion":
+        _resolve_water_right(src, existing_rights, errors, data)
+        _resolve_parcel(src, existing_parcels, warnings, data)
+
+    return {"index": index, "data": data, "errors": errors, "warnings": warnings}
+
+
+def validate_rows(rows, mapping, infra_type, existing_reg_ids, existing_names=None):
+    """Validate + coerce a batch into writer-ready `data` dicts.
+
+    Returns a list of {index, data, errors, warnings}. A row with any errors is
+    skipped by commit_rows; warnings (e.g. an off-list choice value) are kept.
+    `existing_names` (from `existing_names()`) makes a row whose name is already
+    on file an error; a name repeated in the file is an error either way.
+    """
+    results = []
+    seen_reg_ids = set()
+    existing = {r for r in (existing_reg_ids or set())}
+    names_on_file = set(existing_names or ())
+    seen_names = set()
+
+    existing_rights, existing_parcels = _diversion_lookups(infra_type, mapping)
 
     for index, row in enumerate(rows):
-        errors = []
-        warnings = []
-        data = {}
-
-        def src(field):
-            col = mapping.get(field)
-            if not col:
-                return ""
-            return (row.get(col) or "").strip()
-
-        # --- name (required for every type) ---
-        name = src("name")
-        if not name:
-            errors.append("The name is blank.")
-        elif name in names_on_file:
-            errors.append(f"The name {name} is already on file.")
-        elif name in seen_names:
-            errors.append(f"The name {name} appears earlier in this file.")
-        if name:
-            seen_names.add(name)
-        data["name"] = name
-
-        # --- location: geometry column OR lat+lon pair ---
-        location = _resolve_location(row, mapping, errors, map_row=GEOMETRY_COL in row)
-        if location is not None:
-            data["location"] = location
-
-        # --- duplicate registration id (wells) ---
-        if infra_type == "well":
-            reg = src("well_registration_id")
-            if reg:
-                if reg in existing:
-                    errors.append(f"Registration ID {reg} is already on file.")
-                elif reg in seen_reg_ids:
-                    errors.append(f"Registration ID {reg} appears earlier in this file.")
-                seen_reg_ids.add(reg)
-                data["well_registration_id"] = reg
-
-        # --- year_pumping_began (int, wells) ---
-        if infra_type == "well":
-            year = src("year_pumping_began")
-            if year:
-                try:
-                    data["year_pumping_began"] = int(Decimal(year))
-                except (InvalidOperation, ValueError):
-                    errors.append(
-                        f"The year pumping began is '{year}', which is not a year."
-                    )
-
-        # --- numeric/decimal fields ---
-        for field in decimal_fields:
-            val = src(field)
-            if val:
-                try:
-                    data[field] = Decimal(val)
-                except (InvalidOperation, ValueError):
-                    errors.append(
-                        f"The {FIELD_NOUNS.get(field, field)} is '{val}', which is "
-                        "not a number."
-                    )
-
-        # --- choice fields: read in any case; off-list = imported without, noted ---
-        for field in choice_fields:
-            val = src(field)
-            if val:
-                code = _CHOICE_LOOKUP[field].get(val.lower())
-                if code is None:
-                    warnings.append(_CHOICE_NOTES[field].format(val=val))
-                else:
-                    data[field] = code
-
-        # --- plain string passthrough fields ---
-        for field in _STRING_FIELDS.get(infra_type, []):
-            val = src(field)
-            if val:
-                data[field] = val
-
-        # --- water right (diversion only, 146-02 D2) ---
-        # An unresolved value is a row error naming the value -- never
-        # silently None, which is how a diversion used to lose its right on
-        # a typo'd APPL_ID with nobody the wiser until CalWATRS filing.
-        if infra_type == "diversion":
-            right_val = src("water_right")
-            if right_val:
-                right_pk = existing_rights.get(right_val)
-                if right_pk is None:
-                    errors.append(
-                        f"No water right on file has the application number "
-                        f"{right_val}. Import the water right first, or correct "
-                        "the number in the file."
-                    )
-                else:
-                    data["water_right_id"] = right_pk
-
-        # --- parcel_number -> a PointOfDiversionParcel at fraction 1.0
-        #     (diversion only, 146-02 D3). Present-but-unmatched is not an
-        #     error (a operator's PARCEL_NUMBER may name a use area not yet
-        #     entered) -- only a MATCH links anything, and the preview says
-        #     so via the "warnings" list rather than staying silent either way.
-        if infra_type == "diversion":
-            parcel_val = src("parcel_number")
-            if parcel_val:
-                parcel_pk = existing_parcels.get(parcel_val)
-                # A match needs no note.
-                if parcel_pk is not None:
-                    data["_pod_parcel_id"] = parcel_pk
-                else:
-                    warnings.append(
-                        f"No use area on file has the parcel number {parcel_val}, "
-                        "so OpenH2O imported this point of diversion without a "
-                        "use area."
-                    )
-
         results.append(
-            {"index": index, "data": data, "errors": errors, "warnings": warnings}
+            _validate_row(
+                index, row, mapping, infra_type, existing, seen_reg_ids,
+                names_on_file, seen_names, existing_rights, existing_parcels,
+            )
         )
 
     return results

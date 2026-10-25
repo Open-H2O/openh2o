@@ -14,7 +14,13 @@ import logging
 from django.contrib.auth.decorators import login_required
 from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Point, Polygon
 from django.db.models import Q
-from django.http import Http404, HttpResponseNotFound, JsonResponse
+from django.http import (
+    Http404,
+    HttpRequest,
+    HttpResponse,
+    HttpResponseNotFound,
+    JsonResponse,
+)
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -188,6 +194,204 @@ def _water_rights_for_select():
     return WaterRight.objects.order_by("right_id")
 
 
+def _typed_point_json(request: HttpRequest) -> str:
+    """GeoJSON for the typed latitude/longitude boxes, or "" when they do not parse."""
+    # ISS-171: a well operator with a WCR in hand types the point instead of
+    # clicking the map. A click or a drag always fills geometry_json client
+    # side, so this is strictly a fallback for the typed-coordinate path — and
+    # it runs BEFORE the geometry path below, building the same Point a click
+    # would have, so _parse_point/_parse_polygon downstream need no changes.
+    # Silently ignored (not an error) when it does not parse: a stray value in
+    # one box with the map still empty is the map's story to tell, not this
+    # fallback's.
+    lat_raw = request.POST.get("latitude", "").strip()
+    lng_raw = request.POST.get("longitude", "").strip()
+    if lat_raw and lng_raw:
+        try:
+            lat_val = float(lat_raw)
+            lng_val = float(lng_raw)
+        except ValueError:
+            lat_val = lng_val = None
+        if (
+            lat_val is not None
+            and -90 <= lat_val <= 90
+            and -180 <= lng_val <= 180
+        ):
+            return json.dumps({"type": "Point", "coordinates": [lng_val, lat_val]})
+    return ""
+
+
+def _parcel_from_post(parcel_id: str) -> Parcel | None:
+    """The parcel the form named, or None when blank or no longer there."""
+    parcel = None
+    if parcel_id:
+        try:
+            parcel = Parcel.objects.get(pk=parcel_id)
+        except Parcel.DoesNotExist:
+            parcel = None
+    return parcel
+
+
+def _add_error(request: HttpRequest, error_type: str, message: str) -> HttpResponse:
+    """Re-render the Add form with a friendly error and the submitted values kept."""
+    # Re-render the Add form with a friendly error AND the submitted values +
+    # drawn geometry preserved, so a failed submit never loses the user's work.
+    return render(
+        request,
+        "infrastructure/add.html",
+        _add_context(error_type, error=message, submitted=request.POST),
+    )
+
+
+def _add_well(
+    request: HttpRequest,
+    name: str,
+    status: str,
+    notes: str,
+    geometry_json: str,
+    parcel: Parcel | None,
+) -> HttpResponse:
+    """Create a Well from the posted form, or re-render the form with the error."""
+    location = _parse_point(geometry_json)
+    if not location:
+        return _add_error(request, "well", "Place the well on the map.")
+    try:
+        depth_ft = coerce_decimal(request.POST.get("depth_ft"), "Depth (ft)", min_value=0)
+        capacity_gpm = coerce_decimal(request.POST.get("capacity_gpm"), "Capacity (gpm)", min_value=0)
+        year_pumping_began = coerce_int(
+            request.POST.get("year_pumping_began"), "Year Pumping Began",
+            min_value=1850, max_value=timezone.now().year,
+        )
+        casing_diameter_in = coerce_decimal(request.POST.get("casing_diameter_in"), "Casing Diameter (in)", min_value=0)
+        screen_top_ft = coerce_decimal(request.POST.get("screen_top_ft"), "Screen Top (ft)", min_value=0)
+        screen_bottom_ft = coerce_decimal(request.POST.get("screen_bottom_ft"), "Screen Bottom (ft)", min_value=0)
+        tested_yield_gpm = coerce_decimal(request.POST.get("tested_yield_gpm"), "Tested Yield (gpm)", min_value=0)
+    except FieldValidationError as exc:
+        return _add_error(request, "well", str(exc))
+    well = Well.objects.create(
+        name=name,
+        location=location,
+        depth_ft=depth_ft,
+        capacity_gpm=capacity_gpm,
+        status=status,
+        owner_name=request.POST.get("owner_name", ""),
+        year_pumping_began=year_pumping_began,
+        dwr_extraction_method=request.POST.get("dwr_extraction_method", ""),
+        dwr_direct_or_estimate=request.POST.get("dwr_direct_or_estimate", ""),
+        accuracy_band=request.POST.get("accuracy_band", ""),
+        wcr_number=request.POST.get("wcr_number", ""),
+        state_well_number=request.POST.get("state_well_number", ""),
+        casing_diameter_in=casing_diameter_in,
+        casing_material=request.POST.get("casing_material", ""),
+        screen_top_ft=screen_top_ft,
+        screen_bottom_ft=screen_bottom_ft,
+        tested_yield_gpm=tested_yield_gpm,
+        pump_type=request.POST.get("pump_type", ""),
+        notes=notes,
+    )
+    if parcel:
+        WellIrrigatedParcel.objects.create(well=well, parcel=parcel)
+    return redirect("wells:detail", pk=well.pk)
+
+
+def _add_diversion(
+    request: HttpRequest,
+    name: str,
+    status: str,
+    notes: str,
+    geometry_json: str,
+    parcel: Parcel | None,
+) -> HttpResponse:
+    """Create a PointOfDiversion from the posted form, or re-render with the error."""
+    # Local import: `surface` is an optional module (Phase 87), so this must
+    # not run at module scope. This branch is only reachable when the add
+    # form offered a diversion type, which it does not do without the module.
+    from surface.models import PointOfDiversion, PointOfDiversionParcel, WaterRight
+
+    location = _parse_point(geometry_json)
+    if not location:
+        return _add_error(request, "diversion", "Place the diversion on the map.")
+    try:
+        max_rate_cfs = coerce_decimal(request.POST.get("max_rate_cfs"), "Max Rate (cfs)", min_value=0)
+    except FieldValidationError as exc:
+        return _add_error(request, "diversion", str(exc))
+    # 146-02 D2: optional at creation, the same select the POD page's own
+    # "Water right" panel offers -- a blank, stale or tampered value falls
+    # back to unlinked rather than a 500, since this is a plain <select>
+    # value, not a get_object_or_404'd URL segment.
+    water_right_id = request.POST.get("water_right_id", "").strip()
+    water_right = (
+        WaterRight.objects.filter(pk=water_right_id).first()
+        if water_right_id
+        else None
+    )
+    pod_kwargs = dict(
+        name=name,
+        location=location,
+        water_right=water_right,
+        stream_name=request.POST.get("stream_name", ""),
+        max_rate_cfs=max_rate_cfs,
+        status=status,
+        notes=notes,
+        # 146-03 Task 3: the 145-01 memo's crosswalk layer, the point's
+        # local name (contract unit and miner's inch removed 2026-10-13).
+        local_name=request.POST.get("local_name", "").strip(),
+    )
+    pod = PointOfDiversion.objects.create(**pod_kwargs)
+    if parcel:
+        PointOfDiversionParcel.objects.create(point_of_diversion=pod, parcel=parcel)
+    return redirect("surface:pod_list")
+
+
+def _add_recharge_site(
+    request: HttpRequest,
+    infra_type: str,
+    name: str,
+    status: str,
+    notes: str,
+    geometry_json: str,
+) -> HttpResponse:
+    """Create a RechargeSite (storage or recharge) from the posted form, or re-render."""
+    # Local import: `recharge` is an optional module, so this must not run at
+    # module scope (ISS-072). This branch is only reachable when the add form
+    # offered a recharge type, which it does not do without the module.
+    from recharge.models import RechargeSite
+
+    location = _parse_point(geometry_json)
+    geometry = _parse_polygon(geometry_json)
+
+    if not location and not geometry:
+        if infra_type == "storage" and request.POST.get("storage_type") == "storage_tank":
+            return _add_error(request, infra_type, "Place the tank on the map.")
+        return _add_error(request, infra_type, "Draw the outline on the map.")
+
+    if geometry and not location:
+        location = geometry.centroid
+
+    try:
+        capacity_acre_feet = coerce_decimal(
+            request.POST.get("capacity_acre_feet"), "Capacity (acre-feet)", min_value=0
+        )
+    except FieldValidationError as exc:
+        return _add_error(request, infra_type, str(exc))
+
+    site_type = request.POST.get("site_type", "spreading_basin")
+    if infra_type == "storage":
+        site_type = request.POST.get("storage_type", "storage_pond")
+
+    site = RechargeSite.objects.create(
+        name=name,
+        location=location,
+        geometry=geometry,
+        site_type=site_type,
+        capacity_acre_feet=capacity_acre_feet,
+        status=status,
+        operator=request.POST.get("operator", ""),
+        notes=notes,
+    )
+    return redirect("recharge:detail", pk=site.pk)
+
+
 @login_required
 def infrastructure_add(request):
     if request.method == "GET":
@@ -209,171 +413,21 @@ def infrastructure_add(request):
     geometry_json = request.POST.get("geometry_json", "")
     parcel_id = request.POST.get("parcel_id", "")
 
-    # ISS-171: a well operator with a WCR in hand types the point instead of
-    # clicking the map. A click or a drag always fills geometry_json client
-    # side, so this is strictly a fallback for the typed-coordinate path — and
-    # it runs BEFORE the geometry path below, building the same Point a click
-    # would have, so _parse_point/_parse_polygon downstream need no changes.
-    # Silently ignored (not an error) when it does not parse: a stray value in
-    # one box with the map still empty is the map's story to tell, not this
-    # fallback's.
     if not geometry_json:
-        lat_raw = request.POST.get("latitude", "").strip()
-        lng_raw = request.POST.get("longitude", "").strip()
-        if lat_raw and lng_raw:
-            try:
-                lat_val = float(lat_raw)
-                lng_val = float(lng_raw)
-            except ValueError:
-                lat_val = lng_val = None
-            if (
-                lat_val is not None
-                and -90 <= lat_val <= 90
-                and -180 <= lng_val <= 180
-            ):
-                geometry_json = json.dumps(
-                    {"type": "Point", "coordinates": [lng_val, lat_val]}
-                )
+        geometry_json = _typed_point_json(request)
 
-    parcel = None
-    if parcel_id:
-        try:
-            parcel = Parcel.objects.get(pk=parcel_id)
-        except Parcel.DoesNotExist:
-            parcel = None
-
-    def _error(error_type, message):
-        # Re-render the Add form with a friendly error AND the submitted values +
-        # drawn geometry preserved, so a failed submit never loses the user's work.
-        return render(
-            request,
-            "infrastructure/add.html",
-            _add_context(error_type, error=message, submitted=request.POST),
-        )
+    parcel = _parcel_from_post(parcel_id)
 
     if infra_type == "well":
-        location = _parse_point(geometry_json)
-        if not location:
-            return _error("well", "Place the well on the map.")
-        try:
-            depth_ft = coerce_decimal(request.POST.get("depth_ft"), "Depth (ft)", min_value=0)
-            capacity_gpm = coerce_decimal(request.POST.get("capacity_gpm"), "Capacity (gpm)", min_value=0)
-            year_pumping_began = coerce_int(
-                request.POST.get("year_pumping_began"), "Year Pumping Began",
-                min_value=1850, max_value=timezone.now().year,
-            )
-            casing_diameter_in = coerce_decimal(request.POST.get("casing_diameter_in"), "Casing Diameter (in)", min_value=0)
-            screen_top_ft = coerce_decimal(request.POST.get("screen_top_ft"), "Screen Top (ft)", min_value=0)
-            screen_bottom_ft = coerce_decimal(request.POST.get("screen_bottom_ft"), "Screen Bottom (ft)", min_value=0)
-            tested_yield_gpm = coerce_decimal(request.POST.get("tested_yield_gpm"), "Tested Yield (gpm)", min_value=0)
-        except FieldValidationError as exc:
-            return _error("well", str(exc))
-        well = Well.objects.create(
-            name=name,
-            location=location,
-            depth_ft=depth_ft,
-            capacity_gpm=capacity_gpm,
-            status=status,
-            owner_name=request.POST.get("owner_name", ""),
-            year_pumping_began=year_pumping_began,
-            dwr_extraction_method=request.POST.get("dwr_extraction_method", ""),
-            dwr_direct_or_estimate=request.POST.get("dwr_direct_or_estimate", ""),
-            accuracy_band=request.POST.get("accuracy_band", ""),
-            wcr_number=request.POST.get("wcr_number", ""),
-            state_well_number=request.POST.get("state_well_number", ""),
-            casing_diameter_in=casing_diameter_in,
-            casing_material=request.POST.get("casing_material", ""),
-            screen_top_ft=screen_top_ft,
-            screen_bottom_ft=screen_bottom_ft,
-            tested_yield_gpm=tested_yield_gpm,
-            pump_type=request.POST.get("pump_type", ""),
-            notes=notes,
-        )
-        if parcel:
-            WellIrrigatedParcel.objects.create(well=well, parcel=parcel)
-        return redirect("wells:detail", pk=well.pk)
+        return _add_well(request, name, status, notes, geometry_json, parcel)
 
     elif infra_type == "diversion":
-        # Local import: `surface` is an optional module (Phase 87), so this must
-        # not run at module scope. This branch is only reachable when the add
-        # form offered a diversion type, which it does not do without the module.
-        from surface.models import PointOfDiversion, PointOfDiversionParcel, WaterRight
-
-        location = _parse_point(geometry_json)
-        if not location:
-            return _error("diversion", "Place the diversion on the map.")
-        try:
-            max_rate_cfs = coerce_decimal(request.POST.get("max_rate_cfs"), "Max Rate (cfs)", min_value=0)
-        except FieldValidationError as exc:
-            return _error("diversion", str(exc))
-        # 146-02 D2: optional at creation, the same select the POD page's own
-        # "Water right" panel offers -- a blank, stale or tampered value falls
-        # back to unlinked rather than a 500, since this is a plain <select>
-        # value, not a get_object_or_404'd URL segment.
-        water_right_id = request.POST.get("water_right_id", "").strip()
-        water_right = (
-            WaterRight.objects.filter(pk=water_right_id).first()
-            if water_right_id
-            else None
-        )
-        pod_kwargs = dict(
-            name=name,
-            location=location,
-            water_right=water_right,
-            stream_name=request.POST.get("stream_name", ""),
-            max_rate_cfs=max_rate_cfs,
-            status=status,
-            notes=notes,
-            # 146-03 Task 3: the 145-01 memo's crosswalk layer, the point's
-            # local name (contract unit and miner's inch removed 2026-10-13).
-            local_name=request.POST.get("local_name", "").strip(),
-        )
-        pod = PointOfDiversion.objects.create(**pod_kwargs)
-        if parcel:
-            PointOfDiversionParcel.objects.create(point_of_diversion=pod, parcel=parcel)
-        return redirect("surface:pod_list")
+        return _add_diversion(request, name, status, notes, geometry_json, parcel)
 
     elif infra_type in ("recharge_site", "storage"):
-        # Local import: `recharge` is an optional module, so this must not run at
-        # module scope (ISS-072). This branch is only reachable when the add form
-        # offered a recharge type, which it does not do without the module.
-        from recharge.models import RechargeSite
+        return _add_recharge_site(request, infra_type, name, status, notes, geometry_json)
 
-        location = _parse_point(geometry_json)
-        geometry = _parse_polygon(geometry_json)
-
-        if not location and not geometry:
-            if infra_type == "storage" and request.POST.get("storage_type") == "storage_tank":
-                return _error(infra_type, "Place the tank on the map.")
-            return _error(infra_type, "Draw the outline on the map.")
-
-        if geometry and not location:
-            location = geometry.centroid
-
-        try:
-            capacity_acre_feet = coerce_decimal(
-                request.POST.get("capacity_acre_feet"), "Capacity (acre-feet)", min_value=0
-            )
-        except FieldValidationError as exc:
-            return _error(infra_type, str(exc))
-
-        site_type = request.POST.get("site_type", "spreading_basin")
-        if infra_type == "storage":
-            site_type = request.POST.get("storage_type", "storage_pond")
-
-        site = RechargeSite.objects.create(
-            name=name,
-            location=location,
-            geometry=geometry,
-            site_type=site_type,
-            capacity_acre_feet=capacity_acre_feet,
-            status=status,
-            operator=request.POST.get("operator", ""),
-            notes=notes,
-        )
-        return redirect("recharge:detail", pk=site.pk)
-
-    return _error(infra_type, "Invalid infrastructure type.")
+    return _add_error(request, infra_type, "Invalid infrastructure type.")
 
 
 # ---------------------------------------------------------------------------
@@ -579,6 +633,58 @@ def _commit_failure_context(infra_type, rows, mapping, exc, error=None):
     }
 
 
+def _posted_rows(request: HttpRequest) -> list:
+    """The parsed rows the preview step posted back, or [] when missing or unreadable."""
+    try:
+        rows = json.loads(request.POST.get("rows_json", "") or "[]")
+    except json.JSONDecodeError:
+        rows = []
+    return rows
+
+
+def _confirmed_mapping(request: HttpRequest) -> dict[str, str]:
+    """Rebuild the field -> column mapping from the confirmed <select> values."""
+    return {
+        key[len("map:"):]: val
+        for key, val in request.POST.items()
+        if key.startswith("map:") and val
+    }
+
+
+def _existing_registration_ids(infra_type: str) -> set[str]:
+    """Well registration ids already on file (wells only), so duplicates are caught."""
+    existing_reg_ids: set[str] = set()
+    if infra_type == "well":
+        existing_reg_ids = set(
+            Well.objects.exclude(well_registration_id__isnull=True)
+            .exclude(well_registration_id="")
+            .values_list("well_registration_id", flat=True)
+        )
+    return existing_reg_ids
+
+
+def _import_result_context(
+    results: list, created: int, rows: list, infra_type: str
+) -> dict:
+    """Context for the import result partial: counts, skipped and noted rows, back link."""
+    skipped = [r for r in results if r["errors"]]
+    noted = [r for r in results if r["warnings"] and not r["errors"]]
+
+    back_name, back_label = ADD_TYPE_BACK[infra_type]
+    return {
+        "created": created,
+        "skipped": skipped,
+        "noted": noted,
+        "total": len(results),
+        "map_file": importer.is_map_rows(rows),
+        "infra_type": infra_type,
+        "infra_label": ADD_TYPE_LABEL[infra_type],
+        "record_noun": IMPORT_RECORD_NOUN[infra_type],
+        "back_url": reverse(back_name),
+        "back_label": back_label,
+    }
+
+
 @login_required
 @require_POST
 def infrastructure_import_commit(request):
@@ -589,10 +695,7 @@ def infrastructure_import_commit(request):
             UNSUPPORTED_IMPORT_TYPE_MESSAGE, content_type="text/plain"
         )
 
-    try:
-        rows = json.loads(request.POST.get("rows_json", "") or "[]")
-    except json.JSONDecodeError:
-        rows = []
+    rows = _posted_rows(request)
 
     if not rows:
         return render(
@@ -616,12 +719,7 @@ def infrastructure_import_commit(request):
             )},
         )
 
-    # Rebuild the field -> column mapping from the confirmed <select> values.
-    mapping = {
-        key[len("map:"):]: val
-        for key, val in request.POST.items()
-        if key.startswith("map:") and val
-    }
+    mapping = _confirmed_mapping(request)
 
     # No
     # column matched to the name or the location keeps the matching step on
@@ -634,13 +732,7 @@ def infrastructure_import_commit(request):
             _commit_failure_context(infra_type, rows, mapping, None, error=refusal),
         )
 
-    existing_reg_ids = set()
-    if infra_type == "well":
-        existing_reg_ids = set(
-            Well.objects.exclude(well_registration_id__isnull=True)
-            .exclude(well_registration_id="")
-            .values_list("well_registration_id", flat=True)
-        )
+    existing_reg_ids = _existing_registration_ids(infra_type)
 
     # ISS-179: commit_rows' per-row savepoint already isolates a single bad row
     # (see its own docstring), so anything that still reaches here (a module
@@ -666,25 +758,10 @@ def infrastructure_import_commit(request):
             _commit_failure_context(infra_type, rows, mapping, exc),
             status=200,
         )
-    skipped = [r for r in results if r["errors"]]
-    noted = [r for r in results if r["warnings"] and not r["errors"]]
-
-    back_name, back_label = ADD_TYPE_BACK[infra_type]
     return render(
         request,
         "infrastructure/partials/_import_result.html",
-        {
-            "created": created,
-            "skipped": skipped,
-            "noted": noted,
-            "total": len(results),
-            "map_file": importer.is_map_rows(rows),
-            "infra_type": infra_type,
-            "infra_label": ADD_TYPE_LABEL[infra_type],
-            "record_noun": IMPORT_RECORD_NOUN[infra_type],
-            "back_url": reverse(back_name),
-            "back_label": back_label,
-        },
+        _import_result_context(results, created, rows, infra_type),
     )
 
 

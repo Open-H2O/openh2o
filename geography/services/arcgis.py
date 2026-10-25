@@ -10,9 +10,16 @@ import json
 import logging
 import random
 import time
+from collections.abc import Iterator
 
 import requests
-from django.contrib.gis.geos import LineString, MultiLineString, MultiPolygon, Polygon
+from django.contrib.gis.geos import (
+    GEOSGeometry,
+    LineString,
+    MultiLineString,
+    MultiPolygon,
+    Polygon,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +72,7 @@ MAX_ATTEMPTS = 6
 BACKOFF_CAP_SECONDS = 30
 
 
-def _backoff_seconds(attempt):
+def _backoff_seconds(attempt: int) -> float:
     """Exponential backoff with jitter, in seconds, for a zero-based attempt.
 
     The jitter matters: without it every page of a stalled traversal retries on
@@ -90,14 +97,14 @@ class ArcGISTraversalError(RuntimeError):
     the same kind of false promise this phase exists to remove.
     """
 
-    def __init__(self, message, last_oid=None):
+    def __init__(self, message: str, last_oid: int | None = None) -> None:
         self.last_oid = last_oid
         if last_oid is not None:
             message = f"{message} — resume with --resume-from {last_oid}"
         super().__init__(message)
 
 
-def _validated_resume_key(value):
+def _validated_resume_key(value: int | str) -> int:
     """Return ``value`` as an int, or raise ValueError.
 
     This is the one boundary in this module where hostile input matters: the
@@ -115,19 +122,201 @@ def _validated_resume_key(value):
         ) from None
 
 
+def _with_oid_field(out_fields: str, oid_field: str) -> str:
+    """``out_fields`` with the OID field added when a specific field list leaves it out."""
+    # Always request the OID field, so a failure can always name a resume key.
+    # out_fields="*" already returns it; a specific field list has to ask.
+    # Callers read named attribute keys and ignore extras, so this is additive.
+    if out_fields != "*":
+        requested = [f.strip() for f in str(out_fields).split(",")]
+        if oid_field not in requested:
+            out_fields = f"{out_fields},{oid_field}"
+    return out_fields
+
+
+def _page_params(
+    effective_where: str,
+    out_fields: str,
+    return_geometry: bool,
+    out_sr: int,
+    max_record_count: int,
+    offset: int,
+    geometry: dict | str | None,
+    geometry_type: str | None,
+    spatial_rel: str | None,
+    order_by_fields: str | None,
+) -> dict[str, object]:
+    """The form-encoded query parameters for the page starting at ``offset``."""
+    params = {
+        "where": effective_where,
+        "outFields": out_fields,
+        "returnGeometry": str(return_geometry).lower(),
+        "outSR": out_sr,
+        "f": "json",
+        "resultRecordCount": max_record_count,
+        "resultOffset": offset,
+    }
+
+    if geometry is not None:
+        params["geometry"] = (
+            json.dumps(geometry) if isinstance(geometry, dict) else geometry
+        )
+    if geometry_type is not None:
+        params["geometryType"] = geometry_type
+    if spatial_rel is not None:
+        params["spatialRel"] = spatial_rel
+    if order_by_fields is not None:
+        params["orderByFields"] = order_by_fields
+    return params
+
+
+def _page_failure(data: dict, attempt: int, offset: int) -> str | None:
+    """None when the response is a usable page, else why it is not (raises if not retryable)."""
+    error = data.get("error")
+    if error is None:
+        if data.get("features") or not data.get(
+            "exceededTransferLimit", False
+        ):
+            return None  # the only success path
+
+        # An empty page is the traversal's terminator ONLY when the
+        # service also agrees there is nothing more. Measured
+        # 2026-08-28 against the live LightBox service: while it was
+        # degraded it answered this query with ZERO features and
+        # exceededTransferLimit STILL TRUE, on a where-clause that
+        # returnCountOnly put at 57,290 rows. Taking that as the end
+        # of the traversal is how an import reports "Done. 0
+        # record(s)" and exit 0 having read nothing at all — the
+        # exact silent undercount every other guard in this module
+        # exists to prevent. Retry it; if it persists, fail loudly
+        # and carry the resume key out.
+        last_failure = (
+            "the service returned an empty page while still "
+            "reporting exceededTransferLimit=true"
+        )
+        logger.warning(
+            "ArcGIS returned an empty page but says there is more "
+            "(attempt %d/%d, offset %d)",
+            attempt + 1,
+            MAX_ATTEMPTS,
+            offset,
+        )
+        return last_failure
+
+    if isinstance(error, dict):
+        code = error.get("code")
+        message = error.get("message", error)
+    else:
+        code = None
+        message = error
+
+    if code not in RETRYABLE_ARCGIS_ERROR_CODES:
+        # Ours, not the network's: a bad field name or a malformed
+        # `where`. Fail fast and legibly — no sleep, no second try.
+        raise ArcGISTraversalError(
+            f"ArcGIS API error (code {code}, not retryable): {message}"
+        )
+
+    last_failure = f"code {code}: {message}"
+    logger.warning(
+        "ArcGIS returned an in-body error "
+        "(attempt %d/%d): code %s: %s",
+        attempt + 1,
+        MAX_ATTEMPTS,
+        code,
+        message,
+    )
+    return last_failure
+
+
+def _fetch_page(url: str, params: dict[str, object], offset: int, last_oid: int | None) -> dict:
+    """POST one page query, retrying transport and in-body failures; returns the parsed body."""
+    # Retry with jittered exponential backoff.
+    #
+    # The success condition is "response parsed AND no error object", not
+    # "raise_for_status() passed" — every failure this API actually produces
+    # is an HTTP 200 (measured 2026-08-28, 16 of 60 requests). That is why
+    # response.json() is INSIDE the loop and the dispatch below reads the
+    # parsed body.
+    #
+    # Deliberately NOT urllib3.util.Retry / HTTPAdapter(max_retries=...):
+    # every stock Python retry sits below the JSON parse and dispatches on
+    # status code and transport failure only, so against this service it
+    # would fire zero times — a fix that looks installed and does nothing.
+    # Deliberately NOT `tenacity` either: retry_if_result is the right
+    # abstraction, but it is a new dependency for one call site in a project
+    # whose stated constraint is a small runtime, and the house already has a
+    # retry idiom (datasync/adapters/base.py:195-208). Do not re-litigate.
+    #
+    # POST, not GET: the spatial query sends the boundary geometry as a
+    # parameter. A full-resolution boundary (e.g. the Merced Subbasin's
+    # 8,446-vertex polygon) serialized into a GET query string blows past
+    # the server's URL-length limit and returns "414 Request-URI Too
+    # Large", silently yielding zero features. ArcGIS REST /query accepts
+    # the identical parameters form-encoded in a POST body, which has no
+    # such limit, so POST works for boundaries of any size.
+    last_failure = None
+    for attempt in range(MAX_ATTEMPTS):
+        try:
+            response = requests.post(url, data=params, timeout=60)
+            response.raise_for_status()
+            data = response.json()
+        except RETRYABLE_TRANSPORT_ERRORS as exc:
+            last_failure = exc
+            logger.warning(
+                "ArcGIS request failed at the transport "
+                "(attempt %d/%d): %s",
+                attempt + 1,
+                MAX_ATTEMPTS,
+                exc,
+            )
+            if attempt < MAX_ATTEMPTS - 1:
+                time.sleep(_backoff_seconds(attempt))
+        else:
+            last_failure = _page_failure(data, attempt, offset)
+            if last_failure is None:
+                return data
+            if attempt < MAX_ATTEMPTS - 1:
+                time.sleep(_backoff_seconds(attempt))
+
+    logger.error(
+        "ArcGIS request failed after %d attempts: %s",
+        MAX_ATTEMPTS,
+        last_failure,
+    )
+    raise ArcGISTraversalError(
+        f"ArcGIS query failed after {MAX_ATTEMPTS} attempts "
+        f"(offset {offset}): {last_failure}",
+        last_oid=last_oid,
+    )
+
+
+def _page_last_oid(features: list[dict], oid_field: str, last_oid: int | None) -> int | None:
+    """The last OBJECTID this page carried, or ``last_oid`` unchanged when it has none."""
+    # The resume key: the last OBJECTID this page carried. Tolerate its
+    # absence — a page whose features have no OID leaves last_oid as it was
+    # and simply produces no hint. A missing OID must never turn a
+    # recoverable failure into a different failure.
+    last_attributes = (features[-1] or {}).get("attributes") or {}
+    page_last_oid = last_attributes.get(oid_field)
+    if page_last_oid is not None:
+        last_oid = page_last_oid
+    return last_oid
+
+
 def query_feature_server(
-    url,
-    where="1=1",
-    geometry=None,
-    geometry_type=None,
-    spatial_rel=None,
-    out_fields="*",
-    return_geometry=True,
-    out_sr=4326,
-    max_record_count=1000,
-    resume_from=None,
-    oid_field="OBJECTID",
-):
+    url: str,
+    where: str = "1=1",
+    geometry: dict | str | None = None,
+    geometry_type: str | None = None,
+    spatial_rel: str | None = None,
+    out_fields: str = "*",
+    return_geometry: bool = True,
+    out_sr: int = 4326,
+    max_record_count: int = 1000,
+    resume_from: int | str | None = None,
+    oid_field: str = "OBJECTID",
+) -> Iterator[list[dict]]:
     """Generator that yields pages of features from an ArcGIS FeatureServer.
 
     Each page is a list of dicts with 'attributes' and 'geometry' keys.
@@ -167,13 +356,7 @@ def query_feature_server(
     if resume_from is not None:
         resume_from = _validated_resume_key(resume_from)
 
-    # Always request the OID field, so a failure can always name a resume key.
-    # out_fields="*" already returns it; a specific field list has to ask.
-    # Callers read named attribute keys and ignore extras, so this is additive.
-    if out_fields != "*":
-        requested = [f.strip() for f in str(out_fields).split(",")]
-        if oid_field not in requested:
-            out_fields = f"{out_fields},{oid_field}"
+    out_fields = _with_oid_field(out_fields, oid_field)
 
     # Compose, never overwrite: load_counties.py really does pass its own
     # `where` (STATE='<fips>'), so replacing it would silently widen that import
@@ -189,139 +372,12 @@ def query_feature_server(
     last_oid = None
 
     while True:
-        params = {
-            "where": effective_where,
-            "outFields": out_fields,
-            "returnGeometry": str(return_geometry).lower(),
-            "outSR": out_sr,
-            "f": "json",
-            "resultRecordCount": max_record_count,
-            "resultOffset": offset,
-        }
-
-        if geometry is not None:
-            params["geometry"] = (
-                json.dumps(geometry) if isinstance(geometry, dict) else geometry
-            )
-        if geometry_type is not None:
-            params["geometryType"] = geometry_type
-        if spatial_rel is not None:
-            params["spatialRel"] = spatial_rel
-        if order_by_fields is not None:
-            params["orderByFields"] = order_by_fields
-
-        # Retry with jittered exponential backoff.
-        #
-        # The success condition is "response parsed AND no error object", not
-        # "raise_for_status() passed" — every failure this API actually produces
-        # is an HTTP 200 (measured 2026-08-28, 16 of 60 requests). That is why
-        # response.json() is INSIDE the loop and the dispatch below reads the
-        # parsed body.
-        #
-        # Deliberately NOT urllib3.util.Retry / HTTPAdapter(max_retries=...):
-        # every stock Python retry sits below the JSON parse and dispatches on
-        # status code and transport failure only, so against this service it
-        # would fire zero times — a fix that looks installed and does nothing.
-        # Deliberately NOT `tenacity` either: retry_if_result is the right
-        # abstraction, but it is a new dependency for one call site in a project
-        # whose stated constraint is a small runtime, and the house already has a
-        # retry idiom (datasync/adapters/base.py:195-208). Do not re-litigate.
-        #
-        # POST, not GET: the spatial query sends the boundary geometry as a
-        # parameter. A full-resolution boundary (e.g. the Merced Subbasin's
-        # 8,446-vertex polygon) serialized into a GET query string blows past
-        # the server's URL-length limit and returns "414 Request-URI Too
-        # Large", silently yielding zero features. ArcGIS REST /query accepts
-        # the identical parameters form-encoded in a POST body, which has no
-        # such limit, so POST works for boundaries of any size.
-        data = None
-        last_failure = None
-        for attempt in range(MAX_ATTEMPTS):
-            try:
-                response = requests.post(url, data=params, timeout=60)
-                response.raise_for_status()
-                data = response.json()
-            except RETRYABLE_TRANSPORT_ERRORS as exc:
-                last_failure = exc
-                logger.warning(
-                    "ArcGIS request failed at the transport "
-                    "(attempt %d/%d): %s",
-                    attempt + 1,
-                    MAX_ATTEMPTS,
-                    exc,
-                )
-                if attempt < MAX_ATTEMPTS - 1:
-                    time.sleep(_backoff_seconds(attempt))
-            else:
-                error = data.get("error")
-                if error is None:
-                    if data.get("features") or not data.get(
-                        "exceededTransferLimit", False
-                    ):
-                        break  # the only success path
-
-                    # An empty page is the traversal's terminator ONLY when the
-                    # service also agrees there is nothing more. Measured
-                    # 2026-08-28 against the live LightBox service: while it was
-                    # degraded it answered this query with ZERO features and
-                    # exceededTransferLimit STILL TRUE, on a where-clause that
-                    # returnCountOnly put at 57,290 rows. Taking that as the end
-                    # of the traversal is how an import reports "Done. 0
-                    # record(s)" and exit 0 having read nothing at all — the
-                    # exact silent undercount every other guard in this module
-                    # exists to prevent. Retry it; if it persists, fail loudly
-                    # and carry the resume key out.
-                    last_failure = (
-                        "the service returned an empty page while still "
-                        "reporting exceededTransferLimit=true"
-                    )
-                    logger.warning(
-                        "ArcGIS returned an empty page but says there is more "
-                        "(attempt %d/%d, offset %d)",
-                        attempt + 1,
-                        MAX_ATTEMPTS,
-                        offset,
-                    )
-                    if attempt < MAX_ATTEMPTS - 1:
-                        time.sleep(_backoff_seconds(attempt))
-                    continue
-
-                if isinstance(error, dict):
-                    code = error.get("code")
-                    message = error.get("message", error)
-                else:
-                    code = None
-                    message = error
-
-                if code not in RETRYABLE_ARCGIS_ERROR_CODES:
-                    # Ours, not the network's: a bad field name or a malformed
-                    # `where`. Fail fast and legibly — no sleep, no second try.
-                    raise ArcGISTraversalError(
-                        f"ArcGIS API error (code {code}, not retryable): {message}"
-                    )
-
-                last_failure = f"code {code}: {message}"
-                logger.warning(
-                    "ArcGIS returned an in-body error "
-                    "(attempt %d/%d): code %s: %s",
-                    attempt + 1,
-                    MAX_ATTEMPTS,
-                    code,
-                    message,
-                )
-                if attempt < MAX_ATTEMPTS - 1:
-                    time.sleep(_backoff_seconds(attempt))
-        else:
-            logger.error(
-                "ArcGIS request failed after %d attempts: %s",
-                MAX_ATTEMPTS,
-                last_failure,
-            )
-            raise ArcGISTraversalError(
-                f"ArcGIS query failed after {MAX_ATTEMPTS} attempts "
-                f"(offset {offset}): {last_failure}",
-                last_oid=last_oid,
-            )
+        params = _page_params(
+            effective_where, out_fields, return_geometry, out_sr,
+            max_record_count, offset, geometry, geometry_type, spatial_rel,
+            order_by_fields,
+        )
+        data = _fetch_page(url, params, offset, last_oid)
 
         features = data.get("features", [])
         page_num += 1
@@ -332,14 +388,7 @@ def query_feature_server(
         if not features:
             break
 
-        # The resume key: the last OBJECTID this page carried. Tolerate its
-        # absence — a page whose features have no OID leaves last_oid as it was
-        # and simply produces no hint. A missing OID must never turn a
-        # recoverable failure into a different failure.
-        last_attributes = (features[-1] or {}).get("attributes") or {}
-        page_last_oid = last_attributes.get(oid_field)
-        if page_last_oid is not None:
-            last_oid = page_last_oid
+        last_oid = _page_last_oid(features, oid_field, last_oid)
 
         yield features
 
@@ -351,7 +400,12 @@ def query_feature_server(
         time.sleep(0.5)  # Rate limit between pages
 
 
-def query_by_boundary(url, boundary_geometry, out_fields="*", return_geometry=True):
+def query_by_boundary(
+    url: str,
+    boundary_geometry: GEOSGeometry,
+    out_fields: str = "*",
+    return_geometry: bool = True,
+) -> list[dict]:
     """Query a FeatureServer for features that intersect a boundary.
 
     Takes a GEOSGeometry (MultiPolygon), converts to ArcGIS JSON,
@@ -374,7 +428,7 @@ def query_by_boundary(url, boundary_geometry, out_fields="*", return_geometry=Tr
     return all_features
 
 
-def esri_polygon_to_geos(esri_geometry):
+def esri_polygon_to_geos(esri_geometry: dict | None) -> MultiPolygon | None:
     """Convert an ArcGIS JSON polygon to a Django GEOSGeometry MultiPolygon.
 
     Input format: {'rings': [[[x, y], ...], ...]}
@@ -394,7 +448,7 @@ def esri_polygon_to_geos(esri_geometry):
     # a single polygon. Django/GEOS will normalize winding order.
     polygons = []
     exterior = None
-    holes = []
+    holes: list[list[tuple]] = []
 
     for ring in rings:
         coords = [tuple(pt[:2]) for pt in ring]
@@ -429,7 +483,7 @@ def esri_polygon_to_geos(esri_geometry):
     return mp
 
 
-def esri_polyline_to_geos(esri_geometry):
+def esri_polyline_to_geos(esri_geometry: dict | None) -> MultiLineString | None:
     """Convert an ArcGIS JSON polyline to a Django GEOSGeometry MultiLineString.
 
     Input format: {'paths': [[[x, y], ...], ...]}
@@ -455,7 +509,7 @@ def esri_polyline_to_geos(esri_geometry):
     return MultiLineString(lines, srid=4326)
 
 
-def geos_to_esri_geometry(geos_geometry):
+def geos_to_esri_geometry(geos_geometry: GEOSGeometry) -> dict:
     """Convert a GEOSGeometry to ArcGIS JSON geometry dict.
 
     Returns: {'rings': [[[x, y], ...], ...], 'spatialReference': {'wkid': 4326}}

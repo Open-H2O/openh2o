@@ -16,7 +16,7 @@ from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Polygon
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.core.serializers import serialize
-from django.db.models import Count, Max, Q, Sum
+from django.db.models import Count, Max, Q, QuerySet, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
@@ -256,23 +256,8 @@ def _zone_parcels_context(zone):
     }
 
 
-def _zone_detail_context(zone):
-    """Build the per-zone detail context.
-
-    Shared by the standalone detail page, the in-pane HTMX render, and the
-    workspace's pre-loaded ``?selected=`` pane so all three are identical.
-    """
-    # Assigned parcels via ParcelZone, and the footer's count + acreage total
-    # (143-06). Phase 89: both this and the allocations query below are queries
-    # into switched-off modules under demotion. The tables are schema-resident,
-    # so they answer rather than raise — an empty answer that the page then
-    # presents as fact ("No parcels assigned to this zone", "No allocations for
-    # this zone"), which is a statement about data rather than about
-    # configuration. Empty here, and the cards that read them are guarded on
-    # the same conditions.
-    parcels_ctx = _zone_parcels_context(zone)
-    parcel_zones = parcels_ctx["parcel_zones"]
-
+def _zone_allocations(zone: Zone) -> QuerySet:
+    """The zone's allocation plans, newest period first (none without accounting)."""
     # Allocations for this zone (any period)
     allocations = AllocationPlan.objects.none()
     if is_enabled("accounting"):
@@ -282,7 +267,78 @@ def _zone_detail_context(zone):
             .select_related("reporting_period", "water_type")
             .order_by("-reporting_period__start_date")
         )
+    return allocations
 
+
+def _zone_budget_row(alloc: AllocationPlan, zone: Zone, zone_parcel_ids: list[int]) -> dict:
+    """One allocation-versus-use row for the zone's budget table."""
+    period_rows = billable_ledger(
+        ParcelLedger.objects.filter(
+            parcel_id__in=zone_parcel_ids,
+            reporting_period=alloc.reporting_period,
+        )
+    )
+    if (alloc.water_type.code or "").upper() == "GW":
+        gw = zone_groundwater_budget(zone, alloc.reporting_period)
+        captions = _zone_budget_captions(True, alloc.reporting_period.name)
+        return {
+            "period": alloc.reporting_period,
+            "water_type": alloc.water_type,
+            # The plan row's own allocation, so a zone carrying two GW plans
+            # in one period still lists two rows; `remaining` is the zone's
+            # position, which is what the dashboard states as well.
+            "budget": alloc.allocation_acre_feet or Decimal("0"),
+            "carryover": gw["carryover"],
+            # 143-06: the lead panel's Available segment (Task 4, the
+            # checkpoint's zone-lead ruling) is the same "available"
+            # `zone_groundwater_budget` already returns for `remaining` to
+            # be computed from -- allocation adjusted by carry-over. Never
+            # re-derived here, so it cannot drift from `remaining`.
+            "available": gw["available"],
+            "used": gw["used"],
+            "used_label": "pumped",
+            "is_groundwater": True,
+            # 150.1-02 screen 5: what the carry-over sum is made of, by kind.
+            "credit_sources": zone_credit_sources(zone, alloc.reporting_period),
+            "remaining": gw["remaining"],
+            "available_caption": captions["available"],
+            "used_caption": captions["used"],
+            "remaining_caption": captions["remaining"],
+        }
+    else:
+        # surface_diversion is stored NEGATIVE (production convention); the
+        # delivered magnitude is its absolute value, so remaining =
+        # budget − delivered reads correctly.
+        used = abs(
+            period_rows.filter(source_type="surface_diversion").aggregate(
+                s=Sum("amount_acre_feet")
+            )["s"]
+            or Decimal("0")
+        )
+        used_label = "delivered"
+    budget = alloc.allocation_acre_feet or Decimal("0")
+    captions = _zone_budget_captions(False, alloc.reporting_period.name)
+    return {
+        "period": alloc.reporting_period,
+        "water_type": alloc.water_type,
+        "budget": budget,
+        # A surface allocation has no groundwater carry-over. Absent, not
+        # zero: the template dashes it rather than printing 0.00, which
+        # would read as "nothing left over" instead of "not a cell here".
+        "carryover": None,
+        # A surface allocation has nothing to add before it is spent.
+        "available": budget,
+        "used": used,
+        "used_label": used_label,
+        "remaining": budget - used,
+        "available_caption": captions["available"],
+        "used_caption": captions["used"],
+        "remaining_caption": captions["remaining"],
+    }
+
+
+def _zone_budgets(zone: Zone, allocations: QuerySet, parcel_zones: QuerySet) -> list[dict]:
+    """Allocation versus use for each of the zone's allocations."""
     # Allocation vs. use (Phase 52-02): an allocation number alone doesn't tell the story —
     # an evaluator needs "of X allocated, Y was used". For each allocation, compute the
     # matching draw against the zone's parcels in that period: groundwater allocations
@@ -299,73 +355,11 @@ def _zone_detail_context(zone):
     # two screens cannot print two different remainings for one zone-period, which is
     # the second half of the same defect (ISS-155's class, DESIGN.md rule 12).
     zone_parcel_ids = list(parcel_zones.values_list("parcel_id", flat=True))
-    budgets = []
-    for alloc in allocations:
-        period_rows = billable_ledger(
-            ParcelLedger.objects.filter(
-                parcel_id__in=zone_parcel_ids,
-                reporting_period=alloc.reporting_period,
-            )
-        )
-        if (alloc.water_type.code or "").upper() == "GW":
-            gw = zone_groundwater_budget(zone, alloc.reporting_period)
-            captions = _zone_budget_captions(True, alloc.reporting_period.name)
-            budgets.append({
-                "period": alloc.reporting_period,
-                "water_type": alloc.water_type,
-                # The plan row's own allocation, so a zone carrying two GW plans
-                # in one period still lists two rows; `remaining` is the zone's
-                # position, which is what the dashboard states as well.
-                "budget": alloc.allocation_acre_feet or Decimal("0"),
-                "carryover": gw["carryover"],
-                # 143-06: the lead panel's Available segment (Task 4, the
-                # checkpoint's zone-lead ruling) is the same "available"
-                # `zone_groundwater_budget` already returns for `remaining` to
-                # be computed from -- allocation adjusted by carry-over. Never
-                # re-derived here, so it cannot drift from `remaining`.
-                "available": gw["available"],
-                "used": gw["used"],
-                "used_label": "pumped",
-                "is_groundwater": True,
-                # 150.1-02 screen 5: what the carry-over sum is made of, by kind.
-                "credit_sources": zone_credit_sources(zone, alloc.reporting_period),
-                "remaining": gw["remaining"],
-                "available_caption": captions["available"],
-                "used_caption": captions["used"],
-                "remaining_caption": captions["remaining"],
-            })
-            continue
-        else:
-            # surface_diversion is stored NEGATIVE (production convention); the
-            # delivered magnitude is its absolute value, so remaining =
-            # budget − delivered reads correctly.
-            used = abs(
-                period_rows.filter(source_type="surface_diversion").aggregate(
-                    s=Sum("amount_acre_feet")
-                )["s"]
-                or Decimal("0")
-            )
-            used_label = "delivered"
-        budget = alloc.allocation_acre_feet or Decimal("0")
-        captions = _zone_budget_captions(False, alloc.reporting_period.name)
-        budgets.append({
-            "period": alloc.reporting_period,
-            "water_type": alloc.water_type,
-            "budget": budget,
-            # A surface allocation has no groundwater carry-over. Absent, not
-            # zero: the template dashes it rather than printing 0.00, which
-            # would read as "nothing left over" instead of "not a cell here".
-            "carryover": None,
-            # A surface allocation has nothing to add before it is spent.
-            "available": budget,
-            "used": used,
-            "used_label": used_label,
-            "remaining": budget - used,
-            "available_caption": captions["available"],
-            "used_caption": captions["used"],
-            "remaining_caption": captions["remaining"],
-        })
+    return [_zone_budget_row(alloc, zone, zone_parcel_ids) for alloc in allocations]
 
+
+def _current_zone_budgets(zone: Zone, budgets: list[dict]) -> list[dict]:
+    """The current period's budget rows, each with its use-ledger entry count."""
     # 143-06: the lead panel shows the CURRENT period's result(s) only -- the
     # same `current_period_id` helper Task 3 extracted to `accounting.services`
     # so the zone page, the allocations list and the ledger cannot land on
@@ -393,7 +387,11 @@ def _zone_detail_context(zone):
             .distinct()
             .count()
         )
+    return current_budgets
 
+
+def _used_label_uniform(budgets: list[dict]) -> str | None:
+    """The one "used" word every budget row shares, or None when they differ."""
     # Rule 9: a two-word column header that wraps stacks its second word under
     # the first, but only when every row shares the SAME word -- a zone with a
     # groundwater row ("pumped") and a surface row ("delivered") keeps the
@@ -402,7 +400,11 @@ def _zone_detail_context(zone):
     # about the rows that do not share it.
     used_labels = {b["used_label"] for b in budgets}
     used_label_uniform = next(iter(used_labels)) if len(used_labels) == 1 else None
+    return used_label_uniform
 
+
+def _zone_geojson(zone: Zone) -> dict | None:
+    """GeoJSON for the zone's own boundary, or None when it has no geometry."""
     # GeoJSON for the persistent detail map. A FeatureCollection (via serialize)
     # so OH2O.detailPaneMap reads it exactly as it does for every other screen;
     # it auto-detects the zone's polygon boundary (fill + outline). A Python
@@ -428,7 +430,11 @@ def _zone_detail_context(zone):
             zone.geometry.point_on_surface.x,
             zone.geometry.point_on_surface.y,
         ]
+    return geojson
 
+
+def _zone_parcels_geojson(parcel_zones: QuerySet) -> dict | None:
+    """GeoJSON for the zone's assigned use areas, or None when there are none to draw."""
     # R-102: the zone's assigned use areas, so the persistent map can draw
     # them beneath the boundary — the list beneath this map already names
     # them; the map drew none. None when there are none to draw, or when
@@ -450,6 +456,32 @@ def _zone_detail_context(zone):
             )
             for f in parcels_geojson["features"]:
                 f["properties"]["pk"] = f.get("id")
+    return parcels_geojson
+
+
+def _zone_detail_context(zone):
+    """Build the per-zone detail context.
+
+    Shared by the standalone detail page, the in-pane HTMX render, and the
+    workspace's pre-loaded ``?selected=`` pane so all three are identical.
+    """
+    # Assigned parcels via ParcelZone, and the footer's count + acreage total
+    # (143-06). Phase 89: both this and the allocations query below are queries
+    # into switched-off modules under demotion. The tables are schema-resident,
+    # so they answer rather than raise — an empty answer that the page then
+    # presents as fact ("No parcels assigned to this zone", "No allocations for
+    # this zone"), which is a statement about data rather than about
+    # configuration. Empty here, and the cards that read them are guarded on
+    # the same conditions.
+    parcels_ctx = _zone_parcels_context(zone)
+    parcel_zones = parcels_ctx["parcel_zones"]
+
+    allocations = _zone_allocations(zone)
+    budgets = _zone_budgets(zone, allocations, parcel_zones)
+    current_budgets = _current_zone_budgets(zone, budgets)
+    used_label_uniform = _used_label_uniform(budgets)
+    geojson = _zone_geojson(zone)
+    parcels_geojson = _zone_parcels_geojson(parcel_zones)
 
     context = {
         "zone": zone,

@@ -19,6 +19,7 @@ Usage:
 import json
 import logging
 from collections import OrderedDict
+from collections.abc import Callable
 from pathlib import Path
 
 import requests
@@ -129,76 +130,17 @@ class Command(BaseCommand):
         if dry_run:
             self.stdout.write(self.style.WARNING("DRY RUN: no records will be created."))
 
-        step_registry = OrderedDict([
-            ("basins", self._step_basins),
-            ("parcels", self._step_parcels),
-            ("flowlines", self._step_flowlines),
-        ])
-        # The stations step writes MonitoredStation rows, so it is offered only
-        # where `datasync` is enabled. Without this a demoted deployment could
-        # fill a switched-off module's tables straight from the CLI — the same
-        # leak `seed_data` was gated for, through a different door. Named
-        # explicitly rather than filtered out silently, so `--steps stations`
-        # says why instead of "Unknown steps".
-        if is_enabled("datasync"):
-            step_registry["stations"] = self._step_stations
-
-        # Filter to requested steps
-        requested = options["steps"]
-        if requested:
-            step_names = [s.strip() for s in requested.split(",")]
-            invalid = [s for s in step_names if s not in step_registry]
-            if invalid:
-                raise CommandError(
-                    f"Unknown steps: {', '.join(invalid)}. "
-                    f"Valid: {', '.join(step_registry.keys())}"
-                )
-            step_registry = OrderedDict(
-                (k, v) for k, v in step_registry.items() if k in step_names
-            )
-
-        # An OBJECTID is meaningful only inside the layer it came from: the
-        # parcels layer's 2,207,678 is a different row from the flowlines
-        # layer's, so honouring one key across two steps would silently SKIP
-        # rows in the other. Skipping is the only real risk here — double
-        # counting is already impossible, because _step_parcels filters existing
-        # APNs and _step_flowlines filters existing id3dhp values, and both
-        # bulk_create with ignore_conflicts=True. Refuse rather than guess.
-        if resume_from is not None:
-            resumable = [n for n in step_registry if n in RESUMABLE_STEPS]
-            if len(step_registry) != 1 or len(resumable) != 1:
-                raise CommandError(
-                    "--resume-from needs exactly one resumable step. An "
-                    "OBJECTID belongs to one layer, so applying it to several "
-                    "steps would skip rows in the others. Re-run with "
-                    "--steps parcels or --steps flowlines "
-                    f"(you asked for: {', '.join(step_registry) or 'all steps'})."
-                )
+        step_registry = self._select_steps(options["steps"])
+        self._check_resume_from(step_registry, resume_from)
 
         self.stdout.write(
             f"Running {len(step_registry)} step(s) for boundary "
             f"'{boundary.name}' (ID {boundary.pk})..."
         )
 
-        total_created = 0
-        had_failure = False
-        for step_name, step_fn in step_registry.items():
-            self.stdout.write(f"\n--- Step: {step_name} ---")
-            try:
-                if step_name in RESUMABLE_STEPS:
-                    count = step_fn(boundary, dry_run, resume_from=resume_from)
-                else:
-                    count = step_fn(boundary, dry_run)
-                total_created += count
-                self.stdout.write(
-                    self.style.SUCCESS(f"  {step_name}: {count} record(s) created.")
-                )
-            except Exception as exc:
-                had_failure = True
-                self.stdout.write(
-                    self.style.ERROR(f"  {step_name} failed: {exc}")
-                )
-                logger.exception("Step %s failed", step_name)
+        total_created, had_failure = self._run_steps(
+            step_registry, boundary, dry_run, resume_from
+        )
 
         if had_failure:
             # A step failed mid-run (e.g. an upstream API died between pages). Do
@@ -222,6 +164,89 @@ class Command(BaseCommand):
         self.stdout.write(
             self.style.SUCCESS(f"\nDone. {total_created} total record(s) created.")
         )
+
+    def _select_steps(self, requested: str | None) -> "OrderedDict[str, Callable[..., int]]":
+        """The steps to run, in order: all offered ones, or the ``--steps`` subset."""
+        step_registry = OrderedDict([
+            ("basins", self._step_basins),
+            ("parcels", self._step_parcels),
+            ("flowlines", self._step_flowlines),
+        ])
+        # The stations step writes MonitoredStation rows, so it is offered only
+        # where `datasync` is enabled. Without this a demoted deployment could
+        # fill a switched-off module's tables straight from the CLI — the same
+        # leak `seed_data` was gated for, through a different door. Named
+        # explicitly rather than filtered out silently, so `--steps stations`
+        # says why instead of "Unknown steps".
+        if is_enabled("datasync"):
+            step_registry["stations"] = self._step_stations
+
+        # Filter to requested steps
+        if requested:
+            step_names = [s.strip() for s in requested.split(",")]
+            invalid = [s for s in step_names if s not in step_registry]
+            if invalid:
+                raise CommandError(
+                    f"Unknown steps: {', '.join(invalid)}. "
+                    f"Valid: {', '.join(step_registry.keys())}"
+                )
+            step_registry = OrderedDict(
+                (k, v) for k, v in step_registry.items() if k in step_names
+            )
+        return step_registry
+
+    def _check_resume_from(
+        self,
+        step_registry: "OrderedDict[str, Callable[..., int]]",
+        resume_from: int | None,
+    ) -> None:
+        """Refuse ``--resume-from`` unless exactly one resumable step was asked for."""
+        # An OBJECTID is meaningful only inside the layer it came from: the
+        # parcels layer's 2,207,678 is a different row from the flowlines
+        # layer's, so honouring one key across two steps would silently SKIP
+        # rows in the other. Skipping is the only real risk here — double
+        # counting is already impossible, because _step_parcels filters existing
+        # APNs and _step_flowlines filters existing id3dhp values, and both
+        # bulk_create with ignore_conflicts=True. Refuse rather than guess.
+        if resume_from is not None:
+            resumable = [n for n in step_registry if n in RESUMABLE_STEPS]
+            if len(step_registry) != 1 or len(resumable) != 1:
+                raise CommandError(
+                    "--resume-from needs exactly one resumable step. An "
+                    "OBJECTID belongs to one layer, so applying it to several "
+                    "steps would skip rows in the others. Re-run with "
+                    "--steps parcels or --steps flowlines "
+                    f"(you asked for: {', '.join(step_registry) or 'all steps'})."
+                )
+
+    def _run_steps(
+        self,
+        step_registry: "OrderedDict[str, Callable[..., int]]",
+        boundary: Boundary,
+        dry_run: bool,
+        resume_from: int | None,
+    ) -> tuple[int, bool]:
+        """Run each step, reporting as it goes; returns (records created, whether any step failed)."""
+        total_created = 0
+        had_failure = False
+        for step_name, step_fn in step_registry.items():
+            self.stdout.write(f"\n--- Step: {step_name} ---")
+            try:
+                if step_name in RESUMABLE_STEPS:
+                    count = step_fn(boundary, dry_run, resume_from=resume_from)
+                else:
+                    count = step_fn(boundary, dry_run)
+                total_created += count
+                self.stdout.write(
+                    self.style.SUCCESS(f"  {step_name}: {count} record(s) created.")
+                )
+            except Exception as exc:
+                had_failure = True
+                self.stdout.write(
+                    self.style.ERROR(f"  {step_name} failed: {exc}")
+                )
+                logger.exception("Step %s failed", step_name)
+        return total_created, had_failure
 
     def _resolve_boundary(self, value):
         """Look up Boundary by numeric ID or name (case-insensitive)."""
@@ -343,14 +368,7 @@ class Command(BaseCommand):
 
             for features in pages:
                 page_num += 1
-                apn_map = {}
-                for feat in features:
-                    apn = (feat.get("attributes") or {}).get("PARCEL_APN")
-                    if not apn or not str(apn).strip():
-                        continue
-                    apn = str(apn).strip()
-                    if apn not in apn_map:
-                        apn_map[apn] = feat
+                apn_map = self._parcels_by_apn(features)
 
                 if not apn_map:
                     self.stdout.write(f"  Page {page_num}: 0 valid parcels, skipping.")
@@ -362,57 +380,11 @@ class Command(BaseCommand):
                     ).values_list("parcel_number", flat=True)
                 )
 
-                new_parcels = []
-                for apn, feat in apn_map.items():
-                    if apn in existing_apns:
-                        continue
+                new_parcels = self._build_parcels(apn_map, existing_apns)
 
-                    attrs = feat.get("attributes") or {}
-                    addr_parts = [
-                        str(attrs.get("SITE_ADDR") or "").strip(),
-                        str(attrs.get("SITE_CITY") or "").strip(),
-                        str(attrs.get("SITE_STATE") or "").strip(),
-                        str(attrs.get("SITE_ZIP") or "").strip(),
-                    ]
-                    address = ", ".join(p for p in addr_parts if p)
-
-                    geom = None
-                    esri_feat_geom = feat.get("geometry")
-                    if esri_feat_geom:
-                        try:
-                            geom = esri_polygon_to_geos(esri_feat_geom)
-                        except Exception as exc:
-                            logger.warning("Bad geometry for %s: %s", apn, exc)
-
-                    if geom is None:
-                        self.stdout.write(
-                            self.style.WARNING(f"  Skipping (no geometry): {apn}")
-                        )
-                        continue
-
-                    new_parcels.append(
-                        Parcel(
-                            parcel_number=apn,
-                            geometry=geom,
-                            address=address,
-                            status="active",
-                        )
-                    )
-
-                if dry_run:
-                    self.stdout.write(
-                        f"  Page {page_num}: would create {len(new_parcels)} parcel(s)"
-                    )
-                    created_total += len(new_parcels)
-                else:
-                    created = Parcel.objects.bulk_create(
-                        new_parcels, ignore_conflicts=True
-                    )
-                    created_total += len(created)
-                    self.stdout.write(
-                        f"  Page {page_num}: {len(created)} parcel(s) created "
-                        f"({len(existing_apns)} existing skipped)"
-                    )
+                created_total += self._store_parcel_page(
+                    page_num, new_parcels, existing_apns, dry_run
+                )
 
         except Exception as exc:
             # Propagate so a mid-pagination failure is reported incomplete, not a
@@ -422,6 +394,81 @@ class Command(BaseCommand):
             raise
 
         return created_total
+
+    @staticmethod
+    def _parcels_by_apn(features: list[dict]) -> dict[str, dict]:
+        """One page's features keyed by trimmed APN, dropping blanks and repeats."""
+        apn_map = {}
+        for feat in features:
+            apn = (feat.get("attributes") or {}).get("PARCEL_APN")
+            if not apn or not str(apn).strip():
+                continue
+            apn = str(apn).strip()
+            if apn not in apn_map:
+                apn_map[apn] = feat
+        return apn_map
+
+    def _build_parcels(self, apn_map: dict[str, dict], existing_apns: set[str]) -> list[Parcel]:
+        """Unsaved Parcels for the page's new APNs; a feature with no usable geometry is skipped."""
+        new_parcels = []
+        for apn, feat in apn_map.items():
+            if apn in existing_apns:
+                continue
+
+            attrs = feat.get("attributes") or {}
+            addr_parts = [
+                str(attrs.get("SITE_ADDR") or "").strip(),
+                str(attrs.get("SITE_CITY") or "").strip(),
+                str(attrs.get("SITE_STATE") or "").strip(),
+                str(attrs.get("SITE_ZIP") or "").strip(),
+            ]
+            address = ", ".join(p for p in addr_parts if p)
+
+            geom = None
+            esri_feat_geom = feat.get("geometry")
+            if esri_feat_geom:
+                try:
+                    geom = esri_polygon_to_geos(esri_feat_geom)
+                except Exception as exc:
+                    logger.warning("Bad geometry for %s: %s", apn, exc)
+
+            if geom is None:
+                self.stdout.write(
+                    self.style.WARNING(f"  Skipping (no geometry): {apn}")
+                )
+                continue
+
+            new_parcels.append(
+                Parcel(
+                    parcel_number=apn,
+                    geometry=geom,
+                    address=address,
+                    status="active",
+                )
+            )
+        return new_parcels
+
+    def _store_parcel_page(
+        self,
+        page_num: int,
+        new_parcels: list[Parcel],
+        existing_apns: set[str],
+        dry_run: bool,
+    ) -> int:
+        """Save one page of parcels (or only count them on a dry run); returns the count."""
+        if dry_run:
+            self.stdout.write(
+                f"  Page {page_num}: would create {len(new_parcels)} parcel(s)"
+            )
+            return len(new_parcels)
+        created = Parcel.objects.bulk_create(
+            new_parcels, ignore_conflicts=True
+        )
+        self.stdout.write(
+            f"  Page {page_num}: {len(created)} parcel(s) created "
+            f"({len(existing_apns)} existing skipped)"
+        )
+        return len(created)
 
     def _step_flowlines(self, boundary, dry_run, resume_from=None):
         """Fetch USGS 3DHP flowlines that intersect the boundary.
@@ -452,14 +499,7 @@ class Command(BaseCommand):
 
             for features in pages:
                 page_num += 1
-                sid_map = {}
-                for feat in features:
-                    attrs = feat.get("attributes") or {}
-                    sid = str(attrs.get("id3dhp") or "").strip()
-                    if not sid:
-                        continue
-                    if sid not in sid_map:
-                        sid_map[sid] = feat
+                sid_map = self._flowlines_by_id(features)
 
                 if not sid_map:
                     self.stdout.write(f"  Page {page_num}: 0 valid flowlines, skipping.")
@@ -472,52 +512,11 @@ class Command(BaseCommand):
                     ).values_list("source_id", flat=True)
                 )
 
-                new_flowlines = []
-                for sid, feat in sid_map.items():
-                    if sid in existing_sids:
-                        continue
+                new_flowlines = self._build_flowlines(boundary, sid_map, existing_sids)
 
-                    attrs = feat.get("attributes") or {}
-                    geom = None
-                    esri_feat_geom = feat.get("geometry")
-                    if esri_feat_geom:
-                        try:
-                            geom = esri_polyline_to_geos(esri_feat_geom)
-                        except Exception as exc:
-                            logger.warning("Bad geometry for %s: %s", sid, exc)
-
-                    if geom is None:
-                        self.stdout.write(
-                            self.style.WARNING(f"  Skipping (no geometry): {sid}")
-                        )
-                        continue
-
-                    new_flowlines.append(
-                        Flowline(
-                            name=str(attrs.get("gnisidlabel") or "").strip(),
-                            boundary=boundary,
-                            feature_type=str(attrs.get("featuretypelabel") or "").strip(),
-                            length_km=attrs.get("lengthkm"),
-                            stream_order=attrs.get("streamorder"),
-                            source_id=sid,
-                            geometry=geom,
-                        )
-                    )
-
-                if dry_run:
-                    self.stdout.write(
-                        f"  Page {page_num}: would create {len(new_flowlines)} flowline(s)"
-                    )
-                    created_total += len(new_flowlines)
-                else:
-                    created = Flowline.objects.bulk_create(
-                        new_flowlines, ignore_conflicts=True
-                    )
-                    created_total += len(created)
-                    self.stdout.write(
-                        f"  Page {page_num}: {len(created)} flowline(s) created "
-                        f"({len(existing_sids)} existing skipped)"
-                    )
+                created_total += self._store_flowline_page(
+                    page_num, new_flowlines, existing_sids, dry_run
+                )
 
         except Exception as exc:
             # Propagate so a mid-pagination failure is reported incomplete, not a
@@ -527,6 +526,78 @@ class Command(BaseCommand):
             raise
 
         return created_total
+
+    @staticmethod
+    def _flowlines_by_id(features: list[dict]) -> dict[str, dict]:
+        """One page's features keyed by trimmed 3DHP id, dropping blanks and repeats."""
+        sid_map = {}
+        for feat in features:
+            attrs = feat.get("attributes") or {}
+            sid = str(attrs.get("id3dhp") or "").strip()
+            if not sid:
+                continue
+            if sid not in sid_map:
+                sid_map[sid] = feat
+        return sid_map
+
+    def _build_flowlines(
+        self, boundary: Boundary, sid_map: dict[str, dict], existing_sids: set[str]
+    ) -> list[Flowline]:
+        """Unsaved Flowlines for the page's new ids; a feature with no usable geometry is skipped."""
+        new_flowlines = []
+        for sid, feat in sid_map.items():
+            if sid in existing_sids:
+                continue
+
+            attrs = feat.get("attributes") or {}
+            geom = None
+            esri_feat_geom = feat.get("geometry")
+            if esri_feat_geom:
+                try:
+                    geom = esri_polyline_to_geos(esri_feat_geom)
+                except Exception as exc:
+                    logger.warning("Bad geometry for %s: %s", sid, exc)
+
+            if geom is None:
+                self.stdout.write(
+                    self.style.WARNING(f"  Skipping (no geometry): {sid}")
+                )
+                continue
+
+            new_flowlines.append(
+                Flowline(
+                    name=str(attrs.get("gnisidlabel") or "").strip(),
+                    boundary=boundary,
+                    feature_type=str(attrs.get("featuretypelabel") or "").strip(),
+                    length_km=attrs.get("lengthkm"),
+                    stream_order=attrs.get("streamorder"),
+                    source_id=sid,
+                    geometry=geom,
+                )
+            )
+        return new_flowlines
+
+    def _store_flowline_page(
+        self,
+        page_num: int,
+        new_flowlines: list[Flowline],
+        existing_sids: set[str],
+        dry_run: bool,
+    ) -> int:
+        """Save one page of flowlines (or only count them on a dry run); returns the count."""
+        if dry_run:
+            self.stdout.write(
+                f"  Page {page_num}: would create {len(new_flowlines)} flowline(s)"
+            )
+            return len(new_flowlines)
+        created = Flowline.objects.bulk_create(
+            new_flowlines, ignore_conflicts=True
+        )
+        self.stdout.write(
+            f"  Page {page_num}: {len(created)} flowline(s) created "
+            f"({len(existing_sids)} existing skipped)"
+        )
+        return len(created)
 
     def _step_stations(self, boundary, dry_run):
         """Discover monitoring stations across every discovery-capable provider.
@@ -583,62 +654,15 @@ class Command(BaseCommand):
                 )
                 return 0, "skipped_no_adapter"
 
-            if use_mock:
-                station_list = self._load_mock_stations(code)
-            else:
-                # Skip key-gated providers cleanly when no credential is set, so a
-                # missing key reads as a labeled skip rather than an opaque empty
-                # result. Key-free providers return None here.
-                missing_credential = adapter.missing_required_credential()
-                if missing_credential:
-                    self.stdout.write(
-                        self.style.WARNING(
-                            f"  {code.upper()}: skipped — no API key "
-                            f"configured ({missing_credential})."
-                        )
-                    )
-                    logger.info(
-                        "Station discovery skipped for %s: %s",
-                        code, missing_credential,
-                    )
-                    return 0, "skipped_no_key"
-                station_list = adapter.discover_stations(boundary.geometry)
+            station_list = self._fetch_station_list(adapter, boundary, code, use_mock)
+            if station_list is None:
+                return 0, "skipped_no_key"
 
             self.stdout.write(
                 f"  {code.upper()}: found {len(station_list)} station(s)."
             )
 
-            created_count = 0
-            for stn in station_list:
-                ext_id = str(stn.get("station_id", "")).strip()
-                if not ext_id:
-                    continue
-
-                lat = stn.get("latitude")
-                lon = stn.get("longitude")
-                if lat is None or lon is None:
-                    continue
-
-                if dry_run:
-                    exists = MonitoredStation.objects.filter(
-                        data_source=ds, external_station_id=ext_id
-                    ).exists()
-                    if not exists:
-                        created_count += 1
-                    continue
-
-                _, created = MonitoredStation.objects.get_or_create(
-                    data_source=ds,
-                    external_station_id=ext_id,
-                    defaults={
-                        "station_name": stn.get("name", ""),
-                        "location": Point(float(lon), float(lat), srid=4326),
-                        "parameters": stn.get("parameters", []),
-                        "is_active": False,
-                    },
-                )
-                if created:
-                    created_count += 1
+            created_count = self._save_discovered_stations(ds, station_list, dry_run)
 
             if dry_run:
                 self.stdout.write(
@@ -664,6 +688,70 @@ class Command(BaseCommand):
             )
             logger.exception("Station discovery failed for %s", code)
             return 0, "failed"
+
+    def _fetch_station_list(
+        self, adapter, boundary: Boundary, code: str, use_mock: bool
+    ) -> list[dict] | None:
+        """The provider's stations for the boundary, or None when a key-gated provider has no key."""
+        if use_mock:
+            station_list = self._load_mock_stations(code)
+        else:
+            # Skip key-gated providers cleanly when no credential is set, so a
+            # missing key reads as a labeled skip rather than an opaque empty
+            # result. Key-free providers return None here.
+            missing_credential = adapter.missing_required_credential()
+            if missing_credential:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"  {code.upper()}: skipped — no API key "
+                        f"configured ({missing_credential})."
+                    )
+                )
+                logger.info(
+                    "Station discovery skipped for %s: %s",
+                    code, missing_credential,
+                )
+                return None
+            station_list = adapter.discover_stations(boundary.geometry)
+        return station_list
+
+    @staticmethod
+    def _save_discovered_stations(
+        ds: DataSource, station_list: list[dict], dry_run: bool
+    ) -> int:
+        """Create a MonitoredStation for each new discovered station; returns how many are new."""
+        created_count = 0
+        for stn in station_list:
+            ext_id = str(stn.get("station_id", "")).strip()
+            if not ext_id:
+                continue
+
+            lat = stn.get("latitude")
+            lon = stn.get("longitude")
+            if lat is None or lon is None:
+                continue
+
+            if dry_run:
+                exists = MonitoredStation.objects.filter(
+                    data_source=ds, external_station_id=ext_id
+                ).exists()
+                if not exists:
+                    created_count += 1
+                continue
+
+            _, created = MonitoredStation.objects.get_or_create(
+                data_source=ds,
+                external_station_id=ext_id,
+                defaults={
+                    "station_name": stn.get("name", ""),
+                    "location": Point(float(lon), float(lat), srid=4326),
+                    "parameters": stn.get("parameters", []),
+                    "is_active": False,
+                },
+            )
+            if created:
+                created_count += 1
+        return created_count
 
     def _load_mock_stations(self, source_code):
         """Load station list from fixture file for mock mode."""

@@ -8,6 +8,7 @@ instead of management command stdout output.
 """
 
 import logging
+from collections.abc import Callable
 
 from core.modules import is_enabled
 from geography.models import Boundary, Flowline, Zone
@@ -40,7 +41,7 @@ _STEP_MODULE = {
 }
 
 
-def wizard_steps() -> list:
+def wizard_steps() -> list[tuple[str, str, str]]:
     """The wizard steps this deployment can actually run, in order.
 
     Resolved per request rather than at import time: ``OPENH2O_MODULES`` is read
@@ -54,7 +55,7 @@ def wizard_steps() -> list:
     ]
 
 
-def run_auto_populate_step(boundary: Boundary, step_name: str) -> tuple:
+def run_auto_populate_step(boundary: Boundary, step_name: str) -> tuple[int, list[str]]:
     """
     Run one step of the auto_populate pipeline for a boundary.
 
@@ -70,7 +71,7 @@ def run_auto_populate_step(boundary: Boundary, step_name: str) -> tuple:
     class SilentCommand(Command):
         """Subclass that suppresses stdout and captures counts."""
 
-        def __init__(self):
+        def __init__(self) -> None:
             super().__init__()
             self.stdout = _NullWriter()
             self.stderr = _NullWriter()
@@ -133,7 +134,7 @@ def station_provider_label(code: str) -> str:
     return _PROVIDER_FRIENDLY_FALLBACKS.get(code, code.upper())
 
 
-def run_station_provider_step(boundary: Boundary, code: str) -> tuple:
+def run_station_provider_step(boundary: Boundary, code: str) -> tuple[int, list[str], str]:
     """Discover stations from ONE provider for the wizard's per-provider poll.
 
     Returns ``(count, errors, status)``. ``count`` is the number of stations
@@ -150,7 +151,7 @@ def run_station_provider_step(boundary: Boundary, code: str) -> tuple:
     from geography.management.commands.auto_populate import Command
 
     class SilentCommand(Command):
-        def __init__(self):
+        def __init__(self) -> None:
             super().__init__()
             self.stdout = _NullWriter()
             self.stderr = _NullWriter()
@@ -195,7 +196,7 @@ def build_station_review(boundary: Boundary) -> dict:
         .order_by("data_source__name", "station_name")
     )
 
-    groups_map = {}
+    groups_map: dict = {}
     total = 0
     active = 0
     for station in stations:
@@ -257,15 +258,15 @@ def get_boundary_preview_data(boundary: Boundary) -> dict:
 class _NullWriter:
     """Absorbs write() calls from management command stdout."""
 
-    def write(self, *args, **kwargs):
+    def write(self, *args: object, **kwargs: object) -> None:
         pass
 
-    def flush(self):
+    def flush(self) -> None:
         pass
 
 
 class _NullStyle:
     """No-op style shim so Command.style.SUCCESS(...) calls don't fail."""
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Callable[[str], str]:
         return lambda x: x

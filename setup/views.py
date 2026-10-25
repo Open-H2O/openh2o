@@ -14,7 +14,7 @@ import logging
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
+from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 
 from core.access import admin_required
@@ -258,6 +258,100 @@ def setup_run(request):
     return render(request, "setup/run.html", context)
 
 
+def _run_next_step(
+    request: HttpRequest,
+    boundary: Boundary,
+    steps: list,
+    step_names: list[str],
+    selected_steps: list[str] | None,
+    step_index: int,
+    results: list[dict],
+    provider_index: int,
+) -> tuple[int, int]:
+    """Run the one step (or one station provider) now due; returns the new step and provider index."""
+    step_name = step_names[step_index]
+    if selected_steps is not None and step_name not in selected_steps:
+        # Not chosen on the picker: report it plainly as a choice, never as
+        # an error, and never call the populate code for it at all.
+        results.append({
+            "step": step_name,
+            "label": steps[step_index][1],
+            "count": 0,
+            "errors": [],
+            "success": True,
+            "note": "Skipped: you unchecked this step",
+        })
+        step_index += 1
+    elif step_name == "stations":
+        # Stations is split into one short request per provider (ISS-051): a
+        # slow/failing provider becomes an isolated, labeled row instead of a
+        # synchronous all-providers call that can outlast the worker timeout.
+        code = STATION_PROVIDERS[provider_index]
+        count, errors, status = run_station_provider_step(boundary, code)
+        results.append({
+            "step": "stations",
+            "label": station_provider_label(code),
+            "count": count,
+            "errors": errors,
+            "success": status not in ("failed", "timed_out"),
+            "status": status,
+            "note": PROVIDER_SKIP_NOTES.get(status),
+        })
+        provider_index += 1
+        if provider_index >= len(STATION_PROVIDERS):
+            # Every provider polled — the stations step is complete.
+            step_index += 1
+            provider_index = 0
+        request.session[SESSION_KEY_PROVIDER_INDEX] = provider_index
+    else:
+        count, errors = run_auto_populate_step(boundary, step_name)
+        results.append({
+            "step": step_name,
+            "label": steps[step_index][1],
+            "count": count,
+            "errors": errors,
+            "success": len(errors) == 0,
+        })
+        step_index += 1
+    request.session[SESSION_KEY_STEP_INDEX] = step_index
+    request.session[SESSION_KEY_RESULTS] = results
+    request.session.modified = True
+    return step_index, provider_index
+
+
+def _progress_context(
+    boundary: Boundary,
+    steps: list,
+    step_names: list[str],
+    results: list[dict],
+    step_index: int,
+    provider_index: int,
+    all_done: bool,
+) -> dict:
+    """Context for the progress partial, with the station-review data on the final poll."""
+    # While the stations phase runs, label the spinner with the provider the next
+    # poll will query, so the operator sees progress one provider at a time.
+    active_provider_label = None
+    if not all_done and step_names[step_index] == "stations":
+        active_provider_label = station_provider_label(
+            STATION_PROVIDERS[provider_index]
+        )
+
+    context = {
+        "results": results,
+        "steps": steps,
+        "step_index": step_index,
+        "all_done": all_done,
+        "boundary": boundary,
+        "active_provider_label": active_provider_label,
+    }
+    # On the final poll, attach the station-review data so completion can offer
+    # the in-flow enable step (discovered stations land inactive).
+    if all_done and is_enabled("datasync"):
+        context.update(build_station_review(boundary))
+    return context
+
+
 @admin_required
 @login_required
 def setup_progress(request):
@@ -291,76 +385,16 @@ def setup_progress(request):
     all_done = step_index >= len(step_names)
 
     if not all_done:
-        step_name = step_names[step_index]
-        if selected_steps is not None and step_name not in selected_steps:
-            # Not chosen on the picker: report it plainly as a choice, never as
-            # an error, and never call the populate code for it at all.
-            results.append({
-                "step": step_name,
-                "label": steps[step_index][1],
-                "count": 0,
-                "errors": [],
-                "success": True,
-                "note": "Skipped: you unchecked this step",
-            })
-            step_index += 1
-        elif step_name == "stations":
-            # Stations is split into one short request per provider (ISS-051): a
-            # slow/failing provider becomes an isolated, labeled row instead of a
-            # synchronous all-providers call that can outlast the worker timeout.
-            code = STATION_PROVIDERS[provider_index]
-            count, errors, status = run_station_provider_step(boundary, code)
-            results.append({
-                "step": "stations",
-                "label": station_provider_label(code),
-                "count": count,
-                "errors": errors,
-                "success": status not in ("failed", "timed_out"),
-                "status": status,
-                "note": PROVIDER_SKIP_NOTES.get(status),
-            })
-            provider_index += 1
-            if provider_index >= len(STATION_PROVIDERS):
-                # Every provider polled — the stations step is complete.
-                step_index += 1
-                provider_index = 0
-            request.session[SESSION_KEY_PROVIDER_INDEX] = provider_index
-        else:
-            count, errors = run_auto_populate_step(boundary, step_name)
-            results.append({
-                "step": step_name,
-                "label": steps[step_index][1],
-                "count": count,
-                "errors": errors,
-                "success": len(errors) == 0,
-            })
-            step_index += 1
-        request.session[SESSION_KEY_STEP_INDEX] = step_index
-        request.session[SESSION_KEY_RESULTS] = results
-        request.session.modified = True
+        step_index, provider_index = _run_next_step(
+            request, boundary, steps, step_names, selected_steps,
+            step_index, results, provider_index,
+        )
 
     all_done = step_index >= len(step_names)
 
-    # While the stations phase runs, label the spinner with the provider the next
-    # poll will query, so the operator sees progress one provider at a time.
-    active_provider_label = None
-    if not all_done and step_names[step_index] == "stations":
-        active_provider_label = station_provider_label(
-            STATION_PROVIDERS[provider_index]
-        )
-
-    context = {
-        "results": results,
-        "steps": steps,
-        "step_index": step_index,
-        "all_done": all_done,
-        "boundary": boundary,
-        "active_provider_label": active_provider_label,
-    }
-    # On the final poll, attach the station-review data so completion can offer
-    # the in-flow enable step (discovered stations land inactive).
-    if all_done and is_enabled("datasync"):
-        context.update(build_station_review(boundary))
+    context = _progress_context(
+        boundary, steps, step_names, results, step_index, provider_index, all_done
+    )
     return render(request, "setup/partials/_progress.html", context)
 
 
