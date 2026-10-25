@@ -14,8 +14,8 @@ field, so basins go on NON-agricultural land. The DWR crop layer only maps
 farmland, so it can't show basin sites. This pulls the county's real parcel
 fabric, flags the parcels that aren't cropped, and lets a person pick basins from
 those — the same "a human chose this against the real map" provenance as the 74
-crop fields. Phase 62-01 also adds the basin→POD schema link the 62-02 seed
-hangs the pick on.
+crop fields. The schema also links a basin to a POD; the basin seed
+hangs the pick on that link.
 
 ## Workflow
 
@@ -53,7 +53,7 @@ hangs the pick on.
    - **Save** (toggle editing off → Save).
 3. **Run `extract_selection.py`.** It extracts the tagged basins to
    `../selected_basins.geojson`, which is committed. Check that every `feeds_via`
-   resolves to a real `Flowline` name; then the 62-02 seed rebuilds the basins
+   resolves to a real `Flowline` name; then `seed_merced_basins_from_selection` rebuilds the basins
    + basin↔POD links from the real geometry.
 
 ## Files

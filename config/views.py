@@ -23,15 +23,14 @@ from core.modules import is_enabled
 def _public_counts() -> dict:
     """The entity counts both the public landing and the signed-in home show."""
     context = {}
-    # Phase 89 puts `parcels` and `accounting` on the same footing as the four
-    # below. They were the last two counts built unconditionally, and they were
-    # unconditional only because the modules were pinned `required` — not
-    # because a dashboard ought to assert them.
+    # `parcels` and `accounting` are guarded the same way as the four
+    # below: both are optional modules, so a count is built only when the
+    # module is on.
     if is_enabled("parcels"):
         context["parcel_count"] = Parcel.objects.count()
     if is_enabled("accounting"):
         context["water_account_count"] = WaterAccount.objects.count()
-    # `wells` and `datasync` are demoted, not removed (Phase 88), so the imports
+    # `wells` and `datasync` are demoted, not removed, so the imports
     # at the top of this file keep working and the tables keep answering — with
     # a truthful zero that reads as a LIE on the page: "0 Wells" says you have
     # no wells, where the honest answer is that this deployment does not track
@@ -41,7 +40,7 @@ def _public_counts() -> dict:
         context["well_count"] = Well.objects.count()
     if is_enabled("datasync"):
         context["station_count"] = MonitoredStation.objects.count()
-        # 143-09 (R-137, R-138): computed here, before the anonymous return,
+        # Computed here, before the anonymous return,
         # so the signed-in hero and the anonymous stations card read one
         # pair of numbers rather than two counts that could drift apart.
         now = timezone.now()
@@ -56,8 +55,8 @@ def _public_counts() -> dict:
             == "fresh"
         )
     if is_enabled("surface"):
-        # Local import: `surface` is an optional module (Phase 87), so this must
-        # not run at module scope — this file was the first casualty of a
+        # Local import: `surface` is an optional module, so this must
+        # not run at module scope: this file was the first casualty of a
         # surface-less boot, dying here before printing a useful error. The count
         # is built inside the guard too: the stat cards that read it are guarded
         # on the same condition, so on a surface-less deployment the key is simply
@@ -67,7 +66,7 @@ def _public_counts() -> dict:
         context["diversion_count"] = PointOfDiversion.objects.count()
     if is_enabled("recharge"):
         # Local import: `recharge` is an optional module, so this must not run at
-        # module scope (ISS-072). The count is built inside the guard too — the
+        # module scope: a deployment without the app would fail to import it. The count is built inside the guard too — the
         # templates that read it are guarded on the same condition, so on a
         # recharge-less deployment the key is simply absent rather than zero.
         from recharge.models import RechargeSite
@@ -81,7 +80,7 @@ def _add_signed_in_context(context: dict) -> None:
     # Status-hero data — every value is real, never decorative.
     site_config = SiteConfig.objects.first()
     context["agency_name"] = site_config.agency_name if site_config else "OpenH2O"
-    # 143-09 (R-137): the greeting ("Good morning") and the `_greeting`
+    # The greeting ("Good morning") and the `_greeting`
     # helper that built it are both removed; the greeting named a time of
     # day, not a fact about the district, and the hero's largest words now
     # lead with the station figure instead (built above, before the
@@ -92,7 +91,7 @@ def _add_signed_in_context(context: dict) -> None:
             DataSyncLog.objects.filter(status__in=["success", "partial"]).first()
         )
         context["last_sync_time"] = last_sync.started_at if last_sync else None
-    # 150-01 (2026-10-08): records decide what the home page offers.
+    # Records decide what the home page offers.
     # Module flags cannot: `surface` and `datasync` both pull the
     # parcels/accounting pair on, so accounting can be running with no use
     # area to log against and no water year to balance. "Log water use" reads
@@ -103,7 +102,7 @@ def _add_signed_in_context(context: dict) -> None:
     # `station_count`, built above for the public landing, rather than count
     # the same table twice. `surface` and `drinking` are truly removable, so
     # their models are imported here, inside the guard, never at module scope
-    # (89-03: a module-scope import of an absent app kills the boot); the key
+    # (a module-scope import of an absent app kills the boot); the key
     # is absent, not zero, when the module is off.
     if is_enabled("surface"):
         from surface.models import WaterRight
@@ -124,7 +123,7 @@ def index(request):
     task cards, and the counts demoted to an at-a-glance stat bar. The public
     landing shows the same counts as the demo's headline numbers.
 
-    150-01: the signed-in page also counts water rights, water systems and
+    The signed-in page also counts water rights, water systems and
     sample results, and asks whether a water year exists. Those are built
     after the anonymous return, so the public landing's queries do not grow.
     """
@@ -168,15 +167,13 @@ SEARCH_GROUP_LIMIT = 6   # max hits shown per entity type, so it stays scannable
 
 def _parcel_search_group(q: str, limit: int) -> dict | None:
     """The "Use Areas" result group, or None when off or nothing matched."""
-    # Phase 89: the same crash site as the wells group below, and the last two
-    # groups that were still unguarded. Schema-resident means the parcels tables
+    # The same crash site as the wells group below. Schema-resident means the parcels tables
     # SURVIVE the demotion and keep answering the query, while
     # `reverse("parcels:detail")` raises NoReverseMatch because the routes are
     # gone. On a fresh demoted deployment the tables are empty, `if parcels:` is
     # falsy and nothing reverses — which is why this cannot be left to luck: an
     # agency that switches Use Areas off AFTER using it keeps its rows, and the
-    # search box becomes a 500 on the first two characters typed. (88-02 shipped
-    # exactly this defect on `wells` and 88-03 caught it on staging.)
+    # search box becomes a 500 on the first two characters typed.
     if is_enabled("parcels"):
         parcels = Parcel.objects.filter(
             Q(parcel_number__icontains=q) | Q(owner_name__icontains=q)
@@ -216,7 +213,7 @@ def _well_search_group(q: str, limit: int) -> dict | None:
 def _diversion_search_group(q: str, limit: int) -> dict | None:
     """The "Surface Diversions" result group, or None when off or nothing matched."""
     if is_enabled("surface"):
-        # Local import + guard: `surface` is an optional module (Phase 87). Global
+        # Local import + guard: `surface` is an optional module. Global
         # search is `config`, which stays enabled, so without the guard this would
         # query a missing model AND reverse a route that never registered.
         from surface.models import PointOfDiversion
@@ -349,8 +346,8 @@ def demonstration_data(request):
 #: needs to render at all. ``None`` means the card renders in every valid
 #: configuration.
 #:
-#: **Why the numbering lives here and not in the template.** Plan 89-02 (ISS-088)
-#: replaced ten hardcoded ``Step N`` literals with numbers computed from what
+#: **Why the numbering lives here and not in the template.** The step numbers
+#: are computed from what
 #: actually renders — a nine-module drinking-water deployment used to show a
 #: single card labelled "Step 5", which is not a gap in a sequence but a number
 #: pointing at a sequence the reader cannot see. A template counter cannot do it:
@@ -360,8 +357,7 @@ def demonstration_data(request):
 #: ``_PAGES`` in the droppability harness — adding a step means adding a row.
 #:
 #: **Why ``pwsid`` is FIRST, and why nobody should "fix" the numbering back.**
-#: Plan 92-01 (ISS-092) added the drinking-water door this page had never
-#: mentioned, and the decision on 2026-07-22 was identity before geography.
+#: The drinking-water door comes first: identity before geography.
 #: The Setup Wizard's GeoJSON upload answers *where*: it draws a ``Boundary``
 #: polygon, and every step after it is a spatial query filtered to that shape. A
 #: PWSID answers *who*: it builds a ``WaterSystem`` out of three EPA Envirofacts
@@ -374,12 +370,11 @@ def demonstration_data(request):
 #: 1-11, and both cross-reference strings moved with them). That cost was
 #: accepted knowingly: it is the price of one page that is honest in both
 #: configurations rather than one that is honest in the larger of them.
-#: 149.1-04 (2026-10-07): the order follows what depends on
-#: what. Identity first (92-01), then the zones the records sit in, then the
+#: The order follows what depends on
+#: what. Identity first, then the zones the records sit in, then the
 #: records (use areas, the wells and diversions that attach to them, the
 #: stations), then the accounting setup, and the ledger last because it is data
-#: entry, not setup. The Phase 12 order had been the order the modules were
-#: built, with later steps appended.
+#: entry, not setup.
 GETTING_STARTED_STEPS = (
     ("pwsid", "drinking"),
     ("zones", None),
@@ -393,8 +388,8 @@ GETTING_STARTED_STEPS = (
     ("ledger", "accounting"),
 )
 
-#: The steps the Setup Wizard does part of. 149.1-04 (2026-10-07): wells and
-#: surface came OFF this list because the wizard never did them:
+#: The steps the Setup Wizard does part of. Wells and
+#: surface are NOT on this list because the wizard never did them:
 #: ``setup/services.py`` ``WIZARD_STEPS`` imports basins (as zones), parcels
 #: (use areas), flowlines and monitoring stations, and no wells or recharge
 #: basins. 150.1 (2026-10-10): zones joined it, because the basins step adds
@@ -409,7 +404,7 @@ def _getting_started_numbering():
     """``{step key: rendered number}`` plus the wizard's step citation and its count.
 
     The state-report step (``reporting``, with a second condition on ``wells`` or
-    ``surface``) came off the page on 2026-10-07 (149.1-04: the
+    ``surface``) is not on the page (the
     module is not fully developed), so no row needs a second condition now.
     """
     numbers = {}
@@ -440,7 +435,7 @@ def getting_started(request):
 
 #: The five explainer pages, paired with every module whose domain they explain.
 #:
-#: **This is the Plan 89-02 Help-page decision, and it is a hide, not a rewrite.**
+#: **Hiding these pages is deliberate, and it is a hide, not a rewrite.**
 #: These pages do not merely mention accounting — accounting IS their subject.
 #: "How Water Balances Work" answers one question: how do you reconcile estimated
 #: crop use against surface deliveries, groundwater and rain? Take those domains
@@ -500,7 +495,7 @@ def budgets_allocations(request):
 def surface_deliveries(request):
     """The old Surface delivery settings address, forwarded to Settings explained.
 
-    The page was folded into Settings explained on 2026-10-18 (150.1-03: one
+    The page was folded into Settings explained (one
     fact on one page); a permanent redirect keeps every shared link working.
     """
     if not explainer_is_available("settings_explained"):
@@ -512,7 +507,7 @@ def surface_deliveries(request):
 def water_balances(request):
     """Conceptual explainer: crop water use as estimated demand, matched against supplies.
 
-    148-03: leads with the picture's own worked field-month
+    Leads with the picture's own worked field-month
     (``accounting.services.example_field_month``) through
     ``help/partials/_the_subtraction.html``.
     """
@@ -556,15 +551,16 @@ def settings_explained(request):
 #: Glossary definitions that end with a "See Help > <page>." pointer, mapped to
 #: the explainer that pointer opens.
 #:
-#: **ISS-085 is NOT decided by this table.** Whether an operator's glossary should
-#: narrow to the terms their deployment uses is a live product question and Plan
-#: 89-02 deliberately left it open (see the summary). What 89-02 could not leave
-#: alone is the consequence of its OWN change: those five Help pages are now
+#: **This table does not decide whether an operator's glossary narrows.** Whether
+#: the glossary should
+#: narrow to the terms their deployment uses is a product question left open here.
+#: What cannot be left
+#: alone is the consequence of hiding pages: those five Help pages are
 #: hidden when the deployment does not run the domains they explain, so a
 #: definition telling the reader to "See Help > Allocations & Ceilings" was
 #: sending them at a 404. A cross-reference to a page that is not there is a
-#: wrong instruction, not a gap — 88-03 drew that line for the Setup Wizard's
-#: step numbers, and it applies identically here.
+#: wrong instruction, not a gap (the same holds for the Setup Wizard's
+#: step numbers).
 #:
 #: The pointer is dropped, never rewritten. The definition before it stands on
 #: its own; a dictionary entry does not need a "read more" to be a definition.
@@ -634,9 +630,9 @@ def glossary(request):
     Every reader knows water (an agency or district engineer, a grower, a ditch
     tender, a drinking-water operator), so an entry answers
     *what does this platform mean by X and what does it hold against one* — never
-    *what is X*. Rewritten on that axis 2026-08-06 (ISS-129): "Well" used to read
-    "A borehole used to draw groundwater", which told a thirty-year groundwater
-    professional what a well is. It now names the record and its fields.
+    *what is X*. "Well" does not read
+    "A borehole used to draw groundwater", which would tell a thirty-year groundwater
+    professional what a well is; it names the record and its fields.
 
     Three things stay explainable forever and are the legitimate half of the
     boundary: agency and program names with their expansions (CalWATRS, CDEC,
@@ -644,33 +640,22 @@ def glossary(request):
     did not author, and this platform's own coined concepts (Allocation Ceiling,
     Use Area, Ledger Entry).
 
-    **A deployment never narrows the membership (ISS-085, decided).** 36 entries in
-    and 40 entries out (148-03 Task 2 added four calculation terms; 150-03 Task
-    5 added nine more for ISS-183, the drinking-water words and the station
-    list's freshness words, for 49; 2026-10-11, the four
-    coined calculation terms and Consumptive Use gave way to the engineer's
-    terms: ETAW, ETAW Met by Surface Water, ETAW Met by Groundwater,
-    Groundwater Irrigation Efficiency, Groundwater Extraction and Surface Water
-    in Excess of ETAW, and ET became Crop ET, for 50; 150.2-02 removed
-    Groundwater Irrigation Efficiency with the setting it named, for 49, because
-    there is one irrigation efficiency per field; that count was in fact 48);
-    a reduced deployment narrows the *pointers*, not the dictionary.
-    2026-10-18 (150.1-03): every definition rewritten whole, and five entries
-    for words no screen, form or public guide uses were removed (Apportionment,
-    ET-Demand Allocation, Usage, Closing Balance, Recovery Horizon), for 43. A
+    **A deployment never narrows the membership.** The glossary holds the
+    same entries on every deployment; a reduced deployment narrows the
+    *pointers*, not the dictionary. Only words that a screen, form or public
+    guide uses have an entry. A
     definition defines and points to the Help page that explains; the
     explaining stays on that page. And the ``See Help > X.`` sentences are matched byte-for-byte by
-    ``_without_unavailable_help_pointers`` above — reword one and it stops being
-    stripped, which sends a reduced-deployment reader at a 404 (the defect Plan
-    89-02 fixed; ``tests/test_help_explainers.py`` guards it).
+    ``_without_unavailable_help_pointers`` above: reword one and it stops being
+    stripped, which sends a reduced-deployment reader at a 404
+    (``tests/test_help_explainers.py`` guards it).
 
-    **The page is one table (149.1-04, 2026-10-07).** Each entry is a row: the
+    **The page is one table.** Each entry is a row: the
     term, the definition with its pointer split off by ``_split_help_pointer``,
     and the pointer as a link in the Read more column, empty where there is none.
     The letter headings that a script used to insert into a ``<dl>`` are rows the
     template renders where the first letter changes, so the jump nav's anchors
-    exist without JavaScript. The definitions were reworded to rule 12's names in
-    the same plan, membership unchanged: an old name says first which name the
+    exist without JavaScript. The definitions use DESIGN.md copy rule 12's names: an old name says first which name the
     screens use, and an entry says what the platform holds or does and stops.
     """
     terms = {
@@ -733,14 +718,14 @@ def profile(request):
         form = ProfileForm(request.POST, instance=request.user)
         if form.is_valid():
             form.save()
-            # No message here: the profile now shows messages (ISS-248, for
-            # "You changed your password."), and "Profile updated." is not a
+            # No message here: the profile shows messages
+            # ("You changed your password."), and "Profile updated." is not a
             # sentence this site uses. It never showed on this page before; it waited
             # and surfaced on the next page that shows messages.
             return redirect("profile")
     else:
         form = ProfileForm(instance=request.user)
-    # 151-04: a host administrator's sign-in card depends on whether another
+    # A host administrator's sign-in card depends on whether another
     # active host administrator can change their address on the Users page.
     from core.models import User
 

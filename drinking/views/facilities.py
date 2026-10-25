@@ -126,7 +126,7 @@ def _facility_coverage_context(queryset: QuerySet[SystemFacility]) -> dict:
             "activity_status", ACTIVITY_STATUS_CHOICES
         ),
         "has_any": SystemFacility.objects.exists(),
-        # 123-02: the coverage counts for the sentence under the map, the
+        # The coverage counts for the sentence under the map, the
         # same pair `sampling_points` computes below and for the same
         # reason — the Merced demonstration's figures are not any other
         # system's, and an Envirofacts-onboarded system starts at zero
@@ -136,13 +136,13 @@ def _facility_coverage_context(queryset: QuerySet[SystemFacility]) -> dict:
         # `activity_status`. This sentence is about what the platform
         # HOLDS, not about what the current search matched.
         "total_facility_count": SystemFacility.objects.count(),
-        # 151.3-06 (Brent, 10:52): the page names both publishers once a facility was added by hand.
+        # The page names both publishers once a facility was added by hand.
         "any_added_by_hand": SystemFacility.objects.filter(added_by_hand=True).exists(),
         "mapped_facility_count": SystemFacility.objects.filter(
             location__isnull=False
         ).count(),
         # The head partial's own names for the same two counts, plus the
-        # FILTERED located count (143-07, Ruling A: the map now follows
+        # FILTERED located count (the map follows
         # the list, so this is the number that actually lands on it).
         "all_count": SystemFacility.objects.count(),
         "located_count": SystemFacility.objects.filter(
@@ -178,7 +178,7 @@ def facilities(request):
 
     n_source, n_tp, n_ds = _facility_population_counts(base_queryset)
 
-    # The map card's head (143-07). The map draws FACILITIES and the list
+    # The map card's head. The map draws FACILITIES and the list
     # counts facilities too — a 1:1 correspondence sampling_points below does
     # not have — so the shared head partial's own branches (all_count /
     # located_count / total_count / result_located_count) say the right thing
@@ -261,7 +261,7 @@ def facility_detail(request, pk):
 
 @login_required
 def facility_add(request):
-    """Add a facility by hand (146-04 Task 3, D9).
+    """Add a facility by hand.
 
     A source does not exist for the state's reporting until the district
     engineer assigns it an id, and it does not reach EPA's record, which
@@ -370,14 +370,13 @@ def facilities_geojson(request):
                 "pk": facility.pk,
                 "facility_id": facility.facility_id,
                 "name": facility.name,
-                # 143-07 Step 0: the map label, code prefix stripped. `name` is
+                # The map label, code prefix stripped. `name` is
                 # optional here (a facility can carry only its federal id), so
                 # this is null rather than an empty string when absent — a
                 # coalesce expression skips null and falls through to the next
                 # field, but treats "" as a real (empty) value and stops there.
                 "label": map_label(facility.name) if facility.name else None,
-                # The published LABEL, not the two-letter code. ISS-008 was filed
-                # for exactly this on the monitoring charts.
+                # The published LABEL, not the two-letter code.
                 "facility_type": facility.get_facility_type_display(),
                 "system_name": facility.system.name,
                 "pwsid": facility.system.pwsid,

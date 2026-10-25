@@ -33,7 +33,7 @@ from parcels.models import Parcel, ParcelLedger
 from wells.models import WellIrrigatedParcel
 
 
-# ISS-056 soft divergence flag: a parcel whose stored weight and ET-implied
+# Soft divergence flag: a parcel whose stored weight and ET-implied
 # weight differ by this much (absolute weight, i.e. 15 percentage points) is
 # worth a second look — a likely data-entry tell. Display-only; nothing is
 # auto-corrected.
@@ -44,7 +44,7 @@ SHARED_SUPPLY_DIVERGENCE_THRESHOLD = Decimal("0.15")
 _PCT_PLACES = Decimal("0.01")
 
 
-# GEARS "Extraction volume measurement method" controlled vocabulary (ISS-047a).
+# GEARS "Extraction volume measurement method" controlled vocabulary.
 # The GEARS portal prints this field as a fixed label, not our internal code.
 # Source: a SWRCB Groundwater Extraction Report with Report Status "Accepted"
 # (Extractor 25226 / Well 6895, Water Year 2018) prints the value
@@ -52,7 +52,7 @@ _PCT_PLACES = Decimal("0.01")
 # metered vs unmetered. We crosswalk our ParcelLedger.source_type codes onto the
 # two state-facing labels here rather than leaking the internal code into the
 # filing. (UCUM is deliberately NOT used — it targets the v1.3 open-data
-# exports, not these state CSVs; see ISS-047d.)
+# exports, not these state CSVs.)
 GEARS_METHOD = {
     "meter_reading": "Metered",
     "et_estimate": "Unmetered/Estimated",
@@ -68,15 +68,14 @@ def gears_method(source_type):
     silently relabeled to a wrong state value.
 
     GEARS is a groundwater filing built only from ``ParcelLedger`` rows (see
-    ``generate_gears_csv`` below, lines 363-483) -- it never reads a
-    ``surface.DiversionRecord``, so this inference is unchanged by 146-03.
+    ``generate_gears_csv`` below) -- it never reads a
+    ``surface.DiversionRecord``, so the label comes from the ledger source type alone.
     """
     return GEARS_METHOD.get(source_type, source_type)
 
 
 def calwatrs_method_label(record):
-    """The state's own words for how a ``DiversionRecord``'s number is known
-    (146-03 Task 2).
+    """The state's own words for how a ``DiversionRecord``'s number is known.
 
     Prefers the record's own ``method`` -- and the device's type when the
     method is ``device`` -- over any other inference: this platform asked
@@ -172,12 +171,12 @@ def build_normalized_pod_parcel_map(reporting_period=None):
     side. PointOfDiversionParcel.fraction also defaults to 1.0, so a POD diverting
     to N parcels all at 1.0 would have its diverted volume multiplied by N when the
     CalWATRS CSV splits it across them — the same double-count the well map guards
-    against (ISS-028). Each POD's parcels run through the SAME measurement-first
+    against. Each POD's parcels run through the SAME measurement-first
     ``apportion_shared_supply`` ladder (hand-set wins, else ET demand for the
     ``reporting_period``, else even), so the weights sum to exactly 1.0. Passing no
     ``reporting_period`` reproduces today's static split.
     """
-    # Local import: `surface` is an optional module (Phase 87), so this must not
+    # Local import: `surface` is an optional module, so this must not
     # run at module scope — importing surface.models with the app uninstalled
     # raises RuntimeError before any useful error prints.
     from surface.models import PointOfDiversionParcel
@@ -212,14 +211,13 @@ def _compare_split(links, demand_by_parcel, parcel_names):
       ``Decimal("1.0")`` sentinel, which drops to rung 3 (pure ET demand). When
       the source's parcels have zero total measured demand it is undefined
       (``None`` → "no ET signal"), NOT a misleading even split, and the flag is
-      suppressed. This is the demo state until Phase 58 re-runs the engine.
-    * ``your_pct`` / ``et_pct`` / ``gap_points`` -- 143-12, R-090. The same three
+      suppressed.
+    * ``your_pct`` / ``et_pct`` / ``gap_points`` -- the same three
       weights read as a percent of the source's water (0.1196 -> 11.96) rather
       than a fraction, each quantized to ``Decimal("0.01")`` with
-      ``ROUND_HALF_UP``. ISS-142 allows the conversion because a weight's third
-      and fourth decimal places become the percent's two, so no information is
-      lost. ``None`` where the underlying weight is ``None``. These are ADDED
-      keys; ``your_weight``/``et_weight``/``divergence`` and the flag rule are
+      ``ROUND_HALF_UP``. The conversion loses no information because a weight's third
+      and fourth decimal places become the percent's two. ``None`` where the
+      underlying weight is ``None``. These are ADDED keys; ``your_weight``/``et_weight``/``divergence`` and the flag rule are
       unchanged, and every existing key stays for the apportionment and
       presentation tests that assert them by name.
     """
@@ -276,7 +274,7 @@ def _compare_split(links, demand_by_parcel, parcel_names):
 
 
 def build_shared_supply_comparison(reporting_period=None):
-    """ISS-056: stored split vs. ET-implied split for each hand-set shared source.
+    """Stored split vs. ET-implied split for each hand-set shared source.
 
     A *shared source* is a well or point of diversion serving more than one
     parcel. A source is *hand-set* when a district nudged any member's link
@@ -320,7 +318,7 @@ def build_shared_supply_comparison(reporting_period=None):
              [(wip.parcel_id, wip.fraction) for wip in wips])
         )
 
-    # Guarded as well as locally imported (Phase 87): the shared-supply check is a
+    # Guarded as well as locally imported: the shared-supply check is a
     # `reporting` page, which stays enabled, so this half would otherwise run
     # unconditionally. With `surface` dropped the comparison is well-only, and the
     # template's POD link branch is guarded on the same condition.
@@ -405,7 +403,7 @@ def _gears_by_well_rows(reporting_period: ReportingPeriod) -> list[dict[str, Any
                     }
                 rows[key]["volume"] += abs(entry.amount_acre_feet) * fraction
         else:
-            # ISS-027: metered extraction on a parcel with no well link. Never
+            # Metered extraction on a parcel with no well link. Never
             # silently drop it — emit a parcel-keyed [INCOMPLETE] row so the
             # volume stays visible and flagged (mirrors the [INCOMPLETE] holder
             # convention on the CalWATRS side). validate_report warns so the
@@ -466,7 +464,7 @@ def _gears_by_et_rows(reporting_period: ReportingPeriod) -> list[dict[str, Any]]
         if key not in rows:
             rows[key] = {
                 "parcel_number": entry.parcel.parcel_number,
-                # ISS-031c: a null acreage becomes a blank cell, never a literal
+                # A null acreage becomes a blank cell, never a literal
                 # 0 — reporting 0 acres beside a real ET volume is self-
                 # inconsistent to a state reviewer. validate_report flags it.
                 "area": (
@@ -571,7 +569,7 @@ def _calwatrs_raw_volumes(records: Any) -> dict[tuple[int, str], dict[str, Any]]
                 # max_flow_rate_cfs: reported as CFS. 1 CFS × 1 day = 1.9835 AF.
                 "max_flow": rec.max_flow_rate_cfs or Decimal("0"),
                 "type": rec.get_diversion_type_display(),
-                # 146-03 Task 2: the record-first method label. Each
+                # The record-first method label. Each
                 # (pod, month) key maps to exactly one DiversionRecord here --
                 # the model's own unique_together on (point_of_diversion,
                 # month, diversion_type) and this loop's own diversion_type
@@ -595,7 +593,7 @@ def _calwatrs_file_rows(
     for key in sorted(raw, key=lambda k: (raw[k]["right_id"], raw[k]["month"])):
         entry = raw[key]
         if entry["right_id"] == "":
-            # ISS-031b: a blank Water Right ID is a structurally-invalid key the
+            # A blank Water Right ID is a structurally-invalid key the
             # CalWATRS portal rejects/orphans. Withhold the row from the file;
             # validate_report surfaces it as a warning naming the POD instead, so
             # the volume is never lost — it is flagged for the operator to fix.
@@ -620,7 +618,7 @@ def _calwatrs_file_rows(
 
 
 def generate_calwatrs_csv(reporting_period, template_type="a1"):
-    # Local import: `surface` is an optional module (Phase 87) — see
+    # Local import: `surface` is an optional module — see
     # `build_normalized_pod_parcel_map`. The CalWATRS filing is a surface-water
     # report, so this generator is only ever reached with the module enabled.
     from surface.models import DiversionRecord, PointOfDiversionParcel
@@ -651,7 +649,7 @@ def generate_calwatrs_csv(reporting_period, template_type="a1"):
 
     # Build pod→[(parcel_id, weight)] map split by the measurement-first kernel for
     # THIS period. Sums to 1.0 across the POD's parcels so its diversion is reported
-    # ONCE, not N times (ISS-028); where no share is hand-set the split follows ET
+    # ONCE, not N times; where no share is hand-set the split follows ET
     # demand so the thirsty crop carries the larger slice — the mirror of the well guard.
     pod_parcel_map = build_normalized_pod_parcel_map(reporting_period)
 

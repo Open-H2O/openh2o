@@ -38,7 +38,7 @@ ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[])
 # deploy by scripts/reset-demo.sh, which DROPs and restores the whole database
 # from the golden snapshot — that restore replaces the `django_session` table,
 # so DB-backed sessions are destroyed on each deploy and EVERY logged-in user is
-# logged out (recurring incident; see ISS-069). Cookie sessions live in the
+# logged out (a recurring incident). Cookie sessions live in the
 # browser, signed by the pinned SECRET_KEY, so they survive a DB restore AND a
 # container rebuild. Behaviour stays correct: the session still carries the auth
 # hash, so a real password change (or a wiped/restored admin row whose hash
@@ -92,7 +92,7 @@ INSTALLED_APPS = [
     "allauth.account",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
-    # Change history by Postgres trigger (Phase 147). See core/history.py.
+    # Change history by Postgres trigger. See core/history.py.
     "pgtrigger",
     "pghistory",
     # Local — composed from OPENH2O_MODULES via the registry. Note this is
@@ -111,16 +111,16 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     # Attaches the signed-in user and the request path to every change the
-    # request makes (Phase 147, core/history.py).
+    # request makes (core/history.py).
     "pghistory.middleware.HistoryMiddleware",
     # Refuses every unsafe request from a Viewer (read-only) account, on every
-    # route, whatever ACCESS_CONTROL_ENFORCED says (Phase 147, core/access.py).
+    # route, whatever ACCESS_CONTROL_ENFORCED says (core/access.py).
     "core.access.ReadOnlyMiddleware",
     # Sends a person whose password an administrator set to Choose a new
-    # password until they have (151-04, core/access.py).
+    # password until they have (core/access.py).
     "core.access.MustChoosePasswordMiddleware",
     # Turns a write refused by the finalized-period lock into the 409 page in
-    # plain words instead of a 500 (Phase 147, accounting/locks.py).
+    # plain words instead of a 500 (accounting/locks.py).
     "accounting.locks.FinalizedPeriodMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -242,7 +242,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 # threshold above which an uploaded file spools to a temp file instead of RAM.
 # These do NOT cap the uploaded FILE size itself — that hard ceiling lives in
 # core.geofiles (MAX_UPLOAD_BYTES / MAX_EXTRACTED_BYTES), shared by the bulk
-# importer and the Setup Wizard since 150-03.
+# importer and the Setup Wizard.
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10 MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024  # 5 MB
 
@@ -255,19 +255,19 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 ACCOUNT_LOGIN_METHODS = {"email"}
 ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
 # ACCOUNT_EMAIL_VERIFICATION is set below, under "-- Email", because it is
-# derived from EMAIL_HOST and must be read after it (ISS-015).
+# derived from EMAIL_HOST and must be read after it.
 # Closes public signup when ACCESS_CONTROL_ENFORCED is ON (the default); set it
 # OFF only on an open demo where self-registration should stay open. See
-# core.adapters / ISS-021.
+# core.adapters.
 ACCOUNT_ADAPTER = "core.adapters.AccessControlledAccountAdapter"
-# OpenH2O's sentences on allauth's password forms (ISS-248, core/account_forms.py).
+# OpenH2O's sentences on allauth's password forms (core/account_forms.py).
 ACCOUNT_FORMS = {
     "change_password": "core.account_forms.ChangePasswordForm",
     "set_password": "core.account_forms.SetPasswordForm",
     "reset_password_from_key": "core.account_forms.ResetPasswordKeyForm",
     "signup": "core.account_forms.SignupForm",
 }
-# One email address per person (ISS-248, 2026-10-17). The page
+# One email address per person. The page
 # that added a second one is gone (config/urls.py); this holds the rule for
 # any allauth path that could still add one.
 ACCOUNT_MAX_EMAIL_ADDRESSES = 1
@@ -277,7 +277,7 @@ LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
 SOCIALACCOUNT_PROVIDERS = {}
 
-# -- Access control (two-tier model, ISS-021) --------------------------------
+# -- Access control (two-tier model) --------------------------------
 # Master switch for the Administrator vs Operator access model.
 #   ON (default) = secure posture for a real agency: enforce admin_required
 #       gates (Setup Wizard, Methodology) and close public self-signup, so a
@@ -303,14 +303,14 @@ EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
 EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 
-# -- Signup email verification (ISS-015) -------------------------------------
+# -- Signup email verification -------------------------------------
 # What allauth does with each value, and which deployment wants which:
 #   "none"      = create the account and sign the user straight in. The only
 #       posture that works with no mail server, so it is what a single office
 #       computer running the console email backend gets.
 #   "optional"  = send the confirmation email, but let the user in without it.
 #   "mandatory" = block login until the address is confirmed. The safe posture
-#       for a public agency deployment, and the one ISS-015 was filed to make
+#       for a public agency deployment, and the one this setting exists to make
 #       reachable at all -- before this, the value was a hardcoded "none" that
 #       no operator could change without editing Python.
 #
@@ -337,7 +337,7 @@ ACCOUNT_EMAIL_VERIFICATION_CHOICES = ("none", "optional", "mandatory")
 
 
 def resolve_email_verification(raw, email_host):
-    """Resolve ACCOUNT_EMAIL_VERIFICATION (ISS-015).
+    """Resolve ACCOUNT_EMAIL_VERIFICATION.
 
     `raw` is the operator's explicit value ("" or None when unset); `email_host`
     is the resolved EMAIL_HOST. Returns one of
@@ -390,7 +390,7 @@ OPENET_CACHE_DAYS = int(os.environ.get("OPENET_CACHE_DAYS", "30"))
 # turned out to hold. It used to be 400, which is Tier 2 (that tier requires
 # linking an Earth Engine account) — so every Tier 1 deployment ran a guard set
 # to four times the allowance it was guarding, and it could not fire until the
-# operator had already spent twice what they had. Corrected 2026-08-05, ISS-128.
+# operator had already spent twice what they had.
 #
 # A fallback must fail toward the SMALLER allowance. This is not a spending cap
 # — OpenET does not bill per call — it is a scarce fixed allowance that resets

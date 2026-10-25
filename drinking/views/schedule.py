@@ -8,7 +8,7 @@ from drinking.models import SamplingSchedule, WaterSystem
 
 
 # ---------------------------------------------------------------------------
-# The sampling schedule (146-04 Task 4, D8)
+# The sampling schedule
 # ---------------------------------------------------------------------------
 
 

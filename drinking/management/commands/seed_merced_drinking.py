@@ -487,7 +487,7 @@ class Command(BaseCommand):
             for entry in validated:
                 if entry["errors"]:
                     errors.extend(entry["errors"])
-            # Since ISS-140 was ruled "beside" (2026-09-22), the importer also
+            # The importer also
             # stores the file's MCL and DLR as reported; naming the file here
             # is what lets each seeded result say where its limits came from.
             counts = importer.commit_rows(

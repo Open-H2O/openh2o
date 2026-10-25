@@ -163,7 +163,7 @@ def _duplicate_reading_warnings(reporting_period: ReportingPeriod) -> list[Prefl
 def _well_split_warnings() -> list[PreflightMessage]:
     """Warn on wells whose hand-set parcel split does not add up to 100%."""
     # Warn ONLY on a genuine hand-set inconsistency. Under derive-at-read-
-    # time (Phase 56), an untouched well leaves every parcel at the default
+    # time, an untouched well leaves every parcel at the default
     # 1.0 sentinel and the kernel splits it correctly — that is NOT an error,
     # so it must stay silent (else every shared well warns noisily). A well is
     # "hand-set" once any parcel's fraction is nudged off 1.0; only then does a
@@ -216,7 +216,7 @@ def _well_coverage_warnings(reporting_period: ReportingPeriod, source_count: int
 
 def _unlinked_parcel_warnings(reporting_period: ReportingPeriod) -> list[PreflightMessage]:
     """Warn about metered parcels with no well link."""
-    # ISS-027: a metered parcel with no well link can't be attributed to a
+    # A metered parcel with no well link can't be attributed to a
     # well row. The generator surfaces it as an unallocated [INCOMPLETE]
     # row rather than dropping the volume — warn so the operator links it.
     metered_parcel_ids = set(
@@ -261,7 +261,7 @@ def _gears_by_et_warnings(reporting_period: ReportingPeriod) -> list[PreflightMe
             ),
         })
 
-    # ISS-031c: a parcel with ET but no recorded acreage leaves a blank Area
+    # A parcel with ET but no recorded acreage leaves a blank Area
     # cell in the file (never a misleading 0). Name them so they get fixed.
     null_area_parcels = sorted(
         set(
@@ -289,7 +289,7 @@ def _gears_by_et_warnings(reporting_period: ReportingPeriod) -> list[PreflightMe
 
 def _calwatrs_warnings(reporting_period: ReportingPeriod, report_type: str) -> list[PreflightMessage]:
     """Checks for a CalWATRS A-1 or A-2 filing, in the order the portal would trip on them."""
-    # Local import: `surface` is an optional module (Phase 87), so this must
+    # Local import: `surface` is an optional module, so this must
     # not run at module scope. Every surface reference in this function lives
     # inside this branch, and CalWATRS is a surface-water filing — the branch
     # is unreachable on a deployment without the module.
@@ -396,7 +396,7 @@ def _pods_without_right_warnings(reporting_period: ReportingPeriod) -> list[Pref
     """Warn about points of diversion with no linked water right."""
     from surface.models import PointOfDiversion
 
-    # ISS-031b: PODs with no linked right produce a blank Water Right ID. The
+    # PODs with no linked right produce a blank Water Right ID. The
     # generator WITHHOLDS those rows (a blank key is rejected/orphaned by the
     # portal); name the PODs here so the withheld volume is never lost from
     # view and the operator knows exactly what to link before filing.
@@ -454,7 +454,7 @@ def _pod_split_warnings() -> list[PreflightMessage]:
     """Warn on points of diversion whose hand-set parcel split does not add up to 100%."""
     from surface.models import PointOfDiversionParcel
 
-    # ISS-028, reconciled for Phase 56: warn ONLY on a genuine hand-set
+    # Warn ONLY on a genuine hand-set
     # inconsistency. An untouched POD leaves every parcel at the 1.0 sentinel and
     # the kernel splits it correctly at read time — silent. A POD is "hand-set"
     # once any parcel's fraction is nudged off 1.0; only then does a deliberate
@@ -484,7 +484,7 @@ def _return_flow_passthrough_warnings(reporting_period: ReportingPeriod, diversi
     """Inform about points of diversion that return their full volume to the stream."""
     from surface.models import DiversionRecord
 
-    # Phase 67-02: return flow is INFORMATIONAL, never a volume discrepancy.
+    # Return flow is INFORMATIONAL, never a volume discrepancy.
     # CalWATRS reports the GROSS diverted volume the state requires; the
     # returned portion rides in its own Return Flow (AF) column, never netted.
     # A POD that returns its FULL volume (hydropower / non-consumptive

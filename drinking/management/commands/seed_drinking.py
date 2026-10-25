@@ -14,7 +14,7 @@ Two things this command deliberately does NOT do:
 * **It does not invent DDW analyte codes.** DDW's SDWIS.CSV data dictionary
   describes ``Analyte Code`` as "a unique, four-digit number" but publishes no
   code list, and no other authoritative list is in hand. Every ``ddw_code``
-  therefore stays NULL; the CSV importer (78-03) will populate them from the
+  therefore stays NULL; the CSV importer populates them from the
   codes the state's own files carry.
 * **It does not determine compliance.** A ``RegulatoryLimit`` records what the
   limit is and when it applied. Comparing a result against one is a later,

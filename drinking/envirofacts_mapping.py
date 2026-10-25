@@ -18,8 +18,8 @@ DDW's real published PS Code for that facility is ``CA1010001_010_010``,
 confirmed against California's live SDWIS4.zip export. So
 ``SystemFacility.facility_id`` is populated from ``state_facility_id``, and
 EPA's key is preserved separately in ``epa_facility_id`` for provenance. Mapping
-EPA's key would make Phase 80's wizard compose ``CA1010001_14042_001`` and match
-nothing in any genuine lab file. See 79-RESEARCH.md § ps_code_resolution.
+EPA's key would make the onboarding wizard compose ``CA1010001_14042_001`` and match
+nothing in any genuine lab file.
 
 **Prepare, never determine.** This module records what EPA says. It does not
 compute a compliance judgment, and it does not invent a value EPA did not
@@ -64,7 +64,7 @@ class UnmappableFacility(Exception):
 
     ``str(exc)`` is READER-FACING — the onboarding review and result screens
     render it to an operator verbatim — so it says "state-assigned facility ID"
-    rather than naming a column (ISS-101). ``field`` carries the payload key a
+    rather than naming a column. ``field`` carries the payload key a
     developer needs, and ``commit_system`` logs it on the skip path. Keep the two
     apart: a message that has to serve both audiences ends up serving the one who
     is not reading it.
@@ -114,7 +114,7 @@ def _coded(value, choices, field_name, warnings):
 
     ``field_name`` is the READER'S name for the field ("the system type",
     "facility 010's water type"), because the note reaches the onboarding
-    review verbatim. It used to name the model field (pws_type) (150.1-02).
+    review verbatim. It does not name the model field (pws_type).
 
     An unrecognised code is REPORTED and dropped, never stored. The code lists
     in ``drinking/models.py`` are transcribed from published DDW and EPA
@@ -201,7 +201,7 @@ def map_water_system(payload, warnings=None):
     # breaks them down — the state's annual electronic report (eAR) — is
     # imported.
     #
-    # What changed (Phase 100): the aggregate now has somewhere honest to land.
+    # The aggregate has somewhere honest to land:
     # population_served_total and service_connections_total are mapped above and
     # sit BESIDE the splits, never in place of them. The eight fields listed
     # here are unchanged and the reason above is unchanged.
@@ -226,10 +226,10 @@ def map_facility(payload, warnings=None):
     state_facility_id = _text(payload.get("state_facility_id"))
 
     if not state_facility_id:
-        # ISS-101: this string is rendered VERBATIM to an operator, in the
+        # This string is rendered VERBATIM to an operator, in the
         # onboarding review's "Facility and reason" panel and
-        # again on the result page. It used to name `state_facility_id` — a
-        # Django field name — two lines above the same screen's own English for
+        # again on the result page. It must not name `state_facility_id`, a
+        # Django field name, beside the same screen's own English for
         # the same fact. The field name is not lost: it is on the exception as
         # `.field`, and `commit_system`'s skip path logs it. A developer looks in
         # the log; the operator reads the page.
@@ -376,7 +376,7 @@ def commit_system(system_payload, facility_payloads):
         except UnmappableFacility as exc:
             # `result.skipped` reaches the operator's screen, the log line reaches
             # a developer — which is why the payload key lives here and not in the
-            # message (ISS-101).
+            # message.
             result.skipped.append(str(exc))
             logger.info(
                 "envirofacts: %s (payload key: %s)", exc, UnmappableFacility.field

@@ -23,8 +23,8 @@ which are worth stopping for.
 **Rows arrive as ``published``.** The chart endpoint
 (``datasync/views.py``) filters ``status="published"``; a fixture loaded as
 ``staged`` would satisfy every gate, restore every row, and still leave the
-charts blank. That is precisely the class of defect 104-02 caught by opening a
-page after four green gates, so it is stated here rather than left to the reader.
+charts blank. That is the class of defect only opening a
+page catches once every gate is green, so it is stated here rather than left to the reader.
 
 **``raw_data`` is written as ``{}``** — see ``dump_reading_fixture``'s docstring.
 The field is the adapter's untouched upstream payload; a frozen demonstration has

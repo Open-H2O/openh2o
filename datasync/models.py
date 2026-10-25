@@ -168,7 +168,7 @@ class OpenETCache(models.Model):
     # API call charged through reserve_query_slot, and a bulk load from the
     # committed fixture that spends nothing. Recorded at the moment it is known
     # rather than inferred later — inferring it from row timing is exactly what
-    # made a freshly-seeded demonstration read as 380 requests spent (ISS-128).
+    # made a freshly-seeded demonstration read as 380 requests spent.
     origin = models.CharField(
         max_length=10,
         choices=[
@@ -249,7 +249,7 @@ class OpenETCache(models.Model):
         # 100 is Tier 1, what a new OpenET account gets, and it must match
         # config/settings/base.py's default. A guard's fallback errs toward the
         # SMALLER allowance — erring high is not a bigger budget, it is a
-        # disabled guard (ISS-128). The live figure comes from
+        # disabled guard. The live figure comes from
         # OpenETAdapter.account_status(); it is deliberately not read here,
         # because this method runs under an advisory lock inside
         # reserve_query_slot's transaction and must not make an HTTP call.

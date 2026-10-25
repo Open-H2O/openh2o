@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
-Production-by-month bulk import (146-04 Task 2, D7, ISS-184).
+Production-by-month bulk import.
 
 Mirrors ``surface/diversion_import.py``'s shape, which itself mirrors
 ``accounting/ledger_import.py``: one service, two callers (the web upload and
@@ -11,8 +11,8 @@ layouts, recognised by header:
   (``GW``, ``SW``, ``Purchased``, ``Sold``, ``Recycled``, ``NonPotable``,
   ``NonPotableSold``), Units of Measure As Reported (``G``, ``MG``, ``AF``,
   ``CCF``, or blank), Quantity as in Units Reported. All seven codes land,
-  ``NonPotableSold`` as its own type, never folded into ``NonPotable``
-  (ISS-206); any other code is a row error naming it. A blank unit is a row
+  ``NonPotableSold`` as its own type, never folded into ``NonPotable``;
+  any other code is a row error naming it. A blank unit is a row
   error until the mapping step's "unit for blank rows" is set.
 * **The operator's monthly log** -- the Small Water System eAR template's own
   Section 5 layout: a ``Date/Month`` column carrying the twelve month names,
@@ -56,7 +56,7 @@ MAX_ROWS = 2000
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MB, the ceiling every importer here uses
 
 
-# The whole-file messages (150.1-02) use the surface and lab imports' words. The size is
+# The whole-file messages use the surface and lab imports' words. The size is
 # rounded UP, so a file over the cap never reads as equal to it.
 def too_large_message(size):
     mb = 1024 * 1024
@@ -74,7 +74,7 @@ def row_cap_message(row_count):
 
 _UNIT_CODES = {code for code, _label in PRODUCTION_UNIT_CHOICES}
 
-#: The eAR's own TypeCode -> this product's type_code, all seven (ISS-206).
+#: The eAR's own TypeCode -> this product's type_code, all seven.
 #: A code not listed here is a row error naming it, never a silent drop.
 _EAR_TYPE_MAP = {
     "GW": "GW",
@@ -177,7 +177,7 @@ def recognise_layout(columns):
 def _process_ear_row(line_num, row, *, system, unit_for_blank):
     errors = []
 
-    # The row errors (150.1-02): each a sentence, values as the file writes them.
+    # The row errors: each a sentence, values as the file writes them.
     pwsid_raw = (row.get("PWSID") or "").strip()
     pwsid = pwsid_raw.upper()
     if not pwsid:

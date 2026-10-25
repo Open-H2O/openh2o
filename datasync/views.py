@@ -105,7 +105,7 @@ def _build_source_status(boundary, now):
             "source": src,
             "display": freshness.source_display(src.code),
             "log": log,
-            # 150.1-02 screen 15 message A rows 6 and 8.
+            # The count of readings the last run saved, with thousands separators.
             "readings_saved": f"{log.records_published:,}" if log else "",
             "credential_env": freshness.CREDENTIAL_ENV.get(src.code, ""),
             "total": total,
@@ -123,7 +123,7 @@ def _build_source_status(boundary, now):
 
 
 def _station_list_head_line(*, total_count, q, source, active, reporting):
-    """The Monitoring Stations card head's count line (143-07).
+    """The Monitoring Stations card head's count line.
 
     This page filters on FOUR axes at once (search, source, syncing,
     reporting) with its own established wording ("42 stations, syncing" / "2
@@ -284,7 +284,7 @@ def _enriched_station_rows(
         enriched_stations.append({
             "station": s,
             "freshness": station_freshness.get(s.pk, "dead"),
-            # ISS-183: the Reporting cell's tooltip states this source's limits.
+            # The Reporting cell's tooltip states this source's limits.
             "freshness_thresholds": freshness.freshness_thresholds(
                 s.data_source.code, s.data_source.name
             ),
@@ -317,7 +317,7 @@ def station_list(request):
     q = request.GET.get("q", "").strip()
     source = request.GET.get("source", "").strip()
     active = request.GET.get("active", "").strip()
-    # The SECOND axis, and it is second on purpose (ISS-108). `active` asks
+    # The SECOND axis, and it is second on purpose. `active` asks
     # "do we pull from this station"; `reporting` asks "has it published
     # recently, judged against its own source's cadence". A station is routinely
     # both wired and dormant, which read as a contradiction only because the two
@@ -356,7 +356,7 @@ def station_list(request):
         page_obj, station_health, latest_value, latest_unit, sparklines, reading_counts
     )
 
-    # The map card's head (143-07, R-074). `result_pks` is the WHOLE filtered
+    # The map card's head. `result_pks` is the WHOLE filtered
     # (and ordered) list, before pagination — the station list's four filters
     # (q, source, active, reporting) all land in `stations_ordered` above, so
     # this is exactly what the map is told to draw. `located_count` gates
@@ -424,7 +424,7 @@ def _measured_parameter_codes(station: MonitoredStation) -> list[str]:
     """The parameter codes this station has actually published, sorted."""
     # Only parameters this station has ACTUALLY published — not the declared sensor
     # list — so it never offers an empty option for a sensor the site doesn't
-    # measure (matches station_chart_data; 59-02).
+    # measure (matches station_chart_data).
     return sorted(
         DataRecordStaging.objects
         .filter(station=station, status="published")
@@ -440,7 +440,7 @@ def _latest_parameter_readings(
     """The newest published value for each measured parameter."""
     # At-a-glance current readings: the newest published value per parameter.
     # Read straight from published DataRecordStaging — the scheduled sync writes
-    # these; the view never calls the external API (ISS-051 timeout hazard).
+    # these; the view never calls the external API (a slow provider would hang the page).
     latest_readings = []
     for code in measured_codes:
         rec = (
@@ -505,7 +505,7 @@ def _station_detail_context(station):
         "recent_logs": recent_logs,
         "geojson": geojson,
         "station_freshness": station_freshness,
-        # ISS-183: the badge's tooltip states the limits for this station's
+        # The badge's tooltip states the limits for this station's
         # source, read from datasync/freshness.py, never typed in the template.
         "freshness_thresholds": freshness.freshness_thresholds(
             source_code, station.data_source.name
@@ -676,7 +676,7 @@ def _dashboard_station_rows(
 def _openet_allowance_context() -> dict:
     """The OpenET allowance figures the dashboard card shows, with their source and tier."""
     # OpenET allowance. Two numbers with two different meanings, and the screen
-    # has to say which one it is showing (ISS-128).
+    # has to say which one it is showing.
     #
     # When OpenET answers, its own figures win: it counts requests across the
     # whole account, including any spent outside this deployment, and it is the
@@ -807,7 +807,7 @@ def _published_parameter_units(station: MonitoredStation) -> dict[str, str]:
     # dropdown never empties or desyncs when you change the time range. We do NOT
     # union the station's *declared* parameters — a site configured for a sensor
     # it doesn't actually report (e.g. a reservoir gauge that has Inflow declared
-    # but never measures it) should not offer that empty option (59-02).
+    # but never measures it) should not offer that empty option.
     published_param_rows = (
         DataRecordStaging.objects
         .filter(station=station, status="published")
@@ -941,11 +941,10 @@ def station_chart_data(request, pk):
 def stations_freshness_geojson(request):
     """Return every LOCATED station as GeoJSON with freshness metadata.
 
-    143-07, R-074: this used to filter ``is_active=True`` the same way the
-    list's default does, so the two agreed by coincidence (42 = 42 on the
-    demonstration) rather than by design — filtering "Not syncing" on the list
-    left the map still drawing only the active 42, with nothing on screen for
-    the 293 the list was now showing. Every located station draws here, active
+    Filtering on ``is_active=True`` here, as the list's default does, would make
+    the two agree only by coincidence: filtering "Not syncing" on the list
+    would leave the map drawing only the active stations, with nothing on screen
+    for the ones the list was showing. So every located station draws here, active
     or not, and ``is_active`` rides along in properties so the follow helper
     (which filters by the list's own pks, honouring all four of its filters)
     is what actually decides what's on screen — never this endpoint.
@@ -1001,7 +1000,7 @@ def stations_freshness_geojson(request):
             "properties": {
                 "pk": s.pk,
                 "station_name": s.station_name,
-                # 143-07 Step 0: the map label, code prefix stripped.
+                # The map label, code prefix stripped.
                 "label": map_label(s.station_name or ""),
                 "external_station_id": s.external_station_id,
                 "data_source_code": s.data_source.code,

@@ -14,7 +14,7 @@ import idiom:
 **Architecture mirrored, code not shared.** This module imports nothing from
 ``infrastructure``. A module-scope import of ``infrastructure.importer`` would
 make dropping the ``infrastructure`` app crash ``drinking`` — the exact coupling
-Phase 77 quarantined. Lab CSVs need none of the GDAL/shapefile machinery
+this module avoids. Lab CSVs need none of the GDAL/shapefile machinery
 anyway, so this is stdlib ``csv`` only.
 
 The file layout is DDW's, so a raw California export maps with zero clicks. The
@@ -42,9 +42,9 @@ parts of this module are national and which are one state's shape:
       (a state code and the federal `storet_code` stored side by side); only
       the field name assumes California.
     - PS Code composition, which lives in the onboarding wizard rather than
-      here. That one is genuinely per-state. See ISS-077.
+      here. That one is genuinely per-state.
 
-Verified against the live `SDWIS4.tab` on 2026-07-19 (ISS-073): 29 columns,
+Verified against the live `SDWIS4.tab` on 2026-07-19: 29 columns,
 two more than the dictionary lists. `Water System Classification` split into
 `Federal`/`State` variants, and `Sample Type` is present in the real file
 though absent from the 2021 layout. All are system- or event-level; every
@@ -60,14 +60,14 @@ manufacture system structure that then looks like a real monitoring location.
 **Analytes are the regulator's vocabulary, so the file may extend it.** An
 unknown analyte IS created — from the file's own ``Analyte Code`` + ``Analyte
 Name``, which is DDW's vocabulary rather than ours — and the preview says so.
-78-01 seeded every ``ddw_code`` as NULL because DDW publishes no code list, so
+Every seeded ``ddw_code`` is NULL because DDW publishes no code list, so
 name is the workhorse match and a code arriving in a file is *learned*.
 
 **Prepare, never determine.** The DDW layout carries ``MCL`` and ``DLR``
 columns. Until 2026-09-22 this importer read neither, on the argument that a
 limit stored beside the value is one template change away from a compliance
-verdict. ISS-140 was ruled **beside** that day (146-04 Task 1):
-the two columns are now stored on the result exactly as the file carried them
+verdict. They are now stored **beside** the finding: the two columns are
+stored on the result exactly as the file carried them
 (``mcl_as_reported``, ``dlr_as_reported``), with the file's name and the import
 date, and shown beside the finding as what "the laboratory's file carried".
 What is still NOT done, and must not be: nothing compares a finding with
@@ -105,7 +105,7 @@ from drinking.models import (
 # analyte rows, so a single quarter of routine monitoring is already hundreds of
 # rows.
 #
-# MEASURED, not assumed (2026-07-19, ISS-073): every row for CA1010001 (Bakman
+# MEASURED, not assumed (2026-07-19): every row for CA1010001 (Bakman
 # Water Company, Fresno — 17,393 people, 2,675 connections, 18 sampling points)
 # was counted out of the state's real `SDWIS4.tab` export. That system's whole
 # 2023-to-present history is **2,471 rows / 721,121 bytes**, so a genuine
@@ -126,7 +126,7 @@ MAX_ROWS = 5000
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MB
 
 
-# The whole-file messages (150.1-02), in the words the surface water imports
+# The whole-file messages, in the words the surface water imports
 # carry. The size is rounded UP, so a file over the cap never reads as equal to
 # it (a 25.5 MB file read "File is too large (25 MB); the upload cap is 25 MB.").
 def too_large_message(size):
@@ -190,14 +190,14 @@ _SAMPLE_TYPES = {code for code, _label in SAMPLE_TYPE_CHOICES}
 # the same set. So this map is NOT a California quirk to be swapped out per
 # state — it is the one part of the import path that already travels.
 #
-# MEASURED (2026-07-20, ISS-074): all 40 rows of the real California `SDWIS4.tab`
+# MEASURED (2026-07-20): all 40 rows of the real California `SDWIS4.tab`
 # slice carry `RT`. Without this map a genuine export warns on EVERY row, which
 # teaches an operator to ignore the warning column — the one place a real
 # problem would show up.
 #
 # `TG` (triggered source monitoring — a groundwater source sample required after
 # a coliform-positive routine sample) maps to its OWN vocabulary entry,
-# `triggered`, added in ISS-076. It carries its own regulatory meaning under the
+# `triggered`. It carries its own regulatory meaning under the
 # Ground Water Rule, so it is NOT folded into `routine` or `special` — that would
 # be the silent-relabeling failure this whole map exists to avoid. It earned a
 # `SAMPLE_TYPE_CHOICES` entry rather than a convenience mapping.
@@ -334,9 +334,9 @@ ALIASES = {
     "method": {"method", "analytical method", "method code"},
     "collector": {"collector", "sampled by", "collected by"},
     # Not a result field: read once per FILE by `record_regulating_agency`
-    # after the commit, never per row (146-04 Task 3).
+    # after the commit, never per row.
     "regulating_agency": {"regulating agency"},
-    # ISS-140, ruled "beside" 2026-09-22: stored as reported, never compared.
+    # Limits are stored as reported, never compared.
     "mcl_as_reported": {"mcl"},
     "dlr_as_reported": {"dlr"},
 }
@@ -441,7 +441,7 @@ def _parse_lab_date(raw):
     are supported: more format variance means more chances for a permissive
     parser to guess silently and wrongly.
 
-    MEASURED (2026-07-20, ISS-074) on the real 40-row CA1010001 slice: 32 of the
+    MEASURED (2026-07-20) on the real 40-row CA1010001 slice: 32 of the
     40 sample dates carry a second component greater than 12 (`01-13-2026` and
     the like), which is impossible to read as `DD-MM`. That is what proves the
     state writes month-first — it was not assumed. A permissive parser that
@@ -464,8 +464,7 @@ def _parse_lab_date(raw):
         parsed = None
     if parsed is not None:
         return parsed
-    # M/D/YYYY, how a spreadsheet saves a US date (3/5/2024), added in
-    # 150.1-02.
+    # M/D/YYYY, how a spreadsheet saves a US date (3/5/2024).
     # Still month first, so it adds no ambiguity to the rule above.
     for fmt in ("%m-%d-%Y", "%m/%d/%Y"):
         try:
@@ -511,7 +510,7 @@ def _parse_result(raw_result, raw_lt_rl, raw_rl, errors):
 
     # --- blank cell: sometimes a non-detect, sometimes an absence -----------
     #
-    # MEASURED (2026-07-20, ISS-074): 30 of the 40 rows in the real
+    # MEASURED (2026-07-20): 30 of the 40 rows in the real
     # `SDWIS4.tab` slice report a non-detect exactly this way — an EMPTY
     # `Result` cell with `Less Than Reporting Level = Y` and the bound carried
     # in `Reporting Level`. The check used to fire before `lt_flag` was ever
@@ -601,9 +600,9 @@ def _parse_result(raw_result, raw_lt_rl, raw_rl, errors):
 #: `test_identity_covers_every_field_the_writer_sets`, which compares the two and
 #: fails when a new column is added to one and not the other.
 #:
-#: **This list is the whole of ISS-102.** The guard used to key on
-#: (event, analyte, method) alone, which is not a description of a measurement:
-#: it cannot tell a re-analysis from a repeat. Over the City of Merced's own
+#: **This list is what keeps a re-analysis from being dropped as a repeat.** A
+#: guard keyed on (event, analyte, method) alone is not a description of a
+#: measurement: it cannot tell a re-analysis from a repeat. Over the City of Merced's own
 #: three-year lab file that discarded 56 rows, and NOT ONE of them was a clerical
 #: duplicate — 27 carried a different `Result`, and the remaining 29 differed in
 #: `reporting_level` (26) or `analysis_date` (3). Four of the 56 stored a
@@ -624,8 +623,7 @@ _IDENTITY_FIELDS = (
 )
 
 #: Fields ``commit_rows`` writes that are deliberately NOT part of a result's
-#: identity. The limits the laboratory's file carried (ISS-140, ruled "beside"
-#: 2026-09-22) and where and when they arrived describe the file, not the
+#: identity. The limits the laboratory's file carried and where and when they arrived describe the file, not the
 #: measurement: a re-import of the same results on another day, under another
 #: file name, is the same measurement and must be skipped, not doubled.
 #: ``tests/test_drinking_import.py`` pins that every written field is in
@@ -686,10 +684,10 @@ def _batch_lookups() -> dict:
     }
 
     # Existing results, keyed the way the duplicate guard keys them — through the
-    # SAME helper the row side uses, so the two can never drift apart (ISS-102).
+    # SAME helper the row side uses, so the two can never drift apart.
     #
     # Mapped to (pk, whether the stored row predates the limits): a result
-    # imported before ISS-140's "beside" ruling has no `limits_file_date`, and
+    # imported before limits were stored has no `limits_file_date`, and
     # re-importing its file is how it gets the limits the file carried.
     # The measurement itself is never touched.
     existing_keys = {
@@ -775,7 +773,7 @@ def _read_event_identity(
         )
     data["sample_date"] = sample_date
 
-    # The notes below are the 150.1-02 wording. parse_time raises on a well-formed but
+    # parse_time raises on a well-formed but
     # impossible time (25:99), which was a 500 on the preview; it is the
     # same note as any unreadable time.
     raw_time = src("sample_time")
@@ -868,7 +866,7 @@ def _read_finding(src: Callable[[str], str], data: dict, errors: list) -> None:
 def _read_limits_and_analysis_date(
     src: Callable[[str], str], mapping: dict, data: dict, warnings: list
 ) -> None:
-    """The limits the file carried (ISS-140, "beside"), then the analysis date."""
+    """The limits the file carried, then the analysis date."""
     # Stored as reported and nothing more. An unreadable cell is a
     # warning, never an error: the finding is still the finding, and a
     # limit this importer cannot read is simply not stored.
@@ -907,7 +905,7 @@ def _flag_result_on_file(
     # Keyed on the WHOLE measurement (`_result_identity`) so re-importing the
     # same file is a no-op rather than a doubling — while a row that differs
     # in any respect is kept, because it is a second analysis of one sample
-    # and not a repeat of the first (ISS-102). Checked against both the DB
+    # and not a repeat of the first. Checked against both the DB
     # and the rest of this batch.
     event_pk = existing_events.get((data.get("sampling_point_id"),) + event_key)
     if event_pk is not None:
@@ -1014,7 +1012,7 @@ def validate_rows(rows, mapping):
                           means every field matches — see `_result_identity`. A
                           row differing only in its result, its reporting level
                           or its analysis date is a second analysis of the same
-                          sample and is KEPT (ISS-102).
+                          sample and is KEPT.
     """
     lookups = _batch_lookups()
 
@@ -1074,7 +1072,7 @@ def _analyte_id_for(data: dict, analyte_cache: dict, counts: dict) -> int:
 
 def _learn_ddw_code(analyte_id: int, data: dict) -> None:
     """Record the file's DDW code on an analyte that has none yet."""
-    # 78-01 seeded every ddw_code NULL because DDW publishes no code
+    # Every seeded ddw_code is NULL because DDW publishes no code
     # list. When a file carries a code for an analyte we already know
     # by name, LEARN it — but only if no other analyte already holds
     # that code, because ddw_code is unique.
@@ -1227,7 +1225,7 @@ def _limits_as_reported(data, source_file, imported_on):
 
 
 # ---------------------------------------------------------------------------
-# record_regulating_agency (146-04 Task 3)
+# record_regulating_agency
 # ---------------------------------------------------------------------------
 
 #: The three things the commit report can say, plus silence.
@@ -1239,7 +1237,7 @@ AGENCY_FILE_DISAGREES = "file_disagrees"
 def regulating_agency_outcomes(rows, mapping, validated):
     """What :func:`record_regulating_agency` would record, writing nothing.
 
-    The read-only half (150-04 V3): the preview calls it to say beforehand the
+    The read-only half: the preview calls it to say beforehand the
     one line the commit will say, and the commit calls it through
     :func:`record_regulating_agency`, so the two can never disagree. An
     ``AGENCY_RECORDED`` outcome here means "would be recorded"; the system row
@@ -1308,7 +1306,7 @@ def record_regulating_agency(rows, mapping, validated):
     reached, as a list.
 
     The decision is :func:`regulating_agency_outcomes`'s (the preview shows the
-    same outcomes before the commit, 150-04 V3); this function only writes the
+    same outcomes before the commit); this function only writes the
     ``AGENCY_RECORDED`` ones.
     """
     outcomes = regulating_agency_outcomes(rows, mapping, validated)

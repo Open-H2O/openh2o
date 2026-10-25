@@ -7,7 +7,7 @@ safety nets, not fixtures.
 ## monitored-stations-2026-06-03.json
 
 A full `dumpdata` of every `datasync.MonitoredStation` (321 rows) plus the 8
-`datasync.DataSource` definitions, captured during Phase 53-01 just before the
+`datasync.DataSource` definitions, captured just before the
 248 out-of-basin monitoring stations were removed from the Merced demonstration
 (they were statewide-discovery artifacts from earlier testing, not part of the
 Merced basin demo).

@@ -23,7 +23,7 @@ def group_results_by_event(rows):
     with ``shown`` less than ``total`` saying so.
 
     Pure on purpose -- rows in, groups out, no request and no queryset touched
-    beyond the one Count -- so the sampling-point detail page (143-08 Task 3)
+    beyond the one Count -- so the sampling-point detail page
     can call it again on its own ``recent`` slice of one point's history.
     """
     rows = list(rows)
@@ -81,7 +81,7 @@ def _facility_geojson(facility, extra_properties=None):
     properties = {
         "facility_id": facility.facility_id,
         "name": facility.name,
-        # The published LABEL, not the two-letter code (ISS-008).
+        # The published LABEL, not the two-letter code.
         "facility_type": facility.get_facility_type_display(),
         "system_name": facility.system.name,
     }
@@ -101,7 +101,7 @@ def _facility_geojson(facility, extra_properties=None):
     }
 
 
-# The surface water imports' sentence (150.1-02): rows_json is empty or not a list of rows.
+# The surface water imports' sentence: rows_json is empty or not a list of rows.
 _ROWS_NOT_RECEIVED = (
     "OpenH2O did not receive the file's rows from the preview. "
     "Upload the file again."
@@ -114,16 +114,15 @@ def _describe(facility):
     Set on the instance rather than resolved in the template so the same answer
     is available whether the page renders it or an add's response swaps it in.
 
-    This used to also attach a sentence saying what the facility physically is
-    ("A drilled well. Water comes up out of the ground here."). Deleted
-    2026-08-06 (ISS-129): the reader is a water district operator and the panel
+    This does not attach a sentence saying what the facility physically is
+    ("A drilled well. Water comes up out of the ground here."): the reader is a water district operator and the panel
     heading already carries EPA's own label. DESIGN.md copy rule 11.
     """
     # EPA's name is often just the type again ("DISTRIBUTION SYSTEM" on a
     # facility already typed Distribution System). Showing both produced the
     # heading "Distribution System — DISTRIBUTION SYSTEM", which is the exact
     # code-soup this rewrite exists to remove. Applied to the facility select's
-    # option text too (143-08 Task 4), the one other place this heading shape
+    # option text too, the one other place this heading shape
     # is built.
     label = (facility.get_facility_type_display() or "").strip().lower()
     facility.name_adds_nothing = (facility.name or "").strip().lower() == label

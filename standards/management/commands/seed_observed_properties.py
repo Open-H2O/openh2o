@@ -57,10 +57,10 @@ OBSERVED_PROPERTIES = [
     # A totalizer meter reads a VOLUME EXTRACTED, and nothing above meant that:
     # the seventeen concepts before it cover flow, stage, groundwater level,
     # reservoir storage, ET, precipitation and weather. `reservoir_storage`
-    # carries the right UCUM atom and entirely the wrong concept. Added by Phase
-    # 132 so the demonstration's meter reads can name what they measure instead
+    # carries the right UCUM atom and entirely the wrong concept. Present
+    # so the demonstration's meter reads can name what they measure instead
     # of carrying a null FK past the conformance audit. The pcode is blank on
-    # purpose — the documented non-blocking exception (decision 31-01) — and
+    # purpose — the documented non-blocking exception — and
     # there is deliberately no CODE_TO_KEY entry below, because no external
     # adapter emits this concept and a crosswalk row would claim a source that
     # does not exist.

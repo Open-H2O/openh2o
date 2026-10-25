@@ -10,8 +10,8 @@ Four UI-independent functions the import views are thin glue over:
                                         -> [{index, data, errors, warnings}]
   commit_rows(valid_results, infra_type) -> int  (number created)
 
-The GDAL/GeoJSON/shapefile/KML parser helpers live in core/geofiles.py
-(150-03), shared with the Setup Wizard, and are re-exported here under their
+The GDAL/GeoJSON/shapefile/KML parser helpers live in core/geofiles.py,
+shared with the Setup Wizard, and are re-exported here under their
 old names. CSV is added via stdlib csv.
 
 Each parsed row is a flat dict of source-column -> string value. Spatial
@@ -36,7 +36,7 @@ from django.contrib.gis.geos import (
 )
 from django.db import transaction
 
-from core.geofiles import (  # noqa: F401  re-exported under their old names (150-03)
+from core.geofiles import (  # noqa: F401  re-exported under their old names
     MAX_EXTRACTED_BYTES,
     MAX_UPLOAD_BYTES,
     NO_FEATURES_MESSAGE,
@@ -62,7 +62,7 @@ GEOMETRY_COL = "__geometry__"
 MAX_ROWS = 500
 
 # The byte ceilings (25 MB raw upload, 50 MB extracted from a zip) live in
-# core/geofiles.py beside the readers that enforce them (150-03). Both names
+# core/geofiles.py beside the readers that enforce them. Both names
 # stay importable from here: parse_upload checks MAX_UPLOAD_BYTES below, and
 # callers read importer.MAX_UPLOAD_BYTES. The archive readers read the caps
 # from core.geofiles, so a test that shrinks one patches it there.
@@ -223,7 +223,7 @@ def _features_to_rows(features):
 #: carries no well-name column at all. `WCRNUMBER` is the one column present
 #: and non-blank on every row, so it is the best-guess source for BOTH `name`
 #: and `wcr_number`; the mapping step still lets the operator override either
-#: one (ISS-179, ISS-190).
+#: one.
 _WELL_ALIASES = {
     "name": {"name", "well_name", "well", "wcrnumber"},
     "well_registration_id": {"reg_id", "registration_id", "well_id", "local_id"},
@@ -246,7 +246,7 @@ _WELL_ALIASES = {
 }
 
 _DIVERSION_ALIASES = {
-    # "appl_pod" replaces "pod_name" as the state alias (146-02 D2): the
+    # "appl_pod" replaces "pod_name" as the state alias: the
     # shape-1 POD file (points-of-diversion.csv, header read 2026-09-20)
     # carries BOTH `APPL_POD` (the state's own natural POD id, populated on
     # every row) and `POD_NAME` (blank on every row in the real export).
@@ -257,18 +257,18 @@ _DIVERSION_ALIASES = {
     # lets the operator override for a file where POD_NAME really is filled in.
     "name": {"name", "diversion_name", "appl_pod"},
     "stream_name": {"stream", "stream_name", "source", "source_name"},
-    # 146-03 Task 3: the ditch tender's own alias for the headgate (the
-    # 145-01 memo's crosswalk layer), never the state's own column -- the
+    # The ditch tender's own alias for the headgate (the
+    # crosswalk layer), never the state's own column -- the
     # state's export carries no such name.
     "local_name": {"local_name", "known_as", "ditch_name", "headgate_name"},
     "max_rate_cfs": {"max_rate_cfs", "max_rate", "cfs", "rate_cfs", "direct_diversion_rate"},
     "latitude": {"lat", "latitude", "y"},
     "longitude": {"lon", "lng", "long", "longitude", "x"},
     "geometry": {GEOMETRY_COL, "geometry", "wkt", "geom"},
-    # 146-02 D2: the state's POD file names the right by `APPL_ID`; resolved
+    # The state's POD file names the right by `APPL_ID`; resolved
     # against WaterRight.right_id in validate_rows, never taken as a raw FK pk.
     "water_right": {"appl_id", "water_right", "right_id", "water_right_id"},
-    # 146-02 D3: when present and matching a Parcel, writes a
+    # When present and matching a Parcel, writes a
     # PointOfDiversionParcel at fraction 1.0 (commit_rows).
     "parcel_number": {"parcel_number", "parcel_no", "apn"},
 }
@@ -520,8 +520,8 @@ def _diversion_lookups(
     Returns ``(existing_rights, existing_parcels)``: right_id -> pk and
     parcel_number -> pk, each empty unless that column is mapped.
     """
-    # 146-02 D2/D3: built once, not per row. `surface` is a truly-optional
-    # module (Phase 87), so its model is imported locally and only when a
+    # Built once, not per row. `surface` is a truly-optional
+    # module, so its model is imported locally and only when a
     # diversion row is actually being validated -- the same guard commit_rows
     # already uses for this exact model. In practice this branch is only
     # reached when the deployment has `surface` enabled at all (the view's
@@ -628,7 +628,7 @@ def _resolve_water_right(
     data: dict,
 ) -> None:
     """Diversion water right: look the application number up, or add a row error."""
-    # --- water right (diversion only, 146-02 D2) ---
+    # --- water right (diversion only) ---
     # An unresolved value is a row error naming the value -- never
     # silently None, which is how a diversion used to lose its right on
     # a typo'd APPL_ID with nobody the wiser until CalWATRS filing.
@@ -653,7 +653,7 @@ def _resolve_parcel(
 ) -> None:
     """Diversion parcel number: a match links a use area, a miss is only a warning."""
     # --- parcel_number -> a PointOfDiversionParcel at fraction 1.0
-    #     (diversion only, 146-02 D3). Present-but-unmatched is not an
+    #     (diversion only). Present-but-unmatched is not an
     #     error (a operator's PARCEL_NUMBER may name a use area not yet
     #     entered) -- only a MATCH links anything, and the preview says
     #     so via the "warnings" list rather than staying silent either way.
@@ -905,7 +905,7 @@ def _point_from_geometry(raw):
 
 
 #: infra_type -> the module that has to be enabled to create that row, and the
-#: sentence appended as a row error when it is not (ISS-179). `well`, `diversion`
+#: sentence appended as a row error when it is not. `well`, `diversion`
 #: and `recharge_site`/`storage` each create a model from a truly-optional
 #: module's app (`wells` is schema-resident and always importable, but a
 #: deployment that switched it OFF must still get no NEW rows in its empty
@@ -927,12 +927,11 @@ def commit_rows(valid_results, infra_type):
     Wrapped in a single transaction. Errored rows are skipped. Per-row create()
     is fine here — wells/diversions/recharge sites have no save-time signals.
 
-    Every model import is LOCAL to its own branch, guarded by `is_enabled()`
-    (ISS-179): `commit_rows` used to import `RechargeSite` unconditionally
-    before the type branch, so a `diversion` or `well` commit on a deployment
-    without `recharge` raised `RuntimeError` before a single row was even
-    looked at, a 500 that swallowed the whole import (shapes 1 and 4, three
-    tries and two tries, zero records, no message). Now a row whose type's
+    Every model import is LOCAL to its own branch, guarded by `is_enabled()`.
+    Importing `RechargeSite` unconditionally before the type branch would make a
+    `diversion` or `well` commit on a deployment without `recharge` raise
+    `RuntimeError` before a single row was even looked at, a 500 that swallowed
+    the whole import with no message. Instead a row whose type's
     module is off is a reported row error, and every other row in the same
     batch still commits.
     """
@@ -961,7 +960,7 @@ def commit_rows(valid_results, infra_type):
                         from surface.models import PointOfDiversion, PointOfDiversionParcel
 
                         row_data = dict(data)
-                        # `_pod_parcel_id` (146-02 D3) is a Parcel pk resolved
+                        # `_pod_parcel_id` is a Parcel pk resolved
                         # in validate_rows, not a PointOfDiversion field -- it
                         # has to come out before create() and is used AFTER,
                         # once the POD itself exists to link to.
@@ -994,7 +993,7 @@ def commit_rows(valid_results, infra_type):
 # ---------------------------------------------------------------------------
 # GDAL / spatial parser helpers
 # ---------------------------------------------------------------------------
-# The readers moved to core/geofiles.py (150-03, ISS-200) so the Setup Wizard,
+# The readers live in core/geofiles.py so the Setup Wizard,
 # a module every deployment gets, can read a shapefile or KML without
 # depending on this optional module. They are imported above and kept under
 # their old names here, so parse_upload and every caller of

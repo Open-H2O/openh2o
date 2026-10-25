@@ -158,7 +158,7 @@ def result_detail(request, pk):
     )
     system = result.event.sampling_point.facility.system
 
-    # 143-08 Task 3 (R-055): the lead panel's third peer. The most recent
+    # The lead panel's third peer. The most recent
     # earlier finding of the SAME analyte at the SAME point -- never a
     # different point or a different analyte, which would compare findings
     # that answer different questions. `sample_date__lte` plus `exclude(pk=)`

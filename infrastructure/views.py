@@ -51,8 +51,7 @@ ADD_TYPE_LABEL = {
     "well": "Well",
     "diversion": "Diversion",
     # "Storage" alone made the breadcrumb read "Add Storage" beside a sentence
-    # saying "a storage pond or tank" — the same self-contradiction ISS-134 was
-    # filed about, one line smaller.
+    # saying "a storage pond or tank" — a self-contradiction.
     "storage": "Storage Pond",
     "recharge_site": "Recharge Site",
 }
@@ -77,7 +76,7 @@ ADD_TYPE_LONG_LABEL = {
     "recharge_site": "recharge site",
 }
 
-#: The module that owns each add/import type. Phase 87: every ADD_TYPE_BACK value
+#: The module that owns each add/import type. Every ADD_TYPE_BACK value
 #: is fed to `reverse()`, and `surface:pod_list` / `recharge:list` do not resolve
 #: when their module is omitted — so an unfiltered `?type=diversion` was a
 #: NoReverseMatch 500 on a page that is otherwise fine. This is not an import and
@@ -93,16 +92,16 @@ ADD_TYPE_MODULE = {
 
 
 #: Fallback order for an unrecognised or unavailable ``?type``. ``well`` first,
-#: because it was the hardcoded fallback before Phase 88 and is still the right
+#: because it was the original hardcoded fallback and is still the right
 #: default wherever it exists.
 ADD_TYPE_ORDER = ("well", "diversion", "storage", "recharge_site")
 
 logger = logging.getLogger(__name__)
 
-#: Shown, verbatim, on a 404 from the bulk importer (ISS-179): `?type=parcel`
-#: (also `use_area`, `usearea`) used to fall through to `_supported_type`'s
+#: Shown, verbatim, on a 404 from the bulk importer: `?type=parcel`
+#: (also `use_area`, `usearea`) would otherwise fall through to `_supported_type`'s
 #: "unrecognised value" fallback and silently serve the Well importer instead.
-#: Shape 6's own correction found it. `supported_add_types()` is the list of
+#: `supported_add_types()` is the list of
 #: truth for what this screen actually takes; use areas are a different door.
 UNSUPPORTED_IMPORT_TYPE_MESSAGE = (
     "The bulk import page does not import this type. Load use areas from a "
@@ -123,8 +122,8 @@ def _supported_type(raw):
     registered. The matching cards in add.html are guarded on the same
     condition, so the type is not offered either.
 
-    **The fallback used to be the literal ``"well"``, which Phase 88 turned into
-    a bug rather than a safety net**: with `wells` demoted, an unrecognised type
+    **The fallback must not be the literal ``"well"``, which is a
+    bug rather than a safety net**: with `wells` demoted, an unrecognised type
     fell back to a type whose route no longer exists, so the guard handed the
     NoReverseMatch straight back. Returns ``None`` when no type is available at
     all — the caller turns that into a 404, because a page for adding
@@ -154,7 +153,7 @@ def _add_context(infra_type, **extra):
         # The OTHER types this deployment can serve, so the page can offer a way
         # out without asking the question it already has the answer to. Built
         # from supported_add_types() rather than the full list, for the same
-        # reason the type cards were guarded in Phase 87: offering a type whose
+        # reason the type cards are guarded: offering a type whose
         # module is dropped is a NoReverseMatch 500, not a dead link.
         "other_add_types": [
             {"value": t, "label": ADD_TYPE_LONG_LABEL[t]}
@@ -163,21 +162,21 @@ def _add_context(infra_type, **extra):
         ],
         "back_url": reverse(back_name),
         "back_label": back_label,
-        # `measurement_method` is deliberately not offered here (146-05):
+        # `measurement_method` is deliberately not offered here:
         # a new well created with it AND
         # the three DWR fields below could start life with the two already
         # disagreeing. The model field stays for the seeds and the Merced
         # audit trail; a well made through this form simply starts blank on
         # it, same as any field this form does not ask for.
         "pump_type_choices": PUMP_TYPE_CHOICES,
-        # 146-05 S2: DWR's own extraction-method row, offered blank by default.
+        # DWR's own extraction-method row, offered blank by default.
         "dwr_extraction_method_choices": DWR_EXTRACTION_METHOD_CHOICES,
         "dwr_direct_or_estimate_choices": DWR_DIRECT_OR_ESTIMATE_CHOICES,
         "accuracy_band_choices": ACCURACY_BAND_CHOICES,
-        # 146-02 D2: the diversion card's "Water right" select. Local import,
+        # The diversion card's "Water right" select. Local import,
         # guarded, the same reason `infra_type == "diversion"` branches below
         # import `surface.models` locally -- `surface` is truly optional
-        # (Phase 87) and this context is built for every add-page render, not
+        # and this context is built for every add-page render, not
         # only a diversion one.
         "water_rights": _water_rights_for_select(),
     }
@@ -196,7 +195,7 @@ def _water_rights_for_select():
 
 def _typed_point_json(request: HttpRequest) -> str:
     """GeoJSON for the typed latitude/longitude boxes, or "" when they do not parse."""
-    # ISS-171: a well operator with a WCR in hand types the point instead of
+    # A well operator with a WCR in hand types the point instead of
     # clicking the map. A click or a drag always fills geometry_json client
     # side, so this is strictly a fallback for the typed-coordinate path — and
     # it runs BEFORE the geometry path below, building the same Point a click
@@ -303,7 +302,7 @@ def _add_diversion(
     parcel: Parcel | None,
 ) -> HttpResponse:
     """Create a PointOfDiversion from the posted form, or re-render with the error."""
-    # Local import: `surface` is an optional module (Phase 87), so this must
+    # Local import: `surface` is an optional module, so this must
     # not run at module scope. This branch is only reachable when the add
     # form offered a diversion type, which it does not do without the module.
     from surface.models import PointOfDiversion, PointOfDiversionParcel, WaterRight
@@ -315,7 +314,7 @@ def _add_diversion(
         max_rate_cfs = coerce_decimal(request.POST.get("max_rate_cfs"), "Max Rate (cfs)", min_value=0)
     except FieldValidationError as exc:
         return _add_error(request, "diversion", str(exc))
-    # 146-02 D2: optional at creation, the same select the POD page's own
+    # Optional at creation, the same select the POD page's own
     # "Water right" panel offers -- a blank, stale or tampered value falls
     # back to unlinked rather than a 500, since this is a plain <select>
     # value, not a get_object_or_404'd URL segment.
@@ -333,7 +332,7 @@ def _add_diversion(
         max_rate_cfs=max_rate_cfs,
         status=status,
         notes=notes,
-        # 146-03 Task 3: the 145-01 memo's crosswalk layer, the point's
+        # The crosswalk layer, the point's
         # local name (contract unit and miner's inch removed 2026-10-13).
         local_name=request.POST.get("local_name", "").strip(),
     )
@@ -353,7 +352,7 @@ def _add_recharge_site(
 ) -> HttpResponse:
     """Create a RechargeSite (storage or recharge) from the posted form, or re-render."""
     # Local import: `recharge` is an optional module, so this must not run at
-    # module scope (ISS-072). This branch is only reachable when the add form
+    # module scope. This branch is only reachable when the add form
     # offered a recharge type, which it does not do without the module.
     from recharge.models import RechargeSite
 
@@ -438,7 +437,7 @@ def infrastructure_add(request):
 def _import_type(raw):
     """Normalize a ?type / infra_type value to a supported import type.
 
-    **Only partly `_supported_type(raw)`** (ISS-179). A BLANK type, nobody
+    **Only partly `_supported_type(raw)`.** A BLANK type, nobody
     named one, e.g. the bare `/infrastructure/import/` the URLconf crawl and a
     stray internal link both reach, still falls back to the first available
     type exactly as `_supported_type` does; that half of the fallback was never
@@ -447,7 +446,7 @@ def _import_type(raw):
     real value and simply is not one this deployment serves: `?type=parcel`
     (also `use_area`, `usearea`) named an actual, wrong door and
     `_supported_type`'s "anything I don't recognise" fallback silently served
-    the Well importer instead. Shape 6's own correction is what caught it.
+    the Well importer instead.
     Returns the type unchanged when it is one this deployment actually serves,
     `None` for an unrecognised NON-BLANK value. The three callers below turn
     `None` into a 404 with `UNSUPPORTED_IMPORT_TYPE_MESSAGE`, never a fallback
@@ -532,7 +531,7 @@ def infrastructure_import_preview(request):
         [importer.sample_cell(col, row.get(col, "")) for col in columns]
         for row in rows[:5]
     ]
-    # 146-02 D2: the sample table's OWN header, separate from `columns` (which
+    # The sample table's OWN header, separate from `columns` (which
     # the field-mapping <select>s above also iterate as the file's real source
     # columns -- appending a synthetic entry there would offer it as a
     # selectable, non-existent column).
@@ -561,7 +560,7 @@ def infrastructure_import_preview(request):
 def _diversion_water_right_preview_column(infra_type, rows, mapping, columns, sample_table):
     """Append "Water right (resolved)" to the sample preview, diversion only.
 
-    146-02 D2: the preview shows the resolved right per row, so an operator
+    The preview shows the resolved right per row, so an operator
     sees a typo'd APPL_ID before committing rather than after. Mutates
     `sample_table`'s rows in place (one cell each) and returns the header row
     to show above them -- `columns` itself must stay untouched, since the
@@ -602,7 +601,7 @@ def _columns_from_rows(rows):
 
 
 def _commit_failure_context(infra_type, rows, mapping, exc, error=None):
-    """Rebuild the mapping-step context after a commit-time crash (ISS-179).
+    """Rebuild the mapping-step context after a commit-time crash.
 
     The same shape `infrastructure_import_preview` renders the first time,
     from the `rows_json` and confirmed `mapping` the crashed POST already
@@ -734,13 +733,13 @@ def infrastructure_import_commit(request):
 
     existing_reg_ids = _existing_registration_ids(infra_type)
 
-    # ISS-179: commit_rows' per-row savepoint already isolates a single bad row
+    # commit_rows' per-row savepoint already isolates a single bad row
     # (see its own docstring), so anything that still reaches here (a module
-    # this deployment does not have but that Task 2.1's guard missed, a
-    # programming error, anything) is genuinely unexpected. Before this catch
-    # it was a 500: HTMX swaps nothing on a 500, so the operator saw the exact
-    # same mapping table come back with no explanation (shape 1, three tries;
-    # shape 4, two). Now they get that same table back with one line saying
+    # this deployment does not have but that the module guard missed, a
+    # programming error, anything) is genuinely unexpected. A 500 would swap
+    # nothing in HTMX, so the operator would see the exact
+    # same mapping table come back with no explanation. Instead they get that
+    # same table back with one line saying
     # nothing was created and why, at 200 so HTMX actually swaps it in.
     try:
         results = importer.validate_rows(
@@ -778,7 +777,7 @@ def infrastructure_geojson(request):
         })
 
     if is_enabled("surface"):
-        # Local import: `surface` is an optional module (Phase 87) — see
+        # Local import: `surface` is an optional module — see
         # `infrastructure_add`. Unlike the add-form branch, this loop is
         # unconditional, so it needs the module check as well as the local import.
         from surface.models import PointOfDiversion
@@ -792,7 +791,7 @@ def infrastructure_geojson(request):
 
     if is_enabled("recharge"):
         # Local import: `recharge` is an optional module, so this must not run at
-        # module scope (ISS-072). Unlike the add-form branch above, this loop is
+        # module scope. Unlike the add-form branch above, this loop is
         # unconditional, so it needs the module check as well as the local import.
         from recharge.models import RechargeSite
 

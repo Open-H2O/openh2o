@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
 Extract the tagged basins from the picker GeoPackage into the committed
-fixture the 62-02 seed reads: data/merced/selected_basins.geojson (EPSG:4326).
+fixture the basin seed reads: data/merced/selected_basins.geojson (EPSG:4326).
 
 A candidate parcel is a chosen recharge basin if it has a non-empty `feeds_via`
 (the name of the canal/river that fills it — REQUIRED, the seed resolves it to a

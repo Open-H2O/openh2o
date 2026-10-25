@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Django admin registrations for the drinking water app models.
 
-This is the CRUD backstop until 78-02 builds real pages.
+This is the staff-side CRUD backstop; operators use the pages in drinking/views/.
 """
 from django.contrib import admin
 

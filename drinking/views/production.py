@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
-# Production by month and source (146-04 Task 2, D7, ISS-184)
+# Production by month and source
 # ---------------------------------------------------------------------------
 #
 # The record shape 2's operator never had: what the system produced, by
@@ -111,11 +111,11 @@ def _production_totals(by_key: dict, type_codes: list[str]) -> list[dict]:
 
 def _shown_columns(by_key: dict, type_codes: list[str]) -> tuple[list[int], list[str]]:
     """The indexes of the type columns worth showing, and the lower-case labels of the sources among them."""
-    # 146-04 Task 6 (page verdict at 1,730): a source reported as zero, or not
+    # A source reported as zero, or not
     # at all, in every month of the year is one sentence above the table, not
     # a column of twelve zeros. Le Grand's real eAR carries five such columns
-    # beside its one groundwater column, and the reader's worst fault was that
-    # "most of the page's largest region is dead space". The grand total
+    # beside its one groundwater column, which would leave most of the
+    # table's width as dead space. The grand total
     # still sums every source column, so nothing drops out of the arithmetic.
     shown = [
         i for i, code in enumerate(type_codes)
@@ -172,7 +172,7 @@ def production(request):
     rows = _production_rows(by_key, type_codes)
     totals = _production_totals(by_key, type_codes)
 
-    # 150.1-02: the year
+    # The year
     # total is water produced or purchased. Water sold to another system came
     # out of that water, so adding the two sold columns counted it twice; they
     # are totalled on their own and named after it. Each column's own total in
@@ -254,7 +254,7 @@ def production_import_page(request):
     )
 
 
-#: The production preview lists at most this many of the file's rows (150-04 V2).
+#: The production preview lists at most this many of the file's rows.
 PRODUCTION_PREVIEW_ROW_LIMIT = 50
 
 
@@ -350,7 +350,7 @@ def production_import_preview(request):
     context.update(result)
     context["rows_json"] = json.dumps(rows)
     context["row_count"] = len(rows)
-    # 150-04 V2: the file's own rows under its own column names, bounded.
+    # The file's own rows under its own column names, bounded.
     context["preview_columns"] = columns
     context["preview_rows"] = [
         [row.get(column, "") for column in columns]

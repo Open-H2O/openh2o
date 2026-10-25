@@ -41,7 +41,7 @@ def not_applicable(category: str, module: str, subject: str) -> dict:
 
     So the check still produces a row, still names itself, and says why it has
     nothing to measure. ``status`` is ``skipped`` — its own alarm level, added
-    as the fourth STATUS_CHOICES entry in Phase 91. Everything that rolls health
+    as the fourth STATUS_CHOICES entry. Everything that rolls health
     up branches on the status field: the dashboard, the JSON API and the CLI
     summary all exclude skipped rows from the healthy denominator and from the
     overall verdict, so a switched-off module can no longer raise the score.
@@ -103,9 +103,7 @@ def check_database():
         connection.ensure_connection()
 
         # This check is about CONNECTIVITY, so it survives every demotion — it
-        # just stops counting tables nobody is filling. Phase 88 did this for
-        # `wells`; Phase 89 does it for the last two, which were unconditional
-        # only because they were pinned `required`. Each count is omitted from
+        # just stops counting tables nobody is filling. Each count is omitted from
         # both the details and the sentence rather than reported as a zero that
         # reads like a missing import.
         counts = {}
@@ -377,9 +375,8 @@ def check_ledger_integrity():
     # entries are legitimate demo-seed artifacts (a parcel that booked no water in
     # a period); on the frozen demo they're static and shouldn't alarm.
     #
-    # 143-05 (ISS-159 #4, R-043): the count is UNCHANGED (every zero-amount row
-    # in the live demo is a calculated row; the query stays a plain
-    # amount_acre_feet=0 filter), but the message now tells the same story the
+    # The count is a plain amount_acre_feet=0 filter (every zero-amount row
+    # in the live demo is a calculated row), and the message tells the same story the
     # Use Ledger tells about those rows in its Description column, so a reader
     # who meets the count here and the rows there reads one story instead of
     # two different words for the same fact.
@@ -417,7 +414,7 @@ def check_ledger_integrity():
 
 def check_orphans():
     # The acting half is "active parcels not assigned to an account", which needs
-    # BOTH modules. They are mutually required as of Phase 89, so one predicate
+    # BOTH modules. They are mutually required, so one predicate
     # would do — the pair is spelled out anyway, because an exemption that
     # depends on a requires-edge should say which edge it is leaning on.
     if not is_enabled("parcels") or not is_enabled("accounting"):
@@ -936,7 +933,7 @@ def _metered_use_areas(n: int) -> str:
 
     The check counts one use area once per water year it has a meter or a
     delivery and an estimated use, so the caller says "counted once per water
-    year" beside the number (149.1-07, R-057).
+    year" beside the number.
     """
     return f"{n} metered use area{'' if n == 1 else 's'}"
 
@@ -977,11 +974,11 @@ def check_et_meter_agreement():
     becomes a real test against a district's own meters. Do not "tune" the bands
     to make demo numbers prettier.
 
-    What the seeder chooses has changed, and the shape of the circularity with
-    it (131-01). Until then the multiple was a flat band keyed on a WELL or POD
-    INDEX ([1.05, 1.18] and [1.02, 1.16]), so every parcel read near-drip and the
-    aggregate sat at 0.9288 whether the field was flood-irrigated alfalfa or a
-    micro-irrigated almond block. The multiple is now 1 / (that crop's
+    What the seeder chooses decides the shape of the circularity. A flat band
+    keyed on a WELL or POD INDEX ([1.05, 1.18] and [1.02, 1.16]) would make every
+    parcel read near-drip and the aggregate sit at 0.9288 whether the field was
+    flood-irrigated alfalfa or a micro-irrigated almond block. The multiple is
+    instead 1 / (that crop's
     irrigation-method efficiency), so a demo parcel reads back the efficiency of
     the method its crop is actually grown under and the aggregate is the
     consumptive-use-weighted harmonic mean of the seeded crop mix. Still the
@@ -1183,7 +1180,7 @@ STUCK_QUEUED_AFTER = timedelta(minutes=15)
 
 
 def check_calculation():
-    """When the calculation last ran, and whether it worked (149-01 Task 4).
+    """When the calculation last ran, and whether it worked.
 
     Precedence: a run that has been "running" for over two hours is marked
     failed and reported red; a request waiting over fifteen minutes means the
@@ -1310,7 +1307,7 @@ def _stale_calculation_card(last, now: datetime) -> dict | None:
     """The yellow card when open water years have gone two days without a finished calculation, or None."""
     from accounting.models import CalculationRequest, ReportingPeriod
 
-    # 151-02: a failed latest run stays red (below, it is worse). Otherwise an
+    # A failed latest run stays red (below, it is worse). Otherwise an
     # open water year with no finished calculation for two days means the
     # nightly calculation may have stopped.
     # A run in progress (one stuck past two hours was caught above) is not a
@@ -1415,7 +1412,7 @@ def _record_time(value):
 
 
 def check_backup():
-    """Whether the site has a recent backup that read back (151-02).
+    """Whether the site has a recent backup that read back.
 
     Reads the two files scripts/backup.sh leaves in OPENH2O_BACKUP_STATUS_DIR:
     last-backup.json (a good run) and last-backup-failure.json (a failed run,

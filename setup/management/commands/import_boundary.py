@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
-Load an operator's own GeoJSON boundary file into a Boundary row (ISS-122).
+Load an operator's own GeoJSON boundary file into a Boundary row.
 
 **The gap this closes.** ``docs/AI-OPERATOR-GUIDE.md`` tells a headless
 operator (no browser, SSH only) that the command-line path "reaches the same

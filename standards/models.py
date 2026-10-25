@@ -10,10 +10,10 @@ records, for each data source, how that source's own native code
 (``PARAMETER_MAP`` key) maps onto a canonical concept.
 
 Promoted here from the runtime label helper in
-``datasync/adapters/registry.py`` (decision 26.1-01), which only carried a
-display name + unit and which nothing in the database referenced. The later
-publishing layers read measurement vocabulary from this registry: the
-SensorThings API (Phase 32) and the Frictionless/WaDE exports (Phase 33).
+``datasync/adapters/registry.py``, which only carried a
+display name + unit and which nothing in the database referenced. Publishing layers (a
+SensorThings API, Frictionless/WaDE exports) are to read measurement vocabulary
+from this registry.
 """
 
 from django.db import models
@@ -65,7 +65,7 @@ class ObservedProperty(models.Model):
         """
         True when the property carries both a USGS pcode and a UCUM unit.
 
-        The full publish-readiness predicate: Phase 32/33 will refuse to
+        The full publish-readiness predicate: a publisher must refuse to
         serialize a property where this is False. Note the conformance audit
         (``check_conformance``) gates on UCUM for ALL properties but treats a
         blank pcode as a known, non-blocking exception, because several real
@@ -117,7 +117,7 @@ class Datastream(models.Model):
     (a well or an external/surface station) + a Sensor + an ObservedProperty.
 
     This is the one OGC SensorThings entity the 48-table model didn't already
-    have. Phase 32 serializes each Datastream and attaches Observations to it
+    have. In the SensorThings mapping, each Datastream carries Observations
     (a SensorMeasurement *is* the Observation in that mapping — no separate
     Observation table). The FeatureOfInterest is derived from the well's screen
     interval + vertical datum, so there is no FeatureOfInterest table either.
@@ -178,7 +178,7 @@ class Datastream(models.Model):
     def uom(self) -> str:
         """
         Unit of measurement, read live from the linked ObservedProperty's UCUM
-        unit so it can never drift from the canonical vocabulary. Phase 32 would
-        only add a stored column here if it ever needs a per-series override.
+        unit so it can never drift from the canonical vocabulary. A stored column would
+        be added here only if a per-series override is ever needed.
         """
         return self.observed_property.ucum_unit

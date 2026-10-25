@@ -34,7 +34,7 @@ class HealthCheckResult(models.Model):
         ("period_alignment", "Period Alignment"),
         ("et_meter_agreement", "ET / Meter Agreement"),
         ("ssl", "SSL"),
-        # 150.1-02: the check reads the
+        # The check reads the
         # database's name; the stored key stays "docker".
         ("docker", "Database name"),
         ("migrations", "Migrations"),
@@ -47,8 +47,8 @@ class HealthCheckResult(models.Model):
         ("red", "Red"),
         # A check whose whole subject belongs to a module this deployment does
         # not run. Its own alarm level, not a shade of green: counting a skipped
-        # check as healthy let switching modules off RAISE the reported score
-        # (ISS-087). Choices are not enforced by Postgres, so this costs one
+        # check as healthy let switching modules off RAISE the reported score.
+        # Choices are not enforced by Postgres, so this costs one
         # choices-only AlterField and no column change.
         ("skipped", "Skipped"),
     ]

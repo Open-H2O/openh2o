@@ -20,8 +20,8 @@ regulator publishes them so imports and exports need no translation table.
 **Prepare, never determine.** Nothing in this module calculates compliance.
 ``RegulatoryLimit`` records what the limit *is* and when it applied; comparing a
 result against it is a later, rule-by-rule job. ``SampleResult`` also keeps the
-MCL and DLR the laboratory's file carried on its row (ISS-140, ruled "beside"
-2026-09-22), stored as reported and never compared with the finding.
+MCL and DLR the laboratory's file carried on its row,
+stored as reported and never compared with the finding.
 
 The quality↔quantity join is ``SystemFacility.well`` → ``wells.Well``. A supply
 well is ONE physical feature: the extraction ledger lives on the wells side, the
@@ -152,7 +152,7 @@ SAMPLE_TYPE_CHOICES = [
     # A groundwater source sample required after a coliform-positive routine
     # sample. It carries its own regulatory meaning under the Ground Water Rule,
     # so it gets its own entry rather than being folded into routine/special
-    # (EPA CMDP code `TG`). Added for ISS-076.
+    # (EPA CMDP code `TG`).
     ("triggered", "Triggered"),
 ]
 
@@ -301,7 +301,7 @@ class SystemFacility(models.Model):
         "segment.",
     )
     name = models.CharField(max_length=200, blank=True)
-    # 146-04 Task 3 (D9, the memo's J8). The operator's own word for the
+    # The operator's own word for the
     # facility, shown BESIDE the state's padded name and never in place of it:
     # the state's name is what the lab file and the state's reports carry, so
     # it stays the one the record is matched on.
@@ -579,8 +579,7 @@ class SampleResult(models.Model):
     lab_cert_no = models.CharField(
         max_length=20, blank=True, help_text="ELAP certification number."
     )
-    # ISS-140, ruled "beside" (146-04 Task 1):
-    # the limits the laboratory's file carried on this row, stored exactly as
+    # The limits the laboratory's file carried on this row, stored exactly as
     # reported and shown BESIDE the finding. Never compared with it, never
     # coloured by it, never a verdict. They are provenance, not part of what
     # the lab measured, so they are not in the importer's duplicate identity
@@ -664,7 +663,7 @@ class EnvirofactsCache(models.Model):
     same reason, and this model deliberately mirrors its shape.
 
     Why the payload is stored VERBATIM and never pre-mapped: caching a mapped
-    result would freeze Plan 79-02's mapping decisions into the cache, so a
+    result would freeze the mapping decisions into the cache, so a
     later mapping bug would survive the code fix until every row expired.
     Storing what EPA sent means a mapping change takes effect on the next read.
 
@@ -704,7 +703,7 @@ class EnvirofactsCache(models.Model):
         return (timezone.now() - self.queried_at).days > max_days
 
 
-# -- 1.3 Production by month and source (146-04 Task 2, D7, ISS-184) --------
+# -- 1.3 Production by month and source --------------------------
 #
 # The record shape 2's operator never had: what the system produced or
 # delivered, by month and by source. Two real-world layouts land here --
@@ -712,7 +711,7 @@ class EnvirofactsCache(models.Model):
 # (``drinking/production_import.py``) -- so the type codes below are the
 # eAR's own seven, and the units are the eAR's own four.
 
-# Source: the eAR's own TypeCode column, all seven of its codes (ISS-206).
+# Source: the eAR's own TypeCode column, all seven of its codes.
 # NonPotableSold ("Non-potable water sold to another PWS") is its own type,
 # never folded into NonPotable; any other code is a row error naming it.
 PRODUCTION_TYPE_GW = "GW"
@@ -862,7 +861,7 @@ class SystemProduction(models.Model):
         super().save(*args, **kwargs)
 
 
-# -- 1.4 The operator's sampling schedule (146-04 Task 4, D8) ----------------
+# -- 1.4 The operator's sampling schedule ----------------------------
 
 SCHEDULE_FREQUENCY_CHOICES = [
     ("daily", "Daily"),

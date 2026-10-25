@@ -72,7 +72,7 @@ class Command(BaseCommand):
             # The denominator is APPLICABLE checks, not every check. Dividing by
             # every check while skipped rows scored as green is what printed
             # "12/13 healthy" on a deployment running half the platform — the
-            # score went UP as modules went away (ISS-087). Both numbers are
+            # score went UP as modules went away. Both numbers are
             # shown so a dropped check stays distinguishable from one that never
             # existed.
             applicable = sum(1 for r in results if r["status"] != "skipped")

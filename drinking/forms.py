@@ -2,9 +2,8 @@
 """
 Forms for the drinking-water domain.
 
-Created in 146-04 Task 2 for the production add-month door (D7); Task 3 added
-the facility forms (D9) here and Task 4 adds the sampling schedule form, rather
-than each starting its own file.
+The production add-month form, the facility forms and the sampling schedule
+form share this file, rather than each starting its own.
 """
 from django import forms
 
@@ -58,7 +57,7 @@ class SystemProductionForm(forms.ModelForm):
             "unit_as_reported": forms.Select(attrs={"class": "form-select"}),
             "notes": forms.Textarea(attrs={"class": "form-textarea", "rows": 2}),
         }
-        # 150.1-02: "Type" and "Volume",
+        # The labels are "Type" and "Volume",
         # not the model's "Type code" and "Volume, as reported".
         labels = {
             "type_code": "Type",
@@ -87,7 +86,7 @@ class SystemProductionForm(forms.ModelForm):
 
 
 # ---------------------------------------------------------------------------
-# The facility door (146-04 Task 3, D9)
+# The facility door
 # ---------------------------------------------------------------------------
 
 
@@ -227,7 +226,7 @@ class FacilityLocalNameForm(forms.ModelForm):
 
 
 # ---------------------------------------------------------------------------
-# The sampling schedule (146-04 Task 4, D8)
+# The sampling schedule
 # ---------------------------------------------------------------------------
 
 

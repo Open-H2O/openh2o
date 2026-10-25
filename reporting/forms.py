@@ -26,8 +26,8 @@ class ReportGenerateForm(forms.Form):
         if report_type_filter:
             queryset = queryset.filter(report_type__startswith=report_type_filter)
 
-        # Seeding is only half the promise (ISS-082). With the seed gate in
-        # place a FRESH instance never gets a disabled module's rows, so this
+        # A disabled module's report types must never be offered. On a
+        # FRESH instance `seed_report_templates` never writes their rows, so this
         # queryset empties on its own — but an instance that was seeded BEFORE
         # the module was switched off still carries them, and those rows must
         # not be offerable. `seed_report_templates` deliberately withholds

@@ -70,7 +70,7 @@ class CIMISAdapter(BaseAdapter):
         return {"Ocp-Apim-Subscription-Key": self._get_api_key()}
 
     def missing_required_credential(self):
-        """CIMIS station + data APIs require an application key (ISS-007)."""
+        """CIMIS station + data APIs require an application key."""
         return None if self._get_api_key() else "CIMIS appKey (set CIMIS_API_KEY)"
 
     def fetch(self, station, start_date, end_date):

@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 BASE_URL = "https://cdec.water.ca.gov/dynamicapp/req/JSONDataServlet"
 
 # CDEC has no station-search JSON endpoint. ``staMeta`` is a human-facing HTML
-# page (calling .json() on it is the ISS-048 crash). The only machine-reachable
+# page (calling .json() on it crashes). The only machine-reachable
 # station list is the ``staSearch`` results table, which renders every station
 # server-side — ID, name, river basin, county, longitude, latitude, elevation,
 # operator — when ``sensor_chk`` is left blank. We fetch it once and filter to
@@ -158,7 +158,7 @@ class CDECAdapter(BaseAdapter):
     # CDEC sensors post at different durations: reservoirs report a Daily value,
     # but most river/stream gauges only publish Hourly or Event ("E", ~15-min)
     # readings and return NOTHING for a daily-duration query. Querying "D" alone
-    # left every flow gauge looking dead (59-02). Try coarsest→finest and stop at
+    # left every flow gauge looking dead (daily-only queries miss them). Try coarsest→finest and stop at
     # the first duration that returns rows, so reservoirs stay compact (daily) while
     # flow gauges still land their native-cadence data.
     #
@@ -225,8 +225,8 @@ class CDECAdapter(BaseAdapter):
                     # page — and resp.json() then raises ValueError. Treat one bad
                     # sensor/duration as "nothing here" and move on: a single
                     # flaky response must never fail the whole station, and we
-                    # never crash on .json() (mirrors the discovery contract,
-                    # ISS-048). Stations with real data on other sensors still
+                    # never crash on .json() (mirrors the discovery contract).
+                    # Stations with real data on other sensors still
                     # publish it; truly-empty stations report honestly as stale.
                     logger.warning(
                         "CDEC %s sensor %s dur %s: %s",
@@ -368,7 +368,7 @@ class CDECAdapter(BaseAdapter):
         bounding box. CDEC publishes no station-search JSON, so this is the only
         machine-reachable list.
 
-        Defensive by contract (ISS-048): any response we can't parse into
+        Defensive by contract: any response we can't parse into
         stations — the human-facing HTML page, an empty body, a changed
         endpoint — yields [] and ONE clear, greppable warning naming CDEC,
         never a bare JSONDecodeError and never an unhandled crash. One provider

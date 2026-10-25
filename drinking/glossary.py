@@ -27,7 +27,7 @@ more. The rule is `DESIGN.md` copy rule 11; the guard is
 **What used to be here, and must not come back.** A second dictionary,
 ``FACILITY_TYPE_PLAIN``, gave all 22 EPA facility codes a sentence saying what
 the thing physically is — "A drilled well. Water comes up out of the ground
-here." It was deleted whole on 2026-08-06 (ISS-129), not trimmed:
+here." It was deleted whole on 2026-08-06, not trimmed:
 ``FACILITY_TYPE_CHOICES`` in ``drinking/models.py`` already carries EPA's own
 label for every code, and the facility panel already renders it as the heading,
 so the dictionary's only added content was the water lecture. Three tests in
@@ -43,14 +43,14 @@ import re
 #: Abbreviations that appear inside EPA's own facility and sampling-point names.
 #: Order matters only for readability; lookup is by key.
 #:
-#: **Every value is a decoding and nothing more (ISS-129, 2026-08-06).** Each of
+#: **Every value is a decoding and nothing more.** Each of
 #: these used to carry a clause after the expansion — what the filter removes,
 #: what the contaminant is, where the samples are taken — and every one of those
 #: clauses explained treatment, chemistry or sampling practice to the person who
 #: does it for a living. A status code's meaning stays, because what the state's
 #: own flag signifies is a data convention this platform owes the reader; a
 #: description of the water, the equipment or the sampling never does.
-#: No em dash in a value (INAC, 150.1-02).
+#: No em dash in a value.
 SHORTHAND = {
     "RAW": "Untreated water.",
     "STBY": "Standby.",

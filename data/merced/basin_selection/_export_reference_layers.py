@@ -53,7 +53,7 @@ print(f"river flowlines: {len(rivers)} ({named} named)")
 #
 # This file is a hand-run script, not an importable module, so its module-scope
 # imports never execute at boot. It is still guarded because `recharge` is an
-# optional module (ISS-072): on a deployment without it, a top-level
+# optional module: on a deployment without it, a top-level
 # `from recharge.models import ...` on line 21 would abort the whole export with
 # an `app_label` RuntimeError before the river and headgate layers — which have
 # nothing to do with recharge — ever got written. Guarding the section instead

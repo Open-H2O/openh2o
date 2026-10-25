@@ -10,12 +10,12 @@ stations lived inside a running database. ``seed_merced`` step 2
 demonstration with **no stations at all**. The landing page counts them
 (``config/views.py``), so a repository-built demonstration read "0 of 0 stations
 reporting" while production read "37 of 42" (re-derived 2026-08-01 by running
-`config/views.py`'s own expression against production; the "21 of 42" figure
-carried in 104-01 and 104-02 was never re-derived and is wrong).
+`config/views.py`'s own expression against production; an earlier "21 of 42" figure
+was never re-derived and is wrong).
 
-103-01 argued the stations did not need freezing because nothing later in
-``seed_merced``'s ``SEQUENCE`` reads ``MonitoredStation``. That test was
-build-internal — it asked what the seed consumes, not what the demonstration
+Freezing the stations can look unnecessary, because nothing later in
+``seed_merced``'s ``SEQUENCE`` reads ``MonitoredStation``. That test is
+build-internal: it asks what the seed consumes, not what the demonstration
 SHOWS. The stations are on screen, on the map and named on the about page; they
 are part of the demonstration, so they are repository content.
 

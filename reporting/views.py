@@ -82,7 +82,7 @@ def report_list(request):
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
-    # Counted only for a family this deployment can actually file (ISS-082). A
+    # Counted only for a family this deployment can actually file. A
     # count is a claim that the thing exists here; a wells-less or surface-less
     # deployment should neither name nor tally a filing family it cannot
     # produce. `families` drives both the action cards and the one sentence in
@@ -127,7 +127,7 @@ def report_list(request):
 
 def _family_unavailable_response(request: HttpRequest, report_type_filter: str) -> HttpResponse | None:
     """The handled-error page when the filter names a report family whose module is off, else None."""
-    # ISS-082, the route-level half. 87-02 measured this URL returning 200 with
+    # The route-level half. This URL once returned 200 with
     # `surface` dropped: a Generate page for a filing the deployment cannot
     # make. With the seed gate in place the dropdown would now merely be empty,
     # and an empty select that cannot be submitted is a worse answer than a
@@ -151,7 +151,7 @@ def _family_unavailable_response(request: HttpRequest, report_type_filter: str) 
 
 def _demo_filename_prefix() -> str:
     """The filename prefix that marks a demonstration deployment's file, or an empty string."""
-    # Demo framing on the FILE itself (Phase 53-02). A leading "#" row
+    # Demo framing on the FILE itself. A leading "#" row
     # could corrupt the strict GEARS/CalWATRS parsers, so the disclaimer
     # rides the filename instead: it's format-safe and survives download
     # (report_download reuses the stored name). Flag-gated so a real
@@ -294,7 +294,7 @@ def report_detail(request, pk):
 
 @login_required
 def shared_supply_check(request):
-    """ISS-056: stored split vs. ET-implied split reasonableness check.
+    """Stored split vs. ET-implied split reasonableness check.
 
     Lists every hand-set shared well / point of diversion with the human split
     beside the split estimated ET demand would imply, flagging large divergences
@@ -436,12 +436,12 @@ def calwatrs_worksheet(request, pk):
     if report_type not in ("calwatrs_a1", "calwatrs_a2"):
         raise Http404("The transcription worksheet is only for CalWATRS reports.")
 
-    # 89-03: the check above gates on report TYPE, not on module availability,
+    # The check above gates on report TYPE, not on module availability,
     # and those are different questions. A CalWATRS submission ROW outlives the
     # module — an agency that filed CalWATRS and later switched `surface` off
     # still has its filing history, and every row in it reaches this view. The
-    # old comment here reasoned that the type check made the view "unreachable
-    # without the module"; measured on staging against a copy of the real demo
+    # type check does not make the view "unreachable without the module":
+    # measured on staging against a copy of the real demo
     # database it was reachable, and the local import below raised
     # `RuntimeError: ... doesn't declare an explicit app_label` — a 500, on the
     # deployment's own report history. Gate on the module, like the generate
@@ -452,7 +452,7 @@ def calwatrs_worksheet(request, pk):
             "transcription worksheet cannot be built here."
         )
 
-    # Local import: `surface` is an optional module (Phase 87), so this must not
+    # Local import: `surface` is an optional module, so this must not
     # run at module scope. Safe to reach only because of the guard above.
     from surface.models import DiversionRecord
 
@@ -563,7 +563,7 @@ def report_prefill(request, pk):
     if method is None:
         raise Http404("OpenET pre-fill is not available for this report type.")
 
-    # 89-03: same defect, same cause as `calwatrs_worksheet` above — a surviving
+    # Same defect, same cause as `calwatrs_worksheet` above — a surviving
     # submission row reaches the CalWATRS pre-fill builder, whose local
     # `surface.models` import 500s with the module dropped.
     if not report_type_is_available(report_type):

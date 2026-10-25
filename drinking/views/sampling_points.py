@@ -20,7 +20,7 @@ from drinking.views.common import group_results_by_event, _facility_geojson
 def _sampling_points_head_line(
     *, all_count, mapped_facility_count, total_count, result_located_count, q, filter_words
 ):
-    """The Sampling Points card head's `line` override (143-07).
+    """The Sampling Points card head's `line` override.
 
     ``partials/_map_card_head.html``'s own branches describe ONE set of rows
     on the map exactly as the list counts them. This page's list counts
@@ -85,7 +85,7 @@ def _filtered_sampling_points(q: str, point_type: str) -> QuerySet[SamplingPoint
 
 def _points_pwsid_for_empty_state(has_any_point: bool) -> str:
     """The one system's PWSID the empty state's builder button opens on, or ""."""
-    # 123-02: the PWSID the empty state's "Build sampling points" button opens
+    # The PWSID the empty state's "Build sampling points" button opens
     # on. Onboarding writes facilities and deliberately never writes a point, so
     # the right door from an empty inventory is the builder — and the builder
     # takes a PWSID in its path.
@@ -142,7 +142,7 @@ def _sampling_point_map_head(
     point_type: str,
 ) -> tuple[list[int], int, str | None]:
     """The map card head: (facility pks drawn, located facility count, `line` override)."""
-    # The map card's head (143-07): the map draws FACILITIES, so the pks the
+    # The map card's head: the map draws FACILITIES, so the pks the
     # results partial emits are the distinct facility ids of the FILTERED
     # sampling points, never the points' own pks. `result_located_count`
     # counts the distinct located facilities among that same filtered set —
@@ -276,7 +276,7 @@ def sampling_point_detail(request, pk):
         {
             "point": point,
             "recent_results": recent,
-            # 143-08 Task 3 (R-069): the SAME helper the results log calls
+            # The SAME helper the results log calls
             # (`group_results_by_event`, defined above), on this point's own
             # `recent` slice, so one place decides how a run of results folds
             # into one block per sample event.

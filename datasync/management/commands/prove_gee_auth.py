@@ -2,7 +2,7 @@
 """
 Prove the Earth Engine tier end to end, headlessly.
 
-This is the go/no-go gate for the GEE OpenET tier (Phase 37). It:
+This is the go/no-go gate for the GEE OpenET tier. It:
 
 1. Authenticates to Google Earth Engine with a SERVICE ACCOUNT (no browser),
    the way a headless server must. Auth failure is fatal and printed verbatim,

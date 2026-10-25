@@ -5,7 +5,7 @@ Idempotently get_or_creates the four state report templates (GEARS by Well,
 GEARS by ET, CalWATRS Direct Use / A1, CalWATRS To Storage / A2). Run it once
 when standing up an instance so the report types are available to generate.
 
-**Each row is gated on the module whose water it describes** (ISS-082). GEARS is
+**Each row is gated on the module whose water it describes**. GEARS is
 a groundwater filing and belongs to ``wells``; CalWATRS is a surface-water filing
 and belongs to ``surface``. A deployment that does not run a domain is not
 offered its filings -- before v2.4 an agency with no surface water was seeded two
@@ -13,14 +13,10 @@ CalWATRS templates anyway and invited to prepare a filing it could not make. The
 owner mapping is ``reporting.report_types.REPORT_TYPE_OWNER``, which the generate
 form reads too; it is not restated here.
 
-**The GEARS half of this gate is inert today, deliberately.** ``wells`` is still
-``required=True`` in ``core/modules.py``, so ``is_enabled("wells")`` is always
-True and those two rows always seed. Plan 88-02 is what flips ``wells`` optional,
-and it is the first thing this gate will ever actually withhold. Building it now
-rather than then is the same dormant-machinery discipline Phase 86 used for
-``schema_resident``: implement it, unit test it against a hypothetical module
-list, and let the next plan be its first real user -- so the demotion does not
-have to carry a behavior change and a copy fix in the same commit.
+**The GEARS half of this gate withholds when ``wells`` is switched off.**
+``wells`` is optional (``required=False`` in ``core/modules.py``), so
+``is_enabled("wells")`` is False on a deployment that turned it off, and the two
+GEARS rows are then not seeded. While ``wells`` is on, those two rows seed.
 
 **Withholding is not deleting.** A row for a disabled module is skipped, never
 removed. ``ReportSubmission`` carries an FK to ``ReportTemplate``, so deleting a

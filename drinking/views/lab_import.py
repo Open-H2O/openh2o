@@ -45,7 +45,7 @@ def _unknown_ps_code_routes(validated):
 
     A California code's PWSID is its first segment by construction (DDW's
     ``{pwsid}_{facility_id}_{point_number}``). Another state's code is stored as
-    its lab file writes it and need not contain a PWSID at all (ISS-077), so a
+    its lab file writes it and need not contain a PWSID at all, so a
     first segment counts as a PWSID only when it looks like California's or
     names a system this site carries. Any other code is still reported, without
     a link.
@@ -163,7 +163,7 @@ def import_preview(request):
         if not item["errors"] and not item["data"].get("is_duplicate")
     )
     # Results already on file that predate the limits and will gain them from
-    # this file (146-04). A file that creates nothing but fills
+    # this file. A file that creates nothing but fills
     # these still has something to commit.
     limits_fill_count = sum(
         1
@@ -191,12 +191,12 @@ def import_preview(request):
             "committable": committable,
             "limits_fill_count": limits_fill_count,
             "unknown_ps_codes": _unknown_ps_code_routes(validated),
-            # 150-04 V3: the regulating-agency line the commit will print,
+            # The regulating-agency line the commit will print,
             # decided by the same function the commit calls; nothing written.
             "agency": importer.regulating_agency_outcomes(rows, mapping, validated),
             "rows_json": json.dumps(rows),
             # Carried to the commit so each result can say which file the
-            # limits it carries arrived in (ISS-140, "beside").
+            # limits it carries arrived in.
             "source_file": uploaded.name,
         },
     )
@@ -248,7 +248,7 @@ def import_commit(request):
         source_file=(request.POST.get("source_file", "") or "").strip()[:255],
     )
     # After the commit, so a file that lands nothing still records the agency
-    # it names for the system its rows resolved to (146-04 Task 3).
+    # it names for the system its rows resolved to.
     agency = importer.record_regulating_agency(rows, mapping, validated)
 
     skipped = [

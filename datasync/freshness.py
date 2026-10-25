@@ -80,7 +80,7 @@ STATUS_META = {
     "healthy": {"label": "Healthy", "tone": "fresh"},
     "needs_key": {"label": "Needs API key", "tone": "info"},
     "no_stations": {"label": "No stations", "tone": "neutral"},
-    # Distinct from "no_stations" and the distinction is the whole of ISS-107.
+    # Distinct from "no_stations" and the distinction matters.
     # CIMIS carries 15 stations and none is switched on; the old single state
     # made the card read "No stations wired" directly above its own body text
     # printing "0 active / 15 total", and then advise discovery — which
@@ -148,7 +148,7 @@ def format_hours(hours):
 def freshness_thresholds(source_code, source_name=None):
     """The three freshness words' limits for one source, as one tooltip.
 
-    Every number is read from the constants above (ISS-183): the source's
+    Every number is read from the constants above: the source's
     expected interval times ``FRESH_MULTIPLIER`` and ``STALE_MULTIPLIER``, the
     same arithmetic ``classify_freshness`` applies.
     """
@@ -193,7 +193,7 @@ def classify_source_status(
     ever blame a "failed" sync.
 
     ``total_stations`` separates the two ways a source can have nothing to sync,
-    because they need opposite advice (ISS-107). Zero stations means go and find
+    because they need opposite advice. Zero stations means go and find
     some. Fifteen stations and none active means switch one on — telling that
     operator to run discovery sends them round a loop that cannot terminate.
     It defaults to None only so an older three-argument call still classifies;

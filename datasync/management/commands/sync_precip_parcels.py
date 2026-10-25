@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
 Sync per-parcel monthly precipitation into OpenETCache — the rainfall faucet the
-calculation engine (Phase 38) needs to net effective precip out of gross ET.
+calculation engine needs to net effective precip out of gross ET.
 
 Unlike ET, precip has NO REST tier: GRIDMET ``pr`` is sampled per-parcel only via
 Earth Engine, so this command always goes through GEE directly (it does NOT route

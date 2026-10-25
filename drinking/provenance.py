@@ -68,8 +68,7 @@ EPA_SDWIS = "EPA Envirofacts (SDWIS)"
 #: laboratories and ELAP certification numbers.
 DDW_LAB = "State Water Board Division of Drinking Water"
 
-#: Where a sample result came from, said truthfully on ANY deployment
-#: (150.1-02).
+#: Where a sample result came from, said truthfully on ANY deployment.
 #:
 #: ``DDW_LAB`` above names the State Water Board, which is true of the
 #: demonstration's file and false of a lab's own file in the same format, and the
@@ -79,7 +78,7 @@ DDW_LAB = "State Water Board Division of Drinking Water"
 LAB_FILES = "imported lab files"
 
 #: One result's source when no file name was stored with it (a row imported
-#: before ISS-140 kept file names), and the regulating agency read off a file.
+#: before file names were kept), and the regulating agency read off a file.
 LAB_FILE = "an imported lab file"
 
 #: GAMA — the state's Groundwater Ambient Monitoring and Assessment Program.
@@ -98,7 +97,7 @@ GAMA = "State Water Board GAMA Program"
 
 #: A ``SamplingPoint`` record, which no publisher ships as a row.
 #:
-#: Written by the Phase 80 point builder through
+#: Written by the sampling-point builder through
 #: ``drinking.ps_codes.compose_ps_code``. Two different claims in one phrase, on
 #: purpose: the PS-code FORMAT is the state's published convention and the
 #: ``{pwsid}_{facility_id}_{point_number}`` join key every lab row is matched on,
@@ -128,12 +127,10 @@ PUBLISHED_SUPPLY_SOURCE = "EPA and State Water Board published record"
 
 #: A value the operator typed into this deployment's own form.
 #:
-#: 146-04 Task 3 (D9): a facility added by hand. Nothing federal wrote it, so
+#: A facility added by hand. Nothing federal wrote it, so
 #: the facility page's identity card names the operator rather than inheriting
 #: ``EPA_SDWIS``, which every onboarded facility on the same list carries.
-#: The sampling point and lab result pages carry it too, for the same facility
-#: (150.1-02; the old
-#: wording named an operator and a "deployment").
+#: The sampling point and lab result pages carry it too, for the same facility.
 OPERATOR_ENTERED = "entered on this site"
 
 #: Every constant above, keyed by its own name.

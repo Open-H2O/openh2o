@@ -16,7 +16,7 @@ merced_basin_picker.gpkg (built first by build_basin_gpkg.py), with bottom→top
       operator  -> operating district/GSA (optional)
       capacity_acre_feet -> design capacity hint (optional)
       feeds_via -> NAME of the canal/river that fills it (read it off the
-                   labelled canal/river layers; the 62-02 seed resolves it to a
+                   labelled canal/river layers; the basin seed resolves it to a
                    real Flowline) — REQUIRED for a parcel to count as a basin
 """
 import os

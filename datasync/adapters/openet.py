@@ -36,7 +36,7 @@ POLYGON_URL = "https://openet-api.org/raster/timeseries/polygon"
 # PROSE STRING, not a number field, so it is parsed rather than read. And the
 # three other 400s are per-request SHAPE limits — the acreage, polygon and
 # field-id caps on a single call — which is how "400" came to be written into
-# this platform as a monthly call budget in the first place (ISS-128).
+# this platform as a monthly call budget in the first place.
 #
 # A status read does NOT spend the allowance: this account read "0 used of 100"
 # on 2026-08-04 and again on 2026-08-05 with a status call in between.
@@ -99,7 +99,7 @@ class OpenETAdapter(BaseAdapter):
              "used": int|None, "tier": int|None, "reason": str}
 
         ``source`` is not decoration. A guessed allowance presented as an
-        authoritative one is the whole of ISS-128: the code said 400, the
+        authoritative one once misled operators: a constant said 400, the
         account was 100, and nothing on any screen distinguished a figure the
         provider had confirmed from a constant somebody typed. Every caller
         must be able to tell them apart, so failure is a labelled result rather

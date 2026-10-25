@@ -95,7 +95,7 @@ class BaseAdapter(ABC):
     # gunicorn worker that SIGKILLs anything past its ~30s timeout. A single slow
     # or erroring provider must therefore fail fast — a tight read timeout and a
     # single attempt with no retry-backoff — so it can never consume the worker
-    # budget and hang the whole first-run flow (ISS-051). The generous data-fetch
+    # budget and hang the whole first-run flow. The generous data-fetch
     # path (``_request`` with its defaults) is deliberately left untouched.
     discovery_timeout: float = 10.0
     discovery_max_retries: int = 1
@@ -215,7 +215,7 @@ class BaseAdapter(ABC):
         wizard, behind gunicorn's worker timeout. This caps a single provider's
         HTTP call to ``discovery_timeout`` seconds with a single attempt
         (``discovery_max_retries``), so a slow or 404-ing provider fails fast and
-        is reported as a labeled skip rather than killing the worker (ISS-051).
+        is reported as a labeled skip rather than killing the worker.
         Callers still wrap this in try/except and degrade to ``[]`` on failure.
         """
         kwargs.setdefault("timeout", self.discovery_timeout)

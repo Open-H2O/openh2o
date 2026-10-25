@@ -28,12 +28,12 @@ from drinking.views.common import _describe
 # System onboarding: page -> lookup -> commit
 # ---------------------------------------------------------------------------
 #
-# The operator-facing door onto Phase 79's Envirofacts adapter. Same three-step
+# The operator-facing door onto the Envirofacts adapter (drinking/envirofacts.py). Same three-step
 # shape as the lab import above, for the same reason: nothing is written until
 # the operator has seen exactly what a commit would do, including what it would
 # SKIP.
 #
-# **The session holds only the PWSID.** Sessions are `signed_cookies` (ISS-069)
+# **The session holds only the PWSID.** Sessions are `signed_cookies`
 # — there is no server-side store, the session IS the cookie, and a browser caps
 # a cookie at roughly 4 KB. Bakman alone returns 36 facilities against a ~45-field
 # WaterSystem; stashing the mapped payloads would blow that ceiling, and the
@@ -308,7 +308,7 @@ def _facility_panels(system):
 def _facility_select_order(facilities):
     """Sources first, then the rest, each group in facility-id order.
 
-    143-08 Task 4 (design A): the builder's facility select is the one place
+    The builder's facility select is the one place
     order matters, since a source facility is disproportionately what an
     operator is adding a point to (it is where water enters the system, the
     thing a program most often samples). ``sorted`` is stable, so within each
@@ -412,7 +412,7 @@ def onboard_points_add(request, pwsid):
     rather than an ``exists()`` check so two operators racing the same code get a
     plain "already there" instead of an IntegrityError 500.
 
-    143-08 Task 4 (design A): every branch below renders
+    Every branch below renders
     ``_onboard_points_listed.html``, never the bare alert the old per-facility
     panel returned on an error: the operator's whole table has to stay on
     screen (``hx-target="#points-listed"``, ``hx-swap="outerHTML"``) whatever

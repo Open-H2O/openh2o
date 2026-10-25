@@ -168,7 +168,7 @@ def _prefill_calwatrs(reporting_period: ReportingPeriod) -> list[dict[str, Any]]
     consumptive-use estimate, not a diverted volume — the label makes that
     explicit; this is a starting figure to reconcile.
     """
-    # Local import: `surface` is an optional module (Phase 87), so this must not
+    # Local import: `surface` is an optional module, so this must not
     # run at module scope. The CalWATRS pre-fill is surface-water only, so this
     # helper is unreachable without the module.
     from surface.models import PointOfDiversion

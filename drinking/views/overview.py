@@ -65,7 +65,7 @@ def overview(request):
         .annotate(n=Count("id"))
     }
 
-    # 146-04 Task 4 (D8): the one "next due" line. One query for every
+    # The one "next due" line. One query for every
     # system's dated rows, earliest first, and the first per system kept in
     # Python -- the same no-per-system-query rule as the two aggregates above.
     next_due = {}
@@ -97,7 +97,7 @@ def overview(request):
         system.has_connection_splits = any(
             getattr(system, name) is not None for name in _CONNECTION_SPLIT_FIELDS
         )
-        # 123-02: the state each step of the sequence is in, computed here and
+        # The state each step of the sequence is in, computed here and
         # NEVER written into the template. The demonstration happens to hold 61
         # facilities, 27 points and 22,367 results; an onboarded system holds
         # none of those, and a numeral typed into the eyebrow would be a

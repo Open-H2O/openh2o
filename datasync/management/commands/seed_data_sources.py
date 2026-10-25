@@ -33,7 +33,7 @@ DATA_SOURCES = [
         "auth_type": "api_key",
         "sync_interval_hours": 720,
         "description": "Satellite evapotranspiration data",
-        # 59-01: hidden — not a station source; ET flows via OpenETCache, not the station pipeline
+        # hidden: not a station source; ET flows via OpenETCache, not the station pipeline
         "is_active": False,
     },
     {
@@ -43,7 +43,7 @@ DATA_SOURCES = [
         "auth_type": "api_key",
         "sync_interval_hours": 24,
         "description": "California Irrigation Management Information System",
-        # 68-01: revived (ISS-007) — re-pointed to the new 2026 API; valid key in CIMIS_API_KEY.
+        # active: re-pointed to the new 2026 API; valid key in CIMIS_API_KEY.
         "is_active": True,
     },
     {
@@ -53,7 +53,7 @@ DATA_SOURCES = [
         "auth_type": "none",
         "sync_interval_hours": 24,
         "description": "California Nevada River Forecast Center",
-        # 59-01: retired — no telemetry stations in the Merced bbox (forecast provider)
+        # retired: no telemetry stations in the Merced bbox (forecast provider)
         "is_active": False,
     },
     {
@@ -89,7 +89,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         created_count = 0
         for ds in DATA_SOURCES:
-            # Sources without the key default to active; cnrfc/openet/cimis carry False (59-01).
+            # Sources without the key default to active; cnrfc/openet/cimis carry False.
             desired_active = ds.get("is_active", True)
             obj, created = DataSource.objects.get_or_create(
                 code=ds["code"],

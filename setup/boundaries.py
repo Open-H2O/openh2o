@@ -1,9 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Shared GeoJSON-boundary parsing (ISS-122).
+"""Shared GeoJSON-boundary parsing.
 
-Moved out of ``setup/views.py`` (Phase 118 and earlier), where it was the
-setup wizard's own private upload logic and the ONLY code in the whole
-codebase that could turn an operator's own GeoJSON file into a ``Boundary``
+Without this module, the wizard's private upload logic would be the ONLY code in
+the whole codebase that could turn an operator's own GeoJSON file into a ``Boundary``
 row. ``geography.management.commands.auto_populate`` only ever RESOLVES an
 existing ``Boundary`` by name or pk — it never creates one — so a headless
 operator (no browser, SSH only) following ``docs/AI-OPERATOR-GUIDE.md``'s own
@@ -12,7 +11,7 @@ one implementation the wizard (``setup/views.py``) and the new
 ``import_boundary`` management command both call, so a file behaves
 identically no matter which path loads it.
 
-Since 150-03 (ISS-200) the wizard reads a file through ``boundary_from_upload``,
+The wizard reads a file through ``boundary_from_upload``,
 which takes a zipped shapefile or a KML as well as GeoJSON (the readers live in
 ``core/geofiles.py``); a GeoJSON file still goes through
 ``boundary_from_geojson_text``, which ``import_boundary`` keeps calling.
@@ -178,13 +177,9 @@ def boundary_attrs_from_properties(properties: dict) -> dict:
 def parse_geojson_boundary(geojson: dict):
     """A MultiPolygon GEOSGeometry (srid 4326) from a GeoJSON dict.
 
-    Accepts a FeatureCollection, a Feature or a raw geometry. Since 150.1-02
-    every polygon in the
-    document is combined, exactly as a shapefile's or a KML's are; this read
-    only the first feature, and refused a file whose first feature was a
-    point even when the rest were polygons, while the wizard said several
-    polygons are combined. Raises ``ValueError`` with the sentence the page
-    shows. Invalid polygons are repaired with ``buffer(0)`` (ISS-122), the
+    Accepts a FeatureCollection, a Feature or a raw geometry. Every polygon in the
+    document is combined, exactly as a shapefile's or a KML's are. Raises ``ValueError`` with the sentence the page
+    shows. Invalid polygons are repaired with ``buffer(0)``, the
     same GEOS repair the Merced seeder uses.
     """
     return _boundary_from_features(_geojson_features(geojson), fallback_name="")[1]
@@ -213,9 +208,9 @@ def boundary_from_geojson_text(raw_text, *, fallback_name):
     """Parse uploaded GeoJSON text into (name, geometry, attrs).
 
     Shared by the setup wizard's upload branch (``setup/views.py``) and the
-    ``import_boundary`` management command (ISS-122) — before this, the
-    wizard held the only code able to build a ``Boundary`` from an operator's
-    own file, so a headless deployment had no equivalent. Both callers now go
+    ``import_boundary`` management command. Without this module, the
+    wizard would hold the only code able to build a ``Boundary`` from an operator's
+    own file, and a headless deployment would have no equivalent. Both callers go
     through this one implementation, so an upload behaves identically whether
     it came in through a browser or `import_boundary --file`.
 
@@ -295,7 +290,7 @@ def _within_longitude_latitude(geom) -> bool:
 def boundary_from_upload(uploaded_file, *, fallback_name):
     """Build a boundary from an uploaded map file: (name, geometry, attrs, polygon_count).
 
-    The Setup Wizard's one door for a file (150-03, ISS-200). A GeoJSON file
+    The Setup Wizard's one door for a file. A GeoJSON file
     (``.geojson`` / ``.json``) goes through ``boundary_from_geojson_text``
     exactly as it always has, so its name, geometry, attrs and error sentences
     are unchanged; its ``polygon_count`` is the number of polygons in the
@@ -389,7 +384,7 @@ def _boundary_from_features(features, *, fallback_name):
 
 
 def parse_extent_bounds(north, south, east, west):
-    """Parse and range-check four typed extent corners (ISS-178).
+    """Parse and range-check four typed extent corners.
 
     Returns ``(north, south, east, west)`` as floats, or raises ``ValueError``
     with a plain-language reason, the same contract ``parse_geojson_boundary``
@@ -421,7 +416,7 @@ def parse_extent_bounds(north, south, east, west):
 
 
 def boundary_from_extent(*, north, south, east, west, name):
-    """Build a rectangle ``Boundary`` geometry from four typed corners (ISS-178).
+    """Build a rectangle ``Boundary`` geometry from four typed corners.
 
     Goes through ``parse_geojson_boundary``, the same validity-repair and
     SRID-4326 path ``boundary_from_geojson_text`` (the upload card) uses, so

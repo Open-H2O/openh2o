@@ -101,7 +101,7 @@ def run_auto_populate_step(boundary: Boundary, step_name: str) -> tuple[int, lis
 
 # Ordered provider codes for the station step, the single source of truth shared
 # with the management command. The wizard iterates this one provider per HTMX
-# poll so a slow/failing provider is an isolated, short request (ISS-051).
+# poll so a slow/failing provider is an isolated, short request.
 from geography.management.commands.auto_populate import (  # noqa: E402
     STATION_SOURCE_CODES as STATION_PROVIDERS,  # noqa: F401 (re-export: setup/views.py and tests import it from here)
 )
@@ -223,13 +223,12 @@ def get_boundary_preview_data(boundary: Boundary) -> dict:
     from datasync.models import MonitoredStation
 
     existing_basins = Zone.objects.filter(boundary=boundary).count()
-    # Phase 89: same shape Phase 88 gave `existing_stations` — None rather than
-    # a truthful zero when the module is off. Measured while wiring this up:
-    # NEITHER `existing_parcels` NOR `existing_stations` is read by any template
+    # None rather than a truthful zero when the module is off, as for
+    # `existing_stations`. NEITHER `existing_parcels` NOR `existing_stations` is read by any template
     # (confirm.html renders only `existing_basins|add:existing_flowlines`), so
     # both are dead context today. Guarded rather than deleted, because deleting
     # a value the wizard's confirmation step is plainly meant to show is a
-    # product decision, not a demotion one — recorded for 89-02.
+    # product decision, not a demotion one.
     existing_parcels = Parcel.objects.count() if is_enabled("parcels") else None
     existing_flowlines = Flowline.objects.filter(boundary=boundary).count()
     existing_stations = MonitoredStation.objects.count() if is_enabled("datasync") else None

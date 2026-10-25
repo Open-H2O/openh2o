@@ -19,12 +19,12 @@ from core.modules import is_enabled
 from .models import HealthCheckResult
 
 
-# 143-09 (R-055, R-056): where a reader goes to act on a problem. Keyed by
+# Where a reader goes to act on a problem. Keyed by
 # category; each entry is (url name, query string or None, the label the card
 # prints, the module that owns the page). A skipped check's module is off by
 # definition, so it is never looked up here: health_dashboard only consults
 # this mapping for a yellow or red row, and only builds the href when the
-# owning module is on (ISS-089: no `{% url %}` reaches the template outside a
+# owning module is on (no `{% url %}` reaches the template outside a
 # module gate).
 WHERE_TO_LOOK = {
     "sync_freshness": (
@@ -142,7 +142,7 @@ def _canal_with_most_leftover_water():
     """The point of diversion with the most water beyond what the crops could use.
 
     "Most" is the largest total of ``UnallocatedDelivery`` over the newest
-    reporting period that has any such row (149-02 Task 2b); ``None`` when
+    reporting period that has any such row; ``None`` when
     there is none, and the card keeps its link to the diversions list. A
     period holds the months between its dates, so the sum is read by month
     range, not by the row's nullable period link.
@@ -184,13 +184,13 @@ def health_dashboard(request):
 
     green_count = sum(1 for r in results if r.status == "green")
     # The registry total: how many checks actually ran and persisted a row. This
-    # is derived, never a literal — the template used to say "8 categories" long
-    # after there were thirteen (ISS-090), so a fourteenth check moves the number
+    # is derived, never a literal — a typed count goes stale (the template once said "8 categories" long
+    # after there were thirteen), so a fourteenth check moves the number
     # by itself.
     total = len(results)
     # Skipped checks belong to modules this deployment does not run. They are
     # shown, but they leave the healthy denominator and every rollup — counting
-    # them as green is what let switching modules off raise the score (ISS-087).
+    # them as green is what let switching modules off raise the score.
     applicable_results = [r for r in results if r.status != "skipped"]
     applicable = len(applicable_results)
     skipped = total - applicable
@@ -201,14 +201,14 @@ def health_dashboard(request):
         r.get_category_display() for r in results if r.status == "skipped"
     ]
 
-    # 143-09: a way to the record, on the card of every problem. Only a yellow
+    # A way to the record, on the card of every problem. Only a yellow
     # or red row gets one; a healthy or skipped card states its fact and
     # stops (rule 8). Host-level categories point nowhere in the platform;
     # they are fixed on the host, and the card says so instead.
     for r in results:
         r.where = None
         r.host_level = r.category in HOST_LEVEL_CATEGORIES
-        # 149-01: a result may carry its own link (the calculation card points
+        # A result may carry its own link (the calculation card points
         # at the one period's page, not a list).
         own_href = (r.details or {}).get("where_href")
         if r.status in ("yellow", "red") and own_href and is_enabled("accounting"):
@@ -241,7 +241,7 @@ def health_dashboard(request):
     else:
         overall_status = "healthy"
 
-    # 147-02 rule: operator detail is for signed-in staff, and the stored
+    # Operator detail is for signed-in staff, and the stored
     # error text of a failed calculation is for administrators only.
     show_admin_detail = is_administrator(request.user)
     for r in results:

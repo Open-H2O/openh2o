@@ -49,7 +49,7 @@ def main():
     #   operator    -> operating district/GSA (optional)
     #   capacity_acre_feet -> design capacity hint (optional)
     #   feeds_via   -> NAME of the canal or river that fills this basin; the
-    #                  62-02 seed resolves it to a real Flowline (REQUIRED)
+    #                  basin seed resolves it to a real Flowline (REQUIRED)
     cand["name"] = ""
     cand["operator"] = ""
     cand["capacity_acre_feet"] = ""

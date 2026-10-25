@@ -121,8 +121,8 @@ consumes, not what the *demonstration shows*. The stations are on the map, on
 `/datasync/`, named on the about page under "Real published records — USGS and
 CDEC", and counted in the landing-page hero. A repository build without them
 rendered "0 of 0 stations reporting" where production reads **"37 of 42"**
-(re-derived from production 2026-08-01 — the "21 of 42" figure carried in
-104-01/104-02 was never re-derived and is wrong).
+(re-derived from production 2026-08-01 — an earlier "21 of 42" figure
+was never re-derived and is wrong).
 
 Records are keyed by the natural pair **(`source` code, `external_station_id`)**,
 never by primary key. `DataSource` has no natural-key manager — only
@@ -249,4 +249,4 @@ python manage.py seed_merced_base   # idempotent; updates in place on re-run
 ```
 
 Merced is **additive**: it coexists with the Demo Valley
-dataset. Demo-Valley/Fresno teardown is deliberately Phase 53.
+dataset. This command does not remove the Demo-Valley/Fresno data.

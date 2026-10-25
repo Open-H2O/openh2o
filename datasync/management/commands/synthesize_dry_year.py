@@ -16,7 +16,7 @@ a basin whose spatial texture is already established.
 
 **Derive, never invent.** Every value here comes from that same parcel's own
 committed value for the matching month-of-year, transformed. Twelve invented
-basin numbers would flatten two things Phase 131 built and this phase has no
+basin numbers would flatten two properties the committed data already has and this command has no
 business destroying: the 56%-of-mean spread of rainfall across the 76 parcels,
 and the correlation between a parcel's ET and the crop planted on it.
 
@@ -62,7 +62,7 @@ unstamped for the same reason.
 
 WARNING: every item's ``date`` string is rewritten into the target window.
 ``accounting/steps.py::_read_cache_mm`` SKIPS (and logs) any item whose date
-falls outside its own row's span — F-math-03 / ISS-032 — so a missed rewrite is
+falls outside its own row's span, so a missed rewrite is
 a silent zero, not a crash.
 
 Usage:
@@ -82,7 +82,7 @@ DEFAULT_SOURCE_WINDOW = "2024-10-01:2025-09-30"
 DEFAULT_TARGET_WINDOW = "2025-10-01:2026-09-30"
 DEFAULT_PREFIX = "MER-"
 
-# Halve the rain (133-01).
+# Halve the rain.
 # The committed year is 294.9 mm (11.6 in) basin-mean, which reads normal-to-wet
 # for the valley floor; 0.50 takes it to 147.5 mm (5.8 in), which reads
 # unmistakably dry beside it. Measured consequence, computed by running
@@ -415,7 +415,7 @@ class Command(BaseCommand):
                         "et_data": et_data,
                         # Derived offline from rows already paid for. This costs
                         # no OpenET request and must not count against the
-                        # monthly allowance (ISS-128).
+                        # monthly allowance.
                         "origin": "fixture",
                     },
                 )
@@ -492,7 +492,7 @@ class Command(BaseCommand):
     def _assert_items_in_span(self, parcel_number, variable, items, start, end):
         """Refuse to write an item _read_cache_mm would silently skip.
 
-        F-math-03 / ISS-032: an item dated outside its own row's span is skipped
+        An item dated outside its own row's span is skipped
         with a log warning, which reads downstream as a zero rather than as an
         error. Catching it here turns a silent wrong number into a loud refusal.
         """

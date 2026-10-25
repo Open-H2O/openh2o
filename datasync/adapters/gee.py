@@ -4,8 +4,8 @@ Shared Google Earth Engine mechanics for the OpenET GEE tier.
 
 This module is the single home for the proven Earth Engine plumbing — headless
 service-account auth and polygon ``reduceRegions`` over the OpenET Ensemble
-monthly collection. Both the ``prove_gee_auth`` proof command (Phase 37-01) and
-the production ``GEEOpenETAdapter`` (Phase 37-02) import from here so the two can
+monthly collection. Both the ``prove_gee_auth`` proof command and
+the production ``GEEOpenETAdapter`` import from here so the two can
 never drift on the collection id, band, scale, auth flow, or reduce mechanics.
 
 ``ee`` is imported lazily inside ``init_earth_engine`` so that non-GEE deploys

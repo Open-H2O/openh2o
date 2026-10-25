@@ -3,14 +3,14 @@
 Publish-gate audit for the conformance registry.
 
 This is the publish-gate the v1.3 milestone calls for, expressed as a
-pre-publish audit (no live publish path exists until Phase 32 to wire it into).
+pre-publish audit (no live publish path exists yet to wire it into).
 It reports:
   - ObservedProperty rows that are not fully publishable (missing pcode and/or
     UCUM), split into BLOCKING (missing UCUM) and PENDING (missing pcode only);
   - SourceParameter rows missing an observed_property (a crosswalk gap);
   - a count of measurements still carrying a null observed_property FK.
 
-Gating rule (decision 31-01): gate on UCUM for ALL properties — every publish
+Gating rule: gate on UCUM for ALL properties — every publish
 path needs a unit contract — but treat a blank USGS pcode as a known,
 non-blocking exception, because several real concepts (reservoir storage,
 reservoir flows, ET, weather) legitimately have no USGS parameter code. The

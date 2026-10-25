@@ -31,7 +31,7 @@ urlpatterns = [
         facilities.facility_detail,
         name="facility_detail",
     ),
-    # The facility door (146-04 Task 3, D9). "add" is not an int, so it cannot
+    # The facility door. "add" is not an int, so it cannot
     # be shadowed by the detail route above or shadow it.
     path("facilities/add/", facilities.facility_add, name="facility_add"),
     path(
@@ -55,7 +55,7 @@ urlpatterns = [
     path("import/", lab_import.import_page, name="import"),
     path("import/preview/", lab_import.import_preview, name="import_preview"),
     path("import/commit/", lab_import.import_commit, name="import_commit"),
-    # Production by month and source (146-04 Task 2, D7). Exact-match prefix
+    # Production by month and source. Exact-match prefix
     # before <int:pk>-shaped routes: "add" and "import" are not ints, so no
     # ordering hazard, but "production/" is a prefix of every path below it,
     # the same shape the app-level "/drinking/" prefix already carries in
@@ -77,7 +77,7 @@ urlpatterns = [
         production.production_import_commit,
         name="production_import_commit",
     ),
-    # The sampling schedule (146-04 Task 4, D8).
+    # The sampling schedule.
     path("schedule/", schedule.schedule, name="schedule"),
     path("schedule/add/", schedule.schedule_add, name="schedule_add"),
     path("schedule/<int:pk>/edit/", schedule.schedule_edit, name="schedule_edit"),

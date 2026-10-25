@@ -43,24 +43,24 @@ SESSION_KEY_BOUNDARY = "setup_wizard_boundary_id"
 SESSION_KEY_STEP_INDEX = "setup_wizard_step_index"
 SESSION_KEY_RESULTS = "setup_wizard_results"
 SESSION_KEY_PROVIDER_INDEX = "setup_wizard_provider_index"
-# ISS-178: which populate steps this run was told to execute. Absent (not merely
+# Which populate steps this run was told to execute. Absent (not merely
 # empty) means "step 3 has not asked yet"; that is how setup_run decides
 # whether to show the picker or the HTMX progress poll, and how a fresh
 # confirm() always re-asks rather than silently re-running the last choice.
 SESSION_KEY_SELECTED_STEPS = "setup_wizard_selected_steps"
-# 150-03 (ISS-200): how many polygons an uploaded file's boundary combined. Set
+# How many polygons an uploaded file's boundary combined. Set
 # by an upload, removed by a select or a typed extent, so the confirm step only
 # says "N polygons combined" about the file that was just read.
 SESSION_KEY_POLYGON_COUNT = "setup_wizard_polygon_count"
 
-# The upload card's refusals that name the three formats (150-03).
+# The upload card's refusals that name the three formats.
 # A file that is not text or not JSON reuses the GeoJSON sentence.
 UPLOAD_NO_FILE = "Choose a boundary file to upload."
 UPLOAD_NOT_TEXT = NOT_GEOJSON_MESSAGE
 UPLOAD_NOT_JSON = NOT_GEOJSON_MESSAGE
 
 # The step list is resolved per request via `wizard_steps()`, not frozen into a
-# module constant: `datasync` is demotable from Phase 88, and a deployment that
+# module constant: `datasync` is demotable, and a deployment that
 # switched it off must not be walked through a Monitoring Stations step. The
 # views index into the list by position, so one stale copy would run the wrong
 # step rather than merely showing an extra label.
@@ -98,7 +98,7 @@ def setup_wizard(request):
 
         elif action == "upload":
             # The input keeps its old name, geojson_file; it now takes a
-            # zipped shapefile, a KML or a GeoJSON file (150-03, ISS-200).
+            # zipped shapefile, a KML or a GeoJSON file.
             uploaded = request.FILES.get("geojson_file")
             if not uploaded:
                 errors.append(UPLOAD_NO_FILE)
@@ -192,7 +192,7 @@ def setup_confirm(request):
 
     if request.method == "POST":
         # Reset step tracking and go to run page. Also drop any earlier step
-        # choice (ISS-178): a fresh confirm always re-asks step 3's picker
+        # choice: a fresh confirm always re-asks step 3's picker
         # rather than silently re-running whatever an older session chose.
         request.session[SESSION_KEY_STEP_INDEX] = 0
         request.session[SESSION_KEY_RESULTS] = []
@@ -201,7 +201,7 @@ def setup_confirm(request):
         return redirect("setup:run")
 
     preview = get_boundary_preview_data(boundary)
-    # 150-03: the template says "N polygons combined" only when N > 1.
+    # The template says "N polygons combined" only when N > 1.
     preview["polygon_count"] = request.session.get(SESSION_KEY_POLYGON_COUNT)
     return render(request, "setup/confirm.html", preview)
 
@@ -211,7 +211,7 @@ def setup_confirm(request):
 def setup_run(request):
     """Step 3: choose which populate steps to run, then the HTMX polling page.
 
-    ISS-178: the run no longer starts itself. A GET with no step choice yet
+    The run does not start itself. A GET with no step choice yet
     recorded for this session renders the picker: a checkbox per step, all
     checked by default, plus "I have my own data" (JS, unchecks every box).
     Posting that form is what stores the chosen step names in the session
@@ -283,7 +283,7 @@ def _run_next_step(
         })
         step_index += 1
     elif step_name == "stations":
-        # Stations is split into one short request per provider (ISS-051): a
+        # Stations is split into one short request per provider: a
         # slow/failing provider becomes an isolated, labeled row instead of a
         # synchronous all-providers call that can outlast the worker timeout.
         code = STATION_PROVIDERS[provider_index]
@@ -368,7 +368,7 @@ def setup_progress(request):
     except Boundary.DoesNotExist:
         return HttpResponse("Boundary not found.", status=400)
 
-    # ISS-178: which step names this run was told to execute. None means step 3
+    # Which step names this run was told to execute. None means step 3
     # was reached without going through the picker (a stale or replayed request),
     # treated as "run everything" rather than "run nothing" (the wizard's old
     # behaviour), so an already-in-flight run is never silently emptied out from

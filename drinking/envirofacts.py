@@ -5,7 +5,7 @@ EPA Envirofacts SDWIS client — turn a PWSID into raw federal data.
 This module does network I/O and nothing else. It fetches three SDWIS tables for
 one public water system, caches each raw response on a row, and fails with a
 type the caller can branch on. It deliberately does NOT map anything onto
-``drinking.models`` — that is Plan 79-02's job, and keeping the split means a
+``drinking.models`` — that is drinking/envirofacts_mapping.py's job, and keeping the split means a
 mapping change never has to invalidate a cache.
 
 **Endpoint.** The V1 ``efservice`` endpoint, not ``dmapservice``. Both are live

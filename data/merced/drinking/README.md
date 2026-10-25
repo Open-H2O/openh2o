@@ -106,7 +106,7 @@ see `drinking/models.py` on "prepare, never determine".
 
 ### A repeat is not always a repeat
 
-**Fixed 2026-07-30 (ISS-102). Kept here because the reasoning binds any agency
+**Fixed 2026-07-30. Kept here because the reasoning binds any agency
 loading its own SDWIS export, not just this file.**
 
 The importer used to identify a result by (event, analyte, method) and drop a

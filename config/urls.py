@@ -46,7 +46,7 @@ urlpatterns = [
     # that does not exist should not exist, and a 403 would confirm the endpoint
     # is real. Before this guard the flag hid the button and nothing else, so a
     # plain GET here still handed the visitor to Google and could clear an
-    # existing account's password on the way back (ISS-115).
+    # existing account's password on the way back.
     #
     # Declared BEFORE allauth's mount on purpose: Django resolves patterns in
     # declaration order, so these win over `allauth.urls`. They are deliberately
@@ -56,7 +56,7 @@ urlpatterns = [
     path("accounts/google/login/", google_login_guard),
     path("accounts/google/login/callback/", google_callback_guard),
     path("accounts/google/login/token/", google_login_by_token_guard),
-    # allauth's email page is removed (ISS-248, 2026-10-17: one
+    # allauth's email page is removed (one
     # address per person, and only an administrator changes it, on the Users
     # page). Declared before allauth's mount for the same reason as the guards
     # above, and unnamed for the same reason.
@@ -84,7 +84,7 @@ urlpatterns = [
     path("profile/choose-password/", choose_password, name="choose_password"),
     path("nav-mode/", set_nav_mode, name="set_nav_mode"),
     path("search/", global_search, name="global_search"),
-    # Persistent identifiers (146-06, ISS-019). Top-level rather than under
+    # Persistent identifiers. Top-level rather than under
     # core's own `users/` prefix, and hand-written rather than module-owned:
     # `core` is the one module every deployment runs, so the address always
     # exists and answers for itself when a kind's module is switched off
@@ -95,7 +95,7 @@ urlpatterns = [
         persistent_identifier,
         name="persistent_identifier",
     ),
-    # Change history (147-01). Top-level for the same reason as /id/ above:
+    # Change history. Top-level for the same reason as /id/ above:
     # `core` is in every deployment, and every signed-in role reads it.
     path("changes/", change_history, name="change_history"),
     path("", index, name="index"),
