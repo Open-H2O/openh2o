@@ -47,7 +47,7 @@ DWR_DIRECT_OR_ESTIMATE_CHOICES = [
 # (research file 05, line 309: "0-5 %", "5-10 %", "20-30 %" observed on 20
 # records). Blank means no band is stated -- never a model-spread substitute
 # for one (the platform already withdrew OpenET member-model spread from a
-# billable figure for exactly this reason, ISS-158).
+# billable figure for exactly this reason).
 ACCURACY_BAND_CHOICES = [
     ("0-5", "0-5%"),
     ("5-10", "5-10%"),
@@ -113,7 +113,7 @@ class Well(models.Model):
         max_length=30, blank=True, choices=MEASUREMENT_METHOD_CHOICES
     )
 
-    # DWR's own annual-report row (146-05 S2): the method, whether it is
+    # DWR's own annual-report row: the method, whether it is
     # direct or an estimate, and the accuracy band -- 23 CCR 356.2(b)(2).
     # `default=""` so the schema migration can add these to a table that
     # already carries rows (staging, production) without a prompt.
@@ -156,7 +156,7 @@ class Well(models.Model):
     )
 
     # Vertical datum for screen-interval depths, so they can be expressed as
-    # elevations for the Phase 32 SensorThings FeatureOfInterest.
+    # elevations for the SensorThings FeatureOfInterest.
     vertical_datum = models.CharField(
         max_length=10,
         blank=True,
@@ -201,7 +201,7 @@ class WellMeter(models.Model):
     removed_date = models.DateField(null=True, blank=True)
     calibration_date = models.DateField(
         null=True, blank=True
-    )  # GEARS rejects certified-meter dates >5yr (decision 29-02)
+    )  # GEARS rejects certified-meter dates >5yr
     is_current = models.BooleanField(default=True)
 
     class Meta:

@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Spatial-placement toolkit: put operational features ON the real base layer.
 
-WHY this exists. Phase 51 places diversions, wells, and parcels for the Merced
-demo. The credibility test — the one a domain expert applies in the first three
+WHY this exists. The Merced demo seeds place diversions, wells, and parcels
+with these functions. The credibility test — the one a domain expert applies in the first three
 seconds — is whether those features sit on the actual rivers and canals or
 *float in a field*. (We failed this once already: a recharge basin sized in
 fixed degrees "swallowed half a city.") These three pure functions are the guard
-that 51-02 routes every feature through, so the rule lives in one tested place.
+that the Merced seeds route every feature through, so the rule lives in one tested place.
 
 Three gotchas this module exists to handle correctly, so the next reader does
 not reintroduce them:
@@ -31,7 +31,7 @@ not reintroduce them:
      metric, which is why ``place_near_flowline`` is specified to ±15%, not
      survey precision. It is for plausible placement, not surveying.
 
-All functions are deterministic (no randomness): re-running the 51-02 seed
+All functions are deterministic (no randomness): re-running a seed that uses them
 reproduces identical placements.
 """
 import math
@@ -40,8 +40,7 @@ from django.contrib.gis.geos import Point
 
 # Share the latitude conversion with recharge.geometry so the two cannot drift.
 #
-# Module scope is correct here and is NOT an ISS-072 defect, so do not "finish the
-# job" by moving it. `recharge/geometry.py` imports `math` and
+# Module scope is correct here, so do not "finish the job" by moving it. `recharge/geometry.py` imports `math` and
 # `django.contrib.gis.geos` and defines no models, so this import succeeds whether
 # or not `recharge` is in INSTALLED_APPS — the app_label RuntimeError that makes
 # the other recharge imports load-bearing only fires for `recharge.models`.
@@ -112,8 +111,8 @@ def nearest_flowline(point, flowlines, feature_type=None):
     (EPSG:3310) from ``point`` to each flowline's geometry. When ``feature_type``
     is given, only flowlines of exactly that type are considered — so asking for
     the nearest river never returns a nearer canal. Empty candidate set (or all
-    filtered out) returns ``None``; 51-02 turns that into a clear
-    "base layer not seeded" error.
+    filtered out) returns ``None``, so a caller can report that the base
+    layer is not seeded.
     """
     point_m = _to_measure(point)
     best = None

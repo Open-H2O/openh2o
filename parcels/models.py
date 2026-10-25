@@ -127,7 +127,7 @@ class ParcelLedger(models.Model):
             "On a canal split row, the point of diversion whose headgate total "
             "it is a share of, so recalculating one point never replaces "
             "another point's shares on a field both serve. Blank on a field's "
-            "own recorded delivery, and on split rows written before 149-01."
+            "own recorded delivery, and on split rows written before this field existed."
         ),
     )
 
@@ -155,7 +155,7 @@ class ParcelLedger(models.Model):
                 name="parcelledger_usage_rows_non_positive",
             ),
         ]
-        # A finalized water year is closed to change (147-02, accounting/locks.py).
+        # A finalized water year is closed to change (accounting/locks.py).
         triggers = [
             finalized_period_lock(
                 date_column="effective_date", period_column="reporting_period_id"
@@ -204,20 +204,18 @@ class UsageLocation(models.Model):
 
 @track_changes()
 class IrrigationMethod(models.Model):
-    """One row of a published irrigation-efficiency table (146-05 Task 1, S1).
+    """One row of a published irrigation-efficiency table.
 
     Seeded by a data migration, not a seed command, so every deployment
     carries the same rows after ``migrate``: East Turlock Subbasin GSA's
     Section 4.05 table, 18 rows counted off the PDF on 2026-09-23. Seeded first
-    by ``surface/0016_seed_irrigation_methods``; since 150.2-01 by
+    by ``surface/0016_seed_irrigation_methods``; now by
     ``parcels/0013_irrigation_method``, which also adopts the rows a deployment
     already had.
 
-    Lives in ``parcels`` since 150.2-01, which helps
-    groundwater-only growers and water managers. It began in
-    ``surface`` on the reasoning that nothing read an efficiency where there
-    was no canal; a field irrigated from a well has an irrigation method too,
-    and a groundwater-only deployment runs without ``surface``.
+    Lives in ``parcels``, which helps groundwater-only growers and water
+    managers: a field irrigated from a well has an irrigation method too, and
+    a groundwater-only deployment runs without ``surface``.
     ``parcels.services.field_efficiency`` reads a field's assigned row here,
     falling back to the agency-wide default when the field has none.
     """
@@ -258,14 +256,11 @@ class IrrigationMethod(models.Model):
 
 @track_changes()
 class ParcelIrrigationMethod(models.Model):
-    """How one use area is irrigated (146-05 Task 1, S1); no row means not set.
+    """How one use area is irrigated; no row means not set.
 
-    A row of its own rather than a ``Parcel.irrigation_method`` column, which
-    is how it was built in ``surface`` (where a ``Parcel`` column pointing into
-    ``surface`` would have dangled without it, rule 1 of the composition rule,
-    ``core/modules.py``). Both ends now live in ``parcels`` (150.2-01), so the
-    row is kept as it was rather than reshaped: every reader goes through the
-    ``irrigation`` accessor, and the move carried each row across with its pk.
+    A row of its own rather than a ``Parcel.irrigation_method`` column; every
+    reader goes through the ``irrigation`` accessor, so the row keeps this
+    shape.
     """
 
     parcel = models.OneToOneField(

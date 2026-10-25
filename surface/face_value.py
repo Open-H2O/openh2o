@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Every water year of a right set against its face value (150-02 Task 5).
+"""Every water year of a right set against its face value.
 
 The right's page compares each water year on record with the face value: the
 current year in its equation row (Face value less Recorded is Remaining, read

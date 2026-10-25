@@ -59,7 +59,7 @@ THREEDHP_FLOWLINES_URL = (
 
 # Every provider that implements live, per-boundary station discovery, in the
 # order the station step attempts them. Module-level so the setup wizard's
-# service layer can iterate the SAME list one provider per HTMX poll (ISS-051)
+# service layer can iterate the SAME list one provider per HTMX poll
 # without redefining it. Key-free public APIs are ordered first so they populate
 # the catalog even when the key-gated providers skip for lack of a credential.
 #
@@ -612,7 +612,7 @@ class Command(BaseCommand):
         Fail-soft: one provider failing (or lacking a key) never aborts the others.
 
         Each provider's work lives in ``_discover_provider`` so the setup wizard
-        can discover one provider per short HTMX poll (ISS-051); this command path
+        can discover one provider per short HTMX poll; this command path
         simply loops the full ``STATION_SOURCE_CODES`` list and sums the results.
         """
         total_created = 0

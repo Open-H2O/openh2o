@@ -6,7 +6,7 @@ records ONE surface delivery total for a month (a ``DiversionRecord``), but the
 parcels that point of diversion serves grow different crops with different water
 demand. ``allocate_district_delivery`` reads those recorded diversions, finds the
 served parcels, pulls each parcel's MEASURED ET demand for the diversion month
-(the 54-01 consumptive-use spine), splits the delivery across them with the pure
+(the consumptive-use spine), splits the delivery across them with the pure
 ``accounting.allocation_math.allocate_by_demand`` kernel, and writes the negative
 ``surface_diversion`` ledger rows the calculation engine's ``subtract_surface_water``
 step consumes.
@@ -26,7 +26,7 @@ Invariants honored (must agree with the calc engine + the Plan-01 kernel):
   of ``create_diversion_ledger_entries``), so a recorded delivery is never
   silently dropped.
 * Idempotent: this service OWNS the rows it writes, and only those. Every split
-  row carries ``ParcelLedger.divided_from_headgate=True`` (149-01); a re-run
+  row carries ``ParcelLedger.divided_from_headgate=True``; a re-run
   deletes those rows for the served parcels in the months it touches, then
   writes fresh ones, so a re-run is byte-identical — mirroring
   ``run_calculations`` / ``rollover_allocations`` delete-then-insert. A
@@ -36,7 +36,7 @@ Invariants honored (must agree with the calc engine + the Plan-01 kernel):
   total among the served fields that have none (see
   ``allocate_district_delivery``).
 * ``dry_run=True`` returns the would-be rows (unsaved) and writes nothing.
-* Canal losses come off the top (149-02). The point's evaporation, seepage and
+* Canal losses come off the top. The point's evaporation, seepage and
   spill fractions are taken from the month's consumed total before anything is
   divided; the remainder rule and the split start from what is left
   (``available``). Evaporation and spill are written off, credited to no one.
@@ -45,13 +45,13 @@ Invariants honored (must agree with the calc engine + the Plan-01 kernel):
   point-month's figures are stored on ``CanalMonthLoss`` for the canal's page.
 
 Efficiency is resolved PER PARCEL by ``parcels.services.field_efficiency``
-(148-02, S1; it moved to ``parcels`` in 150.2-01): a served
-parcel with a recorded ``parcels.ParcelIrrigationMethod`` (146-05) is capped at
+(in ``parcels``): a served
+parcel with a recorded ``parcels.ParcelIrrigationMethod`` is capped at
 its own method's assigned efficiency; a parcel with no method falls back to the
-agency-wide ``SiteConfig.default_irrigation_efficiency`` (55-02). An explicit
+agency-wide ``SiteConfig.default_irrigation_efficiency``. An explicit
 ``efficiency=`` override on this call still wins for every served parcel, so
 the per-parcel lookup only runs when no override is given. Shared-well /
-shared-POD apportionment is Phase 56, out of scope here.
+shared-POD apportionment is out of scope here.
 """
 
 from __future__ import annotations
@@ -139,9 +139,7 @@ def _records_for_period(
     # record is water put into a reservoir or a recharge basin: it reaches no
     # field that month, and a basin fill is already credited through the
     # recharge ledger, so dividing it onto fields would count it twice
-    # (seed_merced_ledgers._seed_recharge_diversion_records; found by 149-01
-    # re-running the demonstration year, where it put 85.22 AF of Bottomlands
-    # Riparian Take's February basin fill onto its ten fields).
+    # (see seed_merced_ledgers._seed_recharge_diversion_records).
     qs = DiversionRecord.objects.filter(
         point_of_diversion=point_of_diversion, diversion_type="direct_use"
     )
@@ -366,7 +364,7 @@ class CanalLossesTooLarge(ValueError):
 def _month_losses(
     pod: PointOfDiversion, month: date, diverted: Decimal
 ) -> dict[str, Decimal]:
-    """The month's canal losses off the top of ``diverted`` (149-02).
+    """The month's canal losses off the top of ``diverted``.
 
     Each loss is the point's own fraction of the consumed total, to four
     places; ``available`` is what is left and carries the rounding residual,
@@ -540,7 +538,7 @@ def _plan_allocation(
     served_links = _served_links(pod)
     served = [link.parcel for link in served_links]
 
-    # Per-parcel cap (148-02, S1): each served parcel's own field_efficiency,
+    # Per-parcel cap: each served parcel's own field_efficiency,
     # unless the caller passed an explicit override, which wins for every
     # parcel. Resolved once here, not per record, since the served list and
     # each parcel's method do not change across a POD's diversion records.
@@ -585,7 +583,7 @@ def _allocate_month(
     month_total = sum(
         (r.consumed_acre_feet() for r in month_records), Decimal("0")
     )
-    # Canal losses come off the top (149-02). Computed for every month
+    # Canal losses come off the top. Computed for every month
     # before anything is divided or written, so a point whose shares leave
     # nothing for the fields raises with nothing changed.
     loss = _month_losses(pod, month, month_total)
@@ -621,7 +619,7 @@ def _allocate_month(
         if delivery_total == 0:
             # Nothing to divide: the own records already account for the
             # headgate, or the point delivered nothing (a typed 0, which is
-            # how a month with no delivery is recorded since 150.5-01). A
+            # how a month with no delivery is recorded). A
             # split row of 0 would put a delivery on each field's ledger
             # that never happened.
             continue
@@ -743,7 +741,7 @@ def _split_record(
         # vanished: no row, no pool, no log, so the internal ledger
         # silently disagreed with the DiversionRecord CalWATRS files
         # from. Record it explicitly against the POD instead of
-        # dropping it or inventing a destination. (149-01: against the
+        # dropping it or inventing a destination. (Against the
         # remainder, the headgate water the own records do not cover.)
         surplus = delivery_total - sum(shares.values(), Decimal("0"))
     else:
@@ -852,8 +850,8 @@ def _store_allocation(
     #
     # Only THIS point's shares are replaced (``divided_from_point_pk``), so a
     # field two points serve keeps the other point's share. A split row written
-    # before 149-01 carries no point and is replaced by whichever serving point
-    # runs first, as every split row was before.
+    # before the column existed carries no point and is replaced by whichever
+    # serving point runs first, as every split row was before.
     #
     # When ``months`` is given, every asked-for month is cleared even if the
     # point has no record left in it: a deleted diversion record must take its
@@ -906,7 +904,7 @@ def allocate_district_delivery(
     split. Writes negative ``surface_diversion`` ``ParcelLedger`` rows, each
     marked ``divided_from_headgate=True``.
 
-    **Canal losses come off the top (149-02).** Per point and calendar month,
+    **Canal losses come off the top.** Per point and calendar month,
     the consumed total the split starts from is the month's direct-use records'
     ``consumed_acre_feet()`` summed (``diverted``). The point's evaporation,
     seepage and spill fractions are taken from it to four places and
@@ -923,7 +921,7 @@ def allocate_district_delivery(
     row, and the figures of each month are stored there (replaced on every run,
     removed when the month has no record left).
 
-    **The remainder rule (149-01).** A served field with a
+    **The remainder rule.** A served field with a
     recorded delivery of its own for the month (one or more ``surface_diversion``
     rows with ``divided_from_headgate=False``) keeps it. The split divides only
     the REMAINDER, ``max(0, available - own_total)``, among the served
@@ -945,7 +943,7 @@ def allocate_district_delivery(
             (``None`` = every recorded diversion on the POD).
         efficiency: optional irrigation-efficiency override in ``(0, 1]``, applied
             to EVERY served parcel; default is each parcel's own
-            ``field_efficiency`` (146-05's ``ParcelIrrigationMethod`` where set,
+            ``field_efficiency`` (the ``ParcelIrrigationMethod`` where set,
             else the agency-wide ``SiteConfig.default_irrigation_efficiency``).
         dry_run: when ``True``, return the would-be rows (unsaved) and write nothing.
         months: optional iterable of dates narrowing the records to those
@@ -1098,7 +1096,7 @@ def _add_group_totals(ordered: list[dict[str, Any]]) -> None:
 
 
 def canal_water_by_month(pod: PointOfDiversion) -> list[dict[str, Any]]:
-    """Where one canal's water went, month by month (149-02 Task 2b). Read-only.
+    """Where one canal's water went, month by month. Read-only.
 
     Returns one dict per reporting period that has a direct-use diversion
     record on ``pod``, newest first (months that fall in no period close into

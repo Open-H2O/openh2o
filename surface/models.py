@@ -8,10 +8,10 @@ is taken from a stream, with PointOfDiversionParcel linking a diversion to the
 parcels it serves. DiversionRecord logs each diversion event, including the
 returned_af that distinguishes diverted from actually consumed water.
 MeasuringDevice is the
-23 CCR 934(b)(1) device registry (146-03 Task 1), linked to a point of
+23 CCR 934(b)(1) device registry, linked to a point of
 diversion through PointOfDiversionDevice the way wells.WellMeter links a meter
-to a well. The irrigation-method table and each use area's method began here
-(146-05) and moved to ``parcels`` in 150.2-01, so a deployment without canals
+to a well. The irrigation-method table and each use area's method live in
+``parcels``, so a deployment without canals
 records them too.
 """
 from datetime import date
@@ -200,7 +200,7 @@ class WaterRightParcel(models.Model):
         return f"{self.water_right} → {self.parcel}"
 
 
-# Default seepage share by the canal's lining (150.3-01; the lining choice rests on these
+# Default seepage share by the canal's lining (the lining choice rests on these
 # three figures). Unlined 25
 # percent: the middle of FAO Irrigation and Drainage Paper 61, Table 10 (from
 # USBR 1978), unlined canals 20 to 30 percent of canal flow. Lined 5 percent:
@@ -280,14 +280,13 @@ class PointOfDiversion(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
     notes = models.TextField(blank=True)
 
-    # --- Canal losses (146-03 Task 3): three shares of the water diverted
+    # --- Canal losses: three shares of the water diverted
     # that never reach a field, each with the band the district states.
     # Defaults are the design-implications document's own (2026-09-18,
     # convention 4): 0.01 for evaporation (about 1 percent, near-universal),
     # 0 for seepage and spill (not stated, rather than guessing a district's
-    # figure). Phase 148 rules on who owns each share and what value is
-    # right for a given canal; Phase 149's engine is the first thing that
-    # computes with them. Nothing here does.
+    # figure). Nothing here computes with them; the canal-loss step in
+    # surface/services.py does.
     LOSS_BASIS_CHOICES = [
         ("measured", "Measured"),
         ("district_estimate", "Estimated"),
@@ -353,7 +352,7 @@ class PointOfDiversion(models.Model):
         help_text="How the three shares below were set: measured on this "
         "canal, estimated for this canal, or the platform's default.",
     )
-    # 150.3-01: blank means not stated, so a point nobody has described keeps
+    # Blank means not stated, so a point nobody has described keeps
     # the seepage it holds. While loss_basis is "default", save() sets the
     # seepage share from this (default_seepage_fraction); a measured or
     # district figure is never overwritten.
@@ -373,11 +372,9 @@ class PointOfDiversion(models.Model):
         related_name="spill_points",
     )
 
-    # --- The 145-01 memo's crosswalk layer (146-03 Task 3): a local alias,
+    # --- The crosswalk layer: a local alias,
     # so a bulk import can resolve a headgate by its local name rather than
-    # only this platform's own name. The contract unit and miner's inch
-    # fields beside it were removed 2026-10-13 (150.1-02): nothing in
-    # OpenH2O read either.
+    # only this platform's own name.
     local_name = models.CharField(
         max_length=200,
         blank=True,
@@ -431,7 +428,7 @@ class PointOfDiversion(models.Model):
             }
         super().save(*args, **kwargs)
 
-    # The notes under each loss on the point's page (150.3-01). Each names where a default figure
+    # The notes under each loss on the point's page. Each names where a default figure
     # comes from, and is empty unless the basis is the platform's default.
     _SEEPAGE_DEFAULT_NOTES = {
         "unlined": "Default for an unlined canal. FAO Irrigation and Drainage "
@@ -527,12 +524,11 @@ class PointOfDiversionParcel(models.Model):
 
 @track_changes()
 class WaterAccountDeliveryPoint(models.Model):
-    """Which point of diversion delivers to an account (146-05 Task 3, Q8).
+    """Which point of diversion delivers to an account.
 
     A ``surface`` row rather than a ``delivery_pod`` column on
     ``accounting.WaterAccount``, for the reason ``ParcelIrrigationMethod``
-    was built as a `surface` row rather than a `Parcel` column (146-05 Task 1;
-    it moved to ``parcels`` in 150.2-01):
+    is its own row rather than a `Parcel` column:
     ``accounting`` is schema-resident and ``surface`` is truly removable, so a
     column on ``WaterAccount`` pointing into ``surface`` would dangle on every
     deployment without `surface` (rule 1, `core/modules.py`) and
@@ -566,7 +562,7 @@ class WaterAccountDeliveryPoint(models.Model):
 
 @track_changes()
 class MeasuringDevice(models.Model):
-    """A measuring or recording device under 23 CCR 934(b)(1) (146-03 Task 1).
+    """A measuring or recording device under 23 CCR 934(b)(1).
 
     Current section 934(b)(1) governs Water Year 2027 onward (October 1,
     2026); the 2016 analogue (23 CCR 937) is not modelled on this table. Never
@@ -765,7 +761,7 @@ class DiversionRecord(models.Model):
         ("to_storage", "To Storage"),
     ]
     #: How this record's number is known, in the state's own vocabulary
-    #: (146-03 Task 2). Blank means "not stated" -- most existing rows, and
+    #: Blank means "not stated" -- most existing rows, and
     #: any newly-entered one where the operator hasn't said, land here rather
     #: than guessing a method the operator never named.
     METHOD_CHOICES = [
@@ -832,7 +828,7 @@ class DiversionRecord(models.Model):
     class Meta:
         ordering = ["-month"]
         unique_together = [("point_of_diversion", "month", "diversion_type")]
-        # A finalized water year is closed to change (147-02, accounting/locks.py).
+        # A finalized water year is closed to change (accounting/locks.py).
         triggers = [
             finalized_period_lock(date_column="month", period_column="reporting_period_id")
         ]
@@ -971,7 +967,7 @@ class UnallocatedDelivery(models.Model):
                 name="unallocated_delivery_amount_positive",
             ),
         ]
-        # A finalized water year is closed to change (147-02, accounting/locks.py).
+        # A finalized water year is closed to change (accounting/locks.py).
         triggers = [
             finalized_period_lock(date_column="month", period_column="reporting_period_id")
         ]

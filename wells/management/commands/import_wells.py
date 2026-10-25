@@ -5,7 +5,7 @@ Reads each record (deriving a Point location from lat/lon columns or
 geometry, in SRID 4326) and creates Well rows. Run it to load an agency's
 well inventory; use --dry-run to preview without writing to the database.
 
-**The alias table (ISS-190).** The first four fields below keep their own
+**The alias table.** The first four fields below keep their own
 override flags from this command's first version; the rest read one fixed
 column name each, matching the state's and an agency's own well exports
 (six-shapes-2026-09 shape-4 `wells.csv`, header read 2026-09-20). This is the
@@ -31,8 +31,8 @@ drifting apart again.
 agency's local registry identifier"). `wcr_number` is the STATE's identifier,
 the DWR Well Completion Report number -- a different field, never read from
 the same column as `WELL_REG_ID` even when a file happens to carry the same
-value in both (ISS-190: before this fix, the command had no `wcr_number`
-column at all, so the state's number silently went nowhere).
+value in both (the state's number is read from its own `wcr_number`
+column).
 
 `well_type` is matched case-insensitively against an existing `WellType`
 name. `WellType` is seeded reference data, the same kind `WaterRightType` is
@@ -67,7 +67,7 @@ DEFAULT_LAT_FIELD = "LATITUDE"
 DEFAULT_LON_FIELD = "LONGITUDE"
 DEFAULT_REG_ID_FIELD = "WELL_REG_ID"
 
-#: Extra Well fields read beyond the original four, added for ISS-190.
+#: Extra Well fields read beyond the original four.
 #: {Well field name: column name read}. Fixed spellings, no override flag --
 #: see the module docstring's table.
 EXTRA_COLUMNS = {
@@ -258,7 +258,7 @@ class Command(BaseCommand):
                     )
                     return "duplicate"
 
-            # Same-name warning (ISS-190): not a hard duplicate, since
+            # Same-name warning: not a hard duplicate, since
             # only well_registration_id is unique, but silently
             # importing a second row under an existing name is exactly
             # what shape 4's walk found ("0 duplicates skipped").

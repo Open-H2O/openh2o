@@ -46,8 +46,7 @@ EDITABLE_FIELDS = {
         "label": "Year Pumping Began", "type": "number", "step": "1", "integer": True,
         "min_value": 1850, "max_is_current_year": True,
     },
-    # `measurement_method` is deliberately NOT here (146-05,
-    # 2026-09-23): the well page used to carry it with its
+    # `measurement_method` is deliberately NOT here: the well page used to carry it with its
     # own pencil beside the three DWR fields below, derived from it once by
     # migration 0005 and independent of it ever since, so the two could
     # disagree on the same card. It is now read-only -- rendered directly in
@@ -57,7 +56,7 @@ EDITABLE_FIELDS = {
     # field itself stays: the seeds, seven test files and the Merced audit
     # trail still read it.
     #
-    # 146-05 S2: DWR's own annual-report row (23 CCR 356.2(b)(2)), derived
+    # DWR's own annual-report row (23 CCR 356.2(b)(2)), derived
     # once from measurement_method above and editable independently after
     # that. Each carries a blank option so the row can be cleared, unlike
     # measurement_method's old editor, which was never given one.
@@ -85,8 +84,8 @@ EDITABLE_FIELDS = {
 
 
 def _editable_fields():
-    """EDITABLE_FIELDS, plus `well_type` (ISS-189: "Well type" printed with
-    no editor, because `well_type` was not in EDITABLE_FIELDS).
+    """EDITABLE_FIELDS, plus `well_type` (without it, "Well type" would print with
+    no editor, because `well_type` is not in EDITABLE_FIELDS).
 
     Its choices are read per call, the same reason `parcels._editable_fields`
     reads `IrrigationMethod` per call: `WellType` is seeded reference data an
@@ -116,7 +115,7 @@ def _field_value(well, field):
 
 
 def _measurement_method_display(well):
-    """`measurement_method`'s own label, read-only (146-05).
+    """`measurement_method`'s own label, read-only.
 
     Kept for provenance -- the seeds, seven test files and the Merced audit
     trail still read the raw field -- but no longer independently editable,
@@ -153,14 +152,13 @@ def _dwr_extraction_line(well):
 
 @login_required
 def wells_list(request):
-    """Wells overview (143-13, candidate A: the list is the page).
+    """Wells overview: the list is the page.
 
     A Bucket-3 finder, the shape every other list on the platform now uses:
-    the 143-07 overview map card (count line + key, following the list) above
+    the overview map card (count line + key, following the list) above
     a one-row toolbar above the table, a row opening the well's own detail
-    page. Replaces the earlier master-detail workspace (`workspace.html`),
-    whose narrow rail and empty resting pane were the worst-named fault on
-    this page since 143-02 (the "workspace FRAME" ruling, R-105 / R-106).
+    page. This list replaces the earlier master-detail workspace
+    (`workspace.html`), which had a narrow rail and an empty resting pane.
 
     A `?selected=<pk>` query param (the old workspace's deep-link shape)
     redirects to the well's own detail page so a bookmarked link still lands
@@ -192,7 +190,7 @@ def wells_list(request):
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
-    # The overview map card's counts (143-07 shape, `_map_card_head.html`):
+    # The overview map card's counts (see `_map_card_head.html`):
     # `located_count` is what the map can draw AT ALL (unfiltered), which is
     # what decides whether the page builds a map host at all; `result_pks` /
     # `result_located_count` are the CURRENT filter's, which is what the map
@@ -227,9 +225,9 @@ def published_source_publisher(well):
     MUNICIPAL SUPPLY SOURCE with a published record behind it: in the Merced
     demonstration those 21 rows carry the state's own name for the source (from
     the DDW lab file), the system's name from EPA Envirofacts, and a real GAMA
-    coordinate. Nothing about them is invented, and until Phase 101 every one of
-    them wore an unconditional "sample data" pill on its Identification header —
-    the inverse of the truth, live on the public demo.
+    coordinate. Nothing about them is invented, so an unconditional "sample data" pill on
+    their Identification header would be the inverse of the truth, on the
+    public demo.
 
     **The signal is the foreign key, never the ``MER-PWS-`` prefix.** That prefix
     is a demonstration seed constant
@@ -239,8 +237,8 @@ def published_source_publisher(well):
 
     **Guarded on the module, because ``drinking`` is truly optional** — not
     schema-resident. Dropped, its app leaves ``INSTALLED_APPS`` entirely, so
-    ``well.drinking_facilities`` is not merely empty, it does not exist. Phase 88
-    softened ``drinking.requires`` to ``("standards",)``, so wells-without-drinking
+    ``well.drinking_facilities`` is not merely empty, it does not exist.
+    ``drinking.requires`` is ``("standards",)``, so wells-without-drinking
     is a real deployment and it must render exactly as it did before this
     function existed.
 
@@ -267,12 +265,12 @@ def _well_detail_context(well):
     workspace's pre-loaded ``?selected=`` pane so all three are identical.
     """
     current_meters = well.wellmeter_set.filter(is_current=True).select_related("meter")
-    # 146-02 D3: the raw fraction (four decimals, "share 1.0000") is now shown
+    # The raw fraction (four decimals, "share 1.0000") is shown
     # and edited directly -- see _irrigated_parcel_share_value.html -- rather
     # than a rounded whole percent computed here.
     irrigated_parcels = list(well.wellirrigatedparcel_set.select_related("parcel").all())
     monitoring = getattr(well, "monitoringwell", None)
-    # ISS-145 (137-03). The page's own description promises "measurement
+    # The page's own description promises "measurement
     # history"; these two are it. Both are built in wells/measurement_history.py,
     # grouped by water year and newest first, never assembled in the template.
     meter_history = measurement_history.meter_history(well)
@@ -311,10 +309,10 @@ def _well_detail_context(well):
         "meter_history": meter_history,
         "water_levels": water_levels,
         "ef": editable_fields_map,
-        # 146-05 S2: DWR's three-part identity line, computed once here so
+        # DWR's three-part identity line, computed once here so
         # the template states it rather than re-deriving it (rule 12).
         "dwr_extraction_line": _dwr_extraction_line(well),
-        # 146-05: the legacy field's own label, read-only,
+        # The legacy field's own label, read-only,
         # computed once here for the same reason.
         "measurement_method_display": _measurement_method_display(well),
         # Pass the Python object (or None); the template escapes it via
@@ -429,7 +427,7 @@ def well_edit_field(request, pk):
         save_value = new_value
 
     if field_meta.get("fk"):
-        # well_type (ISS-189): the submitted value is a WellType id, not the
+        # well_type: the submitted value is a WellType id, not the
         # field's own value -- assign the `_id` attribute so Django does not
         # try to interpret a raw string as a model instance.
         setattr(well, f"{field}_id", int(save_value) if save_value else None)
@@ -451,7 +449,7 @@ def well_edit_field(request, pk):
 @login_required
 @require_http_methods(["GET", "PATCH"])
 def well_irrigated_parcel_edit_share(request, pk, wip_pk):
-    """Inline fraction editor for a well's linked use area (146-02 D3).
+    """Inline fraction editor for a well's linked use area.
 
     Same GET/PATCH pattern as well_edit_field above, scoped to one
     WellIrrigatedParcel row rather than a field on the well itself.

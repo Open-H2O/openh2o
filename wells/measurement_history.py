@@ -1,15 +1,13 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """The well page's measurement history: meter reads and a monthly water-level digest.
 
-ISS-145. The page has promised "measurement history" since it was written and
-rendered none. The rows exist — the ``measurements`` app is model-only by design
+The well page promises "measurement history". The rows exist — the ``measurements`` app is model-only by design
 (``core/modules.py``, "no views, no nav"), so a meter's reads and a logger's
 water levels have no page of their own and belong on the well they measure.
 
 Two shapes come out of here, both grouped by WATER YEAR (October through
 September, named for the year it ends in, ``WY 2025-2026``) and listed newest
-first. A single year hides the comparison that makes the record worth having;
-ISS-145 says so in as many words.
+first. A single year hides the comparison that makes the record worth having.
 
 * ``meter_history(well)`` — every current meter's totalizer reads, the read and
   the delta the seed wrote into ``calculated_volume``. No arithmetic here: the

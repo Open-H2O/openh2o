@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Estimate the delivery of a ditch with no meter, capped at what the right allows (149-02).
+"""Estimate the delivery of a ditch with no meter, capped at what the right allows.
 
 A point of diversion that serves fields, has no measuring
 device in service in a month and has no volume a person typed for it gets that
@@ -35,8 +35,8 @@ for each point, crop water use again (``accounting.engine_run.run_month``).
    leaves the same row and adds no change history.
 
 A point whose right is revoked or inactive gets no estimate and loses any it
-held. A point with no right is estimated with no cap: no season, no face value
-(150.1-02 screen 8, 2026-10-13; it used to get none). A month in which a point delivered nothing is recorded as a typed
+held. A point with no right is estimated with no cap: no season, no face value.
+A month in which a point delivered nothing is recorded as a typed
 record of 0, which stops the estimate like any other typed record. The estimator only ever touches
 records whose method is ``estimated_from_use``; a person who edits an estimate
 and changes its volume turns it into a typed record (``typed_method_for``), so
@@ -128,7 +128,7 @@ def replaced_sentence(month):
 
 
 def typed_method_for(point, month):
-    """The method an edited estimate takes once a person changes its volume (ISS-226).
+    """The method an edited estimate takes once a person changes its volume.
 
     "device" when a measuring device is in service at the point for the
     month (``_device_in_service``), else "methodology". Either is a typed
@@ -156,7 +156,7 @@ def _device_in_service(point, first, last):
 
     A link with no dates covers every month. A link that is no longer
     current, or a device whose own status is "removed", does not count
-    (150-02, ISS-226): either way the point has no device in service to read.
+    either way the point has no device in service to read.
     """
     return PointOfDiversionDevice.objects.filter(
         Q(installed_on__isnull=True) | Q(installed_on__lte=last),
@@ -310,8 +310,7 @@ def _estimate_point(
         _drop(point, first)
         return
 
-    # A point with no linked right is estimated with no cap (150.1-02
-    # screen 8): requiring a right shut out anyone
+    # A point with no linked right is estimated with no cap: requiring a right shut out anyone
     # whose right is not on file, or who has none).
     right = point.water_right
     if right is not None and right.status in ("revoked", "inactive"):

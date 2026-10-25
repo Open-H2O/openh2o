@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Management command that imports DiversionRecord rows from a CSV file.
 
-An operator (or the AI operator, ISS-190) runs this to bulk-load a year of
+An operator (or the AI operator) runs this to bulk-load a year of
 the state's own Water Use Reported figures, or a ditch tender's own book,
 against a point of diversion. The rules -- layout recognition, unit
 conversions, the USE-type rule, dedup -- live in ``surface.diversion_import``,
@@ -52,7 +52,7 @@ class Command(BaseCommand):
         use_rule = options["use_rule"]
 
         if not os.path.exists(file_path):
-            # ISS-190: a bare path only ever resolves inside the container --
+            # A bare path only ever resolves inside the container --
             # every prior importer's docs learned this the hard way. Named
             # here so a CommandError alone is never the whole story again.
             raise CommandError(

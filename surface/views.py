@@ -8,7 +8,7 @@ journey from a point of diversion through the parcels it serves. water_rights_li
 and water_right_detail expose the underlying entitlements, diversion_record_create
 records a diversion event, and pods_geojson feeds the diversion map.
 
-146-02 Task 2 (D2, D3) adds the doors between the two: pod_link_right lets a
+Doors between the two: pod_link_right lets a
 point of diversion name its right, water_right_assign_parcel /
 water_right_remove_parcel / water_right_search_parcels are the right's places
 of use (the account page's search-parcels / assign fragment shape,
@@ -77,17 +77,17 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
-# 143-10: the water-year grouping shared by the diversion page, its add-record
+# The water-year grouping shared by the diversion page, its add-record
 # view, and the water right page. Rule 7 (DESIGN.md): two kinds of row are
 # said once, with a divider naming the condition (a reporting period covers
 # these rows), never a note repeated on every one. The list handed in MUST
 # already be ordered so a reporting period's rows are contiguous (``-month``
 # alone for a POD, which carries one diversion_type per record per month;
-# ``-month, point_of_diversion__name`` for a right's records, R-122, so ties
+# ``-month, point_of_diversion__name`` for a right's records, so ties
 # in a month read in POD-name order) -- this function does not re-sort, it
 # only partitions what it is given, so it never disagrees with the table it
-# groups (ISS-154, 137-02; 143-05: the panel's figures are the SAME queryset
-# the table prints, never a second derivation).
+# groups (the panel's figures are the SAME queryset the table prints, never
+# a second derivation).
 # ---------------------------------------------------------------------------
 def _group_diversion_records(records):
     """Partition ordered ``DiversionRecord`` rows into water-year groups.
@@ -169,7 +169,7 @@ def pod_list(request):
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
-    # The map card's head and the map that follows the list (143-07). The
+    # The map card's head and the map that follows the list. The
     # results partial emits the WHOLE filtered queryset's pks, never the
     # page's, and the head counts what the list counts against everything;
     # ``located_count`` is what the map can draw at all (a location is required
@@ -200,7 +200,7 @@ def pod_list(request):
 
 
 def _device_panel_context(pod):
-    """Build the "Measuring device" panel's context for ``pod`` (146-03 T1).
+    """Build the "Measuring device" panel's context for ``pod``.
 
     Shared by ``_pod_detail_context`` (the full page) and
     ``device_mark_removed`` (the HTMX re-render of just this panel), so the
@@ -239,11 +239,11 @@ def _pod_detail_context(pod):
         .order_by("-month")
     )
 
-    # 143-10 (R-115, R-055): the table's own water-year groups, and the
+    # The table's own water-year groups, and the
     # CURRENT period's figures read off that SAME grouping -- no second
     # query, so the lead panel can never disagree with the table under it
     # (a guard asserts this). accounting.services.current_period_id is the
-    # helper 143-06 extracted so the diversion page, the zone page and the
+    # helper the diversion page, the zone page and the
     # ledger land on the same idea of "current" (surface `requires`
     # accounting, core/modules.py, so this import needs no module gate).
     record_groups = _group_diversion_records(diversion_records)
@@ -252,14 +252,14 @@ def _pod_detail_context(pod):
     pod_parcels = _pod_parcel_links(pod)
     basin_links = _pod_basin_links(pod)
 
-    # One-hop water journey (Phase 67-03). rediverted_from is the upstream source
+    # One-hop water journey. rediverted_from is the upstream source
     # this POD re-diverts; rediversions is the reverse — downstream PODs that draw
-    # on this POD's return flow. One hop only — no route-resolver graph this phase.
+    # on this POD's return flow. One hop only — no route-resolver graph.
     rediverted_from = pod.rediverted_from
     rediversions = pod.rediversions.order_by("name")
 
     # Water right info (may be None). all_water_rights feeds the "Water right"
-    # panel's select (146-02 D2) -- ordered by right_id, same as the water
+    # panel's select -- ordered by right_id, same as the water
     # rights list, so a district with a handful of rights reads them in the
     # order it already knows them.
     water_right = pod.water_right
@@ -309,7 +309,7 @@ def _current_period_and_totals(
 
 def _pod_parcel_links(pod: PointOfDiversion) -> list[PointOfDiversionParcel]:
     """The POD's linked use areas, by parcel number."""
-    # Linked use areas (parcel connections). 146-02 D3: the share is now shown
+    # Linked use areas (parcel connections). The share is shown
     # and edited as the raw fraction (four decimals, "share 1.0000"), not a
     # rounded whole percent -- see _pod_parcel_share_value.html.
     return list(
@@ -322,14 +322,14 @@ def _pod_parcel_links(pod: PointOfDiversion) -> list[PointOfDiversionParcel]:
 
 def _pod_basin_links(pod: PointOfDiversion) -> Any:
     """The recharge areas this POD fills, by name; an empty list when the recharge module is off."""
-    # Recharge areas this diversion fills (Phase 62). For a dual-purpose Merced
+    # Recharge areas this diversion fills. For a dual-purpose Merced
     # River diversion this lists the Flood-MAR areas it floods, right next to the
     # cropland it irrigates above.
     #
     # `basin_links` is a REVERSE ACCESSOR created by recharge.models.RechargeSitePOD,
     # not an import -- which is why grepping for `from recharge` never found this
     # coupling. Drop the module and the attribute simply does not exist, so this
-    # page raises AttributeError (ISS-072).
+    # page raises AttributeError.
     #
     # Gated on is_enabled, deliberately NOT on getattr(pod, "basin_links", None):
     # a silent getattr fallback would also swallow a genuine future rename of the
@@ -385,10 +385,9 @@ def pod_detail(request, pk):
 
 @login_required
 def pod_edit(request, pk):
-    """Edit a point of diversion's own fields (146-03 Task 3): its identity,
-
+    """Edit a point of diversion's own fields: its identity,
     the canal-loss fractions and bands, and the crosswalk layer's local
-    name / contract unit. Mirrors ``water_right_edit``'s shape.
+    name. Mirrors ``water_right_edit``'s shape.
     """
     pod = get_object_or_404(PointOfDiversion, pk=pk)
     if request.method == "POST":
@@ -405,7 +404,7 @@ def pod_edit(request, pk):
 @login_required
 @require_POST
 def pod_link_right(request, pk):
-    """HTMX POST: link or unlink a point of diversion's water right (146-02 D2).
+    """HTMX POST: link or unlink a point of diversion's water right.
 
     The POD page's "Water right" panel is a select of every WaterRight,
     ordered by right_id, with a blank "No right linked" option. A blank
@@ -430,7 +429,7 @@ def pod_link_right(request, pk):
 
 
 # ---------------------------------------------------------------------------
-# Measuring device registry (146-03 Task 1, door S3): a point of diversion's
+# Measuring device registry: a point of diversion's
 # 23 CCR 934(b)(1) device, entered and edited through full-page forms on the
 # `period_create` pattern, and "Mark removed" as an HTMX POST that re-renders
 # just the panel (the pod_link_right shape above).
@@ -531,7 +530,7 @@ def device_mark_removed(request, pk):
 def _recalculate_months(request, trigger, months):
     """Start the calculation of ``months`` after a record saved; return the line to show.
 
-    149-01: a saved diversion record moves the fields its point of diversion
+    A saved diversion record moves the fields its point of diversion
     serves, so the month is recalculated by itself. Months in a finalized
     water year are left alone (the save is refused there anyway). Returns ""
     when the surface module is off or nothing was left to calculate.
@@ -555,7 +554,7 @@ def _render_diversion_records_section(
     request, pod, *, form=None, edit_record=None, edit_form=None, period_warning=None,
     recalculation_line="",
 ):
-    """Render ``_diversion_records.html`` for ``pod`` (146-02 Task 3).
+    """Render ``_diversion_records.html`` for ``pod``.
 
     The one shared builder behind create, edit (GET and POST) and delete, so
     the table's grouping, current-period figures and lead-panel totals are
@@ -605,7 +604,7 @@ def _render_diversion_records_section(
 
 #: The message a unique-constraint violation on (point_of_diversion, month,
 #: diversion_type) shows instead of the raw IntegrityError a bare .save()
-#: would otherwise raise as a 500 (146-02 Task 3, ISS-181).
+#: would otherwise raise as a 500.
 _DUPLICATE_RECORD_ERROR = "A record for this month and diversion type is already on file. Edit that record instead."
 
 
@@ -635,7 +634,7 @@ def diversion_record_create(request, pk):
         # never runs it -- without this, a duplicate (POD, month, type) hit
         # the database's own constraint as a raw IntegrityError, a 500.
         #
-        # 149-02: a month that holds an ESTIMATE for this point gives way to the
+        # A month that holds an ESTIMATE for this point gives way to the
         # volume a person types. The estimate is dated the 1st, as a typed
         # record is, so it would collide; it is deleted inside the same
         # transaction as the save, so a refused save keeps it.
@@ -678,7 +677,7 @@ def diversion_record_create(request, pk):
 @login_required
 @require_http_methods(["GET", "POST"])
 def diversion_record_edit(request, pk, rpk):
-    """Edit one diversion record (146-02 Task 3, ISS-181, D... "edit or delete").
+    """Edit one diversion record.
 
     GET shows an "Edit diversion record" form in place of the "Add" one, at
     the bottom of the section (never inline in the table row: the add and
@@ -716,7 +715,7 @@ def diversion_record_edit(request, pk, rpk):
             start_date__lte=month,
             end_date__gte=month,
         ).first()
-        # 150-02 (ISS-226 edge 1): an estimate saved with a changed volume
+        # An estimate saved with a changed volume
         # becomes a typed record, so the next run's estimator (which touches
         # only its own method) leaves the person's figure alone. The method is
         # a measuring device when one is in service for the month, else a
@@ -736,7 +735,7 @@ def diversion_record_edit(request, pk, rpk):
             refuse_if_period_finalized(stored_period)
             refuse_if_period_finalized(updated.reporting_period)
             with transaction.atomic():
-                # 149-02: an edit that moves a volume onto a month holding an
+                # An edit that moves a volume onto a month holding an
                 # estimate replaces the estimate, as a new record does.
                 replaced = discard_estimate(
                     pod, month, updated.diversion_type, exclude_pk=updated.pk
@@ -773,7 +772,7 @@ def diversion_record_edit(request, pk, rpk):
 @login_required
 @require_POST
 def diversion_record_delete(request, pk, rpk):
-    """Delete one diversion record (146-02 Task 3, ISS-181)."""
+    """Delete one diversion record."""
     pod = get_object_or_404(PointOfDiversion, pk=pk)
     record = get_object_or_404(DiversionRecord, pk=rpk, point_of_diversion=pod)
     try:
@@ -791,7 +790,7 @@ def diversion_record_delete(request, pk, rpk):
 @login_required
 @require_http_methods(["GET", "PATCH"])
 def pod_parcel_edit_share(request, pk, pp_pk):
-    """Inline fraction editor for a POD's linked use area (146-02 D3).
+    """Inline fraction editor for a POD's linked use area.
 
     The wells:edit_field GET/PATCH pattern (wells/views.py), scoped to one
     PointOfDiversionParcel row rather than a field on the parent model. GET
@@ -888,7 +887,7 @@ def water_rights_list(request):
 
 @login_required
 def water_right_create(request):
-    """Create a water right (146-02 door D1), the `period_create` full-page pattern."""
+    """Create a water right, the `period_create` full-page pattern."""
     if request.method == "POST":
         form = WaterRightForm(request.POST)
         if form.is_valid():
@@ -902,7 +901,7 @@ def water_right_create(request):
 
 @login_required
 def water_right_edit(request, pk):
-    """Edit a water right (146-02 door D1)."""
+    """Edit a water right."""
     water_right = get_object_or_404(WaterRight, pk=pk)
     if request.method == "POST":
         form = WaterRightForm(request.POST, instance=water_right)
@@ -1045,7 +1044,7 @@ def water_right_import_commit(request):
 
 
 # ---------------------------------------------------------------------------
-# 146-03 Task 4 (D4): diversion volumes in bulk against a point of diversion.
+# Diversion volumes in bulk against a point of diversion.
 # ---------------------------------------------------------------------------
 
 
@@ -1063,7 +1062,7 @@ def _diversion_import_settings_context(points, *, selected_point=None, method=""
 
 
 def _posted_use_rule(request):
-    """The import screen's own USE-row question (146-03 Task 6), or ``None``
+    """The import screen's own USE-row question, or ``None``
 
     to fall back to the deployment's remembered default. A blank posted
     value means "not chosen yet", exactly like an un-checked radio group.
@@ -1077,12 +1076,12 @@ def _posted_use_rule(request):
 LAYOUT_TABLES_SENTENCE = "The tables below list the columns OpenH2O imports."
 
 
-#: How many row numbers one grouped row error names before " ..." (150-04 V1).
+#: How many row numbers one grouped row error names before " ...".
 ROW_ERROR_FIRST_ROWS = 3
 
 
 def _group_row_errors(errors):
-    """The preview's row errors, one entry per distinct message (150-04 V1).
+    """The preview's row errors, one entry per distinct message.
 
     Twelve months refused for one finalized year are one cause, not twelve
     lines. Each entry is ``{"message", "count", "first_rows", "more"}``: the
@@ -1195,7 +1194,7 @@ def diversion_import_preview(request):
     context.update(result)
     # The radio group reflects the rule actually applied (the posted choice,
     # or the deployment's remembered default on first preview) -- never the
-    # raw POST, which is blank until the operator picks one (146-03 Task 6).
+    # raw POST, which is blank until the operator picks one.
     context["use_rule"] = result["settings"]["diversion_use_type_rule"]
     context["error_groups"] = _group_row_errors(result["errors"])
     context["rows_json"] = json.dumps(rows)
@@ -1208,7 +1207,7 @@ def diversion_import_preview(request):
 def diversion_import_commit(request):
     """Re-run the confirmed settings against the parsed rows and write them.
 
-    146-03 Task 6: when the file had USE rows and the posted ``use_rule``
+    When the file had USE rows and the posted ``use_rule``
     differs from the deployment's remembered default, the chosen rule is
     written back onto ``SiteConfig`` here (commit only, never preview) so
     the same file, imported again next year, defaults to the same answer.
@@ -1300,14 +1299,13 @@ def _water_right_detail_context(water_right):
 
     # Remaining = face value less the current period's recorded volume,
     # across every point of diversion under this right -- never re-derived
-    # from anything but the SAME rows the table under the panel prints
-    # (ISS-154, 137-02; 143-05).
+    # from anything but the SAME rows the table under the panel prints.
     remaining = None
     if water_right.face_value_acre_feet is not None:
         diverted_so_far = current_totals["diverted"] if current_totals else Decimal("0")
         remaining = water_right.face_value_acre_feet - diverted_so_far
 
-    # 150-02 Task 5: every water year on record against the face value, one
+    # Every water year on record against the face value, one
     # row per group above (surface/face_value.py reads the SAME groups, so
     # the "By water year" table can never disagree with the records table).
     # Each group carries its row so the records table's divider can say how
@@ -1332,7 +1330,7 @@ def _water_right_detail_context(water_right):
         "current_holds_estimate": current_holds_estimate,
         "pod_breakdown": _pod_breakdown(current_totals),
         "pods_geojson": _right_pods_geojson(pods),
-        # 146-02 D3: this right's places of use. Gated on `parcels` for the
+        # This right's places of use. Gated on `parcels` for the
         # same reason `basin_links` above is gated on `recharge` -- surface
         # requires parcels (core/modules.py), so this is always True in a
         # valid deployment; the guard is defensive documentation, not a
@@ -1390,7 +1388,7 @@ def _water_right_places_of_use(water_right):
     """This right's WaterRightParcel rows, parcel-number order.
 
     Shared by the detail context and by assign/remove, which re-render just
-    the `_places_of_use_list.html` fragment (146-02 D3, the account page's
+    the `_places_of_use_list.html` fragment (the account page's
     search-parcels / assign fragment shape -- accounting/views/accounts.py -- reused as
     a shape, never its views).
     """
@@ -1422,7 +1420,7 @@ def water_right_detail(request, pk):
 
 
 # ---------------------------------------------------------------------------
-# Places of use (146-02 D3): the account page's search-parcels / assign
+# Places of use: the account page's search-parcels / assign
 # fragment shape (accounting/views/accounts.py::assign_parcel / remove_parcel /
 # parcel_search_for_assignment), reused as a shape only -- WaterRightParcel
 # has no soft-delete columns (no added_date/removed_date), so "remove" here
@@ -1496,7 +1494,7 @@ def pods_geojson(request):
     for f in data["features"]:
         # Inject pk so the full-map popup can link to the POD detail page.
         f["properties"]["pk"] = f.get("id")
-        # 143-07 Step 0: the map label, code prefix stripped. labelField reads
+        # The map label, code prefix stripped. labelField reads
         # this first and falls back to the existing expression, so an older
         # cached response still labels the way it always has.
         f["properties"]["label"] = map_label(f["properties"].get("name") or "")

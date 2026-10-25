@@ -80,7 +80,7 @@ class Command(BaseCommand):
         else:
             imported_count = staged_pending  # Would-be count
 
-        # ISS-030: clear this run's staging scratch so the table can't accumulate
+        # Clear this run's staging scratch so the table can't accumulate
         # across imports or bleed a leftover row into a later run. Duplicate/error
         # diagnostics were already written to stdout above. Done for dry-run too —
         # a dry-run that left `pending` rows behind would be promoted by the next
@@ -125,7 +125,7 @@ class Command(BaseCommand):
         staged_pending = 0
         staged_duplicate = 0
         staged_error = 0
-        # ISS-030: track the staging rows THIS invocation creates, so promotion
+        # Track the staging rows THIS invocation creates, so promotion
         # is scoped to this run (never a leftover `pending` row from an aborted
         # earlier import) and so this run can clear its own scratch afterward.
         staged_ids: list[int] = []
@@ -215,7 +215,7 @@ class Command(BaseCommand):
         """Create a Parcel for each pending row this run staged; return (imported, failed) counts."""
         imported_count = 0
         failed_count = 0
-        # ISS-030: promote ONLY the rows this invocation staged — not every
+        # Promote ONLY the rows this invocation staged — not every
         # global `pending` row. A leftover `pending` row from an aborted
         # prior import must never be materialized by an unrelated later run.
         pending_qs = ParcelStaging.objects.filter(

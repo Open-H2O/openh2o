@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
-Water rights bulk import engine (146-02 Task 1, door D1).
+Water rights bulk import engine.
 
 Mirrors the parse-preview-commit shape ``infrastructure/importer.py`` already
 established (read that module first): a pure parse step, a best-guess column
@@ -44,13 +44,13 @@ MAX_ROWS = 500
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MB, same ceiling as the infrastructure importer
 
 #: The state's own rights-LIST unit values. A face value or a maximum rate in
-#: any other unit is left out of the right, with a note naming the unit found
-#: (150.1-02 screen 18, message E). This importer never converts a unit.
+#: any other unit is left out of the right, with a note naming the unit found.
+#: This importer never converts a unit.
 FACE_VALUE_UNITS_EXPECTED = "Acre-feet per Year"
 MAX_DD_UNITS_EXPECTED = "Cubic Feet per Second"
 
 #: The whole-file messages for both surface water imports
-#: (150.1-02). diversion_import.py
+#: diversion_import.py
 #: imports these so the two pages say the same thing for the same fault.
 NO_FILE_MESSAGE = "Choose a CSV file to upload."
 NOT_CSV_MESSAGE = (
@@ -160,7 +160,7 @@ RIGHT_FIELD_ALIASES = {
     "storage_season_end_day": {"STORAGE_SEASON_END_DAY_1"},
 }
 
-#: Sentence case, no parentheses (150.1-02).
+#: Sentence case, no parentheses.
 FIELD_LABELS = {
     "right_id": "Application number",
     "right_type_name": "Right type",
@@ -262,7 +262,7 @@ _BARE_TYPE_ALIASES = {
 
 def _column(mapping, field):
     """The file column a message names for ``field``: the one the person
-    matched, else the state's own header (150.1-02 screen 18, message E)."""
+    matched, else the state's own header."""
     return mapping.get(field) or sorted(RIGHT_FIELD_ALIASES[field])[0]
 
 

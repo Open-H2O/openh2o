@@ -50,9 +50,9 @@ EDITABLE_FIELDS = {
     "notes": {"label": "Notes", "type": "textarea"},
 }
 
-#: 146-05 Task 1 (S1). Not a Parcel column, so not in EDITABLE_FIELDS: the
+#: Not a Parcel column, so not in EDITABLE_FIELDS: the
 #: method is its own row (parcels.ParcelIrrigationMethod). Offered on every
-#: deployment since 150.2-01, when the row moved here from `surface`: a field
+#: deployment, because the row lives in `parcels`, not `surface`: a field
 #: watered from a well has an irrigation method too.
 IRRIGATION_METHOD = "irrigation_method"
 
@@ -106,14 +106,13 @@ def _save_irrigation_method(parcel, method_pk):
 
 @login_required
 def parcels_list(request):
-    """Use Areas overview (143-13, candidate A: the list is the page).
+    """Use Areas overview: the list is the page.
 
     A Bucket-3 finder, the shape every other list on the platform now uses:
-    the 143-07 overview map card (count line + key, following the list) above
+    the overview map card (count line + key, following the list) above
     a one-row toolbar above the table, a row opening the use area's own detail
-    page. Replaces the earlier master-detail workspace (`workspace.html`),
-    whose narrow rail and empty resting pane were the worst-named fault on
-    this page since 143-02 (the "workspace FRAME" ruling, R-105 / R-106).
+    page. This list replaces the earlier master-detail workspace
+    (`workspace.html`), which had a narrow rail and an empty resting pane.
 
     A `?selected=<pk>` query param (the old workspace's deep-link shape)
     redirects to the use area's own detail page so a bookmarked link still
@@ -143,7 +142,7 @@ def parcels_list(request):
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
-    # The overview map card's counts (143-07 shape, `_map_card_head.html`):
+    # The overview map card's counts (see `_map_card_head.html`):
     # `located_count` is what the map can draw AT ALL (unfiltered), which is
     # what decides whether the page builds a map host at all; `result_pks` /
     # `result_located_count` are the CURRENT filter's, which is what the map
@@ -188,24 +187,24 @@ def _parcel_detail_context(parcel, period_id=None):
     all_periods = list(ReportingPeriod.objects.order_by("-start_date"))
     balance_period = _balance_period(parcel, all_periods, period_id)
 
-    # The corrected v1.10 lens (57-01) + the closing identity (52.6-03), both
+    # The corrected v1.10 lens + the closing identity, both
     # read from the same source fields so the card is internally consistent.
     consumptive_balance = parcel_consumptive_balance(parcel, balance_period)
     mass_balance = parcel_mass_balance(parcel, balance_period)
     # Months this parcel was engine-run — each links to its own audit waterfall
-    # (Task 2). Empty when ET was never computed (surface-only ISS-054 case),
+    # Empty when ET was never computed (a surface-only use area),
     # which the template renders as an honest "ET not yet computed" state rather
     # than a scary red residual.
     run_periods = parcel_run_periods(parcel, balance_period)
-    # 148-03: the months that link to a calculation receipt are only those
+    # The months that link to a calculation receipt are only those
     # with a well and no meter; a field with none shows no link block at all.
     receipt_periods = parcel_receipt_periods(parcel, balance_period)
-    # ISS-157: what the platform already stored and no screen had ever shown.
+    # Unmet demand, as the platform already stores it.
     unmet_demand_af = parcel_unmet_demand(parcel, balance_period)
-    # 148-04 (c): canal water beyond what the crop could use, on a run stamped
+    # Canal water beyond what the crop could use, on a run stamped
     # to show it as its own named line rather than a credit.
     over_delivery_shown_af = parcel_over_delivery_shown(parcel, balance_period)
-    # 148-03: the same figure under every setting value, the cause line under
+    # The same figure under every setting value, the cause line under
     # a residual that is real (a field with no meter and no closing estimate).
     over_delivery_total_af = parcel_over_delivery_total(parcel, balance_period)
 
@@ -242,24 +241,24 @@ def _balance_period(
     parcel: Parcel, all_periods: list[ReportingPeriod], period_id: str | None
 ) -> ReportingPeriod | None:
     """The reporting period the parcel pane opens on, by the four steps below."""
-    # Which period the pane opens on (ISS-147). Four steps, in order, and the
-    # ORDER is the whole fix:
+    # Which period the pane opens on. Four steps, in order, and the
+    # ORDER matters:
     #
     #   1. An explicit `?period=` the reader chose. An unknown or malformed pk
     #      falls through rather than 404ing — a stale bookmark should show the
     #      pane, not an error page.
     #   2. The most recent period this parcel has a CalculationRun for. A run
-    #      with demand and no supply is exactly the state ISS-147 wants shown:
+    #      with demand and no supply is exactly the state this pane should show:
     #      the six curtailed Merced fields have their finding in the dry year,
     #      and step 3 could not see it because the dry year carries no delivery
     #      row of their own.
     #   3. The old default: the most recent period with REAL (non-allocation)
     #      ledger activity. Still right for a surface-only field the engine has
-    #      never run, which is the ISS-054 case.
+    #      never run.
     #   4. The most recent period overall.
     #
     # ⛔ Step 2 is NOT "the most recent period". Flipping the default outright
-    # would hide the wet year with no way back, which is ISS-147's own warning;
+    # would hide the wet year with no way back;
     # the control below is the way back, and step 1 is what it drives.
     by_pk = {period.pk: period for period in all_periods}
 
@@ -298,21 +297,17 @@ def _balance_period(
 
 def _recent_ledger(parcel: Parcel, balance_period: ReportingPeriod | None) -> Any:
     """The parcel's ten most recent ledger rows in ``balance_period`` (its whole history when None)."""
-    # ISS-165 / R-107. This queryset used to run above, before `balance_period`
-    # was resolved, and filtered on the parcel ONLY. So the water balance and the
-    # ledger card beside it — two surfaces a hand's width apart on one screen —
-    # answered for different years, and neither said which: measured 2026-09-08,
-    # the balance stood at WY 2025-2026 while nine of the card's ten rows were
-    # dated October 2024 to June 2025.
+    # Filtering on the parcel ONLY would let the water balance and the ledger
+    # card beside it — two surfaces a hand's width apart on one screen —
+    # answer for different years, and neither would say which.
     #
     # It is built HERE, after the four-step period resolution above, because the
     # period is the filter. `balance_period` is None only when no reporting
     # period exists at all, and then there is nothing to bound by and the card
     # falls back to the parcel's whole history — the same rows it would have
     # shown anyway, on a deployment that has not set a period up yet.
-    # select_related("water_type"): 143-05's merged Water column
-    # (ledger_row_words) reads entry.water_type on every row, which this
-    # query did not join before that column existed.
+    # select_related("water_type"): the merged Water column
+    # (ledger_row_words) reads entry.water_type on every row.
     recent_ledger = ParcelLedger.objects.filter(parcel=parcel).select_related(
         "water_type"
     )
@@ -474,7 +469,7 @@ def parcels_geojson(request):
     With no parameter: every parcel that has a geometry (the overview map's one
     unfiltered source, filtered client-side by ``OH2O.followResults``).
 
-    ``?account=<id>`` (ISS-175, 150-02): only the parcels that water account
+    ``?account=<id>``: only the parcels that water account
     holds now, through its active ``accounting.WaterAccountParcel`` rows
     (``removed_date`` empty, the same rows the account page counts), in ONE
     query. An integer that names no account, or an account with no located

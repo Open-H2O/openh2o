@@ -10,14 +10,14 @@ urlpatterns = [
     # POD-centric views (primary entry point)
     path("", views.pod_list, name="pod_list"),
     path("diversion/<int:pk>/", views.pod_detail, name="pod_detail"),
-    # 146-03 Task 3: the POD's own edit door (identity, canal losses, alias).
+    # The POD's own edit door (identity, canal losses, alias).
     path("diversion/<int:pk>/edit/", views.pod_edit, name="pod_edit"),
     path("diversion/<int:pk>/record/", views.diversion_record_create, name="diversion_record_create"),
-    # 146-03 Task 4 (D4): diversion volumes in bulk against a point of diversion.
+    # Diversion volumes in bulk against a point of diversion.
     path("diversion/import/", views.diversion_import, name="diversion_import"),
     path("diversion/import/preview/", views.diversion_import_preview, name="diversion_import_preview"),
     path("diversion/import/commit/", views.diversion_import_commit, name="diversion_import_commit"),
-    # 146-02 Task 3 (ISS-181): edit and delete a diversion record.
+    # Edit and delete a diversion record.
     path(
         "diversion/<int:pk>/record/<int:rpk>/edit/",
         views.diversion_record_edit,
@@ -28,9 +28,9 @@ urlpatterns = [
         views.diversion_record_delete,
         name="diversion_record_delete",
     ),
-    # 146-02 D2: the point-to-right link.
+    # The point-to-right link.
     path("diversion/<int:pk>/link-right/", views.pod_link_right, name="pod_link_right"),
-    # 146-03 Task 1 (S3): the 934(b)(1) measuring device registry.
+    # The 23 CCR 934(b)(1) measuring device registry.
     path("diversion/<int:pk>/device/add/", views.device_add, name="device_add"),
     path("device/<int:pk>/edit/", views.device_edit, name="device_edit"),
     path(
@@ -38,7 +38,7 @@ urlpatterns = [
         views.device_mark_removed,
         name="device_mark_removed",
     ),
-    # 146-02 D3: the share editor on a POD's linked use area.
+    # The share editor on a POD's linked use area.
     path(
         "diversion/<int:pk>/parcel/<int:pp_pk>/share/",
         views.pod_parcel_edit_share,
@@ -53,7 +53,7 @@ urlpatterns = [
     path("rights/import/commit/", views.water_right_import_commit, name="water_right_import_commit"),
     path("rights/<int:pk>/", views.water_right_detail, name="detail"),
     path("rights/<int:pk>/edit/", views.water_right_edit, name="water_right_edit"),
-    # 146-02 D3: a right's places of use.
+    # A right's places of use.
     path(
         "rights/<int:pk>/assign-parcel/",
         views.water_right_assign_parcel,

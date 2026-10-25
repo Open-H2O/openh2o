@@ -31,10 +31,10 @@ from recharge.models import RechargeMeasurement, RechargeEvent, RechargeSite
 
 
 # ---------------------------------------------------------------------------
-# 143-10: the water-year grouping for a site's recharge events, shared by the
+# The water-year grouping for a site's recharge events, shared by the
 # detail page and recharge_event_create's POST response -- one helper, so the
-# lead panel and the table under it can never disagree (ISS-154, 137-02;
-# 143-05: the panel's figures are the SAME queryset the table prints).
+# lead panel and the table under it can never disagree (the panel's figures are the SAME queryset the table
+# prints).
 #
 # RechargeEvent carries no reporting_period FK (unlike surface.DiversionRecord),
 # so a group is found by date range against the periods the caller fetched
@@ -130,7 +130,7 @@ def recharge_sites_list(request):
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
-    # The map card's head and the map that follows the list (143-07). Every
+    # The map card's head and the map that follows the list. Every
     # RechargeSite carries a required ``location`` (see the model), so
     # ``located_count`` always equals ``all_count`` here — the shared head
     # partial still branches on it because the other overview pages' geometries
@@ -172,12 +172,11 @@ def _recharge_site_detail_context(site):
         .order_by("-start_date")
     )
 
-    # 143-10 (R-126, R-055): the table's own water-year groups, and the
+    # The table's own water-year groups, and the
     # CURRENT period's figures read off that SAME grouping -- no second
     # query, so the lead panel can never disagree with the table under it.
-    # accounting.services.current_period_id is the helper 143-06 and 143-10
-    # Task 2 read so this page lands on the same idea of "current" as the
-    # diversion page, the right page, the zone page and the ledger (recharge
+    # accounting.services.current_period_id is the helper this page reads, so it lands
+    # on the same idea of "current" as the diversion page, the right page, the zone page and the ledger (recharge
     # `requires` accounting, core/modules.py, so this import needs no module
     # gate).
     periods = ReportingPeriod.objects.all()
@@ -186,7 +185,7 @@ def _recharge_site_detail_context(site):
         event_groups
     )
 
-    # The diversion(s) that fill this basin (Phase 62): each link names the POD
+    # The diversion(s) that fill this basin: each link names the POD
     # and, through it, the real waterway it sits on. A data field on this page,
     # not a flow line on the map.
     pod_links = (
@@ -230,7 +229,7 @@ def _current_and_previous_totals(
         None,
     )
     # The water year before the current one that holds events, shown beside
-    # the current year's figure as a peer (never added to it, ISS-155): the
+    # the current year's figure as a peer (never added to it): the
     # groups are in the periods' own order, newest first, the "outside any
     # water year" group last and never a peer.
     previous_totals = None
@@ -342,7 +341,7 @@ def recharge_event_create(request, pk):
     event = form.save(commit=False)
     event.recharge_site = site
     # The event's recharge lands in the ledger or the basin pool of the water
-    # year it starts in; a finalized year refuses it (147-02), so say so
+    # year it starts in; a finalized year refuses it, so say so
     # beside the form before anything is saved.
     from accounting.locks import PeriodFinalized, refuse_if_finalized
 
@@ -376,7 +375,7 @@ def recharge_event_create(request, pk):
                 f"entr{'y' if count == 1 else 'ies'}."
             )
         else:
-            # Default path (52.6-02): the recharge infiltrates the shared aquifer,
+            # Default path: the recharge infiltrates the shared aquifer,
             # so it was deposited to the GSA basin recharge pool for the zone —
             # not smeared across individual parcels.
             ledger_msg = (
@@ -384,7 +383,7 @@ def recharge_event_create(request, pk):
                 "the site's zone."
             )
     except ValueError:
-        # 150-03 (ISS-182): a message that names a requirement names the place.
+        # A message that names a requirement names the place.
         # No screen sets a recharge site's zone (RechargeSite.zone is written
         # only by the seed commands and the Django admin; the Add Infrastructure
         # form and the Zones pages never touch it), so the sentence says so
@@ -425,7 +424,7 @@ def recharge_sites_geojson(request):
             "properties": {
                 "pk": site.pk,
                 "name": site.name,
-                # 143-07 Step 0: the map label, code prefix stripped.
+                # The map label, code prefix stripped.
                 "label": map_label(site.name or ""),
                 "site_type": site.site_type,
                 "capacity_acre_feet": str(site.capacity_acre_feet) if site.capacity_acre_feet else None,

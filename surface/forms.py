@@ -68,9 +68,9 @@ class DiversionRecordForm(forms.ModelForm):
         }
         # The widget is `type="date"` (a full calendar-day picker) but the
         # model only ever keeps the month -- clean_month below normalizes
-        # whatever day is picked to the 1st. The walker read the un-labelled
-        # date input as "Month, no year" (146-02 context); this label says
-        # what the field actually wants.
+        # whatever day is picked to the 1st. Unlabelled, the date input
+        # reads as "Month, no year"; this label says what the field actually
+        # wants.
         labels = {"month": "Month (pick any day in it)"}
 
     def __init__(self, *args, pod=None, **kwargs):
@@ -83,11 +83,11 @@ class DiversionRecordForm(forms.ModelForm):
         # data_state has no blank choice (unlike method) since every record
         # DOES have a data state -- but the model's own default is
         # 'provisional', and a caller that posts without this key (every
-        # pre-146-03 test, and any future programmatic caller) should get
+        # older test, and any future programmatic caller) should get
         # that default rather than a spurious "this field is required".
         self.fields["data_state"].required = False
 
-        # 146-03 Task 2: the device choices are this point's own devices,
+        # The device choices are this point's own devices,
         # current link first -- an operator entering a record for POD A
         # should never be offered POD B's meter. `pod=None` (an unbound
         # form used outside a POD's own page, if one ever exists) leaves the
@@ -148,7 +148,7 @@ class DiversionRecordForm(forms.ModelForm):
     def clean_returned_af(self):
         """Surface the model guard as a readable field error, not a 500.
 
-        ``DiversionRecord.clean()`` (67-01) is the backstop, but ``Model.save()``
+        ``DiversionRecord.clean()`` is the backstop, but ``Model.save()``
         never calls it; the form is the operator's entry boundary, so re-check
         here that the returned volume can't exceed the diverted volume — a typo
         that flips consumed negative gets rejected with a friendly message.
@@ -165,18 +165,15 @@ class DiversionRecordForm(forms.ModelForm):
 
 
 class PointOfDiversionForm(forms.ModelForm):
-    """Form for editing POD metadata (146-03 Task 3 adds the door: this form
-
-    was defined but never wired to a view or a route before this task --
-    ``surface:pod_edit`` is the door).
+    """Form for editing POD metadata (``surface:pod_edit`` is its door).
 
     water_right and location are excluded (set via separate UI: the POD
     page's own "Water right" panel and the map click that placed the point).
     The canal-loss fractions sit under the template's own "Canal losses"
     heading. A fraction sum of 1 or more is refused with a plain sentence
-    (149-02: the canal split refuses a month where nothing would reach the
+    (the canal split refuses a month where nothing would reach the
     fields) by ``PointOfDiversion.clean()``, which this form's full_clean
-    runs on the shares save() will store (150.3-01: a stated lining sets the
+    runs on the shares save() will store (a stated lining sets the
     default seepage and evaporation), so the error is shown once.
     """
 
@@ -237,7 +234,6 @@ class PointOfDiversionForm(forms.ModelForm):
             "loss_basis": "Basis of the loss shares",
             "lining": "Lining",
         }
-        # 150.3-01 (the district wording was replaced by the national words).
         help_texts = {
             "lining": "When the basis is Platform default, OpenH2O sets the "
             "seepage share from the lining: 25 percent for an unlined canal, "
@@ -282,14 +278,14 @@ class PointOfDiversionForm(forms.ModelForm):
     # The sum of the three shares is checked once, by PointOfDiversion.clean(),
     # which the form's full_clean runs on what save() will store: while the
     # basis is the default, a stated lining replaces the typed seepage and
-    # evaporation shares (150.3-01). A second check here showed the error twice.
+    # evaporation shares. A second check here showed the error twice.
 
 
 class MeasuringDeviceForm(forms.ModelForm):
-    """Create/edit a measuring device (146-03 Task 1, the 934(b)(1) registry).
+    """Create/edit a measuring device (the 23 CCR 934(b)(1) registry).
 
     ``water_rights`` is a multi-select limited to the point of diversion's own
-    right plus any other active right (the plan's own scoping) -- narrowed in
+    right plus any other active right -- narrowed in
     ``__init__`` rather than on the model field, since the model has no single
     point to scope from.
     """
@@ -341,7 +337,7 @@ class MeasuringDeviceForm(forms.ModelForm):
 
 
 class WaterRightForm(forms.ModelForm):
-    """Create/edit a water right (146-02 Task 1, door D1).
+    """Create/edit a water right.
 
     The four season fields per season type (start month, start day, end
     month, end day) are laid out in the template as "from <month> <day> to

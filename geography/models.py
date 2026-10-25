@@ -90,7 +90,7 @@ class Zone(models.Model):
         blank=True,
         help_text='DWR Bulletin 118 subbasin number this zone maps to, e.g. "5-022.11".',
     )
-    # Per-district override of the agency-wide recovery horizon (Phase 55-02).
+    # Per-district override of the agency-wide recovery horizon.
     # A surface district is its own zone, so this is where "this district's
     # unused water expires at year-end" lives. Blank = inherit the SiteConfig
     # default, so an admin only sets the exceptions.

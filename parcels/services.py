@@ -14,10 +14,10 @@ if TYPE_CHECKING:
 def field_efficiency(
     parcel: Parcel, config: SiteConfig | None = None
 ) -> tuple[Decimal, str]:
-    """One parcel's own field efficiency, and where it came from (148-02, S1).
+    """One parcel's own field efficiency, and where it came from.
 
     Returns ``(Decimal, source)``. ``source`` is ``"method"`` when the parcel
-    carries a ``ParcelIrrigationMethod`` (146-05's one-to-one, related_name
+    carries a ``ParcelIrrigationMethod`` (a one-to-one, related_name
     ``irrigation``), which gives the assigned efficiency off that method's
     row. Otherwise ``"agency"``, the deployment-wide
     ``SiteConfig.default_irrigation_efficiency``.
@@ -26,14 +26,14 @@ def field_efficiency(
     per-parcel cap and ``subtract_surface_water``'s consumption math both read,
     so the split and the subtraction can never drift apart on a mixed-method
     headgate (a center pivot and a furrow field sharing one point of diversion
-    must not share one cap; the 146-05 carry).
+    must not share one cap).
 
-    Moved here from ``surface.services`` in 150.2-01 with the two models it
+    Lives here, not in ``surface.services``, with the two models it
     reads, so a deployment without ``surface`` (a groundwater-only district)
     resolves a field's efficiency the same way.
 
     ``config`` lets a caller that has already read the deployment's
-    ``SiteConfig`` for a whole run pass it in (150.2-02: ``run_calculations``
+    ``SiteConfig`` for a whole run pass it in (``run_calculations``
     reads it once, so a settings edit mid-run cannot give two fields two
     different defaults). Otherwise it is read here.
 

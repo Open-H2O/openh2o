@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Bulk diversion-volume import against a point of diversion (146-03 Task 4, D4).
+"""Bulk diversion-volume import against a point of diversion.
 
 Mirrors ``accounting/ledger_import.py``'s shape (read that module first): one
 service, two callers (the web upload and the management command), every
@@ -44,8 +44,8 @@ Rules enforced here, in order:
    (counted, never written), added to the matching DIRECT row's
    ``returned_af`` (USE minus DIRECT, floored at zero and capped at the
    diverted volume), or treated as its own direct_use row. The rule comes
-   from the ``use_rule`` keyword when the caller passes one (146-03 Task 6:
-   the import screen's own mapping-step question, shown only when the file
+   from the ``use_rule`` keyword when the caller passes one (the
+   import screen's own mapping-step question, shown only when the file
    has USE rows); otherwise it falls back to the deployment's remembered
    default, ``SiteConfig.diversion_use_type_rule``.
 3. WITHIN-FILE COMBINE. Two or more rows landing on the same (point, month,
@@ -96,7 +96,7 @@ from surface.models import DiversionRecord, PointOfDiversion, WaterRight
 MAX_ROWS = 2000
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MB, the same ceiling every other importer uses
 
-#: The import screen's own USE-row question (146-03 Task 6): same three values as
+#: The import screen's own USE-row question: same three values as
 #: ``SiteConfig.DIVERSION_USE_TYPE_RULE_CHOICES``, but the copy is aimed at
 #: someone looking at the rows in THIS file, not at a deployment-wide
 #: default -- so the wording differs and lives here, not on the model.
@@ -686,7 +686,7 @@ def build_rows(columns, rows, layout, *, whole_file_point=None, method="",
                 data_state="provisional", site_config=None, use_rule=None):
     """Turn raw CSV rows into candidate DiversionRecord field-sets.
 
-    ``use_rule``, when given (146-03 Task 6: chosen on the import screen's
+    ``use_rule``, when given (chosen on the import screen's
     mapping step), overrides the deployment's remembered
     ``SiteConfig.diversion_use_type_rule`` for this file only; ``None``
     (the default) falls back to the stored value exactly as before.
@@ -704,7 +704,7 @@ def build_rows(columns, rows, layout, *, whole_file_point=None, method="",
     )
 
     # The USE rule (J3): drop, returned, or as_direct. An explicit `use_rule`
-    # (146-03 Task 6: the import screen's own question) overrides the
+    # (the import screen's own question) overrides the
     # deployment's remembered default on SiteConfig.
     applied_use_rule = use_rule if use_rule is not None else site_config.diversion_use_type_rule
     use_rows_dropped = _apply_use_rule(groups, use_groups, applied_use_rule, errors)
@@ -737,9 +737,9 @@ def _count_use_rows(rows: list[dict[str, str]], layout: str | None) -> int:
     # Every row the FILE types USE, counted off the raw rows before any of
     # them is resolved to a point. The import screen's own USE question is
     # shown on this count, and a row whose point is not yet chosen still
-    # means the file has USE rows in it (146-03 Task 6; the first version
-    # counted only rows that had already reached a point, so the question
-    # stayed hidden on the first render of exactly the file it is about).
+    # means the file has USE rows in it (counting only rows that had already
+    # reached a point would hide the question on the first render of exactly
+    # the file it is about).
     use_rows_present = 0
     if layout == "state":
         for raw_row in rows:
@@ -916,7 +916,7 @@ def _candidates_from_groups(
 def commit_rows(built, *, method="", data_state="provisional", dry_run=False):
     """Dedup against the database, validate, and (unless dry_run) save.
 
-    Dedup is skip-and-count, never overwrite (146-03 Task 4's own rule): a
+    Dedup is skip-and-count, never overwrite: a
     candidate whose (point, month, diversion_type) already exists is skipped.
     Validation runs in both modes, so a dry-run preview shows the same
     errors a real commit would refuse -- only the ``.save()`` is skipped.
@@ -965,7 +965,7 @@ def _vet_candidates(
     point_ids = {c["point"].pk for c in candidates}
     existing = set()
     if point_ids:
-        # An estimate (149-02) is not a person's record: a file's volume for
+        # An estimate is not a person's record: a file's volume for
         # that month replaces it, so it never counts as a duplicate.
         existing = set(
             DiversionRecord.objects.filter(point_of_diversion_id__in=point_ids)
@@ -974,7 +974,7 @@ def _vet_candidates(
         )
 
     # A month inside a finalized water year is refused as a row error in
-    # plain words (147-02), in the preview as well as on commit, so the
+    # plain words, in the preview as well as on commit, so the
     # preview never counts a row the commit would refuse. The database lock
     # (accounting/locks.py) refuses the same rows anyway.
     finalized_spans = list(
@@ -1041,7 +1041,7 @@ def _save_survivors(
                         start_date__lte=c["month"], end_date__gte=c["month"],
                     ).first()
                     record.reporting_period = period
-                    # 149-02: a volume a person supplies replaces the estimate
+                    # A volume a person supplies replaces the estimate
                     # the platform made for that point and month.
                     replaced = discard_estimate(
                         c["point"], c["month"], c["diversion_type"]
@@ -1083,8 +1083,7 @@ def import_diversion_rows(columns, rows, *, layout=None, whole_file_point=None,
     """Parse-to-commit in one call: what both the view and the command use.
 
     ``use_rule``, when given, overrides the deployment's remembered
-    ``SiteConfig.diversion_use_type_rule`` for this file only (146-03
-    Task 6); ``None`` (the default) uses the stored value, exactly as
+    ``SiteConfig.diversion_use_type_rule`` for this file only; ``None`` (the default) uses the stored value, exactly as
     before.
 
     Returns the full report dict: layout, created, skipped_duplicates,

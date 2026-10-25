@@ -75,7 +75,7 @@ def map_view(request):
     # hardcoded Kaweah legend survived the v1.9 Kaweah→Merced demo migration and
     # showed retired-basin names on the live map — post-mortem 2026-06-08.)
     #
-    # 143-07 R-095: three fills, not five near-identical greens — one from each
+    # Three fills, not five near-identical greens — one from each
     # of DESIGN.md's OKLCH tonal ramps at its 500 (mid) lightness step, so a
     # reader tells them apart at a glance on aerial imagery and in an 11px
     # legend swatch: forest-teal, reservoir-blue, furnace-orange. None is the
@@ -105,7 +105,7 @@ def map_view(request):
         )
     ]
     # The flat fill for a deployment with NO management-area zones (a subbasin
-    # deployment, ISS-116's own case) — forest-teal, so the fallback still
+    # deployment) — forest-teal, so the fallback still
     # reads as "zones" rather than introducing a fourth, undocumented hue.
     # Kept out of the template as a literal: every zone-fill colour on this
     # page comes from this derivation, never a value typed into map.html.
@@ -145,10 +145,11 @@ def zone_list(request):
     q = request.GET.get("q", "").strip()
     zone_type = request.GET.get("zone_type", "").strip()
 
-    # Phase 89: the "N use areas" column is a claim about `parcels`. Annotating
+    # The "N use areas" column is a claim about `parcels`. Annotating
     # unconditionally would report a truthful 0 on every row of a deployment
-    # that does not track use areas at all — the same "0 Wells" lie Phase 88
-    # named on the dashboard. Absent, so the column is not rendered.
+    # that does not track use areas at all — the same false "0 Wells" the
+    # dashboard would show with wells switched off. Absent, so the column is
+    # not rendered.
     queryset = Zone.objects.order_by("name")
     if is_enabled("parcels"):
         queryset = queryset.annotate(parcel_count=Count("parcel_zones"))
@@ -165,7 +166,7 @@ def zone_list(request):
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
-    # The map card's head and the map that follows the list (143-07). Every
+    # The map card's head and the map that follows the list. Every
     # Zone carries a required ``geometry`` (see the model), so
     # ``located_count`` always equals ``all_count`` here — the shared head
     # partial still branches on it because the other overview pages'
@@ -196,7 +197,7 @@ def zone_list(request):
 
 
 def _zone_budget_captions(is_groundwater, period_name):
-    """The three lead-panel captions for one budget row (143-06).
+    """The three lead-panel captions for one budget row.
 
     Each says where the platform got the figure, in the row's own words
     (copy rule 11): a groundwater row is spent by pumping and carries a
@@ -224,7 +225,7 @@ def _zone_parcels_context(zone):
     (``zone_parcel_assign``, ``zone_parcel_remove``) so ``_zone_parcels.html``'s
     footer reads the same computation wherever it is re-rendered. The acreage
     total is a ``Sum`` over the SAME queryset the table prints, computed here
-    rather than in the template (143-06's Task 4 action): ``Sum`` already
+    rather than in the template: ``Sum`` already
     excludes NULL areas, so a use area with no area on record is left out of
     the total rather than treated as zero, and the count of use areas that DO
     carry an area is tracked separately so the footer can say "N of M" when
@@ -289,8 +290,7 @@ def _zone_budget_row(alloc: AllocationPlan, zone: Zone, zone_parcel_ids: list[in
             # position, which is what the dashboard states as well.
             "budget": alloc.allocation_acre_feet or Decimal("0"),
             "carryover": gw["carryover"],
-            # 143-06: the lead panel's Available segment (Task 4, the
-            # checkpoint's zone-lead ruling) is the same "available"
+            # The lead panel's Available segment is the same "available"
             # `zone_groundwater_budget` already returns for `remaining` to
             # be computed from -- allocation adjusted by carry-over. Never
             # re-derived here, so it cannot drift from `remaining`.
@@ -298,7 +298,7 @@ def _zone_budget_row(alloc: AllocationPlan, zone: Zone, zone_parcel_ids: list[in
             "used": gw["used"],
             "used_label": "pumped",
             "is_groundwater": True,
-            # 150.1-02 screen 5: what the carry-over sum is made of, by kind.
+            # What the carry-over sum is made of, by kind.
             "credit_sources": zone_credit_sources(zone, alloc.reporting_period),
             "remaining": gw["remaining"],
             "available_caption": captions["available"],
@@ -339,34 +339,31 @@ def _zone_budget_row(alloc: AllocationPlan, zone: Zone, zone_parcel_ids: list[in
 
 def _zone_budgets(zone: Zone, allocations: QuerySet, parcel_zones: QuerySet) -> list[dict]:
     """Allocation versus use for each of the zone's allocations."""
-    # Allocation vs. use (Phase 52-02): an allocation number alone doesn't tell the story —
+    # Allocation vs. use: an allocation number alone doesn't tell the story —
     # an evaluator needs "of X allocated, Y was used". For each allocation, compute the
     # matching draw against the zone's parcels in that period: groundwater allocations
     # show PUMPING ONLY, metered or calculated, plus last year's carry-over; surface
     # allocations show DELIVERED canal water (the surface-delivery rows only —
     # allocations are excluded so we don't count the grant as a use).
     #
-    # 137-02 (ISS-154): the groundwater branch used to sum EVERY negative billable row
-    # for the period. Canal deliveries are stored negative by the platform's own
-    # convention, so 1,170.93 AF of surface water landed inside a column headed
-    # *pumped* and Halvern Irrigation-Urban read 562.75 AF OVER its groundwater
-    # allocation when its actual draw left it 911.58 AF under. The branch now calls
-    # `zone_groundwater_budget`, which the dashboard's zone row calls as well — so the
-    # two screens cannot print two different remainings for one zone-period, which is
-    # the second half of the same defect (ISS-155's class, DESIGN.md rule 12).
+    # The groundwater branch calls `zone_groundwater_budget`, not a sum of every
+    # negative billable row for the period: canal deliveries are stored negative by
+    # the platform's own convention, so such a sum would put surface water inside a
+    # column headed *pumped* and misstate how far under or over its groundwater
+    # allocation the zone is. The dashboard's zone row calls the same function, so
+    # the two screens cannot print two different remainings for one zone-period.
     zone_parcel_ids = list(parcel_zones.values_list("parcel_id", flat=True))
     return [_zone_budget_row(alloc, zone, zone_parcel_ids) for alloc in allocations]
 
 
 def _current_zone_budgets(zone: Zone, budgets: list[dict]) -> list[dict]:
     """The current period's budget rows, each with its use-ledger entry count."""
-    # 143-06: the lead panel shows the CURRENT period's result(s) only -- the
-    # same `current_period_id` helper Task 3 extracted to `accounting.services`
-    # so the zone page, the allocations list and the ledger cannot land on
+    # The lead panel shows the CURRENT period's result(s) only -- the
+    # same `current_period_id` helper in `accounting.services` is used by
+    # the zone page, the allocations list and the ledger cannot land on
     # three different ideas of "current". A zone with two water types in one
     # period (never seen in the demonstration data, but not ruled out) gets two
-    # results, side by side, each named; the checkpoint ruling is explicit that
-    # they are never summed (ISS-155). Each current result also needs its own
+    # results, side by side, each named, and they are never summed. Each current result also needs its own
     # "Recorded in: Use ledger, N entries" count, which is the SAME filter
     # `/accounting/ledger/?period=<pk>&zone=<pk>` applies (`ledger_list`,
     # `accounting/views/ledger.py`), not the billable-suppressed `period_rows` above,
@@ -466,7 +463,7 @@ def _zone_detail_context(zone):
     workspace's pre-loaded ``?selected=`` pane so all three are identical.
     """
     # Assigned parcels via ParcelZone, and the footer's count + acreage total
-    # (143-06). Phase 89: both this and the allocations query below are queries
+    # Both this and the allocations query below are queries
     # into switched-off modules under demotion. The tables are schema-resident,
     # so they answer rather than raise — an empty answer that the page then
     # presents as fact ("No parcels assigned to this zone", "No allocations for
@@ -516,7 +513,7 @@ def zone_detail(request, pk):
 
 
 # ---------------------------------------------------------------------------
-# Per-district year-end-unused-water override (Phase 55-03)
+# Per-district year-end-unused-water override
 # ---------------------------------------------------------------------------
 #
 # A surface district IS its own Zone, so the per-district override of the
@@ -592,9 +589,8 @@ def zone_edit(request, pk):
     """Edit a zone's name, type, description and the Delta jurisdiction rule.
 
     Unlike ``zone_create``, no map: geometry is drawn once at creation and is
-    not reopened here (146-05 Task 3, Q5 -- the plan's "a zone edit route if
-    none exists" door, since only ``zone_recovery_horizon`` existed and that
-    endpoint is a single-field HTMX control, not a general edit form).
+    not reopened here. This is the general edit form: the only other zone edit,
+    ``zone_recovery_horizon``, is a single-field HTMX control.
     """
     zone = get_object_or_404(Zone, pk=pk)
     if request.method == "POST":
@@ -755,7 +751,7 @@ def tie_lines_geojson(request):
         })
 
     # Surface water tie lines: POD -> parcel centroid. Guarded as well as
-    # locally imported (Phase 87): this loop is unconditional and the map layer
+    # locally imported: this loop is unconditional and the map layer
     # that draws these features is guarded on the same condition.
     if is_enabled("surface"):
         from surface.models import PointOfDiversionParcel
@@ -866,7 +862,7 @@ def flowlines_geojson(request):
     The hydrography renderer: the map's "Surface Water" layers filter on
     feature_type (canals vs natural channels) and label on name.
 
-    **Scale guard (50-02):** the USGS 3DHP source is exhaustive — the real
+    **Scale guard:** the USGS 3DHP source is exhaustive — the real
     Merced data is ~48,700 flowlines (30 MB serialized), most of them tiny
     unnamed first-order capillaries in the Sierra headwaters of the upper
     watershed. Serving all of them makes the map payload unusable and buries
@@ -917,7 +913,7 @@ def zone_overview_geojson(request):
     zone's full detail page on click. Counts are cheap (a district has a handful
     of zones), so this is not on a hot path.
     """
-    # Phase 89: `parcel_count` is omitted rather than zeroed when `parcels` is
+    # `parcel_count` is omitted rather than zeroed when `parcels` is
     # off — the popup's JS already tests `p.parcel_count != null` and drops the
     # phrase, so absence is the shape it was built to handle.
     zones = Zone.objects.filter(geometry__isnull=False)
@@ -953,14 +949,14 @@ def zone_labels_geojson(request):
     times across the map. Labeling a single interior point per zone gives
     exactly one clean, well-placed label.
 
-    ``pk`` and ``zone_type`` (143-07 Task 4) let the Zones overview map's
+    ``pk`` and ``zone_type`` let the Zones overview map's
     follow helper filter this second source by the same pks the fill/outline
-    layers filter by, and let this plan split the district map's legend by
-    type. ``label`` is the code-prefix-stripped name (Step 0); every symbol
+    layers filter by, and let the district map's legend split by
+    type. ``label`` is the code-prefix-stripped name; every symbol
     layer that draws it reads ``['coalesce', ['get','label'], ...]`` so an
     older cached response still labels the way it always has.
 
-    ``short_label`` (Task 5, R-094) is ``label`` with everything up to and
+    ``short_label`` is ``label`` with everything up to and
     including the LAST `` — `` (em dash) dropped. The demonstration's surface
     service-area names carry a composed prefix ``map_label`` deliberately
     leaves alone (``test_map_labels.py``'s
@@ -974,7 +970,7 @@ def zone_labels_geojson(request):
     service-area label layer reads ``short_label``; the GSA label layer and
     the Zones overview map both keep reading ``label``, unchanged.
 
-    150-04 V11: the seed now composes those names with a colon
+    The seed composes those names with a colon
     ("MER Surface Service Area: Halvern Irrigation District"), and geography
     migration 0009 renamed the rows already stored, so ``short_label`` drops
     everything up to and including the last colon-and-space as well. An
