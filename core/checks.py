@@ -26,7 +26,7 @@ from django.db import DatabaseError
 #: itself, so project checks live under the project's own namespace.
 DEBUG_WARNING_ID = "openh2o.W001"
 
-#: The site-identity placeholder warning (ISS-125).
+#: The site-identity placeholder warning.
 SITE_IDENTITY_WARNING_ID = "openh2o.W002"
 
 

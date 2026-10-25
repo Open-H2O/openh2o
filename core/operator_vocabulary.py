@@ -11,7 +11,7 @@ heard of DNS, a rented server, what sends an email, or what an API key is.
 This module is those four lists, merged, one record per concept.
 
 Those logs live in a private folder that ``.dockerignore`` excludes, and the
-test suite runs inside the ``web`` container. The gate can therefore never read
+test suite runs inside the ``web`` container. The test can therefore never read
 them at test time. They are transcribed here once and cited as provenance;
 ``reported_by`` on every record names the run or runs that wrote the term down.
 Nothing on this list was invented by us.
@@ -23,10 +23,10 @@ the reader a definition before it does. It claims *nothing* about whether any
 particular definition is adequate. No test can read a sentence and judge whether
 a groundwater engineer would understand it. ``plain_english`` below is the run's
 own wording, kept because four agents already wrote definitions aimed squarely
-at that reader; it is Phase 114's starting text, not its finish line, and Phase
-114 pairs the machine gate with a human read for exactly this reason.
+at that reader; it is a starting text, not a finished one, and the test
+needs a human read alongside it for exactly this reason.
 
-**Pure data.** No Django import, no model import, no settings access. The gate
+**Pure data.** No Django import, no model import, no settings access. The test
 runs without a database and cannot be broken by an unrelated app change.
 """
 
@@ -56,7 +56,7 @@ class OperatorTerm:
     #: Which clean-room run or runs reported this term. Provenance is the point.
     reported_by: tuple
     #: The runs' own plain-English definition, quoted or lightly merged.
-    #: Phase 114's starting text.
+    #: A starting text, to be read by a person.
     plain_english: str
 
 
@@ -128,7 +128,7 @@ TERMS: tuple = (
         label="nested container (a rented computer that is itself a container)",
         # This phrase appears nowhere in the documents today, so the gate will
         # never report it. The record exists because run 004 lost its entire
-        # Docker path to this and Phase 114 has to decide, on purpose, whether
+        # Docker path to this, so someone has to decide, on purpose, whether
         # the documents say anything about it — not discover the gap by
         # deploying into one again.
         patterns=(r"\bnested container\b",),

@@ -48,8 +48,8 @@ from dataclasses import dataclass
 #: makes this a measurement of this repository rather than an opinion about
 #: hydrology.
 #:
-#: ``FACILITY_PLAIN`` names a dictionary that **no longer exists** — 118-02
-#: deleted it whole on 2026-08-06 (ISS-129). The constant stays because these
+#: ``FACILITY_PLAIN`` names a dictionary that **no longer exists**: it was
+#: deleted whole on 2026-08-06. The constant stays because these
 #: are historical provenance, not live pointers: a term earned its place on this
 #: list by having been caught somewhere, and erasing where would turn a
 #: measurement back into an opinion. ``tests/test_domain_vocabulary.py`` no

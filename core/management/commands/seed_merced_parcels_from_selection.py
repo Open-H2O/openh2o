@@ -43,7 +43,7 @@ FIXTURE = os.path.join(
     os.path.dirname(__file__), "..", "..", "..",
     "data", "merced", "selected_parcels.geojson",
 )
-# Phase 62: the Merced River dual-purpose (Flood-MAR) parcels. These are ordinary
+# The Merced River dual-purpose (Flood-MAR) parcels. These are ordinary
 # ag parcels here — crops + Merced River surface delivery, served by MER-POD-009
 # (their formal place of use). Their recharge half (the storm-flooded Flood-MAR
 # RechargeSite on the same footprint) is added by seed_merced_basins_from_selection.
@@ -82,7 +82,7 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
-        # Local import: `surface` is an optional module (Phase 87), so this must
+        # Local import: `surface` is an optional module, so this must
         # not run at module scope.
         from surface.models import (
             PointOfDiversion, PointOfDiversionParcel, WaterRight, WaterRightParcel,
@@ -100,18 +100,18 @@ class Command(BaseCommand):
         if not features:
             raise CommandError("Selection fixture has no features.")
 
-        # Phase 62: append the Merced River dual-purpose parcels as surface-served
+        # Append the Merced River dual-purpose parcels as surface-served
         # ag parcels (no well → FLOOD_MAR archetype, so their storm over-delivery
         # recharges the shared aquifer). They flow through the SAME link logic
         # below, becoming formal places of use under MER-POD-009.
         features = features + self._river_features()
 
-        # ISS-058: snapshot existing MER parcel geometry BEFORE the rebuild so we
+        # Snapshot existing MER parcel geometry BEFORE the rebuild so we
         # can tell an unchanged field (keep its PK → keep its cached OpenET ET +
         # precip) from a moved one (must drop the now-stale cache). A full delete
-        # used to cascade the whole OpenETCache away, forcing sync_openet_parcels
+        # would cascade the whole OpenETCache away, forcing sync_openet_parcels
         # to re-fetch every parcel from Google Earth Engine — paid compute even
-        # for the ~74 fields whose footprints never changed.
+        # for the ~74 fields whose footprints never change.
         existing_geoms = {
             p.parcel_number: p.geometry
             for p in Parcel.objects.filter(parcel_number__startswith="MER-APN-")
@@ -177,7 +177,7 @@ class Command(BaseCommand):
                 owner = GW_SOLO_OWNERS[gw_solo_i % len(GW_SOLO_OWNERS)]
                 gw_solo_i += 1
             parcel_number = f"MER-APN-{seq:03d}"
-            # ISS-058: a parcel that kept its number but MOVED has cached ET keyed
+            # A parcel that kept its number but MOVED has cached ET keyed
             # to the old footprint (the GEE adapter matches the cache by parcel_id
             # only, never by geometry), so its stale ET must be dropped to force a
             # re-fetch. update_or_create keeps the PK for an unchanged number, so a
@@ -272,7 +272,7 @@ class Command(BaseCommand):
                 )
                 wrp += 1
 
-        # ISS-058 prune: any MER parcel whose number is no longer produced above
+        # Prune: any MER parcel whose number is no longer produced above
         # (a field dropped from the selection) is removed now, AFTER the keepers
         # are rebuilt. Its OpenETCache cascades away with it — correct, the parcel
         # no longer exists. Keepers retain their PK and therefore their cached ET.
@@ -291,7 +291,7 @@ class Command(BaseCommand):
             f"  GSA (groundwater) — {len(wells)} wells "
             f"({sum(1 for m in well_members.values() if len(m) > 1)} shared "
             f"across multiple parcels); {gsa_links} parcels in their GSA\n"
-            f"  ISS-058 — prune-only: kept unchanged parcels' OpenET cache; "
+            f"  Prune-only: kept unchanged parcels' OpenET cache; "
             f"{pruned} dropped parcel(s) pruned"
         ))
 
@@ -341,16 +341,16 @@ class Command(BaseCommand):
         """Clear MER parcels' links + wells so the rebuild starts clean, WITHOUT
         deleting the parcels themselves (keep rights+PODs too).
 
-        ISS-058: the parcels are deliberately kept. Each parcel's PK anchors its
+        The parcels are deliberately kept. Each parcel's PK anchors its
         cached OpenET ET + precip (OpenETCache.parcel, on_delete=CASCADE), so a
-        full parcel delete cascaded the cache and forced sync_openet_parcels to
+        full parcel delete would cascade the cache and force sync_openet_parcels to
         re-fetch every field from Google Earth Engine — paid compute even for the
         unchanged ones. The loop rebuilds the parcels via update_or_create (PK
         preserved for an unchanged number) and these links from scratch; parcels
         dropped from the selection are pruned at the end of handle(). Clearing the
         links here (including ParcelZone) keeps a kept parcel from carrying a
         stale GSA/POD/well association across the re-seed."""
-        # Local import: `surface` is an optional module (Phase 87) — see `handle`.
+        # Local import: `surface` is an optional module; see `handle`.
         from surface.models import PointOfDiversionParcel, WaterRightParcel
 
         parcel_ids = list(

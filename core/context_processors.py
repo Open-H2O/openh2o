@@ -19,11 +19,11 @@ def site_config(request):
 def access_flags(request):
     """Expose the access-control switch + the viewer's admin status to templates.
 
-    Drives the admin-only sidebar grouping (ISS-021, 41-02):
+    Drives the admin-only sidebar grouping:
       - ``access_enforced`` mirrors the ACCESS_CONTROL_ENFORCED master switch.
       - ``user_is_admin`` is the anonymous-safe two-tier check (core.access).
-      - ``user_can_write`` is False only for a Viewer (read-only) account
-        (147-02); every control that changes a record sits inside it.
+      - ``user_can_write`` is False only for a Viewer (read-only) account;
+        every control that changes a record sits inside it.
 
     Admin-only links (Users, Methodology) show only when ``user_is_admin``; the
     Setup Wizard stays visible to everyone while the switch is OFF so the demo's
@@ -46,8 +46,10 @@ _NO_DELIVERY_BACKENDS = (
 
 
 def site_sends_email() -> bool:
-    """False on a site with no mail server (150.1-02; ISS-259: production defaults to the SMTP backend, so a
-    site with no EMAIL_HOST showed the form and then a 500)."""
+    """False on a site with no mail server.
+
+    Production defaults to the SMTP backend, so a site with no EMAIL_HOST would
+    show the form and then fail with a 500."""
     if not settings.EMAIL_HOST:
         return False
     return settings.EMAIL_BACKEND not in _NO_DELIVERY_BACKENDS
@@ -66,7 +68,7 @@ def nav_mode(request):
     stored = request.COOKIES.get("nav_mode", "operations")
     if stored not in ("operations", "admin"):
         stored = "operations"
-    # 150-03 (R-028, ISS-182): a page whose lit entry lives in a section
+    # A page whose lit entry lives in a section
     # Operations hides (Administration: water rights, accounts, water years)
     # renders the sidebar in Admin mode, for this request only. The cookie is
     # never written here, so the next page is back in the stored mode.
@@ -83,7 +85,7 @@ def nav_mode(request):
 
 
 def _lit_entry(request):
-    """The one sidebar entry this request's page lights, or None (150-03).
+    """The one sidebar entry this request's page lights, or None.
 
     Computed once per request and kept on it, because two processors read it:
     ``nav_mode`` (the per-page Admin override) and ``modules`` (the sidebar's
@@ -109,9 +111,9 @@ def modules(request):
 
     ``module_dashboard_cards`` is the flat list of template partials the enabled
     modules contribute to the overview dashboard, in registry order. It is empty
-    on a default deployment — no module ships a dashboard card today, and the
-    honest answer for a module without one is nothing at all rather than an
-    invented tile. Phase 78's drinking-water module adds the first real entry.
+    when no enabled module contributes a card: a module without one adds
+    nothing rather than an invented tile. The drinking-water module contributes
+    the one real card.
     """
     from core.modules import dashboard_cards_for, enabled_modules, nav_sections_for
 
@@ -122,7 +124,7 @@ def modules(request):
         "enabled_modules": [spec.name for spec in specs],
         "nav_sections": sections,
         "module_dashboard_cards": dashboard_cards_for(specs),
-        # 150-03: the url_name of the one entry this page lights, and its
+        # The url_name of the one entry this page lights, and its
         # section key; `_sidebar.html` marks that link active and opens Help
         # when it is one of Help's own.
         "nav_lit": lit.url_name if lit is not None else None,
@@ -137,7 +139,7 @@ def _page_section(lit):
     The section of the entry the page lights, when that entry is a module's
     (the composed deployment's own, so a dropped module never names a section
     with no sidebar). Home and the Help pages light fixed entries, and their
-    pages carry no section class, as before 150-03.
+    pages carry no section class.
 
     Visibility predicates are applied in the template, not here, so an entry
     hidden from THIS viewer still counts. That is deliberate: the value
@@ -155,7 +157,7 @@ def setup_status(request):
 
     ``needs_setup`` is True only when there are zero ``Boundary`` rows — the
     wizard's first output, so "no boundary" unambiguously means "nothing has
-    been set up yet" (Phase 48 / ISS-046). The cheap ``exists()`` query is gated
+    been set up yet". The cheap ``exists()`` query is gated
     to viewers who can actually run setup — admins, or anyone while the access
     switch is OFF — mirroring the Setup Wizard's own sidebar visibility rule. So
     a read-only operator on an enforced deployment never triggers the extra query
@@ -203,8 +205,8 @@ def google_sign_in(request):
     ``google_sign_in_available`` is the SAME predicate the URL guards in
     ``config/urls.py`` use (``core.oauth``), which is the point: the button and
     the endpoint cannot drift apart, because there is only one answer to drift.
-    ISS-115 was exactly that drift — the templates read the flag, the routes read
-    nothing.
+    Without one shared answer, the templates could read the flag while the
+    routes read nothing.
 
     It is not enough to leave this to the templates' old
     ``site_config.allow_google_oauth`` test. That test rendered

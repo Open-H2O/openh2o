@@ -1,16 +1,15 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""allauth account adapter wired to the access-control master switch (ISS-021).
+"""allauth account adapter wired to the access-control master switch.
 
-``ACCESS_CONTROL_ENFORCED`` defaults to True (since Phase 41), so public
+``ACCESS_CONTROL_ENFORCED`` defaults to True, so public
 self-registration is CLOSED by default. With the switch on, this adapter closes
 signup at allauth's own gate -- the signup view stops serving the form and
 refuses to create accounts -- so no separate template surgery is needed. The
 open demo is the deployment that turns the switch OFF; a real agency leaves it
 alone.
 
-``ACCOUNT_EMAIL_VERIFICATION`` is a real setting as of ISS-015 (closed
-2026-08-04, Phase 109-01) rather than the hardcoded ``"none"`` it used to be.
-Unset, it derives from ``EMAIL_HOST``: "mandatory" where a mail server is
+``ACCOUNT_EMAIL_VERIFICATION`` is a setting an operator can set. Unset, it
+derives from ``EMAIL_HOST``: "mandatory" where a mail server is
 configured, "none" where there is not one, so an install that cannot send mail
 can never lock its operator out. It governs the open-signup posture -- when the
 switch above is ON, this adapter refuses the signup before verification is ever
@@ -42,14 +41,14 @@ _SIGNED_IN_ONLY_MESSAGES = {"account/messages/password_changed.txt"}
 
 
 class AccessControlledAccountAdapter(DefaultAccountAdapter):
-    # ISS-248: the sentence shown when the current password is wrong or blank.
+    # The sentence shown when the current password is wrong or blank.
     error_messages = {
         **DefaultAccountAdapter.error_messages,
         "enter_current_password": "The current password does not match your account.",
     }
 
     def send_mail(self, template_prefix, email, context):
-        # ISS-259: the SMTP backend with no EMAIL_HOST can only fail, so a
+        # The SMTP backend with no EMAIL_HOST can only fail, so a
         # reset posted straight to the view (past the page's no-email
         # sentence) sends nothing instead of ending in a 500.
         if (
@@ -63,7 +62,7 @@ class AccessControlledAccountAdapter(DefaultAccountAdapter):
         return not settings.ACCESS_CONTROL_ENFORCED
 
     def get_password_change_redirect_url(self, request):
-        # ISS-248 message A row 11: Change password and Set a password return
+        # Change password and Set a password return
         # to the profile, which shows the sentence.
         return reverse("profile")
 

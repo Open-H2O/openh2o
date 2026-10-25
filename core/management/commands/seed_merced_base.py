@@ -128,15 +128,14 @@ class Command(BaseCommand):
         absent, or rename it off a retired demo identity — but never clobber an
         operator's own custom agency name.
 
-        **Why the forward rename is gated on ownership, not on a name list
-        (Phase 97-02).** The identity this seed writes used to be a REAL agency's
-        name. ``retired_names`` cannot carry it: that set is matched against
+        **Why the forward rename is gated on ownership, not on a name list.**
+        A deployment seeded earlier may carry a REAL agency's name as its demo
+        identity. ``retired_names`` cannot carry it: that set is matched against
         whatever an operator typed, so a real agency that legitimately chose that
         name would be silently renamed out from under them. But name equality
-        alone fails in the opposite direction — the two live deployments already
-        carried the old real name, matched no branch, and fell through to "kept
-        (custom agency name)", which would have left a real agency's name on a
-        public demo permanently.
+        alone fails in the opposite direction: such a deployment matches no
+        branch and falls through to "kept (custom agency name)", which would
+        leave a real agency's name on a public demo permanently.
 
         So the rename keys on ``demonstration_mode`` instead. This seed is the
         only writer of that flag anywhere in the codebase, and it sets it True on
@@ -161,11 +160,11 @@ class Command(BaseCommand):
         # rename forward whatever demonstration_mode says, because no real agency
         # can be sitting under one of them.
         retired_names = {"Demo Valley GSA"}
-        # Contact emails minted by a retired demo seed (Kaweah v1.0-1.8, the Demo
-        # Valley sample, and the pre-97 Merced demo). An in-place rename moved the
-        # agency NAME off the retired identity but left these stale, so a
-        # long-lived demo kept a retired-basin contact email in core_siteconfig
-        # (ISS-067) — the same trap this phase's rename would otherwise re-set.
+        # Contact emails minted by a retired demo seed (Kaweah, the Demo Valley
+        # sample, and the earlier Merced demo). An in-place rename moves the
+        # agency NAME off the retired identity but leaves these stale, so a
+        # long-lived demo would keep a retired-basin contact email in
+        # core_siteconfig.
         # Heal only these known demo emails on a demo-owned identity, never an
         # operator's real contact address. All three are RFC-2606 .example.com
         # addresses: reserved, unroutable, nobody's real inbox.
@@ -183,7 +182,7 @@ class Command(BaseCommand):
                 native_srid=4326,
                 contact_email=merced_email,
                 # The seed owns this identity, so it's a demonstration: stamp
-                # every report surface + file "not submittable" (Phase 53-02).
+                # every report surface + file "not submittable".
                 demonstration_mode=True,
             )
             self.stdout.write(self.style.SUCCESS(
@@ -193,16 +192,16 @@ class Command(BaseCommand):
         ):
             # A retired FICTIONAL demo identity (safe on any row), or any row the
             # seed already owns — demonstration_mode proves ownership, which is
-            # what lets a deployment seeded under the pre-97 real agency name
+            # what lets a deployment seeded under an earlier real agency name
             # rename forward instead of being mistaken for an operator's own
             # choice. See the ownership note in this method's docstring.
             old = sc.agency_name
             sc.agency_name = merced_name
             # Renaming off a retired demo identity → still the seed's demo;
-            # turn on demonstration_mode alongside the name (53-02).
+            # turn on demonstration_mode alongside the name.
             sc.demonstration_mode = True
-            # Heal a retired-basin contact email carried over from the old demo
-            # (ISS-067) — this is the seed's own demo, so a known retired demo
+            # Heal a retired-basin contact email carried over from the old demo:
+            # this is the seed's own demo, so a known retired demo
             # email is stale, never a real operator's address.
             if not sc.contact_email or sc.contact_email in retired_demo_emails:
                 sc.contact_email = merced_email
@@ -214,13 +213,13 @@ class Command(BaseCommand):
             # existing Merced demo). Ensure demonstration_mode is on idempotently:
             # a demo whose SiteConfig predates the field — migrated in as False —
             # would otherwise never get stamped, since the name already matches and
-            # neither the create nor the rename branch fires (Phase 53-02).
+            # neither the create nor the rename branch fires.
             update_fields = []
             if not sc.demonstration_mode:
                 sc.demonstration_mode = True
                 update_fields.append("demonstration_mode")
             # Heal a retired-basin contact email left behind by an earlier
-            # in-place rename (ISS-067). The name already matched Merced, so
+            # in-place rename. The name already matched Merced, so
             # neither the create nor the rename branch ever corrected the email
             # minted by the retired Kaweah/Demo-Valley seed — it would persist
             # for the life of the demo (and reseeding never touched it).

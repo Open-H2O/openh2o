@@ -152,7 +152,7 @@ class Command(BaseCommand):
     def _flush(self):
         """Remove all demo data by deleting the boundary (cascades)."""
         # Local imports: `recharge` and `surface` are optional modules, so these
-        # must not run at module scope (ISS-072, Phase 87).
+        # must not run at module scope.
         from recharge.models import RechargeSite
         from surface.models import WaterRight
 
@@ -219,7 +219,7 @@ class Command(BaseCommand):
 
     def _seed(self):
         # Local imports: `recharge` and `surface` are optional modules, so these
-        # must not run at module scope (ISS-072, Phase 87).
+        # must not run at module scope.
         from recharge.models import RechargeEvent, RechargeSite
         from surface.models import (
             PointOfDiversion,

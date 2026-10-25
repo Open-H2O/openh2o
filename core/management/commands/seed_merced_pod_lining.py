@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""State the lining of each demonstration point of diversion (150.3-01).
+"""State the lining of each demonstration point of diversion.
 
 Each point of diversion is stated as lined, unlined or pipe, to help with
 seepage calculations. Every demonstration point
@@ -66,8 +66,8 @@ LINING_BY_POD = {
     "MER-BPOD-001 El Nido Canal Recharge Intake": ("unlined", _MAJORITY),
 }
 
-# Notes an earlier version of this command wrote (150.3-01 as first built,
-# 2026-10-11 16:40 PDT) named a real district. Each was one paragraph opening
+# Notes an earlier version of this command wrote (as first built, 2026-10-11
+# 16:40 PDT) named a real district. Each was one paragraph opening
 # with this prefix (a comma where the current note has a full stop), so a re-run
 # removes that paragraph before appending the current note. Matched by prefix so
 # this file never has to spell the banned name.

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Reading an uploaded map file into features (150-03, ISS-200).
+"""Reading an uploaded map file into features.
 
 The GeoJSON, zipped-shapefile and KML readers, with their size and archive
 guards, moved here from ``infrastructure/importer.py``, where they were the
@@ -43,7 +43,7 @@ THREE_FORMATS = (
     "a zipped shapefile (.zip), a KML (.kml) or a GeoJSON (.geojson or .json) file"
 )
 
-#: The Setup Wizard's wrong-type sentence (150.1-02).
+#: The Setup Wizard's wrong-type sentence.
 UNSUPPORTED_SENTENCE = "This page imports .zip, .kml, .geojson and .json files only."
 
 #: The map-file sentences both pages show: the bulk import's

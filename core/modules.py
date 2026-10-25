@@ -47,7 +47,7 @@ doing something perfectly reasonable:
 ``tests/test_composition_rule.py`` enforces both. It derives the real edge set
 from Django's live app registry and the migration graph, never from grep — grep
 has already missed a reverse accessor and a multi-line field declaration in this
-codebase (Phase 82). That test lives in ``tests/`` rather than here precisely
+codebase. That test lives in ``tests/`` rather than here precisely
 because it needs the live registry, which this file must never touch.
 
 The nine pre-existing violations are tolerated only as the written, reasoned
@@ -69,21 +69,19 @@ app remains in ``INSTALLED_APPS``, its migrations run and its tables sit empty,
 but it contributes no URLs, no nav, no seed commands and no pages. Everything an
 operator can see is gone; only the schema stays. This is the class
 ``measurements`` and ``standards`` have always belonged to informally, now said
-out loud — and since Phase 88 it is a live mechanism rather than a dormant one:
-``wells`` and ``datasync`` were the first modules that are optional AND
-schema-resident at the same time, which is the combination the tier was built
-for. Phase 89 added ``parcels`` and ``accounting``, which makes four. True
+out loud. It is a live mechanism: ``wells``, ``datasync``, ``parcels`` and
+``accounting`` are optional AND schema-resident at the same time, which is the
+combination the tier exists for. True
 removal (tables gone too) stays available per section as a priced option; see
 ISSUES.md.
 
 The standard set today: ``core`` and ``geography``, plus the invisible
-vocabularies ``measurements`` and ``standards``. **Every water domain is now a
-choice** — Phase 89 (2026-07-21) demoted the last two, ``parcels`` and
-``accounting``, which is the milestone's whole point. They are demoted as an
-inseparable PAIR: ``accounting.requires`` has always named ``parcels``, and
-Phase 89 added ``accounting`` to ``parcels.requires``, so turning either off
-turns both off and the one-sided configuration is refused at boot. The reason,
-on measured evidence: ``parcels/views.py`` builds the Use Areas detail page out
+vocabularies ``measurements`` and ``standards``. **Every water domain is a
+choice.** ``parcels`` and ``accounting`` are optional as an
+inseparable PAIR: ``accounting.requires`` names ``parcels`` and
+``parcels.requires`` names ``accounting``, so turning either off
+turns both off and the one-sided configuration is refused at boot. The reason:
+``parcels/views.py`` builds the Use Areas detail page out
 of Accounting, so the unpaired shape would ship a page with its content removed.
 
 They stay schema-resident rather than being removed because the arrows point the
@@ -95,40 +93,36 @@ cost.
 **Switching this pair off takes five more sections with it** —  ``wells``,
 ``datasync``, ``surface``, ``recharge`` and ``reporting`` each declare that they
 need one of the two. What is left is a login, a map and Drinking Water, and that
-is not a broken install: it is the drinking-water utility flavor this milestone
-existed to make possible.
+is not a broken install: it is the drinking-water utility flavor.
 
-**"Not yet decoupled" was the wrong diagnosis, and Phase 88 measured it.** Six
-modules carried a ``required_reason`` blaming module-scope imports. Demoted
-model-only, the app stays in ``INSTALLED_APPS`` and every one of those imports
-keeps resolving — ``manage.py check`` is clean with ``wells`` and ``datasync``
-switched off (Phase 88), and equally clean with the whole seven-module
-``parcels``/``accounting`` closure switched off (Phase 89), in both cases with
-ZERO imports moved. The last of those six ``required_reason`` strings was deleted
-by Phase 89. What breaks under demotion is what the operator can SEE: routes,
+**A module need not be decoupled from module-scope imports to be optional.**
+Demoted model-only, the app stays in ``INSTALLED_APPS`` and every such import
+keeps resolving: ``manage.py check`` is clean with ``wells`` and ``datasync``
+switched off, and equally clean with the whole seven-module
+``parcels``/``accounting`` closure switched off, in both cases without moving
+any import. What breaks under demotion is what the operator can SEE: routes,
 nav, seeds, counts and words. A clean ``manage.py check`` proves nothing here;
 ``make test-droppable`` is the only thing that looks.
 
 **And know what even that cannot see: it renders against an EMPTY database.**
-Phase 89-03 pointed a reduced module set at a copy of the real demo data and
-found eight live 500s — a surviving CalWATRS filing reaching
-``reporting.views`` code whose ``surface`` import no longer resolves. Green at
-30 means a reduced deployment works for a brand-new agency with no data. The
-realistic case is an agency that has been USING the platform and then switches a
-module off, where old rows reach code paths whose module is gone, and nothing in
-the harness exercises it (ISS-091).
+A reduced module set pointed at a copy of the real demo data can fail where the
+empty-database run passes: a surviving CalWATRS filing can reach
+``reporting.views`` code that imports from ``surface``, which is why those
+imports are local and guarded. A green run means a reduced deployment works for
+a brand-new agency with no data. The realistic case is an agency that has been
+USING the platform and then switches a module off, where old rows reach code
+paths whose module is gone, and nothing in the harness exercises it.
 
-Droppable today — all ten of them: ``reporting``, ``health``, ``setup``,
-``infrastructure``, ``feedback``, ``drinking`` — ``recharge``, which Phase 82
-(2026-07-20) decoupled as the pilot — ``surface``, removed outright by Phase 87
-— ``wells`` and ``datasync``, demoted model-only by Phase 88 — and ``parcels``
-and ``accounting``, demoted as a pair by Phase 89. The four demoted ones are the
-distinction the two-tier semantic exists for: switched off but schema-resident,
-because nine backwards arrows point into them.
+Droppable today: ``reporting``, ``health``, ``setup``, ``infrastructure``,
+``feedback``, ``drinking``, ``recharge``, ``surface`` (removed outright, tables
+included), ``wells`` and ``datasync`` (schema-resident), and ``parcels`` and
+``accounting`` (schema-resident, as a pair). The four schema-resident ones are
+the distinction the two-tier semantic exists for: switched off but
+schema-resident, because backwards arrows (``SCHEMA_EXCEPTIONS``) point into
+them.
 
 **Keep these paragraphs current.** A stale docstring here does not throw; it just
-gets believed. The predecessor of this text drifted exactly that way, still
-routing work to phases that had been retired.
+gets believed.
 """
 
 from dataclasses import dataclass
@@ -205,13 +199,10 @@ class NavEntry:
     a prefix of its own sub-pages: Surface Diversions matches ``/surface/`` but
     must NOT light up on ``/surface/rights``, which is its own entry.
 
-    **`active_excludes` is a tuple, not a single string.** 77-02 had exactly one
-    exclusion to express and a lone string covered it. Phase 78's Drinking Water
-    entry needs two — ``/drinking/`` is a prefix of both ``/drinking/results/``
-    and ``/drinking/sampling-points/`` — and there is no single substring that
-    covers both. A one-element tuple is exactly as expressive as the old string,
-    so the existing entry's rendered output is unchanged; the golden fixtures
-    are what prove that rather than assert it.
+    **`active_excludes` is a tuple, not a single string.** The Drinking Water
+    entry needs several: ``/drinking/`` is a prefix of both ``/drinking/results/``
+    and ``/drinking/sampling-points/``, and there is no single substring that
+    covers both. A one-element tuple is exactly as expressive as a lone string.
 
     `icon` is a short stable key that `_nav_icon.html` maps to an icon partial.
 
@@ -234,13 +225,13 @@ class NavEntry:
     active_excludes: tuple = ()
     visibility: str = VISIBILITY_ALWAYS
     starts_group: bool = False
-    #: Further path prefixes this entry owns besides `active_match` (150-03).
+    #: Further path prefixes this entry owns besides `active_match`.
     #: A page with no entry of its own names the entry it is reached from here,
     #: so it lights that one: the calculation receipt lights Dashboard, the
     #: monitoring page lights Monitoring Stations.
     also_matches: tuple = ()
     #: Module names of which at least one must be enabled for this entry to
-    #: exist at all (150-03). Empty means no condition. Applied where the
+    #: exist at all. Empty means no condition. Applied where the
     #: sidebar is composed (`nav_sections_for`, `sidebar_entries`) rather
     #: than in the template, because an entry hidden in the template still
     #: counts as the first of its section and would draw a `starts_group`
@@ -250,7 +241,7 @@ class NavEntry:
     def owned_prefix_length(self, path: str) -> int:
         """Length of the longest prefix of `path` this entry owns, or -1.
 
-        The lighting rule (Plan 150-03): an entry owns its `active_match` and
+        The lighting rule: an entry owns its `active_match` and
         every `also_matches` prefix, except where one of its `active_excludes`
         is a prefix of the path. `"/"` is owned exactly, never as a prefix of
         everything. `lit_entry` picks the entry with the longest owned prefix.
@@ -280,7 +271,7 @@ class NavEntry:
 
 
 def lit_entry(path: str, entries) -> Optional[NavEntry]:
-    """The ONE sidebar entry a page at `path` lights, or None (Plan 150-03).
+    """The ONE sidebar entry a page at `path` lights, or None.
 
     The entry owning the longest prefix of `path` wins (see
     `NavEntry.owned_prefix_length`), so `/map/zones/4/` lights Zones and not
@@ -319,8 +310,8 @@ class ModuleSpec:
     nav: tuple = ()
     #: Template partial paths this module contributes to the overview dashboard,
     #: e.g. ``("drinking/partials/_dashboard_card.html",)``. Empty for every
-    #: module today — see `dashboard_cards_for` for why that is the right answer
-    #: and not an omission.
+    #: module except the drinking-water module; see `dashboard_cards_for` for why
+    #: that is the right answer and not an omission.
     dashboard_cards: tuple = ()
     seed_commands: tuple = ()
     required: bool = False
@@ -338,8 +329,8 @@ class ModuleSpec:
     #: **Independent of ``required``.** ``measurements`` and ``standards`` are
     #: both: standard (nobody may omit them) AND schema-resident, so the flag
     #: does no work on either. It starts doing work when a module is optional
-    #: and schema-resident at the same time — which since Phase 88 (2026-07-21)
-    #: ``wells`` and ``datasync`` are. The composition path below is live, and
+    #: and schema-resident at the same time, as ``wells``, ``datasync``,
+    #: ``parcels`` and ``accounting`` are. The composition path below is live, and
     #: ``make test-droppable`` exercises it in the ``without-wells`` and
     #: ``without-datasync`` cases.
     schema_resident: bool = False
@@ -402,8 +393,7 @@ MODULE_REGISTRY: dict = {
         url_module="core.urls",
         url_order=120,
         nav=(
-            # 147-02: the sidebar entry is gone;
-            # /changes/ stays reachable from the Users page only. See
+            # No sidebar entry: /changes/ is reachable from the Users page only. See
             # templates/core/users_list.html.
             NavEntry(
                 url_name="core:users_list",
@@ -474,18 +464,14 @@ MODULE_REGISTRY: dict = {
         ),
         # `core` for ParcelLedger.created_by.
         #
-        # `accounting` was deliberately absent here until Phase 89 (2026-07-21),
-        # and the note that used to sit in this spot said declaring it "would
-        # force `accounting` permanently enabled, which is the opposite of what
-        # Phase 89 needs." That was true while `parcels` was `required=True`: a
-        # requires-edge from a module nobody may omit pins its target on
-        # forever. Once `parcels` itself became optional the statement inverted
-        # — the edge no longer pins anything, it makes the pair inseparable,
-        # which is exactly what Phase 89 needs. `accounting.requires` already
-        # named `parcels`; this completes the cycle, so turning either off turns
-        # both off and the one-sided configuration is refused at boot.
+        # `accounting` is declared here on purpose.
+        # A requires-edge from a module nobody may omit would pin its target on
+        # forever, but `parcels` is optional, so the edge pins nothing: it makes
+        # the pair inseparable. `accounting.requires` names `parcels`; this
+        # completes the cycle, so turning either off turns both off and the
+        # one-sided configuration is refused at boot.
         #
-        # Decided 2026-07-21 on measured evidence: `parcels/views.py`
+        # The reason is that `parcels/views.py`
         # builds the Use Areas detail page out of Accounting (water balance,
         # recent ledger, resolved reporting period). Shipping `parcels` without
         # `accounting` would ship a page with its content removed.
@@ -495,13 +481,11 @@ MODULE_REGISTRY: dict = {
         # documents the operator contract. They are different claims about the
         # same code and neither substitutes for the other.
         requires=("core", "geography", "accounting"),
-        # DEMOTED model-only in Phase 89 (2026-07-21), not removed — the same
-        # call Phase 88 made for `wells` and `datasync`, for the same measured
-        # reason. The old `required_reason` blamed module-scope imports; Phase 88
-        # measured that diagnosis false and this phase re-confirmed it, because a
+        # Optional but schema-resident (demoted model-only, not removed), like
+        # `wells` and `datasync`. Module-scope imports are not the barrier: a
         # schema-resident module stays in INSTALLED_APPS and every one of those
         # imports keeps resolving. `manage.py check` is clean with the whole
-        # seven-module closure omitted and ZERO imports moved.
+        # seven-module closure omitted.
         #
         # What actually pinned `parcels` is the other direction, and it is the
         # one arrow that cannot be turned around cheaply:
@@ -534,15 +518,13 @@ MODULE_REGISTRY: dict = {
         # `parcels` for WellIrrigatedParcel.parcel, `measurements` for
         # WellMeter.meter — both measured, both undeclared before v2.4.
         requires=("geography", "parcels", "measurements"),
-        # DEMOTED model-only in Phase 88 (2026-07-21), not removed. The old
-        # `required_reason` claimed module-scope imports were the barrier; that
-        # was measured and found false — `manage.py check` is clean with `wells`
-        # demoted and ZERO imports moved, because a schema-resident module stays
-        # in INSTALLED_APPS. What actually pinned it is the other direction:
-        # three SCHEMA_EXCEPTIONS records point INTO `wells`
+        # Optional but schema-resident (demoted model-only, not removed).
+        # Module-scope imports are not the barrier: `manage.py check` is clean
+        # with `wells` demoted, because a schema-resident module stays in
+        # INSTALLED_APPS. What pins it is the other direction:
+        # SCHEMA_EXCEPTIONS records point INTO `wells`
         # (measurements.Sensor.well, measurements.WaterMeasurement.well,
-        # standards.Datastream.well), plus drinking.SystemFacility.well added by
-        # this phase. Its tables therefore stay in every configuration so those
+        # standards.Datastream.well, drinking.SystemFacility.well). Its tables therefore stay in every configuration so those
         # references cannot dangle; everything the operator can see goes.
         required=False,
         schema_resident=True,
@@ -594,7 +576,7 @@ MODULE_REGISTRY: dict = {
                 section=SECTION_OVERVIEW,
                 order=20,
                 active_match="/accounting/dashboard",
-                # 150-03: the calculation receipt is reached from the
+                # The calculation receipt is reached from the
                 # dashboard's figures and has no entry of its own.
                 also_matches=("/accounting/calculation-run/",),
             ),
@@ -656,10 +638,9 @@ MODULE_REGISTRY: dict = {
         # `geography` for the two AllocationPlan/AllocationCarryover zone FKs,
         # `core` for ReportingPeriod.finalized_by.
         requires=("core", "geography", "parcels"),
-        # DEMOTED model-only in Phase 89 (2026-07-21), inseparably with
+        # Optional but schema-resident (demoted model-only), inseparably with
         # `parcels` — see that module's `requires` for the cycle and the reason
-        # for it. The old `required_reason` blamed module-scope
-        # imports and was wrong in the same way `parcels`' was.
+        # for it. Module-scope imports are not the barrier here either.
         #
         # What keeps it schema-resident: two SCHEMA_EXCEPTIONS records point
         # INTO it from `parcels` (ParcelLedger.water_type and
@@ -702,8 +683,8 @@ MODULE_REGISTRY: dict = {
         # `accounting` for the two reporting_period FKs, `geography` for
         # PointOfDiversion.source_flowline.
         requires=("geography", "parcels", "accounting"),
-        # Decoupled in Phase 87 (2026-07-21). Every cross-app `surface.models`
-        # import now runs at function scope, the kept templates that reach into
+        # Every cross-app `surface.models`
+        # import runs at function scope, the kept templates that reach into
         # it are guarded, `seed_water_right_types` is module-gated, and
         # `make test-droppable` covers it. `surface` is TRULY removable — no
         # SCHEMA_EXCEPTIONS record targets it — so `schema_resident` stays at its
@@ -721,7 +702,7 @@ MODULE_REGISTRY: dict = {
         nav=(
             NavEntry(
                 url_name="recharge:list",
-                # 150-03: one name for the record, the one the detail page,
+                # One name for the record, the one the detail page,
                 # the counts, the map card and the popup already use.
                 label="Recharge sites",
                 icon="recharge",
@@ -733,12 +714,11 @@ MODULE_REGISTRY: dict = {
         # `surface` for RechargeSitePOD.point_of_diversion, `accounting` for
         # RechargeEvent.water_type, `geography` for RechargeSite.zone. The
         # `surface` entry is the load-bearing one: it is what makes dropping
-        # `surface` validly drag `recharge` out with it once Phase 87 flips
-        # surface optional, and the droppability harness computes that closure
-        # from exactly this tuple.
+        # `surface` validly drag `recharge` out with it, and the droppability
+        # harness computes that closure from exactly this tuple.
         requires=("geography", "parcels", "accounting", "surface"),
-        # Decoupled in Phase 82 (2026-07-20). Every cross-app `recharge.models`
-        # import now runs at function scope, the templates that reach into it are
+        # Every cross-app `recharge.models`
+        # import runs at function scope, the templates that reach into it are
         # guarded, and `make test-droppable` covers it.
         required=False,
     ),
@@ -757,16 +737,16 @@ MODULE_REGISTRY: dict = {
                 section=SECTION_WATER_DATA,
                 order=60,
                 active_match="/datasync/stations",
-                # 150-03: the station-health page is the stations' own.
+                # The station-health page is the stations' own.
                 also_matches=("/datasync/monitoring/",),
             ),
         ),
         seed_commands=("seed_data_sources",),
         # `parcels` for OpenETCache.parcel.
         requires=("geography", "parcels"),
-        # DEMOTED model-only in Phase 88 (2026-07-21), same shape as `wells`
-        # above. The retired `required_reason` blamed module-scope imports;
-        # demotion keeps the app installed, so those imports never break. The
+        # Optional but schema-resident (demoted model-only), same shape as
+        # `wells` above. Demotion keeps the app installed, so module-scope
+        # imports never break. The
         # real pin is `standards.Datastream.monitored_station`, a
         # SCHEMA_EXCEPTIONS record pointing into it from a module every
         # deployment carries — so the tables stay and the routes, nav, seeds and
@@ -846,8 +826,7 @@ MODULE_REGISTRY: dict = {
         url_module="infrastructure.urls",
         url_order=110,
         nav=(
-            # 150-03: the add and import pages lit nothing until this entry
-            # existed. It opens the add page, which carries the type cards (a
+            # The add and import pages light this entry. It opens the add page, which carries the type cards (a
             # link into the importer with no ?type= would silently serve the
             # first type, the defect tests/test_page_offers_what_it_lists.py
             # names); the import page is under the same prefix and lights it too. Hidden in the sidebar for a read-only
@@ -901,11 +880,9 @@ MODULE_REGISTRY: dict = {
                 # sub-route without adding its exclusion leaves Overview lit
                 # while the operator is somewhere else. The facilities exclusion
                 # also correctly moves the facility DETAIL page's highlight from
-                # Overview to Facilities. `/drinking/production` joined
-                # 146-04 Task 2 (D7); missing it would have left Overview lit
-                # on every production page, the same fault this comment
-                # already warns about for the other four. `/drinking/schedule`
-                # joined 146-04 Task 4 (D8) for the same reason.
+                # Overview to Facilities. `/drinking/production` and
+                # `/drinking/schedule` are excluded for the same reason:
+                # without them Overview would stay lit on every page under them.
                 active_excludes=(
                     "/drinking/facilities",
                     "/drinking/sampling-points",
@@ -958,9 +935,7 @@ MODULE_REGISTRY: dict = {
                 # month figure is the whole point of the page it opens.
                 icon="production",
                 section=SECTION_WATER_DATA,
-                # 95: between Sample Results (90) and Add a water system (100) --
-                # 146-04 Task 2 (D7) added this after the module's original
-                # four sub-pages.
+                # 95: between Sample Results (90) and Add a water system (100).
                 order=95,
                 active_match="/drinking/production",
             ),
@@ -971,14 +946,13 @@ MODULE_REGISTRY: dict = {
                 # with one ticked line, the operator's checklist.
                 icon="schedule",
                 section=SECTION_WATER_DATA,
-                # 97: after Production (95), before Add a water system (100);
-                # 146-04 Task 4 (D8).
+                # 97: after Production (95), before Add a water system (100).
                 order=97,
                 active_match="/drinking/schedule",
             ),
             NavEntry(
                 url_name="drinking:onboard",
-                # 150-03 (R-013): the entry says what the page does.
+                # The entry says what the page does.
                 label="Add a water system",
                 # Its own icon key, not a reuse: `test_icon_keys_are_unique`
                 # holds one glyph to one destination, so a shared icon would
@@ -991,25 +965,23 @@ MODULE_REGISTRY: dict = {
         ),
         # The first module to ship a dashboard card. It renders only when a
         # WaterSystem exists, so a deployment that carries the module but has
-        # not started using it still sees the pre-78 dashboard.
+        # not started using it still sees the dashboard without the card.
         dashboard_cards=("drinking/partials/_dashboard_card.html",),
         seed_commands=("seed_drinking",),
-        # `wells` came OUT in Phase 88 (2026-07-21), on locked decision
-        # 3: no agency type is assumed in either direction. A district can buy
-        # every drop wholesale and still have a drinking-water system to track,
-        # so the module must not force a groundwater section on. The one thing
-        # that stood in the way — `drinking.SystemFacility.well` and its
-        # matching migration dependency — is now the ninth SCHEMA_EXCEPTIONS
-        # record instead, which is legal because `wells` became schema-resident
-        # in the same phase and therefore keeps its tables in every valid
-        # configuration.
+        # `wells` is not required: no agency type is assumed in either
+        # direction. A district can buy every drop wholesale and still have a
+        # drinking-water system to track, so the module must not force a
+        # groundwater section on. `drinking.SystemFacility.well` and its
+        # matching migration dependency are a SCHEMA_EXCEPTIONS record instead,
+        # which is legal because `wells` is schema-resident and therefore keeps
+        # its tables in every valid configuration.
         #
-        # This is also what stops `drop_closure('wells')` returning
-        # `{wells, drinking}`: while the edge was declared here, demoting Wells
-        # would have dragged Drinking Water out with it.
+        # This is also what keeps `drop_closure('wells')` from returning
+        # `{wells, drinking}`: were the edge declared here, dropping Wells
+        # would drag Drinking Water out with it.
         requires=("standards",),
-        # The first Phase-78-era module, and droppable by construction: nothing
-        # outside `drinking/` imports it at module scope. ISS-072 discipline.
+        # Droppable by construction: nothing outside `drinking/` imports it at
+        # module scope.
         required=False,
     ),
 }
@@ -1405,12 +1377,12 @@ def dashboard_cards_for(modules) -> list:
     Flat, in registry order, so the dashboard renders them with a plain
     ``{% include %}`` loop and never names a module.
 
-    Empty on a default deployment, and that is the correct answer rather than a
-    gap: the overview's existing panels — the supply-vs-use rollup, the account
-    table, the zone table — are accounting-domain summaries that belong to
+    Empty when no enabled module contributes a card, and that is the correct
+    answer rather than a gap: the overview's existing panels (the supply-vs-use rollup, the account
+    table, the zone table) are accounting-domain summaries that belong to
     ``accounting``, not per-module tiles wearing a shared costume. Manufacturing
     a card for every module to make the list look populated would invent UI
-    nobody asked for. Phase 78 adds the first genuine one.
+    nobody asked for. The drinking-water module contributes the one genuine card.
     """
     cards: list = []
     for spec in modules:
@@ -1421,7 +1393,7 @@ def dashboard_cards_for(modules) -> list:
 #: The sidebar links that belong to no module: Home, and the Help section's
 #: pages. `_sidebar.html` writes them out longhand (their icons and the
 #: explainer gates live there); they are listed here only so that one
-#: resolver, `lit_entry`, decides what lights on every page (150-03), never a
+#: resolver, `lit_entry`, decides what lights on every page, never a
 #: second matching mechanism in the template. `icon` is empty because the
 #: template draws these icons inline.
 FIXED_NAV_ENTRIES: tuple = (

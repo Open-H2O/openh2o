@@ -12,7 +12,7 @@ from core.constants import RECOVERY_HORIZON_CHOICES
 from core.history import CHANGE_NOTE_HELP, NOTE_MAX_LENGTH
 from core.models import SiteConfig, User
 
-# ISS-248: replaces Django's "Enter a
+# Replaces Django's "Enter a
 # valid email address." on every form where an administrator types an address.
 INCOMPLETE_EMAIL_VALIDATOR = EmailValidator(
     message="%(value)s is not a complete email address."
@@ -24,7 +24,7 @@ class ProfileForm(forms.ModelForm):
 
     Deliberately excludes email and password. The email address is the sign-in
     name and only an administrator changes it, on the Users page
-    (:class:`UserEmailForm`; ISS-248); the password has its
+    (:class:`UserEmailForm`); the password has its
     own page, linked from the profile.
     """
 
@@ -49,14 +49,14 @@ class ProfileForm(forms.ModelForm):
         }
 
 
-# The three roles, in the order the Users screen offers them (147-02). An
+# The three roles, in the order the Users screen offers them. An
 # administrator is `agency_admin`; a viewer is `read_only`; an operator is
 # neither. They are exclusive: User.clean() refuses a viewer who is also an
 # administrator.
 ROLE_ADMINISTRATOR = "administrator"
 ROLE_OPERATOR = "operator"
 ROLE_VIEWER = "viewer"
-# 151-04 (ISS-260): a host administrator is is_staff. Offered on the Users page
+# A host administrator is is_staff. Offered on the Users page
 # only to a reader who is one, so it is not in ROLE_CHOICES (Add user keeps three).
 ROLE_HOST_ADMINISTRATOR = "host_administrator"
 ROLE_CHOICES = [
@@ -64,7 +64,7 @@ ROLE_CHOICES = [
     (ROLE_OPERATOR, "Operator"),
     (ROLE_VIEWER, "Viewer"),
 ]
-# The help line under the role choice (150.1-02).
+# The help line under the role choice.
 ROLE_HELP = (
     "Viewers read every record and change none. Operators also add, change "
     "and remove records. Administrators also manage users, set up the site, "
@@ -103,16 +103,16 @@ def apply_role(user, role):
 
 
 class UserCreateForm(forms.ModelForm):
-    """Add a new user from the in-app admin Users page (ISS-021, 41-02).
+    """Add a new user from the in-app admin Users page.
 
-    Email delivery isn't configured on this single-tenant deploy (ISS-015), so an
+    A deployment may have no mail server (no ``EMAIL_HOST``), so an
     administrator sets the new user's initial password here rather than mailing
     an invite link -- the honest path given the deploy. On save we also mint a
     verified, primary allauth ``EmailAddress`` row the same way ``ensure_superuser``
     does, so the new account can sign in by email immediately. (allauth
     authenticates against ``EmailAddress``, not ``User.email``.)
 
-    The role is one choice of three (147-02), stored on the two flags by
+    The role is one choice of three, stored on the two flags by
     :func:`apply_role`.
     """
 
@@ -156,13 +156,13 @@ class UserCreateForm(forms.ModelForm):
         # email IS the login, so require it on the form.
         self.fields["email"].required = True
         self.fields["email"].error_messages["required"] = "Enter the email address."
-        # ISS-248: the same validator on Add user.
+        # The same validator on Add user.
         self.fields["email"].validators = [INCOMPLETE_EMAIL_VALIDATOR]
 
     def clean_email(self):
-        # 150.1-02: an address on file as any
-        # account's (a second address added under Manage email included) is
-        # refused; the save's update_or_create used to move it onto this account.
+        # An address on file as any account's (a second address added under
+        # Manage email included) is refused; otherwise the save's
+        # update_or_create would move it onto this account.
         email = self.cleaned_data["email"].strip().lower()
         if (
             User.objects.filter(email__iexact=email).exists()
@@ -205,13 +205,13 @@ class UserCreateForm(forms.ModelForm):
 
 
 class UserRoleForm(forms.Form):
-    """The Users screen's per-row role control (147-02)."""
+    """The Users screen's per-row role control."""
 
     role = forms.ChoiceField(choices=ROLE_CHOICES + [HOST_ADMINISTRATOR_CHOICE])
 
 
 class _TwoPasswordsForm(forms.Form):
-    """Two password boxes that must match and pass Django's checks (151-04).
+    """Two password boxes that must match and pass Django's checks.
 
     The mismatch sentence and the refusals are the ones Change password and
     Add user already use (core/account_forms.py, core/password_validation.py).
@@ -254,7 +254,7 @@ class _TwoPasswordsForm(forms.Form):
 
 
 class TemporaryPasswordForm(_TwoPasswordsForm):
-    """An administrator sets another person's temporary password (151-04)."""
+    """An administrator sets another person's temporary password."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -268,7 +268,7 @@ SAME_AS_CURRENT = "The new password must be different from your current password
 
 
 class ChoosePasswordForm(_TwoPasswordsForm):
-    """A person replaces the password an administrator set (151-04)."""
+    """A person replaces the password an administrator set."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -300,7 +300,7 @@ def email_on_file(email, exclude_user=None):
 
 
 class UserEmailForm(forms.Form):
-    """An administrator changes another person's email address (ISS-248).
+    """An administrator changes another person's email address.
 
     Only an administrator changes an address, and a person has one address.
     The person's sign-in name changes with it,
@@ -352,10 +352,10 @@ class UserEmailForm(forms.Form):
 
 
 class DeliverySettingsForm(forms.Form):
-    """Agency-wide delivery accounting policy, in plain language (Phase 55-03).
+    """Agency-wide delivery accounting policy, in plain language.
 
-    Edits the two SiteConfig fields Plans 01-02 added:
-    ``default_irrigation_efficiency`` and ``default_recovery_horizon``. Both are
+    Edits SiteConfig's ``default_irrigation_efficiency`` and
+    ``default_recovery_horizon``, plus the module-gated fields below. Both are
     phrased as plain questions a non-coder analyst can answer once for the whole
     agency — no internal jargon. Efficiency is SHOWN as a whole-number percent
     (75) but STORED on the model as a Decimal fraction (0.750), so this form
@@ -364,26 +364,21 @@ class DeliverySettingsForm(forms.Form):
     SiteConfig is a singleton; the view loads the one row and passes it in as
     ``instance``. The form never creates a second row.
 
-    **The efficiency field belongs to ``parcels`` (150.2-01).** From 90-02 it
-    belonged to ``surface`` and disappeared with it, because its one consumer
-    then apportioned canal deliveries. It is a field's irrigation efficiency
-    wherever no irrigation method is on file (``parcels.services.field_efficiency``),
+    **The efficiency field belongs to ``parcels``.** It is a field's
+    irrigation efficiency wherever no irrigation method is on file (``parcels.services.field_efficiency``),
     and a groundwater-only district has fields too, so it is
     shown whenever ``parcels`` runs. ``default_recovery_horizon`` stays for the
     same reason: ``accounting.services.resolve_recovery_horizon`` and
     ``rollover_allocations`` read it for any zone's unused allocation, surface or
     not.
 
-    **There is no separate groundwater efficiency (150.2-02).** From 148-02
-    to 150.2-02 a flat ``groundwater_efficiency`` (80%) had its own card here;
-    there is one irrigation efficiency per field (2026-10-11), so
-    ``run_calculations`` divides pumped groundwater by the same field
-    efficiency the default above feeds, and the setting is gone.
+    **There is no separate groundwater efficiency.** There is one irrigation
+    efficiency per field, so ``run_calculations`` divides pumped groundwater by
+    the same field efficiency the default above feeds.
 
-    **The over-delivery treatment belongs to ``surface`` the same way (148-04
-    Task 1, 2026-09-20).** ``over_delivery_treatment`` and
-    ``over_delivery_leave_behind`` are read once per run by
-    ``run_calculations`` (148-04 Task 2); only canal water can be
+    **The over-delivery treatment belongs to ``surface`` the same way.**
+    ``over_delivery_treatment`` and ``over_delivery_leave_behind`` are read once
+    per run by ``run_calculations``; only canal water can be
     over-delivered, so both fields are shown and saved under the
     ``shows_surface_settings`` gate. Both fields are ``required=False`` at the
     Django level so a caller that does not offer them (an old test, or a
@@ -393,22 +388,20 @@ class DeliverySettingsForm(forms.Form):
     here, reached a different way because this pair shares one card with a
     conditional second field (the percent only applies to "credited").
 
-    **``diversion_report_year_rule`` belongs to ``surface`` the same way
-    (146-03 Task 3).** It is the 145-01 memo's crosswalk layer for a bulk
-    diversion import a later plan adds; on a deployment with no Surface
+    **``diversion_report_year_rule`` belongs to ``surface`` the same way.**
+    It sets how a YEAR and MONTH in the bulk diversion import file become a
+    calendar month; on a deployment with no Surface
     module there is no diversion file to read, so it is shown and saved
     under exactly the same ``shows_surface_settings`` gate -- kept as its own name
     (``shows_diversion_settings``) so the template reads for what it shows,
     not why.
 
-    **The USE-row question that used to sit beside it moved to the import
-    screen (146-03 Task 6, 2026-09-22).** It is a
-    question about one uploaded file, asked here months before any file
-    exists, of a reader with no reason yet to hold the vocabulary; it now
-    renders on the import mapping step, and only when the uploaded file
+    **The USE-row question is asked on the import screen, not here.** It is a
+    question about one uploaded file, and a reader of this page has no reason
+    yet to hold the vocabulary; it renders on the import mapping step, and only when the uploaded file
     actually has USE rows in it. ``diversion_use_type_rule`` stays on
     ``SiteConfig`` as the remembered answer, written from the import screen,
-    but this form no longer shows or saves it.
+    and this form does not show or save it.
     """
 
     efficiency_percent = forms.IntegerField(
@@ -419,19 +412,15 @@ class DeliverySettingsForm(forms.Form):
             "max_value": "Enter a percent from 1 to 100.",
         },
         label="Default irrigation efficiency",
-        # 90-02: said "soaks back into the aquifer as recharge", which named the
-        # `recharge` module's noun on deployments that do not run it. The
-        # sentence does not need the word — where the water goes is already
-        # said — so the copy changed rather than `_FORBIDDEN_VOCABULARY`.
-        # 150.2-02.
+        # The sentence avoids the `recharge` module's noun, which a
+        # deployment that does not run that module must not name.
         help_text="Typical: 75%. OpenH2O uses this efficiency for every field "
         "with no irrigation method on file.",
         widget=forms.NumberInput(
             attrs={"class": "form-input", "style": "width: 6rem;", "step": "1"}
         ),
     )
-    # 148-04 Task 1: what happens to surface water in excess of ETAW
-    # (150.1-02). `required=False` at the Django level (see
+    # What happens to surface water in excess of ETAW. `required=False` at the Django level (see
     # the class docstring) -- a submission that omits it leaves the stored
     # treatment untouched, same convention as `identifier_host` blank meaning
     # "use the default". Plain-language radio labels are set in __init__,
@@ -455,7 +444,7 @@ class DeliverySettingsForm(forms.Form):
             "max_value": "Enter a percent from 0 to 100.",
         },
         label="Share left in the basin",
-        # 148-04: the sentence about fields without a well is in the
+        # The sentence about fields without a well is in the
         # template, behind the `wells` gate: a kept page may not name a
         # dropped module's noun (tests/droppability).
         help_text="Under the credited choice, OpenH2O leaves this share of the "
@@ -469,19 +458,16 @@ class DeliverySettingsForm(forms.Form):
     )
     recovery_horizon = forms.ChoiceField(
         choices=RECOVERY_HORIZON_CHOICES,
-        # 90-02: was "its full surface-water allotment", which described surface
-        # water on a deployment that may have none — and the setting was never
-        # surface-only in the first place. Rewritten module-neutrally rather than
-        # guarded, because the sentence survives it (89-02's rule).
+        # Worded without "surface water": the setting applies on a deployment
+        # that may have none.
         label=(
             "When a zone doesn't use its full allocation by the end of the "
             "water year:"
         ),
         widget=forms.RadioSelect,
     )
-    # 146-03 Task 3: the 145-01 memo's crosswalk layer (J6, M2). Choices come
-    # off SiteConfig itself so the two never drift out of step. (J3, the
-    # USE-row rule, moved to the import screen in Task 6 -- see the class
+    # Choices come off SiteConfig itself so the two never drift out of step.
+    # (The USE-row rule is asked on the import screen -- see the class
     # docstring.)
     diversion_report_year_rule = forms.ChoiceField(
         choices=SiteConfig.DIVERSION_REPORT_YEAR_RULE_CHOICES,
@@ -504,7 +490,7 @@ class DeliverySettingsForm(forms.Form):
         ),
     )
 
-    # 146-06 Task 1 (ISS-019): the one stored piece of the persistent
+    # The one stored piece of the persistent
     # identifier scheme. Owned by `core`, so it is shown whatever modules run.
     identifier_host = forms.CharField(
         required=False,
@@ -520,10 +506,9 @@ class DeliverySettingsForm(forms.Form):
         ),
     )
 
-    # Phase 147: why the settings changed, saved with the change in the change
-    # history (core/history.py). Optional here; not a SiteConfig field. 147-02
-    # removed this field's box from the page; the
-    # recording stays, so a caller (or a future one) can still supply a note.
+    # Why the settings changed, saved with the change in the change history
+    # (core/history.py). Optional here; not a SiteConfig field. The page shows
+    # no box for it; a caller can still supply a note.
     note = forms.CharField(
         required=False,
         max_length=NOTE_MAX_LENGTH,
@@ -538,13 +523,13 @@ class DeliverySettingsForm(forms.Form):
         from core.modules import is_enabled
 
         self.instance = instance
-        # 150.2-01: the default irrigation efficiency belongs to `parcels`,
+        # The default irrigation efficiency belongs to `parcels`,
         # which every deployment that reaches this page runs (the page is
         # `accounting`'s, and the two are an inseparable pair).
         self.shows_efficiency = is_enabled("parcels")
         # The cards only a canal district has: surface water in excess of
-        # ETAW and the reporting-year rule. This was `shows_efficiency` until
-        # 150.2-01 moved the efficiency off `surface`.
+        # ETAW and the reporting-year rule. The efficiency card has its own gate,
+        # `shows_efficiency`, above.
         self.shows_surface_settings = is_enabled("surface")
         # Same gate as the surface settings, named for what it shows.
         self.shows_diversion_settings = self.shows_surface_settings
@@ -586,7 +571,7 @@ class DeliverySettingsForm(forms.Form):
             ("same_water_year", "Let it expire (use-it-or-lose-it)"),
         ]
         if self.shows_surface_settings:
-            # The settled words (148-03, 2026-09-28): the radio's label is the
+            # The radio's label is the
             # choice, one line; what it does is the description the template
             # prints under it (`over_delivery_options`). No "recharge": this
             # page is served without that module.
@@ -606,7 +591,7 @@ class DeliverySettingsForm(forms.Form):
     def over_delivery_options(self):
         """``(radio, description)`` per choice, in the choices' own order.
 
-        148-03: the Delivery Settings card prints each choice as a label line
+        The Delivery Settings card prints each choice as a label line
         with what it does on a quieter line under it, so the three radios
         line up instead of wrapping to three different lengths. The
         descriptions live here, beside the labels, and not in the template,
@@ -681,8 +666,8 @@ class DeliverySettingsForm(forms.Form):
                     "landowner.",
                 )
         if self.shows_diversion_settings:
-            # 150.1-02: a season with
-            # no starting month failed every row of a Water Use Reported file.
+            # A season with no starting month would fail every row of a
+            # Water Use Reported file.
             if (
                 cleaned.get("diversion_report_year_rule") == "season"
                 and not cleaned.get("season_start_month")
@@ -711,8 +696,8 @@ class DeliverySettingsForm(forms.Form):
             ]
             updated.append("default_irrigation_efficiency")
         if self.shows_surface_settings:
-            # 148-04 Task 1: a submission that omits the treatment (nobody
-            # was offered it, e.g. a caller built before this plan) leaves
+            # A submission that omits the treatment (nobody was offered it,
+            # e.g. a caller that does not send the field) leaves
             # both stored values exactly as they were. A submitted treatment
             # other than "credited" leaves the stored leave-behind share
             # untouched too -- it only means something when crediting.

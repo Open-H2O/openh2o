@@ -7,11 +7,9 @@ definitions table lives in ``DESIGN.md`` between ``<!-- vocabulary: begin -->``
 and ``<!-- vocabulary: end -->``, and this module is the one reader of it. The
 document is the source; nothing here restates a definition.
 
-**Why the table is read and not transcribed.** Phase 135 found that every
-defect it could confirm was a correct number under a label naming something
-else, or two screens describing the same rows differently (ISS-151, ISS-153,
-ISS-155, and the word halves of ISS-143 and ISS-148). The product had two live
-definitions of "supply" and had never chosen. A list copied into a test would be
+**Why the table is read and not transcribed.** A correct number can sit under
+a label naming something else, and two screens can describe the same rows
+differently; each quantity needs one chosen name. A list copied into a test would be
 a third place for the choice to drift. Reading the table means the gate and the
 document cannot disagree.
 
@@ -146,7 +144,7 @@ def parse_rules(markdown: str) -> list:
         raise AssertionError(
             "DESIGN.md rule 12's table parsed to zero gated phrases. Every row "
             f"says {NO_GATED_PHRASE!r}, so the gate would hold nothing. At least "
-            "the four sites Phase 136 measured red must be gated."
+            "one term must name a gated phrase."
         )
     return rules
 

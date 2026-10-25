@@ -33,47 +33,38 @@ SEED_COMMANDS = [
 #: than listed above, so a district running without `drinking` still seeds
 #: cleanly instead of failing on a management command that does not exist.
 OPTIONAL_SEED_COMMANDS = [
-    # Phase 88-02, and this pair fails DIFFERENTLY from the three below it.
-    # `surface` and `reporting` are truly removable, so their commands cease to
-    # exist and `make seed` died loudly. `wells` and `datasync` are demoted
-    # model-only: the apps stay in INSTALLED_APPS, management commands are
-    # discovered from INSTALLED_APPS, so these two still exist and still run —
-    # quietly filling the tables of a switched-off module. A crash announces
-    # itself; this does not, and only
+    # Two kinds of gated command, which fail differently when the gate is
+    # missing. `surface` and `reporting` are truly removable, so their commands
+    # cease to exist and `make seed` would die loudly. `wells`, `datasync` and
+    # `accounting` are schema-resident: the apps stay in INSTALLED_APPS,
+    # management commands are discovered from INSTALLED_APPS, so their commands
+    # still exist and still run, quietly filling the tables of a switched-off
+    # module. A crash announces itself; this does not, and only
     # `test_schema_resident_module_tables_are_present_and_empty` can see it.
+    # `seed_water_types` is owned by `accounting` (core/modules.py) and is the
+    # same quiet kind.
     #
-    # Listed FIRST so the resolved order on a full deployment is unchanged:
-    # roles, water types, well types, data sources, then the three below.
+    # The schema-resident commands are listed first so the resolved order on a
+    # full deployment is: roles, water types, well types, data sources, then
+    # the commands below.
     #
-    # Phase 89 added `seed_water_types` at the head of that list, and it is the
-    # SAME silent-fill class as `wells` and `datasync` rather than the loud one.
-    # It is owned by `accounting` (core/modules.py) and sat in the ungated block
-    # above, so under demotion `make seed` would still find it — management
-    # commands are discovered from INSTALLED_APPS, and a schema-resident app
-    # never leaves — and quietly fill a switched-off module's tables. Nothing
-    # crashes; the only thing that can see it is
-    # `test_schema_resident_module_tables_are_present_and_empty`.
-    #
-    # `parcels` declares NO seed command, so there is no parcels-side twin —
-    # confirmed against `MODULE_REGISTRY["parcels"].seed_commands`, which is
-    # empty, rather than taken from the plan.
+    # `parcels` declares NO seed command (`MODULE_REGISTRY["parcels"].seed_commands`
+    # is empty), so there is no parcels-side twin.
     ("accounting", "seed_water_types"),
     ("wells", "seed_well_types"),
     ("datasync", "seed_data_sources"),
     ("drinking", "seed_drinking"),
-    # Phase 87. `seed_water_right_types` is owned by `surface`; with the module
-    # dropped the command does not exist and `make seed` died on it. Running it
-    # after the ungated block is safe — verified 2026-07-21 that no other seed
-    # command references WaterRightType.
+    # `seed_water_right_types` is owned by `surface`; with the module dropped
+    # the command does not exist and `make seed` would die on it. Running it
+    # after the ungated block is safe: no other command this one runs
+    # references WaterRightType.
     ("surface", "seed_water_right_types"),
-    # Plan 88-01, deviation rule 1. `seed_report_templates` is owned by
-    # `reporting`, which has been optional since Phase 77 — but the command sat
-    # in the ungated block above, so `make seed` on a deployment that dropped
-    # reporting died with `CommandError: Unknown command:
-    # 'seed_report_templates'`. Measured on main 2026-07-21, identical in shape
-    # to the `surface` defect one line up. Nothing else references
-    # ReportTemplate during seeding, so running it after the ungated block is
-    # safe.
+    # `seed_report_templates` is owned by `reporting`, which is optional. In the
+    # ungated block it would make `make seed` on a deployment that dropped
+    # reporting die with `CommandError: Unknown command:
+    # 'seed_report_templates'`, the same shape as the `surface` case above.
+    # Nothing else references ReportTemplate during seeding, so running it
+    # after the ungated block is safe.
     ("reporting", "seed_report_templates"),
 ]
 
@@ -83,12 +74,11 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         commands = list(SEED_COMMANDS)
-        # Phase 89: say what was skipped and why. This gate has been silent
-        # since Phase 87 — a demoted deployment's output simply had fewer lines
-        # in it, which reads identically to a seed command that was never
-        # written. An operator comparing two deployments could not tell "not
-        # applicable here" from "we forgot". Costs one line each and makes the
-        # composition visible where an operator is already looking.
+        # Say what was skipped and why. Without it a deployment with a module
+        # off just prints fewer lines, which reads identically to a seed command
+        # that was never written, so an operator comparing two deployments could
+        # not tell "not applicable here" from "we forgot". One line each makes
+        # the composition visible where an operator is already looking.
         for module, cmd in OPTIONAL_SEED_COMMANDS:
             if is_enabled(module):
                 commands.append(cmd)

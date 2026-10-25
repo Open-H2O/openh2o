@@ -17,11 +17,12 @@ state's SGMA boundary service, committed as data/merced/merced_gsas.geojson
     Basin_Subbasin_Number = '5-022.04'.
 
 **The geometry is that authoritative public boundary, unaltered. The names
-are not.** Phase 97 replaced each feature's ``GSA_Name`` with a fictional
-agency, and blanked the real DWR ``GSA_ID`` and agency ``GSA_URL``, because
+are not.** The committed file carries a fictional agency in each feature's
+``GSA_Name``, a placeholder in place of the real DWR ``GSA_ID``, and a blank
+agency ``GSA_URL``, because
 these zones are the container the demo's entirely invented parcels and
 pumping ledgers sit in — and naming a real public agency as the authority
-over invented accounting is the defect that phase exists to delete. So do
+over invented accounting is the defect this avoids. So do
 not "restore" the names by re-fetching the layer: re-fetch would return the
 real agencies and re-introduce the defect. Refresh the *geometry* from the
 service if it changes; keep the fictional identity.
@@ -107,13 +108,13 @@ class Command(BaseCommand):
         ))
 
     def _rename_forward(self, features):
-        """Rename a pre-Phase-97 zone onto its current fixture name.
+        """Rename a zone seeded under an earlier name onto its current fixture name.
 
-        One-time migration, added 2026-07-28. Zones are keyed by NAME in
-        ``update_or_create``, so on a deployment seeded before Phase 97 renamed
-        the GSAs, this command would simply CREATE three new zones and leave the
-        three originals behind — still carrying the real agency names the phase
-        exists to remove, and still linked to every parcel, well, recharge site
+        One-time migration. Zones are keyed by NAME in
+        ``update_or_create``, so on a deployment seeded before the GSAs were
+        renamed, this command would simply CREATE three new zones and leave the
+        three originals behind, still carrying the real agency names the
+        fictional names replace, and still linked to every parcel, well, recharge site
         and carryover row that references them. Six zones, half of them the
         defect. Renaming the row forward keeps every one of those foreign keys.
 
@@ -124,7 +125,7 @@ class Command(BaseCommand):
         identity outright.
 
         Safe to leave in place; it is a no-op once every zone matches a fixture
-        name, which is the state of any deployment seeded after Phase 97.
+        name, which is the state of any deployment seeded with the fictional names.
         """
         fixture_names = {ft["properties"]["GSA_Name"] for ft in features}
         stale = list(

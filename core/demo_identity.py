@@ -6,16 +6,16 @@ Two callers need the same transform for opposite reasons.
 COMPOSES a water-account contact address by slugifying a contact name, and
 `core/management/commands/scan_demo_identity.py` must MATCH that same shape when
 it looks for a real agency, district, farm or owner name sitting on invented
-data. ISS-103 is exactly the gap between those two: a banned contact string such
+data. The gap between those two is the risk: a banned contact string such
 as ``Merced Water Manager`` survives as ``merced.water.manager@example.com``, a
 form no case-insensitive substring of the banned value matches.
 
 The transform lives here, in one place, rather than being copied into the scan,
-because a second copy would re-open ISS-103 on a slower clock — the day somebody
+because a second copy would re-open that gap on a slower clock: the day somebody
 edits the composer's regex, the truncation length or the separator and the
 scanner keeps looking for yesterday's shape, the blind spot is back and nothing
-reports it. ISS-122 set this pattern when one boundary parse needed two callers:
-extract, do not duplicate.
+reports it. The rule: when two callers need the same parse, extract it, do not
+duplicate it.
 
 This module is deliberately NOT a management command. Command modules are not
 importable as a stable API, and importing one command from another is a pattern

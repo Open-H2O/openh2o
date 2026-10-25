@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Truncate every pghistory event table (Phase 147, ISS-177).
+"""Truncate every pghistory event table.
 
 This exists for exactly one caller: ``scripts/rebuild-golden.sh``, as its last
 step before ``pg_dump``. The golden demonstration is meant to look like an
@@ -13,7 +13,7 @@ history nobody made.
 **This command refuses to run without ``--golden-build``.** On a real
 deployment the change history IS the record `core/history.py` exists to keep;
 running this there would delete the evidence of who changed what, which is the
-one thing Phase 147 was built to stop happening. The flag is not a shortcut
+one thing the change history exists to keep. The flag is not a shortcut
 around that -- it is how the golden build says out loud that this is the one
 place clearing history is correct.
 
@@ -84,7 +84,7 @@ class Command(BaseCommand):
                 "clear_change_history refuses to run without --golden-build. "
                 "On a real deployment the change history is the record of who "
                 "changed what -- clearing it there would delete the exact "
-                "evidence Phase 147 exists to keep. This command is meant for "
+                "evidence the change history exists to keep. This command is meant for "
                 "one caller only, scripts/rebuild-golden.sh, building a "
                 "demonstration that carries no invented history."
             )

@@ -25,14 +25,14 @@ Order matters:
                               the QGIS field selection (incl. the 2 Merced
                               River dual-purpose parcels). Needs PODs (4), GSAs
                               (3), and data/merced/selected_parcels.geojson.
-  6. seed_merced_pivot_irrigation — 146-05: sets
+  6. seed_merced_pivot_irrigation: sets
                               parcels.ParcelIrrigationMethod to "Center Pivot"
                               on every use area whose outline fills at least
                               90% of its minimum bounding circle (MER-APN-001
                               through 009, visibly round on the aerial map).
                               Purely geometric on the parcels seeded at step 5;
                               no other dependency. Never overwrites a method
-                              already set. No-op when `surface` is off.
+                              already set. No-op when `parcels` is off.
   7. seed_merced_basins_from_selection — recharge AREAS from the QGIS pick:
                               El Nido Canal spreading basins (new canal intakes)
                               + Merced River Flood-MAR cropland (linked to the
@@ -103,7 +103,7 @@ asks what the seed *consumes*, not what the demonstration *shows*. The stations
 are on the map, on ``/datasync/``, named on the about page under "Real published
 records", and counted in the landing-page hero — so an offline build carrying
 none rendered "0 of 0 stations reporting" where production reads "37 of 42"
-(re-derived 2026-08-01; the "21 of 42" figure in 104-01/104-02 is wrong).
+(re-derived 2026-08-01).
 Re-discovering them nightly does not fix it either: ``discover_stations``
 creates rows with ``is_active=False`` and the hero counts ``is_active=True``.
 
@@ -111,9 +111,9 @@ On a DEBUG=False deployment step 4 guards itself, because it deletes and
 regenerates parcel/well geometry. A FIRST-TIME seed passes straight through —
 with no ``MER-`` parcels or wells in the database there is nothing to clobber.
 RE-running over an existing demo is refused unless you pass
-``--allow-prod-clobber``, which this command forwards to step 4. That is the
-whole of ISS-095: the flag had nowhere to enter, so ``make fresh`` and the
-DEPLOY.md/AI-OPERATOR-GUIDE seed instruction both died at step 3 of 10.
+``--allow-prod-clobber``, which this command forwards to step 4. Without that
+forwarding, ``make fresh`` and the DEPLOY.md/AI-OPERATOR-GUIDE seed instruction
+would die at step 4.
 """
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
@@ -127,10 +127,9 @@ SEQUENCE = [
     # real parcels/wells right after, so the flush is safe.
     ("seed_merced_operations", {"flush": True}),
     ("seed_merced_parcels_from_selection", {}),
-    # 146-05 (2026-09-23): the nine round use
-    # areas (MER-APN-001 through 009) are visibly center-pivot fields on the
-    # aerial map, and the platform now has a place to say so
-    # (parcels.ParcelIrrigationMethod, 146-05 Task 1). Runs right after
+    # The nine round use areas (MER-APN-001 through 009) are visibly
+    # center-pivot fields on the aerial map, and the platform has a place to
+    # say so (parcels.ParcelIrrigationMethod). Runs right after
     # parcels exist and before anything else touches them, is purely
     # geometric (no dependency on any later step), and never overwrites a
     # method a use area already carries.
@@ -139,7 +138,7 @@ SEQUENCE = [
     # River Flood-MAR cropland). Replaces the hardcoded two-square seed; runs
     # after parcels (needs MER-POD-009) and before the recharge events.
     ("seed_merced_basins_from_selection", {}),
-    # 150.3-01: each point of diversion's lining, which sets its default
+    # Each point of diversion's lining, which sets its default
     # seepage share. Runs after the last command that creates a point (the
     # recharge intake above) and before the ledgers divide any delivery.
     ("seed_merced_pod_lining", {}),
@@ -178,10 +177,9 @@ SEQUENCE = [
 ]
 
 #: Sub-commands that accept ``--allow-prod-clobber``, so this command can forward
-#: it (ISS-095). Only ``seed_merced_operations`` guards on ``DEBUG`` today, and
-#: before this existed there was no way to pass the flag through — so the
-#: documented "full reset" died at step 3 of 10 on every DEBUG=False deployment,
-#: leaving a wiped database with only steps 1-3 in it.
+#: it. Only ``seed_merced_operations`` guards on ``DEBUG`` today. Without the
+#: forwarding, the documented "full reset" would die at step 4 on every
+#: DEBUG=False deployment, leaving a wiped database with only steps 1-3 in it.
 #:
 #: Declared rather than introspected at call time, because forwarding a flag to a
 #: command that does not define it is a hard ``TypeError`` mid-sequence — after
@@ -299,13 +297,13 @@ class Command(BaseCommand):
         )
 
     def _report_engine_gap(self):
-        """Say what this sequence deliberately did NOT do (ISS-099).
+        """Say what this sequence deliberately did NOT do.
 
-        This command used to sign off with "fully seeded" — after skipping the ET
-        cache, the CalculationPlan and the engine run, three exclusions recorded
-        only in the docstring above. An operator who stopped here got a dashboard
-        reading consumptive use 0.00 for every account and zone, which is not the
-        demo working; it is the demo with its headline number missing.
+        The sequence skips the ET cache, the CalculationPlan and the engine run,
+        so signing off with "fully seeded" would be false. An operator who
+        stopped here gets a dashboard reading consumptive use 0.00 for every
+        account and zone, which is not the demo working; it is the demo with its
+        headline number missing.
 
         Checked rather than printed unconditionally, so the message is a
         description of THIS database and not a standing disclaimer that gets

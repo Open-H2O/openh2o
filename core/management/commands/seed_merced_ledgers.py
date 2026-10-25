@@ -1,14 +1,14 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Build the Merced demonstration's synthetic ACCOUNTING layer (Phase 52-01).
+"""Build the Merced demonstration's synthetic ACCOUNTING layer.
 
-WHY this command exists. Phases 50–51 built the physical Merced demo — real
-boundaries, rivers/canals, GSAs, water rights, points of diversion, parcels on
-surveyed cropland, and wells. That canvas shows WHERE water moves. This command
-adds the accounting layer that shows HOW MUCH: reporting periods, Allocations
-for BOTH authorities, water accounts per grower, and the full ParcelLedger
-transaction set. It is the payoff of the whole rebuild — the layer that lets an
-evaluator read "this grower was allocated X, used Y, is Z over/under, and here is
-the audit trail." Phase 53 turns these rows into the state reports + teardown.
+WHY this command exists. The physical Merced demo has real boundaries,
+rivers/canals, GSAs, water rights, points of diversion, parcels on surveyed
+cropland, and wells. That canvas shows WHERE water moves. This command adds the
+accounting layer that shows HOW MUCH: reporting periods, Allocations for BOTH
+authorities, water accounts per grower, and the full ParcelLedger transaction
+set. It is the layer that lets an evaluator read "this grower was allocated X,
+used Y, is Z over/under, and here is the audit trail." The state reports build
+on these rows.
 
 The four headline cases it demonstrates, all keyed off each parcel's water source
 (the physical truth: a POD link means surface delivery, a well link means
@@ -39,14 +39,14 @@ ParcelLedger rows on MER- parcels) then rebuilds, so a bare re-run leaves counts
 unchanged. It NEVER touches Demo Valley / base-layer rows, nor the three GSA
 management-area zones (those belong to seed_merced_gsas).
 
-SIZING — estimated-ET-derived (58-03, the corrected v1.10 model). The DELIVERED
-supply — surface deliveries AND meter readings — is now sized to each parcel's
+SIZING: estimated-ET-derived. The DELIVERED
+supply (surface deliveries AND meter readings) is sized to each parcel's
 ESTIMATED net consumptive-use demand (gross ET − effective precip), read from the
 ``CalculationRun`` rows the FIRST ``run_calculations`` pass of
-``refresh_merced_accounting`` writes for EVERY parcel (54-01 spine + the 58-03
+``refresh_merced_accounting`` writes for EVERY parcel (the engine run plus a
 metered reference run). Supply tracks that demand within a realistic loss band
 with modest per-source scatter, so per-parcel residuals land small and realistic
-instead of the basin-wide ~50% under-supply 58-02 diagnosed (ISS-057). A surface
+instead of the basin-wide ~50% under-supply that flat rates produce. A surface
 delivery over-delivers slightly; the over-delivery percolates as incidental
 recharge (the engine's ``clamp_floor`` step), so a surface parcel's books close to
 ~0. A meter reading pumps slightly MORE than the crop consumed; that loss/return
@@ -57,17 +57,18 @@ flow has no recharge sink, so a metered parcel carries a small POSITIVE residual
 parcel-month that genuinely has no CalculationRun (should not happen inside the
 two-pass refresh). Do NOT "restore" the flat rates — they undersupply measured ET.
 
-APPLIED WATER IS NOW CROP DEMAND ÷ THE FIELD'S IRRIGATION-METHOD EFFICIENCY
-(131-01). 58-03 sized the delivered supply as demand times a band keyed on an
-INDEX — the well's index on the meter path, the point of diversion's index on
-the surface path. An index is not a field: every parcel came out near-drip, and
-the aggregate irrigation efficiency across all 74 valley fields measured 0.9288
-whether the field was flood-irrigated alfalfa or a micro-irrigated almond block.
+APPLIED WATER IS CROP DEMAND ÷ THE FIELD'S IRRIGATION-METHOD EFFICIENCY.
+Sizing the delivered supply as demand times a band keyed on an INDEX (the
+well's index on the meter path, the point of diversion's index on the surface
+path) would not work: an index is not a field. Every parcel would come out
+near-drip, and the aggregate irrigation efficiency across all 74 valley fields
+would read the same whether the field was flood-irrigated alfalfa or a
+micro-irrigated almond block.
 ``health/checks.py::check_et_meter_agreement`` says so in its own docstring —
-on demo data that check "measures the seeder". A district engineer reading 0.93
-on border-check flood stops believing the demonstration.
+on demo data that check "measures the seeder". A district engineer reading a
+near-drip efficiency on border-check flood stops believing the demonstration.
 
-So the multiple is now ``1 / efficiency``, and the efficiency comes from the
+So the multiple is ``1 / efficiency``, and the efficiency comes from the
 crop each parcel actually carries (``CROP_IRRIGATION`` below, one entry per crop
 ``seed_merced_cropland`` assigns), naming the irrigation method in words:
 
@@ -81,7 +82,7 @@ The two bands are the only published figures this codebase cites, and they are
 already cited in ``health/checks.py`` (~lines 60-63 and again in that check's
 docstring). No per-crop figure here is presented as published.
 
-The per-parcel scatter 58-03 wanted SURVIVES — ±3% deterministic, index-keyed,
+The per-parcel scatter is ±3%, deterministic, index-keyed,
 through the same 8-bucket helper (``_crop_supply_ratio``). The crop sets the
 centre; the index sets the scatter. Still no ``random``.
 
@@ -115,7 +116,7 @@ from geography.models import Boundary, ParcelZone, Zone
 from parcels.models import Parcel, ParcelLedger
 from wells.models import Well, WellIrrigatedParcel
 
-# Phase 67-03 diversion-reach journey: the two parcel-less PODs seed_merced_operations
+# Diversion-reach journey: the two parcel-less PODs seed_merced_operations
 # places on the Merced River. Their monthly DiversionRecords are created HERE (the
 # accounting layer's home — operations creates no records by design), keyed to these
 # names so the two seeds stay in lock-step.
@@ -124,9 +125,9 @@ from core.management.commands.seed_merced_operations import (  # noqa: E402
     JOURNEY_UPSTREAM_POD,
 )
 
-# 134-01: the storm fill schedule, IMPORTED from the command that owns it rather
+# The storm fill schedule, IMPORTED from the command that owns it rather
 # than copied — the same import `seed_merced_measurements` makes. Three commands
-# now describe the same storms (the events, the on-site readings, and the surface
+# describe the same storms (the events, the on-site readings, and the surface
 # diversion they were taken under); one definition cannot drift from itself.
 from core.management.commands.seed_merced_recharge_events import (  # noqa: E402
     DEMO_OPERATOR as RECHARGE_OPERATOR,
@@ -135,7 +136,7 @@ from core.management.commands.seed_merced_recharge_events import (  # noqa: E402
 
 MER_PARCEL_PREFIX = "MER-APN-"
 # The demonstration's two water years, oldest first. Named once so the
-# `--journey-only` surgical path and the main seed cannot drift apart (133-02).
+# `--journey-only` surgical path and the main seed cannot drift apart.
 DEMO_PERIOD_NAMES = ("WY 2024-2025", "WY 2025-2026")
 GSA_BASIN_CODE = "5-022.04"
 DISTRICT_ZONE_PREFIX = "MER Surface Service Area"
@@ -144,15 +145,15 @@ DISTRICT_ZONE_PREFIX = "MER Surface Service Area"
 def district_zone_name(holder_name, right_id):
     """A surface district's zone name: the prefix, a colon, the holder, the right.
 
-    150-04 V11: a colon, never an em dash ("MER Surface Service Area:
-    Ashvale-Dunmoor Water District (MER-WR-005-DEMO)"). Rows seeded before
-    then are renamed by geography migration 0009.
+    A colon, never an em dash ("MER Surface Service Area:
+    Ashvale-Dunmoor Water District (MER-WR-005-DEMO)"). Rows seeded earlier
+    are renamed by geography migration 0009.
     """
     return f"{DISTRICT_ZONE_PREFIX}: {holder_name} ({right_id})"
 
-# 58-03: DELIVERED supply (surface deliveries + meter readings) is no longer sized
-# from these flat rates — it tracks each parcel's MEASURED net ET demand (see the
-# module docstring), because the flat rates undersupply measured ET (ISS-057). The
+# DELIVERED supply (surface deliveries + meter readings) is not sized from these
+# flat rates: it tracks each parcel's MEASURED net ET demand (see the module
+# docstring), because the flat rates undersupply measured ET. The
 # rates survive for two narrow, legitimate uses ONLY: (1) a fail-soft fallback when
 # a parcel-month genuinely has no CalculationRun (should not happen inside the
 # two-pass refresh); (2) the paper ALLOCATION rows (`_allocation_rows`), which are
@@ -166,7 +167,7 @@ SEASONAL_WEIGHTS = {
 SURFACE_RATE = 2.2          # AF/acre/yr — allocation ceiling + delivery fallback
 GW_RATE = 1.8               # AF/acre/yr — allocation ceiling + meter fallback
 
-# Measured-ET supply bands (58-03). Each is a per-source multiple of a parcel's
+# Measured-ET supply bands. Each is a per-source multiple of a parcel's
 # measured net consumptive-use demand, deterministic by parcel index so re-runs
 # are stable and parcels scatter instead of tracking ET identically.
 #
@@ -183,15 +184,14 @@ SURFACE_SUPPLY_SPAN = Decimal("0.14")
 METER_SUPPLY_LO = Decimal("1.05")     # meter over-pump band [1.05, 1.18]
 METER_SUPPLY_SPAN = Decimal("0.13")
 
-# 131-01: the flat index-keyed bands above are RETIRED as the delivered-supply
-# basis. They are kept because `_allocation_rows` and the no-CalculationRun
-# fallbacks still reference the same idea of a deterministic band, and because
-# deleting a constant a future reader may want to compare against loses the
-# history. Do NOT route delivered supply back through them: an index is not a
-# field, and a per-index band gives a flood-irrigated alfalfa field the same
-# applied-water multiple as a micro-irrigated almond block. Measured before this
-# change, the demo's aggregate irrigation efficiency was 0.9288 across all 74
-# valley fields — near-drip everywhere, including the alfalfa.
+# The flat index-keyed bands above are NOT the delivered-supply basis. They are
+# kept because `_allocation_rows` and the no-CalculationRun fallbacks still
+# reference the same idea of a deterministic band. Do NOT route delivered supply
+# back through them: an index is not a field, and a per-index band gives a
+# flood-irrigated alfalfa field the same applied-water multiple as a
+# micro-irrigated almond block (the aggregate irrigation efficiency across all
+# 74 valley fields would come out near-drip everywhere, including the
+# alfalfa).
 #
 # CROP → IRRIGATION METHOD → EFFICIENCY. One entry per crop
 # `seed_merced_cropland.CROPS` assigns, round-robin by parcel index. Applied
@@ -223,19 +223,19 @@ CROP_IRRIGATION = {
 CROP_SCATTER_LO = Decimal("0.97")
 CROP_SCATTER_SPAN = Decimal("0.06")
 
-# Agency-wide irrigation efficiency the seed installs on the SiteConfig singleton
-# (55-03). The per-parcel surface split is now produced by
+# Agency-wide irrigation efficiency the seed installs on the SiteConfig singleton.
+# The per-parcel surface split is produced by
 # surface.services.allocate_district_delivery, which READS efficiency from
 # SiteConfig — so the seed sets it here rather than carrying its own constant.
 SEED_IRRIGATION_EFFICIENCY = Decimal("0.750")
 GSA_SUSTAINABLE_RATE = 2.0  # fallback for a GSA not named in the table below
-# 136-02 — one demonstration sustainable-yield rate per GSA, AF per acre of the
+# One demonstration sustainable-yield rate per GSA, AF per acre of the
 # GSA's demonstration parcels, keyed by zone NAME (the zones are created by
 # seed_merced_gsas before this command runs and are looked up by name elsewhere
 # in this file). A GSP's number is set by the agency; these are the
 # demonstration's, chosen 2026-09-06 from the measured groundwater use so the
 # dashboard shows a budget under pressure that the dry year crosses because
-# pumping rose (ISS-151's story), and every plan row says so in its notes.
+# pumping rose, and every plan row says so in its notes.
 #   Halvern Valley GSA          4,844.7 ac × 0.58 = 2,809.93 AF against 2,518.46 AF
 #       pumped in WY 2024-2025 (+291.47 under) and 3,142.51 AF in WY 2025-2026
 #       (−332.58 over): the allocation is identical in both years and pumping
@@ -262,11 +262,11 @@ DRY_YEAR_OPEN_FRACTION = Decimal("0.1")    # the El Nido district's current-year
 # surface delivery is June 2025, so July–September deliver nothing and the
 # conjunctive growers substitute groundwater (a clear pumping bump).
 #
-# 133-02 — THIS CALENDAR IS A DECISION, NOT A LEFTOVER DATE. It is a single
+# THIS CALENDAR IS A DECISION, NOT A LEFTOVER DATE. It is a single
 # cutoff, not a per-water-year window, so every month of WY 2025-2026 falls
 # after it and the El Nido point delivers nothing in the open year. Each of
-# those months carries a typed delivery record of 0 (150.5-01,
-# 2026-10-12: curtailment orders removed from OpenH2O). A typed record stops
+# those months carries a typed delivery record of 0 (OpenH2O has no
+# curtailment orders). A typed record stops
 # the estimator (surface/estimate.py `_has_typed_record`, zero included), so
 # the platform never estimates water the district recorded as not delivered.
 # The district's allocation for that year is deliberately NOT zero
@@ -284,8 +284,8 @@ EL_NIDO_POD_PREFIX = "MER-POD-007"
 # Matched by its id prefix: the demo marker suffix ("-DEMO") is not on every
 # build's names.
 UNMETERED_POD_PREFIX = "MER-POD-004"
-# Phase 67-03 journey calendar, as MONTH NUMBERS so it reproduces in any water
-# year (133-02). June/July/August are drawn fully by the downstream re-diversion
+# Journey calendar, as MONTH NUMBERS so it reproduces in any water
+# year. June/July/August are drawn fully by the downstream re-diversion
 # (returned_af = 0, wholly consumptive); May is the one partially-returned month,
 # so the demo shows all three points of the spectrum — 0% / partial / 100%.
 JOURNEY_FULL_DRAW_MONTHS = {6, 7, 8}
@@ -298,7 +298,7 @@ JOURNEY_PARTIAL_RETURN_MONTH = 5
 SUBSTITUTION_MONTHS = {7, 8, 9}
 SUBSTITUTION_MULTIPLIER = Decimal("1.6")
 
-# 134-01 — THE STORM'S HEADGATE RATE. The peak flow recorded on the CalWATRS
+# THE STORM'S HEADGATE RATE. The peak flow recorded on the CalWATRS
 # "Max rate (CFS)" column for a basin fill. Same deterministic shape
 # `seed_merced_measurements` uses for its canal-inflow reading (a bigger basin
 # taking a bigger fill pulls more canal water), so the number on the form and the
@@ -331,7 +331,7 @@ def _jitter(seq):
 
 
 def _supply_ratio(seq, lo, span):
-    """A deterministic supply-to-demand multiple in ``[lo, lo + span]`` (58-03).
+    """A deterministic supply-to-demand multiple in ``[lo, lo + span]``.
 
     Keyed on a parcel/POD index across 8 buckets so the supply scatters parcel to
     parcel (no two track measured ET identically) yet re-runs reproduce identical
@@ -341,7 +341,7 @@ def _supply_ratio(seq, lo, span):
 
 
 def _crop_supply_ratio(seq, efficiency):
-    """Applied-water multiple for one field: ``1 / efficiency``, scattered (131-01).
+    """Applied-water multiple for one field: ``1 / efficiency``, scattered.
 
     The centre is the inverse of that field's irrigation-method efficiency — a
     0.62 border-check flood alfalfa field applies 1/0.62 ≈ 1.613 times what the
@@ -375,7 +375,7 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "--journey-only", action="store_true",
-            help="Seed ONLY the Phase 67-03 diversion-reach journey records onto "
+            help="Seed ONLY the diversion-reach journey records onto "
             "the EXISTING accounting layer — no flush, no rebuild. For surgical "
             "live seeding that cannot perturb the whole-basin closure.",
         )
@@ -383,7 +383,7 @@ class Command(BaseCommand):
     @demonstration_seed
     def handle(self, *args, **options):
         if options.get("journey_only"):
-            # 133-02: both demonstration water years, not just the finalized one.
+            # Both demonstration water years, not just the finalized one.
             # A surgical journey re-seed that covered only WY 2024-2025 would leave
             # the open year's reach records behind whenever it ran.
             journey_periods = list(ReportingPeriod.objects.filter(
@@ -407,7 +407,7 @@ class Command(BaseCommand):
     # owned by seed_merced_gsas), never Demo Valley/base-layer rows.
     # ------------------------------------------------------------------
     def _flush(self):
-        # Local import: `surface` is an optional module (Phase 87), so this must
+        # Local import: `surface` is an optional module, so this must
         # not run at module scope.
         from surface.models import DiversionRecord
 
@@ -422,10 +422,9 @@ class Command(BaseCommand):
             point_of_diversion__water_right__right_id__startswith="MER-WR-"
         ).delete()
 
-        # 134-01: the recharge-basin intake carries NO water right, so the filter
+        # The recharge-basin intake carries NO water right, so the filter
         # above does not reach it and its to-storage records would accumulate on
-        # every re-run. This is the same defect class as the 132-01 totalizer bug
-        # and it is exactly why the storm records are written HERE and not in
+        # every re-run. That is why the storm records are written HERE and not in
         # seed_merced_recharge_events: `refresh_merced_accounting`'s pass 2 re-runs
         # this command, so records written elsewhere get half-deleted —
         # MER-POD-009-DEMO carries MER-WR-008-DEMO and would be caught by the line
@@ -464,7 +463,7 @@ class Command(BaseCommand):
     # Seed
     # ------------------------------------------------------------------
     def _seed(self):
-        # Local import: `surface` is an optional module (Phase 87) — see `_flush`.
+        # Local import: `surface` is an optional module; see `_flush`.
         from surface.models import PointOfDiversionParcel
 
         parcels = list(Parcel.objects.filter(
@@ -480,7 +479,7 @@ class Command(BaseCommand):
         sw, _ = WaterType.objects.get_or_create(code="SW", defaults={"name": "Surface Water"})
 
         # The per-parcel surface split is produced by the platform service, which
-        # reads irrigation efficiency from the SiteConfig singleton (55-03). Set the
+        # reads irrigation efficiency from the SiteConfig singleton. Set the
         # demo's agency-wide efficiency here so a fresh demo install has it; respect
         # an operator who has already tuned it to a non-default value.
         self._ensure_efficiency()
@@ -519,7 +518,7 @@ class Command(BaseCommand):
         # --- Water accounts (one per distinct owner) + account-parcel links ---
         self._build_accounts(parcels, prior)
 
-        # 58-03: each parcel-month's ESTIMATED net consumptive-use demand
+        # Each parcel-month's ESTIMATED net consumptive-use demand
         # (gross ET − effective precip), read from the CalculationRuns the first
         # run_calculations pass wrote. Supply (surface + meter) is sized to THIS,
         # so the seed sizes against the SAME ET the mass balance later checks.
@@ -529,16 +528,15 @@ class Command(BaseCommand):
         entries = self._allocation_rows(parcels, surface_parcel_ids, gw, sw, periods)
         ParcelLedger.objects.bulk_create(entries, batch_size=500)
 
-        # 131-01: each field's irrigation efficiency, resolved from its crop once
+        # Each field's irrigation efficiency, resolved from its crop once
         # (single joined query) and read from a dict inside both supply loops. It is
         # a property of the FIELD, not of the year, so it is resolved ONCE outside
-        # the per-period loop and both water years share it (133-02).
+        # the per-period loop and both water years share it.
         eff_by_parcel = self._efficiency_by_parcel(parcels)
 
-        # --- THE SUPPLY SIDE, ONCE PER REPORTING PERIOD (133-02). Before this, the
-        # month schedule was hardcoded to WY 2024-2025's twelve months, so the open
-        # water year carried a full demand side and no supply at all. Within a period
-        # the ordering is unchanged and still load-bearing: surface FIRST, then
+        # --- THE SUPPLY SIDE, ONCE PER REPORTING PERIOD. Each period gets its own
+        # month schedule, so the open water year carries supply as well as demand.
+        # Within a period the ordering is load-bearing: surface FIRST, then
         # meters against the demand surface left unmet. Across periods the ledger
         # keys are month-scoped, so neither year can see the other's rows. ---
         surface_rows = []
@@ -564,13 +562,13 @@ class Command(BaseCommand):
             ParcelLedger.objects.bulk_create(period_gw_rows, batch_size=500)
             gw_rows.extend(period_gw_rows)
 
-            # Phase 67-03: the visible water journey (non-consumptive passthrough +
+            # The visible water journey (non-consumptive passthrough +
             # downstream re-diversion). Parcel-less PODs -> zero ledger supply ->
             # closure untouched. Recreated AFTER the flush so a `make merced` re-run
             # reproduces it.
             self._seed_diversion_journey_records(rp)
 
-        # 134-01: the high-flow diversions the managed basin fills were taken
+        # The high-flow diversions the managed basin fills were taken
         # under. AFTER the period loop closes, not inside it, and that placement
         # is load-bearing. `surface.services._records_for_period` selects a POD's
         # records by period FK *or* month span and does NOT filter on
@@ -598,7 +596,7 @@ class Command(BaseCommand):
         per right to hang its surface budget on. Keyed by name prefix + right_id so
         the flush removes only these — never the three GSA management-area zones.
         """
-        # Local import: `surface` is an optional module (Phase 87) — see `_flush`.
+        # Local import: `surface` is an optional module; see `_flush`.
         from surface.models import WaterRightParcel
 
         parcel_ids = [p.id for p in parcels]
@@ -662,7 +660,7 @@ class Command(BaseCommand):
         ).select_related("parcel"):
             acres_by_gsa[pz.zone_id] += Decimal(str(pz.parcel.area_acres or 0))
         for zone in gsa_zones:
-            # 136-02: per-GSA rate by zone name, the scalar as the fallback.
+            # Per-GSA rate by zone name, the scalar as the fallback.
             rate = GSA_SUSTAINABLE_RATE_AF_PER_ACRE.get(
                 zone.name, Decimal(str(GSA_SUSTAINABLE_RATE)))
             budget = max(GSA_BUDGET_FLOOR, _q(acres_by_gsa[zone.id] * rate))
@@ -773,12 +771,10 @@ class Command(BaseCommand):
     def _month_schedule(self, period):
         """(date, month_num) for each month of ``period``, day 15.
 
-        133-02: walks the ReportingPeriod's OWN start/end dates. It used to
-        hardcode ``2024 if mn >= 10 else 2025``, which is why the open water year
-        had a full demand side and no supply at all — every one of this method's
-        four callers built WY 2024-2025 and nothing else. Reading the dates off
-        the period means a second water year needs no second code path, and a
-        period whose dates are edited needs no code change either.
+        Walks the ReportingPeriod's OWN start/end dates rather than hardcoding
+        one water year's months. Reading the dates off the period means a second
+        water year needs no second code path, and a period whose dates are edited
+        needs no code change either.
 
         Day 15 is the mid-month convention the whole seed uses: `DiversionRecord`
         is unique on (POD, month, type), and the engine keys `CalculationRun` by
@@ -794,10 +790,10 @@ class Command(BaseCommand):
     def _ensure_efficiency(self):
         """Install the demo's agency-wide irrigation efficiency on SiteConfig.
 
-        The per-parcel surface split is now produced by
+        The per-parcel surface split is produced by
         ``surface.services.allocate_district_delivery``, which reads efficiency
         from the SiteConfig singleton. So the seed sets it here (0.750) rather than
-        carrying its own constant — closing the loop the 55-03 settings UI opens.
+        carrying its own constant; the Delivery Settings screen edits the same value.
         Idempotent: it only writes a fresh row's default, leaving an operator's
         tuned value in place on re-runs of an already-configured install.
         """
@@ -815,8 +811,8 @@ class Command(BaseCommand):
         """Map ``(parcel_id, "YYYY-MM") -> measured net consumptive-use demand``.
 
         Reads the ``CalculationRun`` rows the first ``run_calculations`` pass wrote
-        for every parcel (54-01 spine + 58-03 metered reference run), scoped to the
-        months of every period being seeded (133-02 — one query for both water
+        for every parcel (the engine run plus a metered reference run), scoped to the
+        months of every period being seeded (one query for both water
         years, never one per year inside a loop). ``net_consumptive_use_af`` is gross ET minus
         effective precip — the demand the supply must meet — and is stable across
         the two passes (it never depends on surface or meter readings), so sizing
@@ -838,7 +834,7 @@ class Command(BaseCommand):
         return out
 
     def _efficiency_by_parcel(self, parcels):
-        """Map ``parcel_id -> irrigation efficiency`` from each field's crop (131-01).
+        """Map ``parcel_id -> irrigation efficiency`` from each field's crop.
 
         ONE query over the crop-type ``UsageLocation`` rows
         ``seed_merced_cropland`` wrote, joined to ``CropType``, read into a dict
@@ -887,19 +883,19 @@ class Command(BaseCommand):
                             eff_by_parcel):
         """Surface deliveries, produced by the PLATFORM allocation service.
 
-        This is the 55-03 wiring: the seed no longer sizes each parcel's delivery
-        with its own private math. Instead it does what a real district does —
+        The seed does not size each parcel's delivery with its own private math.
+        Instead it does what a real district does:
         records the MONTHLY DISTRICT TOTAL that left each point of diversion (a
         ``DiversionRecord``, the source of truth) — then calls
         ``surface.services.allocate_district_delivery`` to split that total across
         the served parcels. The service weights the split by each parcel's measured
-        ET demand for the month (the 54-01 spine) when calculations have run, and
+        ET demand for the month when calculations have run, and
         falls back to the static ``PointOfDiversionParcel.fraction`` split when they
         have not. Either way it writes the NEGATIVE ``surface_diversion`` rows the
         calc engine consumes — the SAME tested path the app uses, so the seed and
         the app can never drift.
 
-        58-03 sizing: the recorded district total per POD/month is the sum over its
+        Sizing: the recorded district total per POD/month is the sum over its
         served parcels of each parcel's MEASURED net consumptive-use demand
         (``net_cu``, from the first run_calc pass) times a per-POD surface
         over-delivery ratio (always ≥ 1.0). The measured ET already carries real
@@ -911,11 +907,11 @@ class Command(BaseCommand):
         The El Nido POD records a delivery of 0 for every month after June 2025,
         so the service produces no deliveries for its parcels after then; the
         resulting summer shortfall on their surface-only parcels is the intentional
-        scarcity demonstration, not a sizing error. 133-02: because the cutoff is a
+        scarcity demonstration, not a sizing error. Because the cutoff is a
         date and not a per-year window, the El Nido POD delivers nothing at all
         across WY 2025-2026 — see the constant's comment block.
 
-        133-02: called ONCE PER REPORTING PERIOD. The ``period`` argument sets both
+        Called ONCE PER REPORTING PERIOD. The ``period`` argument sets both
         the month schedule and the ``reporting_period`` stamped on each
         ``DiversionRecord`` — that FK matters, because ``_records_for_period``
         matches a record on its FK **OR** its month falling inside the period span,
@@ -925,7 +921,7 @@ class Command(BaseCommand):
         Returns the list of ``ParcelLedger`` surface rows the service wrote (for the
         summary count); the service has already persisted them.
         """
-        # Local imports: `surface` is an optional module (Phase 87) — see `_flush`.
+        # Local imports: `surface` is an optional module; see `_flush`.
         from surface.models import (
             DiversionRecord,
             PointOfDiversion,
@@ -965,7 +961,7 @@ class Command(BaseCommand):
             for month_date, mn in schedule:
                 if runs_dry and month_date > EL_NIDO_LAST_DELIVERY:
                     # Nothing delivered: a typed record of 0, so the estimator
-                    # never invents a delivery for the month (150.5-01).
+                    # never invents a delivery for the month.
                     DiversionRecord.objects.update_or_create(
                         point_of_diversion=pod,
                         month=month_date,
@@ -981,7 +977,7 @@ class Command(BaseCommand):
                 for p in served:
                     demand = net_cu.get((p.id, month_key))
                     if demand is not None and demand > 0:
-                        # 131-01: per-PARCEL, not per-POD. Each served field's
+                        # Per-PARCEL, not per-POD. Each served field's
                         # demand is divided by ITS OWN crop's irrigation-method
                         # efficiency, so one canal can serve a flood-irrigated
                         # alfalfa field and a drip almond block and deliver the
@@ -1040,15 +1036,15 @@ class Command(BaseCommand):
                           surface_by_pm, eff_by_parcel):
         """Monthly groundwater extraction (NEGATIVE) for METERED wells ONLY.
 
-        The metering split is the 52-01 dual-source invariant: wells alternate
+        The metering split is a dual-source invariant: wells alternate
         metered / unmetered. The two halves are handled differently:
 
-        - A METERED well's reading is authoritative. 58-03 sizes each served
+        - A METERED well's reading is authoritative. The seed sizes each served
           parcel's monthly reading to the RESIDUAL groundwater it actually needed —
           its MEASURED net ET demand (``net_cu``, from the first run_calc pass) MINUS
           the surface already delivered to it that month — divided by that field's
-          own crop irrigation-method efficiency (131-01; the ratio used to be a
-          per-WELL index band, but a well can irrigate several parcels growing
+          own crop irrigation-method efficiency (not a per-WELL index
+          band, because a well can irrigate several parcels growing
           different crops, so the crop is resolved PER SERVED PARCEL through the
           ``WellIrrigatedParcel`` links and each link's share is scaled by its own
           ratio before the fraction weighting). This mirrors exactly what the engine computes for an UNMETERED
@@ -1092,7 +1088,7 @@ class Command(BaseCommand):
                 continue
             # Alternate metered / unmetered so the demo exercises both stories.
             # The assignment is a property of the WELL, not of the water year, so
-            # calling this once per period (133-02) re-derives the identical value
+            # calling this once per period re-derives the identical value
             # and the guarded update below writes nothing on the second pass.
             metered = (wseq % 2 == 0)
             method = "certified_meter" if metered else "unmetered_estimate"
@@ -1127,7 +1123,7 @@ class Command(BaseCommand):
                 # ET path: size EACH served parcel's reading to its RESIDUAL
                 # groundwater need = measured net ET demand MINUS the surface already
                 # delivered that month, DIVIDED by that field's own crop
-                # irrigation-method efficiency (131-01). A parcel fully met
+                # irrigation-method efficiency. A parcel fully met
                 # by surface reads ~0; a groundwater-only parcel (no surface) reads
                 # its full demand ÷ its efficiency — always a positive residual,
                 # never a deficit, no double-supply for a conjunctive parcel. The
@@ -1178,7 +1174,7 @@ class Command(BaseCommand):
         return rows
 
     # ------------------------------------------------------------------
-    # Diversion-reach journey records (Phase 67-03)
+    # Diversion-reach journey records
     # ------------------------------------------------------------------
     def _seed_diversion_journey_records(self, period):
         """Recorded diversions for the two parcel-less journey PODs.
@@ -1198,14 +1194,12 @@ class Command(BaseCommand):
         Return Flow AF) but contribute nothing to the whole-basin balance.
         ``update_or_create`` on the ``(POD, month, type)`` unique key → idempotent.
 
-        133-02: the calendar comes from ``period`` rather than four literal 2025
-        dates. The hydro passthrough runs every month of whichever year is being
+        The calendar comes from ``period``, not from literal dates. The hydro passthrough runs every month of whichever year is being
         seeded; the downstream re-diversion draws in that year's June/July/August
         and returns part of its May. Those are MONTH NUMBERS, so the same shape
-        reproduces in any water year — and for WY 2024-2025 it reproduces the
-        exact five records the literals used to write.
+        reproduces in any water year.
         """
-        # Local import: `surface` is an optional module (Phase 87) — see `_flush`.
+        # Local import: `surface` is an optional module; see `_flush`.
         from surface.models import DiversionRecord, PointOfDiversion
 
         upstream = PointOfDiversion.objects.filter(name=JOURNEY_UPSTREAM_POD).first()
@@ -1254,7 +1248,7 @@ class Command(BaseCommand):
         )
 
     def _seed_recharge_diversion_records(self, period):
-        """The surface-side paper for every managed basin fill (134-01).
+        """The surface-side paper for every managed basin fill.
 
         ``MER-BPOD-001 El Nido Canal Recharge Intake`` carries the note "Operated
         during high-flow/storm events to divert water for managed aquifer
@@ -1279,7 +1273,7 @@ class Command(BaseCommand):
             seed's ±2.5 jitter is deliberately dropped. It is the PEAK: flow is
             highest on day one and throttled back as the basin fills, which is
             why a 3-day event span and a ~1.4-day fill volume are not in conflict.
-          * ``reporting_period`` is set EXPLICITLY (133-02). ``_records_for_period``
+          * ``reporting_period`` is set EXPLICITLY. ``_records_for_period``
             matches on the FK *or* the month span, so a missing or stale FK
             double-allocates.
           * ``returned_af`` is 0. Water diverted into a recharge basin percolates;
@@ -1300,8 +1294,8 @@ class Command(BaseCommand):
         demonstration. A basin fill IS a to-storage diversion, so writing these
         fixes that as a consequence rather than as separate work.
         """
-        # `recharge` is an optional module (ISS-072) and `surface` is optional too
-        # (Phase 87) — see `_flush`. With recharge off there are no basins to fill,
+        # `recharge` is an optional module and `surface` is optional too;
+        # see `_flush`. With recharge off there are no basins to fill,
         # so there is nothing to record and nothing to import.
         from core.modules import is_enabled
 

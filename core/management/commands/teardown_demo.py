@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Surgically remove the retired Kaweah and Demo-Valley (Fresno) demo data.
 
-WHY this command exists (Phase 53-01). openh2o.com carried Kaweah AND Merced at
-once, so the dashboard's "Total Usage" silently summed two basins. The v1.9
-Merced Demonstration must show ONE basin cleanly. This command deletes every
+WHY this command exists. A site holding both Kaweah AND Merced demo data
+sums two basins in every site-wide dashboard total. The Merced
+demonstration must show ONE basin cleanly. This command deletes every
 Kaweah and Demo-Valley object in a single atomic transaction, leaving the Merced
 demo and all shared reference data untouched — which also resolves the
 dashboard-totals commingling as a side effect.
@@ -139,7 +139,7 @@ class Command(BaseCommand):
     # ------------------------------------------------------------------
     def _teardown_basin(self, cfg):
         # Local imports: `recharge` and `surface` are optional modules, so these
-        # must not run at module scope (ISS-072, Phase 87).
+        # must not run at module scope.
         from recharge.models import RechargeSite
         from surface.models import (
             DiversionRecord,

@@ -9,7 +9,7 @@ Behind them, ``check_conformance`` reports a clean bill of health having examine
 zero measurements: green because it is empty, which is the worst shape a gate can
 take (``tests/test_standards_registry.py`` names this in its own words).
 
-This command writes the five slices ISS-105 flagged, all in one place because
+This command writes five slices, all in one place because
 they are one story — a water year of fieldwork:
 
   1. ``recharge.RechargeMeasurement`` — on-site monitoring at the seven basins
@@ -56,17 +56,12 @@ DESIGN — the same three rules the rest of the Merced seed follows:
 reading would create the one row that mechanism exists to prevent. Provenance
 goes in ``notes``.
 
-TWO PLAN PREMISES THAT DID NOT SURVIVE THE SOURCE, recorded so the next reader
-does not re-derive them:
+TWO FACTS ABOUT THE SOURCES, recorded so the next reader does not re-derive them:
 
-  * The seeded ``RechargeEvent`` rows used to carry ``end_date = NULL`` — every
-    one of them — so there was no event window to place a reading "inside", and
-    the fill window was defined here instead: a storm fill worked over the ~5 days
-    after the gates open, with the reading offsets below counted from
-    ``start_date``. **134-01 gave the events a real 3-day span**
-    (``FILL_SPAN_DAYS`` in the events seed) and chose that length so all four
-    notes below stay true. The offsets are still counted from ``start_date`` and
-    MUST stay that way — deriving one from ``end_date`` would make a future span
+  * The seeded ``RechargeEvent`` rows carry a real 3-day span
+    (``FILL_SPAN_DAYS`` in the events seed), a length chosen so all four notes
+    below stay true. The reading offsets below are counted from ``start_date``
+    and MUST stay that way: deriving one from ``end_date`` would make a future span
     change silently re-date 126 readings. ``tests/test_merced_recharge_events.py``
     locks the reading-inside-the-fill invariant in both directions.
   * ``MONITORING_WELLS`` lives in ``scripts/export_merced_native.py``, an export
@@ -87,23 +82,22 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
 
-# The basin fill schedule lives in the events seed and is imported, not copied
-# (133-02) — the two commands describe the same storms and must not drift.
+# The basin fill schedule lives in the events seed and is imported, not copied.
+# The two commands describe the same storms and must not drift.
 from core.management.commands.seed_merced_recharge_events import (  # noqa: E402
     RECHARGE_SEASONS,
 )
 
 # The single readable key that finds the demo district's basins without
 # hardcoding names — the same key seed_merced_recharge_events uses. Fictional
-# since Phase 97: these readings are invented, so they must never be attributed
+# by design: these readings are invented, so they must never be attributed
 # to a real district.
 DEMO_OPERATOR = "Halvern Irrigation District"
 
 # The fill schedule seed_merced_recharge_events writes its events on — IMPORTED
-# from that command rather than copied (133-02). It used to be a second literal
-# list here with a comment saying the two were "kept in step by test, not by
-# hope"; no such test existed, and a reading dated outside its basin's fill is a
-# reading of nothing. One definition cannot drift from itself.
+# from that command rather than copied. A second literal list could drift from
+# the events, and a reading dated outside its basin's fill is a reading of
+# nothing. One definition cannot drift from itself.
 #
 # A season is a list of (date, fraction-of-capacity). A 0.30 fill ponds deeper
 # and runs the canal harder than a 0.20 fill; the readings below have to say so,
@@ -118,8 +112,8 @@ FILL_SEASONS = RECHARGE_SEASONS
 RECORD_START = datetime.date(2024, 10, 1)
 RECORD_END = datetime.date(2026, 9, 30)
 DAYS_IN_FIRST_WY = (datetime.date(2025, 9, 30) - RECORD_START).days  # 364
-# Month-end read dates for the totalizers, one per month of BOTH water years
-# (133-02). A totalizer is a lifetime counter: it does not reset at the water
+# Month-end read dates for the totalizers, one per month of BOTH water years.
+# A totalizer is a lifetime counter: it does not reset at the water
 # year boundary, so the second year continues the first year's running value.
 WY_MONTHS = [
     (2024, 10), (2024, 11), (2024, 12),
@@ -135,7 +129,7 @@ WY_MONTHS = [
 OPEN_YEAR_FIRST_INDEX = 12
 
 # The district's monitoring points, transcribed from MONITORING_WELLS in
-# scripts/export_merced_native.py (the demo's own declaration, Phase 52.5). The
+# scripts/export_merced_native.py (the demo's own declaration). The
 # NGVD29 row is deliberate: it exercises the legacy-datum path.
 # reg -> (agency, frequency, reference elevation ft, datum, notes)
 MONITORING_WELLS = {
@@ -198,25 +192,26 @@ WELL_DEPTH_OFFSET = {
 # water and kept logging in air, and the day it spent re-equilibrating. Flagged
 # anomalous with the cause named. The two days after it are reconstructed from
 # the manual sounder either side, and carry quality "estimated". ANNUAL, so the
-# second water year has its own (133-02) — one visit across two years would read
+# second water year has its own: one visit across two years would read
 # as a district that stopped servicing its instrument.
 SERVICE_VISITS = (datetime.date(2025, 5, 14), datetime.date(2026, 5, 14))
 # The tail of the record that has not been through the district's annual review.
 # It moves with the record's end, not with a literal date.
 PROVISIONAL_FROM = datetime.date(2026, 8, 16)
 
-# 133-02 — THE DRY YEAR'S WATER TABLE IS DERIVED FROM THIS DEMONSTRATION'S OWN
+# THE DRY YEAR'S WATER TABLE IS DERIVED FROM THIS DEMONSTRATION'S OWN
 # NUMBERS, not drawn a second time. The wet year's anchors above are a shape and
 # say so; a second hand-drawn shape would be a second unverifiable claim, and a
 # flat continuation would be worse — a water table that does not move through a
 # drought is the one thing this audience would never believe.
 #
-# So the second year reuses the first year's shape SEGMENT BY SEGMENT, scaled by
-# the two quantities the rest of this milestone already measured:
+# So the second year reuses the first year's shape piece by piece, scaled by
+# the two quantities the rest of the demonstration already carries:
 #
 #   * winter RECOVERY is scaled by 0.50, because managed recharge halved —
 #     `RECHARGE_SEASONS` spreads 1.00x basin capacity in the wet year and 0.50x
-#     in the dry one, and 133-01 halved the rainfall that drives it.
+#     in the dry one, and ``synthesize_dry_year`` halves the rainfall that
+#     drives it (its default ``--precip-factor`` is 0.50).
 #   * summer DRAWDOWN is scaled by 1.187, because metered groundwater rose 18.7%
 #     (2,558.6 AF -> 3,037.8 AF, measured on the built demo 2026-09-05).
 #
@@ -295,7 +290,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         # Local imports: `recharge`, `wells` and `measurements` are optional
         # modules, so a module-scope import raises app_label RuntimeError on a
-        # demoted deployment (ISS-072, Phase 87).
+        # demoted deployment.
         from measurements.models import (
             Meter, MeterReading, Sensor, SensorMeasurement, WaterMeasurement,
         )
@@ -364,10 +359,10 @@ class Command(BaseCommand):
         renders the ten most recent; at this spacing those ten reach back across a
         season rather than sampling one storm.
 
-        133-02: the dry year's two fills are instrumented the same way the wet
+        The dry year's two fills are instrumented the same way the wet
         year's four are. The district did not stop reading its basins because it
         rained less, and an event history for WY 2025-2026 sitting beside an
-        empty measurements card is the exact contradiction 132-01 closed.
+        empty measurements card would contradict itself.
 
         The numbers have to agree with the event history printed beside them on
         the same page: a bigger basin taking a bigger fill ponds deeper and pulls
@@ -441,8 +436,8 @@ class Command(BaseCommand):
 
                 # Percolation, on every OTHER fill: once early, once after the
                 # fines off the first storms have had time to settle out.
-                # Expressed as a parity rather than the literal (0, 2) it used to
-                # be, so a season of a different length (133-02's two-storm dry
+                # Expressed as a parity rather than a literal (0, 2) pair, so a
+                # season of a different length (the two-storm dry
                 # winter) still gets a reading rather than falling through both
                 # branches and recording nothing but depth and flow.
                 if idx % 2 == 0:
@@ -551,7 +546,7 @@ class Command(BaseCommand):
     ):
         """Monthly reads on the 12 certified meters, reconciled to the ledger.
 
-        133-02: across BOTH water years, 24 reads a meter. The delta is read off
+        Across BOTH water years, 24 reads a meter. The delta is read off
         the ledger month by month, so the second year's reads reconcile to the
         second year's metered groundwater the same way the first year's do — that
         reconciliation is the whole tie between this instrument record and the
@@ -593,9 +588,9 @@ class Command(BaseCommand):
             # pumping a few hundred acre-feet a year since the 1990s.
             running = _q4(Decimal(rng.randrange(80_000, 420_000)) / Decimal("10"))
             # One meter in four had a read missed somewhere in each water year.
-            # Drawn PER YEAR (133-02) rather than once across the whole record, so
+            # Drawn PER YEAR rather than once across the whole record, so
             # adding a second year does not silently halve the miss rate — and so
-            # the committed year's draw is the one it always was.
+            # the first year's draw does not depend on the second year.
             estimated_months = set()
             for year_start in (0, OPEN_YEAR_FIRST_INDEX):
                 if rng.random() < 0.30:
@@ -627,7 +622,7 @@ class Command(BaseCommand):
                     )
                 elif m_idx >= len(WY_MONTHS) - 2:
                     # The last two months of the OPEN year have not been through
-                    # the district's annual review yet (133-02). WY 2024-2025 is
+                    # the district's annual review yet. WY 2024-2025 is
                     # `is_finalized=True`, so its September read is no longer
                     # provisional once a second year has passed — leaving it that
                     # way would have a finalized year still awaiting review.

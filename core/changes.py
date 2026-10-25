@@ -5,9 +5,8 @@ The recording side is ``core/history.py``. This module turns the recorded events
 into rows a person can read: when, who, which record, what changed (field,
 before, after) and the note.
 
-``changes_for`` also fed the History panel on record pages until 147-02
-(the panel was removed; the recording is kept and the display stripped). It stays here, tested directly, because it is the same
-one-record reading path ``/changes/``'s own ``?type=&record=`` filter uses.
+``changes_for`` is not used by any record page. It stays here, tested directly,
+because it is the same one-record reading path ``/changes/``'s own ``?type=&record=`` filter uses.
 
 **One row per record per action.** A single request or command can write the
 same row more than once (a step reorder lifts every moved step out of the way,
@@ -198,14 +197,14 @@ def record_types():
 # Fields that belong to a module other than their model's own. `core.SiteConfig`
 # is required, but these settings exist for one module alone (DeliverySettingsForm
 # hides them without it), so a deployment without that module never shows their
-# history either. The default irrigation efficiency belongs to `parcels` since
-# 150.2-01: every field has an irrigation method, canal or well.
+# history either. The default irrigation efficiency belongs to `parcels`:
+# every field has an irrigation method, canal or well.
 FIELD_MODULES = {
     "core.SiteConfig.default_irrigation_efficiency": "parcels",
     "core.SiteConfig.diversion_use_type_rule": "surface",
     "core.SiteConfig.diversion_report_year_rule": "surface",
     "core.SiteConfig.season_start_month": "surface",
-    # 148-04 Task 1: only canal water can be over-delivered.
+    # Only canal water can be over-delivered.
     "core.SiteConfig.over_delivery_treatment": "surface",
     "core.SiteConfig.over_delivery_leave_behind": "surface",
 }

@@ -1,18 +1,16 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Seed crop land-use for the irrigated Merced parcels (Phase 52.5-01).
+"""Seed crop land-use for the irrigated Merced parcels.
 
 WHY this command exists. The calc engine's ``facility_only_zero`` step
 (accounting/steps.py) forces a parcel's computed extraction to 0 unless the
 parcel has at least one ``UsageLocation`` carrying a non-null ``crop_type`` —
-those parcels are treated as facility-only and pump nothing billable. Phases
-50–52 built the physical + accounting Merced demo but deliberately left
-``CropType`` / ``UsageLocation`` out of scope (synthetic volumes were
-``area × rate``, never crop-ET-derived). The side effect: EVERY Merced parcel
-currently reads as facility-only, so a real ``run_calculations`` pass would zero
-all of them. This command closes that gap — it gives every IRRIGATED Merced
+those parcels are treated as facility-only and pump nothing billable. No
+other Merced seed writes ``CropType`` / ``UsageLocation`` rows (the ledger
+seed only reads the ones this command writes), so without this command EVERY
+Merced parcel reads as facility-only and a real ``run_calculations`` pass would zero all of them. This command closes that gap: it gives every IRRIGATED Merced
 parcel (one served by a well or a point of diversion) a ``UsageLocation`` with a
 ``crop_type``, so the engine passes it through. It is the land-use prerequisite
-for routing Merced through the real engine (Plan 02).
+for routing Merced through the real engine.
 
 This is a thin demonstration seed, not a crop model. The exact crop mix is not
 load-bearing; what matters is only that each irrigated parcel carries SOME
@@ -74,7 +72,7 @@ class Command(BaseCommand):
         ))
 
     def _seed(self):
-        # Local import: `surface` is an optional module (Phase 87), so this must
+        # Local import: `surface` is an optional module, so this must
         # not run at module scope.
         from surface.models import PointOfDiversionParcel
 

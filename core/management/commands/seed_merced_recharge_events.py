@@ -1,15 +1,15 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Seed managed/storm recharge EVENTS on the Merced recharge areas (Phase 52.5-03).
+"""Seed managed/storm recharge EVENTS on the Merced recharge areas.
 
 ``seed_merced_basins_from_selection`` creates the demo district's recharge
-areas (El Nido Canal spreading basins + Merced River Flood-MAR cropland,
-Phase 62) as ``RechargeSite`` rows but gives them no events, so no managed
+areas (El Nido Canal spreading basins + Merced River Flood-MAR cropland)
+as ``RechargeSite`` rows but gives them no events, so no managed
 recharge ever reaches the ledger. This command adds wet-season ``RechargeEvent``
-rows for BOTH demonstration water years (133-02) and deposits each to the
+rows for BOTH demonstration water years and deposits each to the
 overlying GSA's basin pool — the *managed* half of an honest groundwater budget.
 The two seasons are deliberately different sizes: see ``RECHARGE_SEASONS``. (The *incidental* deep-percolation
 half — surface delivered beyond crop demand — is written separately by the calc
-engine; see run_calculations / ISS-052.)
+engine; see run_calculations.)
 
 Basins are selected by ``operator`` (Halvern Irrigation District) so this picks up
 whatever the current hand-pick produced without hardcoding basin names, and never
@@ -44,18 +44,18 @@ from parcels.models import ParcelLedger
 # the number of basin-fulls spread that year, so the list says in one line how
 # wet the winter was.
 #
-# 133-02 — THE DRY YEAR'S RECHARGE IS SMALLER, NOT ABSENT, AND HERE IS WHY.
+# THE DRY YEAR'S RECHARGE IS SMALLER, NOT ABSENT, AND HERE IS WHY.
 # A dry year genuinely has less storm water to spread, so copying the wet year's
 # schedule would be a lie. Seeding nothing would be a different lie: the basins
 # and their canal intake are still there, and a winter with half the rain still
 # produces storms worth diverting. The dry season below is scaled to 0.50 — the
-# same rainfall multiplier 133-01 applied to the satellite record — and it arrives as TWO mid-winter storms rather
+# same rainfall multiplier ``synthesize_dry_year`` applies to the satellite record, and it arrives as TWO mid-winter storms rather
 # than a four-month season, because a dry winter is short of storms before it is
 # short of water in each one. December and March, the shoulder fills, do not
 # happen at all.
 #
 # ⚠ This is the MANAGED spreading-basin schedule only. The high-flow storm
-# diversion is Phase 134's to tell and must not be built here.
+# diversion is written by ``seed_merced_ledgers`` and must not be built here.
 RECHARGE_SEASONS = {
     "WY 2024-2025": [
         (date(2024, 12, 15), Decimal("0.20")),
@@ -70,10 +70,10 @@ RECHARGE_SEASONS = {
 }
 # Merced recharge areas all carry this operator (set by the basin seed); the
 # single readable key that finds them without hardcoding names or hitting other
-# demos. Fictional since Phase 97 — the recharge volumes below are invented, so
+# demos. Fictional: the recharge volumes below are invented, so
 # a real district must not be named as the operator they are attributed to. No
 # legacy-operator fallback here on purpose: the basin seed runs first and
-# migrates the old rows, so a database still carrying the pre-97 operator fails
+# migrates the old rows, so a database still carrying the earlier operator fails
 # loudly on the "no recharge areas found" branch instead of quietly writing
 # invented volumes onto rows the basin seed is about to delete.
 DEMO_OPERATOR = "Halvern Irrigation District"
@@ -111,7 +111,7 @@ class Command(BaseCommand):
     @demonstration_seed
     def handle(self, *args, **options):
         # Local import: `recharge` is an optional module, so this must not run at
-        # module scope (ISS-072).
+        # module scope.
         from recharge.models import RechargeEvent, RechargeSite
 
         gw, _ = WaterType.objects.get_or_create(
@@ -214,7 +214,7 @@ class Command(BaseCommand):
                     ),
                 )
                 # No parcel arg -> the whole event volume pools to the zone's GSA
-                # basin pool; no per-parcel ledger rows (kills the ISS-053 smear).
+                # basin pool; no per-parcel ledger rows (no smear across parcels).
                 create_recharge_ledger_entries(event, zone=zone)
                 total_events += 1
             self.stdout.write(

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Persistent identifiers: one address per feature record (146-06, ISS-019).
+"""Persistent identifiers: one address per feature record.
 
 Every feature record a deployment holds gets an address of the form
 ``https://<host>/id/<kind>/<pk>/``. It is DERIVED here on every read and never

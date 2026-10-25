@@ -19,7 +19,7 @@ class CoreConfig(AppConfig):
         register(check_development_settings_in_use)
         register(check_site_identity_is_set)
 
-        # Fill in the Site row (ISS-125) once migrations have finished, never
+        # Fill in the Site row once migrations have finished, never
         # here: ready() runs before the tables exist. sender=self keeps it to
         # one firing per `migrate`, not one per installed app.
         post_migrate.connect(

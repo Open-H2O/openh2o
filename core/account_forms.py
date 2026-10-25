@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""allauth's password forms with OpenH2O's sentences (ISS-248).
+"""allauth's password forms with OpenH2O's sentences.
 
 The labels and blank-field sentences of Change password, and one sentence for
 two new passwords that differ, on every page that sets a password. The checks are allauth's own; only the

@@ -1,11 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""One request-time answer to "is Google sign-in switched on here?" (ISS-115).
+"""One request-time answer to "is Google sign-in switched on here?"
 
-Before this module the question was asked in two templates and nowhere else, so
-``allow_google_oauth`` hid the "Continue with Google" button and left the three
-sign-in routes wide open. The button and the endpoint disagreeing is the whole
-defect, and one predicate read by both layers is what stops them disagreeing
-again — see ``tests/test_google_sign_in_switch.py`` and ``config/urls.py``.
+The button and the three sign-in routes must agree. A flag read only by the
+templates (``allow_google_oauth``) would hide the "Continue with Google" button
+and leave the routes wide open, so one predicate is read by both layers. See
+``tests/test_google_sign_in_switch.py`` and ``config/urls.py``.
 
 **Available means BOTH halves are in place: the per-agency flag is on AND the
 Google credentials are configured.** Keying on the flag alone would leave a
@@ -85,8 +84,8 @@ def _guarded(view):
 
     ``guarded_view`` names the view this guard delegates to. It exists so the
     tests can tell "guarded and pointing at the right view" apart from "guarded
-    and pointing at the login view three times" — the shortcut Phase 127's
-    discovery probe took, which closes the hole and breaks the callback.
+    and pointing at the login view three times", a shortcut that closes the
+    hole and breaks the callback.
     """
 
     @functools.wraps(view)

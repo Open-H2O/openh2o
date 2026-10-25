@@ -19,7 +19,7 @@ DESIGN — reproducible, non-destructive, accounting-safe:
   * Display-only meters: the ``Meter``/``WellMeter`` rows this mints are purely
     presentational. The accounting engine reads metered volumes from ledger
     ``meter_reading`` rows, NOT from ``Meter`` objects, so creating them does not
-    touch the Phase 58-03 metered-disposition calibration. Meters are keyed on a
+    touch the metered-disposition calibration. Meters are keyed on a
     deterministic serial, so update_or_create never duplicates them.
 
 Runs LAST in the seed_merced sequence: it enriches records the structural seeds
@@ -216,7 +216,7 @@ class Command(BaseCommand):
                 continue
             basis = a.contact_name or a.name
             # The transform is shared with scan_demo_identity so the scan can
-            # match the shape this line writes (ISS-103). Do not inline it back.
+            # match the shape this line writes. Do not inline it back.
             slug = identity_slug(basis)
             a.contact_email = f"{slug or 'contact'}@example.com"
             a.save(update_fields=["contact_email"])

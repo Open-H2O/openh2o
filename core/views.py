@@ -1,14 +1,14 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""In-app team management (ISS-021, 41-02).
+"""In-app team management.
 
 A deliberately small Users area so non-technical district staff never have to
 touch the developer-facing Django back-end (/admin/). It manages exactly two
-things per user -- a role of three (administrator, operator or viewer; 147-02)
+things per user -- a role of three (administrator, operator or viewer)
 and active-or-not -- not a general RBAC scheme (the dormant Role/UserRole
 models are DEPRECATED; see core.models).
 
 Every view stacks @login_required + @admin_required, so the whole area rides the
-same ACCESS_CONTROL_ENFORCED master switch as the rest of Phase 41: invisible
+same ACCESS_CONTROL_ENFORCED master switch as the rest of access control: invisible
 while the switch is OFF for the demo, admin-only once it flips at go-live.
 
 Two lock-out guards run on every state change:
@@ -51,7 +51,8 @@ ROLE_SENTENCES = {
     "host_administrator": "a host administrator",
 }
 
-# 151-04 (ISS-260), account sentences rows 8 and 9.
+# The refusal shown when someone other than a host administrator acts on a
+# host administrator's account.
 HOST_ROW_REFUSED = (
     "Only a host administrator can change a host administrator's account."
 )
@@ -61,8 +62,8 @@ def _refuse_host_row(request, target):
     """True, with the refusal message, when ``request.user`` may not act on ``target``.
 
     The Users page already hides the controls; this is the check that holds
-    when a request is posted past the page (ISS-260: an agency administrator
-    deactivated a host administrator that way). There is no last-host-
+    when a request is posted past the page (otherwise an agency administrator
+    could deactivate a host administrator that way). There is no last-host-
     administrator guard: nobody acts on their own row and only a host
     administrator acts on a host administrator's, so it cannot fire.
     """
@@ -125,9 +126,9 @@ def user_create(request):
 def user_set_role(request, pk):
     """Make another non-staff user an administrator, an operator or a viewer.
 
-    One control of three (147-02) in place of the old administrator toggle.
-    The change is recorded in the change history by the User tracking
-    (147-01), with the administrator who made it.
+    One control of three: administrator, operator or viewer.
+    The change is recorded in the change history by the User tracking,
+    with the administrator who made it.
     """
     target = get_object_or_404(User, pk=pk)
     form = UserRoleForm(request.POST)
@@ -182,11 +183,10 @@ def user_toggle_active(request, pk):
 def user_email_edit(request, pk):
     """Change another person's email address, which is their sign-in name.
 
-    ISS-248: only an administrator changes an address, and there is one
+    Only an administrator changes an address, and there is one
     address per person. Not your own (the role and status rule, for the same reason: a mistyped
     address would lock you out with no one to fix it). A host
-    administrator's address is changed only by another host administrator
-    (151-04, ISS-260).
+    administrator's address is changed only by another host administrator.
     """
     target = get_object_or_404(User, pk=pk)
     if target == request.user:
@@ -213,7 +213,7 @@ def user_email_edit(request, pk):
 @login_required
 @admin_required
 def user_temp_password(request, pk):
-    """Set a temporary password for another person (151-04, S3 A).
+    """Set a temporary password for another person.
 
     Their current password stops working; the next sign-in lands on the Choose
     a new password page (core.access.MustChoosePasswordMiddleware).
@@ -244,7 +244,7 @@ def user_temp_password(request, pk):
 
 @login_required
 def choose_password(request):
-    """The page a person with an administrator-set password must pass (151-04, S7 A)."""
+    """The page a person with an administrator-set password must pass."""
     from django.contrib.auth import update_session_auth_hash
 
     user = request.user
@@ -265,7 +265,7 @@ def choose_password(request):
 
 
 # ---------------------------------------------------------------------------
-# Persistent identifiers (146-06 Task 1, ISS-019)
+# Persistent identifiers
 # ---------------------------------------------------------------------------
 #
 # Not part of the Users area above: it lives here because `core` is the one
@@ -320,7 +320,7 @@ def persistent_identifier(request, kind, pk):
     return response
 
 
-# -- Change history (147-01) ----------------------------------------------------
+# -- Change history ----------------------------------------------------
 
 
 def _parse_date(value):
@@ -335,7 +335,7 @@ def _parse_date(value):
 @login_required
 @require_safe
 def change_history(request):
-    """Every recorded change, newest first, 50 to a page (147-01, ISS-177).
+    """Every recorded change, newest first, 50 to a page.
 
     Readable by everyone signed in, whatever their role: the record of who
     changed a figure is not an administrator's private file. Filters: record

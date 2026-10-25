@@ -2,7 +2,7 @@
 """
 Sidebar helpers.
 
-``nav_active`` marks the one lit link. Since 150-03 the decision is made once
+``nav_active`` marks the one lit link. The decision is made once
 per request, for the whole sidebar, by ``core.modules.lit_entry`` (the longest
 owning prefix wins), and reaches templates as ``nav_lit``, the winning entry's
 url_name, from the ``modules`` context processor. Deciding per entry, as
@@ -25,7 +25,7 @@ def nav_active(entry, lit):
 def explainer_available(name):
     """``{% explainer_available "methods" as show %}`` — is that Help page served?
 
-    Plan 89-02. The five explainer pages are hidden when the deployment does not
+    The five explainer pages are hidden when the deployment does not
     run the domain they explain, and the view raises ``Http404`` when it is asked
     for one anyway (``config/views.py::EXPLAINER_MODULES``). The sidebar reads the
     SAME predicate rather than repeating the module list, so a link into a hidden

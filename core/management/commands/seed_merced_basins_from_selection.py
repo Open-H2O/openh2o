@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Build Merced recharge areas + their diversion links from the hand-picked QGIS selection.
 
-WHY this exists. v1.9 placed two recharge basins as fixed-degree squares at
-hardcoded coordinates (seed_merced_recharge). Phase 62 re-does them the same
-trustworthy way the 74 crop fields were done: real parcels are hand-selected in
+WHY this exists. The older seed_merced_recharge placed two recharge basins as
+fixed-degree squares at hardcoded coordinates. This command places them the
+same trustworthy way the 74 crop fields are placed: real parcels are hand-selected in
 QGIS against the satellite + canal/river layers, and the export drives the seed.
 Two hand-picked scenarios, both real-hydrography recharge tied to a real point of
 diversion (POD):
@@ -26,9 +26,9 @@ diversion (POD):
 Each recharge area is tied to its diversion through a RechargeSitePOD link
 (surfaced on the detail pages, NOT a flow line on the map). Every POD this
 command places sits on the real waterway: source_flowline + stream_name are read
-FROM the flowline, never typed (geography.placement, the ISS-053 archetype rule).
+FROM the flowline, never typed (geography.placement).
 
-THE INTAKE'S WATER RIGHT (136-02, ISS-152 option a, 2026-09-05). The El
+THE INTAKE'S WATER RIGHT. The El
 Nido intake diverts storm water to storage under its own invented right,
 ``MER-WR-011-DEMO``, created and attached HERE because this command owns the
 intake POD and ``update_or_create``s it on every build — a link made anywhere
@@ -51,7 +51,7 @@ seed_merced_recharge_events (which deposits the managed/storm recharge).
 
 Idempotent + Merced-scoped. A re-run wipes the demo district's recharge areas
 (old hardcoded AND prior selection runs, keyed on operator — including the
-operator names this demo used before Phase 97 renamed them), their POD
+operator names this demo used before its operator was renamed), their POD
 links, the recharge-intake PODs this command owns (MER-BPOD-*), the intake's
 own right (MER-WR-011-DEMO, so a reset never orphans it), and ONLY the
 managed ``basin_recharge_pool`` slice for the Merced GSA zones — never the
@@ -83,9 +83,9 @@ RIVER_FIXTURE = os.path.join(DATA_DIR, "selected_river_ag_parcels.geojson")
 # wipe and the recharge-events seed use to find "the Merced basins" without
 # touching Demo Valley ("Demo Valley GSA"). Fictional: the basins and their
 # recharge volumes are invented, so a real district must not be named as their
-# operator (Phase 97).
+# operator.
 DEMO_OPERATOR = "Halvern Irrigation District"
-# One-time migration key, added 2026-07-28 (Phase 97-02). The operator string IS
+# One-time migration key for the operator rename. The operator string IS
 # the teardown selection key, so renaming it alone would strand every row already
 # written under the old name: `_flush` could no longer see them, and the next seed
 # would ADD a second set of basins beside the orphans. Staging and production were
@@ -97,9 +97,9 @@ LEGACY_OPERATORS = ("Merced Irrigation District",)
 # prefix so a removed basin never leaves an orphan intake behind. Distinct from
 # the operational MER-POD-### diversions, which this command never deletes.
 BASIN_POD_PREFIX = "MER-BPOD-"
-# The intake's own water right (136-02, ISS-152 option a). Invented, like the
-# other six MER-WR- rights; the holder is the basins' operator, the Phase 97
-# demonstration name (gate 1 scans holder_name for real district names).
+# The intake's own water right. Invented, like the other six MER-WR- rights;
+# the holder is the basins' operator, the fictional demonstration name (the
+# demo-identity scan checks holder_name for real district names).
 RECHARGE_RIGHT_ID = "MER-WR-011-DEMO"
 RECHARGE_RIGHT_TYPE = "Post-1914 Appropriative"   # by NAME; seed_data owns the rows
 # Above the 2,924.90 AF the wet year takes to storage, so the intake is never
@@ -108,9 +108,9 @@ RECHARGE_RIGHT_FACE_VALUE_AF = Decimal("3500")
 # SGMA-era. Invented, carries no legal claim; the demonstration's recharge
 # operation is post-2014 by design.
 RECHARGE_RIGHT_PRIORITY_DATE = date(2016, 11, 15)
-# Capacity convention: ~2 ft active ponded depth × footprint acres (62-02
-# — dialed down from the prior basins' 5 ft because these hand-picked parcels are
-# large, so the operationally ponded fraction is shallower). Managed/storm
+# Capacity convention: ~2 ft active ponded depth × footprint acres
+# (the older basins used 5 ft; these hand-picked parcels are large, so the
+# operationally ponded fraction is shallower). Managed/storm
 # recharge pools to the GSA basin pool, so this sizes the pool, NOT the closure.
 PONDED_DEPTH_FT = Decimal("2.0")
 MERCED_BOUNDARY = "Merced Subbasin"
@@ -165,7 +165,7 @@ class Command(BaseCommand):
     # ------------------------------------------------------------------
     def _seed_el_nido(self, features, boundary, gsa_zones):
         # Local imports: `recharge` and `surface` are optional modules, so these
-        # must not run at module scope (ISS-072, Phase 87). Matches the existing
+        # must not run at module scope. Matches the existing
         # function-scope `recharge.geometry` import in `_capacity` below.
         from recharge.models import RechargeSite, RechargeSitePOD
         from surface.models import PointOfDiversion
@@ -218,7 +218,7 @@ class Command(BaseCommand):
         pod, _ = PointOfDiversion.objects.update_or_create(
             name=f"{BASIN_POD_PREFIX}001 El Nido Canal Recharge Intake",
             defaults={
-                # 136-02 (ISS-152 a): the storm/high-flow recharge take diverts
+                # The storm/high-flow recharge take diverts
                 # under the demonstration's own recharge right, so the whole
                 # storm reaches the CalWATRS To Storage file instead of being
                 # withheld for a blank Water Right ID. Not a consumptive right:
@@ -248,8 +248,8 @@ class Command(BaseCommand):
 
         Created here, in the same block that creates the intake POD, because
         this command owns that POD and rewrites its ``water_right`` on every
-        build. Creates NO WaterRightParcel and NO PointOfDiversionParcel —
-        trap 2 (136-02): ``seed_merced_ledgers._seed_surface_deliveries``
+        build. Creates NO WaterRightParcel and NO PointOfDiversionParcel,
+        because ``seed_merced_ledgers._seed_surface_deliveries``
         selects PODs by a ``MER-WR-`` right AND a served parcel, so a right
         that serves no parcel keeps the storm out of every field's ledger.
         ``test_the_storm_never_reaches_a_parcels_account`` measures it.
@@ -290,7 +290,7 @@ class Command(BaseCommand):
     # ------------------------------------------------------------------
     def _seed_river_floodmar(self, features, gsa_zones):
         # Local imports: `recharge` and `surface` are optional modules, so these
-        # must not run at module scope (ISS-072, Phase 87).
+        # must not run at module scope.
         from recharge.models import RechargeSite, RechargeSitePOD
         from surface.models import PointOfDiversion
 
@@ -412,13 +412,13 @@ class Command(BaseCommand):
 
         Scoped by operator (the current one plus LEGACY_OPERATORS) so it clears
         BOTH the old hardcoded basins and any prior selection run — including
-        rows written before the Phase 97 rename — and by the MER-BPOD- prefix
+        rows written before the operator rename, and by the MER-BPOD- prefix
         for the intakes — never the operational MER-POD-### diversions, never
         Demo Valley. The pool delete is scoped to ``basin_recharge_pool`` ONLY, so
         the engine's incidental pool and the rollover carryover survive.
         """
         # Local imports: `recharge` and `surface` are optional modules, so these
-        # must not run at module scope (ISS-072, Phase 87).
+        # must not run at module scope.
         from recharge.models import RechargeSite, RechargeSitePOD
         from surface.models import PointOfDiversion, WaterRight
 
@@ -438,7 +438,7 @@ class Command(BaseCommand):
         ).delete()
         RechargeSite.objects.filter(id__in=site_ids).delete()
         PointOfDiversion.objects.filter(id__in=intake_ids).delete()
-        # 136-02: the intake's own right goes with the intake, so a reset never
+        # The intake's own right goes with the intake, so a reset never
         # leaves MER-WR-011-DEMO orphaned on the rights list. The POD's FK is
         # SET_NULL and the intake is already gone; the right serves no parcel,
         # so there is nothing else for this delete to cascade into.

@@ -1,11 +1,11 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
 Set parcels.ParcelIrrigationMethod to the seeded "Center Pivot" row on every
-use area whose outline is visibly a circle (146-05, 2026-09-23).
+use area whose outline is visibly a circle.
 
 WHY: MER-APN-001 through MER-APN-009 are round on the aerial map -- a center
 pivot's own signature, and the reason a reader can tell just by looking.
-Measured on staging (main session, 2026-09-23):
+Measured on staging, 2026-09-23:
 
     ST_Area(g_3310) / ST_Area(ST_MinimumBoundingCircle(g_3310))
 
@@ -19,14 +19,13 @@ comfortably above every other shape.
 This is DEMO data: the classification is derived from the real DWR-surveyed
 field outline's SHAPE (`seed_merced_parcels_from_selection` reads real
 crop-field polygons), never a claim about how the underlying farm is actually
-irrigated. Phase 148 made the engine read it (`parcels.services.field_efficiency`).
+irrigated. The engine reads it (`parcels.services.field_efficiency`).
 
 Idempotent: a re-run changes nothing, because it is keyed by parcel and NEVER
 overwrites a use area that already carries a method -- an operator's choice,
 or an earlier run of this same command, stands. Skipped cleanly (no error, no
-rows written) when `parcels` is off. Until 150.2-01 it was skipped when
-`surface` was off, because `ParcelIrrigationMethod` lived there; it lives in
-`parcels` now, so a groundwater-only demonstration gets its pivots too.
+rows written) when `parcels` is off. `ParcelIrrigationMethod` lives in
+`parcels`, so a groundwater-only demonstration gets its pivots too.
 
 Not `MER-`-restricted: the test is purely geometric (this use area's own
 shape against its own bounding circle), so it runs over every use area with

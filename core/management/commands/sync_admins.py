@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Mark every superuser as an agency admin — the go-live safety net (ISS-021).
+"""Mark every superuser as an agency admin: the go-live safety net.
 
 Run this on the server BEFORE flipping ACCESS_CONTROL_ENFORCED to True so the
 deployer (the superuser created by ensure_superuser) is a full administrator

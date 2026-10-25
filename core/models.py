@@ -3,8 +3,8 @@
 Core models.
 
 Cross-cutting models shared by every app. User is the custom AUTH_USER_MODEL
-('core.User') and the home of the two-tier is_administrator access rule
-(ISS-021); SiteConfig holds the single agency's deployment-wide settings,
+('core.User') and the home of the two-tier is_administrator access rule;
+SiteConfig holds the single agency's deployment-wide settings,
 including demonstration_mode. Role/UserRole are a deprecated, dormant RBAC
 scheme kept only to avoid a destructive migration — do not build on them.
 """
@@ -36,14 +36,14 @@ from core.history import track_changes
 )
 class User(AbstractUser):
     agency_admin = models.BooleanField(default=False)
-    # The third role (147-02): a Viewer signs in and reads every page but
+    # The third role: a Viewer signs in and reads every page but
     # changes nothing. Enforced for every unsafe request by
     # core.access.ReadOnlyMiddleware, whatever ACCESS_CONTROL_ENFORCED says,
     # because a viewer is an explicit assignment, not a deployment posture.
     read_only = models.BooleanField(default=False, verbose_name="Viewer (read only)")
     phone = models.CharField(max_length=20, blank=True)
     title = models.CharField(max_length=100, blank=True)
-    # 151-04: an administrator set this person's password (Add user, or Set
+    # An administrator set this person's password (Add user, or Set
     # temporary password). core.access.MustChoosePasswordMiddleware sends them
     # to the Choose a new password page until they replace it. Not in the
     # tracked fields above: like the password hash, it is not a change of who
@@ -77,7 +77,7 @@ class User(AbstractUser):
 
     @property
     def is_administrator(self):
-        """The single rule for "elevated" access (ISS-021, two-tier model).
+        """The single rule for "elevated" access (two-tier model).
 
         An administrator is an active user who is either Django staff/superuser
         OR carries agency_admin=True. is_staff ALWAYS implies administrator, so
@@ -88,7 +88,7 @@ class User(AbstractUser):
         return bool(self.is_active and (self.is_staff or self.agency_admin))
 
 
-# DEPRECATED (ISS-021): superseded by the two-tier agency_admin access model
+# DEPRECATED: superseded by the two-tier agency_admin access model
 # (see User.is_administrator + core.access). Role/UserRole are a dormant RBAC
 # scheme that gated nothing; retained only to avoid a destructive migration.
 # Safe to remove in a later cleanup phase. Do NOT build on these.
@@ -129,10 +129,10 @@ class SiteConfig(models.Model):
         "the site.",
     )
 
-    # --- Agency-wide delivery accounting policy (Phase 55-02) ---
+    # --- Agency-wide delivery accounting policy ---
     # Efficiency is agronomic, not per-right: one agency-wide figure. Lifts the
     # hardcoded seed constant IRRIGATION_EFFICIENCY out of code so an agency can
-    # tune it from a screen (the settings UI lands in Plan 03).
+    # tune it from the Delivery Settings screen.
     default_irrigation_efficiency = models.DecimalField(
         max_digits=4,
         decimal_places=3,
@@ -140,12 +140,12 @@ class SiteConfig(models.Model):
         help_text="The default irrigation efficiency, for a field with no irrigation method on file.",
     )
 
-    # 148-04 Task 1 (2026-09-20): what a canal delivery that
+    # What a canal delivery that
     # went beyond what its field's crop could use does to the numbers. Belongs
     # to `surface` -- only canal water can be over-delivered, so
     # DeliverySettingsForm shows and saves both fields under its
-    # `shows_surface_settings` gate. `run_calculations` (148-04
-    # Task 2) is the one reader; nothing here reaches the engine directly.
+    # `shows_surface_settings` gate. `run_calculations`
+    # is the one reader; nothing here reaches the engine directly.
     OVER_DELIVERY_TREATMENT_CHOICES = [
         ("not_credited", "Not credited to anyone"),
         ("credited", "Credited to the landowner, less a share left in the basin"),
@@ -171,9 +171,8 @@ class SiteConfig(models.Model):
         "default, 0.100, is 10 percent.",
     )
 
-    # 150.2-02: `groundwater_efficiency` (a flat 80% for pumped groundwater,
-    # 148-02) was removed: there is one irrigation efficiency per
-    # field. run_calculations divides by parcels.services.field_efficiency,
+    # There is no separate groundwater efficiency: there is one irrigation
+    # efficiency per field. run_calculations divides by parcels.services.field_efficiency,
     # which falls back to default_irrigation_efficiency above.
     # The agency-wide default for what happens to an unused allocation at
     # year-end. A district may override it on its Zone; this default must always
@@ -187,11 +186,12 @@ class SiteConfig(models.Model):
         "administrator can set a different choice for one zone on that zone's page.",
     )
 
-    # --- Diversion records: the 145-01 memo's crosswalk layer (146-03 Task
-    # 3). Both fields belong to `surface` exactly as
-    # default_irrigation_efficiency does: DeliverySettingsForm shows them
-    # only when `surface` is enabled, and a later plan's bulk importer is
-    # the only reader -- nothing here reaches the accounting engine.
+    # --- Diversion records: the crosswalk layer for the state's Water Use
+    # Reported file. These fields belong to `surface`: DeliverySettingsForm shows
+    # the report-year rule only when `surface` is enabled, the import screen
+    # writes the use-type rule, and the bulk diversion importer
+    # (surface/diversion_import.py) is the only reader -- nothing here reaches
+    # the accounting engine.
     DIVERSION_USE_TYPE_RULE_CHOICES = [
         ("drop", "Ignore USE rows"),
         ("returned", "USE minus DIRECT is the returned volume"),
@@ -226,7 +226,7 @@ class SiteConfig(models.Model):
         "(the memo's J6).",
     )
 
-    # --- Persistent identifiers (146-06 Task 1, ISS-019) ---
+    # --- Persistent identifiers ---
     # The ONE stored piece of the identifier scheme; the identifiers themselves
     # are derived on read (core/identifiers.py), so they cannot drift from the
     # records they name. Blank means "this site's own address". A value may

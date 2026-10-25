@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""One helper for the map label prefix, shared by every overview map (143-07).
+"""One helper for the map label prefix, shared by every overview map.
 
 The overview map card is built on Surface Diversions with one change: the map
 LABEL drops the code

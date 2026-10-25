@@ -93,7 +93,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # Local import: `recharge` is an optional module, so this must not run at
-        # module scope (ISS-072). The `recharge.geometry` import at the top of
+        # module scope. The `recharge.geometry` import at the top of
         # this file stays there deliberately — see the note beside it.
         from recharge.models import RechargeSite
 

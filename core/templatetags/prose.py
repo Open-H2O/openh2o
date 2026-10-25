@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Prose that names only the water domains a deployment actually runs.
 
-ISS-082's copy half. Some sentences survive being made module-neutral -- the
+Some sentences survive being made module-neutral -- the
 home page's map sublabel went from "every well, parcel, and diversion" to
 "everything you manage", and lost nothing. Others cannot: Getting Started tells
 an operator what the Setup Wizard will import, and "it populates your data" is

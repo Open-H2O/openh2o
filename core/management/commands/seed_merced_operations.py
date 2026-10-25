@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Seed the Merced demonstration's OPERATIONAL features onto the real base layer.
 
-WHY this command exists. Phase 50 built a credible Merced canvas (real
-boundaries, river + canal segments, recharge basins, stations). This command
+WHY this command exists. The steps before it give a credible Merced canvas
+(real boundaries, river + canal segments, stations). This command
 populates the LOWER subbasin (the valley floor, where the agencies who will use
 this platform actually do their accounting) with the features a domain expert
 inspects: Merced River diversions, MID-canal headgates, groundwater wells, and
@@ -15,7 +15,7 @@ geometry, so a diversion can land in a field and its labelled source can be a
 river that is nowhere near it. A diversion floating in a field — or a farm with
 no plausible connection to water — is the single tell that makes a domain expert
 (Water Data Consortium, ESA, state staff) stop trusting the whole map. So every
-feature here is routed through the 51-01 placement toolkit
+feature here is routed through the placement toolkit
 (``geography.placement``): diversions are SNAPPED onto an actual river/canal
 segment, parcels are PLACED a plausible distance off the reach that serves them,
 and each diversion's ``stream_name`` is read from the real flowline it sits on —
@@ -32,9 +32,10 @@ ADDITIVE + PREFIX-KEYED: all operational rows carry a ``MER-`` prefix
 rows, then rebuilds — it NEVER touches boundaries, flowlines, recharge sites,
 stations, or any Demo Valley row, and the base layer is left intact.
 
-Phase 51 is PHYSICAL features + their relationships ONLY. It creates NO
+This command seeds PHYSICAL features + their relationships ONLY. It creates NO
 ``DiversionRecord`` monthly volumes, NO ``ParcelLedger``, NO water accounts, NO
-reporting periods — those synthetic accounting ledgers are Phase 52.
+reporting periods: those synthetic accounting ledgers come from
+``seed_merced_ledgers``.
 ``WellIrrigatedParcel`` and ``PointOfDiversionParcel`` ARE physical place-of-use
 relationships and belong here.
 
@@ -104,13 +105,13 @@ BASE_LAYER_HINT = (
 #   right_id, type_idx, holder_name, priority_date(str|None), face_af, source_name, status
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
-# Diversion-reach journey (Phase 67-03). A non-consumptive HYDROELECTRIC
+# Diversion-reach journey. A non-consumptive HYDROELECTRIC
 # passthrough on the Merced River main stem (returns its full volume to the
 # stream) + a DOWNSTREAM re-diversion that draws on that return flow. Both PODs
 # are SEEDED HERE on real Merced River geometry but SERVE NO PARCELS, so they are
 # visible on the detail pages and in CalWATRS (gross Volume AF + Return Flow AF)
 # yet write ZERO surface_diversion ledger rows — the whole-basin consumptive
-# balance is untouched (the load-bearing spine-safety gate of Plan 67-03). The
+# balance is untouched, and must stay that way. The
 # monthly DiversionRecords are seeded by seed_merced_ledgers (the accounting
 # layer's home), keyed to the two POD names below.
 #
@@ -118,7 +119,7 @@ BASE_LAYER_HINT = (
 # lower-Merced hydroelectric facility and Snelling is a genuine place — because
 # published geography carried unaltered is not misrepresentation, and anchoring
 # a diversion to a real named facility is what makes the reach read truthfully.
-# The HOLDER is fictional (Phase 97): the right, its 60,000 AF and its records
+# The HOLDER is fictional: the right, its 60,000 AF and its records
 # are entirely invented, so they may not be attributed to a real company.
 JOURNEY_RIGHT_ID = "MER-WR-010-DEMO"
 JOURNEY_UPSTREAM_POD = "MER-POD-010-DEMO Merced Falls Hydroelectric Diversion"
@@ -180,7 +181,7 @@ POD_CONFIGS = [
      "Merced River", RIVER, 0.15, Decimal("45.0")),
 ]
 
-# Phase 67-03 journey PODs are NOT in POD_CONFIGS / PARCEL_CLUSTER_CONFIGS — they
+# The journey PODs are NOT in POD_CONFIGS / PARCEL_CLUSTER_CONFIGS: they
 # are created by the dedicated `_seed_diversion_journey` method (single source of
 # truth, also reachable via `--journey-only` for a surgical live add that touches
 # no parcels). Both sit on the Merced River main stem: the upstream hydroelectric
@@ -249,7 +250,7 @@ _WELL_OFFSETS = [
     (0.0014, -0.0011), (-0.0013, 0.0010), (0.0009, -0.0014),
 ]
 
-# Realistic demo OPERATOR / owner names (NOT a crop — the 47-02 lesson: the
+# Realistic demo OPERATOR / owner names (NOT a crop: the
 # "Owner" column must read like a farm operator, not "Almonds"). Cycled by index.
 MER_PARCEL_OWNERS = [
     "Halvern Valley Farms LLC",
@@ -337,7 +338,7 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "--journey-only", action="store_true",
-            help="Seed ONLY the Phase 67-03 diversion-reach journey (a hydro "
+            help="Seed ONLY the diversion-reach journey (a hydro "
             "passthrough + a downstream re-diversion on the Merced River, serving "
             "no parcels). Touches no parcels/wells/links/other rights — safe to "
             "run against a live seeded instance without clobbering real geometry.",
@@ -375,9 +376,9 @@ class Command(BaseCommand):
         # ...unless there is no geometry to lose. A guard that fires on an empty
         # database protects nothing and blocks the one path the platform promises:
         # DEPLOY.md §9 and docs/AI-OPERATOR-GUIDE.md Phase 3 both tell a
-        # production operator to run `seed_merced`, and until ISS-095 that command
-        # died at step 3 of 10 on every deployment that followed them, leaving a
-        # half-seeded database. The emptiness test below is scoped to exactly the
+        # production operator to run `seed_merced`; if this guard fired on a
+        # first-time seed, every deployment that followed them would die here,
+        # leaving a half-seeded database. The emptiness test below is scoped to exactly the
         # rows the destructive path touches — the `MER-` prefixed parcels, wells
         # and water rights `_flush` deletes and `_seed` regenerates — so any
         # deployment holding even one of them keeps the guard in full.
@@ -470,7 +471,7 @@ class Command(BaseCommand):
         Counted, not `.exists()`, so the refusal can say how much is at stake.
         """
         # Local import for the same reason `_flush` uses one: `surface` is an
-        # optional module (Phase 87) and this must not run at module scope.
+        # optional module and this must not run at module scope.
         from surface.models import WaterRight
 
         return (
@@ -480,7 +481,7 @@ class Command(BaseCommand):
         )
 
     def _flush(self):
-        # Local import: `surface` is an optional module (Phase 87), so this must
+        # Local import: `surface` is an optional module, so this must
         # not run at module scope.
         from surface.models import (
             PointOfDiversion,
@@ -564,7 +565,7 @@ class Command(BaseCommand):
         return segs[idx]
 
     def _seed(self, lower):
-        # Local import: `surface` is an optional module (Phase 87) — see `_flush`.
+        # Local import: `surface` is an optional module; see `_flush`.
         from surface.models import (
             PointOfDiversion,
             PointOfDiversionParcel,
@@ -643,7 +644,7 @@ class Command(BaseCommand):
                     "water_right": rights_by_id[rid],
                     "location": location,
                     "stream_name": stream_name,
-                    # Provenance FK (Phase 62): the real waterway segment this
+                    # Provenance FK: the real waterway segment this
                     # diversion sits on. stream_name stays the descriptive label;
                     # source_flowline is the structured tie to hydrography.
                     "source_flowline": line,
@@ -772,7 +773,7 @@ class Command(BaseCommand):
                 )
                 wip_count += 1
 
-        # Phase 67-03: the diversion-reach journey (hydro passthrough + downstream
+        # The diversion-reach journey (hydro passthrough + downstream
         # re-diversion). Additive, serves no parcels, so it rides on top of the
         # operational layer without affecting any closure.
         self._seed_diversion_journey(lower)
@@ -788,7 +789,7 @@ class Command(BaseCommand):
         ))
 
     # ------------------------------------------------------------------
-    # Diversion-reach journey (Phase 67-03)
+    # Diversion-reach journey
     # ------------------------------------------------------------------
     def _seed_diversion_journey(self, lower):
         """Place the journey PODs on the Merced River main stem (no parcels).
@@ -804,7 +805,7 @@ class Command(BaseCommand):
         (update_or_create on stable natural keys); touches nothing else, so it is
         safe to run standalone (``--journey-only``) on a live demo.
         """
-        # Local import: `surface` is an optional module (Phase 87) — see `_flush`.
+        # Local import: `surface` is an optional module; see `_flush`.
         from surface.models import (
             PointOfDiversion,
             WaterRight,

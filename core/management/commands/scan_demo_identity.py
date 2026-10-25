@@ -34,7 +34,7 @@ Matching semantics, which are the substance of this command:
    every run of non-alphanumerics collapsed to a single ``.``, truncated to 40
    characters, the exact transform `core.demo_identity.identity_slug` applies
    and `seed_merced_details.py::_fill_account_contacts` composes contact
-   addresses with. This is what closes ISS-103: ``Merced Water Manager`` reaches
+   addresses with. This catches the composed form: ``Merced Water Manager`` reaches
    a database as ``merced.water.manager@example.com``, a form no substring of
    the banned value matches. **Only multi-word banned values get a slug term**
    — a slug containing no ``.`` is a bare token, and an ``icontains`` on
@@ -202,7 +202,7 @@ class Command(BaseCommand):
     def _policy_table(model, table):
         """The table whose policy scopes govern this model's columns.
 
-        A change-history table (Phase 147, ``core/history.py``) holds copies of
+        A change-history table (``core/history.py``) holds copies of
         its tracked table's columns, so each copy is judged by the tracked
         column's own scope: a real place name protected on ``wells_well.
         owner_name`` stays protected on ``wells_wellevent.owner_name``, and a
@@ -252,7 +252,7 @@ class Command(BaseCommand):
         protected value ``Merced River``, so slug matching WITHOUT slug
         suppression would start flagging real published geography the moment any
         column carried a composed form — the cry-wolf failure this module's
-        docstring warns about, arriving by way of the fix for ISS-103.
+        docstring warns about, arriving by way of slug matching.
         """
         low = span.lower()
         span_slug = identity_slug(span)
@@ -439,8 +439,8 @@ class Command(BaseCommand):
 
         if findings:
             # The findings are repeated INTO the exception message on purpose.
-            # This exception is what a CI log, a cron mail and 102-02's alert
-            # body will carry, and a message saying only "3 violations" sends
+            # This exception is what a CI log, a cron mail and an alert body
+            # will carry, and a message saying only "3 violations" sends
             # the reader back to the database to find out which — the exact
             # count-without-content failure §0.2 warns about.
             shown = findings[: self.MAX_IN_MESSAGE]

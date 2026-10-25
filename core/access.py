@@ -11,9 +11,9 @@ The master switch is ``settings.ACCESS_CONTROL_ENFORCED`` (default ``True``):
   - OFF: the decorator is a pass-through for any logged-in user, so the
     hosted demonstration behaves exactly as it did before this module existed.
   - ON (default): enforce the two-tier model; only administrators reach gated
-    screens. See ISS-021.
+    screens.
 
-The third role, Viewer (147-02), is enforced by :class:`ReadOnlyMiddleware`
+The third role, Viewer, is enforced by :class:`ReadOnlyMiddleware`
 below, and holds whichever way the switch is set.
 """
 import re
@@ -94,7 +94,7 @@ def admin_required(view_func):
     return _wrapped
 
 
-# -- The Viewer role (147-02) ----------------------------------------------------
+# -- The Viewer role ----------------------------------------------------
 
 #: Methods that change something. A viewer's request with any other method
 #: (GET, HEAD, OPTIONS) goes through untouched.
@@ -117,7 +117,7 @@ VIEWER_ALLOWED_URL_NAME_PREFIX = "account_"
 #: URL names whose page exists only to change something: a create or edit
 #: form, an importer, an inline editor, an assign or remove step. A viewer's
 #: GET of one is refused with the same page as a refused change, so an address
-#: typed by hand shows the sentence instead of a live form (147-02 walk). Read
+#: typed by hand shows the sentence instead of a live form. Read
 #: pages never match: ``tests/test_viewer_role.py`` pins the full list of
 #: names this matches against the URL configuration.
 VIEWER_WRITE_PAGE_PATTERN = re.compile(
@@ -199,7 +199,7 @@ def read_only_response(request):
     )
 
 
-# -- Choosing your own password (151-04) ---------------------------------------
+# -- Choosing your own password ---------------------------------------
 
 
 class MustChoosePasswordMiddleware:

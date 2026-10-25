@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Where the platform's own name and web address come from (ISS-125).
+"""Where the platform's own name and web address come from.
 
 Every message django-allauth sends is subject-prefixed with the current
 ``Site`` row's **name**. ``config/settings/base.py`` sets ``SITE_ID = 1`` and
@@ -13,7 +13,7 @@ every password-reset email openh2o.com has ever sent went out titled
 engineers who will not know such a setting exists, let alone that a wrong value
 shows up in a stranger's inbox. The platform already holds both facts:
 ``SiteConfig.agency_name`` is the organization's name, set at /admin/ under
-Core > Site configs (no screen outside /admin/ edits it, ISS-235), and ``ALLOWED_HOSTS`` is the address the deployment answers on. This
+Core > Site configs (no screen outside /admin/ edits it), and ``ALLOWED_HOSTS`` is the address the deployment answers on. This
 module is the arithmetic between them.
 
 **Why a ``post_migrate`` receiver and not something simpler.** Recorded so it
