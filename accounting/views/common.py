@@ -14,10 +14,9 @@ def _account_summary_row(account, selected_period, has_allocations, groundwater_
     consumptive balance, its supply breakdown, and (only when a groundwater
     budget exists this period) its pro-rated allocation and what remains.
 
-    143-13: extracted from the dashboard's account_summaries loop so the
-    accounts list (the list becomes this same
-    table, with a search) computes the identical figures rather than holding a
-    second copy of the allocation arithmetic. Both callers pass the SAME
+    Shared by the dashboard's account_summaries loop and the accounts list
+    (the same table, with a search), so both compute the identical figures
+    rather than holding a second copy of the allocation arithmetic. Both callers pass the SAME
     ``has_allocations`` / ``groundwater_type`` (the period-wide facts, not
     per-account) so a row never disagrees with its own page about whether a
     budget exists at all.

@@ -39,7 +39,7 @@ from wells.models import WellIrrigatedParcel
 # auto-corrected.
 SHARED_SUPPLY_DIVERGENCE_THRESHOLD = Decimal("0.15")
 
-# 143-12, R-090: the quantum a shared-supply weight is rounded to once it is
+# The quantum a shared-supply weight is rounded to once it is
 # read as a percent (0.1196 -> 11.96) rather than a four-place fraction.
 _PCT_PLACES = Decimal("0.01")
 

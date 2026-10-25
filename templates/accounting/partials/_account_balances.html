@@ -24,7 +24,7 @@
             hx-target="#balance-section"
             hx-trigger="change"
             {% comment %}
-              R-036: the width/padding/font-size used to be an inline style
+              The width/padding/font-size used to be an inline style
               here, and its `padding` SHORTHAND wiped the right-hand allowance
               `.form-select` reserves for its dropdown arrow, so the water year
               rendered under the arrow. Fixed at the class (app.css →
@@ -96,7 +96,7 @@
 <div class="card-raised page-grid-account-full">
 {% if parcel_balances %}
 {% comment %}
-  R-039: the table reads as the equation the panel above states — Supplies
+  The table reads as the equation the panel above states: Supplies
   (Surface, Groundwater, Rain, Total) minus Consumptive use equals Balance —
   with the group header bracketing exactly the columns that sum to Total, and
   one rule where the kind of number changes from measured water to a derived

@@ -37,7 +37,7 @@ OPENH2O_LOG_DIR=/opt/openh2o-logs
 25 1 * * * $OPENH2O_DIR/scripts/backup.sh
 
 # Daily 2:00 AM: slower periodic sources — groundwater (DWR WDL/SGMA) and climate (NOAA)
-# (cimis/cnrfc/openet dropped 59-01: deactivated sources, no useful markers — see seed_data_sources.py)
+# (cimis, cnrfc and openet are not synced here: they are deactivated sources with no useful markers; see seed_data_sources.py)
 0 2 * * * $OPENH2O_DIR/scripts/run-sync.sh dwr_wdl dwr_sgma noaa
 
 # Daily 3:30 AM: calculate every open reporting period, after the 2:00 AM sync has

@@ -6,20 +6,23 @@ planning record that is not in the repository, so a reader cannot follow it.
 The reason belongs in the comment itself, and the history belongs in git.
 
 This test scans the product code (Python, templates, CSS, JavaScript, shell
-scripts, the Makefile, docker-compose.yml, entrypoint.sh) and the programmer
+scripts, the Makefile, Dockerfile, Caddyfile, crontab.txt, docker-compose.yml,
+entrypoint.sh) and the programmer
 documents beside it (DESIGN.md, CLAUDE.md, ARCHITECTURE.md, scripts/README.md
-and the README files under data/) for four shapes:
+and the README files under data/) for five shapes:
 
 - an issue number: ``ISS-`` followed by digits;
 - a phase number of two or more digits: ``Phase 62``, ``Phase 150.1``;
-- a plan number: two or three digits, an optional ``.N``, a hyphen and ``0N``
-  (``148-02``, ``52.6-02``), not preceded by a digit, dot, hyphen or slash and
+- a plan number: two or three digits, an optional ``.N``, a hyphen and two
+  digits from ``00`` to ``19`` (``148-02``, ``143-13``, ``52.6-02``), not preceded by a digit, dot, hyphen or slash and
   not followed by a digit or hyphen, so dates (``2026-10-24``) and version
   ranges do not match.
 - the name of a planning file: ``ISSUES.md``, ``STATE.md``, ``RESUME.md``, or
-  a name ending ``-PLAN.md``, ``-SUMMARY.md``, ``-DISCOVERY.md``,
-  ``-RESEARCH.md`` or ``-EVIDENCE.md``. These files are the maintainer's private record, not part
-  of the repository.
+  a name with ``-PLAN``, ``-SUMMARY``, ``-DISCOVERY``, ``-RESEARCH`` or
+  ``-EVIDENCE`` in it. These files are the maintainer's private record, not
+  part of the repository;
+- a review row: ``R-`` and three digits, or ``F-<word>-<digits>``, the row
+  numbers of review registers that are not in the repository.
 
 ``Phase 2`` and other single-digit phases are the AI operator guide's own
 steps (docs/AI-OPERATOR-GUIDE.md) and do not match. ``tests/`` and the
@@ -38,14 +41,15 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 PATTERNS = {
     "issue number": re.compile(r"ISS-\d+"),
     "phase number": re.compile(r"Phase \d{2,}(\.\d+)?"),
-    "plan number": re.compile(r"(?<![\d.\-/])[1-9]\d{1,2}(\.\d)?-0\d(?![\d\-])"),
+    "plan number": re.compile(r"(?<![\d.\-/])[1-9]\d{1,2}(\.\d)?-[01]\d(?![\d\-])"),
     "planning file": re.compile(
-        r"\bISSUES\.md\b|\bSTATE\.md\b|\bRESUME\.md\b|-(PLAN|SUMMARY|DISCOVERY|RESEARCH|EVIDENCE)\.md\b"
+        r"\bISSUES\.md\b|\bSTATE\.md\b|\bRESUME\.md\b|-(PLAN|SUMMARY|DISCOVERY|RESEARCH|EVIDENCE)\b"
     ),
+    "review row": re.compile(r"\bR-\d{3}\b|\bF-[a-z]+-\d+\b"),
 }
 
 SUFFIXES = {".py", ".html", ".js", ".css", ".sh"}
-NAMED_FILES = {"Makefile", "docker-compose.yml", "entrypoint.sh"}
+NAMED_FILES = {"Makefile", "docker-compose.yml", "entrypoint.sh", "Dockerfile", "Caddyfile", "crontab.txt"}
 DOCUMENTS = {"DESIGN.md", "CLAUDE.md", "ARCHITECTURE.md", "scripts/README.md"}
 
 # Folders that hold no hand-written source: generated output, local data, caches.

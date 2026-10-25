@@ -210,12 +210,12 @@ function countFeatures(layer, sourceCounts) {
     });
 })();
 
-// ── R-096: the panel says when it scrolls ──
+// ── The panel says when it scrolls ──
 // At 1,730 x 1,000 the panel fit with MONITORING visible; at 1,440 x 900 it
 // clipped the last section with nothing on screen to say so. `#controls::after`
 // (map-engine.css) draws a bottom fade in the card colour; this toggles the
-// `.panel-can-scroll` class that shows it, reading the exact condition R-096
-// asks for and removing it once the reader has scrolled to the end. Runs on
+// `.panel-can-scroll` class that shows it while more of the body lies below
+// the visible part, and removes it once the reader has scrolled to the end. Runs on
 // scroll, on section collapse/expand (both change `.panel-body.scrollHeight`
 // without a scroll event of their own) and on viewport resize.
 (function panelScrollFade() {

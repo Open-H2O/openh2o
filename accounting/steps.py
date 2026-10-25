@@ -93,7 +93,7 @@ def _read_cache_mm(parcel, period, variable, model, key):
     Matches rows whose [start_date, end_date] span covers the period, then totals the
     et_data list items whose "date" starts with the period and whose <key> is set.
 
-    F-math-08 (math eval 2026-07-18): rows are deduplicated by item date, NEWEST
+    Rows are deduplicated by item date, NEWEST
     ROW WINS — they are never summed across rows. Two cache rows covering the same
     parcel-month hold the SAME physical measurement re-fetched (the GEE re-fetch
     path wrote a second row for any non-finalized month), not two additive

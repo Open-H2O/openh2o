@@ -100,7 +100,7 @@ def report_list(request):
     context = {
         "page_obj": page_obj,
         "total_count": paginator.count,
-        # R-085: every submission, unfiltered, so the toolbar (a search box)
+        # Every submission, unfiltered, so the toolbar (a search box)
         # can hide itself when there is nothing in the whole table to search.
         "all_count": ReportSubmission.objects.count(),
         "q": q,
@@ -263,7 +263,7 @@ def _report_detail_context(submission):
         "is_calwatrs": report_type.startswith("calwatrs"),
         # Single-tenant: one agency profile carries the GEARS Correspondence ID.
         "profile": ReportingProfile.objects.first(),
-        # R-088: the metadata card's File field shows the file itself, not its
+        # The metadata card's File field shows the file itself, not its
         # storage path (submission.generated_file carries the "reports/" prefix).
         "generated_filename": (
             os.path.basename(submission.generated_file)
@@ -302,7 +302,7 @@ def shared_supply_check(request):
     Defaults to the most recent period carrying real activity (where the ET
     signal lives), with a period selector; ``?period=`` overrides.
 
-    143-12, R-089: ``?show=flagged`` narrows the TABLE to the flagged groups;
+    ``?show=flagged`` narrows the TABLE to the flagged groups;
     any other value (including absent) shows all of them. The "Flagged this
     period" panel's three counts (``flagged_count``, ``source_count``,
     ``flagged_rows``) are always computed over EVERY group of the period,

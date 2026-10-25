@@ -52,7 +52,7 @@
       <div id="detail-map" class="map-embed" style="height: 380px; position: relative; overflow: hidden; background: var(--color-base);"></div>
     </div>
     <div id="detail-body">
-      {# R-035 (same fault, found by this plan's probe on /parcels/11/): this IS the full page. #}
+      {# This IS the full page, so the pane's "open full page" escape is suppressed. #}
       {% include "parcels/partials/_detail_pane.html" with on_full_page=True %}
     </div>
   </div>

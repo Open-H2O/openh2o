@@ -85,7 +85,7 @@ def _facility_population_counts(
     base_queryset: QuerySet[SystemFacility],
 ) -> tuple[int, int, int]:
     """The card head's population line as (sources, treatment plants, distribution systems)."""
-    # The card head's population line (R-063): one facility_type count query
+    # The card head's population line: one facility_type count query
     # over the FILTERED, unannotated queryset -- never a per-row loop -- with
     # "source" as the residual bucket (every present type that is not a
     # treatment plant or the distribution system). Measured on the local

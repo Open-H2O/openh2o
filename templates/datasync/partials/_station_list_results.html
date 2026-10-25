@@ -81,7 +81,7 @@ OH2O.followResults reads them after every swap and filters the map to them.
             </svg>
           </div>
           {% elif item.reading_count == 1 %}
-          {% comment %} R-075: one reading is not "no data" — the dot and the
+          {% comment %} One reading is not "no data": the dot and the
                timestamp beside it say otherwise; a sparkline just needs a
                second point (datasync/views.py refuses to draw one from
                fewer). Never `--`, which reads the same as zero. {% endcomment %}

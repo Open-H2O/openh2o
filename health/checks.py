@@ -622,7 +622,7 @@ def check_migrations():
 def check_cache_duplication():
     """Catch OpenETCache rows that cover the same parcel-month more than once.
 
-    F-math-08 (math eval 2026-07-18). Two cache rows spanning one parcel-month
+    Two cache rows spanning one parcel-month
     hold the SAME measurement fetched twice, so the engine reads the newer and
     ignores the older — but duplicates still mean a writer bypassed the upsert,
     and before that fix they were summed into a doubled gross ET. This is the
@@ -701,7 +701,7 @@ def check_cache_duplication():
 def check_pod_fractions():
     """Verify each point of diversion splits to ~100% across its served parcels.
 
-    F-data-06 (math eval 2026-07-18). A POD's diverted volume is apportioned to
+    A POD's diverted volume is apportioned to
     parcels by PointOfDiversionParcel.fraction. If the fractions sum to less than
     one, diverted water silently vanishes from the ledger; more than one and it
     is invented. Neither shows up as an error anywhere else.

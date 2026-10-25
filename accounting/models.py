@@ -55,7 +55,7 @@ class ReportingPeriod(models.Model):
                 check=models.Q(start_date__lt=models.F("end_date")),
                 name="reporting_period_start_before_end",
             ),
-            # F-data-05 (math eval 2026-07-18): reporting periods must not
+            # Reporting periods must not
             # overlap. A ledger row belongs to exactly one period, and the
             # date-containment lookups that resolve "which period is this in"
             # take .first() — with overlapping periods that answer is arbitrary,

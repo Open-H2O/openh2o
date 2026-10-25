@@ -190,7 +190,7 @@ class GEEOpenETAdapter(OpenETAdapter):
                 summary["failed"] += 1
                 continue
 
-            # F-math-08: UPSERT, never create. A re-fetch of a window whose months
+            # UPSERT, never create. A re-fetch of a window whose months
             # are not yet finalized used to write a SECOND row over the same span;
             # the engine then read both and doubled the parcel's gross ET. Keyed on
             # the same tuple the uniqueness constraint enforces, so the re-fetch

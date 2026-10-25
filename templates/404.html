@@ -2,7 +2,7 @@
 
 {% comment %}
   Django's own 404 handler renders this in place of the bare "Not Found" page
-  when DEBUG=False (R-060). It receives `request_path` (the path that missed
+  when DEBUG=False. It receives `request_path` (the path that missed
   every URL pattern) and `exception` (the Resolver404, which can carry a
   resolver's internal detail); only `request_path` is a reader-facing fact:
   copy rule 9 keeps `exception` off the page. The page is one line and one way

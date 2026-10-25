@@ -32,7 +32,7 @@ RUN pip install --no-cache-dir --require-hashes -r requirements.lock
 # A hardcoded -x64 binary crashes with exit 133 (illegal instruction) on arm64;
 # that failure aborts the build, leaves the PREVIOUS image serving, and `make
 # test` then runs stale code and reports green against source that no longer
-# exists (ISS-075). `uname -m` reflects the platform the build actually runs on,
+# exists. `uname -m` reflects the platform the build actually runs on,
 # so no build arg is required. `curl -f` makes a failed download fail the build
 # instead of silently saving an HTML error page as the "binary".
 RUN tw_arch="$(uname -m | sed -e 's/x86_64/x64/' -e 's/aarch64/arm64/')" \

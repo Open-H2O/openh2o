@@ -43,12 +43,12 @@ from geography.models import Boundary
 def _freshness_clause(n):
     """A count as prose: zero reads 'none' rather than '0' (rule 6's words,
     shared by the dashboard's map-card head line and every per-source count
-    line, 143-12)."""
+    line)."""
     return "none" if n == 0 else f"{n:,}"
 
 
 def _dashboard_freshness_line(total_active, fresh_count, stale_count, dead_count):
-    """The monitoring map card's head line (143-12, shape 1): 'N active
+    """The monitoring map card's head line: 'N active
     stations: F up to date, S slightly behind, D dormant', in the station
     list's own words (rule 6: Up to date / Slightly behind / Dormant, never
     'On schedule' / 'Behind schedule'). The noun is singular when exactly one
@@ -61,7 +61,7 @@ def _dashboard_freshness_line(total_active, fresh_count, stale_count, dead_count
 
 
 def _source_count_line(active, total, fresh, stale, dead):
-    """A source card's count line, one shape for every card (143-12, R-082):
+    """A source card's count line, one shape for every card:
     zero counts read 'none'; a source with no active stations stops after
     saying so rather than printing three more 'none' clauses."""
     if active == 0:
@@ -247,7 +247,7 @@ def _latest_reading_tooltip(value: Decimal | float | None, unit: str) -> str | N
 def _list_sparklines(raw_records: dict) -> tuple[dict, dict]:
     """The sparkline point strings and the per-station reading counts behind them."""
     sparklines: dict = {}
-    # R-075: the count a sparkline was built from, per station — 0 or 1 when
+    # The count a sparkline was built from, per station: 0 or 1 when
     # there's no sparkline (2 is the floor to draw one), so the Trend cell can
     # tell "no reading yet" apart from "one reading, not enough to trend".
     reading_counts: dict = {}
@@ -606,7 +606,7 @@ def _classify_active_stations(
 ) -> tuple[dict, int, int, int]:
     """Each active station's freshness class, plus the fresh, stale and dead counts."""
     # One pass over every active station, source-aware (never a query per
-    # state, 143-12 R-079/R-080). The per-station result is kept so the
+    # state). The per-station result is kept so the
     # station_list build below classifies each station exactly once.
     station_freshness_by_pk = {}
     fresh_count = stale_count = dead_count = 0

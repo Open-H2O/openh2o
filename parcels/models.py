@@ -60,8 +60,8 @@ class Parcel(models.Model):
 
 # Sign is semantic, not cosmetic: the ledger nets to a balance, so a sign-flipped
 # row does not look wrong — it quietly moves the balance by twice its magnitude.
-# These two sets are what ParcelLedger's check constraints enforce (math eval
-# 2026-07-18, F-data-04). Module scope because ParcelLedger.Meta needs them and a
+# These two sets are what ParcelLedger's check constraints enforce. Module scope
+# because ParcelLedger.Meta needs them and a
 # nested class body cannot see the enclosing class's namespace.
 #
 # SUPPLY rows credit water and must be > 0.

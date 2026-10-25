@@ -143,7 +143,7 @@ def methodology_settings(request):
         "steps": steps,
         "parcels": Parcel.objects.order_by("parcel_number")[:200],
         "default_period": _latest_calculated_period(),
-        # R-046: the effective-precip method select renders from the SAME
+        # The effective-precip method select renders from the SAME
         # labels the audit page's Detail cell uses, so the two pages can never
         # name a method differently.
         "method_labels": METHOD_LABELS.items(),

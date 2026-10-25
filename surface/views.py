@@ -570,7 +570,7 @@ def _render_diversion_records_section(
         .order_by("-month")
     )
 
-    # 143-10: the same grouping _pod_detail_context uses, so a POST that
+    # The same grouping _pod_detail_context uses, so a POST that
     # swaps this partial back in renders the identical shape (row-group
     # dividers, subtotal rows) the full page load does.
     record_groups = _group_diversion_records(diversion_records)
@@ -1282,11 +1282,11 @@ def _water_right_detail_context(water_right):
     """
     pods = PointOfDiversion.objects.filter(water_right=water_right).order_by("name")
 
-    # 143-10 (R-121, R-122, R-055): every record, not the last 12 -- a
+    # Every record, not the last 12 -- a
     # right's records are monthly per point, a few dozen a year, so the
     # count belongs in the card head rather than a silent truncation.
-    # Ordered by month, then by POD name (R-122): the previous "-month" alone
-    # left ties between two PODs recording in the same month swap order from
+    # Ordered by month, then by POD name: "-month" alone lets ties between
+    # two PODs recording in the same month swap order from
     # render to render, because the database gives no guarantee for equal
     # keys with no secondary sort.
     all_records = list(
@@ -1376,7 +1376,7 @@ def _right_pods_geojson(pods: Any) -> dict[str, Any] | None:
                 fields=["name", "stream_name", "max_rate_cfs", "status"],
             )
         )
-        # R-123: the serializer puts pk at the feature's top level, not in
+        # The serializer puts pk at the feature's top level, not in
         # properties, the same reason the general `pods_geojson` endpoint
         # injects it below — this map's popup needs it to link out.
         for f in pods_geojson["features"]:

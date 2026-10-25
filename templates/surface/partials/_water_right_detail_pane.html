@@ -24,7 +24,7 @@
 
 
 {% comment %}
-  143-10 (R-121, R-122, R-055). Composed as a page at 1,730 CSS px, reusing
+  Composed as a page at 1,730 CSS px, reusing
   the account page's grid UNCHANGED: Right information beside "Face value
   against records" at one height, the records table full width below
   (grouped by water year, every record now, not just the last 12), then
@@ -302,7 +302,7 @@
       Records: full width, grouped by water year with closing subtotal rows
       (rule 7), no tfoot. Every record on the right now, not the last 12 --
       the count moves into the card head instead of a silent truncation.
-      R-122: ordered "-month, point_of_diversion__name" in the view, so two
+      Ordered "-month, point_of_diversion__name" in the view, so two
       PODs recording in the same month read in a stable, POD-name order.
     {% endcomment %}
     <div class="card-raised page-grid-account-full" style="padding: 0;">
@@ -396,7 +396,7 @@
 // On an HTMX row-swap the toolkit is already loaded, so this runs immediately.
 (function () {
   var FLOWLINES_URL = '{% url "geography:flowlines_geojson" %}';
-  // R-123: sentinel pk resolved through Django (the house pattern the
+  // Sentinel pk resolved through Django (the house pattern the
   // overview maps use, e.g. _pods_overview_map.html) so the link tracks the
   // app's URL prefix instead of hardcoding it.
   var POD_DETAIL_URL = '{% url "surface:pod_detail" 0 %}';

@@ -217,7 +217,7 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
         // Surface service areas: everything in 'zones' that is NOT a
         // management-area GSA. Drawn OUTLINE ONLY (no fill, dashed) so the
         // layer reads as a boundary laid over the GSA zones, never as more
-        // zones competing for the same three fills. R-094: the label sits at
+        // zones competing for the same three fills. The label sits at
         // minzoom 11 (the layer and its popups don't exist below that),
         // wraps at 10 characters, reads `short_label` (the part of the name
         // after the em dash — `zone_labels_geojson`) so "MER Surface Service

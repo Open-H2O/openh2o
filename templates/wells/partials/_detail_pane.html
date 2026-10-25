@@ -38,7 +38,7 @@
   `@container (max-width: 1150px)` rule puts `-balance` first (`order: -2`)
   because IT was written for the account page, where the swapped balance
   panel leads on purpose; this modifier resets that back to source order for
-  this grid only (app.css, "143-10, Task 4").
+  this grid only (app.css, `.page-grid-account--source-order`).
 {% endcomment %}
 <div class="pane-stack">
   <div class="page-grid-account page-grid-account--source-order">
@@ -161,7 +161,7 @@
       </div>
     </div>
 
-    {# Three short cards: Current meters and Irrigated use areas side by side (each is a one-line list on most wells, and a one-line list across a 2fr cell read as an empty box, 143-10), Monitoring data under them. No lead figure on this page (R-055 does not name one here), so no .budget-panel -- this cell is a plain page-stack that fills the height the Identification card sets. #}
+    {# Three short cards: Current meters and Irrigated use areas side by side (each is a one-line list on most wells, and a one-line list across a 2fr cell read as an empty box), Monitoring data under them. No lead figure on this page (nothing here is the one figure to lead with), so no .budget-panel -- this cell is a plain page-stack that fills the height the Identification card sets. #}
     <div class="page-grid-account-balance">
       <div class="page-stack">
         <div class="page-grid-2col">

@@ -72,7 +72,7 @@ list re-renders in place. Loaded by methodology_settings.html via {% include %}.
             {% endfor %}
           </select>
         </div>
-        {% comment %} R-050: only the field the selected method reads is
+        {% comment %} Only the field the selected method reads is
              shown, with no "(method = fraction)" suffix left to disagree
              with a select the reader has already changed. A plain JS
              toggle (below) keeps the right field visible the instant the
@@ -116,7 +116,7 @@ list re-renders in place. Loaded by methodology_settings.html via {% include %}.
   {% endfor %}
 </div>
 
-{% comment %} R-050: toggle the precipitation step's live field to match the
+{% comment %} Toggle the precipitation step's live field to match the
      Method select, with no server round trip, the same idiom
      `infrastructure/add.html` uses for its storage-type sub-fields. Delegated
      from the document root (not bound per-select) because this whole partial

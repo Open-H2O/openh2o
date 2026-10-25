@@ -7,7 +7,7 @@ from drinking.models import SampleResult
 def group_results_by_event(rows):
     """Fold an ordered run of sample results into one block per sample event.
 
-    R-070 / R-071: an event IS one date at one point, so the results log says
+    An event IS one date at one point, so the results log says
     that once per event (a ``tr.row-group`` divider) instead of repeating the
     date and the PS Code on every row. ``rows`` must already be ordered so a
     given event's results are contiguous -- ``results`` below orders

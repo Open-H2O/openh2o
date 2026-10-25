@@ -131,7 +131,7 @@
         <div class="field-value">{{ point.facility.get_facility_type_display|blank }}</div>
       </div>
       {% comment %}
-        R-066's same rule, read through the FACILITY: renders ONLY when the
+        The facility page's Well field rule, read through the FACILITY: renders ONLY when the
         facility itself is a Well. A point on a treatment plant or the
         distribution facility has no well to name at all, so the field is
         left off rather than printed empty (rule 8). Module-guarded exactly as
@@ -158,7 +158,7 @@
     </div>
 
     {% comment %}
-      R-069. "Sampling history" is gone as its own section: its four counts
+      "Sampling history" is gone as its own section: its four counts
       are what this card's head now says, and the table right under it is the
       same lab file, so a separate label a few lines up would only ask a
       reader to hold the number twice. The SAME `group_results_by_event`

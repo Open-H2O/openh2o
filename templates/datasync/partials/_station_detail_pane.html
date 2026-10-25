@@ -28,7 +28,7 @@
 <div class="pane-stack">
 
   {% comment %} Telemetry chart, full width, directly under the map — the trend over time
-       is the thing people open a station to see, so it leads. R-077 (143-12):
+       is the thing people open a station to see, so it leads. The one exception:
        when this station has never published a reading (enriched_parameters is
        empty), there is nothing to chart: no selects, no range buttons, no
        canvas, no #chart-empty. The card states the fact and stops (rule 8),
@@ -77,12 +77,12 @@
     share the width evenly; the tables further down scroll inside their own
     .table-scroll cards rather than forcing a column wide.
 
-    R-077 (143-12): the Current Readings card's only content on a station
-    with no readings was one sentence ("No published readings yet.") beside a
-    tall identity card, the empty box beside a giant box, as on
-    the drinking overview. That card is not rendered at all when
-    latest_readings is empty (the Telemetry card above already says so); the
-    identity card then stands alone, its fields in the account-info two-
+    The Current Readings card is not rendered at all when latest_readings is
+    empty (the Telemetry card above already says so): its only content would
+    be one sentence ("No published readings yet.") beside a tall identity
+    card, an empty box beside a giant box.
+
+    The identity card then stands alone, its fields in the account-info two-
     column shape (.field-grid-2) so the row is not one narrow card beside
     nothing.
   {% endcomment %}
@@ -201,7 +201,7 @@
   </div>
 
   {% comment %}
-    Sync logs (left) + recent records (right). R-077 (143-12): when NEITHER
+    Sync logs (left) + recent records (right). When NEITHER
     has a row, two cards each holding one sentence collapse into ONE
     full-width card (rule 8: the fact, and stop) rather than two half-width
     boxes each apologizing for being empty. recent_logs is per SOURCE, not

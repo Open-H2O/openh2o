@@ -471,7 +471,7 @@
   OH2O.mountBasemapToggle(map, 'aerial');
 
   map.on('load', function() {
-    // 143-10 (R-112): MapLibre sizes its canvas once at init, against
+    // MapLibre sizes its canvas once at init, against
     // whatever height `.map-card`'s flex layout (app.css) already gave the
     // container by then. This call is the safety net for a script that hides
     // or shows a type-specific fields card AFTER load and changes that

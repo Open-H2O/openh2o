@@ -372,7 +372,7 @@ OH2O.mountBasemapToggle = function (map, mode) {
     return bar;
 };
 
-/* ── Frame a map on the agency boundary (R-100) ───────────────────────────
+/* ── Frame a map on the agency boundary ───────────────────────────
    The two draw-your-boundary maps (zone_create, infrastructure add) used to
    open on a fixed point in the mountains with no sense of where the agency
    actually is. Fetches `geography:boundaries_geojson`; with features, draws
@@ -467,7 +467,7 @@ OH2O._frameBounds = function (map, bounds) {
      labelAt   'point_on_surface' reads a server-supplied `label_point`
                ([lng, lat]) off each feature's properties and labels a
                separate one-point-per-feature source instead of the polygon
-               source itself (R-102): a MultiPolygon with many disjoint parts
+               source itself: a MultiPolygon with many disjoint parts
                (a GSA union of scattered parcels, or a zone) otherwise stamps
                a symbol layer placed ON the polygon source once PER PART —
                the same fault `zone_labels_geojson` already fixed for the
@@ -531,7 +531,7 @@ OH2O._addDetailLayers = function (map, src, key, isPoint, popup, opts) {
             drops the river/canal flowlines beneath the diversion point). Does
             NOT re-run on row-to-row swaps — the substrate is built once with the
             map, same as the basemap.
-     labelAt   optional, forwarded to OH2O._addDetailLayers (R-102): pass
+     labelAt   optional, forwarded to OH2O._addDetailLayers: pass
             'point_on_surface' for a polygon feature whose geojson carries a
             `label_point` per feature, so a multi-part MultiPolygon gets one
             label instead of one per part.

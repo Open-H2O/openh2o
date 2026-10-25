@@ -45,7 +45,7 @@ change was scoped as though such a deployment were off-thesis.
 | Web Server | Gunicorn (2 workers) |
 | Reverse Proxy | Caddy (auto-HTTPS) |
 | Frontend | HTMX (CDN), Tailwind CSS (standalone binary) |
-| Maps | MapLibre GL JS (CDN, added in Phase 3) |
+| Maps | MapLibre GL JS (CDN) |
 | Static Files | WhiteNoise |
 | Containerization | Docker Compose |
 | Design System | VanderDev (tokens.css, OKLCH color ramps) |
@@ -231,9 +231,9 @@ either violation:
    tuple** in `core/modules.py`. An undeclared edge is a dependency nobody can
    see until a deployment breaks on it.
 
-Nine pre-existing violations are tolerated, and only as the reasoned records in
+Ten pre-existing violations are tolerated, and only as the reasoned records in
 `core/modules.py::SCHEMA_EXCEPTIONS`: each naming why it stands and what
-turning it around would cost. The tripwire fails on a tenth, and equally on a
+turning it around would cost. The tripwire fails on an eleventh, and equally on a
 record that no longer matches real code. It derives the graph from Django's live
 app registry, never from grep, because grep has already missed a reverse
 accessor and a multi-line field declaration in this codebase.
@@ -244,7 +244,7 @@ before you plan work against them.** `recharge` and `surface` are truly
 removable: their apps leave `INSTALLED_APPS` and their tables go. `wells` and
 `datasync`, `parcels` and `accounting` are
 `schema_resident=True`: switched off, they keep their apps and their empty
-tables, because nine backwards arrows point into them and would otherwise
+tables, because schema-exception records point into them and would otherwise
 dangle.
 
 `parcels` and `accounting` are an **inseparable pair**, enforced by a

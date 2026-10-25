@@ -7,7 +7,7 @@ per request, for the whole sidebar, by ``core.modules.lit_entry`` (the longest
 owning prefix wins), and reaches templates as ``nav_lit``, the winning entry's
 url_name, from the ``modules`` context processor. Deciding per entry, as
 ``NavEntry.is_active`` did, let two entries light at once (Map and Zones on
-``/map/zones/``, R-098) and left pages with no entry of their own dark (R-028).
+``/map/zones/``) and left pages with no entry of their own dark.
 This module is only the bridge that lets a template ask "is this the one".
 """
 from django import template

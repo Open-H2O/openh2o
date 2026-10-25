@@ -50,8 +50,8 @@ has already missed a reverse accessor and a multi-line field declaration in this
 codebase. That test lives in ``tests/`` rather than here precisely
 because it needs the live registry, which this file must never touch.
 
-The nine pre-existing violations are tolerated only as the written, reasoned
-records in ``SCHEMA_EXCEPTIONS`` below. The tripwire fails on a tenth — and
+The ten pre-existing violations are tolerated only as the written, reasoned
+records in ``SCHEMA_EXCEPTIONS`` below. The tripwire fails on an eleventh, and
 equally on an exception record that has outlived the code it excused, so the
 allowlist can never quietly become fiction.
 
@@ -1050,9 +1050,8 @@ SCHEMA_PRESENT_MODULE_NAMES: tuple = tuple(
 # tripwire refuses an exception whose target is truly removable — such a record
 # would be a contradiction wearing an excuse.
 #
-# `where` was re-verified against the live tree on 2026-07-21. The line numbers
-# in 83-DISCOVERY's table point one line further down (at the quoted target
-# rather than the field name); these point at the field declaration itself.
+# `where` was re-verified against the live tree on 2026-07-21; its line numbers
+# point at the field declaration itself, not at the quoted target below it.
 
 SCHEMA_EXCEPTIONS: tuple = (
     SchemaException(
@@ -1154,7 +1153,7 @@ SCHEMA_EXCEPTIONS: tuple = (
             "Move the ParcelZone model itself into parcels — a table rename and "
             "an FK repoint on the spine every allocation calculation reads. "
             "This is the single arrow that pins parcels permanently; "
-            "83-DISCOVERY names it as the reason 'any subset of the six' was "
+            "it is the reason 'any subset of the six' was "
             "never achievable."
         ),
     ),

@@ -402,7 +402,7 @@ class OpenETAdapter(BaseAdapter):
 
         # Finalize the reservation into a real cache row.
         #
-        # F-math-08: retire any STALE row for the identical window first. We only
+        # Retire any STALE row for the identical window first. We only
         # get here on a miss, and the miss that reaches a same-span row is the
         # is_stale() refresh — leaving the old row would both trip the
         # openetcache_one_row_per_parcel_window constraint on save and, before

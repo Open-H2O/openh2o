@@ -37,7 +37,7 @@ map to them.
         <td class="text-secondary">{{ well.well_registration_id|blank }}</td>
         <td class="text-secondary">{{ well.owner_name|blank }}</td>
         <td>{% include "wells/partials/_status_badge.html" with status=well.status %}</td>
-        {% comment %} 143-10 (R-110): the figure says what it measures. Kept as
+        {% comment %} the figure says what it measures. Kept as
              "Depth N ft" in the cell (not a bare number) even though the
              column header also names it, so the guard at
              tests/test_views.py:817 stays green untouched. {% endcomment %}

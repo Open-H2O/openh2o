@@ -68,7 +68,7 @@ def meter_history(well):
         by_year = OrderedDict()
         for read in reads:
             by_year.setdefault(water_year(_local_date(read.reading_date)), []).append(read)
-        # 143-10 (R-111): `count` and `delta_total` close each water year's own
+        # `count` and `delta_total` close each water year's own
         # row-group, the same footer-A shape the diversion and event-history
         # tables carry (rule 7) -- summed here from the rows already fetched
         # above, never a second query. The Totalizer has no matching total: a

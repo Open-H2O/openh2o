@@ -242,7 +242,7 @@ def _current_and_previous_totals(
 
 def _measurement_groups(site: RechargeSite) -> tuple[list[dict[str, Any]], int]:
     """The site's recent readings grouped by measurement type, and the total reading count."""
-    # 143-10 (R-126): recent readings grouped by what they measure, most
+    # Recent readings grouped by what they measure, most
     # recent SIX of each, the unit read off the first row (never assumed --
     # the same column carries mg/L, ft, cfs and in/hr depending on the
     # reading), and the count on record for that type. MEASUREMENT_TYPE_CHOICES

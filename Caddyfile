@@ -4,10 +4,10 @@
 # trust that header (SECURE_PROXY_SSL_HEADER); without it SECURE_SSL_REDIRECT
 # would bounce every request to https and loop through the tunnel forever.
 
-# Half two of the request record (ISS-121). The site below sends its access log
+# Half two of the request record. The site below sends its access log
 # to a file; this sends the SAME entries to stderr as well, which is what
-# `docker compose logs caddy` reads and therefore what the control that found
-# ISS-121 measures. Both halves are needed and neither is decoration: stderr
+# `docker compose logs caddy` reads and therefore what an operator's check of
+# the request record measures. Both halves are needed and neither is decoration: stderr
 # alone dies with the container on every deploy, and a file alone would leave
 # `docker compose logs caddy` still answering "has anyone opened this page" with
 # nothing.
@@ -34,7 +34,7 @@
 :80 {
     encode gzip
 
-    # The record of who asked for what (ISS-121), half one of two. Before this
+    # The record of who asked for what, half one of two. Before this
     # block a deployment built from this repository's own documentation logged
     # not one request: `docker compose logs caddy` carried 102 lines and none of
     # them named a path, so an operator asked "has anyone opened this page", "is
@@ -146,7 +146,7 @@
     # 404 rendered BY the app is a successful proxy and passes straight through,
     # so the app keeps owning its own error pages.
     #
-    # **The status list and `status 503` are both load-bearing (ISS-138).** Two
+    # **The status list and `status 503` are both load-bearing.** Two
     # separate defects were measured on 2026-08-29 and each needs one of them:
     #
     # 1. Without `status 503`, this block served the branded page while Caddy

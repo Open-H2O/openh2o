@@ -63,7 +63,7 @@ unfiltered.
 {% if page_obj.object_list %}
 <div class="card-raised table-scroll" style="padding: 0;">
   {% comment %}
-  R-063. The card head above the table (shape 1, the ledger list's own
+  The card head above the table (shape 1, the ledger list's own
   no-h2 form: `accounting/partials/_ledger_list_results.html`, this page's
   own page_title already names the thing). The population line's three type
   counts come from ONE `values("facility_type").annotate(Count)` query in
@@ -107,7 +107,7 @@ unfiltered.
         <td class="text-secondary text-sm">{{ facility.get_facility_type_display|blank }}</td>
         <td class="text-secondary text-sm">{{ facility.get_activity_status_display|blank }}</td>
         {% comment %}
-          R-063. EPA's record carries a water type for a source facility
+          EPA's record carries a water type for a source facility
           only -- measured, every one of the wells is a source and none of
           the treatment plants or the distribution facility is -- so a
           non-source facility's cell says the field does not apply, worded

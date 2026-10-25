@@ -2,7 +2,7 @@
 Renders one inline-editable well field for the detail tile.
 Expects: well, ef (dict with name, label, type, choices, integer, value).
 Keeps the HTMX inline-edit pattern (pencil -> _field_edit.html -> _field_value.html).
-Optional: extra_class, appended to the root .field-group (143-10, so Notes can
+Optional: extra_class, appended to the root .field-group (so Notes can
 carry .field-grid-2-span inside the Construction card's field-grid-2 without a
 second wrapping div breaking the grid's direct-child selectors).
 {% endcomment %}
@@ -24,7 +24,7 @@ second wrapping div breaking the grid's direct-child selectors).
     {% endif %}
   </div>
   <div id="field-{{ ef.name }}" class="field-row">
-    {% comment %} 143-10 (R-112): `min-width: 0` so the value can wrap inside a
+    {% comment %} `min-width: 0` so the value can wrap inside a
          `.field-grid-2` half-width column instead of pushing the pencil button
          out past the card edge -- the same fix `.page-grid-2col > *` already
          applies for a table's column, needed here because a flex item's

@@ -1168,7 +1168,7 @@ html { color-scheme: dark; }
        off at the fold, so what is cut is the least of it. */
     .page-grid-account-balance { order: -2; }
     #balance-section > .page-grid-account-full { order: -1; }
-    /* 143-10, Task 4: the well pane has no swap target inside its balance
+    /* The well pane has no swap target inside its balance
        cell (unlike the account page's #balance-section, which the rule above
        was written for), and a reader opens the pane to edit Identification,
        not to see Current meters first. This modifier on `.page-grid-account`
@@ -4075,7 +4075,7 @@ div[id$="-map"] {
 }
 
 /* -- Form subsection: a ruled-off group of levers under a step's main grid
-   (methodology editor's "Banked surplus", R-051) ------------------------- */
+   (methodology editor's "Banked surplus") ------------------------- */
 
 .form-subsection {
     border-top: 1px solid var(--color-border);
@@ -4084,8 +4084,8 @@ div[id$="-map"] {
 }
 
 /* -- Disclosure mark: the chevron on a <summary> that shows it opens (the
-   compliance strip's own convention, reused by the parcel-link disclosure,
-   R-129) ------------------------------------------------------------------ */
+   compliance strip's own convention, reused by the parcel-link disclosure)
+   ------------------------------------------------------------------ */
 
 .disclosure-mark {
     transition: transform 120ms;
@@ -4788,12 +4788,12 @@ details[open] > summary .disclosure-mark {
 .map-form-layout {
     display: grid;
     /* One column: the map is a landscape band above the form, the record
-       pages' shape, and the form's cards sit two across under it. The 143-10
-       build ran the map beside the form at the form's height, in portrait,
+       pages' shape, and the form's cards sit two across under it. An earlier
+       layout ran the map beside the form at the form's height, in portrait,
        where most of it was out of view; maps here run landscape, like the
        other maps and most computer monitors. The
        stretched two-column layout that produced the portrait map is retired
-       with it (R-112 add: nothing runs out, nothing is beside
+       with it (nothing runs out, nothing is beside
        anything). */
     grid-template-columns: 1fr;
     gap: var(--space-lg);
@@ -5598,7 +5598,7 @@ details[open] > summary .disclosure-mark {
    more) tracks and a rule, not the five-track supply/use/balance equation
    `.budget-panel-body .budget-panel-row` is built for. */
 .period-panel .budget-panel-body .budget-panel-row { grid-template-columns: 1fr auto 1fr; }
-/* 143-10, Task 3: a lead panel that holds ONE figure and nothing to set it
+/* A lead panel that holds ONE figure and nothing to set it
    against (the recharge site's year total: nothing subtracts, rule 8 still
    wants one lead figure). Without this the lone segment sits in the first
    track of the five-track grid and two thirds of the panel stand empty. */

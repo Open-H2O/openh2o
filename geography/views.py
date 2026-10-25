@@ -417,7 +417,7 @@ def _zone_geojson(zone: Zone) -> dict | None:
                 fields=["name", "zone_type"],
             )
         )
-        # R-102: the zone's boundary is a MultiPolygon with many disjoint
+        # The zone's boundary is a MultiPolygon with many disjoint
         # parts (a GSA union of scattered parcels), so a symbol layer placed
         # ON this polygon source stamps the name once PER PART. `label_point`
         # ([lng, lat], the same `point_on_surface` `zone_labels_geojson` uses
@@ -432,7 +432,7 @@ def _zone_geojson(zone: Zone) -> dict | None:
 
 def _zone_parcels_geojson(parcel_zones: QuerySet) -> dict | None:
     """GeoJSON for the zone's assigned use areas, or None when there are none to draw."""
-    # R-102: the zone's assigned use areas, so the persistent map can draw
+    # The zone's assigned use areas, so the persistent map can draw
     # them beneath the boundary — the list beneath this map already names
     # them; the map drew none. None when there are none to draw, or when
     # `parcels` is off (the existing parcels_ctx gate above), so the pane's

@@ -65,7 +65,7 @@ line to the page.{% endcomment %}{% if 'parcels' in enabled_modules or 'wells' i
         <div class="dashboard-card-value">{{ water_account_count }}</div>
         <div class="dashboard-card-sublabel">View accounts</div>
     </a>{% endif %}
-    {% comment %}R-138: 335 total stations and 42 syncing are now said in one
+    {% comment %}Total and syncing stations are said in one
     place with their difference named, in the station list's own word
     ("syncing"). The signed-in hero counts the syncing ones that are also
     up to date; this card counts every station on record.{% endcomment %}{% if 'datasync' in enabled_modules %}<a href="{% url 'datasync:station_list' %}" class="dashboard-card">

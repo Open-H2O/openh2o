@@ -33,7 +33,7 @@ def results(request):
             "event__sampling_point__facility",
             "event__sampling_point__facility__system",
         )
-        # An event IS one date at one point (R-070/R-071): ordering by point
+        # An event IS one date at one point: ordering by point
         # and event id after the date keeps a whole event's rows contiguous,
         # so two points sampled the same day render as two groups rather than
         # interleaving by analyte the way the old `analyte__name`-only

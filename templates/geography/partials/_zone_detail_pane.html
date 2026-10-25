@@ -190,7 +190,7 @@
       Row two: use areas full width, the search card under it. Task 2's
       rendered choice (measurements.json, zone_row_two): beside a 1,129px
       table a 182px search card leaves 947px of empty column under it, the
-      same R-112 fault row one just removed; under, nothing hangs.
+      same empty-column fault row one just removed; under, nothing hangs.
     {% endcomment %}{% if 'parcels' in enabled_modules %}<!-- Assigned Use Areas card -->
     <div class="card-raised page-grid-account-full">
       <h2 class="section-header mb-md">Assigned use areas</h2>
@@ -231,13 +231,13 @@
   the map scripts at end of page), hides the map card when the zone has no
   geometry.
 
-  R-102: `onMapLoad` lays the zone's assigned use areas (parcels_geojson)
+  `onMapLoad` lays the zone's assigned use areas (parcels_geojson)
   BENEATH the zone outline (`beforeId: 'zone-fill'`), each with a popup
   linking out to its own detail page. This is a standalone full page for ONE
   zone (`/map/zones/<pk>/`) — the overview list swaps `#results` only, never
   this pane — so `onMapLoad` running once, with the map, is enough; there is
   no later zone whose parcels this would need to refresh for. `labelAt:
-  'point_on_surface'` is the R-102 fix for the OTHER half of this fault: the
+  'point_on_surface'` is the fix for the OTHER half of this fault: the
   zone's own boundary label, which used to stamp once per polygon part.
 {% endcomment %}
 {% if geojson %}{{ geojson|json_script:"detail-geojson-data" }}{% endif %}

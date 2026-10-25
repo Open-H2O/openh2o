@@ -26,11 +26,11 @@ def list_response(request, *, page_template, results_template, context):
 
 
 def redirect_to_selected(request, url_name, pk):
-    """Where a finder's old ``?selected=<pk>`` deep link lands (143-13).
+    """Where a finder's old ``?selected=<pk>`` deep link lands.
 
     Use Areas, Wells and Water accounts were master-detail workspaces
     (`workspace.html`) whose ``?selected=<pk>`` pre-rendered the record's
-    detail INTO the same page. Candidate A ("the list is the page") removed
+    detail INTO the same page. The list pages replaced
     that shell, so the same query param now redirects straight to the
     record's own detail page instead: old links keep working, they just
     land on a full page rather than a pane.

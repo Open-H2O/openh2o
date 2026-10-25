@@ -1,6 +1,6 @@
 {% load humanize %}
 {% comment %}
-  143-10 (R-115, R-055, R-112). This partial is the HTMX target of BOTH the
+  This partial is the HTMX target of BOTH the
   full page load (_pod_detail_context) and diversion_record_create's POST
   response, so the two callers share _group_diversion_records rather than
   deriving the same water-year groups twice. Columns run Month, Diverted,

@@ -282,7 +282,7 @@ def _wants_jsonld(request):
     """JSON-LD on ``?format=jsonld`` or when the Accept header prefers it.
 
     Quality values are read, not just the type names: Geoconnex's harvester
-    sends ``application/ld+json;q=1.0, text/html;q=0.8`` (146-06-EVIDENCE-T1.md),
+    sends ``application/ld+json;q=1.0, text/html;q=0.8``,
     which names both. ``text/html`` is listed first so a tie (a bare ``*/*``,
     or no header at all) goes to the page, the way a geoconnex.us address
     itself answers.

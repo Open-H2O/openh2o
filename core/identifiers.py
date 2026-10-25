@@ -13,7 +13,7 @@ browser is sent (303) to the record's own page, and a machine asking for
 ``application/ld+json`` gets the document :func:`jsonld_for` builds.
 
 **The JSON-LD shape follows the Geoconnex contributor documentation as read on
-2026-09-23** (quoted in the phase's ``146-06-EVIDENCE-T1.md``): a feature is a
+2026-09-23**: a feature is a
 ``schema:Place`` whose WKT geometry sits under ``gsp:hasGeometry`` (schema.org's
 ``geo`` is carried too, for schema.org readers, but Geoconnex does not index
 it); every term is prefixed and the prefixes are declared; places a record sits

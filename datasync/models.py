@@ -186,7 +186,7 @@ class OpenETCache(models.Model):
             models.Index(fields=["queried_at"]),
         ]
         constraints = [
-            # F-math-08 (math eval 2026-07-18): at most ONE real cache row per
+            # At most ONE real cache row per
             # parcel-window-variable-model. The GEE re-fetch path used to create a
             # second row over the same span and the engine summed both, doubling
             # gross ET and effective precip. Writers upsert on exactly this tuple.

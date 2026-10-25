@@ -69,7 +69,7 @@ seed's coordinates came from it; a facility otherwise gets a location only at
         <td class="text-mono"><a href="{% url 'drinking:sampling_point_detail' point.pk %}" class="data-table-link">{{ point.ps_code }}</a></td>
         <td>{{ point.name|blank }}</td>
         {% comment %}
-          R-067: the facility ID is the link (the same shape the lab-result
+          The facility ID is the link (the same shape the lab-result
           page already uses for its own Facility field); the name stays
           plain, beside it.
         {% endcomment %}

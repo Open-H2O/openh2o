@@ -131,11 +131,9 @@ def _account_rows_with_totals(
 
 @login_required
 def accounts_list(request):
-    """Water accounts overview (143-13, "accounts-table"):
-    the dashboard's own Active water accounts table, with a search and the
-    period control that drives its figures. Replaces the earlier
-    master-detail workspace (`workspace.html`), the shell Use Areas and Wells
-    also left (candidate A, "the list is the page").
+    """Water accounts overview: the dashboard's own Active water accounts
+    table, with a search and the period control that drives its figures. It
+    replaces an earlier master-detail workspace; the list is the page.
 
     A ``?selected=<pk>`` query param (the old workspace's deep-link shape)
     redirects to the account's own detail page so a bookmarked link still
