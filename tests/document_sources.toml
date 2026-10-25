@@ -315,7 +315,7 @@ files = [
   "Makefile",
 ]
 labels = []
-checked_at = "71c50e2"
+checked_at = "393d09b"
 
 [[section]]
 document = "CONTRIBUTING.md"
@@ -367,14 +367,14 @@ heading = "How the OpenH2O code fits together"
 files = []
 why_none = "Says who the page is for and points at README.md and DEPLOY.md; no claim about the code."
 labels = []
-checked_at = "d9f5bfb"
+checked_at = "393d09b"
 
 [[section]]
 document = "ARCHITECTURE.md"
 heading = "What OpenH2O is"
 files = ["docker-compose.yml", "Dockerfile", "config/settings/base.py"]
 labels = []
-checked_at = "2677bc5"
+checked_at = "393d09b"
 
 [[section]]
 document = "ARCHITECTURE.md"
@@ -389,7 +389,7 @@ files = [
   "core/models.py",
 ]
 labels = []
-checked_at = "2677bc5"
+checked_at = "393d09b"
 
 [[section]]
 document = "ARCHITECTURE.md"
@@ -408,7 +408,7 @@ files = [
   "templates/base.html",
 ]
 labels = []
-checked_at = "2677bc5"
+checked_at = "393d09b"
 
 [[section]]
 document = "ARCHITECTURE.md"
@@ -420,7 +420,7 @@ files = [
   "Makefile",
 ]
 labels = []
-checked_at = "2677bc5"
+checked_at = "393d09b"
 
 [[section]]
 document = "ARCHITECTURE.md"
@@ -444,7 +444,7 @@ files = [
   "core/forms.py",
 ]
 labels = []
-checked_at = "2677bc5"
+checked_at = "393d09b"
 
 [[section]]
 document = "ARCHITECTURE.md"
@@ -457,7 +457,7 @@ files = [
   "config/urls.py",
 ]
 labels = []
-checked_at = "2677bc5"
+checked_at = "393d09b"
 
 [[section]]
 document = "ARCHITECTURE.md"
@@ -472,7 +472,7 @@ files = [
   "crontab.txt",
 ]
 labels = []
-checked_at = "2677bc5"
+checked_at = "393d09b"
 
 [[section]]
 document = "ARCHITECTURE.md"
@@ -488,7 +488,7 @@ files = [
   "templates/partials/_map_card_head.html",
 ]
 labels = []
-checked_at = "2677bc5"
+checked_at = "393d09b"
 
 [[section]]
 document = "ARCHITECTURE.md"
@@ -503,14 +503,14 @@ files = [
   "scripts/guide_reread.py",
 ]
 labels = []
-checked_at = "2677bc5"
+checked_at = "393d09b"
 
 [[section]]
 document = "ARCHITECTURE.md"
 heading = "Adding a page"
 files = ["accounting/urls.py", "core/modules.py"]
 labels = []
-checked_at = "2677bc5"
+checked_at = "393d09b"
 
 [[section]]
 document = "ARCHITECTURE.md"
@@ -518,7 +518,7 @@ heading = "Where decisions are written"
 files = []
 why_none = "Names where reasons and guides are written (DESIGN.md, docs/, templates/help/, CLAUDE.md); no claim about how the code behaves."
 labels = []
-checked_at = "d9f5bfb"
+checked_at = "393d09b"
 
 [[section]]
 document = "SECURITY.md"
