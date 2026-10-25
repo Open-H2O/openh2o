@@ -34,9 +34,12 @@ Usage:
     python manage.py sync_source cdec --mock
 """
 
+from __future__ import annotations
+
 from datetime import date, timedelta
 
 from django.core.management.base import BaseCommand, CommandError
+from django.db.models import QuerySet
 from django.utils import timezone
 
 from datasync import freshness
@@ -74,6 +77,58 @@ def default_window_days(source_code):
     """
     interval_days = freshness.expected_interval_hours(source_code) / 24
     return max(MINIMUM_WINDOW_DAYS, int(interval_days * WINDOW_INTERVAL_MULTIPLIER))
+
+
+def _pull_window(code: str, start: str | None, end: str | None) -> tuple[date, date]:
+    """The (start, end) dates to pull: --end or today, then --start or a cadence-sized window back."""
+    # Resolve the END first, then measure the window back from it.
+    #
+    # The order is the whole point. This used to compute start_date from
+    # date.today() and only afterwards let --end move the far edge, so
+    # `--end 2026-08-01` on 2026-08-02 asked for 2025-12-05 → 2026-08-01:
+    # a window one day short of the one the source needs, silently, and
+    # drifting further the older the requested --end. The window must be
+    # measured from the end the caller actually asked for.
+    #
+    # It hid because it is invisible on the day you run it — start and end
+    # agree when --end IS today — and cron never passes --end at all.
+    # tests/test_sync_window.py caught it by failing overnight on 2026-08-02
+    # having passed on 2026-08-01, which is exactly the shape of a
+    # date-dependent bug: green until the calendar turns over.
+    end_date = date.fromisoformat(end) if end else date.today()
+    if start:
+        start_date = date.fromisoformat(start)
+    else:
+        start_date = end_date - timedelta(days=default_window_days(code))
+    return start_date, end_date
+
+
+def _finalize_sync_log(
+    sync_log: DataSyncLog, failures: int, stations: QuerySet[MonitoredStation]
+) -> None:
+    """Stamp the shared log's completion time, duration and final status, then save it."""
+    sync_log.completed_at = timezone.now()
+    sync_log.duration_seconds = (
+        sync_log.completed_at - sync_log.started_at
+    ).total_seconds()
+
+    if failures == stations.count():
+        sync_log.status = "failed"
+    elif failures > 0:
+        sync_log.status = "partial"
+    elif sync_log.records_fetched > 0 and sync_log.records_staged == 0:
+        # Every station returned data but none of it staged (an upstream
+        # format change silently dropping records). Not a clean success.
+        sync_log.status = "partial"
+        if not sync_log.error_message:
+            sync_log.error_message = (
+                f"{sync_log.records_fetched} records fetched but 0 staged "
+                "across all stations (all dropped in validate/stage)."
+            )
+    else:
+        sync_log.status = "success"
+
+    sync_log.save()
 
 
 class Command(BaseCommand):
@@ -137,25 +192,7 @@ class Command(BaseCommand):
             )
             return
 
-        # Resolve the END first, then measure the window back from it.
-        #
-        # The order is the whole point. This used to compute start_date from
-        # date.today() and only afterwards let --end move the far edge, so
-        # `--end 2026-08-01` on 2026-08-02 asked for 2025-12-05 → 2026-08-01:
-        # a window one day short of the one the source needs, silently, and
-        # drifting further the older the requested --end. The window must be
-        # measured from the end the caller actually asked for.
-        #
-        # It hid because it is invisible on the day you run it — start and end
-        # agree when --end IS today — and cron never passes --end at all.
-        # tests/test_sync_window.py caught it by failing overnight on 2026-08-02
-        # having passed on 2026-08-01, which is exactly the shape of a
-        # date-dependent bug: green until the calendar turns over.
-        end_date = date.fromisoformat(options["end"]) if options["end"] else date.today()
-        if options["start"]:
-            start_date = date.fromisoformat(options["start"])
-        else:
-            start_date = end_date - timedelta(days=default_window_days(code))
+        start_date, end_date = _pull_window(code, options["start"], options["end"])
 
         stations = MonitoredStation.objects.filter(
             data_source=data_source, is_active=True
@@ -175,6 +212,28 @@ class Command(BaseCommand):
             f"({start_date} to {end_date})"
         )
 
+        self._reap_orphaned_logs(data_source, code)
+
+        # Create a shared sync log for all stations in this run
+        sync_log = DataSyncLog.objects.create(
+            data_source=data_source, status="running"
+        )
+
+        failures = self._sync_stations(
+            adapter, stations, start_date, end_date, sync_log, options["mock"]
+        )
+
+        _finalize_sync_log(sync_log, failures, stations)
+
+        # Update source timestamp
+        data_source.last_sync_at = timezone.now()
+        data_source.save()
+
+        self._report_outcome(sync_log)
+        self._alert_on_persistent_failure(data_source, sync_log)
+
+    def _reap_orphaned_logs(self, data_source: DataSource, code: str) -> None:
+        """Close out "running" logs left by a prior run that died mid-flight."""
         # Reap orphaned "running" logs first. Syncs for a single source run
         # serially (one cron entry per source, no overlap), so any log still
         # marked "running" when a new run begins is a prior run that died
@@ -196,49 +255,29 @@ class Command(BaseCommand):
                 )
             )
 
-        # Create a shared sync log for all stations in this run
-        sync_log = DataSyncLog.objects.create(
-            data_source=data_source, status="running"
-        )
-
+    def _sync_stations(
+        self,
+        adapter,
+        stations: QuerySet[MonitoredStation],
+        start_date: date,
+        end_date: date,
+        sync_log: DataSyncLog,
+        mock: bool,
+    ) -> int:
+        """Sync each station into the shared log; returns how many errored."""
         failures = 0
         for station in stations:
             self.stdout.write(f"  {station.external_station_id}: {station.station_name}")
             result = adapter.sync(
-                station, start_date, end_date, sync_log=sync_log, mock=options["mock"]
+                station, start_date, end_date, sync_log=sync_log, mock=mock
             )
             if result.error_message:
                 failures += 1
                 self.stdout.write(self.style.ERROR(f"    Error: {result.error_message}"))
+        return failures
 
-        # Finalize the shared sync log
-        sync_log.completed_at = timezone.now()
-        sync_log.duration_seconds = (
-            sync_log.completed_at - sync_log.started_at
-        ).total_seconds()
-
-        if failures == stations.count():
-            sync_log.status = "failed"
-        elif failures > 0:
-            sync_log.status = "partial"
-        elif sync_log.records_fetched > 0 and sync_log.records_staged == 0:
-            # Every station returned data but none of it staged (an upstream
-            # format change silently dropping records). Not a clean success.
-            sync_log.status = "partial"
-            if not sync_log.error_message:
-                sync_log.error_message = (
-                    f"{sync_log.records_fetched} records fetched but 0 staged "
-                    "across all stations (all dropped in validate/stage)."
-                )
-        else:
-            sync_log.status = "success"
-
-        sync_log.save()
-
-        # Update source timestamp
-        data_source.last_sync_at = timezone.now()
-        data_source.save()
-
+    def _report_outcome(self, sync_log: DataSyncLog) -> None:
+        """Print the run's summary line in the colour its status deserves."""
         summary = (
             f"Done: {sync_log.records_fetched} fetched, "
             f"{sync_log.records_staged} staged, "
@@ -259,6 +298,10 @@ class Command(BaseCommand):
         else:
             self.stdout.write(self.style.SUCCESS(summary))
 
+    def _alert_on_persistent_failure(
+        self, data_source: DataSource, sync_log: DataSyncLog
+    ) -> None:
+        """Raise CommandError once a source has failed enough runs in a row."""
         # Exit non-zero only when the failure has PERSISTED, and the threshold
         # is set from measurement rather than taste.
         #

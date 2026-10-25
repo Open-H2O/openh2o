@@ -1,10 +1,12 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """The facility list, its detail page, the add and edit forms, and the map data they share."""
+from __future__ import annotations
+
 import json
 
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.db.models import Count, Max, Prefetch, Q
+from django.db.models import Count, Max, Prefetch, Q, QuerySet
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from core.access import public_in_open_demo
@@ -52,18 +54,10 @@ def _present_choices(field_name, choices):
     )
 
 
-@login_required
-def facilities(request):
-    """The facility inventory: every physical part of the water system.
-
-    Was a 61-row table stapled to the bottom of the overview, where it could not
-    be searched, filtered or paged. Same shape as ``sampling_points`` above —
-    one annotated queryset, a Q-joined search, two exact filters, 50 to a page.
-    """
-    q = request.GET.get("q", "").strip()
-    facility_type = request.GET.get("facility_type", "").strip()
-    activity_status = request.GET.get("activity_status", "").strip()
-
+def _filtered_facilities(
+    q: str, facility_type: str, activity_status: str
+) -> QuerySet[SystemFacility]:
+    """The facilities matching the search and the two exact filters, unannotated."""
     # The filters live on `base_queryset`, unannotated, so the type-count
     # aggregate below can group it by `facility_type` alone. Annotating it
     # first and THEN grouping by fewer fields would fold `sampling_point_count`
@@ -84,14 +78,13 @@ def facilities(request):
         base_queryset = base_queryset.filter(facility_type=facility_type)
     if activity_status:
         base_queryset = base_queryset.filter(activity_status=activity_status)
+    return base_queryset
 
-    queryset = base_queryset.annotate(
-        sampling_point_count=Count("sampling_points")
-    ).order_by("facility_id")
 
-    paginator = Paginator(queryset, 50)
-    page_obj = paginator.get_page(request.GET.get("page", 1))
-
+def _facility_population_counts(
+    base_queryset: QuerySet[SystemFacility],
+) -> tuple[int, int, int]:
+    """The card head's population line as (sources, treatment plants, distribution systems)."""
     # The card head's population line (R-063): one facility_type count query
     # over the FILTERED, unannotated queryset -- never a per-row loop -- with
     # "source" as the residual bucket (every present type that is not a
@@ -107,13 +100,11 @@ def facilities(request):
     n_tp = type_counts.pop("TP", 0)
     n_ds = type_counts.pop("DS", 0)
     n_source = sum(type_counts.values())
+    return n_source, n_tp, n_ds
 
-    # The map card's head (143-07). The map draws FACILITIES and the list
-    # counts facilities too — a 1:1 correspondence sampling_points below does
-    # not have — so the shared head partial's own branches (all_count /
-    # located_count / total_count / result_located_count) say the right thing
-    # with no `line` override. `result_pks` is the WHOLE filtered queryset's
-    # pks (before pagination), read by OH2O.followResults after every swap.
+
+def _facility_filter_words(facility_type: str, activity_status: str) -> str:
+    """The active filters in words, for the map card head."""
     facility_type_label = dict(FACILITY_TYPE_CHOICES).get(facility_type, "")
     activity_status_label = dict(ACTIVITY_STATUS_CHOICES).get(activity_status, "")
     filter_bits = []
@@ -121,6 +112,79 @@ def facilities(request):
         filter_bits.append(f"of type “{facility_type_label}”")
     if activity_status_label:
         filter_bits.append(f"with status “{activity_status_label}”")
+    return " and ".join(filter_bits)
+
+
+def _facility_coverage_context(queryset: QuerySet[SystemFacility]) -> dict:
+    """The choice lists and the map coverage counts the page and its head partial read."""
+    return {
+        # Read _present_choices' docstring before touching either of these.
+        "facility_type_choices": _present_choices(
+            "facility_type", FACILITY_TYPE_CHOICES
+        ),
+        "activity_status_choices": _present_choices(
+            "activity_status", ACTIVITY_STATUS_CHOICES
+        ),
+        "has_any": SystemFacility.objects.exists(),
+        # 123-02: the coverage counts for the sentence under the map, the
+        # same pair `sampling_points` computes below and for the same
+        # reason — the Merced demonstration's figures are not any other
+        # system's, and an Envirofacts-onboarded system starts at zero
+        # because EPA publishes no coordinates at all.
+        #
+        # Deliberately UNFILTERED by `q` / `facility_type` /
+        # `activity_status`. This sentence is about what the platform
+        # HOLDS, not about what the current search matched.
+        "total_facility_count": SystemFacility.objects.count(),
+        # 151.3-06 (Brent, 10:52): the page names both publishers once a facility was added by hand.
+        "any_added_by_hand": SystemFacility.objects.filter(added_by_hand=True).exists(),
+        "mapped_facility_count": SystemFacility.objects.filter(
+            location__isnull=False
+        ).count(),
+        # The head partial's own names for the same two counts, plus the
+        # FILTERED located count (143-07, Ruling A: the map now follows
+        # the list, so this is the number that actually lands on it).
+        "all_count": SystemFacility.objects.count(),
+        "located_count": SystemFacility.objects.filter(
+            location__isnull=False
+        ).count(),
+        "result_pks": list(queryset.values_list("pk", flat=True)),
+        "result_located_count": queryset.filter(
+            location__isnull=False
+        ).count(),
+    }
+
+
+@login_required
+def facilities(request):
+    """The facility inventory: every physical part of the water system.
+
+    Was a 61-row table stapled to the bottom of the overview, where it could not
+    be searched, filtered or paged. Same shape as ``sampling_points`` above —
+    one annotated queryset, a Q-joined search, two exact filters, 50 to a page.
+    """
+    q = request.GET.get("q", "").strip()
+    facility_type = request.GET.get("facility_type", "").strip()
+    activity_status = request.GET.get("activity_status", "").strip()
+
+    base_queryset = _filtered_facilities(q, facility_type, activity_status)
+
+    queryset = base_queryset.annotate(
+        sampling_point_count=Count("sampling_points")
+    ).order_by("facility_id")
+
+    paginator = Paginator(queryset, 50)
+    page_obj = paginator.get_page(request.GET.get("page", 1))
+
+    n_source, n_tp, n_ds = _facility_population_counts(base_queryset)
+
+    # The map card's head (143-07). The map draws FACILITIES and the list
+    # counts facilities too — a 1:1 correspondence sampling_points below does
+    # not have — so the shared head partial's own branches (all_count /
+    # located_count / total_count / result_located_count) say the right thing
+    # with no `line` override. `result_pks` is the WHOLE filtered queryset's
+    # pks (before pagination), read by OH2O.followResults after every swap.
+    filter_words = _facility_filter_words(facility_type, activity_status)
 
     return list_response(
         request,
@@ -135,41 +199,8 @@ def facilities(request):
             "q": q,
             "facility_type": facility_type,
             "activity_status": activity_status,
-            # Read _present_choices' docstring before touching either of these.
-            "facility_type_choices": _present_choices(
-                "facility_type", FACILITY_TYPE_CHOICES
-            ),
-            "activity_status_choices": _present_choices(
-                "activity_status", ACTIVITY_STATUS_CHOICES
-            ),
-            "has_any": SystemFacility.objects.exists(),
-            # 123-02: the coverage counts for the sentence under the map, the
-            # same pair `sampling_points` computes below and for the same
-            # reason — the Merced demonstration's figures are not any other
-            # system's, and an Envirofacts-onboarded system starts at zero
-            # because EPA publishes no coordinates at all.
-            #
-            # Deliberately UNFILTERED by `q` / `facility_type` /
-            # `activity_status`. This sentence is about what the platform
-            # HOLDS, not about what the current search matched.
-            "total_facility_count": SystemFacility.objects.count(),
-            # 151.3-06 (Brent, 10:52): the page names both publishers once a facility was added by hand.
-            "any_added_by_hand": SystemFacility.objects.filter(added_by_hand=True).exists(),
-            "mapped_facility_count": SystemFacility.objects.filter(
-                location__isnull=False
-            ).count(),
-            # The head partial's own names for the same two counts, plus the
-            # FILTERED located count (143-07, Ruling A: the map now follows
-            # the list, so this is the number that actually lands on it).
-            "all_count": SystemFacility.objects.count(),
-            "located_count": SystemFacility.objects.filter(
-                location__isnull=False
-            ).count(),
-            "result_pks": list(queryset.values_list("pk", flat=True)),
-            "result_located_count": queryset.filter(
-                location__isnull=False
-            ).count(),
-            "filter_words": " and ".join(filter_bits),
+            **_facility_coverage_context(queryset),
+            "filter_words": filter_words,
             "hx_request": bool(request.headers.get("HX-Request")),
         },
     )

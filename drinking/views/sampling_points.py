@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """The sampling-point list and the detail page for one sampling point."""
+from __future__ import annotations
+
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.db.models import Count, Max, Min, Q
+from django.db.models import Count, Max, Min, Q, QuerySet
 from django.shortcuts import get_object_or_404, render
 from core.workspace import list_response
 from drinking.models import (
@@ -57,17 +59,8 @@ def _sampling_points_head_line(
     return f"{total_count:,} of {all_count:,} {match_verb} {clause}; {tail}"
 
 
-@login_required
-def sampling_points(request):
-    """The sampling-point inventory: where samples are physically drawn.
-
-    ``latest_sample_date`` and ``result_count`` are annotated over the single
-    point -> events -> results join chain rather than walked per row, so this
-    page issues one query no matter how many points a system carries.
-    """
-    q = request.GET.get("q", "").strip()
-    point_type = request.GET.get("point_type", "").strip()
-
+def _filtered_sampling_points(q: str, point_type: str) -> QuerySet[SamplingPoint]:
+    """The annotated sampling points matching the search and the type filter."""
     queryset = (
         SamplingPoint.objects
         .select_related("facility", "facility__system", "facility__well")
@@ -87,10 +80,11 @@ def sampling_points(request):
         )
     if point_type:
         queryset = queryset.filter(point_type=point_type)
+    return queryset
 
-    paginator = Paginator(queryset, 50)
-    page_obj = paginator.get_page(request.GET.get("page", 1))
 
+def _points_pwsid_for_empty_state(has_any_point: bool) -> str:
+    """The one system's PWSID the empty state's builder button opens on, or ""."""
     # 123-02: the PWSID the empty state's "Build sampling points" button opens
     # on. Onboarding writes facilities and deliberately never writes a point, so
     # the right door from an empty inventory is the builder — and the builder
@@ -104,13 +98,16 @@ def sampling_points(request):
     # default, and picking the first would send an operator to the wrong one
     # with no way to tell. `[:2]` asks the database that question in one slice
     # rather than fetching a table to count it.
-    has_any_point = SamplingPoint.objects.exists()
     points_pwsid = ""
     if not has_any_point:
         pwsids = list(WaterSystem.objects.values_list("pwsid", flat=True)[:2])
         if len(pwsids) == 1:
             points_pwsid = pwsids[0]
+    return points_pwsid
 
+
+def _sampling_point_coverage_counts() -> dict[str, int]:
+    """The platform-wide point and facility counts behind the sentence under the map."""
     # The coverage counts for the sentence under the map. Computed here, every
     # render, and NEVER written into the template as literals: the Merced
     # demonstration happens to be 21 of 27 points and 21 of 61 facilities, and an
@@ -129,7 +126,22 @@ def sampling_points(request):
     mapped_facility_count = SystemFacility.objects.filter(
         location__isnull=False
     ).count()
+    return {
+        "point_total_count": point_total_count,
+        "mapped_point_count": mapped_point_count,
+        "total_facility_count": total_facility_count,
+        "mapped_facility_count": mapped_facility_count,
+    }
 
+
+def _sampling_point_map_head(
+    queryset: QuerySet[SamplingPoint],
+    coverage: dict[str, int],
+    total_count: int,
+    q: str,
+    point_type: str,
+) -> tuple[list[int], int, str | None]:
+    """The map card head: (facility pks drawn, located facility count, `line` override)."""
     # The map card's head (143-07): the map draws FACILITIES, so the pks the
     # results partial emits are the distinct facility ids of the FILTERED
     # sampling points, never the points' own pks. `result_located_count`
@@ -151,15 +163,45 @@ def sampling_points(request):
     # host — no need for this override to duplicate it.
     head_line = (
         _sampling_points_head_line(
-            all_count=point_total_count,
-            mapped_facility_count=mapped_facility_count,
-            total_count=paginator.count,
+            all_count=coverage["point_total_count"],
+            mapped_facility_count=coverage["mapped_facility_count"],
+            total_count=total_count,
             result_located_count=result_located_count,
             q=q,
             filter_words=f"of type “{point_type_label}”" if point_type_label else "",
         )
-        if mapped_facility_count
+        if coverage["mapped_facility_count"]
         else None
+    )
+    return result_pks, result_located_count, head_line
+
+
+@login_required
+def sampling_points(request):
+    """The sampling-point inventory: where samples are physically drawn.
+
+    ``latest_sample_date`` and ``result_count`` are annotated over the single
+    point -> events -> results join chain rather than walked per row, so this
+    page issues one query no matter how many points a system carries.
+    """
+    q = request.GET.get("q", "").strip()
+    point_type = request.GET.get("point_type", "").strip()
+
+    queryset = _filtered_sampling_points(q, point_type)
+
+    paginator = Paginator(queryset, 50)
+    page_obj = paginator.get_page(request.GET.get("page", 1))
+
+    has_any_point = SamplingPoint.objects.exists()
+    points_pwsid = _points_pwsid_for_empty_state(has_any_point)
+
+    coverage = _sampling_point_coverage_counts()
+    point_total_count = coverage["point_total_count"]
+    mapped_point_count = coverage["mapped_point_count"]
+    mapped_facility_count = coverage["mapped_facility_count"]
+
+    result_pks, result_located_count, head_line = _sampling_point_map_head(
+        queryset, coverage, paginator.count, q, point_type
     )
 
     return list_response(
@@ -178,7 +220,7 @@ def sampling_points(request):
             "point_total_count": point_total_count,
             "mapped_point_count": mapped_point_count,
             "unmapped_point_count": point_total_count - mapped_point_count,
-            "total_facility_count": total_facility_count,
+            "total_facility_count": coverage["total_facility_count"],
             "mapped_facility_count": mapped_facility_count,
             "all_count": point_total_count,
             "located_count": mapped_facility_count,

@@ -79,7 +79,9 @@ duplicate identity (``_NOT_IDENTITY_FIELDS``).
 
 import csv
 import io
+import datetime as dt
 import math
+from collections.abc import Callable
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
@@ -666,24 +668,8 @@ def _result_identity(event_id, analyte_id, values):
     )
 
 
-def validate_rows(rows, mapping):
-    """Validate + coerce a batch into writer-ready `data` dicts.
-
-    Returns a list of {index, data, errors, warnings}. A row with any errors is
-    skipped by commit_rows; warnings never block a commit.
-
-    Warning taxonomy the preview surfaces:
-      - "new analyte"  -> this file will extend the analyte vocabulary
-      - "duplicate"    -> an IDENTICAL result already exists (or repeats within
-                          this same file); committing will skip it. Identical
-                          means every field matches — see `_result_identity`. A
-                          row differing only in its result, its reporting level
-                          or its analysis date is a second analysis of the same
-                          sample and is KEPT (ISS-102).
-    """
-    results = []
-
-    # Everything the batch needs from the DB, fetched once rather than per row.
+def _batch_lookups() -> dict:
+    """Everything a batch needs from the DB, fetched once rather than per row."""
     known_points = {
         code: pk
         for pk, code in SamplingPoint.objects.values_list("pk", "ps_code")
@@ -724,221 +710,429 @@ def validate_rows(rows, mapping):
             "pk", "sampling_point_id", "sample_date", "sample_time", "sample_type"
         )
     }
+    return {
+        "known_points": known_points,
+        "known_analytes_by_name": known_analytes_by_name,
+        "known_analytes_by_code": known_analytes_by_code,
+        "existing_keys": existing_keys,
+        "existing_events": existing_events,
+    }
+
+
+def _row_reader(row: dict, mapping: dict) -> Callable[[str], str]:
+    """A function that reads one mapped field of `row`, stripped, or "" if unmapped."""
+
+    def src(field: str) -> str:
+        col = mapping.get(field)
+        if not col:
+            return ""
+        return (row.get(col) or "").strip()
+
+    return src
+
+
+def _check_sampling_point(
+    src: Callable[[str], str],
+    mapping: dict,
+    known_points: dict,
+    data: dict,
+    errors: list,
+) -> None:
+    """Sampling point: must already exist."""
+    ps_code = src("ps_code")
+    # A blank required cell is
+    # named by the file's own column (a file missing the column is refused
+    # before the preview, so "unmapped" never reached a row).
+    if not ps_code:
+        errors.append(f"{mapping.get('ps_code') or 'PS Code'} is blank.")
+    elif ps_code not in known_points:
+        errors.append(
+            f"No sampling point on file has the PS Code {ps_code}. Add the "
+            "sampling point first, or correct the code in the file."
+        )
+    else:
+        data["sampling_point_id"] = known_points[ps_code]
+    data["ps_code"] = ps_code
+
+
+def _read_event_identity(
+    src: Callable[[str], str],
+    mapping: dict,
+    data: dict,
+    errors: list,
+    warnings: list,
+) -> tuple[dt.date | None, dt.time | None, str]:
+    """Event identity: date, time, type and collector. Returns (date, time, type)."""
+    raw_date = src("sample_date")
+    sample_date = _parse_lab_date(raw_date) if raw_date else None
+    date_column = mapping.get("sample_date") or "Sample Date"
+    if not raw_date:
+        errors.append(f"{date_column} is blank.")
+    elif sample_date is None:
+        errors.append(
+            f"{date_column} '{raw_date}' is not a date written "
+            f"{_DATE_FORMAT_HELP}."
+        )
+    data["sample_date"] = sample_date
+
+    # The notes below are the 150.1-02 wording. parse_time raises on a well-formed but
+    # impossible time (25:99), which was a 500 on the preview; it is the
+    # same note as any unreadable time.
+    raw_time = src("sample_time")
+    try:
+        sample_time = parse_time(raw_time) if raw_time else None
+    except ValueError:
+        sample_time = None
+    if raw_time and sample_time is None:
+        warnings.append(
+            f"OpenH2O cannot read the {mapping.get('sample_time') or 'Sample Time'} "
+            f"'{raw_time}' and will import this result without a time."
+        )
+    data["sample_time"] = sample_time
+
+    # Keep the raw spelling for the warning: an operator searches their own
+    # file for the string we show them, and `rt` does not appear in a file
+    # that says `RT`.
+    raw_sample_type = src("sample_type")
+    sample_type = raw_sample_type.lower() or "routine"
+    if sample_type not in _SAMPLE_TYPES:
+        # EPA's federal CMDP code vocabulary, before we give up and warn.
+        sample_type = _SDWIS_SAMPLE_TYPES.get(sample_type, sample_type)
+    if sample_type not in _SAMPLE_TYPES:
+        warnings.append(
+            f"OpenH2O does not recognize the sample type '{raw_sample_type}' "
+            "and will record this sample as routine."
+        )
+        sample_type = "routine"
+    data["sample_type"] = sample_type
+    data["collector"] = src("collector")
+    return sample_date, sample_time, sample_type
+
+
+def _match_analyte(
+    src: Callable[[str], str],
+    mapping: dict,
+    lookups: dict,
+    new_analyte_names: set,
+    data: dict,
+    errors: list,
+    warnings: list,
+) -> str:
+    """Analyte: match by DDW code then name, or warn that the file adds one. Returns the name."""
+    analyte_name = src("analyte_name")
+    ddw_code = src("ddw_code")
+    data["analyte_name"] = analyte_name
+    data["ddw_code"] = ddw_code
+
+    if not analyte_name:
+        errors.append(
+            f"{mapping.get('analyte_name') or 'Analyte Name'} is blank."
+        )
+    else:
+        key = analyte_name.lower()
+        analyte_pk = (
+            lookups["known_analytes_by_code"].get(ddw_code) if ddw_code else None
+        )
+        if analyte_pk is None:
+            analyte_pk = lookups["known_analytes_by_name"].get(key)
+        if analyte_pk is not None:
+            data["analyte_id"] = analyte_pk
+        else:
+            # Not an error. DDW's own file is the vocabulary source; we
+            # record that the file is extending it so the operator sees it
+            # before committing.
+            if key not in new_analyte_names:
+                new_analyte_names.add(key)
+            warnings.append(
+                f"No analyte on file is named {analyte_name}. OpenH2O will "
+                f"add {analyte_name} as a new analyte."
+            )
+    return analyte_name
+
+
+def _read_finding(src: Callable[[str], str], data: dict, errors: list) -> None:
+    """The finding itself: the result, its unit, method, laboratory and counting error."""
+    parsed = _parse_result(
+        src("result"), src("less_than_rl"), src("reporting_level"), errors
+    )
+    if parsed:
+        data.update(parsed)
+
+    data["unit"] = src("unit")
+    data["method"] = src("method")
+    data["lab_name"] = src("lab_name")
+    data["lab_cert_no"] = src("lab_cert_no")
+    data["counting_error"] = _decimal_or_none(src("counting_error"))
+
+
+def _read_limits_and_analysis_date(
+    src: Callable[[str], str], mapping: dict, data: dict, warnings: list
+) -> None:
+    """The limits the file carried (ISS-140, "beside"), then the analysis date."""
+    # Stored as reported and nothing more. An unreadable cell is a
+    # warning, never an error: the finding is still the finding, and a
+    # limit this importer cannot read is simply not stored.
+    for field, label, without in (
+        ("mcl_as_reported", "MCL", "an MCL"),
+        ("dlr_as_reported", "DLR", "a DLR"),
+    ):
+        raw_limit = src(field)
+        value = _decimal_or_none(raw_limit)
+        if raw_limit and value is None:
+            warnings.append(
+                f"OpenH2O cannot read the {label} '{raw_limit}' and will "
+                f"import this result without {without}."
+            )
+        data[field] = value
+
+    raw_analysis = src("analysis_date")
+    analysis_date = _parse_lab_date(raw_analysis) if raw_analysis else None
+    if raw_analysis and analysis_date is None:
+        warnings.append(
+            f"OpenH2O cannot read the {mapping.get('analysis_date') or 'Analysis Date'} "
+            f"'{raw_analysis}' and will import this result without an "
+            "analysis date."
+        )
+    data["analysis_date"] = analysis_date
+
+
+def _flag_result_on_file(
+    data: dict,
+    event_key: tuple,
+    existing_keys: dict,
+    existing_events: dict,
+    warnings: list,
+) -> None:
+    """Re-import guard: mark a row whose identical result is already stored."""
+    # Keyed on the WHOLE measurement (`_result_identity`) so re-importing the
+    # same file is a no-op rather than a doubling — while a row that differs
+    # in any respect is kept, because it is a second analysis of one sample
+    # and not a repeat of the first (ISS-102). Checked against both the DB
+    # and the rest of this batch.
+    event_pk = existing_events.get((data.get("sampling_point_id"),) + event_key)
+    if event_pk is not None:
+        match = existing_keys.get(
+            _result_identity(event_pk, data["analyte_id"], data)
+        )
+        if match is not None:
+            data["is_duplicate"] = True
+            stored_pk, predates_limits = match
+            if predates_limits:
+                data["fill_limits_pk"] = stored_pk
+                warnings.append(
+                    "The same result is already on file from before "
+                    "OpenH2O kept a lab file's MCL and DLR. OpenH2O "
+                    "will add this file's MCL and DLR to that result."
+                )
+            else:
+                warnings.append(
+                    "The same result is already on file, so OpenH2O "
+                    "will skip this row."
+                )
+
+
+def _flag_repeat_in_file(
+    data: dict,
+    event_key: tuple,
+    analyte_name: str,
+    seen_in_batch: set,
+    warnings: list,
+) -> None:
+    """Mark a row that repeats an earlier row of this same file."""
+    # The event has no pk yet for a collection this file is introducing,
+    # so the batch key names the event by its natural key and then reuses
+    # the identity helper for everything after it. `analyte_name` stays
+    # in the key for a row whose analyte is also new in this file and so
+    # has no id to compare either.
+    batch_key = (
+        (data.get("sampling_point_id"),)
+        + event_key
+        + (analyte_name.lower(),)
+        + _result_identity(None, data.get("analyte_id"), data)
+    )
+    # Counted apart from "already on file": a repeat
+    # of a row whose result is already on file is that, and only that.
+    if batch_key in seen_in_batch and not data.get("is_duplicate"):
+        data["is_duplicate"] = True
+        data["repeat_in_file"] = True
+        warnings.append(
+            "An earlier row in this file has the same result, so "
+            "OpenH2O will skip this row."
+        )
+    seen_in_batch.add(batch_key)
+
+
+def _validate_row(
+    index: int,
+    row: dict,
+    mapping: dict,
+    lookups: dict,
+    seen_in_batch: set,
+    new_analyte_names: set,
+) -> dict:
+    """Validate one row into {index, data, errors, warnings}."""
+    errors: list = []
+    warnings: list = []
+    data: dict = {}
+    src = _row_reader(row, mapping)
+
+    _check_sampling_point(src, mapping, lookups["known_points"], data, errors)
+    sample_date, sample_time, sample_type = _read_event_identity(
+        src, mapping, data, errors, warnings
+    )
+    event_key = (sample_date, sample_time, sample_type)
+    analyte_name = _match_analyte(
+        src, mapping, lookups, new_analyte_names, data, errors, warnings
+    )
+    _read_finding(src, data, errors)
+    _read_limits_and_analysis_date(src, mapping, data, warnings)
+
+    if not errors and data.get("analyte_id") is not None:
+        _flag_result_on_file(
+            data,
+            event_key,
+            lookups["existing_keys"],
+            lookups["existing_events"],
+            warnings,
+        )
+    if not errors:
+        _flag_repeat_in_file(data, event_key, analyte_name, seen_in_batch, warnings)
+
+    return {"index": index, "data": data, "errors": errors, "warnings": warnings}
+
+
+def validate_rows(rows, mapping):
+    """Validate + coerce a batch into writer-ready `data` dicts.
+
+    Returns a list of {index, data, errors, warnings}. A row with any errors is
+    skipped by commit_rows; warnings never block a commit.
+
+    Warning taxonomy the preview surfaces:
+      - "new analyte"  -> this file will extend the analyte vocabulary
+      - "duplicate"    -> an IDENTICAL result already exists (or repeats within
+                          this same file); committing will skip it. Identical
+                          means every field matches — see `_result_identity`. A
+                          row differing only in its result, its reporting level
+                          or its analysis date is a second analysis of the same
+                          sample and is KEPT (ISS-102).
+    """
+    lookups = _batch_lookups()
 
     # Within-batch bookkeeping: a file that repeats a row is as much a duplicate
     # as one that repeats what is already stored.
-    seen_in_batch = set()
-    new_analyte_names = set()
+    seen_in_batch: set = set()
+    new_analyte_names: set = set()
 
-    for index, row in enumerate(rows):
-        errors = []
-        warnings = []
-        data = {}
-
-        def src(field):
-            col = mapping.get(field)
-            if not col:
-                return ""
-            return (row.get(col) or "").strip()
-
-        # --- sampling point: must already exist -----------------------------
-        ps_code = src("ps_code")
-        # A blank required cell is
-        # named by the file's own column (a file missing the column is refused
-        # before the preview, so "unmapped" never reached a row).
-        if not ps_code:
-            errors.append(f"{mapping.get('ps_code') or 'PS Code'} is blank.")
-        elif ps_code not in known_points:
-            errors.append(
-                f"No sampling point on file has the PS Code {ps_code}. Add the "
-                "sampling point first, or correct the code in the file."
-            )
-        else:
-            data["sampling_point_id"] = known_points[ps_code]
-        data["ps_code"] = ps_code
-
-        # --- event identity -------------------------------------------------
-        raw_date = src("sample_date")
-        sample_date = _parse_lab_date(raw_date) if raw_date else None
-        date_column = mapping.get("sample_date") or "Sample Date"
-        if not raw_date:
-            errors.append(f"{date_column} is blank.")
-        elif sample_date is None:
-            errors.append(
-                f"{date_column} '{raw_date}' is not a date written "
-                f"{_DATE_FORMAT_HELP}."
-            )
-        data["sample_date"] = sample_date
-
-        # The notes below are the 150.1-02 wording. parse_time raises on a well-formed but
-        # impossible time (25:99), which was a 500 on the preview; it is the
-        # same note as any unreadable time.
-        raw_time = src("sample_time")
-        try:
-            sample_time = parse_time(raw_time) if raw_time else None
-        except ValueError:
-            sample_time = None
-        if raw_time and sample_time is None:
-            warnings.append(
-                f"OpenH2O cannot read the {mapping.get('sample_time') or 'Sample Time'} "
-                f"'{raw_time}' and will import this result without a time."
-            )
-        data["sample_time"] = sample_time
-
-        # Keep the raw spelling for the warning: an operator searches their own
-        # file for the string we show them, and `rt` does not appear in a file
-        # that says `RT`.
-        raw_sample_type = src("sample_type")
-        sample_type = raw_sample_type.lower() or "routine"
-        if sample_type not in _SAMPLE_TYPES:
-            # EPA's federal CMDP code vocabulary, before we give up and warn.
-            sample_type = _SDWIS_SAMPLE_TYPES.get(sample_type, sample_type)
-        if sample_type not in _SAMPLE_TYPES:
-            warnings.append(
-                f"OpenH2O does not recognize the sample type '{raw_sample_type}' "
-                "and will record this sample as routine."
-            )
-            sample_type = "routine"
-        data["sample_type"] = sample_type
-        data["collector"] = src("collector")
-
-        # --- analyte --------------------------------------------------------
-        analyte_name = src("analyte_name")
-        ddw_code = src("ddw_code")
-        data["analyte_name"] = analyte_name
-        data["ddw_code"] = ddw_code
-
-        if not analyte_name:
-            errors.append(
-                f"{mapping.get('analyte_name') or 'Analyte Name'} is blank."
-            )
-        else:
-            key = analyte_name.lower()
-            analyte_pk = known_analytes_by_code.get(ddw_code) if ddw_code else None
-            if analyte_pk is None:
-                analyte_pk = known_analytes_by_name.get(key)
-            if analyte_pk is not None:
-                data["analyte_id"] = analyte_pk
-            else:
-                # Not an error. DDW's own file is the vocabulary source; we
-                # record that the file is extending it so the operator sees it
-                # before committing.
-                if key not in new_analyte_names:
-                    new_analyte_names.add(key)
-                warnings.append(
-                    f"No analyte on file is named {analyte_name}. OpenH2O will "
-                    f"add {analyte_name} as a new analyte."
-                )
-
-        # --- the finding itself ---------------------------------------------
-        parsed = _parse_result(
-            src("result"), src("less_than_rl"), src("reporting_level"), errors
-        )
-        if parsed:
-            data.update(parsed)
-
-        data["unit"] = src("unit")
-        data["method"] = src("method")
-        data["lab_name"] = src("lab_name")
-        data["lab_cert_no"] = src("lab_cert_no")
-        data["counting_error"] = _decimal_or_none(src("counting_error"))
-
-        # --- the limits the file carried (ISS-140, "beside") -----------------
-        # Stored as reported and nothing more. An unreadable cell is a
-        # warning, never an error: the finding is still the finding, and a
-        # limit this importer cannot read is simply not stored.
-        for field, label, without in (
-            ("mcl_as_reported", "MCL", "an MCL"),
-            ("dlr_as_reported", "DLR", "a DLR"),
-        ):
-            raw_limit = src(field)
-            value = _decimal_or_none(raw_limit)
-            if raw_limit and value is None:
-                warnings.append(
-                    f"OpenH2O cannot read the {label} '{raw_limit}' and will "
-                    f"import this result without {without}."
-                )
-            data[field] = value
-
-        raw_analysis = src("analysis_date")
-        analysis_date = _parse_lab_date(raw_analysis) if raw_analysis else None
-        if raw_analysis and analysis_date is None:
-            warnings.append(
-                f"OpenH2O cannot read the {mapping.get('analysis_date') or 'Analysis Date'} "
-                f"'{raw_analysis}' and will import this result without an "
-                "analysis date."
-            )
-        data["analysis_date"] = analysis_date
-
-        # --- re-import guard --------------------------------------------------
-        # Keyed on the WHOLE measurement (`_result_identity`) so re-importing the
-        # same file is a no-op rather than a doubling — while a row that differs
-        # in any respect is kept, because it is a second analysis of one sample
-        # and not a repeat of the first (ISS-102). Checked against both the DB
-        # and the rest of this batch.
-        if not errors and data.get("analyte_id") is not None:
-            event_pk = existing_events.get(
-                (
-                    data.get("sampling_point_id"),
-                    sample_date,
-                    sample_time,
-                    sample_type,
-                )
-            )
-            if event_pk is not None:
-                match = existing_keys.get(
-                    _result_identity(event_pk, data["analyte_id"], data)
-                )
-                if match is not None:
-                    data["is_duplicate"] = True
-                    stored_pk, predates_limits = match
-                    if predates_limits:
-                        data["fill_limits_pk"] = stored_pk
-                        warnings.append(
-                            "The same result is already on file from before "
-                            "OpenH2O kept a lab file's MCL and DLR. OpenH2O "
-                            "will add this file's MCL and DLR to that result."
-                        )
-                    else:
-                        warnings.append(
-                            "The same result is already on file, so OpenH2O "
-                            "will skip this row."
-                        )
-
-        if not errors:
-            # The event has no pk yet for a collection this file is introducing,
-            # so the batch key names the event by its natural key and then reuses
-            # the identity helper for everything after it. `analyte_name` stays
-            # in the key for a row whose analyte is also new in this file and so
-            # has no id to compare either.
-            batch_key = (
-                data.get("sampling_point_id"),
-                sample_date,
-                sample_time,
-                sample_type,
-                analyte_name.lower(),
-            ) + _result_identity(None, data.get("analyte_id"), data)
-            # Counted apart from "already on file": a repeat
-            # of a row whose result is already on file is that, and only that.
-            if batch_key in seen_in_batch and not data.get("is_duplicate"):
-                data["is_duplicate"] = True
-                data["repeat_in_file"] = True
-                warnings.append(
-                    "An earlier row in this file has the same result, so "
-                    "OpenH2O will skip this row."
-                )
-            seen_in_batch.add(batch_key)
-
-        results.append(
-            {"index": index, "data": data, "errors": errors, "warnings": warnings}
-        )
-
-    return results
+    return [
+        _validate_row(index, row, mapping, lookups, seen_in_batch, new_analyte_names)
+        for index, row in enumerate(rows)
+    ]
 
 
 # ---------------------------------------------------------------------------
 # commit_rows
 # ---------------------------------------------------------------------------
+
+
+def _import_counts(valid_results: list) -> dict:
+    """The starting tally for a commit: duplicates, skipped and repeats counted up front."""
+    return {
+        "events": 0,
+        "results": 0,
+        "analytes": 0,
+        "duplicates": sum(
+            1 for r in valid_results if r["data"].get("is_duplicate")
+        ),
+        "skipped": sum(1 for r in valid_results if r["errors"]),
+        "limits_filled": 0,
+        # Of ``duplicates``, the rows that repeat an earlier row of this file
+        # rather than a result on file.
+        "repeats": sum(
+            1 for r in valid_results if r["data"].get("repeat_in_file")
+        ),
+    }
+
+
+def _analyte_id_for(data: dict, analyte_cache: dict, counts: dict) -> int:
+    """The analyte pk for a row: match, or learn from the file's own vocabulary."""
+    analyte_id = data.get("analyte_id")
+    if analyte_id is None:
+        key = data["analyte_name"].strip().lower()
+        if key in analyte_cache:
+            analyte_id = analyte_cache[key]
+        else:
+            analyte, made = Analyte.objects.get_or_create(
+                name=data["analyte_name"].strip(),
+                defaults={"ddw_code": data.get("ddw_code") or None},
+            )
+            if made:
+                counts["analytes"] += 1
+            analyte_id = analyte.pk
+            analyte_cache[key] = analyte_id
+    return analyte_id
+
+
+def _learn_ddw_code(analyte_id: int, data: dict) -> None:
+    """Record the file's DDW code on an analyte that has none yet."""
+    # 78-01 seeded every ddw_code NULL because DDW publishes no code
+    # list. When a file carries a code for an analyte we already know
+    # by name, LEARN it — but only if no other analyte already holds
+    # that code, because ddw_code is unique.
+    code = data.get("ddw_code")
+    if code:
+        Analyte.objects.filter(pk=analyte_id, ddw_code__isnull=True).exclude(
+            pk__in=Analyte.objects.filter(ddw_code=code).values("pk")
+        ).update(ddw_code=code)
+
+
+def _event_id_for(data: dict, event_cache: dict, counts: dict) -> int:
+    """The event pk for a row: one per (point, date, time, type)."""
+    event_key = (
+        data["sampling_point_id"],
+        data["sample_date"],
+        data["sample_time"],
+        data["sample_type"],
+    )
+    if event_key in event_cache:
+        event_id = event_cache[event_key]
+    else:
+        event, made = SampleEvent.objects.get_or_create(
+            sampling_point_id=data["sampling_point_id"],
+            sample_date=data["sample_date"],
+            sample_time=data["sample_time"],
+            sample_type=data["sample_type"],
+            defaults={"collector": data.get("collector", "")},
+        )
+        if made:
+            counts["events"] += 1
+        event_id = event.pk
+        event_cache[event_key] = event_id
+    return event_id
+
+
+def _fill_limits_on_duplicates(
+    valid_results: list, source_file: str, imported_on: dt.date, counts: dict
+) -> None:
+    """Give results recorded before limits were kept the limits this file carried."""
+    # A duplicate is still never re-created; only its four
+    # `_NOT_IDENTITY_FIELDS` are written, and only on a row that has
+    # never had them (`limits_file_date` null), so a second re-import
+    # changes nothing.
+    fills = [
+        SampleResult(
+            pk=r["data"]["fill_limits_pk"],
+            **_limits_as_reported(r["data"], source_file, imported_on),
+        )
+        for r in valid_results
+        if not r["errors"] and r["data"].get("fill_limits_pk") is not None
+    ]
+    if fills:
+        counts["limits_filled"] = SampleResult.objects.filter(
+            pk__in=[f.pk for f in fills], limits_file_date__isnull=True
+        ).count()
+        SampleResult.objects.bulk_update(
+            fills, list(_NOT_IDENTITY_FIELDS), batch_size=1000
+        )
 
 
 def commit_rows(valid_results, source_file="", imported_on=None):
@@ -961,80 +1155,21 @@ def commit_rows(valid_results, source_file="", imported_on=None):
         if not r["errors"] and not r["data"].get("is_duplicate")
     ]
 
-    counts = {
-        "events": 0,
-        "results": 0,
-        "analytes": 0,
-        "duplicates": sum(
-            1 for r in valid_results if r["data"].get("is_duplicate")
-        ),
-        "skipped": sum(1 for r in valid_results if r["errors"]),
-        "limits_filled": 0,
-        # Of ``duplicates``, the rows that repeat an earlier row of this file
-        # rather than a result on file.
-        "repeats": sum(
-            1 for r in valid_results if r["data"].get("repeat_in_file")
-        ),
-    }
+    counts = _import_counts(valid_results)
 
     if imported_on is None:
         imported_on = timezone.localdate()
 
     # Caches so a 5000-row file does not re-query per row.
-    analyte_cache = {}
-    event_cache = {}
+    analyte_cache: dict = {}
+    event_cache: dict = {}
 
     with transaction.atomic():
         for result in clean:
             data = result["data"]
-
-            # --- analyte: match, or learn from the file's own vocabulary ----
-            analyte_id = data.get("analyte_id")
-            if analyte_id is None:
-                key = data["analyte_name"].strip().lower()
-                if key in analyte_cache:
-                    analyte_id = analyte_cache[key]
-                else:
-                    analyte, made = Analyte.objects.get_or_create(
-                        name=data["analyte_name"].strip(),
-                        defaults={"ddw_code": data.get("ddw_code") or None},
-                    )
-                    if made:
-                        counts["analytes"] += 1
-                    analyte_id = analyte.pk
-                    analyte_cache[key] = analyte_id
-
-            # 78-01 seeded every ddw_code NULL because DDW publishes no code
-            # list. When a file carries a code for an analyte we already know
-            # by name, LEARN it — but only if no other analyte already holds
-            # that code, because ddw_code is unique.
-            code = data.get("ddw_code")
-            if code:
-                Analyte.objects.filter(pk=analyte_id, ddw_code__isnull=True).exclude(
-                    pk__in=Analyte.objects.filter(ddw_code=code).values("pk")
-                ).update(ddw_code=code)
-
-            # --- event: one per (point, date, time, type) -------------------
-            event_key = (
-                data["sampling_point_id"],
-                data["sample_date"],
-                data["sample_time"],
-                data["sample_type"],
-            )
-            if event_key in event_cache:
-                event_id = event_cache[event_key]
-            else:
-                event, made = SampleEvent.objects.get_or_create(
-                    sampling_point_id=data["sampling_point_id"],
-                    sample_date=data["sample_date"],
-                    sample_time=data["sample_time"],
-                    sample_type=data["sample_type"],
-                    defaults={"collector": data.get("collector", "")},
-                )
-                if made:
-                    counts["events"] += 1
-                event_id = event.pk
-                event_cache[event_key] = event_id
+            analyte_id = _analyte_id_for(data, analyte_cache, counts)
+            _learn_ddw_code(analyte_id, data)
+            event_id = _event_id_for(data, event_cache, counts)
 
             # --- the result --------------------------------------------------
             # Per-row savepoint: one row that trips a CheckConstraint is rolled
@@ -1069,26 +1204,7 @@ def commit_rows(valid_results, source_file="", imported_on=None):
                 )
                 counts["skipped"] += 1
 
-        # --- limits for results recorded before they were kept ---------------
-        # A duplicate is still never re-created; only its four
-        # `_NOT_IDENTITY_FIELDS` are written, and only on a row that has
-        # never had them (`limits_file_date` null), so a second re-import
-        # changes nothing.
-        fills = [
-            SampleResult(
-                pk=r["data"]["fill_limits_pk"],
-                **_limits_as_reported(r["data"], source_file, imported_on),
-            )
-            for r in valid_results
-            if not r["errors"] and r["data"].get("fill_limits_pk") is not None
-        ]
-        if fills:
-            counts["limits_filled"] = SampleResult.objects.filter(
-                pk__in=[f.pk for f in fills], limits_file_date__isnull=True
-            ).count()
-            SampleResult.objects.bulk_update(
-                fills, list(_NOT_IDENTITY_FIELDS), batch_size=1000
-            )
+        _fill_limits_on_duplicates(valid_results, source_file, imported_on, counts)
 
     return counts
 

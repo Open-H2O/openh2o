@@ -8,14 +8,18 @@ recently each reported), and the chart-data/GeoJSON endpoints those views feed.
 All readings are served from published DataRecordStaging rows the scheduled sync
 writes; these views never call the external APIs directly.
 """
+from __future__ import annotations
+
 import json
 import re
-from datetime import timedelta
+from collections.abc import Iterable
+from datetime import datetime, timedelta
+from decimal import Decimal
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.gis.geos import Point
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -154,6 +158,143 @@ def _station_list_head_line(*, total_count, q, source, active, reporting):
     return ", ".join(parts)
 
 
+def _filtered_stations(q: str, source: str, active: str) -> QuerySet[MonitoredStation]:
+    """The stations matching the search, the source and the active/inactive choice."""
+    queryset = MonitoredStation.objects.select_related("data_source").order_by(
+        "data_source__code", "station_name"
+    )
+
+    if q:
+        queryset = queryset.filter(
+            Q(station_name__icontains=q) | Q(external_station_id__icontains=q)
+        )
+    if source:
+        queryset = queryset.filter(data_source__code=source)
+    # Default to active-only so the list doesn't surface dead/inactive stations.
+    # Explicit opt-ins: "0" = inactive only, "all" = everything.
+    if active == "0":
+        queryset = queryset.filter(is_active=False)
+    elif active != "all":
+        queryset = queryset.filter(is_active=True)
+    return queryset
+
+
+def _station_source_phrase(source: str) -> str:
+    """The chosen source in words for the head line, or "" when no source is chosen."""
+    source_name = (
+        DataSource.objects.filter(code=source).values_list("name", flat=True).first()
+        if source else None
+    )
+    return freshness.source_phrase(source_name or source) if source else ""
+
+
+def _health_ordered_stations(
+    queryset: QuerySet[MonitoredStation], now: datetime, reporting: str
+) -> tuple[list[MonitoredStation], dict]:
+    """The stations ordered by health, narrowed by the reporting filter, with each one's class."""
+    # Order by health, not just the alphabet. Up-to-date stations come first,
+    # then slightly-behind, then dormant ones pushed to the very end — so a
+    # handful of quiet stations never lead the page and make a mostly-healthy
+    # network look broken. Freshness is source-aware and computed in Python, so
+    # we materialise the (already source/name-ordered) queryset and stable-sort
+    # it by a health rank; the alphabetical order is preserved within each band.
+    HEALTH_RANK = {"fresh": 0, "stale": 1, "dead": 2}
+    station_health = {
+        s.pk: freshness.classify_freshness(s.data_source.code, s.last_data_at, now)
+        for s in queryset
+    }
+    stations_ordered = sorted(
+        queryset,
+        key=lambda s: HEALTH_RANK.get(station_health.get(s.pk), 3),
+    )
+
+    # Freshness is source-aware and computed in Python, so it filters here
+    # rather than in SQL — after the ordering, before pagination, so the page
+    # count reflects what the operator asked for.
+    if reporting in ("fresh", "stale", "dead"):
+        stations_ordered = [
+            s for s in stations_ordered if station_health.get(s.pk) == reporting
+        ]
+    return stations_ordered, station_health
+
+
+def _group_latest_readings(staging_qs: Iterable[dict]) -> tuple[dict, dict, dict]:
+    """Group staged rows by station: the newest 10 values, the latest value, the latest unit."""
+    raw_records: dict = {}
+    latest_value: dict = {}
+    latest_unit: dict = {}
+    for row in staging_qs:
+        sid = row["station_id"]
+        if sid not in raw_records:
+            raw_records[sid] = []
+            latest_value[sid] = row["value"]
+            latest_unit[sid] = row["unit"] or ""
+        if len(raw_records[sid]) < 10:
+            raw_records[sid].append(row["value"])
+    return raw_records, latest_value, latest_unit
+
+
+def _latest_reading_tooltip(value: Decimal | float | None, unit: str) -> str | None:
+    """The "Latest: 12.30 cfs" tooltip for a row, or None when there is no readable value."""
+    if value is None:
+        return None
+    try:
+        return f"Latest: {float(value):,.2f} {unit}".strip()
+    except (ValueError, TypeError):
+        return None
+
+
+def _list_sparklines(raw_records: dict) -> tuple[dict, dict]:
+    """The sparkline point strings and the per-station reading counts behind them."""
+    sparklines: dict = {}
+    # R-075: the count a sparkline was built from, per station — 0 or 1 when
+    # there's no sparkline (2 is the floor to draw one), so the Trend cell can
+    # tell "no reading yet" apart from "one reading, not enough to trend".
+    reading_counts: dict = {}
+    for sid, values in raw_records.items():
+        numeric = [float(v) for v in reversed(values) if v is not None]
+        reading_counts[sid] = len(numeric)
+        if len(numeric) < 2:
+            continue
+        min_v, max_v = min(numeric), max(numeric)
+        span = max_v - min_v if max_v != min_v else 1.0
+        sparklines[sid] = " ".join(
+            f"{round(i * 119 / (len(numeric) - 1), 2)},"
+            f"{round(40 - ((v - min_v) / span) * 34 - 2, 2)}"
+            for i, v in enumerate(numeric)
+        )
+    return sparklines, reading_counts
+
+
+def _enriched_station_rows(
+    page_obj: Iterable[MonitoredStation],
+    station_health: dict,
+    latest_value: dict,
+    latest_unit: dict,
+    sparklines: dict,
+    reading_counts: dict,
+) -> list[dict]:
+    """One row per listed station: its freshness, limits, sparkline, tooltip and count."""
+    station_freshness = {s.pk: station_health.get(s.pk, "dead") for s in page_obj}
+    enriched_stations = []
+    for s in page_obj:
+        tooltip = _latest_reading_tooltip(
+            latest_value.get(s.pk), latest_unit.get(s.pk, "")
+        )
+        enriched_stations.append({
+            "station": s,
+            "freshness": station_freshness.get(s.pk, "dead"),
+            # ISS-183: the Reporting cell's tooltip states this source's limits.
+            "freshness_thresholds": freshness.freshness_thresholds(
+                s.data_source.code, s.data_source.name
+            ),
+            "sparkline_points": sparklines.get(s.pk),
+            "latest_tooltip": tooltip,
+            "reading_count": reading_counts.get(s.pk, 0),
+        })
+    return enriched_stations
+
+
 @login_required
 def station_list(request):
     """Monitoring stations OVERVIEW: a network freshness map + a searchable list.
@@ -186,51 +327,11 @@ def station_list(request):
     # could answer before.
     reporting = request.GET.get("reporting", "").strip()
 
-    queryset = MonitoredStation.objects.select_related("data_source").order_by(
-        "data_source__code", "station_name"
+    queryset = _filtered_stations(q, source, active)
+    source_phrase = _station_source_phrase(source)
+    stations_ordered, station_health = _health_ordered_stations(
+        queryset, now, reporting
     )
-
-    if q:
-        queryset = queryset.filter(
-            Q(station_name__icontains=q) | Q(external_station_id__icontains=q)
-        )
-    if source:
-        queryset = queryset.filter(data_source__code=source)
-    source_name = (
-        DataSource.objects.filter(code=source).values_list("name", flat=True).first()
-        if source else None
-    )
-    source_phrase = freshness.source_phrase(source_name or source) if source else ""
-    # Default to active-only so the list doesn't surface dead/inactive stations.
-    # Explicit opt-ins: "0" = inactive only, "all" = everything.
-    if active == "0":
-        queryset = queryset.filter(is_active=False)
-    elif active != "all":
-        queryset = queryset.filter(is_active=True)
-
-    # Order by health, not just the alphabet. Up-to-date stations come first,
-    # then slightly-behind, then dormant ones pushed to the very end — so a
-    # handful of quiet stations never lead the page and make a mostly-healthy
-    # network look broken. Freshness is source-aware and computed in Python, so
-    # we materialise the (already source/name-ordered) queryset and stable-sort
-    # it by a health rank; the alphabetical order is preserved within each band.
-    HEALTH_RANK = {"fresh": 0, "stale": 1, "dead": 2}
-    station_health = {
-        s.pk: freshness.classify_freshness(s.data_source.code, s.last_data_at, now)
-        for s in queryset
-    }
-    stations_ordered = sorted(
-        queryset,
-        key=lambda s: HEALTH_RANK.get(station_health.get(s.pk), 3),
-    )
-
-    # Freshness is source-aware and computed in Python, so it filters here
-    # rather than in SQL — after the ordering, before pagination, so the page
-    # count reflects what the operator asked for.
-    if reporting in ("fresh", "stale", "dead"):
-        stations_ordered = [
-            s for s in stations_ordered if station_health.get(s.pk) == reporting
-        ]
 
     # An instance rarely exceeds ~50 stations, so show them all on one page —
     # finding one is a glance plus a type-to-filter, not a paging exercise. The
@@ -242,7 +343,6 @@ def station_list(request):
 
     # Per-row freshness + a 10-point sparkline + latest value, so each row tells
     # its at-a-glance story (health, trend, current reading) without opening it.
-    station_freshness = {s.pk: station_health.get(s.pk, "dead") for s in page_obj}
     page_ids = [s.pk for s in page_obj]
     staging_qs = (
         DataRecordStaging.objects
@@ -250,57 +350,11 @@ def station_list(request):
         .order_by("station_id", "-observation_date")
         .values("station_id", "value", "unit")
     )
-    raw_records: dict = {}
-    latest_value: dict = {}
-    latest_unit: dict = {}
-    for row in staging_qs:
-        sid = row["station_id"]
-        if sid not in raw_records:
-            raw_records[sid] = []
-            latest_value[sid] = row["value"]
-            latest_unit[sid] = row["unit"] or ""
-        if len(raw_records[sid]) < 10:
-            raw_records[sid].append(row["value"])
-
-    sparklines: dict = {}
-    # R-075: the count a sparkline was built from, per station — 0 or 1 when
-    # there's no sparkline (2 is the floor to draw one), so the Trend cell can
-    # tell "no reading yet" apart from "one reading, not enough to trend".
-    reading_counts: dict = {}
-    for sid, values in raw_records.items():
-        numeric = [float(v) for v in reversed(values) if v is not None]
-        reading_counts[sid] = len(numeric)
-        if len(numeric) < 2:
-            continue
-        min_v, max_v = min(numeric), max(numeric)
-        span = max_v - min_v if max_v != min_v else 1.0
-        sparklines[sid] = " ".join(
-            f"{round(i * 119 / (len(numeric) - 1), 2)},"
-            f"{round(40 - ((v - min_v) / span) * 34 - 2, 2)}"
-            for i, v in enumerate(numeric)
-        )
-
-    enriched_stations = []
-    for s in page_obj:
-        lv = latest_value.get(s.pk)
-        lu = latest_unit.get(s.pk, "")
-        tooltip = None
-        if lv is not None:
-            try:
-                tooltip = f"Latest: {float(lv):,.2f} {lu}".strip()
-            except (ValueError, TypeError):
-                tooltip = None
-        enriched_stations.append({
-            "station": s,
-            "freshness": station_freshness.get(s.pk, "dead"),
-            # ISS-183: the Reporting cell's tooltip states this source's limits.
-            "freshness_thresholds": freshness.freshness_thresholds(
-                s.data_source.code, s.data_source.name
-            ),
-            "sparkline_points": sparklines.get(s.pk),
-            "latest_tooltip": tooltip,
-            "reading_count": reading_counts.get(s.pk, 0),
-        })
+    raw_records, latest_value, latest_unit = _group_latest_readings(staging_qs)
+    sparklines, reading_counts = _list_sparklines(raw_records)
+    enriched_stations = _enriched_station_rows(
+        page_obj, station_health, latest_value, latest_unit, sparklines, reading_counts
+    )
 
     # The map card's head (143-07, R-074). `result_pks` is the WHOLE filtered
     # (and ordered) list, before pagination — the station list's four filters
@@ -337,24 +391,8 @@ def station_list(request):
     )
 
 
-def _station_detail_context(station):
-    """Build the per-station detail context.
-
-    Shared by the standalone detail page, the in-pane HTMX render, and the
-    workspace's pre-loaded ``?selected=`` pane so all three are identical.
-    """
-    source_code = station.data_source.code
-
-    recent_records = list(
-        DataRecordStaging.objects.filter(station=station).order_by("-observation_date")[:10]
-    )
-    for rec in recent_records:
-        rec.param_display = get_parameter_label(source_code, rec.parameter_code)
-
-    recent_logs = DataSyncLog.objects.filter(data_source=station.data_source).order_by(
-        "-started_at"
-    )[:10]
-
+def _station_point_geojson(station: MonitoredStation) -> dict | None:
+    """Point GeoJSON for the persistent detail map, or None for a station with no location."""
     # Point GeoJSON for the PERSISTENT detail map. OH2O.detailPaneMap reads this
     # FeatureCollection, detects the point geometry, and draws the shared station
     # symbology (red glow + marker + label) — the same call Wells/PODs use. A
@@ -379,28 +417,27 @@ def _station_detail_context(station):
                 }
             ],
         }
+    return geojson
 
-    # Freshness drives the telemetry chart's line colour (source-aware).
-    station_freshness = freshness.classify_freshness(
-        source_code, station.last_data_at, timezone.now()
-    )
 
-    # Build enriched parameter list for the dropdown + PARAMETERS chips. Only
-    # parameters this station has ACTUALLY published — not the declared sensor
+def _measured_parameter_codes(station: MonitoredStation) -> list[str]:
+    """The parameter codes this station has actually published, sorted."""
+    # Only parameters this station has ACTUALLY published — not the declared sensor
     # list — so it never offers an empty option for a sensor the site doesn't
     # measure (matches station_chart_data; 59-02).
-    measured_codes = sorted(
+    return sorted(
         DataRecordStaging.objects
         .filter(station=station, status="published")
         .order_by()  # clear Meta.ordering (-observation_date) so DISTINCT keys on code alone
         .values_list("parameter_code", flat=True)
         .distinct()
     )
-    enriched_parameters = [
-        {"code": code, "label": get_parameter_label(source_code, code)}
-        for code in measured_codes
-    ]
 
+
+def _latest_parameter_readings(
+    station: MonitoredStation, source_code: str, measured_codes: list[str]
+) -> list[dict]:
+    """The newest published value for each measured parameter."""
     # At-a-glance current readings: the newest published value per parameter.
     # Read straight from published DataRecordStaging — the scheduled sync writes
     # these; the view never calls the external API (ISS-051 timeout hazard).
@@ -424,6 +461,42 @@ def _station_detail_context(station):
                 "unit": rec.unit,
                 "observation_date": rec.observation_date,
             })
+    return latest_readings
+
+
+def _station_detail_context(station):
+    """Build the per-station detail context.
+
+    Shared by the standalone detail page, the in-pane HTMX render, and the
+    workspace's pre-loaded ``?selected=`` pane so all three are identical.
+    """
+    source_code = station.data_source.code
+
+    recent_records = list(
+        DataRecordStaging.objects.filter(station=station).order_by("-observation_date")[:10]
+    )
+    for rec in recent_records:
+        rec.param_display = get_parameter_label(source_code, rec.parameter_code)
+
+    recent_logs = DataSyncLog.objects.filter(data_source=station.data_source).order_by(
+        "-started_at"
+    )[:10]
+
+    geojson = _station_point_geojson(station)
+
+    # Freshness drives the telemetry chart's line colour (source-aware).
+    station_freshness = freshness.classify_freshness(
+        source_code, station.last_data_at, timezone.now()
+    )
+
+    # Build enriched parameter list for the dropdown + PARAMETERS chips.
+    measured_codes = _measured_parameter_codes(station)
+    enriched_parameters = [
+        {"code": code, "label": get_parameter_label(source_code, code)}
+        for code in measured_codes
+    ]
+
+    latest_readings = _latest_parameter_readings(station, source_code, measured_codes)
 
     return {
         "station": station,
@@ -528,6 +601,116 @@ def station_add(request):
     return render(request, "datasync/station_add.html", context)
 
 
+def _classify_active_stations(
+    active_stations: QuerySet[MonitoredStation], now: datetime
+) -> tuple[dict, int, int, int]:
+    """Each active station's freshness class, plus the fresh, stale and dead counts."""
+    # One pass over every active station, source-aware (never a query per
+    # state, 143-12 R-079/R-080). The per-station result is kept so the
+    # station_list build below classifies each station exactly once.
+    station_freshness_by_pk = {}
+    fresh_count = stale_count = dead_count = 0
+    for s in active_stations:
+        cls = freshness.classify_freshness(s.data_source.code, s.last_data_at, now)
+        station_freshness_by_pk[s.pk] = cls
+        if cls == "fresh":
+            fresh_count += 1
+        elif cls == "stale":
+            stale_count += 1
+        else:
+            dead_count += 1
+    return station_freshness_by_pk, fresh_count, stale_count, dead_count
+
+
+def _dashboard_sparklines(raw_records: dict) -> dict:
+    """Build sparkline SVG path strings per station (None when fewer than two readings)."""
+    station_sparklines: dict[int, str | None] = {}
+    for sid, values in raw_records.items():
+        # Reverse so oldest is on left
+        vals = list(reversed(values))
+        numeric = [float(v) for v in vals if v is not None]
+        if len(numeric) < 2:
+            station_sparklines[sid] = None
+            continue
+        min_v = min(numeric)
+        max_v = max(numeric)
+        span = max_v - min_v if max_v != min_v else 1.0
+        width = 120
+        height = 40
+        n = len(numeric)
+        points = []
+        for i, v in enumerate(numeric):
+            x = round(i * (width - 1) / (n - 1), 2)
+            y = round(height - ((v - min_v) / span) * (height - 6) - 2, 2)
+            points.append(f"{x},{y}")
+        station_sparklines[sid] = " ".join(points)
+    return station_sparklines
+
+
+def _dashboard_station_rows(
+    active_stations: QuerySet[MonitoredStation],
+    station_freshness_by_pk: dict,
+    latest_value: dict,
+    latest_unit: dict,
+    station_sparklines: dict,
+) -> list[dict]:
+    """One row per active station for the dashboard's map and list."""
+    # Determine freshness class for each active station (source-aware)
+    station_list = []
+    for s in active_stations:
+        fresh_class = station_freshness_by_pk[s.pk]
+        latest_tooltip = _latest_reading_tooltip(
+            latest_value.get(s.pk), latest_unit.get(s.pk, "")
+        )
+        station_list.append({
+            # The source's name, not its code.
+            "source_display": freshness.source_display(s.data_source.code),
+            "station": s,
+            "freshness": fresh_class,
+            "sparkline_points": station_sparklines.get(s.pk),
+            "latest_tooltip": latest_tooltip,
+        })
+    return station_list
+
+
+def _openet_allowance_context() -> dict:
+    """The OpenET allowance figures the dashboard card shows, with their source and tier."""
+    # OpenET allowance. Two numbers with two different meanings, and the screen
+    # has to say which one it is showing (ISS-128).
+    #
+    # When OpenET answers, its own figures win: it counts requests across the
+    # whole account, including any spent outside this deployment, and it is the
+    # only thing that can answer the allowance question at all. When it does
+    # not answer, we fall back to the local count of rows this platform charged
+    # itself for, against the configured allowance — an honest estimate, and
+    # labelled as one rather than dressed up as the provider's word.
+    #
+    # No outbound call happens here: account_status() is served from the
+    # day-long cache on every render but the first.
+    from datasync.adapters.openet import OpenETAdapter
+
+    openet_status = OpenETAdapter().account_status()
+    _, local_used, local_limit = OpenETCache.check_budget()
+    if openet_status["source"] == "provider":
+        openet_used = openet_status["used"]
+        openet_limit = openet_status["limit"]
+    else:
+        openet_used = local_used
+        openet_limit = local_limit
+    return {
+        "openet_used": openet_used,
+        "openet_limit": openet_limit,
+        "openet_source": openet_status["source"],
+        "openet_tier": openet_status["tier"],
+        "openet_fallback_reason": openet_status["reason"],
+        "openet_remaining": max(openet_limit - openet_used, 0),
+        # Burnt orange at four-fifths spent, because the allowance does not
+        # refill until the 1st and there is nothing to do about it afterwards.
+        # Never alarm red: running low is a budget state, not a hard error.
+        "openet_low": bool(openet_limit) and openet_used >= 0.8 * openet_limit,
+    }
+
+
 @login_required
 def monitoring_dashboard(request):
     """Monitoring dashboard with station health stats, sparklines, and freshness map."""
@@ -543,20 +726,9 @@ def monitoring_dashboard(request):
         is_active=True
     ).select_related("data_source").order_by("data_source__code", "station_name")
 
-    # One pass over every active station, source-aware (never a query per
-    # state, 143-12 R-079/R-080). The per-station result is kept so the
-    # station_list build below classifies each station exactly once.
-    station_freshness_by_pk = {}
-    fresh_count = stale_count = dead_count = 0
-    for s in active_stations:
-        cls = freshness.classify_freshness(s.data_source.code, s.last_data_at, now)
-        station_freshness_by_pk[s.pk] = cls
-        if cls == "fresh":
-            fresh_count += 1
-        elif cls == "stale":
-            stale_count += 1
-        else:
-            dead_count += 1
+    station_freshness_by_pk, fresh_count, stale_count, dead_count = (
+        _classify_active_stations(active_stations, now)
+    )
     total_active = fresh_count + stale_count + dead_count
     shown = fresh_count + stale_count
     freshness_line = _dashboard_freshness_line(
@@ -584,84 +756,17 @@ def monitoring_dashboard(request):
     )
 
     # Group by station, keep latest 10 per station; capture latest value+unit
-    raw_records: dict = {}
-    latest_unit_dash: dict = {}
-    latest_value_dash: dict = {}
-    for row in staging_qs:
-        sid = row["station_id"]
-        if sid not in raw_records:
-            raw_records[sid] = []
-            latest_value_dash[sid] = row["value"]
-            latest_unit_dash[sid] = row["unit"] or ""
-        if len(raw_records[sid]) < 10:
-            raw_records[sid].append(row["value"])
-
-    # Build sparkline SVG path strings per station
-    station_sparklines = {}
-    for sid, values in raw_records.items():
-        # Reverse so oldest is on left
-        vals = list(reversed(values))
-        numeric = [float(v) for v in vals if v is not None]
-        if len(numeric) < 2:
-            station_sparklines[sid] = None
-            continue
-        min_v = min(numeric)
-        max_v = max(numeric)
-        span = max_v - min_v if max_v != min_v else 1.0
-        width = 120
-        height = 40
-        n = len(numeric)
-        points = []
-        for i, v in enumerate(numeric):
-            x = round(i * (width - 1) / (n - 1), 2)
-            y = round(height - ((v - min_v) / span) * (height - 6) - 2, 2)
-            points.append(f"{x},{y}")
-        station_sparklines[sid] = " ".join(points)
-
-    # Determine freshness class for each active station (source-aware)
-    station_list = []
-    for s in active_stations:
-        fresh_class = station_freshness_by_pk[s.pk]
-        lv = latest_value_dash.get(s.pk)
-        lu = latest_unit_dash.get(s.pk, "")
-        if lv is not None:
-            try:
-                latest_tooltip = f"Latest: {float(lv):,.2f} {lu}".strip()
-            except (ValueError, TypeError):
-                latest_tooltip = None
-        else:
-            latest_tooltip = None
-        station_list.append({
-            # The source's name, not its code.
-            "source_display": freshness.source_display(s.data_source.code),
-            "station": s,
-            "freshness": fresh_class,
-            "sparkline_points": station_sparklines.get(s.pk),
-            "latest_tooltip": latest_tooltip,
-        })
-
-    # OpenET allowance. Two numbers with two different meanings, and the screen
-    # has to say which one it is showing (ISS-128).
-    #
-    # When OpenET answers, its own figures win: it counts requests across the
-    # whole account, including any spent outside this deployment, and it is the
-    # only thing that can answer the allowance question at all. When it does
-    # not answer, we fall back to the local count of rows this platform charged
-    # itself for, against the configured allowance — an honest estimate, and
-    # labelled as one rather than dressed up as the provider's word.
-    #
-    # No outbound call happens here: account_status() is served from the
-    # day-long cache on every render but the first.
-    from datasync.adapters.openet import OpenETAdapter
-
-    openet_status = OpenETAdapter().account_status()
-    _, local_used, local_limit = OpenETCache.check_budget()
-    if openet_status["source"] == "provider":
-        openet_used = openet_status["used"]
-        openet_limit = openet_status["limit"]
-    else:
-        openet_used = local_used
-        openet_limit = local_limit
+    raw_records, latest_value_dash, latest_unit_dash = _group_latest_readings(
+        staging_qs
+    )
+    station_sparklines = _dashboard_sparklines(raw_records)
+    station_list = _dashboard_station_rows(
+        active_stations,
+        station_freshness_by_pk,
+        latest_value_dash,
+        latest_unit_dash,
+        station_sparklines,
+    )
 
     context = {
         "source_status_list": source_status_list,
@@ -673,16 +778,7 @@ def monitoring_dashboard(request):
         "shown": shown,
         "freshness_line": freshness_line,
         "station_list": station_list,
-        "openet_used": openet_used,
-        "openet_limit": openet_limit,
-        "openet_source": openet_status["source"],
-        "openet_tier": openet_status["tier"],
-        "openet_fallback_reason": openet_status["reason"],
-        "openet_remaining": max(openet_limit - openet_used, 0),
-        # Burnt orange at four-fifths spent, because the allowance does not
-        # refill until the 1st and there is nothing to do about it afterwards.
-        # Never alarm red: running low is a budget state, not a hard error.
-        "openet_low": bool(openet_limit) and openet_used >= 0.8 * openet_limit,
+        **_openet_allowance_context(),
         "boundary_name": boundary.name if boundary else None,
         "outside_count": outside_count,
     }
@@ -691,6 +787,102 @@ def monitoring_dashboard(request):
         return render(request, "datasync/partials/_monitoring_content.html", context)
 
     return render(request, "datasync/monitoring_dashboard.html", context)
+
+
+def _chart_window_days(days_raw: str) -> int:
+    """The requested window in days: 0 means all time, anything positive is at least 7."""
+    try:
+        days = int(days_raw)
+    except (ValueError, TypeError):
+        days = 0
+    if days > 0:
+        days = max(7, days)
+    return days
+
+
+def _published_parameter_units(station: MonitoredStation) -> dict[str, str]:
+    """Every parameter code the station has published, mapped to its unit."""
+    # STABLE parameter universe: every parameter this station has ACTUALLY
+    # published. Window-independent on purpose (no date filter here), so the
+    # dropdown never empties or desyncs when you change the time range. We do NOT
+    # union the station's *declared* parameters — a site configured for a sensor
+    # it doesn't actually report (e.g. a reservoir gauge that has Inflow declared
+    # but never measures it) should not offer that empty option (59-02).
+    published_param_rows = (
+        DataRecordStaging.objects
+        .filter(station=station, status="published")
+        .order_by()  # clear Meta.ordering (-observation_date) so DISTINCT keys on code+unit alone
+        .values("parameter_code", "unit")
+        .distinct()
+    )
+    return {r["parameter_code"]: r["unit"] for r in published_param_rows}
+
+
+def _chart_parameters_meta(
+    source_code: str, param_codes: list[str], units_by_code: dict[str, str]
+) -> list[dict]:
+    """The dropdown entries: code, bare name, unit and full label for each parameter."""
+    parameters_meta = []
+    for code in param_codes:
+        unit = units_by_code.get(code, "")
+        label = get_parameter_label(source_code, code)
+        if unit and label.endswith(f" ({unit})"):
+            name = label[: -(len(unit) + 3)]
+        else:
+            name = label
+        parameters_meta.append({"code": code, "name": name, "unit": unit, "label": label})
+    return parameters_meta
+
+
+def _chart_series(
+    station: MonitoredStation, param: str, date_filter: dict
+) -> dict[str, float | None]:
+    """Return {date: value} for one parameter inside the window."""
+    rows = (
+        DataRecordStaging.objects
+        .filter(station=station, status="published", parameter_code=param, **date_filter)
+        .order_by("observation_date")
+        .values("observation_date", "value")
+    )
+    out = {}
+    for r in rows:
+        key = r["observation_date"].strftime("%Y-%m-%d")
+        out[key] = float(r["value"]) if r["value"] is not None else None
+    return out
+
+
+def _chart_datasets(
+    station: MonitoredStation,
+    source_code: str,
+    parameter: str | None,
+    parameter2: str,
+    units_by_code: dict[str, str],
+    date_filter: dict,
+) -> tuple[list[str], list[dict]]:
+    """The shared date axis and one dataset per selected parameter."""
+    datasets = []
+    labels: list[str] = []
+    if parameter:
+        primary = _chart_series(station, parameter, date_filter)
+        secondary = _chart_series(station, parameter2, date_filter) if parameter2 else {}
+        # Shared, sorted date axis across both series.
+        labels = sorted(set(primary) | set(secondary))
+        datasets.append({
+            "label": get_parameter_label(source_code, parameter),
+            "data": [primary.get(d) for d in labels],
+            "parameter_code": parameter,
+            "unit": units_by_code.get(parameter, ""),
+            "axis": "y",
+        })
+        if parameter2:
+            datasets.append({
+                "label": get_parameter_label(source_code, parameter2),
+                "data": [secondary.get(d) for d in labels],
+                "parameter_code": parameter2,
+                "unit": units_by_code.get(parameter2, ""),
+                "axis": "y1",
+            })
+    return labels, datasets
 
 
 @login_required
@@ -714,32 +906,13 @@ def station_chart_data(request, pk):
 
     parameter = request.GET.get("parameter", "").strip()
     parameter2 = request.GET.get("parameter2", "").strip()
-    days_raw = request.GET.get("days", "0")
-    try:
-        days = int(days_raw)
-    except (ValueError, TypeError):
-        days = 0
-    if days > 0:
-        days = max(7, days)
+    days = _chart_window_days(request.GET.get("days", "0"))
 
     date_filter = {}
     if days > 0:
         date_filter["observation_date__gte"] = timezone.now() - timedelta(days=days)
 
-    # STABLE parameter universe: every parameter this station has ACTUALLY
-    # published. Window-independent on purpose (no date filter here), so the
-    # dropdown never empties or desyncs when you change the time range. We do NOT
-    # union the station's *declared* parameters — a site configured for a sensor
-    # it doesn't actually report (e.g. a reservoir gauge that has Inflow declared
-    # but never measures it) should not offer that empty option (59-02).
-    published_param_rows = (
-        DataRecordStaging.objects
-        .filter(station=station, status="published")
-        .order_by()  # clear Meta.ordering (-observation_date) so DISTINCT keys on code+unit alone
-        .values("parameter_code", "unit")
-        .distinct()
-    )
-    units_by_code = {r["parameter_code"]: r["unit"] for r in published_param_rows}
+    units_by_code = _published_parameter_units(station)
     param_codes = sorted(units_by_code.keys())
 
     # Resolve the selected parameter(s) against the stable universe.
@@ -748,52 +921,10 @@ def station_chart_data(request, pk):
     if parameter2 and (parameter2 not in param_codes or parameter2 == parameter):
         parameter2 = ""
 
-    parameters_meta = []
-    for code in param_codes:
-        unit = units_by_code.get(code, "")
-        label = get_parameter_label(source_code, code)
-        if unit and label.endswith(f" ({unit})"):
-            name = label[: -(len(unit) + 3)]
-        else:
-            name = label
-        parameters_meta.append({"code": code, "name": name, "unit": unit, "label": label})
-
-    def series_for(param):
-        """Return {date: value} for one parameter inside the window."""
-        rows = (
-            DataRecordStaging.objects
-            .filter(station=station, status="published", parameter_code=param, **date_filter)
-            .order_by("observation_date")
-            .values("observation_date", "value")
-        )
-        out = {}
-        for r in rows:
-            key = r["observation_date"].strftime("%Y-%m-%d")
-            out[key] = float(r["value"]) if r["value"] is not None else None
-        return out
-
-    datasets = []
-    labels = []
-    if parameter:
-        primary = series_for(parameter)
-        secondary = series_for(parameter2) if parameter2 else {}
-        # Shared, sorted date axis across both series.
-        labels = sorted(set(primary) | set(secondary))
-        datasets.append({
-            "label": get_parameter_label(source_code, parameter),
-            "data": [primary.get(d) for d in labels],
-            "parameter_code": parameter,
-            "unit": units_by_code.get(parameter, ""),
-            "axis": "y",
-        })
-        if parameter2:
-            datasets.append({
-                "label": get_parameter_label(source_code, parameter2),
-                "data": [secondary.get(d) for d in labels],
-                "parameter_code": parameter2,
-                "unit": units_by_code.get(parameter2, ""),
-                "axis": "y1",
-            })
+    parameters_meta = _chart_parameters_meta(source_code, param_codes, units_by_code)
+    labels, datasets = _chart_datasets(
+        station, source_code, parameter, parameter2, units_by_code, date_filter
+    )
 
     result = {
         "labels": labels,

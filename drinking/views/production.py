@@ -1,10 +1,13 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Water production by month and source: the year table, the by-hand form and the file import."""
+from __future__ import annotations
+
 import json
 import logging
 from decimal import Decimal
 
 from django.contrib.auth.decorators import login_required
+from django.http import HttpRequest
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
@@ -46,6 +49,92 @@ PRODUCTION_MONTH_NAMES = {
 SOLD_TYPE_CODES = frozenset({PRODUCTION_TYPE_SO, PRODUCTION_TYPE_NS})
 
 
+def _selected_production_year(request: HttpRequest, years: list[int]) -> int | None:
+    """The year asked for in the query string, else the latest year on file."""
+    year_param = request.GET.get("year", "").strip()
+    if year_param.isdigit():
+        return int(year_param)
+    return years[0] if years else None
+
+
+def _production_rows(by_key: dict, type_codes: list[str]) -> list[dict]:
+    """The table rows: one per month, plus a whole-year row when a record has no month."""
+    # A record with month=None (the whole year reported as one figure) is
+    # its own row at the foot of the table, never folded into a numbered
+    # month it was never attached to.
+    has_annual_row = any(month is None for month, _type_code in by_key)
+
+    rows = []
+    for month_num in range(1, 13):
+        rows.append(
+            {
+                "month": month_num,
+                "label": PRODUCTION_MONTH_NAMES[month_num],
+                "cells": [by_key.get((month_num, code)) for code in type_codes],
+            }
+        )
+    if has_annual_row:
+        rows.append(
+            {
+                "month": None,
+                "label": "Whole year (one figure)",
+                "cells": [by_key.get((None, code)) for code in type_codes],
+            }
+        )
+    return rows
+
+
+def _production_totals(by_key: dict, type_codes: list[str]) -> list[dict]:
+    """One footer total per type code, in gallons, whole gallons and acre-feet."""
+    totals = []
+    for code in type_codes:
+        column = [record for (_month, t), record in by_key.items() if t == code]
+        gallons = sum((r.volume_gallons for r in column), Decimal("0"))
+        totals.append(
+            {
+                "type_code": code,
+                # Gallons are the state's own reported unit and arrive as
+                # whole numbers (`Water Produced or Delivered` carries no
+                # fractional gallon in either layout), so this is rounded in
+                # the view rather than through `floatformat`; there is
+                # nothing a formatter would do here that `int()` does not.
+                # Acre-feet is different: it is a conversion this platform
+                # performs (325,851 gallons per acre-foot), so it goes
+                # through `floatformat:2` in the template.
+                "gallons": gallons,
+                "gallons_whole": int(gallons.to_integral_value()),
+                "acre_feet": sum((r.volume_acre_feet for r in column), Decimal("0")),
+            }
+        )
+    return totals
+
+
+def _shown_columns(by_key: dict, type_codes: list[str]) -> tuple[list[int], list[str]]:
+    """The indexes of the type columns worth showing, and the lower-case labels of the sources among them."""
+    # 146-04 Task 6 (page verdict at 1,730): a source reported as zero, or not
+    # at all, in every month of the year is one sentence above the table, not
+    # a column of twelve zeros. Le Grand's real eAR carries five such columns
+    # beside its one groundwater column, and the reader's worst fault was that
+    # "most of the page's largest region is dead space". The grand total
+    # still sums every source column, so nothing drops out of the arithmetic.
+    shown = [
+        i for i, code in enumerate(type_codes)
+        if any(
+            r.volume_as_reported for (_m, t), r in by_key.items() if t == code
+        )
+    ]
+    # Named in lower case because they are read mid-sentence in the head line.
+    # The sold columns are not where the water came from, so the "from" list
+    # leaves them out; the head line names sold water on its own.
+    shown_labels = [
+        PRODUCTION_TYPE_CHOICES[i][1].lower() for i in shown
+        if type_codes[i] not in SOLD_TYPE_CODES
+    ]
+    if not shown:
+        shown = list(range(len(type_codes)))
+    return shown, shown_labels
+
+
 @login_required
 def production(request):
     """The year table: production and delivery by month and source.
@@ -70,11 +159,7 @@ def production(request):
         .distinct()
     )
 
-    year_param = request.GET.get("year", "").strip()
-    if year_param.isdigit():
-        year = int(year_param)
-    else:
-        year = years[0] if years else None
+    year = _selected_production_year(request, years)
 
     type_codes = [code for code, _label in PRODUCTION_TYPE_CHOICES]
     records = (
@@ -84,49 +169,9 @@ def production(request):
     )
     by_key = {(r.month, r.type_code): r for r in records}
 
-    # A record with month=None (the whole year reported as one figure) is
-    # its own row at the foot of the table, never folded into a numbered
-    # month it was never attached to.
-    has_annual_row = any(month is None for month, _type_code in by_key)
+    rows = _production_rows(by_key, type_codes)
+    totals = _production_totals(by_key, type_codes)
 
-    rows = []
-    for month_num in range(1, 13):
-        rows.append(
-            {
-                "month": month_num,
-                "label": PRODUCTION_MONTH_NAMES[month_num],
-                "cells": [by_key.get((month_num, code)) for code in type_codes],
-            }
-        )
-    if has_annual_row:
-        rows.append(
-            {
-                "month": None,
-                "label": "Whole year (one figure)",
-                "cells": [by_key.get((None, code)) for code in type_codes],
-            }
-        )
-
-    totals = []
-    for code in type_codes:
-        column = [record for (_month, t), record in by_key.items() if t == code]
-        gallons = sum((r.volume_gallons for r in column), Decimal("0"))
-        totals.append(
-            {
-                "type_code": code,
-                # Gallons are the state's own reported unit and arrive as
-                # whole numbers (`Water Produced or Delivered` carries no
-                # fractional gallon in either layout), so this is rounded in
-                # the view rather than through `floatformat`; there is
-                # nothing a formatter would do here that `int()` does not.
-                # Acre-feet is different: it is a conversion this platform
-                # performs (325,851 gallons per acre-foot), so it goes
-                # through `floatformat:2` in the template.
-                "gallons": gallons,
-                "gallons_whole": int(gallons.to_integral_value()),
-                "acre_feet": sum((r.volume_acre_feet for r in column), Decimal("0")),
-            }
-        )
     # 150.1-02: the year
     # total is water produced or purchased. Water sold to another system came
     # out of that water, so adding the two sold columns counted it twice; they
@@ -138,27 +183,7 @@ def production(request):
     grand_total_af = sum((t["acre_feet"] for t in supply), Decimal("0"))
     sold_total_gallons = sum((t["gallons"] for t in sold), Decimal("0"))
 
-    # 146-04 Task 6 (page verdict at 1,730): a source reported as zero, or not
-    # at all, in every month of the year is one sentence above the table, not
-    # a column of twelve zeros. Le Grand's real eAR carries five such columns
-    # beside its one groundwater column, and the reader's worst fault was that
-    # "most of the page's largest region is dead space". The grand total
-    # still sums every source column, so nothing drops out of the arithmetic.
-    shown = [
-        i for i, code in enumerate(type_codes)
-        if any(
-            r.volume_as_reported for (_m, t), r in by_key.items() if t == code
-        )
-    ]
-    # Named in lower case because they are read mid-sentence in the head line.
-    # The sold columns are not where the water came from, so the "from" list
-    # leaves them out; the head line names sold water on its own.
-    shown_labels = [
-        PRODUCTION_TYPE_CHOICES[i][1].lower() for i in shown
-        if type_codes[i] not in SOLD_TYPE_CODES
-    ]
-    if not shown:
-        shown = list(range(len(type_codes)))
+    shown, shown_labels = _shown_columns(by_key, type_codes)
     zero_labels = [
         label.lower()
         for i, (_code, label) in enumerate(PRODUCTION_TYPE_CHOICES)
