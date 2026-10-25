@@ -3,7 +3,7 @@
 from decimal import Decimal
 
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -36,30 +36,10 @@ from accounting.views.common import _account_summary_row
 # ---------------------------------------------------------------------------
 
 
-@login_required
-def accounts_list(request):
-    """Water accounts overview (143-13, "accounts-table"):
-    the dashboard's own Active water accounts table, with a search and the
-    period control that drives its figures. Replaces the earlier
-    master-detail workspace (`workspace.html`), the shell Use Areas and Wells
-    also left (candidate A, "the list is the page").
-
-    A ``?selected=<pk>`` query param (the old workspace's deep-link shape)
-    redirects to the account's own detail page so a bookmarked link still
-    lands somewhere real.
-
-    Returns the ``_accounts_list_results`` partial for an HTMX list refresh
-    (search / period, which target ``#results``), and the full page
-    otherwise.
-    """
-    selected_raw = request.GET.get("selected", "").strip()
-    if selected_raw:
-        return redirect_to_selected(request, "accounting:account_detail", selected_raw)
-
-    q = request.GET.get("q", "").strip()
-    period_param = request.GET.get("period", "").strip()
-
-    periods = ReportingPeriod.objects.order_by("-start_date")
+def _accounts_list_period(
+    periods: QuerySet[ReportingPeriod], period_param: str
+) -> ReportingPeriod | None:
+    """The period named by ?period=, else the shared current-period default."""
     selected_period = None
     if period_param:
         selected_period = periods.filter(pk=period_param).first()
@@ -71,18 +51,24 @@ def accounts_list(request):
         default_period_id = compute_current_period_id()
         if default_period_id:
             selected_period = periods.filter(pk=default_period_id).first()
+    return selected_period
 
-    all_active = WaterAccount.objects.filter(status="active")
-    total_count = all_active.count()
 
-    queryset = all_active.order_by("account_number")
+def _search_accounts(queryset: QuerySet[WaterAccount], q: str) -> QuerySet[WaterAccount]:
+    """Narrow accounts to those whose number, name or contact matches the search text."""
     if q:
         queryset = queryset.filter(
             Q(account_number__icontains=q)
             | Q(name__icontains=q)
             | Q(contact_name__icontains=q)
         )
+    return queryset
 
+
+def _period_budget_flags(
+    selected_period: ReportingPeriod | None,
+) -> tuple[bool, WaterType | None, bool]:
+    """Whether the period has allocations, the groundwater water type, and whether the engine has never run."""
     has_allocations = False
     groundwater_type = None
     engine_has_never_run = False
@@ -98,7 +84,16 @@ def accounts_list(request):
                 CalculationRun.objects.all(), selected_period
             ).exists()
         )
+    return has_allocations, groundwater_type, engine_has_never_run
 
+
+def _account_rows_with_totals(
+    queryset: QuerySet[WaterAccount],
+    selected_period: ReportingPeriod | None,
+    has_allocations: bool,
+    groundwater_type: WaterType | None,
+) -> tuple[list, dict[str, Decimal]]:
+    """One summary row per account, and the grand totals (including grand_net) over them."""
     # Built regardless of whether a period is selected: `selected_period=None`
     # reaches `_account_summary_row` -> `account_consumptive_balance` the same
     # way the account detail pane's own "All Time" choice does (reporting_period
@@ -124,17 +119,58 @@ def accounts_list(request):
         grand_supply_groundwater += row["groundwater"]
         grand_supply_precip += row["precip"]
     grand_net = grand_supply_total - grand_consumptive_use
-
-    context = {
-        "account_summaries": account_summaries,
-        "has_allocations": has_allocations,
-        "engine_has_never_run": engine_has_never_run,
+    return account_summaries, {
         "grand_consumptive_use": grand_consumptive_use,
         "grand_supply_total": grand_supply_total,
         "grand_supply_surface": grand_supply_surface,
         "grand_supply_groundwater": grand_supply_groundwater,
         "grand_supply_precip": grand_supply_precip,
         "grand_net": grand_net,
+    }
+
+
+@login_required
+def accounts_list(request):
+    """Water accounts overview (143-13, "accounts-table"):
+    the dashboard's own Active water accounts table, with a search and the
+    period control that drives its figures. Replaces the earlier
+    master-detail workspace (`workspace.html`), the shell Use Areas and Wells
+    also left (candidate A, "the list is the page").
+
+    A ``?selected=<pk>`` query param (the old workspace's deep-link shape)
+    redirects to the account's own detail page so a bookmarked link still
+    lands somewhere real.
+
+    Returns the ``_accounts_list_results`` partial for an HTMX list refresh
+    (search / period, which target ``#results``), and the full page
+    otherwise.
+    """
+    selected_raw = request.GET.get("selected", "").strip()
+    if selected_raw:
+        return redirect_to_selected(request, "accounting:account_detail", selected_raw)
+
+    q = request.GET.get("q", "").strip()
+    period_param = request.GET.get("period", "").strip()
+
+    periods = ReportingPeriod.objects.order_by("-start_date")
+    selected_period = _accounts_list_period(periods, period_param)
+
+    all_active = WaterAccount.objects.filter(status="active")
+    total_count = all_active.count()
+
+    queryset = _search_accounts(all_active.order_by("account_number"), q)
+    has_allocations, groundwater_type, engine_has_never_run = _period_budget_flags(
+        selected_period
+    )
+    account_summaries, grand_totals = _account_rows_with_totals(
+        queryset, selected_period, has_allocations, groundwater_type
+    )
+
+    context = {
+        "account_summaries": account_summaries,
+        "has_allocations": has_allocations,
+        "engine_has_never_run": engine_has_never_run,
+        **grand_totals,
         "periods": periods,
         "selected_period": selected_period,
         "q": q,
@@ -206,23 +242,10 @@ def _account_delivery_sentence(account):
     return " · ".join(parts)
 
 
-def _account_detail_context(account, period_param=None):
-    """Build the per-account detail context.
-
-    Shared by the standalone detail page, the in-pane HTMX render, and the
-    workspace's pre-loaded ``?selected=`` pane so all three are identical.
-
-    ``period_param`` selects the reporting period for the balance card:
-      * ``None``  → default to the period where this account has real activity
-                    (so the page never opens on an empty / allocation-only year).
-      * ``""``    → All Time (no period filter; an explicit user choice).
-      * ``"<pk>"`` → that specific period.
-    """
-    assignments = _account_assignments(account)
-    acct_parcel_ids = list(assignments.values_list("parcel_id", flat=True))
-
-    # Period selector
-    periods = ReportingPeriod.objects.order_by("-start_date")
+def _detail_selected_period(
+    periods: QuerySet[ReportingPeriod], period_param: str | None, acct_parcel_ids: list[int]
+) -> ReportingPeriod | None:
+    """The period for the balance card: the one asked for, else where the account has activity."""
     selected_period = None
 
     if period_param:
@@ -251,13 +274,13 @@ def _account_detail_context(account, period_param=None):
             ).first()
         else:
             selected_period = periods.filter(is_finalized=False).first()
+    return selected_period
 
-    # Account-level balance, in the corrected v1.10 lens: estimated consumptive
-    # use (gross ET) against the surface / groundwater / precip supplies that met
-    # it (57-02). account_consumptive_balance selects the SAME active assignments
-    # account_balance did, so the roll-up partitions identically.
-    balance = account_consumptive_balance(account, reporting_period=selected_period)
 
+def _parcel_balance_rows(
+    assignments: QuerySet[WaterAccountParcel], selected_period: ReportingPeriod | None
+) -> list[dict]:
+    """One consumptive-balance row per assigned use area."""
     # Per-parcel breakdown, same consumptive lens. parcel_consumptive_balance
     # reuses the billable primitive (groundwater supply == _balance_dict usage),
     # so per-parcel rows sum to the account total (57-01 case #5 proves the helper
@@ -280,7 +303,11 @@ def _account_detail_context(account, period_param=None):
             "net_vs_supply": pcb["net_vs_supply"],
             "calculation_runs": pcb["calculation_runs"],
         })
+    return parcel_balances
 
+
+def _use_area_state_counts(parcel_balances: list[dict]) -> dict[str, int]:
+    """How many use areas the estimate covers, and how many sit in surplus, deficit or balance."""
     # The parts of the panel's other two figures (143-03, 2026-09-11): how many
     # of the account's use areas the consumptive-use estimate actually covers,
     # and how the balance splits across them. Counts, not AF: they are read off
@@ -292,7 +319,16 @@ def _account_detail_context(account, period_param=None):
     use_areas_in_surplus = use_area_states.count("surplus")
     use_areas_in_deficit = use_area_states.count("deficit")
     use_areas_balanced = use_area_states.count("balanced")
+    return {
+        "use_areas_estimated": use_areas_estimated,
+        "use_areas_in_surplus": use_areas_in_surplus,
+        "use_areas_in_deficit": use_areas_in_deficit,
+        "use_areas_balanced": use_areas_balanced,
+    }
 
+
+def _use_area_map_counts(assignments: QuerySet[WaterAccountParcel]) -> tuple[int, int]:
+    """The map card head's counts of use areas: all, and those with a location."""
     # The account's map card (ISS-175, 150-02): the head's two counts, read off
     # the rows the loop above already fetched (select_related parcel, so no
     # query). Counted by use area, not by row, because the map draws each use
@@ -302,16 +338,44 @@ def _account_detail_context(account, period_param=None):
     use_areas_located_count = sum(
         1 for p in assigned_parcels.values() if p.geometry is not None
     )
+    return use_areas_all_count, use_areas_located_count
+
+
+def _account_detail_context(account, period_param=None):
+    """Build the per-account detail context.
+
+    Shared by the standalone detail page, the in-pane HTMX render, and the
+    workspace's pre-loaded ``?selected=`` pane so all three are identical.
+
+    ``period_param`` selects the reporting period for the balance card:
+      * ``None``  → default to the period where this account has real activity
+                    (so the page never opens on an empty / allocation-only year).
+      * ``""``    → All Time (no period filter; an explicit user choice).
+      * ``"<pk>"`` → that specific period.
+    """
+    assignments = _account_assignments(account)
+    acct_parcel_ids = list(assignments.values_list("parcel_id", flat=True))
+
+    # Period selector
+    periods = ReportingPeriod.objects.order_by("-start_date")
+    selected_period = _detail_selected_period(periods, period_param, acct_parcel_ids)
+
+    # Account-level balance, in the corrected v1.10 lens: estimated consumptive
+    # use (gross ET) against the surface / groundwater / precip supplies that met
+    # it (57-02). account_consumptive_balance selects the SAME active assignments
+    # account_balance did, so the roll-up partitions identically.
+    balance = account_consumptive_balance(account, reporting_period=selected_period)
+
+    parcel_balances = _parcel_balance_rows(assignments, selected_period)
+    state_counts = _use_area_state_counts(parcel_balances)
+    use_areas_all_count, use_areas_located_count = _use_area_map_counts(assignments)
 
     return {
         "account": account,
         "assignments": assignments,
         "balance": balance,
         "parcel_balances": parcel_balances,
-        "use_areas_estimated": use_areas_estimated,
-        "use_areas_in_surplus": use_areas_in_surplus,
-        "use_areas_in_deficit": use_areas_in_deficit,
-        "use_areas_balanced": use_areas_balanced,
+        **state_counts,
         "use_areas_all_count": use_areas_all_count,
         "use_areas_located_count": use_areas_located_count,
         "periods": periods,

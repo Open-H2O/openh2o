@@ -7,8 +7,8 @@ import csv as csv_module
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.db.models import Q, Sum
-from django.http import HttpResponse
+from django.db.models import Q, QuerySet, Sum
+from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 
 from core.csv_safe import safe_row
@@ -110,14 +110,13 @@ def ledger_source_type_choices():
     ]
 
 
-@login_required
-def ledger_list(request):
-    """Paginated list of ledger entries with HTMX search and filters."""
+def _ledger_filters(request: HttpRequest) -> dict[str, str]:
+    """The ledger's text filters and sort, read from the query string.
+
+    Keys: q, period_id, source_type, water_type_id, start_date, end_date,
+    active_areas, sort, direction, zone_id. They are also the context keys.
+    """
     q = request.GET.get("q", "").strip()
-    # "period" absent entirely (bare landing) is distinct from "period="
-    # (the "All Periods" choice, which the HTMX filters always send). Only the
-    # former gets an auto-default applied below.
-    period_present = "period" in request.GET
     period_id = request.GET.get("period", "").strip()
     source_type = request.GET.get("source_type", "").strip()
     water_type_id = request.GET.get("water_type", "").strip()
@@ -134,24 +133,39 @@ def ledger_list(request):
     if direction not in ("asc", "desc"):
         direction = "desc"
     zone_id = request.GET.get("zone", "").strip()
+    return {
+        "q": q,
+        "period_id": period_id,
+        "source_type": source_type,
+        "water_type_id": water_type_id,
+        "start_date": start_date,
+        "end_date": end_date,
+        "active_areas": active_areas,
+        "sort": sort,
+        "direction": direction,
+        "zone_id": zone_id,
+    }
+
+
+def _ledger_page_size(request: HttpRequest) -> int:
+    """The requested page size, or 100 when it is missing or not one of the offered sizes."""
     try:
         page_size = int(request.GET.get("page_size", 100))
     except (TypeError, ValueError):
         page_size = 100
     if page_size not in LEDGER_PAGE_SIZES:
         page_size = 100
+    return page_size
 
-    # 143-05 (R-020): the tiebreak orders by use-area number ascending, not
-    # just -created_at, so within one date a reader sees a field's meter
-    # reading beside its delivery instead of raw seed-insertion order.
-    queryset = ParcelLedger.objects.select_related(
-        "parcel", "water_type", "reporting_period"
-    ).order_by("-effective_date", "parcel__parcel_number", "-created_at")
 
-    periods = ReportingPeriod.objects.order_by("-start_date")
-    water_types = WaterType.objects.order_by("name")
-    zones = Zone.objects.order_by("name")
+def _ledger_default_period(
+    filters: dict[str, str], period_present: bool, periods: QuerySet[ReportingPeriod]
+) -> tuple[str, bool, str, bool, int | None]:
+    """Resolve the period filter, defaulting a bare landing to the current period.
 
+    Returns (period_id, auto_defaulted, auto_default_period_name,
+    auto_default_calculated, default_period_id).
+    """
     # ISS-022: landing on the ledger with no filters at all should not bury the
     # audit trail. The "How was this calculated?" links only render on
     # calculated rows, so default to the most recent period that HAS calculated
@@ -179,12 +193,14 @@ def ledger_list(request):
     )
     default_period_id = compute_current_period_id()
 
+    period_id = filters["period_id"]
     period_auto_defaulted = False
     auto_default_period_name = ""
     auto_default_calculated = calculated_period_id is not None
     no_other_filters = not (
-        q or source_type or water_type_id or start_date or end_date or zone_id
-        or active_areas
+        filters["q"] or filters["source_type"] or filters["water_type_id"]
+        or filters["start_date"] or filters["end_date"] or filters["zone_id"]
+        or filters["active_areas"]
     )
     if not period_present and no_other_filters and default_period_id is not None:
         period_id = str(default_period_id)
@@ -193,30 +209,51 @@ def ledger_list(request):
             (p for p in periods if p.pk == default_period_id), None
         )
         auto_default_period_name = default_period.name if default_period else ""
+    return (
+        period_id,
+        period_auto_defaulted,
+        auto_default_period_name,
+        auto_default_calculated,
+        default_period_id,
+    )
 
+
+def _apply_ledger_filters(
+    queryset: QuerySet[ParcelLedger], filters: dict[str, str]
+) -> QuerySet[ParcelLedger]:
+    """Narrow the ledger rows by search text, period, source, water type, dates, status and zone."""
+    q = filters["q"]
     if q:
         queryset = queryset.filter(
             Q(parcel__parcel_number__icontains=q) | Q(description__icontains=q)
         )
-    if period_id:
-        queryset = queryset.filter(reporting_period_id=period_id)
-    if source_type:
-        queryset = queryset.filter(source_type=source_type)
-    if water_type_id:
-        queryset = queryset.filter(water_type_id=water_type_id)
-    if start_date:
-        queryset = queryset.filter(effective_date__gte=start_date)
-    if end_date:
-        queryset = queryset.filter(effective_date__lte=end_date)
-    if active_areas:
+    if filters["period_id"]:
+        queryset = queryset.filter(reporting_period_id=filters["period_id"])
+    if filters["source_type"]:
+        queryset = queryset.filter(source_type=filters["source_type"])
+    if filters["water_type_id"]:
+        queryset = queryset.filter(water_type_id=filters["water_type_id"])
+    if filters["start_date"]:
+        queryset = queryset.filter(effective_date__gte=filters["start_date"])
+    if filters["end_date"]:
+        queryset = queryset.filter(effective_date__lte=filters["end_date"])
+    if filters["active_areas"]:
         queryset = queryset.filter(parcel__status="active")
-    if zone_id:
+    if filters["zone_id"]:
         # parcel ↔ zone is many-to-many through ParcelZone, so a parcel in N
         # zones would duplicate its ledger rows — .distinct() collapses them.
         # select_related already pulls the parcel/water_type columns, so ordering
         # by those joined fields stays valid under SELECT DISTINCT.
-        queryset = queryset.filter(parcel__parcel_zones__zone_id=zone_id).distinct()
+        queryset = queryset.filter(
+            parcel__parcel_zones__zone_id=filters["zone_id"]
+        ).distinct()
+    return queryset
 
+
+def _apply_ledger_sort(
+    queryset: QuerySet[ParcelLedger], sort: str, direction: str
+) -> QuerySet[ParcelLedger]:
+    """Re-order by a whitelisted sort key, with a stable tiebreak."""
     # Sort: only a whitelisted key re-orders; everything else keeps the
     # newest-first default set on the queryset above. A stable
     # parcel__parcel_number, -created_at tiebreak (143-05) keeps pagination
@@ -231,7 +268,11 @@ def ledger_list(request):
             order_fields.append("parcel__parcel_number")
         order_fields.append("-created_at")
         queryset = queryset.order_by(*order_fields)
+    return queryset
 
+
+def _ledger_footer_totals(queryset: QuerySet[ParcelLedger]) -> dict[str, Decimal | None]:
+    """The credits and water subtotals over the whole filtered set."""
     # Two subtotals over the WHOLE filtered set (every matching row, not just the
     # visible page), named by kind and never netted (136-01, ISS-155). Credits
     # are the allocation and recharge rows, paper or banked water (DESIGN.md
@@ -250,30 +291,27 @@ def ledger_list(request):
     # the zone M2M join, whose row duplication (a parcel in N zones) would
     # otherwise multiply amounts in SUM.
     credit_rows = Q(source_type__in=ParcelLedger.POSITIVE_SOURCE_TYPES)
-    ledger_totals = ParcelLedger.objects.filter(
+    return ParcelLedger.objects.filter(
         pk__in=queryset.values("pk")
     ).aggregate(
         credits=Sum("amount_acre_feet", filter=credit_rows),
         water=Sum("amount_acre_feet", filter=~credit_rows),
     )
 
-    paginator = Paginator(queryset, page_size)
-    page_number = request.GET.get("page", 1)
-    page_obj = paginator.get_page(page_number)
 
-    # 143-05: the subtitle line names the period and the active filters
-    # instead of the template re-deriving them from raw ids. period_name is
-    # "All periods" on an explicit ?period= (or no period at all); on a bare
-    # auto-defaulted landing the template folds in the separate auto-default
-    # sentence instead of using this value. active_filter_labels lists every
-    # OTHER facet currently narrowing the set, in filter-bar order, so
-    # "filtered: Zone Halvern, Active use areas" always names what changed.
-    source_type_choices = ledger_source_type_choices()
-    period_name = "All water years"
-    if period_id:
-        period_name = next(
-            (p.name for p in periods if str(p.pk) == period_id), period_name
-        )
+def _ledger_active_filter_labels(
+    filters: dict[str, str],
+    zones: QuerySet[Zone],
+    water_types: QuerySet[WaterType],
+    source_type_choices: list[tuple[str, str]],
+) -> list[str]:
+    """Labels for every facet currently narrowing the set, in filter-bar order."""
+    q = filters["q"]
+    zone_id = filters["zone_id"]
+    source_type = filters["source_type"]
+    water_type_id = filters["water_type_id"]
+    start_date = filters["start_date"]
+    end_date = filters["end_date"]
     active_filter_labels = []
     if q:
         active_filter_labels.append('Search "{}"'.format(q))
@@ -299,35 +337,83 @@ def ledger_list(request):
         active_filter_labels.append(f"From {start_date}")
     elif end_date:
         active_filter_labels.append(f"Through {end_date}")
-    if active_areas:
+    if filters["active_areas"]:
         active_filter_labels.append("Active use areas")
+    return active_filter_labels
+
+
+@login_required
+def ledger_list(request):
+    """Paginated list of ledger entries with HTMX search and filters."""
+    filters = _ledger_filters(request)
+    # "period" absent entirely (bare landing) is distinct from "period="
+    # (the "All Periods" choice, which the HTMX filters always send). Only the
+    # former gets an auto-default applied below.
+    period_present = "period" in request.GET
+    page_size = _ledger_page_size(request)
+
+    # 143-05 (R-020): the tiebreak orders by use-area number ascending, not
+    # just -created_at, so within one date a reader sees a field's meter
+    # reading beside its delivery instead of raw seed-insertion order.
+    queryset = ParcelLedger.objects.select_related(
+        "parcel", "water_type", "reporting_period"
+    ).order_by("-effective_date", "parcel__parcel_number", "-created_at")
+
+    periods = ReportingPeriod.objects.order_by("-start_date")
+    water_types = WaterType.objects.order_by("name")
+    zones = Zone.objects.order_by("name")
+
+    (
+        period_id,
+        period_auto_defaulted,
+        auto_default_period_name,
+        auto_default_calculated,
+        default_period_id,
+    ) = _ledger_default_period(filters, period_present, periods)
+    filters["period_id"] = period_id
+
+    queryset = _apply_ledger_filters(queryset, filters)
+    queryset = _apply_ledger_sort(queryset, filters["sort"], filters["direction"])
+    ledger_totals = _ledger_footer_totals(queryset)
+
+    paginator = Paginator(queryset, page_size)
+    page_number = request.GET.get("page", 1)
+    page_obj = paginator.get_page(page_number)
+
+    # 143-05: the subtitle line names the period and the active filters
+    # instead of the template re-deriving them from raw ids. period_name is
+    # "All periods" on an explicit ?period= (or no period at all); on a bare
+    # auto-defaulted landing the template folds in the separate auto-default
+    # sentence instead of using this value. active_filter_labels lists every
+    # OTHER facet currently narrowing the set, in filter-bar order, so
+    # "filtered: Zone Halvern, Active use areas" always names what changed.
+    source_type_choices = ledger_source_type_choices()
+    period_name = "All water years"
+    if period_id:
+        period_name = next(
+            (p.name for p in periods if str(p.pk) == period_id), period_name
+        )
+    active_filter_labels = _ledger_active_filter_labels(
+        filters, zones, water_types, source_type_choices
+    )
 
     context = {
         "page_obj": page_obj,
         "total_count": paginator.count,
         "ledger_total_credits": ledger_totals["credits"] or Decimal("0"),
         "ledger_total_water": abs(ledger_totals["water"] or Decimal("0")),
-        "q": q,
-        "period_id": period_id,
+        **filters,
         "period_name": period_name,
         "active_filter_labels": active_filter_labels,
-        "source_type": source_type,
-        "water_type_id": water_type_id,
-        "start_date": start_date,
-        "end_date": end_date,
         "periods": periods,
         "water_types": water_types,
         "zones": zones,
-        "zone_id": zone_id,
-        "sort": sort,
-        "direction": direction,
         "page_size": page_size,
         "page_sizes": LEDGER_PAGE_SIZES,
         "source_type_choices": source_type_choices,
         "period_auto_defaulted": period_auto_defaulted,
         "auto_default_period_name": auto_default_period_name,
         "auto_default_calculated": auto_default_calculated,
-        "active_areas": active_areas,
         "current_period_id": default_period_id,
         # The page description names "recharge" (copy rule 11's settled
         # sentence); a deployment without the recharge module must not see

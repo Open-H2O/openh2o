@@ -183,6 +183,59 @@ def _over_delivery_share_pct(run):
     return run.over_delivery_leave_behind * 100
 
 
+def _breakdown_facts(run: CalculationRun) -> dict[str, object]:
+    """The efficiency source, precip method, rainfall, area and floor read off the run's steps."""
+    irrigation_efficiency_source = None
+    precip_method = None
+    rainfall_mm = None
+    area_acres = None
+    floor = None
+    for step in run.breakdown:
+        detail = step.get("detail") or {}
+        step_type = step.get("step_type")
+        if step_type == "subtract_surface_water" and irrigation_efficiency_source is None:
+            irrigation_efficiency_source = detail.get("efficiency_source")
+        elif step_type == "subtract_effective_precip":
+            precip_method = detail.get("method", "usda_scs")
+            rainfall_mm = detail.get("precip_mm")
+        elif step_type == "clamp_floor":
+            floor = detail.get("floor")
+        elif step_type == "et_gross":
+            area_acres = detail.get("area_acres")
+    return {
+        "irrigation_efficiency_source": irrigation_efficiency_source,
+        "precip_method": precip_method,
+        "rainfall_mm": rainfall_mm,
+        "area_acres": area_acres,
+        "floor": floor,
+    }
+
+
+def _irrigation_method_name(parcel: Parcel, irrigation_efficiency_source: object) -> str | None:
+    """The field's irrigation method name when the efficiency came from the method, else None."""
+    irrigation_method_name = None
+    if irrigation_efficiency_source == "method":
+        link = getattr(parcel, "irrigation", None)
+        if link is not None:
+            irrigation_method_name = link.method.name
+    return irrigation_method_name
+
+
+def _rainfall_acre_feet(rainfall_mm: object, area_acres: object) -> Decimal | None:
+    """The month's rainfall in acre-feet over the field, or None when either input is missing."""
+    # The month's gridMET rainfall in acre-feet over the field, by the same
+    # conversion and the same area the run used for crop ET, so it reads
+    # beside effective precipitation in one unit.
+    rainfall_af = None
+    if rainfall_mm is not None and area_acres is not None:
+        from accounting.services import et_mm_to_acre_feet
+
+        rainfall_af = abs(
+            et_mm_to_acre_feet(Decimal(str(rainfall_mm)), Decimal(str(area_acres)))
+        )
+    return rainfall_af
+
+
 def _receipt_context(parcel, run, period):
     """The equation panel's figures for one run with a well and no meter reading.
 
@@ -209,28 +262,11 @@ def _receipt_context(parcel, run, period):
     surface water is that figure up to ETAW, and the part above ETAW is the
     run's own ``over_delivery_af`` (the floor step's incidental_recharge_af).
     """
-    irrigation_efficiency_source = None
-    precip_method = None
-    rainfall_mm = None
-    area_acres = None
-    floor = None
-    for step in run.breakdown:
-        detail = step.get("detail") or {}
-        step_type = step.get("step_type")
-        if step_type == "subtract_surface_water" and irrigation_efficiency_source is None:
-            irrigation_efficiency_source = detail.get("efficiency_source")
-        elif step_type == "subtract_effective_precip":
-            precip_method = detail.get("method", "usda_scs")
-            rainfall_mm = detail.get("precip_mm")
-        elif step_type == "clamp_floor":
-            floor = detail.get("floor")
-        elif step_type == "et_gross":
-            area_acres = detail.get("area_acres")
-    irrigation_method_name = None
-    if irrigation_efficiency_source == "method":
-        link = getattr(parcel, "irrigation", None)
-        if link is not None:
-            irrigation_method_name = link.method.name
+    facts = _breakdown_facts(run)
+    irrigation_efficiency_source = facts["irrigation_efficiency_source"]
+    precip_method = facts["precip_method"]
+    floor = facts["floor"]
+    irrigation_method_name = _irrigation_method_name(parcel, irrigation_efficiency_source)
 
     # 150.2-02: the field's irrigation efficiency the run stamped (a run from
     # before the stamp reads it back off final_af / gw_extracted_af).
@@ -258,16 +294,7 @@ def _receipt_context(parcel, run, period):
         and etaw - etaw_met_by_surface < floor_value
     )
 
-    # The month's gridMET rainfall in acre-feet over the field, by the same
-    # conversion and the same area the run used for crop ET, so it reads
-    # beside effective precipitation in one unit.
-    rainfall_af = None
-    if rainfall_mm is not None and area_acres is not None:
-        from accounting.services import et_mm_to_acre_feet
-
-        rainfall_af = abs(
-            et_mm_to_acre_feet(Decimal(str(rainfall_mm)), Decimal(str(area_acres)))
-        )
+    rainfall_af = _rainfall_acre_feet(facts["rainfall_mm"], facts["area_acres"])
 
     return {
         "receipt": True,
