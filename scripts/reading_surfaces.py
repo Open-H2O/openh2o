@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Per-page surface checklist for the 140-02 reading walk.
+"""Per-page surface checklist for the reading walk.
 
 For every census entry, count the surface types its template (plus every partial it
 {% include %}s, transitively, plus partials a view renders into it over HTMX when the
@@ -95,7 +95,7 @@ for row in census:
         "base_chrome": bool(re.search(r"""\{%\s*extends\s+['"](base|workspace)\.html""", read(rel))),
     })
 
-out = {"generated_for": "140-02", "template_root": "templates/",
+out = {"generated_for": "reading walk", "template_root": "templates/",
        "entries": entries,
        "partial_page_index": {k: sorted(v) for k, v in sorted(reverse.items()) if len(v) > 1}}
 json.dump(out, open(out_path, "w"), indent=1)

@@ -7,7 +7,7 @@ TEMPLATE.** Gates 1-3 all interrogate the database. A banned name hardcoded into
 an HTML heading is invisible to every one of them and renders on the page anyway,
 directly beneath the site's own promise that the demonstration "names no real
 water district at all". It is also the only gate that notices a view that 500s
-against real rows -- the class ISS-091 named, where three phases of green gates
+against real rows -- the class where green gates once
 missed eight live crashes because the droppability harness renders against an
 EMPTY database.
 
@@ -274,10 +274,10 @@ def main():
     failures = []
 
     # --- the crawl must have EXHAUSTED its frontier -------------------------
-    # 90-03 measured the real-data frontier at 1,277 paths and had to raise the
-    # cap from 400 to 2,000 to exhaust it. A capped crawl reporting success over
-    # ground it never covered is the precise failure shape this milestone exists
-    # to end, so a non-empty remainder fails the gate.
+    # The real-data frontier was measured at 1,277 paths, which required raising
+    # the cap from 400 to 2,000 to exhaust it. A capped crawl reporting success
+    # over ground it never covered is the failure this gate exists to catch,
+    # so a non-empty remainder fails the gate.
     if result.unvisited:
         failures.append(
             "the crawl hit its cap of %d pages with %d path(s) still queued. It "
@@ -344,9 +344,9 @@ def main():
     # Coverage BY SECTION, not just a total. A single number cannot answer the
     # only question a reader actually has — "is the screen I care about in
     # there?" — and a whole domain missing from the crawl looks exactly like a
-    # whole domain that was crawled and found clean. That is the defect ISS-097
-    # found in the droppability crawl, which was missing every drinking-water
-    # detail page while reporting a healthy total.
+    # whole domain that was crawled and found clean. The droppability crawl once had
+    # this defect: it was missing every drinking-water detail page while
+    # reporting a healthy total.
     sections = {}
     for path in result.visited:
         head = path.strip("/").split("/")[0] if path.strip("/") else "(root)"

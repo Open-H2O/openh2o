@@ -7,7 +7,7 @@
 #
 # NOTHING IS PROMOTED HERE. golden.dump is not read, not written and not backed
 # up by this script. What lands is `candidate.dump` + `candidate.meta`, an
-# artifact a human (or the gates in 103-02) can compare against production
+# artifact a human (or the gates in verify-candidate.sh) can compare against production
 # before anyone decides it deserves to become the golden. A rebuild wired
 # straight into promotion would be MORE dangerous than the status quo, not less.
 #
@@ -20,7 +20,7 @@
 # namespace, so the entire safety of this script rests on $REBUILD_PROJECT
 # differing from the checkout's own project. That is checked first, loudly,
 # before anything is built. It deliberately does NOT refuse on .production-lock:
-# Phase 104 wires this into the production deploy, and a scratch project inside
+# this runs inside the production deploy, and a scratch project inside
 # the production checkout is safe precisely because its volume is separate.
 #
 # SNAPSHOT DIRECTORY AND SCRATCH PROJECT ARE DERIVED FROM THE CHECKOUT.
@@ -85,7 +85,7 @@ fail() {
   cleanup
   # `low` on purpose: production is serving and untouched, and no golden was
   # read or written. A failed rebuild is something to look at in the morning,
-  # not something to be woken for. (Same reasoning as 102-02.)
+  # not something to be woken for. (Same reasoning as reset-demo.sh.)
   demo_ntfy low "OpenH2O golden rebuild failed" \
     "rebuild-golden on $(hostname) failed. No candidate was written and nothing was promoted; the live site is unaffected."
   echo "rebuild-golden: FAILED — scratch stack torn down, nothing promoted." >&2
@@ -106,7 +106,7 @@ $C build web
 # shellcheck disable=SC2086
 $C up -d --wait db
 # `--wait` alone is not enough on a loaded box — see demo_wait_for_db in
-# _demo-lib.sh. Phase 104 runs this inside an automated deploy, so the race has
+# _demo-lib.sh. This runs inside an automated deploy, so the race has
 # to be closed here too, not only in verify-candidate.sh where it was found.
 export DEMO_COMPOSE="$C"
 if ! demo_wait_for_db 120; then
@@ -126,8 +126,8 @@ fi
 #   -e OPENH2O_MODULES= is not noise. config/settings/base.py reads that
 #   variable and falls back to the code's DEFAULT module set when it is empty:
 #   every module except those marked on_by_default=False (today only
-#   reporting, 2026-10-12). The checkout's .env may carry a reduced set (Plan
-#   90-03 deliberately ran staging on reduced configurations), and a golden
+#   reporting, 2026-10-12). The checkout's .env may carry a reduced set (staging
+#   has been run on reduced configurations), and a golden
 #   built under a reduced config would silently omit whole domains. Empty pins
 #   the build to the default set regardless of what this host happens to be
 #   running. It must be the default and not `all`: the live site runs the
@@ -149,8 +149,8 @@ run_step migrate --noinput
 # 500s the moment a page reads the cache: `datasync/views.py::monitoring_dashboard`
 # calls `OpenETAdapter().account_status()`, which begins with `cache.get(...)`.
 # Caught by gate 4 on 2026-08-07 — 1 page of 1,952, `relation "feedback_cache"
-# does not exist` — on the first deploy attempted after Phase 113-02 introduced
-# that read, so the defect never reached production. Creating a TABLE adds no
+# does not exist` — on the first deploy attempted after that read was
+# introduced, so the defect never reached production. Creating a TABLE adds no
 # user rows, so this does not weaken the zero-user-rows rule it sits beside.
 run_step createcachetable
 run_step seed_data
@@ -170,7 +170,7 @@ run_step seed_observed_properties
 run_step seed_merced_base
 run_step loaddata data/merced/flowlines.json
 # --allow-prod-clobber is belt-and-braces: the database is empty, so there is
-# nothing to clobber and a first-time seed passes the guard unaided (ISS-095).
+# nothing to clobber and a first-time seed passes the guard unaided.
 # Passed anyway so the sequence does not depend on that emptiness holding.
 run_step seed_merced --skip-auto-populate --allow-prod-clobber
 # The two frozen-data loads sit together, and both exist because the step they
@@ -194,8 +194,7 @@ run_step seed_calculation_plan
 # it owns, so a second `refresh_merced_accounting` call for the open year would
 # wipe the closed year's supply rows — silently, because a wiped ledger reads as
 # an empty year rather than as an error. The command takes --period repeatedly
-# and runs the engine over the union of their months around a single ledger pass
-# (Phase 133-01, 2026-09-05).
+# and runs the engine over the union of their months around a single ledger pass.
 run_step refresh_merced_accounting --period "WY 2024-2025" --period "WY 2025-2026"
 
 # THE INSTRUMENT RECORD IS RE-SEEDED AFTER THE REFRESH, AND HAS TO BE.
@@ -213,8 +212,8 @@ run_step refresh_merced_accounting --period "WY 2024-2025" --period "WY 2025-202
 # Measured on the candidate built at 27bee27 before this line existed: 260 of 288
 # totalizer reads disagreed with the ledger they claim to sum, verified with the
 # same query that returns 0 of 288 on a database where the seed runs last. The
-# defect is not new — the ordering has been this way since Phase 132-01 shipped
-# the measurement record, and 132's own guard could not see it because its
+# defect is not new — the ordering has been this way since the measurement
+# record was first shipped, and the guard written for it could not see it because its
 # fixture's ledger never changes under it.
 #
 # The command self-flushes, so running it a second time replaces its own rows
@@ -223,7 +222,7 @@ run_step seed_merced_measurements
 
 # THE GOLDEN CARRIES NO INVENTED HISTORY. Every seed command above ran through
 # ordinary model saves, bulk_create and QuerySet.update() -- exactly the paths
-# django-pghistory tracks (core/history.py, Phase 147) -- so by this point the
+# django-pghistory tracks (core/history.py) -- so by this point the
 # candidate is full of change-history rows nobody's district actually made.
 # Gates 1 and 2 of verify-candidate.sh pin every pghistory event table (and
 # pghistory_context) at 0 in data/demo/expected_shape.json, so this MUST be the
@@ -254,7 +253,7 @@ mv "$tmp" "$CANDIDATE"
 # ---------------------------------------------------------------------------
 # Stamp the manifest WHILE THE STACK IS STILL UP — these facts cannot be
 # recovered once the volume is gone. Same key=value shape snapshot-demo.sh
-# writes, so 103-02 can install it as golden.meta unchanged.
+# writes, so promote-golden.sh can install it as golden.meta unchanged.
 # ---------------------------------------------------------------------------
 export DEMO_COMPOSE="$C"
 export DEMO_WEB="run --rm --no-deps -e OPENH2O_MODULES= web"
@@ -320,4 +319,4 @@ echo "rebuild-golden: scratch volume gone, stack removed"
 echo "rebuild-golden: wall clock  $((elapsed / 60))m $((elapsed % 60))s"
 echo ""
 echo "NOTHING WAS PROMOTED. Compare this candidate against production before it"
-echo "becomes anything. Promotion is Phase 103-02."
+echo "becomes anything. Promotion is promote-golden.sh."

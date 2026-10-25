@@ -3,7 +3,7 @@
 # assert-image-fresh.sh — fail LOUDLY when the running web image's source does
 # not match the working tree.
 #
-# Why this exists (ISS-075): `docker compose up -d --build web` can fail at the
+# Why this exists: `docker compose up -d --build web` can fail at the
 # Tailwind step and leave the PREVIOUS image running. `make test` then executes
 # whatever source that stale image baked in — reporting passing tests, in the
 # normal format, at the normal count, against code that no longer exists in the
@@ -75,7 +75,7 @@ if [ "$host_digest" != "$container_digest" ]; then
     container: $container_digest
 
     The running image was built from different code than you have checked out.
-    Tests run now would pass or fail against a GHOST, not your changes (ISS-075).
+    Tests run now would pass or fail against a GHOST, not your changes.
 
     Rebuild before testing:
 

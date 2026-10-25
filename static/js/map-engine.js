@@ -22,7 +22,7 @@ var OH2O = window.OH2O || { switchBasemap: function(){}, basemapStyle: function(
 // declare one — never invent a different rule.
 //
 //   { prop, val }         strict equality (the original form)
-//   { prop, notVal }      strict INequality (143-07: two zone-type layers on
+//   { prop, notVal }      strict INequality (e.g. two zone-type layers on
 //                         'zones' — 'GSA Zones' is `val: 'management_area'`,
 //                         'Surface service areas' is everything else)
 //   { prop, contains }    substring of the property's string value
@@ -259,14 +259,14 @@ function buildSwatch(swatchType, color, swatchStyle) {
 // single layer is painted in many named colours. The panel can give that layer
 // one row and one swatch; it cannot name the five greens inside it.
 //
-// It deliberately does NOT list one row per layer. An earlier pass at ISS-116
+// It deliberately does NOT list one row per layer. An earlier version
 // did, and the result was a second panel saying what the first already said —
 // same section headings, same names, same swatches, minus the feature counts.
 // The Layers panel is the map's
 // key: it names every layer, shows its colour, AND says how many of each there
-// are, and it is always on screen. The defect ISS-116 actually reported — a
+// are, and it is always on screen. The defect actually reported was a
 // legend naming "Drinking Water Facilities" over a layer with zero features
-// while 206 unlabelled red dots went unnamed — is fixed by DELETING that
+// while 206 unlabelled red dots went unnamed. That is fixed by DELETING that
 // hardcoded row, not by adding eleven more beside it.
 //
 // So this runs at script-load and depends on no fetched data: with no per-layer

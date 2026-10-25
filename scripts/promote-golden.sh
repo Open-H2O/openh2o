@@ -31,7 +31,7 @@
 # `high` alerts in reset-demo.sh are for a demo that did NOT reset, which is an
 # operational failure needing attention now. An alarm that wakes somebody for
 # something that can wait until morning is an alarm that gets muted — and then
-# the real one is muted too. (102-02.)
+# the real one is muted too.
 #
 # SNAPSHOT DIRECTORY IS DERIVED FROM THE CHECKOUT, and here that derivation is
 # load-bearing rather than tidy: this is the only script that WRITES golden.dump.
@@ -177,4 +177,4 @@ echo "promote-golden: schema     ${fingerprint:0:12}…"
 echo "promote-golden: rows       $row_total"
 echo ""
 echo "The nightly reset will restore THIS database from now on."
-echo "make deploy is unchanged — rewiring the release path is Phase 104."
+echo "make deploy is unchanged; this script does not rewire the release path."

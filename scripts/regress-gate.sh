@@ -5,7 +5,7 @@
 # Asks GitHub whether the repository's deploy checks (rules 6 and 8: old tests against new code,
 # and each fix's test against the commit before the fix; regress/regress.py run by the
 # repository's deploy-checks.yml) passed for exactly this pair, for a deploy script to call right
-# after ci-gate.sh and before its first change to anything serving. Build item 16, plan 10-01.
+# after ci-gate.sh and before its first change to anything serving.
 #
 # The newest deploy-checks.yml run titled exactly `deploy checks <head> from <base>` decides. With
 # none, it dispatches one (`gh workflow run deploy-checks.yml --ref main -f base -f head`) and

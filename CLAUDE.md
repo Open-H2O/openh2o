@@ -2,9 +2,9 @@
 
 ## Project Overview
 
-A water-data management platform. OpenH2O is for anyone who keeps water records, anywhere in the United States: engineers and managers at water agencies and districts, growers, ditch tenders and drinking-water system operators. Each OpenH2O site keeps the water records of one organization: a district, an agency, a farm or a ditch company. It manages that organization's water data — measurements, deliveries, wells, surface diversions, mixed-use accounting, and managed aquifer recharge. Where an organization files with a state, it can generate the data for the required reports (California's GEARS CSV and CalWATRS CSV today); reporting is an optional feature, not the platform's purpose.
+A water-data management platform. OpenH2O is for anyone who keeps water records, anywhere in the United States: engineers and managers at water agencies and districts, growers, ditch tenders and drinking-water system operators. Each OpenH2O site keeps the water records of one organization: a district, an agency, a farm or a ditch company. It manages that organization's water data: measurements, deliveries, wells, surface diversions, mixed-use accounting, and managed aquifer recharge. Where an organization files with a state, it can generate the data for the required reports (California's GEARS CSV and CalWATRS CSV today); reporting is an optional feature, not the platform's purpose.
 
-⚠ **There is NO working filing path, and no document or screen may imply one (2026-08-05).** GEARS and CalWATRS are large state platforms that would each need work on their own side before they could accept data from this system, and that work has not been done. OpenH2O calculates the figures and writes them out in those systems' layouts; it cannot submit them, and neither system can currently take a file it produces. "Ready-to-file", "prepares the filing" and any upload instruction are all overclaims — every reader-facing mention must say plainly that OpenH2O does not submit to either system, in professional wording ("OpenH2O does not submit reports to the state"), never "wanted and not built", which was struck as unprofessional on 2026-09-23.
+⚠ **There is NO working filing path, and no document or screen may imply one (2026-08-05).** GEARS and CalWATRS are large state platforms that would each need work on their own side before they could accept data from this system, and that work has not been done. OpenH2O calculates the figures and writes them out in those systems' layouts; it cannot submit them, and neither system can currently take a file it produces. "Ready-to-file", "prepares the filing" and any upload instruction are all overclaims: every reader-facing mention must say plainly that OpenH2O does not submit to either system, in professional wording ("OpenH2O does not submit reports to the state"), never "wanted and not built", which was struck as unprofessional on 2026-09-23.
 
 ⚠ **Explain the software and the data conventions; never explain the water
 (BLOCKING).** OpenH2O is for anyone who keeps water records, anywhere in the United States: engineers and managers at water agencies and districts, growers, ditch tenders and drinking-water system operators.
@@ -12,29 +12,29 @@ Every one of these readers knows water, so OpenH2O explains its own software and
 concepts (Allocation Ceiling, Use Area, Ledger Entry), agency and program names
 (GEARS, SGMA, CDEC), and codes inside data it did not author (EPA's `STBY`,
 `GAC`, `DST`) all get explained, because none of those are hydrology. Water and
-hydrology terms never do: for a code, expand it and stop — "granular activated
+hydrology terms never do: for a code, expand it and stop: "granular activated
 carbon", not "a filter that removes organic chemicals". The full statement,
 with the worked example, is copy rule 11 in `DESIGN.md`; the guard is
 `tests/test_domain_vocabulary.py` against the term list in
-`core/domain_vocabulary.py`. **A test may never mandate a domain description** —
+`core/domain_vocabulary.py`. **A test may never mandate a domain description**:
 that, and not the wording itself, is the failure mode this rule exists to end:
 three tests in `tests/test_drinking_readability.py` asserted the water lectures
 had to be present, so every correction made by hand was reverted by the suite
-on the next run (ISS-129, 2026-08-06).
+on the next run.
 
-The core goal is to lower the cost and access barrier for under-resourced agencies. A poorly-funded agency can point a frontier AI subscription at this repo and have the AI stand the platform up — and an engineering firm or consultant can run it just as well. Self-deployment is meant to be a real option, not a vendor contract by default.
+The core goal is to lower the cost and access barrier for under-resourced agencies. A poorly-funded agency can point a frontier AI subscription at this repo and have the AI stand the platform up, and an engineering firm or consultant can run it just as well. Self-deployment is meant to be a real option, not a vendor contract by default.
 
 **Where it runs must not matter (BLOCKING).** The same code, the same
 documentation and the same deployment path must serve an office computer, a
 $15/mo rented server, and government-scale infrastructure alike. **A $15/mo VPS
 is an illustration of how low the floor goes, never a specification of the
-target** — nothing in this repository may refuse, downgrade or treat as a "trial"
+target**: nothing in this repository may refuse, downgrade or treat as a "trial"
 a deployment because of the hardware it sits on. The variable that legitimately
 changes the configuration is **who can reach the instance** (one computer / a
 local network / the public internet), and that is what `docs/AI-OPERATOR-GUIDE.md`
 Phase 2 branches on. Recorded 2026-08-04 after `docs/AI-OPERATOR-GUIDE.md` was
-found refusing single-computer deployment outright, and after Phase 108 was
-scoped as though such a deployment were off-thesis.
+found refusing single-computer deployment outright, and after a deployment
+change was scoped as though such a deployment were off-thesis.
 
 ## Tech Stack
 
@@ -94,7 +94,7 @@ openh2o/
 ```
 
 > **Deploying this platform with an AI agent?** Start with
-> [docs/AI-OPERATOR-GUIDE.md](docs/AI-OPERATOR-GUIDE.md) — it walks a fresh
+> [docs/AI-OPERATOR-GUIDE.md](docs/AI-OPERATOR-GUIDE.md): it walks a fresh
 > agent from a bare server to a running, seeded instance. This file is for
 > working *inside* the codebase once it is running.
 
@@ -130,12 +130,12 @@ docker compose exec db psql -U openh2o -d openh2o
 
 The VanderDev design system provides a dark-mode dashboard aesthetic with California state identity. OpenH2O is on the Vadose **Deep Water** colorway (2026-07-05 overhaul).
 
-Design tokens live in `static/css/tokens.css`, which is the authority — the list
+Design tokens live in `static/css/tokens.css`, which is the authority: the list
 below mirrors it and `DESIGN.md` explains the reasoning:
 - Surface ladder: base (#090E14), nav (#0B121B), tile (#111A24), card (#141E2A), inset (#0E1620), elevated (#1A2633), hover (#22303F)
-- Accent: **Water Teal (#46B3C4) leads** — logo, links, active states, everyday emphasis. **California Gold (#E0A446) acts** — primary CTAs only. Pacific Blue (#1B7FAF / bright #3DB4E0) is parcels and links out to water data.
+- Accent: **Water Teal (#46B3C4) leads**: logo, links, active states, everyday emphasis. **California Gold (#E0A446) acts**: primary CTAs only. Pacific Blue (#1B7FAF / bright #3DB4E0) is parcels and links out to water data.
 - Text: primary (#E7EEF2), secondary (#8FA3AE), tertiary (#7E93A4)
-- Status: supply green (#55B678), deficit burnt-orange (#D1742E), warning amber (#fbbf24), error red (#f87171) — a deficit is never alarm red
+- Status: supply green (#55B678), deficit burnt-orange (#D1742E), warning amber (#fbbf24), error red (#f87171); a deficit is never alarm red
 - OKLCH tonal ramps for data visualization (furnace-orange, reservoir-blue, forest-teal)
 - Typography: Public Sans sitewide (one typeface; numeric columns use `tabular-nums`)
 
@@ -151,28 +151,28 @@ Tailwind config extends the default theme with these tokens. CSS is compiled by 
 ### Before ANY visual change (BLOCKING)
 
 This site has a written design system and a named component vocabulary. Follow
-it — do not eyeball a new look.
+it: do not eyeball a new look.
 
 1. **Read `DESIGN.md` first**, then find the existing component before writing CSS.
    The house "concept" components live in `static/css/app.css` and are catalogued
    in `DESIGN.md` → *House "concept" components*: `.callout-rule` (gold left-rule
    for "the rule" of a page), `.accent-card`, `.budget-panel`, `.concept-panel`,
    `.result-card`, `.step-card`, `.card-raised`/`.card-inset`. The same idea must
-   always look the same — reuse the component, don't reinvent it.
+   always look the same: reuse the component, don't reinvent it.
 2. **Emphasize prose with the site's own panel, never a bespoke accent box.**
    Body and intro text is plain left-aligned prose at a 65–75ch measure (see
    `.about-purpose`, Help page bodies). To lift a passage, wrap it in a plain
-   `.card-raised` — the same panel the credit cards and Help "short version"
-   blocks use — with **no colored left-stripe**. A colored stripe or filled
+   `.card-raised` (the same panel the credit cards and Help "short version"
+   blocks use) with **no colored left-stripe**. A colored stripe or filled
    accent box around a lone paragraph is the generic-AI-callout look; that is
    exactly what to avoid.
 3. **Accent discipline (authority: `static/css/tokens.css`).** Teal
-   (`--color-accent`, `#46B3C4`) is the PRIMARY accent and OpenH2O's identity —
+   (`--color-accent`, `#46B3C4`) is the PRIMARY accent and OpenH2O's identity:
    logo, title, links, active states, everyday emphasis. Gold (`--color-gold`,
    `#E0A446`) is for primary CTAs ONLY, used sparingly ("gold acts"); do NOT use
    it as general emphasis. Pacific Blue (`--color-blue`, `#1B7FAF`) is parcels
    and links to water data. `.callout-rule` hardcodes a legacy pre-Deep-Water
-   gold — treat it as legacy, not the pattern to copy.
+   gold: treat it as legacy, not the pattern to copy.
 4. **Casing:** section headers, eyebrows, and labels are sentence case (the two
    exceptions are data-table column headers and map/legend labels).
 5. **Preview it running and screenshot before calling it done.** Compare against
@@ -181,7 +181,7 @@ it — do not eyeball a new look.
    Reach your instance over **HTTPS on 443**, not over the container's internal
    Caddy port. Django's production settings force `SECURE_SSL_REDIRECT` /
    `SESSION_COOKIE_SECURE` / `CSRF_COOKIE_SECURE`, so over plain HTTP the browser
-   drops the secure cookies and **login fails with a CSRF 403** — pages you can
+   drops the secure cookies and **login fails with a CSRF 403**: pages you can
    reach without logging in still render, which makes the plain-HTTP URL look
    like it works right up until it doesn't.
 
@@ -192,7 +192,7 @@ documented outside this repository, because none of it applies to anyone
 running their own instance. For that, [DEPLOY.md](DEPLOY.md) is the whole story.
 
 **Never invent access to a shared environment.** If a login does not work the
-answer is written down — read it. Creating an account or generating a password
+answer is written down: read it. Creating an account or generating a password
 by hand is undocumented drift in the one place whose value is being reproducible
 from config.
 
@@ -232,18 +232,18 @@ either violation:
    see until a deployment breaks on it.
 
 Nine pre-existing violations are tolerated, and only as the reasoned records in
-`core/modules.py::SCHEMA_EXCEPTIONS` — each naming why it stands and what
+`core/modules.py::SCHEMA_EXCEPTIONS`: each naming why it stands and what
 turning it around would cost. The tripwire fails on a tenth, and equally on a
 record that no longer matches real code. It derives the graph from Django's live
 app registry, never from grep, because grep has already missed a reverse
 accessor and a multi-line field declaration in this codebase.
 
-**Every water domain is now optional (Phase 89, 2026-07-21), and four of the six
+**Every water domain is optional, and four of the six
 got there by DEMOTION rather than removal. The difference is worth knowing
 before you plan work against them.** `recharge` and `surface` are truly
 removable: their apps leave `INSTALLED_APPS` and their tables go. `wells` and
-`datasync` (Phase 88) and `parcels` and `accounting` (Phase 89) are
-`schema_resident=True` — switched off, they keep their apps and their empty
+`datasync`, `parcels` and `accounting` are
+`schema_resident=True`: switched off, they keep their apps and their empty
 tables, because nine backwards arrows point into them and would otherwise
 dangle.
 
@@ -251,24 +251,24 @@ dangle.
 requires-cycle: turning either off turns both off, and the one-sided
 configuration is refused at boot with `ImproperlyConfigured`. Switching the pair
 off takes five more sections with it (`wells`, `datasync`, `surface`,
-`recharge`, `reporting`), leaving a login, a map and Drinking Water — the
+`recharge`, `reporting`), leaving a login, a map and Drinking Water: the
 drinking-water utility flavor, running this same code with no fork. Measured on
 staging: 16 modules → 89 tables, 12 → 77, 9 → 73, and **not one table belonging
 to a schema-resident module is ever removed.**
 
 The practical consequence: demoting a module breaks **nothing** at import time,
 so `manage.py check` staying clean proves nothing. What breaks is what the
-operator can see — routes, nav links, seed commands, counts and prose — and
+operator can see (routes, nav links, seed commands, counts and prose) and
 `make test-droppable` is the only thing that looks.
 
-**Know what even that cannot see: it renders against an EMPTY database.** Plan
-89-03 pointed a reduced module set at a copy of the real demo data and found
-eight live 500s that three phases of green gates had missed — a surviving
+**Know what even that cannot see: it renders against an EMPTY database.**
+Pointing a reduced module set at a copy of the real demo data once found
+eight live 500s that three phases of green gates had missed: a surviving
 CalWATRS filing reaching `reporting.views` code whose `surface` import no longer
 resolves. Green at 30 proves a reduced deployment works for a brand-new agency
 with no data; it says nothing about an agency that has been *using* the platform
 and then switches a module off. If you touch a view that reads rows from an
-optional module, test it with rows present (ISS-091).
+optional module, test it with rows present.
 
 ## Key Constraints
 

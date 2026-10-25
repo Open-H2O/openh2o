@@ -38,7 +38,7 @@ chown -R app:app /app/media /app/staticfiles /app/logs 2>/dev/null || true
 # does not saturate a tiny fixed worker pool. Tune per host via .env; the default
 # (3 workers x 4 threads = 12 concurrent) is safe on a 2-4GB VPS.
 #
-# --access-logfile turns on the record of who asked for what (ISS-121). Before
+# --access-logfile turns on the record of who asked for what. Before
 # this flag a deployment built from this repository's own documentation logged
 # not one request, on either shape, and "has anyone opened this page" had no
 # answer. For a public agency that record is also what answers a records request

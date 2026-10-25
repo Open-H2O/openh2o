@@ -6,7 +6,7 @@
 # script never reads, writes or backs up golden.dump. Promotion is a separate
 # script (promote-golden.sh) that calls this one.
 #
-# WHY THIS EXISTS. 103-01 made the demonstration database reproducible. On its
+# WHY THIS EXISTS. The demonstration database is rebuilt reproducibly (rebuild-golden.sh). On its
 # own that is MORE dangerous than the photocopy it replaces: an automatic
 # rebuild wired straight into a deploy would ship an unchecked database to
 # production on every release. These gates are the other half.
@@ -168,7 +168,7 @@ echo "verify-candidate: scratch project '$REBUILD_PROJECT' (golden.dump is never
 # Build the image from THIS tree and restore the candidate into a scratch db.
 #
 # The build is what closes the "policy is baked into the image" trap that bit
-# twice in Phase 102: data/demo/identity_policy.json and data/demo/
+# twice: data/demo/identity_policy.json and data/demo/
 # expected_shape.json arrive in the container via `COPY . .`, so an edit on the
 # host reaches the gates only because this script rebuilds before running them.
 # ---------------------------------------------------------------------------

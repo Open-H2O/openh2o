@@ -41,7 +41,7 @@ build: guard-prod ## Rebuild containers without starting (refuses under .product
 # instead of running make deploy.
 REF ?= origin/main
 
-# ISS-106: a REFUSED promotion has to alert somebody, and it did not.
+# A REFUSED promotion has to alert somebody.
 #
 # `scripts/_demo-lib.sh` reads OPENH2O_NTFY_URL out of the SHELL environment,
 # and promote-golden.sh runs on the HOST. Nothing under scripts/ sources .env —
@@ -73,8 +73,8 @@ export OPENH2O_NTFY_URL
 #      untouched. That is the strongest failure state available, and it is why
 #      this order was chosen over ship-code-first.
 #   3. promote-golden.sh RE-RUNS the gates even though nothing changed since
-#      rebuild-golden.sh. That costs a few minutes per deploy and is deliberate
-#      (103-02): promotion trusts no marker written by an earlier step. Do not
+#      rebuild-golden.sh. That costs a few minutes per deploy and is deliberate:
+#      promotion trusts no marker written by an earlier step. Do not
 #      add a fast path.
 #
 # snapshot-demo.sh is deliberately ABSENT. It re-stamped the golden from the
@@ -237,7 +237,7 @@ check: ## Run Django system checks (deployment readiness)
 verify-clean: ## Assert this install has reference data only (no demo/agency content)
 	$(EXEC) verify_clean_install
 
-guard-fresh: ## Fail loudly if the web image's source has drifted from the working tree (ISS-075)
+guard-fresh: ## Fail loudly if the web image's source has drifted from the working tree
 	@COMPOSE="$(COMPOSE)" bash scripts/assert-image-fresh.sh
 
 test: guard-fresh ## Run test suite (pinned to local settings; --ds outranks the container's prod env; every module on, reporting included)
@@ -344,7 +344,7 @@ fresh: guard-prod down ## Full reset: destroy volumes, rebuild, migrate, seed, M
 	# --allow-prod-clobber because this target has ALREADY destroyed the volumes
 	# two lines up. On a DEBUG=False deployment seed_merced_operations' guard
 	# would otherwise stop the sequence at step 3 of 10 and leave the database
-	# half-seeded (ISS-095) — refusing to clobber data this target just deleted.
+	# half-seeded, refusing to clobber data this target just deleted.
 	$(EXEC) seed_merced --allow-prod-clobber
 	@echo ""
 	@echo "Fresh environment ready (Merced Subbasin demo). Run 'make createsuperuser' to create an admin."

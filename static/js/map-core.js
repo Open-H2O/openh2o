@@ -49,12 +49,11 @@ OH2O.SPRITE = 'https://tiles.openfreemap.org/sprites/ofm_f384/ofm';
    labelMin   : zoom at which the label fades in (zoom-dependent labels)
 
    Five of these (pod, recharge, zone, drinking, station — every entity the
-   overview maps this plan touches draw) lead with ['get','label'] (143-07
-   Step 0): the geojson endpoint's map_label()-stripped name, with the code
+   overview maps draw) lead with ['get','label']: the geojson endpoint's map_label()-stripped name, with the code
    prefix a stored name like "MER-POD-004-DEMO Atwater Canal Headgate" carries
    dropped. `coalesce` falls through to the old expression when a feature has
-   no `label` property at all (an older cached response, or an endpoint this
-   plan does not touch), so nothing regresses; a facility's `label` is `null`
+   no `label` property at all (an older cached response, or an endpoint that
+   does not send one), so nothing regresses; a facility's `label` is `null`
    rather than `""` when it has no name, for exactly that reason. `well` is
    untouched — its geojson endpoint does not carry `label` yet. */
 OH2O.entities = {
@@ -184,7 +183,7 @@ OH2O.attachPopup = function (map, layerIds, htmlFn) {
     });
 };
 
-/* ── The overview map follows its list (143-07) ───────────────────────────
+/* ── The overview map follows its list ───────────────────────────────────
    An overview page's results partial emits the WHOLE filtered queryset's pks
    (before pagination) as <script id="results-map-pks" type="application/json">.
    The map keeps ONE unfiltered source (one fetch per page load; the geojson
@@ -398,7 +397,7 @@ OH2O.frameOnBoundary = function (map, url) {
             });
             // One label per boundary, not one per polygon part: a two-part
             // MultiPolygon labelled from the polygon source paints its name
-            // twice (the add page, 143-07 Task 6 capture). Label a point
+            // twice (seen on the add page). Label a point
             // source built from each feature's bbox centre instead.
             var pts = { type: 'FeatureCollection', features: fc.features.map(function (f) {
                 var b = OH2O._geojsonBounds({ type: 'FeatureCollection', features: [f] });
@@ -477,7 +476,7 @@ OH2O._frameBounds = function (map, bounds) {
                older cached response, or a caller that never asked for this).
      geojson   the FeatureCollection just loaded into `src`, read for the
                `label_point` properties above; ignored when isPoint. */
-/* 150-04 (W6, rule D6): a detail map's one mark is sized for its band, not
+/* A detail map's one mark is sized for its band, not
    the overview's zoom ramp. The detail map frames a single point at zoom 14,
    where ramp(3.5, 8.5) gives a radius under 7, and the mark sat as "a tiny
    dot" in a 1,430 x 380 band. Here it is 9 px at every zoom, with the glow

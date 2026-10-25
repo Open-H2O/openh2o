@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""List the labels that restate the heading above them (ISS-168, DESIGN.md copy rule 13).
+"""List the labels that restate the heading above them (DESIGN.md copy rule 13).
 
 Standard library only; runs on the host over ``templates/**/*.html``. For every label
 element (``th``, ``dt``, ``label``, ``.field-label``, ``.card-subtitle``,

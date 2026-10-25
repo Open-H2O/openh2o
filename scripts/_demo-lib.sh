@@ -16,8 +16,7 @@
 #
 # This reads the SHELL ENVIRONMENT ONLY, and nothing here should ever reach into
 # .env for it. The Makefile already lifts the key out of .env and exports it for
-# every recipe (see its OPENH2O_NTFY_URL note, added with the ISS-106 fix in
-# 4ac401d), and the crontab lines set it inline. One mechanism, two callers.
+# every recipe (see its OPENH2O_NTFY_URL note), and the crontab lines set it inline. One mechanism, two callers.
 # A .env fallback was added here on 2026-08-01 and removed the next morning: it
 # was justified by a claim that the refused promotion of 2026-08-01 17:01 PDT
 # had alerted nobody, and the ntfy topic's own message history disproves that —
@@ -53,9 +52,9 @@ DEMO_WEB="${DEMO_WEB:-exec -T web}"
 # against that temporary server, so `--wait` returns and the next command hits
 # "FATAL: the database system is shutting down".
 #
-# Measured 2026-07-31 in Plan 103-02: this never fired on an idle box and fired
+# Measured 2026-07-31: this never fired on an idle box and fired
 # every time with the test suite running beside it, because load widens the
-# window. Phase 104 wires these scripts into an automated deploy, where a
+# window. These scripts run inside an automated deploy, where a
 # transient race that only appears under load is exactly the failure that will
 # appear in production and nowhere else.
 #

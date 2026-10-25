@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Render the pages Plan 88-01 touches and write them to a directory for diffing.
+"""Render the pages the module-demotion change touches and write them to a directory for diffing.
 
 The milestone constraint is "zero behavior change for the default all-modules
 deployment", and the honest way to hold that is a byte diff of the rendered
@@ -36,9 +36,8 @@ from django.db import connection  # noqa: E402
 #: "byte-identical" a claim that can be true at all -- without this every diff is
 #: dominated by noise and the real differences hide inside it.
 #:
-#: **The home page's greeting is the second source, found by Plan 88-02 the hard
-#: way.** 88-01's version of this file asserted the CSRF token was the ONLY
-#: nondeterminism; `config.views.index` also stamps "Good morning / afternoon /
+#: **The home page's greeting is the second source.** An earlier version of this
+#: file asserted the CSRF token was the ONLY nondeterminism; `config.views.index` also stamps "Good morning / afternoon /
 #: evening" from the wall clock, so a before-capture and an after-capture taken
 #: either side of noon or 5pm differ on a line no code change touched. The
 #: convergence control does not catch it -- two runs a second apart agree
@@ -60,10 +59,9 @@ def _mask_csrf(body: str) -> str:
     return body
 
 
-#: Pages that render meaningfully against an EMPTY database. Plan 88-02 widened
-#: this list from 88-01's six: the demotion guards templates on the map, the
-#: accounting dashboard, the setup wizard, drinking water and the shared-supply
-#: check, and a proof that does not render a page cannot say anything about it.
+#: Pages that render meaningfully against an EMPTY database. The demotion
+#: guards templates on the map, the accounting dashboard, the setup wizard,
+#: drinking water and the shared-supply check, and a proof that does not render a page cannot say anything about it.
 PAGES = (
     ("index-anon", "/", False),
     ("home-auth", "/", True),
@@ -76,21 +74,19 @@ PAGES = (
     ("setup-wizard", "/setup/", True),
     ("drinking-overview", "/drinking/", True),
     ("shared-supply-check", "/reporting/reports/shared-supply-check/", True),
-    # Plan 89-01 widened this again, for the same reason 88-03 added
-    # `/drinking/`: a page that is absent from this list looks exactly like a
-    # page that was checked and found identical. Every one of these renders a
-    # template Plan 89-01 edits, and five of them are the Help pages the plan
-    # guards but deliberately does not rewrite.
+    # A page that is absent from this list looks exactly like a page that was
+    # checked and found identical (as with `/drinking/` above). Every one of
+    # these renders a template the demotion edits, and five of them are the
+    # Help pages it guards but deliberately does not rewrite.
     ("help-methods", "/help/methods/", True),
     ("help-settings", "/help/settings/", True),
     ("help-water-balances", "/help/water-balances/", True),
     ("help-budgets-allocations", "/help/budgets-allocations/", True),
     ("help-surface-deliveries", "/help/surface-deliveries/", True),
     ("infrastructure-add", "/infrastructure/add/", True),
-    # Plan 89-02 widened it again, and for a reason worth writing down: this plan
-    # edits PROSE on shared pages, which is the highest-risk shape for the
-    # milestone's zero-behaviour-change rule. Every page below carries a sentence
-    # this plan touched or a link it gated, and a page that is absent from this
+    # The demotion also edits PROSE on shared pages, which is the highest-risk
+    # shape for a zero-behaviour-change rule. Every page below carries a sentence
+    # the demotion touched or a link it gated, and a page that is absent from this
     # list looks exactly like a page that was checked and found identical.
     ("glossary", "/help/glossary/", True),
     ("users", "/users/", True),
@@ -104,7 +100,7 @@ PAGES = (
 
 #: Detail panes need a row to have a primary key at all, so they cannot be
 #: reached from the empty-database pass above -- which is exactly the blind spot
-#: Phase 82 named and 88-01 inherited. The rows are built with explicit literal
+#: of the empty-database pass. The rows are built with explicit literal
 #: values rather than factory sequences so two runs produce the same bytes.
 def _seed_detail_rows():
     """Minimal deterministic rows: one parcel, one well, one link between them.
@@ -141,7 +137,7 @@ def _seed_detail_rows():
     )
     WellIrrigatedParcel.objects.create(well=well, parcel=parcel, fraction=Decimal("1.0000"))
 
-    # Plan 89-01: a zone with a parcel assigned to it, so the zone detail pane's
+    # A zone with a parcel assigned to it, so the zone detail pane's
     # "Assigned Use Areas" table actually has a row and its `parcels:detail`
     # reverse is exercised. Without the ParcelZone row the table renders its
     # empty state and the guarded link is never reached, which would make a

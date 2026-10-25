@@ -6,8 +6,7 @@ each script's own header comment for what it does and why.
 ## Walking a deployment shape
 
 `scripts/walk.py` and `scripts/shape_stack.sh` are the pair of tools that let
-anyone stand up one of the six deployment shapes measured in Phase 145
-(145-02) and walk it through its real screens, on a fresh instance, without
+anyone stand up one of the six deployment shapes and walk it through its real screens, on a fresh instance, without
 hand-deriving the compose override each time.
 
 Three commands cover the whole cycle:
@@ -27,7 +26,7 @@ Log in as `shape1@local.test` / `password123` (shape `<n>` gets
 `shape<n>@local.test`), a dev login on localhost, not a secret. Every shape's
 `web` container listens on `810<n>` (shape 1 is `8101`).
 
-`walk.py` is the instrument 145-02 walked all six shapes with. Its report
+`walk.py` walks a deployment shape through its screens. Its report
 always prints a `PAGE ACTIONS` line: the controls in the page header, above
 the main content, which is where a person actually sees them first. Before
 believing a walk log that says a control is missing, check it against that

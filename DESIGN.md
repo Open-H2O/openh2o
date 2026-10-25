@@ -163,7 +163,7 @@ input from a modal by editing one line in `tokens.css` rather than re-pointing
 
 1. **`border-radius: 50%` is a circle, not a radius.** Avatars, status dots,
    the data-freshness pips, the map legend's swatch dot. Squaring a circle is
-   the exact blind-sweep failure ISS-149 named. Leave every `50%` alone.
+   the blind-sweep failure that squaring every radius invites. Leave every `50%` alone.
 2. **Pills stay pills.** A status chip and a switch read as a different kind of
    thing from a panel, and a squared pill reads as a different control. They
    read `--radius-pill`, not a literal.
@@ -230,11 +230,11 @@ the same idea always looks the same. All live in `static/css/app.css`.
 - `.data-table.waterfall` — calculation-run tables shaded by step type
   (reduction = furnace, addition = forest, start/pass-through = neutral).
 
-### The layout rules of the layout pass (Phase 150-04, 2026-10-09)
+### The layout rules
 
-Every fault a fresh reader named during the words phase (149.1) and on the small-dataset instance
-(ISS-201) was measured live and fixed at its shared cause where one existed. The rules, each in
-`static/css/app.css` under "150-04":
+Every fault a fresh reader named in the wording review and on the small-dataset instance
+was measured live and fixed at its shared cause where one existed. The rules, each in
+`static/css/app.css` under "The layout rules":
 
 - **A form is a grid, not a column of bars.** `.form-grid` lays field groups in two tracks; a field
   whose value is a sentence or a name spans both (`.form-span-2`); a one-line form (a step with no
@@ -252,9 +252,8 @@ Every fault a fresh reader named during the words phase (149.1) and on the small
   card, never the page.** `.app-content` is not a scroll container (`overflow-x: clip; overflow-y:
   visible`); `static/js/table-scroll.js` marks each `.table-scroll` wrapper `data-overflow`: a
   fitting wrapper is `overflow-x: visible`, so `.data-table thead th { position: sticky }` pins to
-  the document scroll (dead since Phase 75, ISS-167); an overflowing one scrolls and its first column
-  stays put. The dashboard's two grouped tables do this below 1,330 and 1,435 px (150-01's option 1
-  for fault 4); the canal tables fit at 1,440 and scroll below.
+  the document scroll; an overflowing one scrolls and its first column
+  stays put. The dashboard's two grouped tables do this below 1,330 and 1,435 px; the canal tables fit at 1,440 and scroll below.
 - **A reference row is secondary** (`tr.receipt-aside` on the receipt's meter row); **a block's title
   carries the head's weight** above its fields (the worksheet); **the primary action sits after the
   statement that qualifies it** (the report's Download beside the no-filing sentence, not above it);
@@ -263,18 +262,17 @@ Every fault a fresh reader named during the words phase (149.1) and on the small
   wraps** (`.text-mono { overflow-wrap: anywhere }`); **the health cards' badges are the pill size**
   and every badge colour is a token (`--color-muted` joined `tokens.css`; the last hard-coded badge
   colour went).
-- **A class a template names is defined** (`.font-semibold`, `.text-primary`, `.row-clickable`;
-  ISS-166), and a hygiene test keeps the list from growing back.
+- **A class a template names is defined** (`.font-semibold`, `.text-primary`, `.row-clickable`), and a hygiene test keeps the list from growing back.
 
 What was tried and withdrawn, so it is not tried again: **a short page's void has no layout fix.**
-With the footer pinned to the frame (the shell since Phase 75), a four-row list, the home page on a
+With the footer pinned to the frame (the shell), a four-row list, the home page on a
 small instance and the signed-out front page read DO NOT SHIP for "the dead void between the cards
 and the footer"; with the footer riding the content, the same pages read DO NOT SHIP for "the footer
 floating mid-page" (one read SHIP 4 with that as its worst fault). The same reader faulted a panel
 beside a taller card both stretched ("mostly an empty dark box") and at its content's height ("a
 large dead gap under the stats panel"). Two readers contradicting each other on one element is the
-stop rule: the shell and the 143-03 matched row stay, and the one shape that fills the gap is the
-field page's balance-beside-map grid (150-02).
+stop rule: the shell and the matched row stay, and the one shape that fills the gap is the
+field page's balance-beside-map grid.
 
 ### Casing convention
 
@@ -296,12 +294,12 @@ default option** is Title Case ("All Statuses"). Those are what 19 of 19
 Water Data breadcrumbs, 20-plus back-links and 18 of 20 default options already
 do.
 
-### Tables that explain their numbers (Phase 142)
+### Tables that explain their numbers
 
 The dashboard's tables were the worked example (`templates/accounting/partials/_dashboard_content.html`,
 `.data-table--grouped` in `app.css`). Four consistency passes never reached these faults because none is a
 design-system violation; the test is *can a reader say from the layout what the numbers mean*. Every rule
-below was judged on the whole page, not a table in isolation, and Phase 143 carries them to every other table.
+below was judged on the whole page, not a table in isolation, and they apply to every other table.
 
 1. **Columns run in the order of the equation the page states.** Supplies (Surface, Groundwater, Rain,
    Total) → Consumptive use → Balance, then the groundwater budget. A reader must be able to say why the
@@ -362,8 +360,7 @@ re-learned, and each holds on every page that copies these shapes:
     (`tr.row-group td`, platform-wide). The secondary-text version blended into the rows.
 17. **A card's subtitle is a noun phrase, not a sentence with a story in it.** "What came through the meter,
     and what the water table did beneath it" became "Meter reads and depth to water, by water year."
-    The platform-wide sweep is Phase 143.1; the shape of the fault is in the roadmap entry.
-18. **A grouped table's bracket header sits centred over its bracket.** Left alignment was tried and
+    18. **A grouped table's bracket header sits centred over its bracket.** Left alignment was tried and
     read worse: the bracket is the group's extent and the word balances it from the middle. `.data-table--grouped
     th.th-group-label`, platform-wide; guard
     `tests/test_template_hygiene.py::TestGroupedTableBracketHeaderIsCentred`.
@@ -410,7 +407,7 @@ outliers, not the rule.
 
 A California program's proper name spelled the British way is the one thing on
 these screens that must look authoritative and does not. `GAMA programme`
-shipped to staging in Phase 101 and was caught by eye rather than by a gate.
+once shipped to staging and was caught by eye rather than by a gate.
 
 This binds **rendered text only** — page copy, labels, `help_text`, and the
 strings in `drinking/provenance.py` and `drinking/glossary.py`. Template and
@@ -438,7 +435,7 @@ field grid breaks the grid the reader is scanning.
 
 Chosen over a glossary-link layer because the module already does this and it
 already survived review: `result_detail.html` expands ELAP in prose at its only
-prose use, and that page passed the 101-01 checkpoint. Copying an accepted
+prose use, and that page passed review. Copying an accepted
 precedent beats building a second explanation mechanism.
 
 A name that is a *file layout* rather than a system is not expandable —
@@ -454,7 +451,7 @@ Body prose caps at **75ch**, inside the 65–75ch band CLAUDE.md states. Every
 
 "…arrives with no coordinates **at all**" says nothing "…arrives with no
 coordinates" does not. Cut the intensifier and keep the fact. Same family as the
-sentence 101-01 deleted from the map caption for restating the label beneath it.
+sentence once deleted from the map caption for restating the label beneath it.
 
 ### 8. An empty state states the fact and stops
 
@@ -469,7 +466,7 @@ An error or status string that reaches a screen is copy, and it is bound by ever
 rule above. Field names, model attributes and payload keys are developer
 vocabulary: they belong in a log line, an exception attribute, or a docstring.
 
-The measured instance (ISS-101) is `drinking/envirofacts_mapping.py`'s
+The measured instance is `drinking/envirofacts_mapping.py`'s
 `UnmappableFacility`, which told an operator a facility *"has no
 **state_facility_id**"* on the onboarding review screen — two lines above that
 same screen's own English for the same fact, *"missing the state-assigned ID that
@@ -478,7 +475,7 @@ and once in Python.
 
 Two properties made it durable, and both are worth recognising elsewhere:
 
-* **It was not in a template.** The whole 101-02 copy pass swept 22 templates
+* **It was not in a template.** The whole copy pass swept 22 templates
   and `drinking/glossary.py` and never saw it, because the string is raised in a
   mapping module. Rule 3's list of code files that hold copy is a list to keep
   extending, not a boundary.
@@ -579,17 +576,16 @@ anywhere without a ruling.
 **The rule, in one sentence: name each quantity once, and the same way on
 every screen.**
 
-**What was counted.** Phase 135 traced all 106 figures the platform renders and
+**What was counted.** An audit traced all 106 figures the platform renders and
 recomputed every one of them a second way, in SQL that cannot call the
 platform's own code. Not one figure computed a wrong number. Every defect it
 could confirm was a correct number under a label naming something else, or two
 screens describing the same rows differently: a diversion table headed
-"Consumptive Use" over water spread into a recharge basin (ISS-153); a use
+"Consumptive Use" over water spread into a recharge basin; a use
 ledger footer and a dashboard stating the same year with opposite signs, because
-one file called a canal delivery a debit and the other a supply (ISS-155); a
-budget that subtracted gross crop water use, a quantity that falls in a drought
-(ISS-151); and a parcel badge reading "Surplus" to an audience for whom surplus
-is good news (ISS-143). Three different quantities were all called "consumptive
+one file called a canal delivery a debit and the other a supply; a
+budget that subtracted gross crop water use, a quantity that falls in a drought; and a parcel badge reading "Surplus" to an audience for whom surplus
+is good news. Three different quantities were all called "consumptive
 use". The product had two live definitions of "supply" and had never chosen.
 This rule chooses, and the table below is where the choice is written down.
 
@@ -627,8 +623,8 @@ the number; nothing in this table asks for a new calculation.
 | **Crop ET** | The crop's evapotranspiration for one field and month, OpenET's satellite estimate. Gross, before effective precipitation. The headline use figure on the dashboard, the account page, the field page, the help pages and the glossary. The engineer's term replaces "crop water use" and the dashboard's "consumptive use", because DWR's handbook ties consumptive use to ETAW and the screen meant gross ET. | `consumptive_use_gross` = sum of `CalculationRun.gross_et_af` | `crop water use` in `templates/help/`, `crop water use` in `templates/accounting/`, `crop water use` in `templates/parcels/`, `Crop water use` in `templates/help/`, `Crop water use` in `templates/accounting/`, `Crop water use` in `templates/parcels/`, `Consumptive use` in `templates/help/`, `Consumptive use` in `templates/accounting/`, `Consumptive use` in `templates/parcels/`, `consumptive use` in `templates/help/`, `consumptive use` in `templates/accounting/`, `consumptive use` in `templates/parcels/` |
 | **ETAW** | Evapotranspiration of applied water: crop ET minus effective precipitation, for one field and month. OpenH2O assigns it first to surface water, up to the delivery times the field's irrigation efficiency, and the rest to groundwater. Written "ETAW" on every screen; the glossary expands it. | `consumptive_use_net` = sum of `CalculationRun.net_consumptive_use_af` | `net consumptive use` in `templates/help/`, `net consumptive use` in `templates/accounting/`, `net consumptive use` in `templates/parcels/`, `Net consumptive use` in `templates/help/`, `Net consumptive use` in `templates/accounting/`, `Net consumptive use` in `templates/parcels/` |
 | **Supplies** | Water that reached the field in the period: surface water delivered, groundwater, effective precipitation. Never a credit, an allocation, or paper of any kind. Two screens add two different groundwater figures, on purpose: the dashboard's Supplies columns add ETAW met by groundwater (the `calculated` row's own amount, or the meter); the field page's water balance adds groundwater extraction, and lists the difference under Uses as deep percolation so the balance still closes. In both, a month with neither a `calculated` nor a `meter_reading` row lets the satellite `et_estimate` row stand in. | dashboard: `supplies.surface` + `supplies.groundwater` + `supplies.precip` from `consumptive_use_balance()`, where `supplies.groundwater` = `_recorded_usage(billable_ledger(qs))` (ETAW met by groundwater); field page: `parcel_mass_balance()["inputs"]` = `surface` + `precip` + `gw_recovered`, where `gw_recovered` = `_balance_dict(billable)["usage"]` (extraction) | no gated phrase |
-| **Groundwater use** | What the groundwater budget is spent by: groundwater extraction, never ETAW met by groundwater. A `calculated` row charges the extracted figure its run stamped; a `meter_reading` row charges as recorded; a `calculated` row from a run that stamped no extracted figure charges its recorded amount. Never "consumptive use", and never "pumped" when the number also holds canal water (ISS-154, Phase 137). The dashboard's supplies figure never uses it; the field page's water balance does, with the difference from ETAW met by groundwater listed under Uses. | `charged_groundwater(billable_ledger(qs))`, read as `_balance_dict(...)["usage"]` and as `consumptive_use_balance()["groundwater_charged"]` | no gated phrase |
-| **Allocation** | Paper. A zone's ceiling for one water type in one period; an account's pro-rated share of it. A groundwater allocation and a surface allocation are managed by different agencies under different law and are never added (ISS-156, Phase 138). Never a supply. | `AllocationPlan.allocation_acre_feet`, filtered by `water_type` | no gated phrase |
+| **Groundwater use** | What the groundwater budget is spent by: groundwater extraction, never ETAW met by groundwater. A `calculated` row charges the extracted figure its run stamped; a `meter_reading` row charges as recorded; a `calculated` row from a run that stamped no extracted figure charges its recorded amount. Never "consumptive use", and never "pumped" when the number also holds canal water. The dashboard's supplies figure never uses it; the field page's water balance does, with the difference from ETAW met by groundwater listed under Uses. | `charged_groundwater(billable_ledger(qs))`, read as `_balance_dict(...)["usage"]` and as `consumptive_use_balance()["groundwater_charged"]` | no gated phrase |
+| **Allocation** | Paper. A zone's ceiling for one water type in one period; an account's pro-rated share of it. A groundwater allocation and a surface allocation are managed by different agencies under different law and are never added. Never a supply. | `AllocationPlan.allocation_acre_feet`, filtered by `water_type` | no gated phrase |
 | **Remaining** | Allocation, plus any carry-over, minus the use of the same water type: a groundwater allocation minus groundwater extraction; a surface allocation minus water delivered. Never "allocation minus consumptive use", and never allocation minus ETAW met by groundwater. | groundwater: `zone_groundwater_budget()["remaining"]` = `available` minus `zone_consumptive_balance(...)["groundwater_charged"]`, and the account row's `allocation - cu["groundwater_charged"]` in `accounting/views/common.py`; surface: the "allocation less delivered" branch in `geography/views.py` | `Allocation minus estimated consumptive use` anywhere; `Allocation minus usage` anywhere |
 | **Credit** | Paper or banked water on a field's ledger: an allocation entry, a managed recharge entry, or, under the credited setting for surface water in excess of ETAW, the landowner's credited share of that water (the month's amount less the share left in the basin). Stored positive. A field with no well has its share go to the zone's shared account instead, because it has no well to pump it back; that account is not a ledger entry but the zone's pool row, and a no-well field whose zone has no such account is credited nothing. Never a supply, and never part of the field's water balance, which reads the same under every setting. | `source_type in ("allocation", "recharge")`, `amount_acre_feet > 0` (the `parcelledger_supply_rows_positive` constraint); the credited share is the `recharge` row `over_delivery_credit_words()` describes, amount `CalculationRun.over_delivery_credited_af`; the zone's shared account is an `AllocationCarryover` row from `deposit_to_basin_pool()` with origin `INCIDENTAL_RECHARGE_POOL` | no gated phrase |
 | **Delivered** | Surface water the ledger records as reaching the field in the month, from the district's own record: a meter at the gate, or the ditch tender's estimate. Where the district recorded only the canal total, the field's figure was divided up from the canal total in proportion to each field's ETAW, and its ledger row says so. Stored negative by the ledger's convention (water leaving its source). Never "debits", and never "usage" in a footer that also holds credits. Never the figure the calculation subtracts: that is the delivery times the field's irrigation efficiency. | `surface_diversion` rows, magnitude; on the run, `CalculationRun.surface_delivered_af` | `debits` in `templates/accounting/` |
@@ -651,7 +647,7 @@ A label is read under the heading above it. If the heading already says the thin
 left to say: the arithmetic ("Not met by supplies"), the unit, the scope ("by source"). The settled phrase
 stays the quantity's NAME where it stands alone (the field's own page prints "Water use recorded, no supply
 reported: 330.37 AF"); only the repeat under its own title goes. Rule 4 still holds: this stops a restating,
-it never renames a quantity. Platform-wide sweep: ISS-168, Phase 144.
+it never renames a quantity.
 
 ### 14. Text an engine writes onto a record is a sentence a reader can use
 
@@ -661,15 +657,15 @@ rows, not template text, so no template edit could fix them. Rule 9 is the neare
 column name in a message; this rule requires more: a description an engine stores is copy, and it must
 say what the row is in words the reader would use.
 
-The five sentences (143-11, ISS-170) are kept in ONE module,
+The five sentences are kept in ONE module,
 `accounting/ledger_words.py`, beside the Water column's words, so every word the ledger shows lives in one
 file: a share of a headgate's delivery split by estimated use ("Share of 214.58 AF delivered from Stevinson
 Diversion Canal Headgate, divided up from the canal total in proportion to each field's crop water use after
 rain" (every description of a demand-weighted split says it in those words, and the weight is each
-field's net consumptive use; ISS-218));
+field's net consumptive use));
 the same split by each use area's share of the canal on file ("…, divided up from the canal total by this use
 area's share of the canal on file, 20%, because no use area the canal serves has an estimated use for the
-month" (reworded 2026-10-07, 149.1-05, because "fixed share" was not a phrase a reader knew)); the incidental credit ("Credit for canal water delivered beyond the use area's
+month" (worded this way because "fixed share" was not a phrase a reader knew)); the incidental credit ("Credit for canal water delivered beyond the use area's
 estimated use for the month"); the pumping estimate ("Estimated pumping: the month's estimated use, less
 rainfall and canal water delivered"); and the month with none ("No groundwater extraction was derived for
 this month; rainfall and delivered surface water covered the estimated use."). The guards:
@@ -681,8 +677,8 @@ Two carry-overs. The figure in the sentence is the one the shares actually sum t
 (`consumed_acre_feet()`, not the diverted volume), at the Amount column's precision (two decimals, a
 thousands separator), never the four decimals the model stores. And a re-run on rows written before a
 wording change must replace them, not double them: the old string stays in the module as a legacy prefix
-matched on delete and never written (`LEGACY_INCIDENTAL_RECHARGE_WORDS`; the ISS-052 contract). Identifiers
-follow the 143-07 map-card ruling (table rule 19, `core.map_labels.map_label`): the headgate's name, never its `MER-POD-…` code.
+matched on delete and never written (`LEGACY_INCIDENTAL_RECHARGE_WORDS`). Identifiers
+follow the map-card rule (table rule 19, `core.map_labels.map_label`): the headgate's name, never its `MER-POD-…` code.
 
 ### 15. Explanatory prose is short, complete sentences
 

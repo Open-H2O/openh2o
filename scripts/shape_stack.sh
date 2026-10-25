@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
 # shape_stack.sh: stand up, seed, check and tear down one of the six deployment
-# shapes measured in Phase 145 (145-02), so any later plan can re-walk a shape on
+# shapes, so a shape can be re-walked on
 # a fresh instance instead of re-deriving the recipe by hand.
 #
 # Usage:
@@ -21,11 +21,10 @@
 # inside this repository, and `git status` must never show it.
 #
 # `verify_clean_install` fails (exit 1, "No reference data found (zero DataSource
-# rows)") on any shape whose module list omits `datasync`, shapes 1, 2 and 5 as
-# measured in 145-02-EVIDENCE.md. That is a known positive-signal bug in the
-# check, not a broken install (every module-appropriate reference table IS
-# seeded), so this script prints the failure and continues rather than treating
-# it as fatal: ISS-198, expected until Phase 151.
+# rows)") on any shape whose module list omits `datasync`, shapes 1, 2 and 5.
+# That is a known positive-signal bug in the check, not a broken install
+# (every module-appropriate reference table IS seeded), so this script prints
+# the failure and continues rather than treating it as fatal.
 
 set -euo pipefail
 
@@ -144,7 +143,7 @@ cmd_up() {
 
   echo "shape_stack: manage.py verify_clean_install"
   if ! $COMPOSE -p "$project" exec -T web python manage.py verify_clean_install; then
-    echo "shape_stack: verify_clean_install exited non-zero (ISS-198: expected until Phase 151 on any shape without datasync)"
+    echo "shape_stack: verify_clean_install exited non-zero (expected on any shape without datasync)"
   fi
 
   echo "shape_stack: composed OPENH2O_MODULES"
@@ -163,7 +162,7 @@ cmd_seed() {
 
   echo "shape_stack: manage.py verify_clean_install"
   if ! $COMPOSE -p "$project" exec -T web python manage.py verify_clean_install; then
-    echo "shape_stack: verify_clean_install exited non-zero (ISS-198: expected until Phase 151 on any shape without datasync)"
+    echo "shape_stack: verify_clean_install exited non-zero (expected on any shape without datasync)"
   fi
 }
 

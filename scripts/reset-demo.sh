@@ -39,7 +39,6 @@
 # `high` because a demo that did NOT reset is an operational failure needing
 # attention now. An alarm that wakes somebody for something that can wait until
 # morning is an alarm that gets muted, and then the real one is muted too.
-# (102-02, 2026-07-31.)
 #
 # Mechanism: drop + recreate the database from the golden snapshot (pg_dump -Fc
 # written by snapshot-demo.sh), which cleanly rebuilds PostGIS and all data. The

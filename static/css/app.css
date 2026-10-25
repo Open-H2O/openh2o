@@ -135,7 +135,7 @@ html { color-scheme: dark; }
 }
 
 /* A disabled primary sinks (the same 0.45 the ledger paging uses), so a gold
-   button that cannot act never reads as one that can (146-01, the wizard's
+   button that cannot act never reads as one that can (the wizard's
    "Use this boundary" with none on file). */
 .btn-primary:disabled,
 .btn-primary[disabled] {
@@ -197,9 +197,9 @@ html { color-scheme: dark; }
 .app-content {
     flex: 1;
     padding: var(--space-lg);
-    /* 150-04 (ISS-167): the pane is NOT a scroll container. `overflow-y: auto`
-       stood here from Phase 75, when the pane stopped scrolling internally and
-       the document took over; measured 2026-10-09 on the dashboard, the ledger
+    /* The pane is NOT a scroll container. `overflow-y: auto`
+       is not used: the pane does not scroll internally and
+       the document scrolls; measured 2026-10-09 on the dashboard, the ledger
        and two list pages at 1440 and 1730, its scrollHeight equalled its
        clientHeight on every one, so the only thing the value did was give
        `.data-table thead th { position: sticky }` a pinning box that never
@@ -209,14 +209,14 @@ html { color-scheme: dark; }
        document. The map page overrides this block in its own style element. */
     overflow-x: clip;
     overflow-y: visible;
-    /* Phase 64: enlarge ONLY the information pane (a first real user had to
+    /* Enlarge ONLY the information pane (a first real user had to
        browser-zoom to 150% to read it). Every font-size in this file is rem
        (root-relative), so a container font-size does nothing and an html bump
        would also grow the sidebar nav, header, and all --space-* tokens. `zoom`
        scales this subtree's text AND spacing uniformly in one knob with zero
        collateral on the nav/header. Must be `zoom`, NOT transform:scale —
        transform breaks MapLibre pointer coords and creates a containing block
-       that would break the Phase-63 sticky ledger columns. */
+       that would break the sticky ledger columns. */
     zoom: 1.0625;
 }
 
@@ -361,9 +361,9 @@ html { color-scheme: dark; }
     width: 0;
 }
 
-/* 150-04: a label longer than the rail wraps to a second line instead of being
+/* A label longer than the rail wraps to a second line instead of being
    cut by the sidebar's `overflow: hidden` ("Methods behind the number", two
-   fresh readers in 150-03). The link keeps `nowrap` so the icon and the text
+   fresh readers). The link keeps `nowrap` so the icon and the text
    stay on one row; only the text may break. */
 .sidebar-link-text {
     white-space: normal;
@@ -588,7 +588,7 @@ html { color-scheme: dark; }
     gap: var(--space-lg); /* Phase F: more air between cards (loosen furniture) */
 }
 
-/* 143-09 (R-140): the anonymous front page's single counts grid. auto-FIT
+/* The anonymous front page's single counts grid. auto-FIT
    (not auto-fill) so a short last row stretches its cards rather than
    leaving an empty track beside them; 380px is chosen against this grid's
    measured 1,439px content width at a 1,730 viewport, where three columns
@@ -713,7 +713,7 @@ html { color-scheme: dark; }
     margin: 0 0 var(--space-sm);
 }
 
-/* 143-09 (R-137): the title itself is the link when the hero leads with the
+/* The title itself is the link when the hero leads with the
    station figure. inline-flex + gap lays the existing .home-hero-dot beside
    the text at the title's own size (the dot's fixed 8px box is otherwise
    ignored by a plain inline element); colour is inherited so the link reads
@@ -779,7 +779,7 @@ html { color-scheme: dark; }
    icon + label + sublabel. The most-common action carries a gold edge. */
 .home-task-grid {
     display: grid;
-    /* 150-04 (ISS-201): a 200px floor lets six task tiles share one row at
+    /* A 200px floor lets six task tiles share one row at
        1,730: the pane is zoomed 1.0625, so the 1,439px content width is 1,354
        grid px, and six tracks with five 16px gaps need 6 x 212 at most (260px
        put the fifth alone on row two on shapes 1 and 2; 240 and 220 put the
@@ -937,12 +937,12 @@ html { color-scheme: dark; }
    `min-width: 0` restores what `1fr 1fr` already says, and hands the overflow
    to `.table-scroll`, which exists for exactly that and was being bypassed:
    the wrapper can only scroll a table if something upstream stops the table
-   dictating the layout. 143-01 made the imbalance visible and worse; it did not
-   introduce it. */
+   dictating the layout.
+   */
 .page-grid-2col > * {
     min-width: 0;
 }
-/* Each card its content's height (150-02, ISS-201): a card beside a longer
+/* Each card its content's height a card beside a longer
    list is not stretched to its neighbour's height. */
 .page-grid-2col--align-start {
     align-items: start;
@@ -969,7 +969,7 @@ html { color-scheme: dark; }
     gap: var(--space-lg);
 }
 
-/* The account detail pane, composed as a PAGE (143-03, 2026-09-11; DESIGN.md
+/* The account detail pane, composed as a PAGE (DESIGN.md
    *What a finished page is*). Row one: Account information beside Account
    balance, stretched to one height. Then the use-area breakdown table and the
    assignment card, each the full width. The mirror grid this replaces
@@ -1027,7 +1027,7 @@ html { color-scheme: dark; }
     flex-direction: column;
     justify-content: center;
 }
-/* The water right's face-value card (150-02, ISS-201) is its content's
+/* The water right's face-value card is its content's
    height. Its "By water year" table makes it taller than the information card
    on one right and shorter on another; stretched to the row, the panel sat
    centred in a band of blank fill. A modifier on this page's cell only, so the
@@ -1038,7 +1038,7 @@ html { color-scheme: dark; }
 .page-grid-account-full {
     grid-column: 1 / -1;
 }
-/* The account's use-area map (ISS-175, 150-02) sits on row 2: under
+/* The account's use-area map sits on row 2: under
    Account information and Account balance, above the breakdown table that the
    balance partial renders next to the balance card. Stacked (the container
    query below), row 2 is under the balance card, so the map still sits
@@ -1046,7 +1046,7 @@ html { color-scheme: dark; }
 .page-grid-account-map {
     grid-row: 2;
 }
-/* A water year's finalize / reopen card (147-02): what finalizing does on the
+/* A water year's finalize / reopen card: what finalizing does on the
    left, the note and the button on the right, one row at a desktop width so
    the card stays short. */
 .period-close {
@@ -1075,7 +1075,7 @@ html { color-scheme: dark; }
     border-bottom: 1px solid var(--color-border);
 }
 /* The assigned use areas as a flow of chips, one per use area, each with its
-   own quiet remove control (143-03). As a table, then as a three-column grid,
+   own quiet remove control. As a table, then as a three-column grid,
    eighteen rows of parcel / date / Remove were the heaviest region on the page
    and a second copy of the breakdown table above; the context-free reader
    failed both. A chip is the `.badge` surface with a link in it. */
@@ -1197,7 +1197,7 @@ html { color-scheme: dark; }
 
 /* The login page's heading, named. The ten templates under templates/account/
    share this one definition instead of an inline style or Tailwind classes the
-   served build does not define (R-141, R-143; Phase 141, 2026-09-08). */
+   served build does not define. */
 .auth-title {
     font-size: 1rem;
     font-weight: 600;
@@ -1236,7 +1236,7 @@ html { color-scheme: dark; }
 }
 
 /* Short fields set two abreast, for a card that stands beside a taller
-   neighbour (the account page, 143-03). A long field spans both columns. */
+   neighbour (the account page). A long field spans both columns. */
 .field-grid-2 {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1275,10 +1275,10 @@ html { color-scheme: dark; }
    and a template's `<td class="text-tertiary text-xs">` finally renders as
    asked. Before this the plain `.data-table td` (0,1,1) silently discarded
    every one of them: 105 template cells across 36 templates, measured on
-   /recharge/1/ 2026-09-07 (ISS-162). Two things follow: never an importance
+   /recharge/1/ 2026-09-07. Two things follow: never an importance
    override here, and THE UTILITIES MUST STAY DECLARED AFTER THIS RULE -- moving .text-sm
    or .text-tertiary above this block re-breaks 36 templates without a single
-   test noticing. Changed 2026-09-08, Phase 141. */
+   test noticing. */
 .data-table :where(td) {
     padding: 10px var(--space-md);
     border-bottom: 1px solid var(--color-border);
@@ -1298,7 +1298,7 @@ html { color-scheme: dark; }
     background-color: color-mix(in srgb, var(--color-accent) 8%, transparent);
 }
 
-/* A reading and the note under it are ONE entry (ISS-146 put the note on its
+/* A reading and the note under it are ONE entry (not a note on its
    own row). No rule between the two, the rule comes after the note, and the
    zebra stripe, which counts physical rows, must not split the pair. With a
    rule between them, the note sat pressed against the line above it. */
@@ -1316,7 +1316,7 @@ html { color-scheme: dark; }
     background-color: transparent;
 }
 
-/* A full-width divider naming the kind of row that follows (Phase 142, R-010:
+/* A full-width divider naming the kind of row that follows (
    the Zones table mixes zones with a groundwater budget and zones without,
    and the second kind dashes three cells; the divider says why, once, instead
    of five times). Left-aligned so it sits over the zone names. Excluded
@@ -1353,8 +1353,8 @@ html { color-scheme: dark; }
     background-color: color-mix(in srgb, var(--color-warning) 14%, transparent);
 }
 
-/* The one row a diversion-records table has open for editing (146-02 Task 3,
-   ISS-181): teal, the everyday-emphasis accent, not the warning amber above:
+/* The one row a diversion-records table has open for editing
+   is teal, the everyday-emphasis accent, not the warning amber above:
    nothing is wrong with this row, it's just the one being worked on. */
 .data-table tbody tr.row-editing td {
     background-color: color-mix(in srgb, var(--color-accent) 10%, transparent);
@@ -1375,7 +1375,7 @@ html { color-scheme: dark; }
     border-radius: var(--radius-sm);
 }
 
-/* -- Sortable headers + scroll-away filters (Phase 63; revised 73-02) ------ */
+/* -- Sortable headers + scroll-away filters ------ */
 /* The scroll container is .app-content (overflow-y:auto), so position:sticky
    pins relative to it. The filter card is NOT pinned — it scrolls away normally
    so a tall 3-row filter (search/period/zone + paging) doesn't permanently eat
@@ -1383,11 +1383,11 @@ html { color-scheme: dark; }
    stays pinned at the top of the scroll container, so data stays labeled while
    you scroll; scroll back up to reach the filters. (--ledger-header-offset was
    never consumed here; the JS that set it, syncLedgerHeaderOffset, was removed
-   in 143-05 along with the property write.) */
+   along with the property write.) */
 .ledger-filters-sticky {
     /* intentionally not sticky — see note above; class retained because the
        HTMX hx-include wiring on every filter control depends on the form's id,
-       not this class, but the class name documents the Phase 75 decision */
+       not this class, but the class name documents the decision */
     position: static;
 }
 
@@ -1400,15 +1400,15 @@ html { color-scheme: dark; }
     box-shadow: 0 2px 4px rgba(5, 8, 12, 0.45);
 }
 
-/* -- Grouped headers, the column separator and the footer (Phase 142) ------ */
-/* R-007 / R-008 (ISS-159 #1): a two-row header whose top row names the group
+/* -- Grouped headers, the column separator and the footer ------ */
+/* A two-row header whose top row names the group
    a run of columns belongs to (Supplies; Groundwater budget) and whose bottom
    row carries the leaf labels, so a table can show that three columns sum to a
    fourth and that the budget columns are a different kind of number. Both
    header rows are sticky, so the second row's `top` is the first row's height
    or they overlap on scroll; `--th-group-h` is that height. Declared AFTER the
    base `.data-table :where(td)` rule and BEFORE the text utilities, so a
-   `<td class="text-tertiary text-xs">` still wins (141-01). */
+   `<td class="text-tertiary text-xs">` still wins. */
 .data-table--grouped :where(td),
 .data-table--grouped th {
     padding-inline: 6px;
@@ -1444,7 +1444,7 @@ html { color-scheme: dark; }
 .data-table--canal-water {
     table-layout: fixed;
     /* Below this the fixed columns squeeze a figure across its divider; the
-       table scrolls inside its .table-scroll wrapper instead. 150-04: 63.5rem,
+       table scrolls inside its .table-scroll wrapper instead. 63.5rem,
        not 64: at a 1,440 viewport the card holds 1,021px and 64rem is 1,024,
        so the table scrolled by three pixels at that common width; the
        sweep at 1,440 shows 0 crossings at 63.5rem with the 2px tighter cells. */
@@ -1505,7 +1505,7 @@ html { color-scheme: dark; }
    accent, no rule under it, and its label set like a column header so the row
    reads as the table's closing line rather than one more entry (bold alone
    did not call it out). The ledger and allocation
-   footers already tint themselves inline; Phase 143 folds them in. */
+   footers already tint themselves inline. */
 .data-table tfoot td {
     border-top: 2px solid var(--color-accent-muted);
     border-bottom: none;
@@ -1536,15 +1536,15 @@ html { color-scheme: dark; }
     outline-offset: -2px;
 }
 
-/* Phase 75: the ledger no longer locks the shell to the viewport. That lock
+/* The ledger does not lock the shell to the viewport. That lock
    (height:100vh; overflow:hidden) made .app-content scroll INTERNALLY so the
    sticky column header had a bounded scrollport — but it stranded the footer at
    the bottom of the viewport and gave the page an inner scrollbar instead of
    normal whole-page scroll. The ledger now scrolls like every other list page
    (document scroll; the footer rides the content). The column header is no
    longer pinned here, matching the other list pages. Rule intentionally removed;
-   the JS that set --ledger-header-offset was removed in 143-05 (dead since
-   this phase). */
+   the JS that set --ledger-header-offset is gone.
+   */
 
 
 .back-link:focus-visible,
@@ -1612,8 +1612,8 @@ html { color-scheme: dark; }
 /* A select sized to its own longest option, for a card header rather than a
    form row — the water-year control beside "Account balance".
 
-   R-036 (143-01): this used to be an inline `padding: 4px var(--space-sm)` on
-   the template. The SHORTHAND is the bug: it overwrites `.form-select`'s
+   It replaces an inline `padding: 4px var(--space-sm)` on
+   the template. That SHORTHAND overwrites `.form-select`'s
    `padding-right: calc(var(--space-md) * 2 + 12px)`, which is not decoration
    but the space reserved for the dropdown-arrow background image. Measured
    2026-09-08 on staging: padding-right computed 8px while the 12px arrow sits
@@ -1757,7 +1757,7 @@ html { color-scheme: dark; }
     margin-bottom: var(--space-md);
 }
 
-/* -- Page head (Phase 143-02) --------------------------------------------- */
+/* -- Page head --------------------------------------------- */
 /* One head on every page that extends base.html: crumbs (the path, without the
    current page), the title at title size with the page's actions on its line,
    the description under it. Sits OUTSIDE .app-content, like the breadcrumb bar
@@ -1812,7 +1812,7 @@ html { color-scheme: dark; }
 .page-head .breadcrumb-bar > .row-end { order: 4; }
 /* A narrow page (a form at 640px, centred) gets a head on the same measure, so
    the top of the page and its body share one axis. The body sits under
-   .app-content's zoom (1.0625, Phase 64) and this head does not, so the head's
+   .app-content's zoom (1.0625) and this head does not, so the head's
    measure is the body's measure times that zoom: 640 renders at 680, 800 at 850.
    Measured 2026-09-11 at 1,730: the unzoomed 640 put the title 20px inside the
    card's edge on every narrow page. Keep the factor in sync with .app-content. */
@@ -1823,7 +1823,7 @@ html { color-scheme: dark; }
 .page-head--help > *,
 .page-head--help .breadcrumb-bar > * { width: 100%; max-width: calc(1100px * 1.0625); margin-inline: auto; }
 
-/* -- The feedback trigger in the sidebar (Phase 143-02, R-024) ---------------- */
+/* -- The feedback trigger in the sidebar ---------------- */
 /* A .sidebar-link that is a <button>: same row, same type, no button chrome.
    It sits at the foot of the nav under Help, where the sidebar is sticky and
    full height, so it is always in view and never over content. */
@@ -1836,7 +1836,7 @@ html { color-scheme: dark; }
     text-align: left;
 }
 
-/* -- The signed-out shell's name (Phase 143-02, R-142) ------------------------ */
+/* -- The signed-out shell's name ------------------------ */
 .auth-stack {
     display: flex;
     flex-direction: column;
@@ -2224,7 +2224,7 @@ html { color-scheme: dark; }
     min-width: 0;
 }
 
-/* The two explainer pages built around the 148-01 picture (help/water_balances,
+/* The two explainer pages built around the subtraction picture (help/water_balances,
    help/methods) and the ledger partial they share
    (help/partials/_the_subtraction.html). Every rule below answers one fault
    found on the first render; the page container
@@ -2241,7 +2241,7 @@ html { color-scheme: dark; }
 /* One frame per section. A sub-block inside a card (the ledger, the note about
    the demonstration) is ruled off from the block above it instead of drawn as
    a second card: a raised card nested in a raised card painted the border and
-   the pop shadow twice and doubled the padding (the 117-01 finding again). */
+   the pop shadow twice and doubled the padding. */
 .help-subsection {
     margin-top: var(--space-lg);
     padding-top: var(--space-lg);
@@ -2250,7 +2250,7 @@ html { color-scheme: dark; }
 
 /* A subsection straight under a ruled card heading needs no second rule: the
    heading's own rule already separates them (the diversion import page's
-   "Columns OpenH2O reads", 150.1-02 screen 18). */
+   "Columns OpenH2O reads"). */
 .card-header-ruled + .help-subsection {
     margin-top: var(--space-md);
     padding-top: 0;
@@ -2328,8 +2328,8 @@ html { color-scheme: dark; }
     /* Four columns, one of them a sentence: below this the table scrolls
        inside `.table-scroll` instead of squeezing the sentence to one word a
        line (the 390px render). 38rem, not 40: at a 1,024 px window the
-       card's inner width is 630 px, and 40rem scrolled the table 10 px
-       (149.1-01 collision sweep). */
+       card's inner width is 630 px, and 40rem scrolls the table by
+       10 px. */
     min-width: 38rem;
 }
 
@@ -2374,7 +2374,7 @@ html { color-scheme: dark; }
     margin-top: var(--space-sm);
 }
 
-/* The Methods page's step tables (149.1-01): the step column is a short verb
+/* The Methods page's step tables: the step column is a short verb
    phrase and the setting column a short link, so the sentence column takes
    the room; the same shape as `.how-sure-table` above. */
 .help-steps-table {
@@ -2416,7 +2416,7 @@ html { color-scheme: dark; }
     font-weight: 600;
 }
 
-/* The sources table on How water balances work (149.1-02): its names are one
+/* The sources table on How water balances work: its names are one
    or two words, so the sentence columns take the room a 24% name column wasted. */
 .help-cases-table--short-names .col-name {
     width: 14%;
@@ -2435,14 +2435,14 @@ html { color-scheme: dark; }
     white-space: nowrap;
 }
 
-/* The settings table on Configs & settings (149.1-03): its third column is one
+/* The settings table on Configs & settings: its third column is one
    page name per row, so it takes 18% and the "What it decides" column the rest
    (a squeezed second column was the page's worst fault). */
 .help-cases-table .col-where {
     width: 22%;
 }
 
-/* The glossary (149.1-04): the term column holds names up to seven words,
+/* The glossary: the term column holds names up to seven words,
    the pill column says whose word it is, and the Read more column is one
    link or nothing, kept to the link's width so an empty cell leaves no
    strip (two verdict readers named the wrapped terms and the empty column). */
@@ -2458,7 +2458,7 @@ html { color-scheme: dark; }
     line-height: 1.5;
 }
 
-/* The setup steps on Getting started (149.1-04): the step column is a short
+/* The setup steps on Getting started: the step column is a short
    name and the Where column a section path plus a link, so the instruction
    column takes the room (two verdict readers named the squeezed third column
    and the one-digit number gutter against "10" and "11"). Scoped to the
@@ -2482,7 +2482,7 @@ html { color-scheme: dark; }
     width: 26%;
 }
 
-/* The worked example on Allocations & ceilings (149.1-03): the figure column
+/* The worked example on Allocations & ceilings: the figure column
    holds one number each, kept on one line, so the "where it comes from"
    column takes the room. */
 .help-steps-table .col-figure {
@@ -2491,7 +2491,7 @@ html { color-scheme: dark; }
 }
 
 /* The calculation page's short page (a month with nothing estimated). The
-   receipt table that stood here (148-03 to 150.1-02) is gone: since
+   receipt table is gone: since
    2026-10-11 the page is the equation panel (`.receipt-panel`, below). */
 .receipt-facts {
     margin-bottom: var(--space-sm);
@@ -2523,7 +2523,7 @@ html { color-scheme: dark; }
 
 
 /* `.step-list` and `.step-card--inset` (the Methods page's five step panels)
-   were removed in 149.1-01: the page is tables now and no other template used them. */
+   do not exist: the page is tables now and no other template used them. */
 
 .glossary-letter-heading {
     font-size: 1.25rem;
@@ -2614,13 +2614,13 @@ html { color-scheme: dark; }
 }
 
 /* Lettering is the deficit token (5.0:1 on the card), the colour `.text-deficit`
-   paints figures with; `--furnace-400` measured 2.55:1 (2026-09-28, 148-03). */
+   paints figures with; `--furnace-400` measured 2.55:1 (2026-09-28). */
 .badge-orange {
     background-color: oklch(0.45 0.12 55 / 0.2);
     color: var(--color-deficit);
 }
 
-/* 150-04: the error token, not a literal (the one hard-coded colour the
+/* The error token, not a literal (the one hard-coded colour the
    badge system still carried; CLAUDE.md "never hardcode a colour"). */
 .badge-red {
     background-color: color-mix(in srgb, var(--color-error) 18%, transparent);
@@ -2706,7 +2706,7 @@ html { color-scheme: dark; }
     flex-shrink: 0;
 }
 
-/* Phase 64: flag-gated meta-label marking demo sample data (e.g. a "Revoked"
+/* Flag-gated meta-label marking demo sample data (e.g. a "Revoked"
    state that an outside evaluator could mistake for a real Water Board order).
    Deliberately neutral — no status color — so it reads as a label ABOUT the
    data, not as another status. Token-only. */
@@ -2719,7 +2719,7 @@ html { color-scheme: dark; }
     font-weight: 700;
 }
 
-/* Phase 101: provenance label (partials/_source_label.html) — "who published
+/* Provenance label (partials/_source_label.html) — "who published
    this". Same reasoning as `.badge-demo` above and applied for the same reason:
    transparent background, no status colour, tertiary text, a hairline border, so
    it reads as a label ABOUT the data rather than as another status ON it. The
@@ -2772,7 +2772,7 @@ html { color-scheme: dark; }
 
 /* Its own class, not `.badge-demo`. That one is the row-level marker meaning
    "this value is sample data"; this one scopes the whole deployment. The name
-   deliberately does not contain `badge-demo` either, because the Phase 64 tests
+   deliberately does not contain `badge-demo` either, because the tests
    assert on raw HTML substrings. */
 .notice-badge {
     background-color: transparent;
@@ -2912,10 +2912,9 @@ html { color-scheme: dark; }
    account pages, the parcel pane and the Help explainers as the house
    "balance" card.
 
-   Phase 142 (R-003, R-004, R-005; ISS-159 #2): the figures came down from
-   2.5rem, the result (`.budget-seg--result`) became the only lead figure, and
-   the supply breakdown joined the panel. Phase 143 (resumed 2026-09-11) gave
-   every live-figure panel the same body: one row of figure cells, each figure
+   The figures are below 2.5rem, the result (`.budget-seg--result`) is the only
+   lead figure, and the supply breakdown is part of the panel. Every
+   live-figure panel has the same body: one row of figure cells, each figure
    with its own parts beneath it, the rules below. */
 .budget-panel {
     background: linear-gradient(180deg, var(--color-card), var(--color-inset));
@@ -2955,12 +2954,12 @@ html { color-scheme: dark; }
    `.budget-seg-value`; CSS seats each operator against the figure it applies
    to, on the rule that divides the cells.
 
-   143-01, resumed 2026-09-11. The two-column body that stood here (equation
+   A two-column body (equation
    packed left, one breakdown at the far right) left ~1,300px of nothing between
    the two at 2560 -- on the use-area pane AND on the
    dashboard, whose version had been approved from 1440 mock-ups where it
    happened to fit. This shape was judged by eye at 2560 on the live staging
-   page before anything was measured (`143-01-resume-mock-b.png`); the ratio
+   page before anything was measured ; the ratio
    sweep and the probes are regression checks, not the bar. */
 .budget-panel {
     container-type: inline-size;
@@ -2975,7 +2974,7 @@ html { color-scheme: dark; }
     align-items: start;
     padding: 0;
 }
-/* Four cells, not three: the lab result's panel since 146-04 Task 5 (Result,
+/* Four cells, not three: the lab result's panel (Result,
    Reporting level, the limit the laboratory's file carried, Previous
    finding). The three-cell template above wrapped the fourth onto a second
    row at 1,730 (page verdict, 2026-09-23). `:where()` keeps this at the base
@@ -3124,14 +3123,14 @@ html { color-scheme: dark; }
     border-top: 1px solid var(--color-border);
 }
 
-/* -- Dashboard top row: the panel and the period card (143-04) ----------- */
+/* -- Dashboard top row: the panel and the period card ----------- */
 /* The panel used to span the page: 1,428px at 1,730 for three figure
    blocks of ~330px, so ~300px of nothing collected in its last cell. The
    period card beside it gives the panel the width the component was built
    for (~1,020px), the way the account page pairs Account information with
    Account balance.
 
-   150-01 (2026-10-08): the panel's height is its own content's. It used to
+   The panel's height is its own content's. It used to
    stretch to the period card and centre its body in the stretched height,
    so at 1,730 the figures stood 76px below the head's rule and 76px above
    the note's (26px of that is the body's padding; measured 2026-10-08);
@@ -3160,7 +3159,7 @@ html { color-scheme: dark; }
    Inside the same container query as the row layout so the sub-700px stack
    above keeps winning.
 
-   150-01 (2026-10-08), "unevenly spaced": the cells were equal, but each
+   Spacing ("unevenly spaced"): the cells were equal, but each
    block was centred at its OWN width, so the three labels stood 47, 18 and
    51px into their cells at 1,730 and 30, 17 and 23px at 1,153. Every block
    is now ONE width, 88% of its cell (or its content, where that is wider),
@@ -3229,8 +3228,7 @@ html { color-scheme: dark; }
    across: Supplies and its parts, minus, Uses and its parts, equals, the
    result. The operator's tall top padding exists to sit it on the figures'
    baseline in a row, so it comes off in a column. 960 was the earlier line,
-   and it stacked the account page's 882px panel at a 1,730 viewport
-   (143-03). */
+   and it stacked the account page's 882px panel at a 1,730 viewport. */
 @container (max-width: 700px) {
     /* A two-column grid, not a flex column: the operator takes the narrow
        left column and the figure it applies to takes the right, on the SAME
@@ -3262,7 +3260,7 @@ html { color-scheme: dark; }
         padding-top: 1.45rem;
     }
 }
-/* 148-03: a row of two or three result figures with NO operator between
+/* A row of two or three result figures with NO operator between
    them, the calculation page's result row (its three stacked .result-card
    bands, each a small label far left and one figure far right, took a
    third of the page for three numbers: two fresh readers, DO NOT SHIP,
@@ -3464,7 +3462,7 @@ html { color-scheme: dark; }
 }
 
 /* Where a stat-card's figure came from. A number the reader cannot trace to a
-   source is a number they cannot act on (ISS-128), so provenance gets its own
+   source is a number they cannot act on, so provenance gets its own
    line — quieter than the unit line, separated by a rule so it reads as a note
    about the figure rather than more of the figure. */
 .stat-card-note {
@@ -3505,7 +3503,7 @@ html { color-scheme: dark; }
 .text-mono {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
-    /* 150-04: a code string has no spaces to break at; without this it crossed
+    /* A code string has no spaces to break at; without this it crossed
        its card's edge at 1,024 and 1,153 on Site health (`python manage.py
        run_health_checks`). */
     overflow-wrap: anywhere;
@@ -3760,7 +3758,7 @@ div[id$="-map"] {
 }
 
 .text-error {
-    /* 143-09 (Task 4): the panel's "Action required" peer needs a plain red
+    /* The panel's "Action required" peer needs a plain red
        figure the way `.text-deficit` gives the amber peer plain burnt-orange
        — no utility of that shape existed for alarm red. `.badge-red` carries
        the right color but also a background tint meant for a pill badge;
@@ -4267,7 +4265,7 @@ details[open] > summary .disclosure-mark {
 
 .page-narrow { max-width: 640px; margin-inline: auto; }
 .page-medium { max-width: 800px; margin-inline: auto; }
-/* A help page whose content is tables and a diagram, not prose (149.1-01).
+/* A help page whose content is tables and a diagram, not prose.
    Read on the viewport and on the full page, Methods behind the numbers at
    800px had one worst fault: a card about
    850px wide in a 1,450px content area, "a small panel lost in a large empty
@@ -4655,7 +4653,7 @@ details[open] > summary .disclosure-mark {
 
 /* -- Upload zone --------------------------------------------------------- */
 
-/* One rule set, consolidated from two near-duplicates 2026-08-26 (Phase 121).
+/* One rule set, consolidated from two near-duplicates on 2026-08-26.
    The values below are the ones that WON the old cascade, measured in a browser
    on staging rather than read off the page — padding and transition came from
    the second block, colour from the first. That block also carried a second,
@@ -4691,7 +4689,7 @@ details[open] > summary .disclosure-mark {
 /* A `.upload-zone:hover` background stood here until 2026-08-26. It named
    --color-surface-elevated, a token defined nowhere, so the browser threw the
    declaration away and hover painted no fill. It was deleted rather than
-   repointed (Phase 121). Hover keeps the teal border and
+   repointed. Hover keeps the teal border and
    the lighter label; the fill was never there to lose. */
 
 /* -- Responsive: stat-grid-4col ----------------------------------------- */
@@ -4810,7 +4808,7 @@ details[open] > summary .disclosure-mark {
 }
 
 /* The `.infra-type-*` four-card picker stood here. It was deleted 2026-08-27
-   with the markup it styled (ISS-134): the Add page asked which kind of
+   with the markup it styled: the Add page asked which kind of
    infrastructure you were adding when the URL had already said, and its
    subtitle contradicted its own heading. The type now arrives in the query
    string and is switched by a link in the page header. */
@@ -4864,7 +4862,7 @@ details[open] > summary .disclosure-mark {
     min-height: 28px;
 }
 
-/* ISS-171 (143-07 Task 6): the add page's coordinate strip becomes a row —
+/* The add page's coordinate strip becomes a row —
    the click/drag echo text, then labelled lat/long inputs a WCR-in-hand
    operator can type instead of clicking the map. Point mode only;
    add.html's setDrawMode hides `.coord-inputs` in polygon mode. */
@@ -4890,7 +4888,7 @@ details[open] > summary .disclosure-mark {
     color: var(--furnace-400);
 }
 
-/* The second .upload-zone rule set stood here until 2026-08-26 (Phase 121). It
+/* The second .upload-zone rule set stood here until 2026-08-26. It
    is folded into the single rule set beside the first one, above. */
 
 .upload-zone-content {
@@ -4943,10 +4941,10 @@ details[open] > summary .disclosure-mark {
     gap: var(--space-md);
 }
 
-/* -- Drinking onboarding: sampling-point builder (ISS-078) --------------- */
+/* -- Drinking onboarding: sampling-point builder --------------- */
 
 /* Each facility is a contained inset panel. It carried `.card-raised
-   .card-inset` until 117-01, when both render paths moved inside a
+   .card-inset` until both render paths moved inside a
    `.card-raised` section — and a raised card nested in a raised card draws the
    border and the pop shadow twice. The root is now `.card-inset` alone, which
    supplies only the darker background, so the padding and radius `.card-raised`
@@ -4973,8 +4971,8 @@ details[open] > summary .disclosure-mark {
 /* The "add a sampling point" row: a defined grid instead of a wrapping flex
    row, so facility / number / description / kind / button keep a stable
    order and collapse predictably (five, then two, then one) rather than
-   reflowing on help-text heights. Widened from four columns to five on
-   143-08 Task 4 (design A): the per-facility form became one form for the
+   reflowing on help-text heights. There are five columns, not four:
+   the per-facility form is one form for the
    whole system, so a facility select leads the row. The select gets the
    widest fixed range: its option text is a full "Type, Name (id)" and the
    narrowest facility list still needs to read without wrapping. */
@@ -5014,7 +5012,7 @@ details[open] > summary .disclosure-mark {
     }
 }
 
-/* -- Drinking onboarding: review/result readability (ISS-078) ------------ */
+/* -- Drinking onboarding: review/result readability ------------ */
 
 /* The lookup review and the commit result are each several `.card-raised`
    panels swapped in at once. `.card-raised` carries padding but no margin, and
@@ -5065,7 +5063,7 @@ details[open] > summary .disclosure-mark {
     color: var(--forest-400);
 }
 
-/* -- Phase 75: accounting / reporting page polish ------------------------ */
+/* -- Accounting / reporting page polish ------------------------ */
 
 /* Methodology step cards — the ordered calculation chain. Each step gets a
    left accent + a numbered badge so the sequence reads as a pipeline; a
@@ -5213,7 +5211,7 @@ details[open] > summary .disclosure-mark {
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
 }
-/* 148-03: a choice with a label line and, under it, what the choice does.
+/* A choice with a label line and, under it, what the choice does.
    The Delivery Settings card's three over-delivery choices used to be one
    string each, so the tiles wrapped to three different lengths; the label
    is now one short line and the description a quieter one beneath it. */
@@ -5316,8 +5314,8 @@ details[open] > summary .disclosure-mark {
 }
 
 /* -- "Needs attention" rows (dashboard) ---------------------------------- */
-/* A band of the period card (143-04, 2026-09-11; was a full-width strip of
-   pills above the balance panel, E1). Each exception is a ROW: a count badge
+/* A band of the period card (not a full-width strip of
+   pills above the balance panel). Each exception is a ROW: a count badge
    and the words beside it, routing to where you act on it. A row wraps like
    a list line; a pill at the card's width broke onto two chip lines. The
    count colours are the E1 ladder unchanged: a period to close is the
@@ -5396,7 +5394,7 @@ details[open] > summary .disclosure-mark {
     color: var(--color-text-secondary);
 }
 
-/* -- Use ledger: one filter row, subtitle line, one paging control (143-05) */
+/* -- Use ledger: one filter row, subtitle line, one paging control --- */
 /* Replaces the preset filter chips (This period / Active use areas), removed
    because the chips only duplicated the Period select and the new Active-
    use-areas checkbox in the disclosed row. The chrome mock-up settled these
@@ -5457,7 +5455,7 @@ details[open] > summary .disclosure-mark {
     cursor: default;
 }
 
-/* -- The overview map card's head (143-07) -------------------------------- */
+/* -- The overview map card's head -------------------------------- */
 /* The map card (padding 0, the ledger card's shape above) opens with its
    head: the h2 names the thing, and ONE line at text-base is the count line
    and the key on one row: the count at the left; at the right the key, a
@@ -5489,7 +5487,7 @@ details[open] > summary .disclosure-mark {
     background: currentColor;
 }
 
-/* Three-key variant of the map card head (143-07, Monitoring Stations): the
+/* Three-key variant of the map card head (Monitoring Stations): the
    three freshness states (Up to date / Slightly behind / Dormant) replace
    the in-map legend box _freshness_map.html used to draw, so this head has
    three keys where every other overview card has one. `.map-card-head`'s own
@@ -5538,13 +5536,13 @@ details[open] > summary .disclosure-mark {
 .calculation-notes-table td.td-num, .calculation-notes-table th.th-right,
 .calculation-notes-table td.note-point { white-space: nowrap; }
 
-/* -- Allocations list, the water-year page (143-06) ----------------------- */
+/* -- Allocations list, the water-year page ----------------------- */
 /* The allocations card carries no padding (the table fills it, the ledger's
    own shape, `.ledger-card-head` above); the edge cells restore the card's
    inset themselves so Zone/Allocation don't sit flush against the card wall. */
 .alloc-table th:first-child, .alloc-table td:first-child { padding-left: var(--space-lg); }
 .alloc-table th:last-child,  .alloc-table td:last-child  { padding-right: var(--space-lg); }
-/* Reader fault (143-06 build note, not the mock-up): auto layout gave the
+/* Layout fault: auto layout gave the
    table's forced `width: 100%` surplus to whichever column has the widest
    natural content (Zone, because of the long MER Surface Service Area
    names), so a SHORT GSA name trailed blank table before Water type. Two
@@ -5566,7 +5564,7 @@ details[open] > summary .disclosure-mark {
    closes with its own subtotal rows INSIDE the body, set like the table's
    closing footer (`.tfoot-total`) but never a `tfoot` itself, so 148,500.00
    and 155,700.00 each sit under their own year and the two years' sum
-   (304,200.00 AF, ISS-164) never prints anywhere on the page. */
+   (304,200.00 AF) never prints anywhere on the page. */
 .data-table tbody tr.row-subtotal td,
 .data-table tbody tr.row-subtotal:nth-child(even) td {
     border-top: 2px solid var(--color-accent-muted);
@@ -5596,7 +5594,7 @@ details[open] > summary .disclosure-mark {
     font-size: 0.9375rem;
 }
 /* The water-year page's lead panel holds one figure per water type and no
-   operator between them (nothing adds across water types, ISS-156): two (or
+   operator between them (nothing adds across water types): two (or
    more) tracks and a rule, not the five-track supply/use/balance equation
    `.budget-panel-body .budget-panel-row` is built for. */
 .period-panel .budget-panel-body .budget-panel-row { grid-template-columns: 1fr auto 1fr; }
@@ -5606,16 +5604,16 @@ details[open] > summary .disclosure-mark {
    track of the five-track grid and two thirds of the panel stand empty. */
 .budget-panel--single .budget-panel-body .budget-panel-row { grid-template-columns: 1fr; }
 
-/* 143-06, Task 4: the zone page's allocation card. `.page-grid-account*`
-   (143-03) fits the zone page's row-one shape unchanged -- Zone information
+/* The zone page's allocation card. `.page-grid-account*`
+   fits the zone page's row-one shape unchanged -- Zone information
    beside Allocation vs. use, use areas and the assign-search card each full
    width below as a second and third `.page-grid-account-full` -- so nothing
    new was needed there. These two rules are the zone page's own: */
 .zone-alloc-table { margin-top: var(--space-lg); }
 /* A zone can hold two water types' allocations in one period (a GSA runs
    groundwater, a surface service area runs surface water, but nothing stops
-   one zone carrying both), and the checkpoint ruling is never one sum
-   (ISS-155): two lead results side by side, each named by its own water
+   one zone carrying both), and allocations of different water types are never added into one
+   sum: two lead results side by side, each named by its own water
    type. Every zone in the demonstration data carries one water type, so this
    renders a single column there -- `auto-fit` rather than a fixed `1fr 1fr`
    so a lone result is not stretched into a half-width panel beside nothing. */
@@ -5709,7 +5707,7 @@ details[open] > summary .disclosure-mark {
     }
 }
 
-/* Change history (147-01): the "What changed" cell of the Change history page
+/* Change history: the "What changed" cell of the Change history page
    and the History panel. One field per line, before and after as figures. */
 .change-list {
     list-style: none;
@@ -5730,7 +5728,7 @@ details[open] > summary .disclosure-mark {
     vertical-align: top;
 }
 
-/* -- The field page's top grid and its month table (150-02 Task 3) -------- */
+/* -- The field page's top grid and its month table -------- */
 /* The standalone use-area page (`parcels/detail.html`): the water balance
    card (two parts) beside the map card (one part), so the balance is in the
    first viewport at 1,730 x 1,000. The map card lives OUTSIDE #detail-body,
@@ -5752,7 +5750,7 @@ details[open] > summary .disclosure-mark {
 }
 /* The map card takes the balance card's height (the row's), and the map
    fills it: at 380px beside a taller balance card the map ended in a
-   hanging gap under it (page verdict, 150-02 round 2). The host's inline
+   hanging gap under it (seen in a page review). The host's inline
    380px stays the floor for the one-column layout below. */
 .page-grid-field > #detail-map-card {
     display: flex;
@@ -5802,7 +5800,7 @@ details[open] > summary .disclosure-mark {
 }
 
 /* ======================================================================
-   150-04: the layout pass. Six shared rules, each designed on one page and
+   The layout rules. Six shared rules, each designed on one page and
    checked by a fresh read before it was applied.
    ====================================================================== */
 
@@ -5813,11 +5811,11 @@ details[open] > summary .disclosure-mark {
    fault, the home page (shape 1), the empty use-areas list and the signed-out
    front page DO NOT SHIP 3 on "the footer floating mid-page". The pinned footer
    had read DO NOT SHIP 3 on the same pages for "the dead void between the cards
-   and the footer" (ISS-201, 149.1-06). Two readers contradict each other on a
+   and the footer". Two readers contradict each other on a
    void that a four-row page has either way, so the shell stays as approved and
-   the finding is recorded (LAYOUT-INVENTORY-150-04.md, VERDICTS-150-04.md).
+   the finding stands.
    The same contradiction holds for a panel beside a taller card: stretched it
-   is "mostly an empty dark box" (recharge, 149.1-08), at its content's height
+   is "mostly an empty dark box" (recharge), at its content's height
    it "leaves a large dead gap under the stats panel" (the mock read). What
    stands from this class: the home page's task tiles share one row (above),
    the well page's Construction section balances its right column, and an
@@ -5827,7 +5825,7 @@ details[open] > summary .disclosure-mark {
 /* -- B. Forms: a grouped grid ----------------------------------------- */
 /* Every input is its container's width (`.form-input`, `.form-select`), so a
    form in one column was "one monotonous column of oversized bars with no
-   grouping" (149.1-05 on the ledger's create form). On the grid a field takes
+   grouping" (a reader of the ledger's create form). On the grid a field takes
    one of two tracks and sits beside the field that goes with it (the two dates;
    the amount and its water type); a field whose value is a sentence spans both.
    Form pages sit at the medium measure (`.page-medium`, `page-head--medium`)
@@ -5848,7 +5846,7 @@ details[open] > summary .disclosure-mark {
     grid-column: 1 / -1;
 }
 /* A one-line form: a label-and-input beside a line of text and its button, all
-   on the baseline (the methodology step with no options; 149.1-05: "Steps with
+   on the baseline (the methodology step with no options: "Steps with
    no options waste a full card of vertical space"). */
 .form-grid--row {
     grid-template-columns: minmax(0, 2fr) minmax(0, 3fr) auto;
@@ -5869,7 +5867,7 @@ details[open] > summary .disclosure-mark {
 }
 
 /* B2. Cards two or three across, each ending at its content: the settings
-   pages' one-control cards (146-03's "boxed into a narrow center-left column")
+   pages' one-control cards ("boxed into a narrow center-left column")
    and the wizard's two boundary choices, which stacked put the second below
    a 1,000px fold. 380px is the floor the home page's count cards use. */
 .card-columns {
@@ -5902,7 +5900,7 @@ details[open] > summary .disclosure-mark {
    (ResizeObserver per wrapper). Without the script the wrapper behaves as it
    did (always a scroll box, no pinned header). Fitting: overflow visible, so
    the wrapper is not a scroll container and `.data-table thead th`'s sticky
-   position pins to the document (ISS-167, dead since Phase 75). Overflowing:
+   position pins to the document. Overflowing:
    the table scrolls inside its card, never the page, and its first column
    stays put so a row keeps its name while the figures scroll (the dashboard's
    two grouped tables below 1,330 and 1,435px; the canal tables below 1,440). */
@@ -5948,7 +5946,7 @@ details[open] > summary .disclosure-mark {
 /* B3. A record's fields across a wide card: as many columns as 280px tracks
    fit, so a lone card of label/value pairs is not two columns 700px apart (the
    facility page: "huge empty horizontal gaps between short values", the
-   150-04 read). A row that must span (the Map row) keeps `.field-grid-2-span`. */
+   fresh read). A row that must span (the Map row) keeps `.field-grid-2-span`. */
 .field-grid-auto {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -5957,14 +5955,14 @@ details[open] > summary .disclosure-mark {
 
 /* -- D. Weight and position --------------------------------------------- */
 /* D7. The health cards' status badges at the pill's size: at the badge's 12px
-   they were "tiny" and the card's state could not be scanned (149.1-08). */
+   they were "tiny" and the card's state could not be scanned. */
 .health-grid .badge {
     font-size: 0.8125rem;
     padding: 4px 10px;
 }
 /* D8. A counter on the home page reads as the link it is: an arrow after its
-   label, and the label lights with the figure on hover (six of six readers in
-   150-01 did not take the counters for links). */
+   label, and the label lights with the figure on hover (six of six readers
+   did not take the counters for links). */
 .home-stat-label::after {
     content: " \2192";
 }
@@ -5972,7 +5970,7 @@ details[open] > summary .disclosure-mark {
     color: var(--color-accent);
 }
 
-/* -- E. The four classes templates named that nothing defined (ISS-166) --- */
+/* -- E. The four classes templates named that nothing defined --- */
 .font-semibold {
     font-weight: 600;
 }
@@ -5983,7 +5981,7 @@ details[open] > summary .disclosure-mark {
     cursor: pointer;
 }
 
-/* 150.1-02 (2026-10-11): the Estimated pumping page as three equations in
+/* The Estimated pumping page as three equations in
    one panel, each row the dashboard's centred figure row. A rule and space
    between the rows so each reads as its own line of working. */
 .receipt-panel .budget-panel-body > .budget-panel-row + .budget-panel-row {

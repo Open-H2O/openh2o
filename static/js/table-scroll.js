@@ -1,4 +1,4 @@
-// table-scroll.js (150-04, ISS-167): a `.table-scroll` wrapper scrolls only when
+// table-scroll.js: a `.table-scroll` wrapper scrolls only when
 // its table is wider than it is. Each wrapper is marked data-overflow="true" or
 // "false" on load, when its size changes (ResizeObserver) and after every HTMX
 // swap. app.css turns a fitting wrapper's overflow to `visible`, so it is not a

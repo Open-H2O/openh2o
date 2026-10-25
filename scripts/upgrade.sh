@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
 # An agency's upgrade: `make upgrade`. Backs up, updates the code, rebuilds, checks, and stamps the
-# new version into the footer (ISS-173). It is NOT `make deploy`, which is the demonstration host's
+# new version into the footer. It is NOT `make deploy`, which is the demonstration host's
 # own target and replaces the database with a canned one.
 #
 # In order:

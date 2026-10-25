@@ -106,7 +106,7 @@
    same reasoning `.master-pane`/`.detail-pane` (app.css) already use. */
 .panel-body { padding:10px 14px 12px; flex:1; min-height:0; overflow-y:auto; scrollbar-gutter: stable; }
 
-/* R-096 (143-07): a bottom fade over the panel's last visible row, shown only
+/* A bottom fade over the panel's last visible row, shown only
    while `.panel-body` can still scroll further (map-engine.js toggles the
    class) and gone once the reader reaches the end — the panel that clipped
    MONITORING at 1,440 x 900 with nothing on screen to say more was below.

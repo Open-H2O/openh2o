@@ -36,7 +36,7 @@ It reads three surfaces:
    except ``tests``, outside its ``migrations``, ``management``, ``settings``
    and ``tests`` folders, less the files in ``NOT_SCREEN_PYTHON``, whose
    strings never reach a screen. Docstrings and strings passed to a logger are
-   not read. A new importer or model is read the day it is added (ISS-261).
+   not read. A new importer or model is read the day it is added.
 3. The public guides in ``GUIDES``, outside fenced code blocks.
 
 It runs on the host with the standard library only, so it can be pointed at
@@ -66,7 +66,7 @@ NOT_APPLICATION_PARTS: tuple = ("migrations", "management", "settings", "tests")
 #: Application Python files whose strings never reach a screen, each with its
 #: reason. Every other application file is read. A file that puts even one
 #: string on a screen stays read, and its terminal-only strings are listed in
-#: the test's EXCEPTIONS, line by line. Measured 2026-10-20 (151.3-01, ISS-261).
+#: the test's EXCEPTIONS, line by line. Measured 2026-10-20.
 NOT_SCREEN_PYTHON: tuple = (
     ("core/checks.py", "Django system checks, printed by manage.py check and at start-up in a "
      "terminal or the container log; no view imports them."),
@@ -169,8 +169,8 @@ CALIFORNIA_NAMES: tuple = (
     (r"California.s Electronic\s+Annual\s+Report", "the eAR is California's report (2026-10-14)"),
     (r"open up California's water data", "the Consortium's purpose, in its own terms"),
     (r"so the wizard finds none outside California", "the Setup Wizard's subbasin and parcel sources cover one state (2026-10-18)"),
-    (r"California water system", "a PS Code is built from the PWSID only in California's format; another state's code is typed as the lab file has it (ISS-077, 2026-10-19)"),
-    (r"California PS Code", "the same: only California's PS Codes begin with the PWSID (ISS-077, 2026-10-19)"),
+    (r"California water system", "a PS Code is built from the PWSID only in California's format; another state's code is typed as the lab file has it"),
+    (r"California PS Code", "the same: only California's PS Codes begin with the PWSID"),
     (r"California's reporting format", "the state's own format, the approved name for it (2026-10-12: \"California's reporting format, not layout\")"),
 )
 CALIFORNIA = re.compile(r"\bCalifornia\b")

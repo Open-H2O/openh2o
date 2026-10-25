@@ -66,7 +66,7 @@ services:
       # See docs/earth-engine-tier-setup.md.
       - ./secrets:/run/secrets:ro
       # The nightly backups (scripts/backup.sh), read-only. The Site health card
-      # (Phase 151-02) reads backups/last-backup.json from here; the website can
+      # reads backups/last-backup.json from here; the website can
       # never write to or delete a backup.
       - ./backups:/backups:ro
 

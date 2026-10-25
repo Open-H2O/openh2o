@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """List the guide and help page sections whose code has changed since they were read.
 
-Phase 150.6 (2026-10-19). ``tests/document_sources.toml`` lists, for each
+``tests/document_sources.toml`` lists, for each
 section of the twenty documents, the code its sentences rest on and the
 commit it was last read against (``checked_at``). At each phase's close this
 script lists the sections to re-read: those where one of the listed files, or

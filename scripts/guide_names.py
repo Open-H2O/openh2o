@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Find names in the guides and help pages that the code no longer has.
 
-Phase 150.6 (2026-10-19). Twenty documents explain OpenH2O to the people who
+Twenty documents explain OpenH2O to the people who
 install and run it. When the code renames a command, a setting or a screen
 label, a sentence in one of them goes stale without anyone noticing. This
 script reads the names those documents write in a fixed form and checks each
@@ -22,7 +22,7 @@ one against the code itself, never against a copy of it:
 - places: a link to another document, its ``#anchor``, a DEPLOY.md section
   number, and a quoted heading written after a link must resolve.
 
-It never checks a description, and never that a sentence is present (ISS-129):
+It never checks a description, and never that a sentence is present:
 whether a named thing does what the sentence says is left to the re-read at a
 phase's close (``scripts/guide_reread.py``). It never checks every bold or
 quoted phrase either: measured on 2026-10-19, about a third to a half of them

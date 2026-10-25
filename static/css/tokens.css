@@ -53,10 +53,10 @@
     --color-deficit: #D1742E;
     --color-error: #f87171;
     --color-warning: #fbbf24;
-    --color-muted: #94A3B8;    /* a state with nothing to say: the grey badge's tint (150-04) */
+    --color-muted: #94A3B8;    /* a state with nothing to say: the grey badge's tint */
 
     /* -- Borders & edges ---------------------------------------------------- */
-    /* 0.07 -> 0.11 on 2026-09-06 with the squaring (ISS-149). The rounded corner
+    /* 0.11, raised from 0.07 when the corners were squared. The rounded corner
        had been doing part of the work of telling a card from the page behind it;
        at a 2px radius that job falls on this hairline and on the card/base
        surface step. Still a hairline, and still below --color-border-hover, so
@@ -188,10 +188,9 @@
     --color-entity-blue-bright: #3DB4E0;  /* Drinking-water facilities */
     --color-entity-boundary: #E4A317;  /* District outline — same value as gold */
     /* GSA zone fills. This is NOT --color-supply (#55B678); the two differ by a
-       few points and no record says why. Pinned at the value the map paints
-       today because changing a zone fill is a visible map change and Phase 121's
-       charter is "no intended visual change". Filed as ISS-131 for the design
-       pass to reconcile or to justify keeping both. */
+       few points and no reason for the difference is recorded. Pinned at the value
+       the map paints today because changing a zone fill is a visible map change;
+       a design pass should reconcile the two or justify keeping both. */
     --color-entity-green: #52b788;
     /* Hydrography strokes — GIS hydrology house style, not the app palette. */
     --color-entity-river: #45d0e8;     /* Natural channels */
@@ -199,7 +198,7 @@
     --color-entity-hydro-casing: #06140e;  /* Dark casing under the canal */
 
     /* -- Border radius --------------------------------------------------- */
-    /* Squared 2026-09-06 (ISS-149), chosen after comparing three scales
+    /* Squared, chosen after comparing three scales
        rendered on four real pages. The four non-pill
        tokens are DELIBERATELY the same value: the scale is flat, not a ladder.
        They keep separate names so a future pass can differentiate an input from
@@ -209,7 +208,7 @@
 
        ⛔ Two things this scale does NOT touch, both on purpose:
          - `border-radius: 50%` — circles. Avatars, status dots, pips, the map's
-           swatch dot. Squaring those is the blind-sweep failure ISS-149 warns of.
+           swatch dot. Squaring those is the blind-sweep failure that squaring everything invites.
          - --radius-pill — status chips and switches stay pills. A squared pill
            reads as a different kind of control. */
     --radius-sm: 2px;
