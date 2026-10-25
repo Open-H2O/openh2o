@@ -8,7 +8,7 @@ The reason belongs in the comment itself, and the history belongs in git.
 This test scans the product code (Python, templates, CSS, JavaScript, shell
 scripts, the Makefile, docker-compose.yml, entrypoint.sh) and the programmer
 documents beside it (DESIGN.md, CLAUDE.md, ARCHITECTURE.md, scripts/README.md
-and the README files under data/) for three shapes:
+and the README files under data/) for four shapes:
 
 - an issue number: ``ISS-`` followed by digits;
 - a phase number of two or more digits: ``Phase 62``, ``Phase 150.1``;
@@ -16,6 +16,10 @@ and the README files under data/) for three shapes:
   (``148-02``, ``52.6-02``), not preceded by a digit, dot, hyphen or slash and
   not followed by a digit or hyphen, so dates (``2026-10-24``) and version
   ranges do not match.
+- the name of a planning file: ``ISSUES.md``, ``STATE.md``, ``RESUME.md``, or
+  a name ending ``-PLAN.md``, ``-SUMMARY.md``, ``-DISCOVERY.md``,
+  ``-RESEARCH.md`` or ``-EVIDENCE.md``. These files are the maintainer's private record, not part
+  of the repository.
 
 ``Phase 2`` and other single-digit phases are the AI operator guide's own
 steps (docs/AI-OPERATOR-GUIDE.md) and do not match. ``tests/`` and the
@@ -35,6 +39,9 @@ PATTERNS = {
     "issue number": re.compile(r"ISS-\d+"),
     "phase number": re.compile(r"Phase \d{2,}(\.\d+)?"),
     "plan number": re.compile(r"(?<![\d.\-/])[1-9]\d{1,2}(\.\d)?-0\d(?![\d\-])"),
+    "planning file": re.compile(
+        r"\bISSUES\.md\b|\bSTATE\.md\b|\bRESUME\.md\b|-(PLAN|SUMMARY|DISCOVERY|RESEARCH|EVIDENCE)\.md\b"
+    ),
 }
 
 SUFFIXES = {".py", ".html", ".js", ".css", ".sh"}

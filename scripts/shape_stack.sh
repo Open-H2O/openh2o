@@ -32,8 +32,7 @@ COMPOSE="${COMPOSE:-docker compose}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OVERRIDE_DIR="${TMPDIR:-/tmp}"
 
-# -- Module lists (table order, verbatim from 146-01-PLAN.md's context block,
-#    cross-checked against 145-02-EVIDENCE.md's per-shape table). Bash 3.2 (the
+# -- Module lists, one per water shape. Bash 3.2 (the
 #    version macOS ships) has no associative arrays, so this is a case statement
 #    rather than a `declare -A` table.
 modules_for() {
@@ -96,8 +95,8 @@ EOF
 }
 
 # Waits for the web container's own HEALTHCHECK (Dockerfile: curl against
-# /health/live/) to report healthy. The first build can take up to ~110s
-# (145-02-EVIDENCE.md); later ones 6-7s off the layer cache.
+# /health/live/) to report healthy. The first build can take up to ~110s;
+# later ones 6-7s off the layer cache.
 wait_for_web_healthy() {
   local project="$1"
   local tries=0

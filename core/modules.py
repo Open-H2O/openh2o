@@ -72,8 +72,8 @@ operator can see is gone; only the schema stays. This is the class
 out loud. It is a live mechanism: ``wells``, ``datasync``, ``parcels`` and
 ``accounting`` are optional AND schema-resident at the same time, which is the
 combination the tier exists for. True
-removal (tables gone too) stays available per section as a priced option; see
-ISSUES.md.
+removal (tables gone too) would first need each schema exception into the
+module turned around.
 
 The standard set today: ``core`` and ``geography``, plus the invisible
 vocabularies ``measurements`` and ``standards``. **Every water domain is a

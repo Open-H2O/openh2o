@@ -7,8 +7,8 @@ django-pghistory, not by Django signals, so it catches every way a row can
 change: a form save, ``bulk_create``, ``QuerySet.update()``, ``/admin/``, a
 management command and raw SQL alike. The calculation engine, the ledger
 import, ``attach_orphans_to_period`` and the allocation split all write through
-the bulk paths a signal never sees; that is why the choice was triggers
-(``147-DISCOVERY.md`` section 7).
+the bulk paths a signal never sees, so history is recorded by database
+triggers rather than by Django signals.
 
 **Who did it** is attached as context, never by the code that writes the row:
 

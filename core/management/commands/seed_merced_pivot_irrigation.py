@@ -48,7 +48,7 @@ from parcels.models import IrrigationMethod, Parcel, ParcelIrrigationMethod
 
 #: Comfortably below the 9 real pivots (0.968-0.984, measured on staging) and
 #: comfortably above every other shape (squares near 0.637, everything else
-#: at or under 0.656). 146-05-EVIDENCE.md has the full measurement.
+#: at or under 0.656).
 CIRCULARITY_THRESHOLD = 0.90
 
 #: The name a data migration (parcels/0013_irrigation_method) seeds

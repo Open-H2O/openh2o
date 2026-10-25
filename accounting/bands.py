@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """The band a measured figure carries, from the devices' stated accuracy.
 
-Settled in 150-02-PLAN.md. Pure functions over
+Pure functions over
 records: no database writes, no queries, no engine change (the two resolvers
 at the foot excepted, which read and never write). Django-free at import, like
 ``carryover_math``; a record is anything with ``volume_acre_feet``, ``method``

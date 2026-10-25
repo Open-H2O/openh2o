@@ -250,8 +250,7 @@ def auto_map_columns(columns):
 #: license system exists only for post-1914 rights: a pre-1914 claim
 #: predates that system and is never issued a PERMIT_ID or a LICENSE_ID; this
 #: is a data-crosswalk judgment call (no pre-1914 sample seen yet in the
-#: shape-1 dataset), flagged in the evidence file and ISSUES.md for review
-#: against a real pre-1914 export row.
+#: shape-1 dataset), to be checked against a real pre-1914 export row.
 _BARE_TYPE_ALIASES = {
     "appropriative": "Post-1914 Appropriative",
     "federally reserved": "Federal Reserved",
