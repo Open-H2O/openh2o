@@ -35,14 +35,14 @@
 {% block content %}
 <div class="page-stack page-wide">
 
-  {% comment %} The overview map card (143-07): the head (the count line and the
+  {% comment %} The overview map card: the head (the count line and the
        key on one row, partials/_map_card_head.html) above the map. Clicking a
        zone opens its detail page; the list below is the type-to-find path to
        the same, and the map follows it (OH2O.followResults). With nothing
        located the card is its head alone: no map host, no map built. The head
        is OUTSIDE #results, and the results partial rewrites it out of band,
        so this is the page's only count line. {% endcomment %}
-  {% comment %} 150-04 V6: no records at all, no map card: its head would only say nothing has a location. {% endcomment %}{% if all_count %}
+  {% comment %} No records at all, no map card: its head would only say nothing has a location. {% endcomment %}{% if all_count %}
   <div class="card-raised" style="padding: 0; overflow: hidden;">
     {% include "partials/_map_card_head.html" with head_id="zones-overview-map-head" title="Zones" noun="zone" noun_plural="zones" key_label="Zone boundary" swatch="fill" swatch_token="green" %}
     {% if located_count %}

@@ -50,7 +50,7 @@
   {% comment %}Stats card{% endcomment %}
   <div class="card-raised">
     <h2 class="card-header-ruled">{{ boundary.name }}</h2>
-    {% comment %}150-03 (ISS-200): an uploaded shapefile or KML with several
+    {% comment %}An uploaded shapefile or KML with several
     polygons becomes one dissolved boundary; say so beside its name.{% endcomment %}
     {% if polygon_count and polygon_count > 1 %}
     <p class="text-secondary text-sm mb-md">The map shows {{ polygon_count }} polygons combined into one boundary.</p>
@@ -81,7 +81,7 @@
       {% endif %}
     </div>
 
-    {% comment %}149.1-06 (flow D): what step 3 brings in, one row per populate
+    {% comment %}What step 3 brings in, one row per populate
     step in setup/services.py wizard_steps() order, each row behind the module
     its step fills (_STEP_MODULE: parcels -> 'parcels', stations -> 'datasync';
     basins and flowlines are geography's and always run). The What column is the
@@ -89,7 +89,7 @@
     the sidebar's or the map's name for what the step creates
     (geography/management/commands/auto_populate.py: Zone zone_type='subbasin',
     Parcel by APN, Flowline, MonitoredStation with is_active=False). What it
-    does not bring in agrees with Getting started (149.1-04): no wells, no
+    does not bring in agrees with Getting started: no wells, no
     recharge areas, and a use-area file of the district's own is uploaded on Use
     Areas.{% endcomment %}
     <h3 class="section-header-flush mb-sm">What Populate brings in</h3>

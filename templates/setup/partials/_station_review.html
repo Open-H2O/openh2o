@@ -4,7 +4,7 @@ chosen boundary, grouped by provider (friendly DataSource.name). Each row reuses
 datasync:station_toggle (swaps its own button); "Enable all" posts to
 setup:activate_stations and swaps this whole block. Empty when no stations were
 discovered — the next-steps panel still renders below.
-150-04 (F6): the panel's one action also sits in this card's head row.
+The panel's one action also sits in this card's head row.
 {% endcomment %}
 <div id="station-review">
   {% if review_total %}
@@ -16,7 +16,7 @@ discovered — the next-steps panel still renders below.
           {{ review_total }} station{{ review_total|pluralize }} inside this boundary, {{ review_active }} switched on{% if review_inactive %}. Switch on each station you want OpenH2O to sync, or choose Enable all{% endif %}.
         </p>
       </div>
-      {% comment %} 150-04 (F6, rule D4): the finish panel's one action
+      {% comment %} The finish panel's one action
          (_progress.html, "Open Getting started") also sits here beside
          "Enable all", so the finish is not below the station list. Same
          markup as the panel's; this partial re-renders alone after Enable all

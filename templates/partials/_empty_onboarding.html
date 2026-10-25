@@ -12,7 +12,7 @@
     • Configured instance → this screen's own Add + Import actions (the same
       links its toolbar offers), so an admin who emptied a list can refill it.
 
-  Caller supplies: `what` (the one line: "No <plural> yet.", 149.1-06),
+  Caller supplies: `what` (the one line: "No <plural> yet."),
   `add_label` (e.g. "+ Add Well"), and `type_param` (the infrastructure ?type=
   value). The entity icon stays in the caller so each screen keeps its own glyph.
 
@@ -21,8 +21,8 @@
   "blank for Use Areas, which the add form keys differently", and that sentence
   was false: there is no parcel type, so a blank one fell through
   `_supported_type` to `ADD_TYPE_ORDER[0]` and both buttons opened the Add Well
-  form on a screen listing use areas. Phase 119 removed that include and the
-  Water Rights one. Only wells and recharge include this partial now, and
+  form on a screen listing use areas, so the use areas page does not include it, nor the
+  Water Rights page. Only wells and recharge include this partial, and
   `tests/test_page_offers_what_it_lists.py` fails any page that includes it with
   a type its list does not carry.
 {% endcomment %}

@@ -33,14 +33,14 @@
 {% endif %}
 
 {% comment %}
-  143-10 (R-126, R-055, R-112). Composed as a page at 1,730 CSS px, reusing
-  the account page's grid UNCHANGED (143-03's .page-grid-account*): Site
+  Composed as a page at 1,730 CSS px, reusing
+  the account page's grid UNCHANGED (.page-grid-account*): Site
   information beside Water recharged at one height (the
-  zone-lead ruling, 143-06, copied here), event history full width below,
-  then recent measurements full width. The previous .page-grid-2col put
+  zone-lead shape, copied here), event history full width below,
+  then recent measurements full width. .page-grid-2col would put
   Site information and Event history in one left column beside Recent
-  measurements alone in a right column that ended well short of it -- no
-  worked shape here to copy from; the account grid is.
+  measurements alone in a right column that ends well short of it.
+  The account grid is the shape to copy.
 {% endcomment %}
 <div class="pane-stack">
   <div class="page-grid-account">
@@ -118,7 +118,7 @@
       "By water type" breakdown under the one result, never a peer result
       per type (this is a physical volume added into one basin, unlike a
       zone's groundwater and surface allocations, which are managed under
-      different law and are never added, ISS-156).
+      different law and are never added).
     {% endcomment %}
     <div class="card-raised page-grid-account-balance">
       <div class="page-grid-account-head mb-md">
@@ -136,7 +136,7 @@
         Three cells on the panel's own row: the current year's figure (the
         page's one --result), the events it is made of (the SAME rows the
         Event history table prints), and the water year before it as a peer,
-        never added (ISS-155). One figure alone in this panel left a giant
+        never added. One figure alone in this panel would leave a giant
         blank box to the right of the recharged value;
         the year before it is what a reader sets this year against.
       {% endcomment %}
@@ -200,12 +200,12 @@
     </div>
 
     {% comment %}
-      Recent measurements: full width, ONE grouped table (R-126). tr.row-group
+      Recent measurements: full width, ONE grouped table. tr.row-group
       per measurement type present, naming the type and its unit ("Water
-      level, ft") so the Unit column that used to carry four different units
-      down one column is gone; the note sits in its own column now that the
-      table has the width (ISS-146's second row existed only because the
-      narrow right-hand column had none to spare).
+      level, ft") so there is no Unit column carrying four different
+      units down one column; the note sits in its own column since the
+      table has the width (a second row for the note would only be needed in a
+      narrow right-hand column).
     {% endcomment %}
     <div class="card-raised page-grid-account-full" style="padding: 0;">
       <div class="ledger-card-head">

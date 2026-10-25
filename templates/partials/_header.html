@@ -21,8 +21,8 @@
           always searches zones; the results dropdown links straight to each
           record.
 
-          ISS-084, closed by Plan 89-02. This was an HTML comment, and an HTML
-          comment ships to the browser — so its module enumeration sat in the
+          This is a server-side comment, not an HTML comment: an HTML
+          comment ships to the browser, so a module enumeration here would sit in the
           page source of EVERY page of every deployment, including one with no
           diversions and no stations. A server-side comment never reaches the
           browser at all. The vocabulary gate strips HTML comments before
@@ -69,7 +69,7 @@
 
     <!-- User menu -->
     <div class="app-header-user">
-        {% comment %}150-03: the STORED mode, not the displayed one: an
+        {% comment %}The STORED mode, not the displayed one: an
         Administration page shows that section in Operations for its own
         request only, and the person has not chosen Admin mode.{% endcomment %}
         {% if nav_mode_stored == 'admin' %}

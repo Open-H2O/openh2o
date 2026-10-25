@@ -28,7 +28,7 @@ lift a passage (DESIGN.md). Deliberately NOT gold: gold is for primary actions
 in this design system, and a notice is not an action. Deliberately not a bespoke
 tinted callout box either — that is the generic look DESIGN.md tells us to
 avoid.
-DELIBERATELY NOT `.badge-demo`. That class is Phase 64's row-level marker and
+DELIBERATELY NOT `.badge-demo`. That class is the row-level marker and
 means one specific thing — "this particular value is sample data, not a real
 legal action" — which `tests/test_demo_marker.py` pins by asserting it is ABSENT
 from a water right whose status reads as ordinary. This notice makes a different
@@ -51,7 +51,7 @@ every page, and a notice people learn to skip is a notice that does not work.
 <div class="card-raised demo-notice" role="note" aria-label="Demonstration data notice">
   <span class="badge badge-pill notice-badge">Demo</span>
   <p class="demo-notice-text">
-    {% comment %} 150.1-02: the link inside a sentence that says what it opens. {% endcomment %}
+    {% comment %} The link inside a sentence that says what it opens. {% endcomment %}
     This demo mixes <strong>invented sample data</strong> with <strong>real published records</strong>.
     Another page lists <a href="{% url 'demonstration_data' %}" class="prose-link">where every figure comes from</a>.
     <strong>For testing purposes only.</strong>

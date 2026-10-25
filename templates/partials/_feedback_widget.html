@@ -10,7 +10,7 @@ etc.) are gathered silently at submit time.
 {% if feedback_enabled %}
 <style>
   /* The floating .oh2o-fb-btn rules that lived here were retired with the
-     trigger's move into the sidebar (Phase 143-02, R-024); its style is
+     trigger's move into the sidebar; its style is
      .sidebar-feedback in app.css. */
   .oh2o-fb-panel {
     position: fixed; bottom: 1.25rem; right: 1.25rem; z-index: 901;
@@ -76,9 +76,9 @@ etc.) are gathered silently at submit time.
 </style>
 
 {% comment %}
-  The trigger is no longer here. Until Phase 143-02 it was a sticky pill riding
-  the bottom-right of the window, which put it over the content column's last
-  table cell on 18 of 63 pages at 1,730 (R-024). It now lives in the sidebar
+  The trigger is not here: a sticky pill riding
+  the bottom-right of the window would sit over the content column's last
+  table cell on 18 of 63 pages at 1,730. It lives in the sidebar
   (`partials/_sidebar.html`, id `oh2o-fb-open`, at the foot of the nav under
   Help): the sidebar is sticky and full height, so the trigger is always in
   view and never over content. The panel below and the script are unchanged;

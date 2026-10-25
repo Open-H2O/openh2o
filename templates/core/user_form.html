@@ -23,7 +23,7 @@
   <a href="{% url 'core:users_list' %}" class="back-link">&larr; Back to Users</a>
 
   <div class="card-raised">
-    {% comment %} Was "Add a user", the page title said again in other words (Phase 143-02, copy rule 13: a label under a heading says the remainder). {% endcomment %}
+    {% comment %} The card heading names its contents; "Add a user" under the page title would say it again in other words (copy rule 13: a label under a heading says the remainder). {% endcomment %}
     <h2 class="card-header-ruled">Details</h2>
     <p class="text-sm text-secondary mb-md">The person signs in with their email address and the starting password you set here. OpenH2O will ask them to choose a new password the first time they sign in. OpenH2O does not email them.</p>
 
@@ -33,7 +33,7 @@
     </div>
     {% endif %}
 
-    {% comment %} 150-04 (rule B): a two-track grid. The email and the title span
+    {% comment %} A two-track grid. The email and the title span
          both tracks; the two names share a row, and so do the starting password
          and the role. {% endcomment %}
     <form method="post" class="form-grid">

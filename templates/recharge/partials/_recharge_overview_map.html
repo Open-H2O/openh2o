@@ -12,8 +12,8 @@ fill+outline pair filtered to non-points and a glow+circle pair filtered to
 points. Clicking either opens a popup with the site name and a link to its
 full detail page. Modeled on _zones_overview_map.html.
 
-The overview map card (143-07, designed on Surface Diversions and copied
-here). Three things beyond the marks:
+The overview map card (the structure the Surface Diversions overview map
+uses). Three things beyond the marks:
 
   * An always-on label per SITE, not per polygon part. A symbol layer placed
     directly on the fill/outline source would repeat a multi-ring basin's name
@@ -135,9 +135,9 @@ Variables:
 
           // Polygon basins: fill + outline. A fill/line layer ignores point
           // features, so the $type filter keeps the two geometries from
-          // colliding. Opacity 0.22 -> 0.35 and outline 1.5 -> 2.5px (143-07,
-          // R-124): a small basin (33 to 263 e-6 deg^2) read as two faint
-          // smudges at the fitted zoom.
+          // colliding. Opacity 0.22 -> 0.35 and outline 1.5 -> 2.5px: a small
+          // basin (33 to 263 e-6 deg^2) would read as two faint
+          // smudges at the fitted zoom otherwise.
           map.addLayer({
             id: '{{ map_id }}-fill',
             type: 'fill',
@@ -174,8 +174,8 @@ Variables:
 
           // The always-on label, one per site regardless of how many polygon
           // rings it has, placed on whichever side of its bbox centre has
-          // room. A label that would collide YIELDS and the mark stays (the
-          // approved Surface Diversions card, 143-07 Task 3): the five El Nido
+          // room. A label that would collide YIELDS and the mark stays (as on the
+          // Surface Diversions card): the five El Nido
           // basins sit a few hundred metres apart, so at the fitted zoom only
           // some of their names fit, and all of them appear as the reader
           // zooms in. Never text-allow-overlap: seven names painted over one

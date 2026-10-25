@@ -1,7 +1,7 @@
 <div class="page-stack page-wide">
 
   {% comment %}
-    The overview map card (143-07's shape, applied here 143-12): the head
+    The overview map card: the head
     (the count line, in the station list's own words, and the three
     freshness keys on one row, partials/_stations_map_card_head.html) above
     the map. No stat-grid-4col row survives on the dashboard (a dashboard with no identity card puts its counts in the
@@ -17,16 +17,16 @@
   <div>
     <h2 class="section-header">Source status</h2>
     {% comment %}
-      ISS-128: this line used to read "N of 400 monthly budget used" on a
-      card of its own, where the account's real allowance was 100 and N
-      counted cached rows rather than requests made, so a freshly-rebuilt
-      demonstration reported 380 spent having spent nothing. Both numbers
-      are real now, and the sentence says which of two sources it is
-      reading, because a figure whose provenance a reader cannot see is a
-      figure they cannot act on. The used figure's own class is the whole
-      low-allowance signal now that the card (and its border) are gone.
+      The sentence says which of two sources it is reading, because a figure
+      whose provenance a reader cannot see is a figure they cannot act on. The
+      used figure's own class is the whole low-allowance signal; the line has no card or border.
+
+
+
+
+
     {% endcomment %}
-    {% comment %} 150.1-02. {% endcomment %}
+    {% comment %}{% endcomment %}
     <p class="text-secondary text-base mb-md">
       {{ n_sources }} station sources. Satellite estimates of crop water use come from
       OpenET, which is not a station source. {% if openet_source == "provider" %}By OpenET's count, this site's OpenET account has used <span{% if openet_low %} class="text-deficit"{% endif %}>{{ openet_used }}</span> of its {{ openet_limit }} requests this month.{% else %}This site has used <span{% if openet_low %} class="text-deficit"{% endif %}>{{ openet_used }}</span> of its {{ openet_limit }} OpenET requests this month.{% endif %}
@@ -112,7 +112,7 @@
           {% comment %}
             A sparkline needs two numeric readings (datasync/views.py:165). One
             reading is not "no data" — the dot and the time below it say
-            otherwise — it is not enough points to draw a line. ISS-110.
+            otherwise: it is not enough points to draw a line.
 
             Use this block tag, never the hash form, for anything multi-line:
             the hash form is SINGLE-LINE ONLY and a multi-line one renders its

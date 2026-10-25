@@ -28,7 +28,7 @@
   block and half a page in prose.
 
   Every noun that names a domain this deployment may not run is gated on its
-  module (ISS-082; tests/droppability/checks.py's forbidden vocabulary reads
+  module (tests/droppability/checks.py's forbidden vocabulary reads
   this page on every reduced deployment). NOTICE's claim is kept exact: the
   methodology is independently reimplemented and none of the Groundwater
   Accounting Platform's source code is copied.
@@ -39,7 +39,7 @@
     <img src="{% static 'img/logo.png' %}" alt="OpenH2O logo" class="about-logo">
     {% endif %}
     {% comment %} The wordmark, not the page's title: the page head carries the one h1
-       (Phase 143-02). {% endcomment %}
+       (see base.html). {% endcomment %}
     <p class="about-title">OpenH2O</p>
     {% module_nouns "measurements:measurements" "accounting:deliveries" "wells:wells" "surface:surface diversions" "recharge:managed aquifer recharge" "accounting:mixed-use accounting" as data_nouns %}<p class="about-purpose card-raised">
       OpenH2O is open-source software that keeps an organization's {{ data_nouns }} in one system the organization runs itself.
@@ -83,13 +83,13 @@
     </div>
   </div>
 
-  {% comment %} 2026-10-18 (150.1-03): the method card and the Credits table
-     became one prose panel, and "Who made OpenH2O" lost its "What / The fact"
-     header row (a prose panel there put the page over the help shape's half). The first two
+  {% comment %} The method and credits are one prose panel, and
+     "Who made OpenH2O" has no "What / The fact"
+     header row (a prose panel there would put the page over the help shape's half). The first two
      sentences of "Where OpenH2O comes from" are the maintainer's own wording; every
      line is a sentence written subject first, with no "Name, for purpose"
-     line and no link title used as a subject. The demonstration row left with
-     the table: the demonstration notice at the top of each page links there. {% endcomment %}
+     line and no link title used as a subject. There is no demonstration row:
+     the demonstration notice at the top of each page links there. {% endcomment %}
   <div class="card-raised">
     <h2 class="section-header">Where OpenH2O comes from</h2>
     <p class="text-secondary text-base">OpenH2O's water accounting is modeled on the Groundwater Accounting Platform, which ESA (formerly Sitka Technology Group) develops with the support of the California Water Data Consortium.</p>
@@ -140,7 +140,7 @@
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Glossary</span><span class="text-accent">&rarr;</span></div>
         <p class="text-secondary text-sm">This page explains the words used on these screens.</p>
       </a>
-      {% comment %}89-02: the whole card goes with the page it opens. The
+      {% comment %}The whole card goes with the page it opens. The
       water-balance explainer is hidden when the deployment does not run the
       domains it explains (config/views.py::EXPLAINER_MODULES), and a card onto
       a 404 is worse than no card. The predicate is read from the same place

@@ -1,5 +1,5 @@
 {% load placeholders humanize %}{% comment %}
-The count line is NOT here (143-07). It is the map card's head, above the map
+The count line is NOT here. It is the map card's head, above the map
 and outside #results, and on an htmx swap this partial re-renders that head
 out of band (hx-swap-oob on the same id) so the count follows the list
 without the map being torn down. On a full page render the page includes the
@@ -69,7 +69,7 @@ map to them.
 
 {% else %}
 {% comment %}
-  119-01: text-align left overrides `.empty-state`'s centring (app.css:1808).
+  Text-align left overrides `.empty-state`'s centring (app.css:1808).
   Seven centred lines in a ~400px master column read as a wedge; called on the
   rendered screen 2026-08-25. Kept left-aligned here even at full page width,
   since the shape (glyph, text, one action) is the same regardless of column.
@@ -88,7 +88,7 @@ map to them.
   {% else %}
   {% comment %}
     Deliberately NOT the shared actionable empty state in `templates/partials/`,
-    which was included here until Phase 119. That partial's own contract is
+    which is not included here. That partial's own contract is
     "this screen's own Add + Import actions (the same links its toolbar
     offers)", and this screen offers neither: `ADD_TYPE_ORDER` in
     `infrastructure/views.py` has no parcel type, so both of its links resolved

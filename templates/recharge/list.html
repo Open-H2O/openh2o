@@ -18,9 +18,9 @@
 {% if user_can_write and 'infrastructure' in enabled_modules %}
 <a href="{% url 'infrastructure:import' %}?type=recharge_site" class="btn-secondary btn-sm">Import</a>
 {% comment %}A storage pond or tank is a RechargeSite row and already appears in the
-   list below, but until 2026-08-27 nothing anywhere linked to `?type=storage`
-   — the Add page's four-card picker was its only route into the app, so
-   removing that picker (ISS-134) would have left the type unreachable.
+   list below, but nothing else links to `?type=storage`, so this link is
+   its only route into the app: the Add page has no type picker.
+
    Secondary, because a recharge site is what this page is mostly for.{% endcomment %}
 <a href="{% url 'infrastructure:add' %}?type=storage" class="btn-secondary btn-sm">+ Add storage pond</a>
 <a href="{% url 'infrastructure:add' %}?type=recharge_site" class="btn-primary btn-sm">+ Add recharge site</a>
@@ -41,7 +41,7 @@
 {% block content %}
 <div class="page-stack page-wide">
 
-  {% comment %} The overview map card (143-07): the head (the count line and the
+  {% comment %} The overview map card: the head (the count line and the
        key on one row, partials/_map_card_head.html) above the map. Basins draw
        as polygons, single-point sites as markers. Clicking a feature opens its
        detail page; the list below is the type-to-find path to the same, and
@@ -49,7 +49,7 @@
        is its head alone: no map host, no map built. The head is OUTSIDE
        #results, and the results partial rewrites it out of band, so this is
        the page's only count line. {% endcomment %}
-  {% comment %} 150-04 V6: no records at all, no map card: its head would only say nothing has a location. {% endcomment %}{% if all_count %}
+  {% comment %} No records at all, no map card: its head would only say nothing has a location. {% endcomment %}{% if all_count %}
   <div class="card-raised" style="padding: 0; overflow: hidden;">
     {% include "partials/_map_card_head.html" with head_id="recharge-overview-map-head" title="Recharge sites" noun="recharge site" noun_plural="recharge sites" key_label="Recharge site" swatch="fill" swatch_token="purple" %}
     {% if located_count %}

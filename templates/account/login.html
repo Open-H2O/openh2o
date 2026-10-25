@@ -2,8 +2,8 @@
 {% block title %}Log in - Open Water Accounting Platform{% endblock %}
 {% block content %}
 {% load static %}
-{% comment %} The OpenH2O mark that opened this page now comes from base_auth.html, for
-     every signed-out page alike (Phase 143-02, R-142). {% endcomment %}
+{% comment %} The OpenH2O mark comes from base_auth.html, for
+     every signed-out page alike. {% endcomment %}
 <div class="card-raised" style="width: 100%;">
     <h1 class="auth-title">Log in</h1>
     {% if form.errors %}
@@ -33,7 +33,7 @@
        Only offer an account that can actually be created. With
        ACCESS_CONTROL_ENFORCED on — the shipped default for a real agency —
        self-signup is closed at core/adapters.py, so this invitation led to a
-       refusal page (ISS-126). `access_enforced` is put here by
+       refusal page. `access_enforced` is put here by
        core/context_processors.py::access_flags, on every template.
     {% endcomment %}
     {% if not access_enforced %}

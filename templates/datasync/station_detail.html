@@ -13,12 +13,12 @@
 {% block page_title %}{{ station.station_name }}{% endblock %}
 
 {% comment %}
-  R-077/R-078 (143-12): the freshness word used to live only in the pane
-  header, which is skipped on this full page (on_full_page=True), so a
-  dormant station said nothing anywhere on the page. The badge here is the
+  The freshness word shows here, not only in the pane
+  header, which is skipped on this full page (on_full_page=True); without it a
+  dormant station would say nothing anywhere on the page. The badge here is the
   same three words the station list uses (rule 6: Up to date / Slightly
   behind / Dormant, never "On schedule" / "Behind").
-  150-03 (ISS-183): each badge's title states this station's own limits,
+  Each badge's title states this station's own limits,
   built from datasync/freshness.py by the view (freshness_thresholds).
 {% endcomment %}
 {% block page_meta %}

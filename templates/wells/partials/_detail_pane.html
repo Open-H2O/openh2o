@@ -22,14 +22,14 @@
 {% endif %}
 
 {% comment %}
-  143-10 (R-110, R-111, R-114, R-112). Composed as a page at 1,730 CSS px,
-  reusing the account page's grid UNCHANGED (143-03's .page-grid-account*):
+  Composed as a page at 1,730 CSS px,
+  reusing the account page's grid UNCHANGED (.page-grid-account*):
   Identification beside the three short cards (Current meters, Irrigated
   parcels, Monitoring data) at one height, then Measurement history full
-  width with its two tables side by side. The previous .page-grid-2col ran
+  width with its two tables side by side. .page-grid-2col would run
   Identification to the bottom of the page while the right column's cards and
-  four water-year tables ended a third of the way down (R-112) -- no worked
-  shape here to copy from; the account grid is.
+  four water-year tables end a third of the way down.
+  The account grid is the shape to copy.
 
   `page-grid-account--source-order`: this page has no swap target inside the
   balance cell (unlike the account page's #balance-section), so the reader
@@ -47,10 +47,10 @@
     <div class="card-raised page-grid-account-info">
 
       {% comment %}
-        Phase 101. This header carried an UNCONDITIONAL demo pill, so on the
+        This header carries no UNCONDITIONAL demo pill: on the
         public demonstration every one of the 21 municipal supply sources — the
-        ones a drinking-water system lists as its facilities — was labelled
-        sample data. It is the inverse of the truth for those rows: their names
+        ones a drinking-water system lists as its facilities, would be labelled
+        sample data, the inverse of the truth for those rows: their names
         come from the State Water Board's own lab file, their owner is the water
         system's real name from EPA Envirofacts, and their coordinates are real
         GAMA publications.
@@ -93,10 +93,10 @@
         {% include "wells/partials/_editable_field.html" with ef=ef.state_well_number %}
 
         {% comment %}
-          ISS-189: "Well type" printed here with no editor -- `well_type` was
-          not in `EDITABLE_FIELDS`, so the pencil icon that every other field
-          on this page carries was simply missing from this one. Closed
-          146-05 Task 2: the select reads WellType.objects each render (data
+          "Well type" has an editor although `well_type` is not in `EDITABLE_FIELDS`:
+          `_editable_fields()` in wells/views.py adds it, so it carries the pencil icon that every other field
+          on this page carries.
+          The select reads WellType.objects each render (data
           an agency can add to), same reasoning as the irrigation-method
           select on the use-area page.
         {% endcomment %}
@@ -114,7 +114,7 @@
       </p>
 
       {% comment %}
-        146-05 S2: DWR's own three-part identity for how this well's pumping
+        DWR's own three-part identity for how this well's pumping
         is known (23 CCR 356.2(b)(2)) -- Extraction Method, Direct or
         Estimate, Accuracy Band, each editable below. This line states the
         three together so a reader does not have to assemble them; each part
@@ -132,11 +132,11 @@
         {% include "wells/partials/_editable_field.html" with ef=ef.year_pumping_began %}
 
         {% comment %}
-          146-05: STATIC, not editable; no
+          STATIC, not editable; no
           longer in EDITABLE_FIELDS, so the PATCH/GET endpoint refuses it.
-          150.1-02: the
-          pop-out no longer says the two "cannot disagree" (every demo well
-          showed a method above three blank DWR fields), the Status, Direct
+          The Measurement method
+          pop-out (it does not say the two "cannot disagree"; a well can show a
+          method above three blank DWR fields), the Status, Direct
           or Estimate, Accuracy Band and Share pop-outs, "Irrigated use
           areas", "Monitored by" and the map's "Local registration ID" are
           approved wording.
@@ -196,11 +196,11 @@
                 {{ wip.parcel.parcel_number }}
               </a>
               <div style="text-align: right;">
-                {% comment %} 146-02 D3: the raw fraction, four decimals, with an inline
-                     editor (the wells:edit_field GET/PATCH pattern) -- replaces the
-                     143-10 rounded whole percent. Where a well's shares do not sum to
+                {% comment %} The raw fraction, four decimals, with an inline
+                     editor (the wells:edit_field GET/PATCH pattern), not a
+                     rounded whole percent. Where a well's shares do not sum to
                      1.0 this says nothing more than each parcel's own share -- two use
-                     areas fed by two different points is Q8's allowed case, and this
+                     areas fed by two different points is allowed, and this
                      page does not sum them. {% endcomment %}
                 <span id="well-irrigated-share-{{ wip.pk }}" style="display: inline-flex; align-items: center; gap: 4px; justify-content: flex-end;">
                   {% include "wells/partials/_irrigated_parcel_share_value.html" with well=well wip=wip %}
@@ -252,9 +252,9 @@
         {% endif %}
 
         {% comment %}
-          150-04 (S6, rule A3): Construction was the third section of the
-          Identification card, which ran to y≈1,880 while this column ended at
-          Monitoring data (y≈1,140 on /wells/10/). As this column's last card
+          Construction is this column's last card, not a section of the
+          Identification card (which would run to y≈1,880 while this column ends at
+          Monitoring data, y≈1,140 on /wells/10/), so
           the two columns reach about one height. Each editable field swaps
           into its own `#field-<name>` target (_editable_field.html,
           _field_edit.html, wells/views.py::well_edit_field), so the card that
@@ -281,7 +281,7 @@
     </div>
 
     {% comment %}
-      Measurement history (ISS-145, 137-03; recomposed 143-10 R-111/R-114/R-112).
+      Measurement history.
       Two tables side by side: each current meter's totalizer reads (ONE table
       per meter, grouped by water year with its own closing subtotal row --
       footer A, no tfoot, rule 7) and the monthly depth-to-water digest (grouped,

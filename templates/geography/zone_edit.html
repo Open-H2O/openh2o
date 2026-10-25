@@ -2,10 +2,10 @@
 
 {% comment %}
   Plain edit form, no map: a zone's geometry is drawn once at creation
-  (zone_create.html) and is not reopened here (146-05 Task 3, Q5). The plan
-  asked for "a zone edit route if none exists, the create view's pattern" --
-  the only existing per-zone edit was `zone_recovery_horizon`, a single-field
-  HTMX control, not a general form, so this is new.
+  (zone_create.html) and is not reopened here. This is the zone's general
+  edit form; the only other per-zone edit is `zone_recovery_horizon`, a
+  single-field HTMX control.
+
 {% endcomment %}
 
 {% block title %}Edit {{ zone.name }} - Open Water Accounting Platform{% endblock %}
@@ -47,7 +47,7 @@
     </div>
     {% endif %}
 
-    {% comment %} 150-04 (rule B): a two-track grid. The name beside the zone
+    {% comment %} A two-track grid. The name beside the zone
          type; the description, the Delta-case sentence and the legal basis span
          both tracks. {% endcomment %}
     <form method="post" class="form-grid">

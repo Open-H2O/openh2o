@@ -65,7 +65,7 @@
         </div>
         <!-- Map container: 380px, the record pages' band height (app.css) -->
         <div id="infra-map" style="width: 100%;"></div>
-        {% comment %}ISS-171: a well operator with a WCR in hand has the coordinates
+        {% comment %}A well operator with a WCR in hand has the coordinates
              before the map. The strip's click/drag echo, then two typed
              inputs that place the marker the same way a click does; shown
              only in point mode (setDrawMode, below).{% endcomment %}
@@ -93,9 +93,9 @@
 
       {% comment %}The type is decided before arrival (?type=, defaulted by _supported_type)
          and is switched by the link in the page header, which reloads the page.
-         A hidden input rather than a radio group: the four-card picker asked a
-         question the URL had already answered, and its subtitle contradicted the
-         page's own heading (ISS-134). The JS below reads this input, so it must
+         A hidden input rather than a radio group: the URL has already answered
+         which type this is, and a picker would ask it again, with a subtitle that could contradict the
+         page's own heading. The JS below reads this input, so it must
          keep the name `infra_type`.{% endcomment %}
       <input type="hidden" name="infra_type" value="{{ preselect_type }}">
 
@@ -147,9 +147,9 @@
             <input type="number" id="year_pumping_began" name="year_pumping_began" step="1" min="1850" max="2100" class="form-input" placeholder="e.g. 1998" value="{{ submitted.year_pumping_began|default:'' }}">
           </div>
 
-          {% comment %}146-05 S2: DWR's own annual-report row (23 CCR 356.2(b)(2)).
-               Measurement method is NOT offered here (146-05 checkpoint ruling 2,
-               2026-09-23): a new well could otherwise start life with the legacy
+          {% comment %}DWR's own annual-report row (23 CCR 356.2(b)(2)).
+               Measurement method is NOT offered here:
+               a new well could otherwise start life with the legacy
                field and these three already disagreeing. These are the well's
                only editor for how its pumping is measured, blank by default.{% endcomment %}
           <div class="form-row-2col">
@@ -308,7 +308,7 @@
       {% endif %}
 
       {% comment %}
-        Phase 89. The whole Link to Parcel card goes with the module, not just
+        The whole Link to Parcel card goes with the module, not just
         the one reversed URL inside it. Guarding the link alone would leave a
         card whose search can only return nothing, two buttons that load an
         empty layer, and a "Draw new parcel" form that POSTs rows into a
@@ -382,7 +382,7 @@
 <script src="{% static 'js/map-core.js' %}"></script>
 <script>
 (function() {
-  // `infra_type` is a hidden input since ISS-134 — NOT a checked radio. Querying
+  // `infra_type` is a hidden input, NOT a checked radio. Querying
   // for `:checked` here would match nothing and silently fall back to 'well',
   // which on a wells-less deployment is a type that does not exist.
   var typeInput = document.querySelector('input[name="infra_type"]');
@@ -394,7 +394,7 @@
   var parcelDrawGeometry = null;
   var parcelClickHandled = false;
 
-  // ISS-171: the typed lat/long pair beside the coordinate strip.
+  // The typed lat/long pair beside the coordinate strip.
   var latInput = document.getElementById('latitude');
   var lngInput = document.getElementById('longitude');
   var coordWarning = document.getElementById('coord-warning');
@@ -408,15 +408,15 @@
     recharge_site: document.getElementById('fields-recharge_site'),
   };
 
-  // The type no longer changes without a page load, so there is no change
-  // handler here and no selected-card state to keep in sync — both went with the
-  // picker (ISS-134). This runs once, for the type the URL already decided.
-  // NB: this is a JS comment, so it SHIPS to the browser. Naming the deleted
-  // class here would defeat the very grep that proves it is gone (Phase 121 hit
-  // that three times); the archaeology belongs in ISSUES.md, not in this file.
+  // The type does not change without a page load, so there is no change
+  // handler here and no selected-card state to keep in sync.
+  // This runs once, for the type the URL already decided.
+  // NB: this is a JS comment, so it SHIPS to the browser.
+
+
   Object.keys(typeFields).forEach(function(k) {
     // A type whose module is dropped has no panel in the markup, so the lookup
-    // above is null (Phase 87).
+    // above is null.
     if (!typeFields[k]) return;
     typeFields[k].style.display = k === currentType ? '' : 'none';
   });
@@ -475,10 +475,10 @@
     // whatever height `.map-card`'s flex layout (app.css) already gave the
     // container by then. This call is the safety net for a script that hides
     // or shows a type-specific fields card AFTER load and changes that
-    // height (none does today; the type is fixed for the page's lifetime
-    // since ISS-134), so the canvas never drifts from its container.
+    // height (none does today; the type is fixed for the page's lifetime),
+    // so the canvas never drifts from its container.
     map.resize();
-    // R-100: frame on the agency boundary BEFORE the drawing/parcel layers,
+    // Frame on the agency boundary BEFORE the drawing/parcel layers,
     // so they always draw on top of the boundary outline whichever way the
     // fetch resolves (a deployment with no boundary rows keeps this map's
     // own center/zoom, unchanged below).
@@ -555,7 +555,7 @@
     });
     updateGeometry({ type: 'Point', coordinates: [lngLat.lng, lngLat.lat] });
     updateCoordDisplay(lngLat.lng, lngLat.lat);
-    // ISS-171: a click or a drag (above) writes the marker's position back
+    // A click or a drag (above) writes the marker's position back
     // into the two inputs at six decimals; any warning from a PRIOR typed
     // pair is now stale (the point just moved), so it clears here and only
     // handleCoordInput below decides whether to raise it again.
@@ -563,7 +563,7 @@
     hideCoordWarning();
   }
 
-  // ISS-171: mirror the placed point back into the two typed inputs, at six
+  // Mirror the placed point back into the two typed inputs, at six
   // decimals, whichever way the point got there (click, drag, or typing).
   function syncCoordInputs(lng, lat) {
     if (latInput) latInput.value = lat.toFixed(6);
@@ -581,7 +581,7 @@
     coordWarning.style.display = 'none';
   }
 
-  // ISS-171: a valid typed pair places the marker exactly as a click does; a
+  // A valid typed pair places the marker exactly as a click does; a
   // pair outside the United States' box gets a plain warning and STILL places the
   // marker (a warning, never a refusal — a border district or a fat-fingered
   // sign is still the operator's call, not this form's).
@@ -674,13 +674,13 @@
     drawMode = mode;
     document.getElementById('draw-point').classList.toggle('active', mode === 'point');
     document.getElementById('draw-polygon').classList.toggle('active', mode === 'polygon');
-    // ISS-171: typed coordinates place a POINT, so the inputs make sense only
+    // Typed coordinates place a POINT, so the inputs make sense only
     // in point mode (a well or a diversion; storage when it is a tank).
     var coordInputs = document.getElementById('coord-inputs');
     if (coordInputs) coordInputs.style.display = mode === 'point' ? '' : 'none';
     if (mode !== 'point') hideCoordWarning();
     // The line under the map follows the mode while nothing is placed, a
-    // storage type switch included (151.3-03).
+    // storage type switch included.
     if (!document.getElementById('geometry_json').value) setCoordText(placeHint());
     try { map.getCanvas().style.cursor = 'crosshair'; } catch(e) {}
   }
@@ -693,7 +693,7 @@
     document.getElementById('geometry_json').value = JSON.stringify(geojson);
   }
 
-  // ISS-171: the coord-display strip now WRAPS the status text and the typed
+  // The coord-display strip WRAPS the status text and the typed
   // inputs, so its status text lives in its own child element — setting
   // `.textContent` on the wrapper itself, as every call site here used to,
   // would erase the inputs along with the words.
@@ -724,7 +724,7 @@
 
   // ── Parcel map interaction ──
   {% comment %}
-    Phase 89: guarded as one block with the card above. Everything outside it
+    Guarded as one block with the card above. Everything outside it
     that touches parcel state — the `parcelMode === 'draw'` branches in the
     polygon-finish handler, the hidden `parcels`/`parcel-highlight` sources — is
     already unreachable once these buttons are gone, because `parcelMode` is

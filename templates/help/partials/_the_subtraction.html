@@ -1,8 +1,8 @@
 {% load humanize %}{% comment %}
-  148-03 (revision 3): the picture's own ledger, fed by
+  The picture's own ledger, fed by
   accounting/services.py::example_field_month(). Included, with no extra
   context, by help/water_balances.html's "The short version" (Methods
-  behind the numbers dropped it on 2026-10-10) -- every variable this partial
+  behind the numbers does not include it) -- every variable this partial
   reads comes off `example` alone (words-help-pages.md A.2).
 
   `example` is `None` on a deployment with no qualifying run yet (or with
@@ -11,14 +11,14 @@
   still teaches the arithmetic with no figures in it.
 
   Pill colours: grey for an estimate and for a field's own delivery record
-  (150-02, ISS-225: delivery_split "own", a row the canal split did not
+  (delivery_split "own", a row the canal split did not
   write), gold for a delivery the software divided up from a headgate total,
   and the existing orange
   pill (already the platform's "Deficit"/"Residual" tone) for the two
   assumed-share lines -- the picture's own four-colour mapping, carried onto
   the badge tokens that exist.
 
-  Layout (2026-09-28, replacing the first render):
+  Layout:
   this partial draws no card of its own; the page that includes it supplies
   the frame, and this is a ruled sub-section of it. The figure sits in its
   own right-aligned column under the same bracketed "Number" header as its
@@ -26,7 +26,7 @@
   split explanation that made the Delivered cell an eight-line paragraph is
   the first note under the table.
 
-  149.1-01 (2026-10-06): the two notes under the table are under 60 words
+  The two notes under the table are under 60 words
   each and the words-only variant is a numbered list, so this partial holds
   the shape check (tests/test_help_shape.py) on both pages that include it;
   the verb is "subtract", never "take off".

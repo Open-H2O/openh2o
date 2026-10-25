@@ -1,5 +1,5 @@
 {% comment %}
-Per-district year-end-unused-water control (Phase 55-03). HTMX swap target:
+Per-district year-end-unused-water control. HTMX swap target:
 zone_recovery_horizon returns this same partial so the line + buttons re-render
 in place. "Dense, not hidden": the resolved policy reads as one quiet line, with
 the change-for-this-district buttons right beside it. The active choice is
@@ -41,4 +41,4 @@ highlighted; "Use agency default" clears the override to NULL.
     </button>
   </div>
 </div>
-{% comment %}150.1-02: "the site default" for "agency default", and the explanation now says the choice covers every allocation in the zone (accounting/management/commands/rollover_allocations.py applies it to each zone and water type), that a debt always carries, and when the carry-over is written; the last two are the Surface delivery settings help page's sentences. Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
+{% comment %}The label says "the site default" (not "agency default"), and the explanation says the choice covers every allocation in the zone (accounting/management/commands/rollover_allocations.py applies it to each zone and water type), that a debt always carries, and when the carry-over is written; the last two are the Surface delivery settings help page's sentences. Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}

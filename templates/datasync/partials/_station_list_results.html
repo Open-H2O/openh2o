@@ -1,5 +1,5 @@
 {% comment %}
-The count line is NOT here (143-07). It is the map card's head, above the map
+The count line is NOT here. It is the map card's head, above the map
 and outside #results, and on an htmx swap this partial re-renders that head
 out of band (hx-swap-oob on the same id) so the count follows the list without
 the map being torn down. On a full page render the page includes the head once
@@ -90,13 +90,13 @@ OH2O.followResults reads them after every swap and filters the map to them.
           <span class="text-tertiary text-xs">No readings</span>
           {% endif %}
         </td>
-        {% comment %} ISS-109. The control to switch a station on was NOT missing — it
-             has always been on the station detail page, posting to
-             datasync:station_toggle. What was missing was any way to reach it:
-             this list defaults to syncing-only, so a dormant discovered station
-             is not even on screen, and turning on CIMIS's fifteen meant fifteen
-             separate page visits. Filter to "Not syncing" and they are all here
-             with a switch each. Same partial, same endpoint, no new view.
+        {% comment %} The switch that turns a station on is also on the station detail page,
+             posting to datasync:station_toggle. This list defaults to syncing-only,
+             so a dormant discovered station is not on screen; filtering to
+             "Not syncing" shows them with a switch each, which saves a page visit
+             per station.
+             The switch uses the same partial and endpoint as the detail page.
+
              onclick:stopPropagation keeps the row's navigate-on-click from
              firing when the operator means to hit the switch. {% endcomment %}
         <td onclick="event.stopPropagation();" style="cursor: default;">
@@ -141,7 +141,7 @@ OH2O.followResults reads them after every swap and filters the map to them.
       <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
     </svg>
   </div>
-  {% comment %} 150.1-02 screen 15 message B row 8: the source by its name, not its code. {% endcomment %}
+  {% comment %} The source by its name, not its code. {% endcomment %}
   {% if source and q %}
   <p class="empty-state-text">No station from {{ source_phrase }} matches &ldquo;{{ q }}&rdquo;.</p>
   {% elif source %}

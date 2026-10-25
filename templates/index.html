@@ -5,36 +5,36 @@
 
 {% block page_title %}Home{% endblock %}
 
-{% comment %}143-09 (R-140, shape 2): the wide "System status" card GOES: it
-carried no count and linked nowhere, and its dot touched "System running"
+{% comment %}No wide "System status" card: it carried no count and linked nowhere,
+and its dot touched "System running"
 because it leaned on `gap-2`/`flex`/`items-center`, utilities this stylesheet
-never compiled (ISS-166). The status moves to the head's meta slot, the shape
+never compiled. The status sits in the head's meta slot, the shape
 every record page already uses.{% endcomment %}{% block page_meta %}<span class="badge badge-dot badge-green" title="The site is answering requests.">System running</span>{% endblock %}
 
 {% block content %}
-{% comment %}Phase 89-02, updated 143-09: the second sentence is a promise
+{% comment %}The second sentence is a promise
 about the page it introduces. The entity grid below is gated on its whole
-membership (89-01), so a deployment that runs none of the six leaves this
+membership, so a deployment that runs none of the six leaves this
 description as the only content on the page. Promising counts and management
-pages over a page that has neither is the ISS-082 class in its quietest form:
+pages over a page that has neither is a fault in its quietest form:
 no forbidden noun appears, so no word list can see it. This is the PUBLIC
-landing page, which is the half of `/` the harness could not read at all
-before 88-01. 149.1-06 (R-139): only a visitor who is not signed in sees this
+landing page.
+Only a visitor who is not signed in sees this
 page, so it says what the site is and that the records open after logging in,
 never "your water data".{% endcomment %}{% any_module_enabled "parcels" "wells" "surface" "recharge" "accounting" "datasync" as has_entity_cards %}<p class="page-description">OpenH2O is open-source water accounting for anyone who keeps water records.{% if has_entity_cards %} Log in to see the records behind each count.{% endif %}</p>
 
-{% comment %}143-09 (R-138, R-140): the two entity sections used to split
-"Water data" from "Accounting & monitoring" over two separate grids, which
-left the first grid's row five auto-fill tracks wide with the fifth empty
+{% comment %}One head and one grid hold the entity sections. Two grids would
+split "Water data" from "Accounting & monitoring", leaving the first grid's row
+five auto-fill tracks wide with the fifth empty
 (four cards) and the second grid standing alone under its own head for two
-more. One head, one grid, same gates and same order as the two grids they
-replace: `.dashboard-grid--counts` floors each card at 380px, measured
+more. One head, one grid:
+`.dashboard-grid--counts` floors each card at 380px, measured
 against this grid's 1,439px content width at a 1,730 viewport (three columns
 fit at that floor, a fourth does not), so all six cards this deployment
 allows resolve to two rows of three rather than four across the top and two
 stranded below. The guard shares a line with the markup because a tag alone
-on a line still emits that line's newline, and the milestone's deliverable is
-a byte-identical full render.{% endcomment %}{% if 'parcels' in enabled_modules or 'wells' in enabled_modules or 'surface' in enabled_modules or 'recharge' in enabled_modules or 'accounting' in enabled_modules or 'datasync' in enabled_modules %}<h2 class="content-section-label">Records on this site</h2>
+on a line still emits that line's newline, and the guard should add no blank
+line to the page.{% endcomment %}{% if 'parcels' in enabled_modules or 'wells' in enabled_modules or 'surface' in enabled_modules or 'recharge' in enabled_modules or 'accounting' in enabled_modules or 'datasync' in enabled_modules %}<h2 class="content-section-label">Records on this site</h2>
 <div class="dashboard-grid dashboard-grid--counts">
     {% if 'parcels' in enabled_modules %}<a href="{% url 'parcels:list' %}" class="dashboard-card">
         <div class="dashboard-card-label">Use areas</div>
@@ -74,11 +74,11 @@ a byte-identical full render.{% endcomment %}{% if 'parcels' in enabled_modules 
         <div class="dashboard-card-sublabel">{{ active_station_count }} syncing · View stations</div>
     </a>{% endif %}
 </div>{% endif %}
-{% comment %}143-09 (R-140): "Methodology settings" GOES from this template.
-It was gated on `request.user.is_staff`, and `config.views.index` serves
+{% comment %}This template has no "Methodology settings" card or "Signed in as" branch:
+a card gated on `request.user.is_staff` would be dead markup, because `config.views.index` serves
 this template ONLY to anonymous visitors (a signed-in user gets home.html),
-so the card was dead markup nobody could ever see rendered. The "Signed in
-as" branch a few lines below the old System status card was dead for the
-same reason and went with it.{% endcomment %}
+so nobody could ever see it rendered.
+
+{% endcomment %}
 <p class="text-base mt-md">To run your own OpenH2O site, start from <a href="https://github.com/Open-H2O/openh2o" class="text-link" target="_blank" rel="noopener noreferrer">the repository</a> and its <a href="https://github.com/Open-H2O/openh2o/blob/main/docs/AI-OPERATOR-GUIDE.md" class="text-link" target="_blank" rel="noopener noreferrer">operator guide</a>.</p>
 {% endblock %}

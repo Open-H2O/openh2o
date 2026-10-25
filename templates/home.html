@@ -14,9 +14,9 @@
        retired; the panel's own depth
        and the ambient page light carry the hero now.
 
-       143-09 (R-137, R-138, DESIGN.md rule 8): the largest words on the page
-       used to name a time of day ("Good morning"), which is a fact about the
-       clock, not about the district. The lead panel names the thing and
+       DESIGN.md rule 8: the largest words on the page name the thing, not a time
+       of day ("Good morning" is a fact about the
+       clock, not about the district). The lead panel names the thing and
        leads with its result, so when datasync is on the title becomes the
        figure this page exists to give, in the station list's own words
        (rule 6: "syncing" for is_active, "up to date" for fresh), as a link to
@@ -69,10 +69,10 @@
             <span class="home-task-body">
                 <span class="home-task-label">Run a report</span>
                 {% comment %}
-                  A fourth ISS-082 site, found by measuring the surface-less
-                  render rather than by reading the plan's list — this card
-                  named both filing families unconditionally, so a deployment
-                  with no surface water was still offered "GEARS and CalWATRS".
+                  Module-neutral on purpose: naming both filing families
+                  unconditionally
+                  would offer a deployment
+                  with no surface water "GEARS and CalWATRS".
                   Same owner mapping as the reports page: GEARS is groundwater
                   (`wells`), CalWATRS is surface diversion (`surface`). The card
                   itself is already guarded on `reporting` above; this is the
@@ -89,10 +89,10 @@
             <span class="home-task-body">
                 <span class="home-task-label">Explore the map</span>
                 {% comment %}
-                  Module-neutral on purpose (ISS-082). This used to enumerate
-                  "every well, parcel, and diversion", which is a promise a
-                  deployment without surface water cannot keep — 87-02 measured
-                  it still saying "diversion" with `surface` dropped. The map
+                  Module-neutral on purpose. Enumerating
+                  "every well, parcel, and diversion" is a promise a
+                  deployment without surface water cannot keep:
+                  it would still say "diversion" with `surface` dropped. The map
                   shows whatever the deployment actually has, so the honest
                   sentence is the general one. Three guarded variants would be
                   the wrong shape for a sublabel: more machinery than a
@@ -118,8 +118,8 @@
             </span>
             <span class="home-task-body">
                 <span class="home-task-label">Get help</span>
-                {% comment %}Phase 89-03: "methods" names the Methods explainer,
-                which 89-02 HIDES (404) wherever the deployment does not run
+                {% comment %}"methods" names the Methods explainer,
+                which is HIDDEN (404) wherever the deployment does not run
                 every domain it explains. Naming it unconditionally promises a
                 page a drinking-water deployment cannot open — invisible to the
                 vocabulary gate, because "methods" is ordinary English no word
@@ -130,8 +130,8 @@
         </a>
     </div>
 
-    {% comment %}150-01: a counter renders only above
-    zero, and each stays behind its module as well (Phase 89), so a dropped
+    {% comment %}A counter renders only above
+    zero, and each stays behind its module as well, so a dropped
     module's surviving rows never reach the bar. The heading is gated on the
     counts rather than on the modules, so "Your data" never stands over an
     empty bar. A count's key is absent when its module is off, which makes it

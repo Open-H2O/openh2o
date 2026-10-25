@@ -25,11 +25,11 @@
 </head>
 <body style="display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: var(--space-lg);">
     {% comment %}
-      The platform's name on every signed-out page (Phase 143-02, R-142): nine
-      of the ten account pages carried it only in the footer's smallest type,
-      so someone arriving at "Reset password" from an emailed link could not
-      say what they were resetting a password on. The same mark the login page
-      used to render for itself; that page now inherits it from here.
+      The platform's name on every signed-out page, so someone arriving at
+      "Reset password" from an emailed link can say what they are resetting a
+      password on (the footer alone carries it in its smallest type). The same mark
+      the login page renders is here; that page inherits it.
+
     {% endcomment %}
     <div class="auth-stack">
         <a href="/" class="auth-brand">
@@ -39,7 +39,7 @@
         {% block content %}{% endblock %}
     </div>
     <footer style="position: fixed; bottom: 0; left: 0; right: 0; padding: 0.6rem; text-align: center; font-size: 0.78rem;">
-        {% comment %} 150.1-02 screen 18 message AA: the app footer approved in plan 01, reused. {% endcomment %}
+        {% comment %} The footer text is the same as the app footer. {% endcomment %}
         <span style="color:var(--color-text-secondary);">OpenH2O (Open Water Accounting Platform) ·
         <a href="{% url 'about' %}" style="color:var(--color-text-secondary);">About</a> ·
         <a href="https://github.com/Open-H2O/openh2o" target="_blank" rel="noopener noreferrer" style="color:var(--color-text-secondary);">Source code (AGPL-3.0)</a></span>

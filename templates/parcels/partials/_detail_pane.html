@@ -17,11 +17,11 @@
   <div class="pane-header-meta">
     {% include "parcels/partials/_status_badge.html" with status=parcel.status %}
     {% comment %}
-      R-035's fault on a third surface, found by 143-01's own probe rather than
-      by the register (which recorded it on the account and report panes only):
-      this fragment is the workspace pane AND the standalone page's body, so on
-      /parcels/<pk>/ the only forward link in the head pointed at the page the
-      reader was already on. `on_full_page` comes from `parcels/detail.html`.
+      This fragment is the workspace pane AND the standalone page's body, so on
+      /parcels/<pk>/ the only forward link in the head would point at the page the
+      reader was already on, so the link is hidden there. `on_full_page` comes from
+      `parcels/detail.html`.
+
     {% endcomment %}
     {% if not on_full_page %}
     <a href="{% url 'parcels:detail' parcel.pk %}" class="text-tertiary text-xs back-link" title="Open this use area on its own page">Open full page &rarr;</a>
@@ -38,9 +38,9 @@
   <div class="card-raised">
     {% if run_periods %}
     {% comment %}
-      ISS-148, answered as a design question in 137-01. The pane used to give
-      the answer twice, in two identities that disagree in sign on 32 of 76
-      wet-year and 24 of 76 dry-year parcels, with the answer given third and
+      Two balance identities disagree in sign on 32 of 76
+      wet-year and 24 of 76 dry-year parcels, so the pane gives one answer,
+      first and largest.
       smallest. This panel states the MASS balance — supplies minus uses, where
       uses carry consumptive use, deep percolation, managed recharge and the
       change in banked storage, and nothing else.
@@ -66,15 +66,15 @@
         {% include "parcels/partials/_period_control.html" %}
       </div>
       {% comment %}
-        143-01, resumed 2026-09-11: the two-column body (equation packed left, both breakdowns at the far
-        right) left ~1,300px of nothing between them at 2560, the same dead
-        space filed as ISS-159 #2, after three fixes each
-        signed off by a check that cannot see bad. This is the shape judged
-        by eye on the live page before anything was measured: three figure
-        cells, each figure with its own parts beneath it. Supplies carries "by
+        The body is three figure cells, each figure with its own parts beneath it,
+        not a two-column body (equation packed left, both breakdowns at the far
+        right), which left ~1,300px of nothing between them at 2560.
+        The shape was judged by eye on the live page.
+
+        Supplies carries "by
         source", Uses carries "by destination", and the result carries its
-        badge plus the lines that judge it, which used to float below the
-        panel aligned to nothing.
+        badge plus the lines that judge it, inside the panel.
+
 
         The Groundwater extracted cell is the engine's OWN OUTPUT re-entering
         the balance as an input on a field with a well and no meter, which is
@@ -82,14 +82,14 @@
         minus the canal water the crop could use IS the groundwater figure (the
         `calculated` row, divided to the extracted amount), so the books close
         by arithmetic. The badge under the residual says so in one word
-        (Estimated, 148-03). Managed recharge carries no tag: since 148-04 the
+        (Estimated). Managed recharge carries no tag: the
         row sums only recorded managed recharge, never a credit the engine
-        wrote (ISS-158 closed). Measured 2026-09-06, before the badge word
+        wrote. Measured 2026-09-06, before the badge word
         changed: 113 of 152 field-years read 0.00, every one with the engine's
         own row available, and not one field-year carrying a meter closed.
 
         Runoff is deliberately NOT here: FIG-parcels-013 is a fixed-zero
-        bookkeeping placeholder (verdict EXPLAINED in the 135-03 ledger) and a
+        bookkeeping placeholder (its figure-ledger verdict is EXPLAINED) and a
         cell that can only ever read 0.00 says nothing. The key stays in the dict.
 
         Titles: "by source" for the supplies breakdown, not "of which"
@@ -106,7 +106,7 @@
           <div class="budget-breakdown-group">
             <div class="budget-breakdown-title">Supplies by source</div>
             <div class="budget-breakdown-row"><span>Surface</span><b>{{ mass_balance.inputs.surface|floatformat:2|intcomma }}</b></div>
-            {% comment %} 150-02 Task 3: the part of Surface the calculation
+            {% comment %} The part of Surface the calculation
                  subtracted (CalculationRun.surface_water_af, summed), with the
                  efficiency when one applied to every delivered month; else the
                  month table below carries each month's. Omitted with no
@@ -125,7 +125,7 @@
             <div class="budget-breakdown-title">Uses by destination</div>
             <div class="budget-breakdown-row"><span>Crop ET</span><b>{{ mass_balance.outputs.et|floatformat:2|intcomma }}</b></div>
             <div class="budget-breakdown-row"><span>Deep percolation</span><b>{{ mass_balance.deep_percolation_af|floatformat:2|intcomma }}</b></div>
-            {% comment %} 150-02 Task 3: the two parts of the row above, each
+            {% comment %} The two parts of the row above, each
                  printed only when it is not zero (rule 8). {% endcomment %}
             {% if mass_balance.outputs.deep_percolation_surface_af %}
             {% endif %}
@@ -140,17 +140,17 @@
           <div class="budget-seg-label">Residual</div>
           {% comment %}
             The colour must agree with the badge word. `is_surplus` is
-            `residual >= 0`, so a field that CLOSES on a residual of a few
-            ten-thousandths below zero — MER-APN-032 sits at -0.0001 — took
-            deficit orange while its badge read the grey Balanced. Found on the
-            served page during 137-01 and fixed here: a balanced residual is
+            `residual >= 0`, so without the band check a field that CLOSES on a residual of a few
+            ten-thousandths below zero (MER-APN-032 sits at -0.0001) would take
+            deficit orange while its badge read the grey Balanced. So a
+            balanced residual is
             neutral, matching badge-grey, and only a residual outside the
             closing tolerance takes a direction colour.
           {% endcomment %}
           <div class="budget-seg-value {% if mass_balance.band_status == "closes" %}text-neutral{% elif mass_balance.is_surplus %}text-surplus{% else %}text-deficit{% endif %}">{{ mass_balance.residual_af|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
           {% comment %}
             The badge says what closed the balance, by what the field HAS
-            (148-03, 2026-09-28; DESIGN.md rule 12, the Residual row). Three
+            (DESIGN.md rule 12, the Residual row). Three
             cases:
 
             A. The balance closed on the engine's own estimate (a field with
@@ -158,7 +158,7 @@
                because the well's share was worked out as the remainder and
                then put back in as a supply; it is zero by arithmetic, not
                because two records agreed. "Balanced" said the opposite and
-               retired with this change (ISS-158; the gate holds it at zero).
+               is not used for this case.
             B. The residual is real (no meter, and no closing estimate: a
                field with no well, or a well field whose covered months wrote
                a 0 AF estimate): "Residual" for a positive figure, "Deficit"
@@ -167,7 +167,7 @@
                positive residual is green until it passes
                REALISTIC_RESIDUAL_BAND, then orange. "Surplus" read as good
                news to a water manager, and a positive residual here is the
-               opposite (ISS-143).
+               opposite.
             C. A metered field: no word. The figure stands with its colour,
                because the residual is a difference between records and there
                is nothing to name it but the number. A metered field that
@@ -175,8 +175,8 @@
                with no estimate in it needs no label. A field with no meter
                and no estimate that happens to close is treated the same way.
 
-            The badge sits INSIDE this segment because it judges THIS number
-            (the half of ISS-143 that closed with ISS-148). The cause lines
+            The badge sits INSIDE this segment because it judges THIS number.
+            The cause lines
             under it are chosen by the same three cases.
 
             This block tag is required for a note this long: Django's hash-style
@@ -203,7 +203,7 @@
           {% endif %}
           <div class="budget-seg-notes">
           {% comment %}
-            148-03: the cause lines, by the badge's three cases (the comment
+            The cause lines, by the badge's three cases (the comment
             above). Case A and case C each state in one sentence what the
             residual IS on that kind of field. Case B prints the stored figures
             where they are nonzero (the canal figure here, the unmet-demand
@@ -216,7 +216,7 @@
             irrigation, ditch seepage, a curtailment shortfall) explained the
             water (DESIGN.md copy rule 11) and are gone.
 
-            149.1-05: Case B's two figure lines say in their
+            Case B's two figure lines say in their
             LABEL how each sits in the residual (added, subtracted), never that
             it equals the residual: measured 2026-10-07 on the local demo, the
             residual equals minus the unmet-demand figure on 45 of the 87
@@ -242,9 +242,9 @@
           {% endif %}
 
           {% comment %}
-            ISS-157, the field's surface. The platform has always recorded this — on a
+            The field's surface. The platform records this: on a
             field with no well the engine writes the leftover as unmet demand rather
-            than inventing pumping — and no screen had ever shown it.
+            than inventing pumping.
 
             ⛔ It is a figure, not a finding. The words are settled: *water use recorded, no supply reported*. Never unauthorized,
             unpermitted, unlawful, illegal or stolen, never implying them, and no
@@ -266,7 +266,7 @@
           {% endif %}
 
           {% comment %}
-            148-04 (c). The deployment can set canal water beyond what a
+            The deployment can set canal water beyond what a
             field's crop could use to show as its own line rather than a
             credit (Delivery Settings, "named_line"). This is that line: a
             month set another way never reaches this figure, so a field
@@ -287,15 +287,15 @@
           </p>
           {% endif %}
 
-          {% comment %} 149.1-05: whether the residual includes losses is
+          {% comment %} Whether the residual includes losses is
                answered as two labelled lines, one per kind of loss,
                each saying where that loss is counted instead; the panel's own
                breakdown rows, because two fresh readers read the sentences as a
-               paragraph (rounds 1 and 2). {% endcomment %}
+               paragraph. {% endcomment %}
           </div>
           {% comment %} The group is a direct child of the segment so the panel's
                own row rules apply (`.budget-seg > .budget-breakdown-group`);
-               inside .budget-seg-notes the rows ran together (round 3). {% endcomment %}
+               inside .budget-seg-notes the rows ran together. {% endcomment %}
           <div class="budget-breakdown-group">
             <div class="budget-breakdown-title">Not in this residual</div>
             {% if 'surface' in enabled_modules %}
@@ -309,7 +309,7 @@
     </div>
 
 
-    {% comment %} 148-03: only a month with a well and no meter has a receipt
+    {% comment %} Only a month with a well and no meter has a receipt
        to show (where its estimated pumping came from), so only those months
        link, and a field with none (no well, or every month metered) has no
        block here at all. `receipt_periods` is parcel_receipt_periods(); the
@@ -453,25 +453,25 @@
           </div>
         </div>
         {% comment %}
-          R-107 / R-108 (143-01). Two faults, one line.
+          The card names its period, and its Amount column explains its minus sign.
 
-          The card now SAYS which period it is showing, so a reader can see that
+          The card SAYS which period it is showing, so a reader can see that
           it agrees with the water balance above it rather than having to trust
           that it does. The query behind it is bounded by the same period
-          (`parcels/views.py`, ISS-165) — before that fix these rows were the
-          parcel's whole history and routinely belonged to a different year than
+          (`parcels/views.py`), so these rows are not the
+          parcel's whole history, which routinely belonged to a different year than
           the balance.
 
-          And the Amount column used to print 241.56 beside -36.55 with nothing
-          on the card saying which direction a minus sign meant. The sentence is
+          And the Amount column prints 241.56 beside -36.55, so the card says
+          which direction a minus sign means. The sentence is
           carried VERBATIM in meaning from the Use Ledger, not reworded: one
           quantity, one wording, wherever it is shown (copy rule 12).
 
-          143-05 (2026-09-12): the Use Ledger's own facts
-          line above its table shortened from one 30-word sentence to two
-          short facts at 14px, and this card's copy shortened with it: same
-          two clauses, same wording, both places. It also swapped its Source
-          column for the same merged "Water" column the ledger uses (the
+          The Use Ledger's own facts
+          line above its table is two short facts at 14px, and this card's copy
+          matches it: same
+          two clauses, same wording, both places. Its Water column is the
+          same merged column the ledger uses (the
           `ledger_row_words` filter, loaded from `accounting_extras` and
           backed by `accounting/ledger_words.py::ledger_row_words`), so a row
           reads the same way on both screens instead of a plain badge word
@@ -507,7 +507,7 @@
         {% else %}
           {% comment %}
             "yet" was true when this card showed the parcel's whole history. Now
-            that it is bounded by the period (ISS-165), an empty card means empty
+            that it is bounded by the period, an empty card means empty
             FOR THIS YEAR — the use area may well have entries in another, and
             the period control above is how a reader gets to them.
           {% endcomment %}
@@ -580,7 +580,7 @@
       fadeDuration: 0   // no tile cross-fade flicker
     });
     window._parcelPaneMap = map;
-    // 150-02 Task 3: on the standalone page the map sits in a grid cell whose
+    // On the standalone page the map sits in a grid cell whose
     // width can change after the map is built (the grid placing it, the
     // container query stacking it under 1,150px). A map whose host changed
     // width after build paints blank on the right, so it re-measures its host
@@ -628,4 +628,4 @@
   boot();
 })();
 </script>
-{% comment %}"Effective precipitation" for the figure that read "Rain" (CalculationRun.effective_precip_af, summed in parcel_mass_balance) (150.1-02, Water year page). Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
+{% comment %}"Effective precipitation" for the figure that read "Rain" (CalculationRun.effective_precip_af, summed in parcel_mass_balance) (Water year page). Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}

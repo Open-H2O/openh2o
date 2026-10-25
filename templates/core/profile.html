@@ -21,7 +21,7 @@
     {% if messages %}<div style="margin-bottom: var(--space-lg);">{% include "partials/_messages.html" %}</div>{% endif %}
 
     <div class="card-raised">
-        {% comment %} Was "Profile" under the title "Your profile" (Phase 143-02, copy rule 13). {% endcomment %}
+        {% comment %} The card heading names its contents; "Profile" under the title "Your profile" would repeat it (copy rule 13). {% endcomment %}
         <h2 class="section-header">Contact details</h2>
         <p class="text-sm text-secondary mb-md">
             Signed in as <strong>{{ user.email }}</strong>.
@@ -33,7 +33,7 @@
         </div>
         {% endif %}
 
-        {% comment %} 150-04 (rule B): a two-track grid, the two names on one row
+        {% comment %} A two-track grid, the two names on one row
              and the title beside the phone. {% endcomment %}
         <form method="post" class="form-grid">
             {% csrf_token %}
@@ -65,7 +65,7 @@
 
     <div class="card-raised mt-lg">
         <h2 class="section-header">Sign-in &amp; security</h2>
-        {% comment %} ISS-248: only an
+        {% comment %} Only an
              administrator changes an address, on the Users page, and the email
              page is gone. {% endcomment %}
         {% if user.is_staff %}

@@ -22,7 +22,7 @@
   toggle, the mobile-collapse script — is not module-owned and stays written out
   longhand.
 
-  150-03: which ONE link is lit is decided once per request, for every link
+  Which ONE link is lit is decided once per request, for every link
   including Home and Help, by `core.modules.lit_entry` (the longest owning
   prefix wins; Home and the Help pages are `FIXED_NAV_ENTRIES` there). It
   arrives as `nav_lit`, the winner's url_name, with `nav_lit_section`; no link
@@ -53,7 +53,7 @@
   against fixtures captured before the rewrite. Change the markup here and that
   suite tells you exactly which permutation moved.
 
-  147-02: two entries in the loop below open a write flow rather than a page,
+  Two entries in the loop below open a write flow rather than a page,
   Setup Wizard (`setup:wizard`) and Add a water system (`drinking:onboard`), and
   neither carries a `visibility` predicate a viewer's read-only role can use.
   They are named by `url_name` rather than given a new `visibility` value,
@@ -119,7 +119,7 @@
             </svg>
             <span class="sidebar-link-text">Getting Started</span>
         </a>
-        {% comment %}89-02: three of the five Help entries point at explainer pages
+        {% comment %}Three of the five Help entries point at explainer pages
         that are hidden when the deployment does not run the domain they explain
         (config/views.py::EXPLAINER_MODULES). The predicate is read from the same
         place the view reads it, so a link and its page cannot drift apart. Note
@@ -177,7 +177,7 @@
         </details>
 
         {% if feedback_enabled and 'feedback' in enabled_modules %}
-        {% comment %} The feedback trigger (Phase 143-02, R-024): here, at the foot of the
+        {% comment %} The feedback trigger: here, at the foot of the
              nav, because the sidebar is sticky and full height, so it is always in view
              and never over the content the floating pill used to cover. The panel and
              the script are in partials/_feedback_widget.html and find this by id. {% endcomment %}

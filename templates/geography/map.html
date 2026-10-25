@@ -11,10 +11,10 @@
   <nav class="breadcrumb" aria-label="Breadcrumb">
     <span class="breadcrumb-current">Map</span>
   </nav>
-  {% comment %}Phase 89-02: every noun in this list belongs to a droppable
-  module, so with the whole water closure off the sentence rendered as
+  {% comment %}Every noun in this list belongs to a droppable
+  module, so with the whole water closure off the sentence renders as
   "Interactive map showing ." — a hole where the subject should be. The clause is
-  gated on its own membership with `any_module_enabled`, the tag Phase 88 added
+  gated on its own membership with `any_module_enabled`, the tag made
   for exactly a sentence that would otherwise be left naming nothing. The two
   sentences that survive still describe the map correctly: the agency boundary
   and its zones are `geography` and are always there.{% endcomment %}{% any_module_enabled "parcels" "wells" "surface" "recharge" "drinking" as map_has_features %}<p class="page-description">{% if map_has_features %}{% module_nouns "parcels:use areas" "wells:wells" "surface:points of diversion" "recharge:recharge sites" "drinking:drinking-water facilities" as map_nouns %}{{ map_nouns|capfirst }} appear as layers in the Layers panel. Click a feature for its record.{% else %}Turn layers on and off in the Layers panel. Click a feature for its details.{% endif %}</p>
@@ -42,11 +42,11 @@
        would re-inflate the now-definite map area ~6% past the viewport. #map
        carries a global counter-zoom calc(1/1.0625) (app.css ~1599) that only
        exists to cancel that pane zoom, so reset #map to native too. */
-    /* ISS-098: `flex-direction: column`, and that word is the whole fix. The
+    /* `flex-direction: column` is what stacks the banner above the map. The
        chain above needs .app-content to be a flex CONTAINER, but a ROW makes
        every other child of .app-content a column BESIDE the map — and base.html
        renders the demo banner as exactly such a child. Measured on staging at
-       1920x1080 before the fix: banner 981px, map 679px, in a 1680px content
+       1920x1080 with a row: banner 981px, map 679px, in a 1680px content
        area. A column stacks the banner above the map the way every other page
        does, and leaves the map the growing row beneath it. */
     .app-content { padding: 0 !important; overflow: hidden; display: flex; flex-direction: column; zoom: 1; }
@@ -170,7 +170,7 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
             layout: { 'text-transform': 'uppercase', 'text-letter-spacing': 0.18,
                       'text-size': ['interpolate', ['linear'], ['zoom'], 8, 11, 12, 15] }
         }), { panelHidden: true, section: 'Administrative', paint: { 'text-color': OH2O.colors.gold, 'text-halo-color': '#040608', 'text-halo-width': 1.6, 'text-opacity': 0.85 } }),
-        // R-095 (143-07): the 'zones' source carries TWO kinds of feature —
+        // The 'zones' source carries TWO kinds of feature:
         // management-area GSA zones (the per-zone-name legend breakdown below)
         // and everything else (surface service areas in the demonstration,
         // a real deployment's own custom or subbasin zones). One fill layer
@@ -178,7 +178,7 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
         // layer of eight zones, and the Layers panel's "GSA Zones" count
         // included the five service areas it never named. Both layers below
         // read the SAME source and MUST filter it the way their MapLibre
-        // `filter` does — the ISS-116 lesson (`countFilter` mirrors `filter`).
+        // `filter` does (`countFilter` mirrors `filter`).
         {
             id: 'zones-fill', type: 'fill', source: 'zones',
             label: 'Management Areas', group: 'zones', section: 'Administrative',
@@ -257,7 +257,7 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
             filter: ['!', ['in', 'Canal', ['coalesce', ['get', 'feature_type'], '']]],
             // Mirrors the filter directly above. Without it the count badge and
             // the legend read the whole 'flowlines' source, so rivers and canals
-            // reported the SAME number (ISS-116 measured 4,672 twice).
+            // reported the SAME number (4,672 for both).
             countFilter: { prop: 'feature_type', notContains: 'Canal' },
             paint: { 'line-color': OH2O.colors.river,
                      'line-width': ['interpolate', ['linear'], ['zoom'],
@@ -293,7 +293,7 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
         }), { panelHidden: true, section: 'Surface Water' }),
 
         // ── Land Use ──
-        {% comment %}Phase 89: guarded with their source above, same reasoning
+        {% comment %}Guarded with their source above, same reasoning
           as the Wells, Surface Water and Recharge blocks — a layer left behind
           after its source is gone is a MapLibre console error, not a clean
           absence. With `wells` in the same drop closure, guarding these three
@@ -390,7 +390,7 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
         {% comment %}
           The GW tie lines are drawn from wells.WellIrrigatedParcel, so without
           the module they are a permanently empty toggle labelled "GW" -- the
-          exact shape Phase 87 guarded the SW pair for.
+          same shape the SW pair is guarded for.
         {% endcomment %}{% if 'wells' in enabled_modules %}{
             id: 'gw-tie-lines', type: 'line', source: 'tie-lines',
             label: 'GW Allocation Links', group: 'gw-tie-lines', section: 'Infrastructure',
@@ -533,12 +533,12 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
     // single layer painted in many named colours, which the Layers panel can
     // only ever give one row and one swatch.
     //
-    // Naming the LAYERS is the Layers panel's job — it lists every one with its
-    // swatch and a live feature count, and it is always on screen. The hardcoded
-    // Drinking Water section that used to sit here named a layer with zero
-    // features while 206 red monitoring-station dots went unnamed (ISS-116), and
-    // deleting it is the fix. Do not add per-layer rows back here; that was
-    // tried on 2026-08-05 and produced a second panel echoing the first.
+    // Naming the LAYERS is the Layers panel's job: it lists every one with its
+    // swatch and a live feature count, and it is always on screen. Per-layer
+    // rows here would repeat that panel, and a fixed list can name a layer
+    // with no features while leaving a populated one unnamed. The legend
+    // therefore holds only the management areas below; do not add per-layer
+    // rows here.
     legend: [
 {% if gsa_zones %}        { title: 'Management Areas', items: [
 {% for z in gsa_zones %}            { label: '{{ z.name|escapejs }}', swatch: 'fill', color: '{{ z.color }}' }{% if not forloop.last %},{% endif %}

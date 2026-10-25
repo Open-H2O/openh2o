@@ -1,5 +1,5 @@
 {% load humanize %}{% comment %}
-The overview map card's head (143-07). ONE partial, and every overview page
+The overview map card's head. ONE partial, and every overview page
 includes it with its own words: the h2 names the thing, then ONE line at
 text-base that is the count line AND the key on one row. The count is what the
 list counts, in the same three states on every page:
@@ -42,7 +42,7 @@ Counts, from the view (the page and the results partial share one context):
   line                  optional: a page whose count cannot take this shape
                         passes its own noun phrase and the branches are skipped
 
-149.1-06: each count state is its own <p>, so scripts/help_shape.py measures
+Each count state is its own <p>, so scripts/help_shape.py measures
 one state at a time instead of summing the five alternatives as one block;
 the key span is repeated inside each state that has one, so it stays on the
 count line (`.map-card-head > p` is the flex row). The words are unchanged.

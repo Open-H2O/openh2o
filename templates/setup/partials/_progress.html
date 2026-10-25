@@ -10,11 +10,11 @@
   {# In-flow station review: enable the monitoring stations just discovered. Module-guarded — its rows include a datasync partial that reverses datasync:station_toggle. #}
   {% if 'datasync' in enabled_modules %}{% include "setup/partials/_station_review.html" %}{% endif %}
 
-  {% comment %}149.1-06 (flow D): the finish screen's one action is Getting
+  {% comment %}The finish screen's one action is Getting
   started, and the line names the step that comes after the wizard there
   (config/views.py GETTING_STARTED_STEPS: the wizard row runs before zones,
-  which every configuration carries). The hand-numbered four-step list it
-  replaces put zones last, against Getting started's order.{% endcomment %}
+  which every configuration carries). A hand-numbered four-step list would
+  put zones last, against Getting started's order.{% endcomment %}
   <div class="card-raised" style="background: oklch(0.49 0.11 145 / 0.08); border-color: var(--forest-400);">
     <p class="section-header-flush mb-sm">Setup complete: what's next</p>
     <p class="text-secondary text-sm">Next in Getting started: create management zones on Administration &gt; Zones.</p>

@@ -1,10 +1,10 @@
 {% comment %}
 Use Areas overview map: every use area the list is showing, on the parcels
-overview page (143-13, candidate A). Copies the 143-07 map card's pattern
+overview page. Copies the map card's pattern
 (surface/partials/_pods_overview_map.html) with the polygon paint
 _zones_overview_map.html uses, since a use area is a filled shape, not a dot.
 
-The overview map card (143-07). Three things beyond the fill:
+The overview map card. Three things beyond the fill:
 
   * An always-on label per use area (OH2O.addDetailLabel: minzoom 0, collision
     declutter, text-optional), reading the parcel number straight off the same
@@ -26,7 +26,7 @@ with nothing to draw the card is its head alone and no map is built.
 Variables:
   map_id          - ID of the existing <div> container on the page (required)
   geojson_url     - optional: the URL to fetch instead of parcels:geojson with
-                    no parameter. The account page (ISS-175, 150-02) passes
+                    no parameter. The account page passes
                     parcels:geojson?account=<pk>, so the one source holds only
                     that account's use areas.
   follow_results  - optional, on unless passed False: OH2O.followResults ties

@@ -15,16 +15,16 @@ Usage:
 Variables:
   map_id     - ID of the existing <div> container on the page (required)
 
-143-07: the in-map legend box is gone. The card's HEAD is the key now
-(partials/_stations_map_card_head.html, three swatches instead of the box
-this partial used to draw in the map's bottom-left corner) — one place
-saying the three freshness states, not two. The map also now FOLLOWS THE
+The in-map legend box does not exist: the card's HEAD is the key
+(partials/_stations_map_card_head.html, three swatches), one place
+saying the three freshness states. The map FOLLOWS THE
 LIST: `stations_freshness_geojson` serves every located station regardless
-of `is_active` (R-074 — filtering the list to "Not syncing" used to leave the
-map still drawing only the active 42, with nothing on screen for the 293 the
-list was showing), and OH2O.followResults filters the glow/dots layers to the
+of `is_active`, so filtering the list to "Not syncing" still draws those
+stations, and OH2O.followResults filters the glow/dots layers to the
 results partial's own pks, which honour all four of the list's filters
 (search, source, syncing, reporting).
+
+
 {% endcomment %}
 <script>
 (function() {
@@ -45,7 +45,7 @@ results partial's own pks, which honour all four of the list's filters
   // below repeated them a third and fourth time; they now read from here.
   // Literal hexes, not `var(--token)`, because MapLibre paint takes a colour
   // value and cannot resolve a custom property — the tokens they mirror are
-  // named beside each one. The card head above (143-07) draws its own three
+  // named beside each one. The card head above draws its own three
   // key swatches from the token side of this same pair, in CSS.
   var FRESH_META = {
     fresh: { label: 'Up to date',      color: '#55B678' },  // --color-supply
@@ -104,7 +104,7 @@ results partial's own pks, which honour all four of the list's filters
           }
         });
 
-        // The always-on label per station (the overview map card, 143-07):
+        // The always-on label per station (the overview map card):
         // its name beside the dot on whichever side has room; a label that
         // would collide yields and the dot stays, so the dense middle of the
         // network names what fits and the rest appear as the reader zooms.
@@ -117,7 +117,7 @@ results partial's own pks, which honour all four of the list's filters
           }
         });
 
-        // Filter to the list's pks (143-07, R-074) and frame them: now, and
+        // Filter to the list's pks and frame them: now, and
         // after every htmx swap of #results. The results partial's pks
         // already honour all four filters (q, source, active, reporting),
         // so this is the ONE place that decides what the map draws.

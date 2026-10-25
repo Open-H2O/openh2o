@@ -98,9 +98,9 @@
       <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
         <h2 class="section-header-flush">Station information</h2>
         <div id="toggle-cell" class="row-start">
-          {% comment %} "Syncing", not "Active" (ISS-108): this switch is the wiring
+          {% comment %} "Syncing", not "Active": this switch is the wiring
                axis, and the freshness dot a few lines up is the other one. The
-               station list's filter now uses these same words, so the two
+               station list's filter uses these same words, so the two
                screens cannot disagree about what the switch means. {% endcomment %}
           <span class="text-tertiary text-xs" style="margin-right: var(--space-xs);" title="Whether OpenH2O's scheduled syncs include this station. The Up to date, Slightly behind or Dormant badge shows how recently the station reported.">Syncing</span>
           {% include "datasync/partials/_station_toggle.html" %}

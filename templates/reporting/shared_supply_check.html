@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% comment %}
   **The figures in this table are WEIGHTS, read as a percent of the source's
-  water. ISS-142, extended 2026-09-15 (R-090).**
+  water.**
   An apportionment weight carries real information in its third and fourth
   decimal places; a weight rounded to two would stop distinguishing shares
   that are genuinely different. Reading the SAME weight as a percent to two
@@ -34,16 +34,16 @@
 <div class="page-stack">
 
   {% comment %}
-    143-12 (R-055, R-089, R-090, R-091). Row one is the account-grid shape
-    (143-03/143-06/143-08): the check's controls and its one paragraph beside
+    Row one is the account-grid shape:
+    the check's controls and its one paragraph beside
     the panel with one result and two peers, copied unchanged from
-    drinking/result_detail.html as accepted 2026-09-15. Row two is
+    drinking/result_detail.html. Row two is
     the eight cards folded into ONE grouped table (rule 4, rule 7), the
     derived column (Gap) bracketed off with a `.col-sep` the way
-    _zone_detail_pane.html brackets Used. The 13px "8 hand-set shared sources
-    · 3 flagged · gap threshold 15 points" line that used to sit over the
-    period selector is gone: its three facts are now the panel and the
-    paragraph below the form.
+    _zone_detail_pane.html brackets Used. The panel and the
+    paragraph below the form carry the facts (hand-set shared sources, flagged
+    count, gap threshold); there is no 13px summary line over the period
+    selector.
   {% endcomment %}
   <div class="page-grid-account">
 

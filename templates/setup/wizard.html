@@ -54,7 +54,7 @@
   </div>
   {% endif %}
 
-  {% comment %}ISS-178: this card always renders. With nothing on file the
+  {% comment %}This card always renders. With nothing on file the
   control is disabled and says so with a "none
   yet" note, so a new user sees where an existing boundary would be chosen
   without being offered a choice that does not exist.{% endcomment %}
@@ -88,7 +88,7 @@
     </form>
   </div>
 
-  {% comment %}Three ways in (ISS-178): a fresh instance is never stopped by a
+  {% comment %}Three ways in : a fresh instance is never stopped by a
   missing GIS file. All three write the same Boundary model through the same
   geometry path (setup/boundaries.py); "start without one" writes nothing.{% endcomment %}
 

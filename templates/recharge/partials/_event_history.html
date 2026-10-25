@@ -1,12 +1,12 @@
 {% load humanize %}
 {% comment %}
-  143-10 (R-055, R-112). This partial is the HTMX target of BOTH the full
+  This partial is the HTMX target of BOTH the full
   page load (_recharge_site_detail_context) and recharge_event_create's POST
   response, so the two callers share _group_recharge_events rather than
   deriving the same water-year groups twice. The card head, the grouped
   table (tr.row-group per water year, tr.row-subtotal closing each group
   inside the body, no tfoot) and the 640px-capped log form below all copy
-  the shape 143-06 settled and Task 2 carried to the diversion page's
+  the shape of the diversion page's
   records table (templates/surface/partials/_diversion_records.html).
   Columns are Start, End, Volume, Credited to -- a plain record of what was
   logged, not a derivation -- so no column sums into another and there is no

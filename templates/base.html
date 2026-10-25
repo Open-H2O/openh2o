@@ -77,7 +77,7 @@
     <!-- Explainer pop-out positioning (escapes the content scroll box) -->
     <script src="{% static 'js/explainer-popout.js' %}?v=1" defer></script>
 
-    <!-- A table wrapper scrolls only when its table overflows it; otherwise the header pins to the document (150-04, ISS-167) -->
+    <!-- A table wrapper scrolls only when its table overflows it; otherwise the header pins to the document -->
     <script src="{% static 'js/table-scroll.js' %}?v=1" defer></script>
 
     {# Umami analytics: renders only when UMAMI_WEBSITE_ID and UMAMI_SCRIPT_URL are both set (both blank by default). #}
@@ -100,11 +100,11 @@
             {% include "partials/_header.html" %}
 
             {% comment %}
-              The page head (Phase 143-02, R-058). The one <h1> per page is the
-              page_title block every template already declares; until 143-02 it
-              was rendered screen-reader-only on the theory that the breadcrumb
-              names the page, which left a 13px crumb as the only visible title
-              on 61 of 63 signed-in pages. It lives here in the extends chain so
+              The page head. The one <h1> per page is the
+              page_title block every template already declares. It is visible, not
+              screen-reader-only, because the breadcrumb is only a 13px crumb and
+              would otherwise be the only visible title on a signed-in page.
+              It lives here in the extends chain so
               the per-page page_title overrides apply; inside the included header
               partial they silently did not.
 
@@ -170,15 +170,15 @@
       values, and tests/test_map_palette_single_source.py fails the build if they
       ever disagree about a name or a value.
 
-      That sentence used to read "the tokens are the authority", which was a
-      promise rather than a fact: measured 2026-08-26, the token block held 5 of
-      the 11 keys, no CSS rule referenced any of them, and nothing checked the
-      two files against each other. Phase 121 added the missing six at exactly
-      the values map-core.js already painted and wrote the test. Neither file
-      outranks the other now — they are pinned equal, and the test says so.
+      Neither file outranks the other: they are pinned equal, and the test says so.
+
+
+
+
+
 
       The same guard also stops map-engine.js re-declaring a palette colour as a
-      literal, which it did until 2026-08-26.
+      literal.
     {% endcomment %}
     {% block map_scripts %}{% endblock %}
     {% block chart_scripts %}{% endblock %}
@@ -194,7 +194,7 @@
             sidebar.setAttribute('data-collapsed', 'true');
         }
 
-        // 150-03 (R-145): the lit entry can sit below the sidebar's fold.
+        // The lit entry can sit below the sidebar's fold.
         // Only when the sidebar is open: on a phone it starts collapsed off screen.
         var lit = sidebar.querySelector('.sidebar-link.active');
         if (lit && sidebar.getAttribute('data-collapsed') !== 'true') lit.scrollIntoView({block: 'nearest'});
@@ -264,7 +264,7 @@
         window.showToast(detail.message || 'Done', detail.type || 'success', detail.duration || 3000);
     });
 
-    // Copy controls (146-06): any button carrying data-copy-text copies it,
+    // Copy controls: any button carrying data-copy-text copies it,
     // including one HTMX swaps in later, which is why this is delegated from
     // the document rather than bound per button. The textarea fallback is for
     // a plain-HTTP deployment, where the Clipboard API is not offered.

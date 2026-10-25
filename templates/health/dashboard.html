@@ -11,20 +11,20 @@
     <span class="breadcrumb-current">Site Health</span>
   </nav>
   {% comment %} The category count is the registry total from the view, never a literal —
-     this sentence stayed frozen at eight long after there were thirteen (ISS-090). The
-     third sentence that used to close this paragraph (which checks are left out of the
-     score, and why) now sits under the "This run" card's field grid instead, next to the
-     Not applicable field it explains (143-09). {% endcomment %}
+     a literal would go stale as checks are added. The
+     sentence about which checks are left out of the score, and why, sits under the
+     "This run" card's field grid, next to the
+     Not applicable field it explains. {% endcomment %}
   <p class="page-description">This page shows the latest result of each of OpenH2O's {{ total }} checks on this site's records and server.</p>
 </div>
 {% endblock %}
 
 {% block content %}
 <div class="page-stack page-wide">
-    {% comment %} The page's title is the page head's (Phase 143-02); the h1 that sat here
-       duplicated it once the head became visible. 143-09 (R-055): the row-end chip that
-       used to sit here is gone; the "N/M healthy" sentence it carried is now the count
-       panel below, which leads with the healthy figure instead of hiding it in a chip. {% endcomment %}
+    {% comment %} The page's title is the page head's (base.html), so this page has no h1 of its own.
+       There is no row-end chip: the "N/M healthy" sentence is the count
+       panel below, which leads with the healthy figure instead of
+       hiding it in a chip. {% endcomment %}
 
     {% if total == 0 %}
     <div class="card-raised empty-state">
@@ -33,8 +33,8 @@
     </div>
     {% elif show_detail %}
     {% comment %}
-      143-09 (R-055, shape 1: the count-and-flag panel with two peers, AS BUILT on
-      shared_supply_check.html). The
+      The count-and-flag panel with two peers, as built on
+      shared_supply_check.html. The
       info card is "This run" (when, how many, what is left out, how to re-run)
       beside the balance card's panel, which leads with the healthy count instead
       of burying it in a chip.
