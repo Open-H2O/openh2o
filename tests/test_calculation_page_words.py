@@ -19,7 +19,7 @@ from django.urls import reverse
 
 from accounting.models import CalculationRun
 from accounting.precip_math import METHOD_LABELS
-from accounting.views import _step_detail_summary
+from accounting.views.calculation_runs import _step_detail_summary
 from tests.factories import ParcelFactory
 
 User = get_user_model()

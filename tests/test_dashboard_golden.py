@@ -119,7 +119,7 @@ def dashboard_html(db):
     # Hold the dashboard's clock inside the fixture's water year. On any day
     # after it ends (2026-09-30) the dashboard rightly lists it as a period to
     # close, which is not what this test is about.
-    with mock.patch("accounting.views.timezone.now", return_value=INSIDE_THE_PERIOD):
+    with mock.patch("accounting.views.dashboard.timezone.now", return_value=INSIDE_THE_PERIOD):
         response = client.get(reverse("accounting:dashboard") + f"?period={period.pk}")
     assert response.status_code == 200
     return response.content.decode()

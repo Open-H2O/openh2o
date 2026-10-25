@@ -12,7 +12,7 @@ records a diversion event, and pods_geojson feeds the diversion map.
 point of diversion name its right, water_right_assign_parcel /
 water_right_remove_parcel / water_right_search_parcels are the right's places
 of use (the account page's search-parcels / assign fragment shape,
-accounting/views.py, reused as a shape rather than imported), and
+accounting/views/accounts.py, reused as a shape rather than imported), and
 pod_parcel_edit_share is the inline fraction editor on a POD's linked use
 areas (the wells:edit_field GET/PATCH pattern, wells/views.py).
 """
@@ -1370,7 +1370,7 @@ def _water_right_places_of_use(water_right):
 
     Shared by the detail context and by assign/remove, which re-render just
     the `_places_of_use_list.html` fragment (146-02 D3, the account page's
-    search-parcels / assign fragment shape -- accounting/views.py -- reused as
+    search-parcels / assign fragment shape -- accounting/views/accounts.py -- reused as
     a shape, never its views).
     """
     return list(
@@ -1402,7 +1402,7 @@ def water_right_detail(request, pk):
 
 # ---------------------------------------------------------------------------
 # Places of use (146-02 D3): the account page's search-parcels / assign
-# fragment shape (accounting/views.py::assign_parcel / remove_parcel /
+# fragment shape (accounting/views/accounts.py::assign_parcel / remove_parcel /
 # parcel_search_for_assignment), reused as a shape only -- WaterRightParcel
 # has no soft-delete columns (no added_date/removed_date), so "remove" here
 # is a real delete, not a tombstone.

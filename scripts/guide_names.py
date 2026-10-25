@@ -105,7 +105,7 @@ SETTINGS_SCREENS: dict = {
     "Methodology Settings": (
         "templates/accounting/methodology_settings.html",
         "templates/accounting/partials/_methodology_steps.html",
-        "accounting/views.py",
+        "accounting/views/settings_pages.py",
         # The steps' names on the screen are the ones this command seeds.
         "accounting/management/commands/seed_calculation_plan.py",
     ),

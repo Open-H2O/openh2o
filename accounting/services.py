@@ -479,7 +479,7 @@ def current_period_id():
     The most recent period with CALCULATED ledger rows, then the most recent
     period with any ledger activity at all, then simply the most recent
     period -- the three-fallback rule ISS-022 wrote for the ledger view
-    (`accounting/views.py::ledger_list`), extracted here so the allocations
+    (`accounting/views/ledger.py::ledger_list`), extracted here so the allocations
     view (143-06) and the zone view (143-10) land on the same period the
     ledger does rather than re-deriving it and risking the three screens
     disagreeing about what "current" means. Returns ``None`` only when the
@@ -532,7 +532,7 @@ def attach_orphans_to_period(period):
     and gated on ``is_enabled("surface")`` -- ``accounting`` is
     schema-resident (stays installed with surface off) and must not import
     an uninstalled app at module scope. See
-    ``accounting/views.py::account_detail``'s identical guard.
+    ``accounting/views/accounts.py::account_detail``'s identical guard.
     """
     counts = {"diversion_records": 0, "unallocated_deliveries": 0, "ledger_rows": 0}
 

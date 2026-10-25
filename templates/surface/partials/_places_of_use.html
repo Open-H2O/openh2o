@@ -1,7 +1,7 @@
 {% comment %}
   Places of use on a water right (146-02 D3): search by parcel number, assign,
   remove by row -- writes WaterRightParcel. The account page's search-parcels
-  / assign fragment SHAPE (accounting/views.py::assign_parcel /
+  / assign fragment SHAPE (accounting/views/accounts.py::assign_parcel /
   parcel_search_for_assignment, templates/accounting/partials/
   _parcel_assignment.html), never its views: WaterRightParcel carries no
   reporting_period and no soft-delete columns, so a remove here is a real

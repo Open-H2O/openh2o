@@ -115,7 +115,7 @@ checked_at = "41b90b6"
 document = "README.md"
 heading = "What it looks like"
 files = [
-  "accounting/views.py",
+  "accounting/views/dashboard.py",
   "templates/accounting/partials/_dashboard_content.html",
   "templates/geography/map.html",
   "static/js/map-engine.js",
@@ -654,7 +654,7 @@ files = [
   "Makefile",
   "accounting/management/commands/run_accounting.py",
   "accounting/engine_run.py",
-  "accounting/views.py",
+  "accounting/views/periods.py",
   "health/checks.py",
   "health/management/commands/run_health_checks.py",
   "health/management/commands/prune_old_data.py",
@@ -989,7 +989,7 @@ files = [
   "setup/views.py",
   "setup/services.py",
   "geography/management/commands/auto_populate.py",
-  "accounting/views.py",
+  "accounting/views/ledger.py",
   "accounting/forms.py",
   "infrastructure/views.py",
   "surface/views.py",
@@ -1135,7 +1135,7 @@ heading = "Ledger entries: `import_ledger_csv` or the Upload CSV page"
 files = [
   "accounting/ledger_import.py",
   "accounting/management/commands/import_ledger_csv.py",
-  "accounting/views.py",
+  "accounting/views/ledger.py",
   "accounting/forms.py",
   "accounting/services.py",
   "accounting/urls.py",
@@ -1660,7 +1660,7 @@ files = [
   "templates/surface/partials/_diversion_import_preview.html",
   "core/models.py",
   "core/forms.py",
-  "accounting/views.py",
+  "accounting/views/settings_pages.py",
   "templates/accounting/delivery_settings.html",
   "drinking/views.py",
   "drinking/production_import.py",
@@ -1704,7 +1704,8 @@ files = [
   "drinking/production_import.py",
   "drinking/management/commands/import_production.py",
   "accounting/management/commands/import_ledger_csv.py",
-  "accounting/views.py",
+  "accounting/views/ledger.py",
+  "accounting/views/settings_pages.py",
   "accounting/services.py",
   "core/forms.py",
   "measurements/admin.py",
@@ -2279,7 +2280,10 @@ files = [
   "crontab.txt",
   "accounting/models.py",
   "accounting/forms.py",
-  "accounting/views.py",
+  "accounting/views/accounts.py",
+  "accounting/views/allocations.py",
+  "accounting/views/ledger.py",
+  "accounting/views/periods.py",
   "templates/accounting/ledger_list.html",
   "templates/accounting/period_detail.html",
   "accounting/management/commands/run_accounting.py",
@@ -2377,7 +2381,7 @@ checked_at = "efe5113"
 [[section]]
 document = "templates/help/water_balances.html"
 heading = "Where to go next"
-files = ["templates/accounting/partials/_dashboard_content.html", "accounting/views.py"]
+files = ["templates/accounting/partials/_dashboard_content.html", "accounting/views/dashboard.py"]
 labels = [
   { text = "Dashboard", where = "core/modules.py" },
 ]
@@ -2458,7 +2462,7 @@ document = "templates/help/settings_explained.html"
 heading = "Methodology Settings"
 files = [
   "accounting/management/commands/seed_calculation_plan.py",
-  "accounting/views.py",
+  "accounting/views/settings_pages.py",
   "accounting/precip_math.py",
   "accounting/steps.py",
   "templates/accounting/partials/_methodology_steps.html",
@@ -2478,7 +2482,7 @@ files = [
   "core/forms.py",
   "core/models.py",
   "core/constants.py",
-  "accounting/views.py",
+  "accounting/views/settings_pages.py",
   "parcels/services.py",
   "accounting/steps.py",
   "accounting/management/commands/run_calculations.py",
@@ -2510,7 +2514,7 @@ files = [
   "config/settings/base.py",
   "core/access.py",
   "core/adapters.py",
-  "accounting/views.py",
+  "accounting/views/settings_pages.py",
 ]
 labels = []
 checked_at = "41b90b6"
@@ -2554,7 +2558,7 @@ checked_at = "41b90b6"
 [[section]]
 document = "templates/help/budgets_allocations.html"
 heading = "From a zone’s ceiling to an account’s allocation"
-files = ["accounting/models.py", "accounting/views.py", "core/access.py"]
+files = ["accounting/models.py", "accounting/views/allocations.py", "accounting/views/common.py", "core/access.py"]
 labels = [
   { text = "Allocations", where = "core/modules.py" },
 ]
@@ -2563,7 +2567,7 @@ checked_at = "41b90b6"
 [[section]]
 document = "templates/help/budgets_allocations.html"
 heading = "Worked example"
-files = ["accounting/views.py"]
+files = ["accounting/views/common.py"]
 labels = []
 checked_at = "41b90b6"
 
@@ -2571,7 +2575,7 @@ checked_at = "41b90b6"
 document = "templates/help/budgets_allocations.html"
 heading = "What counts against an allocation"
 files = [
-  "accounting/views.py",
+  "accounting/views/common.py",
   "accounting/services.py",
   "accounting/carryover_math.py",
   "geography/views.py",
@@ -2583,7 +2587,7 @@ checked_at = "41b90b6"
 [[section]]
 document = "templates/help/budgets_allocations.html"
 heading = "Where to go next"
-files = ["templates/accounting/allocations_list.html", "accounting/views.py"]
+files = ["templates/accounting/allocations_list.html", "accounting/views/allocations.py"]
 labels = [
   { text = "Allocations", where = "core/modules.py" },
 ]
@@ -2604,7 +2608,8 @@ files = [
   "config/views.py",
   "core/modules.py",
   "accounting/models.py",
-  "accounting/views.py",
+  "accounting/views/common.py",
+  "accounting/views/settings_pages.py",
   "accounting/steps.py",
   "accounting/management/commands/seed_calculation_plan.py",
   "accounting/management/commands/run_calculations.py",

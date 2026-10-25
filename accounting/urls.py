@@ -2,89 +2,97 @@
 """URL routes for the accounting app."""
 from django.urls import path
 
-from accounting import views
+from accounting.views import (
+    accounts,
+    allocations,
+    calculation_runs,
+    dashboard,
+    ledger,
+    periods,
+    settings_pages,
+)
 
 app_name = "accounting"
 
 urlpatterns = [
     # Dashboard
-    path("dashboard/", views.dashboard, name="dashboard"),
+    path("dashboard/", dashboard.dashboard, name="dashboard"),
     # Reporting Periods
-    path("reporting-periods/", views.periods_list, name="periods_list"),
-    path("reporting-periods/create/", views.period_create, name="period_create"),
-    path("reporting-periods/<int:pk>/", views.period_detail, name="period_detail"),
+    path("reporting-periods/", periods.periods_list, name="periods_list"),
+    path("reporting-periods/create/", periods.period_create, name="period_create"),
+    path("reporting-periods/<int:pk>/", periods.period_detail, name="period_detail"),
     path(
         "reporting-periods/<int:pk>/calculate/",
-        views.period_calculate,
+        periods.period_calculate,
         name="period_calculate",
     ),
     path(
         "reporting-periods/<int:pk>/calculation-status/",
-        views.period_calculation_status,
+        periods.period_calculation_status,
         name="period_calculation_status",
     ),
     path(
         "reporting-periods/<int:pk>/finalize/",
-        views.period_finalize,
+        periods.period_finalize,
         name="period_finalize",
     ),
     # Water Accounts
-    path("accounts/", views.accounts_list, name="accounts_list"),
-    path("accounts/create/", views.account_create, name="account_create"),
-    path("accounts/<int:pk>/", views.account_detail, name="account_detail"),
-    path("accounts/<int:pk>/edit/", views.account_edit, name="account_edit"),
+    path("accounts/", accounts.accounts_list, name="accounts_list"),
+    path("accounts/create/", accounts.account_create, name="account_create"),
+    path("accounts/<int:pk>/", accounts.account_detail, name="account_detail"),
+    path("accounts/<int:pk>/edit/", accounts.account_edit, name="account_edit"),
     path(
         "accounts/<int:pk>/assign-parcel/",
-        views.assign_parcel,
+        accounts.assign_parcel,
         name="assign_parcel",
     ),
     path(
         "accounts/<int:pk>/remove-parcel/<int:wap_pk>/",
-        views.remove_parcel,
+        accounts.remove_parcel,
         name="remove_parcel",
     ),
     path(
         "accounts/<int:pk>/search-parcels/",
-        views.parcel_search_for_assignment,
+        accounts.parcel_search_for_assignment,
         name="parcel_search_for_assignment",
     ),
     # Allocation Plans
-    path("allocations/", views.allocations_list, name="allocations_list"),
-    path("allocations/create/", views.allocation_create, name="allocation_create"),
+    path("allocations/", allocations.allocations_list, name="allocations_list"),
+    path("allocations/create/", allocations.allocation_create, name="allocation_create"),
     # Ledger
-    path("ledger/", views.ledger_list, name="ledger_list"),
-    path("ledger/create/", views.ledger_create, name="ledger_create"),
-    path("ledger/upload/", views.csv_upload, name="csv_upload"),
-    path("ledger/template/", views.csv_template, name="csv_template"),
-    path("ledger/export/", views.ledger_export, name="ledger_export"),
+    path("ledger/", ledger.ledger_list, name="ledger_list"),
+    path("ledger/create/", ledger.ledger_create, name="ledger_create"),
+    path("ledger/upload/", ledger.csv_upload, name="csv_upload"),
+    path("ledger/template/", ledger.csv_template, name="csv_template"),
+    path("ledger/export/", ledger.ledger_export, name="ledger_export"),
     # Calculation Run audit trail ("How was this calculated?")
     path(
         "calculation-run/<int:parcel_id>/<str:period>/",
-        views.calculation_run_detail,
+        calculation_runs.calculation_run_detail,
         name="calculation_run_detail",
     ),
     # Delivery Settings (staff-only agency efficiency + year-end policy, 55-03)
-    path("delivery-settings/", views.delivery_settings, name="delivery_settings"),
+    path("delivery-settings/", settings_pages.delivery_settings, name="delivery_settings"),
     # Methodology Settings (staff-only self-serve methodology tuning, 38-07)
-    path("methodology/", views.methodology_settings, name="methodology_settings"),
+    path("methodology/", settings_pages.methodology_settings, name="methodology_settings"),
     path(
         "methodology/step/<int:step_id>/toggle/",
-        views.methodology_step_toggle,
+        settings_pages.methodology_step_toggle,
         name="methodology_step_toggle",
     ),
     path(
         "methodology/step/<int:step_id>/move/<str:direction>/",
-        views.methodology_step_move,
+        settings_pages.methodology_step_move,
         name="methodology_step_move",
     ),
     path(
         "methodology/step/<int:step_id>/config/",
-        views.methodology_step_config,
+        settings_pages.methodology_step_config,
         name="methodology_step_config",
     ),
     path(
         "methodology/preview/",
-        views.methodology_preview,
+        settings_pages.methodology_preview,
         name="methodology_preview",
     ),
 ]

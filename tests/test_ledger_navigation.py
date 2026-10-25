@@ -2,7 +2,7 @@
 """
 Phase 63: view-layer tests for the at-scale ledger navigation tools —
 sortable columns (whitelist + fallback), the Zone facet (with de-duplication),
-and the page-size selector. These exercise ``accounting.views.ledger_list``
+and the page-size selector. These exercise ``accounting.views.ledger.ledger_list``
 query handling directly; the sticky/HTMX UI is verified live in the browser.
 """
 

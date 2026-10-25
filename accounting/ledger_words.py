@@ -164,7 +164,7 @@ def ledger_row_words(entry):
 #: use after rain (the weight is ``CalculationRun.net_consumptive_use_af``,
 #: read by ``surface.services._month_demand``). Composed by
 #: ``delivery_share_words`` below, and printed again, in the same words, on
-#: the calculation page's canal line (``accounting/views.py``).
+#: the calculation page's canal line (``accounting/views/calculation_runs.py``).
 #:
 #: 150.1-02 (2026-10-11): "crop water use
 #: after rain" is ETAW. The rows written before are reworded by
@@ -179,7 +179,7 @@ DELIVERY_SHARE_BY_USE = (
 #: normalized by ``apportion_shared_supply``). 149.1-05: reworded from "the
 #: fixed share on file", because "fixed share" was unclear. ``delivery_share_words`` below prints it after
 #: "divided up from the canal total by", the same words the calculation
-#: page's canal line puts before it (``accounting/views.py``), so it stays a
+#: page's canal line puts before it (``accounting/views/calculation_runs.py``), so it stays a
 #: noun phrase; the percentage and the "because no use area the canal serves
 #: has an estimated use for the month" clause follow it there and are not
 #: part of this constant. The colon the sentence used to carry ("...Canal

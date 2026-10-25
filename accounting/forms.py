@@ -192,7 +192,7 @@ class WaterAccountForm(forms.ModelForm):
 
         # Local import: `surface` is optional and truly removable (Phase 87),
         # so this must not run at module scope -- the same guard
-        # `accounting/views.py` already uses for the same module.
+        # `accounting/views/accounts.py` already uses for the same module.
         self.surface_enabled = is_enabled("surface")
         if self.surface_enabled:
             from surface.models import PointOfDiversion

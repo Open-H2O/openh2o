@@ -2,7 +2,7 @@
 """Finalize and reopen for administrators only, with a required reopen note
 (147-02 Task 3).
 
-``accounting.views.period_finalize`` now sits behind ``@admin_required`` as
+``accounting.views.periods.period_finalize`` now sits behind ``@admin_required`` as
 well as login, and reopening a finalized period requires a reason (10-500
 characters) that lands on the period's change-history event via
 ``core.history.change_note``. Finalizing takes the same note, optional.

@@ -375,7 +375,7 @@ def _zone_detail_context(zone):
     # they are never summed (ISS-155). Each current result also needs its own
     # "Recorded in: Use ledger, N entries" count, which is the SAME filter
     # `/accounting/ledger/?period=<pk>&zone=<pk>` applies (`ledger_list`,
-    # `accounting/views.py`), not the billable-suppressed `period_rows` above,
+    # `accounting/views/ledger.py`), not the billable-suppressed `period_rows` above,
     # so the count on the panel matches the count a reader finds by following
     # the link.
     current_period_pk = compute_current_period_id()

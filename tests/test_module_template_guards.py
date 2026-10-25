@@ -176,7 +176,7 @@ def test_ledger_source_owners_still_describe_real_source_types():
     is offered in every configuration, which is the safe way for this table to be
     incomplete.
     """
-    from accounting.views import LEDGER_SOURCE_TYPE_OWNERS
+    from accounting.views.ledger import LEDGER_SOURCE_TYPE_OWNERS
     from parcels.models import ParcelLedger
 
     known = {value for value, _ in ParcelLedger.SOURCE_TYPE_CHOICES}

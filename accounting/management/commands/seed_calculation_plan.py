@@ -14,7 +14,7 @@ GEE adapter actually writes into OpenETCache (verified live in a deployment).
 
 148-02, S1: subtract_surface_water's apply_efficiency knob defaults to True in
 THIS seed. It is the deployment's own choice, made on the methodology page
-(accounting.views.methodology_step_config), and it is NOT retroactively turned
+(accounting.views.settings_pages.methodology_step_config), and it is NOT retroactively turned
 on for an existing deployment's plan -- this command only runs at first seed,
 and there is deliberately no data migration flipping the knob on a plan that
 already exists. A deployment that seeded before 148-02 keeps its old plan's

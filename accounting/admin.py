@@ -29,7 +29,7 @@ class ReportingPeriodAdmin(admin.ModelAdmin):
     list_filter = ["is_finalized"]
     search_fields = ["name"]
     # 147-02 Task 3: finalizing and reopening is a recorded door with a
-    # required reopen note (accounting.views.period_finalize, admin-only).
+    # required reopen note (accounting.views.periods.period_finalize, admin-only).
     # /admin/ editing these fields directly would bypass both the note and
     # the note's place in the change history, so the period page is the only
     # way to flip them.
