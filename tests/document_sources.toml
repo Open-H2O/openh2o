@@ -2178,7 +2178,7 @@ labels = [
   { text = "Glossary", where = "templates/help/glossary.html" },
   { text = "How water balances work", where = "templates/help/water_balances.html" },
 ]
-checked_at = "41b90b6"
+checked_at = "3103e3e"
 
 [[section]]
 document = "templates/about_demonstration_data.html"
@@ -2217,7 +2217,7 @@ files = [
   "drinking/provenance.py",
 ]
 labels = []
-checked_at = "6de4a92"
+checked_at = "3103e3e"
 
 [[section]]
 document = "templates/about_demonstration_data.html"
@@ -2258,7 +2258,7 @@ heading = "(top)"
 files = []
 why_none = "Title, breadcrumb and a one-line description of the page itself; the code comment block is not shown to readers."
 labels = []
-checked_at = "41b90b6"
+checked_at = "3103e3e"
 
 [[section]]
 document = "templates/help/getting_started.html"
@@ -2463,7 +2463,7 @@ heading = "(top)"
 files = []
 why_none = "Title, breadcrumb and a one-line description of the page; the comment block is not reader text."
 labels = []
-checked_at = "41b90b6"
+checked_at = "3103e3e"
 
 [[section]]
 document = "templates/help/settings_explained.html"
@@ -2561,7 +2561,7 @@ heading = "(top)"
 files = []
 why_none = "Title, breadcrumb and a one-line description of the page; the comment block is not reader text."
 labels = []
-checked_at = "41b90b6"
+checked_at = "3103e3e"
 
 [[section]]
 document = "templates/help/budgets_allocations.html"
