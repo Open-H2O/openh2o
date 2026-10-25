@@ -16,7 +16,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.http import FileResponse, Http404
+from django.http import FileResponse, Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -125,10 +125,8 @@ def report_list(request):
     return render(request, "reporting/report_list.html", context)
 
 
-@login_required
-def report_generate(request):
-    report_type_filter = request.GET.get("type", "").strip()
-
+def _family_unavailable_response(request: HttpRequest, report_type_filter: str) -> HttpResponse | None:
+    """The handled-error page when the filter names a report family whose module is off, else None."""
     # ISS-082, the route-level half. 87-02 measured this URL returning 200 with
     # `surface` dropped: a Generate page for a filing the deployment cannot
     # make. With the seed gate in place the dropdown would now merely be empty,
@@ -148,6 +146,54 @@ def report_generate(request):
             ),
             "family_unavailable": True,
         })
+    return None
+
+
+def _demo_filename_prefix() -> str:
+    """The filename prefix that marks a demonstration deployment's file, or an empty string."""
+    # Demo framing on the FILE itself (Phase 53-02). A leading "#" row
+    # could corrupt the strict GEARS/CalWATRS parsers, so the disclaimer
+    # rides the filename instead: it's format-safe and survives download
+    # (report_download reuses the stored name). Flag-gated so a real
+    # agency deployment ships clean filenames.
+    site_config = SiteConfig.objects.first()
+    return (
+        "DEMONSTRATION-NOT-SUBMITTABLE_"
+        if site_config and site_config.demonstration_mode
+        else ""
+    )
+
+
+def _write_report_file(
+    report_type: str,
+    period: ReportingPeriod,
+    demo_prefix: str,
+    timestamp: str,
+    media_dir: str,
+) -> str | None:
+    """Generate the CSV for a known report type into media_dir and return its filename, or None for an unknown type."""
+    if report_type in ("gears_by_well", "gears_by_et"):
+        method = "by_well" if report_type == "gears_by_well" else "by_et"
+        csv_output = generate_gears_csv(period, method=method)
+    elif report_type in ("calwatrs_a1", "calwatrs_a2"):
+        ttype = "a1" if report_type == "calwatrs_a1" else "a2"
+        csv_output = generate_calwatrs_csv(period, template_type=ttype)
+    else:
+        return None
+    filename = f"{demo_prefix}{report_type}_{period.name}_{timestamp}.csv"
+    filepath = os.path.join(media_dir, filename)
+    with open(filepath, "w") as f:
+        f.write(csv_output.getvalue())
+    return filename
+
+
+@login_required
+def report_generate(request):
+    report_type_filter = request.GET.get("type", "").strip()
+
+    unavailable = _family_unavailable_response(request, report_type_filter)
+    if unavailable is not None:
+        return unavailable
 
     if request.method == "POST":
         form = ReportGenerateForm(request.POST, report_type_filter=report_type_filter)
@@ -167,35 +213,10 @@ def report_generate(request):
             os.makedirs(media_dir, exist_ok=True)
             timestamp = timezone.now().strftime("%Y%m%d_%H%M%S")
 
-            # Demo framing on the FILE itself (Phase 53-02). A leading "#" row
-            # could corrupt the strict GEARS/CalWATRS parsers, so the disclaimer
-            # rides the filename instead: it's format-safe and survives download
-            # (report_download reuses the stored name). Flag-gated so a real
-            # agency deployment ships clean filenames.
-            site_config = SiteConfig.objects.first()
-            demo_prefix = (
-                "DEMONSTRATION-NOT-SUBMITTABLE_"
-                if site_config and site_config.demonstration_mode
-                else ""
+            filename = _write_report_file(
+                report_type, period, _demo_filename_prefix(), timestamp, media_dir
             )
-
-            if report_type in ("gears_by_well", "gears_by_et"):
-                method = "by_well" if report_type == "gears_by_well" else "by_et"
-                csv_output = generate_gears_csv(period, method=method)
-                filename = f"{demo_prefix}{report_type}_{period.name}_{timestamp}.csv"
-                filepath = os.path.join(media_dir, filename)
-                with open(filepath, "w") as f:
-                    f.write(csv_output.getvalue())
-
-            elif report_type in ("calwatrs_a1", "calwatrs_a2"):
-                ttype = "a1" if report_type == "calwatrs_a1" else "a2"
-                csv_output = generate_calwatrs_csv(period, template_type=ttype)
-                filename = f"{demo_prefix}{report_type}_{period.name}_{timestamp}.csv"
-                filepath = os.path.join(media_dir, filename)
-                with open(filepath, "w") as f:
-                    f.write(csv_output.getvalue())
-
-            else:
+            if filename is None:
                 # report_type is none of the four known kinds — without this guard
                 # `filename` is never assigned and line below raises
                 # UnboundLocalError → 500. Return a handled error instead.

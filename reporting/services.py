@@ -27,7 +27,12 @@ Three rules keep this honest — they are the whole reason the feature exists:
      generators already read.
 """
 
+from __future__ import annotations
+
 from decimal import Decimal
+from typing import TYPE_CHECKING, Any, Callable
+
+from django.db.models import QuerySet
 
 from parcels.models import ParcelLedger
 
@@ -35,6 +40,11 @@ from reporting.generators import (
     build_normalized_pod_parcel_map,
     build_normalized_well_parcel_map,
 )
+
+if TYPE_CHECKING:
+    from datetime import date
+
+    from accounting.models import ReportingPeriod
 
 # The provenance label that MUST appear on every pre-filled value. Tested for
 # exact-string equality (tests/test_reporting_prefill.py) because it is the
@@ -50,11 +60,11 @@ PREFILL_METHOD_BY_REPORT_TYPE = {
 }
 
 
-def _month_key(d):
+def _month_key(d: date) -> str:
     return d.strftime("%Y-%m")
 
 
-def _et_estimate_entries(reporting_period):
+def _et_estimate_entries(reporting_period: ReportingPeriod) -> QuerySet[ParcelLedger]:
     """The et_estimate ledger entries inside the reporting period.
 
     These are stored negative (ET is consumption); callers take abs() so the
@@ -67,7 +77,7 @@ def _et_estimate_entries(reporting_period):
     ).select_related("parcel")
 
 
-def _value(month, value_af):
+def _value(month: str, value_af: Decimal) -> dict[str, Any]:
     """One labeled, editable monthly value object.
 
     Every value the pre-fill emits goes through here, so the provenance label is
@@ -82,7 +92,13 @@ def _value(month, value_af):
     }
 
 
-def _entity(entity_type, entity_id, entity_label, entity_sublabel, months_by_key):
+def _entity(
+    entity_type: str,
+    entity_id: int,
+    entity_label: str,
+    entity_sublabel: str,
+    months_by_key: dict[str, Decimal],
+) -> dict[str, Any]:
     return {
         "entity_type": entity_type,
         "entity_id": entity_id,
@@ -92,7 +108,7 @@ def _entity(entity_type, entity_id, entity_label, entity_sublabel, months_by_key
     }
 
 
-def _prefill_by_well(reporting_period):
+def _prefill_by_well(reporting_period: ReportingPeriod) -> list[dict[str, Any]]:
     """Per well: parcel ET attributed to wells via the normalized fraction map.
 
     Reuses build_normalized_well_parcel_map() — the SAME allocation the GEARS
@@ -100,7 +116,7 @@ def _prefill_by_well(reporting_period):
     pre-fill follows the same measurement-first ET-demand split as the filing.
     """
     well_parcel_map = build_normalized_well_parcel_map(reporting_period)
-    acc = {}  # well_id → {"well": well, "months": {month: Decimal}}
+    acc: dict[int, dict[str, Any]] = {}  # well_id → {"well": well, "months": {month: Decimal}}
     for entry in _et_estimate_entries(reporting_period):
         month = _month_key(entry.effective_date)
         for well, fraction in well_parcel_map.get(entry.parcel_id, []):
@@ -124,9 +140,9 @@ def _prefill_by_well(reporting_period):
     return entities
 
 
-def _prefill_by_parcel(reporting_period):
+def _prefill_by_parcel(reporting_period: ReportingPeriod) -> list[dict[str, Any]]:
     """Per parcel: the raw et_estimate volume, ungrouped (GEARS by-ET)."""
-    acc = {}  # parcel_id → {"parcel": parcel, "months": {month: Decimal}}
+    acc: dict[int, dict[str, Any]] = {}  # parcel_id → {"parcel": parcel, "months": {month: Decimal}}
     for entry in _et_estimate_entries(reporting_period):
         month = _month_key(entry.effective_date)
         slot = acc.setdefault(entry.parcel_id, {"parcel": entry.parcel, "months": {}})
@@ -142,7 +158,7 @@ def _prefill_by_parcel(reporting_period):
     return entities
 
 
-def _prefill_calwatrs(reporting_period):
+def _prefill_calwatrs(reporting_period: ReportingPeriod) -> list[dict[str, Any]]:
     """Per Point of Diversion: parcel ET attributed to PODs via the 56 kernel.
 
     Now routes through generate_calwatrs_csv's SAME period-aware map
@@ -166,7 +182,7 @@ def _prefill_calwatrs(reporting_period):
     }
     # Invert {pod_id: [(parcel_id, weight)]} → {parcel_id: [(pod, weight)]} so the
     # per-parcel ET entries can be attributed to each POD they feed.
-    parcel_pod_map = {}  # parcel_id → [(pod, weight)]
+    parcel_pod_map: dict[int, list[tuple[Any, Decimal]]] = {}  # parcel_id → [(pod, weight)]
     for pod_id, weighted_parcels in pod_parcel_map.items():
         pod = pods_by_id.get(pod_id)
         if pod is None:
@@ -174,7 +190,7 @@ def _prefill_calwatrs(reporting_period):
         for parcel_id, weight in weighted_parcels:
             parcel_pod_map.setdefault(parcel_id, []).append((pod, weight))
 
-    acc = {}  # pod_id → {"pod": pod, "months": {month: Decimal}}
+    acc: dict[int, dict[str, Any]] = {}  # pod_id → {"pod": pod, "months": {month: Decimal}}
     for entry in _et_estimate_entries(reporting_period):
         month = _month_key(entry.effective_date)
         for pod, weight in parcel_pod_map.get(entry.parcel_id, []):
@@ -198,14 +214,14 @@ def _prefill_calwatrs(reporting_period):
     return entities
 
 
-_PREFILL_BUILDERS = {
+_PREFILL_BUILDERS: dict[str, Callable[[ReportingPeriod], list[dict[str, Any]]]] = {
     "by_well": _prefill_by_well,
     "by_parcel": _prefill_by_parcel,
     "calwatrs": _prefill_calwatrs,
 }
 
 
-def build_openet_prefill(reporting_period, method):
+def build_openet_prefill(reporting_period: ReportingPeriod, method: str) -> dict[str, Any]:
     """Build labeled, raw-ET monthly pre-fill values for a reporting period.
 
     Args:

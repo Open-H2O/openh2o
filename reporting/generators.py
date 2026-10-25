@@ -13,15 +13,18 @@ Unit conventions used throughout:
 Reference: USGS Water Science School; California Department of Water Resources unit conversion tables.
 """
 
+from __future__ import annotations
+
 import csv
 import io
 from decimal import ROUND_HALF_UP, Decimal
+from typing import Any
 
 from django.db.models import Sum
 
 from accounting.allocation_math import apportion_shared_supply
 from accounting.ledger_words import DEMONSTRATION_FILE_LINE
-from accounting.models import CalculationRun
+from accounting.models import CalculationRun, ReportingPeriod
 from accounting.services import billable_ledger, runs_in_period
 from core.csv_safe import safe_row
 from core.models import SiteConfig
@@ -366,6 +369,133 @@ def build_shared_supply_comparison(reporting_period=None):
     return groups
 
 
+def _gears_by_well_rows(reporting_period: ReportingPeriod) -> list[dict[str, Any]]:
+    """Metered volume per (well, month); unlinked parcels become [INCOMPLETE] rows."""
+    entries = (
+        ParcelLedger.objects.filter(
+            source_type="meter_reading",
+            effective_date__gte=reporting_period.start_date,
+            effective_date__lte=reporting_period.end_date,
+        )
+        .select_related("parcel")
+    )
+
+    # Build well→parcel map split by the measurement-first kernel for THIS
+    # period (hand-set share wins; else the thirsty crop's well carries the
+    # larger slice via ET demand). Shared with the OpenET pre-fill so the
+    # double-count guard and the demand split can never drift between them.
+    well_parcel_map = build_normalized_well_parcel_map(reporting_period)
+
+    rows = {}
+    for entry in entries:
+        well_fractions = well_parcel_map.get(entry.parcel_id, [])
+        month_str = entry.effective_date.strftime("%Y-%m")
+        if well_fractions:
+            for well, fraction in well_fractions:
+                key = (well.pk, month_str)
+                if key not in rows:
+                    rows[key] = {
+                        "reg_id": well.well_registration_id or "",
+                        "name": str(well),
+                        "lat": well.location.y,
+                        "lon": well.location.x,
+                        "month": month_str,
+                        "volume": Decimal("0"),
+                        "method": "meter_reading",
+                    }
+                rows[key]["volume"] += abs(entry.amount_acre_feet) * fraction
+        else:
+            # ISS-027: metered extraction on a parcel with no well link. Never
+            # silently drop it — emit a parcel-keyed [INCOMPLETE] row so the
+            # volume stays visible and flagged (mirrors the [INCOMPLETE] holder
+            # convention on the CalWATRS side). validate_report warns so the
+            # operator links the parcel to its well before filing.
+            key = (f"parcel:{entry.parcel_id}", month_str)
+            if key not in rows:
+                rows[key] = {
+                    "reg_id": "",
+                    "name": (
+                        f"[INCOMPLETE] [No well link] "
+                        f"Parcel {entry.parcel.parcel_number}"
+                    ),
+                    "lat": "",
+                    "lon": "",
+                    "month": month_str,
+                    "volume": Decimal("0"),
+                    "method": "meter_reading",
+                }
+            rows[key]["volume"] += abs(entry.amount_acre_feet)
+
+    return sorted(rows.values(), key=lambda r: (r["reg_id"], r["month"]))
+
+
+def _write_gears_by_well(writer: Any, reporting_period: ReportingPeriod) -> None:
+    """Write the GEARS by-well header and one line per well-month."""
+    writer.writerow([
+        "Well Registration ID", "Well Name", "Latitude", "Longitude",
+        "Month", "Extraction Volume (AF)", "Measurement Method",
+    ])
+    for row in _gears_by_well_rows(reporting_period):
+        writer.writerow(safe_row([
+            row["reg_id"], row["name"], row["lat"], row["lon"],
+            row["month"], row["volume"], gears_method(row["method"]),
+        ]))
+
+
+def _gears_by_et_rows(reporting_period: ReportingPeriod) -> list[dict[str, Any]]:
+    """Billable ET volume per (parcel, month), sorted for the file."""
+    # Query BOTH ET-family sources, then let billable_ledger() pick the
+    # netted ``calculated`` row where the engine ran and fall back to the raw
+    # ``et_estimate`` row where it didn't. This keeps the state filing
+    # consistent with the internal bill (same shared suppression helper, so
+    # they can never drift), and labels each surviving row by its own source.
+    entries = (
+        ParcelLedger.objects.filter(
+            source_type__in=["et_estimate", "calculated"],
+            effective_date__gte=reporting_period.start_date,
+            effective_date__lte=reporting_period.end_date,
+        )
+        .select_related("parcel")
+    )
+    entries = billable_ledger(entries)
+
+    rows = {}
+    for entry in entries:
+        month_str = entry.effective_date.strftime("%Y-%m")
+        key = (entry.parcel_id, month_str)
+        if key not in rows:
+            rows[key] = {
+                "parcel_number": entry.parcel.parcel_number,
+                # ISS-031c: a null acreage becomes a blank cell, never a literal
+                # 0 — reporting 0 acres beside a real ET volume is self-
+                # inconsistent to a state reviewer. validate_report flags it.
+                "area": (
+                    entry.parcel.area_acres
+                    if entry.parcel.area_acres is not None
+                    else ""
+                ),
+                "month": month_str,
+                "volume": Decimal("0"),
+                "method": entry.source_type,
+            }
+        rows[key]["volume"] += abs(entry.amount_acre_feet)
+
+    return sorted(rows.values(), key=lambda r: (r["parcel_number"], r["month"]))
+
+
+def _write_gears_by_et(writer: Any, reporting_period: ReportingPeriod) -> None:
+    """Write the GEARS by-ET header and one line per parcel-month."""
+    writer.writerow([
+        "Parcel Number", "Area (acres)", "Month",
+        "ET Volume (AF)", "Measurement Method",
+    ])
+    for row in _gears_by_et_rows(reporting_period):
+        writer.writerow(safe_row([
+            row["parcel_number"], row["area"], row["month"],
+            row["volume"], gears_method(row["method"]),
+        ]))
+
+
 def generate_gears_csv(reporting_period, method="by_well"):
     output = io.StringIO()
     writer = csv.writer(output, quoting=csv.QUOTE_MINIMAL)
@@ -374,119 +504,9 @@ def generate_gears_csv(reporting_period, method="by_well"):
         writer.writerow([DEMONSTRATION_FILE_LINE])
 
     if method == "by_well":
-        writer.writerow([
-            "Well Registration ID", "Well Name", "Latitude", "Longitude",
-            "Month", "Extraction Volume (AF)", "Measurement Method",
-        ])
-
-        entries = (
-            ParcelLedger.objects.filter(
-                source_type="meter_reading",
-                effective_date__gte=reporting_period.start_date,
-                effective_date__lte=reporting_period.end_date,
-            )
-            .select_related("parcel")
-        )
-
-        # Build well→parcel map split by the measurement-first kernel for THIS
-        # period (hand-set share wins; else the thirsty crop's well carries the
-        # larger slice via ET demand). Shared with the OpenET pre-fill so the
-        # double-count guard and the demand split can never drift between them.
-        well_parcel_map = build_normalized_well_parcel_map(reporting_period)
-
-        rows = {}
-        for entry in entries:
-            well_fractions = well_parcel_map.get(entry.parcel_id, [])
-            month_str = entry.effective_date.strftime("%Y-%m")
-            if well_fractions:
-                for well, fraction in well_fractions:
-                    key = (well.pk, month_str)
-                    if key not in rows:
-                        rows[key] = {
-                            "reg_id": well.well_registration_id or "",
-                            "name": str(well),
-                            "lat": well.location.y,
-                            "lon": well.location.x,
-                            "month": month_str,
-                            "volume": Decimal("0"),
-                            "method": "meter_reading",
-                        }
-                    rows[key]["volume"] += abs(entry.amount_acre_feet) * fraction
-            else:
-                # ISS-027: metered extraction on a parcel with no well link. Never
-                # silently drop it — emit a parcel-keyed [INCOMPLETE] row so the
-                # volume stays visible and flagged (mirrors the [INCOMPLETE] holder
-                # convention on the CalWATRS side). validate_report warns so the
-                # operator links the parcel to its well before filing.
-                key = (f"parcel:{entry.parcel_id}", month_str)
-                if key not in rows:
-                    rows[key] = {
-                        "reg_id": "",
-                        "name": (
-                            f"[INCOMPLETE] [No well link] "
-                            f"Parcel {entry.parcel.parcel_number}"
-                        ),
-                        "lat": "",
-                        "lon": "",
-                        "month": month_str,
-                        "volume": Decimal("0"),
-                        "method": "meter_reading",
-                    }
-                rows[key]["volume"] += abs(entry.amount_acre_feet)
-
-        for row in sorted(rows.values(), key=lambda r: (r["reg_id"], r["month"])):
-            writer.writerow(safe_row([
-                row["reg_id"], row["name"], row["lat"], row["lon"],
-                row["month"], row["volume"], gears_method(row["method"]),
-            ]))
-
+        _write_gears_by_well(writer, reporting_period)
     elif method == "by_et":
-        writer.writerow([
-            "Parcel Number", "Area (acres)", "Month",
-            "ET Volume (AF)", "Measurement Method",
-        ])
-
-        # Query BOTH ET-family sources, then let billable_ledger() pick the
-        # netted ``calculated`` row where the engine ran and fall back to the raw
-        # ``et_estimate`` row where it didn't. This keeps the state filing
-        # consistent with the internal bill (same shared suppression helper, so
-        # they can never drift), and labels each surviving row by its own source.
-        entries = (
-            ParcelLedger.objects.filter(
-                source_type__in=["et_estimate", "calculated"],
-                effective_date__gte=reporting_period.start_date,
-                effective_date__lte=reporting_period.end_date,
-            )
-            .select_related("parcel")
-        )
-        entries = billable_ledger(entries)
-
-        rows = {}
-        for entry in entries:
-            month_str = entry.effective_date.strftime("%Y-%m")
-            key = (entry.parcel_id, month_str)
-            if key not in rows:
-                rows[key] = {
-                    "parcel_number": entry.parcel.parcel_number,
-                    # ISS-031c: a null acreage becomes a blank cell, never a literal
-                    # 0 — reporting 0 acres beside a real ET volume is self-
-                    # inconsistent to a state reviewer. validate_report flags it.
-                    "area": (
-                        entry.parcel.area_acres
-                        if entry.parcel.area_acres is not None
-                        else ""
-                    ),
-                    "month": month_str,
-                    "volume": Decimal("0"),
-                    "method": entry.source_type,
-                }
-            rows[key]["volume"] += abs(entry.amount_acre_feet)
-
-        for row in sorted(rows.values(), key=lambda r: (r["parcel_number"], r["month"])):
-            writer.writerow(safe_row([
-                row["parcel_number"], row["area"], row["month"],
-                row["volume"], gears_method(row["method"]),
-            ]))
+        _write_gears_by_et(writer, reporting_period)
 
     output.seek(0)
     return output
@@ -517,6 +537,86 @@ def _calwatrs_data_row(entry, fraction, combined_use):
         f"{entry['return_flow'] * fraction:.8f}",
         entry["method_label"],
     ]
+
+
+def _calwatrs_raw_volumes(records: Any) -> dict[tuple[int, str], dict[str, Any]]:
+    """Sum each (pod, month) once: the gross volume, the return flow and the row's fixed fields."""
+    # Aggregate raw volumes per (pod, month), then expand per parcel fraction.
+    # PointOfDiversion.water_right is a nullable FK — guard against None.
+    raw = {}
+    for rec in records:
+        pod = rec.point_of_diversion
+        wr = pod.water_right
+        month_str = rec.month.strftime("%Y-%m")
+        key = (pod.pk, month_str)
+        if key not in raw:
+            if wr is None:
+                right_id = ""
+                holder_name = f"[INCOMPLETE] [No water right] {pod.name}"
+            else:
+                right_id = wr.right_id
+                holder_name = wr.holder_name
+            raw[key] = {
+                "right_id": right_id,
+                "holder": holder_name,
+                "pod": pod,
+                "month": month_str,
+                "volume": Decimal("0"),
+                # return_flow: OpenH2O's own annotation of the portion returned to
+                # the stream. It rides ALONGSIDE the gross volume below — never
+                # netted out of it. The state wants gross (under-reporting is a
+                # Water Code §5107 exposure), so a non-consumptive POD shows its
+                # full Volume (AF) AND an equal Return Flow (AF).
+                "return_flow": Decimal("0"),
+                # max_flow_rate_cfs: reported as CFS. 1 CFS × 1 day = 1.9835 AF.
+                "max_flow": rec.max_flow_rate_cfs or Decimal("0"),
+                "type": rec.get_diversion_type_display(),
+                # 146-03 Task 2: the record-first method label. Each
+                # (pod, month) key maps to exactly one DiversionRecord here --
+                # the model's own unique_together on (point_of_diversion,
+                # month, diversion_type) and this loop's own diversion_type
+                # filter guarantee it -- so capturing the label at key
+                # creation is safe and never overwritten by a second record.
+                "method_label": calwatrs_method_label(rec),
+            }
+        raw[key]["volume"] += rec.volume_acre_feet
+        raw[key]["return_flow"] += rec.returned_af
+    return raw
+
+
+def _calwatrs_file_rows(
+    raw: dict[tuple[int, str], dict[str, Any]],
+    pod_parcel_map: dict[int, list[tuple[int, Decimal]]],
+    gw_parcel_ids: set[int],
+    combined_parcel_ids: set[int],
+) -> list[list[Any]]:
+    """Expand each (pod, month) total into one row per source parcel fraction."""
+    rows = []
+    for key in sorted(raw, key=lambda k: (raw[k]["right_id"], raw[k]["month"])):
+        entry = raw[key]
+        if entry["right_id"] == "":
+            # ISS-031b: a blank Water Right ID is a structurally-invalid key the
+            # CalWATRS portal rejects/orphans. Withhold the row from the file;
+            # validate_report surfaces it as a warning naming the POD instead, so
+            # the volume is never lost — it is flagged for the operator to fix.
+            continue
+        pod = entry["pod"]
+        parcel_fractions = pod_parcel_map.get(pod.pk, [])
+
+        if parcel_fractions:
+            for parcel_id, fraction in parcel_fractions:
+                if parcel_id in combined_parcel_ids:
+                    combined_use = "Combined"
+                elif parcel_id in gw_parcel_ids:
+                    combined_use = "GW Only"
+                else:
+                    combined_use = "SW Only"
+                rows.append(_calwatrs_data_row(entry, fraction, combined_use))
+        else:
+            # POD not linked to any parcel — emit a single row at fraction 1.0,
+            # SW Only. Same helper as the linked branch so the columns match.
+            rows.append(_calwatrs_data_row(entry, Decimal("1"), "SW Only"))
+    return rows
 
 
 def generate_calwatrs_csv(reporting_period, template_type="a1"):
@@ -564,72 +664,8 @@ def generate_calwatrs_csv(reporting_period, template_type="a1"):
     )
     combined_parcel_ids = gw_parcel_ids & sw_parcel_ids
 
-    # Aggregate raw volumes per (pod, month), then expand per parcel fraction.
-    # PointOfDiversion.water_right is a nullable FK — guard against None.
-    raw = {}
-    for rec in records:
-        pod = rec.point_of_diversion
-        wr = pod.water_right
-        month_str = rec.month.strftime("%Y-%m")
-        key = (pod.pk, month_str)
-        if key not in raw:
-            if wr is None:
-                right_id = ""
-                holder_name = f"[INCOMPLETE] [No water right] {pod.name}"
-            else:
-                right_id = wr.right_id
-                holder_name = wr.holder_name
-            raw[key] = {
-                "right_id": right_id,
-                "holder": holder_name,
-                "pod": pod,
-                "month": month_str,
-                "volume": Decimal("0"),
-                # return_flow: OpenH2O's own annotation of the portion returned to
-                # the stream. It rides ALONGSIDE the gross volume below — never
-                # netted out of it. The state wants gross (under-reporting is a
-                # Water Code §5107 exposure), so a non-consumptive POD shows its
-                # full Volume (AF) AND an equal Return Flow (AF).
-                "return_flow": Decimal("0"),
-                # max_flow_rate_cfs: reported as CFS. 1 CFS × 1 day = 1.9835 AF.
-                "max_flow": rec.max_flow_rate_cfs or Decimal("0"),
-                "type": rec.get_diversion_type_display(),
-                # 146-03 Task 2: the record-first method label. Each
-                # (pod, month) key maps to exactly one DiversionRecord here --
-                # the model's own unique_together on (point_of_diversion,
-                # month, diversion_type) and this loop's own diversion_type
-                # filter guarantee it -- so capturing the label at key
-                # creation is safe and never overwritten by a second record.
-                "method_label": calwatrs_method_label(rec),
-            }
-        raw[key]["volume"] += rec.volume_acre_feet
-        raw[key]["return_flow"] += rec.returned_af
-
-    rows = []
-    for key in sorted(raw, key=lambda k: (raw[k]["right_id"], raw[k]["month"])):
-        entry = raw[key]
-        if entry["right_id"] == "":
-            # ISS-031b: a blank Water Right ID is a structurally-invalid key the
-            # CalWATRS portal rejects/orphans. Withhold the row from the file;
-            # validate_report surfaces it as a warning naming the POD instead, so
-            # the volume is never lost — it is flagged for the operator to fix.
-            continue
-        pod = entry["pod"]
-        parcel_fractions = pod_parcel_map.get(pod.pk, [])
-
-        if parcel_fractions:
-            for parcel_id, fraction in parcel_fractions:
-                if parcel_id in combined_parcel_ids:
-                    combined_use = "Combined"
-                elif parcel_id in gw_parcel_ids:
-                    combined_use = "GW Only"
-                else:
-                    combined_use = "SW Only"
-                rows.append(_calwatrs_data_row(entry, fraction, combined_use))
-        else:
-            # POD not linked to any parcel — emit a single row at fraction 1.0,
-            # SW Only. Same helper as the linked branch so the columns match.
-            rows.append(_calwatrs_data_row(entry, Decimal("1"), "SW Only"))
+    raw = _calwatrs_raw_volumes(records)
+    rows = _calwatrs_file_rows(raw, pod_parcel_map, gw_parcel_ids, combined_parcel_ids)
 
     for row in rows:
         writer.writerow(safe_row(row))

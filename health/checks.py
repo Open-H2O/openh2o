@@ -21,7 +21,7 @@ from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.db import connection
-from django.db.models import Count, Sum
+from django.db.models import Count, QuerySet, Sum
 from django.core.management import call_command
 from django.urls import reverse
 from django.utils import dateformat, timezone
@@ -205,7 +205,7 @@ def check_sync_freshness():
             "sync_freshness", "datasync", "external-feed freshness"
         )
 
-    from datasync.models import DataSource, DataSyncLog
+    from datasync.models import DataSource
 
     # On the public demo the database is restored from a frozen golden snapshot
     # every night, so external-feed timestamps are intentionally static. Staleness
@@ -231,7 +231,24 @@ def check_sync_freshness():
             "details": {},
         }
 
+    details, worst_status, names, waiting_for_key, no_station_on = _survey_source_freshness(
+        active_sources
+    )
+    msg = _freshness_message(details, names, waiting_for_key, no_station_on)
+    return {
+        "category": "sync_freshness",
+        "status": worst_status,
+        "message": msg,
+        "details": details,
+    }
+
+
+def _survey_source_freshness(
+    active_sources: QuerySet,
+) -> tuple[dict[str, dict], str, dict[str, str], list[str], list[str]]:
+    """Each active source's last sync and status, the worst status, and the sources left uncounted."""
     from datasync import freshness
+    from datasync.models import DataSyncLog
 
     now = timezone.now()
     details = {}
@@ -283,6 +300,17 @@ def check_sync_freshness():
                 "age_hours": round(age_hours, 1),
                 "status": source_status,
             }
+    return details, worst_status, names, waiting_for_key, no_station_on
+
+
+def _freshness_message(
+    details: dict[str, dict],
+    names: dict[str, str],
+    waiting_for_key: list[str],
+    no_station_on: list[str],
+) -> str:
+    """The sentences that say which sources are stale, never synced, or not counted."""
+    from datasync import freshness
 
     counted = {
         c: v for c, v in details.items()
@@ -323,13 +351,7 @@ def check_sync_freshness():
         sentences.append(
             f"{_and(no_station_on)}, with no station turned on, {verb} not counted."
         )
-    msg = " ".join(sentences)
-    return {
-        "category": "sync_freshness",
-        "status": worst_status,
-        "message": msg,
-        "details": details,
-    }
+    return " ".join(sentences)
 
 
 def check_ledger_integrity():
@@ -979,81 +1001,7 @@ def check_et_meter_agreement():
             "et_meter_agreement", "accounting", "the ET-versus-meter cross-check"
         )
 
-    from accounting.models import CalculationRun, ReportingPeriod
-    from accounting.services import runs_in_period
-    from parcels.models import ParcelLedger
-
-    periods = []
-    total_cu = Decimal("0")
-    total_applied = Decimal("0")
-    out_of_band = []
-    comparable_parcels = 0
-
-    for period in ReportingPeriod.objects.all().order_by("start_date"):
-        runs = runs_in_period(
-            CalculationRun.objects.filter(residual_disposition="metered"), period
-        )
-        months = set(runs.values_list("period", flat=True))
-        parcel_ids = set(runs.values_list("parcel_id", flat=True))
-        if not parcel_ids:
-            continue
-
-        # Meter rows are matched by the MONTH their effective_date falls in, the
-        # same normalization accounting.services.billable_ledger uses; the runs
-        # themselves are selected by runs_in_period so period membership has
-        # exactly one definition (item 6).
-        metered = {}
-        for pid, eff, amt in ParcelLedger.objects.filter(
-            source_type="meter_reading", parcel_id__in=parcel_ids
-        ).values_list("parcel_id", "effective_date", "amount_acre_feet"):
-            if eff.strftime("%Y-%m") in months:
-                metered[pid] = metered.get(pid, Decimal("0")) + abs(amt)
-
-        cu_by_parcel = {}
-        surface_by_parcel = {}
-        for run in runs:
-            cu_by_parcel[run.parcel_id] = cu_by_parcel.get(
-                run.parcel_id, Decimal("0")
-            ) + (run.net_consumptive_use_af or Decimal("0"))
-            surface_by_parcel[run.parcel_id] = surface_by_parcel.get(
-                run.parcel_id, Decimal("0")
-            ) + (run.surface_water_af or Decimal("0"))
-
-        period_cu = Decimal("0")
-        period_applied = Decimal("0")
-        for pid in parcel_ids:
-            cu = cu_by_parcel.get(pid, Decimal("0"))
-            applied = metered.get(pid, Decimal("0")) + surface_by_parcel.get(
-                pid, Decimal("0")
-            )
-            if applied <= 0 or cu <= 0:
-                continue
-            comparable_parcels += 1
-            period_cu += cu
-            period_applied += applied
-            ratio = cu / applied
-            if not (ET_METER_GREEN_LOW <= ratio <= ET_METER_GREEN_HIGH):
-                out_of_band.append(
-                    {
-                        "parcel_id": pid,
-                        "period": period.name,
-                        "ratio": str(ratio.quantize(Decimal("0.001"))),
-                        "consumptive_use_af": str(cu),
-                        "applied_water_af": str(applied),
-                    }
-                )
-
-        if period_applied > 0:
-            periods.append(
-                {
-                    "period": period.name,
-                    "ratio": str((period_cu / period_applied).quantize(Decimal("0.001"))),
-                    "consumptive_use_af": str(period_cu),
-                    "applied_water_af": str(period_applied),
-                }
-            )
-            total_cu += period_cu
-            total_applied += period_applied
+    periods, total_cu, total_applied, out_of_band, comparable_parcels = _compare_periods()
 
     out_of_band.sort(key=lambda row: abs(Decimal(row["ratio"]) - Decimal("1")), reverse=True)
     details = {
@@ -1082,11 +1030,116 @@ def check_et_meter_agreement():
     details["total_consumptive_use_af"] = str(total_cu)
     details["total_applied_water_af"] = str(total_applied)
 
+    status, msg = _et_meter_verdict(aggregate, comparable_parcels, out_of_band)
+    return {
+        "category": "et_meter_agreement",
+        "status": status,
+        "message": msg,
+        "details": details,
+    }
+
+
+def _compare_periods() -> tuple[list[dict], Decimal, Decimal, list[dict], int]:
+    """Each water year's ETAW-to-applied-water row, the grand totals, the out-of-band parcels and the comparable parcel count."""
+    from accounting.models import ReportingPeriod
+
+    periods = []
+    total_cu = Decimal("0")
+    total_applied = Decimal("0")
+    out_of_band = []
+    comparable_parcels = 0
+
+    for period in ReportingPeriod.objects.all().order_by("start_date"):
+        comparison = _period_meter_comparison(period)
+        if comparison is None:
+            continue
+        period_cu, period_applied, period_comparable, period_out_of_band = comparison
+        comparable_parcels += period_comparable
+        out_of_band.extend(period_out_of_band)
+
+        if period_applied > 0:
+            periods.append(
+                {
+                    "period": period.name,
+                    "ratio": str((period_cu / period_applied).quantize(Decimal("0.001"))),
+                    "consumptive_use_af": str(period_cu),
+                    "applied_water_af": str(period_applied),
+                }
+            )
+            total_cu += period_cu
+            total_applied += period_applied
+    return periods, total_cu, total_applied, out_of_band, comparable_parcels
+
+
+def _period_meter_comparison(period) -> tuple[Decimal, Decimal, int, list[dict]] | None:
+    """One water year's net consumptive use and applied water over its comparable parcels, with the out-of-band parcels; None when no run was metered."""
+    from accounting.models import CalculationRun
+    from accounting.services import runs_in_period
+    from parcels.models import ParcelLedger
+
+    runs = runs_in_period(
+        CalculationRun.objects.filter(residual_disposition="metered"), period
+    )
+    months = set(runs.values_list("period", flat=True))
+    parcel_ids = set(runs.values_list("parcel_id", flat=True))
+    if not parcel_ids:
+        return None
+
+    # Meter rows are matched by the MONTH their effective_date falls in, the
+    # same normalization accounting.services.billable_ledger uses; the runs
+    # themselves are selected by runs_in_period so period membership has
+    # exactly one definition (item 6).
+    metered = {}
+    for pid, eff, amt in ParcelLedger.objects.filter(
+        source_type="meter_reading", parcel_id__in=parcel_ids
+    ).values_list("parcel_id", "effective_date", "amount_acre_feet"):
+        if eff.strftime("%Y-%m") in months:
+            metered[pid] = metered.get(pid, Decimal("0")) + abs(amt)
+
+    cu_by_parcel = {}
+    surface_by_parcel = {}
+    for run in runs:
+        cu_by_parcel[run.parcel_id] = cu_by_parcel.get(
+            run.parcel_id, Decimal("0")
+        ) + (run.net_consumptive_use_af or Decimal("0"))
+        surface_by_parcel[run.parcel_id] = surface_by_parcel.get(
+            run.parcel_id, Decimal("0")
+        ) + (run.surface_water_af or Decimal("0"))
+
+    comparable_parcels = 0
+    out_of_band = []
+    period_cu = Decimal("0")
+    period_applied = Decimal("0")
+    for pid in parcel_ids:
+        cu = cu_by_parcel.get(pid, Decimal("0"))
+        applied = metered.get(pid, Decimal("0")) + surface_by_parcel.get(
+            pid, Decimal("0")
+        )
+        if applied <= 0 or cu <= 0:
+            continue
+        comparable_parcels += 1
+        period_cu += cu
+        period_applied += applied
+        ratio = cu / applied
+        if not (ET_METER_GREEN_LOW <= ratio <= ET_METER_GREEN_HIGH):
+            out_of_band.append(
+                {
+                    "parcel_id": pid,
+                    "period": period.name,
+                    "ratio": str(ratio.quantize(Decimal("0.001"))),
+                    "consumptive_use_af": str(cu),
+                    "applied_water_af": str(applied),
+                }
+            )
+    return period_cu, period_applied, comparable_parcels, out_of_band
+
+
+def _et_meter_verdict(aggregate: Decimal, n: int, out_of_band: list[dict]) -> tuple[str, str]:
+    """The status and sentence for the aggregate ETAW-to-applied-water ratio."""
     # The ratio
     # is ETAW (net consumptive use: gross ET less effective precipitation)
     # over the water metered or delivered.
     pct = (aggregate * 100).quantize(Decimal("0.1"))
-    n = comparable_parcels
     low, high = int(ET_METER_GREEN_LOW * 100), int(ET_METER_GREEN_HIGH * 100)
     each = "each counted" if n != 1 else "counted"
     base = (
@@ -1117,13 +1170,7 @@ def check_et_meter_agreement():
     else:
         status = "green"
         msg = f"{base} OpenH2O expects {low}% to {high}%."
-
-    return {
-        "category": "et_meter_agreement",
-        "status": status,
-        "message": msg,
-        "details": details,
-    }
+    return status, msg
 
 
 def _when(dt):
@@ -1148,67 +1195,17 @@ def check_calculation():
     if not is_enabled("accounting"):
         return not_applicable("calculation", "accounting", "the calculation")
 
-    from accounting.models import CalculationRequest, ReportingPeriod
+    from accounting.models import CalculationRequest
 
     now = timezone.now()
 
-    def details_for(req, **extra):
-        return {
-            "request_id": req.pk,
-            "reporting_period_id": req.reporting_period_id,
-            "error_detail": req.error_detail or "",
-            **extra,
-        }
+    stuck_card = _stuck_calculation_card(now)
+    if stuck_card is not None:
+        return stuck_card
 
-    def with_where(d, req):
-        if req.reporting_period_id:
-            d["where_href"] = reverse(
-                "accounting:period_detail", args=[req.reporting_period_id]
-            )
-        return d
-
-    stuck = (
-        CalculationRequest.objects.filter(
-            status="running", started_at__lt=now - STUCK_RUNNING_AFTER
-        )
-        .order_by("started_at")
-        .first()
-    )
-    if stuck:
-        sentence = (
-            "The calculation stopped without finishing, probably because the "
-            "server restarted. Run it again from the water year's page."
-        )
-        CalculationRequest.objects.filter(
-            status="running", started_at__lt=now - STUCK_RUNNING_AFTER
-        ).update(status="failed", finished_at=now, outcome=sentence)
-        stuck.refresh_from_db()
-        return {
-            "category": "calculation",
-            "status": "red",
-            "message": sentence,
-            "details": with_where(details_for(stuck), stuck),
-        }
-
-    waiting = (
-        CalculationRequest.objects.filter(
-            status="queued", requested_at__lt=now - STUCK_QUEUED_AFTER
-        )
-        .order_by("requested_at")
-        .first()
-    )
-    if waiting:
-        return {
-            "category": "calculation",
-            "status": "yellow",
-            # Row 9: the cause is in the guide's Calculation row.
-            "message": (
-                f"The calculation requested on {_when(waiting.requested_at)} "
-                "has not started. Pass this card to the AI that "
-                "maintains the site; the fix is in OpenH2O's operator guide."
-            ),
-            "details": with_where(details_for(waiting), waiting),
-        }
+    waiting_card = _waiting_calculation_card(now)
+    if waiting_card is not None:
+        return waiting_card
 
     last = (
         CalculationRequest.objects.filter(finished_at__isnull=False)
@@ -1227,6 +1224,91 @@ def check_calculation():
             ),
             "details": {},
         }
+
+    stale_card = _stale_calculation_card(last, now)
+    if stale_card is not None:
+        return stale_card
+
+    return _latest_calculation_card(last)
+
+
+def _request_details(req, **extra) -> dict:
+    """The details every calculation card carries about one request."""
+    return {
+        "request_id": req.pk,
+        "reporting_period_id": req.reporting_period_id,
+        "error_detail": req.error_detail or "",
+        **extra,
+    }
+
+
+def _with_where(d: dict, req) -> dict:
+    """Add the link to the request's water year page, when it has one."""
+    if req.reporting_period_id:
+        d["where_href"] = reverse(
+            "accounting:period_detail", args=[req.reporting_period_id]
+        )
+    return d
+
+
+def _stuck_calculation_card(now: datetime) -> dict | None:
+    """Mark a run stuck past two hours as failed and return the red card, or None."""
+    from accounting.models import CalculationRequest
+
+    stuck = (
+        CalculationRequest.objects.filter(
+            status="running", started_at__lt=now - STUCK_RUNNING_AFTER
+        )
+        .order_by("started_at")
+        .first()
+    )
+    if not stuck:
+        return None
+    sentence = (
+        "The calculation stopped without finishing, probably because the "
+        "server restarted. Run it again from the water year's page."
+    )
+    CalculationRequest.objects.filter(
+        status="running", started_at__lt=now - STUCK_RUNNING_AFTER
+    ).update(status="failed", finished_at=now, outcome=sentence)
+    stuck.refresh_from_db()
+    return {
+        "category": "calculation",
+        "status": "red",
+        "message": sentence,
+        "details": _with_where(_request_details(stuck), stuck),
+    }
+
+
+def _waiting_calculation_card(now: datetime) -> dict | None:
+    """The yellow card for a request queued past fifteen minutes, or None."""
+    from accounting.models import CalculationRequest
+
+    waiting = (
+        CalculationRequest.objects.filter(
+            status="queued", requested_at__lt=now - STUCK_QUEUED_AFTER
+        )
+        .order_by("requested_at")
+        .first()
+    )
+    if not waiting:
+        return None
+    return {
+        "category": "calculation",
+        "status": "yellow",
+        # Row 9: the cause is in the guide's Calculation row.
+        "message": (
+            f"The calculation requested on {_when(waiting.requested_at)} "
+            "has not started. Pass this card to the AI that "
+            "maintains the site; the fix is in OpenH2O's operator guide."
+        ),
+        "details": _with_where(_request_details(waiting), waiting),
+    }
+
+
+def _stale_calculation_card(last, now: datetime) -> dict | None:
+    """The yellow card when open water years have gone two days without a finished calculation, or None."""
+    from accounting.models import CalculationRequest, ReportingPeriod
 
     # 151-02: a failed latest run stays red (below, it is worse). Otherwise an
     # open water year with no finished calculation for two days means the
@@ -1248,10 +1330,10 @@ def check_calculation():
         )
         if open_years:
             still = "is" if len(open_years) == 1 else "are"
-            d = details_for(
+            d = _request_details(
                 last, age_hours=round((now - last.finished_at).total_seconds() / 3600, 1)
             )
-            with_where(d, last)
+            _with_where(d, last)
             return {
                 "category": "calculation",
                 "status": "yellow",
@@ -1261,22 +1343,26 @@ def check_calculation():
                 ),
                 "details": d,
             }
+    return None
 
+
+def _latest_calculation_card(last) -> dict:
+    """The card for the latest finished request: red if it failed, yellow if it has notes, else green."""
     # Row 7: "OpenH2O last calculated 12 months of WY 2025-2026 on ...".
     months = len(last.months or [])
     what = f"{months} month{'' if months == 1 else 's'}"
     if last.reporting_period_id:
         what += f" of {last.reporting_period.name}"
     summary = f"OpenH2O last calculated {what} on {_when(last.finished_at)}."
-    d = details_for(last)
+    d = _request_details(last)
     if last.status == "failed":
         status, msg = "red", last.outcome
-        with_where(d, last)
+        _with_where(d, last)
     elif last.status == "finished_with_notes":
         notes = last.notes or []
         status = "yellow"
         msg = f"{summary} {notes[0]}" if notes else summary
-        with_where(d, last)
+        _with_where(d, last)
     else:
         status, msg = "green", summary
     return {"category": "calculation", "status": status, "message": msg, "details": d}
@@ -1373,24 +1459,7 @@ def check_backup():
         return unreadable
 
     if failure is not None and (finished is None or failed > finished):
-        return {
-            "category": "backup",
-            "status": "red",
-            "message": (
-                f"The backup on {_when(failed)} failed "
-                f"{_BACKUP_STEPS.get(step, f'at its {step} step')}. {_HAND_OFF}"
-            ),
-            "details": {
-                "failed_at": failed.isoformat(),
-                "step": step,
-                "reason": reason,
-                **(
-                    {"finished_at": finished.isoformat()}
-                    if finished is not None
-                    else {}
-                ),
-            },
-        }
+        return _failed_backup_card(failed, finished, step, reason)
 
     if success is None:
         return {
@@ -1402,6 +1471,33 @@ def check_backup():
             "details": {"folder": str(folder)},
         }
 
+    return _successful_backup_card(finished, dump_bytes, entries, base_tables)
+
+
+def _failed_backup_card(failed: datetime, finished: datetime | None, step: str, reason: str) -> dict:
+    """The red card for a failed backup run that is newer than the last good one."""
+    return {
+        "category": "backup",
+        "status": "red",
+        "message": (
+            f"The backup on {_when(failed)} failed "
+            f"{_BACKUP_STEPS.get(step, f'at its {step} step')}. {_HAND_OFF}"
+        ),
+        "details": {
+            "failed_at": failed.isoformat(),
+            "step": step,
+            "reason": reason,
+            **(
+                {"finished_at": finished.isoformat()}
+                if finished is not None
+                else {}
+            ),
+        },
+    }
+
+
+def _successful_backup_card(finished: datetime, dump_bytes: int, entries: int, base_tables: int) -> dict:
+    """The card for the last good backup: yellow if it is missing tables or stale, else green."""
     age = timezone.now() - finished
     details = {
         "finished_at": finished.isoformat(),
