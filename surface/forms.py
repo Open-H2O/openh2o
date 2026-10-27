@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Forms for surface water diversion record entry."""
+from datetime import timedelta
 from decimal import Decimal
 
 from django import forms
@@ -75,6 +76,7 @@ class DiversionRecordForm(forms.ModelForm):
 
     def __init__(self, *args, pod=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.pod = pod
         # Blank means "fully consumed" — default to 0 rather than a required field,
         # so existing entry flows are unchanged when the operator leaves it empty.
         self.fields["returned_af"].required = False
@@ -142,8 +144,39 @@ class DiversionRecordForm(forms.ModelForm):
         """
         month = self.cleaned_data.get("month")
         if month is not None:
+            stored = self.instance.month if self.instance.pk else None
+            if stored is not None and (stored.year, stored.month) == (
+                month.year,
+                month.month,
+            ):
+                # Editing a record keeps the day it was stored with; only a
+                # change of month moves it, and it moves to the 1st.
+                return stored
             month = month.replace(day=1)
         return month
+
+    def clean(self):
+        """Refuse a second record for the same point, month and type, whatever its day."""
+        cleaned = super().clean()
+        month = cleaned.get("month")
+        kind = cleaned.get("diversion_type")
+        if self.pod is not None and month is not None and kind:
+            following = (month.replace(day=28) + timedelta(days=4)).replace(day=1)
+            others = DiversionRecord.objects.filter(
+                point_of_diversion=self.pod,
+                diversion_type=kind,
+                month__gte=month.replace(day=1),
+                month__lt=following,
+            ).exclude(method="estimated_from_use")
+            if self.instance.pk:
+                others = others.exclude(pk=self.instance.pk)
+            if others.exists():
+                self.add_error(
+                    "month",
+                    "A record for this month and diversion type is already on "
+                    "file. Edit that record instead.",
+                )
+        return cleaned
 
     def clean_returned_af(self):
         """Surface the model guard as a readable field error, not a 500.

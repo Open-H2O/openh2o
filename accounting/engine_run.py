@@ -220,10 +220,13 @@ def _points_of_diversion(first):
     """Active points of diversion with a record in the month or fields they serve."""
     from surface.models import DiversionRecord, PointOfDiversion, PointOfDiversionParcel
 
+    # A record counts whatever day of the month it is dated (the seeds date
+    # theirs the 15th, every product path the 1st).
+    following = (first.replace(day=28) + dt.timedelta(days=4)).replace(day=1)
     ids = set(
-        DiversionRecord.objects.filter(month=first).values_list(
-            "point_of_diversion_id", flat=True
-        )
+        DiversionRecord.objects.filter(
+            month__gte=first, month__lt=following
+        ).values_list("point_of_diversion_id", flat=True)
     )
     ids |= set(
         PointOfDiversionParcel.objects.values_list("point_of_diversion_id", flat=True)

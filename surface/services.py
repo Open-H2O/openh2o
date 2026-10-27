@@ -554,6 +554,7 @@ def _store_month_loss(
             "spill_af": loss["spill_af"],
             "available_af": loss["available_af"],
             "own_af": loss.get("own_af", Decimal("0")),
+            "unserved_af": loss.get("unserved_af", Decimal("0")),
             "seepage_zone": new_zone,
             "seepage_water_year": new_year,
         },
@@ -661,6 +662,15 @@ def _allocate_month(
                 "spill_af": loss["spill_af"],
             }
         )
+
+    if not served_links:
+        # A point that serves no field has nobody to divide the water among.
+        # What is left after its losses is kept as its own figure (the canal
+        # page names where it went) and credits no one: no ledger row, no
+        # recharge event, no account credit, no unallocated delivery.
+        loss["own_af"] = Decimal("0")
+        loss["unserved_af"] = available
+        return loss
 
     own = _own_magnitudes(served, month)
     own_total = _own_total_for_pod(pod, own, month)
@@ -1061,7 +1071,7 @@ def allocate_district_delivery(
 
 
 def _consumed_by_month(pod: PointOfDiversion) -> dict[date, dict[str, Any]]:
-    """Per calendar month with a direct-use record: its consumed total and whether any record is an estimate."""
+    """Per calendar month with a direct-use record: taken, returned, kept and whether any record is an estimate."""
     zero = Decimal("0")
     records = list(
         DiversionRecord.objects.filter(
@@ -1072,9 +1082,16 @@ def _consumed_by_month(pod: PointOfDiversion) -> dict[date, dict[str, Any]]:
     for record in records:
         entry = by_month.setdefault(
             _month_start(record.month),
-            {"consumed": zero, "estimated": False},
+            {
+                "consumed": zero,
+                "taken": zero,
+                "returned": zero,
+                "estimated": False,
+            },
         )
         entry["consumed"] += record.consumed_acre_feet()
+        entry["taken"] += abs(record.volume_acre_feet)
+        entry["returned"] += record.returned_af
         if record.method == "estimated_from_use":
             entry["estimated"] = True
     return by_month
@@ -1113,12 +1130,26 @@ def _period_of(month: date, periods: list[ReportingPeriod]) -> ReportingPeriod |
     return None
 
 
+def _destination_of(pod: PointOfDiversion) -> str:
+    """Where a point that serves no field delivers: its recharge site(s), else "no field"."""
+    from core.modules import is_enabled
+
+    if is_enabled("recharge"):
+        names = sorted(
+            {link.recharge_site.name for link in pod.basin_links.select_related("recharge_site")}
+        )
+        if names:
+            return ", ".join(names)
+    return "no field"
+
+
 def _canal_month_row(
     month: date,
     info: dict[str, Any],
     loss: CanalMonthLoss | None,
     divided: dict[date, Decimal],
     beyond: dict[date, Decimal],
+    destination: str = "no field",
 ) -> dict[str, Any]:
     """One month's row for the canal page, from its stored loss row or, lacking one, its records."""
     tolerance = Decimal("0.0001")
@@ -1126,6 +1157,8 @@ def _canal_month_row(
     if loss is None:
         row = {
             "month": month,
+            "taken": info["taken"],
+            "returned": info["returned"],
             "headgate": info["consumed"],
             "evaporation": None,
             "seepage": None,
@@ -1134,6 +1167,8 @@ def _canal_month_row(
             "own": None,
             "divided": None,
             "beyond": None,
+            "unserved": None,
+            "unserved_to": destination,
             "calculated": False,
             "adds_up": True,
         }
@@ -1141,6 +1176,8 @@ def _canal_month_row(
         losses = loss.evaporation_af + loss.seepage_af + loss.spill_af
         row = {
             "month": month,
+            "taken": info["taken"],
+            "returned": info["returned"],
             "headgate": loss.diverted_af,
             "evaporation": loss.evaporation_af,
             "seepage": loss.seepage_af,
@@ -1149,9 +1186,13 @@ def _canal_month_row(
             "own": loss.own_af,
             "divided": divided.get(month, zero),
             "beyond": beyond.get(month, zero),
+            "unserved": loss.unserved_af,
+            "unserved_to": destination,
             "calculated": True,
         }
-        parts = losses + row["own"] + row["divided"] + row["beyond"]
+        parts = (
+            losses + row["own"] + row["divided"] + row["beyond"] + row["unserved"]
+        )
         row["adds_up"] = abs(row["headgate"] - parts) <= tolerance
     row["estimated"] = info["estimated"]
     return row
@@ -1161,8 +1202,8 @@ def _add_group_totals(ordered: list[dict[str, Any]]) -> None:
     """Give each period group its ``totals`` (None figures count as nothing)."""
     zero = Decimal("0")
     figure_keys = (
-        "headgate", "evaporation", "seepage", "spill", "losses", "own",
-        "divided", "beyond",
+        "taken", "returned", "headgate", "evaporation", "seepage", "spill",
+        "losses", "own", "divided", "beyond", "unserved",
     )
     for group in ordered:
         rows = group["rows"]
@@ -1170,6 +1211,7 @@ def _add_group_totals(ordered: list[dict[str, Any]]) -> None:
         totals["count"] = len(rows)
         totals["uncalculated"] = sum(1 for r in rows if not r["calculated"])
         totals["estimated"] = any(r["estimated"] for r in rows)
+        totals["unserved_to"] = rows[0]["unserved_to"] if rows else "no field"
         totals["adds_up"] = all(r["adds_up"] for r in rows)
         group["totals"] = totals
 
@@ -1189,14 +1231,16 @@ def canal_water_by_month(pod: PointOfDiversion) -> list[dict[str, Any]]:
     to-storage record never makes one)::
 
         {"month": date, "headgate": Decimal, "evaporation", "seepage", "spill",
-         "losses" (their sum), "own", "divided", "beyond": Decimal | None,
-         "estimated": bool, "calculated": bool, "adds_up": bool}
+         "losses" (their sum), "own", "divided", "beyond", "unserved":
+         Decimal | None, "taken" and "returned" (the records' volume and what
+         was returned; "headgate" is the volume less the return), "unserved_to"
+         (where a point that serves no field delivers), "estimated": bool, "calculated": bool, "adds_up": bool}
 
     Every figure is read from a stored row: the headgate figure and the three
     losses from ``CanalMonthLoss``; ``divided`` is the magnitude of this
     point's split rows on the ledger (stored negative); ``beyond`` is
     ``UnallocatedDelivery``. Nothing is recomputed. ``adds_up`` says whether
-    headgate = losses + own + divided + beyond to 0.0001; a month where it
+    headgate = losses + own + divided + beyond + unserved to 0.0001; a month where it
     does not stays on the page so a reader sees it. A month with records but no
     ``CanalMonthLoss`` row (it predates the canal-loss calculation) shows the
     records' consumed total as ``headgate``, ``calculated`` False, the other
@@ -1217,11 +1261,12 @@ def canal_water_by_month(pod: PointOfDiversion) -> list[dict[str, Any]]:
     beyond = _unallocated_by_month(pod)
 
     periods = list(ReportingPeriod.objects.order_by("-start_date"))
+    destination = _destination_of(pod)
 
     groups: dict[int | None, dict[str, Any]] = {}
     for month in sorted(by_month):
         row = _canal_month_row(
-            month, by_month[month], stored.get(month), divided, beyond
+            month, by_month[month], stored.get(month), divided, beyond, destination
         )
         period = _period_of(month, periods)
         group = groups.setdefault(

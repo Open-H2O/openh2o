@@ -1023,6 +1023,11 @@ class CanalMonthLoss(models.Model):
     written off, credited to no one. Seepage is deposited to the district's pool in
     ``seepage_zone`` for ``seepage_water_year``; both stay blank when no zone could
     take it.
+
+    A point that does not serve a field has nobody to divide ``available_af`` among, so
+    the whole of it is ``unserved_af`` (the canal page names the recharge site the
+    point feeds, or "no field", as the page words it). The month closes as ``diverted_af`` less returned
+    = fields + own + evaporation + seepage + spill + undivided + ``unserved_af``.
     """
 
     point_of_diversion = models.ForeignKey(
@@ -1049,6 +1054,13 @@ class CanalMonthLoss(models.Model):
         default=Decimal("0"),
         help_text="The served fields' own recorded deliveries for the month, "
         "taken from what was left before the rest was divided up.",
+    )
+    unserved_af = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        default=Decimal("0"),
+        help_text="For a point that does not serve a field: what was left after the "
+        "three losses. Nobody is credited with it. Zero for a point that serves fields.",
     )
     seepage_zone = models.ForeignKey(
         "geography.Zone",

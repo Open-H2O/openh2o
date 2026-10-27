@@ -404,10 +404,10 @@ def test_v9_a_point_with_a_direct_use_record_keeps_the_card(auth_client):
     assert 'id="where-the-water-went"' in body
 
 
-def test_a_point_with_no_linked_use_area_shows_no_card(auth_client):
-    """The calculation
-    never splits a point with no linked use area, so its months were shown as
-    "not yet calculated" forever. The card is not shown there."""
+def test_a_point_with_no_linked_use_area_shows_the_card(auth_client):
+    """The calculation visits a point with no linked use area and books its water
+    to a recharge site or to no field, so the card is shown there; a month not
+    yet calculated says so."""
     from tests.factories import DiversionRecordFactory
 
     pod = PointOfDiversionFactory(name="V150 Unlinked Headgate")
@@ -415,7 +415,8 @@ def test_a_point_with_no_linked_use_area_shows_no_card(auth_client):
 
     body = auth_client.get(reverse("surface:pod_detail", args=[pod.pk])).content.decode()
 
-    assert 'id="where-the-water-went"' not in body
+    assert 'id="where-the-water-went"' in body
+    assert "Not yet calculated" in body
 
 
 # ---------------------------------------------------------------------------
