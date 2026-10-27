@@ -214,12 +214,11 @@ def test_ledger_create_renders_the_grid_with_its_pairs():
     form = _region(html, "form-grid")
     assert form.root_tag == "form"
     spanning = [classes for tag, classes in form.children if "form-span-2" in classes]
-    assert len(spanning) == 2  # the use area and the description
-    assert (
-        html.index('id="id_source_type"')
-        < html.index('id="id_reporting_period"')
-        < html.index('id="id_description"')
-    )
+    # The use area, the source type (no half-width select alone on a row) and
+    # the description.
+    assert len(spanning) == 3
+    assert 'id="id_reporting_period"' not in html
+    assert html.index('id="id_source_type"') < html.index('id="id_description"')
     assert 'class="page-stack page-medium"' in html
 
 

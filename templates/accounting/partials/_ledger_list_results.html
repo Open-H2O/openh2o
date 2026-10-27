@@ -1,4 +1,7 @@
 {% load humanize accounting_extras %}
+{% if download_oob %}<a id="ledger-download" hx-swap-oob="true" href="{% url 'accounting:ledger_export' %}?{{ download_query }}" class="btn-secondary btn-sm">
+  Download CSV
+</a>{% endif %}
 {# overflow:hidden is left off deliberately: it would clip the sticky <thead>. #}
 <div class="card-raised table-scroll-mobile" style="padding: 0;">
   {% comment %} Subtitle line: two short, plainly stated facts read better
@@ -27,7 +30,7 @@
     </div>
     {% if total_count %}
     <div class="text-secondary text-base">
-      Acre-feet. Negative amounts are water delivered or pumped; positive amounts are credits.
+      Acre-feet. Negative amounts are deliveries, pumping and estimates of use; positive amounts are credits.
     </div>
     {% endif %}
   </div>

@@ -29,7 +29,13 @@ Rules enforced here, in order:
    preview included, whether or not a period was picked (the web upload with a
    period picked used to skip it entirely). The database refuses the same
    rows anyway (accounting/locks.py); this says which ones before writing.
-4. DEDUP (idempotent re-import). The ledger is an append-only journal, so we never
+4. WATER YEAR. Every row is filed under the reporting period its own date
+   falls in. A date no period covers is kept with no period, the way every
+   other record saved before a period existed is kept;
+   ``attach_orphans_to_period`` files it when a period covering the date is
+   created. A period named for the whole file only restricts the file: a row
+   dated outside it is a row error, and it never moves a row into that period.
+5. DEDUP (idempotent re-import). The ledger is an append-only journal, so we never
    delete — we skip a row that already exists with the same
    (parcel, effective_date, source_type, amount) and collapse exact duplicates
    within the file. Re-importing the same CSV writes nothing the second time,
@@ -183,6 +189,22 @@ def _normalized_sign(
     return amount
 
 
+def _outside_picked_period_error(
+    effective_date: date | None, reporting_period: ReportingPeriod | None
+) -> str | None:
+    """The refusal when a period was named for the file and the row's date is outside it."""
+    if (
+        reporting_period is None
+        or effective_date is None
+        or reporting_period.start_date <= effective_date <= reporting_period.end_date
+    ):
+        return None
+    return (
+        f"effective_date {effective_date}: outside {reporting_period.name} "
+        f"({reporting_period.start_date} to {reporting_period.end_date})"
+    )
+
+
 def _finalized_period_error(
     effective_date: date | None,
     effective_date_raw: str,
@@ -282,6 +304,10 @@ def _check_row(
     )
     if finalized_error:
         row_errors.append(finalized_error)
+    else:
+        outside_error = _outside_picked_period_error(effective_date, reporting_period)
+        if outside_error:
+            row_errors.append(outside_error)
 
     water_type = _lookup_water_type(water_type_code, water_type_cache, row_errors)
 
@@ -306,8 +332,15 @@ def _check_row(
     }
 
 
+def _period_id_for(
+    day: date, period_spans: list[tuple[date, date, int]]
+) -> int | None:
+    """The id of the reporting period whose dates contain ``day``, or None."""
+    return next((pk for (s, e, pk) in period_spans if s <= day <= e), None)
+
+
 def _new_entry(
-    fields: dict[str, Any], reporting_period: ReportingPeriod | None
+    fields: dict[str, Any], reporting_period_id: int | None
 ) -> tuple[tuple[int, date, str, Decimal], ParcelLedger]:
     """The dedup key and the unsaved ledger row for one valid CSV row."""
     parcel = fields["parcel"]
@@ -331,7 +364,7 @@ def _new_entry(
             water_type=fields["water_type"],
             source_type=source_type,
             description=fields["description"],
-            reporting_period=reporting_period,
+            reporting_period_id=reporting_period_id,
         ),
     )
 
@@ -380,9 +413,11 @@ def import_ledger_rows(
 ):
     """Validate and import ledger rows from an open text-mode CSV file.
 
-    ``reporting_period`` is assigned to every created row when given; a
-    finalized one refuses every row. The finalized-period guard also runs per
-    row by date, either way. ``dry_run`` validates and reports without writing.
+    Each created row is filed under the reporting period its date falls in
+    (none when no period covers it). ``reporting_period``, when given, only
+    restricts the file: a row dated outside it is refused, and a finalized one
+    refuses every row. The finalized-period guard also runs per row by date,
+    either way. ``dry_run`` validates and reports without writing.
 
     Returns a dict: created_count, error_count, errors (list of
     {"line", "messages"}), preview (first 5 rows), skipped_duplicate,
@@ -408,6 +443,9 @@ def import_ledger_rows(
         return failure
 
     finalized_spans = _finalized_spans()
+    period_spans = list(
+        ReportingPeriod.objects.values_list("start_date", "end_date", "pk")
+    )
     picked_is_finalized = bool(reporting_period and reporting_period.is_finalized)
 
     for line_num, row in enumerate(reader, start=first_data_line):
@@ -426,7 +464,9 @@ def import_ledger_rows(
             errors.append({"line": line_num, "messages": row_errors})
             continue
 
-        key, entry = _new_entry(fields, reporting_period)
+        key, entry = _new_entry(
+            fields, _period_id_for(fields["effective_date"], period_spans)
+        )
         entries_to_create.append((key, entry))
 
         if len(preview) < 5:

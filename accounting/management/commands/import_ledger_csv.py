@@ -38,7 +38,7 @@ class Command(BaseCommand):
             "--reporting-period",
             type=str,
             default=None,
-            help="Name of the reporting period to assign to all entries.",
+            help="Name of a reporting period: only rows dated inside it are imported. Each row counts in the period its date falls in.",
         )
         parser.add_argument(
             "--delimiter",
@@ -80,8 +80,9 @@ class Command(BaseCommand):
         # number already filed with the state; importing into it would silently
         # rewrite a filed figure. Mirror the run_calculations guard: refuse up
         # front when the operator explicitly targets a finalized period. dry_run
-        # is never blocked (it writes nothing). When NO period is named, rows
-        # carry reporting_period=None, so instead guard per-row by date below.
+        # is never blocked (it writes nothing). Each row is filed under the
+        # period its date falls in, so the per-row guard by date below still
+        # runs when a period is named.
         if (
             reporting_period is not None
             and reporting_period.is_finalized

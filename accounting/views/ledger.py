@@ -2,6 +2,7 @@
 """The parcel ledger: the filtered list, adding a row by hand, CSV upload, the CSV template and the export."""
 from datetime import date
 from decimal import Decimal
+from urllib.parse import urlencode
 
 import csv as csv_module
 
@@ -16,6 +17,7 @@ from core.csv_safe import safe_row
 from accounting.engine_run import recalculation_sentence, request_for_months
 from accounting.locks import (
     PeriodFinalized,
+    period_for,
     refuse_if_finalized,
     refuse_if_period_finalized,
 )
@@ -478,6 +480,7 @@ def ledger_list(request):
         "auto_default_period_name": auto_default_period_name,
         "auto_default_calculated": auto_default_calculated,
         "current_period_id": default_period_id,
+        "download_query": _ledger_download_query(filters),
         # The page description names "recharge" (copy rule 11's settled
         # sentence); a deployment without the recharge module must not see
         # that noun (tests/droppability/checks.py::
@@ -487,6 +490,9 @@ def ledger_list(request):
     }
 
     if request.headers.get("HX-Request"):
+        # The Download CSV link sits above the results, so the fragment carries
+        # a fresh copy that HTMX swaps in beside the table.
+        context["download_oob"] = True
         return render(
             request, "accounting/partials/_ledger_list_results.html", context
         )
@@ -515,6 +521,9 @@ def ledger_create(request):
         if form.is_valid():
             entry = form.save(commit=False)
             entry.created_by = request.user
+            # The row counts in the water year its date falls in; a date no
+            # water year covers is kept with none, and joins one when it is created.
+            entry.reporting_period = period_for(entry.effective_date)
             try:
                 refuse_if_finalized(entry.effective_date)
                 refuse_if_period_finalized(entry.reporting_period)
@@ -522,7 +531,15 @@ def ledger_create(request):
                 form.add_error("effective_date", str(exc))
             else:
                 entry.save()
-                messages.success(request, "Entry saved.")
+                if entry.reporting_period is None:
+                    messages.success(
+                        request,
+                        "Entry saved. No water year includes its date, so it is in "
+                        "no water year yet. It joins one when a water year covering "
+                        "the date is created.",
+                    )
+                else:
+                    messages.success(request, "Entry saved.")
                 if entry.source_type == "surface_diversion" and is_enabled("surface"):
                     _recalculate_ledger_months(
                         request, [f"{entry.effective_date:%Y-%m}"]
@@ -549,9 +566,8 @@ def csv_upload(request):
         form = CsvUploadForm(request.POST, request.FILES)
         if form.is_valid():
             csv_file = request.FILES["file"]
-            period = form.cleaned_data.get("reporting_period")
             dry_run = form.cleaned_data.get("dry_run", False)
-            results = parse_ledger_csv(csv_file, reporting_period=period, dry_run=dry_run)
+            results = parse_ledger_csv(csv_file, dry_run=dry_run)
             context = {"form": form, "results": results, "dry_run": dry_run}
             months = results.get("surface_diversion_months") or []
             if months and not dry_run and is_enabled("surface"):
@@ -599,35 +615,12 @@ def csv_template(request):
 
 @login_required
 def ledger_export(request):
-    """Export filtered ledger entries as CSV."""
-    q = request.GET.get("q", "").strip()
-    period_id = request.GET.get("period", "").strip()
-    source_type = request.GET.get("source_type", "").strip()
-    water_type_id = request.GET.get("water_type", "").strip()
-    start_date = request.GET.get("start_date", "").strip()
-    end_date = request.GET.get("end_date", "").strip()
-    active_areas = request.GET.get("active_areas", "").strip()
-
+    """Export the ledger entries the screen's own filters match, as CSV."""
+    filters = _ledger_filters(request)
     queryset = ParcelLedger.objects.select_related(
         "parcel", "water_type", "reporting_period"
     ).order_by("-effective_date", "-created_at")
-
-    if q:
-        queryset = queryset.filter(
-            Q(parcel__parcel_number__icontains=q) | Q(description__icontains=q)
-        )
-    if period_id:
-        queryset = queryset.filter(reporting_period_id=period_id)
-    if source_type:
-        queryset = queryset.filter(source_type=source_type)
-    if water_type_id:
-        queryset = queryset.filter(water_type_id=water_type_id)
-    if start_date:
-        queryset = queryset.filter(effective_date__gte=start_date)
-    if end_date:
-        queryset = queryset.filter(effective_date__lte=end_date)
-    if active_areas:
-        queryset = queryset.filter(parcel__status="active")
+    queryset = _apply_ledger_filters(queryset, filters)
 
     response = HttpResponse(content_type="text/csv")
     response["Content-Disposition"] = 'attachment; filename="ledger_export.csv"'

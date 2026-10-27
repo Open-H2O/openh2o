@@ -225,7 +225,7 @@ def test_shape_6_ledger_page_footer_sums_debits_and_credits_separately():
     # the upload preview, docs/DATA-IMPORT.md) and no longer prints here.
     assert sign_rule_sentence() not in body
     assert body.count(
-        "Negative amounts are water delivered or pumped; positive amounts are credits."
+        "Negative amounts are deliveries, pumping and estimates of use; positive amounts are credits."
     ) == 1
     assert "6,326.01" in body
     assert "+0.00" in body

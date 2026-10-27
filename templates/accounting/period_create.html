@@ -29,15 +29,10 @@
          copy rule 13: a label under a heading says the remainder). {% endcomment %}
     <h2 class="card-header-ruled">Details</h2>
 
-    {% if form.errors %}
+    {% if form.non_field_errors %}
     <div class="form-error-box">
       {% for error in form.non_field_errors %}
           <p class="form-error-text">{{ error }}</p>
-      {% endfor %}
-      {% for field in form %}
-        {% for error in field.errors %}
-          <p class="form-error-text">{{ field.label }}: {{ error }}</p>
-        {% endfor %}
       {% endfor %}
     </div>
     {% endif %}
@@ -50,6 +45,9 @@
       <div class="form-group{% if field.name == "name" or field.name == "notes" %} form-span-2{% endif %}">
         <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
         {{ field }}
+        {% if field.errors %}
+        <div class="form-help text-furnace">{% for error in field.errors %}{{ error }} {% endfor %}</div>
+        {% endif %}
       </div>
       {% endfor %}
       <div class="form-footer">

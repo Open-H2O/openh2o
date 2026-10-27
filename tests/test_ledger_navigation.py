@@ -280,7 +280,7 @@ class TestLedgerFooter:
         # gone from the page, and the new one appears exactly once, never
         # inside <tfoot>.
         sentence = (
-            "Negative amounts are water delivered or pumped; positive "
+            "Negative amounts are deliveries, pumping and estimates of use; positive "
             "amounts are credits."
         )
         assert html.count(sentence) == 1
@@ -372,7 +372,7 @@ class TestLedgerSignSentenceInSubtitle:
         resp = auth_client.get(_ledger_url(period=str(period.pk)))
         html = resp.content.decode()
         sentence = (
-            "Negative amounts are water delivered or pumped; positive "
+            "Negative amounts are deliveries, pumping and estimates of use; positive "
             "amounts are credits."
         )
         assert html.count(sentence) == 1

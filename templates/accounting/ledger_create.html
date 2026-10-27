@@ -13,7 +13,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">New Entry</span>
   </nav>
-  <p class="page-description">Each Use Ledger entry records one volume for one use area on one date. Pick the water year the entry counts in.</p>
+  <p class="page-description">Each Use Ledger entry records one volume for one use area on one date. OpenH2O files the entry under the water year that includes its date.</p>
 </div>
 {% endblock %}
 
@@ -28,15 +28,14 @@
     <h2 class="card-header-ruled">Details</h2>
 
     {% comment %} The form is a two-track grid. The use area
-         and the description span both tracks; the two dates, the amount and its
-         water type, and the source type and its water year each share a row.
-         The description is rendered after the loop so Source type and Water
-         year sit side by side. {% endcomment %}
+         and the description span both tracks; the two dates, and the amount and its
+         water type, each share a row; the source type spans both tracks.
+         The description is rendered after the loop. {% endcomment %}
     <form method="post" class="form-grid">
       {% csrf_token %}
 
       {% for field in form %}{% if field.name != "description" %}
-      <div class="form-group{% if field.name == "parcel" %} form-span-2{% endif %}">
+      <div class="form-group{% if field.name == "parcel" or field.name == "source_type" %} form-span-2{% endif %}">
         <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
         {{ field }}
         {% if field.errors %}
@@ -51,7 +50,7 @@
              it governs, in the same words as the Use Ledger's results head (the
              unit is already in the field's own label, so it is not said again). {% endcomment %}
         {% if field.name == "amount_acre_feet" %}
-        <div class="form-help">Negative amounts are water delivered or pumped; positive amounts are credits.</div>
+        <div class="form-help">Negative amounts are deliveries, pumping and estimates of use; positive amounts are credits.</div>
         {% endif %}
       </div>
       {% endif %}{% endfor %}

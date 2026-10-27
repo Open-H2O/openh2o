@@ -570,7 +570,9 @@ def parse_ledger_csv(
 
     Args:
         csv_file: A file-like object (from request.FILES or open()).
-        reporting_period: Optional ReportingPeriod to assign to all entries.
+        reporting_period: Optional ReportingPeriod the file is restricted to;
+            a row dated outside it is refused. Each created row is filed under
+            the period its own date falls in, never under this one.
         dry_run: If True, validate only without creating records.
 
     Returns:

@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Forms for reporting periods, allocation plans, and water accounts."""
+import calendar
+
 from django import forms
 from django.core.exceptions import NON_FIELD_ERRORS
 
@@ -38,6 +40,12 @@ class ReportingPeriodForm(forms.ModelForm):
         end = cleaned.get("end_date")
         if start and end and end <= start:
             self.add_error("end_date", "The end date must be after the start date.")
+        # A run belongs to every period its month touches, so two periods that
+        # meet inside a month would each take the whole month. Whole months only.
+        if start and start.day != 1:
+            self.add_error("start_date", "A water year starts on the first day of a month.")
+        if end and end.day != calendar.monthrange(end.year, end.month)[1]:
+            self.add_error("end_date", "A water year ends on the last day of a month.")
         return cleaned
 
 
@@ -246,12 +254,6 @@ class CsvUploadForm(forms.Form):
     file = forms.FileField(
         widget=forms.ClearableFileInput(attrs={"accept": ".csv", "class": "file-picker-input"})
     )
-    reporting_period = forms.ModelChoiceField(
-        queryset=ReportingPeriod.objects.order_by("-start_date"),
-        required=False,
-        empty_label="No water year",
-        widget=forms.Select(attrs={"class": "form-select"}),
-    )
     dry_run = forms.BooleanField(required=False, initial=False)
 
 
@@ -266,12 +268,10 @@ class ParcelLedgerForm(forms.ModelForm):
             "water_type",
             "source_type",
             "description",
-            "reporting_period",
         ]
         labels = {
             "parcel": "Use area",
             "amount_acre_feet": "Amount (AF)",
-            "reporting_period": "Water year",
         }
         widgets = {
             "parcel": forms.Select(attrs={"class": "form-select"}),
@@ -289,5 +289,4 @@ class ParcelLedgerForm(forms.ModelForm):
             "description": forms.Textarea(
                 attrs={"rows": 3, "class": "form-textarea"}
             ),
-            "reporting_period": forms.Select(attrs={"class": "form-select"}),
         }
