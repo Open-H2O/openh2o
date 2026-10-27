@@ -35,6 +35,8 @@ resolved through the app registry (``apps.get_model``) and only after
 """
 
 from django.apps import apps
+from django.db.models import Q
+from django.utils import timezone
 from django.http import Http404
 
 from core.modules import is_enabled
@@ -246,7 +248,17 @@ def _contained_in(kind, obj, geometry, base):
 
     if kind == "use-area":
         ParcelZone = apps.get_model("geography", "ParcelZone")
-        for link in ParcelZone.objects.filter(parcel=obj).select_related("zone").order_by("zone__pk"):
+        # Only the zones the field belongs to today: a membership has a start
+        # and an end date, and a finished one is history, not containment.
+        today = timezone.localdate()
+        links = (
+            ParcelZone.objects.filter(parcel=obj)
+            .filter(Q(start_date__isnull=True) | Q(start_date__lte=today))
+            .filter(Q(end_date__isnull=True) | Q(end_date__gte=today))
+            .select_related("zone")
+            .order_by("zone__pk")
+        )
+        for link in links:
             refs.append(_ref("zone", link.zone, base))
     elif kind == "recharge-site" and obj.zone_id:
         refs.append(_ref("zone", obj.zone, base))

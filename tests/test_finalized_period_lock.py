@@ -32,10 +32,12 @@ from accounting.locks import (
     refuse_if_finalized,
 )
 from accounting.models import (
+    AccountCredit,
     AllocationCarryover,
     AllocationPlan,
     CalculationRun,
     ReportingPeriod,
+    WaterAccount,
     WaterCredit,
     WaterCreditDraw,
 )
@@ -114,6 +116,12 @@ def _build(label, day, period):
             zone=ZoneFactory(), water_type=WaterTypeFactory(),
             water_year=_water_year(day), amount_af=Decimal("4.0000"),
         )
+    if label == "accounting.AccountCredit":
+        return AccountCredit.objects.create(
+            water_account=WaterAccount.objects.create(name="Lock test", account_number=f"LOCK-{day}"),
+            water_type=WaterTypeFactory(), water_year=_water_year(day), origin="carried_forward",
+            amount_af=Decimal("4.0000"), source_key="lock-test",
+        )
     if label == "accounting.CalculationRun":
         return CalculationRun.objects.create(
             parcel=ParcelFactory(), period=_month(day), gross_et_af=Decimal("3.0000"),
@@ -170,7 +178,7 @@ def test_every_locked_table_carries_the_trigger():
         )
         tables = [row[0] for row in cursor.fetchall()]
     assert tables == sorted(_table(label) for label in LOCKED_MODELS)
-    assert len(LOCK_TRIGGER_URIS) == 9
+    assert len(LOCK_TRIGGER_URIS) == 10
 
 
 @pytest.mark.parametrize("label", LOCKED_MODELS)

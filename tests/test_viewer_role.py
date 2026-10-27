@@ -272,7 +272,7 @@ WRITE_PAGES = [
     "geography:zone_edit", "geography:zone_parcel_assign", "geography:zone_parcel_remove",
     "infrastructure:add", "infrastructure:import", "infrastructure:import_commit",
     "infrastructure:import_preview", "infrastructure:parcel_create", "parcels:edit_field",
-    "recharge:event_create",
+    "recharge:event_create", "recharge:event_delete", "recharge:event_edit",
     "surface:device_add", "surface:device_edit", "surface:device_mark_removed",
     "surface:diversion_import", "surface:diversion_import_commit",
     "surface:diversion_import_preview", "surface:diversion_record_create",
@@ -282,7 +282,7 @@ WRITE_PAGES = [
     "surface:water_right_edit", "surface:water_right_import",
     "surface:water_right_import_commit", "surface:water_right_import_preview",
     "surface:water_right_remove_parcel", "wells:edit_field",
-    "wells:irrigated_parcel_edit_share",
+    "wells:irrigated_parcel_edit_share", "wells:meter_reading_add",
 ]
 
 

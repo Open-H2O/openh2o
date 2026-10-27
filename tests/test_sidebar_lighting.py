@@ -49,6 +49,7 @@ signed-in superuser with the ``nav_mode`` cookie at ``operations`` and at
 ``admin``. Here the rows come from the factories, not the demonstration data.
 """
 import re
+from datetime import date
 from html import unescape
 from types import SimpleNamespace
 
@@ -128,6 +129,7 @@ EXPECTED_LIT = {
     "/parcels/<int:pk>/": "Use Areas",
     "/recharge/": "Recharge sites",
     "/recharge/<int:pk>/": "Recharge sites",
+    "/recharge/<int:pk>/events/<int:event_pk>/edit/": "Recharge sites",
     "/reporting/reports/": "Reports",
     "/reporting/reports/<int:pk>/": "Reports",
     "/reporting/reports/<int:pk>/calwatrs-worksheet/": "Reports",
@@ -328,6 +330,7 @@ def walk():
     """The fixture the walk renders against: one row per converter, a superuser."""
     from accounting.models import CalculationPlan, CalculationRun, CalculationStep
     from drinking.models import SamplingSchedule
+    from recharge.models import RechargeEvent
     from surface.models import MeasuringDevice, PointOfDiversionDevice
     from tests.factories import (
         DiversionRecordFactory,
@@ -414,6 +417,9 @@ def walk():
         point_of_diversion=rows.pod, device=rows.device, is_current=True
     )
     rows.recharge_site = RechargeSiteFactory()
+    rows.recharge_event = RechargeEvent.objects.create(
+        recharge_site=rows.recharge_site, start_date=date(2024, 3, 1), volume_acre_feet=Decimal("1.0000")
+    )
     rows.report = ReportSubmissionFactory(reporting_period=rows.period)
     rows.system = WaterSystemFactory()
     rows.facility = SystemFacilityFactory(system=rows.system)
@@ -478,6 +484,7 @@ def concrete(pattern, rows):
         "rpk": rows.record.pk,
         "wrp_pk": rows.right_parcel.pk,
         "wip_pk": rows.well_parcel.pk,
+        "event_pk": rows.recharge_event.pk,
     }
     pk_rows = [attr for prefix, attr in PK_ROW_BY_PREFIX if pattern.startswith(prefix)]
     if pk_rows:

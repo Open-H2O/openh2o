@@ -283,7 +283,7 @@
     {% if canal_water and pod_parcels %}
     <div class="card-raised page-grid-account-full" id="where-the-water-went">
       <h2 class="section-header mb-md">Where the water went</h2>
-      <p class="text-secondary text-sm mb-md">Canal losses and the three columns after them add up to the water taken at the headgate; a month that does not is marked Does not add up. Acre-feet.</p>
+      <p class="text-secondary text-sm mb-md">Canal losses and the {% if pod.division_method == "crop_need" %}three{% else %}two{% endif %} columns after them add up to the water taken at the headgate; a month that does not is marked Does not add up. Acre-feet.</p>
       {% for group in canal_water %}
       <details class="mb-md"{% if group.is_open %} open{% endif %}>
         <summary class="row-start" style="cursor: pointer; list-style: none; gap: var(--space-sm); padding: var(--space-xs) 0;">
@@ -299,9 +299,15 @@
           {% comment %}Fixed widths: the three long headers get room to wrap to two or
              three lines instead of one word per line beside a wide Month column.{% endcomment %}
           <colgroup>
+            {% if pod.division_method == "crop_need" %}
             <col style="width: 9%"><col style="width: 12%">
             <col style="width: 11%"><col style="width: 9%"><col style="width: 8%">
             <col style="width: 13%"><col style="width: 19%"><col style="width: 19%">
+            {% else %}
+            <col style="width: 12%"><col style="width: 20%">
+            <col style="width: 14%"><col style="width: 12%"><col style="width: 10%">
+            <col style="width: 16%"><col style="width: 16%">
+            {% endif %}
           </colgroup>
           <thead>
             <tr class="th-group">
@@ -310,7 +316,7 @@
               <th colspan="3" class="th-group-label col-sep">Canal losses</th>
               <th rowspan="2" class="th-right">Fields' own records</th>
               <th rowspan="2" class="th-right">Divided up among the other fields</th>
-              <th rowspan="2" class="th-right">Left after each field received its ETAW divided by its irrigation efficiency</th>
+              {% if pod.division_method == "crop_need" %}<th rowspan="2" class="th-right">Left after each field received its ETAW divided by its irrigation efficiency</th>{% endif %}
             </tr>
             <tr>
               <th class="th-right col-sep">Evaporation</th>
@@ -325,7 +331,7 @@
                 {{ r.month|date:"M Y" }}
                 {% if r.estimated %}<span class="badge badge-grey" title="At least one diversion record this month is estimated from use, not measured.">Estimated</span>{% endif %}
                 {% if not r.calculated %}<span class="text-tertiary text-xs">Not yet calculated</span>{% endif %}
-                {% if not r.adds_up %}<span class="badge badge-amber" title="Canal losses plus the three columns after them differ from the water taken at the headgate.">Does not add up</span>{% endif %}
+                {% if not r.adds_up %}<span class="badge badge-amber" title="Canal losses plus the {% if pod.division_method == "crop_need" %}three{% else %}two{% endif %} columns after them differ from the water taken at the headgate.">Does not add up</span>{% endif %}
               </td>
               <td class="td-num">{{ r.headgate|floatformat:2|intcomma }}</td>
               {% if r.calculated %}
@@ -334,14 +340,14 @@
               <td class="td-num text-secondary">{{ r.spill|floatformat:2|intcomma }}</td>
               <td class="td-num">{{ r.own|floatformat:2|intcomma }}</td>
               <td class="td-num">{{ r.divided|floatformat:2|intcomma }}</td>
-              <td class="td-num">{{ r.beyond|floatformat:2|intcomma }}</td>
+              {% if pod.division_method == "crop_need" %}<td class="td-num">{{ r.beyond|floatformat:2|intcomma }}</td>{% endif %}
               {% else %}
               <td class="td-num text-tertiary col-sep">&mdash;</td>
               <td class="td-num text-tertiary">&mdash;</td>
               <td class="td-num text-tertiary">&mdash;</td>
               <td class="td-num text-tertiary">&mdash;</td>
               <td class="td-num text-tertiary">&mdash;</td>
-              <td class="td-num text-tertiary">&mdash;</td>
+              {% if pod.division_method == "crop_need" %}<td class="td-num text-tertiary">&mdash;</td>{% endif %}
               {% endif %}
             </tr>
             {% endfor %}
@@ -353,16 +359,16 @@
               <td class="td-num-bold td-total">{{ group.totals.spill|floatformat:2|intcomma }}</td>
               <td class="td-num-bold td-total">{{ group.totals.own|floatformat:2|intcomma }}</td>
               <td class="td-num-bold td-total">{{ group.totals.divided|floatformat:2|intcomma }}</td>
-              <td class="td-num-bold td-total">{{ group.totals.beyond|floatformat:2|intcomma }}</td>
+              {% if pod.division_method == "crop_need" %}<td class="td-num-bold td-total">{{ group.totals.beyond|floatformat:2|intcomma }}</td>{% endif %}
             </tr>
           </tbody>
         </table>
         </div>
         {% if not group.totals.adds_up %}
-        <p class="text-tertiary text-xs mt-sm"><span class="badge badge-amber">Does not add up</span> marks a month whose canal losses plus the three columns after them differ from the water taken at the headgate.</p>
+        <p class="text-tertiary text-xs mt-sm"><span class="badge badge-amber">Does not add up</span> marks a month whose canal losses plus the {% if pod.division_method == "crop_need" %}three{% else %}two{% endif %} columns after them differ from the water taken at the headgate.</p>
         {% endif %}
         {% if group.totals.uncalculated %}
-        <p class="text-tertiary text-xs mt-sm">OpenH2O has not yet calculated {{ group.totals.uncalculated }} month{{ group.totals.uncalculated|pluralize }}. The headgate total above includes {{ group.totals.uncalculated|pluralize:"that month,those months" }}, but the canal loss columns and the three columns after them do not.</p>
+        <p class="text-tertiary text-xs mt-sm">OpenH2O has not yet calculated {{ group.totals.uncalculated }} month{{ group.totals.uncalculated|pluralize }}. The headgate total above includes {{ group.totals.uncalculated|pluralize:"that month,those months" }}, but the canal loss columns and the {% if pod.division_method == "crop_need" %}three{% else %}two{% endif %} columns after them do not.</p>
         {% endif %}
       </details>
       {% endfor %}
@@ -386,7 +392,7 @@
               <th>Owner</th>
               <th class="th-right">
                 Share
-                {% include "partials/_help_tooltip.html" with label="Share" text="This use area's fixed share of the canal's water. OpenH2O divides the canal's water in these shares only in a month when none of the canal's use areas has any ETAW. A use area fed by two points has a share at each." %}
+                {% include "partials/_help_tooltip.html" with label="Share" text="This use area's share of the canal's water. OpenH2O divides the water that reaches the use areas in these shares, or by acreage where no share was entered, unless the point is set to divide by crop ET. A use area fed by two points has a share at each." %}
               </th>
             </tr>
           </thead>

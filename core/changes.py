@@ -207,6 +207,7 @@ FIELD_MODULES = {
     # Only canal water can be over-delivered.
     "core.SiteConfig.over_delivery_treatment": "surface",
     "core.SiteConfig.over_delivery_leave_behind": "surface",
+    "core.SiteConfig.canal_seepage_credit": "surface",
 }
 
 

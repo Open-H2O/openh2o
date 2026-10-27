@@ -66,16 +66,14 @@
     </div>
     {% endif %}
 
-    {% comment %} Setting: surface water in excess of ETAW. `surface` owns both
-         fields, and the form shows them only
+    {% comment %} Setting: surface water in excess of ETAW. `surface` owns the
+         field, and the form shows it only
          with that module on
          (`shows_surface_settings`): only canal water can be over-delivered. Its position is
          computed in the view like every other optional card. Each choice is a
          label line with what it does on a quieter line under it
-         (`form.over_delivery_options`), so the three radios line up instead of
-         wrapping to three different lengths. The sentence about a field with
-         no well lives in the credited choice's description, behind the
-         `wells` gate, and is said once. {% endcomment %}
+         (`form.over_delivery_options`), so the radios line up instead of
+         wrapping to different lengths. {% endcomment %}
     {% if form.shows_surface_settings %}
     <div class="card-raised">
       <span class="step-eyebrow">Setting {{ over_delivery_number }} of {{ settings_total }}</span>
@@ -94,16 +92,48 @@
       </div>
       {% if form.over_delivery_treatment.errors %}<p class="text-sm text-furnace mt-sm">{{ form.over_delivery_treatment.errors|striptags }}</p>{% endif %}
 
-      <div class="field-group mt-md mb-0">
-        <label class="form-label" for="{{ form.over_delivery_leave_behind_percent.id_for_label }}">{{ form.over_delivery_leave_behind_percent.label }}</label>
-        {% comment %} The explanation sits above the box, as on the efficiency and groundwater cards (a fresh reader flagged the difference, 2026-09-28). {% endcomment %}
-        <p class="text-secondary text-sm" style="margin-bottom: var(--space-md);">{{ form.over_delivery_leave_behind_percent.help_text }}</p>
+    </div>
+    {% endif %}
+
+    {% comment %} Setting: canal seepage. `surface` owns the field and the form shows
+         it with that module on, like the card above. Same label-and-description
+         layout as the over-delivery choices. {% endcomment %}
+    {% if form.shows_surface_settings %}
+    <div class="card-raised">
+      <span class="step-eyebrow">Setting {{ seepage_number }} of {{ settings_total }}</span>
+      <h2 class="section-header">{{ form.canal_seepage_credit.label }}</h2>
+      <p class="text-secondary text-sm" style="margin-bottom: var(--space-md);">OpenH2O records each month's canal seepage in the basin's water budget. This setting decides whether a water account is also credited with it.</p>
+      <div class="field-group mt-sm">
+        {% for radio, description in form.canal_seepage_options %}
+        <label class="radio-option">
+          {{ radio.tag }}
+          <span class="radio-option-text">
+            <span class="text-secondary text-base">{{ radio.choice_label }}</span>
+            <span class="text-tertiary text-sm radio-option-description">{{ description }}</span>
+          </span>
+        </label>
+        {% endfor %}
+      </div>
+      {% if form.canal_seepage_credit.errors %}<p class="text-sm text-furnace mt-sm">{{ form.canal_seepage_credit.errors|striptags }}</p>{% endif %}
+    </div>
+    {% endif %}
+
+    {% comment %} Setting: share left in the basin. Read by the recharge credit and by
+         the seepage credit, so it shows when either module runs
+         (`shows_leave_behind`); its help text names only the credits the
+         deployment has. {% endcomment %}
+    {% if form.shows_leave_behind %}
+    <div class="card-raised">
+      <span class="step-eyebrow">Setting {{ leave_behind_number }} of {{ settings_total }}</span>
+      <h2 class="section-header">{{ form.leave_behind_percent.label }}</h2>
+      <p class="text-secondary text-sm" style="margin-bottom: var(--space-md);">{{ form.leave_behind_percent.help_text }}</p>
+      <div class="field-group mb-0">
         <span class="input-suffix">
-          {{ form.over_delivery_leave_behind_percent }}
+          {{ form.leave_behind_percent }}
           <span class="input-suffix-unit">%</span>
         </span>
-        {% if form.over_delivery_leave_behind_percent.errors %}<p class="text-sm text-furnace mt-sm">{{ form.over_delivery_leave_behind_percent.errors|striptags }}</p>{% endif %}
       </div>
+      {% if form.leave_behind_percent.errors %}<p class="text-sm text-furnace mt-sm">{{ form.leave_behind_percent.errors|striptags }}</p>{% endif %}
     </div>
     {% endif %}
 

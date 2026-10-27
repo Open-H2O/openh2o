@@ -377,16 +377,17 @@ class DeliverySettingsForm(forms.Form):
     the same field efficiency the default above feeds.
 
     **The over-delivery treatment belongs to ``surface`` the same way.**
-    ``over_delivery_treatment`` and ``over_delivery_leave_behind`` are read once
-    per run by ``run_calculations``; only canal water can be
-    over-delivered, so both fields are shown and saved under the
-    ``shows_surface_settings`` gate. Both fields are ``required=False`` at the
-    Django level so a caller that does not offer them (an old test, or a
-    deployment with ``surface`` off) leaves the stored values exactly as
-    they were rather than writing a value nobody was offered -- the same
-    "leave it alone" outcome a module gate gives every other field
-    here, reached a different way because this pair shares one card with a
-    conditional second field (the percent only applies to "credited").
+    ``over_delivery_treatment`` is read once per run by ``run_calculations``;
+    only canal water can be over-delivered, so the field is shown and saved
+    under the ``shows_surface_settings`` gate. It is ``required=False`` at the
+    Django level so a caller that does not offer it (an old test, or a
+    deployment with ``surface`` off) leaves the stored value exactly as it
+    was. Two choices are offered; a site stored as "credited" by an older
+    version is moved to "not credited" by migration.
+
+    **The seepage choice belongs to ``surface`` the same way**, and the share
+    left in the basin is shown when ``surface`` or ``recharge`` runs, because
+    each of them credits water accounts with the volume less that share.
 
     **``diversion_report_year_rule`` belongs to ``surface`` the same way.**
     It sets how a YEAR and MONTH in the bulk diversion import file become a
@@ -426,16 +427,25 @@ class DeliverySettingsForm(forms.Form):
     # "use the default". Plain-language radio labels are set in __init__,
     # like `recovery_horizon`'s.
     over_delivery_treatment = forms.ChoiceField(
-        choices=SiteConfig.OVER_DELIVERY_TREATMENT_CHOICES,
+        choices=SiteConfig.OVER_DELIVERY_TREATMENT_OFFERED,
         required=False,
         label="Surface water in excess of ETAW",
         widget=forms.RadioSelect,
     )
-    # Shown/entered as a whole-number percent, stored as a Decimal fraction --
-    # the same convention as `efficiency_percent`. Required only when
-    # "credited" is the chosen treatment (enforced in `clean()`); otherwise
-    # the stored leave-behind share is left exactly as it was.
-    over_delivery_leave_behind_percent = forms.IntegerField(
+    # What happens to a canal's seepage. `surface` owns it, so it is shown and
+    # saved under `shows_surface_settings`; required=False for the same reason
+    # as the treatment above.
+    canal_seepage_credit = forms.ChoiceField(
+        choices=SiteConfig.CANAL_SEEPAGE_CREDIT_CHOICES,
+        required=False,
+        label="Canal seepage",
+        widget=forms.RadioSelect,
+    )
+    # Shown/entered as a whole-number percent, stored as a Decimal fraction like
+    # `efficiency_percent`. Read for the recharge credit (`recharge`) and the
+    # seepage credit (`surface`), so the card shows when either module runs, and
+    # its help text is built in __init__ to name only the modules that run.
+    leave_behind_percent = forms.IntegerField(
         required=False,
         min_value=0,
         max_value=100,
@@ -444,14 +454,6 @@ class DeliverySettingsForm(forms.Form):
             "max_value": "Enter a percent from 0 to 100.",
         },
         label="Share left in the basin",
-        # The sentence about fields without a well is in the
-        # template, behind the `wells` gate: a kept page may not name a
-        # dropped module's noun (tests/droppability).
-        help_text="Under the credited choice, OpenH2O leaves this share of the "
-        "surface water in excess of ETAW in the basin, credited to no one, and "
-        "credits the rest to the landowner. The share is 10 percent unless an "
-        "administrator changes it. A changed setting affects a past month only when that "
-        "month is recalculated.",
         widget=forms.NumberInput(
             attrs={"class": "form-input", "style": "width: 6rem;", "step": "1"}
         ),
@@ -533,9 +535,9 @@ class DeliverySettingsForm(forms.Form):
         self.shows_surface_settings = is_enabled("surface")
         # Same gate as the surface settings, named for what it shows.
         self.shows_diversion_settings = self.shows_surface_settings
-        # Whether the deployment has wells: the credited choice's sentence
-        # about a field with no well is said only where a field can have one.
-        self.has_wells = is_enabled("wells")
+        # The share left in the basin is read by the recharge credit and by the
+        # seepage credit, so either module is a reason to show it.
+        self.shows_leave_behind = is_enabled("recharge") or self.shows_surface_settings
         if instance is not None and "initial" not in kwargs:
             initial = {
                 "recovery_horizon": instance.default_recovery_horizon,
@@ -548,7 +550,9 @@ class DeliverySettingsForm(forms.Form):
                 )
             if self.shows_surface_settings:
                 initial["over_delivery_treatment"] = instance.over_delivery_treatment
-                initial["over_delivery_leave_behind_percent"] = int(
+                initial["canal_seepage_credit"] = instance.canal_seepage_credit
+            if self.shows_leave_behind:
+                initial["leave_behind_percent"] = int(
                     (instance.over_delivery_leave_behind * 100).to_integral_value()
                 )
             if self.shows_diversion_settings:
@@ -560,7 +564,11 @@ class DeliverySettingsForm(forms.Form):
             del self.fields["efficiency_percent"]
         if not self.shows_surface_settings:
             del self.fields["over_delivery_treatment"]
-            del self.fields["over_delivery_leave_behind_percent"]
+            del self.fields["canal_seepage_credit"]
+        if not self.shows_leave_behind:
+            del self.fields["leave_behind_percent"]
+        else:
+            self.fields["leave_behind_percent"].help_text = self._leave_behind_help()
         if not self.shows_diversion_settings:
             del self.fields["diversion_report_year_rule"]
             del self.fields["season_start_month"]
@@ -577,8 +585,12 @@ class DeliverySettingsForm(forms.Form):
             # page is served without that module.
             self.fields["over_delivery_treatment"].choices = [
                 ("not_credited", "Not credited to anyone."),
-                ("credited", "Credited to the landowner, less a share left in the basin."),
                 ("named_line", "Shown on the field's page as its own line."),
+            ]
+            self.fields["canal_seepage_credit"].choices = [
+                ("none", "Credited to no one."),
+                ("by_acre", "Shared by acre among the fields the canal serves, less the share left in the basin."),
+                ("owner", "Credited to the canal's owner only, less the share left in the basin."),
             ]
         if self.shows_diversion_settings:
             self.fields["diversion_report_year_rule"].choices = [
@@ -600,29 +612,58 @@ class DeliverySettingsForm(forms.Form):
         """
         if not self.shows_surface_settings:
             return []
-        if self.has_wells:
-            credited = (
-                "The landowner's share is a credit on the field's ledger. "
-                "A field with no well cannot pump its share back, so the share "
-                "goes to the zone's shared account."
-            )
-        else:
-            credited = (
-                "The landowner's share goes to the zone's shared account."
-            )
         descriptions = {
             "not_credited": (
                 "Nothing else happens to the amount. This is the default."
             ),
-            "credited": credited,
             "named_line": (
                 "OpenH2O neither credits nor charges the amount. The field's "
-                "water balance is the same under each of the three choices."
+                "water balance is the same under both choices."
             ),
         }
         return [
             (radio, descriptions[radio.data["value"]])
             for radio in self["over_delivery_treatment"]
+        ]
+
+    def _leave_behind_help(self):
+        """The share's help text, naming only the credits this deployment has."""
+        from core.modules import is_enabled
+
+        sources = []
+        if is_enabled("recharge"):
+            sources.append("a recharge event's water")
+        if self.shows_surface_settings:
+            sources.append("canal seepage")
+        return (
+            f"Typical: 10%. When OpenH2O credits {' and '.join(sources)} to a "
+            "water account, it leaves this share in the basin and credits the "
+            "rest. A changed share applies to credits written after the change."
+        )
+
+    @property
+    def canal_seepage_options(self):
+        """``(radio, description)`` per seepage choice, in the choices' own order."""
+        if not self.shows_surface_settings:
+            return []
+        descriptions = {
+            "none": (
+                "OpenH2O records the seepage in the basin's water budget and "
+                "credits it to no water account. This is the default."
+            ),
+            "by_acre": (
+                "Each served field's water account is credited its share of the "
+                "seepage by acre. A field that is not in a water account is "
+                "skipped, and its part is credited to no one."
+            ),
+            "owner": (
+                "The water account named as owner on the canal's headgate is "
+                "credited. A headgate with no owner named credits no one."
+            ),
+        }
+        return [
+            (radio, descriptions[radio.data["value"]])
+            for radio in self["canal_seepage_credit"]
         ]
 
     def clean_identifier_host(self):
@@ -635,6 +676,12 @@ class DeliverySettingsForm(forms.Form):
             )
         return value
 
+    def clean_leave_behind_percent(self):
+        percent = self.cleaned_data.get("leave_behind_percent")
+        if percent is None:
+            return None
+        return (Decimal(percent) / Decimal("100")).quantize(Decimal("0.001"))
+
     def clean_efficiency_percent(self):
         percent = self.cleaned_data["efficiency_percent"]
         # Percent (75) -> Decimal fraction (0.750), the stored convention.
@@ -643,28 +690,8 @@ class DeliverySettingsForm(forms.Form):
         except InvalidOperation:
             raise forms.ValidationError("Enter a whole number between 1 and 100.")
 
-    def clean_over_delivery_leave_behind_percent(self):
-        percent = self.cleaned_data.get("over_delivery_leave_behind_percent")
-        if percent is None:
-            return None
-        # Percent (90) -> Decimal fraction (0.900), the stored convention.
-        try:
-            return (Decimal(percent) / Decimal("100")).quantize(Decimal("0.001"))
-        except InvalidOperation:
-            raise forms.ValidationError("Enter a whole number between 0 and 100.")
-
     def clean(self):
         cleaned = super().clean()
-        if self.shows_surface_settings:
-            treatment = cleaned.get("over_delivery_treatment")
-            leave_behind = cleaned.get("over_delivery_leave_behind_percent")
-            if (treatment == "credited" and leave_behind is None
-                    and "over_delivery_leave_behind_percent" not in self.errors):
-                self.add_error(
-                    "over_delivery_leave_behind_percent",
-                    "Enter the share left in the basin when crediting the "
-                    "landowner.",
-                )
         if self.shows_diversion_settings:
             # A season with no starting month would fail every row of a
             # Water Use Reported file.
@@ -697,19 +724,21 @@ class DeliverySettingsForm(forms.Form):
             updated.append("default_irrigation_efficiency")
         if self.shows_surface_settings:
             # A submission that omits the treatment (nobody was offered it,
-            # e.g. a caller that does not send the field) leaves
-            # both stored values exactly as they were. A submitted treatment
-            # other than "credited" leaves the stored leave-behind share
-            # untouched too -- it only means something when crediting.
+            # e.g. a caller that does not send the field) leaves the stored
+            # value exactly as it was.
             treatment = self.cleaned_data.get("over_delivery_treatment")
             if treatment:
                 config.over_delivery_treatment = treatment
                 updated.append("over_delivery_treatment")
-                if treatment == "credited":
-                    config.over_delivery_leave_behind = self.cleaned_data[
-                        "over_delivery_leave_behind_percent"
-                    ]
-                    updated.append("over_delivery_leave_behind")
+            seepage = self.cleaned_data.get("canal_seepage_credit")
+            if seepage:
+                config.canal_seepage_credit = seepage
+                updated.append("canal_seepage_credit")
+        if self.shows_leave_behind:
+            leave_behind = self.cleaned_data.get("leave_behind_percent")
+            if leave_behind is not None:
+                config.over_delivery_leave_behind = leave_behind
+                updated.append("over_delivery_leave_behind")
         if self.shows_diversion_settings:
             config.diversion_report_year_rule = self.cleaned_data["diversion_report_year_rule"]
             config.season_start_month = self.cleaned_data.get("season_start_month")

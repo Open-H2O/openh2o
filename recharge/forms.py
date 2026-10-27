@@ -2,7 +2,7 @@
 """Forms for recharge event data entry."""
 from django import forms
 
-from recharge.models import RechargeEvent
+from recharge.models import RechargeEvent, RechargeSite
 
 
 class RechargeEventForm(forms.ModelForm):
@@ -46,3 +46,18 @@ class RechargeEventForm(forms.ModelForm):
         if volume is not None and volume <= 0:
             self.add_error("volume_acre_feet", "Volume must be greater than zero.")
         return cleaned
+
+
+class RechargeSiteAccountForm(forms.ModelForm):
+    """Name the water account of whoever recharges at a site."""
+
+    class Meta:
+        model = RechargeSite
+        fields = ["water_account"]
+        labels = {"water_account": "Water account credited"}
+        widgets = {"water_account": forms.Select(attrs={"class": "form-select"})}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["water_account"].empty_label = "Not credited to a water account"
+        self.fields["water_account"].required = False

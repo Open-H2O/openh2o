@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """The parcel ledger: the filtered list, adding a row by hand, CSV upload, the CSV template and the export."""
+from datetime import date
 from decimal import Decimal
 
 import csv as csv_module
@@ -237,13 +238,35 @@ def _apply_ledger_filters(
     if filters["active_areas"]:
         queryset = queryset.filter(parcel__status="active")
     if filters["zone_id"]:
-        # parcel ↔ zone is many-to-many through ParcelZone, so a parcel in N
-        # zones would duplicate its ledger rows — .distinct() collapses them.
-        # select_related already pulls the parcel/water_type columns, so ordering
-        # by those joined fields stays valid under SELECT DISTINCT.
-        queryset = queryset.filter(
-            parcel__parcel_zones__zone_id=filters["zone_id"]
-        ).distinct()
+        # A field is in a zone for a span of dates, so the filter asks who was
+        # a member in the span the screen is looking at: the chosen water year,
+        # else the dates typed, else all time. zone_parcel_ids is the reader the
+        # zone page uses, so the two screens agree on who belonged.
+        from accounting.services import zone_parcel_ids
+
+        def _day(text, fallback):
+            try:
+                return date.fromisoformat(text)
+            except ValueError:
+                return fallback
+
+        zone = Zone.objects.filter(pk=filters["zone_id"]).first()
+        period = (
+            ReportingPeriod.objects.filter(pk=filters["period_id"]).first()
+            if filters["period_id"]
+            else None
+        )
+        members = (
+            []
+            if zone is None
+            else zone_parcel_ids(
+                zone,
+                period,
+                date_start=_day(filters["start_date"], date.min),
+                date_end=_day(filters["end_date"], date.max),
+            )
+        )
+        queryset = queryset.filter(parcel_id__in=members)
     return queryset
 
 

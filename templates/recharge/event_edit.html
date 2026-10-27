@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Edit recharge event - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Edit recharge event{% endblock %}
+{% block page_head_class %}page-head--medium{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'recharge:list' %}">Water Data</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'recharge:detail' site.pk %}">{{ site.name }}</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Edit event</span>
+  </nav>
+  <p class="page-description">Change the event's dates, volume and water type. The credit to the site's water account and the entry in the basin recharge pool change with it.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack page-medium">
+
+  <a href="{% url 'recharge:detail' site.pk %}" class="back-link">&larr; Back to {{ site.name }}</a>
+
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Event at {{ site.name }}</h2>
+    {% if form.non_field_errors %}
+    <div class="form-error-box">
+      {% for error in form.non_field_errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
+    </div>
+    {% endif %}
+    <form method="post">
+      {% csrf_token %}
+      {% for field in form %}
+      <div class="form-group">
+        <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+        {{ field }}
+        {% for error in field.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
+      </div>
+      {% endfor %}
+      <div class="form-footer">
+        <button type="submit" class="btn-primary">Save changes</button>
+        <a href="{% url 'recharge:detail' site.pk %}" class="btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

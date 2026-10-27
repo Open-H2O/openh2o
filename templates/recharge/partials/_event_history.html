@@ -29,12 +29,13 @@
       <th>End</th>
       <th class="th-right">Volume</th>
       <th>Credited to</th>
+      {% if user_can_write %}<th><span class="sr-only">Actions</span></th>{% endif %}
     </tr>
   </thead>
   <tbody>
     {% for group in event_groups %}
     <tr class="row-group">
-      <td colspan="4">{{ group.period_name }} &middot; {{ group.count }} event{{ group.count|pluralize }}</td>
+      <td colspan="{% if user_can_write %}5{% else %}4{% endif %}">{{ group.period_name }} &middot; {{ group.count }} event{{ group.count|pluralize }}</td>
     </tr>
     {% for event in group.rows %}
     <tr>
@@ -46,6 +47,17 @@
       <td class="text-secondary">
         {% if event.water_type %}{{ event.water_type }}{% else %}&mdash;{% endif %}
       </td>
+      {% if user_can_write %}
+      <td class="text-secondary">
+        <a href="{% url 'recharge:event_edit' site.pk event.pk %}" class="data-table-link">Edit</a>
+        &middot;
+        <button type="button"
+                hx-post="{% url 'recharge:event_delete' site.pk event.pk %}"
+                hx-target="#event-history" hx-swap="innerHTML"
+                hx-confirm="Delete the {{ event.start_date|date:"M d, Y" }} event of {{ event.volume_acre_feet|floatformat:2|intcomma }} AF? Its credit and its basin pool entry are removed too."
+                style="background: none; border: none; padding: 0; cursor: pointer; color: var(--furnace-400); text-decoration: underline; text-underline-offset: 2px;">Delete</button>
+      </td>
+      {% endif %}
     </tr>
     {% endfor %}
     <tr class="row-subtotal">
@@ -53,6 +65,7 @@
       <td></td>
       <td class="td-num-bold td-total">{{ group.volume|floatformat:2|intcomma }}</td>
       <td></td>
+      {% if user_can_write %}<td></td>{% endif %}
     </tr>
     {% endfor %}
   </tbody>

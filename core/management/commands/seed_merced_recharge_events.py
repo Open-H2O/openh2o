@@ -24,6 +24,10 @@ Distinct from the engine's incidental rows: those are described "Incidental
 recharge — ..."; ``create_recharge_ledger_entries`` describes these "Recharge from
 <basin> ...". The two never collide and each is independently idempotent.
 
+The basins are the district's, so each event also credits the district's own water
+account (``MER-ACCT-DIST``, named for the operator) with its volume less the share
+left in the basin; the pool row stays as the basin's record of the water.
+
 Idempotent: self-flushes its own events + ledger rows before re-creating. Runs
 AFTER ``seed_merced_ledgers`` (needs both ReportingPeriods + parcels).
 """
@@ -77,6 +81,9 @@ RECHARGE_SEASONS = {
 # loudly on the "no recharge areas found" branch instead of quietly writing
 # invented volumes onto rows the basin seed is about to delete.
 DEMO_OPERATOR = "Halvern Irrigation District"
+# The district's water account, credited with the basins' recharge. The prefix is
+# the one every demonstration account carries (the teardown finds them by it).
+DISTRICT_ACCOUNT_NUMBER = "MER-ACCT-DIST"
 # How long the gates stay open on a fill. The events used to carry no end_date at
 # all, so every event-history card printed an em dash where the span belongs and
 # the demonstration could not say how long a storm was diverted for.
@@ -148,10 +155,38 @@ class Command(BaseCommand):
             )
             return
 
+        # The basins are the district's, so the district's own water account is
+        # credited with what they recharge. It carries the demonstration's account
+        # prefix, so the teardown that removes the other demonstration accounts
+        # removes this one too.
+        from accounting.models import AccountCredit, WaterAccount
+
+        district, _ = WaterAccount.objects.get_or_create(
+            account_number=DISTRICT_ACCOUNT_NUMBER,
+            defaults={
+                "name": DEMO_OPERATOR,
+                "status": "active",
+                "contact_name": "District Water Manager",
+            },
+        )
+        for basin in basins:
+            if basin.water_account_id != district.pk:
+                basin.water_account = district
+                basin.save(update_fields=["water_account"])
+
         # Self-flush: drop this seed's prior events (idempotency). Also clear any
         # LEGACY per-parcel "Recharge from <basin>" ledger rows left by the old
         # area-weighted smear — the rewritten service writes none — while leaving
         # the engine's "Incidental recharge" rows untouched.
+        AccountCredit.objects.filter(
+            origin="managed_recharge",
+            source_key__in=[
+                f"recharge_event:{pk}"
+                for pk in RechargeEvent.objects.filter(
+                    recharge_site__in=basins
+                ).values_list("pk", flat=True)
+            ],
+        ).delete()
         RechargeEvent.objects.filter(recharge_site__in=basins).delete()
         for basin in basins:
             ParcelLedger.objects.filter(

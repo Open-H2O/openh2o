@@ -146,29 +146,54 @@ class SiteConfig(models.Model):
     # DeliverySettingsForm shows and saves both fields under its
     # `shows_surface_settings` gate. `run_calculations`
     # is the one reader; nothing here reaches the engine directly.
+    #: Every value a month's calculation has ever been stamped with. A run
+    #: written when "credited" was offered still reads "credited"; nothing
+    #: offers or applies it now.
     OVER_DELIVERY_TREATMENT_CHOICES = [
         ("not_credited", "Not credited to anyone"),
         ("credited", "Credited to the landowner, less a share left in the basin"),
         ("named_line", "Shown on the field's page as its own line"),
     ]
+    #: What a site can choose now.
+    OVER_DELIVERY_TREATMENT_OFFERED = [
+        ("not_credited", "Not credited to anyone"),
+        ("named_line", "Shown on the field's page as its own line"),
+    ]
     over_delivery_treatment = models.CharField(
         max_length=20,
-        choices=OVER_DELIVERY_TREATMENT_CHOICES,
+        choices=OVER_DELIVERY_TREATMENT_OFFERED,
         default="not_credited",
         help_text="What happens to surface water in excess of ETAW on the "
-        "month's calculation: not credited to anyone (the default), credited "
-        "to the landowner with a share left in the basin, or shown as its own "
-        "line that is not a credit.",
+        "month's calculation: not credited to anyone (the default), or shown "
+        "as its own line that is not a credit.",
     )
     over_delivery_leave_behind = models.DecimalField(
         max_digits=4,
         decimal_places=3,
         default=Decimal("0.100"),
         validators=[MinValueValidator(0), MaxValueValidator(1)],
-        help_text="Under the credited choice, OpenH2O leaves this share of the "
-        "surface water in excess of ETAW in the basin, credited to no one, and "
-        "credits the rest to the landowner. Enter it as a fraction: the "
-        "default, 0.100, is 10 percent.",
+        help_text="OpenH2O leaves this share of the water it credits from a "
+        "recharge event or from canal seepage in the basin, credited to no one. "
+        "Enter it as a fraction: the default, 0.100, is 10 percent.",
+    )
+    #: What happens to the water a canal loses to seepage. Belongs to `surface`
+    #: (DeliverySettingsForm shows it under the same gate). The pool row the
+    #: seepage adds to the basin stays whatever is chosen; this decides whether
+    #: any water account is credited too.
+    CANAL_SEEPAGE_CREDIT_CHOICES = [
+        ("none", "Credited to no one"),
+        ("by_acre", "Shared by acre among the fields the canal serves"),
+        ("owner", "Credited to the canal's owner only"),
+    ]
+    canal_seepage_credit = models.CharField(
+        max_length=10,
+        choices=CANAL_SEEPAGE_CREDIT_CHOICES,
+        default="none",
+        help_text="Whether a canal's seepage is credited to water accounts. "
+        "Credited to no one (the default) leaves it in the basin's water budget "
+        "alone. Shared by acre credits the accounts of the fields the canal "
+        "serves, and the owner choice credits the account named on the canal's "
+        "headgate. Both choices leave the Share left in the basin out of the credit.",
     )
 
     # There is no separate groundwater efficiency: there is one irrigation

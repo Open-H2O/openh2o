@@ -297,6 +297,10 @@ class PointOfDiversion(models.Model):
         ("lined", "Lined"),
         ("pipe", "Pipe"),
     ]
+    DIVISION_METHOD_CHOICES = [
+        ("shares", "By the shares entered, or by acreage"),
+        ("crop_need", "By crop ET"),
+    ]
 
     evaporation_fraction = models.DecimalField(
         max_digits=5,
@@ -370,6 +374,26 @@ class PointOfDiversion(models.Model):
         null=True,
         blank=True,
         related_name="spill_points",
+    )
+    owner_account = models.ForeignKey(
+        "accounting.WaterAccount",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="owned_points",
+        help_text="When Delivery Settings credit seepage to the owner only, "
+        "this water account is credited with it. Leave it blank to credit "
+        "no one.",
+    )
+    division_method = models.CharField(
+        max_length=10,
+        choices=DIVISION_METHOD_CHOICES,
+        default="shares",
+        help_text="How each month's water is divided among the fields this "
+        "headgate serves. By shares uses the share entered for each field, or "
+        "the field's acreage where no share is entered, and books all of the "
+        "water to the fields. By crop ET caps each field at its crop ET divided "
+        "by its irrigation efficiency and lists the rest as not divided.",
     )
 
     # --- The crosswalk layer: a local alias,

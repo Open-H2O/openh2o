@@ -185,7 +185,7 @@ class PointOfDiversionForm(forms.ModelForm):
             "evaporation_fraction", "evaporation_band_percent",
             "seepage_fraction", "seepage_band_percent",
             "spill_fraction", "spill_band_percent", "spill_device",
-            "loss_basis", "lining", "notes",
+            "loss_basis", "lining", "division_method", "owner_account", "notes",
         ]
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-input"}),
@@ -220,6 +220,8 @@ class PointOfDiversionForm(forms.ModelForm):
             "spill_device": forms.Select(attrs={"class": "form-select"}),
             "loss_basis": forms.Select(attrs={"class": "form-select"}),
             "lining": forms.Select(attrs={"class": "form-select"}),
+            "division_method": forms.Select(attrs={"class": "form-select"}),
+            "owner_account": forms.Select(attrs={"class": "form-select"}),
             "notes": forms.Textarea(attrs={"class": "form-textarea", "rows": 3}),
         }
         labels = {
@@ -233,6 +235,8 @@ class PointOfDiversionForm(forms.ModelForm):
             "spill_device": "Spill measured at",
             "loss_basis": "Basis of the loss shares",
             "lining": "Lining",
+            "division_method": "How the water is divided among the fields",
+            "owner_account": "Canal owner",
         }
         help_texts = {
             "lining": "When the basis is Platform default, OpenH2O sets the "
@@ -267,10 +271,15 @@ class PointOfDiversionForm(forms.ModelForm):
         self.fields["evaporation_band_percent"].required = False
         self.fields["seepage_band_percent"].required = False
         self.fields["spill_band_percent"].required = False
+        # A post that leaves the method out keeps the point's current one.
+        self.fields["division_method"].required = False
         self.fields["lining"].required = False
         self.fields["lining"].choices = [("", "Not stated")] + list(
             PointOfDiversion.LINING_CHOICES
         )
+
+    def clean_division_method(self):
+        return self.cleaned_data.get("division_method") or self.instance.division_method
 
     def clean_lining(self):
         return self.cleaned_data.get("lining") or None

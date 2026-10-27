@@ -4,9 +4,9 @@ Recharge site and event surfaces.
 
 Renders the recharge-site list and detail pages (showing a site's RechargeEvents,
 the PODs that fill it, and recent RechargeMeasurements) and the sites GeoJSON
-endpoint. Creating a RechargeEvent here hands off to the accounting service,
-which credits groundwater either to the GSA basin pool for the site's zone or to
-a has-well parcel on the conjunctive path.
+endpoint. Creating, editing or deleting a RechargeEvent here hands off to the
+accounting service, which records the water in the GSA basin pool for the site's
+zone and credits the water account named on the site.
 """
 from __future__ import annotations
 
@@ -19,14 +19,16 @@ from django.core.paginator import Paginator
 from django.core.serializers import serialize
 from django.db.models import Q
 from django.http import HttpResponse
+from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 from core.access import public_in_open_demo
 from core.map_labels import map_label
 
 from accounting.models import ReportingPeriod
 from accounting.services import current_period_id as compute_current_period_id
 from core.workspace import detail_response, list_response
-from recharge.forms import RechargeEventForm
+from recharge.forms import RechargeEventForm, RechargeSiteAccountForm
 from recharge.models import RechargeMeasurement, RechargeEvent, RechargeSite
 
 
@@ -207,6 +209,7 @@ def _recharge_site_detail_context(site):
         "measurement_groups": measurement_groups,
         "total_measurement_count": total_measurement_count,
         "event_form": RechargeEventForm(),
+        "account_form": RechargeSiteAccountForm(instance=site),
         "geojson": _site_geojson(site),
     }
 
@@ -361,39 +364,12 @@ def recharge_event_create(request, pk):
             "event_form": form,
         })
     event.save()
+    ledger_msg = _credit_event(event, "Event saved.")
+    return _history_response(request, site, ledger_msg=ledger_msg)
 
-    # The service is the single source of truth for the zone rule; let it decide.
-    from accounting.services import create_recharge_ledger_entries
 
-    try:
-        created = create_recharge_ledger_entries(event)
-        count = len(created)
-        if count:
-            # Personal-credit path: the event was tied to a has-well parcel.
-            ledger_msg = (
-                f"Created {count} personal recharge ledger "
-                f"entr{'y' if count == 1 else 'ies'}."
-            )
-        else:
-            # Default path: the recharge infiltrates the shared aquifer,
-            # so it was deposited to the GSA basin recharge pool for the zone —
-            # not smeared across individual parcels.
-            ledger_msg = (
-                "Event saved. Recharge deposited to the basin recharge pool for "
-                "the site's zone."
-            )
-    except ValueError:
-        # A message that names a requirement names the place.
-        # No screen sets a recharge site's zone (RechargeSite.zone is written
-        # only by the seed commands and the Django admin; the Add Infrastructure
-        # form and the Zones pages never touch it), so the sentence says so
-        # rather than sending the reader to a page that cannot do it.
-        ledger_msg = (
-            "Event saved. This site has no zone, so OpenH2O did not deposit the "
-            "recharge to a basin recharge pool. No page sets a recharge site's "
-            "zone yet."
-        )
-
+def _history_response(request, site, *, event_form=None, ledger_msg=None):
+    """The event-history partial for a site, with a sentence about what just happened."""
     events = list(
         RechargeEvent.objects.filter(recharge_site=site)
         .select_related("water_type")
@@ -404,10 +380,111 @@ def recharge_event_create(request, pk):
         "site": site,
         "events": events,
         "event_groups": event_groups,
-        "event_form": RechargeEventForm(),
-        "ledger_msg": ledger_msg,
+        "event_form": event_form or RechargeEventForm(),
     }
+    if ledger_msg:
+        context["ledger_msg"] = ledger_msg
     return render(request, "recharge/partials/_event_history.html", context)
+
+
+def _credit_event(event, lead):
+    """Hand a saved event to the accounting service and say what it recorded."""
+    # The service is the single source of truth for the zone rule; let it decide.
+    from accounting.services import create_recharge_ledger_entries, leave_behind_share
+
+    site = event.recharge_site
+    try:
+        create_recharge_ledger_entries(event)
+    except ValueError:
+        # A message that names a requirement names the place.
+        # No screen sets a recharge site's zone (RechargeSite.zone is written
+        # only by the seed commands and the Django admin; the Add Infrastructure
+        # form and the Zones pages never touch it), so the sentence says so
+        # rather than sending the reader to a page that cannot do it.
+        return (
+            f"{lead} This site has no zone, so OpenH2O did not deposit the "
+            "recharge to a basin recharge pool. No page sets a recharge site's "
+            "zone yet."
+        )
+    if site.water_account_id:
+        credited = event.volume_acre_feet * (1 - leave_behind_share())
+        return (
+            f"{lead} The basin recharge pool for the site's zone records the "
+            f"water, and {credited:,.2f} AF is credited to {site.water_account.name}."
+        )
+    return (
+        f"{lead} The basin recharge pool for the site's zone records the "
+        "water. A water account is not credited, because this site names none."
+    )
+
+
+@login_required
+@require_POST
+def recharge_site_account(request, pk):
+    """Name (or clear) the water account credited with this site's recharge."""
+    site = get_object_or_404(RechargeSite, pk=pk)
+    form = RechargeSiteAccountForm(request.POST, instance=site)
+    if form.is_valid():
+        form.save()
+    return redirect("recharge:detail", pk=pk)
+
+
+def _refuse_finalized_event(form, *dates):
+    """Add the finalized-year refusal beside the date field, True when one was added."""
+    from accounting.locks import PeriodFinalized, refuse_if_finalized
+
+    for day in dates:
+        try:
+            refuse_if_finalized(day)
+        except PeriodFinalized as exc:
+            form.add_error("start_date" if "start_date" in form.fields else None, str(exc))
+            return True
+    return False
+
+
+@login_required
+def recharge_event_edit(request, pk, event_pk):
+    """Change a recharge event; its credit and its basin pool entry move with it."""
+    from accounting.services import remove_recharge_ledger_entries
+
+    site = get_object_or_404(RechargeSite, pk=pk)
+    event = get_object_or_404(RechargeEvent, pk=event_pk, recharge_site=site)
+    if request.method == "POST":
+        before = RechargeEvent.objects.select_related("recharge_site", "water_type").get(pk=event.pk)
+        form = RechargeEventForm(request.POST, instance=event)
+        if form.is_valid() and not _refuse_finalized_event(
+            form, before.start_date, form.cleaned_data["start_date"]
+        ):
+            with transaction.atomic():
+                remove_recharge_ledger_entries(before)
+                saved = form.save()
+                _credit_event(saved, "Event saved.")
+            return redirect("recharge:detail", pk=pk)
+    else:
+        form = RechargeEventForm(instance=event)
+    return render(request, "recharge/event_edit.html", {"site": site, "event": event, "form": form})
+
+
+@login_required
+@require_POST
+def recharge_event_delete(request, pk, event_pk):
+    """Delete a recharge event and take its credit and basin pool entry back."""
+    from accounting.locks import PeriodFinalized, refuse_if_finalized
+    from accounting.services import remove_recharge_ledger_entries
+
+    site = get_object_or_404(RechargeSite, pk=pk)
+    event = get_object_or_404(RechargeEvent, pk=event_pk, recharge_site=site)
+    try:
+        refuse_if_finalized(event.start_date)
+    except PeriodFinalized as exc:
+        return _history_response(request, site, ledger_msg=str(exc))
+    with transaction.atomic():
+        remove_recharge_ledger_entries(event)
+        event.delete()
+    return _history_response(
+        request, site,
+        ledger_msg="Event deleted. Its credit and its entry in the basin recharge pool are gone.",
+    )
 
 
 @public_in_open_demo

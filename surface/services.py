@@ -21,10 +21,12 @@ Invariants honored (must agree with the calc engine + the Plan-01 kernel):
   ``accounting.services.parcel_net_consumptive_use`` exposes, scoped to the month
   because allocation is inherently per-month (a summer crop should pull more of
   July's water, and its cap is that month's demand ÷ efficiency).
-* No ET demand for any served parcel that month → the kernel returns ``{}`` and we
-  FALL BACK to the static ``PointOfDiversionParcel.fraction`` split (the behavior
-  of ``create_diversion_ledger_entries``), so a recorded delivery is never
-  silently dropped.
+* The point's ``division_method`` picks the rule. "shares" (the default) divides
+  by the ``PointOfDiversionParcel.fraction`` the district entered, or by the
+  fields' acreage where it entered none, and books all of it. "crop_need" is the
+  demand-weighted split below; with no ET demand for any served parcel that
+  month the kernel returns ``{}`` and the shares split is used instead, so a
+  recorded delivery is never silently dropped.
 * Idempotent: this service OWNS the rows it writes, and only those. Every split
   row carries ``ParcelLedger.divided_from_headgate=True``; a re-run
   deletes those rows for the served parcels in the months it touches, then
@@ -222,8 +224,11 @@ def _fraction_rows(
         total = record.consumed_acre_feet()
     today = timezone.now().date()
 
+    # The shares the district entered win; where it entered none, the fields'
+    # acreage divides the water (the ladder's demand rung, fed acres).
     weights = apportion_shared_supply(
-        (link.parcel.pk, link.fraction, Decimal("0")) for link in served_links
+        (link.parcel.pk, link.fraction, link.parcel.area_acres or Decimal("0"))
+        for link in served_links
     )
     if not weights:
         return []
@@ -408,21 +413,22 @@ def _zone_containing(pod: PointOfDiversion) -> Zone | None:
 
 
 def _seepage_zone(
-    contained: Zone | None, month_shares: dict[Parcel, Decimal] | None
+    contained: Zone | None, month_shares: dict[Parcel, Decimal] | None, month: date | None = None
 ) -> Zone | None:
     """The zone a point-month's seepage goes to, or None.
 
     The zone that contains the point; failing that, the pool zone of the
     served field that took the largest share that month
     (``accounting.services.parcel_pool_zone``, the function the incidental pool
-    uses). ``month_shares`` is ``{parcel: AF}`` for the month's split rows.
+    uses), read for the zone membership in force in ``month``. ``month_shares``
+    is ``{parcel: AF}`` for the month's split rows.
     """
     if contained is not None:
         return contained
     if not month_shares:
         return None
     biggest = sorted(month_shares.items(), key=lambda kv: (-kv[1], kv[0].pk))[0][0]
-    return parcel_pool_zone(biggest)
+    return parcel_pool_zone(biggest, month)
 
 
 def _settle_seepage(zone: Zone, water_year: int, delta: Decimal) -> None:
@@ -437,6 +443,62 @@ def _settle_seepage(zone: Zone, water_year: int, delta: Decimal) -> None:
     )
     if row.amount_af == Decimal("0"):
         row.delete()
+
+
+def _store_seepage_credits(
+    pod: PointOfDiversion,
+    month: date,
+    loss: dict[str, Decimal] | None,
+    served: list[Parcel],
+) -> None:
+    """Replace the water-account credits this point-month's seepage earns.
+
+    What the credit is depends on ``SiteConfig.canal_seepage_credit``. "none"
+    (the default) writes nothing: the seepage stays the basin's pool row.
+    "by_acre" shares the month's seepage less the share left in the basin
+    among the served fields by acre, each part going to that field's water
+    account in force that month; a field with no account has its part credited
+    to no one. "owner" credits the point's owner account the whole of it less the
+    share left in the basin, and no one when the point names no owner. The
+    rows are keyed to the point and month, so a re-run, a changed setting or a
+    month with no record left replaces or clears exactly them.
+    """
+    from accounting.services import leave_behind_share, parcel_account, replace_account_credits
+    from core.models import SiteConfig
+
+    config = SiteConfig.objects.first()
+    choice = config.canal_seepage_credit if config else "none"
+    key = f"canal_seepage:{pod.pk}:{month:%Y-%m}"
+    seepage = loss["seepage_af"] if loss is not None else Decimal("0")
+    credits: list[tuple[Any, WaterType, int, Decimal, str]] = []
+    if choice != "none" and seepage > 0:
+        water_type, _ = WaterType.objects.get_or_create(
+            code="GW", defaults={"name": "Groundwater"}
+        )
+        water_year = water_year_of(f"{month.year}-{month.month:02d}")
+        kept = seepage * (1 - leave_behind_share())
+        line = f"Canal seepage from {pod.name}, {month:%B %Y}"
+        if choice == "owner":
+            if pod.owner_account is not None:
+                credits.append((pod.owner_account, water_type, water_year, kept, line))
+        else:
+            acres = {p.pk: (p.area_acres or Decimal("0")) for p in served}
+            whole = sum(acres.values(), Decimal("0"))
+            if whole == 0:
+                acres = {p.pk: Decimal("1") for p in served}
+                whole = Decimal(len(served))
+            by_account: dict[Any, Decimal] = {}
+            for field in served:
+                account = parcel_account(field, month)
+                if account is not None:
+                    by_account[account] = by_account.get(account, Decimal("0")) + (
+                        kept * acres[field.pk] / whole
+                    )
+            credits = [
+                (account, water_type, water_year, amount, line)
+                for account, amount in sorted(by_account.items(), key=lambda kv: kv[0].pk)
+            ]
+    replace_account_credits("canal_seepage", key, credits)
 
 
 def _store_month_loss(
@@ -723,7 +785,20 @@ def _split_record(
     sw_type: WaterType | None,
     loss_fraction: Decimal,
 ) -> tuple[list[ParcelLedger], str, Decimal]:
-    """Split one record's remainder over the free fields; return (rows, path taken, surplus)."""
+    """Split one record's remainder over the free fields; return (rows, path taken, surplus).
+
+    The point's ``division_method`` picks the rule. "shares" (the default)
+    divides everything by the shares the district entered, or by acreage where
+    it entered none, so all of it is booked to the fields. "crop_need" divides
+    by each field's crop need, capped at need over efficiency, and what no cap
+    takes is the surplus.
+    """
+    if pod.division_method != "crop_need":
+        rows = _fraction_rows(
+            record, free_links, pod, sw_type, delivery_total, loss_fraction
+        )
+        surplus = delivery_total if served and not free else Decimal("0")
+        return rows, "shares entered, or acreage", surplus
     demand_by_parcel = {p: _month_demand(p, record.month) for p in free}
     shares = allocate_by_demand(
         delivery_total,
@@ -817,7 +892,7 @@ def _seepage_zones(
         )
     seepage_zones: dict[date, Zone | None] = {}
     for month, loss in losses.items():
-        zone = _seepage_zone(contained, month_shares.get(month))
+        zone = _seepage_zone(contained, month_shares.get(month), month)
         seepage_zones[month] = zone
         if zone is None and loss["seepage_af"] > 0 and notes is not None:
             notes.append(
@@ -860,11 +935,11 @@ def _store_allocation(
     if months is not None:
         months_to_clear |= {_month_start(m) for m in months}
     with transaction.atomic():
-        if served and months_to_clear:
+        if months_to_clear:
             ParcelLedger.objects.filter(
-                Q(divided_from_point_pk=pod.pk) | Q(divided_from_point_pk__isnull=True),
+                Q(divided_from_point_pk=pod.pk)
+                | Q(divided_from_point_pk__isnull=True, parcel__in=served),
                 _in_months("effective_date", months_to_clear),
-                parcel__in=served,
                 source_type="surface_diversion",
                 divided_from_headgate=True,
             ).delete()
@@ -882,6 +957,7 @@ def _store_allocation(
         # taken back out of the pool).
         for month in sorted(months_to_clear):
             _store_month_loss(pod, month, losses.get(month), seepage_zones.get(month))
+            _store_seepage_credits(pod, month, losses.get(month), served)
         return list(ParcelLedger.objects.bulk_create(to_write))
 
 
@@ -894,9 +970,12 @@ def allocate_district_delivery(
     months: Iterable[date] | None = None,
     notes: list[dict[str, Any]] | None = None,
 ) -> list[ParcelLedger]:
-    """Allocate a POD's recorded diversions across served parcels by ET demand.
+    """Allocate a POD's recorded diversions across the parcels it serves.
 
-    For each ``DiversionRecord`` on ``point_of_diversion`` in ``reporting_period``,
+    By default (``division_method`` "shares") each month's water is divided by
+    the shares the district entered, or by acreage where it entered none, and
+    all of it is booked to the fields. When the point is set to "crop_need" the
+    split is by ET demand as described next. For each ``DiversionRecord`` on ``point_of_diversion`` in ``reporting_period``,
     split the recorded delivery across the parcels the POD serves, weighted by each
     parcel's measured net consumptive use for the record's month and capped at
     ``demand / efficiency`` (the Plan-01 kernel). Where no served parcel has ET

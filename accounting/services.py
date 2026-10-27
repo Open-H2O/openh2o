@@ -61,6 +61,7 @@ from accounting.ledger_words import (
     LEGACY_CANAL_CREDIT_WORDS,
 )
 from accounting.models import (
+    AccountCredit,
     AllocationCarryover,
     AllocationPlan,
     CalculationRun,
@@ -85,20 +86,76 @@ INCIDENTAL_RECHARGE_POOL = "incidental_recharge_pool"
 CONVEYANCE_SEEPAGE_POOL = "conveyance_seepage_pool"
 
 
-def parcel_pool_zone(parcel: Parcel) -> Zone | None:
-    """The parcel's GSA management-area zone — where its basin pool lives.
+def _span_of(reporting_period: ReportingPeriod | None) -> tuple[date | None, date | None]:
+    """The first and last day a membership has to touch to count, or (None, None) for "now"."""
+    if reporting_period is None:
+        return None, None
+    return reporting_period.start_date, reporting_period.end_date
+
+
+def zone_parcel_ids(
+    zone: Zone,
+    reporting_period: ReportingPeriod | None = None,
+    *,
+    date_start: date | None = None,
+    date_end: date | None = None,
+) -> list[int]:
+    """The fields in a zone in the period: those whose membership dates touch it.
+
+    A membership counts when it starts on or before the period's last day (or
+    has no start) and ends on or after its first day (or has no end). With no
+    period and no dates, only the memberships still open count.
+    """
+    if reporting_period is not None:
+        date_start, date_end = _span_of(reporting_period)
+    qs = ParcelZone.objects.filter(zone=zone)
+    if date_start is None and date_end is None:
+        qs = qs.filter(end_date__isnull=True)
+    else:
+        qs = qs.filter(Q(start_date__isnull=True) | Q(start_date__lte=date_end)).filter(
+            Q(end_date__isnull=True) | Q(end_date__gte=date_start)
+        )
+    return list(qs.values_list("parcel_id", flat=True).distinct())
+
+
+def account_parcel_ids(
+    water_account: WaterAccount, reporting_period: ReportingPeriod | None = None
+) -> list[int]:
+    """The fields in a water account in the period: those not removed before it began.
+
+    A link has no start date of its own (its added date is when it was typed),
+    so only its removed date is read. With no period, only the open links count.
+    """
+    qs = WaterAccountParcel.objects.filter(water_account=water_account)
+    if reporting_period is None:
+        qs = qs.filter(removed_date__isnull=True)
+    else:
+        qs = qs.filter(Q(removed_date__isnull=True) | Q(removed_date__gte=reporting_period.start_date))
+    return list(qs.values_list("parcel_id", flat=True).distinct())
+
+
+def parcel_pool_zone(parcel: Parcel, on: date | None = None) -> Zone | None:
+    """The parcel's GSA management-area zone on a day: where its basin pool lives.
 
     A no-well parcel's incidental recharge is deposited to this zone's basin pool
     rather than the parcel's own ledger. Mirrors the zone managed recharge pools
     into (``seed_merced_recharge_events`` resolves the basin's management_area
-    zone the same way). Returns the first management-area zone, or None.
+    zone the same way). Reads the membership in force on ``on`` (today when
+    omitted): one that has started by then and has not ended before it. Where
+    two management areas qualify, the lower-numbered zone answers, so the
+    answer never depends on row order. Returns None when no membership is in
+    force.
 
     Lives here, not in ``run_calculations``, so the canal split's
     seepage pool resolves a field's zone with this same function.
     """
+    day = on or timezone.localdate()
     pz = (
         ParcelZone.objects.filter(parcel=parcel, zone__zone_type="management_area")
+        .filter(Q(start_date__isnull=True) | Q(start_date__lte=day))
+        .filter(Q(end_date__isnull=True) | Q(end_date__gte=day))
         .select_related("zone")
+        .order_by("zone_id")
         .first()
     )
     return pz.zone if pz else None
@@ -151,6 +208,66 @@ def deposit_to_basin_pool(
         row.amount_af = (row.amount_af + amount).quantize(Decimal("0.0001"))
         row.save(update_fields=["amount_af"])
         return row
+
+
+def leave_behind_share() -> Decimal:
+    """The share of credited water that stays in the basin (the Delivery Settings choice)."""
+    from core.models import SiteConfig
+
+    config = SiteConfig.objects.first()
+    return config.over_delivery_leave_behind if config else Decimal("0.100")
+
+
+def _recharge_source_key(recharge_event: RechargeEvent) -> str:
+    """The key a recharge event's credit is written under, so it can be replaced or removed."""
+    return f"recharge_event:{recharge_event.pk}"
+
+
+def parcel_account(parcel: Parcel, on: date) -> WaterAccount | None:
+    """The water account a field belonged to on a day, or None.
+
+    A link has no start date of its own (its added date is when it was typed),
+    so only its removed date is read; the lowest-numbered account answers if a
+    hand-over left two.
+    """
+    link = (
+        WaterAccountParcel.objects.filter(parcel=parcel)
+        .filter(Q(removed_date__isnull=True) | Q(removed_date__gte=on))
+        .select_related("water_account")
+        .order_by("water_account_id")
+        .first()
+    )
+    return link.water_account if link else None
+
+
+def replace_account_credits(
+    origin: str,
+    source_key: str,
+    credits: Iterable[tuple[WaterAccount, WaterType, int, Decimal, str]],
+) -> list[AccountCredit]:
+    """Replace every credit one source wrote, with the rows given.
+
+    ``credits`` is ``(account, water_type, water_year, amount_af, description)``
+    per row. The source's earlier rows (``origin`` and ``source_key``) go first,
+    so a re-run leaves the same rows and an empty list clears the source. A row
+    that rounds to zero is not written.
+    """
+    rows = [
+        AccountCredit(
+            water_account=account,
+            water_type=water_type,
+            water_year=water_year,
+            origin=origin,
+            amount_af=Decimal(amount).quantize(Decimal("0.0001")),
+            source_key=source_key,
+            description=description,
+        )
+        for account, water_type, water_year, amount, description in credits
+        if Decimal(amount).quantize(Decimal("0.0001")) != 0
+    ]
+    with transaction.atomic():
+        AccountCredit.objects.filter(origin=origin, source_key=source_key).delete()
+        return AccountCredit.objects.bulk_create(rows)
 
 
 def _fraction_split_entries(
@@ -287,19 +404,24 @@ def create_recharge_ledger_entries(
     zone: Zone | None = None,
     parcel: Parcel | None = None,
 ) -> list[ParcelLedger]:
-    """Route a managed recharge event to the GSA basin pool — or one has-well parcel.
+    """Route a managed recharge event to the GSA basin pool and credit whoever recharged.
 
     The old behaviour smeared the event volume area-weighted across EVERY parcel
     in the zone, inventing a recoverable groundwater credit on surface-only
-    parcels that have no well to pump it back (a phantom credit). The water physically infiltrates the shared aquifer, so by default
-    the WHOLE event volume is deposited to the zone's managed basin recharge pool
-    (an ``AllocationCarryover`` row, origin ``basin_recharge_pool``) and NO
-    per-parcel ledger rows are written.
+    parcels that have no well to pump it back (a phantom credit). The water
+    physically infiltrates the shared aquifer, so the WHOLE event volume is
+    deposited to the zone's managed basin recharge pool (an
+    ``AllocationCarryover`` row, origin ``basin_recharge_pool``), the basin's
+    record of the water, which stays outside a zone's Available. NO per-parcel
+    ledger rows are written.
 
-    The single per-parcel personal-credit path is the conjunctive case: when a
-    caller ties the event to a specific has-well parcel, that parcel CAN recover
-    its recharge, so it gets one personal groundwater ledger row instead of
-    pooling. (The Merced demo never passes a parcel, so it always pools.)
+    Whoever recharged is credited: one ``AccountCredit`` (origin
+    ``managed_recharge``, source ``recharge_event:<pk>``) of the volume less the
+    share left in the basin, for the event's water year, on the water account
+    named on the recharge site. A site that names none credits no one. When a
+    caller ties the event to a specific has-well parcel (the conjunctive case,
+    where the field can pump its recharge back) and that parcel is in a water
+    account, that account is credited instead and nothing is pooled.
 
     Args:
         recharge_event: A recharge.models.RechargeEvent instance.
@@ -308,8 +430,7 @@ def create_recharge_ledger_entries(
         parcel: Optional has-well Parcel the event is tied to (personal path).
 
     Returns:
-        ``[the one personal ParcelLedger row]`` on the personal path, else ``[]``
-        — the pool deposit is an AllocationCarryover row, not a ledger row.
+        ``[]``: the pool deposit and the credit are not ledger rows.
 
     Raises:
         ValueError: If no zone supplied and the recharge site has no zone FK set.
@@ -331,33 +452,86 @@ def create_recharge_ledger_entries(
         )
     volume = recharge_event.volume_acre_feet
 
-    # Personal path: a conjunctive (has-well) parcel tied to this event recovers
-    # its own recharge, so it gets one personal groundwater credit, not the pool.
-    if parcel is not None and recharge_routes_to_personal(parcel):
-        entry = ParcelLedger.objects.create(
-            parcel=parcel,
-            transaction_date=timezone.now().date(),
-            effective_date=recharge_event.start_date,
-            amount_acre_feet=volume,
-            source_type="recharge",
-            description=(
-                f"Recharge from {recharge_event.recharge_site.name}: "
-                f"{volume} AF credited to this use area"
-            ),
-            reporting_period=None,
-            water_type=water_type,
-        )
-        return [entry]
-
-    # Default basin/GSA path: the whole event infiltrates the shared aquifer, so
-    # it deposits to the zone's managed basin pool and writes NO per-parcel rows.
     water_year = water_year_of(
         f"{recharge_event.start_date.year}-{recharge_event.start_date.month:02d}"
     )
+    credited = Decimal(volume) * (1 - leave_behind_share())
+
+    # Personal path: a conjunctive (has-well) parcel tied to this event recovers
+    # its own recharge, so its water account is credited the volume less the
+    # share left in the basin. A parcel that is not in a water account falls
+    # through to the basin path below, so the water is never recorded nowhere.
+    if parcel is not None and recharge_routes_to_personal(parcel):
+        account = parcel_account(parcel, recharge_event.start_date)
+        if account is not None:
+            replace_account_credits(
+                "managed_recharge",
+                _recharge_source_key(recharge_event) + ":field",
+                [(account, water_type, water_year, credited,
+                  f"Recharge at {recharge_event.recharge_site.name}, "
+                  f"{recharge_event.start_date:%b} {recharge_event.start_date.day}, "
+                  f"{recharge_event.start_date.year}")],
+            )
+            return []
+
+    # Default basin/GSA path: the whole event infiltrates the shared aquifer, so
+    # it deposits to the zone's managed basin pool (the basin's record of the
+    # water, outside Available) and writes NO per-parcel rows. Whoever
+    # recharged is credited the volume less the share left in the basin: the
+    # water account named on the site, or no one when it names none.
     deposit_to_basin_pool(
         zone, water_type, water_year, volume, origin=BASIN_RECHARGE_POOL
     )
+    account = recharge_event.recharge_site.water_account
+    replace_account_credits(
+        "managed_recharge",
+        _recharge_source_key(recharge_event),
+        [] if account is None else [
+            (account, water_type, water_year, credited,
+             f"Recharge at {recharge_event.recharge_site.name}, "
+             f"{recharge_event.start_date:%b} {recharge_event.start_date.day}, "
+             f"{recharge_event.start_date.year}")
+        ],
+    )
     return []
+
+
+def remove_recharge_ledger_entries(
+    recharge_event: RechargeEvent, zone: Zone | None = None
+) -> None:
+    """Take back what ``create_recharge_ledger_entries`` wrote for this event.
+
+    Call it with the event as it was stored: its volume, start date, water
+    type and site decide the pool row and the credit to take back. The basin
+    pool row goes when it nets to zero. An event the personal path credited
+    (it left no pool deposit) takes only its credit back.
+    """
+    key = _recharge_source_key(recharge_event)
+    personal = AccountCredit.objects.filter(
+        origin="managed_recharge", source_key=f"{key}:field"
+    ).exists()
+    AccountCredit.objects.filter(
+        origin="managed_recharge", source_key=f"{key}:field"
+    ).delete()
+    AccountCredit.objects.filter(origin="managed_recharge", source_key=key).delete()
+    if personal:
+        return
+    if zone is None:
+        zone = recharge_event.recharge_site.zone
+    if zone is None:
+        return
+    water_type = recharge_event.water_type or WaterType.objects.filter(code="GW").first()
+    if water_type is None:
+        return
+    water_year = water_year_of(
+        f"{recharge_event.start_date.year}-{recharge_event.start_date.month:02d}"
+    )
+    row = deposit_to_basin_pool(
+        zone, water_type, water_year, -recharge_event.volume_acre_feet,
+        origin=BASIN_RECHARGE_POOL,
+    )
+    if row.amount_af == Decimal("0"):
+        row.delete()
 
 
 # ---------------------------------------------------------------------------
@@ -780,7 +954,7 @@ def account_balance(
 ) -> dict[str, Decimal]:
     """Aggregate balance across all parcels assigned to a water account.
 
-    Uses active assignments only (removed_date is null).
+    Uses the links in force in the period (``account_parcel_ids``).
 
     Args:
         water_account: A WaterAccount instance.
@@ -789,10 +963,7 @@ def account_balance(
     Returns:
         dict with keys: total, supply, usage, net (all Decimal).
     """
-    parcel_ids = WaterAccountParcel.objects.filter(
-        water_account=water_account,
-        removed_date__isnull=True,
-    ).values_list("parcel_id", flat=True)
+    parcel_ids = account_parcel_ids(water_account, reporting_period)
 
     qs = ParcelLedger.objects.filter(parcel_id__in=parcel_ids)
     if reporting_period is not None:
@@ -811,9 +982,7 @@ def zone_balance(zone: Zone, reporting_period: ReportingPeriod | None = None) ->
     Returns:
         dict with keys: total, supply, usage, net (all Decimal).
     """
-    parcel_ids = ParcelZone.objects.filter(zone=zone).values_list(
-        "parcel_id", flat=True
-    )
+    parcel_ids = zone_parcel_ids(zone, reporting_period)
 
     qs = ParcelLedger.objects.filter(parcel_id__in=parcel_ids)
     if reporting_period is not None:
@@ -1555,15 +1724,11 @@ def account_consumptive_balance(
 ) -> dict[str, Any]:
     """Consumptive-use balance across a water account's active parcels.
 
-    Uses the same active-assignment selection as ``account_balance``
-    (``removed_date`` is null), so the consumptive lens rolls up the identical
-    parcel set the billable balance does.
+    Uses the same selection as ``account_balance`` (``account_parcel_ids``), so
+    the consumptive lens rolls up the identical parcel set the billable balance
+    does.
     """
-    parcel_ids = WaterAccountParcel.objects.filter(
-        water_account=water_account,
-        removed_date__isnull=True,
-    ).values_list("parcel_id", flat=True)
-    return consumptive_use_balance(list(parcel_ids), reporting_period)
+    return consumptive_use_balance(account_parcel_ids(water_account, reporting_period), reporting_period)
 
 
 def zone_consumptive_balance(
@@ -1571,12 +1736,9 @@ def zone_consumptive_balance(
 ) -> dict[str, Any]:
     """Consumptive-use balance across a zone's parcels.
 
-    Uses the same ParcelZone selection as ``zone_balance``.
+    Uses the same selection as ``zone_balance`` (``zone_parcel_ids``).
     """
-    parcel_ids = ParcelZone.objects.filter(zone=zone).values_list(
-        "parcel_id", flat=True
-    )
-    return consumptive_use_balance(list(parcel_ids), reporting_period)
+    return consumptive_use_balance(zone_parcel_ids(zone, reporting_period), reporting_period)
 
 
 # ---------------------------------------------------------------------------
@@ -1632,9 +1794,7 @@ def water_year_usage_by_type(
 
     Returns a dict {water_type_code: Decimal usage (positive)}.
     """
-    parcel_ids = ParcelZone.objects.filter(zone=zone).values_list(
-        "parcel_id", flat=True
-    )
+    parcel_ids = zone_parcel_ids(zone, date_start=date_start, date_end=date_end)
     qs = ParcelLedger.objects.filter(
         parcel_id__in=parcel_ids,
         effective_date__gte=date_start,
@@ -1673,52 +1833,79 @@ def water_year_usage_by_type(
     return buckets
 
 
-def zone_carryover(zone: Zone, water_year: int) -> Decimal:
-    """Signed sum of carried-forward budget for a zone in a water year (AF).
+def _groundwater_type() -> WaterType | None:
+    """The groundwater water type, by code: primary keys differ between deployments."""
+    return WaterType.objects.filter(code__iexact="GW").first()
 
-    Positive = net surplus rolled in; negative = net debt borrowed against this
-    year. Sums across water types so it folds into the dashboard's per-zone
-    "remaining" the same way the per-zone allocation already aggregates types.
+
+def zone_carryover(zone: Zone, water_year: int) -> Decimal:
+    """Signed groundwater the zone carried forward into a water year (AF).
+
+    Positive = surplus rolled in; negative = debt borrowed against this year.
+    Only the zone's groundwater year-end row counts. The recharge and seepage
+    pools and any row of another water type are not part of a groundwater
+    budget (``zone_pool_sources`` lists the pools beside it).
     Returns Decimal("0") when no rollover has been run for this zone-year.
     """
     return AllocationCarryover.objects.filter(
-        zone=zone, water_year=water_year
+        zone=zone,
+        water_year=water_year,
+        origin="allocation_carryover",
+        water_type__code__iexact="GW",
     ).aggregate(total=Sum("amount_af"))["total"] or Decimal("0")
 
 
-#: What the zone page's "Available by source" calls each kind of row that
-#: `zone_carryover` adds into a zone's groundwater available, in the order it
-#: lists them ("Managed recharge", "Canal seepage",
-#: "Carried forward"; the deep-percolation pool takes Delivery Settings' own
-#: words for that water).
-ZONE_CREDIT_LABELS = (
+#: What the zone page's "Available by source" calls the one kind of row that
+#: `zone_carryover` adds into a zone's groundwater available.
+ZONE_CREDIT_LABELS = (("allocation_carryover", "Carried forward"),)
+
+#: What the zone page calls each pool it lists outside Available (the
+#: deep-percolation pool takes Delivery Settings' own words for that water).
+ZONE_POOL_LABELS = (
     (BASIN_RECHARGE_POOL, "Managed recharge"),
     (INCIDENTAL_RECHARGE_POOL, "Surface water in excess of ETAW"),
     (CONVEYANCE_SEEPAGE_POOL, "Canal seepage"),
-    ("allocation_carryover", "Carried forward"),
 )
+
+
+def _zone_rows_by_origin(zone: Zone, reporting_period: ReportingPeriod) -> dict[str, Decimal]:
+    """The zone's groundwater-typed carry-over rows for the period's water year, summed by origin."""
+    end = reporting_period.end_date
+    water_year = water_year_of(f"{end.year}-{end.month:02d}")
+    return dict(
+        AllocationCarryover.objects.filter(
+            zone=zone, water_year=water_year, water_type__code__iexact="GW"
+        )
+        .values("origin")
+        .annotate(total=Sum("amount_af"))
+        .values_list("origin", "total")
+    )
 
 
 def zone_credit_sources(
     zone: Zone, reporting_period: ReportingPeriod
 ) -> list[tuple[str, Decimal]]:
-    """``[(label, AF), ...]`` for each kind of row in the zone's carry-over sum.
+    """``[(label, AF), ...]`` for the rows in the zone's carry-over sum.
 
-    The same rows, water year and sum as `zone_groundwater_budget`'s
-    ``carryover``, split by ``origin`` so the zone page can say what the figure
-    is made of. A kind with no rows, or rows netting to zero, is left out.
+    The same row, water year and sum as `zone_groundwater_budget`'s
+    ``carryover``. A kind with no rows, or rows netting to zero, is left out.
     """
-    end = reporting_period.end_date
-    water_year = water_year_of(f"{end.year}-{end.month:02d}")
-    totals = dict(
-        AllocationCarryover.objects.filter(zone=zone, water_year=water_year)
-        .values("origin")
-        .annotate(total=Sum("amount_af"))
-        .values_list("origin", "total")
-    )
+    totals = _zone_rows_by_origin(zone, reporting_period)
     return [
         (label, totals[origin])
         for origin, label in ZONE_CREDIT_LABELS
+        if totals.get(origin)
+    ]
+
+
+def zone_pool_sources(
+    zone: Zone, reporting_period: ReportingPeriod
+) -> list[tuple[str, Decimal]]:
+    """``[(label, AF), ...]`` for each groundwater pool the zone holds, outside Available."""
+    totals = _zone_rows_by_origin(zone, reporting_period)
+    return [
+        (label, totals[origin])
+        for origin, label in ZONE_POOL_LABELS
         if totals.get(origin)
     ]
 
@@ -1769,7 +1956,7 @@ def zone_groundwater_budget(
 
     # Resolved by CODE, not by id: the water types are seeded reference data and
     # their primary keys differ between deployments.
-    groundwater_type = WaterType.objects.filter(code__iexact="GW").first()
+    groundwater_type = _groundwater_type()
     allocation = None
     if groundwater_type is not None:
         allocation = AllocationPlan.objects.filter(
@@ -1800,6 +1987,95 @@ def zone_groundwater_budget(
         "available": available,
         "used": used,
         "remaining": available - used,
+    }
+
+
+def account_water_year(reporting_period: ReportingPeriod) -> int:
+    """The water year a period belongs to, labelled by the year it ends in."""
+    end = reporting_period.end_date
+    return water_year_of(f"{end.year}-{end.month:02d}")
+
+
+def _field_acres(parcel_ids: list[int]) -> dict[int, Decimal]:
+    """Each field's area as the field page shows it (a field with no area is 0)."""
+    return {
+        pid: area or Decimal("0")
+        for pid, area in Parcel.objects.filter(pk__in=parcel_ids).values_list("pk", "area_acres")
+    }
+
+
+def account_allocation(
+    water_account: WaterAccount, reporting_period: ReportingPeriod
+) -> Decimal | None:
+    """The account's share of the groundwater allocations of the zones it has fields in.
+
+    For each zone with a groundwater plan in the period: the zone's allocation
+    times the account's acres in the zone over the zone's acres. Where no field
+    of the zone has an area on record, fields are counted instead. ``None``
+    when none of the account's zones has a groundwater plan.
+    """
+    groundwater_type = _groundwater_type()
+    if groundwater_type is None:
+        return None
+    mine = set(account_parcel_ids(water_account, reporting_period))
+    zones = {
+        pz.zone_id: pz.zone
+        for pz in ParcelZone.objects.filter(parcel_id__in=mine).select_related("zone")
+    }
+    total = None
+    for zone in zones.values():
+        plans = AllocationPlan.objects.filter(
+            zone=zone, reporting_period=reporting_period, water_type=groundwater_type
+        ).aggregate(total=Sum("allocation_acre_feet"))["total"]
+        if plans is None:
+            continue
+        members = zone_parcel_ids(zone, reporting_period)
+        if not mine.intersection(members):
+            continue
+        acres = _field_acres(members)
+        zone_acres = sum(acres.values(), Decimal("0"))
+        if zone_acres > 0:
+            share = sum((acres[p] for p in members if p in mine), Decimal("0")) / zone_acres
+        else:
+            share = Decimal(len([p for p in members if p in mine])) / Decimal(len(members) or 1)
+        total = (total or Decimal("0")) + plans * share
+    return None if total is None else total.quantize(Decimal("0.0001"))
+
+
+def account_credits(water_account: WaterAccount, reporting_period: ReportingPeriod) -> list[AccountCredit]:
+    """The account's groundwater credit rows for the period's water year."""
+    return list(
+        AccountCredit.objects.filter(
+            water_account=water_account,
+            water_year=account_water_year(reporting_period),
+            water_type__code__iexact="GW",
+        ).order_by("origin", "source_key")
+    )
+
+
+def account_groundwater_budget(
+    water_account: WaterAccount, reporting_period: ReportingPeriod
+) -> dict[str, Any]:
+    """The account's groundwater budget for one period, the ONE computation of it.
+
+    ``allocation`` is its acre share of its zones' allocations
+    (``account_allocation``), ``credits`` its ``AccountCredit`` rows for the
+    water year (carried forward, managed recharge, canal seepage), ``used``
+    its groundwater charged, and ``remaining`` allocation plus credits less
+    used. ``allocation`` and ``remaining`` are ``None`` when no zone of the
+    account has a groundwater plan.
+    """
+    allocation = account_allocation(water_account, reporting_period)
+    credits = account_credits(water_account, reporting_period)
+    used = account_consumptive_balance(water_account, reporting_period)["groundwater_charged"]
+    if allocation is None:
+        return {"allocation": None, "credits": credits, "used": used, "remaining": None}
+    credit_total = sum((c.amount_af for c in credits), Decimal("0"))
+    return {
+        "allocation": allocation,
+        "credits": credits,
+        "used": used,
+        "remaining": allocation + credit_total - used,
     }
 
 

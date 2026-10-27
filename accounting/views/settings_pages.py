@@ -79,6 +79,17 @@ def delivery_settings(request):
     if form.shows_surface_settings:
         position += 1
         over_delivery_number = position
+    # The seepage card follows it, behind the same gate.
+    seepage_number = None
+    if form.shows_surface_settings:
+        position += 1
+        seepage_number = position
+    # The share left in the basin is read by the recharge credit and the
+    # seepage credit, so it shows when either module runs.
+    leave_behind_number = None
+    if form.shows_leave_behind:
+        position += 1
+        leave_behind_number = position
     position += 1
     recovery_number = position
     diversion_number = None
@@ -99,6 +110,8 @@ def delivery_settings(request):
             "settings_total": settings_total,
             "efficiency_number": efficiency_number,
             "over_delivery_number": over_delivery_number,
+            "seepage_number": seepage_number,
+            "leave_behind_number": leave_behind_number,
             "recovery_number": recovery_number,
             "diversion_number": diversion_number,
             "identifier_number": identifier_number,

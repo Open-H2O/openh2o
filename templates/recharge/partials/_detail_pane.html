@@ -77,6 +77,19 @@
           <div class="field-value">{{ site.operator|blank }}</div>
         </div>
 
+        <div class="field-group field-grid-2-span">
+          <div class="field-label">Credited to</div>
+          <div class="field-value">{% if site.water_account %}Recharge here is credited to {{ site.water_account.name }}.{% else %}Recharge here is not credited to a water account.{% endif %}</div>
+          {% if user_can_write %}
+          <form method="post" action="{% url 'recharge:site_account' site.pk %}" class="row-start mt-sm" style="gap: var(--space-sm);">
+            {% csrf_token %}
+            <label class="sr-only" for="{{ account_form.water_account.id_for_label }}">{{ account_form.water_account.label }}</label>
+            {{ account_form.water_account }}
+            <button type="submit" class="btn-secondary btn-sm">Save</button>
+          </form>
+          {% endif %}
+        </div>
+
         {% if pod_links %}
         <div class="field-group field-grid-2-span">
           <div class="field-label">Filled by</div>

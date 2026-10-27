@@ -6,8 +6,10 @@ Owns the recharge facilities (RechargeSite: spreading basins, injection/ASR
 wells, ponds), the link tying a basin to the point(s) of diversion that fill it
 (RechargeSitePOD), the recorded recharge deposits (RechargeEvent, in acre-feet),
 and on-site monitoring (RechargeMeasurement). A recharge event credits
-groundwater: it routes to the GSA basin pool for the site's zone, or to a single
-has-well parcel on the conjunctive path.
+groundwater: it routes to the GSA basin pool for the site's zone (the basin's
+record of the water, outside Available), and credits the water account named on
+the site, or that of a single has-well parcel on the conjunctive path, with the
+volume less the share left in the basin.
 """
 from django.contrib.gis.db import models
 from django.urls import reverse
@@ -42,6 +44,13 @@ class RechargeSite(models.Model):
     zone = models.ForeignKey(
         "geography.Zone", on_delete=models.SET_NULL, null=True, blank=True,
         related_name="recharge_sites",
+    )
+    water_account = models.ForeignKey(
+        "accounting.WaterAccount", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="recharge_sites",
+        help_text="Each event logged at this site is credited to this water "
+        "account, less the share left in the basin. Leave it blank to credit "
+        "no one.",
     )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
     operator = models.CharField(max_length=200, blank=True)

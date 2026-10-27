@@ -156,7 +156,7 @@ def test_a_note_is_cut_at_500_characters(administrator):
 def test_a_move_writes_only_the_two_steps_that_trade_places(administrator):
     call_command("seed_calculation_plan")
     steps = list(CalculationStep.objects.order_by("order"))
-    assert len(steps) == 5
+    assert len(steps) == 4
     first, second = steps[0], steps[1]
     url = reverse("accounting:methodology_step_move", args=[second.pk, "up"])
 

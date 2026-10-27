@@ -61,6 +61,7 @@ LOCKED_MODELS = (
     "accounting.WaterCredit",
     "accounting.WaterCreditDraw",
     "accounting.AllocationCarryover",
+    "accounting.AccountCredit",
     "accounting.CalculationRun",
     "surface.DiversionRecord",
     "surface.UnallocatedDelivery",

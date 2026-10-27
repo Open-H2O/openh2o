@@ -13,7 +13,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Edit</span>
   </nav>
-  <p class="page-description">Change the point's name, stream, local name, maximum rate, status and notes. Set the three canal losses between the headgate and the fields it serves.</p>
+  <p class="page-description">Change the point's name, stream, local name, maximum rate, status and notes. Set the three canal losses between the headgate and the fields it serves, how each month's water is divided among those fields, and the water account that owns the canal.</p>
 </div>
 {% endblock %}
 
@@ -112,6 +112,18 @@
       <div class="form-group">
         <label class="form-label" for="{{ form.spill_device.id_for_label }}">{{ form.spill_device.label }}</label>
         {{ form.spill_device }}
+      </div>
+
+      <div class="form-group form-span-2">
+        <label class="form-label" for="{{ form.division_method.id_for_label }}">{{ form.division_method.label }}</label>
+        {{ form.division_method }}
+        <div class="form-help">{{ form.division_method.help_text }}</div>
+      </div>
+
+      <div class="form-group form-span-2">
+        <label class="form-label" for="{{ form.owner_account.id_for_label }}">{{ form.owner_account.label }}</label>
+        {{ form.owner_account }}
+        <div class="form-help">{{ form.owner_account.help_text }}</div>
       </div>
 
       <div class="form-group form-span-2">
