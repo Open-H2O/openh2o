@@ -102,6 +102,7 @@ from decimal import Decimal
 from django.contrib.gis.geos import MultiPolygon
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.db.models import Sum
 
 from accounting.locks import demonstration_seed
 from accounting.models import (
@@ -256,8 +257,8 @@ GSA_SUSTAINABLE_RATE_AF_PER_ACRE = {
     "Halvern Irrigation-Urban GSA": Decimal("2.00"),
 }
 GSA_BUDGET_FLOOR = Decimal("500.0")   # a GSA with no demo parcels still gets a budget
-SURFACE_BUDGET_FRACTION = Decimal("0.9")    # district surface budget ~ 90% of face
-DRY_YEAR_OPEN_FRACTION = Decimal("0.1")    # the El Nido district's current-year budget is cut
+SURFACE_ALLOCATION_MARGIN = Decimal("0.10")  # district surface allocation = its year's deliveries + 10%
+DRY_YEAR_OPEN_FRACTION = Decimal("0.1")    # the El Nido district's current-year allocation is a tenth of its prior year's
 
 # The El Nido canal runs dry going INTO the peak season: the last month with a
 # surface delivery is June 2025, so July–September deliver nothing and the
@@ -271,7 +272,7 @@ DRY_YEAR_OPEN_FRACTION = Decimal("0.1")    # the El Nido district's current-year
 # the estimator (surface/estimate.py `_has_typed_record`, zero included), so
 # the platform never estimates water the district recorded as not delivered.
 # The district's allocation for that year is deliberately NOT zero
-# (`DRY_YEAR_OPEN_FRACTION` leaves it at a tenth of face value): the district
+# (`DRY_YEAR_OPEN_FRACTION` leaves it at a tenth of the prior year's): the district
 # cut the allocation, and then the canal delivered nothing at all.
 EL_NIDO_LAST_DELIVERY = date(2025, 6, 30)
 # The El Nido canal's point of diversion, matched by its id prefix (the demo
@@ -398,6 +399,7 @@ class Command(BaseCommand):
             with transaction.atomic():
                 for rp in journey_periods:
                     self._seed_diversion_journey_records(rp)
+                    self._book_points_serving_no_field(rp)
             return
         with transaction.atomic():
             self._flush()
@@ -572,6 +574,7 @@ class Command(BaseCommand):
             # closure untouched. Recreated AFTER the flush so a `make merced` re-run
             # reproduces it.
             self._seed_diversion_journey_records(rp)
+            self._book_points_serving_no_field(rp)
 
         # The high-flow diversions the managed basin fills were taken
         # under. AFTER the period loop closes, not inside it, and that placement
@@ -585,6 +588,9 @@ class Command(BaseCommand):
         # in which period. ⚠ Do not move this back inside the loop.
         for rp in periods:
             self._seed_recharge_diversion_records(rp)
+
+        # Surface allocations last: they are sized from the deliveries above.
+        self._size_surface_allocations(district_zones, periods, open_wy)
 
         entries = entries + gw_rows  # combined ledger count for the summary
 
@@ -688,20 +694,45 @@ class Command(BaseCommand):
                     },
                 )
 
-        # Surface-district allocations — one per district zone, both periods, sized near
-        # the right's face value. The El Nido district's CURRENT-year allocation
-        # is cut to a tenth for the dry year.
+    def _size_surface_allocations(self, district_zones, periods, open_wy):
+        """Surface-district allocations, one per district zone and water year.
+
+        Each is the surface water the district's fields were delivered that
+        year plus ``SURFACE_ALLOCATION_MARGIN``, so the demonstration shows an
+        allocation of the size a district would set from its supply, not a
+        multiple of the right's face value. It runs after the deliveries are
+        written, because the deliveries are what it is sized from. The one
+        exception is the El Nido district's open year: its canal delivers
+        nothing, so its allocation is the prior year's cut to
+        ``DRY_YEAR_OPEN_FRACTION`` of it, the cut the dry-year story records.
+        """
+        sw = WaterType.objects.get(code="SW")
+        prior_amount = {}
         for right_id, (zone, right) in district_zones.items():
-            face = Decimal(str(right.face_value_acre_feet or 0))
-            base = _q(face * SURFACE_BUDGET_FRACTION)
+            parcel_ids = list(
+                ParcelZone.objects.filter(zone=zone).values_list("parcel_id", flat=True)
+            )
             dry = right.right_id.startswith("MER-WR-009")
             for rp in periods:
                 if dry and rp is open_wy:
-                    amount = _q(face * DRY_YEAR_OPEN_FRACTION)
+                    amount = _q(prior_amount.get(right_id, Decimal("0")) * DRY_YEAR_OPEN_FRACTION)
                     note = "Surface allocation reduced for a dry year."
                 else:
-                    amount = base
-                    note = "Surface Allocation (~face value of the district's right)."
+                    delivered = abs(
+                        ParcelLedger.objects.filter(
+                            parcel_id__in=parcel_ids,
+                            source_type="surface_diversion",
+                            reporting_period=rp,
+                        ).aggregate(s=Sum("amount_acre_feet"))["s"]
+                        or Decimal("0")
+                    )
+                    amount = _q(delivered * (1 + SURFACE_ALLOCATION_MARGIN))
+                    note = (
+                        f"Surface allocation for the demonstration: the water "
+                        f"delivered to the district's fields in {rp.name} plus "
+                        f"{SURFACE_ALLOCATION_MARGIN * 100:.0f}%."
+                    )
+                prior_amount[right_id] = amount
                 AllocationPlan.objects.update_or_create(
                     zone=zone, water_type=sw, reporting_period=rp,
                     defaults={
@@ -1181,6 +1212,31 @@ class Command(BaseCommand):
     # ------------------------------------------------------------------
     # Diversion-reach journey records
     # ------------------------------------------------------------------
+    def _book_points_serving_no_field(self, period):
+        """Divide the period's water at every MER point that serves no field.
+
+        Run after the journey records exist. The service books what is left
+        after canal losses as delivered to no field (or to the recharge site
+        the point feeds) and writes no ledger row, so a later engine run over
+        the period has nothing left to add.
+        """
+        from surface.models import DiversionRecord, PointOfDiversion, PointOfDiversionParcel
+        from surface.services import allocate_district_delivery
+
+        served = PointOfDiversionParcel.objects.values("point_of_diversion_id")
+        with_water = DiversionRecord.objects.filter(diversion_type="direct_use").values(
+            "point_of_diversion_id"
+        )
+        points = (
+            PointOfDiversion.objects.filter(
+                water_right__right_id__startswith="MER-WR-", pk__in=with_water
+            )
+            .exclude(pk__in=served)
+            .order_by("name")
+        )
+        for pod in points:
+            allocate_district_delivery(pod, period)
+
     def _seed_diversion_journey_records(self, period):
         """Recorded diversions for the two parcel-less journey PODs.
 
