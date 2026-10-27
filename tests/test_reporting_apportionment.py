@@ -261,22 +261,24 @@ def test_calwatrs_honors_handset_split_over_demand():
 # ---------------------------------------------------------------------------
 
 def test_gears_by_well_total_preserved_no_double_count():
-    """A well metered on each of its two parcels reports its total ONCE (not 2x),
-    and routing through the demand-split path does not change that total."""
+    """A well with a reading typed on each of its two parcels writes each reading
+    once, whole: 10 + 10 = 20 AF. A reading is never repeated for every parcel
+    the well waters nor cut by their shares, and the demand split does not
+    change that total."""
     rp = ReportingPeriodFactory()
     well = WellFactory(well_registration_id="REG-1")
     a = ParcelFactory()
     b = ParcelFactory()
     WellIrrigatedParcelFactory(well=well, parcel=a, fraction=Decimal("1.0000"))
     WellIrrigatedParcelFactory(well=well, parcel=b, fraction=Decimal("1.0000"))
-    _meter(a, "10.0000")   # same reading recorded on each parcel the well serves
+    _meter(a, "10.0000")   # each parcel's own reading
     _meter(b, "10.0000")
     _run(a, "5")           # demand split present, but the well total is invariant
     _run(b, "15")
 
     rows = list(csv.reader(io.StringIO(generate_gears_csv(rp, "by_well").getvalue())))[1:]
     assert len(rows) == 1                       # one well row
-    assert Decimal(rows[0][5]) == Decimal("10")  # column 5 = Extraction Volume, not 20
+    assert Decimal(rows[0][5]) == Decimal("20")  # column 5 = Extraction Volume: both readings, whole
 
 
 def test_prefill_calwatrs_follows_demand_split():

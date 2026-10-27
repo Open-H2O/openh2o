@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING
 from django.db.models import Count
 
 from parcels.models import ParcelLedger
+from reporting.generators import _gears_by_et_rows, _gears_by_well_rows
 from reporting.models import ReportingProfile
 from wells.models import Well, WellIrrigatedParcel
 
@@ -92,12 +93,8 @@ def _gears_by_well_warnings(reporting_period: ReportingPeriod) -> list[Preflight
     """Checks for the GEARS by-well filing, in the order the portal would trip on them."""
     warnings: list[PreflightMessage] = []
 
-    source_filter = "meter_reading"
-    source_count = ParcelLedger.objects.filter(
-        source_type=source_filter,
-        effective_date__gte=reporting_period.start_date,
-        effective_date__lte=reporting_period.end_date,
-    ).count()
+    rows = _gears_by_well_rows(reporting_period)
+    source_count = len(rows)
     if source_count == 0:
         warnings.append({
             "level": "error",
@@ -107,10 +104,20 @@ def _gears_by_well_warnings(reporting_period: ReportingPeriod) -> list[Preflight
             ),
         })
 
+    else:
+        total = sum((r["volume"] for r in rows), Decimal("0"))
+        warnings.append({
+            "level": "info",
+            "message": (
+                f"The by-well file will hold {source_count} "
+                f"{'row' if source_count == 1 else 'rows'}, {total:.2f} AF in all."
+            ),
+        })
+
     warnings.extend(_missing_registration_warnings())
     warnings.extend(_duplicate_reading_warnings(reporting_period))
     warnings.extend(_well_split_warnings())
-    warnings.extend(_well_coverage_warnings(reporting_period, source_count))
+    warnings.extend(_well_coverage_warnings(reporting_period, rows))
     warnings.extend(_unlinked_parcel_warnings(reporting_period))
     return warnings
 
@@ -187,20 +194,11 @@ def _well_split_warnings() -> list[PreflightMessage]:
     return []
 
 
-def _well_coverage_warnings(reporting_period: ReportingPeriod, source_count: int) -> list[PreflightMessage]:
+def _well_coverage_warnings(reporting_period: ReportingPeriod, rows: list[dict]) -> list[PreflightMessage]:
     """Warn when under 80% of active wells have a meter reading in the period."""
     active_wells = Well.objects.filter(status="active").count()
-    if active_wells > 0 and source_count > 0:
-        wells_with_data = (
-            WellIrrigatedParcel.objects.filter(
-                parcel__parcelledger__source_type="meter_reading",
-                parcel__parcelledger__effective_date__gte=reporting_period.start_date,
-                parcel__parcelledger__effective_date__lte=reporting_period.end_date,
-            )
-            .values("well_id")
-            .distinct()
-            .count()
-        )
+    if active_wells > 0 and rows:
+        wells_with_data = len({r["well_id"] for r in rows if r["well_id"] is not None})
         coverage = (wells_with_data / active_wells) * 100
         if coverage < 80:
             return [{
@@ -247,17 +245,24 @@ def _gears_by_et_warnings(reporting_period: ReportingPeriod) -> list[PreflightMe
     """Checks for the GEARS by-ET filing: ET estimates present, acreage recorded."""
     warnings: list[PreflightMessage] = []
 
-    et_count = ParcelLedger.objects.filter(
-        source_type="et_estimate",
-        effective_date__gte=reporting_period.start_date,
-        effective_date__lte=reporting_period.end_date,
-    ).count()
-    if et_count == 0:
+    rows = _gears_by_et_rows(reporting_period)
+    if not rows:
         warnings.append({
             "level": "error",
             "message": (
-                "No ET estimates for this period — GEARS by-ET requires ET-derived "
-                "consumptive-use data."
+                "The by-ET file would be empty for this period. Either ET "
+                "estimates are not recorded, or every field with one is metered "
+                "and is in the by-well file."
+            ),
+        })
+    else:
+        total = sum((r["volume"] for r in rows), Decimal("0"))
+        warnings.append({
+            "level": "info",
+            "message": (
+                f"The by-ET file will hold {len(rows)} "
+                f"{'row' if len(rows) == 1 else 'rows'}, {total:.2f} AF in all. "
+                "Metered field-months are in the by-well file and are left out here."
             ),
         })
 

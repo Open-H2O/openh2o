@@ -367,44 +367,104 @@ def build_shared_supply_comparison(reporting_period=None):
     return groups
 
 
-def _gears_by_well_rows(reporting_period: ReportingPeriod) -> list[dict[str, Any]]:
-    """Metered volume per (well, month); unlinked parcels become [INCOMPLETE] rows."""
+def _well_reading_volumes(reporting_period: ReportingPeriod) -> dict[tuple[int, str], Decimal]:
+    """``{(well id, "YYYY-MM"): acre-feet}`` the wells' own meters read in the period.
+
+    The readings are entered once, on the well, and counted the way the
+    calculation counts them (``_reading_acre_feet``). A reading on a meter no
+    well carries is not in the result.
+    """
+    import datetime as dt
+
+    from django.utils import timezone
+
+    from accounting.management.commands.run_calculations import _reading_acre_feet
+    from measurements.models import MeterReading
+    from wells.models import WellMeter
+
+    start = timezone.make_aware(dt.datetime.combine(reporting_period.start_date, dt.time.min))
+    end = timezone.make_aware(
+        dt.datetime.combine(reporting_period.end_date + dt.timedelta(days=1), dt.time.min)
+    )
+    by_meter: dict[tuple[int, str], Decimal] = {}
+    for reading in MeterReading.objects.filter(
+        reading_date__gte=start, reading_date__lt=end
+    ).select_related("meter"):
+        volume = _reading_acre_feet(reading)
+        if volume is None:
+            continue
+        key = (reading.meter_id, timezone.localtime(reading.reading_date).strftime("%Y-%m"))
+        by_meter[key] = by_meter.get(key, Decimal("0")) + volume
+
+    meter_ids = {meter_id for meter_id, _ in by_meter}
+    out: dict[tuple[int, str], Decimal] = {}
+    for link in WellMeter.objects.filter(meter_id__in=meter_ids):
+        for (meter_id, month_str), volume in by_meter.items():
+            if meter_id == link.meter_id:
+                key = (link.well_id, month_str)
+                out[key] = out.get(key, Decimal("0")) + volume
+    return out
+
+
+def _gears_by_well_build(
+    reporting_period: ReportingPeriod,
+) -> tuple[list[dict[str, Any]], set[tuple[int, str]]]:
+    """The by-well rows, and the (field id, month) pairs those rows hold.
+
+    A well's volume for a month is what its own meter read, once. A reading
+    typed on a field is that field's water and is written once under the field's
+    well (the well with the largest share of the field, the lowest id on a tie).
+    A well with a typed field reading in the month takes the typed readings and
+    not its own meter's, the same choice the calculation makes.
+    """
+    from accounting.management.commands.run_calculations import WELL_METER_SHARE_WORDS
+
     entries = (
         ParcelLedger.objects.filter(
             source_type="meter_reading",
             effective_date__gte=reporting_period.start_date,
             effective_date__lte=reporting_period.end_date,
         )
+        .exclude(description__startswith=WELL_METER_SHARE_WORDS)
         .select_related("parcel")
     )
 
-    # Build well→parcel map split by the measurement-first kernel for THIS
-    # period (hand-set share wins; else the thirsty crop's well carries the
-    # larger slice via ET demand). Shared with the OpenET pre-fill so the
-    # double-count guard and the demand split can never drift between them.
-    well_parcel_map = build_normalized_well_parcel_map(reporting_period)
+    links_by_parcel: dict[int, list[WellIrrigatedParcel]] = {}
+    links_by_well: dict[int, list[WellIrrigatedParcel]] = {}
+    for link in WellIrrigatedParcel.objects.select_related("well").order_by("pk"):
+        links_by_parcel.setdefault(link.parcel_id, []).append(link)
+        links_by_well.setdefault(link.well_id, []).append(link)
 
-    rows = {}
+    def new_row(well, month_str):
+        return {
+            "reg_id": well.well_registration_id or "",
+            "name": str(well),
+            "lat": well.location.y,
+            "lon": well.location.x,
+            "month": month_str,
+            "volume": Decimal("0"),
+            "method": "meter_reading",
+            "well_id": well.pk,
+        }
+
+    rows: dict[tuple[Any, str], dict[str, Any]] = {}
+    held: set[tuple[int, str]] = set()
+    typed_wells: set[tuple[int, str]] = set()
     for entry in entries:
-        well_fractions = well_parcel_map.get(entry.parcel_id, [])
         month_str = entry.effective_date.strftime("%Y-%m")
-        if well_fractions:
-            for well, fraction in well_fractions:
-                key = (well.pk, month_str)
-                if key not in rows:
-                    rows[key] = {
-                        "reg_id": well.well_registration_id or "",
-                        "name": str(well),
-                        "lat": well.location.y,
-                        "lon": well.location.x,
-                        "month": month_str,
-                        "volume": Decimal("0"),
-                        "method": "meter_reading",
-                    }
-                rows[key]["volume"] += abs(entry.amount_acre_feet) * fraction
+        held.add((entry.parcel_id, month_str))
+        links = links_by_parcel.get(entry.parcel_id, [])
+        if links:
+            for link in links:
+                typed_wells.add((link.well_id, month_str))
+            home = max(links, key=lambda k: (k.fraction, -k.pk)).well
+            key = (home.pk, month_str)
+            if key not in rows:
+                rows[key] = new_row(home, month_str)
+            rows[key]["volume"] += abs(entry.amount_acre_feet)
         else:
             # Metered extraction on a parcel with no well link. Never
-            # silently drop it — emit a parcel-keyed [INCOMPLETE] row so the
+            # silently drop it: emit a parcel-keyed [INCOMPLETE] row so the
             # volume stays visible and flagged (mirrors the [INCOMPLETE] holder
             # convention on the CalWATRS side). validate_report warns so the
             # operator links the parcel to its well before filing.
@@ -421,10 +481,37 @@ def _gears_by_well_rows(reporting_period: ReportingPeriod) -> list[dict[str, Any
                     "month": month_str,
                     "volume": Decimal("0"),
                     "method": "meter_reading",
+                    "well_id": None,
                 }
             rows[key]["volume"] += abs(entry.amount_acre_feet)
 
-    return sorted(rows.values(), key=lambda r: (r["reg_id"], r["month"]))
+    well_volumes = _well_reading_volumes(reporting_period)
+    if well_volumes:
+        wells = {
+            link.well_id: link.well
+            for links in links_by_well.values()
+            for link in links
+        }
+        from wells.models import Well
+
+        wells.update(Well.objects.in_bulk({w for w, _ in well_volumes} - set(wells)))
+        for (well_id, month_str), volume in well_volumes.items():
+            if (well_id, month_str) in typed_wells:
+                continue
+            key = (well_id, month_str)
+            if key not in rows:
+                rows[key] = new_row(wells[well_id], month_str)
+            rows[key]["volume"] += volume
+            for link in links_by_well.get(well_id, []):
+                held.add((link.parcel_id, month_str))
+
+    ordered = sorted(rows.values(), key=lambda r: (r["reg_id"], r["month"]))
+    return ordered, held
+
+
+def _gears_by_well_rows(reporting_period: ReportingPeriod) -> list[dict[str, Any]]:
+    """Metered volume per (well, month); unlinked parcels become [INCOMPLETE] rows."""
+    return _gears_by_well_build(reporting_period)[0]
 
 
 def _write_gears_by_well(writer: Any, reporting_period: ReportingPeriod) -> None:
@@ -457,10 +544,16 @@ def _gears_by_et_rows(reporting_period: ReportingPeriod) -> list[dict[str, Any]]
     )
     entries = billable_ledger(entries)
 
+    # A field-month the by-well file holds is metered: its water is written
+    # there, so the by-ET file leaves it out.
+    metered = _gears_by_well_build(reporting_period)[1]
+
     rows = {}
     for entry in entries:
         month_str = entry.effective_date.strftime("%Y-%m")
         key = (entry.parcel_id, month_str)
+        if key in metered:
+            continue
         if key not in rows:
             rows[key] = {
                 "parcel_number": entry.parcel.parcel_number,
@@ -526,14 +619,22 @@ def _calwatrs_data_row(entry, fraction, combined_use):
     through float) while guaranteeing a plain fixed-point column for every row.
     """
     pod = entry["pod"]
+    # A point that carries its re-diversion link takes water an upstream point
+    # already diverted: its volume is written in the re-diverted column and the
+    # direct column reads zero, so the same water is not counted as a second
+    # direct diversion.
+    shown = entry["volume"] * fraction
+    zero = Decimal("0")
+    direct, rediverted = (zero, shown) if pod.rediverted_from_id else (shown, zero)
     return [
         entry["right_id"], entry["holder"], pod.name,
         float(fraction),
         pod.location.y, pod.location.x, entry["month"],
-        f"{entry['volume'] * fraction:.8f}",
+        f"{direct:.8f}",
         entry["max_flow"], entry["type"], combined_use,
         f"{entry['return_flow'] * fraction:.8f}",
         entry["method_label"],
+        f"{rediverted:.8f}",
     ]
 
 
@@ -633,7 +734,7 @@ def generate_calwatrs_csv(reporting_period, template_type="a1"):
         "Water Right ID", "Holder Name", "POD Name", "Source Fraction",
         "Latitude", "Longitude", "Month", "Volume (AF)",
         "Max Flow Rate (CFS)", "Diversion Type", "Combined Use",
-        "Return Flow (AF)", "Measurement Method",
+        "Return Flow (AF)", "Measurement Method", "Re-diverted Volume (AF)",
     ])
 
     diversion_type = "direct_use" if template_type == "a1" else "to_storage"

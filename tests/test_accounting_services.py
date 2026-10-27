@@ -775,13 +775,10 @@ class TestGearsWellFractionNormalization:
                 except Exception:
                     pass
 
-        # With 3 parcels each fraction=1.0 and no ET demand, the Phase 56 kernel
-        # splits evenly (1/3 each), now quantized to the ledger's 4dp — so p1's
-        # share is 0.3333 (or 0.3334 if it holds the rounding residual). Total
-        # reported ≈ 30 * (1/3) = 10 AF (1 ledger entry on p1 only). Without
-        # normalization it would be 30 * 1.0 = 30 AF — the triple-count bug. Assert
-        # the no-triple-count invariant with a 4dp tolerance, not an exact 1/3.
-        assert abs(total_reported - Decimal("10")) < Decimal("0.01")
+        # The 30 AF typed on p1 is p1's own reading. It is written once under the
+        # well, whole: not once per parcel the well waters (90) and not cut by
+        # the well's shares (10).
+        assert total_reported == Decimal("30")
 
     def test_gears_well_single_parcel_fraction_unchanged(self):
         """A well irrigating 1 parcel (fraction=1.0) reports the full extraction volume."""

@@ -188,7 +188,6 @@ EXCEPTIONS: tuple = (
     ("reporting/validators.py", "duplicate parcel-month reading", ("em dash",), _REPORTS),
     ("reporting/validators.py", "well(s) have a hand-set parcel split", ("em dash",), _REPORTS),
     ("reporting/validators.py", "metered parcel(s) have no well link", ("em dash",), _REPORTS),
-    ("reporting/validators.py", "GEARS by-ET requires", ("em dash",), _REPORTS),
     ("reporting/validators.py", "the CalWATRS form would have nothing", ("em dash",), _REPORTS),
     ("reporting/validators.py", "duplicate POD-month record", ("em dash",), _REPORTS),
     ("reporting/validators.py", "their rows are withheld from the CalWATRS file", ("em dash",), _REPORTS),
