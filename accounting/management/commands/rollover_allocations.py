@@ -21,8 +21,9 @@ never mutates a finalized period's ledger rows, so a re-run cannot rewrite filed
 numbers. If the source year is not yet finalized the carry-over is provisional and
 the command says so loudly (but still computes it, so a demo/preview works).
 
-Water-year boundary is configurable via --anchor-month (default 10 = California's
-Oct 1 start), matching carryover_math.water_year_of.
+Water-year boundary is the site's water year start month (default 10 =
+California's Oct 1 start); --anchor-month overrides it for one run. The rule is
+carryover_math.water_year_of.
 """
 
 from __future__ import annotations
@@ -34,7 +35,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.db.models import QuerySet, Sum
 
-from accounting.carryover_math import available_with_carryover
+from accounting.carryover_math import available_with_carryover, water_year_label
 from accounting.models import (
     AccountCredit,
     AllocationCarryover,
@@ -53,6 +54,7 @@ from accounting.services import (
 )
 from core.constants import CARRY_FORWARD, SAME_WATER_YEAR
 from core.models import SiteConfig
+from core.water_year import water_year_start_month
 from geography.models import ParcelZone, Zone
 
 
@@ -162,8 +164,8 @@ def _replace_carryover_rows(decided: list[_Decided], source_wy: int, target_wy: 
 
 
 def _water_year_label(water_year: int) -> str:
-    """The water year as the screens name it: 2025 is "WY 2024-2025"."""
-    return f"WY {water_year - 1}-{water_year}"
+    """The water year as the screens name it: 2025 is "WY 2024-2025", or "2025" from a January start."""
+    return water_year_label(water_year, water_year_start_month())
 
 
 _AccountResult = tuple[WaterAccount, Decimal, Decimal, bool]
@@ -258,8 +260,9 @@ class Command(BaseCommand):
         parser.add_argument(
             "--anchor-month",
             type=int,
-            default=10,
-            help="Water-year start month (default 10 = Oct 1, California).",
+            default=None,
+            help="Water-year start month. Left out, the site's setting is used "
+            "(10 = Oct 1 unless it was changed).",
         )
         parser.add_argument(
             "--dry-run",
@@ -269,7 +272,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         source_wy = options["water_year"]
-        anchor = options["anchor_month"]
+        anchor = options["anchor_month"] or water_year_start_month()
         dry_run = options["dry_run"]
         target_wy = source_wy + 1
 

@@ -70,6 +70,7 @@ from django.utils import timezone
 
 from accounting.allocation_math import allocate_by_demand, apportion_shared_supply
 from accounting.carryover_math import water_year_of
+from core.water_year import water_year_start_month
 from accounting.ledger_words import delivery_share_words, percent_words
 from accounting.models import CalculationRun, ReportingPeriod, WaterType
 from accounting.services import (
@@ -475,7 +476,7 @@ def _store_seepage_credits(
         water_type, _ = WaterType.objects.get_or_create(
             code="GW", defaults={"name": "Groundwater"}
         )
-        water_year = water_year_of(f"{month.year}-{month.month:02d}")
+        water_year = water_year_of(f"{month.year}-{month.month:02d}", water_year_start_month())
         kept = seepage * (1 - leave_behind_share())
         line = f"Canal seepage from {pod.name}, {month:%B %Y}"
         if choice == "owner":
@@ -524,7 +525,7 @@ def _store_month_loss(
         new_zone, new_year, new_amount = None, None, Decimal("0")
     else:
         new_zone = zone
-        new_year = water_year_of(f"{month.year}-{month.month:02d}") if zone else None
+        new_year = water_year_of(f"{month.year}-{month.month:02d}", water_year_start_month()) if zone else None
         new_amount = loss["seepage_af"] if zone else Decimal("0")
 
     if (

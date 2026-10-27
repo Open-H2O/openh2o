@@ -86,6 +86,7 @@ from accounting.services import (
     parcel_pool_zone as _parcel_pool_zone,
 )
 from core.models import SiteConfig
+from core.water_year import water_year_start_month
 from parcels.models import Parcel, ParcelLedger
 from parcels.services import field_efficiency
 
@@ -806,7 +807,7 @@ def _adjust_basin_pool(
             pool_row = deposit_to_basin_pool(
                 pool_zone,
                 gw_water_type,
-                water_year_of(period),
+                water_year_of(period, water_year_start_month()),
                 delta,
                 origin=INCIDENTAL_RECHARGE_POOL,
             )

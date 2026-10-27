@@ -58,6 +58,7 @@ from django.db.models import Q
 
 from accounting.allocation_math import apportion_shared_supply
 from accounting.carryover_math import water_year_of
+from core.water_year import water_year_start_month
 from accounting.models import CalculationRun, ReportingPeriod
 from accounting.recharge_policy import recharge_routes_to_personal
 from parcels.services import field_efficiency
@@ -203,8 +204,10 @@ def _in_direct_season(right, first, last):
 
 def _already_used(right, first):
     """Direct-use volume on every point of the right, earlier months of this water year (AF)."""
-    water_year = water_year_of(f"{first.year}-{first.month:02d}")
-    year_start = date(water_year - 1, 10, 1)
+    start_month = water_year_start_month()
+    water_year = water_year_of(f"{first.year}-{first.month:02d}", start_month)
+    # A year that starts in January begins in the year it is named for.
+    year_start = date(water_year - (1 if start_month > 1 else 0), start_month, 1)
     total = Decimal("0")
     for volume in DiversionRecord.objects.filter(
         point_of_diversion__water_right=right,

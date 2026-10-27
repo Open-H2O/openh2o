@@ -53,6 +53,7 @@ from parcels.models import Parcel, ParcelLedger
 
 from core.constants import CARRY_FORWARD
 from core.modules import is_enabled
+from core.water_year import water_year_start_month
 
 from accounting.carryover_math import available_with_carryover, water_year_of
 from accounting.ledger_import import import_ledger_rows
@@ -454,7 +455,8 @@ def create_recharge_ledger_entries(
     volume = recharge_event.volume_acre_feet
 
     water_year = water_year_of(
-        f"{recharge_event.start_date.year}-{recharge_event.start_date.month:02d}"
+        f"{recharge_event.start_date.year}-{recharge_event.start_date.month:02d}",
+        water_year_start_month(),
     )
     credited = Decimal(volume) * (1 - leave_behind_share())
 
@@ -525,7 +527,8 @@ def remove_recharge_ledger_entries(
     if water_type is None:
         return
     water_year = water_year_of(
-        f"{recharge_event.start_date.year}-{recharge_event.start_date.month:02d}"
+        f"{recharge_event.start_date.year}-{recharge_event.start_date.month:02d}",
+        water_year_start_month(),
     )
     row = deposit_to_basin_pool(
         zone, water_type, water_year, -recharge_event.volume_acre_feet,
@@ -1834,14 +1837,17 @@ def zone_consumptive_balance(
 # reporting_period=None, so a FK filter would silently drop them.
 
 
-def water_year_periods(water_year: int, anchor_month: int = 10) -> list[ReportingPeriod]:
+def water_year_periods(water_year: int, anchor_month: int | None = None) -> list[ReportingPeriod]:
     """ReportingPeriods belonging to ``water_year`` (labelled by their end_date).
 
     The period is assigned to the water year its END month falls in, so a
     standard Oct->Sep period ending 2025-09-30 is WY2025, and a monthly period
     "2024-10" (ending in October) rolls into WY2025. Returns a list ordered by
-    start_date; empty if no period covers that year.
+    start_date; empty if no period covers that year. ``anchor_month`` is the
+    month the water year starts in; left out, it is the site's setting.
     """
+    if anchor_month is None:
+        anchor_month = water_year_start_month()
     result = []
     for period in ReportingPeriod.objects.order_by("start_date"):
         end = period.end_date
@@ -1964,7 +1970,7 @@ ZONE_POOL_LABELS = (
 def _zone_rows_by_origin(zone: Zone, reporting_period: ReportingPeriod) -> dict[str, Decimal]:
     """The zone's groundwater-typed carry-over rows for the period's water year, summed by origin."""
     end = reporting_period.end_date
-    water_year = water_year_of(f"{end.year}-{end.month:02d}")
+    water_year = water_year_of(f"{end.year}-{end.month:02d}", water_year_start_month())
     return dict(
         AllocationCarryover.objects.filter(
             zone=zone, water_year=water_year, water_type__code__iexact="GW"
@@ -2072,7 +2078,9 @@ def zone_groundwater_budget(
     # applies the surplus-depreciates / debt-does-not rule centrally; periods
     # elapsed is 0 because this is the opening balance for the very next year.
     end = reporting_period.end_date
-    carryover = zone_carryover(zone, water_year_of(f"{end.year}-{end.month:02d}"))
+    carryover = zone_carryover(
+        zone, water_year_of(f"{end.year}-{end.month:02d}", water_year_start_month())
+    )
     available = available_with_carryover(allocation, carryover)
     return {
         "allocation": allocation,
@@ -2086,7 +2094,7 @@ def zone_groundwater_budget(
 def account_water_year(reporting_period: ReportingPeriod) -> int:
     """The water year a period belongs to, labelled by the year it ends in."""
     end = reporting_period.end_date
-    return water_year_of(f"{end.year}-{end.month:02d}")
+    return water_year_of(f"{end.year}-{end.month:02d}", water_year_start_month())
 
 
 def _field_acres(parcel_ids: list[int]) -> dict[int, Decimal]:

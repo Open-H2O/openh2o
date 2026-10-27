@@ -6,7 +6,8 @@ The well page promises "measurement history". The rows exist — the ``measureme
 water levels have no page of their own and belong on the well they measure.
 
 Two shapes come out of here, both grouped by WATER YEAR (October through
-September, named for the year it ends in, ``WY 2025-2026``) and listed newest
+September unless the site sets another month, named for the year it ends in,
+``WY 2025-2026``) and listed newest
 first. A single year hides the comparison that makes the record worth having.
 
 * ``meter_history(well)`` — every current meter's totalizer reads, the read and
@@ -33,6 +34,9 @@ from decimal import Decimal
 
 from django.utils import timezone
 
+from accounting.carryover_math import water_year_label as _label
+from accounting.carryover_math import water_year_of
+from core.water_year import water_year_start_month
 from measurements.models import MeterReading, Sensor, SensorMeasurement, WaterMeasurement
 
 DEPTH_PROPERTY = "groundwater_level_depth"
@@ -42,13 +46,21 @@ DEPTH_PROPERTY = "groundwater_level_depth"
 UNIT_SHORT = {"acre_feet": "AF", "gallons": "gal", "cubic_feet": "cu ft", "cfs": "cfs"}
 
 
-def water_year(day):
-    """The water year a date falls in, named for the calendar year it ends in."""
-    return day.year + 1 if day.month >= 10 else day.year
+def water_year(day, start_month=None):
+    """The water year a date falls in, named for the calendar year it ends in.
+
+    The year starts in the site's water year start month (October unless the
+    site changed it). A caller with many dates passes ``start_month`` once.
+    """
+    if start_month is None:
+        start_month = water_year_start_month()
+    return water_year_of(f"{day.year}-{day.month:02d}", start_month)
 
 
-def water_year_label(wy):
-    return f"WY {wy - 1}-{wy}"
+def water_year_label(wy, start_month=None):
+    if start_month is None:
+        start_month = water_year_start_month()
+    return _label(wy, start_month)
 
 
 def _local_date(when):
@@ -58,6 +70,7 @@ def _local_date(when):
 def meter_history(well):
     """Per current meter with at least one read: reads newest first, by water year."""
     groups = []
+    start_month = water_year_start_month()
     links = well.wellmeter_set.filter(is_current=True).select_related("meter")
     for link in links:
         reads = list(
@@ -67,7 +80,7 @@ def meter_history(well):
             continue
         by_year = OrderedDict()
         for read in reads:
-            by_year.setdefault(water_year(_local_date(read.reading_date)), []).append(read)
+            by_year.setdefault(water_year(_local_date(read.reading_date), start_month), []).append(read)
         # `count` and `delta_total` close each water year's own
         # row-group, the same footer-A shape the diversion and event-history
         # tables carry (rule 7) -- summed here from the rows already fetched
@@ -76,7 +89,7 @@ def meter_history(well):
         # that closes).
         years = [
             {
-                "label": water_year_label(wy),
+                "label": water_year_label(wy, start_month),
                 "reads": rows,
                 "count": len(rows),
                 "delta_total": sum((r.calculated_volume or Decimal("0") for r in rows), Decimal("0")),
@@ -118,6 +131,7 @@ def water_level_history(well):
     ``change`` (``None`` for the earliest month on record, which has nothing
     before it to change from).
     """
+    start_month = water_year_start_month()
     points = _logger_points(well)
     source = "logger"
     if not points:
@@ -144,7 +158,7 @@ def water_level_history(well):
 
     by_year = OrderedDict()
     for entry in reversed(digest):  # newest first
-        by_year.setdefault(water_year(entry["month"]), []).append(entry)
+        by_year.setdefault(water_year(entry["month"], start_month), []).append(entry)
     # Each water year closes with its NET change: the monthly changes add to
     # it (a close is a level and is never summed; the changes between closes
     # are). The meter table beside this one closes every
@@ -152,7 +166,7 @@ def water_level_history(well):
     # from the second year on.
     years = [
         {
-            "label": water_year_label(wy),
+            "label": water_year_label(wy, start_month),
             "months": rows,
             "count": len(rows),
             "net_change": sum((r["change"] for r in rows if r["change"] is not None), Decimal("0")),

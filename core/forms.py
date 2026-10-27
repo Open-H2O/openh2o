@@ -492,6 +492,26 @@ class DeliverySettingsForm(forms.Form):
         ),
     )
 
+    # Owned by `core`, so it is shown whatever modules run. Optional at the
+    # Django level so a caller that does not send it leaves the stored month
+    # as it was.
+    water_year_start_month = forms.IntegerField(
+        required=False,
+        min_value=1,
+        max_value=12,
+        error_messages={
+            "min_value": "No month is numbered %(show_value)s.",
+            "max_value": "No month is numbered %(show_value)s.",
+        },
+        label="Which month does your water year start in?",
+        help_text="Enter a month number from 1 to 12. The default is 10, "
+        "October. A year that starts in January is named by its calendar "
+        "year. Set this before you enter the first allocation.",
+        widget=forms.NumberInput(
+            attrs={"class": "form-input", "style": "width: 6rem;", "step": "1", "min": "1", "max": "12"}
+        ),
+    )
+
     # The one stored piece of the persistent
     # identifier scheme. Owned by `core`, so it is shown whatever modules run.
     identifier_host = forms.CharField(
@@ -541,6 +561,7 @@ class DeliverySettingsForm(forms.Form):
         if instance is not None and "initial" not in kwargs:
             initial = {
                 "recovery_horizon": instance.default_recovery_horizon,
+                "water_year_start_month": instance.water_year_start_month,
                 "identifier_host": instance.identifier_host,
             }
             if self.shows_efficiency:
@@ -716,6 +737,10 @@ class DeliverySettingsForm(forms.Form):
         config = self.instance
         updated = ["default_recovery_horizon", "identifier_host"]
         config.default_recovery_horizon = self.cleaned_data["recovery_horizon"]
+        start_month = self.cleaned_data.get("water_year_start_month")
+        if start_month:
+            config.water_year_start_month = start_month
+            updated.append("water_year_start_month")
         config.identifier_host = self.cleaned_data.get("identifier_host", "")
         if self.shows_efficiency:
             config.default_irrigation_efficiency = self.cleaned_data[

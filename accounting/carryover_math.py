@@ -78,6 +78,18 @@ def water_year_of(period, anchor_month=10):
     return year
 
 
+def water_year_label(water_year, anchor_month=10):
+    """The water year as a screen names it.
+
+    A year that starts in January is the calendar year, so it is named by that
+    year ("2026"). Any other year runs across two calendar years and is named
+    by both ("WY 2025-2026").
+    """
+    if anchor_month == 1:
+        return str(water_year)
+    return f"WY {water_year - 1}-{water_year}"
+
+
 def net_carryover(allocation_af, usage_af):
     """Signed year-end remainder = ``allocation - usage``, quantized to 4dp.
 

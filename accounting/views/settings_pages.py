@@ -92,6 +92,9 @@ def delivery_settings(request):
         leave_behind_number = position
     position += 1
     recovery_number = position
+    # The water year's first month belongs to `core`, so its card always shows.
+    position += 1
+    water_year_number = position
     diversion_number = None
     if form.shows_diversion_settings:
         position += 1
@@ -113,6 +116,7 @@ def delivery_settings(request):
             "seepage_number": seepage_number,
             "leave_behind_number": leave_behind_number,
             "recovery_number": recovery_number,
+            "water_year_number": water_year_number,
             "diversion_number": diversion_number,
             "identifier_number": identifier_number,
         },

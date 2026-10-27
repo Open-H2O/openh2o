@@ -152,6 +152,19 @@
       {% if form.recovery_horizon.errors %}<p class="text-sm text-furnace">{{ form.recovery_horizon.errors|striptags }}</p>{% endif %}
     </div>
 
+    {% comment %} Setting: the month the water year starts in. `core` owns
+         SiteConfig.water_year_start_month, so this card is shown on every deployment. {% endcomment %}
+    <div class="card-raised">
+      <span class="step-eyebrow">Setting {{ water_year_number }} of {{ settings_total }}</span>
+      <h2 class="section-header">Water year</h2>
+      <div class="field-group mt-sm mb-0">
+        <label class="form-label" for="{{ form.water_year_start_month.id_for_label }}">{{ form.water_year_start_month.label }}</label>
+        {{ form.water_year_start_month }}
+        <p class="text-secondary text-sm" style="margin-top: var(--space-xs);">{{ form.water_year_start_month.help_text }}</p>
+        {% if form.water_year_start_month.errors %}<p class="text-sm text-furnace mt-sm">{{ form.water_year_start_month.errors|striptags }}</p>{% endif %}
+      </div>
+    </div>
+
     {% comment %} Setting: diversion records. `surface` owns this field, same gate as the
          surface settings. The
          USE-row question is on the import screen,

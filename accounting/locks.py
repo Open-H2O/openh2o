@@ -70,10 +70,16 @@ LOCKED_MODELS = (
 #: What :func:`override` switches off: the lock triggers and nothing else.
 LOCK_TRIGGER_URIS = tuple(f"{label}:{LOCK_TRIGGER_NAME}" for label in LOCKED_MODELS)
 
-#: The California water year starts in October: a period is in the water year
-#: its END month falls in (``accounting.services.water_year_periods`` with its
-#: default ``anchor_month=10``). AllocationCarryover is keyed on that label.
-WATER_YEAR_ANCHOR_MONTH = 10
+#: SQL: the month the site's water year starts in, read from the one site row
+#: each time the trigger runs, so changing the setting needs no new trigger.
+#: October when there is no site row. A period is in the water year its END
+#: month falls in (``accounting.services.water_year_periods``), and
+#: AllocationCarryover is keyed on that label. ``accounting.carryover_math``
+#: holds the same rule in Python.
+WATER_YEAR_START_MONTH_SQL = (
+    "COALESCE((SELECT s.water_year_start_month FROM core_siteconfig s "
+    "ORDER BY s.id LIMIT 1), 10)"
+)
 
 
 def _month_text_to_date(column):
@@ -97,7 +103,8 @@ def _finalized_match(*, date_sql=None, period_column=None, water_year_column=Non
     if water_year_column:
         tests.append(
             "(EXTRACT(YEAR FROM p.end_date)::int + CASE WHEN "
-            f"EXTRACT(MONTH FROM p.end_date) >= {WATER_YEAR_ANCHOR_MONTH} "
+            f"{WATER_YEAR_START_MONTH_SQL} > 1 AND "
+            f"EXTRACT(MONTH FROM p.end_date) >= {WATER_YEAR_START_MONTH_SQL} "
             f'THEN 1 ELSE 0 END) = {{row}}."{water_year_column}"'
         )
     return " OR ".join(tests)

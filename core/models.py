@@ -251,6 +251,19 @@ class SiteConfig(models.Model):
         "(the memo's J6).",
     )
 
+    # --- Water year ---
+    # The first month of the water year. One setting, read by every place that
+    # decides which water year a month belongs to, and by the finalized-year
+    # lock in the database (accounting/locks.py).
+    water_year_start_month = models.PositiveSmallIntegerField(
+        default=10,
+        validators=[MinValueValidator(1), MaxValueValidator(12)],
+        verbose_name="water year start month",
+        help_text="Enter a month number from 1 to 12. The default is 10, "
+        "October. A year that starts in January is named by its "
+        "calendar year.",
+    )
+
     # --- Persistent identifiers ---
     # The ONE stored piece of the identifier scheme; the identifiers themselves
     # are derived on read (core/identifiers.py), so they cannot drift from the
