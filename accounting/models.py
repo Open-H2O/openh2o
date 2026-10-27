@@ -219,6 +219,38 @@ class WaterAccountParcel(models.Model):
     def __str__(self):
         return f"{self.water_account} - {self.parcel}"
 
+    def other_account_link(self):
+        """Another account's link to this field that is still in force when this one begins.
+
+        A field that left another account on the day this link begins is a hand-over,
+        not an overlap.
+
+        A link has no start date of its own: it begins the day it was typed.
+        """
+        if not self.parcel_id:
+            return None
+        from django.utils import timezone
+
+        begins = self.added_date or timezone.localdate()
+        others = (
+            WaterAccountParcel.objects.filter(parcel_id=self.parcel_id)
+            .exclude(water_account_id=self.water_account_id)
+            .exclude(pk=self.pk)
+            .select_related("water_account")
+        )
+        for other in others:
+            if other.removed_date is None or other.removed_date > begins:
+                return other
+        return None
+
+    def clean(self):
+        super().clean()
+        other = self.other_account_link()
+        if other is not None:
+            raise ValidationError(
+                f"{self.parcel} is already in water account {other.water_account.account_number}."
+            )
+
 
 @track_changes()
 class AllocationPlan(models.Model):
@@ -508,6 +540,51 @@ class AllocationCarryover(models.Model):
             f"{self.zone} {self.water_type.code} WY{self.water_year}: "
             f"{self.amount_af} AF"
         )
+
+
+@track_changes()
+class AccountCredit(models.Model):
+    """Water added to, or owed by, one water account for one water year.
+
+    ``water_year`` is the year the row applies to, labelled by the year it ends
+    in (as ``AllocationCarryover``). ``amount_af`` is signed. A row is written by
+    one source, named in ``source_key``, so that source can clear and rewrite its
+    own rows without touching another's. The account page lists ``description``
+    as a line under the allocation.
+    """
+
+    ORIGIN_CHOICES = [
+        ("carried_forward", "Carried forward"),
+        ("managed_recharge", "Managed recharge"),
+        ("canal_seepage", "Canal seepage"),
+    ]
+
+    water_account = models.ForeignKey(WaterAccount, on_delete=models.CASCADE, related_name="credits")
+    water_type = models.ForeignKey(WaterType, on_delete=models.CASCADE)
+    water_year = models.PositiveIntegerField(
+        help_text="The year this applies to, named by the year it ends in."
+    )
+    origin = models.CharField(max_length=24, choices=ORIGIN_CHOICES)
+    amount_af = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        help_text="Signed amount in acre-feet. Positive adds water, negative is water owed.",
+    )
+    source_key = models.CharField(
+        max_length=120,
+        help_text="Names what wrote this row, so it can replace its own rows.",
+    )
+    description = models.CharField(max_length=300, help_text="The line the account page shows.")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["water_year", "water_account", "origin", "source_key"]
+        indexes = [models.Index(fields=["water_account", "water_year"])]
+        # A finalized water year is closed to change (accounting/locks.py).
+        triggers = [finalized_period_lock(water_year_column="water_year")]
+
+    def __str__(self):
+        return f"{self.water_account} {self.water_type.code} WY{self.water_year}: {self.amount_af} AF"
 
 
 @track_changes()

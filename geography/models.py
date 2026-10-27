@@ -140,9 +140,56 @@ class ZoneGroup(models.Model):
 class ParcelZone(models.Model):
     parcel = models.ForeignKey("parcels.Parcel", on_delete=models.CASCADE, related_name="parcel_zones")
     zone = models.ForeignKey(Zone, on_delete=models.CASCADE, related_name="parcel_zones")
+    # A field's membership of a zone runs for a span of dates. A blank start
+    # means the field has always been in the zone, and a blank end means it
+    # still is. A year's figures count the fields whose span touches the year,
+    # so taking a field out later leaves a finished year as it was.
+    start_date = models.DateField(
+        null=True, blank=True,
+        help_text="First day the field is in this zone. Blank means it always has been.",
+    )
+    end_date = models.DateField(
+        null=True, blank=True,
+        help_text="Last day the field is in this zone. Blank means it still is.",
+    )
 
     class Meta:
-        unique_together = ("parcel", "zone")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["parcel", "zone"],
+                condition=models.Q(end_date__isnull=True),
+                name="one_open_membership_per_field_and_zone",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.parcel} - {self.zone}"
+
+    def other_membership_of_the_same_kind(self):
+        """Another membership of this field, in a zone of the same kind, that overlaps this one's dates.
+
+        A field that left a zone on the day this membership starts is a hand-over, not an overlap.
+        """
+        if not self.parcel_id or not self.zone_id or not self.zone.zone_type:
+            return None
+        others = ParcelZone.objects.filter(
+            parcel_id=self.parcel_id, zone__zone_type=self.zone.zone_type
+        ).exclude(pk=self.pk).select_related("zone")
+        for other in others:
+            starts_before_we_end = other.start_date is None or self.end_date is None or other.start_date <= self.end_date
+            ends_after_we_start = other.end_date is None or self.start_date is None or other.end_date > self.start_date
+            if starts_before_we_end and ends_after_we_start:
+                return other
+        return None
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        super().clean()
+        if self.start_date and self.end_date and self.end_date < self.start_date:
+            raise ValidationError("The last day cannot be before the first day.")
+        other = self.other_membership_of_the_same_kind()
+        if other is not None:
+            raise ValidationError(
+                f"{self.parcel} is already in {other.zone.name}, which is the same kind of zone."
+            )

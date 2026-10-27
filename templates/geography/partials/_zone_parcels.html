@@ -7,7 +7,7 @@
   migration and the unguarded `{% templatetag openblock %} url 'parcels:detail'
   {% templatetag closeblock %}` inside the loop becomes a NoReverseMatch on the
   zone page. The module predicate says what we actually mean.
-{% endcomment %}{% if 'parcels' in enabled_modules %}{% if parcel_zones %}
+{% endcomment %}{% if 'parcels' in enabled_modules %}{% if membership_error %}<p class="text-sm mb-md text-deficit" role="alert">{{ membership_error }}</p>{% endif %}{% if parcel_zones %}
 <table class="data-table">
   <thead>
     <tr>

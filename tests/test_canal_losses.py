@@ -32,6 +32,7 @@ from accounting.services import (
     deposit_to_basin_pool,
     zone_carryover,
     zone_groundwater_budget,
+    zone_pool_sources,
 )
 from parcels.models import ParcelLedger
 from surface.models import CanalMonthLoss, UnallocatedDelivery
@@ -83,6 +84,7 @@ def _canal(
     extra = {"location": location} if location is not None else {}
     pod = PointOfDiversionFactory(
         name=name,
+        division_method="crop_need",
         evaporation_fraction=evaporation,
         seepage_fraction=seepage,
         spill_fraction=spill,
@@ -338,10 +340,10 @@ def test_no_zone_at_all_deposits_nothing_and_says_so_in_words():
     ]
 
 
-def test_the_zones_balance_counts_the_seepage_pool():
+def test_the_zones_balance_keeps_the_seepage_pool_outside_available():
     # The figure the dashboard's zone row reads (zone_groundwater_budget): the
-    # carry-over is every pool row of the zone-year, so 11.4 AF of seepage adds
-    # to a 100 AF allocation.
+    # carry-over is the year-end row alone, so 11.4 AF of seepage stays a pool
+    # of its own beside a 100 AF allocation.
     rp, pod, fields = _canal()
     zone = ZoneFactory()
     groundwater, _ = WaterType.objects.get_or_create(
@@ -356,10 +358,11 @@ def test_the_zones_balance_counts_the_seepage_pool():
 
     allocate_district_delivery(pod, rp, efficiency=EFF)
 
-    assert zone_carryover(zone, 2024) == Decimal("11.4000")
+    assert zone_carryover(zone, 2024) == Decimal("0")
     budget = zone_groundwater_budget(zone, rp)
-    assert budget["carryover"] == Decimal("11.4000")
-    assert budget["available"] == Decimal("111.4000")
+    assert budget["carryover"] == Decimal("0")
+    assert budget["available"] == Decimal("100.0000")
+    assert zone_pool_sources(zone, rp) == [("Canal seepage", Decimal("11.4000"))]
 
 
 # (c) the notes ---------------------------------------------------------------
@@ -459,7 +462,7 @@ def engine_world():
     parcel = _parcel("CL-A", acres="10")
     _irrigate(parcel)
     _et_cache(parcel, period="2024-01", et_mm=304.8)  # exactly 10.0000 AF
-    pod = PointOfDiversionFactory(name="Test Canal Headgate")
+    pod = PointOfDiversionFactory(name="Test Canal Headgate", division_method="crop_need")
     PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=parcel)
     DiversionRecordFactory(
         point_of_diversion=pod,

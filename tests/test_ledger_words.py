@@ -22,6 +22,7 @@ import pytest
 
 from accounting.ledger_words import (
     DELIVERY_SHARE_BY_FIXED,
+    DELIVERY_SHARE_SOURCE,
     DELIVERY_SHARE_BY_USE,
     INCIDENTAL_RECHARGE_WORDS,
     LEGACY_INCIDENTAL_RECHARGE_WORDS,
@@ -92,7 +93,7 @@ class TestDeliveryShareWordsTail:
         sentence = delivery_share_words(record, _pod("Plain Canal Headgate"))
         assert sentence.endswith(DELIVERY_SHARE_BY_USE)
 
-    def test_fixed_share_form_prints_percentage_and_because_no_use_area_tail(self):
+    def test_fixed_share_form_prints_percentage_and_where_the_share_came_from(self):
         record = _record("10", "0")
         sentence = delivery_share_words(
             record, _pod("Plain Canal Headgate"), fixed_share=Decimal("0.2000")
@@ -101,9 +102,8 @@ class TestDeliveryShareWordsTail:
         # definition); the share is named as the thing it is, then its figure.
         assert f", divided up from the canal total by {DELIVERY_SHARE_BY_FIXED}, 20%, " in sentence
         assert "fixed share" not in sentence
-        assert sentence.endswith(
-            "because no use area the canal serves has an estimated use for the month"
-        )
+        assert sentence.endswith(DELIVERY_SHARE_SOURCE)
+        assert "because no use area" not in sentence
 
 
 class TestDeliveryShareWordsPodName:
@@ -149,6 +149,7 @@ def _public_word_constants():
     assert set(names) == {
         "DELIVERY_SHARE_BY_FIXED",
         "DELIVERY_SHARE_BY_USE",
+        "DELIVERY_SHARE_SOURCE",
         "INCIDENTAL_RECHARGE_WORDS",
         "NO_PUMPING_DERIVED_WORDS",
         "PUMPING_ESTIMATE_WORDS",

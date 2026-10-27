@@ -14,11 +14,13 @@ from decimal import Decimal
 from django.contrib.auth.decorators import login_required
 from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Polygon
 from django.core.cache import cache
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.core.serializers import serialize
 from django.db.models import Count, Max, Q, QuerySet, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from accounting.models import AllocationPlan
@@ -27,6 +29,8 @@ from accounting.services import (
     current_period_id as compute_current_period_id,
     zone_credit_sources,
     zone_groundwater_budget,
+    zone_parcel_ids as parcels_in_zone,
+    zone_pool_sources,
 )
 from core.access import admin_required, public_in_open_demo
 from core.constants import RECOVERY_HORIZON_CHOICES
@@ -152,7 +156,9 @@ def zone_list(request):
     # not rendered.
     queryset = Zone.objects.order_by("name")
     if is_enabled("parcels"):
-        queryset = queryset.annotate(parcel_count=Count("parcel_zones"))
+        queryset = queryset.annotate(
+            parcel_count=Count("parcel_zones", filter=Q(parcel_zones__end_date__isnull=True))
+        )
 
     if q:
         queryset = queryset.filter(Q(name__icontains=q))
@@ -207,7 +213,7 @@ def _zone_budget_captions(is_groundwater, period_name):
     """
     if is_groundwater:
         return {
-            "available": f"allocation plus recharge, seepage and carry-over, {period_name}",
+            "available": f"allocation plus carry-over, {period_name}",
             "used": f"pumped, metered or estimated, {period_name}",
             "remaining": f"available less pumped, {period_name}",
         }
@@ -238,7 +244,7 @@ def _zone_parcels_context(zone):
     if is_enabled("parcels"):
         parcel_zones = (
             ParcelZone.objects
-            .filter(zone=zone)
+            .filter(zone=zone, end_date__isnull=True)
             .select_related("parcel")
             .order_by("parcel__parcel_number")
         )
@@ -272,7 +278,13 @@ def _zone_allocations(zone: Zone) -> QuerySet:
 
 
 def _zone_budget_row(alloc: AllocationPlan, zone: Zone, zone_parcel_ids: list[int]) -> dict:
-    """One allocation-versus-use row for the zone's budget table."""
+    """One allocation-versus-use row for the zone's budget table.
+
+    The fields counted are the ones in the zone during the allocation's own
+    period, read from their membership dates. ``zone_parcel_ids`` (the fields
+    in the zone now) is accepted so callers need not change, and is not read.
+    """
+    zone_parcel_ids = parcels_in_zone(zone, alloc.reporting_period)
     period_rows = billable_ledger(
         ParcelLedger.objects.filter(
             parcel_id__in=zone_parcel_ids,
@@ -300,6 +312,8 @@ def _zone_budget_row(alloc: AllocationPlan, zone: Zone, zone_parcel_ids: list[in
             "is_groundwater": True,
             # What the carry-over sum is made of, by kind.
             "credit_sources": zone_credit_sources(zone, alloc.reporting_period),
+            # The pools stand outside Available, each on its own line.
+            "pool_sources": zone_pool_sources(zone, alloc.reporting_period),
             "remaining": gw["remaining"],
             "available_caption": captions["available"],
             "used_caption": captions["used"],
@@ -642,15 +656,24 @@ def zone_create(request):
 @login_required
 @require_POST
 def zone_parcel_assign(request, pk):
-    """Assign a parcel to a zone. Creates ParcelZone."""
+    """Assign a parcel to a zone. Creates a ParcelZone that starts today."""
     zone = get_object_or_404(Zone, pk=pk)
     parcel_id = request.POST.get("parcel_id")
     parcel = get_object_or_404(Parcel, pk=parcel_id)
 
-    ParcelZone.objects.get_or_create(zone=zone, parcel=parcel)
+    error = None
+    if not ParcelZone.objects.filter(zone=zone, parcel=parcel, end_date__isnull=True).exists():
+        membership = ParcelZone(zone=zone, parcel=parcel, start_date=timezone.localdate())
+        try:
+            membership.full_clean()
+        except ValidationError as exc:
+            error = " ".join(exc.messages)
+        else:
+            membership.save()
 
     return render(request, "geography/partials/_zone_parcels.html", {
         "zone": zone,
+        "membership_error": error,
         **_zone_parcels_context(zone),
     })
 
@@ -658,10 +681,13 @@ def zone_parcel_assign(request, pk):
 @login_required
 @require_POST
 def zone_parcel_remove(request, pk, pz_pk):
-    """Remove a parcel from a zone. Deletes the ParcelZone."""
+    """Take a parcel out of a zone. Ends the ParcelZone today and keeps the row,
+    so the years the field was in the zone still count it."""
     zone = get_object_or_404(Zone, pk=pk)
     pz = get_object_or_404(ParcelZone, pk=pz_pk, zone=zone)
-    pz.delete()
+    if pz.end_date is None:
+        pz.end_date = timezone.localdate()
+        pz.save(update_fields=["end_date"])
 
     return render(request, "geography/partials/_zone_parcels.html", {
         "zone": zone,
@@ -678,7 +704,7 @@ def zone_parcel_search(request, pk):
     results = []
     if q:
         already_assigned = ParcelZone.objects.filter(
-            zone=zone
+            zone=zone, end_date__isnull=True
         ).values_list("parcel_id", flat=True)
 
         results = (
@@ -918,7 +944,9 @@ def zone_overview_geojson(request):
     # phrase, so absence is the shape it was built to handle.
     zones = Zone.objects.filter(geometry__isnull=False)
     if is_enabled("parcels"):
-        zones = zones.annotate(parcel_count=Count("parcel_zones"))
+        zones = zones.annotate(
+            parcel_count=Count("parcel_zones", filter=Q(parcel_zones__end_date__isnull=True))
+        )
     features = [
         {
             "type": "Feature",

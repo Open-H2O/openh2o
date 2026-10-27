@@ -320,19 +320,25 @@ class TestCreateRechargeLedgerEntries:
         assert rows.first().amount_af == Decimal("100.0000")
 
     def test_personal_path_for_a_has_well_parcel(self):
-        """When tied to a conjunctive (has-well) parcel, the event writes ONE
-        personal recharge row and pools nothing."""
+        """When tied to a conjunctive (has-well) parcel in a water account, the
+        event credits that account the volume less the share left in the basin,
+        writes no ledger row and pools nothing."""
+        from accounting.models import AccountCredit, WaterAccountParcel
+        from tests.factories import WaterAccountFactory
+
         zone = ZoneFactory(zone_type="management_area")
         parcel = ParcelFactory(area_acres=Decimal("40.00"))
         ParcelZoneFactory(parcel=parcel, zone=zone)
         WellIrrigatedParcelFactory(parcel=parcel)  # has well -> CONJUNCTIVE
+        account = WaterAccountFactory()
+        WaterAccountParcel.objects.create(water_account=account, parcel=parcel)
 
         event = RechargeEventFactory(volume_acre_feet=Decimal("80.0000"))
         entries = create_recharge_ledger_entries(event, zone=zone, parcel=parcel)
 
-        assert len(entries) == 1
-        assert entries[0].amount_acre_feet == Decimal("80.0000")
-        assert entries[0].source_type == "recharge"
+        assert entries == []
+        credit = AccountCredit.objects.get(water_account=account, origin="managed_recharge")
+        assert credit.amount_af == Decimal("72.0000")
         assert self._pool_total(zone) == Decimal("0")
 
     def test_no_well_parcel_arg_still_pools(self):

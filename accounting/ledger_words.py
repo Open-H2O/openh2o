@@ -181,6 +181,17 @@ DELIVERY_SHARE_BY_USE = (
 #: shape (`tests/test_domain_vocabulary.py::scan`), so there is none.
 DELIVERY_SHARE_BY_FIXED = "this use area's share of the canal on file"
 
+#: Where that share came from, closing the sentence after the percentage. The
+#: canal is divided by the shares the district entered for it, or by each use
+#: area's acreage where it entered none; the row does not record which, so the
+#: clause names both. Rows written with the earlier clause ("because no use area
+#: the canal serves has an estimated use for the month", true only of the old
+#: fallback) are reworded by parcels/migrations/0019.
+DELIVERY_SHARE_SOURCE = (
+    "taken from the shares entered for the canal, or from each use area's "
+    "acreage where none were entered"
+)
+
 #: A recharge row credited to a use area (or the basin pool) for canal water
 #: delivered beyond what the month's estimated use called for.
 #:
@@ -276,8 +287,7 @@ def delivery_share_words(record, pod, *, fixed_share=None, loss_fraction=None):
     fallback path; pass it only from ``_fraction_rows``. When omitted, the
     sentence closes with ``DELIVERY_SHARE_BY_USE``; when given, it closes with
     "divided up from the canal total by", ``DELIVERY_SHARE_BY_FIXED``, the
-    percentage, and the "because no use area the canal serves has an estimated
-    use for the month" tail.
+    percentage, and ``DELIVERY_SHARE_SOURCE``.
 
     The verb phrase is "delivered from" for a `direct_use` record and "taken
     to storage from" otherwise (a to-storage record reaching this path is
@@ -315,8 +325,7 @@ def delivery_share_words(record, pod, *, fixed_share=None, loss_fraction=None):
     if fixed_share is not None:
         sentence += (
             f", divided up from the canal total by {DELIVERY_SHARE_BY_FIXED}, "
-            f"{fixed_share:.0%}, because no use area the canal serves has an "
-            f"estimated use for the month"
+            f"{fixed_share:.0%}, {DELIVERY_SHARE_SOURCE}"
         )
     else:
         sentence += ", " + DELIVERY_SHARE_BY_USE

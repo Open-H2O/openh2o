@@ -36,23 +36,17 @@ clamp_floor's `incidental_recharge_af` — is always recorded on the run, as
 
 What happens to it is a deployment
 setting, `SiteConfig.over_delivery_treatment`, read ONCE per run:
-`"not_credited"` (the default, exactly the
-behaviour above) writes no `recharge` ledger row and no basin-pool deposit;
-`"named_line"` is identical on the engine side (the amount is shown
-elsewhere, never here); `"credited"` writes a `recharge` row for a has-well
-parcel's own share (`deposit_to_basin_pool` and `recharge_routes_to_personal`
-route it as the earlier rain-bank engine did) or deposits a no-well parcel's
-share to its zone's basin pool, less `SiteConfig.over_delivery_leave_behind`
-kept back in the basin either way. Every run stamps what it did —
-`over_delivery_treatment`, `over_delivery_leave_behind`,
-`over_delivery_credited_af`, `over_delivery_credit_pooled` — so a later
-change to the setting moves no figure until the month is re-run,
-and re-running (or switching the setting and re-running) is idempotent in
-both directions: a personal row is delete-then-insert per (parcel, period),
-and a pool deposit is always a signed DELTA against what THIS field's prior
-run pooled (`prior_pooled`, below), which folds in the one-time reversal of an
-older engine's deposit (`prior_has_old_pool_deposit`) as one case of the same
-computation rather than a second, separate step.
+`"not_credited"` (the default) and `"named_line"` are identical on the
+engine side: no `recharge` ledger row and no basin-pool deposit (the amount is
+shown elsewhere, never here). Nothing credits an over-delivery: a site stored as
+the removed `"credited"` choice is run as `"not_credited"`. A run an older
+version stamped as credited stays readable, and re-running its month clears the
+`recharge` row and takes back the pool deposit that run wrote, as a signed
+DELTA against what THIS field's prior run pooled (`prior_pooled`, below), which
+folds in the one-time reversal of an older engine's deposit
+(`prior_has_old_pool_deposit`) as one case of the same computation rather than
+a second, separate step. Every run stamps `over_delivery_treatment`, so a later
+change to the setting moves no figure until the month is re-run.
 """
 
 from __future__ import annotations
@@ -76,7 +70,6 @@ from accounting.ledger_words import (
     LEGACY_CANAL_CREDIT_WORDS,
     NO_PUMPING_DERIVED_WORDS,
     PUMPING_ESTIMATE_WORDS,
-    over_delivery_credit_words,
 )
 from accounting.models import (
     CalculationPlan,
@@ -145,57 +138,11 @@ def _groundwater_extraction(final_af, efficiency):
     return extracted, deep_percolation
 
 
-def _over_delivery_decision(over, treatment, leave_behind, *, routes_personal, pool_zone):
-    """What THIS parcel-month's over-delivery becomes under `treatment`.
-
-    Pure — writes nothing, reads nothing; every input is already in hand.
-    Returns ``(credited_af, credit_pooled, leave_behind_stamp, note)``:
-
-      - ``credited_af`` — the amount actually credited this run, or ``None``
-        when nothing was (every treatment but "credited", a zero-or-negative
-        `over`, or a no-well field with no management-area zone to hold it).
-      - ``credit_pooled`` — ``True`` iff ``credited_af`` went to the field's
-        zone's shared pool rather than the field's own ledger (the
-        routing rule: no well, no way to pump a personal credit back).
-      - ``leave_behind_stamp`` — the share read from SiteConfig THIS run,
-        stamped whenever ``treatment == "credited"`` (whether or not there
-        was anything to apply it to this month); ``None`` otherwise.
-      - ``note`` — the fragment for the per-parcel --dry-run / live output
-        line, or ``None`` when there is nothing to say.
-    """
-    quant = Decimal("0.0001")
-
-    if treatment != "credited":
-        note = None
-        if treatment == "named_line" and over > 0:
-            note = "shown as its own line"
-        return None, False, None, note
-
-    leave_behind_stamp = leave_behind
-    if over <= 0:
-        return None, False, leave_behind_stamp, None
-
-    credited = (over * (Decimal("1") - leave_behind)).quantize(quant)
-    if credited <= 0:
-        # The whole over-delivery is left in the basin (leave_behind == 1, the
-        # validators' own top of range) -- nothing to write a `recharge` row
-        # OR a pool deposit FOR (the ledger's supply-rows-positive constraint
-        # requires amount_acre_feet > 0), so this reads the same as "nothing
-        # credited this month", not an error.
-        return None, False, leave_behind_stamp, None
-    left = (over - credited).quantize(quant)
-    left_pct = format(leave_behind, ".0%")
-
-    if routes_personal:
-        note = f"credited {credited} AF to the field, {left} AF ({left_pct}) left in the basin"
-        return credited, False, leave_behind_stamp, note
-    if pool_zone is not None:
-        note = (
-            f"credited {credited} AF to the zone's shared account, "
-            f"{left} AF ({left_pct}) left in the basin"
-        )
-        return credited, True, leave_behind_stamp, note
-    return None, False, leave_behind_stamp, "no zone to hold it, nothing credited"
+def _over_delivery_note(over, treatment):
+    """The fragment for a --dry-run / live line about this parcel-month's over-delivery, or ``None``."""
+    if treatment == "named_line" and over > 0:
+        return "shown as its own line"
+    return None
 
 
 def _resolve_leftover(parcel, period, final_af, breakdown, *, commit):
@@ -327,7 +274,7 @@ def _persist_calculation_run(
     exactly as the model fields' help text says.
 
     The four ``over_delivery_*`` stamps are the CALLER's decision
-    (``_over_delivery_decision``, computed before this function runs) —
+    (read once per run, before this function runs) —
     passed straight through, never re-derived here, so this function stays a
     pure "write what I was told" persister for every field it owns.
 
@@ -409,6 +356,166 @@ def _parcels_in_scope(parcel_number: str | None) -> QuerySet[Parcel]:
                 f"no parcel with parcel_number={parcel_number!r}"
             )
     return parcels
+
+
+#: What a field's ledger row for its share of a well's meter reading starts
+#: with. The month's calculation writes these rows and replaces them every
+#: time it runs; a meter row a person typed on the field never starts this way.
+WELL_METER_SHARE_WORDS = "From the well's meter:"
+
+_GALLONS_PER_ACRE_FOOT = Decimal("325851")
+_CUBIC_FEET_PER_ACRE_FOOT = Decimal("43560")
+
+
+def _reading_acre_feet(reading) -> Decimal | None:
+    """One meter reading as acre-feet pumped, or ``None`` when it states no volume.
+
+    The reading's own stored volume (``calculated_volume``) wins. Without one,
+    the volume is the reading less its previous value; with no previous value
+    on the reading, a totalizer is read against the last reading before it on
+    the same meter, and any other meter type states the month's volume as the
+    reading itself. The volume is in the meter's unit and is converted to
+    acre-feet. A rate (cubic feet per second) states no volume and gives
+    ``None``, as does a totalizer with nothing before it to subtract.
+    """
+    from measurements.models import MeterReading
+
+    meter = reading.meter
+    if reading.calculated_volume is not None:
+        volume = reading.calculated_volume
+    elif reading.previous_value is not None:
+        volume = reading.current_value - reading.previous_value
+    elif meter.meter_type == "totalizer":
+        earlier = (
+            MeterReading.objects.filter(
+                meter=meter, reading_date__lt=reading.reading_date
+            )
+            .order_by("-reading_date")
+            .first()
+        )
+        if earlier is None:
+            return None
+        volume = reading.current_value - earlier.current_value
+    else:
+        volume = reading.current_value
+    if volume < 0:
+        return None
+    if meter.unit == "acre_feet":
+        return volume
+    if meter.unit == "gallons":
+        return volume / _GALLONS_PER_ACRE_FOOT
+    if meter.unit == "cubic_feet":
+        return volume / _CUBIC_FEET_PER_ACRE_FOOT
+    return None
+
+
+def _well_meter_shares(year: int, month: int, parcel_ids: set[int]) -> dict[int, tuple[Decimal, str]]:
+    """``{parcel id: (acre-feet, description)}`` for the fields a well's meter covers this month.
+
+    A well's readings dated in the month are added up and divided among the
+    fields the well waters by each field's share of the well (the shares
+    scaled to add to one, so shares left at their default divide it evenly).
+    A well whose fields include one that carries its own meter row for the
+    month is left out: that row already holds the meter's water.
+    """
+    from django.utils import timezone
+
+    from core.modules import is_enabled
+
+    if not is_enabled("wells"):
+        return {}
+    from measurements.models import MeterReading
+    from wells.models import WellIrrigatedParcel, WellMeter
+
+    start = timezone.make_aware(dt.datetime(year, month, 1))
+    end = timezone.make_aware(
+        dt.datetime(year + (month == 12), month % 12 + 1, 1)
+    )
+    readings = MeterReading.objects.filter(
+        reading_date__gte=start, reading_date__lt=end
+    ).select_related("meter")
+    by_meter: dict[int, Decimal] = {}
+    for reading in readings:
+        volume = _reading_acre_feet(reading)
+        if volume is not None:
+            by_meter[reading.meter_id] = by_meter.get(reading.meter_id, Decimal("0")) + volume
+
+    typed_rows = set(
+        ParcelLedger.objects.filter(
+            source_type="meter_reading",
+            effective_date__year=year,
+            effective_date__month=month,
+        )
+        .exclude(description__startswith=WELL_METER_SHARE_WORDS)
+        .values_list("parcel_id", flat=True)
+    )
+    quant = Decimal("0.0001")
+    out: dict[int, tuple[Decimal, str]] = {}
+    well_volumes: dict[int, Decimal] = {}
+    wells: dict[int, Any] = {}
+    for link in WellMeter.objects.filter(meter_id__in=by_meter).select_related("well"):
+        wells[link.well_id] = link.well
+        well_volumes[link.well_id] = (
+            well_volumes.get(link.well_id, Decimal("0")) + by_meter[link.meter_id]
+        )
+    for well_id, volume in well_volumes.items():
+        links = list(
+            WellIrrigatedParcel.objects.filter(well_id=well_id).order_by("parcel_id")
+        )
+        if not links or any(k.parcel_id in typed_rows for k in links):
+            continue
+        total_share = sum((k.fraction for k in links), Decimal("0"))
+        if total_share <= 0:
+            continue
+        volume = volume.quantize(quant)
+        assigned = Decimal("0")
+        for i, link in enumerate(links):
+            if i == len(links) - 1:
+                amount = volume - assigned
+            else:
+                amount = (volume * link.fraction / total_share).quantize(quant)
+            assigned += amount
+            if link.parcel_id in parcel_ids:
+                pct = format(link.fraction / total_share, ".0%")
+                out[link.parcel_id] = (
+                    amount,
+                    f"{WELL_METER_SHARE_WORDS} {wells[well_id].name} pumped {volume} AF "
+                    f"this month, this field's share is {pct}",
+                )
+    return out
+
+
+def _write_well_meter_shares(
+    year: int,
+    month: int,
+    eff_date: dt.date,
+    shares: dict[int, tuple[Decimal, str]],
+    parcel_ids: set[int],
+    reporting_period: ReportingPeriod | None,
+) -> None:
+    """Replace the month's well-meter rows on the fields in scope with ``shares``."""
+    gw_type, _ = WaterType.objects.get_or_create(
+        code="GW", defaults={"name": "Groundwater"}
+    )
+    with transaction.atomic():
+        ParcelLedger.objects.filter(
+            source_type="meter_reading",
+            description__startswith=WELL_METER_SHARE_WORDS,
+            effective_date__year=year,
+            effective_date__month=month,
+            parcel_id__in=parcel_ids,
+        ).delete()
+        for parcel_id, (amount, description) in shares.items():
+            ParcelLedger.objects.create(
+                parcel_id=parcel_id,
+                transaction_date=dt.date.today(),
+                effective_date=eff_date,
+                amount_acre_feet=-amount,
+                source_type="meter_reading",
+                description=description,
+                reporting_period=reporting_period,
+                water_type=gw_type,
+            )
 
 
 def _metered_parcel_ids(year: int, month: int) -> set[int]:
@@ -649,25 +756,12 @@ def _write_residual_row(
     return residual_disposition, unmet_demand_af
 
 
-def _write_over_delivery_credit(
-    parcel: Parcel,
-    eff_date: dt.date,
-    credited_af: Decimal | None,
-    over_delivery_leave_behind: Decimal,
-    reporting_period: ReportingPeriod | None,
-    gw_water_type: WaterType,
-    *,
-    routes_personal: bool,
-) -> None:
-    """Clear the field's stale credit row, then write the personal credit when one applies."""
-    # The delete-by-prefix runs unconditionally, every
-    # treatment, every run — it clears THIS field's own stale
-    # credit row (a switch away from "credited", or a re-run of
-    # "credited" itself, which is delete-then-insert) and cleans
-    # up a row an older engine wrote (either wording,
-    # INCIDENTAL_RECHARGE_WORDS or the earlier
-    # LEGACY_INCIDENTAL_RECHARGE_WORDS), BEFORE deciding whether
-    # to write a fresh one.
+def _clear_over_delivery_credit(parcel: Parcel, eff_date: dt.date) -> None:
+    """Clear the field's stale credit row left by an older version of the engine."""
+    # Nothing credits an over-delivery now, but a month an older version
+    # credited still holds its row (either wording, INCIDENTAL_RECHARGE_WORDS
+    # or the earlier LEGACY_INCIDENTAL_RECHARGE_WORDS); re-running the month
+    # removes it.
     ParcelLedger.objects.filter(
         Q(description__startswith=INCIDENTAL_RECHARGE_WORDS)
         | Q(description__startswith=LEGACY_INCIDENTAL_RECHARGE_WORDS)
@@ -676,48 +770,25 @@ def _write_over_delivery_credit(
         effective_date=eff_date,
         source_type="recharge",
     ).delete()
-    if routes_personal and credited_af is not None:
-        # "credited", has a well: a personal, recoverable credit —
-        # the same shape the rain-bank engine wrote, less the leave-behind share.
-        ParcelLedger.objects.create(
-            parcel=parcel,
-            transaction_date=dt.date.today(),
-            effective_date=eff_date,
-            amount_acre_feet=credited_af,
-            source_type="recharge",
-            description=over_delivery_credit_words(
-                over_delivery_leave_behind
-            ),
-            reporting_period=reporting_period,
-            water_type=gw_water_type,
-        )
 
 
 def _adjust_basin_pool(
     pool_zone: Zone | None,
     gw_water_type: WaterType,
     period: str,
-    credited_af: Decimal | None,
-    credit_pooled: bool,
     prior_run: CalculationRun | None,
     prior_incidental: Decimal,
     prior_has_old_pool_deposit: bool,
     *,
     routes_personal: bool,
 ) -> None:
-    """Move the zone's basin pool by the signed delta against what the prior run pooled."""
-    # The basin-pool side, unified. A no-well field's
-    # credited share joins its zone's shared pool; a field that
-    # is NOT currently pooling (every other case — "not_credited",
-    # "named_line", a has-well field under "credited", or a
-    # no-well field with nothing to credit) still needs its PRIOR
-    # pooled amount taken back down if a past run left one. Both
-    # are one signed delta against `prior_pooled`, which folds in
-    # the one-time reversal of an older engine's deposit as the first of its three
-    # cases rather than a second, separate step — a re-run's
-    # "prior" is always THIS engine's own last write once it has
-    # run once, so `prior_has_old_pool_deposit` is only ever true the
-    # first time.
+    """Take back what the prior run pooled for this field; nothing is pooled now."""
+    # Nothing is pooled any more, so the new pooled amount is always zero and
+    # the delta is a take-back of whatever a past run left: what an older
+    # version pooled for this field (`prior_run.over_delivery_credit_pooled`),
+    # or, the first time only, the deposit an older engine made
+    # (`prior_has_old_pool_deposit`). A re-run's "prior" is always this
+    # engine's own last write once it has run once.
     prior_pooled = (
         prior_incidental
         if prior_has_old_pool_deposit and not routes_personal
@@ -728,7 +799,7 @@ def _adjust_basin_pool(
             else Decimal("0")
         )
     )
-    new_pooled = credited_af if credit_pooled else Decimal("0")
+    new_pooled = Decimal("0")
     if pool_zone is not None:
         delta = new_pooled - prior_pooled
         if delta != 0:
@@ -761,10 +832,6 @@ def _commit_parcel_month(
     gw_efficiency: Decimal,
     gw_efficiency_source: str,
     over_delivery_treatment: str,
-    over_delivery_leave_behind: Decimal,
-    leave_behind_stamp: Decimal | None,
-    credited_af: Decimal | None,
-    credit_pooled: bool,
     reporting_period: ReportingPeriod | None,
     gw_water_type: WaterType,
     is_metered: bool,
@@ -809,16 +876,13 @@ def _commit_parcel_month(
             groundwater_application_efficiency=gw_efficiency,
             groundwater_efficiency_source=gw_efficiency_source,
             over_delivery_treatment=over_delivery_treatment,
-            over_delivery_leave_behind=leave_behind_stamp,
-            over_delivery_credited_af=credited_af,
-            over_delivery_credit_pooled=credit_pooled,
+            over_delivery_leave_behind=None,
+            over_delivery_credited_af=None,
+            over_delivery_credit_pooled=False,
         )
-        _write_over_delivery_credit(
-            parcel, eff_date, credited_af, over_delivery_leave_behind,
-            reporting_period, gw_water_type, routes_personal=routes_personal,
-        )
+        _clear_over_delivery_credit(parcel, eff_date)
         _adjust_basin_pool(
-            pool_zone, gw_water_type, period, credited_af, credit_pooled,
+            pool_zone, gw_water_type, period,
             prior_run, prior_incidental, prior_has_old_pool_deposit,
             routes_personal=routes_personal,
         )
@@ -880,7 +944,7 @@ def _over_delivery_routing(
     # (b) run must still be able to find the zone that holds its old
     # deposit, to take it back down to 0 (see prior_pooled, below).
     routes_personal = recharge_routes_to_personal(parcel)
-    pool_zone = _parcel_pool_zone(parcel)
+    pool_zone = _parcel_pool_zone(parcel, dt.date(int(period[:4]), int(period[5:7]), 1))
     prior_run, prior_incidental, prior_has_old_pool_deposit = _prior_run_state(
         parcel, period
     )
@@ -955,7 +1019,6 @@ class Command(BaseCommand):
         dry_run = options["dry_run"]
 
         parcels = _parcels_in_scope(options.get("parcel"))
-        metered_row_ids = _metered_parcel_ids(year, month)
         self._warn_unmetered_only_deprecated(options)
 
         reporting_period = ReportingPeriod.objects.filter(
@@ -964,6 +1027,16 @@ class Command(BaseCommand):
         self._guard_finalized_period(
             reporting_period, period, dry_run=dry_run, force=options["force"]
         )
+
+        # A well's meter reading, entered once on the well, becomes each
+        # field's share before anything asks which fields are metered.
+        scope_ids = set(parcels.values_list("id", flat=True))
+        well_shares = _well_meter_shares(year, month, scope_ids)
+        if not dry_run:
+            _write_well_meter_shares(
+                year, month, eff_date, well_shares, scope_ids, reporting_period
+            )
+        metered_row_ids = _metered_parcel_ids(year, month) | set(well_shares)
 
         # Snapshot the methodology ONCE: the active plan is identical for every
         # parcel in a single run, so hashing per-parcel would be wasted work and
@@ -1094,8 +1167,13 @@ class Command(BaseCommand):
         "unmet" or "metered" for the summary counts, or ``None`` when the
         parcel has no matched ET and was skipped.
         """
-        over_delivery_treatment = site_config.over_delivery_treatment
-        over_delivery_leave_behind = site_config.over_delivery_leave_behind
+        # "credited" is no longer a choice; a site still holding it runs as
+        # "not credited" until the migration has moved it.
+        over_delivery_treatment = (
+            "named_line"
+            if site_config.over_delivery_treatment == "named_line"
+            else "not_credited"
+        )
 
         assessment = _assess_et(parcel, period, site_config)
         if assessment is None:
@@ -1107,17 +1185,11 @@ class Command(BaseCommand):
             _over_delivery_routing(parcel, period)
         )
 
-        # Decide what this parcel-month's over-delivery becomes
-        # under the setting read once above — a pure computation, shared
-        # by the --dry-run preview and the real write below, so the two
-        # can never say something different happened.
+        # The line's note about the over-delivery, shared by the --dry-run
+        # preview and the real write below, so the two can never say
+        # something different happened.
         over = incidental_af.quantize(Decimal("0.0001"))
-        credited_af, credit_pooled, leave_behind_stamp, credit_note = (
-            _over_delivery_decision(
-                over, over_delivery_treatment, over_delivery_leave_behind,
-                routes_personal=routes_personal, pool_zone=pool_zone,
-            )
-        )
+        credit_note = _over_delivery_note(over, over_delivery_treatment)
 
         if dry_run:
             net_af, info = _resolve_leftover(
@@ -1141,9 +1213,6 @@ class Command(BaseCommand):
             gw_efficiency=gw_efficiency,
             gw_efficiency_source=gw_efficiency_source,
             over_delivery_treatment=over_delivery_treatment,
-            over_delivery_leave_behind=over_delivery_leave_behind,
-            leave_behind_stamp=leave_behind_stamp,
-            credited_af=credited_af, credit_pooled=credit_pooled,
             reporting_period=reporting_period, gw_water_type=gw_water_type,
             is_metered=is_metered, routes_personal=routes_personal,
             pool_zone=pool_zone, prior_run=prior_run,

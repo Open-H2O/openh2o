@@ -93,6 +93,47 @@
 </div>
 </div>
 
+{% if groundwater_budget %}
+<div class="card-raised page-grid-account-full">
+<div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+  <h3 class="section-header-sm">Groundwater budget</h3>
+  <span class="text-tertiary text-xs">{{ selected_period.name }}. All figures in acre-feet (AF).</span>
+</div>
+<div class="table-scroll">
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>Source</th>
+      <th class="th-right">Amount</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Allocation</td>
+      <td class="td-num">{{ groundwater_budget.allocation|floatformat:2|intcomma }}</td>
+    </tr>
+    {% for credit in groundwater_budget.credits %}
+    <tr>
+      <td class="text-secondary">{{ credit.description }}</td>
+      <td class="td-num {% if credit.amount_af < 0 %}text-deficit{% else %}text-surplus{% endif %}">{% if credit.amount_af > 0 %}+{% endif %}{{ credit.amount_af|floatformat:2|intcomma }}</td>
+    </tr>
+    {% endfor %}
+    <tr>
+      <td>Used</td>
+      <td class="td-num">{{ groundwater_budget.used|floatformat:2|intcomma }}</td>
+    </tr>
+  </tbody>
+  <tfoot>
+    <tr>
+      <td class="tfoot-total">Remaining</td>
+      <td class="td-num-bold {% if groundwater_budget.remaining >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ groundwater_budget.remaining|floatformat:2|intcomma }}</td>
+    </tr>
+  </tfoot>
+</table>
+</div>
+</div>
+{% endif %}
+
 <div class="card-raised page-grid-account-full">
 {% if parcel_balances %}
 {% comment %}

@@ -275,7 +275,7 @@ class TestZoneCarryover:
         zone = ZoneFactory()
         assert zone_carryover(zone, 2025) == Decimal("0")
 
-    def test_signed_sum_across_types(self):
+    def test_only_the_groundwater_year_end_row_counts(self):
         gw = WaterTypeFactory(name="Groundwater", code="GW")
         sw = WaterTypeFactory(name="Surface Water", code="SW")
         zone = ZoneFactory()
@@ -285,7 +285,11 @@ class TestZoneCarryover:
         AllocationCarryover.objects.create(
             zone=zone, water_type=sw, water_year=2025, amount_af=Decimal("-30")
         )
-        assert zone_carryover(zone, 2025) == Decimal("50")
+        AllocationCarryover.objects.create(
+            zone=zone, water_type=gw, water_year=2025, amount_af=Decimal("12"),
+            origin="basin_recharge_pool",
+        )
+        assert zone_carryover(zone, 2025) == Decimal("80")
 
 
 # ---------------------------------------------------------------------------

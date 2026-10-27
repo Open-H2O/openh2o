@@ -112,6 +112,12 @@
                   {% for label, amount in b.credit_sources %}<div class="budget-breakdown-row"><span>{{ label }}</span><b>{% if amount > 0 %}+{% endif %}{{ amount|floatformat:2|intcomma }}</b></div>{% endfor %}
                 </div>
                 {% endif %}
+                {% if b.pool_sources %}
+                <div class="budget-breakdown-group">
+                  <div class="budget-breakdown-title">Not in Available</div>
+                  {% for label, amount in b.pool_sources %}<div class="budget-breakdown-row"><span>{{ label }}</span><b>{% if amount > 0 %}+{% endif %}{{ amount|floatformat:2|intcomma }}</b></div>{% endfor %}
+                </div>
+                {% endif %}
               </div>
               <div class="budget-op">&minus;</div>
               <div class="budget-seg">
@@ -283,4 +289,4 @@
   go();
 })();
 </script>
-{% comment %}Available by source names each kind of row zone_carryover sums (accounting/services.py zone_credit_sources; on the demonstration all of the old "Carried forward" was managed recharge and canal seepage, no rollover having run); the table column reads "Added"; the pointer to the Dashboard sits under a groundwater result only, because the Dashboard dashes a surface allocation's remaining. Captions are geography/views.py _zone_budget_captions. Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
+{% comment %}Available by source names the one row zone_carryover sums, the groundwater year-end carry-over (accounting/services.py zone_credit_sources); "Not in Available" lists the recharge and seepage pools beside it (zone_pool_sources); the table column reads "Added"; the pointer to the Dashboard sits under a groundwater result only, because the Dashboard dashes a surface allocation's remaining. Captions are geography/views.py _zone_budget_captions. Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}

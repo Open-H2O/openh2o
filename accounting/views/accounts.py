@@ -22,6 +22,7 @@ from core.modules import is_enabled
 from core.workspace import redirect_to_selected
 from accounting.services import (
     account_consumptive_balance,
+    account_groundwater_budget,
     balance_state,
     current_period_id as compute_current_period_id,
     parcel_consumptive_balance,
@@ -206,6 +207,22 @@ def _account_assignments(account):
     )
 
 
+def _period_assignments(account, selected_period):
+    """The links the period's figures count: those not removed before the period began.
+
+    The chips list what the account holds now; the breakdown beside the balance
+    lists what the balance counted, so its rows add up to the balance's footer.
+    """
+    if selected_period is None:
+        return _account_assignments(account)
+    return (
+        WaterAccountParcel.objects.filter(water_account=account)
+        .filter(Q(removed_date__isnull=True) | Q(removed_date__gte=selected_period.start_date))
+        .select_related("parcel", "reporting_period")
+        .order_by("parcel__parcel_number")
+    )
+
+
 def _account_delivery_sentence(account):
     """"A farm unit" or "A farm unit · delivered through <point or well>"
     The identity card's leading clause, plus its
@@ -361,14 +378,22 @@ def _account_detail_context(account, period_param=None):
     # account_balance did, so the roll-up partitions identically.
     balance = account_consumptive_balance(account, reporting_period=selected_period)
 
-    parcel_balances = _parcel_balance_rows(assignments, selected_period)
+    counted = _period_assignments(account, selected_period)
+    parcel_balances = _parcel_balance_rows(counted, selected_period)
     state_counts = _use_area_state_counts(parcel_balances)
     use_areas_all_count, use_areas_located_count = _use_area_map_counts(assignments)
+    # The groundwater budget needs a period: "All Time" has no allocation.
+    groundwater_budget = None
+    if selected_period is not None:
+        groundwater_budget = account_groundwater_budget(account, selected_period)
+        if groundwater_budget["allocation"] is None:
+            groundwater_budget = None
 
     return {
         "account": account,
         "assignments": assignments,
         "balance": balance,
+        "groundwater_budget": groundwater_budget,
         "parcel_balances": parcel_balances,
         **state_counts,
         "use_areas_all_count": use_areas_all_count,
@@ -452,6 +477,25 @@ def assign_parcel(request, pk):
     parcel_id = request.POST.get("parcel_id")
     parcel = get_object_or_404(Parcel, pk=parcel_id)
 
+    # A field is in one water account at a time: a link that begins today is
+    # refused while another account still holds the field.
+    already_here = WaterAccountParcel.objects.filter(
+        water_account=account, parcel=parcel, removed_date__isnull=True
+    ).exists()
+    if not already_here:
+        other = WaterAccountParcel(
+            water_account=account, parcel=parcel, added_date=timezone.localdate()
+        ).other_account_link()
+        if other is not None:
+            return _assignment_refused(
+                request,
+                account,
+                Exception(
+                    f"{parcel.parcel_number} is already in water account "
+                    f"{other.water_account.account_number}. Remove it from that account first."
+                ),
+            )
+
     # This door writes the undated assignment (no reporting period), which
     # no finalized year locks (an assignment is locked only when it
     # names a finalized period), so it has nothing to refuse.
@@ -468,7 +512,7 @@ def assign_parcel(request, pk):
     # no-op the operator cannot recover from).
     if not created and wap.removed_date is not None:
         wap.removed_date = None
-        wap.added_date = timezone.now().date()
+        wap.added_date = timezone.localdate()
         wap.save(update_fields=["removed_date", "added_date"])
 
     assignments = _account_assignments(account)
@@ -490,7 +534,7 @@ def remove_parcel(request, pk, wap_pk):
         refuse_if_period_finalized(wap.reporting_period)
     except PeriodFinalized as exc:
         return _assignment_refused(request, account, exc)
-    wap.removed_date = timezone.now().date()
+    wap.removed_date = timezone.localdate()
     wap.save(update_fields=["removed_date"])
 
     assignments = _account_assignments(account)

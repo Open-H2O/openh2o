@@ -1,11 +1,15 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Roll a closed water year's leftover (or over-drawn) budget into the next year.
+"""Roll a closed water year's leftover (or over-drawn) groundwater into the next year.
 
-For each (zone, water_type) that had a budget in the requested water year, sum
-that year's AllocationPlan allocation and its billable usage, compute the SIGNED
-remainder (carryover_math.net_carryover), and write one AllocationCarryover row
-for the NEXT water year — the opening balance that year inherits. A positive row
-is a surplus carried forward; a negative row is a debt borrowed against next year.
+Groundwater only: surface water does not carry over, so no surface row is
+written whatever a zone's recovery horizon says. For each zone that had a
+groundwater budget in the requested water year, the remainder is the year's
+allocation plus the amount carried INTO that year, less its billable usage
+(carryover_math). It is written as one AllocationCarryover row for the NEXT
+water year, the opening balance that year inherits. A positive row is a surplus
+carried forward; a negative row is a debt, carried one for one until it is
+repaid. Each water account carries its own remainder the same way, written as an
+AccountCredit row of origin ``carried_forward``.
 
 Idempotent like run_calculations: the rows this command owns for the target year
 (delete-then-insert inside one transaction) are cleared and rewritten, so running
@@ -30,21 +34,26 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.db.models import QuerySet, Sum
 
-from accounting.carryover_math import net_carryover
+from accounting.carryover_math import available_with_carryover
 from accounting.models import (
+    AccountCredit,
     AllocationCarryover,
     AllocationPlan,
     ReportingPeriod,
+    WaterAccount,
     WaterType,
 )
 from accounting.services import (
+    account_allocation,
+    account_consumptive_balance,
+    account_parcel_ids,
     resolve_recovery_horizon,
     water_year_periods,
     water_year_usage_by_type,
 )
 from core.constants import CARRY_FORWARD, SAME_WATER_YEAR
 from core.models import SiteConfig
-from geography.models import Zone
+from geography.models import ParcelZone, Zone
 
 
 _Result = tuple[Zone, WaterType, Decimal, Decimal, Decimal]
@@ -56,22 +65,24 @@ def _budget_rows(periods: list[ReportingPeriod], source_wy: int) -> QuerySet[All
     # (zone, water_type) pairs that had a budget this year, with the summed
     # allocation. A pair with usage but no budget has no "leftover budget" to
     # carry, so it is intentionally not rolled forward.
-    alloc_rows = (
-        AllocationPlan.objects.filter(reporting_period__in=periods)
-        .values("zone_id", "water_type_id")
-        .annotate(allocation=Sum("allocation_acre_feet"))
-        .order_by("zone_id", "water_type_id")
-    )
-    if not alloc_rows:
+    if not AllocationPlan.objects.filter(reporting_period__in=periods).exists():
         raise CommandError(
             f"no AllocationPlan exists for water year {source_wy}; "
             "nothing to roll over"
         )
+    alloc_rows = (
+        AllocationPlan.objects.filter(
+            reporting_period__in=periods, water_type__code__iexact="GW"
+        )
+        .values("zone_id", "water_type_id")
+        .annotate(allocation=Sum("allocation_acre_feet"))
+        .order_by("zone_id", "water_type_id")
+    )
     return alloc_rows
 
 
 def _budget_results(
-    alloc_rows: QuerySet[AllocationPlan], date_start: date, date_end: date
+    alloc_rows: QuerySet[AllocationPlan], date_start: date, date_end: date, source_wy: int
 ) -> list[_Result]:
     """Each pair's ``(zone, water_type, allocation, usage, net)`` for the year."""
     zones = {z.id: z for z in Zone.objects.all()}
@@ -90,7 +101,13 @@ def _budget_results(
             )
         usage = usage_cache[zone.id].get(water_type.code, Decimal("0"))
 
-        net = net_carryover(allocation, usage)
+        # What the zone's page calls Available: the allocation plus what was
+        # carried into the year. A debt carried in is still owed, so the
+        # remainder carries it on.
+        carried_in = AllocationCarryover.objects.filter(
+            zone=zone, water_type=water_type, water_year=source_wy, origin="allocation_carryover"
+        ).aggregate(total=Sum("amount_af"))["total"] or Decimal("0")
+        net = (available_with_carryover(allocation, carried_in) - usage).quantize(Decimal("0.0001"))
         results.append((zone, water_type, allocation, usage, net))
     return results
 
@@ -144,6 +161,86 @@ def _replace_carryover_rows(decided: list[_Decided], source_wy: int, target_wy: 
         )
 
 
+def _water_year_label(water_year: int) -> str:
+    """The water year as the screens name it: 2025 is "WY 2024-2025"."""
+    return f"WY {water_year - 1}-{water_year}"
+
+
+_AccountResult = tuple[WaterAccount, Decimal, Decimal, bool]
+
+
+def _account_results(
+    periods: list[ReportingPeriod], source_wy: int, water_type: WaterType | None
+) -> list[_AccountResult]:
+    """Each account's ``(account, remainder, used, expires_surplus)`` for the year.
+
+    The remainder is its share of the groundwater allocations, plus its credit
+    rows for the year (last year's carried amount among them), less the
+    groundwater it was charged: the same sum the accounts table prints as
+    Remaining. A surplus expires only where every zone the account has a
+    groundwater plan in lets surplus expire; a debt is always carried.
+    """
+    if water_type is None:
+        return []
+    cfg = SiteConfig.objects.first()
+    agency_default = cfg.default_recovery_horizon if cfg else CARRY_FORWARD
+    results = []
+    for account in WaterAccount.objects.order_by("account_number"):
+        allocation = None
+        used = Decimal("0")
+        for period in periods:
+            share = account_allocation(account, period)
+            if share is not None:
+                allocation = (allocation or Decimal("0")) + share
+            used += account_consumptive_balance(account, period)["groundwater_charged"]
+        if allocation is None:
+            continue
+        credits = AccountCredit.objects.filter(
+            water_account=account, water_year=source_wy, water_type=water_type
+        ).aggregate(total=Sum("amount_af"))["total"] or Decimal("0")
+        net = (allocation + credits - used).quantize(Decimal("0.0001"))
+        parcel_ids = account_parcel_ids(account, periods[0])
+        zone_ids = set(
+            ParcelZone.objects.filter(parcel_id__in=parcel_ids).values_list("zone_id", flat=True)
+        ) & set(
+            AllocationPlan.objects.filter(reporting_period__in=periods, water_type=water_type)
+            .values_list("zone_id", flat=True)
+        )
+        horizons = [
+            resolve_recovery_horizon(z, agency_default=agency_default)
+            for z in Zone.objects.filter(pk__in=zone_ids)
+        ]
+        expires = bool(horizons) and all(h == SAME_WATER_YEAR for h in horizons) and net > 0
+        results.append((account, net, used, expires))
+    return results
+
+
+def _replace_account_credits(
+    results: list[_AccountResult], water_type: WaterType | None, source_wy: int, target_wy: int
+) -> None:
+    """Delete-then-insert the carried-forward rows this command wrote for the target year."""
+    source_key = f"rollover:{source_wy}"
+    with transaction.atomic():
+        AccountCredit.objects.filter(
+            water_year=target_wy, origin="carried_forward", source_key=source_key
+        ).delete()
+        AccountCredit.objects.bulk_create(
+            [
+                AccountCredit(
+                    water_account=account,
+                    water_type=water_type,
+                    water_year=target_wy,
+                    origin="carried_forward",
+                    amount_af=net,
+                    source_key=source_key,
+                    description=f"Carried forward from {_water_year_label(source_wy)}",
+                )
+                for account, net, _used, expires in results
+                if not expires
+            ]
+        )
+
+
 class Command(BaseCommand):
     help = (
         "Roll a closed water year's signed budget remainder forward as "
@@ -188,7 +285,7 @@ class Command(BaseCommand):
         self._warn_if_not_finalized(periods, source_wy)
 
         alloc_rows = _budget_rows(periods, source_wy)
-        results = _budget_results(alloc_rows, date_start, date_end)
+        results = _budget_results(alloc_rows, date_start, date_end, source_wy)
         decided = _decide_expiring_surplus(results)
 
         verb = "Would write" if dry_run else "Wrote"
@@ -196,6 +293,16 @@ class Command(BaseCommand):
             _replace_carryover_rows(decided, source_wy, target_wy)
 
         written, skipped = self._report_rows(decided, target_wy)
+
+        groundwater = WaterType.objects.filter(code__iexact="GW").first()
+        account_results = _account_results(periods, source_wy, groundwater)
+        if not dry_run:
+            _replace_account_credits(account_results, groundwater, source_wy, target_wy)
+        for account, net, used, expires in account_results:
+            self.stdout.write(
+                f"  {account.account_number} GW: remainder {net} AF, used {used} AF -> "
+                + ("EXPIRES, not carried" if expires else f"WY{target_wy}")
+            )
 
         suffix = (
             f" ({skipped} expiring surplus not carried)" if skipped else ""
