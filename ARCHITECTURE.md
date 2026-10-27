@@ -99,9 +99,9 @@ records into a month's ledger.
 - **What starts it.** Four things queue a calculation: the nightly cron job in `crontab.txt`
   (`manage.py run_accounting --open-periods --trigger schedule`); the Calculate button on a
   reporting period's page (`accounting/views/periods.py`, `period_calculate`), which queues
-  nothing while one for that period is already waiting or running; saving ledger entries or
-  surface records (`accounting/views/ledger.py`, `surface/views.py`, through
-  `engine_run.request_for_months`); and `run_accounting` run by hand. Each creates a
+  nothing while one for that period is already waiting or running; saving ledger entries,
+  surface records or a well's meter reading (`accounting/views/ledger.py`, `surface/views.py`,
+  `wells/views.py`, through `engine_run.request_for_months`); and `run_accounting` run by hand. Each creates a
   `CalculationRequest` (`accounting/models.py`), and the queue in `accounting/engine_run.py`
   (`run_queue`) takes a database lock so one calculation runs at a time. A screen starts
   `run_accounting --request <pk>` as its own process (`start_calculation`), so the request returns
@@ -112,15 +112,18 @@ records into a month's ledger.
   serves (`surface/services.py`), and runs the per-field calculation again with the divided water.
 - **One field.** `accounting/management/commands/run_calculations.py` runs the methodology chain
   for each field through `accounting/calculation.py` (`evaluate_chain`). The steps are functions
-  registered in `accounting/steps.py` (`STEP_REGISTRY`): gross crop water use, less effective rain,
-  less surface water, the facility-only rule, and a floor at zero. Which steps run and in what
-  order is data: `CalculationPlan` and `CalculationStep` rows in `accounting/models.py`. The
+  registered in `accounting/steps.py` (`STEP_REGISTRY`): gross crop water use (0 on a field marked
+  fallow), less effective rain, less surface water, and a floor at zero. A retired facility-only
+  step stays registered so that a plan saved before it was retired still runs; it changes
+  nothing. Which steps run and in what order is data: `CalculationPlan` and `CalculationStep` rows in `accounting/models.py`. The
   Methodology Settings page (`accounting/views/settings_pages.py`) turns steps on and off,
   reorders them and edits the settings of two of them (effective rain and the floor).
 - **What it writes.** A `CalculationRun` per field-month (with each step's result), calculated
-  `ParcelLedger` rows, the canal and delivery tables in `surface/` (with `surface` on), and the
-  request's status and notes. Under the credited over-delivery setting it also writes recharge
-  ledger rows and basin pool deposits. With the `health` module on, a Site Health result is stored afterwards
+  `ParcelLedger` rows, each field's share of a well's meter readings as a meter ledger row, the canal and delivery tables in `surface/` (with `surface` on), and the
+  request's status and notes. Re-running a month that an older version credited removes that
+  month's recharge ledger row and takes back its basin pool deposit. When Delivery Settings credit
+  canal seepage to a water account, the canal division also writes `AccountCredit` rows
+  (`surface/services.py`, `_store_seepage_credits`). With the `health` module on, a Site Health result is stored afterwards
   (`health/checks.py`, `check_calculation`).
 - **Settings it reads.** Site-wide choices sit on the one `SiteConfig` row (`core/models.py`). For
   example `over_delivery_treatment` says what happens to surface water beyond the crop's use (by

@@ -49,7 +49,7 @@
         <tbody>
           <tr>
             <td class="col-name">1</td>
-            <td>For each field and month, OpenH2O starts with OpenET's satellite estimate of crop ET.</td>
+            <td>For each field and month, OpenH2O starts with OpenET's satellite estimate of crop ET, or 0 for a field marked fallow.</td>
           </tr>
           <tr>
             <td class="col-name">2</td>
@@ -57,7 +57,7 @@
           </tr>
           <tr>
             <td class="col-name">3</td>
-            <td>OpenH2O assigns ETAW first to surface water, up to the field's delivery times its irrigation efficiency.</td>
+            <td>OpenH2O assigns ETAW first to surface water, up to the field's delivery times its irrigation efficiency. A delivery OpenH2O estimated for a diversion with no meter is not counted in this step.</td>
           </tr>
           <tr>
             <td class="col-name">4</td>
@@ -111,7 +111,7 @@
         <tbody>
           <tr>
             <td class="col-name">A headgate total</td>
-            <td>OpenH2O keeps each headgate's delivery as one monthly total. It subtracts the canal's losses and any delivery recorded for an individual field, then divides the remainder among the other fields in proportion to each field's ETAW, up to what each field can use.</td>
+            <td>OpenH2O keeps each headgate's delivery as one monthly total. It subtracts the canal's losses and any delivery recorded for an individual field, then divides the remainder among the other fields by the share entered for each field, or by acreage where none is entered. A headgate set to divide by crop ET divides it in proportion to each field's ETAW, up to what each field can use.</td>
           </tr>
           <tr>
             <td class="col-name">A field's own record</td>

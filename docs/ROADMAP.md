@@ -15,27 +15,31 @@ and switched off by default. OpenH2O does not submit reports to the state.
 These parts of OpenH2O are built and tested. Each one ends with a link to its code.
 
 - **The monthly calculation.** For each field and month, OpenH2O starts from
-  OpenET's satellite estimate of crop water use and subtracts the rain and canal
-  water the crop could use. On a field with a well and no meter volume for the
+  OpenET's satellite estimate of crop water use (0 on a field marked fallow) and
+  subtracts the rain and the canal water the crop could use. A canal delivery that
+  OpenH2O estimated is not subtracted. On a field with a well and no meter volume for the
   month, what is left is the groundwater consumed that month. Where a well's meter
   volume for the month is on the ledger, OpenH2O uses that volume. The code is in
   [`accounting/steps.py`](../accounting/steps.py),
   [`accounting/calculation.py`](../accounting/calculation.py) and
   [`accounting/services.py`](../accounting/services.py).
 - **Carry-over between water years.** At the end of a water year, OpenH2O carries
-  each zone's unused allocation into the next water year as a credit, unless the
+  each zone's unused groundwater allocation, and each water account's own remainder,
+  into the next water year as a credit, unless the
   Delivery Settings page, or the zone's own page, is set to let unused allocation
   expire. A zone's own choice overrides the Delivery Settings page. OpenH2O always
   carries an overdrawn allocation into the next water year as a debt, whichever
   choice is set. The code is in [`accounting/models.py`](../accounting/models.py)
-  and [`accounting/carryover_math.py`](../accounting/carryover_math.py).
+  [`accounting/carryover_math.py`](../accounting/carryover_math.py) and
+  [`accounting/management/commands/rollover_allocations.py`](../accounting/management/commands/rollover_allocations.py).
 - **Dividing a canal delivery among fields.** OpenH2O keeps each headgate's delivery
   as one monthly total. It subtracts the canal's losses and any delivery recorded
-  for an individual field, then divides the remainder among the other fields in
-  proportion to each field's ETAW. No field receives more than its ETAW divided by
-  its irrigation efficiency, and OpenH2O records any water left over against the
-  headgate. In a month when no field has any ETAW, it divides the remainder by the
-  shares entered on the point of diversion. The code is in
+  for an individual field, then divides the remainder among the other fields by the
+  shares entered on the point of diversion, or by acreage where none is entered. A
+  headgate set to divide by crop ET instead divides in proportion to each field's
+  ETAW, caps each field at its ETAW divided by its irrigation efficiency,
+  records any water left over against the headgate, and uses the shares in a month
+  when no field has any ETAW. The code is in
   [`accounting/allocation_math.py`](../accounting/allocation_math.py).
 - **A permanent web address for each record.** Each boundary, zone, use area, well,
   point of diversion, recharge site, monitoring station, water system, facility,
@@ -51,7 +55,9 @@ These parts of OpenH2O are built and tested. Each one ends with a link to its co
 
 Meter readings arrive on irregular dates. OpenH2O stores each reading, and the code is
 in [`measurements/models.py`](../measurements/models.py). Today a person enters each
-meter's monthly volume on the ledger, either by typing it or by importing a file. The
+meter's monthly volume on the ledger, by typing it or importing a file, or enters
+readings on a well, and the month's calculation divides the volume of the readings
+dated in that month among the well's fields. The
 planned step would turn a meter's readings into monthly volumes by spreading the
 water measured from one reading to the next over the days in between.
 

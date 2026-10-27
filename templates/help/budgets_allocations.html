@@ -19,13 +19,14 @@
 {% block content %}
 {% comment %}
   2026-10-10 (150.1): rebuilt from nine facts, each checked against the code: the per-account share
-  (accounting/views/common.py _account_summary_row: groundwater plans only, the
-  count of the account's use areas in the zone over the count of all use
-  areas in the zone, summed over zones), the zone's budget with carry-over
-  (accounting/services.py zone_groundwater_budget; an account's remaining has
-  no carry-over), and the surface comparison on the zone page (geography/
+  (accounting/services.py account_allocation: groundwater plans only, the
+  account's acres in the zone over the zone's acres, use areas counted only
+  where no use area of the zone has an area on record, summed over zones), the
+  budgets with carry-over (zone_groundwater_budget and account_groundwater_budget;
+  the rollover writes a zone row and one row per account, groundwater only), and
+  the surface comparison on the zone page (geography/
   views.py, delivered rows only). Two old lines were false: an account's
-  remaining included carry-over, and an overdraft was "the one figure the
+  remaining left out its own carry-over, and an overdraft was "the one figure the
   platform colors red" (it is text-deficit, burnt orange).
 
   The page names `accounting`, `parcels`, `surface` and `recharge` as its
@@ -56,11 +57,11 @@
           </tr>
           <tr>
             <td class="col-name">An account&rsquo;s share</td>
-            <td>OpenH2O divides a zone&rsquo;s groundwater ceiling equally among the zone&rsquo;s use areas, and each account receives one share for every use area it holds there.</td>
+            <td>OpenH2O divides a zone&rsquo;s groundwater ceiling among its accounts by acreage: each account receives the part of the ceiling that its use areas&rsquo; acres are of all the acres in the zone.</td>
           </tr>
           <tr>
-            <td class="col-name">Why use areas are counted</td>
-            <td>OpenH2O counts use areas because parcel records do not always include acreage. A small use area and a large one therefore receive the same share.</td>
+            <td class="col-name">A zone with no acreage on record</td>
+            <td>When every use area in a zone lacks an area on record, OpenH2O divides the zone&rsquo;s ceiling equally among its use areas.</td>
           </tr>
           <tr>
             <td class="col-name">More than one zone</td>
@@ -87,16 +88,16 @@
             <td class="col-figure">12,000 acre-feet</td>
           </tr>
           <tr>
-            <td class="col-name">Use areas in the zone</td>
-            <td class="col-figure">500</td>
+            <td class="col-name">Acres of use areas in the zone</td>
+            <td class="col-figure">50,000</td>
           </tr>
           <tr>
-            <td class="col-name">The account&rsquo;s use areas in the zone</td>
-            <td class="col-figure">30</td>
+            <td class="col-name">Acres of the account&rsquo;s use areas in the zone</td>
+            <td class="col-figure">3,000</td>
           </tr>
           <tr>
             <td class="col-name">The account&rsquo;s groundwater allocation</td>
-            <td class="col-figure">12,000 &times; 30 / 500 = 720 acre-feet</td>
+            <td class="col-figure">12,000 &times; 3,000 / 50,000 = 720 acre-feet</td>
           </tr>
         </tbody>
       </table>
@@ -124,11 +125,11 @@
           </tr>
           {% if 'wells' in enabled_modules %}<tr>
             <td class="col-name">Remaining allocation</td>
-            <td>An account&rsquo;s remaining allocation is its allocation minus the groundwater extraction on its use areas. A negative figure means the account has extracted more than its allocation.</td>
+            <td>An account&rsquo;s remaining allocation is its allocation, plus any amount carried forward to it and any credit listed on its page, minus the groundwater extraction on its use areas. A negative figure means the account has extracted more than that.</td>
           </tr>{% endif %}
           <tr>
             <td class="col-name">Carry-over</td>
-            <td>OpenH2O adds the carry-over from the previous water year to a zone&rsquo;s remaining groundwater allocation only. The accounts&rsquo; remaining allocations therefore do not add up to the zone&rsquo;s.</td>
+            <td>When the rollover_allocations command is run for a water year that closed, OpenH2O carries each zone&rsquo;s and each account&rsquo;s remaining groundwater allocation into the next year, a debt as well as a surplus. A zone set to let a surplus expire carries only a debt. Surface water is not carried forward.</td>
           </tr>
           <tr>
             <td class="col-name">A zone with no ceiling</td>

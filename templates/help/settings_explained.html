@@ -52,7 +52,7 @@
           <tr>
             <td class="col-name">Calculation steps</td>
             <td>The order of the calculation steps, and which of them are switched on.</td>
-            <td>{% if show_methods %}All five steps, switched on, in the order <a class="prose-link" href="{% url 'methods' %}">Methods behind the numbers</a> describes.{% else %}All five steps, switched on.{% endif %}</td>
+            <td>{% if show_methods %}All four steps, switched on, in the order <a class="prose-link" href="{% url 'methods' %}">Methods behind the numbers</a> describes.{% else %}All four steps, switched on.{% endif %}</td>
           </tr>
           <tr>
             <td class="col-name">Effective precipitation method</td>
@@ -71,7 +71,7 @@
           </tr>
           <tr>
             <td class="col-name">Lowest remainder</td>
-            <td>The lowest value that crop ET less effective precipitation and the delivery times irrigation efficiency can reach.</td>
+            <td>The lowest value that crop ET less effective precipitation and the counted delivery times irrigation efficiency can reach. A delivery OpenH2O estimated is not counted.</td>
             <td>0 acre-feet</td>
           </tr>
         </tbody>
@@ -98,12 +98,17 @@
           </tr>
           <tr>
             <td class="col-name">Surface water in excess of ETAW</td>
-            <td>Not credited to anyone; shown on the field&rsquo;s page as its own line; or credited to the landowner, less a share left in the basin.{% if 'wells' in enabled_modules %} A credit goes to the field&rsquo;s own ledger when the field has a well, and to its zone&rsquo;s shared account when it does not.{% endif %}</td>
+            <td>Not credited to anyone, or shown on the field&rsquo;s page as its own line.</td>
             <td>Not credited to anyone</td>
           </tr>
           <tr>
+            <td class="col-name">Canal seepage</td>
+            <td>Whether a water account is credited with a canal&rsquo;s seepage. Credited to no one; shared by acre among the fields the canal serves, less the share left in the basin; or credited to the canal&rsquo;s owner only, less the share left in the basin. OpenH2O records the seepage in the basin&rsquo;s water budget under every choice. The owner is the water account named on the canal&rsquo;s headgate page.</td>
+            <td>Credited to no one</td>
+          </tr>
+          <tr>
             <td class="col-name">Share left in the basin</td>
-            <td>The share of surface water in excess of ETAW left in the basin when the rest is credited to the landowner.</td>
+            <td>The share of canal seepage{% if 'recharge' in enabled_modules %}, and of a recharge event&rsquo;s water,{% endif %} that stays in the basin when the rest is credited to a water account. A changed share applies to credits written after the change.</td>
             <td>10 percent</td>
           </tr>
           <tr>
@@ -161,7 +166,7 @@
         <tbody>
           <tr>
             <td class="col-name">A setting that changes a figure</td>
-            <td>Each calculated month keeps the settings it was calculated with. A changed setting affects a past month only when that month is recalculated.</td>
+            <td>Each calculated month keeps the settings it was calculated with. A changed setting affects a past month only when that month is recalculated{% if 'recharge' in enabled_modules %}, and a recharge event's credit only when that event is saved again{% endif %}.</td>
           </tr>
           <tr>
             <td class="col-name">The year-end choice</td>
@@ -189,7 +194,7 @@
       </a>
       <a href="{{ delivery_url }}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Delivery Settings</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">This page holds the default irrigation efficiency, the treatment of surface water in excess of ETAW, the year-end choice, the reporting year and record addresses.</p>
+        <p class="text-secondary text-sm">This page holds the default irrigation efficiency, the treatment of surface water in excess of ETAW, the treatment of canal seepage, the share left in the basin, the year-end choice, the reporting year and record addresses.</p>
       </a>{% endif %}
     </div>
   </div>

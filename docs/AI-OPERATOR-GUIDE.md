@@ -423,7 +423,7 @@ place the table gives:
 | Which unit the delivery records use, such as a miner's inch | OpenH2O has no field for a miner's inch. Convert the figures to acre-feet, or to cfs and hours, before you import them. |
 | Which headgate is which point of diversion | The point of diversion's local name, on its edit page. The point's page then shows it as "known locally as" that name. |
 | How to count the `USE` rows in California's Water Use Reported export: left out, as water returned, or as direct diversions | The diversion import screen asks on its preview when a file has `USE` rows, and it keeps the answer for the next file. |
-| Which parcels each point of diversion serves, and the share of each when two water rights serve one field | The share on the link between the point and the parcel, set on the point's own page. |
+| Which parcels each point of diversion serves, each field's share of that point's water, and whether the water is divided by crop ET instead | The share on the link between the point and the parcel, set on the point's own page. Where a share is not entered, OpenH2O divides the water by acreage. To divide by crop ET, set **How the water is divided among the fields** on the point's edit page. |
 | Each measuring device's nickname, calibration date and accuracy | The device record, from **Add device** on the point's own page. |
 | Which year a season belongs to | The report-year setting on the Delivery Settings page (`/accounting/delivery-settings/`), under Diversion records. It is set once for the whole site. |
 | The unit of the rows in a production file whose unit is blank | **Unit for rows with a blank unit**, on the preview of the production import screen. |

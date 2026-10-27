@@ -161,7 +161,7 @@ which OpenH2O calculates, and precipitation, which OpenH2O reads from GRIDMET.
   precipitation from crop ET. The method is set on the Methodology Settings page.
   The choices are all of the month's precipitation, a fixed fraction of it, or the
   USDA-SCS (TR-21) method. The USDA-SCS method never estimates more than the
-  month's precipitation or the month's crop ET. The methods are in
+  month's precipitation or the month's ET as the satellite reads it. The methods are in
   `accounting/precip_math.py`.
 - **Precipitation.** OpenH2O reads each parcel's monthly precipitation in
   millimeters from GRIDMET's daily `pr` band, through Google Earth Engine. The

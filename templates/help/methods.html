@@ -56,7 +56,7 @@
           </tr>
           <tr>
             <td class="col-name">ETAW met by surface water</td>
-            <td>The field&rsquo;s surface water delivery is its share of a headgate total, divided as the next table describes. OpenH2O multiplies the delivery by the field&rsquo;s irrigation efficiency, and ETAW met by surface water is that product or the month&rsquo;s ETAW, whichever is smaller.</td>
+            <td>The field&rsquo;s surface water delivery is its share of a headgate total, divided as the next table describes. OpenH2O multiplies the delivery by the field&rsquo;s irrigation efficiency, and ETAW met by surface water is that product or the month&rsquo;s ETAW, whichever is smaller. A delivery OpenH2O estimated for a diversion with no meter is left out of that product.</td>
           </tr>
           <tr>
             <td class="col-name">Deep percolation from a delivery</td>
@@ -68,11 +68,11 @@
           </tr>
           <tr>
             <td class="col-name">Groundwater extraction</td>
-            <td>Where the well has a meter, the meter reading is the extraction. Otherwise OpenH2O divides ETAW met by groundwater by the field&rsquo;s irrigation efficiency to get the extraction, and the extraction minus ETAW met by groundwater is deep percolation.</td>
+            <td>Where the well has a meter, the field&rsquo;s share of the well&rsquo;s meter reading is the extraction, divided evenly among its fields where no shares are entered. Otherwise OpenH2O divides ETAW met by groundwater by the field&rsquo;s irrigation efficiency to get the extraction, and the extraction minus ETAW met by groundwater is deep percolation.</td>
           </tr>
           <tr>
-            <td class="col-name">A field with no crop</td>
-            <td>When a field has no crop on file, OpenH2O sets the month's remainder to zero. The field's crop ET and rain are still recorded.</td>
+            <td class="col-name">A field marked fallow</td>
+            <td>When a field carries the fallow mark, OpenH2O counts its crop ET as 0. The satellite figure is still recorded with the month's calculation.</td>
           </tr>
           <tr>
             <td class="col-name">The surplus</td>
@@ -108,15 +108,15 @@
           </tr>
           <tr>
             <td class="col-name">The division</td>
-            <td>OpenH2O divides the remainder among the other fields in proportion to each field&rsquo;s ETAW. No field receives more than its ETAW divided by its irrigation efficiency.</td>
+            <td>By default, OpenH2O divides the remainder among the other fields by the share entered for each field, or by acreage where none is entered. When the point of diversion is set to divide by crop ET, OpenH2O divides it in proportion to each field&rsquo;s ETAW, and no field receives more than its ETAW divided by its irrigation efficiency.</td>
           </tr>
           <tr>
             <td class="col-name">Water left over</td>
-            <td>If water remains after every field has received its ETAW divided by its irrigation efficiency, OpenH2O shows it on the point of diversion&rsquo;s page and charges it to no field.</td>
+            <td>When the point of diversion divides by crop ET and water remains after every field has received its ETAW divided by its irrigation efficiency, OpenH2O shows it on the point of diversion&rsquo;s page and charges it to no field.</td>
           </tr>
           <tr>
             <td class="col-name">A month with no ETAW</td>
-            <td>In a month when no field on the headgate has any ETAW, OpenH2O divides the remainder according to the shares entered on the point of diversion, or evenly when none are entered.</td>
+            <td>In a month when no field on the headgate has any ETAW, OpenH2O divides the remainder according to the shares entered on the point of diversion, or by acreage when none are entered.</td>
           </tr>
         </tbody>
       </table>
@@ -140,7 +140,7 @@
           </tr>
           <tr>
             <td class="col-name">The estimate</td>
-            <td>When a diversion has no meter and no volume recorded for a month, OpenH2O estimates the delivery as the water its fields need plus the canal&rsquo;s losses. A field&rsquo;s need is its ETAW divided by its irrigation efficiency, or its own recorded delivery where it has one.</td>
+            <td>When a diversion has no meter and no volume recorded for a month, OpenH2O estimates the delivery as the water its fields need plus the canal&rsquo;s losses. A field&rsquo;s need is its ETAW divided by its irrigation efficiency, or its own recorded delivery where it has one. A field served by more than one diversion with no meter has its need divided among them by the shares entered for it, or evenly where none are entered.</td>
           </tr>
           <tr>
             <td class="col-name">The water right&rsquo;s limits</td>
