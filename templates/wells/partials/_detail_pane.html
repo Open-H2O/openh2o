@@ -181,13 +181,38 @@
           {% else %}
             <p class="text-tertiary text-base">This well has no active meter.</p>
           {% endif %}
+          {% if user_can_write and current_meters %}
+          <form method="post" action="{% url 'wells:meter_reading_add' well.pk %}" class="form-grid" style="padding-top: var(--space-md); margin-top: var(--space-md); border-top: 1px solid var(--color-border);">
+            {% csrf_token %}
+            <h3 class="text-sm font-semibold text-secondary m-0 form-span-2">Record a meter reading</h3>
+            {% if reading_form.non_field_errors %}
+            <div class="text-xs form-span-2" style="color: var(--furnace-400);">{{ reading_form.non_field_errors|join:", " }}</div>
+            {% endif %}
+            <div class="form-group">
+              <label class="field-label" for="{{ reading_form.reading_date.id_for_label }}">Date read</label>
+              {{ reading_form.reading_date }}
+              {% if reading_form.reading_date.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ reading_form.reading_date.errors|join:", " }}</span>{% endif %}
+            </div>
+            <div class="form-group">
+              <label class="field-label" for="{{ reading_form.current_value.id_for_label }}">Meter reading</label>
+              {{ reading_form.current_value }}
+              {% if reading_form.current_value.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ reading_form.current_value.errors|join:", " }}</span>{% endif %}
+              <span class="text-xs text-tertiary">In the meter's own unit. OpenH2O divides the pumping among this well's use areas by their shares.</span>
+            </div>
+            <div class="form-group form-span-2">
+              <label class="field-label" for="{{ reading_form.notes.id_for_label }}">Notes</label>
+              {{ reading_form.notes }}
+            </div>
+            <div class="form-span-2"><button type="submit" class="btn-primary btn-sm">Save reading</button></div>
+          </form>
+          {% endif %}
         </div>
 
         <!-- Irrigated Parcels card -->
         <div class="card-raised">
           <h2 class="section-header mb-md field-row">
             Irrigated use areas
-            {% include "partials/_help_tooltip.html" with label="Share" text="The share of this well's water that this use area receives. OpenH2O does not check that this well's shares add up to 1." %}
+            {% include "partials/_help_tooltip.html" with label="Share" text="The share of this well's water that this use area receives. OpenH2O does not check that this well's shares add up to 1. A meter reading on this well is divided by these shares, scaled to add up to 1." %}
           </h2>
           {% if irrigated_parcels %}
             {% for wip in irrigated_parcels %}
@@ -324,7 +349,7 @@
                   <td class="text-secondary">{{ read.reading_date|date:"M d, Y" }}</td>
                   <td class="td-num">{{ read.current_value|floatformat:2|intcomma }}</td>
                   <td class="td-num">
-                    {{ read.calculated_volume|floatformat:2|intcomma }}
+                    {% if read.calculated_volume is None %}<span class="text-tertiary">&mdash;</span>{% else %}{{ read.calculated_volume|floatformat:2|intcomma }}{% endif %}
                     {% if read.quality != "approved" %}<span class="text-tertiary text-xs">{{ read.get_quality_display|lower }}</span>{% endif %}
                   </td>
                 </tr>

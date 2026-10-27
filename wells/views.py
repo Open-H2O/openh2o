@@ -10,19 +10,22 @@ inline editing of its editable fields.
 import json
 from urllib.parse import parse_qs
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.core.serializers import serialize
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseBadRequest
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_http_methods, require_POST
 from core.access import public_in_open_demo
 
 from core.validation import FieldValidationError, coerce_decimal, coerce_int
 from core.workspace import detail_response, list_response, redirect_to_selected
+from core.modules import is_enabled
 from wells import measurement_history
+from wells.forms import MeterReadingForm
 from wells.models import (
     ACCURACY_BAND_CHOICES,
     DWR_DIRECT_OR_ESTIMATE_CHOICES,
@@ -258,7 +261,7 @@ def published_source_publisher(well):
     return PUBLISHED_SUPPLY_SOURCE
 
 
-def _well_detail_context(well):
+def _well_detail_context(well, reading_form=None):
     """Build the per-well detail context.
 
     Shared by the standalone detail page, the in-pane HTMX render, and the
@@ -274,6 +277,8 @@ def _well_detail_context(well):
     # history"; these two are it. Both are built in wells/measurement_history.py,
     # grouped by water year and newest first, never assembled in the template.
     meter_history = measurement_history.meter_history(well)
+    if reading_form is None:
+        reading_form = MeterReadingForm(well=well)
     water_levels = measurement_history.water_level_history(well)
 
     geojson = None
@@ -307,6 +312,7 @@ def _well_detail_context(well):
         "irrigated_parcels": irrigated_parcels,
         "monitoring": monitoring,
         "meter_history": meter_history,
+        "reading_form": reading_form,
         "water_levels": water_levels,
         "ef": editable_fields_map,
         # DWR's three-part identity line, computed once here so
@@ -356,6 +362,30 @@ def well_detail(request, pk):
         page_template="wells/detail.html",
         context=context,
     )
+
+
+@login_required
+@require_POST
+def meter_reading_add(request, pk):
+    """Save one reading of the well's meter, then recalculate the month it falls in."""
+    well = get_object_or_404(Well.objects.select_related("well_type"), pk=pk)
+    form = MeterReadingForm(request.POST, well=well)
+    if not form.is_valid():
+        return render(
+            request, "wells/detail.html", _well_detail_context(well, reading_form=form),
+            status=200,
+        )
+    reading = form.save(user=request.user)
+    messages.success(request, "Meter reading saved.")
+    if is_enabled("accounting"):
+        from accounting.engine_run import recalculation_sentence, request_for_months
+
+        month = timezone.localtime(reading.reading_date).date().replace(day=1)
+        started = request_for_months("ledger_saved", [month], requested_by=request.user)
+        covered = sorted({m for r in started for m in r.months})
+        if covered:
+            messages.success(request, recalculation_sentence(covered))
+    return redirect("wells:detail", pk=well.pk)
 
 
 @login_required

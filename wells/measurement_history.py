@@ -79,7 +79,7 @@ def meter_history(well):
                 "label": water_year_label(wy),
                 "reads": rows,
                 "count": len(rows),
-                "delta_total": sum((r.calculated_volume for r in rows), Decimal("0")),
+                "delta_total": sum((r.calculated_volume or Decimal("0") for r in rows), Decimal("0")),
             }
             for wy, rows in sorted(by_year.items(), reverse=True)
         ]

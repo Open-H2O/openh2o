@@ -1,13 +1,12 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""148-04 Task 2: the engine follows `SiteConfig.over_delivery_treatment` (Q1).
+"""The engine follows `SiteConfig.over_delivery_treatment`.
 
-Three values (2026-09-20): (a) "not_credited" — today's
-148-02 behaviour, nothing written beyond the run's own `over_delivery_af`;
-(b) "credited" — a has-well field's share becomes a personal `recharge` row
-(ISS-053 routing), a no-well field's share joins its zone's shared basin
-pool, and `over_delivery_leave_behind` stays in the basin either way; (c)
-"named_line" — the engine writes nothing (the amount is shown elsewhere,
-never here), identical to (a) on the engine side.
+Two values are offered: "not_credited" (the default) and "named_line". Both
+write nothing beyond the run's own `over_delivery_af`; the amount is shown
+elsewhere, never by the engine. "credited" was a third value until Brent ruled
+it out (nothing credits water applied beyond crop need): a site that still
+holds it runs as "not credited", and a month an older version credited loses
+its recharge row and its pool deposit when it is run again.
 
 Every scenario shares one fixture: a 10-acre field, ET 10.0000 AF (et_mm
 304.8 so the conversion is exact), a 20 AF canal delivery, and the agency's
@@ -189,12 +188,12 @@ def test_a_is_the_default_with_no_site_config_row_at_all():
 
 
 # --------------------------------------------------------------------------
-# (b) credited — has-well: a personal row; no-well: the zone's shared pool.
+# A site still stored as the removed "credited" choice: nothing is credited.
 # --------------------------------------------------------------------------
 
 
 @pytest.mark.django_db
-def test_b_has_well_writes_one_credited_row_with_the_words():
+def test_a_site_stored_as_credited_credits_a_has_well_field_nothing():
     parcel, zone = _fixture("OD-B-WELL", well=True)
     call_command("seed_calculation_plan")
     _config(over_delivery_treatment="not_credited")
@@ -205,29 +204,17 @@ def test_b_has_well_writes_one_credited_row_with_the_words():
     call_command("run_calculations", "--period", PERIOD)
 
     run = _run(parcel, PERIOD)
-    assert run.over_delivery_treatment == "credited"
-    assert run.over_delivery_leave_behind == SHARE
-    assert run.over_delivery_credited_af == CREDITED
+    assert run.over_delivery_treatment == "not_credited"
+    assert run.over_delivery_credited_af is None
     assert run.over_delivery_credit_pooled is False
-
-    rows = _recharge_rows(parcel)
-    assert len(rows) == 1
-    assert rows[0].amount_acre_feet == CREDITED
-    assert rows[0].description == over_delivery_credit_words(SHARE)
-    assert rows[0].description.startswith(INCIDENTAL_RECHARGE_WORDS)
-    assert rows[0].description == (
-        f"{INCIDENTAL_RECHARGE_WORDS}, 90% credited and 10% left in the basin"
-    )
-
-    # The budget's remaining supply is up by EXACTLY the credited amount —
-    # nothing else about the month's numbers moved.
-    assert (_supply(parcel) - supply_a).quantize(Q) == CREDITED
-    # A has-well field never feeds the pool.
+    assert run.over_delivery_af == OVER
+    assert not _recharge_rows(parcel)
+    assert _supply(parcel) == supply_a
     assert _incidental_pool_total(zone) == Decimal("0")
 
 
 @pytest.mark.django_db
-def test_b_no_well_pools_and_writes_no_personal_row():
+def test_a_site_stored_as_credited_pools_nothing_for_a_no_well_field():
     parcel, zone = _fixture("OD-B-NOWELL", well=False)
     call_command("seed_calculation_plan")
     _config(over_delivery_treatment="credited", over_delivery_leave_behind=SHARE)
@@ -235,34 +222,11 @@ def test_b_no_well_pools_and_writes_no_personal_row():
     call_command("run_calculations", "--period", PERIOD)
 
     run = _run(parcel, PERIOD)
-    assert run.over_delivery_treatment == "credited"
-    assert run.over_delivery_leave_behind == SHARE
-    assert run.over_delivery_credited_af == CREDITED
-    assert run.over_delivery_credit_pooled is True
-    assert not _recharge_rows(parcel)
-    assert _incidental_pool_total(zone) == CREDITED
-
-
-@pytest.mark.django_db
-def test_b_no_well_no_zone_credits_nothing():
-    """No management-area zone to hold a no-well field's share: credited
-    stays null, nothing is written anywhere, even though the setting is
-    "credited" and there was a real over-delivery."""
-    parcel = _parcel("OD-B-NOZONE", acres=ACRES)
-    _irrigate(parcel)
-    _et_cache(parcel, period=PERIOD, et_mm=ET_MM)
-    _surface_row(parcel, PERIOD, af=DELIVERED)
-    call_command("seed_calculation_plan")
-    _config(over_delivery_treatment="credited", over_delivery_leave_behind=SHARE)
-
-    call_command("run_calculations", "--period", PERIOD)
-
-    run = _run(parcel, PERIOD)
-    assert run.over_delivery_treatment == "credited"
-    assert run.over_delivery_leave_behind == SHARE
+    assert run.over_delivery_treatment == "not_credited"
     assert run.over_delivery_credited_af is None
     assert run.over_delivery_credit_pooled is False
     assert not _recharge_rows(parcel)
+    assert _incidental_pool_total(zone) == Decimal("0")
 
 
 # --------------------------------------------------------------------------
@@ -294,37 +258,61 @@ def test_c_named_line_writes_nothing_stamps_treatment():
 # --------------------------------------------------------------------------
 
 
+def _older_credit(parcel, zone, *, pooled):
+    """What an older version wrote for this month: a run stamped credited and its credit."""
+    from accounting.models import WaterType
+
+    gw, _ = WaterType.objects.get_or_create(code="GW", defaults={"name": "Groundwater"})
+    CalculationRun.objects.create(
+        parcel=parcel,
+        period=PERIOD,
+        gross_et_af=GROSS_ET,
+        net_consumptive_use_af=Decimal("0"),
+        final_af=Decimal("0"),
+        over_delivery_treatment="credited",
+        over_delivery_leave_behind=SHARE,
+        over_delivery_credited_af=CREDITED,
+        over_delivery_credit_pooled=pooled,
+        breakdown=[
+            {
+                "step_type": "clamp_floor",
+                "detail": {
+                    "incidental_recharge_af": str(OVER),
+                    "over_delivery_af": str(OVER),
+                },
+            }
+        ],
+    )
+    if pooled:
+        deposit_to_basin_pool(
+            zone, gw, water_year_of(PERIOD), CREDITED, origin=INCIDENTAL_RECHARGE_POOL
+        )
+    else:
+        ParcelLedger.objects.create(
+            parcel=parcel,
+            transaction_date=dt.date(2024, 3, 1),
+            effective_date=dt.date(2024, 2, 1),
+            amount_acre_feet=CREDITED,
+            source_type="recharge",
+            description=over_delivery_credit_words(SHARE),
+            water_type=gw,
+        )
+
+
 @pytest.mark.django_db
-def test_b_rerun_twice_leaves_one_row_and_the_pool_unchanged():
-    parcel, zone = _fixture("OD-B-RERUN", well=False)
+def test_running_a_month_again_takes_back_the_pool_deposit_an_older_version_made():
+    parcel, zone = _fixture("OD-RERUN-POOL", well=False)
     call_command("seed_calculation_plan")
-    _config(over_delivery_treatment="credited", over_delivery_leave_behind=SHARE)
-
-    call_command("run_calculations", "--period", PERIOD)
-    call_command("run_calculations", "--period", PERIOD)
-
-    assert CalculationRun.objects.filter(parcel=parcel, period=PERIOD).count() == 1
+    _older_credit(parcel, zone, pooled=True)
     assert _incidental_pool_total(zone) == CREDITED
-
-
-@pytest.mark.django_db
-def test_switch_b_to_a_removes_the_row_and_zeroes_the_pool():
-    parcel, zone = _fixture("OD-BA", well=False)
-    call_command("seed_calculation_plan")
-    _config(over_delivery_treatment="credited", over_delivery_leave_behind=SHARE)
-    call_command("run_calculations", "--period", PERIOD)
-    assert _incidental_pool_total(zone) == CREDITED
-
     _config(over_delivery_treatment="not_credited")
+
     call_command("run_calculations", "--period", PERIOD)
 
     run = _run(parcel, PERIOD)
     assert run.over_delivery_treatment == "not_credited"
     assert run.over_delivery_credited_af is None
-    assert not _recharge_rows(parcel)
     assert _incidental_pool_total(zone) == Decimal("0")
-    # A row left standing at exactly 0 would be a phantom for the pool's
-    # readers to explain — it must be gone, not merely zeroed.
     from accounting.models import AllocationCarryover
 
     assert not AllocationCarryover.objects.filter(
@@ -333,60 +321,39 @@ def test_switch_b_to_a_removes_the_row_and_zeroes_the_pool():
 
 
 @pytest.mark.django_db
-def test_a_b_c_b_a_ends_where_it_started():
-    parcel, zone = _fixture("OD-ABCBA", well=False)
+def test_running_a_month_again_removes_the_recharge_row_an_older_version_wrote():
+    parcel, zone = _fixture("OD-RERUN-ROW", well=True)
     call_command("seed_calculation_plan")
-
+    _older_credit(parcel, zone, pooled=False)
+    assert len(_recharge_rows(parcel)) == 1
     _config(over_delivery_treatment="not_credited")
-    call_command("run_calculations", "--period", PERIOD)
-    start = _state(parcel, zone)
-
-    _config(over_delivery_treatment="credited", over_delivery_leave_behind=SHARE)
-    call_command("run_calculations", "--period", PERIOD)
-    assert _state(parcel, zone) != start  # sanity: (b) really did move something
-
-    _config(over_delivery_treatment="named_line")
-    call_command("run_calculations", "--period", PERIOD)
-
-    _config(over_delivery_treatment="credited", over_delivery_leave_behind=SHARE)
-    call_command("run_calculations", "--period", PERIOD)
-
-    _config(over_delivery_treatment="not_credited")
-    call_command("run_calculations", "--period", PERIOD)
-    end = _state(parcel, zone)
-
-    assert end == start
-
-
-@pytest.mark.django_db
-def test_no_well_field_that_gains_a_well_between_two_b_runs():
-    parcel, zone = _fixture("OD-GAINSWELL", well=False)
-    call_command("seed_calculation_plan")
-    _config(over_delivery_treatment="credited", over_delivery_leave_behind=SHARE)
 
     call_command("run_calculations", "--period", PERIOD)
-    assert _incidental_pool_total(zone) == CREDITED
+
     assert not _recharge_rows(parcel)
-
-    WellIrrigatedParcelFactory(parcel=parcel)  # gains a well -> CONJUNCTIVE
-    call_command("run_calculations", "--period", PERIOD)
-
     assert _incidental_pool_total(zone) == Decimal("0")
-    rows = _recharge_rows(parcel)
-    assert len(rows) == 1
-    assert rows[0].amount_acre_feet == CREDITED
 
 
 @pytest.mark.django_db
-def test_pre_148_02_prior_pool_deposit_under_b_nets_once_not_twice():
-    """A legacy (pre-148-02) run left `incidental_recharge_af=5.4000` in its
-    breakdown (no `over_delivery_af` key) and a matching 5.4000 AF pool
-    deposit made outside this engine, as `test_no_well_incidental_pool_is_
-    idempotent_across_reruns` also simulates it. A fresh (b) run must net a
-    SINGLE delta against that legacy amount — the pool ends at 3.6000 (this
-    fixture's own hand-computed credited share), NOT
-    3.6000 - 5.4000 + 5.4000 (which would mean the one-time reversal and the
-    new deposit both landed, doubling up)."""
+def test_a_run_an_older_version_stamped_credited_stays_readable_until_it_is_run_again():
+    parcel, zone = _fixture("OD-NOTOUCH", well=False)
+    call_command("seed_calculation_plan")
+    _older_credit(parcel, zone, pooled=True)
+    before = _state(parcel, zone)
+
+    _config(over_delivery_treatment="not_credited")  # setting changed, NOT re-run
+
+    assert _state(parcel, zone) == before
+    assert before["treatment"] == "credited"
+    assert before["credited_af"] == CREDITED
+
+
+@pytest.mark.django_db
+def test_pre_148_02_prior_pool_deposit_is_taken_back_once_not_twice():
+    """A legacy run left `incidental_recharge_af=5.4000` in its breakdown (no
+    `over_delivery_af` key) and a matching 5.4000 AF pool deposit made outside
+    this engine. The next run takes that deposit back exactly once: the pool
+    ends at 0, not -5.4000."""
     parcel, zone = _fixture("OD-LEGACY", well=False)
     call_command("seed_calculation_plan")
 
@@ -415,31 +382,15 @@ def test_pre_148_02_prior_pool_deposit_under_b_nets_once_not_twice():
     )
     assert _incidental_pool_total(zone) == legacy_incidental
 
-    _config(over_delivery_treatment="credited", over_delivery_leave_behind=SHARE)
+    _config(over_delivery_treatment="not_credited")
+    call_command("run_calculations", "--period", PERIOD)
     call_command("run_calculations", "--period", PERIOD)
 
-    assert _incidental_pool_total(zone) == CREDITED
-    run = _run(parcel, PERIOD)
-    assert run.over_delivery_credited_af == CREDITED
-    assert run.over_delivery_credit_pooled is True
+    assert _incidental_pool_total(zone) == Decimal("0")
 
 
 @pytest.mark.django_db
-def test_switching_the_setting_without_a_rerun_moves_nothing():
-    parcel, zone = _fixture("OD-NOTOUCH", well=False)
-    call_command("seed_calculation_plan")
-    _config(over_delivery_treatment="credited", over_delivery_leave_behind=SHARE)
-    call_command("run_calculations", "--period", PERIOD)
-    before = _state(parcel, zone)
-
-    _config(over_delivery_treatment="not_credited")  # setting changed, NOT re-run
-
-    after = _state(parcel, zone)
-    assert after == before
-
-
-@pytest.mark.django_db
-def test_finalized_period_refuses_without_force_under_credited_too():
+def test_finalized_period_refuses_without_force_for_a_credited_site_too():
     parcel, _zone = _fixture("OD-FINAL", well=True)
     call_command("seed_calculation_plan")
     _config(over_delivery_treatment="credited", over_delivery_leave_behind=SHARE)
@@ -457,8 +408,8 @@ def test_finalized_period_refuses_without_force_under_credited_too():
 
     call_command("run_calculations", "--period", PERIOD, "--force")
     run = _run(parcel, PERIOD)
-    assert run.over_delivery_treatment == "credited"
-    assert run.over_delivery_credited_af == CREDITED
+    assert run.over_delivery_treatment == "not_credited"
+    assert run.over_delivery_credited_af is None
 
 
 # --------------------------------------------------------------------------
@@ -467,31 +418,24 @@ def test_finalized_period_refuses_without_force_under_credited_too():
 
 
 @pytest.mark.django_db
-def test_mass_balance_residual_identical_under_a_b_c_for_has_well_field():
+def test_mass_balance_residual_identical_under_every_setting_for_has_well_field():
     parcel, _zone = _fixture("OD-MB", well=True)
     call_command("seed_calculation_plan")
 
-    _config(over_delivery_treatment="not_credited")
-    call_command("run_calculations", "--period", PERIOD)
-    balance_a = parcel_mass_balance(parcel)
-    assert balance_a["outputs"]["recharge"] == Decimal("0")
+    balances = []
+    for treatment in ("not_credited", "credited", "named_line"):
+        _config(over_delivery_treatment=treatment)
+        call_command("run_calculations", "--period", PERIOD)
+        balance = parcel_mass_balance(parcel)
+        assert balance["outputs"]["recharge"] == Decimal("0")
+        assert not _recharge_rows(parcel)
+        balances.append(balance)
 
-    _config(over_delivery_treatment="credited", over_delivery_leave_behind=SHARE)
-    call_command("run_calculations", "--period", PERIOD)
-    balance_b = parcel_mass_balance(parcel)
-    # A real `recharge` row now exists (the credited row), but the mass
-    # balance's `recharge` output still excludes it by prefix.
-    assert _recharge_rows(parcel)
-    assert balance_b["outputs"]["recharge"] == Decimal("0")
-
-    _config(over_delivery_treatment="named_line")
-    call_command("run_calculations", "--period", PERIOD)
-    balance_c = parcel_mass_balance(parcel)
-    assert balance_c["outputs"]["recharge"] == Decimal("0")
-
-    assert balance_a["residual_af"] == balance_b["residual_af"] == balance_c["residual_af"]
-    assert balance_a["inputs_total"] == balance_b["inputs_total"] == balance_c["inputs_total"]
-    assert balance_a["outputs_total"] == balance_b["outputs_total"] == balance_c["outputs_total"]
+    first = balances[0]
+    for other in balances[1:]:
+        assert first["residual_af"] == other["residual_af"]
+        assert first["inputs_total"] == other["inputs_total"]
+        assert first["outputs_total"] == other["outputs_total"]
 
 
 # --------------------------------------------------------------------------

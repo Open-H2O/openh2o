@@ -1,12 +1,13 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""148-04 Task 1: the over-delivery treatment setting on Delivery Settings.
+"""The over-delivery treatment setting on Delivery Settings.
 
-Three values (Q1, 2026-09-20): not credited (the default, today's
-behaviour), credited to the landowner less a share left in the basin, or shown
-as its own named line that is not a credit. ``over_delivery_treatment`` and
+Two values are offered: not credited (the default) and shown as its own named
+line that is not a credit. A third, credited to the landowner, was removed;
+posting it is refused. ``over_delivery_treatment`` and
 ``over_delivery_leave_behind`` belong to ``surface`` exactly as
 ``default_irrigation_efficiency`` does (``core/forms.py::DeliverySettingsForm``)
--- only canal water can be over-delivered.
+-- only canal water can be over-delivered. The leave-behind share is stored but
+no longer offered on the page.
 
 Follows ``tests/test_delivery_settings_surface_fields.py`` and
 ``tests/test_groundwater_extraction.py`` for how the form/view, module gating
@@ -87,7 +88,7 @@ def test_defaults_are_not_credited_and_ten_percent():
 
 
 # ---------------------------------------------------------------------------
-# 2. Validation: "credited" requires the percent
+# 2. "Credited" is no longer a choice
 #
 # Deliberately the first test in this file that renders a page through the
 # client, and it does so with the full module set (no override_settings) --
@@ -95,7 +96,7 @@ def test_defaults_are_not_credited_and_ten_percent():
 # ---------------------------------------------------------------------------
 
 
-def test_credited_without_a_percent_is_a_form_error(admin_client):
+def test_credited_is_refused_and_the_page_offers_two_choices(admin_client):
     config, _ = SiteConfig.objects.get_or_create(defaults={"agency_name": "Agency"})
     resp = admin_client.post(
         reverse("accounting:delivery_settings"),
@@ -104,31 +105,11 @@ def test_credited_without_a_percent_is_a_form_error(admin_client):
     # Invalid form: re-renders the page (200), never redirects.
     assert resp.status_code == 200
     body = resp.content.decode()
-    assert "Enter the share left in the basin" in body
+    assert body.count('name="over_delivery_treatment"') == 2
+    assert 'value="credited"' not in body
+    assert 'name="over_delivery_leave_behind_percent"' not in body
     config.refresh_from_db()
     assert config.over_delivery_treatment == "not_credited"
-    assert config.over_delivery_leave_behind == Decimal("0.100")
-
-
-# ---------------------------------------------------------------------------
-# 3. 90 -> Decimal("0.900") stored
-# ---------------------------------------------------------------------------
-
-
-def test_ninety_percent_credited_is_stored_as_point_nine(admin_client):
-    config, _ = SiteConfig.objects.get_or_create(defaults={"agency_name": "Agency"})
-    resp = admin_client.post(
-        reverse("accounting:delivery_settings"),
-        {
-            **_BASE_POST,
-            "over_delivery_treatment": "credited",
-            "over_delivery_leave_behind_percent": "90",
-        },
-    )
-    assert resp.status_code == 302
-    config.refresh_from_db()
-    assert config.over_delivery_treatment == "credited"
-    assert config.over_delivery_leave_behind == Decimal("0.900")
 
 
 def test_named_line_does_not_require_or_store_a_percent(admin_client):
@@ -143,7 +124,7 @@ def test_named_line_does_not_require_or_store_a_percent(admin_client):
     assert resp.status_code == 302
     config.refresh_from_db()
     assert config.over_delivery_treatment == "named_line"
-    # Not "credited", so the stored leave-behind share is left alone.
+    # The stored leave-behind share is not offered on the page and is left alone.
     assert config.over_delivery_leave_behind == Decimal("0.250")
 
 
@@ -163,8 +144,7 @@ def test_save_writes_a_site_config_event_carrying_the_new_value(admin_client):
         reverse("accounting:delivery_settings"),
         {
             **_BASE_POST,
-            "over_delivery_treatment": "credited",
-            "over_delivery_leave_behind_percent": "90",
+            "over_delivery_treatment": "named_line",
             "note": "Board-approved over-delivery policy",
         },
     )
@@ -175,8 +155,8 @@ def test_save_writes_a_site_config_event_carrying_the_new_value(admin_client):
     after = events.get(pgh_label="update")
     assert before.over_delivery_treatment == "not_credited"
     assert str(before.over_delivery_leave_behind) == "0.100"
-    assert after.over_delivery_treatment == "credited"
-    assert str(after.over_delivery_leave_behind) == "0.900"
+    assert after.over_delivery_treatment == "named_line"
+    assert str(after.over_delivery_leave_behind) == "0.100"
     assert after.pgh_context.metadata["note"] == "Board-approved over-delivery policy"
 
 

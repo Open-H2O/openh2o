@@ -16,5 +16,11 @@ urlpatterns = [
         views.well_irrigated_parcel_edit_share,
         name="irrigated_parcel_edit_share",
     ),
+    # A meter reading is entered once, on the well.
+    path(
+        "<int:pk>/meter-reading/add/",
+        views.meter_reading_add,
+        name="meter_reading_add",
+    ),
     path("geojson/", views.wells_geojson, name="geojson"),
 ]
