@@ -33,6 +33,7 @@ from django.contrib.gis.geos import MultiPolygon, Point, Polygon
 from django.core.management import call_command
 
 from accounting.models import (
+    AccountCredit,
     AllocationPlan,
     ReportingPeriod,
     WaterAccount,
@@ -595,6 +596,45 @@ def test_second_seed_run_does_not_change_counts():
     assert first["ledger"] > 0 and first["accounts"] > 0 and first["budgets"] > 0
 
 
+@pytest.mark.django_db
+def test_reseeding_the_ledgers_keeps_the_districts_recharge_credits():
+    # The district's own account belongs to the recharge seed, which runs once,
+    # before the build re-runs this seed between its two engine passes. Removing
+    # it here would take the recharge credits with it.
+    _build_physical_merced()
+    call_command("seed_merced_ledgers")
+    district = WaterAccount.objects.create(
+        account_number="MER-ACCT-DIST", name="Halvern Irrigation District")
+    AccountCredit.objects.create(
+        water_account=district, water_type=WaterType.objects.get(code__iexact="GW"),
+        water_year=2026, origin="managed_recharge", amount_af=Decimal("90.0000"),
+        source_key="recharge_event:1", description="Recharge at a basin")
+
+    call_command("seed_merced_ledgers")
+
+    assert WaterAccount.objects.filter(account_number="MER-ACCT-DIST").exists()
+    assert AccountCredit.objects.filter(
+        water_account__account_number="MER-ACCT-DIST").count() == 1
+
+
+def test_the_demonstration_seeds_each_headgate_share_by_acreage():
+    # A headgate's water is divided by the shares entered, so the demonstration
+    # enters them by acreage: equal shares would give a small field the water of
+    # a large one.
+    from types import SimpleNamespace
+
+    from core.management.commands import (
+        seed_merced_operations,
+        seed_merced_parcels_from_selection,
+    )
+
+    fields = [SimpleNamespace(pk=1, area_acres=10), SimpleNamespace(pk=2, area_acres=30)]
+    unmeasured = [SimpleNamespace(pk=1, area_acres=None), SimpleNamespace(pk=2, area_acres=None)]
+    for seed in (seed_merced_operations, seed_merced_parcels_from_selection):
+        assert seed._acreage_shares(fields) == {1: Decimal("0.2500"), 2: Decimal("0.7500")}
+        assert seed._acreage_shares(unmeasured) == {1: Decimal("0.5"), 2: Decimal("0.5")}
+
+
 # --------------------------------------------------------------------------
 # Group 6 — surface deliveries are produced by the PLATFORM allocation service
 #
@@ -701,6 +741,9 @@ def test_seed_surface_split_is_demand_weighted_when_calculations_exist(seeded):
     )
     assert len(served) >= 2, "need at least two served parcels to compare shares"
     thirsty, modest = served[0].parcel, served[1].parcel
+    # The demonstration divides by shares; this test is about the crop-need choice.
+    pod.division_method = "crop_need"
+    pod.save()
 
     # A June 2025 (prior WY) month with sharply different demand. The recorded
     # district total is fixed; a SHORT delivery (demand-supply exceeds it) forces

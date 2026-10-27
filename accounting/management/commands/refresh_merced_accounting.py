@@ -65,6 +65,7 @@ from django.core.management.base import BaseCommand, CommandError
 from accounting.locks import override
 from accounting.management.commands.run_calculations import FORCE_REASON
 from accounting.models import ReportingPeriod
+from core.modules import is_enabled
 
 DEFAULT_PERIOD = "WY 2024-2025"
 
@@ -177,6 +178,14 @@ class Command(BaseCommand):
         ))
         call_command("seed_merced_ledgers", stdout=self.stdout)
 
+        # The well meters' readings are seeded as the sum of the field rows, and
+        # the engine divides a well's reading among its fields where none carries
+        # its own row. Pass 2 just rewrote those rows, so the readings are seeded
+        # again from them before pass 3 reads them; otherwise pass 3 divides
+        # readings sized from the first, flat ledger.
+        if all(is_enabled(m) for m in ("wells", "measurements", "recharge")):
+            call_command("seed_merced_measurements", stdout=self.stdout)
+
         # Pass 3 — recompute residual disposition + incidental recharge against
         # the demand-weighted surface rows, so the per-parcel books close.
         self.stdout.write(self.style.MIGRATE_HEADING(
@@ -215,6 +224,10 @@ class Command(BaseCommand):
         self.stdout.write(
             "  2. seed_merced_ledgers, ONCE "
             "(demand-weighted surface re-allocation via allocate_district_delivery)"
+        )
+        self.stdout.write(
+            "  2b. seed_merced_measurements (the well meters read again from "
+            "the rewritten rows)"
         )
         self.stdout.write(
             f"  3. run_calculations --force, each month {span} "

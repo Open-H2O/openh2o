@@ -80,7 +80,24 @@ def test_both_water_years_run_around_a_single_ledger_pass(both_water_years):
     names = [name for name, _ in calls]
     ledger_index = names.index("seed_merced_ledgers")
     assert set(names[:ledger_index]) == {"run_calculations"}
-    assert set(names[ledger_index + 1 :]) == {"run_calculations"}
+    assert set(names[ledger_index + 2 :]) == {"run_calculations"}
+
+
+@pytest.mark.django_db
+def test_the_well_meters_are_read_again_before_the_second_engine_pass(both_water_years):
+    # The engine divides a well's meter reading among its fields when none of
+    # them carries its own meter row. The readings are seeded as the sum of the
+    # field rows, so they have to be re-seeded from the rows the ledger pass
+    # wrote, or the second pass divides readings sized from the first ledger.
+    with mock.patch(CALL_COMMAND) as mocked:
+        call_command(
+            "refresh_merced_accounting", period=[CLOSED_YEAR, OPEN_YEAR]
+        )
+
+    names = [name for name, _ in _calls(mocked)]
+    ledger_index = names.index("seed_merced_ledgers")
+    assert names[ledger_index + 1] == "seed_merced_measurements"
+    assert names.count("seed_merced_measurements") == 1
 
 
 @pytest.mark.django_db

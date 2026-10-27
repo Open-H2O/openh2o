@@ -73,6 +73,19 @@ GW_SOLO_OWNERS = [
 ]
 
 
+
+def _acreage_shares(parcels):
+    """Each parcel's share of its headgate's water by acreage, four decimals.
+
+    Equal shares where no parcel in the group has an acreage on record.
+    """
+    acres = {p.pk: Decimal(str(p.area_acres or 0)) for p in parcels}
+    total = sum(acres.values(), Decimal("0"))
+    if total <= 0:
+        even = Decimal(str(round(1.0 / len(parcels), 4)))
+        return {pk: even for pk in acres}
+    return {pk: (a / total).quantize(Decimal("0.0001")) for pk, a in acres.items()}
+
 class Command(BaseCommand):
     help = (
         "Rebuild Merced parcels + diversion/well links from the QGIS "
@@ -243,15 +256,17 @@ class Command(BaseCommand):
                 )
             wells.append(well)
 
-        # --- POD -> parcel links, fraction normalized within each POD ---
+        # --- POD -> parcel links, each field's share by its acreage ---
+        # The engine divides a headgate's water by the shares entered, so
+        # equal shares would give a 3-acre field the water of a 190-acre one.
         podp = 0
         for pod_pk, cluster in pod_to_parcels.items():
             pod = PointOfDiversion.objects.get(pk=pod_pk)
-            fraction = Decimal(str(round(1.0 / len(cluster), 4)))
+            shares = _acreage_shares(cluster)
             for parcel in cluster:
                 PointOfDiversionParcel.objects.update_or_create(
                     point_of_diversion=pod, parcel=parcel,
-                    defaults={"fraction": fraction},
+                    defaults={"fraction": shares[parcel.pk]},
                 )
                 podp += 1
 

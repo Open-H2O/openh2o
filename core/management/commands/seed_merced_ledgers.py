@@ -131,6 +131,7 @@ from core.management.commands.seed_merced_operations import (  # noqa: E402
 # diversion they were taken under); one definition cannot drift from itself.
 from core.management.commands.seed_merced_recharge_events import (  # noqa: E402
     DEMO_OPERATOR as RECHARGE_OPERATOR,
+    DISTRICT_ACCOUNT_NUMBER,
     RECHARGE_SEASONS,
 )
 
@@ -434,8 +435,12 @@ class Command(BaseCommand):
             point_of_diversion__name__startswith=RECHARGE_INTAKE_POD_PREFIX
         ).delete()
 
+        # The district's own account is the recharge seed's, not this one's: it holds
+        # the recharge credits, and the build re-runs this seed after the recharge
+        # seed has run. teardown_demo still removes it with the other accounts.
         acct_ids = list(
             WaterAccount.objects.filter(account_number__startswith="MER-ACCT-")
+            .exclude(account_number=DISTRICT_ACCOUNT_NUMBER)
             .values_list("id", flat=True)
         )
         WaterAccountParcel.objects.filter(water_account_id__in=acct_ids).delete()
@@ -1406,7 +1411,7 @@ class Command(BaseCommand):
             f"{len(dry_parcel_ids)} on the El Nido canal, dry after June 2025)\n"
             f"  {len(district_zones)} surface-district service-area zones "
             f"(+ {gsa_count} GSA zones) carry Allocations for BOTH authorities\n"
-            f"  {WaterAccount.objects.filter(account_number__startswith='MER-ACCT-').count()} "
+            f"  {WaterAccount.objects.filter(account_number__startswith='MER-ACCT-').exclude(account_number=DISTRICT_ACCOUNT_NUMBER).count()} "
             "water accounts (one per owner)\n"
             f"  {AllocationPlan.objects.filter(name__startswith='MER Surface Service Area').count()} "
             "surface allocations + GSA groundwater allocations, both periods\n"

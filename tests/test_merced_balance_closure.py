@@ -183,7 +183,7 @@ def _pod_serving(parcel, *, volume_af, rp):
     A single-parcel POD makes allocation deterministic: AMPLE hands the parcel its
     demand/efficiency cap, SHORT hands it the whole recorded delivery.
     """
-    pod = PointOfDiversionFactory()
+    pod = PointOfDiversionFactory(division_method="crop_need")
     PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=parcel)
     DiversionRecordFactory(
         point_of_diversion=pod, reporting_period=rp,
