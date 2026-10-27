@@ -124,7 +124,8 @@
           <div class="budget-breakdown-group">
             <div class="budget-breakdown-title">Uses by destination</div>
             <div class="budget-breakdown-row"><span>Crop ET</span><b>{{ mass_balance.outputs.et|floatformat:2|intcomma }}</b></div>
-            <div class="budget-breakdown-row"><span>Applied water not consumed</span><b>{{ mass_balance.deep_percolation_af|floatformat:2|intcomma }}</b></div>
+            {% comment %} Two lines: on one, its figure met the divider at 1,730 (staging read, 2026-10-27). {% endcomment %}
+            <div class="budget-breakdown-row"><span>Applied water<br>not consumed</span><b>{{ mass_balance.deep_percolation_af|floatformat:2|intcomma }}</b></div>
             {% comment %} The two parts of the row above, each
                  printed only when it is not zero (rule 8). {% endcomment %}
             {% if mass_balance.outputs.deep_percolation_surface_af %}
