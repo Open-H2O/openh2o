@@ -56,6 +56,7 @@ from typing import TYPE_CHECKING, Any
 
 from django.db.models import Q
 
+from accounting.allocation_math import apportion_shared_supply
 from accounting.carryover_math import water_year_of
 from accounting.models import CalculationRun, ReportingPeriod
 from accounting.recharge_policy import recharge_routes_to_personal
@@ -332,7 +333,7 @@ def _estimate_point(
         notes.append({"kind": "estimate_losses_too_large", "pod": point.name})
         return
 
-    headgate = _fields_headgate(point, served, first, text_month, fractions)
+    headgate = _fields_headgate(point, served, first, last, text_month, fractions)
     if not headgate:
         # None: no crop water use for any of its fields yet, nothing to estimate from.
         # Zero: the fields used no water this month, so the estimate is no
@@ -369,10 +370,42 @@ def _estimate_point(
         )
 
 
+def _is_estimated(point: PointOfDiversion, first: date, last: date) -> bool:
+    """True when the estimator gives this point a delivery for the month (as ``_estimate_point`` decides)."""
+    if point.status != "active":
+        return False
+    if _device_in_service(point, first, last) or _has_typed_record(point, first):
+        return False
+    right = point.water_right
+    return right is None or right.status not in ("revoked", "inactive")
+
+
+def _point_share_of_field(
+    point: PointOfDiversion, field: Parcel, first: date, last: date
+) -> Decimal:
+    """The part (0 to 1) of a field's need this point's estimate carries.
+
+    A field served by one estimated point is that point's whole need. A field
+    served by several is split across them by the share entered for the field
+    at each point, evenly where none was entered.
+    """
+    links = PointOfDiversionParcel.objects.filter(parcel=field).select_related(
+        "point_of_diversion__water_right"
+    )
+    members = [
+        (link.point_of_diversion_id, link.fraction, Decimal("0"))
+        for link in links
+        if link.point_of_diversion_id == point.pk
+        or _is_estimated(link.point_of_diversion, first, last)
+    ]
+    return apportion_shared_supply(members).get(point.pk, Decimal("1"))
+
+
 def _fields_headgate(
     point: PointOfDiversion,
     served: list[Parcel],
     first: date,
+    last: date,
     text_month: str,
     fractions: Decimal,
 ) -> Decimal | None:
@@ -391,7 +424,10 @@ def _fields_headgate(
         efficiency = field_efficiency(field)[0]
         if efficiency and efficiency > 0:
             # Each field's cap to four places, as the split rounds it.
-            need += (_month_demand(field, first) / efficiency).quantize(_Q)
+            # A field several unmetered points serve has its need supplied
+            # once: this point carries its share of it.
+            share = _point_share_of_field(point, field, first, last)
+            need += (_month_demand(field, first) * share / efficiency).quantize(_Q)
     field_need = need + own_total
     headgate = (field_need / (1 - fractions)).quantize(_Q)
     # The largest headgate figure whose water left after the canal's

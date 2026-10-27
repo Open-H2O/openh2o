@@ -151,8 +151,6 @@ EXCEPTIONS: tuple = (
      ("negation frame",), _APPROVED.format("2026-10-13")),
     ("templates/surface/diversion_import.html", "rather than the application number",
      ("negation frame",), _APPROVED.format("2026-10-14")),
-    ("templates/surface/partials/_detail_pane.html", "none of the canal's use areas",
-     ("negation frame",), _APPROVED.format("2026-10-13")),
     ("health/checks.py", "none of the canal's use areas",
      ("negation frame",), _APPROVED.format("2026-10-16")),
     ("health/checks.py", ", not a public domain name",

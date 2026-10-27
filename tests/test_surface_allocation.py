@@ -53,7 +53,7 @@ def test_ample_district_caps_each_parcel_at_demand_over_efficiency():
     rp = ReportingPeriodFactory()
     a = ParcelFactory(parcel_number="APN-A")
     b = ParcelFactory(parcel_number="APN-B")
-    pod = PointOfDiversionFactory(evaporation_fraction=Decimal("0"))
+    pod = PointOfDiversionFactory(division_method="crop_need", evaporation_fraction=Decimal("0"))
     PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=a, fraction=Decimal("0.5"))
     PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=b, fraction=Decimal("0.5"))
     _run(a, "2024-01", 10)  # cap 10/0.75 = 13.3333
@@ -79,7 +79,7 @@ def test_short_district_splits_whole_delivery_by_demand():
     rp = ReportingPeriodFactory()
     a = ParcelFactory(parcel_number="APN-A")
     b = ParcelFactory(parcel_number="APN-B")
-    pod = PointOfDiversionFactory(evaporation_fraction=Decimal("0"))
+    pod = PointOfDiversionFactory(division_method="crop_need", evaporation_fraction=Decimal("0"))
     PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=a)
     PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=b)
     _run(a, "2024-01", 10)
@@ -172,7 +172,7 @@ def test_efficiency_defaults_to_siteconfig():
     SiteConfig.objects.create(agency_name="Test GSA")  # default efficiency 0.750
     rp = ReportingPeriodFactory()
     a = ParcelFactory(parcel_number="APN-A")
-    pod = PointOfDiversionFactory(evaporation_fraction=Decimal("0"))
+    pod = PointOfDiversionFactory(division_method="crop_need", evaporation_fraction=Decimal("0"))
     PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=a)
     _run(a, "2024-01", 30)  # cap 30/0.750 = 40
     DiversionRecordFactory(
@@ -192,7 +192,7 @@ def test_demand_weighted_rows_carry_surface_water_type():
     rp = ReportingPeriodFactory()
     a = ParcelFactory(parcel_number="APN-A")
     b = ParcelFactory(parcel_number="APN-B")
-    pod = PointOfDiversionFactory(evaporation_fraction=Decimal("0"))
+    pod = PointOfDiversionFactory(division_method="crop_need", evaporation_fraction=Decimal("0"))
     PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=a)
     PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=b)
     _run(a, "2024-01", 10)  # ET demand present -> demand-weighted path
@@ -306,7 +306,7 @@ def test_ample_surplus_is_recorded_as_unallocated_delivery():
     rp = ReportingPeriodFactory()
     a = ParcelFactory(parcel_number="APN-S1")
     b = ParcelFactory(parcel_number="APN-S2")
-    pod = PointOfDiversionFactory(evaporation_fraction=Decimal("0"))
+    pod = PointOfDiversionFactory(division_method="crop_need", evaporation_fraction=Decimal("0"))
     PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=a, fraction=Decimal("0.5"))
     PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=b, fraction=Decimal("0.5"))
     _run(a, "2024-01", 10)  # cap 13.3333
@@ -355,7 +355,7 @@ def test_rerun_does_not_duplicate_or_strand_unallocated_surplus():
 
     rp = ReportingPeriodFactory()
     a = ParcelFactory(parcel_number="APN-S4")
-    pod = PointOfDiversionFactory(evaporation_fraction=Decimal("0"))
+    pod = PointOfDiversionFactory(division_method="crop_need", evaporation_fraction=Decimal("0"))
     PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=a, fraction=Decimal("1.0"))
     _run(a, "2024-01", 10)  # cap 13.3333
     DiversionRecordFactory(

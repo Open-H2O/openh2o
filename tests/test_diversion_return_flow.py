@@ -170,7 +170,7 @@ def test_demand_weighted_path(returned, expected):
     rp = ReportingPeriodFactory()
     a = ParcelFactory(parcel_number="APN-A")
     b = ParcelFactory(parcel_number="APN-B")
-    pod = PointOfDiversionFactory(evaporation_fraction=Decimal("0"))
+    pod = PointOfDiversionFactory(division_method="crop_need", evaporation_fraction=Decimal("0"))
     PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=a)
     PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=b)
     # demand 50+50 -> caps 66.67 each (sum 133); consumed (<=100) is SHORT, so the

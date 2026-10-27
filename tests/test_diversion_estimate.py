@@ -768,6 +768,7 @@ def test_the_estimate_fills_the_fields_exactly_through_the_months_run():
     rp = ReportingPeriodFactory()
     pod = PointOfDiversionFactory(
         name="Alder Ditch Headgate",
+        division_method="crop_need",
         evaporation_fraction=Decimal("0.01"),
         seepage_fraction=Decimal("0.12"),
         spill_fraction=Decimal("0.02"),

@@ -279,7 +279,7 @@ def test_the_engine_now_caps_by_the_parcels_own_method(auth_client):
     SiteConfig.objects.create(agency_name="Test GSA")  # default efficiency 0.750
     rp = ReportingPeriodFactory()
     parcel = ParcelFactory(parcel_number="APN-DRIP")
-    pod = PointOfDiversionFactory()
+    pod = PointOfDiversionFactory(division_method="crop_need")
     PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=parcel)
     CalculationRun.objects.create(
         parcel=parcel, period="2024-01",
@@ -307,7 +307,7 @@ def test_pivot_and_no_method_fields_on_one_headgate_get_different_caps(auth_clie
     headgate must not let one parcel's method decide another's water)."""
     SiteConfig.objects.create(agency_name="Test GSA")  # default efficiency 0.750
     rp = ReportingPeriodFactory()
-    pod = PointOfDiversionFactory()
+    pod = PointOfDiversionFactory(division_method="crop_need")
     pivot = ParcelFactory(parcel_number="APN-PIVOT")
     plain = ParcelFactory(parcel_number="APN-PLAIN")
     PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=pivot)
@@ -371,12 +371,12 @@ def test_pivot_and_no_method_fields_consume_different_parts_of_equal_delivery(
     assert plain_record["detail"]["consumed_af"] == "18.7500"
 
 
-def test_knob_off_reproduces_todays_numbers_exactly_even_with_a_method_set(
+def test_a_plan_without_the_efficiency_key_still_multiplies_by_the_method(
     auth_client,
 ):
-    """apply_efficiency missing (an old plan's posture) subtracts the whole
-    delivered magnitude, unchanged by a method being set on the parcel -- the
-    method only matters once the knob is on."""
+    """The efficiency is not a setting: a plan with no ``apply_efficiency`` key
+    (an old plan) subtracts the delivery times the parcel's own method
+    efficiency, 25 AF x 0.870 = 21.75 AF, as a plan with the key does."""
     parcel = ParcelFactory(parcel_number="APN-PIVOT-3")
     _patch(auth_client, parcel, str(_method("Center Pivot").pk))
     ParcelLedger.objects.create(
@@ -390,6 +390,6 @@ def test_knob_off_reproduces_todays_numbers_exactly_even_with_a_method_set(
     fn = STEP_REGISTRY["subtract_surface_water"]
     new_running, record = fn(Decimal("30"), parcel, "2024-06", {}, {})
 
-    assert new_running == Decimal("5")
-    assert set(record["detail"]) == {"surface_water_af"}
-    assert Decimal(record["detail"]["surface_water_af"]) == Decimal("25")
+    assert new_running == Decimal("8.25")
+    assert Decimal(record["detail"]["surface_water_af"]) == Decimal("21.75")
+    assert Decimal(record["detail"]["delivered_af"]) == Decimal("25")

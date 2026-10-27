@@ -80,7 +80,7 @@ def _split_by_parcel(month=JAN):
 def _one_pod_three_fields():
     """One headgate serving A, B and C; A will carry an own record."""
     rp = ReportingPeriodFactory()
-    pod = PointOfDiversionFactory(evaporation_fraction=Decimal("0"))
+    pod = PointOfDiversionFactory(division_method="crop_need", evaporation_fraction=Decimal("0"))
     a = ParcelFactory(parcel_number="APN-A")
     b = ParcelFactory(parcel_number="APN-B")
     c = ParcelFactory(parcel_number="APN-C")
@@ -465,7 +465,7 @@ def test_remainder_with_no_field_left_to_take_it_is_unallocated():
 
 def test_ample_remainder_reports_the_unallocated_surplus_in_notes():
     rp = ReportingPeriodFactory()
-    pod = PointOfDiversionFactory(evaporation_fraction=Decimal("0"))
+    pod = PointOfDiversionFactory(division_method="crop_need", evaporation_fraction=Decimal("0"))
     a = ParcelFactory(parcel_number="APN-A")
     b = ParcelFactory(parcel_number="APN-B")
     PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=a)
