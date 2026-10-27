@@ -74,7 +74,8 @@
         <div class="budget-breakdown-group">
           <div class="budget-breakdown-title">Uses by destination</div>
           <div class="budget-breakdown-row"><span>Crop ET</span><b>{{ balance.consumptive_use_gross|floatformat:2|intcomma }}</b></div>
-          <div class="budget-breakdown-row"><span>Pumped water not consumed</span><b>{{ balance.water_not_consumed|floatformat:2|intcomma }}</b></div>
+          {% comment %} Two lines: on one, its figure ran 17px across the divider at 1,730 (staging read, 2026-10-27). {% endcomment %}
+          <div class="budget-breakdown-row"><span>Pumped water<br>not consumed</span><b>{{ balance.water_not_consumed|floatformat:2|intcomma }}</b></div>
         </div>
         <div class="budget-breakdown-group">
           <div class="budget-breakdown-title">Estimate coverage</div>
