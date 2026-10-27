@@ -39,8 +39,11 @@ These parts of OpenH2O are built and tested. Each one ends with a link to its co
   headgate set to divide by crop ET instead divides in proportion to each field's
   ETAW, caps each field at its ETAW divided by its irrigation efficiency,
   records any water left over against the headgate, and uses the shares in a month
-  when no field has any ETAW. The code is in
-  [`accounting/allocation_math.py`](../accounting/allocation_math.py).
+  when no field has any ETAW. A point of diversion that does not serve a field
+  does not divide its water: what is left after the canal's losses appears on its page as delivered to
+  the recharge site it feeds, or to no field, and is credited to no one. The code is in
+  [`accounting/allocation_math.py`](../accounting/allocation_math.py) and
+  [`surface/services.py`](../surface/services.py).
 - **A permanent web address for each record.** Each boundary, zone, use area, well,
   point of diversion, recharge site, monitoring station, water system, facility,
   sampling point and water right has a permanent web address on its OpenH2O

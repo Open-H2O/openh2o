@@ -97,7 +97,7 @@
           <tr>
             <td class="col-step"><span class="step-num">{{ steps.water_year }}</span>Create a water year</td>
             <td class="col-where">Administration &gt; Water Years<br><a href="{% url 'accounting:periods_list' %}" class="text-sm text-accent">Go to Water Years &rarr;</a></td>
-            <td>Create each water year with its start and end dates.</td>
+            <td>Create each water year with its start and end dates. A water year starts on the first day of a month and ends on the last day of a month. Before you set the first allocation ceiling, set the month your water year starts in on Delivery Settings. The default is October.</td>
           </tr>
           <tr>
             <td class="col-step"><span class="step-num">{{ steps.ceilings }}</span>Set allocation ceilings</td>
@@ -107,7 +107,7 @@
           <tr>
             <td class="col-step"><span class="step-num">{{ steps.ledger }}</span>Record water use</td>
             <td class="col-where">Water Data &gt; Use Ledger<br><a href="{% url 'accounting:ledger_list' %}" class="text-sm text-accent">Go to Use Ledger &rarr;</a></td>
-            <td>Record meter readings, deliveries and adjustments one at a time with New entry, or many at once with Upload CSV. OpenH2O calculates each month&rsquo;s figures for a water year when you press Run the calculation on that water year&rsquo;s page, and every night once your server&rsquo;s scheduled jobs are installed.{% if 'wells' in enabled_modules %} For each use area that has a well and no meter reading, OpenH2O enters the use area&rsquo;s ETAW met by groundwater on the Use Ledger.{% endif %}</td>
+            <td>Record meter readings, deliveries and adjustments one at a time with New entry, or many at once with Upload CSV. OpenH2O files each entry under the water year that includes its date. An entry counts as groundwater only when its water type is groundwater, or when it is a meter reading with no water type. OpenH2O calculates each month&rsquo;s figures for a water year when you press Run the calculation on that water year&rsquo;s page, and every night once your server&rsquo;s scheduled jobs are installed.{% if 'wells' in enabled_modules %} For each use area that has a well and no meter reading, OpenH2O enters the use area&rsquo;s ETAW met by groundwater on the Use Ledger.{% endif %}</td>
           </tr>{% endif %}
         </tbody>
       </table>

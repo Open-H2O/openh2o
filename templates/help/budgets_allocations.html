@@ -117,7 +117,7 @@
         <tbody>
           {% if 'wells' in enabled_modules %}<tr>
             <td class="col-name">Groundwater extraction</td>
-            <td>Groundwater extraction on an account&rsquo;s use areas counts against its allocation. OpenH2O uses the meter reading for a well with a meter and its own estimate for a well without one.</td>
+            <td>Groundwater extraction on an account&rsquo;s use areas counts against its allocation. OpenH2O uses the meter reading for a well with a meter and its own estimate for a well without one. An entry added with New entry or Upload CSV counts only when its water type is groundwater, or when it is a meter reading with no water type.</td>
           </tr>{% endif %}
           <tr>
             <td class="col-name">Surface water deliveries</td>

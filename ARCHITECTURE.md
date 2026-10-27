@@ -109,7 +109,9 @@ records into a month's ledger.
 - **One month.** `engine_run.run_month` runs in one transaction. It runs the per-field
   calculation; with the `surface` module on, it then writes the delivery estimate for unmetered
   points (`surface/estimate.py`), divides each point of diversion's water among the fields it
-  serves (`surface/services.py`), and runs the per-field calculation again with the divided water.
+  serves (`surface/services.py`), stores what is left after canal losses at a point that serves no
+  field as `CanalMonthLoss.unserved_af`, credited to no one, and runs the per-field calculation again
+  with the divided water. A diversion record counts in its month whatever day it is dated.
 - **One field.** `accounting/management/commands/run_calculations.py` runs the methodology chain
   for each field through `accounting/calculation.py` (`evaluate_chain`). The steps are functions
   registered in `accounting/steps.py` (`STEP_REGISTRY`): gross crop water use (0 on a field marked
@@ -129,6 +131,43 @@ records into a month's ledger.
   example `over_delivery_treatment` says what happens to surface water beyond the crop's use (by
   default it is recorded on the run and credited to no account); it is read in
   `run_calculations.py` and edited on the Delivery Settings page when `surface` is on.
+  `water_year_start_month` (default 10) decides which water year every month belongs to; Python reads
+  it through `core/water_year.py`, and the finalized-year lock reads the same column in SQL
+  (`accounting/locks.py`).
+
+- **Effective rain.** The default USDA-SCS method (`accounting/precip_math.py`) works in
+  millimetres. With P the month's rain, ET the month's crop water use and D the soil storage in
+  inches (3.0 by default), SF = 0.531747 + 0.295164 D - 0.057697 D^2 + 0.003804 D^3 and effective
+  rain = SF x (1.25 x P^0.824 - 2.93) x 10^(0.000955 x ET), with P^0.824 taken as 0 when P is 0,
+  evaluated in ordinary binary floating point. It is capped at the smaller of P and ET, floored at
+  0, and converted to acre-feet over the field's area.
+- **Rounding.** Every acre-foot figure the ledger and the runs store is quantized to four decimal places with
+  Python's default `Decimal` context, which rounds half to even (2.50285 is stored as 2.5028).
+  Irrigation efficiencies are stored to three places.
+  Pages that print two places round half up, which changes only the printed figure.
+- **Order of rounding on a run.** The chain carries gross crop water use and effective rain
+  unrounded. `subtract_surface_water` (`accounting/steps.py`) rounds the canal water counted once,
+  as the counted delivery times the field's efficiency, and, when it subtracted canal water, sets the running figure to 0 when it
+  is not 0 but within 0.0001 of 0. `run_calculations.py` then stores each figure rounded on its
+  own: gross, effective rain, net use (stored gross minus stored rain), the final figure, the
+  groundwater extraction (the stored final figure divided by efficiency), deep percolation (the
+  extraction minus the stored final figure), over-delivery and unmet demand. The stored surface
+  water is the counted delivery times efficiency in full, even where it exceeds the crop's need. A month
+  with no canal water has its delivery stored as 0.0000 (not blank) and a blank efficiency.
+- **How a headgate's water is divided.** The point's `division_method` picks the rule
+  (`surface/services.py`, `_split_record`). The default divides by the shares entered
+  (`apportion_shared_supply` in `accounting/allocation_math.py`): when any field still to be divided among (those without their own recorded delivery) has a share other than the default 1.0, the shares are the weights, otherwise it divides by acreage, and
+  evenly where no field has an acreage. Each weight is rounded to four places and the
+  rounding difference goes to the field whose key sorts last as text; each field's amount is the
+  water times its rounded weight, rounded to four places, and the last field takes what is left
+  of the water. The other choice, crop need, caps each field at its need divided by its
+  efficiency (rounded to four places); the water fills the caps when it covers them all, and
+  otherwise is shared by need with any field that would pass its cap held at it and the rest
+  re-shared, repeated until none passes (`allocate_by_demand`). In a month when no such field has a need, crop need divides by the shares rule. After rounding, the difference
+  goes to the field with the most room below its cap, ties to the key that sorts last as
+  text, spilling to the next when one field cannot take it all. A remainder of 0 writes no rows.
+- **Where a divided row sits.** A divided row, like an undivided one, carries the diversion
+  record's own date and its reporting period.
 
 ## Change history
 

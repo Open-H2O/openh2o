@@ -138,14 +138,17 @@ does not submit reports to the state, and neither system can currently accept a
 file that OpenH2O produces.
 
 - **GEARS.** OpenH2O writes two GEARS layouts: monthly metered extraction by well,
-  and monthly consumptive use from OpenET. Figures are in acre-feet.
+  and monthly use from OpenET for the field-months the by-well layout does not hold.
+  The by-well layout writes each well's meter readings once. Figures are in acre-feet.
 - **CalWATRS.** OpenH2O writes the Direct Use and To Storage layouts for each point
   of diversion, in acre-feet and cubic feet per second. A parcel with both
   groundwater and surface water is marked as combined use. A diversion with no water
   right ID is left out of the file, and the check OpenH2O runs on each report lists
   it as a warning. The Measurement Method column shows the method recorded for the
   diversion. For a diversion measured by a device, the column adds the device's
-  type after the method. A record with no method shows "Not stated".
+  type after the method. A record with no method shows "Not stated". The last column,
+  Re-diverted Volume (AF), holds the volume of a point of diversion that is linked as
+  re-diverting another point's water. That point's Volume (AF) column reads 0.
 
 The files are written by `reporting/generators.py`, and the models are in
 `reporting/models.py`.

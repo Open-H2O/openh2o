@@ -214,7 +214,7 @@ each row it converted.
 The report-year setting is on the Delivery Settings page, under Diversion records.
 When a Water Use Reported file has no `calendar_month` column, OpenH2O uses the
 setting to find the calendar year of each month. The report year can be a water
-year, a calendar year, or a season that starts in a month you choose.
+year from October to September, whatever month the site's own water year starts in, a calendar year, or a season that starts in a month you choose.
 
 When a file has rows of the type `USE`, the import screen asks how to handle them,
 and the mapping step shows how many there are. The choices are:
@@ -270,7 +270,7 @@ Dry run.
 | `effective_date` | yes | The date the entry applies to. |
 | `amount_acre_feet` | yes | Its sign depends on `source_type`. |
 | `source_type` | yes | One of the codes in the sign table. |
-| `water_type_code` | no | The code of a water type on the site. |
+| `water_type_code` | no | The code of a water type on the site. A negative entry without a water type counts against a groundwater allocation only when its source type is `meter_reading` or `calculated`, or `et_estimate` on a field with a well. |
 | `transaction_date` | no | The date the entry was recorded. |
 | `description` | no | Any text. |
 
@@ -295,13 +295,7 @@ OpenH2O skips a row that repeats the parcel, date, source type and amount of an
 entry already on the site or of an earlier row in the file. It refuses entries for a
 water year that has been finalized.
 
-A water year in OpenH2O is a record on the Water Years page, with a name and its
-first and last dates. To assign the entries to one, create the water year first
-(`/accounting/reporting-periods/create/`). On the Upload CSV page, choose it from
-the list. With the command, pass its name to `--reporting-period` exactly as the
-Water Years page shows it. Entries imported without a water year are assigned when
-a water year that covers their dates is created. The command reads a comma-separated
-file unless you pass another character with `--delimiter`.
+A water year in OpenH2O is a record on the Water Years page, with a name, a first date on the first day of a month and a last date on the last day of a month. Each imported entry is filed under the water year that includes its date. An entry dated outside every water year on the site waits without one and is filed when a water year covering its date is created. With the command, `--reporting-period` limits the import to one water year: pass its name exactly as the Water Years page shows it, and a row dated outside that water year is not imported and is listed as an error. The command reads a comma-separated file unless you pass another character with `--delimiter`.
 
 ```bash
 docker compose cp ledger.csv web:/tmp/

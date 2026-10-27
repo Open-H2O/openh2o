@@ -55,12 +55,16 @@
             <td>ETAW is crop ET minus effective precipitation. By default, effective precipitation is estimated with the USDA-SCS method.</td>
           </tr>
           <tr>
+            <td class="col-name">The effective precipitation formula</td>
+            <td>The USDA-SCS method works in millimeters. With P the month&rsquo;s precipitation, ET the month&rsquo;s OpenET crop ET (the satellite figure, even on a field marked fallow) and D the soil storage in inches (3.0 unless the setting is changed), OpenH2O first computes a storage factor, SF = 0.531747 + 0.295164 &times; D &minus; 0.057697 &times; D&sup2; + 0.003804 &times; D&sup3;. Effective precipitation is SF &times; (1.25 &times; P<sup>0.824</sup> &minus; 2.93) &times; 10<sup>(0.000955 &times; ET)</sup>, with P<sup>0.824</sup> taken as 0 when P is 0. The result is held at or below the smaller of P and ET and at or above 0, then converted to acre-feet over the field&rsquo;s area. The formula is evaluated in ordinary binary floating point.</td>
+          </tr>
+          <tr>
             <td class="col-name">ETAW met by surface water</td>
             <td>The field&rsquo;s surface water delivery is its share of a headgate total, divided as the next table describes. OpenH2O multiplies the delivery by the field&rsquo;s irrigation efficiency, and ETAW met by surface water is that product or the month&rsquo;s ETAW, whichever is smaller. A delivery OpenH2O estimated for a diversion with no meter is left out of that product.</td>
           </tr>
           <tr>
-            <td class="col-name">Deep percolation from a delivery</td>
-            <td>The share of the delivery that the crop cannot use at the field&rsquo;s irrigation efficiency is deep percolation.</td>
+            <td class="col-name">Applied water not consumed</td>
+            <td>On the field&rsquo;s page, applied water not consumed counts the canal water the crop did not use: the part of the delivery left out at the field&rsquo;s irrigation efficiency, the surface water in excess of ETAW, and all of any delivery OpenH2O estimated for a diversion with no meter. It also counts the pumped water not consumed.</td>
           </tr>
           <tr>
             <td class="col-name">ETAW met by groundwater</td>
@@ -68,7 +72,7 @@
           </tr>
           <tr>
             <td class="col-name">Groundwater extraction</td>
-            <td>Where the well has a meter, the field&rsquo;s share of the well&rsquo;s meter reading is the extraction, divided evenly among its fields where no shares are entered. Otherwise OpenH2O divides ETAW met by groundwater by the field&rsquo;s irrigation efficiency to get the extraction, and the extraction minus ETAW met by groundwater is deep percolation.</td>
+            <td>Where the well has a meter, the field&rsquo;s share of the well&rsquo;s meter reading is the extraction, divided evenly among its fields where no shares are entered. Otherwise OpenH2O divides ETAW met by groundwater by the field&rsquo;s irrigation efficiency to get the extraction, and the extraction minus ETAW met by groundwater is the pumped water not consumed, which the field&rsquo;s page counts within applied water not consumed.</td>
           </tr>
           <tr>
             <td class="col-name">A field marked fallow</td>
@@ -77,6 +81,18 @@
           <tr>
             <td class="col-name">The surplus</td>
             <td>When effective precipitation plus the delivery times irrigation efficiency exceeds crop ET, OpenH2O records the surplus in two parts: effective precipitation in excess of crop ET, and surface water in excess of ETAW. What happens to surface water in excess of ETAW depends on a setting described in {% if show_settings %}<a class="prose-link" href="{% url 'settings_explained' %}">Settings explained</a>{% else %}Settings explained{% endif %}.</td>
+          </tr>
+          <tr>
+            <td class="col-name">Rounding</td>
+            <td>OpenH2O stores acre-feet to four decimal places and rounds half to even: a figure exactly halfway between two values goes to the one whose last digit is even, so 2.50285 is stored as 2.5028. Pages that print two decimal places round half up, which changes only what is printed.</td>
+          </tr>
+          <tr>
+            <td class="col-name">The order of rounding on a run</td>
+            <td>Gross crop ET and effective precipitation are carried unrounded through the calculation. The canal water counted is rounded once, as the delivery times the field&rsquo;s irrigation efficiency. When canal water was counted and the running figure after that step is less than 0.0001 acre-feet from 0 on either side, and is not exactly 0, OpenH2O sets it to 0. The figures stored for the month are then each rounded on their own: gross ET, effective precipitation, ETAW (the stored gross ET minus the stored effective precipitation), the final figure after the floor, the groundwater extraction (the stored final figure divided by irrigation efficiency), the pumped water not consumed (the extraction minus the stored final figure), surface water in excess of ETAW, and the unmet demand. The surface water stored for the month is the counted delivery (the delivery less any part OpenH2O estimated) times irrigation efficiency in full, even where it exceeds ETAW.</td>
+          </tr>
+          <tr>
+            <td class="col-name">A month with no delivery</td>
+            <td>When a month has no canal water, its delivery is stored as 0.0000 and its irrigation efficiency is left blank.</td>
           </tr>
         </tbody>
       </table>
@@ -96,7 +112,7 @@
         <tbody>
           <tr>
             <td class="col-name">Canal losses</td>
-            <td>OpenH2O first subtracts the canal&rsquo;s evaporation, seepage and spill from the headgate total. Evaporation and spill are charged to no one, and seepage goes to the zone&rsquo;s seepage pool.</td>
+            <td>OpenH2O first subtracts the canal&rsquo;s evaporation, seepage and spill from the water kept at the headgate, which is the water taken less the water returned. Evaporation and spill are charged to no one, and seepage goes to the zone&rsquo;s seepage pool.</td>
           </tr>
           <tr>
             <td class="col-name">Default losses</td>
@@ -108,15 +124,35 @@
           </tr>
           <tr>
             <td class="col-name">The division</td>
-            <td>By default, OpenH2O divides the remainder among the other fields by the share entered for each field, or by acreage where none is entered. When the point of diversion is set to divide by crop ET, OpenH2O divides it in proportion to each field&rsquo;s ETAW, and no field receives more than its ETAW divided by its irrigation efficiency.</td>
+            <td>By default, OpenH2O divides the remainder among the other fields by the share entered for each field, or by acreage when no field&rsquo;s share has been changed from 1.0. When the point of diversion is set to divide by crop ET, OpenH2O divides it in proportion to each field&rsquo;s ETAW, and no field receives more than its ETAW divided by its irrigation efficiency.</td>
+          </tr>
+          <tr>
+            <td class="col-name">The shares entered</td>
+            <td>OpenH2O divides by the shares entered when any field&rsquo;s entered share differs from the default of 1.0. When none does, it divides by acreage, or evenly among the fields when none has an acreage on record. Each field&rsquo;s weight is its share, or its acreage, divided by the total of them, rounded to four decimal places. When OpenH2O divides by acreage, a field without an acreage on record is given 0 acre-feet. The rounding difference in the weights goes to the field whose ID sorts last as text. Each field&rsquo;s amount is the water times its rounded weight, rounded to four decimal places, and the field whose ID sorts last takes what is left, so the amounts add to the total exactly.</td>
+          </tr>
+          <tr>
+            <td class="col-name">Dividing by crop ET, in detail</td>
+            <td>Each field&rsquo;s ceiling is its ETAW divided by its irrigation efficiency, rounded to four decimal places. When the water covers every ceiling, each field receives its ceiling. When it does not, OpenH2O divides all of it in proportion to ETAW, holds any field whose share would pass its ceiling at that ceiling, and divides what is left among the other fields in proportion to ETAW, repeating until every field is at or under its ceiling. Each share is then rounded to four decimal places and held at its ceiling. The rounding difference goes to the field with the most room below its ceiling, to the field whose APN sorts last as text when two have equal room, and on to the next field when the first cannot take all of it.</td>
           </tr>
           <tr>
             <td class="col-name">Water left over</td>
             <td>When the point of diversion divides by crop ET and water remains after every field has received its ETAW divided by its irrigation efficiency, OpenH2O shows it on the point of diversion&rsquo;s page and charges it to no field.</td>
           </tr>
           <tr>
+            <td class="col-name">A point that does not serve a field</td>
+            <td>When a point of diversion does not serve a field, OpenH2O subtracts the canal&rsquo;s losses and does not divide the rest. It shows the rest on the point of diversion&rsquo;s page as delivered to the site the point feeds, named, or as Delivered to no field, and does not credit it to anyone.</td>
+          </tr>
+          <tr>
             <td class="col-name">A month with no ETAW</td>
             <td>In a month when no field on the headgate has any ETAW, OpenH2O divides the remainder according to the shares entered on the point of diversion, or by acreage when none are entered.</td>
+          </tr>
+          <tr>
+            <td class="col-name">A month recorded as 0</td>
+            <td>A diversion recorded as 0 for a month does not give any field a delivery and does not write divided rows for that month.</td>
+          </tr>
+          <tr>
+            <td class="col-name">The date of a divided row</td>
+            <td>A divided row carries the date of the diversion record it was divided from, whatever day in the month that is, and that record&rsquo;s reporting period.</td>
           </tr>
         </tbody>
       </table>

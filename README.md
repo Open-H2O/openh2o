@@ -150,7 +150,7 @@ which runs the demonstration data. Invented sample data carries a *Demo* label
 and appears beside the real published records.
 
 **The dashboard** shows the water balance for the water year: supplies by source,
-crop ET from OpenET's satellite estimate, the balance between them, and how many
+uses (crop ET from OpenET's satellite estimate and pumped water not consumed), the balance between them, and how many
 accounts are in surplus or in deficit.
 
 ![The OpenH2O dashboard for water year 2025-2026, showing supplies of 15,173.16 acre-feet by source, crop ET of 16,209.28 acre-feet and a balance of -1,036.12 acre-feet](docs/screenshots/dashboard.png)

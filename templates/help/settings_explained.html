@@ -117,6 +117,11 @@
             <td>Carried into the next water year</td>
           </tr>
           <tr>
+            <td class="col-name">Water year</td>
+            <td>The month each water year starts in. OpenH2O uses it to place each month in a water year for carry-over, credits, the face value remaining on a water right and the finalized lock. A water year that starts in January is named by its calendar year. Set it before the first allocation is entered.</td>
+            <td>October</td>
+          </tr>
+          <tr>
             <td class="col-name">Reporting year</td>
             <td>For a diversion record file that gives a year and a month but no date, the year the file uses: a water year starting in October, a calendar year, or a season starting in a chosen month.</td>
             <td>Water year</td>
@@ -166,7 +171,11 @@
         <tbody>
           <tr>
             <td class="col-name">A setting that changes a figure</td>
-            <td>Each calculated month keeps the settings it was calculated with. A changed setting affects a past month only when that month is recalculated{% if 'recharge' in enabled_modules %}, and a recharge event's credit only when that event is saved again{% endif %}.</td>
+            <td>Each calculated month keeps the settings it was calculated with. Except for the water year start, a changed setting affects a past month only when that month is recalculated{% if 'recharge' in enabled_modules %}, and a recharge event's credit only when that event is saved again{% endif %}.</td>
+          </tr>
+          <tr>
+            <td class="col-name">The water year start</td>
+            <td>A changed month applies at once to every page that places a month in a water year, and to the finalized lock. Carry-over and credits already written keep the water year they were written under.</td>
           </tr>
           <tr>
             <td class="col-name">The year-end choice</td>
@@ -194,7 +203,7 @@
       </a>
       <a href="{{ delivery_url }}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Delivery Settings</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">This page holds the default irrigation efficiency, the treatment of surface water in excess of ETAW, the treatment of canal seepage, the share left in the basin, the year-end choice, the reporting year and record addresses.</p>
+        <p class="text-secondary text-sm">This page holds the default irrigation efficiency, the treatment of surface water in excess of ETAW, the treatment of canal seepage, the share left in the basin, the year-end choice, the month the water year starts in, the reporting year and record addresses.</p>
       </a>{% endif %}
     </div>
   </div>

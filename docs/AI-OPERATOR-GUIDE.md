@@ -426,6 +426,7 @@ place the table gives:
 | Which parcels each point of diversion serves, each field's share of that point's water, and whether the water is divided by crop ET instead | The share on the link between the point and the parcel, set on the point's own page. Where a share is not entered, OpenH2O divides the water by acreage. To divide by crop ET, set **How the water is divided among the fields** on the point's edit page. |
 | Each measuring device's nickname, calibration date and accuracy | The device record, from **Add device** on the point's own page. |
 | Which year a season belongs to | The report-year setting on the Delivery Settings page (`/accounting/delivery-settings/`), under Diversion records. It is set once for the whole site. |
+| Which month your water year starts in | The water year setting on the Delivery Settings page (`/accounting/delivery-settings/`). The default is 10, October. Set it before the first allocation. |
 | The unit of the rows in a production file whose unit is blank | **Unit for rows with a blank unit**, on the preview of the production import screen. |
 | Which facility each name in the organization's files means | The facility's local name, on its add or edit page under Drinking Water facilities. |
 | Whether any laboratory results exist only on paper | A CSV file with the lab import's columns, typed up from the paper and imported at `/drinking/import/`. |
@@ -449,17 +450,18 @@ one in full.
 | A public water system, by its PWSID | `/drinking/onboard/` | A PWSID is the identification number of a public water system in EPA's records. The page looks the system up in EPA's Envirofacts records and adds the system and its facilities. Add the sampling points on the page that follows. |
 | Laboratory results | `/drinking/import/` | It matches the column headings of California's Division of Drinking Water and several headings that commercial labs use. |
 | A year of production by month and source | `/drinking/production/import/`, or `import_production` | It reads an eAR export or a monthly log. The screen saves to the first water system on the site. A site with several water systems imports with the command, which takes `--pwsid` to name the system. |
-| Past ledger entries, as a CSV file | `import_ledger_csv`, or the Upload CSV page of the Use Ledger (`/accounting/ledger/upload/`) | The Upload CSV page imports the file at once unless you tick Dry run. |
+| Past ledger entries, as a CSV file | `import_ledger_csv`, or the Upload CSV page of the Use Ledger (`/accounting/ledger/upload/`) | The Upload CSV page imports the file at once unless you tick Dry run. Each entry counts in the water year its date falls in, so create the water years first, under Administration > Water Years. An entry dated outside every water year is saved in no water year and joins one when a water year covering its date is created. With `--reporting-period`, the command imports only the rows dated inside that water year. |
 | A year of diversion volumes, in California's Water Use Reported export or the organization's own book of deliveries | `/surface/diversion/import/`, or `import_diversion_records` | OpenH2O tells the two layouts apart by their column headings, and the preview names every conversion. Set the report year first, as the next paragraph describes. |
 
 Before you import diversion records, ask how the organization counts a reporting
-year: as a water year, a calendar year, or an irrigation season that starts in a
+year: as an October-to-September water year, a calendar year, or an irrigation season that starts in a
 month it chooses. Set the answer on the Delivery Settings page
 (`/accounting/delivery-settings/`), under Diversion records. That part of the page
-appears only when the site runs the `surface` section.
+appears only when the site runs the `surface` section. This answer applies only to
+diversion files, and it is separate from the month the site's water year starts in.
 
 Water accounts and allocations have no import. Create them on their pages under
-Accounting. OpenH2O has no page yet for entering water-level readings at a well or
+Accounting. Before the first allocation, set the month the water year starts in on Delivery Settings, and create each water year from the first day of a month to the last day of a month. OpenH2O has no page yet for entering water-level readings at a well or
 readings at a monitoring station. Someone with a staff account, such as the
 superuser from Phase 2, can add them on the administration site at `/admin/`. The
 Data import guide lists every record that is entered by hand and the page for each.
