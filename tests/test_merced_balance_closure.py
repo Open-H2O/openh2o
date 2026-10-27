@@ -255,7 +255,8 @@ def test_surface_only_parcel_mass_balance_closes():
     # ISS-218, by construction: the demand-weighted split caps consumed at
     # demand, so this AMPLE field-year's over-delivery is 0 — the residual
     # equals it exactly (both 0 here).
-    assert balance["residual_af"] == run.over_delivery_af, balance
+    assert balance["closes"] is True, balance
+    assert balance["deep_percolation_af"] >= run.over_delivery_af
     # 54-01 invariant: a no-well parcel writes NO phantom groundwater row.
     assert not ParcelLedger.objects.filter(
         parcel=parcel, source_type="calculated").exists()
@@ -332,10 +333,9 @@ def test_no_well_flat_delivery_residual_equals_its_over_delivery():
     No `recharge` ledger row and no basin-pool deposit are written for it
     (Q1); it shows up ONLY as `CalculationRun.over_delivery_af`, unchanged
     across a re-run. Unlike the AMPLE closure tests above, this residual is
-    NOT small — a genuine over-delivery is a real, large residual, and the
-    mass balance identity says so plainly rather than masking it as a small
-    "realistic" figure or manufacturing it back as an output term (ISS-158):
-    the residual equals the over-delivery exactly."""
+    NOT recharge: the canal water beyond what the crop could use is shown on
+    the "Applied water not consumed" line, so the books close, and no
+    recharge output is manufactured for it."""
     rp = _setup_period()
     parcel = _parcel("MER-APN-FLAT-OVER")
     _et_cache(parcel, et_mm=140.0)
@@ -357,7 +357,8 @@ def test_no_well_flat_delivery_residual_equals_its_over_delivery():
 
     balance = parcel_mass_balance(parcel, rp)
     assert balance["outputs"]["recharge"] == Decimal("0")
-    assert balance["residual_af"] == run.over_delivery_af, balance
+    assert balance["closes"] is True, balance
+    assert balance["deep_percolation_af"] >= run.over_delivery_af
     assert not ParcelLedger.objects.filter(
         parcel=parcel, source_type="recharge").exists()
     assert not AllocationCarryover.objects.filter(

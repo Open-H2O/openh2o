@@ -126,7 +126,7 @@ class TestZoneBalance:
         ParcelZoneFactory(parcel=p1, zone=zone)
         ParcelZoneFactory(parcel=p2, zone=zone)
         ParcelLedgerFactory(parcel=p1, amount_acre_feet=Decimal("10.0000"))
-        ParcelLedgerFactory(parcel=p2, amount_acre_feet=Decimal("-5.0000"))
+        ParcelLedgerFactory(parcel=p2, amount_acre_feet=Decimal("-5.0000"), source_type="meter_reading")
 
         result = zone_balance(zone)
         assert result["supply"] == Decimal("10.0000")
@@ -701,8 +701,8 @@ class TestBalanceDict:
     def test_all_negative(self):
         """All-negative entries: supply is 0, usage is the absolute sum."""
         parcel = ParcelFactory()
-        ParcelLedgerFactory(parcel=parcel, amount_acre_feet=Decimal("-15.0000"))
-        ParcelLedgerFactory(parcel=parcel, amount_acre_feet=Decimal("-25.0000"))
+        ParcelLedgerFactory(parcel=parcel, amount_acre_feet=Decimal("-15.0000"), source_type="meter_reading")
+        ParcelLedgerFactory(parcel=parcel, amount_acre_feet=Decimal("-25.0000"), source_type="meter_reading")
 
         from parcels.models import ParcelLedger
 
@@ -717,7 +717,7 @@ class TestBalanceDict:
         parcel = ParcelFactory()
         ParcelLedgerFactory(parcel=parcel, amount_acre_feet=Decimal("0.0000"))
         ParcelLedgerFactory(parcel=parcel, amount_acre_feet=Decimal("50.0000"))
-        ParcelLedgerFactory(parcel=parcel, amount_acre_feet=Decimal("-20.0000"))
+        ParcelLedgerFactory(parcel=parcel, amount_acre_feet=Decimal("-20.0000"), source_type="meter_reading")
 
         from parcels.models import ParcelLedger
 

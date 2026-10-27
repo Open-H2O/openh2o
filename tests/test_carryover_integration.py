@@ -31,6 +31,7 @@ from tests.factories import (
     AllocationPlanFactory,
     ParcelFactory,
     ParcelZoneFactory,
+    WellIrrigatedParcelFactory,
     ReportingPeriodFactory,
     WaterTypeFactory,
     ZoneFactory,
@@ -127,6 +128,7 @@ class TestUsageByType:
         zone = ZoneFactory()
         parcel = ParcelFactory()
         ParcelZoneFactory(parcel=parcel, zone=zone)
+        WellIrrigatedParcelFactory(parcel=parcel)  # a satellite row only counts on a field with a well
 
         # et_estimate carries NULL water_type but is groundwater extraction.
         usage_row(parcel, date(2024, 6, 1), 30, source_type="et_estimate")
@@ -156,6 +158,7 @@ class TestUsageByType:
         zone = ZoneFactory()
         parcel = ParcelFactory()
         ParcelZoneFactory(parcel=parcel, zone=zone)
+        WellIrrigatedParcelFactory(parcel=parcel)  # a satellite row only counts on a field with a well
         usage_row(parcel, date(2024, 6, 1), 30, source_type="et_estimate")
         usage_row(parcel, date(2025, 6, 1), 99, source_type="et_estimate")
 
@@ -174,6 +177,7 @@ class TestRolloverCommand:
         zone = ZoneFactory()
         parcel = ParcelFactory()
         ParcelZoneFactory(parcel=parcel, zone=zone)
+        WellIrrigatedParcelFactory(parcel=parcel)  # a satellite row only counts on a field with a well
         # The year's figures are written while it is open, then it closes:
         # a finalized year refuses every write (147-02).
         period = wy_period(

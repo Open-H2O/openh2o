@@ -509,8 +509,8 @@ def test_a_metered_calculation_page_shows_no_extracted_figure(admin_client):
 
 
 def test_the_balance_panel_rows_add_up_to_uses(admin_client):
-    """148-02: the two deep-percolation outputs count in Uses, so the panel
-    lists them as one row; without it the rows under Uses fell short of the
+    """148-02: the two applied-water-not-consumed outputs count in Uses, so the
+    panel lists them as one row; without it the rows under Uses fell short of the
     Uses total by exactly that amount (MER-APN-032, WY 2025-2026: 181.25)."""
     period = "2025-05"
     parcel = _et_only_parcel("GWX-PANEL", period, et_mm=ET_1_22)
@@ -534,4 +534,4 @@ def test_the_balance_panel_rows_add_up_to_uses(admin_client):
     html = admin_client.get(
         reverse("parcels:detail", args=[parcel.id])
     ).content.decode()
-    assert "Deep percolation" in html
+    assert "Applied water not consumed" in html

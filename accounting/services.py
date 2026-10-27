@@ -45,6 +45,7 @@ from django.db.models import (
     Sum,
     When,
 )
+from django.db.models.functions import TruncMonth
 from django.utils import timezone
 
 from geography.models import ParcelZone
@@ -828,21 +829,44 @@ def parcel_balance_breakdown(
 _Q4 = Decimal("0.0001")
 
 
+def _groundwater_rows(queryset: QuerySet[ParcelLedger]) -> QuerySet[ParcelLedger]:
+    """The negative rows of a ledger queryset that are groundwater use.
+
+    A row counts when it is of the groundwater water type, or is the engine's
+    own estimate: a ``calculated`` row (written only where a well exists) or
+    the satellite ``et_estimate`` row of a field that has a well. A satellite
+    row on a field with no well is unmet demand, never pumping. A meter
+    reading with no water type counts (the meter says which water it was). A
+    canal delivery, a row of another water type and a hand entry or upload
+    with no water type are not groundwater: with no type there is nothing to
+    say which water it was.
+    """
+    from wells.models import WellIrrigatedParcel
+
+    groundwater_typed = Q(water_type__code__iexact="GW") & ~Q(
+        source_type="surface_diversion"
+    )
+    # A meter reading is a well's pumping record whatever its label, so one with
+    # no water type counts; one typed as another water does not.
+    untyped_meter = Q(source_type="meter_reading", water_type__isnull=True)
+    engine_rows = untyped_meter | Q(source_type="calculated") | (
+        Q(source_type="et_estimate")
+        & Q(parcel_id__in=WellIrrigatedParcel.objects.values("parcel_id"))
+    )
+    return queryset.filter(amount_acre_feet__lt=0).filter(groundwater_typed | engine_rows)
+
+
 def _recorded_usage(queryset: QuerySet[ParcelLedger]) -> Decimal:
     """The recorded usage computation: recorded magnitude, at face
-    value, of every negative non-``surface_diversion`` row.
+    value, of every negative groundwater row (see ``_groundwater_rows``).
 
     Extracted out of ``_balance_dict`` so a caller that must show what
-    actually reached the crop -- ``consumptive_use_balance``'s
-    ``supplies["groundwater"]``, the Supplies panel's number -- can keep
-    reading it directly rather than through ``charged_groundwater`` below,
-    which now answers a different question for ``_balance_dict`` and the
-    budget readers built on it (extraction spends the
-    allocation; consumption is what the Supplies panel shows).
+    actually reached the crop can keep reading it directly rather than
+    through ``charged_groundwater`` below, which answers a different
+    question for ``_balance_dict`` and the budget readers built on it
+    (extraction spends the allocation; consumption is what reached the crop).
     """
-    usage_neg = queryset.filter(amount_acre_feet__lt=0).exclude(
-        source_type="surface_diversion"
-    ).aggregate(s=Sum("amount_acre_feet"))["s"]
+    usage_neg = _groundwater_rows(queryset).aggregate(s=Sum("amount_acre_feet"))["s"]
     return abs(usage_neg or Decimal("0"))
 
 
@@ -1170,25 +1194,36 @@ def _mass_balance_ledger_terms(
 
 def _mass_balance_run_terms(
     parcel: Parcel, reporting_period: ReportingPeriod | None
-) -> tuple[Decimal, Decimal, Decimal, Decimal, Decimal, Decimal, set[Decimal | None]]:
+) -> tuple[
+    Decimal, Decimal, Decimal, Decimal, Decimal, Decimal, set[Decimal | None],
+    Decimal | None,
+]:
     """The CalculationRun-sourced terms, summed over the period's runs.
 
     Returns ``(precip, et, delta_storage, deep_percolation_surface,
-    deep_percolation_gw, surface_usable, efficiencies)``.
+    deep_percolation_gw, surface_usable, efficiencies, surface_crop_use)``.
+    ``surface_crop_use`` is the canal water the crops used (the part they
+    could use, less what exceeded their need), or ``None`` with no run.
     """
     # CalculationRun-sourced terms: ET, effective precip, banking, percolation.
     precip = Decimal("0")
     et = Decimal("0")
     delta_storage = Decimal("0")
+    # The canal water not consumed is worked out in `_mass_balance_result`,
+    # from the ledger's delivered figure and `surface_crop_use` below.
     deep_percolation_surface = Decimal("0")
     deep_percolation_gw = Decimal("0")
     # Two figures the panel prints and the identity does not
     # read: the canal water the crop could use (the runs' own column, summed)
     # and the efficiencies that made it, one per delivered month.
     surface_usable = Decimal("0")
+    surface_crop_use: Decimal | None = None
     efficiencies = set()
     for run in _calculation_runs_for_period(parcel, reporting_period):
         surface_usable += run.surface_water_af or Decimal("0")
+        surface_crop_use = (surface_crop_use or Decimal("0")) + (
+            (run.surface_water_af or Decimal("0")) - (run.over_delivery_af or Decimal("0"))
+        )
         if run.surface_delivered_af:
             efficiencies.add(run.surface_efficiency)
         et += run.gross_et_af or Decimal("0")
@@ -1196,21 +1231,12 @@ def _mass_balance_run_terms(
         delta_storage += (run.banked_af or Decimal("0")) - (
             run.drawn_af or Decimal("0")
         )
-        # The part of a canal delivery the crop could NOT use. Neither
-        # crop use nor a credit, and never manufactured. Only present
-        # on a run whose apply_efficiency knob was on and something was
-        # delivered (surface_delivered_af not null); an old run, or the knob
-        # off, contributes 0 here, exactly like every other absent term above.
-        if run.surface_delivered_af is not None:
-            consumed = run.surface_water_af or Decimal("0")
-            deep_percolation_surface += run.surface_delivered_af - consumed
-        # The groundwater sibling of the term above --
-        # pumped water that returned to the aquifer rather than reaching the
+        # Pumped water that returned to the aquifer rather than reaching the
         # crop. Null on a metered or no-well run (same absent-term convention).
         deep_percolation_gw += run.deep_percolation_gw_af or Decimal("0")
     return (
         precip, et, delta_storage, deep_percolation_surface,
-        deep_percolation_gw, surface_usable, efficiencies,
+        deep_percolation_gw, surface_usable, efficiencies, surface_crop_use,
     )
 
 
@@ -1237,15 +1263,24 @@ def _mass_balance_result(
     gw_recovered: Decimal,
     surface: Decimal,
     recharge: Decimal,
-    run_terms: tuple[Decimal, Decimal, Decimal, Decimal, Decimal, Decimal, set[Decimal | None]],
+    run_terms: tuple[
+        Decimal, Decimal, Decimal, Decimal, Decimal, Decimal, set[Decimal | None],
+        Decimal | None,
+    ],
     gw_is_estimated: bool,
     gw_is_metered: bool,
 ) -> dict[str, Any]:
     """Assemble the balance identity, its flags and the panel-only figures."""
     (
         precip, et, delta_storage, deep_percolation_surface,
-        deep_percolation_gw, surface_usable, efficiencies,
+        deep_percolation_gw, surface_usable, efficiencies, surface_crop_use,
     ) = run_terms
+    # All the canal water that reached the field and its crop did not use: what
+    # the efficiency withheld, and what exceeded the crop's need. Read off the
+    # ledger's delivered figure, so a delivery the engine only estimated (and
+    # did not subtract) shows here whole. A field with no run keeps 0.
+    if surface_crop_use is not None:
+        deep_percolation_surface = surface - surface_crop_use
     runoff = Decimal("0")  # bookkeeping boundary: no surface-hydrology model.
 
     inputs = {"surface": surface, "precip": precip, "gw_recovered": gw_recovered}
@@ -1582,7 +1617,7 @@ def unmet_demand_by_parcel(
 def _consumptive_supply_terms(
     parcel_ids: list[int], reporting_period: ReportingPeriod | None
 ) -> tuple[Decimal, Decimal, Decimal]:
-    """Ledger-sourced supplies: ``(groundwater, groundwater_charged, surface)``."""
+    """Ledger-sourced supplies: ``(groundwater_consumed, groundwater_charged, surface)``."""
     # Ledger-sourced supplies, on the SAME billable basis as the mass balance.
     qs = ParcelLedger.objects.filter(parcel_id__in=parcel_ids)
     if reporting_period is not None:
@@ -1600,22 +1635,63 @@ def _consumptive_supply_terms(
     return groundwater, groundwater_charged, surface
 
 
+def _metered_pumping_by_month(
+    parcel_ids: list[int], reporting_period: ReportingPeriod | None
+) -> dict[tuple[int, date], Decimal]:
+    """Metered groundwater (positive AF) per ``(parcel id, first of month)``."""
+    qs = ParcelLedger.objects.filter(
+        parcel_id__in=parcel_ids, source_type="meter_reading"
+    )
+    if reporting_period is not None:
+        qs = qs.filter(reporting_period=reporting_period)
+    rows = (
+        _groundwater_rows(qs)
+        .annotate(month=TruncMonth("effective_date"))
+        .values("parcel_id", "month")
+        .annotate(total=Sum("amount_acre_feet"))
+    )
+    return {(r["parcel_id"], r["month"]): abs(r["total"]) for r in rows}
+
+
+def _run_water_not_consumed(run: CalculationRun, metered: Decimal | None) -> Decimal:
+    """Pumped water this run's crop did not consume (AF, never negative).
+
+    An estimated run stamped it (``deep_percolation_gw_af``). A metered month
+    has the reading less what the crop still needed from groundwater after
+    precipitation and the canal water it used, and none of it when the crop
+    needed more than was pumped.
+    """
+    if run.deep_percolation_gw_af is not None:
+        return run.deep_percolation_gw_af
+    if metered is None:
+        return Decimal("0")
+    need = (run.net_consumptive_use_af or Decimal("0")) - (
+        run.surface_water_af or Decimal("0")
+    )
+    return max(metered - max(need, Decimal("0")), Decimal("0"))
+
+
 def _consumptive_run_terms(
     parcel_ids: list[int], reporting_period: ReportingPeriod | None
-) -> tuple[Decimal, Decimal, Decimal, int]:
-    """CalculationRun-sourced terms: ``(gross, net, precip, run_count)``."""
+) -> tuple[Decimal, Decimal, Decimal, int, Decimal]:
+    """CalculationRun-sourced terms: ``(gross, net, precip, run_count, not_consumed)``."""
     # CalculationRun-sourced consumptive-use terms, summed per parcel-month.
     gross = Decimal("0")
     net = Decimal("0")
     precip = Decimal("0")
+    not_consumed = Decimal("0")
     run_count = 0
+    metered = _metered_pumping_by_month(parcel_ids, reporting_period)
     for parcel in Parcel.objects.filter(id__in=parcel_ids):
         for run in _calculation_runs_for_period(parcel, reporting_period):
             gross += run.gross_et_af or Decimal("0")
             net += run.net_consumptive_use_af or Decimal("0")
             precip += run.effective_precip_af or Decimal("0")
+            not_consumed += _run_water_not_consumed(
+                run, metered.get((parcel.id, run.period_start))
+            )
             run_count += 1
-    return gross, net, precip, run_count
+    return gross, net, precip, run_count, not_consumed
 
 
 def consumptive_use_balance(
@@ -1628,16 +1704,12 @@ def consumptive_use_balance(
     consumptive-use lens. Every term is sourced from an EXISTING helper so this read can
     never drift from the billable ledger or the mass balance:
 
-    * ``supplies["groundwater"]`` == ``_recorded_usage(billable_ledger(qs))`` for
-      the parcels — the CONSUMED magnitude, what reached the crop, identical to
-      the figure the Supplies panel has always shown. This line does not read ``_balance_dict(...)["usage"]``, because
-      that helper's usage CHARGES a calculated row's stamped extraction
-      estimate where one exists (the budget spends extraction, not
-      consumption) — this call site is deliberately NOT one of the budget
-      readers, so it reads ``_recorded_usage`` directly to keep
-      showing consumption. The two agree exactly wherever no run has stamped
-      an extraction estimate (an old run, a metered run, or none); they
-      diverge on an estimated field, by design.
+    * ``supplies["groundwater"]`` == ``charged_groundwater(billable_ledger(qs))``:
+      groundwater as PUMPED (extraction) on a metered field and an estimated one
+      alike. The consumed magnitude stays available as ``groundwater_consumed``
+      (``_recorded_usage``). The pumped water the crop did not consume is
+      ``water_not_consumed`` and is a use beside crop ET, so
+      ``net_vs_supply`` = supplies - crop ET - water not consumed.
     * ``groundwater_charged``: the BUDGET figure —
       ``charged_groundwater(billable_ledger(qs))`` — read by
       ``zone_groundwater_budget`` and the account-row "remaining" arithmetic
@@ -1667,7 +1739,7 @@ def consumptive_use_balance(
              "supplies": {"surface": Decimal, "groundwater": Decimal,
                           "precip": Decimal},
              "supply_total": Decimal,            # surface + groundwater + precip
-             "net_vs_supply": Decimal,           # supply_total − consumptive_use_gross
+             "net_vs_supply": Decimal,           # supply_total − consumptive_use_gross − water_not_consumed
              "groundwater_charged": Decimal,     # the budget-spend figure
              "calculation_runs": int}            # how many runs the sums came from
 
@@ -1681,13 +1753,17 @@ def consumptive_use_balance(
     """
     parcel_ids = list(parcel_ids)
 
-    groundwater, groundwater_charged, surface = _consumptive_supply_terms(
+    groundwater_consumed, groundwater_charged, surface = _consumptive_supply_terms(
         parcel_ids, reporting_period
     )
-    gross, net, precip, run_count = _consumptive_run_terms(
+    gross, net, precip, run_count, not_consumed = _consumptive_run_terms(
         parcel_ids, reporting_period
     )
 
+    # Groundwater is counted as pumped on every field, metered or estimated, and
+    # the pumped water the crop did not consume is a use beside crop ET, so two
+    # fields farmed alike balance alike.
+    groundwater = groundwater_charged
     supply_total = surface + groundwater + precip
     return {
         "consumptive_use_gross": gross,
@@ -1698,7 +1774,10 @@ def consumptive_use_balance(
             "precip": precip,
         },
         "supply_total": supply_total,
-        "net_vs_supply": supply_total - gross,
+        "groundwater_consumed": groundwater_consumed,
+        "water_not_consumed": not_consumed,
+        "uses_total": gross + not_consumed,
+        "net_vs_supply": supply_total - gross - not_consumed,
         # The budget-spend figure, kept separate from
         # `supplies["groundwater"]` above so a budget reader (zone_groundwater_budget,
         # the account row's remaining) and a Supplies-panel reader can each call
@@ -1785,6 +1864,8 @@ def water_year_usage_by_type(
         gross ``et_estimate`` twin is the pre-netting source), so for per-type
         carryover they bucket to "GW" regardless of a possibly-null water_type
         column.
+      - a ``meter_reading`` row with no water_type is groundwater (a meter is a
+        well's record), as ``_groundwater_rows`` counts it.
       - every other row uses its own water_type code (meter_reading -> its type,
         surface_diversion -> SW, ...).
       - a non-engine row with no water_type cannot be attributed and is skipped
@@ -1803,9 +1884,19 @@ def water_year_usage_by_type(
     )
     qs = billable_ledger(qs).select_related("water_type")
 
+    from wells.models import WellIrrigatedParcel
+
+    well_parcel_ids = set(WellIrrigatedParcel.objects.values_list("parcel_id", flat=True))
     buckets: dict[str, Decimal] = {}
     for row in qs:
+        if row.source_type == "et_estimate" and row.parcel_id not in well_parcel_ids:
+            # Unmet demand on a field with no well, never pumping.
+            continue
         if row.source_type in ("et_estimate", "calculated"):
+            code = "GW"
+        elif row.source_type == "meter_reading" and not row.water_type_id:
+            # A meter is a well's record: an untyped reading is pumping, as
+            # ``_groundwater_rows`` counts it.
             code = "GW"
         elif row.water_type_id:
             code = row.water_type.code

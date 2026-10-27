@@ -109,6 +109,10 @@ def _account_rows_with_totals(
     grand_supply_surface = Decimal("0")
     grand_supply_groundwater = Decimal("0")
     grand_supply_precip = Decimal("0")
+    grand_not_consumed = Decimal("0")
+    # Only an account with calculation runs has a balance (the table dashes the
+    # others), so only those add to the balance in the footer.
+    grand_net = Decimal("0")
     for account in queryset:
         row = _account_summary_row(
             account, selected_period, has_allocations, groundwater_type
@@ -119,13 +123,16 @@ def _account_rows_with_totals(
         grand_supply_surface += row["surface"]
         grand_supply_groundwater += row["groundwater"]
         grand_supply_precip += row["precip"]
-    grand_net = grand_supply_total - grand_consumptive_use
+        grand_not_consumed += row["water_not_consumed"]
+        if row["has_calculations"]:
+            grand_net += row["net_vs_supply"]
     return account_summaries, {
         "grand_consumptive_use": grand_consumptive_use,
         "grand_supply_total": grand_supply_total,
         "grand_supply_surface": grand_supply_surface,
         "grand_supply_groundwater": grand_supply_groundwater,
         "grand_supply_precip": grand_supply_precip,
+        "grand_not_consumed": grand_not_consumed,
         "grand_net": grand_net,
     }
 
@@ -312,6 +319,7 @@ def _parcel_balance_rows(
             "groundwater": pcb["supplies"]["groundwater"],
             "precip": pcb["supplies"]["precip"],
             "supply_total": pcb["supply_total"],
+            "water_not_consumed": pcb["water_not_consumed"],
             "net_vs_supply": pcb["net_vs_supply"],
             "calculation_runs": pcb["calculation_runs"],
         })

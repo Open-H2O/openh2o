@@ -299,14 +299,14 @@ def _header_rows(table_html):
 
 def test_the_accounts_table_reads_as_the_equation():
     """Design B: Account | Supplies (Surface, Groundwater, Rain, Total) |
-    Consumptive use | Balance | Groundwater budget (Allocation, Remaining)."""
+    Uses (Crop ET, Pumped water not consumed) | Balance | Groundwater budget (Allocation, Remaining)."""
     period, _zone, _parcel, _account = _basin()
 
     table = _accounts_table(_dashboard(period).content.decode())
 
     assert _header_rows(table) == [
-        ["Account", "Supplies", "Crop ET", "Balance", "Groundwater budget"],
-        ["Surface", "Groundwater", "Effective precipitation", "Total", "Allocation", "Remaining"],
+        ["Account", "Supplies", "Uses", "Balance", "Groundwater budget"],
+        ["Surface", "Groundwater", "Effective precipitation", "Total", "Crop ET", "Pumped water not consumed", "Allocation", "Remaining"],
     ]
     assert 'colspan="4"' in table
     assert 'colspan="2"' in table
@@ -319,8 +319,8 @@ def test_the_zones_table_spans_three_budget_columns():
     table = _zones_table(_dashboard(period).content.decode())
 
     assert _header_rows(table) == [
-        ["Zone", "Supplies", "Crop ET", "Balance", "Groundwater budget"],
-        ["Surface", "Groundwater", "Effective precipitation", "Total", "Allocation", "Added", "Remaining"],
+        ["Zone", "Supplies", "Uses", "Balance", "Groundwater budget"],
+        ["Surface", "Groundwater", "Effective precipitation", "Total", "Crop ET", "Pumped water not consumed", "Allocation", "Added", "Remaining"],
     ]
     assert 'colspan="3"' in table
 

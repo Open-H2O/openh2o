@@ -56,13 +56,17 @@ def rollover(**kwargs):
 
 
 def _usage_row(parcel, af):
-    """A negative (groundwater usage) et_estimate row inside WY 2024."""
+    """A negative (groundwater usage) meter reading row inside WY 2024.
+
+    A meter reading, not a satellite row: a satellite row on a field with no
+    well is unmet demand, not pumping, and this field has no well.
+    """
     ParcelLedger.objects.create(
         parcel=parcel,
         transaction_date=date.today(),
         effective_date=date(2024, 6, 1),
         amount_acre_feet=Decimal(str(-abs(af))),
-        source_type="et_estimate",
+        source_type="meter_reading",
     )
 
 

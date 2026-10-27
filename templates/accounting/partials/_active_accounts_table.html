@@ -28,8 +28,8 @@ budget); a unit stated once in the caller's own subtitle, never on a column.
     <tr class="th-group">
       <th rowspan="2" style="min-width: 170px;">Account</th>
       <th colspan="4" class="th-group-label">Supplies</th>
-      <th rowspan="2" class="th-right"><span class="th-stack">Crop ET</span></th>
-      <th rowspan="2" class="th-right">Balance{% include "partials/_explainer_popout.html" with title="Balance" text="This account's total supplies minus its crop ET for the period. A positive balance means the supplies on record were more than crop ET." link=wb_help_url link_label="How water balances work" %}</th>
+      <th colspan="2" class="th-group-label">Uses</th>
+      <th rowspan="2" class="th-right">Balance{% include "partials/_explainer_popout.html" with title="Balance" text="This account's total supplies minus its uses for the period: crop ET and the water its fields did not consume. A positive balance means the supplies on record were more than those uses." link=wb_help_url link_label="How water balances work" %}</th>
       {% if has_allocations %}
       {% comment %}The label is "Groundwater budget", same as the Zones table's identical group
            header in _dashboard_content.html -- one label, both tables (rule
@@ -42,6 +42,8 @@ budget); a unit stated once in the caller's own subtitle, never on a column.
       <th class="th-right">Groundwater</th>
       <th class="th-right"><span class="th-stack">Effective precipitation</span></th>
       <th class="th-right">Total</th>
+      <th class="th-right">Crop ET</th>
+      <th class="th-right"><span class="th-stack">Pumped water not consumed</span></th>
       {% if has_allocations %}
       <th class="th-right col-sep">Allocation{% include "partials/_explainer_popout.html" with title="Groundwater allocation" text="This account's share of the water year's groundwater allocation, pro-rated by the acres of its use areas in each groundwater zone. Surface-water allocation is a separate budget and is not counted here." link=budgets_help_url link_label="How budgets & allocations work" %}</th>
       <th class="th-right">Remaining{% include "partials/_explainer_popout.html" with title="Groundwater remaining" text="Groundwater allocation, plus any amount carried forward, minus pumping. A field with a meter counts its meter readings; a field without one counts its estimated pumping, its ETAW met by groundwater divided by its irrigation efficiency. A negative number means the account pumped more than its groundwater allocation this water year." link=budgets_help_url link_label="How budgets & allocations work" %}</th>
@@ -83,6 +85,9 @@ budget); a unit stated once in the caller's own subtitle, never on a column.
       <td class="td-num {% if row.has_calculations %}text-usage{% else %}text-tertiary{% endif %}">
         {% if row.has_calculations %}{{ row.consumptive_use_gross|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
       </td>
+      <td class="td-num {% if row.has_calculations %}text-usage{% else %}text-tertiary{% endif %}">
+        {% if row.has_calculations %}{{ row.water_not_consumed|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
+      </td>
       <td class="td-num-bold {% if not row.has_calculations %}text-tertiary{% else %}{{ row.net_vs_supply|balance_class }}{% endif %}">
         {% if row.has_calculations %}{{ row.net_vs_supply|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
       </td>
@@ -112,6 +117,7 @@ budget); a unit stated once in the caller's own subtitle, never on a column.
       <td class="td-num text-supply">{{ grand_supply_precip|floatformat:2|intcomma }}</td>
       <td class="td-num-bold text-supply">{{ grand_supply_total|floatformat:2|intcomma }}</td>
       <td class="td-num {% if engine_has_never_run %}text-tertiary{% else %}text-usage{% endif %}">{% if engine_has_never_run %}&mdash;{% else %}{{ grand_consumptive_use|floatformat:2|intcomma }}{% endif %}</td>
+      <td class="td-num {% if engine_has_never_run %}text-tertiary{% else %}text-usage{% endif %}">{% if engine_has_never_run %}&mdash;{% else %}{{ grand_not_consumed|floatformat:2|intcomma }}{% endif %}</td>
       <td class="td-num-bold {% if engine_has_never_run %}text-tertiary{% else %}{{ grand_net|balance_class }}{% endif %}">{% if engine_has_never_run %}&mdash;{% else %}{{ grand_net|floatformat:2|intcomma }}{% endif %}</td>
       {% if has_allocations %}
       <td class="col-sep"></td>

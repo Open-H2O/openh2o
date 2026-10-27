@@ -55,7 +55,7 @@
       </div>
       <div class="budget-op">&minus;</div>
       <div class="budget-seg">
-        <div class="budget-seg-label">Crop ET</div>
+        <div class="budget-seg-label">Uses</div>
         {% comment %}
           With no calculation runs behind it this is not a zero, it is a
           blank. Rendering 0.00 here is what made the balance below read as a
@@ -66,9 +66,9 @@
         {% if engine_has_never_run %}
         <div class="budget-seg-value text-tertiary">Not calculated</div>
         {% else %}
-        <div class="budget-seg-value text-usage">{{ grand_consumptive_use|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+        <div class="budget-seg-value text-usage">{{ grand_uses_total|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
         {% endif %}
-        <div class="budget-seg-caption">OpenET satellite estimate</div>
+        <div class="budget-seg-caption">crop ET and pumped water not consumed</div>
         {% comment %}
           The parts of this figure are its coverage, as on the account
           page -- how many of the active accounts the estimate reaches, and
@@ -76,6 +76,13 @@
           new formatted-number site, so the figure ledger's ids hold. The cell
           would stop at its caption beside a Supplies cell three lines taller.
         {% endcomment %}
+        {% if not engine_has_never_run %}
+        <div class="budget-breakdown-group">
+          <div class="budget-breakdown-title">Uses by destination</div>
+          <div class="budget-breakdown-row"><span>Crop ET</span><b>{{ grand_consumptive_use|floatformat:2|intcomma }}</b></div>
+          <div class="budget-breakdown-row"><span>Pumped water not consumed</span><b>{{ grand_not_consumed|floatformat:2|intcomma }}</b></div>
+        </div>
+        {% endif %}
         <div class="budget-breakdown-group">
           <div class="budget-breakdown-title">Estimate coverage</div>
           <div class="budget-breakdown-row"><span>Accounts with estimates</span><b>{{ accounts_with_estimates }} of {{ account_summaries|length }}</b></div>
@@ -90,7 +97,7 @@
         {% else %}
         <div class="budget-seg-value {{ grand_net|balance_class }}">{{ grand_net|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
         {% endif %}
-        <div class="budget-seg-caption">supplies minus crop ET</div>
+        <div class="budget-seg-caption">supplies minus uses</div>
         {% comment %}
           The balance judged account by account, counted only among
           accounts with an estimate (the table below dashes the rest).
@@ -157,7 +164,7 @@
 {% comment %}
   Both tables read as the equation the
   panel above states: Supplies (Surface, Groundwater, Effective precipitation, Total) minus
-  Crop ET equals Balance, then one vertical rule, then the Groundwater
+  Uses (Crop ET, Pumped water not consumed) equals Balance, then one vertical rule, then the Groundwater
   budget, which is an allocation on paper from a different framework and not
   water that moved. Two header rows: group labels over their columns, leaf
   labels under them. The unit is stated once in each card's subtitle, never on
@@ -199,12 +206,12 @@
       <tr class="th-group">
         <th rowspan="2" style="min-width: 190px;">Zone</th>
         <th colspan="4" class="th-group-label">Supplies</th>
-        <th rowspan="2" class="th-right"><span class="th-stack">Crop ET</span></th>
+        <th colspan="2" class="th-group-label">Uses</th>
         <th rowspan="2" class="th-right">Balance</th>
         {% if has_allocations %}
         {% comment %}The label is "Groundwater budget"
-             (not "Extraction budget"): Remaining is spent in EXTRACTED terms (a calculated row's stamped extraction estimate, not the
-             Supplies "Groundwater" column beside it, which stays consumed),
+             (not "Extraction budget"): Remaining is spent in EXTRACTED terms (a calculated row's stamped extraction estimate, the
+             same pumped figure the Supplies "Groundwater" column beside it now shows),
              and "budget" alone does not say which of the two it spends. The bare
              word "Extracted" over Allocation reads as allocation extracted, and
              "Groundwater budget, spent by extraction" widens the two budget
@@ -218,6 +225,8 @@
         <th class="th-right">Groundwater</th>
         <th class="th-right"><span class="th-stack">Effective precipitation</span></th>
         <th class="th-right">Total</th>
+        <th class="th-right">Crop ET</th>
+        <th class="th-right"><span class="th-stack">Pumped water not consumed</span></th>
         {% if has_allocations %}
         <th class="th-right col-sep">Allocation</th>
         <th class="th-right">Added</th>
@@ -238,7 +247,7 @@
       {% if has_allocations %}
       {% ifchanged row.has_groundwater_budget %}
       <tr class="row-group">
-        <td colspan="10">{% if row.has_groundwater_budget %}Zones with a groundwater budget for {{ selected_period.name }}{% else %}Zones without a groundwater budget for {{ selected_period.name }}. Allocation, Added and Remaining do not apply.{% endif %}</td>
+        <td colspan="11">{% if row.has_groundwater_budget %}Zones with a groundwater budget for {{ selected_period.name }}{% else %}Zones without a groundwater budget for {{ selected_period.name }}. Allocation, Added and Remaining do not apply.{% endif %}</td>
       </tr>
       {% endifchanged %}
       {% endif %}
@@ -273,6 +282,9 @@
         </td>
         <td class="td-num {% if row.has_calculations %}text-usage{% else %}text-tertiary{% endif %}">
           {% if row.has_calculations %}{{ row.consumptive_use_gross|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
+        </td>
+        <td class="td-num {% if row.has_calculations %}text-usage{% else %}text-tertiary{% endif %}">
+          {% if row.has_calculations %}{{ row.water_not_consumed|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
         </td>
         <td class="td-num-bold {% if not row.has_calculations %}text-tertiary{% else %}{{ row.net_vs_supply|balance_class }}{% endif %}">
           {% if row.has_calculations %}{{ row.net_vs_supply|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}

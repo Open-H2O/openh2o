@@ -83,6 +83,10 @@ def _account_rollup(
     grand_supply_surface = Decimal("0")
     grand_supply_groundwater = Decimal("0")
     grand_supply_precip = Decimal("0")
+    grand_not_consumed = Decimal("0")
+    # Only an account with calculation runs has a balance (the table dashes the
+    # others), so only those add to the balance in the footer.
+    grand_net = Decimal("0")
     # The parts of the panel's Consumptive use and Balance
     # figures, as COUNTS over the same population as the totals (active
     # accounts, this period). Coverage is how many of those accounts the
@@ -113,6 +117,9 @@ def _account_rollup(
         grand_supply_surface += row["surface"]
         grand_supply_groundwater += row["groundwater"]
         grand_supply_precip += row["precip"]
+        grand_not_consumed += row["water_not_consumed"]
+        if row["has_calculations"]:
+            grand_net += row["net_vs_supply"]
         grand_calculation_runs += row["calculation_runs"]
         if row["calculation_runs"] > 0:
             accounts_with_estimates += 1
@@ -131,6 +138,9 @@ def _account_rollup(
         "grand_supply_surface": grand_supply_surface,
         "grand_supply_groundwater": grand_supply_groundwater,
         "grand_supply_precip": grand_supply_precip,
+        "grand_not_consumed": grand_not_consumed,
+        "grand_uses_total": grand_consumptive_use + grand_not_consumed,
+        "grand_net": grand_net,
         "accounts_with_estimates": accounts_with_estimates,
         "grand_calculation_runs": grand_calculation_runs,
         "accounts_in_surplus": accounts_in_surplus,
@@ -176,6 +186,7 @@ def _zone_summary_rows(selected_period: ReportingPeriod, has_allocations: bool) 
             "groundwater": zcu["supplies"]["groundwater"],
             "precip": zcu["supplies"]["precip"],
             "supply_total": zcu["supply_total"],
+            "water_not_consumed": zcu["water_not_consumed"],
             "net_vs_supply": zcu["net_vs_supply"],
             "allocation": zone_allocation,
             "carryover": zone_carryover_af,
@@ -295,6 +306,9 @@ def _period_budget_sections(
         "grand_supply_surface": Decimal("0"),
         "grand_supply_groundwater": Decimal("0"),
         "grand_supply_precip": Decimal("0"),
+        "grand_not_consumed": Decimal("0"),
+        "grand_uses_total": Decimal("0"),
+        "grand_net": Decimal("0"),
         "accounts_with_estimates": 0,
         "grand_calculation_runs": 0,
         "accounts_in_surplus": 0,
@@ -355,8 +369,8 @@ def dashboard(request):
         selected_period
     )
 
-    # Bottom-line: supplies minus estimated consumptive use.
-    grand_net = totals["grand_supply_total"] - totals["grand_consumptive_use"]
+    # The bottom line (supplies minus crop ET and the water not consumed) is
+    # rolled up in `totals`, over the accounts that have calculation runs.
 
     engine_has_never_run, has_calculation_plan = _engine_run_status(selected_period)
 
@@ -402,7 +416,6 @@ def dashboard(request):
         "account_summaries": account_summaries,
         "zone_summaries": zone_summaries,
         **totals,
-        "grand_net": grand_net,
         "engine_has_never_run": engine_has_never_run,
         "has_calculation_plan": has_calculation_plan,
         "has_allocations": has_allocations,

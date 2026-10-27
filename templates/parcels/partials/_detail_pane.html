@@ -42,7 +42,7 @@
       wet-year and 24 of 76 dry-year parcels, so the pane gives one answer,
       first and largest.
       smallest. This panel states the MASS balance — supplies minus uses, where
-      uses carry consumptive use, deep percolation, managed recharge and the
+      uses carry consumptive use, applied water not consumed, managed recharge and the
       change in banked storage, and nothing else.
 
       Why this identity and not the dashboard's (supplies minus gross ET): the
@@ -62,7 +62,7 @@
     {% endcomment %}
     <div class="budget-panel">
       <div class="budget-panel-head">
-        <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Surface water, groundwater extraction and managed recharge come from the water year's Use ledger entries. Effective precipitation, crop ET, deep percolation and storage change come from the water year's calculation runs. The residual is supplies minus uses. The Residual badge is green within a quarter of crop ET and orange beyond it." link=methods_help_url link_label="Methods behind the numbers" %}</span>
+        <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Surface water, groundwater extraction and managed recharge come from the water year's Use ledger entries. Effective precipitation, crop ET and storage change come from the water year's calculation runs. Applied water not consumed is the canal water and pumped water the crop did not use. The residual is supplies minus uses. The Residual badge is green within a quarter of crop ET and orange beyond it." link=methods_help_url link_label="Methods behind the numbers" %}</span>
         {% include "parcels/partials/_period_control.html" %}
       </div>
       {% comment %}
@@ -124,7 +124,7 @@
           <div class="budget-breakdown-group">
             <div class="budget-breakdown-title">Uses by destination</div>
             <div class="budget-breakdown-row"><span>Crop ET</span><b>{{ mass_balance.outputs.et|floatformat:2|intcomma }}</b></div>
-            <div class="budget-breakdown-row"><span>Deep percolation</span><b>{{ mass_balance.deep_percolation_af|floatformat:2|intcomma }}</b></div>
+            <div class="budget-breakdown-row"><span>Applied water not consumed</span><b>{{ mass_balance.deep_percolation_af|floatformat:2|intcomma }}</b></div>
             {% comment %} The two parts of the row above, each
                  printed only when it is not zero (rule 8). {% endcomment %}
             {% if mass_balance.outputs.deep_percolation_surface_af %}
@@ -223,8 +223,8 @@
             field-periods carrying one and differs on 42 (a canal figure in the
             same period). The last line, under every case, says where losses
             are: canal losses come off the headgate total before it is divided
-            (surface/services.py::_month_losses), and the field's deep
-            percolation is a Use, so neither is in the residual.
+            (surface/services.py::_month_losses), and the field's applied
+            water not consumed is a Use, so neither is in the residual.
           {% endcomment %}
           {% if mass_balance.band_status == "closes" and mass_balance.gw_is_estimated and not mass_balance.gw_is_metered %}
           <p class="text-tertiary">
@@ -237,7 +237,7 @@
           {% elif over_delivery_total_af > 0 %}
           <p class="text-secondary">
             <strong>Surface water in excess of ETAW:</strong>
-            <span class="td-num">{{ over_delivery_total_af|floatformat:2|intcomma }}</span> AF, added in the residual above
+            <span class="td-num">{{ over_delivery_total_af|floatformat:2|intcomma }}</span> AF, counted under Uses in applied water not consumed
           </p>
           {% endif %}
 
@@ -281,9 +281,9 @@
           </p>
           {% endif %}
 
-          {% if not mass_balance.gw_is_metered and mass_balance.band_status != "closes" and mass_balance.is_surplus and mass_balance.residual_af > over_delivery_total_af %}
+          {% if not mass_balance.gw_is_metered and mass_balance.band_status != "closes" and mass_balance.is_surplus and mass_balance.residual_af > 0 %}
           <p class="text-tertiary">
-            The rest of the residual is effective precipitation in excess of crop ET.
+            The residual is effective precipitation in excess of crop ET, less any water use recorded with no supply reported.
           </p>
           {% endif %}
 
@@ -299,9 +299,9 @@
           <div class="budget-breakdown-group">
             <div class="budget-breakdown-title">Not in this residual</div>
             {% if 'surface' in enabled_modules %}
-            <div class="budget-breakdown-row"><span>Canal losses</span><b>deducted from the headgate total</b></div>
+            <div class="budget-breakdown-row"><span>Canal losses</span><b>at the headgate</b></div>
             {% endif %}
-            <div class="budget-breakdown-row"><span>Deep percolation</span><b>counted under Uses</b></div>
+            <div class="budget-breakdown-row"><span>Applied water not consumed</span><b>under Uses</b></div>
           </div>
         </div>
       </div>
@@ -326,7 +326,7 @@
     {% endif %}
     {% else %}
     <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-      <h2 class="section-header-flush" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Surface water, groundwater extraction and managed recharge come from the water year's Use ledger entries. Effective precipitation, crop ET, deep percolation and storage change come from the water year's calculation runs. The residual is supplies minus uses. The Residual badge is green within a quarter of crop ET and orange beyond it." link=methods_help_url link_label="Methods behind the numbers" %}</h2>
+      <h2 class="section-header-flush" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Surface water, groundwater extraction and managed recharge come from the water year's Use ledger entries. Effective precipitation, crop ET and storage change come from the water year's calculation runs. Applied water not consumed is the canal water and pumped water the crop did not use. The residual is supplies minus uses. The Residual badge is green within a quarter of crop ET and orange beyond it." link=methods_help_url link_label="Methods behind the numbers" %}</h2>
       {% include "parcels/partials/_period_control.html" %}
     </div>
     <div class="alert-warning">
@@ -489,7 +489,7 @@
           the card has one numeric column and rule 4 states a single-unit
           table's unit once.
         {% endcomment %}
-        <p class="text-secondary text-base" style="margin: 0 0 var(--space-md);">{% if balance_period %}{{ balance_period.name }} &middot; {% endif %}Acre-feet. Negative amounts are water delivered or pumped; positive amounts are credits.</p>
+        <p class="text-secondary text-base" style="margin: 0 0 var(--space-md);">{% if balance_period %}{{ balance_period.name }} &middot; {% endif %}Acre-feet. Negative amounts are deliveries, pumping and estimates of use; positive amounts are credits.</p>
         {% if recent_ledger %}
         <table class="data-table text-sm">
           <thead>

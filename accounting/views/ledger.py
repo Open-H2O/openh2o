@@ -309,13 +309,57 @@ def _ledger_footer_totals(queryset: QuerySet[ParcelLedger]) -> dict[str, Decimal
     # rule 12, review question 3). Re-filter by PK to drop
     # the zone M2M join, whose row duplication (a parcel in N zones) would
     # otherwise multiply amounts in SUM.
+    #
+    # The water figure is what was delivered and pumped, so an estimated row
+    # counts at the pumping its run stamped (the water lifted), not at the
+    # consumption it was made from. A row from a run that stamped no pumping
+    # (a run from before the stamp existed) counts as recorded.
+    from django.db.models import Case, DecimalField, F, OuterRef, Subquery, When
+
+    from accounting.models import CalculationRun
+
     credit_rows = Q(source_type__in=ParcelLedger.POSITIVE_SOURCE_TYPES)
-    return ParcelLedger.objects.filter(
-        pk__in=queryset.values("pk")
-    ).aggregate(
-        credits=Sum("amount_acre_feet", filter=credit_rows),
-        water=Sum("amount_acre_feet", filter=~credit_rows),
+    rows = ParcelLedger.objects.filter(pk__in=queryset.values("pk")).annotate(
+        run_pumped_af=Subquery(
+            CalculationRun.objects.filter(
+                parcel_id=OuterRef("parcel_id"),
+                period_start=OuterRef("effective_date"),
+            )
+            .order_by("-created_at")
+            .values("gw_extracted_af")[:1]
+        )
     )
+    water_amount = Case(
+        When(
+            Q(source_type="calculated") & Q(run_pumped_af__isnull=False),
+            then=F("run_pumped_af") * -1,
+        ),
+        default=F("amount_acre_feet"),
+        output_field=DecimalField(max_digits=12, decimal_places=4),
+    )
+    return rows.aggregate(
+        credits=Sum("amount_acre_feet", filter=credit_rows),
+        water=Sum(water_amount, filter=~credit_rows),
+    )
+
+
+#: The query-string keys the Download CSV link carries, in the order the filter
+#: bar shows them. ``ledger_export`` reads them through ``_ledger_filters``.
+_DOWNLOAD_KEYS = (
+    ("period", "period_id"),
+    ("zone", "zone_id"),
+    ("q", "q"),
+    ("source_type", "source_type"),
+    ("water_type", "water_type_id"),
+    ("start_date", "start_date"),
+    ("end_date", "end_date"),
+    ("active_areas", "active_areas"),
+)
+
+
+def _ledger_download_query(filters: dict[str, str]) -> str:
+    """The query string that makes the export match the screen's filters."""
+    return urlencode([(key, filters[name]) for key, name in _DOWNLOAD_KEYS])
 
 
 def _ledger_active_filter_labels(

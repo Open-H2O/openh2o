@@ -130,9 +130,9 @@ def test_no_well_flood_mar_closes_with_zero_personal_recharge():
     FLOOD_MAR (crop, no well) over-delivery month no longer closes via a
     `recharge` output term — that term is real recharge ledger rows only, and
     an over-delivery is never one. The 4 AF the crop could not use shows up
-    only as `over_delivery_af` on the run, and the RESIDUAL equals it exactly
-    (the identity states the over-delivery plainly rather than absorbing it
-    into a manufactured recharge figure, ISS-158). No personal groundwater is
+    only as `over_delivery_af` on the run, and the books close with it on the
+    "applied water not consumed" line (never as a manufactured recharge
+    figure, ISS-158). No personal groundwater is
     pumped and no personal recharge credit is left on the parcel."""
     rp = ReportingPeriodFactory()
     parcel = ParcelFactory()
@@ -150,8 +150,9 @@ def test_no_well_flood_mar_closes_with_zero_personal_recharge():
     # over-delivery is NOT a recharge output any more.
     assert result["outputs"]["recharge"] == Decimal("0")
     assert result["outputs"]["delta_storage"] == Decimal("0")
-    assert result["closes"] is False
-    assert result["residual_af"] == run.over_delivery_af == Decimal("4")
+    assert result["closes"] is True
+    assert result["residual_af"] == Decimal("0")
+    assert result["deep_percolation_af"] == run.over_delivery_af == Decimal("4")
     # ISS-053: no positive personal recharge ledger credit on a no-well parcel.
     from parcels.models import ParcelLedger
     assert not ParcelLedger.objects.filter(
@@ -165,8 +166,8 @@ def test_mer_apn_031_shape_no_personal_recharge_pooled():
     The ISS-053 worked case, updated: gw_recovered == 0, no personal recharge
     row, and — Q1 — no pooled deposit either, since an over-delivery is
     nobody's credit at all any more. The 3 AF the crop could not use is the
-    run's `over_delivery_af`, and the residual equals it exactly (the books
-    do not close, and are not made to)."""
+    run's `over_delivery_af`, and it is the applied water not consumed (the
+    books close)."""
     rp = ReportingPeriodFactory()
     parcel = ParcelFactory(parcel_number="MER-APN-031")
     UsageLocationFactory(parcel=parcel)  # a crop + (below) surface, but no well
@@ -180,8 +181,9 @@ def test_mer_apn_031_shape_no_personal_recharge_pooled():
 
     assert result["inputs"]["gw_recovered"] == Decimal("0")
     assert result["outputs"]["recharge"] == Decimal("0")
-    assert result["closes"] is False
-    assert result["residual_af"] == run.over_delivery_af == Decimal("3")
+    assert result["closes"] is True
+    assert result["residual_af"] == Decimal("0")
+    assert result["deep_percolation_af"] == run.over_delivery_af == Decimal("3")
 
     from parcels.models import ParcelLedger
     personal_recharge = ParcelLedger.objects.filter(

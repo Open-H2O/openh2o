@@ -190,7 +190,7 @@ def test_the_amount_column_says_what_a_negative_means(field_with_two_years):
     html = response.content.decode()
 
     assert (
-        "Negative amounts are water delivered or pumped; positive amounts "
+        "Negative amounts are deliveries, pumping and estimates of use; positive amounts "
         "are credits." in html
     ), "the ledger card prints negative amounts with nothing saying what they are (R-108)"
     assert (

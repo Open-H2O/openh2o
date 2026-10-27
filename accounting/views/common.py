@@ -48,6 +48,7 @@ def _account_summary_row(account, selected_period, has_allocations, groundwater_
         "groundwater": cu["supplies"]["groundwater"],
         "precip": cu["supplies"]["precip"],
         "supply_total": cu["supply_total"],
+        "water_not_consumed": cu["water_not_consumed"],
         "net_vs_supply": cu["net_vs_supply"],
         "allocation": allocation,
         "remaining": remaining,

@@ -34,6 +34,7 @@ from tests.factories import (
     ReportingPeriodFactory,
     WaterAccountFactory,
     WaterAccountParcelFactory,
+    WellIrrigatedParcelFactory,
     ZoneFactory,
 )
 
@@ -236,6 +237,7 @@ class TestBalancesReconcile:
         p_fallback = ParcelFactory()
         WaterAccountParcelFactory(water_account=account, parcel=p_calc)
         WaterAccountParcelFactory(water_account=account, parcel=p_fallback)
+        WellIrrigatedParcelFactory(parcel=p_fallback)  # a satellite row only counts on a field with a well
         _et(p_calc, "-11")
         _calc(p_calc, "-11")
         _et(p_fallback, "-14")
@@ -250,6 +252,7 @@ class TestBalancesReconcile:
         p_fallback = ParcelFactory()
         ParcelZoneFactory(parcel=p_calc, zone=zone)
         ParcelZoneFactory(parcel=p_fallback, zone=zone)
+        WellIrrigatedParcelFactory(parcel=p_fallback)  # a satellite row only counts on a field with a well
         _et(p_calc, "-11")
         _calc(p_calc, "-11")
         _et(p_fallback, "-14")

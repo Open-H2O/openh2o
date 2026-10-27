@@ -162,12 +162,14 @@ def test_the_leaf_headers_run_in_equation_order(page):
     assert header_cells == [
         "Use area",
         "Supplies",
-        "Crop ET",
+        "Uses",
         "Balance",
         "Surface",
         "Groundwater",
         "Effective precipitation",
         "Total",
+        "Crop ET",
+        "Pumped water not consumed",
     ], f"the header no longer reads as the equation: {header_cells}"
 
 

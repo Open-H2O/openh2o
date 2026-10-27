@@ -62,15 +62,20 @@
       </div>
       <div class="budget-op">&minus;</div>
       <div class="budget-seg">
-        <div class="budget-seg-label">Crop ET</div>
-        <div class="budget-seg-value text-usage">{{ balance.consumptive_use_gross|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
-        <div class="budget-seg-caption">OpenET satellite estimate</div>
+        <div class="budget-seg-label">Uses</div>
+        <div class="budget-seg-value text-usage">{{ balance.uses_total|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+        <div class="budget-seg-caption">crop ET and pumped water not consumed</div>
         {% comment %}
           The parts of this figure are its coverage -- how many of the
           account's use areas the estimate reaches, and the calculation runs
           the sum came from. Without them the cell would stop at its caption, beside a
           Supplies cell three lines taller.
         {% endcomment %}
+        <div class="budget-breakdown-group">
+          <div class="budget-breakdown-title">Uses by destination</div>
+          <div class="budget-breakdown-row"><span>Crop ET</span><b>{{ balance.consumptive_use_gross|floatformat:2|intcomma }}</b></div>
+          <div class="budget-breakdown-row"><span>Pumped water not consumed</span><b>{{ balance.water_not_consumed|floatformat:2|intcomma }}</b></div>
+        </div>
         <div class="budget-breakdown-group">
           <div class="budget-breakdown-title">Estimate coverage</div>
           <div class="budget-breakdown-row"><span>Use areas</span><b>{{ use_areas_estimated }} of {{ parcel_balances|length }}</b></div>
@@ -79,9 +84,9 @@
       </div>
       <div class="budget-op">&equals;</div>
       <div class="budget-seg budget-seg--result">
-        <div class="budget-seg-label" style="display: flex; align-items: center; gap: var(--space-xs);">Balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Crop ET is OpenET's satellite estimate. Supplies are surface water deliveries, groundwater and effective precipitation. Groundwater is the meter reading on a use area with a meter, and ETAW met by groundwater on a use area with a well and no meter reading. The balance is supplies minus crop ET. A use area with a well and no meter reading balances to zero when it did not receive surface water. When it did receive surface water, its balance is the part of the delivery that OpenH2O does not count toward ETAW. A negative balance means crop ET was more than the supplies on record." link=wb_help_url link_label="How water balances work" %}</div>
+        <div class="budget-seg-label" style="display: flex; align-items: center; gap: var(--space-xs);">Balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Crop ET is OpenET's satellite estimate. Supplies are surface water deliveries, groundwater and effective precipitation. Groundwater is the pumping on record: the meter reading on a use area with a meter, and the estimated pumping (ETAW met by groundwater divided by the irrigation efficiency) on a use area with a well and no meter reading. Uses are crop ET and the pumped water the crop did not consume. The balance is supplies minus uses. A use area with a well and no meter reading balances to zero when it did not receive surface water. When it did receive surface water, its balance is the part of the delivery that OpenH2O does not count toward ETAW. A negative balance means the uses were more than the supplies on record." link=wb_help_url link_label="How water balances work" %}</div>
         <div class="budget-seg-value {{ balance.net_vs_supply|balance_class }}">{{ balance.net_vs_supply|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
-        <div class="budget-seg-caption">supplies minus crop ET</div>
+        <div class="budget-seg-caption">supplies minus uses</div>
         <div class="budget-breakdown-group">
           <div class="budget-breakdown-title">Balance by use area</div>
           <div class="budget-breakdown-row"><span>In surplus</span><b>{{ use_areas_in_surplus }}</b></div>
@@ -177,14 +182,16 @@
       {% endcomment %}
       <th rowspan="2">Use area</th>
       <th colspan="4" class="th-group-label">Supplies</th>
-      <th rowspan="2" class="th-right"><span class="th-stack">Crop ET</span></th>
-      <th rowspan="2" class="th-right col-sep">Balance{% include "partials/_explainer_popout.html" with title="Balance" text="This use area's total supplies minus its crop ET for the period. A positive balance means the supplies on record were more than crop ET." link=wb_help_url link_label="How water balances work" %}</th>
+      <th colspan="2" class="th-group-label">Uses</th>
+      <th rowspan="2" class="th-right col-sep">Balance{% include "partials/_explainer_popout.html" with title="Balance" text="This use area's total supplies minus its uses for the period: crop ET and the water it did not consume. A positive balance means the supplies on record were more than those uses." link=wb_help_url link_label="How water balances work" %}</th>
     </tr>
     <tr>
       <th class="th-right">Surface</th>
       <th class="th-right">Groundwater</th>
       <th class="th-right"><span class="th-stack">Effective precipitation</span></th>
       <th class="th-right">Total</th>
+      <th class="th-right">Crop ET</th>
+      <th class="th-right"><span class="th-stack">Pumped water not consumed</span></th>
     </tr>
   </thead>
   <tbody>
@@ -209,6 +216,9 @@
       </td>
       <td class="td-num text-usage">
         {{ pb.consumptive_use_gross|floatformat:2|intcomma }}
+      </td>
+      <td class="td-num text-usage">
+        {{ pb.water_not_consumed|floatformat:2|intcomma }}
       </td>
       <td class="td-num-bold col-sep {{ pb.net_vs_supply|balance_class }}">
         {{ pb.net_vs_supply|floatformat:2|intcomma }}
@@ -237,6 +247,7 @@
       <td class="td-num text-supply">{{ balance.supplies.precip|floatformat:2|intcomma }}</td>
       <td class="td-num-bold text-supply">{{ balance.supply_total|floatformat:2|intcomma }}</td>
       <td class="td-num text-usage">{{ balance.consumptive_use_gross|floatformat:2|intcomma }}</td>
+      <td class="td-num text-usage">{{ balance.water_not_consumed|floatformat:2|intcomma }}</td>
       <td class="td-num-bold col-sep {{ balance.net_vs_supply|balance_class }}">{{ balance.net_vs_supply|floatformat:2|intcomma }}</td>
     </tr>
   </tfoot>
