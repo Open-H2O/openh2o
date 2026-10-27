@@ -2,8 +2,8 @@
 """Seed the default CalculationPlan and its step chain.
 
 Idempotent (mirrors seed_observed_properties): get_or_create one active plan,
-then update_or_create its 5 steps keyed on (plan, order). Running twice leaves
-exactly one plan and exactly five steps.
+then update_or_create its 4 steps keyed on (plan, order). Running twice leaves
+exactly one plan and exactly four steps.
 
 The default chain nets effective precipitation out of gross ET: the
 subtract_effective_precip step is ENABLED with the USDA-SCS / TR-21 method
@@ -12,14 +12,13 @@ subtract_effective_precip step is ENABLED with the USDA-SCS / TR-21 method
 et_gross config uses variable="ET" / model="Ensemble" to match the strings the
 GEE adapter actually writes into OpenETCache (verified live in a deployment).
 
-subtract_surface_water's apply_efficiency knob defaults to True in
-THIS seed. It is the deployment's own choice, made on the methodology page
-(accounting.views.settings_pages.methodology_step_config), and it is NOT retroactively turned
-on for an existing deployment's plan -- this command only runs at first seed,
-and there is deliberately no data migration flipping the knob on a plan that
-already exists. A deployment that seeded before this default keeps its old plan's
-config (missing the key, which behaves exactly as False) until an operator
-turns it on themselves.
+subtract_surface_water always multiplies a canal delivery by the field's
+irrigation efficiency; its config carries no switch for it, and a plan that
+still holds the old ``apply_efficiency`` key behaves the same with it on or off.
+
+The chain has four steps. A plan saved with the older no-crop step has that
+step taken out when this command runs again (the step no longer zeroes
+anything in any case).
 """
 
 from django.core.management.base import BaseCommand
@@ -48,23 +47,14 @@ DEFAULT_STEPS = [
         "order": 3,
         "step_type": "subtract_surface_water",
         "enabled": True,
-        # apply_efficiency: the deployment's own choice, set here
-        # for a first seed only -- see the module docstring above. On: only
-        # the part of a canal delivery the field's own efficiency says the
-        # crop could use is subtracted; the rest is deep percolation, named
-        # on the parcel's balance, never crop use and never a credit.
-        "config": {"apply_efficiency": True},
+        # Only the part of a canal delivery the field's own efficiency says
+        # the crop could use is subtracted; the rest is deep percolation,
+        # named on the parcel's balance, never crop use and never a credit.
+        "config": {},
         "label": "Subtract delivery × irrigation efficiency",
     },
     {
         "order": 4,
-        "step_type": "facility_only_zero",
-        "enabled": True,
-        "config": {},
-        "label": "Zero out facility-only parcels",
-    },
-    {
-        "order": 5,
         "step_type": "clamp_floor",
         "enabled": True,
         # The floor is the step's only knob (there is no bank, depreciation
@@ -78,7 +68,7 @@ DEFAULT_STEPS = [
 
 
 class Command(BaseCommand):
-    help = "Seed the default CalculationPlan with its 5-step chain (idempotent)."
+    help = "Seed the default CalculationPlan with its 4-step chain (idempotent)."
 
     @transaction.atomic
     def handle(self, *args, **options):
@@ -86,6 +76,11 @@ class Command(BaseCommand):
             name=PLAN_NAME,
             defaults={"is_active": True},
         )
+
+        # The retired no-crop step: out of any plan that still holds it, and
+        # the final step takes the freed place so no order is skipped.
+        plan.steps.filter(step_type="facility_only_zero").delete()
+        plan.steps.filter(step_type="clamp_floor", order=5).update(order=4)
 
         created = 0
         updated = 0

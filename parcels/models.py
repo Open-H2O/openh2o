@@ -44,6 +44,14 @@ class Parcel(models.Model):
         help_text="When checked, area_acres is manually set and will not be auto-calculated from geometry."
     )
     geometry = models.MultiPolygonField(srid=4326, null=True, blank=True)
+    fallow = models.BooleanField(
+        default=False,
+        help_text=(
+            "Marked when the field grows nothing. The calculation counts the "
+            "field's crop water use as 0 while the mark is set; a field "
+            "without it is charged for the crop water use the satellite reads."
+        ),
+    )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
     address = models.TextField(blank=True)
     notes = models.TextField(blank=True)

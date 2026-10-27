@@ -243,7 +243,7 @@ def test_reorder_keeps_orders_contiguous_and_restores_after_up_then_down():
     up = c.post(reverse("accounting:methodology_step_move", args=[middle.id, "up"]))
     assert up.status_code == 200
     orders = sorted(s.order for s in plan.steps.all())
-    assert orders == [1, 2, 3, 4, 5]  # still a contiguous permutation, no gaps/dupes
+    assert orders == [1, 2, 3, 4]  # still a contiguous permutation, no gaps/dupes
     middle.refresh_from_db()
     assert middle.order == 2  # moved up one slot
 
@@ -267,7 +267,7 @@ def test_repeated_reorders_never_raise_integrity_error():
             reverse("accounting:methodology_step_move", args=[first.id, "down"])
         )
         assert resp.status_code == 200
-        assert sorted(s.order for s in plan.steps.all()) == [1, 2, 3, 4, 5]
+        assert sorted(s.order for s in plan.steps.all()) == [1, 2, 3, 4]
 
 
 # --------------------------------------------------------------------------

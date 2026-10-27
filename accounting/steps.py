@@ -200,6 +200,12 @@ def et_gross(running_af, parcel, period, ctx, config):
     # decompose a below-floor surplus into genuine rain surplus vs. surface
     # over-delivery (clamp_floor). Cross-step data is exactly what ctx
     # is for; the detail dict below is unchanged so audit/tests stay stable.
+    # A field marked fallow uses no crop water: its ET still reads from the
+    # cache (the detail keeps the satellite figure) but counts as 0 AF.
+    fallow = bool(getattr(parcel, "fallow", False))
+    satellite_af = af
+    if fallow:
+        af = Decimal("0")
     ctx["et_gross_af"] = af
 
     detail = {
@@ -210,31 +216,85 @@ def et_gross(running_af, parcel, period, ctx, config):
         "et_mm": str(total_mm),
         "area_acres": str(area),
     }
+    if fallow:
+        detail["fallow"] = True
+        detail["satellite_et_af"] = str(satellite_af)
     return af, _record("et_gross", running_af, af, detail)
 
 
+def estimated_delivery_af(parcel, *, year=None, month=None, reporting_period=None):
+    """Canal water OpenH2O estimated for this field, as a positive AF figure.
+
+    The canal split writes a field's share of a headgate month as a
+    ``surface_diversion`` row marked ``divided_from_headgate`` and carrying its
+    point's pk. The row is an estimate when that point's direct-use record for
+    the row's month is the estimator's own (``method="estimated_from_use"``).
+    The estimate stays on the canal page, in the water budget and on the
+    field's page; the groundwater calculation never subtracts it. Zero where
+    the surface module is not installed (no estimate can exist) and for a split
+    row written before the point was recorded on it (it cannot be told apart).
+    """
+    from core.modules import is_enabled
+
+    if not is_enabled("surface"):
+        return Decimal("0")
+
+    from parcels.models import ParcelLedger
+    from surface.models import DiversionRecord
+
+    rows = ParcelLedger.objects.filter(
+        parcel=parcel,
+        source_type="surface_diversion",
+        divided_from_headgate=True,
+        divided_from_point_pk__isnull=False,
+    )
+    if year is not None:
+        rows = rows.filter(effective_date__year=year, effective_date__month=month)
+    if reporting_period is not None:
+        rows = rows.filter(reporting_period=reporting_period)
+    found = list(rows.values_list("divided_from_point_pk", "effective_date", "amount_acre_feet"))
+    if not found:
+        return Decimal("0")
+    estimated_months = {
+        (pk, d.year, d.month)
+        for pk, d in DiversionRecord.objects.filter(
+            point_of_diversion_id__in={f[0] for f in found},
+            diversion_type="direct_use",
+            method="estimated_from_use",
+        ).values_list("point_of_diversion_id", "month")
+    }
+    return sum(
+        (abs(amount) for pk, day, amount in found if (pk, day.year, day.month) in estimated_months),
+        Decimal("0"),
+    )
+
+
 def subtract_surface_water(running_af, parcel, period, ctx, config):
-    """Subtract surface water delivered to this parcel in the period.
+    """Subtract the part of the month's canal delivery the crop could use.
 
     surface_diversion ledger rows are stored NEGATIVE (delivered magnitude as a
     negative number); take the absolute value of their sum. Does NOT floor the
-    result — clamp_floor owns the floor.
+    result: clamp_floor owns the floor.
 
-    ``apply_efficiency``: missing or ``False`` reproduces today's
-    behavior exactly, so the whole delivered magnitude is subtracted, and
-    ``detail["surface_water_af"]`` is that delivered figure. ``True``: only the
-    part of the delivery the crop could actually use is subtracted:
-    ``consumed = delivered x efficiency``, where efficiency is this parcel's
-    OWN ``parcels.services.field_efficiency`` (a method's assigned efficiency,
-    or the agency-wide default). ``detail`` then also carries ``delivered_af``,
-    ``efficiency``, ``efficiency_source`` and ``consumed_af``; ``surface_water_af``
-    keeps its key but becomes the consumed figure, so an old reader of that key
-    still gets a real, usable number.
+    Only the part of a delivery the crop could actually use is subtracted:
+    ``consumed = counted delivery x efficiency``, where efficiency is this
+    parcel's OWN ``parcels.services.field_efficiency`` (a method's assigned
+    efficiency, or the agency-wide default). The multiplication is not a
+    setting: a plan carrying an ``apply_efficiency`` key (on or off) or none
+    behaves the same.
 
-    Delivered ``0`` is a special case even with the knob on: efficiency is
-    never looked up (``efficiency`` and ``efficiency_source`` stay ``None``,
-    ``consumed_af`` is ``0``) so a deployment with no ``surface`` module never
-    reaches ``field_efficiency``'s ``SiteConfig`` read through this step.
+    A delivery OpenH2O estimated from the fields' crop use (see
+    :func:`estimated_delivery_af`) is not counted: it was made from this
+    field's own crop use, so subtracting it would cancel the groundwater the
+    crop used. ``detail["delivered_af"]`` is the whole delivery (the field's
+    balance prints it as supplied), ``detail["estimated_af"]`` the estimated
+    part of it, and ``detail["consumed_af"]`` / ``detail["surface_water_af"]``
+    the figure subtracted.
+
+    Delivered ``0`` is a special case: efficiency is never looked up
+    (``efficiency`` and ``efficiency_source`` stay ``None``, ``consumed_af`` is
+    ``0``) so a deployment with no ``surface`` module never reaches
+    ``field_efficiency``'s ``SiteConfig`` read through this step.
     """
     from parcels.models import ParcelLedger
 
@@ -246,13 +306,8 @@ def subtract_surface_water(running_af, parcel, period, ctx, config):
         effective_date__month=month,
     ).aggregate(total=Sum("amount_acre_feet"))
     delivered_af = abs(agg["total"] or Decimal("0"))
-
-    if not config.get("apply_efficiency", False):
-        new_running = running_af - delivered_af
-        detail = {"surface_water_af": str(delivered_af)}
-        return new_running, _record(
-            "subtract_surface_water", running_af, new_running, detail
-        )
+    estimated_af = estimated_delivery_af(parcel, year=year, month=month)
+    counted_af = delivered_af - estimated_af
 
     quant = Decimal("0.0001")
     if delivered_af == 0:
@@ -265,11 +320,12 @@ def subtract_surface_water(running_af, parcel, period, ctx, config):
         from parcels.services import field_efficiency
 
         efficiency, efficiency_source = field_efficiency(parcel)
-        consumed_af = (delivered_af * efficiency).quantize(quant)
+        consumed_af = (counted_af * efficiency).quantize(quant)
 
     new_running = running_af - consumed_af
     detail = {
         "delivered_af": str(delivered_af),
+        "estimated_af": str(estimated_af),
         "efficiency": str(efficiency) if efficiency is not None else None,
         "efficiency_source": efficiency_source,
         "consumed_af": str(consumed_af),
@@ -291,22 +347,15 @@ def subtract_surface_water(running_af, parcel, period, ctx, config):
 
 
 def facility_only_zero(running_af, parcel, period, ctx, config):
-    """Force running_af to 0 for facility-only parcels (no irrigated usage).
+    """Retired: a field with no crop on record is counted like any other.
 
-    A parcel is facility-only when it has no UsageLocation with a non-null
-    crop_type — those parcels pump nothing billable. Otherwise pass through.
+    Kept in the registry only so a calculation plan saved before it was
+    retired still runs; the step passes the running figure through unchanged.
+    A field that grows nothing carries the fallow mark instead (``et_gross``).
     """
-    from parcels.models import UsageLocation
-
-    has_irrigation = UsageLocation.objects.filter(
-        parcel=parcel, crop_type__isnull=False
-    ).exists()
-    facility_only = not has_irrigation
-
-    new_running = Decimal("0") if facility_only else running_af
-    detail = {"facility_only": facility_only}
-    return new_running, _record(
-        "facility_only_zero", running_af, new_running, detail
+    detail = {"facility_only": False, "retired": True}
+    return running_af, _record(
+        "facility_only_zero", running_af, running_af, detail
     )
 
 
@@ -339,7 +388,7 @@ def clamp_floor(running_af, parcel, period, ctx, config):
 
     The genuine-rain portion is CAPPED at the total surplus
     (min(total_surplus, max(0, Pe - ET))) so a parcel whose running was forced to
-    the floor by an earlier step (e.g. facility_only_zero) never records a
+    the floor by an earlier step (e.g. a fallow mark) never records a
     phantom rain surplus. ET and Pe are read from the shared ctx (stashed by
     et_gross and subtract_effective_precip). If either is absent (a plan
     without those steps, or an isolated unit call), we fall back to the earlier

@@ -34,6 +34,7 @@ from accounting.services import (
     parcel_run_periods,
     parcel_unmet_demand,
 )
+from accounting.steps import estimated_delivery_af
 from core.modules import is_enabled
 from core.validation import FieldValidationError, coerce_decimal, coerce_int
 from parcels.models import IrrigationMethod, Parcel, ParcelIrrigationMethod, ParcelLedger
@@ -56,6 +57,11 @@ EDITABLE_FIELDS = {
 #: watered from a well has an irrigation method too.
 IRRIGATION_METHOD = "irrigation_method"
 
+#: Not a free-text column either: the fallow mark is one yes/no on the use
+#: area, edited as a two-choice select and stored as ``Parcel.fallow``.
+FALLOW = "fallow"
+FALLOW_CHOICES = [("no", "Not fallow"), ("yes", "Fallow")]
+
 
 def _editable_fields():
     """EDITABLE_FIELDS, plus the irrigation method.
@@ -69,6 +75,11 @@ def _editable_fields():
         "type": "select",
         "choices": [("", "Not set")]
         + [(str(m.pk), str(m)) for m in IrrigationMethod.objects.all()],
+    }
+    fields[FALLOW] = {
+        "label": "Fallow",
+        "type": "select",
+        "choices": FALLOW_CHOICES,
     }
     return fields
 
@@ -89,6 +100,8 @@ def _field_value(parcel, field):
         if link is None:
             return "", ""
         return str(link.method_id), str(link.method)
+    if field == FALLOW:
+        return ("yes", "Fallow") if parcel.fallow else ("no", "Not fallow")
     value = getattr(parcel, field)
     return value, value
 
@@ -208,6 +221,12 @@ def _parcel_detail_context(parcel, period_id=None):
     # a residual that is real (a field with no meter and no closing estimate).
     over_delivery_total_af = parcel_over_delivery_total(parcel, balance_period)
 
+    # The part of Surface that OpenH2O estimated; the calculation does not
+    # subtract it from the groundwater figure, and the pane says so.
+    estimated_surface_af = estimated_delivery_af(
+        parcel, reporting_period=balance_period
+    )
+
     recent_ledger = _recent_ledger(parcel, balance_period)
     geojson = _parcel_geojson(parcel)
     editable_fields = _editable_fields()
@@ -228,6 +247,7 @@ def _parcel_detail_context(parcel, period_id=None):
         "unmet_demand_af": unmet_demand_af,
         "over_delivery_shown_af": over_delivery_shown_af,
         "over_delivery_total_af": over_delivery_total_af,
+        "estimated_surface_af": estimated_surface_af,
         "editable_fields": editable_fields,
         "editable_fields_with_values": editable_fields_with_values,
         # Pass the Python object (or None); the template escapes it via
@@ -410,6 +430,19 @@ def parcel_edit_field(request, pk):
 
     if field == IRRIGATION_METHOD:
         _save_irrigation_method(parcel, new_value)
+        value, display = _field_value(parcel, field)
+        context = {
+            "parcel": parcel,
+            "field": field,
+            "field_meta": field_meta,
+            "value": value,
+            "display": display,
+        }
+        return render(request, "parcels/partials/_field_value.html", context)
+
+    if field == FALLOW:
+        parcel.fallow = new_value == "yes"
+        parcel.save(update_fields=["fallow", "updated_at"])
         value, display = _field_value(parcel, field)
         context = {
             "parcel": parcel,

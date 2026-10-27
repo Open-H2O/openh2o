@@ -55,8 +55,8 @@ def _delivery_split_kind(parcel, period):
     ones the canal split wrote, ``divided_from_headgate``, not told
     apart by the wording of their description). ``"fixed"`` when any of them
     carries the fixed-share tail ``delivery_share_words`` writes (in the
-    middle of the sentence, followed by the percentage and the "because"
-    clause, hence ``description__contains``), ``"use"`` for any other split
+    middle of the sentence, followed by the percentage and where the share
+    came from, hence ``description__contains``), ``"use"`` for any other split
     row (a share weighted by crop water use), ``None`` when the field has no
     split row (its own recorded delivery, or no delivery at all).
     """

@@ -143,18 +143,19 @@ def test_subtract_surface_water_subtracts_absolute_and_can_go_negative():
     )
     fn = STEP_REGISTRY["subtract_surface_water"]
     new, record = fn(Decimal("2"), parcel, "2024-06", {}, {})
-    # 2 - abs(-3) = -1; this step does NOT floor (clamp_floor owns that)
-    assert new == Decimal("-1")
-    # DB stores amount as a 4-place Decimal, so the summed magnitude is "3.0000".
-    assert Decimal(record["detail"]["surface_water_af"]) == Decimal("3")
+    # 3 AF x the default efficiency 0.75 = 2.25 used; 2 - 2.25 = -0.25; this
+    # step does NOT floor (clamp_floor owns that)
+    assert new == Decimal("-0.25")
+    assert Decimal(record["detail"]["surface_water_af"]) == Decimal("2.25")
+    assert Decimal(record["detail"]["delivered_af"]) == Decimal("3")
 
 
 @pytest.mark.django_db
-def test_facility_only_zero_zeros_parcel_without_crop():
-    parcel = _parcel("FAC-1")  # no UsageLocation -> facility-only
+def test_facility_only_zero_no_longer_zeros_a_parcel_without_crop():
+    parcel = _parcel("FAC-1")  # no UsageLocation
     new, record = facility_only_zero(Decimal("5"), parcel, "2024-06", {}, {})
-    assert new == Decimal("0")
-    assert record["detail"]["facility_only"] is True
+    assert new == Decimal("5")
+    assert record["detail"]["facility_only"] is False
 
 
 @pytest.mark.django_db
@@ -320,7 +321,7 @@ def test_seed_is_idempotent_and_precip_enabled():
     plans = CalculationPlan.objects.filter(is_active=True)
     assert plans.count() == 1
     plan = plans.first()
-    assert plan.steps.count() == 5
+    assert plan.steps.count() == 4
 
     # As of 38-03 the effective-precip step is enabled in the default chain.
     precip = plan.steps.get(step_type="subtract_effective_precip")
@@ -329,7 +330,7 @@ def test_seed_is_idempotent_and_precip_enabled():
     enabled_orders = list(
         plan.steps.filter(enabled=True).order_by("order").values_list("order", flat=True)
     )
-    assert enabled_orders == [1, 2, 3, 4, 5]
+    assert enabled_orders == [1, 2, 3, 4]
     assert plan.steps.filter(enabled=False).count() == 0
 
 
