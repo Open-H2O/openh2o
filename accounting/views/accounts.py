@@ -386,7 +386,9 @@ def _account_detail_context(account, period_param=None):
     groundwater_budget = None
     if selected_period is not None:
         groundwater_budget = account_groundwater_budget(account, selected_period)
-        if groundwater_budget["allocation"] is None:
+        # No zone ceiling: the card still lists the account's credits (a district
+        # that runs recharge basins and farms nothing has credits and no allocation).
+        if groundwater_budget["allocation"] is None and not groundwater_budget["credits"]:
             groundwater_budget = None
 
     return {

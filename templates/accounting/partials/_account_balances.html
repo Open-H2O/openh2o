@@ -110,7 +110,7 @@
   <tbody>
     <tr>
       <td>Allocation</td>
-      <td class="td-num">{{ groundwater_budget.allocation|floatformat:2|intcomma }}</td>
+      <td class="td-num">{% if groundwater_budget.allocation is None %}&mdash;{% else %}{{ groundwater_budget.allocation|floatformat:2|intcomma }}{% endif %}</td>
     </tr>
     {% for credit in groundwater_budget.credits %}
     <tr>
@@ -126,7 +126,7 @@
   <tfoot>
     <tr>
       <td class="tfoot-total">Remaining</td>
-      <td class="td-num-bold {% if groundwater_budget.remaining >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ groundwater_budget.remaining|floatformat:2|intcomma }}</td>
+      {% if groundwater_budget.remaining is None %}<td class="td-num-bold">&mdash;</td>{% else %}<td class="td-num-bold {% if groundwater_budget.remaining >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ groundwater_budget.remaining|floatformat:2|intcomma }}</td>{% endif %}
     </tr>
   </tfoot>
 </table>

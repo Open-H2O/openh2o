@@ -191,6 +191,19 @@ def test_the_account_page_lists_the_recharge_credit(d3, client):
     assert "45.00" in body
 
 
+
+def test_an_account_with_no_use_area_still_lists_its_recharge_credit(d3, client):
+    # A district that runs basins and farms nothing has no zone ceiling, so no
+    # allocation; its credit must still show on its page.
+    d3["site"].water_account = d3["account"]
+    d3["site"].save()
+    ld.log_event(d3["site"], *AUG, "50.0000", "GW")
+    period = ld.period_of(dt.date(2025, 8, 1))
+    body = client.get(reverse("accounting:account_detail", args=[d3["account"].pk]) + f"?period={period.pk}").content.decode()
+    assert "Groundwater budget" in body
+    assert "Recharge at RB" in body
+    assert "45.00" in body
+
 # -------------------------------------------------------------- the settings
 def test_delivery_settings_shows_and_saves_the_share_left_in_the_basin(client):
     ld.seed_reference()

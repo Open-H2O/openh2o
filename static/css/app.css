@@ -1220,6 +1220,9 @@ html { color-scheme: dark; }
 .field-value {
     color: var(--color-text-primary);
     font-size: 0.9375rem;
+    /* A long unbroken value (an email address, a web address) wraps inside its
+       cell instead of running across the next one. */
+    overflow-wrap: anywhere;
 }
 
 .field-value-mono {
