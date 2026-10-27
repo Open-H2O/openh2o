@@ -77,10 +77,14 @@
           would stop at its caption beside a Supplies cell three lines taller.
         {% endcomment %}
         {% if not engine_has_never_run %}
+        {% comment %}
+          The label breaks after "water": on one line its figure ran 12px across
+          the divider into Balance at 1,730 (staging read, 2026-10-27).
+        {% endcomment %}
         <div class="budget-breakdown-group">
           <div class="budget-breakdown-title">Uses by destination</div>
           <div class="budget-breakdown-row"><span>Crop ET</span><b>{{ grand_consumptive_use|floatformat:2|intcomma }}</b></div>
-          <div class="budget-breakdown-row"><span>Pumped water not consumed</span><b>{{ grand_not_consumed|floatformat:2|intcomma }}</b></div>
+          <div class="budget-breakdown-row"><span>Pumped water<br>not consumed</span><b>{{ grand_not_consumed|floatformat:2|intcomma }}</b></div>
         </div>
         {% endif %}
         <div class="budget-breakdown-group">
