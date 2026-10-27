@@ -105,7 +105,7 @@
           <div class="budget-seg-value text-supply">{{ mass_balance.inputs_total|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
           <div class="budget-breakdown-group">
             <div class="budget-breakdown-title">Supplies by source</div>
-            <div class="budget-breakdown-row"><span>Surface{% if estimated_surface_af %}<span class="budget-breakdown-note">includes {{ estimated_surface_af|floatformat:2|intcomma }} AF estimated, not subtracted from the groundwater figure</span>{% endif %}</span><b>{{ mass_balance.inputs.surface|floatformat:2|intcomma }}</b></div>
+            <div class="budget-breakdown-row"><span>Surface{% if estimated_surface_af %}<span class="budget-breakdown-note budget-breakdown-note--wrap">includes {{ estimated_surface_af|floatformat:2|intcomma }} AF estimated, not subtracted from the groundwater figure</span>{% endif %}</span><b>{{ mass_balance.inputs.surface|floatformat:2|intcomma }}</b></div>
             {% comment %} The part of Surface the calculation
                  subtracted (CalculationRun.surface_water_af, summed), with the
                  efficiency when one applied to every delivered month; else the

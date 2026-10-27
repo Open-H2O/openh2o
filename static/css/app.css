@@ -3097,6 +3097,13 @@ html { color-scheme: dark; }
     font-size: 0.75rem;
     color: var(--color-text-tertiary);
 }
+/* A note longer than any label wraps at the label track's width instead of
+   setting it: a use area's "includes 60.09 AF estimated, not subtracted from
+   the groundwater figure" on one line pushed the Supplies figures 216px into
+   the Uses cell at 1,730 (staging read, 2026-10-27). */
+.budget-breakdown-note--wrap {
+    contain: inline-size;
+}
 .budget-breakdown-row > span {
     padding: 2px 0;
 }
