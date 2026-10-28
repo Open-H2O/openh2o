@@ -86,11 +86,11 @@
           <span class="badge badge-grey badge-pill text-xs">{{ item.source_display }}</span>
           {% if item.sparkline_points %}
           <div class="sparkline-container" {% if item.latest_tooltip %}title="{{ item.latest_tooltip }}" style="cursor: default;"{% endif %}>
-            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+            <svg class="freshness-spark freshness-spark--{{ item.freshness }}" viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="spk-grad-{{ item.station.pk }}" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="{% if item.freshness == 'fresh' %}#22c55e{% elif item.freshness == 'stale' %}#f59e0b{% else %}#9ca3af{% endif %}" stop-opacity="0.10"/>
-                  <stop offset="100%" stop-color="{% if item.freshness == 'fresh' %}#22c55e{% elif item.freshness == 'stale' %}#f59e0b{% else %}#9ca3af{% endif %}" stop-opacity="0"/>
+                  <stop offset="0%" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-opacity="0"/>
                 </linearGradient>
               </defs>
               {% if item.latest_tooltip %}<title>{{ item.latest_tooltip }}</title>{% endif %}
@@ -100,7 +100,6 @@
               />
               <polyline
                 points="{{ item.sparkline_points }}"
-                stroke="{% if item.freshness == 'fresh' %}#22c55e{% elif item.freshness == 'stale' %}#f59e0b{% else %}#9ca3af{% endif %}"
                 stroke-width="2"
                 fill="none"
                 stroke-linecap="round"

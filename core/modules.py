@@ -206,6 +206,9 @@ class NavEntry:
 
     `icon` is a short stable key that `_nav_icon.html` maps to an icon partial.
 
+    `writes` marks an entry that opens a write flow; the sidebar hides it from
+    a read-only (viewer) account.
+
     `starts_group` draws a hairline rule ABOVE this entry, splitting the tail of
     a section into its own visual block without giving it a second heading. It
     is a property of the ENTRY, not of the section, precisely so the rule
@@ -237,6 +240,7 @@ class NavEntry:
     #: counts as the first of its section and would draw a `starts_group`
     #: rule directly under the section label.
     requires_any_module: tuple = ()
+    writes: bool = False
 
     def owned_prefix_length(self, path: str) -> int:
         """Length of the longest prefix of `path` this entry owns, or -1.
@@ -814,6 +818,7 @@ MODULE_REGISTRY: dict = {
                 order=100,
                 active_match="/setup/",
                 visibility=VISIBILITY_SETUP_GATE,
+                writes=True,
             ),
         ),
         requires=("geography",),
@@ -843,6 +848,7 @@ MODULE_REGISTRY: dict = {
                 order=65,
                 active_match="/infrastructure/",
                 requires_any_module=("wells", "surface", "recharge"),
+                writes=True,
             ),
         ),
     ),
@@ -961,6 +967,7 @@ MODULE_REGISTRY: dict = {
                 section=SECTION_WATER_DATA,
                 order=100,
                 active_match="/drinking/onboard",
+                writes=True,
             ),
         ),
         # The first module to ship a dashboard card. It renders only when a
@@ -1180,7 +1187,7 @@ SCHEMA_EXCEPTIONS: tuple = (
         model="SystemFacility",
         field="well",
         target="wells",
-        where="drinking/models.py:337",
+        where="drinking/models.py:342",
         why=(
             "A drinking-water facility very often IS a well — the same physical "
             "hole in the ground that the extraction ledger meters — so "

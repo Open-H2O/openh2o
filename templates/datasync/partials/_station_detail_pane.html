@@ -348,23 +348,24 @@
     // read off the root element once rather than transcribed. Transcribing is
     // what left this chart on Tailwind defaults (green-500/amber-500/gray-400)
     // after the platform moved to its own supply/warning tokens, with the
-    // freshness triple repeated here a fifth time.
+    // freshness triple repeated here a fifth time. The chart's line now reads
+    // the freshness tokens, the same ones the dot above and the map use.
     function token(name, fallback) {
       var value = getComputedStyle(document.documentElement)
         .getPropertyValue(name).trim();
       return value || fallback;
     }
 
-    var axisColor = token('--color-text-secondary', '#8899aa');
+    var axisColor = token('--color-text-secondary', '#8FA3AE');
 
     Chart.defaults.font.family = "'Public Sans', sans-serif";
     Chart.defaults.color = axisColor;
     Chart.defaults.borderColor = 'rgba(100,140,180,0.07)';
 
     var freshness = '{{ station_freshness }}';
-    var primaryColor = freshness === 'fresh' ? token('--color-supply', '#55B678')
-                     : freshness === 'stale' ? token('--color-warning', '#fbbf24')
-                     : axisColor;
+    var primaryColor = freshness === 'fresh' ? token('--color-fresh', axisColor)
+                     : freshness === 'stale' ? token('--color-stale', axisColor)
+                     : token('--color-dormant', axisColor);
     var compareColor = token('--color-blue', '#1B7FAF'); // the compare series
     var chartDataUrl = '{{ chart_data_url }}';
 

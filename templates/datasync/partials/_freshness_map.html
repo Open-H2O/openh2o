@@ -39,18 +39,18 @@ results partial's own pks, which honour all four of the list's filters
   el._mapInit = true;
 
   // Plain-English freshness states + their dot colours, defined ONCE so the
-  // per-station popup and the two map layers can never drift apart. The
-  // values were Tailwind defaults (green-500, amber-500, gray-400) rather
-  // than this platform's palette, and the two `circle-color` expressions
-  // below repeated them a third and fourth time; they now read from here.
-  // Literal hexes, not `var(--token)`, because MapLibre paint takes a colour
-  // value and cannot resolve a custom property — the tokens they mirror are
-  // named beside each one. The card head above draws its own three
-  // key swatches from the token side of this same pair, in CSS.
+  // per-station popup and the two map layers can never drift apart. MapLibre
+  // paint takes a colour value and cannot resolve a custom property, so the
+  // three values are read off the root element here, from the same tokens the
+  // row dots and the card head's key use. The page's stylesheet is loaded
+  // before this script runs, so no literal is kept as a fallback.
+  function freshToken(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
   var FRESH_META = {
-    fresh: { label: 'Up to date',      color: '#55B678' },  // --color-supply
-    stale: { label: 'Slightly behind', color: '#fbbf24' },  // --color-warning
-    dead:  { label: 'Dormant',         color: '#8899aa' }   // --color-text-secondary
+    fresh: { label: 'Up to date',      color: freshToken('--color-fresh') },
+    stale: { label: 'Slightly behind', color: freshToken('--color-stale') },
+    dead:  { label: 'Dormant',         color: freshToken('--color-dormant') }
   };
 
   var FRESH_MATCH = ['match', ['get', 'freshness'],

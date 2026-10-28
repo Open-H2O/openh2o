@@ -53,6 +53,10 @@
     --color-deficit: #D1742E;
     --color-error: #f87171;
     --color-warning: #fbbf24;
+    /* A station's freshness: Up to date, Slightly behind, Dormant. Every dot, key and map colour reads these. */
+    --color-fresh: var(--color-supply);
+    --color-stale: var(--color-warning);
+    --color-dormant: var(--color-text-secondary);
     --color-muted: #94A3B8;    /* a state with nothing to say: the grey badge's tint */
 
     /* -- Borders & edges ---------------------------------------------------- */

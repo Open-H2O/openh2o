@@ -569,7 +569,7 @@ Do this for every new area.
 The populate step finds every gauge and well that public services report near the
 boundary. Many of them never return data: a stream gauge that has been taken out of
 service, a CDEC sensor that posts only event readings, a well last measured a decade
-ago. Left on the map, they fill the monitoring view with red markers. Find out which
+ago. Left on the map, they fill the monitoring view with grey Dormant markers. Find out which
 stations report, keep those, and remove the rest before you hand the site over.
 
 1. **Turn on the stations in the boundary.** The populate step creates every station

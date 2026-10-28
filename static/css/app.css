@@ -4550,12 +4550,19 @@ details[open] > summary .disclosure-mark {
     flex-shrink: 0;
 }
 
-.freshness-dot--fresh  { background: #22c55e; }
-.freshness-dot--stale  { background: #f59e0b; }
+.freshness-dot--fresh  { background: var(--color-fresh); }
+.freshness-dot--stale  { background: var(--color-stale); }
 /* "dead" is really "dormant": no reading inside the expected window, which for
    many water stations is normal. A calm slate-grey says "quiet", not "broken" —
    red is reserved for a source whose sync genuinely failed. */
-.freshness-dot--dead   { background: #9ca3af; }
+.freshness-dot--dead   { background: var(--color-dormant); }
+
+/* The sparkline beside a station takes its state's colour the same way. */
+.freshness-spark            { --spark: var(--color-dormant); }
+.freshness-spark--fresh     { --spark: var(--color-fresh); }
+.freshness-spark--stale     { --spark: var(--color-stale); }
+.freshness-spark stop       { stop-color: var(--spark); }
+.freshness-spark polyline   { stroke: var(--spark); }
 
 /* -- Wizard step list ---------------------------------------------------- */
 
