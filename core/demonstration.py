@@ -649,15 +649,46 @@ def _event_tables():
     return tables()
 
 
+def history_lock_uris():
+    """The ``append_only`` trigger of every change-history table, as pgtrigger names it.
+
+    Built from the live app registry the same way :func:`_event_tables` is, so
+    a model that starts being tracked is covered without anyone editing a list.
+    """
+    from pghistory.models import Event
+
+    uris = []
+    for model in apps.get_models():
+        if not issubclass(model, Event) or model is Event:
+            continue
+        meta = model._meta
+        if meta.proxy or not meta.managed:
+            continue
+        if getattr(model, "pgh_tracked_model", None) is None:
+            continue
+        uris.append(f"{meta.app_label}.{model.__name__}:append_only")
+    return sorted(uris)
+
+
 def forget_events(context_id):
-    """Delete the changes written under ``context_id``, and no others."""
+    """Delete the changes written under ``context_id``, and no others.
+
+    This is the one place that deletes recorded changes. The event tables
+    refuse deletes (``core/history.py``), so the deletes run with those locks
+    switched off; the table that says who did it has no lock, so its delete
+    stays outside. The caller's history context is open outside this too, so
+    the triggers that record keep their context (django-pghistory issue #237,
+    as in ``accounting/locks.py`` ``override``).
+    """
+    import pgtrigger
     from django.db import connection
 
     with connection.cursor() as cursor:
-        for table in _event_tables():
-            cursor.execute(
-                f'DELETE FROM "{table}" WHERE pgh_context_id = %s', [str(context_id)]
-            )
+        with pgtrigger.ignore(*history_lock_uris()):
+            for table in _event_tables():
+                cursor.execute(
+                    f'DELETE FROM "{table}" WHERE pgh_context_id = %s', [str(context_id)]
+                )
         cursor.execute(
             "DELETE FROM pghistory_context WHERE id = %s", [str(context_id)]
         )

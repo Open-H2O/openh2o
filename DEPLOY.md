@@ -803,7 +803,9 @@ administrator account. Before handing the site over:
 3. The organization's host administrator signs in and chooses a new password. Then
    they click **Deactivate** beside the consultant's account.
 
-The change history keeps the consultant's work under the consultant's name. Anyone
+The change history keeps the consultant's work under the consultant's name. The
+database refuses to change or delete the recorded changes, but the record of who made
+each one is in a table it does not protect (Data Pruning, below). Anyone
 who can sign in to the server can still change any account's password or email
 address with the commands in section 7. The organization should know who holds the
 server's logins after the handover.
@@ -996,6 +998,16 @@ To delete those records:
 ```bash
 docker compose exec web python manage.py prune_old_data --confirm
 ```
+
+Change history is not pruned. OpenH2O keeps every recorded change, and the database
+refuses a command that would change or delete a single recorded change. Two things still
+remove changes: loading or removing the demonstration data deletes the changes that
+load or removal made, and no others; and `clear_change_history --golden-build`, which
+is only for building the demonstration, empties the whole change history.
+
+The record of who made each change (the signed-in person or the command) is kept in a
+separate table that this does not protect. Anyone who can write to the database
+directly can still change it.
 
 ### Data Sync
 
@@ -1236,7 +1248,7 @@ The **Continue with Google** button on the sign-in and sign-up pages, and the pa
 it leads to, appear only when the switch is on and the two values are set. With
 either missing, no button appears, and the pages it would lead to answer "page not
 found". Turn the switch on at `/admin/` under Core > Site configs: open the
-organization's entry, tick **Allow google oauth** and save. The order of the steps
+organization's entry, tick **Allow Google sign-in** and save. The order of the steps
 does not matter. You can tick the box now and add the values next week, or the
 other way round, and nothing breaks or opens in between. To turn the feature off
 later, untick the box and save.

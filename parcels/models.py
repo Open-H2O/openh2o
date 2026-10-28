@@ -129,6 +129,7 @@ class ParcelLedger(models.Model):
     # has and surface is optional, so a reference into surface would dangle
     # when it is left out (the composition rule, tests/test_composition_rule.py).
     divided_from_point_pk = models.PositiveIntegerField(
+        verbose_name="Divided from point of diversion number",
         null=True,
         blank=True,
         help_text=(

@@ -115,11 +115,11 @@ class UserRole(models.Model):
 class SiteConfig(models.Model):
     agency_name = models.CharField(max_length=200)
     timezone = models.CharField(max_length=50, default="America/Los_Angeles")
-    native_srid = models.IntegerField(default=4326)
+    native_srid = models.IntegerField(verbose_name="Native coordinate system (SRID)", default=4326)
     contact_email = models.EmailField(blank=True)
     contact_phone = models.CharField(max_length=20, blank=True)
     logo = models.ImageField(upload_to="logos/", blank=True, null=True)
-    allow_google_oauth = models.BooleanField(default=False)
+    allow_google_oauth = models.BooleanField(verbose_name="Allow Google sign-in", default=False)
     demonstration_mode = models.BooleanField(
         default=False,
         help_text="When Demonstration mode is on, every page shows the "

@@ -42,7 +42,7 @@ class WaterRight(models.Model):
         ("revoked", "Revoked"),
     ]
 
-    right_id = models.CharField(max_length=50, unique=True)
+    right_id = models.CharField(verbose_name="Right ID", max_length=50, unique=True)
     right_type = models.ForeignKey(WaterRightType, on_delete=models.PROTECT)
     holder_name = models.CharField(max_length=200)
     priority_date = models.DateField(null=True, blank=True)
@@ -702,6 +702,7 @@ class MeasuringDevice(models.Model):
         "and a new one at least every five years after that.",
     )
     state_device_id = models.CharField(
+        verbose_name="State device ID",
         max_length=50,
         blank=True,
         help_text="The number the state's device registry gives this device. "
@@ -817,12 +818,14 @@ class DiversionRecord(models.Model):
     month = models.DateField()
     volume_acre_feet = models.DecimalField(max_digits=12, decimal_places=4)
     returned_af = models.DecimalField(
+        verbose_name="Returned to stream (AF)",
         max_digits=12,
         decimal_places=4,
         default=Decimal("0"),
         help_text="Acre-feet of this diversion that went back to the stream.",
     )
     max_flow_rate_cfs = models.DecimalField(
+        verbose_name="Max flow rate (CFS)",
         max_digits=10, decimal_places=4, null=True, blank=True
     )
     diversion_type = models.CharField(
@@ -1039,20 +1042,23 @@ class CanalMonthLoss(models.Model):
     )
     month = models.DateField(help_text="First of the calendar month.")
     diverted_af = models.DecimalField(
+        verbose_name="Taken at the headgate (AF)",
         max_digits=12,
         decimal_places=4,
         help_text="The month's direct-use total the split started from: volume "
         "less returned to the stream.",
     )
-    evaporation_af = models.DecimalField(max_digits=12, decimal_places=4)
-    seepage_af = models.DecimalField(max_digits=12, decimal_places=4)
-    spill_af = models.DecimalField(max_digits=12, decimal_places=4)
+    evaporation_af = models.DecimalField(verbose_name="Evaporation (AF)", max_digits=12, decimal_places=4)
+    seepage_af = models.DecimalField(verbose_name="Seepage (AF)", max_digits=12, decimal_places=4)
+    spill_af = models.DecimalField(verbose_name="Spill (AF)", max_digits=12, decimal_places=4)
     available_af = models.DecimalField(
+        verbose_name="Left after canal losses (AF)",
         max_digits=12,
         decimal_places=4,
         help_text="What is left for the fields after the three losses.",
     )
     own_af = models.DecimalField(
+        verbose_name="Fields' own records (AF)",
         max_digits=12,
         decimal_places=4,
         default=Decimal("0"),
@@ -1060,6 +1066,7 @@ class CanalMonthLoss(models.Model):
         "taken from what was left before the rest was divided up.",
     )
     unserved_af = models.DecimalField(
+        verbose_name="Delivered to no field (AF)",
         max_digits=12,
         decimal_places=4,
         default=Decimal("0"),

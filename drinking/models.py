@@ -174,6 +174,7 @@ class WaterSystem(models.Model):
 
     pwsid = models.CharField(
         max_length=20,
+        verbose_name="PWSID",
         unique=True,
         help_text="Public Water System ID, e.g. CA1910067. THE persistent "
         "identifier; joins the Water Data Standard crosswalk.",
@@ -184,6 +185,7 @@ class WaterSystem(models.Model):
     )
     pws_type = models.CharField(
         max_length=10, choices=PWS_TYPE_CHOICES, blank=True,
+        verbose_name="System type",
         help_text="Federal PWS type.",
     )
     state_classification = models.CharField(
@@ -238,8 +240,8 @@ class WaterSystem(models.Model):
     # admin_name and org_name are deliberately NOT carried: they are a named
     # individual's contact details and carry a privacy/retention cost this
     # platform does not take on (scope call, 2026-07-19).
-    mailing_address_line1 = models.CharField(max_length=100, blank=True)
-    mailing_address_line2 = models.CharField(max_length=100, blank=True)
+    mailing_address_line1 = models.CharField(verbose_name="Mailing address line 1", max_length=100, blank=True)
+    mailing_address_line2 = models.CharField(verbose_name="Mailing address line 2", max_length=100, blank=True)
     mailing_city = models.CharField(max_length=100, blank=True)
     mailing_state = models.CharField(
         max_length=2, blank=True,
@@ -249,7 +251,7 @@ class WaterSystem(models.Model):
         "because its administrator's address is in Anaheim. Never filter "
         "jurisdiction by this field — use primacy agency.",
     )
-    mailing_zip = models.CharField(max_length=10, blank=True)
+    mailing_zip = models.CharField(verbose_name="Mailing ZIP code", max_length=10, blank=True)
 
     regulating_agency = models.CharField(
         max_length=100, blank=True,
@@ -260,6 +262,7 @@ class WaterSystem(models.Model):
     # be populated.
     seller_pwsid = models.CharField(
         max_length=20, blank=True,
+        verbose_name="Buys water from (PWSID)",
         help_text="Consecutive-system link: the PWSID this system buys from.",
     )
 
@@ -287,6 +290,7 @@ class SystemFacility(models.Model):
     )
     facility_id = models.CharField(
         max_length=30,
+        verbose_name="Facility ID",
         help_text="State-assigned facility ID — the segment DDW's PS Codes are "
         "built from (CA1010001_010_010). From EPA this is state_facility_id, "
         "NEVER EPA's own facility_id. Not always numeric: DST is real.",
@@ -297,6 +301,7 @@ class SystemFacility(models.Model):
     # CA1010001_14042_001 and match nothing in a real lab file.
     epa_facility_id = models.CharField(
         max_length=20, blank=True, db_index=True,
+        verbose_name="EPA facility ID",
         help_text="EPA's own facility ID. Provenance only; never a PS Code "
         "segment.",
     )
@@ -561,6 +566,7 @@ class SampleResult(models.Model):
     )
     unit = models.CharField(max_length=20, blank=True)
     less_than_rl = models.BooleanField(
+        verbose_name="Less than reporting level",
         default=False, help_text="Non-detect flag (DDW 'Less Than Reporting Level' = Y)."
     )
     reporting_level = models.DecimalField(
@@ -577,6 +583,7 @@ class SampleResult(models.Model):
     method = models.CharField(max_length=100, blank=True)
     lab_name = models.CharField(max_length=200, blank=True)
     lab_cert_no = models.CharField(
+        verbose_name="ELAP certification number",
         max_length=20, blank=True, help_text="ELAP certification number."
     )
     # The limits the laboratory's file carried on this row, stored exactly as
@@ -586,11 +593,13 @@ class SampleResult(models.Model):
     # (`drinking/importer.py::_NOT_IDENTITY_FIELDS`). `RegulatoryLimit` is a
     # different thing (the versioned federal table) and is still shown nowhere.
     mcl_as_reported = models.DecimalField(
+        verbose_name="MCL in the lab file",
         max_digits=16, decimal_places=6, null=True, blank=True,
         help_text="The MCL column of the laboratory's file for this row, as "
         "reported, in the row's own units.",
     )
     dlr_as_reported = models.DecimalField(
+        verbose_name="DLR in the lab file",
         max_digits=16, decimal_places=6, null=True, blank=True,
         help_text="The DLR column of the laboratory's file for this row, as "
         "reported, in the row's own units.",
@@ -814,6 +823,7 @@ class SystemProduction(models.Model):
         max_length=20, choices=PRODUCTION_PROVENANCE_CHOICES
     )
     annual_in_january = models.BooleanField(
+        verbose_name="January row holds the whole year",
         default=False,
         help_text="This January row stands for the whole year; no other "
         "month of this year and type appears in the file it came from.",

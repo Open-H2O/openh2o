@@ -91,6 +91,7 @@ class Well(models.Model):
     ]
 
     well_registration_id = models.CharField(
+        verbose_name="Local registration ID",
         max_length=50, unique=True, blank=True, null=True
     )
     name = models.CharField(max_length=200)
@@ -101,9 +102,11 @@ class Well(models.Model):
     )
     location = models.PointField(srid=4326)
     depth_ft = models.DecimalField(
+        verbose_name="Depth (ft)",
         max_digits=8, decimal_places=2, null=True, blank=True
     )
     capacity_gpm = models.DecimalField(
+        verbose_name="Capacity (gpm)",
         max_digits=8, decimal_places=2, null=True, blank=True
     )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
@@ -120,11 +123,13 @@ class Well(models.Model):
     # `default=""` so the schema migration can add these to a table that
     # already carries rows (staging, production) without a prompt.
     dwr_extraction_method = models.CharField(
+        verbose_name="Extraction method (DWR)",
         max_length=30, blank=True, default="", choices=DWR_EXTRACTION_METHOD_CHOICES,
         help_text="Which of DWR's five annual-report method rows this well's "
         "extraction is measured under (23 CCR 356.2(b)(2)).",
     )
     dwr_direct_or_estimate = models.CharField(
+        verbose_name="Direct or estimate",
         max_length=10, blank=True, default="", choices=DWR_DIRECT_OR_ESTIMATE_CHOICES,
         help_text="Whether the extraction method above is a direct "
         "measurement or an estimate.",
@@ -137,6 +142,7 @@ class Well(models.Model):
 
     # Registry identifiers
     wcr_number = models.CharField(
+        verbose_name="WCR number (DWR)",
         max_length=50, blank=True
     )  # DWR Well Completion Report #
     state_well_number = models.CharField(
@@ -146,12 +152,14 @@ class Well(models.Model):
     # Partner cross-walk identifiers — let a self-published feature line up with
     # the federal/state monitoring systems it also appears in.
     usgs_site_id = models.CharField(
+        verbose_name="USGS site ID",
         max_length=50,
         blank=True,
         help_text="USGS NWIS site number (waterdata.usgs.gov), if this well is "
         "also a USGS monitoring site.",
     )
     wqx_monitoring_location_id = models.CharField(
+        verbose_name="WQX monitoring location ID",
         max_length=50,
         blank=True,
         help_text="EPA WQX MonitoringLocationIdentifier (Water Quality Portal).",
@@ -169,16 +177,20 @@ class Well(models.Model):
 
     # Construction (DWR Well Completion Report, Form 188)
     casing_diameter_in = models.DecimalField(
+        verbose_name="Casing diameter (in)",
         max_digits=6, decimal_places=2, null=True, blank=True
     )
     casing_material = models.CharField(max_length=50, blank=True)
     screen_top_ft = models.DecimalField(
+        verbose_name="Screen top (ft)",
         max_digits=8, decimal_places=2, null=True, blank=True
     )  # depth to top of perforation/screen
     screen_bottom_ft = models.DecimalField(
+        verbose_name="Screen bottom (ft)",
         max_digits=8, decimal_places=2, null=True, blank=True
     )
     tested_yield_gpm = models.DecimalField(
+        verbose_name="Tested yield (gpm)",
         max_digits=8, decimal_places=2, null=True, blank=True
     )  # WCR pump-test yield (distinct from rated capacity_gpm)
     pump_type = models.CharField(max_length=30, blank=True, choices=PUMP_TYPE_CHOICES)

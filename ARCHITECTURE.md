@@ -182,6 +182,31 @@ columns and `updated_at` are not copied into history. Who made a change comes fr
 as `migrate`), and `change_note()` adds a reason. The Change history page (`/changes/`,
 `core/views.py` `change_history`) reads the records back through `core/changes.py`.
 
+**Nothing is pruned, and the event tables are append-only.** `track_changes` passes `append_only=True`
+to `pghistory.track`, which puts a pgtrigger `Protect` trigger named `append_only` on every event
+table. It refuses every `UPDATE` and `DELETE` that runs with the trigger in force, whether from a form,
+the shell, `/admin/` or raw SQL. Code that names the trigger in `pgtrigger.ignore`, a SQL session
+that sets `pgtrigger.ignore`, or the owner of the tables can still get past it. Inserts are
+untouched, so recording is unchanged. A new tracked model is locked once its migration is made and
+applied; there is no list to keep. `TRUNCATE` does not fire a row trigger, so
+`clear_change_history --golden-build` (which refuses to run without that flag) still empties the
+tables for the demonstration's golden build.
+
+`pghistory_context`, the table that says who made a change, is not locked: pghistory updates a
+context row when a nested context adds metadata (`change_note`), so a lock would refuse the note.
+Anyone who can write to the database can still change who a change is attributed to.
+
+The demonstration is the one door through the lock. `forget_events` in `core/demonstration.py` deletes
+the changes its own load or removal wrote, inside `pgtrigger.ignore(*history_lock_uris())` (the URIs
+are built from the registered event models, so none is typed by hand). The history context stays
+outside the ignore, as in `accounting/locks.py` `override` (django-pghistory issue #237), and the
+context row's delete stays outside it because that table has no lock. Nothing else gets this door.
+
+A tracked field with no `verbose_name` prints the name Django makes from the field's name in Change history
+("Gross et af"). Give such a field a `verbose_name` in the words a page uses for the same figure;
+`tests/test_change_labels_07.py` fails for a tracked field that has neither a written label nor a place
+on its list of labels that already read as plain words.
+
 ## Data sources
 
 External data (stream gauges, weather stations, groundwater levels, satellite evapotranspiration)
@@ -259,7 +284,8 @@ For a new page in the accounting app, as an example:
 1. The view, in the module for its screen under `accounting/views/` (or a new module there).
 2. The route, in `accounting/urls.py`.
 3. The template, in `templates/accounting/`, and any htmx part in `templates/accounting/partials/`.
-4. A sidebar link, if it needs one: a `NavEntry` in the module's entry in `core/modules.py`.
+4. A sidebar link, if it needs one: a `NavEntry` in the module's entry in `core/modules.py`. If the
+   page opens a write flow, give the entry `writes=True` so a viewer's sidebar leaves it out.
    `tests/test_modules.py` pins the number of module sidebar links, so that count changes too.
 5. A test in `tests/`.
 6. If the page's URL name contains `import` or `onboard`, the "Option B" section of

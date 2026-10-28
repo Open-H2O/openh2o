@@ -25,6 +25,13 @@ triggers rather than by Django signals.
 - inserts, updates AND deletes are recorded (pghistory's default records only
   inserts and updates, which would lose the last values of a removed row), and
   an update is recorded twice, as the row was and as it became;
+- the event tables refuse updates and deletes (``append_only``): a recorded
+  change cannot be edited or removed by a form, the shell, ``/admin/`` or raw
+  SQL, only inserted. The context table (who did it) is not locked, because
+  pghistory updates a context row when a nested context adds a note, so
+  someone who can write to the database can still change the record of who
+  made a change. The one exception is the demonstration's own clean-up
+  (``core/demonstration.py`` ``forget_events``);
 - geometry columns are never copied into history (GeoDjango support in the
   library is undocumented, and a shape is not a figure);
 - ``updated_at`` is never copied, so a save that changes nothing records nothing;
@@ -125,6 +132,7 @@ def track_changes(*, exclude=(), fields=None):
             pghistory.UpdateEvent(),
             pghistory.DeleteEvent(),
             attrs=attrs,
+            append_only=True,
             **chosen,
         )(model)
 

@@ -378,6 +378,7 @@ class WaterCredit(models.Model):
         max_length=7, help_text="Month the surplus was banked, as YYYY-MM."
     )
     amount_af = models.DecimalField(
+        verbose_name="Amount (AF)",
         max_digits=12,
         decimal_places=4,
         help_text="Surplus banked (acre-feet, positive). The principal — never mutated.",
@@ -425,6 +426,7 @@ class WaterCreditDraw(models.Model):
         max_length=7, help_text="Month the draw was applied, as YYYY-MM."
     )
     amount_af = models.DecimalField(
+        verbose_name="Amount (AF)",
         max_digits=12,
         decimal_places=4,
         help_text="Depreciated value drawn in this period (acre-feet, positive).",
@@ -508,6 +510,7 @@ class AllocationCarryover(models.Model):
         "(normally water_year - 1). Provenance for the audit trail.",
     )
     amount_af = models.DecimalField(
+        verbose_name="Amount (AF)",
         max_digits=12,
         decimal_places=4,
         help_text="Signed carry-over (acre-feet): + surplus carried forward, "
@@ -577,6 +580,7 @@ class AccountCredit(models.Model):
     )
     origin = models.CharField(max_length=24, choices=ORIGIN_CHOICES)
     amount_af = models.DecimalField(
+        verbose_name="Amount (AF)",
         max_digits=12,
         decimal_places=4,
         help_text="Signed amount in acre-feet. Positive adds water, negative is water owed.",
@@ -644,11 +648,13 @@ class CalculationRun(models.Model):
         help_text="First day of `period`'s month. Derived; do not set directly.",
     )
     gross_et_af = models.DecimalField(
+        verbose_name="Crop ET (AF)",
         max_digits=12,
         decimal_places=4,
         help_text="Chain's starting gross ET magnitude (positive AF).",
     )
     effective_precip_af = models.DecimalField(
+        verbose_name="Effective precipitation (AF)",
         max_digits=12,
         decimal_places=4,
         null=True,
@@ -656,6 +662,7 @@ class CalculationRun(models.Model):
         help_text="Effective precipitation subtracted (AF); null if no precip step ran.",
     )
     surface_water_af = models.DecimalField(
+        verbose_name="Surface water counted against ETAW (AF)",
         max_digits=12,
         decimal_places=4,
         null=True,
@@ -666,6 +673,7 @@ class CalculationRun(models.Model):
         "that predates the efficiency step, it is the delivered magnitude itself.",
     )
     surface_delivered_af = models.DecimalField(
+        verbose_name="Delivered (AF)",
         max_digits=12,
         decimal_places=4,
         null=True,
@@ -684,6 +692,7 @@ class CalculationRun(models.Model):
         "delivered, or the step ran on a plan that predates the efficiency step.",
     )
     over_delivery_af = models.DecimalField(
+        verbose_name="Surface water in excess of ETAW (AF)",
         max_digits=12,
         decimal_places=4,
         default=Decimal("0"),
@@ -720,6 +729,7 @@ class CalculationRun(models.Model):
         "'not_credited' or 'named_line'.",
     )
     over_delivery_credited_af = models.DecimalField(
+        verbose_name="Credited to this field (AF)",
         max_digits=12,
         decimal_places=4,
         null=True,
@@ -742,6 +752,7 @@ class CalculationRun(models.Model):
         "field itself.",
     )
     net_consumptive_use_af = models.DecimalField(
+        verbose_name="ETAW (AF)",
         max_digits=12,
         decimal_places=4,
         default=Decimal("0"),
@@ -772,6 +783,7 @@ class CalculationRun(models.Model):
         "its groundwater — the run is an ET reference value, no calculated row).",
     )
     gw_extracted_af = models.DecimalField(
+        verbose_name="Groundwater extraction, estimated (AF)",
         max_digits=12,
         decimal_places=4,
         null=True,
@@ -810,6 +822,7 @@ class CalculationRun(models.Model):
         "stamp is null.",
     )
     deep_percolation_gw_af = models.DecimalField(
+        verbose_name="Pumped water not consumed (AF)",
         max_digits=12,
         decimal_places=4,
         null=True,
@@ -821,6 +834,7 @@ class CalculationRun(models.Model):
         "wherever gw_extracted_af is null.",
     )
     unmet_demand_af = models.DecimalField(
+        verbose_name="Water use recorded, no supply reported (AF)",
         max_digits=12,
         decimal_places=4,
         default=Decimal("0"),
@@ -829,18 +843,21 @@ class CalculationRun(models.Model):
         "NEVER written as a calculated groundwater row.",
     )
     banked_af = models.DecimalField(
+        verbose_name="Banked as credit (AF)",
         max_digits=12,
         decimal_places=4,
         default=Decimal("0"),
         help_text="Surplus deposited as a WaterCredit this period (AF).",
     )
     drawn_af = models.DecimalField(
+        verbose_name="Drawn from credit (AF)",
         max_digits=12,
         decimal_places=4,
         default=Decimal("0"),
         help_text="Credit drawn down to reduce the bill this period (AF).",
     )
     final_af = models.DecimalField(
+        verbose_name="ETAW met by groundwater (AF)",
         max_digits=12,
         decimal_places=4,
         help_text="Final billable magnitude (POSITIVE; equals -ledger.amount_acre_feet).",
@@ -850,6 +867,7 @@ class CalculationRun(models.Model):
         help_text="The evaluate_chain per-step list, stored verbatim.",
     )
     methodology_plan_id = models.PositiveIntegerField(
+        verbose_name="Methodology plan number",
         null=True,
         blank=True,
         help_text="Snapshot of the CalculationPlan id in force at run time.",
