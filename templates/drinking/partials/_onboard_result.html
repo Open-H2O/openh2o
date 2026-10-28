@@ -27,10 +27,18 @@
 {% elif error_kind %}
 <div class="card-raised">
   <h2 class="card-header-ruled">
-    {% if error_kind == "not_found" %}EPA no longer lists this PWSID
+    {% if error_kind == "other_system" %}This site already has a water system
+    {% elif error_kind == "not_found" %}EPA no longer lists this PWSID
     {% elif error_kind == "unavailable" %}No usable answer from EPA
     {% else %}EPA answered with an error{% endif %}
   </h2>
+  {% if error_kind == "other_system" %}
+  <p class="text-base text-secondary mt-md">
+    This site keeps the records of one water system, {{ kept_system.name }}
+    (<span class="text-mono">{{ kept_system.pwsid }}</span>). OpenH2O did not create
+    <span class="text-mono">{{ pwsid }}</span> and saved nothing.
+  </p>
+  {% else %}
   <p class="text-base text-secondary mt-md">
     When you pressed Create, OpenH2O could not read EPA's record for
     <span class="text-mono">{{ pwsid }}</span> a second time, so OpenH2O saved
@@ -41,8 +49,9 @@
     <p class="text-sm text-secondary m-0">{{ error }}</p>
   </div>
   {% endif %}
+  {% endif %}
   <div class="row-start mt-lg">
-    <a href="{% url 'drinking:onboard' %}" class="btn-secondary">Try again</a>
+    <a href="{% url 'drinking:onboard' %}" class="btn-secondary">{% if error_kind == "other_system" %}Back to Add a water system{% else %}Try again{% endif %}</a>
   </div>
 </div>
 {% else %}

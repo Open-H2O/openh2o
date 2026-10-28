@@ -21,13 +21,20 @@
 {% if error_kind %}
 <div class="card-raised">
   <h2 class="card-header-ruled">
-    {% if error_kind == "not_found" %}No system with that PWSID
+    {% if error_kind == "other_system" %}This site already has a water system
+    {% elif error_kind == "not_found" %}No system with that PWSID
     {% elif error_kind == "unavailable" %}No usable answer from EPA
     {% elif error_kind == "service_error" %}EPA answered with an error
     {% else %}Nothing to look up{% endif %}
   </h2>
 
-  {% if error_kind == "not_found" %}
+  {% if error_kind == "other_system" %}
+  <p class="text-base text-secondary mt-md">
+    This site keeps the records of one water system, {{ kept_system.name }}
+    (<span class="text-mono">{{ kept_system.pwsid }}</span>). OpenH2O did not look up
+    <span class="text-mono">{{ pwsid }}</span> and saved nothing.
+  </p>
+  {% elif error_kind == "not_found" %}
   <p class="text-base text-secondary mt-md">
     EPA's Envirofacts does not list a water system with the PWSID
     <span class="text-mono">{{ pwsid }}</span>. Check the PWSID against the
@@ -56,7 +63,7 @@
   {% endif %}
 
   <div class="row-start mt-lg">
-    <a href="{% url 'drinking:onboard' %}" class="btn-secondary">Try another PWSID</a>
+    <a href="{% url 'drinking:onboard' %}" class="btn-secondary">{% if error_kind == "other_system" %}Back to Add a water system{% else %}Try another PWSID{% endif %}</a>
   </div>
 </div>
 {% else %}

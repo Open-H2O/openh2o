@@ -83,24 +83,29 @@ def _filtered_facilities(
 
 def _facility_population_counts(
     base_queryset: QuerySet[SystemFacility],
-) -> tuple[int, int, int]:
-    """The card head's population line as (sources, treatment plants, distribution systems)."""
-    # The card head's population line: one facility_type count query
-    # over the FILTERED, unannotated queryset -- never a per-row loop -- with
-    # "source" as the residual bucket (every present type that is not a
-    # treatment plant or the distribution system). Measured on the local
-    # stack every present type besides TP/DS is a source (`is_source=True`);
-    # this reads the same story off `facility_type` so it stays one query.
-    type_counts = dict(
+) -> tuple[int, int, int, int]:
+    """The card head's population line as (sources, treatment plants, distribution systems, other)."""
+    # One query over the FILTERED, unannotated queryset, never a per-row loop.
+    # A treatment plant and a distribution system are counted by type; every
+    # other facility is a source when it is flagged one (`is_source`) and
+    # "other" when it is not (storage, a clear well, a pump facility).
+    rows = (
         base_queryset.order_by()
-        .values("facility_type")
+        .values("facility_type", "is_source")
         .annotate(n=Count("id"))
-        .values_list("facility_type", "n")
+        .values_list("facility_type", "is_source", "n")
     )
-    n_tp = type_counts.pop("TP", 0)
-    n_ds = type_counts.pop("DS", 0)
-    n_source = sum(type_counts.values())
-    return n_source, n_tp, n_ds
+    n_source = n_tp = n_ds = n_other = 0
+    for facility_type, is_source, n in rows:
+        if facility_type == "TP":
+            n_tp += n
+        elif facility_type == "DS":
+            n_ds += n
+        elif is_source:
+            n_source += n
+        else:
+            n_other += n
+    return n_source, n_tp, n_ds, n_other
 
 
 def _facility_filter_words(facility_type: str, activity_status: str) -> str:
@@ -176,7 +181,7 @@ def facilities(request):
     paginator = Paginator(queryset, 50)
     page_obj = paginator.get_page(request.GET.get("page", 1))
 
-    n_source, n_tp, n_ds = _facility_population_counts(base_queryset)
+    n_source, n_tp, n_ds, n_other = _facility_population_counts(base_queryset)
 
     # The map card's head. The map draws FACILITIES and the list
     # counts facilities too — a 1:1 correspondence sampling_points below does
@@ -194,6 +199,7 @@ def facilities(request):
             "page_obj": page_obj,
             "total_count": paginator.count,
             "n_source": n_source,
+            "n_other": n_other,
             "n_tp": n_tp,
             "n_ds": n_ds,
             "q": q,

@@ -154,7 +154,7 @@ def _no_argument_routes():
 
 
 #: The crawl is cached for the module. Every one of these requests is a GET
-#: against a database with no rows in it, so the response cannot depend on which
+#: against the one fixed state the `crawled` fixture sets up, so the response cannot depend on which
 #: test asked for it, and crawling once instead of once per assertion is the
 #: difference between a gate that runs in seconds and one nobody wants in the
 #: suite.
@@ -217,6 +217,19 @@ def crawled(db, django_user_model):
             is_active=True,
             is_staff=True,
             is_superuser=True,
+        )
+    # Pages read the site's water system, and a test file that commits one
+    # outside its tests' transactions changes what the crawl sees. The crawl
+    # gets a system either way, so it reads the same pages alone and in the
+    # full run.
+    from drinking.models import WaterSystem
+
+    if not WaterSystem.objects.exists():
+        WaterSystem.objects.create(
+            pwsid="CA0000001",
+            name="Crawl Water System",
+            activity_status="A",
+            pws_type="CWS",
         )
     client = Client()
     client.force_login(user)

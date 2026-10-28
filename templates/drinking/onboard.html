@@ -41,6 +41,12 @@
   {% else %}
   <div class="card-raised">
     <h2 class="card-header-ruled">Look up a public water system</h2>
+    {% if site_system %}
+    <p class="text-base text-secondary mt-md">
+      This site keeps the records of one water system, {{ site_system.name }}
+      (<span class="text-mono">{{ site_system.pwsid }}</span>). Look up that PWSID and press Refresh to update its records from EPA.
+    </p>
+    {% endif %}
     <p class="text-base text-secondary mt-md">
       OpenH2O reads the system's record from EPA's Envirofacts copy of the Safe
       Drinking Water Information System (SDWIS). OpenH2O saves nothing until you

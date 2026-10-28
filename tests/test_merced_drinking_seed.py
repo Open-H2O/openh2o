@@ -75,6 +75,11 @@ def _seeded_once(django_db_setup, django_db_blocker):
                 "ANALYZE drinking_sampleresult, drinking_sampleevent, "
                 "drinking_samplingpoint, drinking_systemfacility"
             )
+    yield
+    # A site keeps one water system, so a system left behind here would turn
+    # down every later test that adds a different one. Take it away again.
+    with django_db_blocker.unblock():
+        WaterSystem.objects.filter(pwsid=PWSID).delete()
 
 
 @pytest.fixture

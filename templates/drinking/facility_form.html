@@ -38,6 +38,8 @@
   <p class="page-description">OpenH2O did not take this facility from EPA's record, so you can change every field.</p>
   {% elif system %}
   <p class="page-description">This page adds a facility to {{ system.name }} by hand.</p>
+  {% else %}
+  <p class="page-description">This page adds a facility to a water system by hand, and this site has no water system yet.</p>
   {% endif %}
 </div>
 {% endblock %}
@@ -90,6 +92,7 @@
       <div class="form-group">
         <label class="form-label" for="{{ form.facility_type.id_for_label }}">{{ form.facility_type.label }}</label>
         {{ form.facility_type }}
+        {% for error in form.facility_type.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
       </div>
 
       <div class="form-group form-span-2">
@@ -111,16 +114,19 @@
       <div class="form-group">
         <label class="form-label" for="{{ form.activity_status.id_for_label }}">{{ form.activity_status.label }}</label>
         {{ form.activity_status }}
+        {% for error in form.activity_status.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
       </div>
       <div class="form-group">
         <label class="form-label" for="{{ form.water_type.id_for_label }}">{{ form.water_type.label }}</label>
         {{ form.water_type }}
+        {% for error in form.water_type.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
       </div>
 
       <div class="form-group form-span-2">
         <label class="row-start text-base" style="gap: var(--space-sm);">
           {{ form.is_source }} <span>{{ form.is_source.label }}</span>
         </label>
+        {% for error in form.is_source.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
       </div>
       {% endif %}
 
@@ -129,6 +135,7 @@
         <label class="form-label" for="{{ form.well.id_for_label }}">{{ form.well.label }}</label>
         {{ form.well }}
         <div class="form-help">Optional. OpenH2O links the facility to the chosen well's record in Wells.</div>
+        {% for error in form.well.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
       </div>
       {% endif %}
 

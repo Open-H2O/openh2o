@@ -72,7 +72,7 @@ unfiltered.
   narrowed the table to.
   {% endcomment %}
   <div class="ledger-card-head">
-    <div class="text-secondary text-base">{{ total_count }} facilit{{ total_count|pluralize:"y,ies" }}: {{ n_source }} source{{ n_source|pluralize }}, {{ n_tp }} treatment plant{{ n_tp|pluralize }}, {{ n_ds }} distribution system{{ n_ds|pluralize }}</div>
+    <div class="text-secondary text-base">{{ total_count }} facilit{{ total_count|pluralize:"y,ies" }}: {{ n_source }} source{{ n_source|pluralize }}, {{ n_tp }} treatment plant{{ n_tp|pluralize }}, {{ n_ds }} distribution system{{ n_ds|pluralize }}{% if n_other %}, {{ n_other }} other{% endif %}</div>
     <div class="text-secondary text-base">EPA&rsquo;s record gives a water type for source facilities only.{% if 'wells' in enabled_modules %} The Well column names each well facility&rsquo;s metered well, or says Not linked.{% endif %}</div>
   </div>
   <table class="data-table">

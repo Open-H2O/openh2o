@@ -55,7 +55,24 @@ SESSION_KEY_ONBOARD_PWSID = "drinking_onboard_pwsid"
 @require_GET
 def onboard_page(request):
     """The PWSID entry screen — one input and an honest note about scope."""
-    return render(request, "drinking/onboard.html", {})
+    return render(
+        request,
+        "drinking/onboard.html",
+        {"site_system": WaterSystem.objects.order_by("pwsid").first()},
+    )
+
+
+def _system_the_site_keeps_instead(pwsid):
+    """The site's existing water system when ``pwsid`` is not one of its systems, else None.
+
+    A site keeps one water system's records. Looking up or confirming the same
+    PWSID again is a refresh and passes; a different one is turned down. A site
+    with no water system takes any PWSID.
+    """
+    existing = list(WaterSystem.objects.order_by("pwsid"))
+    if not existing or any(system.pwsid == pwsid for system in existing):
+        return None
+    return existing[0]
 
 
 def _code_label(code, choices):
@@ -177,6 +194,14 @@ def onboard_lookup(request):
             {"error_kind": "empty", "error": "Enter a PWSID to look up."},
         )
 
+    kept = _system_the_site_keeps_instead(pwsid)
+    if kept is not None:
+        return render(
+            request,
+            "drinking/partials/_onboard_review.html",
+            {"error_kind": "other_system", "kept_system": kept, "pwsid": pwsid},
+        )
+
     # Specific first. PwsidNotFound and EnvirofactsUnavailable both subclass
     # EnvirofactsError, so putting the base class first would swallow both and
     # tell an operator holding a perfectly good PWSID that EPA has no such
@@ -224,6 +249,16 @@ def onboard_commit(request):
             request,
             "drinking/partials/_onboard_result.html",
             {"expired": True},
+        )
+
+    # A stale tab can hold a review opened before the site had a system.
+    kept = _system_the_site_keeps_instead(pwsid)
+    if kept is not None:
+        del request.session[SESSION_KEY_ONBOARD_PWSID]
+        return render(
+            request,
+            "drinking/partials/_onboard_result.html",
+            {"error_kind": "other_system", "kept_system": kept, "pwsid": pwsid},
         )
 
     # Same order as the lookup, and for the same reason. The fetch is a cache

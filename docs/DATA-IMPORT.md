@@ -356,8 +356,9 @@ A row whose month and type of water are already on the site is skipped and count
 so importing the same file twice saves nothing the second time. To enter one month
 by hand, use Enter water produced, purchased or sold on the Production page.
 
-The import screen saves the figures to the site's water system. The command's
-`--pwsid` names the system when the site keeps more than one. For a file in the eAR
+The import screen saves the figures to the site's water system. A site keeps the
+records of one water system; the command's `--pwsid` names the system only when
+someone has added a second one another way, such as on the administration site. For a file in the eAR
 layout, `--unit-for-blank` sets the unit for rows with a blank unit. For a monthly
 log, `--operator-year` sets the report year and `--operator-unit` sets the unit. In
 these commands, replace `XX1234567` with your system's PWSID.
@@ -401,8 +402,9 @@ or with `import_boundary`.
 Setting up a small water system usually starts from its PWSID, the identification
 number of a public water system in EPA's records. The Add a water system page
 (`/drinking/onboard/`) looks up the PWSID in EPA's Envirofacts records. It shows the
-water system's record and its facilities, and it saves them when you confirm. A
-facility that has no state facility ID is skipped, and the review lists it. When the
+water system's record and its facilities, and it saves them when you confirm. A site
+keeps the records of one water system: once a system is on the site, the page turns
+down any other PWSID and saves nothing. A facility that has no state facility ID is skipped, and the review lists it. When the
 PWSID is already on the site, the review says so. If you confirm, OpenH2O updates the
 system and its facilities from EPA's current record.
 
