@@ -175,7 +175,6 @@ def setup_wizard(request):
         ),
         "starting_own": request.GET.get("start") == "own",
         "demonstration_state": demonstration_state,
-        "load_minutes": demonstration.LOAD_MINUTES,
     }
     return render(request, "setup/wizard.html", context)
 
@@ -451,7 +450,6 @@ def _demonstration_context(request, confirming=False):
     state = demonstration.status()
     context = {
         "state": state,
-        "load_minutes": demonstration.LOAD_MINUTES,
         "refresh_seconds": demonstration.REFRESH_SECONDS,
         "can_change": is_administrator(request.user),
         "confirming": False,

@@ -61,10 +61,6 @@ DEMONSTRATION_NAME = "Halvern Valley GSA"
 #: The boundary the demonstration is built around.
 DEMONSTRATION_BOUNDARY = "Merced Subbasin"
 
-#: Minutes a load takes, quoted on the page: 96 seconds on a scratch install
-#: of this version, rounded up. Left empty, the page gives no duration.
-LOAD_MINUTES = 2
-
 #: Seconds between the page's refreshes while a run is under way.
 REFRESH_SECONDS = 10
 

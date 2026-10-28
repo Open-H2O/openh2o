@@ -633,3 +633,12 @@ def test_add_ledger_entry_lists_use_areas_in_number_order():
     Parcel.objects.filter(parcel_number="APN-001").update(address="moved")
     listed = [p.parcel_number for p in ParcelLedgerForm().fields["parcel"].queryset]
     assert listed == ["APN-001", "APN-002", "APN-003"]
+
+
+def test_the_screens_give_no_fixed_load_time(admin_client):
+    # Ruling 35: the load took 88 to 96 s on one computer and about 5.5 minutes
+    # on the staging server, so a screen says "a few minutes" and no figure.
+    for url in (WIZARD, URL):
+        body = admin_client.get(url).content.decode()
+        assert "Loading takes a few minutes" in body
+        assert "about 2 minutes" not in body

@@ -54,7 +54,7 @@ swaps itself for the next state.
   <div class="card-raised">
     <h2 class="card-header-ruled">Load the demonstration data</h2>
     <p class="text-secondary text-sm">The demonstration data is a set of sample records for the Merced Subbasin, a real groundwater basin in the San Joaquin Valley: its boundaries, fields and monitoring stations are public records, and its water accounting data is made up.</p>
-    <p class="text-secondary text-sm">{% if load_minutes %}Loading takes about {{ load_minutes }} minutes, and you can leave this page while it runs. {% endif %}Remove the demonstration data before you add your own records.</p>
+    <p class="text-secondary text-sm">Loading takes a few minutes, and you can leave this page while it runs. Remove the demonstration data before you add your own records.</p>
     {% if can_change %}
     <form method="post" class="form-footer">
       {% csrf_token %}
