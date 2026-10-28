@@ -61,3 +61,18 @@ class RechargeSiteAccountForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["water_account"].empty_label = "Not credited to a water account"
         self.fields["water_account"].required = False
+
+
+class RechargeSiteZoneForm(forms.ModelForm):
+    """Set (or clear) the zone whose basin recharge pool records a site's events."""
+
+    class Meta:
+        model = RechargeSite
+        fields = ["zone"]
+        labels = {"zone": "Zone"}
+        widgets = {"zone": forms.Select(attrs={"class": "form-select"})}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["zone"].empty_label = "No zone"
+        self.fields["zone"].required = False

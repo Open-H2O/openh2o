@@ -520,7 +520,7 @@ def water_balances(request):
 
 @public_in_open_demo
 def methods(request):
-    """Explainer: the settings behind each figure, the canal split and the unmetered estimate.
+    """Explainer: the settings behind each figure and the canal split.
 
     2026-10-10: built from thirteen facts; the worked
     field-month moved off this page and lives on ``water_balances`` alone.
@@ -663,6 +663,7 @@ def glossary(request):
         "Allocation": "One account's share of a zone's groundwater allocation ceiling for a water year. See Help > Allocations & Ceilings.",
         "Analyte": "OpenH2O's record of one analyte, with its name and, when known, its four-digit analyte code from the State Water Board's Division of Drinking Water (DDW). OpenH2O adds a record for each new analyte it finds in an imported lab file.",
         "CalWATRS": "California Water Accounting, Tracking, and Reporting System, the State Water Board's system for reporting surface water diversions. OpenH2O does not submit reports to the state.",
+        "Capacity per fill": "The volume the site holds per fill, as entered. OpenH2O stores it in acre-feet on the recharge site's record and shows it as Capacity per fill (AF).",
         "CDEC": "California Data Exchange Center, where the California Department of Water Resources publishes real-time station readings.",
         "CFS (Cubic Feet per Second)": "The unit OpenH2O uses for rates: the maximum rate on a point of diversion and on a water right, and the maximum flow rate on a monthly diversion record.",
         "CIMIS": "California Irrigation Management Information System, the California Department of Water Resources' network of agricultural weather stations.",
@@ -673,7 +674,7 @@ def glossary(request):
         "Effective Precipitation": "OpenH2O estimates each field's effective precipitation for the month from rainfall in the gridMET weather dataset. By default it uses the USDA-SCS method. See Help > Methods Behind the Numbers.",
         "ELAP": "Environmental Laboratory Accreditation Program, California's program for accrediting laboratories. OpenH2O stores the ELAP certification number of the laboratory that ran each result and shows it on the result's page.",
         "ETAW (Evapotranspiration of Applied Water)": "A field's crop ET minus its effective precipitation for the month. See Help > Methods Behind the Numbers.",
-        "ETAW Met by Surface Water": "The part of a field's ETAW that its surface water delivery meets. It is the delivery, less any part OpenH2O estimated, times the field's irrigation efficiency or the month's ETAW, whichever is smaller. See Help > Methods Behind the Numbers.",
+        "ETAW Met by Surface Water": "The part of a field's ETAW that its surface water delivery meets. It is the delivery times the field's irrigation efficiency or the month's ETAW, whichever is smaller. See Help > Methods Behind the Numbers.",
         "ETAW Met by Groundwater": "The part of a field's ETAW that surface water does not meet, when the field has a well. If the well has no meter, the month's calculated row on the Use Ledger holds this figure. See Help > Methods Behind the Numbers.",
         "Groundwater Extraction": "The groundwater a well pumps in a month. OpenH2O uses the meter reading where the well has a meter, and otherwise divides ETAW met by groundwater by the field's irrigation efficiency. See Help > Methods Behind the Numbers.",
         "Surface Water in Excess of ETAW": "The amount by which a field's surface water delivery times its irrigation efficiency exceeds its ETAW for the month. See Help > Settings explained.",
@@ -701,6 +702,7 @@ def glossary(request):
         "Water Account": "OpenH2O's record of one account, with its name, account number, contact, status and the use areas it holds. OpenH2O works out the account's allocation from those use areas, and its remaining allocation from that allocation and the credits listed on the account's page. See Help > Allocations & Ceilings.",
         "Water Right": "OpenH2O's record of one water right, with its state ID, type, holder, priority date, face value in acre-feet, diversion seasons and status, and the use areas in its place of use.",
         "Zone / Management Zone": "OpenH2O's record of one area that has its own allocation ceilings. It holds the zone's name, type, outline on the map and the use areas assigned to it. See Help > Allocations & Ceilings.",
+        "Well Type": "One of the well types on record in OpenH2O, chosen on the well's page, which lists them. Not recorded means no well type was entered.",
         "Well": "OpenH2O's record of one well, with its state well number, well completion report (WCR) number, local ID, meters, depth, casing and screen interval, and the use areas it irrigates.",
     }
     entries = _glossary_entries(terms)

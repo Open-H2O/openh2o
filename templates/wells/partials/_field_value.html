@@ -6,7 +6,7 @@ Replaces the content of #field-<fieldname>.
   {% if field == "status" %}
     {% include "wells/partials/_status_badge.html" with status=value %}
   {% elif field_meta.type == "select" %}
-    {% if value %}{% for cval, clabel in field_meta.choices %}{% if cval == value|stringformat:"s" %}{{ clabel }}{% endif %}{% endfor %}{% else %}—{% endif %}
+    {% if value %}{% for cval, clabel in field_meta.choices %}{% if cval == value|stringformat:"s" %}{{ clabel }}{% endif %}{% endfor %}{% elif field == "well_type" %}Not recorded{% else %}—{% endif %}
   {% else %}
     {{ value|blank }}
   {% endif %}

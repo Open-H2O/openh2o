@@ -20,7 +20,7 @@ second wrapping div breaking the grid's direct-child selectors).
     {% elif ef.name == "accuracy_band" %}
       {% include "partials/_help_tooltip.html" with label="Accuracy Band" text="The accuracy of the extraction method above, in the bands DWR's annual report table uses. A blank means no band is stated." %}
     {% elif ef.name == "well_type" %}
-      {% include "partials/_help_tooltip.html" with label="Well Type" text="What this well is for: irrigation, domestic, monitoring, and so on." %}
+      {% include "partials/_help_tooltip.html" with label="Well Type" text="Chosen from the well types on record. Not recorded means no well type was entered." %}
     {% endif %}
   </div>
   <div id="field-{{ ef.name }}" class="field-row">
@@ -33,7 +33,7 @@ second wrapping div breaking the grid's direct-child selectors).
       {% if ef.name == "status" %}
         {% include "wells/partials/_status_badge.html" with status=ef.value %}
       {% elif ef.type == "select" %}
-        {% if ef.value %}{% for cval, clabel in ef.choices %}{% if cval == ef.value|stringformat:"s" %}{{ clabel }}{% endif %}{% endfor %}{% else %}—{% endif %}
+        {% if ef.value %}{% for cval, clabel in ef.choices %}{% if cval == ef.value|stringformat:"s" %}{{ clabel }}{% endif %}{% endfor %}{% elif ef.name == "well_type" %}{{ ""|blank }}{% else %}—{% endif %}
       {% elif ef.type == "number" %}
         {% if ef.value is not None %}{% if ef.integer %}{{ ef.value|floatformat:"0" }}{% else %}{{ ef.value|floatformat:2 }}{% endif %}{% else %}—{% endif %}
       {% else %}
@@ -49,4 +49,7 @@ second wrapping div breaking the grid's direct-child selectors).
       &#9998;
     </button>{% endif %}
   </div>
+  {% if ef.name == "well_type" %}
+  <div class="text-tertiary text-xs">{% if ef.choices|length > 1 %}Well types on record: {% for cval, clabel in ef.choices %}{% if cval %}{{ clabel }}{% if not forloop.last %}, {% endif %}{% endif %}{% endfor %}.{% else %}No well types are on record.{% endif %} Not recorded means no well type was entered.</div>
+  {% endif %}
 </div>

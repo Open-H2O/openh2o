@@ -39,7 +39,9 @@ class RechargeSite(models.Model):
     location = models.PointField(srid=4326)
     geometry = models.MultiPolygonField(srid=4326, null=True, blank=True)
     capacity_acre_feet = models.DecimalField(
-        max_digits=12, decimal_places=4, null=True, blank=True
+        "Capacity per fill (AF)",
+        max_digits=12, decimal_places=4, null=True, blank=True,
+        help_text="The volume the site holds per fill, as entered.",
     )
     zone = models.ForeignKey(
         "geography.Zone", on_delete=models.SET_NULL, null=True, blank=True,

@@ -12,9 +12,8 @@ and a whole-body check would pass with no link in the message at all. Where
 the linked page is a create form, a Viewer (who is refused on it,
 core/access.py) gets the list instead, and that branch is asserted too.
 
-One requirement has no place: no screen sets a recharge site's zone
-(RechargeSite.zone is written only by seed commands and the Django admin). The
-flash says so plainly, and the test pins that it sends the reader nowhere.
+A recharge site's zone is set on the site's page and on its add form; the
+flash for a site with no zone links that control.
 """
 from io import StringIO
 
@@ -176,8 +175,8 @@ class TestTheCalwatrsLineFollowsTheReportingModule:
 # -- ISS-182: the recharge site with no zone ---------------------------------
 
 
-class TestTheNoZoneMessageSaysThereIsNoScreen:
-    def test_the_flash_is_complete_sentences_with_no_dash(self, writer):
+class TestTheNoZoneMessageLinksTheZoneControl:
+    def test_the_flash_is_complete_sentences_and_links_the_site_page_control(self, writer):
         site = RechargeSiteFactory(zone=None)
         body = writer.post(
             reverse("recharge:event_create", args=[site.pk]),
@@ -185,14 +184,14 @@ class TestTheNoZoneMessageSaysThereIsNoScreen:
         ).content.decode()
         message = (
             "Event saved. This site has no zone, so OpenH2O did not deposit the "
-            "recharge to a basin recharge pool. No page sets a recharge site's "
-            "zone yet."
+            "recharge to a basin recharge pool."
         )
         assert message.replace("'", "&#x27;") in body
-        flash = _fragment(body, "Event saved.", 160)
+        flash = _fragment(body, "Event saved.", 260)
         assert "\u2014" not in flash and "&mdash;" not in flash
         assert "auto-distribute" not in body
-        assert "<a " not in flash, "the flash links a page that cannot set a zone"
+        assert "No page sets" not in body
+        assert "<a href=\"#site-zone\" class=\"data-table-link\">Set the site's zone</a>." in flash
 
 
 # -- ISS-182: import_ledger_csv's missing water year -------------------------

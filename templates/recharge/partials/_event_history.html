@@ -18,7 +18,7 @@
   <div class="text-secondary text-base">Volumes are in acre-feet. Each water year has its own total.</div>
 </div>
 {% if ledger_msg %}
-<p class="text-tertiary text-sm mb-sm" style="padding: 0 var(--space-lg);">{{ ledger_msg }}</p>
+<p class="text-tertiary text-sm mb-sm" style="padding: 0 var(--space-lg);">{{ ledger_msg }}{% if zone_missing %} <a href="#site-zone" class="data-table-link">Set the site's zone</a>.{% endif %}</p>
 {% endif %}
 {% if event_groups %}
 <div class="table-scroll">
@@ -97,3 +97,4 @@
 </form>
 </div>
 {% endif %}
+{% if panel_oob %}{% include "recharge/partials/_water_recharged.html" with oob=True %}{% endif %}

@@ -68,9 +68,9 @@
         {% comment %}A well operator with a WCR in hand has the coordinates
              before the map. The strip's click/drag echo, then two typed
              inputs that place the marker the same way a click does; shown
-             only in point mode (setDrawMode, below).{% endcomment %}
+             for every type (a recharge site takes them in place of an outline).{% endcomment %}
         <div class="coord-display coord-display-row" id="coord-display">
-          <span class="text-xs text-tertiary" id="coord-display-text">{% if preselect_type == "well" or preselect_type == "diversion" %}Click the map to set the location.{% else %}Click the map to draw the outline.{% endif %}</span>
+          <span class="text-xs text-tertiary" id="coord-display-text">{% if preselect_type == "well" or preselect_type == "diversion" %}Click the map to set the location.{% elif preselect_type == "storage" or preselect_type == "recharge_site" %}Click the map to draw the outline, or type a latitude and longitude.{% else %}Click the map to draw the outline.{% endif %}</span>
           <div class="coord-inputs" id="coord-inputs">
             <div class="form-group">
               <label class="field-label" for="latitude">Latitude</label>
@@ -277,6 +277,17 @@
           <div class="form-group">
             <label class="field-label" for="capacity_af_storage">Capacity per fill (acre-feet)</label>
             <input type="number" id="capacity_af_storage" name="capacity_acre_feet" step="0.0001" class="form-input" placeholder="e.g. 120" value="{{ submitted.capacity_acre_feet|default:'' }}">
+            <p class="text-xs text-tertiary">The volume the site holds per fill, as entered.</p>
+          </div>
+          <div class="form-group">
+            <label class="field-label" for="storage_zone">Zone</label>
+            <select id="storage_zone" name="storage_zone" class="form-select">
+              <option value="">No zone</option>
+              {% for z in zones %}
+              <option value="{{ z.pk }}" {% if submitted.storage_zone == z.pk|stringformat:"s" %}selected{% endif %}>{{ z.name }}</option>
+              {% endfor %}
+            </select>
+            <p class="text-xs text-tertiary">Recharge at this site is recorded in the basin recharge pool of its zone. A site with no zone records none; the zone can be set later on the site's page.</p>
           </div>
         </div>
       </div>
@@ -297,11 +308,22 @@
             <div class="form-group">
               <label class="field-label" for="capacity_af_recharge">Capacity per fill (acre-feet)</label>
               <input type="number" id="capacity_af_recharge" name="capacity_acre_feet" step="0.0001" class="form-input" placeholder="e.g. 500" value="{{ submitted.capacity_acre_feet|default:'' }}">
+              <p class="text-xs text-tertiary">The volume the site holds per fill, as entered.</p>
             </div>
             <div class="form-group">
               <label class="field-label" for="operator">Operator</label>
               <input type="text" id="operator" name="operator" class="form-input" placeholder="Operating entity" value="{{ submitted.operator|default:'' }}">
             </div>
+          </div>
+          <div class="form-group">
+            <label class="field-label" for="zone">Zone</label>
+            <select id="zone" name="zone" class="form-select">
+              <option value="">No zone</option>
+              {% for z in zones %}
+              <option value="{{ z.pk }}" {% if submitted.zone == z.pk|stringformat:"s" %}selected{% endif %}>{{ z.name }}</option>
+              {% endfor %}
+            </select>
+            <p class="text-xs text-tertiary">Recharge at this site is recorded in the basin recharge pool of its zone. A site with no zone records none; the zone can be set later on the site's page.</p>
           </div>
         </div>
       </div>
@@ -595,7 +617,9 @@
       hideCoordWarning();
       return;
     }
-    placePoint({ lng: lng, lat: lat }, true);
+    // In polygon mode the typed pair is posted as is and never replaces a
+    // drawn outline; only point mode puts a marker on the map.
+    if (drawMode === 'point') placePoint({ lng: lng, lat: lat }, true);
     if (lat < US_BOUNDS.latMin || lat > US_BOUNDS.latMax || lng < US_BOUNDS.lngMin || lng > US_BOUNDS.lngMax) {
       showCoordWarning('Outside the United States; check the sign of the longitude.');
     }
@@ -674,11 +698,8 @@
     drawMode = mode;
     document.getElementById('draw-point').classList.toggle('active', mode === 'point');
     document.getElementById('draw-polygon').classList.toggle('active', mode === 'polygon');
-    // Typed coordinates place a POINT, so the inputs make sense only
-    // in point mode (a well or a diversion; storage when it is a tank).
-    var coordInputs = document.getElementById('coord-inputs');
-    if (coordInputs) coordInputs.style.display = mode === 'point' ? '' : 'none';
-    if (mode !== 'point') hideCoordWarning();
+    // In polygon mode the pair still posts: the server uses it when no
+    // outline is drawn, and a drawn outline wins.
     // The line under the map follows the mode while nothing is placed, a
     // storage type switch included.
     if (!document.getElementById('geometry_json').value) setCoordText(placeHint());
@@ -686,7 +707,7 @@
   }
 
   function placeHint() {
-    return drawMode === 'polygon' ? 'Click the map to draw the outline.' : 'Click the map to set the location.';
+    return drawMode === 'polygon' ? 'Click the map to draw the outline, or type a latitude and longitude.' : 'Click the map to set the location.';
   }
 
   function updateGeometry(geojson) {

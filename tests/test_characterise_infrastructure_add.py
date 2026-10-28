@@ -356,20 +356,20 @@ def test_diversion_stale_water_right_falls_back_to_unlinked(client_in):
 
 def test_recharge_site_without_a_shape_asks_for_an_outline(client_in):
     resp = client_in.post(_url(), {"infra_type": "recharge_site", "name": "R"})
-    assert _error_of(resp) == "Draw the outline on the map."
+    assert _error_of(resp) == "Draw the outline on the map, or type a latitude and longitude."
     assert RechargeSite.objects.count() == 0
 
 
 def test_storage_without_a_shape_asks_for_an_outline(client_in):
     resp = client_in.post(_url(), {"infra_type": "storage", "name": "S"})
-    assert _error_of(resp) == "Draw the outline on the map."
+    assert _error_of(resp) == "Draw the outline on the map, or type a latitude and longitude."
 
 
 def test_storage_tank_without_a_shape_asks_for_a_tank_point(client_in):
     resp = client_in.post(
         _url(), {"infra_type": "storage", "name": "S", "storage_type": "storage_tank"}
     )
-    assert _error_of(resp) == "Place the tank on the map."
+    assert _error_of(resp) == "Place the tank on the map, or type a latitude and longitude."
 
 
 def test_recharge_site_tank_flag_does_not_change_its_message(client_in):
@@ -377,7 +377,7 @@ def test_recharge_site_tank_flag_does_not_change_its_message(client_in):
         _url(),
         {"infra_type": "recharge_site", "name": "R", "storage_type": "storage_tank"},
     )
-    assert _error_of(resp) == "Draw the outline on the map."
+    assert _error_of(resp) == "Draw the outline on the map, or type a latitude and longitude."
 
 
 def test_recharge_site_polygon_uses_the_centroid_as_location(client_in):

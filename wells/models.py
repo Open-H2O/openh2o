@@ -95,7 +95,9 @@ class Well(models.Model):
     )
     name = models.CharField(max_length=200)
     well_type = models.ForeignKey(
-        WellType, on_delete=models.SET_NULL, null=True, blank=True
+        WellType, on_delete=models.SET_NULL, null=True, blank=True,
+        help_text="Chosen from the well types on record. Blank means no "
+        "well type was entered.",
     )
     location = models.PointField(srid=4326)
     depth_ft = models.DecimalField(

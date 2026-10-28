@@ -179,9 +179,17 @@ def _add_context(infra_type, **extra):
         # and this context is built for every add-page render, not
         # only a diversion one.
         "water_rights": _water_rights_for_select(),
+        "zones": _zones_for_select(),
     }
     context.update(extra)
     return context
+
+
+def _zones_for_select():
+    """Every zone, by name, for the recharge site's Zone select."""
+    from geography.models import Zone
+
+    return list(Zone.objects.order_by("name").only("pk", "name"))
 
 
 def _water_rights_for_select():
@@ -361,8 +369,14 @@ def _add_recharge_site(
 
     if not location and not geometry:
         if infra_type == "storage" and request.POST.get("storage_type") == "storage_tank":
-            return _add_error(request, infra_type, "Place the tank on the map.")
-        return _add_error(request, infra_type, "Draw the outline on the map.")
+            return _add_error(
+                request, infra_type,
+                "Place the tank on the map, or type a latitude and longitude.",
+            )
+        return _add_error(
+            request, infra_type,
+            "Draw the outline on the map, or type a latitude and longitude.",
+        )
 
     if geometry and not location:
         location = geometry.centroid
@@ -375,8 +389,21 @@ def _add_recharge_site(
         return _add_error(request, infra_type, str(exc))
 
     site_type = request.POST.get("site_type", "spreading_basin")
+    zone_field = "zone"
     if infra_type == "storage":
         site_type = request.POST.get("storage_type", "storage_pond")
+        zone_field = "storage_zone"
+
+    # The zone whose basin recharge pool records the site's events; blank
+    # means none, and a value that is not a zone on this site is refused.
+    from geography.models import Zone
+
+    zone = None
+    zone_raw = request.POST.get(zone_field, "").strip()
+    if zone_raw:
+        zone = Zone.objects.filter(pk=zone_raw).first() if zone_raw.isdigit() else None
+        if zone is None:
+            return _add_error(request, infra_type, "Choose a zone from the list.")
 
     site = RechargeSite.objects.create(
         name=name,
@@ -384,6 +411,7 @@ def _add_recharge_site(
         geometry=geometry,
         site_type=site_type,
         capacity_acre_feet=capacity_acre_feet,
+        zone=zone,
         status=status,
         operator=request.POST.get("operator", ""),
         notes=notes,

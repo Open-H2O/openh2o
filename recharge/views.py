@@ -28,7 +28,7 @@ from core.map_labels import map_label
 from accounting.models import ReportingPeriod
 from accounting.services import current_period_id as compute_current_period_id
 from core.workspace import detail_response, list_response
-from recharge.forms import RechargeEventForm, RechargeSiteAccountForm
+from recharge.forms import RechargeEventForm, RechargeSiteAccountForm, RechargeSiteZoneForm
 from recharge.models import RechargeMeasurement, RechargeEvent, RechargeSite
 
 
@@ -210,6 +210,7 @@ def _recharge_site_detail_context(site):
         "total_measurement_count": total_measurement_count,
         "event_form": RechargeEventForm(),
         "account_form": RechargeSiteAccountForm(instance=site),
+        "zone_form": RechargeSiteZoneForm(instance=site),
         "geojson": _site_geojson(site),
     }
 
@@ -365,25 +366,41 @@ def recharge_event_create(request, pk):
         })
     event.save()
     ledger_msg = _credit_event(event, "Event saved.")
-    return _history_response(request, site, ledger_msg=ledger_msg)
+    return _history_response(
+        request, site, ledger_msg=ledger_msg, zone_missing=site.zone_id is None
+    )
 
 
-def _history_response(request, site, *, event_form=None, ledger_msg=None):
-    """The event-history partial for a site, with a sentence about what just happened."""
+def _history_response(
+    request, site, *, event_form=None, ledger_msg=None, zone_missing=False
+):
+    """The event-history partial for a site, with a sentence about what just happened.
+
+    The "Water recharged" panel rides along out of band, built from the same
+    event groups as the table, so the two agree as soon as the response lands.
+    """
     events = list(
         RechargeEvent.objects.filter(recharge_site=site)
         .select_related("water_type")
         .order_by("-start_date")
     )
     event_groups = _group_recharge_events(events, ReportingPeriod.objects.all())
+    current_period, current_totals, previous_totals = _current_and_previous_totals(
+        event_groups
+    )
     context = {
         "site": site,
         "events": events,
         "event_groups": event_groups,
         "event_form": event_form or RechargeEventForm(),
+        "current_period": current_period,
+        "current_totals": current_totals,
+        "previous_totals": previous_totals,
+        "panel_oob": True,
     }
     if ledger_msg:
         context["ledger_msg"] = ledger_msg
+        context["zone_missing"] = zone_missing
     return render(request, "recharge/partials/_event_history.html", context)
 
 
@@ -396,15 +413,12 @@ def _credit_event(event, lead):
     try:
         create_recharge_ledger_entries(event)
     except ValueError:
-        # A message that names a requirement names the place.
-        # No screen sets a recharge site's zone (RechargeSite.zone is written
-        # only by the seed commands and the Django admin; the Add Infrastructure
-        # form and the Zones pages never touch it), so the sentence says so
-        # rather than sending the reader to a page that cannot do it.
+        # A message that names a requirement names the place: the history
+        # partial adds the link to the site page's Zone control after this
+        # sentence (``zone_missing``).
         return (
             f"{lead} This site has no zone, so OpenH2O did not deposit the "
-            "recharge to a basin recharge pool. No page sets a recharge site's "
-            "zone yet."
+            "recharge to a basin recharge pool."
         )
     if site.water_account_id:
         credited = event.volume_acre_feet * (1 - leave_behind_share())
@@ -416,6 +430,17 @@ def _credit_event(event, lead):
         f"{lead} The basin recharge pool for the site's zone records the "
         "water. A water account is not credited, because this site names none."
     )
+
+
+@login_required
+@require_POST
+def recharge_site_zone(request, pk):
+    """Set (or clear) the zone whose basin recharge pool records this site's events."""
+    site = get_object_or_404(RechargeSite, pk=pk)
+    form = RechargeSiteZoneForm(request.POST, instance=site)
+    if form.is_valid():
+        form.save()
+    return redirect("recharge:detail", pk=pk)
 
 
 @login_required
