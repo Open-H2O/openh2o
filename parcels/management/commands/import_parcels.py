@@ -20,6 +20,10 @@ from django.utils import timezone
 from parcels.models import Parcel, ParcelStaging
 
 
+class _PromotionRefused(Exception):
+    """Raised inside the promotion transaction to roll every row back."""
+
+
 class Command(BaseCommand):
     help = "Import parcels from GeoJSON or Shapefile into the staging table, then promote to Parcel."
 
@@ -70,15 +74,22 @@ class Command(BaseCommand):
         staged_ids, staged_pending, staged_duplicate, staged_error = self._stage_features(
             layer, parcel_number_field
         )
+        staged_error_outline = self._outline_refusals
 
         # Promote pending staging records to Parcel table
         imported_count = 0
         if not dry_run:
-            promoted, failed = self._promote_staged(staged_ids, owner_field)
-            imported_count += promoted
-            staged_error += failed
+            if staged_error_outline:
+                # One unreadable outline stops the whole import: nothing is
+                # promoted, and every refused feature has been named above.
+                imported_count = 0
+            else:
+                promoted, failed = self._promote_staged(staged_ids, owner_field)
+                imported_count += promoted
+                staged_error += failed
         else:
-            imported_count = staged_pending  # Would-be count
+            # Would-be count: a real run with a refused outline imports none.
+            imported_count = 0 if staged_error_outline else staged_pending
 
         # Clear this run's staging scratch so the table can't accumulate
         # across imports or bleed a leftover row into a later run. Duplicate/error
@@ -125,12 +136,13 @@ class Command(BaseCommand):
         staged_pending = 0
         staged_duplicate = 0
         staged_error = 0
+        self._outline_refusals = 0
         # Track the staging rows THIS invocation creates, so promotion
         # is scoped to this run (never a leftover `pending` row from an aborted
         # earlier import) and so this run can clear its own scratch afterward.
         staged_ids: list[int] = []
 
-        for feature in layer:
+        for line, feature in enumerate(layer, start=1):
             parcel_number = None
             try:
                 # Extract parcel number
@@ -150,6 +162,16 @@ class Command(BaseCommand):
 
                 raw_data = self._feature_properties(layer, feature)
                 geom = self._feature_geometry(feature, parcel_number)
+                if geom is None:
+                    self.stdout.write(
+                        self.style.ERROR(
+                            f"  Refused {parcel_number} (feature {line}): "
+                            "its outline cannot be read."
+                        )
+                    )
+                    staged_error += 1
+                    self._outline_refusals += 1
+                    continue
 
                 # Duplicate detection
                 is_duplicate = Parcel.objects.filter(parcel_number=parcel_number).exists()
@@ -190,7 +212,7 @@ class Command(BaseCommand):
         return raw_data
 
     def _feature_geometry(self, feature: Any, parcel_number: str) -> MultiPolygon | None:
-        """Return the feature geometry as a 4326 MultiPolygon, or None (with a warning) if unusable."""
+        """Return the feature geometry as a 4326 MultiPolygon, or None if it cannot be read."""
         # Extract and normalise geometry
         geom = None
         try:
@@ -205,9 +227,7 @@ class Command(BaseCommand):
             geom = geos_geom
         except Exception as exc:
             self.stdout.write(
-                self.style.WARNING(
-                    f"  {parcel_number}: geometry error — {exc}. Staging without geometry."
-                )
+                self.style.WARNING(f"  {parcel_number}: geometry error: {exc}.")
             )
         return geom
 
@@ -221,28 +241,37 @@ class Command(BaseCommand):
         pending_qs = ParcelStaging.objects.filter(
             id__in=staged_ids, status="pending"
         )
-        with transaction.atomic():
-            for staging in pending_qs:
-                try:
-                    owner_name = staging.raw_data.get(owner_field, "") or ""
-                    Parcel.objects.create(
-                        parcel_number=staging.parcel_number,
-                        owner_name=str(owner_name).strip(),
-                        geometry=staging.geometry,
-                        status="active",
-                    )
-                    staging.status = "imported"
-                    staging.imported_at = timezone.now()
-                    staging.save(update_fields=["status", "imported_at"])
-                    imported_count += 1
-                except Exception as exc:
-                    staging.status = "rejected"
-                    staging.error_message = str(exc)
-                    staging.save(update_fields=["status", "error_message"])
-                    failed_count += 1
-                    self.stdout.write(
-                        self.style.ERROR(
-                            f"  Failed to promote {staging.parcel_number}: {exc}"
+        refused: list[str] = []
+        try:
+            with transaction.atomic():
+                for staging in pending_qs:
+                    try:
+                        with transaction.atomic():
+                            owner_name = staging.raw_data.get(owner_field, "") or ""
+                            Parcel.objects.create(
+                                parcel_number=staging.parcel_number,
+                                owner_name=str(owner_name).strip(),
+                                geometry=staging.geometry,
+                                status="active",
+                            )
+                        imported_count += 1
+                    except Exception as exc:
+                        failed_count += 1
+                        refused.append(staging.parcel_number)
+                        self.stdout.write(
+                            self.style.ERROR(
+                                f"  Refused {staging.parcel_number}: {exc}"
+                            )
                         )
-                    )
+                if failed_count:
+                    raise _PromotionRefused
+        except _PromotionRefused:
+            self.stdout.write(
+                self.style.ERROR(
+                    "  Nothing was imported. Refused: " + ", ".join(refused) + "."
+                )
+            )
+            return 0, failed_count
+        now = timezone.now()
+        pending_qs.update(status="imported", imported_at=now)
         return imported_count, failed_count

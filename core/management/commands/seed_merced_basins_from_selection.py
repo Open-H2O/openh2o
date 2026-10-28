@@ -136,7 +136,7 @@ class Command(BaseCommand):
         boundary = Boundary.objects.filter(name=MERCED_BOUNDARY).first()
         if boundary is None:
             raise CommandError(
-                f'"{MERCED_BOUNDARY}" boundary not found — run seed_merced_base '
+                f'"{MERCED_BOUNDARY}" boundary not found. Run seed_merced_base '
                 "and auto_populate first."
             )
         gsa_zones = list(
@@ -154,9 +154,9 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(
             f"\nMerced recharge areas rebuilt from QGIS selection:\n"
-            f"  EL NIDO (pure recharge) — {n_basins} spreading basins fed by "
+            f"  EL NIDO (pure recharge): {n_basins} spreading basins fed by "
             f"{n_intakes} shared intake on the El Nido Canal\n"
-            f"  MERCED RIVER (Flood-MAR) — {n_floodmar} dual-purpose recharge areas "
+            f"  MERCED RIVER (Flood-MAR): {n_floodmar} dual-purpose recharge areas "
             f"on cropland served by {RIVER_POD_CODE}"
         ))
 
@@ -193,7 +193,7 @@ class Command(BaseCommand):
                         f"Pure-recharge spreading basin on open non-agricultural "
                         f"land beside the {feeds_via}. Flooded when water is "
                         f"diverted from the canal to percolate into the aquifer; "
-                        f"no crops, no ET. Hand-selected in QGIS (Phase 62)."
+                        f"no crops, no ET."
                     ),
                 },
             )
@@ -260,7 +260,7 @@ class Command(BaseCommand):
             right_type = WaterRightType.objects.get(name=RECHARGE_RIGHT_TYPE)
         except WaterRightType.DoesNotExist:
             raise CommandError(
-                f'Water right type "{RECHARGE_RIGHT_TYPE}" not found — run '
+                f'Water right type "{RECHARGE_RIGHT_TYPE}" not found. Run '
                 "seed_data first. This command never creates a right type: "
                 "surface.WaterRightType is reference data seed_data owns."
             )
@@ -299,7 +299,7 @@ class Command(BaseCommand):
         ).first()
         if river_pod is None:
             raise CommandError(
-                f"{RIVER_POD_CODE} not found — run seed_merced_operations first."
+                f"{RIVER_POD_CODE} not found. Run seed_merced_operations first."
             )
         n = 0
         for ft in features:
@@ -323,7 +323,7 @@ class Command(BaseCommand):
                         f"cropland served by the Merced River diversion "
                         f"({RIVER_POD_CODE}). Normal agricultural use most of the "
                         f"year; deliberately flooded during storm events to "
-                        f"recharge the aquifer. Hand-selected in QGIS (Phase 62)."
+                        f"recharge the aquifer."
                     ),
                 },
             )

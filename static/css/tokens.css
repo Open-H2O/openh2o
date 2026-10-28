@@ -187,11 +187,9 @@
     --color-entity-blue: #1B7FAF;      /* Parcels, Zones */
     --color-entity-blue-bright: #3DB4E0;  /* Drinking-water facilities */
     --color-entity-boundary: #E4A317;  /* District outline — same value as gold */
-    /* GSA zone fills. This is NOT --color-supply (#55B678); the two differ by a
-       few points and no reason for the difference is recorded. Pinned at the value
-       the map paints today because changing a zone fill is a visible map change;
-       a design pass should reconcile the two or justify keeping both. */
-    --color-entity-green: #52b788;
+    /* GSA zone fills: the same green as --color-supply, so a zone's area on the
+       map reads as the app's supply figures do. Keep the two values equal. */
+    --color-entity-green: #55B678;
     /* Hydrography strokes — GIS hydrology house style, not the app palette. */
     --color-entity-river: #45d0e8;     /* Natural channels */
     --color-entity-canal: #7ee8a0;     /* Man-made canals */

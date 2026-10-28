@@ -62,14 +62,7 @@ SKIP_FILES = {"static/css/output.css"}
 
 #: (path, text on the line, reason). Each entry is a line that must keep its
 #: reference for now; the reason says why.
-ALLOWED = (
-    (
-        "core/management/commands/seed_merced_basins_from_selection.py",
-        "Hand-selected in QGIS (Phase 62)",
-        "stored demonstration text that the demo seeds into the database and "
-        "a page shows; its wording is held for the maintainer's review",
-    ),
-)
+ALLOWED = ()
 
 
 def _scanned_files():

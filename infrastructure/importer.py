@@ -232,7 +232,7 @@ _WELL_ALIASES = {
     "capacity_gpm": {"capacity", "capacity_gpm", "gpm", "max_gpm", "pump_capacity"},
     "tested_yield_gpm": {"yield", "yield_gpm", "tested_yield", "well_yield"},
     "depth_ft": {"depth", "total_depth", "depth_ft", "totalcompleteddepth"},
-    "casing_diameter_in": {"casing_dia", "casing_diameter", "casing_in"},
+    "casing_diameter_in": {"casing_dia", "casing_diameter", "casing_in", "casingdiameter"},
     "casing_material": {"casing_material", "casing_mat"},
     "screen_top_ft": {"screen_top", "perf_top", "screen_top_ft"},
     "screen_bottom_ft": {"screen_bottom", "perf_bottom", "screen_bottom_ft"},

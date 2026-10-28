@@ -28,7 +28,7 @@ var OH2O = window.OH2O = window.OH2O || {};
 /* ── Entity color palette ─────────────────────────────────────────────── */
 OH2O.colors = {
     gold: '#E4A317', teal: '#4ECDC4', purple: '#7B68EE', red: '#FF6B6B',
-    blue: '#1B7FAF', blueBright: '#3DB4E0', green: '#52b788', boundary: '#E4A317',
+    blue: '#1B7FAF', blueBright: '#3DB4E0', green: '#55B678', boundary: '#E4A317',
     // Hydrography strokes — the GIS hydrology house style (Pit River ACP / NHD
     // maps): cyan natural channels, mint-green man-made canals, both solid, width
     // carrying stream order. Bright solid lines read over the aerial basemap and

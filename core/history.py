@@ -166,12 +166,26 @@ def command_context(argv=None):
     """
     argv = list(sys.argv if argv is None else argv)
     name = argv[1] if len(argv) > 1 else ""
-    if not name or name.startswith("-") or name in UNATTRIBUTED_COMMANDS:
-        yield
-        return
-    _setup_django_from_argv(argv)
-    with pghistory.context(command=name, argv=argv[1:]):
-        yield
+    try:
+        if not name or name.startswith("-") or name in UNATTRIBUTED_COMMANDS:
+            yield
+            return
+        _setup_django_from_argv(argv)
+        with pghistory.context(command=name, argv=argv[1:]):
+            yield
+    except Exception as exc:  # noqa: BLE001 - only the lock's refusal is translated
+        message = _lock_message(exc)
+        if message is None:
+            raise
+        sys.stderr.write(f"CommandError: {message}\n")
+        raise SystemExit(1) from None
+
+
+def _lock_message(exc):
+    """The finalized-year sentence when ``exc`` is the lock's refusal, else None."""
+    from accounting.locks import lock_error_message
+
+    return lock_error_message(exc)
 
 
 def clean_note(text):

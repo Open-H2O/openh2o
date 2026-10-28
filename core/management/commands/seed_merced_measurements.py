@@ -303,7 +303,7 @@ class Command(BaseCommand):
         )
         if not sites:
             self.stderr.write(self.style.ERROR(
-                "No Merced recharge areas found — run "
+                "No Merced recharge areas found. Run "
                 "seed_merced_basins_from_selection first."
             ))
             return
@@ -407,7 +407,7 @@ class Command(BaseCommand):
                     depth = (0.92 + 0.45 * size) * fill
                     depth_note = (
                         f"Flooded depth across the orchard middles during the "
-                        f"{month} fill. Cropland is run thin — held under about a "
+                        f"{month} fill. Cropland is run thin, held under about a "
                         f"foot so the trees are never standing in water."
                     )
                 else:
@@ -452,7 +452,7 @@ class Command(BaseCommand):
                             "gates were shut."
                             if idx == 0 else
                             "Percolation re-checked late in the season. Down a "
-                            "little on December — fines off the storm have started "
+                            "little on December: fines off the storm have started "
                             "to seal the floor, which is normal and comes back "
                             "with a summer disc."
                         ),
@@ -503,7 +503,7 @@ class Command(BaseCommand):
             well = Well.objects.filter(well_registration_id=reg).first()
             if well is None:
                 self.stderr.write(self.style.WARNING(
-                    f"  {reg}: well not present — monitoring record skipped"
+                    f"  {reg}: well not present, monitoring record skipped"
                 ))
                 continue
             MonitoringWell.objects.update_or_create(
@@ -534,7 +534,7 @@ class Command(BaseCommand):
         op = ObservedProperty.objects.filter(key=key).first()
         if op is None:
             self.stderr.write(self.style.ERROR(
-                f"ObservedProperty '{key}' missing — run "
+                f"ObservedProperty '{key}' missing. Run "
                 f"seed_observed_properties first; measurements need it to name "
                 f"what they measure."
             ))
@@ -616,8 +616,8 @@ class Command(BaseCommand):
                     quality = "estimated"
                     notes = (
                         f"Totalizer read for {month_name}. Read missed on the "
-                        f"scheduled visit — the gate was locked and the well was "
-                        f"down — so the month is estimated from the following "
+                        f"scheduled visit: the gate was locked and the well was "
+                        f"down, so the month is estimated from the following "
                         f"read and the field's irrigation schedule."
                     )
                 elif m_idx >= len(WY_MONTHS) - 2:
@@ -634,7 +634,7 @@ class Command(BaseCommand):
                 elif delta == 0:
                     quality = "approved"
                     notes = (
-                        f"Totalizer read for {month_name}. No change on the face — "
+                        f"Totalizer read for {month_name}. No change on the face: "
                         f"the pump did not run this month."
                     )
                 else:
