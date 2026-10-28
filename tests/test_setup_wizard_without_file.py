@@ -37,6 +37,8 @@ SESSION_KEY_PROVIDER_INDEX = "setup_wizard_provider_index"
 SESSION_KEY_SELECTED_STEPS = "setup_wizard_selected_steps"
 
 WIZARD_URL = reverse("setup:wizard")
+# On a clean site the wizard first asks how to start; ?start=own is the boundary step.
+BOUNDARY_STEP = WIZARD_URL + "?start=own"
 CONFIRM_URL = reverse("setup:confirm")
 RUN_URL = reverse("setup:run")
 PROGRESS_URL = reverse("setup:progress")
@@ -86,7 +88,7 @@ class TestStepOneThreeWaysIn:
         "none yet" note, not hidden."""
         assert Boundary.objects.count() == 0
         client = _admin_client()
-        resp = client.get(WIZARD_URL)
+        resp = client.get(BOUNDARY_STEP)
         assert resp.status_code == 200
         body = resp.content.decode()
         assert "Select an existing boundary" in body
@@ -98,7 +100,7 @@ class TestStepOneThreeWaysIn:
 
     def test_fresh_instance_shows_all_three_cards(self):
         client = _admin_client()
-        resp = client.get(WIZARD_URL)
+        resp = client.get(BOUNDARY_STEP)
         body = resp.content.decode()
         assert "Upload a boundary file" in body
         assert "Type an extent" in body
@@ -108,7 +110,7 @@ class TestStepOneThreeWaysIn:
         """With one boundary on file the control is live and lists it."""
         b = _boundary()
         client = _admin_client()
-        resp = client.get(WIZARD_URL)
+        resp = client.get(BOUNDARY_STEP)
         body = resp.content.decode()
         assert "Select an existing boundary" in body
         assert 'id="boundary_id" class="form-select" disabled' not in body
@@ -118,7 +120,7 @@ class TestStepOneThreeWaysIn:
 
     def test_start_without_one_is_a_link_to_the_front_page(self):
         client = _admin_client()
-        resp = client.get(WIZARD_URL)
+        resp = client.get(BOUNDARY_STEP)
         body = resp.content.decode()
         assert f'href="{reverse("index")}"' in body
         assert "Start without one" in body
@@ -294,7 +296,7 @@ def test_start_without_one_never_touches_siteconfig_or_boundary():
 
     before_siteconfig = SiteConfig.objects.count()
     client = _admin_client()
-    resp = client.get(WIZARD_URL)
+    resp = client.get(BOUNDARY_STEP)
     assert resp.status_code == 200
     # The card is a plain link; visiting the wizard page itself must not have
     # created anything either.

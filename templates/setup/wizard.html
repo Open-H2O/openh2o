@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}Setup wizard: Boundary - Open Water Accounting Platform{% endblock %}
-{% block page_title %}Setup wizard: Boundary{% endblock %}
+{% block title %}Setup wizard{% if not choosing %}: Boundary{% endif %} - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Setup wizard{% if not choosing %}: Boundary{% endif %}{% endblock %}
 {% block page_head_class %}page-head--medium{% endblock %}
 
 {% block breadcrumbs %}
@@ -11,9 +11,9 @@
     <span class="breadcrumb-separator">/</span>
     <a href="{% url 'setup:wizard' %}">Setup Wizard</a>
     <span class="breadcrumb-separator">/</span>
-    <span class="breadcrumb-current">Boundary</span>
+    <span class="breadcrumb-current">{% if choosing %}Start{% else %}Boundary{% endif %}</span>
   </nav>
-  <p class="page-description">Upload a boundary, type an extent, or start without one.</p>
+  <p class="page-description">{% if choosing %}How do you want to start?{% else %}Upload a boundary, type an extent, or start without one.{% endif %}</p>
 </div>
 {% endblock %}
 
@@ -24,7 +24,45 @@
   <div class="card-raised">
     <p class="text-tertiary text-sm">You can read this deployment's data but not set it up. An administrator can change your role on the Users page.</p>
   </div>
+  {% elif choosing %}
+
+  {% comment %}The first question, asked only on a site the demonstration can
+  load into. The load button posts to the Demonstration data page, which runs
+  it and shows how far it has got.{% endcomment %}
+  {% include "partials/_messages.html" %}
+
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Try OpenH2O with the demonstration data</h2>
+    <p class="text-secondary text-sm">The demonstration data is a set of sample records for the Merced Subbasin, a real groundwater basin in the San Joaquin Valley: its boundaries, fields and monitoring stations are public records, and its water accounting data is made up.</p>
+    <p class="text-secondary text-sm">{% if load_minutes %}Loading takes about {{ load_minutes }} minutes. {% endif %}Remove the demonstration data before you add your own records.</p>
+    <form method="post" action="{% url 'setup:demonstration' %}" class="form-footer">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="load">
+      <button type="submit" class="btn-primary">Load the demonstration data</button>
+    </form>
+  </div>
+
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Start with your own records</h2>
+    <p class="text-secondary text-sm">Set this site&rsquo;s boundary. The Setup Wizard then looks for public records inside it, such as groundwater basins and monitoring stations.</p>
+    <div class="form-footer">
+      <a href="{% url 'setup:wizard' %}?start=own" class="btn-secondary">Start with your own records &rarr;</a>
+    </div>
+  </div>
+
+  <p class="text-secondary text-sm">You can also load the demonstration data later, from <a href="{% url 'setup:demonstration' %}" class="text-accent">Demonstration data</a>, while this site does not hold records of its own.</p>
+
   {% else %}
+
+  {% if demonstration_state == "loaded" %}
+  <div class="card-raised">
+    <p class="text-secondary text-sm">The demonstration data is loaded. Remove it on <a href="{% url 'setup:demonstration' %}" class="text-accent">Demonstration data</a> before you set this site&rsquo;s own boundary.</p>
+  </div>
+  {% elif demonstration_state == "running" %}
+  <div class="card-raised">
+    <p class="text-secondary text-sm">The demonstration data is being loaded or removed. <a href="{% url 'setup:demonstration' %}" class="text-accent">Demonstration data</a> shows how far it has got.</p>
+  </div>
+  {% endif %}
 
   {% comment %}Step indicator: the wizard's step names, used on every crumb, title and heading.{% endcomment %}
   <div class="row-start" style="gap: var(--space-lg);">
@@ -189,6 +227,10 @@
       <a href="{% url 'index' %}" class="btn-secondary" id="btn-skip">Start without one →</a>
     </div>
   </div>
+
+  {% if starting_own and demonstration_state == "not_loaded" %}
+  <p class="text-secondary text-sm">To load the demonstration data instead, go back to <a href="{% url 'setup:wizard' %}" class="text-accent">the start of the Setup Wizard</a>.</p>
+  {% endif %}
 
   {% endif %}
 

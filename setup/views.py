@@ -13,11 +13,13 @@ import json
 import logging
 
 from django.contrib import messages
+from django.core.management.base import CommandError
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 
-from core.access import admin_required
+from core import demonstration
+from core.access import admin_required, is_administrator
 from core.modules import is_enabled
 from datasync.models import MonitoredStation
 from geography.models import Boundary
@@ -159,9 +161,21 @@ def setup_wizard(request):
                 return redirect("setup:confirm")
 
     boundaries = Boundary.objects.all().order_by("name")
+    # The first question, asked only while it is free to answer: a site the
+    # demonstration can load into (ruling 33). "Start with your own records"
+    # is ?start=own; the site's first boundary then retires the question.
+    demonstration_state = demonstration.status().state
     context = {
         "boundaries": boundaries,
         "errors": errors,
+        "choosing": (
+            request.method == "GET"
+            and demonstration_state == "not_loaded"
+            and request.GET.get("start") != "own"
+        ),
+        "starting_own": request.GET.get("start") == "own",
+        "demonstration_state": demonstration_state,
+        "load_minutes": demonstration.LOAD_MINUTES,
     }
     return render(request, "setup/wizard.html", context)
 
@@ -304,13 +318,15 @@ def _run_next_step(
             provider_index = 0
         request.session[SESSION_KEY_PROVIDER_INDEX] = provider_index
     else:
-        count, errors = run_auto_populate_step(boundary, step_name)
+        outcome = run_auto_populate_step(boundary, step_name)
+        count, errors = outcome
         results.append({
             "step": step_name,
             "label": steps[step_index][1],
             "count": count,
             "errors": errors,
             "success": len(errors) == 0,
+            "note": getattr(outcome, "note", None),
         })
         step_index += 1
     request.session[SESSION_KEY_STEP_INDEX] = step_index
@@ -428,3 +444,74 @@ def setup_activate_stations(request):
     context = build_station_review(boundary)
     context["boundary"] = boundary
     return render(request, "setup/partials/_station_review.html", context)
+
+
+def _demonstration_context(request, confirming=False):
+    """What the Demonstration data page and its status partial show."""
+    state = demonstration.status()
+    context = {
+        "state": state,
+        "load_minutes": demonstration.LOAD_MINUTES,
+        "refresh_seconds": demonstration.REFRESH_SECONDS,
+        "can_change": is_administrator(request.user),
+        "confirming": False,
+        "sections_missing": state.state == "refused" and bool(demonstration.modules_missing()),
+    }
+    if confirming and state.state == "loaded":
+        counts = demonstration.content_counts()
+        context.update(
+            confirming=True,
+            rows=[
+                (demonstration.screen_name(label, n), n) for label, n in counts.items()
+            ],
+            total=demonstration.total(counts),
+            added=demonstration.added_by_people(),
+            deletes_settings=demonstration.removal_deletes_settings(),
+        )
+    return context
+
+
+@admin_required
+@login_required
+def setup_demonstration(request):
+    """Load or remove the demonstration data.
+
+    A button starts ``load_demonstration`` or ``remove_demonstration`` as its own
+    process after the request commits (the way the calculation starts), so the
+    page never waits on it. The page reads the run's Site health record and
+    refreshes itself while a run is under way.
+    """
+    if request.method == "POST":
+        action = request.POST.get("action", "")
+        if not is_administrator(request.user):
+            messages.error(
+                request,
+                "Only an administrator can load or remove the demonstration data.",
+            )
+        elif action not in demonstration.COMMANDS:
+            messages.error(request, "That button is not one this page has.")
+        else:
+            state = demonstration.status()
+            if state.state == "running":
+                messages.info(request, "A run is in progress. This page refreshes until it ends.")
+            elif action == "load" and state.state != "not_loaded":
+                messages.error(
+                    request,
+                    state.refusal or "The demonstration data is already loaded.",
+                )
+            elif action == "remove" and state.state != "loaded":
+                messages.error(request, demonstration.NOT_LOADED_SENTENCE)
+            else:
+                record = demonstration.begin_run(action, request.user)
+                try:
+                    demonstration.start_worker(
+                        action, record_pk=record, user_pk=request.user.pk
+                    )
+                except CommandError as exc:
+                    messages.error(request, str(exc))
+        return redirect("setup:demonstration")
+
+    context = _demonstration_context(request, confirming=request.GET.get("remove") == "1")
+    if request.headers.get("HX-Request"):
+        return render(request, "setup/partials/_demonstration_status.html", context)
+    return render(request, "setup/demonstration.html", context)

@@ -53,6 +53,9 @@
       This site is for demonstration purposes only.
     </p>
     {% endif %}
+    {% if 'setup' in enabled_modules and user_is_admin %}
+    <p class="text-secondary text-sm">An administrator can load or remove the demonstration data on <a href="{% url 'setup:demonstration' %}" class="text-accent">Demonstration data</a>.</p>
+    {% endif %}
   </div>
 
   <div class="card-raised">

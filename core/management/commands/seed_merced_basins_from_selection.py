@@ -56,7 +56,7 @@ links, the recharge-intake PODs this command owns (MER-BPOD-*), the intake's
 own right (MER-WR-011-DEMO, so a reset never orphans it), and ONLY the
 managed ``basin_recharge_pool`` slice for the Merced GSA zones — never the
 engine's ``incidental_recharge_pool`` or the rollover's ``allocation_carryover``
-(RESEARCH Pitfall 1). It never touches Demo Valley rows.
+(RESEARCH Pitfall 1).
 """
 import json
 import os
@@ -80,8 +80,7 @@ BASINS_FIXTURE = os.path.join(DATA_DIR, "selected_basins.geojson")
 RIVER_FIXTURE = os.path.join(DATA_DIR, "selected_river_ag_parcels.geojson")
 
 # Every Merced recharge area carries this operator — the single, readable key the
-# wipe and the recharge-events seed use to find "the Merced basins" without
-# touching Demo Valley ("Demo Valley GSA"). Fictional: the basins and their
+# wipe and the recharge-events seed use to find "the Merced basins". Fictional: the basins and their
 # recharge volumes are invented, so a real district must not be named as their
 # operator.
 DEMO_OPERATOR = "Halvern Irrigation District"
@@ -413,8 +412,7 @@ class Command(BaseCommand):
         Scoped by operator (the current one plus LEGACY_OPERATORS) so it clears
         BOTH the old hardcoded basins and any prior selection run — including
         rows written before the operator rename, and by the MER-BPOD- prefix
-        for the intakes — never the operational MER-POD-### diversions, never
-        Demo Valley. The pool delete is scoped to ``basin_recharge_pool`` ONLY, so
+        for the intakes — never the operational MER-POD-### diversions. The pool delete is scoped to ``basin_recharge_pool`` ONLY, so
         the engine's incidental pool and the rollover carryover survive.
         """
         # Local imports: `recharge` and `surface` are optional modules, so these

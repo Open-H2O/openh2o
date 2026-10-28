@@ -276,7 +276,7 @@ def test_wizard_boundary_cards_stay_stacked():
     """S16, after the read: side by side the two cards read DO NOT SHIP 3 on their
     mismatched heights, so they stack as before (VERDICTS-150-04.md). Pins the
     absence of the `.card-columns` wrapper and the several-polygons line on the page."""
-    html = _superuser_client().get(reverse("setup:wizard")).content.decode()
+    html = _superuser_client().get(reverse("setup:wizard") + "?start=own").content.decode()
     assert "card-columns" not in html
     assert "When the file holds several polygons" in html
 

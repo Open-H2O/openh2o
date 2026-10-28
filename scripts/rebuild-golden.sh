@@ -153,72 +153,15 @@ run_step migrate --noinput
 # introduced, so the defect never reached production. Creating a TABLE adds no
 # user rows, so this does not weaken the zero-user-rows rule it sits beside.
 run_step createcachetable
-run_step seed_data
-# NOT part of the seed_data umbrella, deliberately — core/modules.py records why
-# (listing it in the registry would change behaviour for anyone composing
-# seed_data from it). But the umbrella's scope is not this build's scope: a
-# rebuild that skips it produces a demonstration with an EMPTY SensorThings
-# crosswalk — measured 2026-07-31, production carries 17 ObservedProperty and 26
-# SourceParameter rows and the first candidate carried 0 of each. Nothing a
-# visitor sees (standards ships no views or urls), but check_conformance and
-# every adapter's PARAMETER_MAP resolve against it. Idempotent, so this neither
-# changes seed_data nor double-seeds.
-run_step seed_observed_properties
-# The boundary must exist BEFORE the flowlines fixture: flowlines.json names it
-# by natural key, and it is pk 1 on staging and pk 6 on production. seed_merced
-# runs this same step again a moment later; it is idempotent.
-run_step seed_merced_base
-run_step loaddata data/merced/flowlines.json
-# --allow-prod-clobber is belt-and-braces: the database is empty, so there is
-# nothing to clobber and a first-time seed passes the guard unaided.
-# Passed anyway so the sequence does not depend on that emptiness holding.
-run_step seed_merced --skip-auto-populate --allow-prod-clobber
-# The two frozen-data loads sit together, and both exist because the step they
-# replace is a live network call. Station discovery is part of auto_populate,
-# which --skip-auto-populate above omits, so without this the build carries ZERO
-# monitoring stations and the landing page reads "0 of 0 stations reporting".
-# Must run after seed_data: load_station_fixture resolves DataSource by code and
-# refuses on an unknown one rather than creating it.
-run_step load_station_fixture
-# The stations were not enough. v2.8 shipped with all 335 of them and every
-# station chart still blank, because the charts read DataRecordStaging and the
-# build makes no network call to fill it. Worse than blank: the stations fixture
-# freezes last_data_at, so the landing hero announced "37 of 42 stations
-# reporting" over an empty canvas — the site asserting freshness it could not
-# show. This is the third frozen load and it must follow load_station_fixture,
-# which owns the station table and which this command refuses to work without.
-run_step load_reading_fixture
-run_step load_openet_fixture
-run_step seed_calculation_plan
-# BOTH water years, in ONE invocation. seed_merced_ledgers self-flushes every row
-# it owns, so a second `refresh_merced_accounting` call for the open year would
-# wipe the closed year's supply rows — silently, because a wiped ledger reads as
-# an empty year rather than as an error. The command takes --period repeatedly
-# and runs the engine over the union of their months around a single ledger pass.
-run_step refresh_merced_accounting --period "WY 2024-2025" --period "WY 2025-2026"
-
-# THE INSTRUMENT RECORD IS RE-SEEDED AFTER THE REFRESH, AND HAS TO BE.
-#
-# `seed_merced_measurements` runs inside `seed_merced` above, and every totalizer
-# read it writes is the SUM OF THE LEDGER ROWS for that well-month — read off
-# `ParcelLedger`, never invented, because a water master comparing a meter to its
-# parcel's metered groundwater will find any disagreement. But
-# `refresh_merced_accounting` REWRITES that ledger: its pass 2 re-runs
-# `seed_merced_ledgers`, which on the first pass had no CalculationRun rows to
-# size against and took the flat fail-soft fallback, and on this pass sizes every
-# row from measured net consumptive use instead. Two different ledgers, and the
-# meter reads were reconciled to the first one.
-#
-# Measured on the candidate built at 27bee27 before this line existed: 260 of 288
-# totalizer reads disagreed with the ledger they claim to sum, verified with the
-# same query that returns 0 of 288 on a database where the seed runs last. The
-# defect is not new — the ordering has been this way since the measurement
-# record was first shipped, and the guard written for it could not see it because its
-# fixture's ledger never changes under it.
-#
-# The command self-flushes, so running it a second time replaces its own rows
-# rather than duplicating them, and every pinned count stays where it is.
-run_step seed_merced_measurements
+# The whole demonstration is ONE command, `load_demonstration`: the same
+# sequence the Demonstration data page's button loads, so what staging shows is
+# what an operator gets. The steps and the reasons for their order live in
+# core/demonstration.py (STEPS). Two facts about running it here:
+#   * It runs in one transaction, and it deletes the change history it wrote
+#     under its own context before it commits.
+#   * --golden-build keeps it from writing a Site health record: the
+#     candidate must contain no health rows (data/demo/expected_shape.json).
+run_step load_demonstration --golden-build
 
 # THE GOLDEN CARRIES NO INVENTED HISTORY. Every seed command above ran through
 # ordinary model saves, bulk_create and QuerySet.update() -- exactly the paths

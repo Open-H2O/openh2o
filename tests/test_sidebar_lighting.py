@@ -137,6 +137,7 @@ EXPECTED_LIT = {
     "/reporting/reports/generate/": "Reports",
     "/reporting/reports/shared-supply-check/": "Reports",
     "/setup/": "Setup Wizard",
+    "/setup/demonstration/": "Setup Wizard",
     "/surface/": "Surface Diversions",
     "/surface/device/<int:pk>/edit/": "Surface Diversions",
     "/surface/diversion/<int:pk>/": "Surface Diversions",

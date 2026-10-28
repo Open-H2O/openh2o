@@ -248,5 +248,6 @@ python manage.py load_openet_fixture
 python manage.py seed_merced_base   # idempotent; updates in place on re-run
 ```
 
-Merced is **additive**: it coexists with the Demo Valley
-dataset. This command does not remove the Demo-Valley/Fresno data.
+This command loads the boundary only; it is the third step of
+`load_demonstration`, which loads the whole demonstration. `remove_demonstration`
+takes the demonstration off a site again.

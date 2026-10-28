@@ -12,8 +12,7 @@ half — surface delivered beyond crop demand — is written separately by the c
 engine; see run_calculations.)
 
 Basins are selected by ``operator`` (Halvern Irrigation District) so this picks up
-whatever the current hand-pick produced without hardcoding basin names, and never
-touches Demo Valley recharge sites.
+whatever the current hand-pick produced without hardcoding basin names.
 
 Decision (2026-06-03): recharge credits **Groundwater (GW)**. The physical
 source water (storm/surface runoff diverted to the basin) is preserved in the

@@ -3,8 +3,8 @@
 
 The platform is single-tenant: one SiteConfig names the deployed agency. Only the
 retired seeds ever created one, so the Merced base seed has to ensure the right
-identity exists — create it on a bare install, rename it off a retired-basin
-name, and leave a custom name alone. These three cases are the contract.
+identity exists — create it on a bare install, rename a row the demonstration
+already owns, and leave a custom name alone. These three cases are the contract.
 
 The base seed loads a committed GeoJSON boundary; these tests only assert the
 SiteConfig side effect, so they call the helper through the command and tolerate
@@ -25,8 +25,8 @@ def test_creates_site_config_when_absent():
 
 
 @pytest.mark.django_db
-def test_renames_retired_basin_identity():
-    SiteConfig.objects.create(agency_name="Demo Valley GSA")
+def test_renames_a_row_the_demonstration_owns():
+    SiteConfig.objects.create(agency_name="Earlier Sample GSA", demonstration_mode=True)
     call_command("seed_merced_base")
     assert SiteConfig.objects.count() == 1
     assert SiteConfig.objects.get().agency_name == "Halvern Valley GSA"
@@ -130,7 +130,8 @@ def test_heals_retired_basin_email_on_renamed_identity():
     email gets the email healed too (ISS-067): the in-place rename moved the
     name but left ``info@kaweahgsa.example.com`` behind for the demo's lifetime."""
     SiteConfig.objects.create(
-        agency_name="Demo Valley GSA",
+        agency_name="Earlier Sample GSA",
+        demonstration_mode=True,
         contact_email="info@kaweahgsa.example.com")
     call_command("seed_merced_base")
     sc = SiteConfig.objects.get()

@@ -23,8 +23,7 @@ populated separately by driving the platform's own loaders:
 
 Idempotent: re-running updates the existing boundary's geometry and
 attributes in place (matched by name), so a refreshed fixture re-seeds
-cleanly without creating duplicates. Merced is additive — it does NOT
-touch Demo Valley data.
+cleanly without creating duplicates.
 """
 import json
 import os
@@ -62,7 +61,7 @@ class Command(BaseCommand):
     help = (
         "Seed the real Merced Subbasin boundary (5-022.04) from "
         "committed public-source GeoJSON. "
-        "Idempotent; additive (does not touch Demo Valley)."
+        "Idempotent."
     )
 
     def handle(self, *args, **options):
@@ -122,19 +121,18 @@ class Command(BaseCommand):
 
         The platform is single-tenant: exactly one SiteConfig names the deployed
         agency (and the singleton's save() refuses a second row). Only the
-        the retired seed_demo_data ever created one, so a fresh
-        ``make fresh`` → ``seed_merced`` rebuild would have NO identity, and a
-        post-teardown server still carries the retired-basin name. Create it if
-        absent, or rename it off a retired demo identity — but never clobber an
-        operator's own custom agency name.
+        nothing else creates one, so a fresh ``load_demonstration`` would have
+        NO identity. Create it if absent, or take over a row the demonstration
+        already owns (Demonstration mode on) — but never clobber an operator's
+        own custom agency name.
 
         **Why the forward rename is gated on ownership, not on a name list.**
         A deployment seeded earlier may carry a REAL agency's name as its demo
-        identity. ``retired_names`` cannot carry it: that set is matched against
-        whatever an operator typed, so a real agency that legitimately chose that
-        name would be silently renamed out from under them. But name equality
-        alone fails in the opposite direction: such a deployment matches no
-        branch and falls through to "kept (custom agency name)", which would
+        identity. A list of retired names cannot carry it: it would be matched
+        against whatever an operator typed, so a real agency that legitimately
+        chose that name would be silently renamed out from under them. But name
+        equality alone fails in the opposite direction: such a deployment matches
+        no branch and falls through to "kept (custom agency name)", which would
         leave a real agency's name on a public demo permanently.
 
         So the rename keys on ``demonstration_mode`` instead. This seed is the
@@ -155,13 +153,8 @@ class Command(BaseCommand):
 
         merced_name = "Halvern Valley GSA"
         merced_email = "info@halvernvalleygsa.example.com"
-        # Only FICTIONAL retired demo identities — never a real basin/agency
-        # name, or a real agency that chose it would be silently renamed. These
-        # rename forward whatever demonstration_mode says, because no real agency
-        # can be sitting under one of them.
-        retired_names = {"Demo Valley GSA"}
-        # Contact emails minted by a retired demo seed (Kaweah, the Demo Valley
-        # sample, and the earlier Merced demo). An in-place rename moves the
+        # Contact emails minted by retired demo seeds (Kaweah and the earlier
+        # Merced demo). An in-place rename moves the
         # agency NAME off the retired identity but leaves these stale, so a
         # long-lived demo would keep a retired-basin contact email in
         # core_siteconfig.
@@ -170,7 +163,6 @@ class Command(BaseCommand):
         # addresses: reserved, unroutable, nobody's real inbox.
         retired_demo_emails = {
             "info@kaweahgsa.example.com",
-            "info@demovalleygsa.example.com",
             "info@mercedsubbasingsa.example.com",
         }
 
@@ -187,11 +179,8 @@ class Command(BaseCommand):
             )
             self.stdout.write(self.style.SUCCESS(
                 f"  Created SiteConfig: {merced_name}"))
-        elif sc.agency_name != merced_name and (
-            sc.agency_name in retired_names or sc.demonstration_mode
-        ):
-            # A retired FICTIONAL demo identity (safe on any row), or any row the
-            # seed already owns — demonstration_mode proves ownership, which is
+        elif sc.agency_name != merced_name and sc.demonstration_mode:
+            # A row the seed already owns — demonstration_mode proves ownership, which is
             # what lets a deployment seeded under an earlier real agency name
             # rename forward instead of being mistaken for an operator's own
             # choice. See the ownership note in this method's docstring.
@@ -221,7 +210,7 @@ class Command(BaseCommand):
             # Heal a retired-basin contact email left behind by an earlier
             # in-place rename. The name already matched Merced, so
             # neither the create nor the rename branch ever corrected the email
-            # minted by the retired Kaweah/Demo-Valley seed — it would persist
+            # minted by a retired demo seed — it would persist
             # for the life of the demo (and reseeding never touched it).
             if sc.contact_email in retired_demo_emails:
                 sc.contact_email = merced_email

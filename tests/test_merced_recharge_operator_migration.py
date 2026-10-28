@@ -55,12 +55,12 @@ def test_flush_reaches_basins_written_under_a_legacy_operator():
 def test_flush_still_leaves_other_demos_alone():
     """The widened scope must not become a wildcard.
 
-    The wipe is deliberately keyed on operator so it never reaches Demo Valley;
+    The wipe is deliberately keyed on operator so it never reaches another operator's basins;
     adding the legacy operator must not weaken that.
     """
     from recharge.models import RechargeSite
 
-    other = _basin("Demo Valley Spreading Basin", "Demo Valley GSA")
+    other = _basin("Other Spreading Basin", "Other Operator")
     unnamed = _basin("Operator-less basin", "")
 
     Command()._flush([])

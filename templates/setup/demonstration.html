@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Demonstration data - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Demonstration data{% endblock %}
+{% block page_head_class %}page-head--medium{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <span>Administration</span>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'setup:wizard' %}">Setup Wizard</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Demonstration data</span>
+  </nav>
+  <p class="page-description">This page loads OpenH2O&rsquo;s demonstration data into this site and removes it again.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack page-medium">
+  {% include "partials/_messages.html" %}
+  {% include "setup/partials/_demonstration_status.html" %}
+  <p class="text-secondary text-sm"><a href="{% url 'demonstration_data' %}" class="text-accent">Where each record in the demonstration data comes from &rarr;</a></p>
+</div>
+{% endblock %}

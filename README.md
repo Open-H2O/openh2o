@@ -82,7 +82,7 @@ cp .env.example .env
 docker compose up -d --build         # start db + web + caddy
 docker compose exec web python manage.py migrate
 docker compose exec web python manage.py seed_data      # reference data
-docker compose exec web python manage.py seed_merced    # the demonstration data
+docker compose exec web python manage.py load_demonstration   # the demonstration data (remove_demonstration takes it out)
 docker compose exec web python manage.py createsuperuser   # your login for the trial
 ```
 
@@ -105,16 +105,17 @@ openh2o.com turns that setting off.
 You will see the demonstration, the same one running at
 [openh2o.com](https://openh2o.com). *Seeding* means loading a starting set of data
 into the empty database: small reference lists such as units and categories, or a
-whole demonstration dataset. The demonstration seed takes a few minutes to download
-hydrography and monitoring stations from public government services. It also loads
-the demonstration's water rights, deliveries, parcels and ledger entries. These
-steps work without any key.
+whole demonstration dataset. Everything the demonstration load uses ships with OpenH2O: its
+streams, monitoring stations, readings and satellite ET. It also loads the
+demonstration's water rights, deliveries, parcels and ledger entries. It works
+without any key.
 
-Consumptive-use figures need an OpenET key (free from
+The demonstration's consumptive-use figures come from that stored satellite ET. For
+your own records, they need an OpenET key (free from
 [etdata.org](https://etdata.org)), because OpenH2O calculates them from satellite
 ET. `run_calculations` also needs a calculation method, which only
-`seed_calculation_plan` creates. The demonstration seed ends with a list of
-anything still missing. For a site with a domain, encryption, scheduled data
+`seed_calculation_plan` creates; `load_demonstration` creates it for the
+demonstration. For a site with a domain, encryption, scheduled data
 updates and production security settings, follow [DEPLOY.md](DEPLOY.md).
 `make help` lists every shortcut command.
 

@@ -26,6 +26,11 @@ from .models import HealthCheckResult
 # this mapping for a yellow or red row, and only builds the href when the
 # owning module is on (no `{% url %}` reaches the template outside a
 # module gate).
+#: A record of a load or a removal of the demonstration data, not a health check:
+#: the Demonstration data page reads it, and Site health leaves it out (a refused
+#: load would otherwise hold the site at "degraded" until the next run).
+RUN_LOG_CATEGORY = "demonstration"
+
 WHERE_TO_LOOK = {
     "sync_freshness": (
         "datasync:monitoring_dashboard",
@@ -171,7 +176,8 @@ def _canal_with_most_leftover_water():
 
 def health_dashboard(request):
     latest_ids = (
-        HealthCheckResult.objects.values("category")
+        HealthCheckResult.objects.exclude(category=RUN_LOG_CATEGORY)
+        .values("category")
         .annotate(latest_id=Max("id"))
         .values_list("latest_id", flat=True)
     )
@@ -273,7 +279,8 @@ def health_dashboard(request):
 
 def health_api(request):
     latest_ids = (
-        HealthCheckResult.objects.values("category")
+        HealthCheckResult.objects.exclude(category=RUN_LOG_CATEGORY)
+        .values("category")
         .annotate(latest_id=Max("id"))
         .values_list("latest_id", flat=True)
     )

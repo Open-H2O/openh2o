@@ -3,7 +3,7 @@
 This is the invariant the public repo must always satisfy: an agency clones the
 code, runs migrations + `seed_data` (reference/lookup data every install needs),
 and gets an EMPTY instance ready for their own watershed. The fictional
-"Demo Valley GSA" (`seed_demo_data`) is an opt-in demo the public never runs.
+demonstration (`load_demonstration`) is opt-in and the public never runs it.
 
 The CI `clean-install-guard` workflow runs this after `seed_data` and fails the
 build if a single row of agency/demo content is present — making it impossible
@@ -16,30 +16,9 @@ Exit code 1 (CommandError) if any content is found; 0 if clean.
 
 from django.core.management.base import BaseCommand, CommandError
 
-from accounting.models import WaterAccount
+from core import demonstration
 from core.models import SiteConfig
-from datasync.models import DataSource, MonitoredStation
-from geography.models import Boundary, Zone
-from parcels.models import Parcel
-from wells.models import Well
-
-# A clean install has zero of these. Each is operator-entered or demo-seeded
-# content, never reference data. (Reference data — roles, water types, data
-# sources, report templates — is loaded by `seed_data` and is expected.)
-CONTENT_MODELS = [
-    ("Boundaries", Boundary),
-    ("Zones", Zone),
-    ("Parcels", Parcel),
-    ("Wells", Well),
-    ("Monitoring stations", MonitoredStation),
-    ("Water accounts", WaterAccount),
-]
-
-# Named demo artifacts — checked explicitly so the failure message is obvious
-# even if a future model is missed by the count sweep above. Only FICTIONAL demo
-# names belong here — never a real basin/agency name, or a legitimate operator
-# who happens to choose that name would be falsely flagged as demo content.
-DEMO_BOUNDARY_NAMES = ["Demo Valley GSA"]
+from datasync.models import DataSource
 
 
 class Command(BaseCommand):
@@ -49,31 +28,23 @@ class Command(BaseCommand):
     )
 
     def handle(self, *args, **options):
-        dirty = []
-        for label, model in CONTENT_MODELS:
-            count = model.objects.count()
-            if count:
-                dirty.append((label, count))
+        # The same list the demonstration's load and removal use, so a new
+        # table cannot be missed here.
+        dirty = [
+            (demonstration.SCREEN_NAMES[label][1].capitalize(), count)
+            for label, count in demonstration.content_counts().items()
+        ]
 
-        named_demo = list(
-            Boundary.objects.filter(
-                name__in=DEMO_BOUNDARY_NAMES
-            ).values_list("name", flat=True)
-        )
-        demo_agency = SiteConfig.objects.exclude(agency_name="").filter(
-            agency_name__in=["Demo Valley GSA"]
+        demo_agency = SiteConfig.objects.filter(
+            agency_name=demonstration.DEMONSTRATION_NAME
         ).values_list("agency_name", flat=True)
 
-        if dirty or named_demo or list(demo_agency):
+        if dirty or list(demo_agency):
             self.stderr.write(
                 self.style.ERROR("CLEAN-INSTALL CHECK FAILED — demo/agency content present:")
             )
             for label, count in dirty:
                 self.stderr.write(self.style.ERROR(f"  - {label}: {count}"))
-            if named_demo:
-                self.stderr.write(
-                    self.style.ERROR(f"  - Demo boundaries: {', '.join(named_demo)}")
-                )
             if list(demo_agency):
                 self.stderr.write(
                     self.style.ERROR(

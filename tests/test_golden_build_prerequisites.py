@@ -34,14 +34,23 @@ REBUILD_SCRIPT = (
 
 
 def _steps(script_text):
-    """The management commands the rebuild runs, in order, ignoring comments."""
+    """The management commands the rebuild runs, in order, ignoring comments.
+
+    The script runs the demonstration as one command, ``load_demonstration``,
+    which runs the steps in ``core.demonstration.STEPS``; it is read here as
+    those steps, in place.
+    """
+    from core.demonstration import STEPS
+
     steps = []
     for line in script_text.splitlines():
         stripped = line.strip()
         if stripped.startswith("#"):
             continue
         match = re.match(r"^run_step\s+([\w-]+)", stripped)
-        if match:
+        if match and match.group(1) == "load_demonstration":
+            steps.extend(name for name, _ in STEPS)
+        elif match:
             steps.append(match.group(1))
     return steps
 

@@ -356,7 +356,7 @@ def test_rerunning_is_a_no_op(seeded):
 
 @pytest.mark.django_db
 def test_flush_rebuilds_cleanly_and_keeps_the_vocabulary(seeded):
-    """``--flush`` is delete-then-reseed, matching ``seed_demo_data --flush``.
+    """``--flush`` is delete-then-reseed.
 
     Two things have to hold, and a count comparison alone proves neither: the
     importer's duplicate guard would leave the counts identical even if the

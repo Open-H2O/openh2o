@@ -1,0 +1,74 @@
+{% comment %}
+The Demonstration data page's one panel, in the state the site is in. While a
+run is under way the panel asks for itself again every few seconds (HTMX) and
+swaps itself for the next state.
+{% endcomment %}
+<div id="demonstration-status"{% if state.state == 'running' %} hx-get="{% url 'setup:demonstration' %}" hx-trigger="every {{ refresh_seconds }}s" hx-swap="outerHTML"{% endif %} aria-live="polite">
+
+  {% if state.state == 'running' %}
+  <div class="card-raised">
+    <h2 class="card-header-ruled">{% if state.action == 'remove' %}Removing the demonstration data{% else %}Loading the demonstration data{% endif %}</h2>
+    <p class="text-secondary text-sm">{% if state.action == 'remove' %}OpenH2O is removing the demonstration data.{% else %}OpenH2O is loading the demonstration data.{% endif %} This page refreshes every {{ refresh_seconds }} seconds.</p>
+  </div>
+
+  {% elif confirming %}
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Remove the demonstration data</h2>
+    <p class="text-secondary text-sm">Removing deletes every record on this site, {{ total|floatformat:"0g" }} in all. Your users and the reference lists stay.{% if deletes_settings %} The demonstration gave this site its name and settings, so they go too, with any setting changed since the load.{% else %} The site&rsquo;s name and settings stay.{% endif %}</p>
+    <p class="text-secondary text-sm">{% if added %}{{ added|floatformat:"0g" }} of these records {{ added|pluralize:"was,were" }} added by people since the load, and {{ added|pluralize:"it goes,they go" }} too.{% else %}People have not added any records since the load.{% endif %}</p>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr><th>Kind of record</th><th>Count</th></tr></thead>
+        <tbody>
+          {% for name, count in rows %}<tr><td>{{ name|capfirst }}</td><td>{{ count|floatformat:"0g" }}</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <form method="post" class="form-footer">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="remove">
+      <button type="submit" class="btn-primary">Remove the demonstration data</button>
+      <a href="{% url 'setup:demonstration' %}" class="btn-secondary">Cancel</a>
+    </form>
+  </div>
+
+  {% elif state.state == 'loaded' %}
+  <div class="card-raised">
+    <h2 class="card-header-ruled">The demonstration data is loaded</h2>
+    <p class="text-secondary text-sm">Remove it before you add your own records. Removing it returns this site to its state before the load, with your users and the reference lists kept.</p>
+    {% if can_change %}<div class="form-footer"><a href="{% url 'setup:demonstration' %}?remove=1" class="btn-primary">Remove the demonstration data</a></div>{% endif %}
+  </div>
+
+  {% elif state.state == 'refused' %}
+  <div class="card-raised">
+    <h2 class="card-header-ruled">The demonstration data cannot be loaded</h2>
+    <p class="text-secondary text-sm">{{ state.refusal }}</p>
+    {% if sections_missing %}
+    <p class="text-secondary text-sm">Sections are switched on in the server&rsquo;s settings, with OPENH2O_MODULES, as section 12 of DEPLOY.md describes.</p>
+    {% else %}
+    <p class="text-secondary text-sm">The demonstration data loads only into a site that does not hold records of its own. To try it on this site, delete those records first. To try it without touching them, install a second copy of OpenH2O and load it there.</p>
+    {% endif %}
+  </div>
+
+  {% else %}
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Load the demonstration data</h2>
+    <p class="text-secondary text-sm">The demonstration data is a set of sample records for the Merced Subbasin, a real groundwater basin in the San Joaquin Valley: its boundaries, fields and monitoring stations are public records, and its water accounting data is made up.</p>
+    <p class="text-secondary text-sm">{% if load_minutes %}Loading takes about {{ load_minutes }} minutes, and you can leave this page while it runs. {% endif %}Remove the demonstration data before you add your own records.</p>
+    {% if can_change %}
+    <form method="post" class="form-footer">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="load">
+      <button type="submit" class="btn-primary">Load the demonstration data</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if state.last and state.state != 'running' %}
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Last run</h2>
+    <p class="text-secondary text-sm">{{ state.last.message }} Started {{ state.last.when|date:"M j, Y, g:i A" }}{% if state.last.who %} by {{ state.last.who }}{% endif %}.</p>
+  </div>
+  {% endif %}
+</div>

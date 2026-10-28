@@ -15,8 +15,7 @@ it had activated "this basin's" stations. It had not.
 ``test_does_not_activate_stations_outside_the_named_boundary`` is the assertion
 that hand-written ``.update()`` would have failed.
 
-The fixture is built directly via the ORM in the style of
-``tests/test_teardown_demo.py``: two non-overlapping boundaries, two data
+The fixture is built directly via the ORM: two non-overlapping boundaries, two data
 sources, and stations placed at explicit coordinates — small, fast, hermetic, no
 network and no large GeoJSON.
 """

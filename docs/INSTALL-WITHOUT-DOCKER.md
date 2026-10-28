@@ -372,11 +372,11 @@ Then load the reference lists every site needs, such as units and categories:
 .venv/bin/python manage.py seed_data
 ```
 
-To *seed* a database is to load a starting set of records into it. `seed_merced`
+To *seed* a database is to load a starting set of records into it. `load_demonstration`
 loads the demonstration data: published records from a real groundwater basin,
-together with invented sample data. Phase 3 of the
-[AI operator guide](AI-OPERATOR-GUIDE.md) describes the demonstration data,
-including how its records stay on the site beside the organization's own records.
+together with invented sample data, and `remove_demonstration` takes it out again.
+Phase 3 of the [AI operator guide](AI-OPERATOR-GUIDE.md) describes the demonstration
+data and when to remove it.
 On this path, start each of Phase 3's commands with `.venv/bin/python manage.py`.
 
 ### The background service
@@ -470,7 +470,7 @@ and add these lines. Put the full path from section 4 in place of
 OPENH2O_DIR=/home/operator/openh2o
 LOGS=/var/log/openh2o
 0 * * * *   cd $OPENH2O_DIR && for s in cdec usgs; do .venv/bin/python manage.py sync_source $s; done >> $LOGS/sync.log 2>&1
-0 2 * * *   cd $OPENH2O_DIR && for s in dwr_wdl dwr_sgma noaa; do .venv/bin/python manage.py sync_source $s; done >> $LOGS/sync.log 2>&1
+0 2 * * *   cd $OPENH2O_DIR && for s in dwr_wdl dwr_sgma noaa cimis; do .venv/bin/python manage.py sync_source $s; done >> $LOGS/sync.log 2>&1
 30 3 * * *  cd $OPENH2O_DIR && .venv/bin/python manage.py run_accounting --open-periods --trigger schedule >> $LOGS/calculation.log 2>&1
 0 */6 * * * cd $OPENH2O_DIR && .venv/bin/python manage.py run_health_checks >> $LOGS/health.log 2>&1
 0 3 1 * *   cd $OPENH2O_DIR && .venv/bin/python manage.py prune_old_data --confirm >> $LOGS/prune.log 2>&1

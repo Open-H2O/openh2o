@@ -479,34 +479,47 @@ published records with invented sample data, and it gives the organization a
 complete site to explore.
 
 ```bash
-docker compose exec web python manage.py seed_merced
+docker compose exec web python manage.py load_demonstration
 ```
 
-`seed_merced` needs a site that runs every module of OpenH2O. Set
-`OPENH2O_MODULES=all` in `.env` and run `docker compose up -d` first (section 12). It loads the basin's boundary, streams and
+`load_demonstration` needs every module OpenH2O runs by default, which is every
+module except reporting. A site that leaves `OPENH2O_MODULES` unset, or sets it to
+`all`, has them (section 12). It loads the reference lists, the basin's boundary, streams and
 canals, management zones, water rights and points of diversion, selected parcels,
-cropland, recharge basins and two water years of ledger activity, one finalized and one open. One of its steps downloads
-streams and monitoring stations from public government services and does not need a key.
-On a server with no internet connection, first load the stored streams with
-`python manage.py seed_merced_base` and
-`python manage.py loaddata data/merced/flowlines.json`, then add
-`--skip-auto-populate` to leave the download out.
+cropland, recharge basins, monitoring stations with their readings, and two water years of ledger activity, one finalized and one open. It downloads
+nothing: every outside input ships with OpenH2O. The load runs as one transaction, so a load that fails saves nothing.
 
-The demonstration's records stay on the site beside the organization's own records,
-and OpenH2O has no command that removes them. (The `make flush-demo` and
-`make teardown-demo` targets handle two older sample datasets, and they leave this
-one in place.) If the organization wants its site without the demonstration, load
-it on a second copy of OpenH2O.
+The load refuses to start on a site that already holds records of its own, and it
+says what it found. It also refuses when a module the demonstration needs is switched
+off. In either case it leaves the site as it was.
+
+An administrator can do the same from Administration > Setup Wizard > Demonstration
+data, which starts the load as its own process and refreshes until it ends. To take
+the demonstration off the site again, run:
+
+```bash
+docker compose exec web python manage.py remove_demonstration
+```
+
+or press Remove the demonstration data on the Demonstration data page, which lists what goes and how
+many records people added since the load. The removal deletes every record the site
+holds and keeps the users and the reference lists. When the site still carries the
+demonstration's name, the load made its settings, so the removal deletes them too,
+with any setting changed while the demonstration was loaded; otherwise it keeps them
+and turns Demonstration mode off. `make demo` and
+`make remove-demo` run the load and the removal. Each command writes a Site health record of what
+it did and deletes the changes it made from Change history.
 
 The demonstration's water rights, deliveries, parcels and ledger activity are all
 seeded. Its consumptive use figures come from satellite evapotranspiration (ET)
-data. That data needs an OpenET key (section 11) and a run of
-`sync_openet_parcels`, which Phase 4 of the AI operator guide shows. Until then,
-those figures stay empty.
+data, and `load_demonstration` loads the demonstration's stored ET data, loads the
+default calculation method and calculates both water years, so the figures are
+there when the load ends. The site's own records need an OpenET key (section 11)
+and a run of `sync_openet_parcels`, which Phase 4 of the AI operator guide shows.
 
 The nightly calculation, `run_accounting`, runs `run_calculations` month by month,
-and both need an active calculation method. Neither `seed_data` nor `seed_merced`
-creates one. Create it with the command below, or sign in as an administrator and
+and both need an active calculation method. `seed_data` does not create one.
+On a site without the demonstration, create it with the command below, or sign in as an administrator and
 press Load the default calculation plan on the Methodology Settings page
 (`/accounting/methodology/`):
 
@@ -514,37 +527,17 @@ press Load the default calculation plan on the Methodology Settings page
 docker compose exec web python manage.py seed_calculation_plan
 ```
 
-When `seed_merced` finishes, it prints a list of what the site still needs, and
-`seed_calculation_plan` is on that list. If a method is in place but there is no ET
+If a method is in place but there is no ET
 data yet, `run_calculations` skips every parcel and reports that it has no ET
-data.
+data. Removing the demonstration also removes its calculation method.
 
 <!-- defines: idempotent -->
-Every step of `seed_merced` but one is *idempotent*: running it again gives the
-same result as running it once, because it skips what is already done. The
-exception deletes and redraws the demonstration's parcel outlines and well
-locations, so under the production settings `seed_merced` stops at that step when
-demonstration records already exist. A first run on an empty database does not need a flag. To
-rebuild the demonstration:
+`load_demonstration` runs `seed_merced` as one of its steps, and `seed_merced` is *idempotent* in every
+step but one: running it again gives the same result as running it once. To rebuild the demonstration, remove
+it and load it again.
 
-```bash
-docker compose exec web python manage.py seed_merced --allow-prod-clobber
-```
-
-The populate step that downloads monitoring stations creates every station switched
-off, so a new demonstration does not show any stations reporting until they are turned on.
-OpenH2O ships with the demonstration's own list of 335 stations. Of those, 42 are
-switched on, and each of the 42 carries the date it last published a reading. One
-command loads the list over the stations the populate step created:
-
-```bash
-docker compose exec web python manage.py load_station_fixture
-```
-
-It downloads nothing, and a second run changes nothing. Run it after `seed_data`
-(section 8), because `seed_data` creates the data sources the station list refers
-to. Without them it stops with a
-message and writes nothing. For the organization's own area, turn on the area's own
+The demonstration's monitoring stations are the 335 in OpenH2O's own list. Of those, 42 are
+switched on, and each of the 42 carries the date it last published a reading. For the organization's own area, turn on the area's own
 stations as Phase 4 of the AI operator guide describes.
 
 The organization's own records come in through the Setup Wizard (section 11) and
@@ -791,7 +784,7 @@ touch .production-lock
 
 `make upgrade` still runs with the file in place, because upgrading the site is its
 purpose. The file does not guard the demonstration targets, such as
-`make merced`, `make flush-demo`, `make teardown-demo` and `make reset-demo`, or
+`make demo`, `make remove-demo` and `make reset-demo`, or
 `docker compose down -v`, which deletes the database. Never run those on a site that
 holds records.
 
@@ -825,14 +818,17 @@ health. The jobs are in `crontab.txt`:
 |-----|----------|---------|
 | `run-sync.sh cdec usgs` | Every hour | Stream and reservoir readings |
 | `backup.sh` | Every day at 1:25 | Backs up the database and the uploaded files into the `backups` folder (Database Backup, below) |
-| `run-sync.sh dwr_wdl dwr_sgma noaa` | Every day at 2:00 | Groundwater levels and climate data |
+| `run-sync.sh dwr_wdl dwr_sgma noaa cimis` | Every day at 2:00 | Groundwater levels, climate data and CIMIS weather (CIMIS and NOAA only when their keys are set) |
 | `run_accounting --open-periods --trigger schedule` | Every day at 3:30 | Calculates every reporting period that is not finalized, after the 2:00 sync. A finalized period is never changed. Each run's record shows on the period's page and on Site health |
 | `run_health_checks` | Every 6 hours | Checks the database, the disk, the certificate, the migrations and the data sources |
 | `prune_old_data --confirm` | The 1st of each month at 3:00 | Deletes sync logs, health-check results and published staging records older than a year |
 
-The times are in the server's own time zone. The schedule does not sync CIMIS or
-OpenET. To keep CIMIS current once its key is set, add `cimis` to the end of the
-2:00 line. OpenET's figures arrive through `sync_openet_parcels`, which the
+The times are in the server's own time zone. The page of each switched-on
+station gives the time of its next scheduled fetch, in the site's time zone (set at
+`/admin/` under Core > Site configs, or `TIME_ZONE` when none is set), so set the
+server's clock to the same zone. The schedule fetches CIMIS and
+NOAA only when their keys are set, and skips each in one line when it is not. It does
+not fetch OpenET: OpenET's figures arrive through `sync_openet_parcels`, which the
 organization runs when it wants figures for new months (Phase 4 of the AI operator
 guide).
 
@@ -1162,7 +1158,7 @@ Two terms in the tables need explaining:
 | `SESSION_COOKIE_SECURE` | No | `True` | Sends the sign-in cookie only over HTTPS. Set `False` on Branch A |
 | `CSRF_COOKIE_SECURE` | No | `True` | Sends the form-check cookie only over HTTPS. Set `False` on Branch A |
 | `ACCESS_CONTROL_ENFORCED` | No | `True` | Closes sign-up and keeps the administrator pages for administrators. Set `False` only on an open demonstration site, where anyone may sign up. A viewer stays read-only either way |
-| `OPENH2O_MODULES` | No | every module except `reporting` | The modules of OpenH2O the site runs, separated by commas, or `all`. The list must include `core`, `geography`, `measurements` and `standards`. A list that leaves out a module another module needs stops the site at start with an error that names the missing module. The demonstration needs `all` |
+| `OPENH2O_MODULES` | No | every module except `reporting` | The modules of OpenH2O the site runs, separated by commas, or `all`. The list must include `core`, `geography`, `measurements` and `standards`. A list that leaves out a module another module needs stops the site at start with an error that names the missing module. The demonstration needs every module the default includes |
 | `TIME_ZONE` | No | `America/Los_Angeles` | The site's time zone |
 | `LOG_DIR` | No | `/app/logs` | The folder for the error log, `openh2o.log`, which rotates at 10 MB and keeps five files. Inside Docker it is on the `logs_data` volume |
 | `DJANGO_SUPERUSER_EMAIL`, `DJANGO_SUPERUSER_PASSWORD` | No | empty | Create the first host administrator when the site has none (section 7) |

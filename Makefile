@@ -14,7 +14,7 @@ export APP_VERSION = $(VERSION)
 .PHONY: help up down build logs shell dbshell migrate makemigrations \
         createsuperuser collectstatic seed seed-roles seed-water-types \
         seed-data-sources seed-report-templates seed-water-right-types \
-        seed-well-types demo flush-demo merced teardown-demo \
+        seed-well-types demo remove-demo \
         check test test-droppable guard-fresh fresh snapshot-demo reset-demo calc-rebuild verify-clean install-cron show-cron sync guard-prod guard-demo-host deploy rebuild-golden \
         verify-candidate promote-golden ci-gate release upgrade
 
@@ -271,17 +271,11 @@ seed-water-right-types: ## Seed water right type definitions
 seed-well-types: ## Seed well type definitions
 	$(EXEC) seed_well_types
 
-demo: ## Load demo data (fictional Demo Valley GSA)
-	$(EXEC) seed_demo_data
+demo: ## Load the demonstration data (the Merced Subbasin) into a site that holds no records of its own
+	$(EXEC) load_demonstration
 
-flush-demo: ## Delete and reload demo data
-	$(EXEC) seed_demo_data --flush
-
-merced: ## Load the full Merced Subbasin demo (boundary, hydrography, GSAs, rights/PODs, selected parcels, recharge)
-	$(EXEC) seed_merced
-
-teardown-demo: ## Remove ALL Kaweah + Demo-Valley demo data (keeps Merced + shared reference data)
-	$(EXEC) teardown_demo
+remove-demo: ## Remove the demonstration data, leaving users, reference lists and settings
+	$(EXEC) remove_demonstration
 
 # ---------------------------------------------------------------------------
 # Health & Maintenance
@@ -341,11 +335,7 @@ fresh: guard-prod down ## Full reset: destroy volumes, rebuild, migrate, seed, M
 	@sleep 5
 	$(EXEC) migrate
 	$(EXEC) seed_data
-	# --allow-prod-clobber because this target has ALREADY destroyed the volumes
-	# two lines up. On a DEBUG=False deployment seed_merced_operations' guard
-	# would otherwise stop the sequence at step 3 of 10 and leave the database
-	# half-seeded, refusing to clobber data this target just deleted.
-	$(EXEC) seed_merced --allow-prod-clobber
+	$(EXEC) load_demonstration
 	@echo ""
 	@echo "Fresh environment ready (Merced Subbasin demo). Run 'make createsuperuser' to create an admin."
 

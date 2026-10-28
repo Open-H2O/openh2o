@@ -97,8 +97,8 @@ normal as long as the step finishes and reports that it finished. These steps ta
 the longest:
 
 - The first build, which downloads and installs the software OpenH2O runs on.
-- Loading the demonstration, because one of its steps downloads streams and
-  monitoring stations from public government services.
+- Loading the demonstration, which builds some 66,000 records and saves them in one
+  transaction at the end.
 - The first sync of past readings from the slower public sources in Phase 4, which
   runs only as fast as those services answer. Start it and do other work while it
   runs.
@@ -311,13 +311,16 @@ wrong.
 ## Phase 3: Load data
 
 Start by asking the person whether the organization has its records ready or wants
-to explore the demonstration first. The demonstration's records stay on the site
-beside the organization's, and OpenH2O has no command that removes them. If the
-organization wants its site without them, explore the demonstration on a second
-copy of OpenH2O, on a laptop for example, and keep the organization's site for its
-own records.
+to explore the demonstration first. The demonstration loads only into a site that
+does not yet hold records of its own, and `remove_demonstration` takes it out again. To
+explore it first, load it on the new site before anything else, and remove it before
+you load the organization's own records.
 
-The Setup Wizard comes first in either case. It sets the area the site covers.
+For the organization's own records, the Setup Wizard comes first. On a site that
+does not hold records of its own and runs the default modules, it first asks whether to load the demonstration data or
+start with the organization's own records. It then sets the area the site covers, and
+the boundary it saves is a record of the site's own, so load the demonstration before
+setting a boundary, not after.
 
 ### The Setup Wizard
 
@@ -364,33 +367,35 @@ container.
 ### Option A: The demonstration data
 
 ```bash
-docker compose exec web python manage.py seed_merced           # the demonstration data
-docker compose exec web python manage.py load_station_fixture  # the demonstration's monitoring stations
+docker compose exec web python manage.py load_demonstration    # the demonstration data
 ```
 
-`seed_merced` loads the demonstration, a real groundwater basin with published
+`load_demonstration` loads the demonstration, a real groundwater basin with published
 records and invented sample data. It gives the organization a complete site to
-explore while you gather its own records. One of its steps downloads streams and
-monitoring stations from public government services and does not need a key. On a
-computer with no internet connection, first load the stored streams with
-`python manage.py seed_merced_base` and
-`python manage.py loaddata data/merced/flowlines.json`, then add
-`--skip-auto-populate` to leave the download out.
+explore while you gather its own records. It loads the reference lists, the basin's
+boundary, streams, parcels, wells, rights, recharge basins, the demonstration's 335
+monitoring stations (42 of them switched on, each carrying the date it last
+published a reading), their readings, the stored satellite ET data and the
+calculated figures for two water years. It downloads nothing and does not need a
+key. It runs as one transaction, so a load that fails saves nothing.
 
-The populate step creates every station it finds switched off, so the
-demonstration's monitoring pages do not show any stations reporting until the stations are
-turned on. `load_station_fixture` loads the demonstration's own station list, which
-ships with OpenH2O. The list holds 335 stations. 42 of them are switched on, and
-each of those carries the date it last published a reading. The command downloads
-nothing, and a second run changes nothing. For the organization's own area, turn the
-stations on as Phase 4 describes.
+It refuses to start on a site that already holds records of its own, or when a module it needs is switched off,
+and it says which. In either case it leaves the site as it was. An administrator can also
+load it from Administration > Setup Wizard > Demonstration data.
 
-To rebuild the demonstration later on the same site, add `--allow-prod-clobber` to
-`seed_merced`. One of its steps deletes and redraws the demonstration's parcel
-outlines and well locations. Because of that step, under the production settings
-`seed_merced` will not run over existing demonstration records unless you add the
-flag. Under the development settings it redraws them without asking, including any
-outline someone has edited. A first run does not need a flag.
+When the organization is ready for its own records, remove the demonstration first:
+
+```bash
+docker compose exec web python manage.py remove_demonstration
+```
+
+The removal deletes every record the site holds and keeps the users and the
+reference lists. If the site had its settings record before the load, the removal
+keeps it and turns Demonstration mode off. If the load created it, the removal
+deletes it, so settings changed while the demonstration was on the site go back to
+their defaults. Either way the site is as it was before the load. The Demonstration data page offers the same removal, and lists
+what goes and how many records people added since the load, so nobody deletes their
+own work unawares. To rebuild the demonstration, remove it and load it again.
 
 ### Look at the organization's records first
 
@@ -493,9 +498,8 @@ and it says which one you are seeing.
 Let the organization decide when to make the first satellite ET run. A run against
 the demonstration spends part of the month's allowance on an area the organization
 does not manage. A run against the organization's own parcels produces the figures
-it needs. Load the organization's own parcels first, then fetch satellite ET. If
-someone wants the demonstration's ET figures filled in, say how many requests the
-run will use before you start it, and let the organization decide.
+it needs. Load the organization's own parcels first, then fetch satellite ET. The
+demonstration brings its own ET figures, so it does not need a run.
 
 ```bash
 docker compose exec web python manage.py sync_openet_parcels --start-date 2025-10-01 --end-date 2026-09-30 --dry-run
@@ -537,16 +541,19 @@ runs these jobs:
 - Every hour, it syncs CDEC and USGS.
 - Every day at 1:25, it backs up the database and the uploaded files into the
   `backups` folder in the checkout (Keeping it running, below).
-- Every day at 2:00, it syncs the Water Data Library, the SGMA Portal and NOAA.
+- Every day at 2:00, it syncs the Water Data Library, the SGMA Portal, NOAA and CIMIS.
 - Every day at 3:30, it calculates every reporting period that is not finalized.
 - Every 6 hours, it runs the health checks.
 - On the 1st of each month at 3:00, `prune_old_data` deletes staging records and
   logs older than their retention period.
 
-The times are in the computer's own time zone. The schedule does not sync CIMIS or
-OpenET. To keep CIMIS current, add `cimis` to the end of the 2:00 line before you
-install the schedule. Fetch OpenET with `sync_openet_parcels` when the organization
-wants new months. To get an alert when a sync fails, add the line
+The times are in the computer's own time zone. The page of each switched-on
+station gives the time of its next scheduled fetch, in the site's time zone (set at
+`/admin/` under Core > Site configs, or `TIME_ZONE` when none is set), so set the
+computer's clock to the same zone. CIMIS and NOAA are fetched
+only when their keys are set; without a key, each is skipped in one line. The schedule
+does not fetch OpenET: fetch it with `sync_openet_parcels` when the organization wants
+new months. To get an alert when a sync fails, add the line
 `OPENH2O_NTFY_URL=` at the top of `crontab.txt`, followed by the address of a topic
 on ntfy, a service that sends notifications to a phone or a browser.
 
@@ -567,8 +574,9 @@ stations report, keep those, and remove the rest before you hand the site over.
 
 1. **Turn on the stations in the boundary.** The populate step creates every station
    switched off, and `sync_source` fetches data only for stations that are on. With
-   none on, it prints "No active stations for CDEC. Run discover_stations first."
-   Ignore that advice. The stations are already found and only need to be turned on.
+   none on, it says how many stations are switched off and names `activate_stations`
+   and the Setup Wizard's Enable all. The stations are already found and only need to
+   be turned on.
    Nothing below works until this step has run.
 
    In a browser, click **Enable all** in the Setup Wizard's last step (Phase 3). It

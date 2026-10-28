@@ -7,7 +7,7 @@ runs commands in-process with the test database.
 
 Excluded per plan:
 - sync_all: requires network or mock setup beyond scope
-- seed_demo_data: creates a massive dataset; too slow for smoke tests
+- load_demonstration: creates a massive dataset; too slow for smoke tests
 """
 
 from datetime import date

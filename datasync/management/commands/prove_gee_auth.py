@@ -111,7 +111,7 @@ class Command(BaseCommand):
         if not parcels:
             raise CommandError(
                 "No parcels with geometry + area_acres found. Load parcel data "
-                "first (e.g. seed_demo_data)."
+                "first (e.g. load_demonstration)."
             )
         self.stdout.write(
             self.style.WARNING(

@@ -37,23 +37,30 @@ preview before anything is saved.
 ## 1. The demonstration data
 
 ```bash
-docker compose exec web python manage.py seed_data      # reference data
-docker compose exec web python manage.py seed_merced    # the demonstration data
+docker compose exec web python manage.py load_demonstration    # the demonstration data
+docker compose exec web python manage.py remove_demonstration  # take it out again
 ```
 
-`seed_merced` loads the demonstration, a real groundwater basin with published
+`load_demonstration` loads the demonstration, a real groundwater basin with published
 records and invented sample data. It gives you a complete site to explore
-while you gather your own records. Run `seed_data` first, because the demonstration
-needs the reference lists it loads. One step of `seed_merced` downloads streams and
-monitoring stations from public government services. The download takes a few
-minutes and does not need a key.
+while you gather your own records. It loads only into a site that does not hold records
+of its own, and it does not use the network: every outside record it uses ships with
+OpenH2O.
+`remove_demonstration` takes it out and leaves the site as a clean install, with its
+users and reference lists kept. Settings changed while the demonstration was loaded
+go back to their defaults unless the site had its own settings before the load.
+Remove it before you import your own records, and load it before you run the Setup
+Wizard, whose boundary is a record of the site's own. An administrator can do both
+from Administration > Setup Wizard > Demonstration data.
 
 ---
 
 ## 2. The Setup Wizard
 
-A new site begins at the Setup Wizard (`/setup/`). Its first step offers four
-choices:
+A new site begins at the Setup Wizard (`/setup/`). On a site that does not hold records
+of its own and runs the default modules, the wizard first asks how to start: load the demonstration data, or start
+with your own records. Starting with your own records opens its first step, which
+offers four choices:
 
 1. Select a boundary already on the site.
 2. Upload a boundary file: a zipped shapefile, a KML file or a GeoJSON file.
@@ -430,10 +437,10 @@ OpenH2O yet. Someone with a staff account can add them on the administration sit
 
 ## A sensible order
 
-1. Load the reference lists with `seed_data`. Run `seed_merced` as well if you want
-   to explore the demonstration first.
-2. Open the Setup Wizard (`/setup/`) and choose, upload or type a boundary, or start
-   without one. With a boundary, run the wizard's populate step to add monitoring
+1. Load the reference lists with `seed_data`. To explore the demonstration first, run
+   `load_demonstration`, and run `remove_demonstration` before the next step.
+2. Open the Setup Wizard (`/setup/`), choose Start with your own records, and choose,
+   upload or type a boundary, or start without one. With a boundary, run the wizard's populate step to add monitoring
    stations, and basins, parcels and streams if you need them.
 3. Import your parcels with `import_parcels`.
 4. Import your wells with `import_wells` or the Wells page's Import screen.

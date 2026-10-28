@@ -516,7 +516,7 @@ class TestBadGeoJSON:
 class TestTheDropZone:
 
     def _page(self):
-        resp = _admin_client().get(WIZARD_URL)
+        resp = _admin_client().get(WIZARD_URL + "?start=own")  # past the first question
         assert resp.status_code == 200
         return resp.content.decode()
 

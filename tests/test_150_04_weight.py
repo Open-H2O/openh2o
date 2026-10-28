@@ -255,7 +255,7 @@ def test_s6_construction_is_the_right_columns_last_card():
 
 @override_settings(ACCESS_CONTROL_ENFORCED=False)
 def test_s16b_the_several_polygons_line_is_at_body_size():
-    resp = _client(username="w150-admin", admin=True).get(reverse("setup:wizard"))
+    resp = _client(username="w150-admin", admin=True).get(reverse("setup:wizard") + "?start=own")
     assert resp.status_code == 200
     html = _squash(resp.content.decode())
     sentence = "When the file holds several polygons, OpenH2O combines them into one boundary."

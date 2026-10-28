@@ -21,8 +21,7 @@ DETERMINISTIC + IDEMPOTENT + ADDITIVE. Crops are assigned by parcel index (no
 (parcel, name) via ``update_or_create`` and then prunes any stale Merced
 UsageLocation a run did not (re)create — so a bare re-run creates nothing, leaves
 counts unchanged, and a parcel that dropped out of the irrigated set is cleaned
-up. It only ever touches MER- parcels' UsageLocations; Demo Valley land use is
-untouched.
+up. It only ever touches MER- parcels' UsageLocations.
 
 Prerequisite (the physical demo must already exist on this instance)::
 
@@ -52,7 +51,7 @@ class Command(BaseCommand):
     help = (
         "Give every irrigated Merced parcel a crop-type UsageLocation so the "
         "calc engine's facility_only_zero step passes it through. Idempotent; "
-        "additive (MER-keyed; never touches Demo Valley land use)."
+        "additive (MER-keyed)."
     )
 
     def add_arguments(self, parser):

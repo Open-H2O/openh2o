@@ -43,6 +43,7 @@
 
   <div class="card-raised">
     <h2 class="section-header">How to set up OpenH2O</h2>
+    {% if 'setup' in enabled_modules and user_is_admin %}<p class="text-secondary text-sm">To try OpenH2O first, choose the <a href="{% url 'setup:demonstration' %}" class="text-accent">demonstration data</a> when the Setup Wizard asks how to start, and remove it before you add your own records.</p>{% endif %}
 
     <div class="table-scroll">
       <table class="data-table help-steps-table help-steps-table--setup">
@@ -77,12 +78,12 @@
           {% if 'wells' in enabled_modules %}<tr>
             <td class="col-step"><span class="step-num">{{ steps.wells }}</span>Import your wells</td>
             <td class="col-where">Water Data &gt; Wells<br><a href="{% url 'wells:list' %}" class="text-sm text-accent">Go to Wells &rarr;</a></td>
-            <td>Add wells one at a time with Add well, or many at once with Import, from a CSV file, a zipped shapefile, a GeoJSON file or a KML file. Each well needs a name and a location.</td>
+            <td>{% if 'infrastructure' in enabled_modules %}Add wells one at a time with Add well, or many at once with Import, from a CSV file, a zipped shapefile, a GeoJSON file or a KML file.{% else %}To load your wells, run the import_wells command on the server, with a CSV file or a shapefile.{% endif %} Each well needs a name and a location.</td>
           </tr>{% endif %}
           {% if 'surface' in enabled_modules %}<tr>
             <td class="col-step"><span class="step-num">{{ steps.surface }}</span>{% if 'recharge' in enabled_modules %}Add surface diversions and recharge sites{% else %}Add surface diversions{% endif %}</td>
             <td class="col-where">Administration &gt; Water Rights<br><a href="{% url 'surface:water_rights_list' %}" class="text-sm text-accent">Go to Water Rights &rarr;</a><br>Water Data &gt; Surface Diversions<br><a href="{% url 'surface:pod_list' %}" class="text-sm text-accent">Go to Surface Diversions &rarr;</a>{% if 'recharge' in enabled_modules %}<br>Water Data &gt; Recharge sites<br><a href="{% url 'recharge:list' %}" class="text-sm text-accent">Go to Recharge sites &rarr;</a>{% endif %}</td>
-            <td>On Water Rights, add each water right by hand, or import the State Water Board&rsquo;s water rights list as a CSV file. On Surface Diversions, add each point of diversion and link it to its water right.{% if 'recharge' in enabled_modules %} On Recharge sites, add each site and choose its zone, then record each recharge event on the site&rsquo;s page. Recharge at a site without a zone is not recorded in a basin recharge pool, and the zone can be set later on the site&rsquo;s page.{% endif %}</td>
+            <td>On Water Rights, add each water right by hand, or import the State Water Board&rsquo;s water rights list as a CSV file. {% if 'infrastructure' in enabled_modules %}On Surface Diversions, add each point of diversion and link it to its water right.{% endif %}{% if 'recharge' in enabled_modules %} On Recharge sites, {% if 'infrastructure' in enabled_modules %}add each site and choose its zone, then {% endif %}record each recharge event on the site&rsquo;s page. Recharge at a site without a zone is not recorded in a basin recharge pool, and the zone can be set later on the site&rsquo;s page.{% endif %}</td>
           </tr>{% endif %}
           {% if 'datasync' in enabled_modules %}<tr>
             <td class="col-step"><span class="step-num">{{ steps.stations }}</span>Connect monitoring stations</td>

@@ -226,8 +226,8 @@ The suite is pytest with pytest-django and factory_boy, in `tests/` (`tests/fact
   `main` and every pull request, `.github/workflows/tests.yml` runs `ruff check .` (ruff pinned to
   0.16.10) and the pytest suite without the tests marked `network`;
   `.github/workflows/clean-install.yml` checks that no migration is missing, that a fresh install
-  migrates and seeds with no demonstration content, and that the full demonstration names no real
-  organization.
+  migrates and seeds with no demonstration content, and that the Merced seed sequence (`seed_merced`, one
+  step of `load_demonstration`) names no real organization.
 - **The image has no source mount.** The `web` image copies the code when it is built, so after
   adding or changing a file run `docker compose up -d --build web` before testing.
   `scripts/assert-image-fresh.sh`, which `make test` runs first, compares the container only with

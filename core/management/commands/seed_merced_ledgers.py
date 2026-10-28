@@ -36,7 +36,7 @@ DETERMINISTIC + IDEMPOTENT + ADDITIVE. No ``random`` (index-based jitter only), 
 re-runs reproduce identical rows. The command ALWAYS flushes its OWN rows first
 (the synthesized district zones, its Allocations, its accounts, and the
 ParcelLedger rows on MER- parcels) then rebuilds, so a bare re-run leaves counts
-unchanged. It NEVER touches Demo Valley / base-layer rows, nor the three GSA
+unchanged. It NEVER touches base-layer rows, nor the three GSA
 management-area zones (those belong to seed_merced_gsas).
 
 SIZING: estimated-ET-derived. The DELIVERED
@@ -363,7 +363,7 @@ class Command(BaseCommand):
     help = (
         "Build the Merced demo's synthetic accounting layer (reporting periods, "
         "two-authority Allocations, accounts, and the full keyed ParcelLedger). "
-        "Idempotent; additive (MER-keyed; never touches Demo Valley/base/GSA rows)."
+        "Idempotent; additive (MER-keyed; never touches base/GSA rows)."
     )
 
     def add_arguments(self, parser):
@@ -405,7 +405,7 @@ class Command(BaseCommand):
 
     # ------------------------------------------------------------------
     # Flush — ONLY this seed's rows. Never the GSA zones (management_area,
-    # owned by seed_merced_gsas), never Demo Valley/base-layer rows.
+    # owned by seed_merced_gsas), never base-layer rows.
     # ------------------------------------------------------------------
     def _flush(self):
         # Local import: `surface` is an optional module, so this must
@@ -418,7 +418,7 @@ class Command(BaseCommand):
 
         # DiversionRecords this seed synthesizes as the recorded district total per
         # MER POD/month (the source of truth the allocation service splits). Keyed
-        # to MER- rights so the flush never touches Demo Valley / base-layer records.
+        # to MER- rights so the flush never touches base-layer records.
         DiversionRecord.objects.filter(
             point_of_diversion__water_right__right_id__startswith="MER-WR-"
         ).delete()
@@ -437,7 +437,7 @@ class Command(BaseCommand):
 
         # The district's own account is the recharge seed's, not this one's: it holds
         # the recharge credits, and the build re-runs this seed after the recharge
-        # seed has run. teardown_demo still removes it with the other accounts.
+        # seed has run.
         acct_ids = list(
             WaterAccount.objects.filter(account_number__startswith="MER-ACCT-")
             .exclude(account_number=DISTRICT_ACCOUNT_NUMBER)

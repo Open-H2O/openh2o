@@ -700,8 +700,9 @@ files = [
   "health/management/commands/run_health_checks.py",
   "health/checks.py",
   "Makefile",
-  "core/management/commands/teardown_demo.py",
-  "core/management/commands/seed_demo_data.py",
+  "core/demonstration.py",
+  "core/management/commands/load_demonstration.py",
+  "core/management/commands/remove_demonstration.py",
   "core/modules.py",
   "config/settings/base.py",
 ]
@@ -1758,7 +1759,7 @@ checked_at = "41b90b6"
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
 heading = "Phase 3: Load data"
-files = ["core/management/commands/seed_merced.py", "core/management/commands/teardown_demo.py", "setup/views.py"]
+files = ["core/management/commands/seed_merced.py", "core/demonstration.py", "setup/views.py"]
 labels = []
 checked_at = "41b90b6"
 

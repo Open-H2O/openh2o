@@ -66,7 +66,9 @@ openh2o/
 ├── core/                    # Core app (User model, seed commands)
 │   ├── management/commands/
 │   │   ├── seed_data.py     # Runs all seed commands
-│   │   ├── seed_merced.py    # Full Merced Subbasin demonstration (the live demo)
+│   │   ├── load_demonstration.py    # Load the Merced demonstration (core/demonstration.py)
+│   │   ├── remove_demonstration.py  # Remove it, leaving a clean install
+│   │   ├── seed_merced.py    # One step of the load: the Merced seed sequence
 │   │   └── seed_roles.py
 │   ├── apps.py
 │   └── models.py
@@ -113,8 +115,8 @@ make shell             # Django shell_plus
 make dbshell           # PostgreSQL shell
 make migrate           # Run migrations
 make seed              # Load all reference data
-make demo              # Load demo dataset (fictional GSA)
-make fresh             # Full reset: destroy, rebuild, migrate, seed, demo
+make demo              # Load the Merced demonstration data (make remove-demo takes it out)
+make fresh             # Full reset: destroy, rebuild, migrate, seed, load the demonstration
 make health            # Run health checks
 make check             # Django deployment checks
 

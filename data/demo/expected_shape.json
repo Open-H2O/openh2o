@@ -357,7 +357,7 @@
     "parcels.CropType": {
       "expected": 5,
       "tolerance": 0,
-      "reason": "Reference data from seed_data. Production carries 7 because two rows (Citrus, Pistachios) are residue from the retired Demo Valley and Kaweah datasets that no current seed command creates. The CANDIDATE is the correct side of that difference -- this is exactly the accumulated accident a build-from-source replaces."
+      "reason": "The demonstration's crop list, written by seed_merced_cropland and seed_merced_ledgers (seed_data writes none). The candidate is built from the repository, so it carries only these five."
     },
     "parcels.Parcel": {
       "expected": 76,
@@ -597,7 +597,7 @@
     "surface.WaterRightType": {
       "expected": 6,
       "tolerance": 0,
-      "reason": "Reference data from seed_data. Production carries 7 because of a bare 'Appropriative' row left over from the retired Demo Valley dataset. The candidate is the correct side."
+      "reason": "Reference data from seed_data (seed_water_right_types): six types. The candidate is built from the repository, so it carries only these."
     },
     "wells.MonitoringWell": {
       "expected": 3,

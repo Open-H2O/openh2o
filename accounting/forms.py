@@ -308,3 +308,11 @@ class ParcelLedgerForm(forms.ModelForm):
                 attrs={"rows": 3, "class": "form-textarea"}
             ),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # In number order: a use area has no default order, and the table's
+        # storage order changes with how its rows were written.
+        self.fields["parcel"].queryset = self.fields["parcel"].queryset.order_by(
+            "parcel_number"
+        )
