@@ -38,6 +38,7 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 
+from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import QuerySet
 from django.utils import timezone
@@ -192,6 +193,19 @@ class Command(BaseCommand):
             )
             return
 
+        # A source whose key is not set is skipped in one line, not tried: the
+        # attempt could only fail every station and count toward an alert.
+        if not options["mock"] and not getattr(settings, "DATASYNC_MOCK_MODE", False):
+            missing = adapter.missing_required_credential()
+            if missing:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"{data_source.name} is skipped because its key is "
+                        f"not set: {missing}."
+                    )
+                )
+                return
+
         start_date, end_date = _pull_window(code, options["start"], options["end"])
 
         stations = MonitoredStation.objects.filter(
@@ -199,12 +213,26 @@ class Command(BaseCommand):
         )
 
         if not stations.exists():
-            self.stdout.write(
-                self.style.WARNING(
-                    f"No active stations for {data_source.name}. "
-                    "Run discover_stations first."
+            switched_off = MonitoredStation.objects.filter(
+                data_source=data_source
+            ).count()
+            if switched_off:
+                noun = "station" if switched_off == 1 else "stations"
+                verb = "is" if switched_off == 1 else "are"
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"{switched_off} {noun} for {data_source.name} {verb} "
+                        f"switched off. Run activate_stations --source {code}, "
+                        "or choose Enable all in the Setup Wizard."
+                    )
                 )
-            )
+            else:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"No stations for {data_source.name}. "
+                        f"Run discover_stations {code} first."
+                    )
+                )
             return
 
         self.stdout.write(

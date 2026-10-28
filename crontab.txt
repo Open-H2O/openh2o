@@ -36,9 +36,14 @@ OPENH2O_LOG_DIR=/opt/openh2o-logs
 # accounting run touch anything. A dump that cannot be read back fails and alerts.
 25 1 * * * $OPENH2O_DIR/scripts/backup.sh
 
-# Daily 2:00 AM: slower periodic sources — groundwater (DWR WDL/SGMA) and climate (NOAA)
-# (cimis, cnrfc and openet are not synced here: they are deactivated sources with no useful markers; see seed_data_sources.py)
-0 2 * * * $OPENH2O_DIR/scripts/run-sync.sh dwr_wdl dwr_sgma noaa
+# Daily 2:00 AM: slower periodic sources: groundwater (DWR WDL/SGMA), climate (NOAA) and
+# CIMIS. CIMIS is fetched when its key (CIMIS_API_KEY) is set; with no key it is skipped
+# in one line. One source failing does not stop the others, run-sync.sh goes on to the next.
+# CNRFC is switched off in OpenH2O's list of data sources (it publishes forecasts, not
+# readings), so the schedule does not fetch it. OpenET is not a station source: its figures
+# are fetched by `sync_openet_parcels`, which nothing here schedules, so run it by hand
+# when you want figures for new months.
+0 2 * * * $OPENH2O_DIR/scripts/run-sync.sh dwr_wdl dwr_sgma noaa cimis
 
 # Daily 3:30 AM: calculate every open reporting period, after the 2:00 AM sync has
 # brought in the day's data. A finalized period is skipped, never changed. One run at a

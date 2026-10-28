@@ -54,6 +54,11 @@
   <div>
     <a href="{% url 'datasync:station_list' %}" class="back-link">&larr; Back to Monitoring Stations</a>
   </div>
+  {% comment %} When the schedule next fetches this station's readings (crontab.txt);
+       absent when the file cannot be read. {% endcomment %}
+  {% if fetch_schedule_sentence %}
+  <p class="text-secondary text-base" id="fetch-schedule">{{ fetch_schedule_sentence }}</p>
+  {% endif %}
   <!-- Persistent map host (the shared body partial builds the map into this). -->
   <div id="detail-map-card" class="card-raised" style="padding: 0; overflow: hidden; display: none;">
     <div id="detail-map" class="map-embed" style="height: 380px; position: relative; overflow: hidden; background: var(--color-base);"></div>

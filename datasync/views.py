@@ -28,7 +28,7 @@ from core.access import public_in_open_demo
 from core.map_labels import map_label
 
 from core.workspace import list_response
-from datasync import freshness
+from datasync import freshness, schedule
 from datasync.adapters.registry import get_parameter_label
 from datasync.models import (
     DataRecordStaging,
@@ -512,6 +512,9 @@ def _station_detail_context(station):
         ),
         "chart_data_url": f"/datasync/stations/{station.pk}/chart-data/",
         "enriched_parameters": enriched_parameters,
+        # When the schedule next fetches this station's readings, read from
+        # crontab.txt; None when that file cannot be read.
+        "fetch_schedule_sentence": schedule.station_sentence(station),
     }
 
 
