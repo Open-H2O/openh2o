@@ -797,6 +797,10 @@ class DiversionRecord(models.Model):
         ("outage_estimate", "Estimated during a device outage, 937(b)(4)"),
         ("estimated_from_use", "Estimated from the fields' crop water use"),
     ]
+    #: What a form offers. ``estimated_from_use`` is left out: OpenH2O no longer
+    #: writes it and no one can choose it, but a record a finalized year still
+    #: holds keeps it, so it stays in ``METHOD_CHOICES`` to be read back.
+    OFFERED_METHOD_CHOICES = [c for c in METHOD_CHOICES if c[0] != "estimated_from_use"]
     #: 931(s) and 931(j)(3): raw device output, provisional (not yet quality
     #: assured or apportioned), and non-provisional. Only non-provisional data
     #: may go in an annual report.

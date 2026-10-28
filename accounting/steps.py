@@ -222,53 +222,6 @@ def et_gross(running_af, parcel, period, ctx, config):
     return af, _record("et_gross", running_af, af, detail)
 
 
-def estimated_delivery_af(parcel, *, year=None, month=None, reporting_period=None):
-    """Canal water OpenH2O estimated for this field, as a positive AF figure.
-
-    The canal split writes a field's share of a headgate month as a
-    ``surface_diversion`` row marked ``divided_from_headgate`` and carrying its
-    point's pk. The row is an estimate when that point's direct-use record for
-    the row's month is the estimator's own (``method="estimated_from_use"``).
-    The estimate stays on the canal page, in the water budget and on the
-    field's page; the groundwater calculation never subtracts it. Zero where
-    the surface module is not installed (no estimate can exist) and for a split
-    row written before the point was recorded on it (it cannot be told apart).
-    """
-    from core.modules import is_enabled
-
-    if not is_enabled("surface"):
-        return Decimal("0")
-
-    from parcels.models import ParcelLedger
-    from surface.models import DiversionRecord
-
-    rows = ParcelLedger.objects.filter(
-        parcel=parcel,
-        source_type="surface_diversion",
-        divided_from_headgate=True,
-        divided_from_point_pk__isnull=False,
-    )
-    if year is not None:
-        rows = rows.filter(effective_date__year=year, effective_date__month=month)
-    if reporting_period is not None:
-        rows = rows.filter(reporting_period=reporting_period)
-    found = list(rows.values_list("divided_from_point_pk", "effective_date", "amount_acre_feet"))
-    if not found:
-        return Decimal("0")
-    estimated_months = {
-        (pk, d.year, d.month)
-        for pk, d in DiversionRecord.objects.filter(
-            point_of_diversion_id__in={f[0] for f in found},
-            diversion_type="direct_use",
-            method="estimated_from_use",
-        ).values_list("point_of_diversion_id", "month")
-    }
-    return sum(
-        (abs(amount) for pk, day, amount in found if (pk, day.year, day.month) in estimated_months),
-        Decimal("0"),
-    )
-
-
 def subtract_surface_water(running_af, parcel, period, ctx, config):
     """Subtract the part of the month's canal delivery the crop could use.
 
@@ -277,19 +230,17 @@ def subtract_surface_water(running_af, parcel, period, ctx, config):
     result: clamp_floor owns the floor.
 
     Only the part of a delivery the crop could actually use is subtracted:
-    ``consumed = counted delivery x efficiency``, where efficiency is this
+    ``consumed = delivery x efficiency``, where efficiency is this
     parcel's OWN ``parcels.services.field_efficiency`` (a method's assigned
     efficiency, or the agency-wide default). The multiplication is not a
     setting: a plan carrying an ``apply_efficiency`` key (on or off) or none
     behaves the same.
 
-    A delivery OpenH2O estimated from the fields' crop use (see
-    :func:`estimated_delivery_af`) is not counted: it was made from this
-    field's own crop use, so subtracting it would cancel the groundwater the
-    crop used. ``detail["delivered_af"]`` is the whole delivery (the field's
-    balance prints it as supplied), ``detail["estimated_af"]`` the estimated
-    part of it, and ``detail["consumed_af"]`` / ``detail["surface_water_af"]``
-    the figure subtracted.
+    Only a delivery that was measured or typed is ever on these rows:
+    OpenH2O does not make up a canal delivery from crop need.
+    ``detail["delivered_af"]`` is the whole delivery (the field's balance
+    prints it as supplied), and ``detail["consumed_af"]`` /
+    ``detail["surface_water_af"]`` the figure subtracted.
 
     Delivered ``0`` is a special case: efficiency is never looked up
     (``efficiency`` and ``efficiency_source`` stay ``None``, ``consumed_af`` is
@@ -306,8 +257,6 @@ def subtract_surface_water(running_af, parcel, period, ctx, config):
         effective_date__month=month,
     ).aggregate(total=Sum("amount_acre_feet"))
     delivered_af = abs(agg["total"] or Decimal("0"))
-    estimated_af = estimated_delivery_af(parcel, year=year, month=month)
-    counted_af = delivered_af - estimated_af
 
     quant = Decimal("0.0001")
     if delivered_af == 0:
@@ -320,12 +269,11 @@ def subtract_surface_water(running_af, parcel, period, ctx, config):
         from parcels.services import field_efficiency
 
         efficiency, efficiency_source = field_efficiency(parcel)
-        consumed_af = (counted_af * efficiency).quantize(quant)
+        consumed_af = (delivered_af * efficiency).quantize(quant)
 
     new_running = running_af - consumed_af
     detail = {
         "delivered_af": str(delivered_af),
-        "estimated_af": str(estimated_af),
         "efficiency": str(efficiency) if efficiency is not None else None,
         "efficiency_source": efficiency_source,
         "consumed_af": str(consumed_af),

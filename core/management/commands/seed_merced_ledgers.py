@@ -268,9 +268,8 @@ DRY_YEAR_OPEN_FRACTION = Decimal("0.1")    # the El Nido district's current-year
 # cutoff, not a per-water-year window, so every month of WY 2025-2026 falls
 # after it and the El Nido point delivers nothing in the open year. Each of
 # those months carries a typed delivery record of 0 (OpenH2O has no
-# curtailment orders). A typed record stops
-# the estimator (surface/estimate.py `_has_typed_record`, zero included), so
-# the platform never estimates water the district recorded as not delivered.
+# curtailment orders). The record of 0 says the district recorded the canal
+# as not delivering, which is different from a month with no record at all.
 # The district's allocation for that year is deliberately NOT zero
 # (`DRY_YEAR_OPEN_FRACTION` leaves it at a tenth of the prior year's): the district
 # cut the allocation, and then the canal delivered nothing at all.
@@ -278,11 +277,10 @@ EL_NIDO_LAST_DELIVERY = date(2025, 6, 30)
 # The El Nido canal's point of diversion, matched by its id prefix (the demo
 # marker suffix "-DEMO" is not on every build's names).
 EL_NIDO_POD_PREFIX = "MER-POD-007"
-# The demo's one ditch with no meter. The seed types
-# no monthly volume for it; the platform estimates each month's delivery from
-# its fields' crop water use (surface.estimate), the same path a district's own
-# unmetered ditch takes, and the split divides that estimate. Its right
-# (MER-WR-004-DEMO, shared with Crocker-Huffman, face 120,000 AF) is kept.
+# The demo's one ditch with no meter. The seed types no monthly volume for it
+# and OpenH2O makes none up, so the ditch has no record and delivers nothing to
+# its fields: no meter reading and no entered delivery means no canal water.
+# Its right (MER-WR-004-DEMO, shared with Crocker-Huffman, face 120,000 AF) is kept.
 # Matched by its id prefix: the demo marker suffix ("-DEMO") is not on every
 # build's names.
 UNMETERED_POD_PREFIX = "MER-POD-004"
@@ -679,7 +677,7 @@ class Command(BaseCommand):
                 AllocationPlan.objects.update_or_create(
                     zone=zone, water_type=gw, reporting_period=rp,
                     defaults={
-                        "name": f"{zone.name} — Groundwater {rp.name}",
+                        "name": f"{zone.name} groundwater, {rp.name}",
                         "allocation_acre_feet": budget,
                         # Label demo data as demo, per row: the rate is the
                         # demonstration's, not a GSP's, and the row says so.
@@ -736,7 +734,7 @@ class Command(BaseCommand):
                 AllocationPlan.objects.update_or_create(
                     zone=zone, water_type=sw, reporting_period=rp,
                     defaults={
-                        "name": f"{zone.name} — Surface Water {rp.name}",
+                        "name": f"{zone.name} surface water, {rp.name}",
                         "allocation_acre_feet": amount,
                         "notes": note,
                     },
@@ -963,7 +961,6 @@ class Command(BaseCommand):
             PointOfDiversion,
             PointOfDiversionParcel,
         )
-        from surface.estimate import estimate_month
         from surface.services import allocate_district_delivery
 
         schedule = self._month_schedule(period)
@@ -982,7 +979,7 @@ class Command(BaseCommand):
 
         for pod_seq, pod in enumerate(pods):
             if pod.name.startswith(UNMETERED_POD_PREFIX):
-                continue  # no meter: estimated below, never typed
+                continue  # no meter and no typed volume: no record, no delivery
             runs_dry = pod.name.startswith(EL_NIDO_POD_PREFIX)
             served = [
                 link.parcel
@@ -996,8 +993,7 @@ class Command(BaseCommand):
             # idempotent via update_or_create on the (POD, month, type) unique key.
             for month_date, mn in schedule:
                 if runs_dry and month_date > EL_NIDO_LAST_DELIVERY:
-                    # Nothing delivered: a typed record of 0, so the estimator
-                    # never invents a delivery for the month.
+                    # Nothing delivered: a typed record of 0.
                     DiversionRecord.objects.update_or_create(
                         point_of_diversion=pod,
                         month=month_date,
@@ -1046,14 +1042,6 @@ class Command(BaseCommand):
                         "volume_acre_feet": total,
                     },
                 )
-
-        # The ditch with no meter: estimated forward from its fields' crop water
-        # use, month by month, oldest first (the face-value cap reads earlier
-        # months). Run only after every metered point's typed volumes are in, so
-        # no metered point is mistaken for an unmetered one; the estimator skips
-        # any point with a typed record or with no active right.
-        for month_date, _mn in schedule:
-            estimate_month(month_date.replace(day=1), [])
 
         # Let the platform service split the recorded totals across parcels by
         # ET demand (or the static fraction fallback) and write the negative

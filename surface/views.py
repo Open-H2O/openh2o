@@ -49,13 +49,6 @@ from parcels.models import Parcel
 from surface import importer
 from surface import diversion_import as diversion_import_service
 from surface.services import canal_water_by_month
-from surface.estimate import (
-    ESTIMATE_METHOD,
-    discard_estimate,
-    replaced_sentence,
-    saved_as_sentence,
-    typed_method_for,
-)
 from surface.face_value import years_against_face_value
 from surface.forms import (
     DiversionRecordForm,
@@ -89,6 +82,25 @@ logger = logging.getLogger(__name__)
 # groups (the panel's figures are the SAME queryset the table prints, never
 # a second derivation).
 # ---------------------------------------------------------------------------
+def _mark_finalized(records):
+    """Give each record ``in_finalized_year``: its period, or its month, is in a finalized year.
+
+    The database lock reads the month as well as the period link, so this does
+    too; a row it marks is one a press on Edit or Delete would refuse. One
+    query for all the rows.
+    """
+    finalized = list(
+        ReportingPeriod.objects.filter(is_finalized=True).values_list("start_date", "end_date")
+    )
+    for record in records:
+        period = record.reporting_period
+        record.in_finalized_year = bool(
+            (period is not None and period.is_finalized)
+            or any(start <= record.month <= end for start, end in finalized)
+        )
+    return records
+
+
 def _group_diversion_records(records):
     """Partition ordered ``DiversionRecord`` rows into water-year groups.
 
@@ -238,6 +250,7 @@ def _pod_detail_context(pod):
         .select_related("reporting_period")
         .order_by("-month")
     )
+    _mark_finalized(diversion_records)
 
     # The table's own water-year groups, and the
     # CURRENT period's figures read off that SAME grouping -- no second
@@ -542,14 +555,6 @@ def _recalculate_months(request, trigger, months):
     return recalculation_sentence(covered) if covered else ""
 
 
-def _with_replaced(replaced_month, line):
-    """The recalculation line, led by "This record replaces OpenH2O's estimate for <Month>." when one gave way."""
-    if replaced_month is None:
-        return line
-    sentence = replaced_sentence(replaced_month)
-    return f"{sentence} {line}" if line else sentence
-
-
 def _render_diversion_records_section(
     request, pod, *, form=None, edit_record=None, edit_form=None, period_warning=None,
     recalculation_line="",
@@ -569,6 +574,7 @@ def _render_diversion_records_section(
         .select_related("reporting_period")
         .order_by("-month")
     )
+    _mark_finalized(diversion_records)
 
     # The same grouping _pod_detail_context uses, so a POST that
     # swaps this partial back in renders the identical shape (row-group
@@ -633,16 +639,9 @@ def diversion_record_create(request, pk):
         # unique_together check (which excludes fields absent from the form)
         # never runs it -- without this, a duplicate (POD, month, type) hit
         # the database's own constraint as a raw IntegrityError, a 500.
-        #
-        # A month that holds an ESTIMATE for this point gives way to the
-        # volume a person types. The estimate is dated the 1st, as a typed
-        # record is, so it would collide; it is deleted inside the same
-        # transaction as the save, so a refused save keeps it.
-        replaced = None
         try:
             refuse_if_period_finalized(period)
             with transaction.atomic():
-                replaced = discard_estimate(pod, month, record.diversion_type)
                 record.validate_unique()
                 record.save()
         except PeriodFinalized as exc:
@@ -650,10 +649,7 @@ def diversion_record_create(request, pk):
         except ValidationError:
             form.add_error(None, _DUPLICATE_RECORD_ERROR)
         else:
-            recalculation_line = _with_replaced(
-                replaced,
-                _recalculate_months(request, "diversion_saved", [month]),
-            )
+            recalculation_line = _recalculate_months(request, "diversion_saved", [month])
             if period is None:
                 # The record saved, but with no reporting period it is invisible to
                 # every period-scoped filing — say so now, not at filing time.
@@ -693,8 +689,6 @@ def diversion_record_edit(request, pk, rpk):
     record = get_object_or_404(DiversionRecord, pk=rpk, point_of_diversion=pod)
     # Before the form's values land on the instance.
     stored_month = record.month
-    stored_method = record.method
-    stored_volume = record.volume_acre_feet
 
     if request.method == "GET":
         return _render_diversion_records_section(
@@ -715,49 +709,20 @@ def diversion_record_edit(request, pk, rpk):
             start_date__lte=month,
             end_date__gte=month,
         ).first()
-        # An estimate saved with a changed volume
-        # becomes a typed record, so the next run's estimator (which touches
-        # only its own method) leaves the person's figure alone. The method is
-        # a measuring device when one is in service for the month, else a
-        # measurement methodology. Saved unchanged, it stays an estimate; a
-        # method the person picked is kept as posted. Set only once the save
-        # is past its refusals, so a refused save re-renders the estimate's
-        # form as it was.
-        typed_as = None
-        if (
-            stored_method == ESTIMATE_METHOD
-            and updated.volume_acre_feet != stored_volume
-            and updated.method in (ESTIMATE_METHOD, "")
-        ):
-            typed_as = typed_method_for(pod, month)
-        replaced = None
         try:
             refuse_if_period_finalized(stored_period)
             refuse_if_period_finalized(updated.reporting_period)
             with transaction.atomic():
-                # An edit that moves a volume onto a month holding an
-                # estimate replaces the estimate, as a new record does.
-                replaced = discard_estimate(
-                    pod, month, updated.diversion_type, exclude_pk=updated.pk
-                )
                 updated.validate_unique()
-                if typed_as is not None:
-                    updated.method = typed_as
                 updated.save()
         except PeriodFinalized as exc:
             form.add_error(None, str(exc))
         except ValidationError:
             form.add_error(None, _DUPLICATE_RECORD_ERROR)
         else:
-            line = _with_replaced(
-                replaced,
-                _recalculate_months(
-                    request, "diversion_saved", [stored_month, updated.month]
-                ),
+            line = _recalculate_months(
+                request, "diversion_saved", [stored_month, updated.month]
             )
-            if typed_as is not None:
-                saved = saved_as_sentence(typed_as)
-                line = f"{saved} {line}" if line else saved
             return _render_diversion_records_section(
                 request, pod, recalculation_line=line
             )
@@ -1055,7 +1020,7 @@ def _diversion_import_settings_context(points, *, selected_point=None, method=""
         "selected_point": selected_point,
         "method": method,
         "data_state": data_state,
-        "method_choices": DiversionRecord.METHOD_CHOICES,
+        "method_choices": DiversionRecord.OFFERED_METHOD_CHOICES,
         "data_state_choices": DiversionRecord.DATA_STATE_CHOICES,
         "use_rule_choices": diversion_import_service.USE_RULE_CHOICES,
     }
@@ -1308,15 +1273,10 @@ def _water_right_detail_context(water_right):
     # Every water year on record against the face value, one
     # row per group above (surface/face_value.py reads the SAME groups, so
     # the "By water year" table can never disagree with the records table).
-    # Each group carries its row so the records table's divider can say how
-    # many of its months were estimated; the current year's row says whether
-    # the equation's Recorded caption names the estimate.
+    # Each group carries its row.
     face_value_years = years_against_face_value(water_right, record_groups)
     for group, year in zip(record_groups, face_value_years):
         group["against_face_value"] = year
-    current_holds_estimate = bool(
-        current_totals and current_totals["against_face_value"]["months_estimated"]
-    )
 
     return {
         "water_right": water_right,
@@ -1327,7 +1287,6 @@ def _water_right_detail_context(water_right):
         "current_totals": current_totals,
         "remaining": remaining,
         "face_value_years": face_value_years,
-        "current_holds_estimate": current_holds_estimate,
         "pod_breakdown": _pod_breakdown(current_totals),
         "pods_geojson": _right_pods_geojson(pods),
         # This right's places of use. Gated on `parcels` for the

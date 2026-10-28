@@ -8,8 +8,8 @@ calculator, never recomputed with the engine's formula.
 * A headgate month is divided by the shares the district entered; by acreage
   where it entered none; by crop need only where the district chose that.
 * Water that reaches the fields after canal losses is all booked to them.
-* A field served by two unmetered points has its need estimated once, split
-  across the points by its share at each.
+* A field served by two points with no record and no meter gets no canal water
+  from either: nothing is made up from its crop need.
 * Re-dividing a month clears what the point wrote that month on every field,
   including a field no longer linked.
 """
@@ -67,8 +67,9 @@ def test_d2_surface_used_is_what_reached_the_fields(d2):
     ld.run_months(["2025-07"])
     ld.run_months(["2025-08"])
     row = ld.zone_budget(d2["dist"], "WY 2024-2025", "SW")
-    assert row["used"] == D("128.0000")
-    assert row["remaining"] == D("72.0000")
+    # July: 100 AF typed less 15% canal losses = 85. August has no record, so it adds nothing.
+    assert row["used"] == D("85.0000")
+    assert row["remaining"] == D("115.0000")
 
 
 def test_d3_july_divided_by_the_shares_entered(d3):
@@ -119,24 +120,19 @@ def two_point_field(fractions):
     return pa, pb
 
 
-def estimated(point):
+def recorded(point):
     from surface.models import DiversionRecord
 
     return sum((r.volume_acre_feet for r in DiversionRecord.objects.filter(point_of_diversion=point)), D("0")).quantize(Z)
 
 
-def test_a_field_on_two_unmetered_points_is_estimated_once_evenly():
-    pa, pb = two_point_field(("1.0", "1.0"))
+@pytest.mark.parametrize("fractions", [("1.0", "1.0"), ("0.75", "0.25")])
+def test_a_field_on_two_unmetered_points_gets_no_canal_water_from_either(fractions):
+    pa, pb = two_point_field(fractions)
     ld.run_months(["2025-07"])
-    assert estimated(pa) == D("6.6667")
-    assert estimated(pb) == D("6.6667")
-
-
-def test_a_field_on_two_unmetered_points_is_estimated_by_its_share_at_each():
-    pa, pb = two_point_field(("0.75", "0.25"))
-    ld.run_months(["2025-07"])
-    assert estimated(pa) == D("10.0000")
-    assert estimated(pb) == D("3.3333")
+    assert recorded(pa) == D("0.0000")
+    assert recorded(pb) == D("0.0000")
+    assert ParcelLedger.objects.filter(source_type="surface_diversion").count() == 0
 
 
 # ------------------------------------------------------------------ F-16

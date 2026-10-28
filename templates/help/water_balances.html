@@ -20,7 +20,7 @@
 {% comment %}
   2026-10-10: rebuilt from twelve facts, each checked against the calculation code (accounting/
   engine_run.py, accounting/models.py residual_disposition, surface/
-  estimate.py). The page says those twelve things and nothing else; the
+  services.py). The page says those twelve things and nothing else; the
   worked example below is shared with Methods behind the numbers.
 
   This page names `accounting`, `parcels`, `surface` and `wells` as its
@@ -33,7 +33,6 @@
   delivery note in help/partials/_the_subtraction.html names the headgate's
   record, not "this district's" (no comment there: it would move the figure
   inventory's line numbers). Each actor traced to its view.
-  The unmetered estimate rows account for a diversion with no linked right, which is estimated with no cap.
 {% endcomment %}<div class="page-stack page-help help-page">
 
   <div class="card-raised">
@@ -57,7 +56,7 @@
           </tr>
           <tr>
             <td class="col-name">3</td>
-            <td>OpenH2O assigns ETAW first to surface water, up to the field's delivery times its irrigation efficiency. A delivery OpenH2O estimated for a diversion with no meter is not counted in this step.</td>
+            <td>OpenH2O assigns ETAW first to surface water, up to the field's delivery times its irrigation efficiency.</td>
           </tr>
           <tr>
             <td class="col-name">4</td>
@@ -119,7 +118,7 @@
           </tr>
           <tr>
             <td class="col-name">A diversion with no meter</td>
-            <td>When a diversion has no meter and no volume entered for the month, OpenH2O estimates the delivery from the fields it serves. If the diversion's water right has a face value, OpenH2O caps the estimate at the face value remaining for the water year.</td>
+            <td>When a diversion has no meter reading and no volume entered for the month, OpenH2O does not record a delivery for it, and the fields it serves do not get canal water from it that month.</td>
           </tr>
         </tbody>
       </table>

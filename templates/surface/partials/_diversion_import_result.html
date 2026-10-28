@@ -25,10 +25,6 @@ and why.
     {% if skipped_duplicates %}OpenH2O skipped {{ skipped_duplicates }} row{{ skipped_duplicates|pluralize }} that matched record{{ skipped_duplicates|pluralize }} already on file and left those record{{ skipped_duplicates|pluralize }} unchanged.{% endif %}
   </p>
 
-  {% if replaced_estimates %}
-  <p class="text-base text-secondary mt-sm" role="status">{% if replaced_estimates|length == 1 %}The imported volume replaces OpenH2O's estimate for {{ replaced_estimates|join:", " }}.{% else %}The imported volumes replace OpenH2O's estimates for {{ replaced_estimates|join:", " }}.{% endif %}</p>
-  {% endif %}
-
   {% if recalculation_line %}
   <p class="text-base text-secondary mt-sm" role="status">{{ recalculation_line }}</p>
   {% endif %}

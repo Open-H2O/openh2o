@@ -1,10 +1,11 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """The run's notes as one table.
 
-The kinds that were bullets (headgate water left over, canal evaporation, the
-unmetered estimate) become one group each, one row per point of diversion, a
-total where a group has more than one point. (A fourth, the curtailed point,
-went with the curtailment feature, 150.5-01.) Sentences
+The kinds that were bullets (headgate water left over, canal evaporation and
+spill) become one group each, one row per point of diversion, a
+total where a group has more than one point. (The curtailed point went with
+the curtailment feature, 150.5-01, and the unmetered estimate went when
+OpenH2O stopped making a delivery up from crop need.) Sentences
 that ask for attention stay sentences, above the table.
 """
 from datetime import date
@@ -40,9 +41,7 @@ RAW = [
      "evaporation_af": Decimal("55.0136"), "spill_af": Decimal("0")},
     {"kind": "canal_losses", "pod": "Atwater", "month": OCT,
      "evaporation_af": Decimal("1.6273"), "spill_af": Decimal("0")},
-    {"kind": "estimate_written", "pod": "Atwater", "month": OCT, "estimate_af": Decimal("100")},
-    {"kind": "estimate_written", "pod": "Atwater", "month": NOV, "estimate_af": Decimal("62.7261")},
-    {"kind": "estimate_right_not_active", "pod": "Old Gate", "month": OCT, "status": "revoked"},
+    {"kind": "seepage_no_zone", "pod": "Old Gate", "month": OCT, "amount_af": Decimal("3.5")},
 ]
 
 
@@ -50,9 +49,9 @@ def test_each_kind_is_one_group_with_one_row_per_point():
     groups = _note_table(RAW)
 
     assert [g["table"] for g in groups] == [
-        "unallocated", "evaporation", "estimate",
+        "unallocated", "evaporation",
     ]
-    left, evap, est = groups
+    left, evap = groups
     assert left["rows"] == [
         {"af": "27.35", "where": "Crocker"},
         {"af": "16.05", "where": "Stevinson"},
@@ -63,8 +62,6 @@ def test_each_kind_is_one_group_with_one_row_per_point():
         {"af": "1.63", "where": "Atwater"},
     ]
     assert evap["total"] == "56.64"
-    assert est["rows"] == [{"af": "162.73", "where": "Atwater, 2 months"}]
-    assert est["total"] is None
 
 
 def test_the_labels_are_the_approved_words():
@@ -77,10 +74,7 @@ def test_the_labels_are_the_approved_words():
     assert groups["evaporation"]["lead"] == (
         "Canal evaporation subtracted from the water diverted"
     )
-    assert groups["estimate"]["lead"] + groups["estimate"]["rest"] == (
-        "Delivery estimated at an unmetered point of diversion as the ETAW of "
-        "the fields it serves divided by each field's irrigation efficiency"
-    )
+    assert "estimate" not in groups
     assert "curtailed" not in groups
 
 
@@ -88,14 +82,12 @@ def test_tabled_sentences_leave_out_only_what_the_table_carries():
     _attention, tabled = _note_sentences(RAW, tabled=True)
     _attention, plain = _note_sentences(RAW)
 
-    assert tabled == ["OpenH2O did not estimate a delivery for Old Gate because the water right is revoked."]
-    assert len(plain) == 4
-
-
-def test_an_estimate_note_without_an_amount_shows_no_amount():
-    raw = [{"kind": "estimate_written", "pod": "A Gate", "month": OCT}]
-
-    assert _note_table(raw)[0]["rows"] == [{"af": None, "where": "A Gate, 1 month"}]
+    assert tabled == [
+        "OpenH2O credited the 3.50 AF of canal seepage at Old Gate in October 2025 to no zone, "
+        "because no management area contains the point or the field that received the most of "
+        "that month's delivery."
+    ]
+    assert len(plain) == 3
 
 
 def test_note_lines_prints_a_group_as_its_label_and_one_line_per_point():
@@ -119,7 +111,7 @@ def test_the_water_year_page_shows_sentences_above_one_table(auth_client):
         reporting_period=period,
         status="succeeded",
         outcome="Calculated 2 months, October 2025 to November 2025.",
-        notes=["OpenH2O did not estimate a delivery for Old Gate because the water right is revoked."]
+        notes=["OpenH2O credited the 3.50 AF of canal seepage at Old Gate in October 2025 to no zone."]
         + _note_table(RAW),
     )
 
@@ -128,7 +120,7 @@ def test_the_water_year_page_shows_sentences_above_one_table(auth_client):
     ).content.decode()
 
     assert "What the calculation found" in html
-    assert "<li>OpenH2O did not estimate a delivery for Old Gate" in html
+    assert "<li>OpenH2O credited the 3.50 AF of canal seepage at Old Gate" in html
     assert html.count('class="data-table calculation-notes-table"') == 1
     assert "Canal evaporation subtracted from the water diverted" in html
     assert ">43.40<" in html

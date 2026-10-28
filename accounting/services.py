@@ -1282,8 +1282,7 @@ def _mass_balance_result(
     ) = run_terms
     # All the canal water that reached the field and its crop did not use: what
     # the efficiency withheld, and what exceeded the crop's need. Read off the
-    # ledger's delivered figure, so a delivery the engine only estimated (and
-    # did not subtract) shows here whole. A field with no run keeps 0.
+    # ledger's delivered figure. A field with no run keeps 0.
     if surface_crop_use is not None:
         deep_percolation_surface = surface - surface_crop_use
     runoff = Decimal("0")  # bookkeeping boundary: no surface-hydrology model.

@@ -110,7 +110,7 @@
           <td class="col-amount td-num">{{ final_af|floatformat:2|intcomma }}</td>
           <td>
             {% if surface_water_af is not None %}
-            ETAW minus the counted delivery times irrigation efficiency. A delivery OpenH2O estimated is not counted. This month has no meter reading on record, so this line is a calculated remainder.
+            ETAW minus the delivery times irrigation efficiency. This month has no meter reading on record, so this line is a calculated remainder.
             {% else %}
             All of ETAW, because this deployment's calculation plan has no surface water step. This month has no meter reading on record, so this line is a calculated remainder.
             {% endif %}

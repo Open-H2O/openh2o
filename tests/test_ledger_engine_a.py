@@ -5,10 +5,10 @@ The districts come from ``tests.ledger_districts`` (their inputs are written at
 the top of that module). Every expected figure is a literal worked with a
 calculator, never recomputed with the engine's formula.
 
-* A canal delivery OpenH2O estimated (the point has no record for the month)
-  stays on the canal page and in the water budget, is labelled estimated on
-  the field's page, and is never subtracted from the field's groundwater
-  charge. A typed record still is.
+* A point with no record for the month delivers nothing: no record is written,
+  the field shows no canal delivery, and the field's groundwater charge is the
+  whole of its crop use over its efficiency. A typed record still comes off the
+  charge.
 * A field's crop water use is counted unless the field carries the fallow mark;
   a field with no crop on record is charged like any other. A calculation plan
   that still holds the old no-crop step no longer zeroes anything.
@@ -53,7 +53,7 @@ def ref():
 def worked_example_field(typed_af=None):
     """A well field with no meter, 8.8567 AF of crop use in July 2025, efficiency 0.75, on an unmetered point.
 
-    No losses on the point, so the estimate delivers exactly the crop use.
+    No losses on the point and no record for it.
     """
     well = ld.make_well("WX", -120.55, 37.2)
     field = ld.add_field("X1", 100, "Alfalfa", None, [], -120.55, 37.2, [{"2025-07": "26.99522"}], well)
@@ -64,12 +64,12 @@ def worked_example_field(typed_af=None):
 
 
 # ------------------------------------------------------------------ F-04
-def test_estimated_delivery_leaves_the_groundwater_charge_whole(ref):
+def test_a_point_with_no_record_leaves_the_groundwater_charge_whole(ref):
     field, point = worked_example_field()
     ld.run_months(["2025-07"])
-    # the estimate was made and divided: it stays on the canal page and in the budget
-    assert DiversionRecord.objects.get(point_of_diversion=point).method == "estimated_from_use"
-    assert ld.ParcelLedger.objects.filter(parcel=field, source_type="surface_diversion").count() == 1
+    # nothing was made up: no record, no canal row, the charge is crop use over efficiency
+    assert not DiversionRecord.objects.filter(point_of_diversion=point).exists()
+    assert ld.ParcelLedger.objects.filter(parcel=field, source_type="surface_diversion").count() == 0
     assert pumped(field, "2025-07") == D("11.8089")
 
 
@@ -80,27 +80,28 @@ def test_a_typed_delivery_still_comes_off_the_groundwater_charge(ref):
     assert pumped(field, "2025-07") == D("7.8089")
 
 
-def test_d2_august_estimate_reduces_no_fields_groundwater_need(ref):
+def test_d2_august_unmetered_point_reduces_no_fields_groundwater_need(ref):
     d2 = ld.build_d2()
     for i, key in enumerate(("G1", "G2", "G3")):
         well = ld.make_well(f"GW{i}", -120.55 + 0.01 * i, 37.19)
         ld.WellIrrigatedParcel.objects.create(well=well, parcel=d2[key])
     ld.run_months(["2025-07"])
     ld.run_months(["2025-08"])
-    assert DiversionRecord.objects.get(point_of_diversion=d2["P2"], month=ld.AUG).method == "estimated_from_use"
+    assert not DiversionRecord.objects.filter(point_of_diversion=d2["P2"], month=ld.AUG).exists()
     # August crop use 15 / 12 / 6 AF over 0.75 / 0.80 / 0.75
     assert pumped(d2["G1"], "2025-08") == D("20.0000")
     assert pumped(d2["G2"], "2025-08") == D("15.0000")
     assert pumped(d2["G3"], "2025-08") == D("8.0000")
 
 
-def test_the_field_page_says_the_estimated_delivery_is_estimated(ref):
+def test_the_field_page_says_no_canal_delivery_is_recorded(ref):
     field, _ = worked_example_field()
     ld.run_months(["2025-07"])
     page = Client()
     page.force_login(User.objects.create_user(username="reader", password="x", is_active=True))
     body = page.get(reverse("parcels:detail", args=[field.pk])).content.decode()
-    assert "includes 11.81 AF estimated" in body
+    assert "No canal delivery is recorded for this use area." in body
+    assert "AF estimated" not in body
 
 
 def test_the_field_page_adds_nothing_for_a_typed_delivery(ref):

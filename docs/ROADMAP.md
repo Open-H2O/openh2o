@@ -16,8 +16,7 @@ These parts of OpenH2O are built and tested. Each one ends with a link to its co
 
 - **The monthly calculation.** For each field and month, OpenH2O starts from
   OpenET's satellite estimate of crop water use (0 on a field marked fallow) and
-  subtracts the rain and the canal water the crop could use. A canal delivery that
-  OpenH2O estimated is not subtracted. On a field with a well and no meter volume for the
+  subtracts the rain and the canal water the crop could use. On a field with a well and no meter volume for the
   month, what is left is the groundwater consumed that month. Where a well's meter
   volume for the month is on the ledger, OpenH2O uses that volume. The code is in
   [`accounting/steps.py`](../accounting/steps.py),

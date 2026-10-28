@@ -330,7 +330,7 @@
             <tr>
               <td class="text-secondary">
                 {{ r.month|date:"M Y" }}
-                {% if r.estimated %}<span class="badge badge-grey" title="At least one diversion record this month is estimated from use, not measured.">Estimated</span>{% endif %}
+                {% if r.estimated %}<span class="badge badge-grey" title="At least one diversion record this month was estimated from use, not measured. OpenH2O no longer makes these estimates.">Estimated</span>{% endif %}
                 {% if not r.calculated %}<span class="text-tertiary text-xs">Not yet calculated</span>{% endif %}
                 {% if not r.adds_up %}<span class="badge badge-amber" title="Canal losses plus the columns after them differ from the water kept at the headgate.">Does not add up</span>{% endif %}
               </td>

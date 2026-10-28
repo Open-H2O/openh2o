@@ -6,12 +6,11 @@
 fixture, worked by hand once:
 
     Face value 100.00 AF.
-    WY 2023-2024: January 70.00 typed, February 50.00 estimated from use.
-        recorded 70.00, estimated 50.00, total 120.00;
-        120.00 - 100.00 = 20.00 over its face value; 1 of 2 months estimated.
+    WY 2023-2024: January 70.00 typed, February 50.00 held from the retired
+        estimate (a finalized year may still carry one): total 120.00;
+        120.00 - 100.00 = 20.00 over its face value; 2 months.
     WY 2024-2025: January 80.00 typed.
-        recorded 80.00, estimated 0.00, total 80.00;
-        100.00 - 80.00 = 20.00 remaining.
+        total 80.00; 100.00 - 80.00 = 20.00 remaining.
 
 Every expected figure below is that pasted literal, never the function's own
 arithmetic run a second time (DESIGN.md rule 12).
@@ -73,21 +72,15 @@ def test_a_year_past_its_face_value_is_over_by_the_difference_and_one_under_it_h
     newer, older = _years(right)
 
     assert newer["period_name"] == "WY 2024-2025"
-    assert newer["recorded_af"] == Decimal("80.0000")
-    assert newer["estimated_af"] == Decimal("0.0000")
     assert newer["total_af"] == Decimal("80.0000")
     assert newer["months"] == 1
-    assert newer["months_estimated"] == 0
     assert newer["record_count"] == 1
     assert newer["over_by_af"] is None
     assert newer["remaining_af"] == Decimal("20.0000")
 
     assert older["period_name"] == "WY 2023-2024"
-    assert older["recorded_af"] == Decimal("70.0000")
-    assert older["estimated_af"] == Decimal("50.0000")
     assert older["total_af"] == Decimal("120.0000")
     assert older["months"] == 2
-    assert older["months_estimated"] == 1
     assert older["record_count"] == 2
     assert older["over_by_af"] == Decimal("20.0000")
     assert older["remaining_af"] is None

@@ -140,19 +140,20 @@ class TestWaterRightRecordOrder:
 
 # ---------------------------------------------------------------------------
 # 150-02 Task 5: the page by water year. Face value 100.00; WY 2023-2024 holds
-# 70.00 typed (January) and 50.00 estimated (February), 120.00 in all, 20.00
+# 70.00 typed (January) and 50.00 held from the retired estimate (February, a
+# finalized year may still carry one), 120.00 in all, 20.00
 # over its face value; WY 2024-2025 holds 80.00 typed, 20.00 remaining. The
 # newer year is the current one (the most recent period, nothing on the
 # ledger), so the equation row reads 100.00 - 80.00 = 20.00.
 # ---------------------------------------------------------------------------
 ESTIMATED_BADGE = (
     '<span class="badge badge-grey" title="OpenH2O estimated this delivery from '
-    "the ETAW of the fields this point serves, divided by each field's "
-    'irrigation efficiency.">Estimated</span>'
+    "the ETAW of the fields this point serves, before it stopped making "
+    'estimates. It is not a measurement.">Estimated</span>'
 )
 
 
-def _two_year_right(face_value=Decimal("100.0000"), *, estimate_in_current=False):
+def _two_year_right(face_value=Decimal("100.0000")):
     right = WaterRightFactory(face_value_acre_feet=face_value)
     pod = PointOfDiversionFactory(water_right=right, name="Alder Ditch Headgate")
     wy2024 = ReportingPeriodFactory(
@@ -172,7 +173,6 @@ def _two_year_right(face_value=Decimal("100.0000"), *, estimate_in_current=False
     DiversionRecordFactory(
         point_of_diversion=pod, reporting_period=wy2025, month=date(2025, 1, 1),
         volume_acre_feet=Decimal("80.0000"),
-        method="estimated_from_use" if estimate_in_current else "",
     )
     return right
 
@@ -197,7 +197,7 @@ class TestWaterRightByWaterYear:
         assert "Every water year on record is compared below" not in html
         assert "Face value less the volume recorded" not in html
 
-    def test_the_year_with_an_estimate_counts_no_months(self):
+    def test_the_year_with_a_stored_estimate_counts_no_months(self):
         # 150.1-02: a month counted as estimated when any one record
         # in it was, so the month count is deleted; the badge marks the record.
         html = _right_page(_two_year_right())
@@ -207,7 +207,7 @@ class TestWaterRightByWaterYear:
         assert html.count(ESTIMATED_BADGE) == 1
         assert "months estimated" not in html
         assert "1 of 2 months" not in html
-        assert '<th class="th-right">Estimated</th>' in html
+        assert '<th class="th-right">Estimated</th>' not in html
 
     def test_the_equation_still_reads_the_current_year(self):
         html = _right_page(_two_year_right())
@@ -215,11 +215,6 @@ class TestWaterRightByWaterYear:
         assert _result_segment_values(html) == ["20.00"]
         assert "diverted at 1 point in WY 2024-2025" in html
         assert "reported or estimated" not in html
-
-    def test_the_recorded_caption_names_the_estimate_when_the_current_year_holds_one(self):
-        html = _right_page(_two_year_right(estimate_in_current=True))
-
-        assert "reported or estimated at 1 point in WY 2024-2025" in html
 
     def test_a_right_with_no_face_value_lists_its_years_with_nothing_set_against_them(self):
         html = _right_page(_two_year_right(face_value=None))

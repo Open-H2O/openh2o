@@ -75,6 +75,8 @@
       </td>
       <td class="th-right text-sm">
         {% if not user_can_write %}
+        {% elif record.in_finalized_year %}
+        <span class="text-tertiary">Finalized</span>
         {% elif edit_record.pk == record.pk %}
         <span class="text-tertiary">Editing below</span>
         {% else %}

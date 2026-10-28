@@ -437,7 +437,6 @@ files = [
   "accounting/steps.py",
   "accounting/models.py",
   "accounting/views/settings_pages.py",
-  "surface/estimate.py",
   "surface/services.py",
   "health/checks.py",
   "core/models.py",
@@ -1273,7 +1272,6 @@ files = [
   "surface/urls.py",
   "surface/management/commands/import_diversion_records.py",
   "surface/models.py",
-  "surface/estimate.py",
   "accounting/locks.py",
   "core/models.py",
   "core/forms.py",
@@ -2538,7 +2536,6 @@ heading = "How surface water deliveries are divided"
 files = [
   "surface/services.py",
   "accounting/allocation_math.py",
-  "surface/estimate.py",
   "accounting/engine_run.py",
   "parcels/services.py",
 ]
@@ -2600,7 +2597,6 @@ checked_at = "41b90b6"
 document = "templates/help/methods.html"
 heading = "Diversions with no meter"
 files = [
-  "surface/estimate.py",
   "surface/services.py",
   "parcels/services.py",
   "accounting/engine_run.py",

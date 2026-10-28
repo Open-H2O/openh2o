@@ -779,98 +779,27 @@ def test_seed_surface_split_is_demand_weighted_when_calculations_exist(seeded):
 
 
 @pytest.mark.django_db
-def test_the_ditch_with_no_meter_is_estimated_once_the_crops_water_use_is_known(seeded):
-    """With crop water use on record, the unmetered ditch's month is estimated.
+def test_the_ditch_with_no_meter_has_no_record_and_delivers_nothing(seeded):
+    """The demo's ditch with no meter has no typed volume, so it has no record.
 
-    The demo carries one ditch with no meter. The seed types
-    nothing for it; with each served field's use after rain on record for a
-    month, re-running the seed writes ONE estimated, provisional record for that
-    month and the split divides it, each field receiving its use over its own
-    efficiency (the estimate is grossed up for the canal's 1% evaporation, so
-    what survives the canal is exactly what the fields could use).
+    OpenH2O makes no delivery up from the fields' crop need: re-running the seed
+    leaves the ditch without a diversion record and its fields without any
+    canal row from it.
     """
-    from accounting.locks import override
-    from accounting.models import CalculationRun
     from core.management.commands.seed_merced_ledgers import UNMETERED_POD_PREFIX
-    from parcels.services import field_efficiency
 
     # The slice's metered point becomes the demo's ditch with no meter: the
     # seed's flush takes its typed records and the seed types none for it.
     pod = PointOfDiversion.objects.get(water_right__right_id=NORMAL_RIGHT)
     pod.name = f"{UNMETERED_POD_PREFIX} Atwater Canal Headgate"
     pod.save(update_fields=["name"])
-    fields = [
-        link.parcel
-        for link in PointOfDiversionParcel.objects.filter(
-            point_of_diversion=pod).select_related("parcel").order_by("id")
-    ]
-    month = "2025-06"
-    with override("test fixture: demand in the finalized year"):
-        for field in fields:
-            CalculationRun.objects.create(
-                parcel=field, period=month,
-                gross_et_af=Decimal("10"), net_consumptive_use_af=Decimal("10"),
-                final_af=Decimal("0"))
 
     call_command("seed_merced_ledgers")
 
-    records = DiversionRecord.objects.filter(point_of_diversion=pod)
-    assert [(r.month, r.method, r.data_state) for r in records] == [
-        (date(2025, 6, 1), "estimated_from_use", "provisional")
-    ]
-    for field in fields:
-        share = abs(
-            ParcelLedger.objects.get(
-                parcel=field, source_type="surface_diversion",
-                divided_from_point_pk=pod.pk,
-            ).amount_acre_feet
-        )
-        expected = (Decimal("10") / field_efficiency(field)[0]).quantize(Decimal("0.0001"))
-        assert abs(share - expected) <= Decimal("0.0001"), (field.parcel_number, share, expected)
-
-
-# --------------------------------------------------------------------------
-# Group 8 — the second water year carries a supply side (133-02)
-#
-# Before 133-02 `_month_schedule()` hardcoded WY 2024-2025's twelve months and
-# every one of its four callers built that year and nothing else, so the open
-# water year had a full demand side (133-01) and no water at all.
-# --------------------------------------------------------------------------
-def _schedule_for(period_name, start, end):
-    """The seed command's month schedule for a period with these dates."""
-    from core.management.commands.seed_merced_ledgers import Command
-
-    period = ReportingPeriod(name=period_name, start_date=start, end_date=end)
-    return Command()._month_schedule(period)
-
-
-def test_month_schedule_walks_the_open_water_year():
-    """WY 2025-2026 yields 2025-10 through 2026-09 — twelve months, in order.
-
-    No database: the schedule is a pure function of the period's own dates, which
-    is the whole point of the 133-02 change.
-    """
-    schedule = _schedule_for(OPEN_WY, date(2025, 10, 1), date(2026, 9, 30))
-
-    assert len(schedule) == 12
-    assert [(d.year, d.month) for d, _ in schedule] == [
-        (2025, 10), (2025, 11), (2025, 12),
-        (2026, 1), (2026, 2), (2026, 3), (2026, 4), (2026, 5), (2026, 6),
-        (2026, 7), (2026, 8), (2026, 9),
-    ]
-    assert all(d.day == 15 for d, _ in schedule), "mid-month convention"
-    assert all(mn == d.month for d, mn in schedule)
-
-
-def test_month_schedule_still_walks_the_prior_water_year():
-    """The committed year is unchanged — same twelve dates the literals produced."""
-    schedule = _schedule_for(PRIOR_WY, date(2024, 10, 1), date(2025, 9, 30))
-
-    assert [(d.year, d.month) for d, _ in schedule] == [
-        (2024, 10), (2024, 11), (2024, 12),
-        (2025, 1), (2025, 2), (2025, 3), (2025, 4), (2025, 5), (2025, 6),
-        (2025, 7), (2025, 8), (2025, 9),
-    ]
+    assert not DiversionRecord.objects.filter(point_of_diversion=pod).exists()
+    assert not ParcelLedger.objects.filter(
+        source_type="surface_diversion", divided_from_point_pk=pod.pk
+    ).exists()
 
 
 @pytest.mark.django_db
@@ -935,9 +864,7 @@ def test_seed_is_deterministic_across_both_water_years(seeded):
 @pytest.mark.django_db
 def test_el_nido_point_carries_a_typed_zero_for_every_dry_month(seeded):
     """150.5-01: the months the El Nido canal delivers nothing are typed records
-    of 0, so the estimator never writes a delivery there (curtailment orders,
-    which used to stop it, were removed on 2026-10-12)."""
-    from surface.estimate import ESTIMATE_METHOD
+    of 0 (curtailment orders were removed on 2026-10-12)."""
     from surface.models import DiversionRecord
 
     pod = PointOfDiversion.objects.get(name__startswith="MER-POD-007")
@@ -948,7 +875,7 @@ def test_el_nido_point_carries_a_typed_zero_for_every_dry_month(seeded):
     # July 2025 through September 2026: fifteen months.
     assert after.count() == 15
     assert {r.volume_acre_feet for r in after} == {Decimal("0.0000")}
-    assert not after.filter(method=ESTIMATE_METHOD).exists()
+    assert not after.filter(method="estimated_from_use").exists()
     assert DiversionRecord.objects.filter(
         point_of_diversion=pod, month__lt=FIRST_DRY_MONTH, volume_acre_feet__gt=0
     ).exists()

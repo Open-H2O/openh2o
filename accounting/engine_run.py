@@ -8,14 +8,15 @@ a saved diversion record and the command line all now run the SAME sequence
 through this module, one month at a time, oldest first:
 
   1. ``run_calculations`` for the month (never ``--force``);
-  2. only when the ``surface`` module is on, ``surface.estimate.estimate_month``
-     (a ditch with no meter and no typed volume gets its delivery estimated from
-     its fields' crop water use, capped at what its water right allows), then
-     ``allocate_district_delivery`` for
+  2. only when the ``surface`` module is on, ``allocate_district_delivery`` for
      every active point of diversion that has a record in the month or serves
      fields (canal losses come off the top, and seepage goes to the district's
      pool; a point whose loss shares leave nothing for the fields stops the
-     month with a sentence naming it);
+     month with a sentence naming it). A point with no measuring device in
+     service and no volume a person typed for the month has no record, so it
+     delivers nothing: OpenH2O does not make up a canal delivery from crop
+     need. A record of the old estimate left in an open month is deleted at
+     the start of this step;
   3. ``run_calculations`` again, against the canal rows step 2 wrote.
 
 Each month is ONE ``transaction.atomic()`` block, so a month that raises changes
@@ -252,12 +253,16 @@ def run_month(month, *, request=None):
     with transaction.atomic():
         _engine(text, out)
         if is_enabled("surface"):
-            from surface.estimate import estimate_month
+            from surface.models import DiversionRecord
             from surface.services import allocate_district_delivery
 
-            # The estimate is written before the points are read and split, so
-            # an estimated point is divided among its fields in the same month.
-            estimate_month(first, raw)
+            # A record the retired estimate left in this month goes first, so
+            # the month is divided from what was measured or typed only.
+            DiversionRecord.objects.filter(
+                month__gte=first,
+                month__lt=(first.replace(day=28) + dt.timedelta(days=4)).replace(day=1),
+                method="estimated_from_use",
+            ).delete()
             for pod in _points_of_diversion(first):
                 allocate_district_delivery(pod, None, months=[first], notes=raw)
             _engine(text, out)
@@ -332,39 +337,6 @@ def _seepage_no_zone_sentence(note: dict[str, Any]) -> str:
     )
 
 
-def _unmetered_estimate_sentence(estimated_points: set[str], estimated_months: set[str]) -> str:
-    """One sentence for the delivery estimated at unmetered points of diversion."""
-    points, months = len(estimated_points), len(estimated_months)
-    # The wording is "1 unmetered point of diversion". The basis is
-    # ETAW / efficiency (surface/estimate.py).
-    return (
-        f"OpenH2O estimated the delivery at {points} unmetered "
-        f"point{'s' if points != 1 else ''} of diversion for {months} "
-        f"month{'s' if months != 1 else ''}, from the ETAW of the fields "
-        f"{'it serves' if points == 1 else 'they serve'} divided by each "
-        f"field's irrigation efficiency. These figures are estimates, not "
-        f"measurements."
-    )
-
-
-def _capped_estimate_sentence(note: dict[str, Any]) -> str:
-    """The sentence for an estimate capped at what the water right allows."""
-    where = {
-        "groundwater": "groundwater",
-        "unmet": "water use recorded, no supply reported",
-        "mixed": (
-            "groundwater on fields with a well and, on fields without one, "
-            "as water use recorded, no supply reported"
-        ),
-    }[note["residual"]]
-    return (
-        f"OpenH2O estimated {_amount(note['estimate_af'])} AF at {note['pod']} for "
-        f"{month_label(note['month'])}. Of the fields' use, "
-        f"{_amount(note['above_af'])} AF is above what the water right "
-        f"allows and counts as {where}."
-    )
-
-
 def _note_sentences(raw, *, tabled=False):
     """Plain sentences for what the canal division raised: ``(attention, info)``.
 
@@ -380,8 +352,8 @@ def _note_sentences(raw, *, tabled=False):
     and one sentence for each point-month whose seepage had no zone to go to.
 
     ``tabled=True`` (2026-10-12: the notes as one table) leaves out the
-    three kinds ``_note_table`` sets out as rows instead: the headgate water left
-    over, canal evaporation and spill, and the unmetered estimates. A run stores those as table groups; the sentences stay the default
+    two kinds ``_note_table`` sets out as rows instead: the headgate water left
+    over, and canal evaporation and spill. A run stores those as table groups; the sentences stay the default
     so a caller reading one month's notes still gets plain sentences.
     """
     attention = []
@@ -390,11 +362,6 @@ def _note_sentences(raw, *, tabled=False):
     spill = Decimal("0")
     loss_points = set()
     no_zone = []
-    estimated_points = set()
-    estimated_months = set()
-    capped = []
-    losses_too_large = set()
-    not_active = defaultdict(set)
     for note in raw:
         if note.get("kind") == "own_over_headgate":
             attention.append(_own_over_headgate_sentence(note))
@@ -406,15 +373,6 @@ def _note_sentences(raw, *, tabled=False):
             loss_points.add(note["pod"])
         elif note.get("kind") == "seepage_no_zone":
             no_zone.append(note)
-        elif note.get("kind") == "estimate_written":
-            estimated_points.add(note["pod"])
-            estimated_months.add(note["month"])
-        elif note.get("kind") == "estimate_capped":
-            capped.append(note)
-        elif note.get("kind") == "estimate_losses_too_large":
-            losses_too_large.add(note["pod"])
-        elif note.get("kind") == "estimate_right_not_active":
-            not_active[note["status"]].add(note["pod"])
     info = []
     if unexplained and not tabled:
         info.append(_unexplained_sentence(unexplained))
@@ -422,22 +380,6 @@ def _note_sentences(raw, *, tabled=False):
         info.append(_canal_losses_sentence(evaporation, spill, loss_points))
     for note in sorted(no_zone, key=lambda n: (n["month"], n["pod"])):
         info.append(_seepage_no_zone_sentence(note))
-    # Estimates for a ditch with no meter. They keep a
-    # run green: an estimate is information, never a fault.
-    if estimated_points and not tabled:
-        info.append(_unmetered_estimate_sentence(estimated_points, estimated_months))
-    for note in sorted(capped, key=lambda n: (n["month"], n["pod"])):
-        info.append(_capped_estimate_sentence(note))
-    for status, pods in sorted(not_active.items()):
-        info.append(
-            f"OpenH2O did not estimate a delivery for {_names(pods)} because "
-            f"the water right is {status}."
-        )
-    if losses_too_large:
-        info.append(
-            f"OpenH2O did not estimate a delivery for {_names(losses_too_large)} "
-            f"because the canal losses there take all of the water diverted."
-        )
     return attention, info
 
 
@@ -455,11 +397,6 @@ _TABLE_LABELS = {
     ),
     "evaporation": ("Canal evaporation subtracted from the water diverted", ""),
     "spill": ("Canal spill subtracted from the water diverted", ""),
-    "estimate": (
-        "Delivery estimated at an unmetered point of diversion",
-        " as the ETAW of the fields it serves divided by each field's "
-        "irrigation efficiency",
-    ),
 }
 
 
@@ -484,18 +421,15 @@ def _table_group(key, rows):
 
 
 def _note_table(raw):
-    """The three kinds of note a run sets out as a table, one group per kind.
+    """The kinds of note a run sets out as a table, one group per kind.
 
-    Groups come in a fixed order (left over, evaporation, spill, estimates);
+    Groups come in a fixed order (left over, evaporation, spill);
     rows with an amount run largest first, the others by name. A
     kind with nothing to say has no group.
     """
     unexplained = defaultdict(lambda: Decimal("0"))
     evaporation = defaultdict(lambda: Decimal("0"))
     spill = defaultdict(lambda: Decimal("0"))
-    estimated = defaultdict(lambda: Decimal("0"))
-    estimated_known = defaultdict(lambda: True)
-    estimated_months = defaultdict(set)
     for note in raw:
         kind = note.get("kind")
         if kind == "unallocated":
@@ -503,12 +437,6 @@ def _note_table(raw):
         elif kind == "canal_losses":
             evaporation[note["pod"]] += Decimal(note["evaporation_af"])
             spill[note["pod"]] += Decimal(note["spill_af"])
-        elif kind == "estimate_written":
-            estimated_months[note["pod"]].add(note["month"])
-            if note.get("estimate_af") is None:
-                estimated_known[note["pod"]] = False
-            else:
-                estimated[note["pod"]] += Decimal(note["estimate_af"])
 
     def largest_first(amounts):
         return [
@@ -526,13 +454,6 @@ def _note_table(raw):
         rows = largest_first(amounts)
         if rows:
             groups.append(_table_group(key, rows))
-    if estimated_months:
-        rows = []
-        for pod in sorted(estimated_months):
-            count = len(estimated_months[pod])
-            where = f"{pod}, {count} month{'s' if count != 1 else ''}"
-            rows.append((where, estimated[pod] if estimated_known[pod] else None))
-        groups.append(_table_group("estimate", rows))
     return groups
 
 
@@ -549,15 +470,6 @@ def note_lines(note):
     if note.get("total"):
         lines.append(f"    Total: {note['total']} AF")
     return lines
-
-
-def _names(pods):
-    """Point names, sorted, as one phrase: "A", "A and B", "A, B and C"."""
-    names = sorted(pods)
-    if len(names) == 1:
-        return names[0]
-    return ", ".join(names[:-1]) + f" and {names[-1]}"
-
 
 
 # --------------------------------------------------------------------------

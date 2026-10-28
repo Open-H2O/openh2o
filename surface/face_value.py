@@ -17,8 +17,6 @@ platform states the arithmetic and stops there.
 
 from decimal import Decimal
 
-from surface.estimate import ESTIMATE_METHOD
-
 _Q = Decimal("0.0001")
 
 
@@ -27,11 +25,9 @@ def years_against_face_value(water_right, record_groups):
 
     ``record_groups`` is what ``_group_diversion_records`` returns for every
     record on the right. Each row carries ``period_key`` and ``period_name``
-    (the group's own), ``recorded_af`` (records of any method but the
-    estimate), ``estimated_af`` (records estimated from the fields' crop water
-    use), ``total_af`` (the group's ``diverted``), ``months`` (distinct
-    calendar months with a record), ``months_estimated`` (distinct months with
-    at least one estimated record), ``record_count``, and ``over_by_af`` /
+    (the group's own), ``total_af`` (the group's ``diverted``), ``months``
+    (distinct calendar months with a record), ``record_count``, and
+    ``over_by_af`` /
     ``remaining_af``. ``over_by_af`` is the total less the face value when
     that is above zero, else None; ``remaining_af`` is the face value less the
     total when that is zero or more, else None. A right with no face value
@@ -40,18 +36,7 @@ def years_against_face_value(water_right, record_groups):
     face_value = water_right.face_value_acre_feet
     rows = []
     for group in record_groups:
-        recorded = Decimal("0")
-        estimated = Decimal("0")
-        months = set()
-        months_estimated = set()
-        for record in group["rows"]:
-            month = (record.month.year, record.month.month)
-            months.add(month)
-            if record.method == ESTIMATE_METHOD:
-                estimated += abs(record.volume_acre_feet)
-                months_estimated.add(month)
-            else:
-                recorded += abs(record.volume_acre_feet)
+        months = {(record.month.year, record.month.month) for record in group["rows"]}
         total = group["diverted"]
         over_by = None
         remaining = None
@@ -64,11 +49,8 @@ def years_against_face_value(water_right, record_groups):
             {
                 "period_key": group["period_key"],
                 "period_name": group["period_name"],
-                "recorded_af": recorded.quantize(_Q),
-                "estimated_af": estimated.quantize(_Q),
                 "total_af": total.quantize(_Q),
                 "months": len(months),
-                "months_estimated": len(months_estimated),
                 "record_count": group["count"],
                 "over_by_af": over_by,
                 "remaining_af": remaining,

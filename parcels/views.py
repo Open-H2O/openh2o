@@ -34,7 +34,6 @@ from accounting.services import (
     parcel_run_periods,
     parcel_unmet_demand,
 )
-from accounting.steps import estimated_delivery_af
 from core.modules import is_enabled
 from core.validation import FieldValidationError, coerce_decimal, coerce_int
 from parcels.models import IrrigationMethod, Parcel, ParcelIrrigationMethod, ParcelLedger
@@ -184,6 +183,20 @@ def parcels_list(request):
 
 
 #: The month table's figure columns, in the order of its `All N months` row.
+
+def _served_with_no_canal_delivery(parcel, mass_balance):
+    """True when a canal point serves this field and no canal delivery is on record for the period.
+
+    False where the surface module is off (the page then names no canal) and for
+    a field no point of diversion serves.
+    """
+    if not is_enabled("surface") or mass_balance["inputs"]["surface"]:
+        return False
+    from surface.models import PointOfDiversionParcel
+
+    return PointOfDiversionParcel.objects.filter(parcel=parcel).exists()
+
+
 def _parcel_detail_context(parcel, period_id=None):
     """Build the per-parcel water-balance context.
 
@@ -221,11 +234,9 @@ def _parcel_detail_context(parcel, period_id=None):
     # a residual that is real (a field with no meter and no closing estimate).
     over_delivery_total_af = parcel_over_delivery_total(parcel, balance_period)
 
-    # The part of Surface that OpenH2O estimated; the calculation does not
-    # subtract it from the groundwater figure, and the pane says so.
-    estimated_surface_af = estimated_delivery_af(
-        parcel, reporting_period=balance_period
-    )
+    # A field a canal point serves, with no canal delivery on record: the pane
+    # says so, because OpenH2O makes no delivery up from crop need.
+    no_canal_delivery = _served_with_no_canal_delivery(parcel, mass_balance)
 
     recent_ledger = _recent_ledger(parcel, balance_period)
     geojson = _parcel_geojson(parcel)
@@ -247,7 +258,7 @@ def _parcel_detail_context(parcel, period_id=None):
         "unmet_demand_af": unmet_demand_af,
         "over_delivery_shown_af": over_delivery_shown_af,
         "over_delivery_total_af": over_delivery_total_af,
-        "estimated_surface_af": estimated_surface_af,
+        "no_canal_delivery": no_canal_delivery,
         "editable_fields": editable_fields,
         "editable_fields_with_values": editable_fields_with_values,
         # Pass the Python object (or None); the template escapes it via

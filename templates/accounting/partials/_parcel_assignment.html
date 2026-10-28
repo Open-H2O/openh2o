@@ -14,7 +14,7 @@
   {% for wap in assignments %}
   <span class="assignment-chip" title="Added {{ wap.added_date|date:"M d, Y" }}">
     <a href="{% url 'parcels:detail' wap.parcel.pk %}" class="assignment-chip-link">{{ wap.parcel.parcel_number }}</a>
-    {% if user_can_write %}<button
+    {% if user_can_write and wap.reporting_period.is_finalized %}<span class="text-tertiary text-xs">Finalized</span>{% elif user_can_write %}<button
       type="button"
       hx-post="{% url 'accounting:remove_parcel' account.pk wap.pk %}"
       hx-target="#parcel-assignments"

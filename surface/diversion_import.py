@@ -84,7 +84,6 @@ from django.db import transaction
 from accounting.locks import finalized_message
 from accounting.models import ReportingPeriod
 from core.models import SiteConfig
-from surface.estimate import discard_estimate
 from surface.importer import (
     NO_COLUMNS_MESSAGE,
     NO_ROWS_MESSAGE,
@@ -817,12 +816,13 @@ def _group_rows(
             {
                 "point": point, "month": month, "kind": kind,
                 "amount": Decimal("0"), "returned": Decimal("0"),
-                "lines": [], "max_flow": None,
+                "lines": [], "volume_lines": [], "max_flow": None,
             },
         )
         g["amount"] += entry["amount_af"]
         g["returned"] += entry["returned_af"]
         g["lines"].append(line_num)
+        g["volume_lines"].append(line_num)
         if entry["max_flow_cfs"] is not None:
             g["max_flow"] = (
                 entry["max_flow_cfs"] if g["max_flow"] is None
@@ -850,11 +850,12 @@ def _apply_use_rule(
                 {
                     "point": use_group["point"], "month": month, "kind": "direct_use",
                     "amount": Decimal("0"), "returned": Decimal("0"),
-                    "lines": [], "max_flow": None,
+                    "lines": [], "volume_lines": [], "max_flow": None,
                 },
             )
             g["amount"] += use_group["amount"]
             g["lines"].extend(use_group["lines"])
+            g["volume_lines"].extend(use_group["lines"])
             continue
         # returned: USE minus DIRECT (floored at zero, capped at the diverted
         # volume) becomes returned_af on the matching direct_use record.
@@ -886,13 +887,16 @@ def _candidates_from_groups(
     candidates = []
     total_af = Decimal("0")
     for (_pt_pk, month, kind), g in groups.items():
-        if len(g["lines"]) > 1:
+        # Only the rows that added to this month's volume are "combined into
+        # one month". A USE row folded in as returned water changed the
+        # returned figure, not the volume, so it is not counted here.
+        if len(g["volume_lines"]) > 1:
             combined_rows.append({
                 "point": str(g["point"]),
                 "month": f"{month:%Y-%m}",
                 "diversion_type": kind,
-                "row_count": len(g["lines"]),
-                "rows": sorted(g["lines"]),
+                "row_count": len(g["volume_lines"]),
+                "rows": sorted(g["volume_lines"]),
             })
         volume = g["amount"].quantize(_FOUR_PLACES)
         total_af += volume
@@ -932,20 +936,16 @@ def commit_rows(built, *, method="", data_state="provisional", dry_run=False):
             "skipped_duplicates": skipped_duplicates,
             "periods_attached": {},
             "months_created": [],
-            "replaced_estimates": [],
             "errors": errors,
         }
 
-    created, periods_attached, months_created, replaced_estimates = _save_survivors(
-        survivors, errors
-    )
+    created, periods_attached, months_created = _save_survivors(survivors, errors)
 
     return {
         "created": created,
         "skipped_duplicates": skipped_duplicates,
         "periods_attached": periods_attached,
         "months_created": sorted(months_created),
-        "replaced_estimates": sorted(replaced_estimates),
         "errors": errors,
     }
 
@@ -965,11 +965,8 @@ def _vet_candidates(
     point_ids = {c["point"].pk for c in candidates}
     existing = set()
     if point_ids:
-        # An estimate is not a person's record: a file's volume for
-        # that month replaces it, so it never counts as a duplicate.
         existing = set(
             DiversionRecord.objects.filter(point_of_diversion_id__in=point_ids)
-            .exclude(method="estimated_from_use")
             .values_list("point_of_diversion_id", "month", "diversion_type")
         )
 
@@ -1024,15 +1021,14 @@ def _vet_candidates(
 def _save_survivors(
     survivors: list[tuple[dict[str, Any], DiversionRecord]],
     errors: list[dict[str, Any]],
-) -> tuple[int, dict[str, int], set[str], set[str]]:
-    """Save each record in its own savepoint; returns (created, periods attached, months, replaced estimates).
+) -> tuple[int, dict[str, int], set[str]]:
+    """Save each record in its own savepoint; returns (created, periods attached, months).
 
     A record that fails to save is appended to ``errors`` and the rest carry on.
     """
     created = 0
     periods_attached: dict[str, int] = {}
     months_created: set[str] = set()
-    replaced_estimates: set[str] = set()
     with transaction.atomic():
         for c, record in survivors:
             try:
@@ -1041,13 +1037,6 @@ def _save_survivors(
                         start_date__lte=c["month"], end_date__gte=c["month"],
                     ).first()
                     record.reporting_period = period
-                    # A volume a person supplies replaces the estimate
-                    # the platform made for that point and month.
-                    replaced = discard_estimate(
-                        c["point"], c["month"], c["diversion_type"]
-                    )
-                    if replaced is not None:
-                        replaced_estimates.add(f"{replaced:%B %Y}")
                     record.save()
                     created += 1
                     months_created.add(f"{c['month']:%Y-%m}")
@@ -1061,7 +1050,7 @@ def _save_survivors(
                         f"record. Details: {type(exc).__name__}: {exc}"
                     ),
                 })
-    return created, periods_attached, months_created, replaced_estimates
+    return created, periods_attached, months_created
 
 
 def _default_site_config():
@@ -1117,7 +1106,6 @@ def import_diversion_rows(columns, rows, *, layout=None, whole_file_point=None,
         "settings": built["settings"],
         "periods_attached": committed["periods_attached"],
         "months_created": committed["months_created"],
-        "replaced_estimates": committed["replaced_estimates"],
         "total_af": built["total_af"],
         "dry_run": dry_run,
     }

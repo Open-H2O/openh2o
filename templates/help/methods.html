@@ -26,8 +26,7 @@
   steps), accounting/precip_math.py, run_calculations.py (the groundwater
   estimate), surface/services.py allocate_district_delivery (the headgate
   split, whose column names on a point of diversion's page this page reuses),
-  surface/models.py (the lining defaults) and surface/estimate.py (the
-  unmetered estimate).
+  and surface/models.py (the lining defaults).
 
   This page names `accounting`, `parcels`, `surface` and `wells` as its
   subject (config/views.py EXPLAINER_MODULES), so it is 404'd rather than
@@ -60,11 +59,11 @@
           </tr>
           <tr>
             <td class="col-name">ETAW met by surface water</td>
-            <td>The field&rsquo;s surface water delivery is its share of a headgate total, divided as the next table describes. OpenH2O multiplies the delivery by the field&rsquo;s irrigation efficiency, and ETAW met by surface water is that product or the month&rsquo;s ETAW, whichever is smaller. A delivery OpenH2O estimated for a diversion with no meter is left out of that product.</td>
+            <td>The field&rsquo;s surface water delivery is its share of a headgate total, divided as the next table describes. OpenH2O multiplies the delivery by the field&rsquo;s irrigation efficiency, and ETAW met by surface water is that product or the month&rsquo;s ETAW, whichever is smaller.</td>
           </tr>
           <tr>
             <td class="col-name">Applied water not consumed</td>
-            <td>On the field&rsquo;s page, applied water not consumed counts the canal water the crop did not use: the part of the delivery left out at the field&rsquo;s irrigation efficiency, the surface water in excess of ETAW, and all of any delivery OpenH2O estimated for a diversion with no meter. It also counts the pumped water not consumed.</td>
+            <td>On the field&rsquo;s page, applied water not consumed counts the canal water the crop did not use: the part of the delivery left out at the field&rsquo;s irrigation efficiency and the surface water in excess of ETAW. It also counts the pumped water not consumed.</td>
           </tr>
           <tr>
             <td class="col-name">ETAW met by groundwater</td>
@@ -88,7 +87,7 @@
           </tr>
           <tr>
             <td class="col-name">The order of rounding on a run</td>
-            <td>Gross crop ET and effective precipitation are carried unrounded through the calculation. The canal water counted is rounded once, as the delivery times the field&rsquo;s irrigation efficiency. When canal water was counted and the running figure after that step is less than 0.0001 acre-feet from 0 on either side, and is not exactly 0, OpenH2O sets it to 0. The figures stored for the month are then each rounded on their own: gross ET, effective precipitation, ETAW (the stored gross ET minus the stored effective precipitation), the final figure after the floor, the groundwater extraction (the stored final figure divided by irrigation efficiency), the pumped water not consumed (the extraction minus the stored final figure), surface water in excess of ETAW, and the unmet demand. The surface water stored for the month is the counted delivery (the delivery less any part OpenH2O estimated) times irrigation efficiency in full, even where it exceeds ETAW.</td>
+            <td>Gross crop ET and effective precipitation are carried unrounded through the calculation. The canal water counted is rounded once, as the delivery times the field&rsquo;s irrigation efficiency. When canal water was counted and the running figure after that step is less than 0.0001 acre-feet from 0 on either side, and is not exactly 0, OpenH2O sets it to 0. The figures stored for the month are then each rounded on their own: gross ET, effective precipitation, ETAW (the stored gross ET minus the stored effective precipitation), the final figure after the floor, the groundwater extraction (the stored final figure divided by irrigation efficiency), the pumped water not consumed (the extraction minus the stored final figure), surface water in excess of ETAW, and the unmet demand. The surface water stored for the month is the delivery times irrigation efficiency in full, even where it exceeds ETAW.</td>
           </tr>
           <tr>
             <td class="col-name">A month with no delivery</td>
@@ -172,19 +171,15 @@
         <tbody>
           <tr>
             <td class="col-name">A recorded volume</td>
-            <td>When a volume is entered for the month, even zero, OpenH2O uses it and does not estimate the delivery.</td>
+            <td>When a volume is entered for the month, even zero, OpenH2O uses it.</td>
           </tr>
           <tr>
-            <td class="col-name">The estimate</td>
-            <td>When a diversion has no meter and no volume recorded for a month, OpenH2O estimates the delivery as the water its fields need plus the canal&rsquo;s losses. A field&rsquo;s need is its ETAW divided by its irrigation efficiency, or its own recorded delivery where it has one. A field served by more than one diversion with no meter has its need divided among them by the shares entered for it, or evenly where none are entered.</td>
+            <td class="col-name">No volume</td>
+            <td>When a diversion has no meter reading and no volume entered for a month, OpenH2O does not record a delivery for it, and the fields it serves do not get canal water from it that month. OpenH2O does not work out a delivery from the crop need of the fields.</td>
           </tr>
           <tr>
-            <td class="col-name">The water right&rsquo;s limits</td>
-            <td>Where the diversion&rsquo;s water right has a face value, the estimate cannot exceed the face value remaining for the water year. A month wholly outside the right&rsquo;s direct diversion season is estimated at zero. When a diversion has no water right on file, its estimate has no limit.</td>
-          </tr>
-          <tr>
-            <td class="col-name">No estimate</td>
-            <td>OpenH2O does not estimate a delivery at a diversion whose water right is inactive or revoked.</td>
+            <td class="col-name">An earlier estimate</td>
+            <td>An earlier version of OpenH2O estimated a delivery for such a month. Upgrading deletes those records from every water year that is not finalized, and the next calculation of that year removes the canal water divided from them. A finalized water year keeps them, marked as estimated, and its months keep the figures they were calculated with, in which the estimate was not subtracted from ETAW.</td>
           </tr>
         </tbody>
       </table>

@@ -56,6 +56,8 @@ _HUNDRED = Decimal("100")
 
 #: Methods whose number did not come off a device with a stated accuracy, so
 #: the record carries no band even if a device is linked to it.
+#: ``estimated_from_use`` is no longer written; a record of it that a finalized
+#: year still holds stays recognised as not measured.
 NO_BAND_METHODS = frozenset(
     {
         "estimated_from_use",

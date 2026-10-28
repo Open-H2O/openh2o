@@ -89,9 +89,9 @@ class TestDemoMarkerGating:
         # 150.1-02: the same sentence, demo or not.
         body = _detail_body("active", demonstration_mode=mode)
         assert (
-            "Whether this right is active, inactive or revoked. OpenH2O "
-            "does not estimate a delivery under an inactive or revoked right."
+            "Whether this right is active, inactive or revoked."
         ) in body
+        assert "does not estimate a delivery" not in body
         assert "Curtailed" not in body
         assert "illustrative sample data" not in body
 
