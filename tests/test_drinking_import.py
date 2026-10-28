@@ -22,7 +22,9 @@ The fixture is a realistic 30-row file in the DDW SDWIS.CSV layout for the
 obviously-fictional PWSID CA0000042.
 """
 
+import html as html_lib
 import io
+import re
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
@@ -686,9 +688,29 @@ class TestNoComplianceVerdict:
         preview = auth_client.post(
             reverse("drinking:import_preview"), {"file": _csv_file(fixture_text)}
         )
-        body = preview.content.decode().lower()
-        for word in ("exceed", "violation", "compliant", "non-compliant", "pass", "fail"):
-            assert word not in body
+        assert _verdict_words_in(preview.content.decode()) == []
+
+
+_VERDICT_WORDS = ("exceed", "violation", "compliant", "non-compliant", "pass", "fail")
+
+
+def _verdict_words_in(html):
+    """Verdict words in the visible text of a page, each with its context.
+
+    Strips scripts, styles, comments, the CSRF input and every tag, so a token
+    or an attribute cannot match; matches whole words only, so "bypass" does
+    not; and returns each hit as the word plus 80 characters around it, so a
+    failure names its own cause.
+    """
+    text = re.sub(r"(?is)<(script|style)\b.*?</\1>|<!--.*?-->", " ", html)
+    text = re.sub(r"(?is)<input\b[^>]*csrfmiddlewaretoken[^>]*>", " ", text)
+    text = html_lib.unescape(re.sub(r"(?s)<[^>]*>", " ", text))
+    text = re.sub(r"\s+", " ", text)
+    pattern = r"(?<![\w-])(" + "|".join(re.escape(w) for w in _VERDICT_WORDS) + r")(?![\w-])"
+    return [
+        f"{m.group(1)!r}: ...{text[max(0, m.start() - 40):m.end() + 40]}..."
+        for m in re.finditer(pattern, text, flags=re.IGNORECASE)
+    ]
 
 
 # ---------------------------------------------------------------------------

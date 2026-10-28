@@ -306,39 +306,40 @@ def _parse_csv(file, delimiter=","):
 # auto_map_columns
 # ---------------------------------------------------------------------------
 
-# Logical field -> accepted source-column spellings, matched case- and
-# punctuation-insensitively. The FIRST alias of each is the exact DDW
+# Logical field -> accepted source-column spellings, in priority order (a
+# tuple, never a set: a file carrying two spellings of one field maps to the
+# earlier one every run), matched case- and punctuation-insensitively. The FIRST alias of each is the exact DDW
 # SDWIS.CSV header, so a raw state export maps with no manual assignment; the
 # rest accommodate the spellings commercial labs actually ship.
 ALIASES = {
-    "ps_code": {"ps code", "ps_code", "pscode", "sampling point id", "station"},
-    "sampling_point_name": {"sampling point name", "sample point name"},
-    "sample_date": {"sample date", "collection date", "date sampled", "sampled"},
-    "sample_time": {"sample time", "collection time", "time sampled"},
-    "sample_type": {"sample type", "type of sample"},
-    "analysis_date": {"analysis date", "analyzed date", "date analyzed"},
-    "lab_cert_no": {"elap cert#", "elap cert", "elap cert no", "lab cert", "cert no"},
-    "lab_name": {"lab name", "laboratory", "laboratory name"},
-    "ddw_code": {"analyte code", "analyte_code", "storet", "storet code"},
-    "analyte_name": {"analyte name", "analyte", "parameter", "constituent"},
-    "result": {"result", "result value", "finding", "concentration"},
-    "counting_error": {"counting error (±)", "counting error", "count error"},
-    "unit": {"units of measure", "units", "unit", "uom"},
-    "less_than_rl": {
+    "ps_code": ("ps code", "ps_code", "pscode", "sampling point id", "station"),
+    "sampling_point_name": ("sampling point name", "sample point name"),
+    "sample_date": ("sample date", "collection date", "date sampled", "sampled"),
+    "sample_time": ("sample time", "collection time", "time sampled"),
+    "sample_type": ("sample type", "type of sample"),
+    "analysis_date": ("analysis date", "analyzed date", "date analyzed"),
+    "lab_cert_no": ("elap cert#", "elap cert", "elap cert no", "lab cert", "cert no"),
+    "lab_name": ("lab name", "laboratory", "laboratory name"),
+    "ddw_code": ("analyte code", "analyte_code", "storet", "storet code"),
+    "analyte_name": ("analyte name", "analyte", "parameter", "constituent"),
+    "result": ("result", "result value", "finding", "concentration"),
+    "counting_error": ("counting error (±)", "counting error", "count error"),
+    "unit": ("units of measure", "units", "unit", "uom"),
+    "less_than_rl": (
         "less than reporting level",
         "less than rl",
         "lt rl",
         "non-detect",
-    },
-    "reporting_level": {"reporting level", "rl", "reporting limit"},
-    "method": {"method", "analytical method", "method code"},
-    "collector": {"collector", "sampled by", "collected by"},
+    ),
+    "reporting_level": ("reporting level", "rl", "reporting limit"),
+    "method": ("method", "analytical method", "method code"),
+    "collector": ("collector", "sampled by", "collected by"),
     # Not a result field: read once per FILE by `record_regulating_agency`
     # after the commit, never per row.
-    "regulating_agency": {"regulating agency"},
+    "regulating_agency": ("regulating agency",),
     # Limits are stored as reported, never compared.
-    "mcl_as_reported": {"mcl"},
-    "dlr_as_reported": {"dlr"},
+    "mcl_as_reported": ("mcl",),
+    "dlr_as_reported": ("dlr",),
 }
 
 # Human-readable labels for the preview's "columns we recognised" summary.

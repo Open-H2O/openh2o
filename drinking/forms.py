@@ -75,6 +75,40 @@ class SystemProductionForm(forms.ModelForm):
             self.fields["facility"].queryset = self.fields["facility"].queryset.none()
         self.fields["unit_as_reported"].initial = "G"
 
+    def clean(self):
+        """Refuse a month and type already on file for the same facility.
+
+        The database cannot: two blank facilities count as different to
+        Postgres, the form leaves ``system`` out so Django skips its own
+        check, and a site may already hold duplicates a constraint would
+        choke on. A blank facility equals a blank facility here.
+        """
+        cleaned = super().clean()
+        year = cleaned.get("year")
+        type_code = cleaned.get("type_code")
+        if self._system is None or year is None or not type_code:
+            return cleaned
+        month = cleaned.get("month")
+        on_file = SystemProduction.objects.filter(
+            system=self._system,
+            year=year,
+            type_code=type_code,
+            facility=cleaned.get("facility"),
+        )
+        on_file = on_file.filter(month=month) if month else on_file.filter(month__isnull=True)
+        if self.instance.pk:
+            on_file = on_file.exclude(pk=self.instance.pk)
+        if on_file.exists():
+            type_label = dict(self.fields["type_code"].choices).get(type_code, type_code)
+            if month:
+                when = f"{MONTH_CHOICES[month][1]} {year}"
+            else:
+                when = str(year)
+            self.add_error(
+                None, f"A figure for {type_label} in {when} is already on file."
+            )
+        return cleaned
+
     def save(self, commit=True):
         instance = super().save(commit=False)
         if self._system is not None:
