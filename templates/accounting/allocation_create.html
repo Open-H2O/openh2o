@@ -40,13 +40,13 @@
     </div>
     {% endif %}
 
-    {% comment %} A two-track grid (`.form-grid`); the name and the notes span
-         both tracks, the zone sits beside the water type and the water year
-         beside the allocation. {% endcomment %}
+    {% comment %} A two-track grid (`.form-grid`); the notes span both tracks,
+         the zone sits beside the water type and the water year beside the
+         allocation. The allocation's name is written on save, not asked. {% endcomment %}
     <form method="post" class="form-grid">
       {% csrf_token %}
       {% for field in form %}
-      <div class="form-group{% if field.name == "name" or field.name == "notes" %} form-span-2{% endif %}">
+      <div class="form-group{% if field.name == "notes" %} form-span-2{% endif %}">
         <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
         {{ field }}
       </div>

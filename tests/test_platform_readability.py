@@ -467,6 +467,7 @@ EXPECTED_UNREACHABLE = {
     # POST-only endpoints. A GET is refused, so there is no page to read. The
     # templates BEHIND these — the import previews, the onboarding review — are
     # swept by the source half, which is exactly why the source half exists.
+    "/accounting/methodology/load-default/": "HTTP 405",
     "/drinking/import/commit/": "HTTP 405",
     "/drinking/import/preview/": "HTTP 405",
     "/drinking/onboard/commit/": "HTTP 405",

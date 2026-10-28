@@ -46,6 +46,26 @@ class ReportingPeriodForm(forms.ModelForm):
             self.add_error("start_date", "A water year starts on the first day of a month.")
         if end and end.day != calendar.monthrange(end.year, end.month)[1]:
             self.add_error("end_date", "A water year ends on the last day of a month.")
+        # The database refuses two overlapping water years with a constraint
+        # whose name is an internal one; say which year is in the way instead.
+        # The error sits on a date field, which also keeps the model's own
+        # constraint check from adding its sentence.
+        if start and end and end > start:
+            clash = (
+                ReportingPeriod.objects.filter(
+                    start_date__lte=end, end_date__gte=start
+                )
+                .exclude(pk=self.instance.pk)
+                .order_by("start_date")
+                .first()
+            )
+            if clash:
+                self.add_error(
+                    "start_date",
+                    f"These dates overlap {clash.name} "
+                    f"({clash.start_date:%b %d, %Y} to {clash.end_date:%b %d, %Y}). "
+                    "Water years cannot overlap.",
+                )
         return cleaned
 
 
@@ -106,7 +126,6 @@ class AllocationPlanForm(forms.ModelForm):
     class Meta:
         model = AllocationPlan
         fields = [
-            "name",
             "zone",
             "water_type",
             "reporting_period",
@@ -124,7 +143,6 @@ class AllocationPlanForm(forms.ModelForm):
             },
         }
         widgets = {
-            "name": forms.TextInput(attrs={"class": "form-input"}),
             "zone": forms.Select(attrs={"class": "form-select"}),
             "water_type": forms.Select(attrs={"class": "form-select"}),
             "reporting_period": forms.Select(attrs={"class": "form-select"}),

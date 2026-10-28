@@ -1,7 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """The administrator pages that tune the calculation: agency-wide delivery settings, and the methodology steps with a preview on a sample parcel."""
+from io import StringIO
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.management import call_command
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
@@ -9,6 +12,7 @@ from django.views.decorators.http import require_POST
 from core.history import change_note
 from accounting.calculation import evaluate_chain
 from accounting.models import CalculationPlan, CalculationRun, CalculationStep
+from accounting.management.commands.seed_calculation_plan import PLAN_NAME
 from accounting.precip_math import METHOD_LABELS
 from core.access import admin_required
 from core.models import SiteConfig
@@ -269,12 +273,17 @@ def methodology_step_config(request, step_id):
         method = request.POST.get("method", config.get("method", "usda_scs"))
         if method in ("raw", "fraction", "usda_scs"):
             config["method"] = method
-        config["fraction"] = _to_float(
-            request.POST.get("fraction"), config.get("fraction", 0.70)
-        )
-        config["soil_storage_in"] = _to_float(
-            request.POST.get("soil_storage_in"), config.get("soil_storage_in", 3.0)
-        )
+        # Only the chosen method's own setting is written; the other key is
+        # left as stored, so a save never records a change to a setting the
+        # page shows no control for.
+        if config.get("method") == "fraction":
+            config["fraction"] = _to_float(
+                request.POST.get("fraction"), config.get("fraction", 0.70)
+            )
+        elif config.get("method") == "usda_scs":
+            config["soil_storage_in"] = _to_float(
+                request.POST.get("soil_storage_in"), config.get("soil_storage_in", 3.0)
+            )
     elif step.step_type == "clamp_floor":
         # The floor is the step's only knob.
         config["floor"] = _to_float(request.POST.get("floor"), config.get("floor", 0))
@@ -288,6 +297,48 @@ def methodology_step_config(request, step_id):
     with change_note(request.POST.get("note")):
         step.save(update_fields=["config", "label"])
     return _render_steps(request, step.plan)
+
+
+def _zero_reason(step):
+    """A plain sentence for why a step's figure is 0, or "" when it has none to give.
+
+    The gross ET step is the one that starts the chain, so a use area with no
+    ET stored for the month shows 0 all the way down; the sentence sits beside
+    that figure instead of leaving the zero unexplained.
+    """
+    if step.get("step_type") != "et_gross":
+        return ""
+    detail = step.get("detail", {}) or {}
+    if detail.get("fallow"):
+        return "This use area is marked fallow, so its ET counts as 0."
+    if detail.get("rows") == 0:
+        return (
+            "No ET is stored for this use area and month, so this figure is 0. "
+            "ET is fetched from OpenET, which needs an API key."
+        )
+    return ""
+
+
+@login_required
+@admin_required
+@require_POST
+def methodology_load_default(request):
+    """Load the default calculation plan: the button on a page with no active plan.
+
+    Runs the same code as the ``seed_calculation_plan`` command. Refuses when a
+    plan is already active, so a second press changes nothing. A viewer's POST
+    never gets here (the read-only middleware refuses it first).
+    """
+    if CalculationPlan.active() is not None:
+        messages.error(request, "A calculation plan is already active, so nothing was loaded.")
+        return redirect("accounting:methodology_settings")
+    call_command("seed_calculation_plan", stdout=StringIO())
+    if CalculationPlan.active() is None:
+        # A plan of that name saved earlier but switched off: the command
+        # keeps its switch, so turn it on here.
+        CalculationPlan.objects.filter(name=PLAN_NAME).update(is_active=True)
+    messages.success(request, "The default calculation plan is loaded.")
+    return redirect("accounting:methodology_settings")
 
 
 @login_required
@@ -343,6 +394,7 @@ def methodology_preview(request):
             "input_af": s.get("input_af"),
             "output_af": s.get("output_af"),
             "detail_text": _step_detail_summary(s, delivery_split=delivery_split),
+            "zero_reason": _zero_reason(s),
         }
         for s in breakdown
     ]

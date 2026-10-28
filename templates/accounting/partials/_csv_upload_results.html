@@ -34,7 +34,7 @@
       <div class="stat-card-value-lg" style="{% if results.error_count > 0 %}color: var(--furnace-500);{% else %}color: var(--forest-500);{% endif %}">
         {{ results.error_count }}
       </div>
-      <div class="stat-card-unit">rows skipped</div>
+      <div class="stat-card-unit">rows with errors</div>
     </div>
   </div>
 
@@ -122,7 +122,7 @@
     <table class="data-table">
       <thead>
         <tr>
-          <th>Parcel</th>
+          <th>Use area</th>
           <th>Effective Date</th>
           <th class="th-right">Amount (AF)</th>
           <th>Source Type</th>

@@ -1,9 +1,7 @@
 {% comment %}
-  **Four decimal places here are deliberate.** Each step's In and Out, and the
-  figure in the header, print to four places, the precision the calculation
-  stores, so the preview shows each step's exact effect. The calculation page
-  (`calculation_run_detail.html`) prints two places and carries the four-place
-  value in each figure's title attribute.
+  Each step's In and Out, and the figure in the header, print to two places,
+  as the calculation page (`calculation_run_detail.html`) does. The exact
+  figure the calculation stores is in each figure's title attribute.
 {% endcomment %}
 {% comment %}
 Live preview output — swapped into #preview-pane by the picker form. Reflects the
@@ -25,7 +23,7 @@ nothing. Reuses the gross→net waterfall shape from calculation_run_detail.html
         </h2>
       </div>
       <div class="td-num-bold" style="font-size: 1.5rem; color: var(--color-text-primary); text-align: right;">
-        {{ final_af|floatformat:4 }} AF
+        <span title="{{ final_af }} acre-feet">{{ final_af|floatformat:2 }} AF</span>
         <div class="field-label" style="text-align: right;">ETAW met by groundwater</div>
       </div>
     </div>
@@ -46,16 +44,16 @@ nothing. Reuses the gross→net waterfall shape from calculation_run_detail.html
         <tr>
           <td class="text-tertiary">{{ forloop.counter }}</td>
           <td style="font-weight: 600;">{{ step.label }}</td>
-          <td class="text-secondary">{{ step.detail_text }}</td>
-          <td class="td-num text-tertiary">{{ step.input_af|floatformat:4 }}</td>
-          <td class="td-num">{{ step.output_af|floatformat:4 }}</td>
+          <td class="text-secondary">{{ step.detail_text }}{% if step.zero_reason %}<div class="text-tertiary text-xs">{{ step.zero_reason }}</div>{% endif %}</td>
+          <td class="td-num text-tertiary" title="{{ step.input_af }} acre-feet">{{ step.input_af|floatformat:2 }}</td>
+          <td class="td-num" title="{{ step.output_af }} acre-feet">{{ step.output_af|floatformat:2 }}</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
     {% else %}
     <p class="text-tertiary text-sm m-0">
-      No step is enabled, so the preview has no steps to show. ETAW met by groundwater: {{ final_af|floatformat:4 }} AF.
+      No step is enabled, so the preview has no steps to show. ETAW met by groundwater: <span title="{{ final_af }} acre-feet">{{ final_af|floatformat:2 }}</span> AF.
     </p>
     {% endif %}
 

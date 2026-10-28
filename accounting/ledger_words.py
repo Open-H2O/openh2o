@@ -115,7 +115,7 @@ def ledger_row_words(entry):
     verb, so they get their own shapes: "Recharge credit" never names a
     water type (a recharge event is a credit regardless of which water
     filled the basin, and the words are settled as
-    written); "{Water type} allocation" names the type because a
+    written); "{Water type} allocation credit" names the type because a
     groundwater allocation and a surface allocation are managed by
     different agencies under different law (DESIGN.md's Allocation entry)
     and a reader needs to tell them apart at a glance.
@@ -127,7 +127,11 @@ def ledger_row_words(entry):
         return "Recharge credit"
 
     if source_type == "allocation":
-        return f"{water_type_name} allocation" if water_type_name else "Allocation"
+        return (
+            f"{water_type_name} allocation credit"
+            if water_type_name
+            else "Allocation credit"
+        )
 
     word = _PAIRED_WORDS.get(source_type)
     if word is None:

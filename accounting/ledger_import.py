@@ -289,6 +289,15 @@ def _check_row(
     if amount is not None and source_type in valid_source_types:
         amount = _normalized_sign(amount, source_type, line_num, sign_normalized_rows)
 
+    # An allocation or a recharge credit is more than zero (the database
+    # check says so too, and would fail the whole file); refuse the row here.
+    if amount == 0 and source_type in POSITIVE_SOURCE_TYPES:
+        row_errors.append(
+            f"amount_acre_feet 0: an {source_type} amount must be more than zero"
+            if source_type == "allocation"
+            else f"amount_acre_feet 0: a {source_type} amount must be more than zero"
+        )
+
     # Effective date
     effective_date = None
     if not effective_date_raw:

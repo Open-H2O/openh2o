@@ -349,7 +349,7 @@
 {% url 'water_balances' as wb_help_url %}
 <div class="card-raised" id="unmet-demand">
   <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-    <h2 class="section-header-flush">Fields with water use recorded and no supply reported</h2>
+    <h2 class="section-header-flush">Use areas with water use recorded and no supply reported</h2>
     <span class="text-tertiary text-xs">{{ selected_period.name }}{% include "partials/_explainer_popout.html" with title="How a row is counted" text="One row per field whose water use in a month of this water year was more than the water on its record. Each figure adds the field's monthly amounts not met by supplies, and the column adds to the total at the bottom." link=wb_help_url link_label="How water balances work" %} · Figures are acre-feet (AF).</span>
   </div>
   {% if unmet_demand_rows %}
@@ -357,7 +357,7 @@
   <table class="data-table">
     <thead>
       <tr>
-        <th style="min-width: 200px;">Field</th>
+        <th style="min-width: 200px;">Use area</th>
         <th class="th-right">Crop ET</th>
         {% comment %}
           Sentence case, deliberately, against the data-table Title-Case

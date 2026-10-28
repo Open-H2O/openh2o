@@ -91,6 +91,11 @@ urlpatterns = [
         name="methodology_step_config",
     ),
     path(
+        "methodology/load-default/",
+        settings_pages.methodology_load_default,
+        name="methodology_load_default",
+    ),
+    path(
         "methodology/preview/",
         settings_pages.methodology_preview,
         name="methodology_preview",

@@ -94,7 +94,7 @@ LEDGER_SOURCE_TYPE_LABELS = {
     "manual_entry": "Entered by hand",
     "csv_import": "Imported from CSV",
     "adjustment": "Adjusted",
-    "allocation": "Allocation",
+    "allocation": "Allocation credit",
     "recharge": "Recharge credit",
 }
 

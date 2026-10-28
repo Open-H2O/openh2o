@@ -30,7 +30,15 @@
   {% if plan is None %}
   <div class="card-raised">
     <h2 class="section-header mb-md">No active methodology</h2>
-    <p class="text-secondary text-sm m-0">No calculation plan is active. Load the default plan with the <code>seed_calculation_plan</code> command, then reload this page.</p>
+    {% if user_can_write %}
+    <p class="text-secondary text-sm mb-md">No calculation plan is active. Loading the default plan adds its steps here, where you can reorder them, switch them on or off and set their parameters.</p>
+    <form method="post" action="{% url 'accounting:methodology_load_default' %}">
+      {% csrf_token %}
+      <button type="submit" class="btn-primary btn-sm">Load the default calculation plan</button>
+    </form>
+    {% else %}
+    <p class="text-secondary text-sm m-0">No calculation plan is active. An administrator can load the default plan.</p>
+    {% endif %}
   </div>
   {% else %}
 

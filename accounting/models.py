@@ -254,7 +254,9 @@ class WaterAccountParcel(models.Model):
 
 @track_changes()
 class AllocationPlan(models.Model):
-    name = models.CharField(max_length=200)
+    # Left blank on the New allocation form; ``save`` fills it from the zone,
+    # water type and water year, so the admin and ``__str__`` still read.
+    name = models.CharField(max_length=200, blank=True)
     zone = models.ForeignKey("geography.Zone", on_delete=models.CASCADE)
     water_type = models.ForeignKey(WaterType, on_delete=models.CASCADE)
     reporting_period = models.ForeignKey(ReportingPeriod, on_delete=models.CASCADE)
@@ -271,6 +273,15 @@ class AllocationPlan(models.Model):
         triggers = [finalized_period_lock(period_column="reporting_period_id")]
         verbose_name = "Allocation Plan"
         verbose_name_plural = "Allocation Plans"
+
+    def default_name(self):
+        """"<zone> <water type>, <water year>", cut to the column's length."""
+        return f"{self.zone.name} {self.water_type.name.lower()}, {self.reporting_period.name}"[:200]
+
+    def save(self, *args, **kwargs):
+        if not self.name:
+            self.name = self.default_name()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
