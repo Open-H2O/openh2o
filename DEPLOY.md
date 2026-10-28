@@ -506,7 +506,9 @@ those figures stay empty.
 
 The nightly calculation, `run_accounting`, runs `run_calculations` month by month,
 and both need an active calculation method. Neither `seed_data` nor `seed_merced`
-creates one. Create it with:
+creates one. Create it with the command below, or sign in as an administrator and
+press Load the default calculation plan on the Methodology Settings page
+(`/accounting/methodology/`):
 
 ```bash
 docker compose exec web python manage.py seed_calculation_plan
@@ -726,6 +728,11 @@ are. It runs these steps in order and stops at the first one that fails:
 
 The footer of every page then shows the version the site runs. `make upgrade` runs on a
 site that carries `.production-lock` (below).
+
+After upgrading from a version that estimated a canal delivery for a diversion with no
+meter reading and no entered volume, run the calculation again for each water year that is
+not finalized. The upgrade deletes those estimated records from the open years, and the run
+removes the canal water that was divided from them.
 
 When it stops at the first step, save a copy of your edits to the file it names, run
 `git checkout -- <file>` with that file's name and run `make upgrade` again. Then make

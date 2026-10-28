@@ -128,9 +128,11 @@ can install OpenH2O and then keep running the site and explaining it to the staf
 - **Loading existing records.** Point the agent at the records you already have,
   such as a county assessor's parcel export, a set of spreadsheets or an export
   from an old system. The agent works out how your columns match OpenH2O's
-  importers and loads the records. The import tools accept your own field names,
-  check a file in a dry run before writing anything, and hold each file in a
-  staging table, which keeps a bad file from leaving your data half-changed. See
+  importers and loads the records. Most of the import tools accept your own column
+  names, and each checks a file in a dry run or a preview before writing anything.
+  `import_parcels` holds the file in a staging table and stops without importing when
+  an outline cannot be read or a parcel cannot be saved; the other imports save each row
+  that passes their checks and list the rows they refused. See
   [docs/DATA-IMPORT.md](docs/DATA-IMPORT.md).
 - **Routine work.** The agent can run the monthly data updates, remove monitoring
   stations that have stopped reporting and read the health check on a schedule. It

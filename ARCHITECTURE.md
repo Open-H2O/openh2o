@@ -107,8 +107,8 @@ records into a month's ledger.
   `run_accounting --request <pk>` as its own process (`start_calculation`), so the request returns
   at once.
 - **One month.** `engine_run.run_month` runs in one transaction. It runs the per-field
-  calculation; with the `surface` module on, it then writes the delivery estimate for unmetered
-  points (`surface/estimate.py`), divides each point of diversion's water among the fields it
+  calculation; with the `surface` module on, it then deletes any diversion record of the retired
+  crop-need estimate left in that month, divides each point of diversion's water among the fields it
   serves (`surface/services.py`), stores what is left after canal losses at a point that serves no
   field as `CanalMonthLoss.unserved_af`, credited to no one, and runs the per-field calculation again
   with the divided water. A diversion record counts in its month whatever day it is dated.
@@ -119,7 +119,9 @@ records into a month's ledger.
   step stays registered so that a plan saved before it was retired still runs; it changes
   nothing. Which steps run and in what order is data: `CalculationPlan` and `CalculationStep` rows in `accounting/models.py`. The
   Methodology Settings page (`accounting/views/settings_pages.py`) turns steps on and off,
-  reorders them and edits the settings of two of them (effective rain and the floor).
+  reorders them and edits the settings of two of them (effective rain and the floor). On a
+  site with no active plan it gives an administrator a button that loads the default plan
+  (`methodology_load_default`, which runs `seed_calculation_plan`).
 - **What it writes.** A `CalculationRun` per field-month (with each step's result), calculated
   `ParcelLedger` rows, each field's share of a well's meter readings as a meter ledger row, the canal and delivery tables in `surface/` (with `surface` on), and the
   request's status and notes. Re-running a month that an older version credited removes that
@@ -147,12 +149,12 @@ records into a month's ledger.
   Pages that print two places round half up, which changes only the printed figure.
 - **Order of rounding on a run.** The chain carries gross crop water use and effective rain
   unrounded. `subtract_surface_water` (`accounting/steps.py`) rounds the canal water counted once,
-  as the counted delivery times the field's efficiency, and, when it subtracted canal water, sets the running figure to 0 when it
+  as the delivery times the field's efficiency, and, when it subtracted canal water, sets the running figure to 0 when it
   is not 0 but within 0.0001 of 0. `run_calculations.py` then stores each figure rounded on its
   own: gross, effective rain, net use (stored gross minus stored rain), the final figure, the
   groundwater extraction (the stored final figure divided by efficiency), deep percolation (the
   extraction minus the stored final figure), over-delivery and unmet demand. The stored surface
-  water is the counted delivery times efficiency in full, even where it exceeds the crop's need. A month
+  water is the delivery times efficiency in full, even where it exceeds the crop's need. A month
   with no canal water has its delivery stored as 0.0000 (not blank) and a blank efficiency.
 - **How a headgate's water is divided.** The point's `division_method` picks the rule
   (`surface/services.py`, `_split_record`). The default divides by the shares entered

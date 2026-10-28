@@ -94,12 +94,13 @@ docker compose exec web python manage.py import_parcels /tmp/parcels.geojson
 |---|---|---|---|
 | Parcel number (APN) | `APN` | `--parcel-number-field` | yes |
 | Owner name | `OWNER` | `--owner-field` | no |
-| Outline | the feature's geometry | none | no |
+| Outline | the feature's geometry | none | yes |
 
 The command reads every feature into a holding table first, then adds the new
 parcels to the site. A parcel whose APN is already on the site is skipped. When a
-feature's outline cannot be read, the command reports it and imports the parcel
-without an outline.
+feature's outline cannot be read, the command names the feature and stops without
+importing any of the file's parcels. If any parcel cannot be added, the command stops
+without adding any and names the ones it refused.
 
 ### Wells: `import_wells`
 
@@ -231,10 +232,8 @@ direct diversion and storage need separate rows.
 Rows for the same point, month and type within one file are added together into one
 record, because a book of deliveries often lists several deliveries a month at one
 headgate. The preview shows how many rows were combined. A record whose point, month
-and type are already on the site is skipped and counted. The one exception is a
-record that OpenH2O estimated from the crop water use of the fields the point
-serves. The file's volume replaces that estimate. OpenH2O refuses rows for months in
-a water year that has been finalized.
+and type are already on the site is skipped and counted. OpenH2O refuses rows for
+months in a water year that has been finalized.
 
 In the mapping step you also choose the measurement method and the data state for
 every record in the file. By default the method is left blank and the data state is
@@ -277,7 +276,8 @@ Dry run.
 On the ledger, water taken against the allocation is a negative amount and water added to it is a positive amount. The table below gives the sign for each source type. Manual entries, CSV imports and adjustments keep the sign you give them.
 
 When an amount's sign does not match its source type, OpenH2O reverses the sign and
-lists every row it changed.
+lists every row it changed. An `allocation` or `recharge` row with an amount of 0 is
+a row error: OpenH2O lists it and imports the file's other rows.
 
 | `source_type` code | Sign |
 |---|---|
