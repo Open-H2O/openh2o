@@ -55,12 +55,37 @@ def wizard_steps() -> list[tuple[str, str, str]]:
     ]
 
 
-def run_auto_populate_step(boundary: Boundary, step_name: str) -> tuple[int, list[str]]:
+class StepOutcome(tuple):
+    """``(count, errors)`` plus an optional ``note`` for the step's result row.
+
+    Unpacks as the two-item tuple the wizard has always received. ``note`` is
+    the sentence for an outcome that "0 records created" would misdescribe, or
+    ``None`` when the count says it all.
+    """
+
+    note: str | None
+
+    def __new__(cls, count: int, errors: list[str], note: str | None = None):
+        outcome = super().__new__(cls, (count, errors))
+        outcome.note = note
+        return outcome
+
+
+def _basins_note(cmd: object, count: int) -> str | None:
+    """"2 basins found, already on this site." when nothing new was made because they were there."""
+    existing = getattr(cmd, "basins_existing", 0)
+    if count == 0 and existing:
+        return f"{existing} basin{'s' if existing != 1 else ''} found, already on this site."
+    return None
+
+
+def run_auto_populate_step(boundary: Boundary, step_name: str) -> StepOutcome:
     """
     Run one step of the auto_populate pipeline for a boundary.
 
     Returns (count, errors) where count is the number of records created
-    and errors is a list of error strings (empty on success).
+    and errors is a list of error strings (empty on success). The result also
+    carries ``note`` (see ``StepOutcome``).
 
     Delegates to the management command's step methods directly to avoid
     code duplication. Uses a lightweight Command instance with a captured
@@ -80,10 +105,12 @@ def run_auto_populate_step(boundary: Boundary, step_name: str) -> tuple[int, lis
     cmd = SilentCommand()
     errors = []
     count = 0
+    note = None
 
     try:
         if step_name == "basins":
             count = cmd._step_basins(boundary, dry_run=False)
+            note = _basins_note(cmd, count)
         elif step_name == "parcels":
             count = cmd._step_parcels(boundary, dry_run=False)
         elif step_name == "flowlines":
@@ -96,7 +123,7 @@ def run_auto_populate_step(boundary: Boundary, step_name: str) -> tuple[int, lis
         logger.exception("Wizard step '%s' failed for boundary %s", step_name, boundary.pk)
         errors.append(str(exc))
 
-    return count, errors
+    return StepOutcome(count, errors, note)
 
 
 # Ordered provider codes for the station step, the single source of truth shared
@@ -167,7 +194,7 @@ def run_station_provider_step(boundary: Boundary, code: str) -> tuple[int, list[
         return 0, ["the stations from this data provider did not load."], "failed"
 
     if status == "timed_out":
-        return count, ["This data provider did not answer in time, so OpenH2O skipped it."], status
+        return count, ["this data provider did not answer in time, so OpenH2O skipped it."], status
     if status == "failed":
         return count, ["the stations from this data provider did not load."], status
     return count, [], status

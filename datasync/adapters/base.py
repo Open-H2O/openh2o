@@ -216,7 +216,8 @@ class BaseAdapter(ABC):
         HTTP call to ``discovery_timeout`` seconds with a single attempt
         (``discovery_max_retries``), so a slow or 404-ing provider fails fast and
         is reported as a labeled skip rather than killing the worker.
-        Callers still wrap this in try/except and degrade to ``[]`` on failure.
+        A failure propagates: the caller reports a provider that did not
+        answer, which is not the same as a provider that found nothing.
         """
         kwargs.setdefault("timeout", self.discovery_timeout)
         return self._request(method, url, max_retries=self.discovery_max_retries, **kwargs)

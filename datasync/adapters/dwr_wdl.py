@@ -102,14 +102,12 @@ class DWRWDLAdapter(BaseAdapter):
             f"AND CAST(longitude AS FLOAT) BETWEEN {sql_float(bbox[0])} AND {sql_float(bbox[2])} "
             f"LIMIT 100"
         )
-        try:
-            resp = self._discover_request(
-                "GET", f"{CNRA_BASE}/datastore_search_sql", params={"sql": sql}
-            )
-            data = resp.json()
-        except Exception as exc:
-            logger.warning("DWR WDL (CNRA) station discovery failed: %s", exc)
-            return []
+        # A failed request propagates so the caller reports a provider that
+        # did not answer, not an empty area.
+        resp = self._discover_request(
+            "GET", f"{CNRA_BASE}/datastore_search_sql", params={"sql": sql}
+        )
+        data = resp.json()
 
         stations = []
         for row in data.get("result", {}).get("records", []):

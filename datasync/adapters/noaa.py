@@ -225,15 +225,13 @@ class NOAAAdapter(BaseAdapter):
             "limit": 1000,
         }
 
-        try:
-            resp = self._discover_request(
-                "GET", f"{BASE_URL}/stations",
-                params=params, headers=self._headers(),
-            )
-            data = resp.json()
-        except Exception as exc:
-            logger.warning("NOAA station discovery failed: %s", exc)
-            return []
+        # A failed request propagates so the caller reports a provider that
+        # did not answer, not an empty area.
+        resp = self._discover_request(
+            "GET", f"{BASE_URL}/stations",
+            params=params, headers=self._headers(),
+        )
+        data = resp.json()
 
         stations = []
         results = data.get("results", [])

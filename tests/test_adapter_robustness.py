@@ -11,7 +11,6 @@ These cover the data-integrity boundary for live state data:
 """
 
 import importlib
-import logging
 import subprocess
 import sys
 from datetime import date
@@ -19,6 +18,7 @@ from io import StringIO
 from types import SimpleNamespace
 
 import pytest
+import requests
 from django.core.management import call_command
 from django.core.management.base import CommandError
 
@@ -207,7 +207,7 @@ class TestDiscoveryIsTimeBounded:
         assert max_time == str(int(adapter.discovery_timeout))
         assert int(max_time) <= 10
 
-    def test_timeout_fails_fast_returns_empty_and_warns(self, monkeypatch, caplog):
+    def test_timeout_fails_fast_and_is_not_reported_as_an_empty_area(self, monkeypatch):
         calls = {"n": 0}
 
         def boom(argv, **kwargs):
@@ -217,13 +217,11 @@ class TestDiscoveryIsTimeBounded:
         monkeypatch.setattr("datasync.adapters.cdec.subprocess.run", boom)
         adapter = CDECAdapter()
 
-        with caplog.at_level(logging.WARNING):
-            result = adapter.discover_stations(self._bbox())
+        with pytest.raises(requests.ConnectionError, match="timed out"):
+            adapter.discover_stations(self._bbox())
 
-        assert result == []
         # Exactly one attempt — no retry-backoff amplifying a slow provider.
         assert calls["n"] == 1
-        assert "timed out" in caplog.text.lower()
 
     def test_data_fetch_path_keeps_generous_timeout(self, monkeypatch):
         """fetch() (the data path) must still use the 60s timeout — only the

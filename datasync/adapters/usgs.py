@@ -16,6 +16,8 @@ Parameters:
 
 import logging
 
+import requests
+
 from datasync.adapters import register_adapter
 from datasync.adapters.base import BaseAdapter
 
@@ -37,10 +39,25 @@ PARAMETER_MAP = {
 STREAM_PARAMS = ["00060", "00065", "00010"]
 GW_PARAMS = ["72019", "72020", "62610"]
 
+# The two site searches discovery makes, one HTTP call each.
+SITE_TYPE_CONFIGS = [
+    {"siteType": "ST", "params": STREAM_PARAMS, "label": "stream",
+     "parameterCd": "00060"},
+    {"siteType": "GW", "params": GW_PARAMS, "label": "groundwater",
+     "parameterCd": "72019"},
+]
+
 
 class USGSAdapter(BaseAdapter):
     source_code = "usgs"
     rate_limit_seconds = 1.0
+
+    # Discovery makes two calls (streams, then groundwater) inside ONE wizard
+    # poll, and gunicorn kills a worker at 60 s. 2 x 25 s plus the 1 s pause
+    # between calls is 51 s, which leaves 9 s of margin. The wide groundwater
+    # search measured 28.0 s on 2026-10-28, so a service that slow is reported
+    # as not answering in time rather than hanging the poll.
+    discovery_timeout = 25.0
 
     def fetch(self, station, start_date, end_date):
         """Fetch daily values from USGS NWIS."""
@@ -137,16 +154,9 @@ class USGSAdapter(BaseAdapter):
         x0, y0, x1, y1 = boundary_geometry.extent  # (xmin, ymin, xmax, ymax)
         bbox_str = f"{x0 - deg:.4f},{y0 - deg:.4f},{x1 + deg:.4f},{y1 + deg:.4f}"
 
-        site_type_configs = [
-            {"siteType": "ST", "params": STREAM_PARAMS, "label": "stream",
-             "parameterCd": "00060"},
-            {"siteType": "GW", "params": GW_PARAMS, "label": "groundwater",
-             "parameterCd": "72019"},
-        ]
-
         stations = []
         seen = set()
-        for config in site_type_configs:
+        for config in SITE_TYPE_CONFIGS:
             params = {
                 "format": "rdb",
                 "bBox": bbox_str,
@@ -155,14 +165,17 @@ class USGSAdapter(BaseAdapter):
                 "hasDataTypeCd": "dv",
                 "parameterCd": config["parameterCd"],
             }
+            # A timeout, a refused connection or an error status propagates, so
+            # the caller reports a provider that did not answer. The one answer
+            # that is not a failure is the site service's "no sites match": an
+            # HTTP 404 with an empty body.
             try:
                 resp = self._discover_request("GET", SITE_URL, params=params)
                 rows = self._parse_rdb(resp.text)
-            except Exception as exc:
-                logger.warning(
-                    "USGS %s discovery failed: %s", config["label"], exc
-                )
-                continue
+            except requests.HTTPError as exc:
+                if not self._is_no_sites_answer(exc):
+                    raise
+                rows = []
 
             for row in rows:
                 sid = row.get("site_no", "")
@@ -187,6 +200,16 @@ class USGSAdapter(BaseAdapter):
                 })
 
         return stations
+
+    @staticmethod
+    def _is_no_sites_answer(exc):
+        """True for the site service's answer to a box with no matching sites."""
+        response = exc.response
+        return (
+            response is not None
+            and response.status_code == 404
+            and not (response.text or "").strip()
+        )
 
     @staticmethod
     def _parse_rdb(text):

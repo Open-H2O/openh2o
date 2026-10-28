@@ -285,6 +285,11 @@ class Command(BaseCommand):
 
         self.stdout.write(f"  Found {len(features)} basin(s) intersecting boundary.")
 
+        # Read by the setup wizard: a basin that is already on the site counts 0
+        # created, which must not read the same as no basin found.
+        self.basins_found = len(features)
+        self.basins_existing = 0
+
         created_count = 0
         for feature in features:
             attrs = feature.get("attributes", {})
@@ -298,6 +303,7 @@ class Command(BaseCommand):
             # Check for existing zone (idempotent)
             if Zone.objects.filter(name=name, boundary=boundary).exists():
                 self.stdout.write(f"  Skipping (exists): {name}")
+                self.basins_existing += 1
                 continue
 
             # Convert geometry

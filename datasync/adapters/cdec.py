@@ -371,21 +371,15 @@ class CDECAdapter(BaseAdapter):
         Defensive by contract: any response we can't parse into
         stations — the human-facing HTML page, an empty body, a changed
         endpoint — yields [] and ONE clear, greppable warning naming CDEC,
-        never a bare JSONDecodeError and never an unhandled crash. One provider
-        failing must not abort discovery.
+        never a bare JSONDecodeError and never an unhandled crash. A request that
+        fails (timeout, connection, error status) is not that case: it raises.
         """
         xmin, ymin, xmax, ymax = boundary_geometry.extent  # (lon, lat) extent
 
-        try:
-            resp = self._discover_request("GET", STATION_URL, params=STATION_SEARCH_PARAMS)
-            body = resp.text or ""
-        except requests.Timeout as exc:
-            # Bounded discovery timeout fired — fail fast, never hang the wizard.
-            logger.warning("CDEC discovery timed out: %s", exc)
-            return []
-        except Exception as exc:
-            logger.warning("CDEC station discovery request failed: %s", exc)
-            return []
+        # A timeout, a refused connection or an error status propagates so the
+        # caller reports a provider that did not answer, not an empty area.
+        resp = self._discover_request("GET", STATION_URL, params=STATION_SEARCH_PARAMS)
+        body = resp.text or ""
 
         parsed = self._parse_station_table(body)
         if not parsed:

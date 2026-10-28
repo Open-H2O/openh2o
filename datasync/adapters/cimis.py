@@ -146,12 +146,10 @@ class CIMISAdapter(BaseAdapter):
 
     def discover_stations(self, boundary_geometry, radius_km=50):
         """Discover CIMIS stations near a boundary (new API, header auth)."""
-        try:
-            resp = self._discover_request("GET", STATION_URL, headers=self._auth_headers())
-            data = resp.json()
-        except Exception as exc:
-            logger.warning("CIMIS station discovery failed: %s", exc)
-            return []
+        # A failed request propagates so the caller reports a provider that
+        # did not answer, not an empty area.
+        resp = self._discover_request("GET", STATION_URL, headers=self._auth_headers())
+        data = resp.json()
 
         stations_list = data.get("Stations", [])
         if not isinstance(stations_list, list):
