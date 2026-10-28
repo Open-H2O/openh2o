@@ -468,7 +468,7 @@ To run one of them on its own:
 docker compose exec web python manage.py seed_roles
 ```
 
-Running `seed_data` again adds nothing twice. It does switch each data source back on or off as it was first seeded, and it puts the federal drinking-water limits back to their seeded values.
+Running `seed_data` again adds nothing twice. It does switch each data source back on or off as it was first seeded, puts the federal drinking-water limits back to their seeded values, and puts each kind of measurement and each source code's mapping back to the values written in `seed_observed_properties`. A change made to those by hand is overwritten.
 
 ---
 

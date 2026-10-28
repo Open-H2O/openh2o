@@ -9,7 +9,7 @@ Parameters:
   15 - Reservoir Storage (AF)
    1 - River Stage (ft)
   20 - Flow (cfs)
-   2 - Precipitation, Incremental (in)
+   2 - Precipitation, accumulated (in)
 """
 
 import json
@@ -72,7 +72,7 @@ PARAMETER_MAP = {
     "23": {"name": "Reservoir Outflow", "unit": "cfs"},
     "1": {"name": "River Stage", "unit": "ft"},
     "20": {"name": "Flow", "unit": "cfs"},
-    "2": {"name": "Precipitation", "unit": "in"},
+    "2": {"name": "Precipitation, accumulated", "unit": "in"},
 }
 
 

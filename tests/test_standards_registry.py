@@ -95,11 +95,11 @@ class TestSeedCommand:
             assert sp.observed_property_id is not None
 
     def test_blank_pcode_concepts_present(self):
-        """Reservoir/ET concepts correctly carry a blank USGS pcode."""
+        """Reservoir elevation correctly carries a blank USGS pcode."""
         call_command("seed_observed_properties", stdout=StringIO(), stderr=StringIO())
-        storage = ObservedProperty.objects.get(key="reservoir_storage")
-        assert storage.usgs_pcode == ""
-        assert storage.ucum_unit  # but it DOES carry a UCUM unit
+        elevation = ObservedProperty.objects.get(key="reservoir_elevation")
+        assert elevation.usgs_pcode == ""
+        assert elevation.ucum_unit  # but it DOES carry a UCUM unit
 
     def test_all_seeded_properties_have_ucum(self):
         """Every seeded concept carries a UCUM unit (the conformance contract)."""

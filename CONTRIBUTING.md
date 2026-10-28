@@ -33,7 +33,7 @@ make test                   # confirm a green baseline
 
 ## Adding a data adapter
 
-New external data sources are the most common contribution. An adapter lives in `datasync/adapters/`, defines a `PARAMETER_MAP` and registers itself. Then map the source's own codes to OpenH2O's measured quantities in the `CODE_TO_KEY` table in `standards/management/commands/seed_observed_properties.py`, which keeps the crosswalk and the conformance check complete. A test checks that every adapter code maps to an observed property.
+New external data sources are the most common contribution. An adapter lives in `datasync/adapters/`, defines a `PARAMETER_MAP`, registers itself, and is added to the list of sources in `datasync/adapters/registry.py`, which is where the crosswalk and its test read the adapters from. Then map the source's own codes to OpenH2O's measured quantities in the `CODE_TO_KEY` table in `standards/management/commands/seed_observed_properties.py`, which keeps the crosswalk and the conformance check complete. A test checks that every adapter code maps to an observed property.
 
 ## Reporting bugs and ideas
 

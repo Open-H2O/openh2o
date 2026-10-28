@@ -193,10 +193,10 @@ Every measurement OpenH2O stores or receives is mapped to one shared vocabulary,
 which lets the data be published to open standards without remapping for each
 site.
 
-- The **ObservedProperty registry** links every measured quantity (stream discharge, depth to groundwater, ET, reservoir storage and others) to its **USGS parameter code**, **EPA WQX characteristic name** and **UCUM unit**.
+- The **ObservedProperty registry** links every measured quantity (stream discharge, depth to groundwater, ET, reservoir storage and others) to a **UCUM unit**, and to its **USGS parameter code** and **EPA WQX characteristic name** where one exists.
 - A **SourceParameter crosswalk** maps each outside source's own parameter codes to that vocabulary. USGS code `00060`, CDEC code `20` and a CNRFC streamflow forecast all resolve to the same `discharge` concept.
 - Measurements carry **quality flags** (provisional, approved or estimated), and groundwater wells carry a **vertical datum** (NAVD88 or NGVD29). Both follow OGC SensorThings conventions.
-- A **conformance check** (`check_conformance`) lists every measurement that cannot yet be published, such as one with no unit or no crosswalk entry. The check exits with an error when it finds one, which lets a script stop on it. Someone has to run it by hand, and OpenH2O does not publish anywhere yet.
+- A **conformance check** (`check_conformance`) lists every kind of measurement that has no unit or no USGS code and every source code that maps to no kind, and it counts the stored measurements linked to no kind. The check exits with an error when a kind has no unit or a source code maps to no kind, which lets a script stop on it. Someone has to run it by hand, and OpenH2O does not publish anywhere yet.
 
 The full crosswalk, the standards roadmap (OGC SensorThings API, Frictionless,
 WaDE 2.0) and a machine-readable export are in

@@ -12,8 +12,8 @@ It reports:
 
 Gating rule: gate on UCUM for ALL properties — every publish
 path needs a unit contract — but treat a blank USGS pcode as a known,
-non-blocking exception, because several real concepts (reservoir storage,
-reservoir flows, ET, weather) legitimately have no USGS parameter code. The
+non-blocking exception, because several real concepts (reservoir elevation
+and flows, ET, solar radiation, wind speed) legitimately have no USGS parameter code. The
 command exits non-zero only when a real publishable-blocking gap exists, so it
 can gate CI or a future publish step.
 """

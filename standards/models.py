@@ -34,8 +34,8 @@ class ObservedProperty(models.Model):
     usgs_pcode = models.CharField(
         max_length=10,
         blank=True,
-        help_text="5-digit USGS parameter code, e.g. 72019. Blank where the "
-        "concept has no USGS code (CDEC reservoir sensors, OpenET ET).",
+        help_text="5-digit USGS parameter code, e.g. 72019. Blank where no USGS "
+        "code with the concept's unit exists (reservoir flows, ET).",
     )
     wqx_characteristic_name = models.CharField(
         max_length=255,
@@ -69,7 +69,7 @@ class ObservedProperty(models.Model):
         serialize a property where this is False. Note the conformance audit
         (``check_conformance``) gates on UCUM for ALL properties but treats a
         blank pcode as a known, non-blocking exception, because several real
-        concepts (reservoir storage, ET) legitimately have no USGS code.
+        concepts (reservoir flows, ET) legitimately have no USGS code.
         """
         return bool(self.usgs_pcode and self.ucum_unit)
 

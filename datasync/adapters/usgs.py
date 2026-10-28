@@ -9,6 +9,9 @@ Parameters:
   00060 - Discharge (cfs)
   00065 - Gage height (ft)
   00010 - Water temperature (deg C)
+  72019 - Depth to water level below land surface (ft)
+  72020 - Elevation above NGVD 1929 (ft), any water surface
+  62610 - Groundwater level above NGVD 1929 (ft)
 """
 
 import logging
@@ -27,8 +30,8 @@ PARAMETER_MAP = {
     "00065": {"name": "Gage Height", "unit": "ft"},
     "00010": {"name": "Water Temperature", "unit": "deg C"},
     "72019": {"name": "Depth to Water Level", "unit": "ft below surface"},
-    "72020": {"name": "Water Level Elevation", "unit": "ft NAVD88"},
-    "62610": {"name": "Groundwater Level", "unit": "ft below datum"},
+    "72020": {"name": "Elevation above NGVD 1929", "unit": "ft above NGVD 1929"},
+    "62610": {"name": "Groundwater level above NGVD 1929", "unit": "ft above NGVD 1929"},
 }
 
 STREAM_PARAMS = ["00060", "00065", "00010"]

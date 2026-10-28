@@ -4,9 +4,9 @@
 
 This guide is for anyone who exchanges water data between OpenH2O and another
 system. OpenH2O keeps one list of the kinds of measurement it handles, such as
-stream discharge or depth to groundwater. Each kind on the list carries an EPA WQX
-characteristic name and a UCUM unit, and seven of the eighteen also carry a USGS
-parameter code. Each outside data source's own parameter codes are mapped onto the
+stream discharge or depth to groundwater. Each kind on the list carries a UCUM unit.
+Eleven of the eighteen also carry an EPA WQX characteristic name, and nine carry a
+USGS parameter code. Each outside data source's own parameter codes are mapped onto the
 same list, so a stream flow from USGS and a stream flow from CDEC are recorded as
 the same kind of measurement.
 
@@ -32,25 +32,26 @@ three identifiers from outside vocabularies:
 | Key | Name | USGS code | WQX characteristic | UCUM unit |
 |---|---|---|---|---|
 | `discharge` | Stream Discharge | 00060 | Stream flow | `[cft_i]/s` |
-| `gage_height` | Gage Height | 00065 | Gage height | `[ft_i]` |
+| `gage_height` | Gage Height | 00065 | Height, gage | `[ft_i]` |
 | `water_temperature` | Water Temperature | 00010 | Temperature, water | `Cel` |
 | `groundwater_level_depth` | Depth to Groundwater | 72019 | Depth to water level below land surface | `[ft_i]` |
-| `groundwater_level_elevation` | Groundwater Level Elevation | 72020 | Water level elevation above NAVD 1988 | `[ft_i]` |
-| `groundwater_level` | Groundwater Level | 62610 | Groundwater level | `[ft_i]` |
-| `reservoir_storage` | Reservoir Storage | none | Reservoir storage | `[acr_us].[ft_i]` |
-| `reservoir_elevation` | Reservoir Elevation | none | Reservoir water surface elevation | `[ft_i]` |
-| `reservoir_inflow` | Reservoir Inflow | none | Flow, inflow | `[cft_i]/s` |
-| `reservoir_outflow` | Reservoir Outflow | none | Flow, outflow | `[cft_i]/s` |
-| `evapotranspiration` | Evapotranspiration | none | Evapotranspiration | `mm` |
-| `reference_et` | Reference Evapotranspiration | none | Evapotranspiration, reference | `mm` |
-| `precipitation` | Precipitation | 00045 | Precipitation | `mm` |
-| `air_temperature` | Air Temperature | none | Temperature, air | `Cel` |
-| `snowfall` | Snowfall | none | Snow depth | `mm` |
+| `groundwater_level_elevation` | Groundwater Level Elevation (NGVD 1929) | 72020 | none | `[ft_i]` |
+| `groundwater_level` | Groundwater Level (NGVD 1929) | 62610 | Groundwater level | `[ft_i]` |
+| `reservoir_storage` | Reservoir Storage | 00054 | Reservoir storage | `[acr_us].[ft_i]` |
+| `reservoir_elevation` | Reservoir Elevation | none | Lake or reservoir elevation | `[ft_i]` |
+| `reservoir_inflow` | Reservoir Inflow | none | none | `[cft_i]/s` |
+| `reservoir_outflow` | Reservoir Outflow | none | none | `[cft_i]/s` |
+| `evapotranspiration` | Evapotranspiration | none | none | `mm` |
+| `reference_et` | Reference Evapotranspiration | none | none | `mm` |
+| `precipitation` | Precipitation | 00045 | Precipitation | `[in_i]` |
+| `air_temperature` | Air Temperature | 00020 | Temperature, air | `Cel` |
+| `snowfall` | Snowfall | none | none | `mm` |
 | `solar_radiation` | Solar Radiation | none | Solar radiation | `W/m2` |
 | `wind_speed` | Wind Speed | none | Wind velocity | `m/s` |
-| `extracted_volume` | Extracted Volume | none | Water withdrawal, volume | `[acr_us].[ft_i]` |
+| `extracted_volume` | Extracted Volume | none | none | `[acr_us].[ft_i]` |
 
-Eleven of the eighteen have no USGS parameter code on OpenH2O's list yet. The UCUM
+Nine of the eighteen have no USGS parameter code on OpenH2O's list. Where the WQX
+column reads none, the WQX list has no value for that kind of measurement. The UCUM
 units were looked up in the published UCUM tables and entered by hand.
 
 The list is defined in `standards/management/commands/seed_observed_properties.py`,

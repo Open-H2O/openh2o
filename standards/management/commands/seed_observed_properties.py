@@ -8,10 +8,12 @@ duplicates.
 
 Step 1 creates the canonical concept rows from OBSERVED_PROPERTIES below. UCUM
 codes are a published lookup (unitsofmeasure.org) — they are hand-authored and
-verified here, never guessed at runtime. Where a concept genuinely has no USGS
-parameter code (CDEC reservoir sensors, OpenET ET, weather), usgs_pcode is left
-blank; it stays publish-incomplete-as-pcode until a real code is assigned, which
-is the conformance gate doing its job, not a bug.
+verified here, never guessed at runtime. Where no USGS parameter code
+with the concept's unit exists (reservoir elevation and flows, ET, snowfall, solar
+radiation, wind speed, extracted volume), usgs_pcode is left blank; it stays
+publish-incomplete-as-pcode, which is the conformance gate doing its job, not a
+bug. A concept is written with update_or_create, so a value corrected here also
+reaches a site that was seeded earlier.
 
 Step 2 walks every (source_code, parameter_code) the adapters expose via
 registry.get_all_parameter_maps() and builds the crosswalk, carrying the
@@ -28,30 +30,35 @@ from standards.models import ObservedProperty, SourceParameter
 # Each concept maps to its USGS parameter code, EPA WQX CharacteristicName, and
 # UCUM unit. UCUM atoms used here: [cft_i]/s (cubic foot intl per second),
 # [ft_i] (foot intl), Cel (degree Celsius), [acr_us].[ft_i] (acre-foot),
-# mm (millimetre), W/m2 (watt per square metre), m/s (metre per second).
+# mm (millimetre), [in_i] (inch intl), W/m2 (watt per square metre), m/s (metre per second).
 # The ucum_unit is the canonical unit of the CONCEPT; the value-as-recorded unit
 # travels on SourceParameter.native_unit (augment, don't replace).
 OBSERVED_PROPERTIES = [
     # key, name, usgs_pcode, wqx_characteristic_name, ucum_unit
+    # A blank pcode: no USGS code with the same unit exists (00035 is wind speed
+    # in mph, so wind_speed stays blank). A blank WQX name: the WQX list has no
+    # value naming the same thing. Both were checked on 2026-10-27.
     ("discharge", "Stream Discharge", "00060", "Stream flow", "[cft_i]/s"),
-    ("gage_height", "Gage Height", "00065", "Gage height", "[ft_i]"),
+    ("gage_height", "Gage Height", "00065", "Height, gage", "[ft_i]"),
     ("water_temperature", "Water Temperature", "00010", "Temperature, water", "Cel"),
     ("groundwater_level_depth", "Depth to Groundwater", "72019",
      "Depth to water level below land surface", "[ft_i]"),
-    ("groundwater_level_elevation", "Groundwater Level Elevation", "72020",
-     "Water level elevation above NAVD 1988", "[ft_i]"),
-    ("groundwater_level", "Groundwater Level", "62610", "Groundwater level", "[ft_i]"),
-    ("reservoir_storage", "Reservoir Storage", "", "Reservoir storage", "[acr_us].[ft_i]"),
+    # 72020 and 62610 are both elevations above NGVD 1929; WQX has no value for
+    # an NGVD 1929 elevation, so 72020 carries no WQX name.
+    ("groundwater_level_elevation", "Groundwater Level Elevation (NGVD 1929)", "72020",
+     "", "[ft_i]"),
+    ("groundwater_level", "Groundwater Level (NGVD 1929)", "62610",
+     "Groundwater level", "[ft_i]"),
+    ("reservoir_storage", "Reservoir Storage", "00054", "Reservoir storage", "[acr_us].[ft_i]"),
     ("reservoir_elevation", "Reservoir Elevation", "",
-     "Reservoir water surface elevation", "[ft_i]"),
-    ("reservoir_inflow", "Reservoir Inflow", "", "Flow, inflow", "[cft_i]/s"),
-    ("reservoir_outflow", "Reservoir Outflow", "", "Flow, outflow", "[cft_i]/s"),
-    ("evapotranspiration", "Evapotranspiration", "", "Evapotranspiration", "mm"),
-    ("precipitation", "Precipitation", "00045", "Precipitation", "mm"),
-    ("reference_et", "Reference Evapotranspiration", "",
-     "Evapotranspiration, reference", "mm"),
-    ("air_temperature", "Air Temperature", "", "Temperature, air", "Cel"),
-    ("snowfall", "Snowfall", "", "Snow depth", "mm"),
+     "Lake or reservoir elevation", "[ft_i]"),
+    ("reservoir_inflow", "Reservoir Inflow", "", "", "[cft_i]/s"),
+    ("reservoir_outflow", "Reservoir Outflow", "", "", "[cft_i]/s"),
+    ("evapotranspiration", "Evapotranspiration", "", "", "mm"),
+    ("precipitation", "Precipitation", "00045", "Precipitation", "[in_i]"),
+    ("reference_et", "Reference Evapotranspiration", "", "", "mm"),
+    ("air_temperature", "Air Temperature", "00020", "Temperature, air", "Cel"),
+    ("snowfall", "Snowfall", "", "", "mm"),
     ("solar_radiation", "Solar Radiation", "", "Solar radiation", "W/m2"),
     ("wind_speed", "Wind Speed", "", "Wind velocity", "m/s"),
     # A totalizer meter reads a VOLUME EXTRACTED, and nothing above meant that:
@@ -64,8 +71,7 @@ OBSERVED_PROPERTIES = [
     # there is deliberately no CODE_TO_KEY entry below, because no external
     # adapter emits this concept and a crosswalk row would claim a source that
     # does not exist.
-    ("extracted_volume", "Extracted Volume", "", "Water withdrawal, volume",
-     "[acr_us].[ft_i]"),
+    ("extracted_volume", "Extracted Volume", "", "", "[acr_us].[ft_i]"),
 ]
 
 # ── Step 2: source native code → canonical concept key ──────────────────────
@@ -123,7 +129,7 @@ class Command(BaseCommand):
         # Step 1 — canonical concepts.
         op_created = 0
         for key, name, pcode, wqx, ucum in OBSERVED_PROPERTIES:
-            _, created = ObservedProperty.objects.get_or_create(
+            _, created = ObservedProperty.objects.update_or_create(
                 key=key,
                 defaults={
                     "name": name,
@@ -151,7 +157,7 @@ class Command(BaseCommand):
                     )
                 )
                 continue
-            _, created = SourceParameter.objects.get_or_create(
+            _, created = SourceParameter.objects.update_or_create(
                 source_code=source_code,
                 parameter_code=parameter_code,
                 defaults={
