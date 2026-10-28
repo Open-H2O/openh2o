@@ -242,6 +242,24 @@ def user_temp_password(request, pk):
     )
 
 
+def _page_kept_before_choosing(request):
+    """The page the person was heading for when sent to choose a password.
+
+    ``MustChoosePasswordMiddleware`` keeps it in the session; an address on
+    another site, or none, goes to Home.
+    """
+    from django.utils.http import url_has_allowed_host_and_scheme
+
+    from core.access import MustChoosePasswordMiddleware
+
+    kept = request.session.pop(MustChoosePasswordMiddleware.KEPT_PAGE, None)
+    if kept and url_has_allowed_host_and_scheme(
+        kept, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        return kept
+    return "/"
+
+
 @login_required
 def choose_password(request):
     """The page a person with an administrator-set password must pass."""
@@ -258,7 +276,7 @@ def choose_password(request):
             user.save(update_fields=["password", "must_choose_password"])
             update_session_auth_hash(request, user)
             messages.success(request, "You changed your password.")
-            return redirect("/")
+            return redirect(_page_kept_before_choosing(request))
     else:
         form = ChoosePasswordForm(user=user)
     return render(request, "core/choose_password.html", {"form": form})

@@ -218,9 +218,10 @@ def test_choosing_clears_the_flag_and_keeps_the_person_signed_in(flagged):
     assert response.status_code == 302 and response.url == "/"
     bob.refresh_from_db()
     assert bob.must_choose_password is False and bob.check_password(CHOSEN)
-    assert client.get("/").status_code == 200
-    # "/" shows no messages; the profile does, and keeps the sentence for it.
-    assert "You changed your password." in _body(client.get("/profile/"))
+    # Every page shows messages once, so the sentence is on the page the
+    # person lands on.
+    home = _body(client.get("/"))
+    assert home.count("You changed your password.") == 1
 
 
 def test_a_person_without_the_flag_who_opens_the_choose_page_goes_home():

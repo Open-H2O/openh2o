@@ -88,10 +88,10 @@ def test_an_operators_post_is_refused_and_the_period_is_unchanged(operator):
 
     response = _client(operator).post(_finalize_url(period), {"note": ""})
 
-    # admin_required's non-admin branch: a redirect back to the dashboard,
-    # never a 403 or a 500.
+    # admin_required's non-admin branch: a redirect to Home, never a 403 or
+    # a 500.
     assert response.status_code == 302
-    assert response.url == reverse("accounting:dashboard")
+    assert response.url == "/"
     period.refresh_from_db()
     assert period.is_finalized is False
 

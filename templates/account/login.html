@@ -13,6 +13,8 @@
     {% endif %}
     <form method="post" action="{% url 'account_login' %}">
         {% csrf_token %}
+        {% comment %} The page the person came from, when the address carried one. {% endcomment %}
+        {{ redirect_field }}
         <div class="form-group">
             <label class="form-label" for="id_login">Email</label>
             <input type="email" id="id_login" name="login" required autofocus class="form-input">

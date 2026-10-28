@@ -1,0 +1,31 @@
+{% load static %}
+{% comment %}
+  Django renders this for an unhandled error with an empty context: no request,
+  no context processors. It extends nothing, reads no model, and links home by
+  a plain address, because a URL tag can itself fail while an error is shown.
+{% endcomment %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Server error - Open Water Accounting Platform</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/favicon.png' %}?v=3">
+    <link rel="stylesheet" href="{% static 'css/tokens.css' %}?v=11">
+    <link rel="stylesheet" href="{% static 'css/output.css' %}">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}?v=84">
+</head>
+<body style="display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: var(--space-lg);">
+    <div class="auth-stack">
+        <a href="/" class="auth-brand">
+            <img src="{% static 'img/favicon-192.png' %}?v=3" alt="">
+            <span class="auth-brand-name">Open<span class="text-accent">H2O</span></span>
+        </a>
+        <div class="card-raised empty-state" style="width: 100%;">
+            <h1 class="auth-title">Server error</h1>
+            <p class="empty-state-text">OpenH2O could not show this page. The error is recorded in the server's log.</p>
+            <a href="/" class="btn-primary">Back to Home</a>
+        </div>
+    </div>
+</body>
+</html>

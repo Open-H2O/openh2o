@@ -73,7 +73,8 @@ def admin_required(view_func):
       - authenticated + switch OFF        → ALLOW (pass-through; preserves the demo).
       - authenticated + switch ON + admin → ALLOW.
       - authenticated + switch ON + non-admin
-            → redirect to the app dashboard with a messages.error.
+            → redirect to Home with a messages.error. Home exists in every
+              module set; the water accounting pages do not.
 
     Deliberately NOT Django's ``staff_member_required``, which bounces to the
     ``/admin/`` login page; an already-logged-in non-admin should land back in
@@ -89,7 +90,7 @@ def admin_required(view_func):
         if is_administrator(user):
             return view_func(request, *args, **kwargs)
         messages.error(request, "That screen is for administrators.")
-        return redirect("accounting:dashboard")
+        return redirect("index")
 
     return _wrapped
 
@@ -216,6 +217,7 @@ class MustChoosePasswordMiddleware:
 
     EXEMPT_VIEW_NAMES = frozenset({"choose_password", "account_logout"})
     EXEMPT_PREFIXES = ("/health/",)
+    KEPT_PAGE = "page_before_choosing_a_password"
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -230,6 +232,10 @@ class MustChoosePasswordMiddleware:
                 from django.urls import reverse
 
                 target = reverse("choose_password")
+                if request.method == "GET" and not request.headers.get("HX-Request"):
+                    # Remember the page the person was heading for, so
+                    # choosing a password ends there and not on Home.
+                    request.session[self.KEPT_PAGE] = request.get_full_path()
                 if request.headers.get("HX-Request"):
                     response = HttpResponse(status=200)
                     response["HX-Redirect"] = target

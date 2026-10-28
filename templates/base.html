@@ -135,6 +135,12 @@
                   SiteConfig.demonstration_mode is off.
                 {% endcomment %}
                 {% include "partials/_demonstration_banner.html" %}
+                {% comment %}
+                  Django messages (a refusal, a saved change) show here once,
+                  for every page. A page that places them itself, beside the
+                  thing they are about, overrides this block with nothing.
+                {% endcomment %}
+                {% block messages %}{% include "partials/_messages.html" %}{% endblock %}
                 {% block content %}{% endblock %}
             </main>
 
