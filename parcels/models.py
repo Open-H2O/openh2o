@@ -9,9 +9,13 @@ ParcelLedger is the per-parcel water-accounting ledger (ET estimates, surface
 deliveries, recharge, allocations, and the calculated groundwater residual);
 ParcelStaging holds raw rows awaiting import.
 """
+import datetime as dt
+
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.contrib.gis.db import models
 from django.urls import reverse
+from django.utils import timezone
 
 from accounting.locks import finalized_period_lock
 from core.history import track_changes
@@ -44,14 +48,6 @@ class Parcel(models.Model):
         help_text="When checked, area_acres is manually set and will not be auto-calculated from geometry."
     )
     geometry = models.MultiPolygonField(srid=4326, null=True, blank=True)
-    fallow = models.BooleanField(
-        default=False,
-        help_text=(
-            "Marked when the field grows nothing. The calculation counts the "
-            "field's crop water use as 0 while the mark is set; a field "
-            "without it is charged for the crop water use the satellite reads."
-        ),
-    )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
     address = models.TextField(blank=True)
     notes = models.TextField(blank=True)
@@ -64,6 +60,21 @@ class Parcel(models.Model):
     def get_absolute_url(self):
         """The record's own page (the /id/ address 303s here)."""
         return reverse("parcels:detail", args=[self.pk])
+
+    def is_fallow_in(self, day):
+        """Whether the field is fallow in the calendar month ``day`` falls in.
+
+        A fallow period covers its start month through its end month, both
+        included. An empty start month reaches back to the start of the records
+        and an empty end month has no end, so a period with both empty covers
+        every month.
+        """
+        return self.fallow_periods.covering(day).exists()
+
+    @property
+    def fallow_now(self):
+        """Whether the field is fallow in the current month."""
+        return self.is_fallow_in(timezone.localdate())
 
 
 # Sign is semantic, not cosmetic: the ledger nets to a balance, so a sign-flipped
@@ -281,3 +292,97 @@ class ParcelIrrigationMethod(models.Model):
 
     def __str__(self):
         return f"{self.parcel} → {self.method}"
+
+
+class FallowPeriodQuerySet(models.QuerySet):
+    def covering(self, day):
+        """The periods that include the calendar month ``day`` falls in."""
+        first = day.replace(day=1)
+        return self.filter(
+            models.Q(start_month__isnull=True) | models.Q(start_month__lte=first),
+            models.Q(end_month__isnull=True) | models.Q(end_month__gte=first),
+        )
+
+
+@track_changes()
+class FallowPeriod(models.Model):
+    """The months a use area grows nothing.
+
+    ``start_month`` and ``end_month`` are each the first day of a month. An
+    empty start month means "from the start of the records" and an empty end
+    month means "still fallow". The end month is included: the field is
+    fallow in it. The periods of one use area may not overlap.
+    """
+
+    parcel = models.ForeignKey(
+        Parcel, on_delete=models.CASCADE, related_name="fallow_periods"
+    )
+    start_month = models.DateField(null=True, blank=True)
+    end_month = models.DateField(null=True, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    objects = FallowPeriodQuerySet.as_manager()
+
+    class Meta:
+        ordering = ["start_month", "end_month"]
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(start_month__isnull=True)
+                    | models.Q(end_month__isnull=True)
+                    | models.Q(end_month__gte=models.F("start_month"))
+                ),
+                name="fallow_period_end_not_before_start",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.parcel} fallow {self.span_words()}".strip()
+
+    def span_words(self):
+        """The months in words: "from March 2026 to June 2026", "from March 2026", "until June 2026"."""
+        start = f"{self.start_month:%B %Y}" if self.start_month else ""
+        end = f"{self.end_month:%B %Y}" if self.end_month else ""
+        if start and end:
+            return f"from {start} to {end}"
+        if start:
+            return f"from {start}"
+        if end:
+            return f"until {end}"
+        return ""
+
+    def overlapping(self):
+        """The other periods of this use area that share a month with this one."""
+        lo = self.start_month or dt.date.min
+        hi = self.end_month or dt.date.max
+        others = FallowPeriod.objects.filter(parcel_id=self.parcel_id)
+        if self.pk:
+            others = others.exclude(pk=self.pk)
+        return [
+            p for p in others
+            if (p.start_month or dt.date.min) <= hi and (p.end_month or dt.date.max) >= lo
+        ]
+
+    def clean(self):
+        if self.start_month and self.end_month and self.end_month < self.start_month:
+            raise ValidationError("The end month cannot be before the start month.")
+        clash = self.overlapping()
+        if clash:
+            raise ValidationError(overlap_sentence(clash[0]))
+
+    def save(self, *args, **kwargs):
+        # The same two checks the form makes, so no other writer can leave two
+        # periods of one use area overlapping.
+        self.clean()
+        super().save(*args, **kwargs)
+
+
+def overlap_sentence(period):
+    """The refusal for a period that shares a month with ``period``."""
+    words = period.span_words()
+    if not words:
+        return "This period overlaps the fallow period that has no dates."
+    return f"This period overlaps the fallow period {words}."

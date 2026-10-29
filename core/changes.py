@@ -105,6 +105,7 @@ RECORD_TYPE_NAMES = {
     "surface.PointOfDiversionParcel": "Point of diversion use area share",
     "surface.WaterRightParcel": "Water right place of use",
     "parcels.ParcelIrrigationMethod": "Use area irrigation method",
+    "parcels.FallowPeriod": "Fallow period",
     "core.SiteConfig": "Site settings",
     "drinking.SamplingSchedule": "Sampling schedule row",
 }
@@ -124,6 +125,7 @@ RELATED_RECORDS = {
         ("surface.PointOfDiversionParcel", "parcel"),
         ("surface.WaterRightParcel", "parcel"),
         ("parcels.ParcelIrrigationMethod", "parcel"),
+        ("parcels.FallowPeriod", "parcel"),
         ("geography.ParcelZone", "parcel"),
         ("accounting.WaterAccountParcel", "parcel"),
     ),

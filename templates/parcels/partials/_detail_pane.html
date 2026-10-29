@@ -306,6 +306,11 @@
           </div>
         </div>
       </div>
+      {% if 'surface' in enabled_modules and fallow_share_sentence %}
+      <div class="budget-breakdown-group--under" style="grid-template-columns: minmax(0, 1fr);">
+        <div class="text-secondary" style="max-width: 75ch;">{{ fallow_share_sentence }}</div>
+      </div>
+      {% endif %}
       </div>
     </div>
 
@@ -365,8 +370,6 @@
               {% include "partials/_help_tooltip.html" with label="Status" text="Active use areas are included in your water data and reports. Inactive use areas are excluded." %}
             {% elif ef.name == "area_acres" %}
               {% include "partials/_help_tooltip.html" with label="Area (acres)" text="Calculated from the parcel boundary when no figure is entered. OpenH2O uses the area to convert crop ET and rainfall from depth to acre-feet. No allocation is calculated from it." %}
-            {% elif ef.name == "fallow" %}
-              {% include "partials/_help_tooltip.html" with label="Fallow" text="Mark a use area that grows nothing. Without the mark, OpenH2O counts the satellite crop ET, whether or not a crop is on record." %}
             {% elif ef.name == "irrigation_method" %}
               {% include "partials/_help_tooltip.html" with label="Irrigation method" text="Each irrigation method's efficiency comes from a groundwater agency's published table. For a field with an irrigation method on file, OpenH2O uses the method's efficiency in place of the default on Delivery Settings." %}
             {% endif %}
@@ -377,8 +380,6 @@
                 {% include "parcels/partials/_status_badge.html" with status=ef.value %}
               {% elif ef.type == "number" %}
                 {% if ef.value is not None %}{{ ef.value|floatformat:2 }}{% else %}—{% endif %}
-              {% elif ef.name == "fallow" %}
-                {{ ef.display }}{% if ef.value == "yes" %} <span class="text-tertiary text-xs">crop ET is counted as 0 in this use area's calculation</span>{% endif %}
               {% elif ef.name == "irrigation_method" %}
                 {{ ef.display|blank }}{% if ef.value %} <span class="text-tertiary text-xs">used in this field's calculation in place of the default on Delivery Settings</span>{% else %}. <span class="text-tertiary text-xs">The default irrigation efficiency on Delivery Settings applies.</span>{% endif %}
               {% else %}
@@ -396,6 +397,18 @@
           </div>
         </div>
         {% endfor %}
+
+        {# The Fallow row: dated periods, added or ended in place, never edited. #}
+        <div class="field-group">
+          <div class="field-label field-row">
+            Fallow
+            {% include "partials/_help_tooltip.html" with label="Fallow" text="Mark the months a use area grows nothing. In a fallow month OpenH2O counts crop ET as 0. Without the mark it counts the satellite crop ET, whether or not a crop is on record." %}
+          </div>
+          <div id="field-fallow" class="field-row">
+            {% include "parcels/partials/_fallow_row.html" %}
+          </div>
+          <div id="field-fallow-more">{% include "parcels/partials/_fallow_more.html" %}</div>
+        </div>
 
         <div class="border-separator">
           <div class="text-tertiary text-xs">

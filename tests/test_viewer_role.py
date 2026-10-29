@@ -272,6 +272,7 @@ WRITE_PAGES = [
     "geography:zone_edit", "geography:zone_parcel_assign", "geography:zone_parcel_remove",
     "infrastructure:add", "infrastructure:import", "infrastructure:import_commit",
     "infrastructure:import_preview", "infrastructure:parcel_create", "parcels:edit_field",
+    "parcels:fallow_period_add", "parcels:fallow_period_end_edit",
     "recharge:event_create", "recharge:event_delete", "recharge:event_edit",
     "surface:device_add", "surface:device_edit", "surface:device_mark_removed",
     "surface:diversion_import", "surface:diversion_import_commit",
@@ -313,6 +314,22 @@ def test_a_viewer_opening_a_write_page_by_address_is_refused(viewer, operator):
     response = _client(operator).get(url)
     assert response.status_code == 200
     assert READ_ONLY_MESSAGE not in response.content.decode()
+
+
+def test_a_viewer_adding_or_ending_a_fallow_period_is_refused(viewer, operator):
+    parcel = ParcelFactory(parcel_number="VIEW-006")
+    client = _client(viewer)
+    add = reverse("parcels:fallow_period_add", args=[parcel.pk])
+    end = reverse("parcels:fallow_period_end_edit", args=[parcel.pk])
+    assert _refused(client.post(add, {"start_month": "2026-03-01"})) == (403, True)
+    assert _refused(client.get(add)) == (403, True)
+    assert _refused(client.post(end, {"end_month": "2026-05-01"})) == (403, True)
+    assert _refused(client.get(end)) == (403, True)
+    assert not parcel.fallow_periods.exists()
+
+    response = _client(operator).post(add, {"start_month": "2026-03-01"})
+    assert response.status_code == 200
+    assert parcel.fallow_periods.count() == 1
 
 
 def test_a_viewer_opening_an_inline_editor_is_refused(viewer):

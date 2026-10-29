@@ -39,6 +39,7 @@ can never drift on the read; getting any string wrong silently zeroes the parcel
 """
 
 import logging
+from datetime import date
 from decimal import Decimal
 
 from django.db.models import Sum
@@ -200,9 +201,11 @@ def et_gross(running_af, parcel, period, ctx, config):
     # decompose a below-floor surplus into genuine rain surplus vs. surface
     # over-delivery (clamp_floor). Cross-step data is exactly what ctx
     # is for; the detail dict below is unchanged so audit/tests stay stable.
-    # A field marked fallow uses no crop water: its ET still reads from the
-    # cache (the detail keeps the satellite figure) but counts as 0 AF.
-    fallow = bool(getattr(parcel, "fallow", False))
+    # A field in a fallow period uses no crop water that month: its ET still
+    # reads from the cache (the detail keeps the satellite figure) but counts
+    # as 0 AF.
+    year, month = _period_year_month(period)
+    fallow = parcel.is_fallow_in(date(year, month, 1))
     satellite_af = af
     if fallow:
         af = Decimal("0")
@@ -299,7 +302,7 @@ def facility_only_zero(running_af, parcel, period, ctx, config):
 
     Kept in the registry only so a calculation plan saved before it was
     retired still runs; the step passes the running figure through unchanged.
-    A field that grows nothing carries the fallow mark instead (``et_gross``).
+    A field that grows nothing is put in a fallow period instead (``et_gross``).
     """
     detail = {"facility_only": False, "retired": True}
     return running_af, _record(
@@ -336,7 +339,7 @@ def clamp_floor(running_af, parcel, period, ctx, config):
 
     The genuine-rain portion is CAPPED at the total surplus
     (min(total_surplus, max(0, Pe - ET))) so a parcel whose running was forced to
-    the floor by an earlier step (e.g. a fallow mark) never records a
+    the floor by an earlier step (e.g. a fallow period) never records a
     phantom rain surplus. ET and Pe are read from the shared ctx (stashed by
     et_gross and subtract_effective_precip). If either is absent (a plan
     without those steps, or an isolated unit call), we fall back to the earlier

@@ -1,0 +1,10 @@
+{% comment %}
+Under the Fallow row: the earlier periods, one line each (newest first), and
+the line a save prints when it starts a recalculation.
+{% endcomment %}
+{% for line in fallow.earlier %}
+<div class="text-tertiary text-xs" style="margin-top: var(--space-xs);">{{ line }}</div>
+{% endfor %}
+{% if fallow_status_line %}
+<p class="text-sm text-secondary" role="status" style="margin: var(--space-xs) 0 0;">{{ fallow_status_line }}</p>
+{% endif %}

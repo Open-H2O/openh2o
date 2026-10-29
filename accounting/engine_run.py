@@ -862,17 +862,25 @@ def request_for_months(trigger, months, *, requested_by=None):
     return created
 
 
-def recalculation_sentence(months):
-    """The line a saving page shows beneath its success message."""
+def _months_where(months):
+    """The months in words: one month, "A through B" for a run, or a list ("A, B and C")."""
     months = sorted({month_text(month_date(m)) for m in months})
     consecutive = len(months) > 1 and months == months_in_span(
         month_date(months[0]), month_date(months[-1])
     )
     if len(months) == 1:
-        where = month_label(months[0])
-    elif consecutive:
-        where = f"{month_label(months[0])} through {month_label(months[-1])}"
-    else:
-        labels = [month_label(m) for m in months]
-        where = ", ".join(labels[:-1]) + f" and {labels[-1]}"
-    return f"OpenH2O is recalculating the fields this water serves for {where}."
+        return month_label(months[0])
+    if consecutive:
+        return f"{month_label(months[0])} through {month_label(months[-1])}"
+    labels = [month_label(m) for m in months]
+    return ", ".join(labels[:-1]) + f" and {labels[-1]}"
+
+
+def recalculation_sentence(months):
+    """The line a saving page shows beneath its success message."""
+    return f"OpenH2O is recalculating the fields this water serves for {_months_where(months)}."
+
+
+def recalculating_months_sentence(months):
+    """The line a page about one use area shows after a save that recalculates months."""
+    return f"OpenH2O is recalculating {_months_where(months)}."

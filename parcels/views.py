@@ -10,6 +10,7 @@ that irrigate it, and inline-edits the parcel's editable fields.
 """
 from __future__ import annotations
 
+import datetime as dt
 import json
 from typing import Any
 from urllib.parse import parse_qs
@@ -36,7 +37,13 @@ from accounting.services import (
 )
 from core.modules import is_enabled
 from core.validation import FieldValidationError, coerce_decimal, coerce_int
-from parcels.models import IrrigationMethod, Parcel, ParcelIrrigationMethod, ParcelLedger
+from parcels.forms import FallowPeriodForm
+from parcels.models import (
+    IrrigationMethod,
+    Parcel,
+    ParcelIrrigationMethod,
+    ParcelLedger,
+)
 
 
 EDITABLE_FIELDS = {
@@ -56,11 +63,6 @@ EDITABLE_FIELDS = {
 #: watered from a well has an irrigation method too.
 IRRIGATION_METHOD = "irrigation_method"
 
-#: Not a free-text column either: the fallow mark is one yes/no on the use
-#: area, edited as a two-choice select and stored as ``Parcel.fallow``.
-FALLOW = "fallow"
-FALLOW_CHOICES = [("no", "Not fallow"), ("yes", "Fallow")]
-
 
 def _editable_fields():
     """EDITABLE_FIELDS, plus the irrigation method.
@@ -74,11 +76,6 @@ def _editable_fields():
         "type": "select",
         "choices": [("", "Not set")]
         + [(str(m.pk), str(m)) for m in IrrigationMethod.objects.all()],
-    }
-    fields[FALLOW] = {
-        "label": "Fallow",
-        "type": "select",
-        "choices": FALLOW_CHOICES,
     }
     return fields
 
@@ -99,8 +96,6 @@ def _field_value(parcel, field):
         if link is None:
             return "", ""
         return str(link.method_id), str(link.method)
-    if field == FALLOW:
-        return ("yes", "Fallow") if parcel.fallow else ("no", "Not fallow")
     value = getattr(parcel, field)
     return value, value
 
@@ -261,11 +256,58 @@ def _parcel_detail_context(parcel, period_id=None):
         "no_canal_delivery": no_canal_delivery,
         "editable_fields": editable_fields,
         "editable_fields_with_values": editable_fields_with_values,
+        "fallow": fallow_row_context(parcel),
+        "fallow_share_sentence": _fallow_share_sentence(parcel, balance_period),
         # Pass the Python object (or None); the template escapes it via
         # json_script so operator free-text can't break out of <script>.
         "geojson": geojson,
     }
     return context
+
+
+def _month_firsts(start, end):
+    """Every first-of-month date from ``start`` through ``end``."""
+    months = []
+    month = start.replace(day=1)
+    while month <= end:
+        months.append(month)
+        month = (month.replace(day=28) + dt.timedelta(days=4)).replace(day=1)
+    return months
+
+
+def _fallow_share_sentence(parcel, balance_period):
+    """The line saying canal water skipped this field in the period's fallow months, or "".
+
+    A month counts when the field was fallow in it, a point of diversion
+    serving it delivered water for use above 0, and the field had no delivery
+    record of its own, so it was one of the fields the water was divided
+    among. Empty where the surface module is off or no month qualifies.
+    """
+    if balance_period is None or not is_enabled("surface"):
+        return ""
+    from surface.services import fallow_months_without_share
+
+    months = fallow_months_without_share(
+        parcel, _month_firsts(balance_period.start_date, balance_period.end_date)
+    )
+    if not months:
+        return ""
+    tail = "Record any water spread on it to recharge as To Storage."
+    if len(months) == 1:
+        return (
+            f"This use area was fallow in {months[0]:%B %Y}, so OpenH2O gave it no share "
+            f"of the canal water that month. {tail}"
+        )
+    in_one_run = months == _month_firsts(months[0], months[-1])
+    if in_one_run:
+        when = f"from {months[0]:%B %Y} to {months[-1]:%B %Y}"
+    else:
+        labels = [f"{m:%B %Y}" for m in months]
+        when = "in " + ", ".join(labels[:-1]) + f" and {labels[-1]}"
+    return (
+        f"This use area was fallow {when}, so OpenH2O gave it no share of the canal "
+        f"water in those months. {tail}"
+    )
 
 
 def _balance_period(
@@ -451,19 +493,6 @@ def parcel_edit_field(request, pk):
         }
         return render(request, "parcels/partials/_field_value.html", context)
 
-    if field == FALLOW:
-        parcel.fallow = new_value == "yes"
-        parcel.save(update_fields=["fallow", "updated_at"])
-        value, display = _field_value(parcel, field)
-        context = {
-            "parcel": parcel,
-            "field": field,
-            "field_meta": field_meta,
-            "value": value,
-            "display": display,
-        }
-        return render(request, "parcels/partials/_field_value.html", context)
-
     if field_meta["type"] == "number":
         try:
             if field_meta.get("integer"):
@@ -504,6 +533,123 @@ def parcel_edit_field(request, pk):
 
 
 
+
+
+def _span_key(period):
+    return (period.start_month or dt.date.min, period.end_month or dt.date.max)
+
+
+def _months_text(period):
+    """``(start, end)`` as month names; None for an empty side."""
+    start = f"{period.start_month:%B %Y}" if period.start_month else None
+    end = f"{period.end_month:%B %Y}" if period.end_month else None
+    return start, end
+
+
+def fallow_row_context(parcel):
+    """What the Fallow row shows: the latest period in words, a note, and the earlier ones.
+
+    ``can_end`` is True when a period is still open; the row then offers to
+    end it and not to add another (periods of one use area may not overlap).
+    """
+    periods = sorted(parcel.fallow_periods.all(), key=_span_key)
+    if not periods:
+        return {"value": "Not fallow", "note": "", "earlier": [], "can_end": False}
+    latest = periods[-1]
+    start, end = _months_text(latest)
+    if start and end and start == end:
+        value = f"Fallow in {start}"
+        note = f"crop ET is counted as 0 in {start} in this use area's calculation"
+    elif start and end:
+        value = f"Fallow from {start} to {end}"
+        note = f"crop ET is counted as 0 from {start} through {end} in this use area's calculation"
+    elif start:
+        value = f"Fallow from {start}"
+        note = f"crop ET is counted as 0 from {start} in this use area's calculation"
+    elif end:
+        value = f"Fallow until {end}"
+        note = f"crop ET is counted as 0 through {end} in this use area's calculation"
+    else:
+        value = "Fallow"
+        note = "crop ET is counted as 0 in this use area's calculation"
+    earlier = []
+    for period in reversed(periods[:-1]):
+        start, end = _months_text(period)
+        if start and end and start == end:
+            earlier.append(f"Earlier: {start}")
+        elif start and end:
+            earlier.append(f"Earlier: {start} to {end}")
+        elif end:
+            earlier.append(f"Earlier: fallow until {end}")
+        else:
+            earlier.append(f"Earlier: fallow from {start}")
+    return {"value": value, "note": note, "earlier": earlier, "can_end": latest.end_month is None}
+
+
+def _fallow_response(request, parcel, *, form=None, ending=False, status_line=""):
+    """The Fallow row: the form when ``form`` is given, otherwise the row and its notes."""
+    context = {
+        "parcel": parcel,
+        "fallow": fallow_row_context(parcel),
+        "fallow_status_line": status_line,
+        "form": form,
+        "ending": ending,
+        "error": form.first_error() if form is not None and form.is_bound else "",
+    }
+    template = (
+        "parcels/partials/_fallow_form.html" if form is not None
+        else "parcels/partials/_fallow_row_swap.html"
+    )
+    return render(request, template, context)
+
+
+def _open_fallow_period(parcel):
+    return parcel.fallow_periods.filter(end_month__isnull=True).first()
+
+
+def _save_fallow(request, parcel, ending):
+    """Check, save and recalculate: the one path behind adding and ending a period."""
+    form = FallowPeriodForm(request.POST, parcel=parcel, ending=ending)
+    if not form.is_valid():
+        return _fallow_response(request, parcel, form=form, ending=ending is not None)
+    months = form.months_to_recalculate()
+    form.save(user=request.user)
+    status_line = ""
+    if months:
+        from accounting.engine_run import recalculating_months_sentence, request_for_months
+
+        started = request_for_months("ledger_saved", months, requested_by=request.user)
+        covered = sorted({m for r in started for m in r.months})
+        if covered:
+            status_line = recalculating_months_sentence(covered)
+    return _fallow_response(request, parcel, status_line=status_line)
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def fallow_period_add(request, pk):
+    """Add a fallow period: GET returns the form (or the row, on cancel), POST saves it."""
+    parcel = get_object_or_404(Parcel, pk=pk)
+    if request.method == "POST":
+        return _save_fallow(request, parcel, ending=None)
+    if request.GET.get("cancel"):
+        return _fallow_response(request, parcel)
+    return _fallow_response(request, parcel, form=FallowPeriodForm(parcel=parcel))
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def fallow_period_end_edit(request, pk):
+    """End the open fallow period: GET returns the end form (or the row, on cancel), POST saves it."""
+    parcel = get_object_or_404(Parcel, pk=pk)
+    ending = _open_fallow_period(parcel)
+    if ending is None or request.GET.get("cancel"):
+        return _fallow_response(request, parcel)
+    if request.method == "POST":
+        return _save_fallow(request, parcel, ending=ending)
+    return _fallow_response(
+        request, parcel, form=FallowPeriodForm(parcel=parcel, ending=ending), ending=True
+    )
 
 
 @public_in_open_demo

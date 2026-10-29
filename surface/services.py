@@ -78,7 +78,7 @@ from accounting.services import (
     deposit_to_basin_pool,
     parcel_pool_zone,
 )
-from parcels.models import Parcel, ParcelLedger
+from parcels.models import FallowPeriod, Parcel, ParcelLedger
 from parcels.services import field_efficiency
 from surface.models import (
     CanalMonthLoss,
@@ -292,6 +292,75 @@ def _in_months(field: str, starts: Iterable[date]) -> Q:
     for start in starts:
         q |= Q(**{f"{field}__gte": start, f"{field}__lt": _next_month(start)})
     return q
+
+
+def _fallow_parcel_ids(parcels: Iterable[Parcel], month: date) -> set[int]:
+    """The pks among ``parcels`` that are fallow in the calendar month of ``month``."""
+    parcels = list(parcels)
+    if not parcels:
+        return set()
+    return set(
+        FallowPeriod.objects.covering(month)
+        .filter(parcel__in=parcels)
+        .values_list("parcel_id", flat=True)
+    )
+
+
+def fallow_fields_left_out(pod: PointOfDiversion, months: Iterable[date]) -> dict[date, list[Parcel]]:
+    """``{month: fields}``: the fields the canal division skipped because they were fallow.
+
+    Only a month in which the point has a direct-use delivery above 0 is
+    listed, and only a field that was one of the fields being divided that
+    month (it had no delivery record of its own). Fields come in parcel number
+    order. This reads the same rules ``_allocate_month`` applies, so the page
+    sentences and the division cannot disagree.
+    """
+    links = _served_links(pod)
+    out: dict[date, list[Parcel]] = {}
+    if not links:
+        return out
+    served = [link.parcel for link in links]
+    for month in sorted({_month_start(m) for m in months}):
+        fallow_ids = _fallow_parcel_ids(served, month)
+        if not fallow_ids:
+            continue
+        delivered = sum(
+            (r.consumed_acre_feet() for r in _records_for_period(pod, None, months=[month])),
+            Decimal("0"),
+        )
+        if delivered <= 0:
+            continue
+        own = _own_magnitudes(served, month)
+        skipped = sorted(
+            (p for p in served if p.pk in fallow_ids and p.pk not in own),
+            key=lambda p: p.parcel_number,
+        )
+        if skipped:
+            out[month] = skipped
+    return out
+
+
+def fallow_months_without_share(parcel: Parcel, months: Iterable[date]) -> list[date]:
+    """The months in ``months`` in which canal water skipped this fallow field."""
+    fallow_months = [m for m in months if parcel.is_fallow_in(m)]
+    if not fallow_months:
+        return []
+    skipped: set[date] = set()
+    for link in PointOfDiversionParcel.objects.filter(parcel=parcel).select_related(
+        "point_of_diversion"
+    ):
+        for month, fields in fallow_fields_left_out(link.point_of_diversion, fallow_months).items():
+            if parcel in fields:
+                skipped.add(month)
+    return sorted(skipped)
+
+
+def fallow_left_out_sentence(parcel_number: str, month: date) -> str:
+    """The line under a turnout's month naming a fallow field that took no share."""
+    return (
+        f"Use area {parcel_number} was fallow in {month:%B %Y}, so OpenH2O gave it "
+        f"no share of this month's water."
+    )
 
 
 def _own_magnitudes(served: list[Parcel], month: date) -> dict[int, Decimal]:
@@ -682,8 +751,16 @@ def _allocate_month(
         )
         return loss
 
-    free_links = [link for link in served_links if link.parcel.pk not in own]
+    # A field that is fallow this month takes no share of the water divided
+    # among the fields without their own record. The rest divide the
+    # remainder; when none is left, it is recorded as unallocated.
+    candidates = [link for link in served_links if link.parcel.pk not in own]
+    fallow_ids = _fallow_parcel_ids([link.parcel for link in candidates], month)
+    free_links = [link for link in candidates if link.parcel.pk not in fallow_ids]
     free = [link.parcel for link in free_links]
+    fallow_left_out = sorted(
+        link.parcel.parcel_number for link in candidates if link.parcel.pk in fallow_ids
+    )
     remainders = _record_remainders(
         month_records, available, own_total, month_total
     )
@@ -710,7 +787,16 @@ def _allocate_month(
         to_write.extend(rows)
         if surplus > 0:
             _record_unallocated(
-                pod, record, delivery_total, surplus, unallocated, notes
+                pod, record, delivery_total, surplus, unallocated, notes,
+                fallow_parcels=fallow_left_out if not free else None,
+            )
+        if fallow_left_out:
+            logger.info(
+                "allocate_district_delivery POD=%s month=%s: fallow, left out "
+                "of the division: %s",
+                pod.name,
+                record.month,
+                ", ".join(fallow_left_out),
             )
         logger.info(
             "allocate_district_delivery POD=%s month=%s: %s (%d parcels, %s AF)",
@@ -853,8 +939,13 @@ def _record_unallocated(
     surplus: Decimal,
     unallocated: list[UnallocatedDelivery],
     notes: list[dict[str, Any]] | None,
+    fallow_parcels: list[str] | None = None,
 ) -> None:
-    """Queue an ``UnallocatedDelivery`` for a record's surplus, note it and log a warning."""
+    """Queue an ``UnallocatedDelivery`` for a record's surplus, note it and log a warning.
+
+    ``fallow_parcels`` names the fields left out of the division because they
+    were fallow that month; the note carries them when there are any.
+    """
     unallocated.append(
         UnallocatedDelivery(
             point_of_diversion=pod,
@@ -865,14 +956,15 @@ def _record_unallocated(
         )
     )
     if notes is not None:
-        notes.append(
-            {
-                "kind": "unallocated",
-                "pod": pod.name,
-                "month": record.month,
-                "amount_af": surplus,
-            }
-        )
+        note = {
+            "kind": "unallocated",
+            "pod": pod.name,
+            "month": record.month,
+            "amount_af": surplus,
+        }
+        if fallow_parcels:
+            note["fallow_parcels"] = list(fallow_parcels)
+        notes.append(note)
     logger.warning(
         "allocate_district_delivery POD=%s month=%s: %s AF of %s AF "
         "delivered is not explained by crop demand — recorded as "

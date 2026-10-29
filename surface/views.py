@@ -101,6 +101,29 @@ def _mark_finalized(records):
     return records
 
 
+def _mark_fallow_notes(records, pod):
+    """Give each record ``fallow_notes``: a line for each fallow field its month's water skipped.
+
+    A month's lines sit under the first direct-use record of that month, so a
+    month with two records does not repeat them. One query set per month, only
+    for months that have a fallow field to name.
+    """
+    from surface.services import fallow_fields_left_out, fallow_left_out_sentence
+
+    left_out = fallow_fields_left_out(pod, {r.month for r in records})
+    placed = set()
+    for record in sorted(records, key=lambda r: r.pk):
+        record.fallow_notes = []
+        month = record.month.replace(day=1)
+        if record.diversion_type != "direct_use" or month in placed or month not in left_out:
+            continue
+        placed.add(month)
+        record.fallow_notes = [
+            fallow_left_out_sentence(parcel.parcel_number, month) for parcel in left_out[month]
+        ]
+    return records
+
+
 def _group_diversion_records(records):
     """Partition ordered ``DiversionRecord`` rows into water-year groups.
 
@@ -251,6 +274,7 @@ def _pod_detail_context(pod):
         .order_by("-month")
     )
     _mark_finalized(diversion_records)
+    _mark_fallow_notes(diversion_records, pod)
 
     # The table's own water-year groups, and the
     # CURRENT period's figures read off that SAME grouping -- no second
@@ -575,6 +599,7 @@ def _render_diversion_records_section(
         .order_by("-month")
     )
     _mark_finalized(diversion_records)
+    _mark_fallow_notes(diversion_records, pod)
 
     # The same grouping _pod_detail_context uses, so a POST that
     # swaps this partial back in renders the identical shape (row-group

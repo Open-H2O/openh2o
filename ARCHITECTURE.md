@@ -102,8 +102,8 @@ records into a month's ledger.
   (`manage.py run_accounting --open-periods --trigger schedule`); the Calculate button on a
   reporting period's page (`accounting/views/periods.py`, `period_calculate`), which queues
   nothing while one for that period is already waiting or running; saving ledger entries,
-  surface records or a well's meter reading (`accounting/views/ledger.py`, `surface/views.py`,
-  `wells/views.py`, through `engine_run.request_for_months`); and `run_accounting` run by hand. Each creates a
+  surface records, a well's meter reading or a field's fallow period (`accounting/views/ledger.py`,
+  `surface/views.py`, `wells/views.py`, `parcels/views.py`, through `engine_run.request_for_months`); and `run_accounting` run by hand. Each creates a
   `CalculationRequest` (`accounting/models.py`), and the queue in `accounting/engine_run.py`
   (`run_queue`) takes a database lock so one calculation runs at a time. A screen starts
   `run_accounting --request <pk>` as its own process (`start_calculation`), so the request returns
@@ -111,13 +111,13 @@ records into a month's ledger.
 - **One month.** `engine_run.run_month` runs in one transaction. It runs the per-field
   calculation; with the `surface` module on, it then deletes any diversion record of the retired
   crop-need estimate left in that month, divides each point of diversion's water among the fields it
-  serves (`surface/services.py`), stores what is left after canal losses at a point that serves no
+  serves (`surface/services.py`; a field marked fallow that month gets no share of water divided by shares), stores what is left after canal losses at a point that serves no
   field as `CanalMonthLoss.unserved_af`, credited to no one, and runs the per-field calculation again
   with the divided water. A diversion record counts in its month whatever day it is dated.
 - **One field.** `accounting/management/commands/run_calculations.py` runs the methodology chain
   for each field through `accounting/calculation.py` (`evaluate_chain`). The steps are functions
-  registered in `accounting/steps.py` (`STEP_REGISTRY`): gross crop water use (0 on a field marked
-  fallow), less effective rain, less surface water, and a floor at zero. A retired facility-only
+  registered in `accounting/steps.py` (`STEP_REGISTRY`): gross crop water use (0 in a month the field
+  is marked fallow), less effective rain, less surface water, and a floor at zero. A retired facility-only
   step stays registered so that a plan saved before it was retired still runs; it changes
   nothing. Which steps run and in what order is data: `CalculationPlan` and `CalculationStep` rows in `accounting/models.py`. The
   Methodology Settings page (`accounting/views/settings_pages.py`) turns steps on and off,

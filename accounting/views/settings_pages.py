@@ -310,7 +310,7 @@ def _zero_reason(step):
         return ""
     detail = step.get("detail", {}) or {}
     if detail.get("fallow"):
-        return "This use area is marked fallow, so its ET counts as 0."
+        return "This use area is marked fallow this month, so its ET counts as 0."
     if detail.get("rows") == 0:
         return (
             "No ET is stored for this use area and month, so this figure is 0. "

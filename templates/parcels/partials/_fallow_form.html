@@ -1,0 +1,37 @@
+{% comment %}
+The add form, or (`ending`) the form that gives the open period its end month.
+Swaps into #field-fallow the way _field_edit.html does. A refusal prints in
+the form, in place of nothing saved; Cancel returns the row.
+{% endcomment %}
+{% if ending %}{% url 'parcels:fallow_period_end_edit' parcel.pk as post_url %}{% else %}{% url 'parcels:fallow_period_add' parcel.pk as post_url %}{% endif %}
+<form hx-post="{{ post_url }}"
+      hx-target="#field-fallow"
+      hx-swap="innerHTML"
+      class="form-grid" style="width: 100%;">
+  {% csrf_token %}
+  {% if not ending %}
+  <h3 class="text-sm font-semibold text-secondary m-0 form-span-2">Add a fallow period</h3>
+  {% endif %}
+  {% if error %}
+  <p class="text-sm text-deficit form-span-2" role="alert" style="margin: 0;">{{ error }}</p>
+  {% endif %}
+  {% if not ending %}
+  <div class="form-group" style="margin-bottom: var(--space-md);">
+    <label class="field-label" for="id_start_month">Start month (pick any day in it)</label>
+    <input type="date" name="start_month" class="form-input" required id="id_start_month" value="{{ form.start_month.value|default_if_none:'' }}" style="border-color: var(--color-accent);">
+    <span class="text-xs text-tertiary">Choose the first full month with no crop. If the crop came out partway through a month, start with the next month. The satellite crop ET for the partial month already shows the lower use.</span>
+  </div>
+  {% endif %}
+  <div class="form-group" style="margin-bottom: var(--space-md);">
+    <label class="field-label" for="id_end_month">End month ({% if not ending %}optional, {% endif %}pick any day in it)</label>
+    <input type="date" name="end_month" class="form-input" id="id_end_month" value="{{ form.end_month.value|default_if_none:'' }}" style="border-color: var(--color-accent);"{% if ending %} required{% endif %}>
+    <span class="text-xs text-tertiary">{% if not ending %}Leave this blank while the use area stays fallow. {% endif %}The use area is fallow in its end month too.</span>
+  </div>
+  <div class="form-span-2 row-start" style="display: flex; gap: var(--space-sm);">
+    <button type="submit" class="btn-primary btn-sm">Save</button>
+    <button type="button" class="btn-secondary btn-sm"
+      hx-get="{{ post_url }}?cancel=1"
+      hx-target="#field-fallow"
+      hx-swap="innerHTML">Cancel</button>
+  </div>
+</form>

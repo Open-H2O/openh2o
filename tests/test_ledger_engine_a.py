@@ -9,7 +9,7 @@ calculator, never recomputed with the engine's formula.
   the field shows no canal delivery, and the field's groundwater charge is the
   whole of its crop use over its efficiency. A typed record still comes off the
   charge.
-* A field's crop water use is counted unless the field carries the fallow mark;
+* A field's crop water use is counted unless the field is in a fallow period;
   a field with no crop on record is charged like any other. A calculation plan
   that still holds the old no-crop step no longer zeroes anything.
 * Canal delivery is always multiplied by the field's irrigation efficiency, with
@@ -22,11 +22,10 @@ from decimal import Decimal as D
 import pytest
 from django.test import Client
 from django.urls import reverse
-from django.utils.http import urlencode
 
 from accounting.models import CalculationPlan, CalculationRun, CalculationStep
 from core.models import User
-from parcels.models import IrrigationMethod, Parcel, ParcelIrrigationMethod
+from parcels.models import FallowPeriod, IrrigationMethod, ParcelIrrigationMethod
 from surface.models import DiversionRecord
 
 from . import ledger_districts as ld
@@ -136,7 +135,7 @@ def test_d1_gsa_used_and_remaining_count_the_field_with_no_crop(ref):
 
 def test_a_field_marked_fallow_is_charged_nothing(ref):
     d1 = ld.build_d1()
-    Parcel.objects.filter(pk=d1["F3"].pk).update(fallow=True)
+    FallowPeriod.objects.create(parcel=d1["F3"])
     ld.run_months(["2025-07"])
     run = run_of(d1["F3"], "2025-07")
     assert (run.gw_extracted_af or D("0")) == D("0")
@@ -172,22 +171,22 @@ def test_seeding_again_takes_the_old_step_out_of_an_existing_plan(ref):
     assert types == ["et_gross", "subtract_effective_precip", "subtract_surface_water", "clamp_floor"]
 
 
-def test_the_fallow_mark_is_set_from_the_field_page(ref):
+def test_a_fallow_period_is_added_and_ended_from_the_field_page(ref):
     field, _ = worked_example_field()
     user = User.objects.create_user(username="operator", password="x", is_active=True)
     page = Client()
     page.force_login(user)
-    url = reverse("parcels:edit_field", args=[field.pk])
-    resp = page.patch(url, data=urlencode({"field": "fallow", "value": "yes"}),
-                      content_type="application/x-www-form-urlencoded")
+    resp = page.post(reverse("parcels:fallow_period_add", args=[field.pk]),
+                     {"start_month": "2025-07-12", "end_month": ""})
     assert resp.status_code == 200
-    field.refresh_from_db()
-    assert field.fallow is True
-    assert "Fallow" in resp.content.decode()
-    resp = page.patch(url, data=urlencode({"field": "fallow", "value": "no"}),
-                      content_type="application/x-www-form-urlencoded")
-    field.refresh_from_db()
-    assert field.fallow is False
+    period = FallowPeriod.objects.get(parcel=field)
+    assert (period.start_month, period.end_month) == (dt.date(2025, 7, 1), None)
+    assert field.is_fallow_in(dt.date(2025, 7, 1)) is True
+    assert "End fallow period" in resp.content.decode()
+    resp = page.post(reverse("parcels:fallow_period_end_edit", args=[field.pk]), {"end_month": "2025-07-30"})
+    period.refresh_from_db()
+    assert period.end_month == dt.date(2025, 7, 1)
+    assert "Add fallow period" in resp.content.decode()
 
 
 # ------------------------------------------------------------------ F-18

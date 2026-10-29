@@ -95,6 +95,11 @@
         {% endif %}
       </td>
     </tr>
+    {% for note in record.fallow_notes %}
+    <tr>
+      <td colspan="7" class="text-tertiary text-xs" style="border-top: none; padding-top: 0; text-align: left; background: transparent;">{{ note }}</td>
+    </tr>
+    {% endfor %}
     {% endfor %}
     <tr class="row-subtotal">
       <td class="tfoot-total">Total</td>

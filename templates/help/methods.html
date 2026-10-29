@@ -55,7 +55,7 @@
           </tr>
           <tr>
             <td class="col-name">The effective precipitation formula</td>
-            <td>The USDA-SCS method works in millimeters. With P the month&rsquo;s precipitation, ET the month&rsquo;s OpenET crop ET (the satellite figure, even on a field marked fallow) and D the soil storage in inches (3.0 unless the setting is changed), OpenH2O first computes a storage factor, SF = 0.531747 + 0.295164 &times; D &minus; 0.057697 &times; D&sup2; + 0.003804 &times; D&sup3;. Effective precipitation is SF &times; (1.25 &times; P<sup>0.824</sup> &minus; 2.93) &times; 10<sup>(0.000955 &times; ET)</sup>, with P<sup>0.824</sup> taken as 0 when P is 0. The result is held at or below the smaller of P and ET and at or above 0, then converted to acre-feet over the field&rsquo;s area. The formula is evaluated in ordinary binary floating point.</td>
+            <td>The USDA-SCS method works in millimeters. With P the month&rsquo;s precipitation, ET the month&rsquo;s OpenET crop ET (the satellite figure, even in a fallow month) and D the soil storage in inches (3.0 unless the setting is changed), OpenH2O first computes a storage factor, SF = 0.531747 + 0.295164 &times; D &minus; 0.057697 &times; D&sup2; + 0.003804 &times; D&sup3;. Effective precipitation is SF &times; (1.25 &times; P<sup>0.824</sup> &minus; 2.93) &times; 10<sup>(0.000955 &times; ET)</sup>, with P<sup>0.824</sup> taken as 0 when P is 0. The result is held at or below the smaller of P and ET and at or above 0, then converted to acre-feet over the field&rsquo;s area. The formula is evaluated in ordinary binary floating point.</td>
           </tr>
           <tr>
             <td class="col-name">ETAW met by surface water</td>
@@ -74,8 +74,8 @@
             <td>Where the well has a meter, the field&rsquo;s share of the well&rsquo;s meter reading is the extraction, divided evenly among its fields where no shares are entered. Otherwise OpenH2O divides ETAW met by groundwater by the field&rsquo;s irrigation efficiency to get the extraction, and the extraction minus ETAW met by groundwater is the pumped water not consumed, which the field&rsquo;s page counts within applied water not consumed.</td>
           </tr>
           <tr>
-            <td class="col-name">A field marked fallow</td>
-            <td>When a field carries the fallow mark, OpenH2O counts its crop ET as 0. The satellite figure is still recorded with the month's calculation.</td>
+            <td class="col-name">A fallow period</td>
+            <td>OpenH2O counts a field&rsquo;s crop ET as 0 in each month of a fallow period, from its start month through its end month. A period with no end month lasts until someone ends it on the use area&rsquo;s page. The satellite figure is still recorded with the month&rsquo;s calculation.</td>
           </tr>
           <tr>
             <td class="col-name">The surplus</td>
@@ -128,6 +128,10 @@
           <tr>
             <td class="col-name">The shares entered</td>
             <td>OpenH2O divides by the shares entered when any field&rsquo;s entered share differs from the default of 1.0. When none does, it divides by acreage, or evenly among the fields when none has an acreage on record. Each field&rsquo;s weight is its share, or its acreage, divided by the total of them, rounded to four decimal places. When OpenH2O divides by acreage, a field without an acreage on record is given 0 acre-feet. The rounding difference in the weights goes to the field whose ID sorts last as text. Each field&rsquo;s amount is the water times its rounded weight, rounded to four decimal places, and the field whose ID sorts last takes what is left, so the amounts add to the total exactly.</td>
+          </tr>
+          <tr>
+            <td class="col-name">A field marked fallow</td>
+            <td>In a month a field is marked fallow, OpenH2O leaves it out of a division by shares and divides the water among the other fields. When every field being divided is fallow that month, OpenH2O shows the water on the point of diversion&rsquo;s page and charges it to no field.</td>
           </tr>
           <tr>
             <td class="col-name">Dividing by crop ET, in detail</td>

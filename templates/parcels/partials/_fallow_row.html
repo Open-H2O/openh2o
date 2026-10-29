@@ -1,0 +1,20 @@
+{% comment %}
+The Fallow row's value and its one control. Fills #field-fallow on the use
+area page and after an add, an end or a cancel. A period cannot be edited or
+deleted; an open one is ended, and a new one is added once none is open.
+`fallow` is parcels.views.fallow_row_context().
+{% endcomment %}
+<span class="field-value" style="flex: 1;">
+  {{ fallow.value }}{% if fallow.note %} <span class="text-tertiary text-xs">{{ fallow.note }}</span>{% endif %}
+</span>
+{% if user_can_write %}{% if fallow.can_end %}<button type="button"
+  hx-get="{% url 'parcels:fallow_period_end_edit' parcel.pk %}"
+  hx-target="#field-fallow"
+  hx-swap="innerHTML"
+  style="background: none; border: none; padding: 0; cursor: pointer; color: var(--color-accent); text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; font-size: 0.8125rem;"
+  title="End the open fallow period">End fallow period</button>{% else %}<button type="button"
+  hx-get="{% url 'parcels:fallow_period_add' parcel.pk %}"
+  hx-target="#field-fallow"
+  hx-swap="innerHTML"
+  style="background: none; border: none; padding: 0; cursor: pointer; color: var(--color-accent); text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; font-size: 0.8125rem;"
+  title="Add fallow period">Add fallow period</button>{% endif %}{% endif %}

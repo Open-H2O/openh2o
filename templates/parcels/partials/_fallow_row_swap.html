@@ -1,0 +1,7 @@
+{% comment %}
+Returned after an add, an end or a cancel. The row replaces the contents of
+#field-fallow; the earlier periods and the recalculation line replace the
+contents of #field-fallow-more out of band.
+{% endcomment %}
+{% include "parcels/partials/_fallow_row.html" %}
+<div id="field-fallow-more" hx-swap-oob="innerHTML">{% include "parcels/partials/_fallow_more.html" %}</div>

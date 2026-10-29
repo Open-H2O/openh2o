@@ -504,6 +504,16 @@
       "tolerance": 0,
       "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
     },
+    "parcels.FallowPeriod": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "A use area's dated fallow periods. The demonstration marks no use area fallow (all 76 carry a crop), so it holds none; the migration from the old undated mark creates none on it."
+    },
+    "parcels.FallowPeriodEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+    },
     "parcels.ParcelIrrigationMethod": {
       "expected": 9,
       "tolerance": 0,

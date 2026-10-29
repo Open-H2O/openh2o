@@ -15,7 +15,7 @@ and switched off by default. OpenH2O does not submit reports to the state.
 These parts of OpenH2O are built and tested. Each one ends with a link to its code.
 
 - **The monthly calculation.** For each field and month, OpenH2O starts from
-  OpenET's satellite estimate of crop water use (0 on a field marked fallow) and
+  OpenET's satellite estimate of crop water use (0 in a month the field is marked fallow) and
   subtracts the rain and the canal water the crop could use. On a field with a well and no meter volume for the
   month, what is left is the groundwater consumed that month. Where a well's meter
   volume for the month is on the ledger, OpenH2O uses that volume. The code is in
