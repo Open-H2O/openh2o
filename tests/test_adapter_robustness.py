@@ -102,30 +102,29 @@ class TestCkanQueryEscaping:
 class TestUsgsParseRobustness:
     @staticmethod
     def _payload(values):
-        return {
-            "value": {
-                "timeSeries": [
-                    {
-                        "variable": {
-                            "variableCode": [{"value": "00060"}],
-                            "unit": {"unitCode": "cfs"},
-                        },
-                        "sourceInfo": {"siteCode": [{"value": "11446500"}]},
-                        "values": [{"value": values}],
-                    }
-                ]
+        """A Water Data API daily answer: one feature per reading."""
+        return [
+            {
+                "type": "Feature",
+                "properties": {
+                    "monitoring_location_id": "USGS-11446500",
+                    "parameter_code": "00060",
+                    "statistic_id": "00003",
+                    "time": time,
+                    "value": value,
+                    "unit_of_measure": "ft^3/s",
+                    "approval_status": "Approved",
+                    "qualifier": None,
+                },
             }
-        }
+            for value, time in values
+        ]
 
     def test_one_bad_reading_drops_only_itself(self):
-        """An 'Ice' qualifier reading among good ones imports the good readings
+        """An 'Ice' reading among good ones imports the good readings
         and drops only the bad — it must not sink the whole batch."""
         raw = self._payload(
-            [
-                {"value": "12.5", "dateTime": "2024-01-01T00:00:00", "qualifiers": ["A"]},
-                {"value": "Ice", "dateTime": "2024-01-02T00:00:00", "qualifiers": ["P", "Ice"]},
-                {"value": "14.0", "dateTime": "2024-01-03T00:00:00", "qualifiers": ["A"]},
-            ]
+            [("12.5", "2024-01-01"), ("Ice", "2024-01-02"), ("14.0", "2024-01-03")]
         )
         records = USGSAdapter().parse(raw)
 
@@ -135,9 +134,7 @@ class TestUsgsParseRobustness:
     def test_empty_reading_kept_as_null(self):
         """A genuinely empty value stays as a null record (validate rejects it
         downstream) rather than being silently dropped at parse."""
-        raw = self._payload(
-            [{"value": "", "dateTime": "2024-01-01T00:00:00", "qualifiers": []}]
-        )
+        raw = self._payload([(None, "2024-01-01")])
         records = USGSAdapter().parse(raw)
 
         assert len(records) == 1

@@ -856,7 +856,7 @@ health. The jobs are in `crontab.txt`:
 
 | Job | Schedule | Purpose |
 |-----|----------|---------|
-| `run-sync.sh cdec usgs` | Every hour | Stream and reservoir readings |
+| `run-sync.sh cdec usgs` | Every hour | Stream and reservoir readings, and USGS well readings |
 | `backup.sh` | Every day at 1:25 | Backs up the database and the uploaded files into the `backups` folder (Database Backup, below) |
 | `run-sync.sh dwr_wdl dwr_sgma noaa cimis` | Every day at 2:00 | Groundwater levels, climate data and CIMIS weather (CIMIS and NOAA only when their keys are set) |
 | `run_accounting --open-periods --trigger schedule` | Every day at 3:30 | Calculates every reporting period that is not finalized, after the 2:00 sync. A finalized period is never changed. Each run's record shows on the period's page and on Site health |
@@ -943,6 +943,11 @@ Set each key in `.env`, then run `docker compose up -d`:
 Until its key is set, CIMIS or NOAA shows as needing a key on the monitoring page,
 and a sync skips it. OpenET is not a station source. `sync_all` never syncs it, and
 its figures arrive through `sync_openet_parcels`.
+
+USGS also takes an optional key. USGS accepts more requests an hour from a site that
+sends one, and asks for one from any site that makes more than a few requests an hour.
+The key is free, from https://api.waterdata.usgs.gov/signup/. Set it as `USGS_API_KEY`
+in `.env`; OpenH2O then sends it with every request to the USGS Water Data APIs.
 
 ### Map Basemaps (streamed, no tile server to host)
 
@@ -1257,6 +1262,7 @@ Two terms in the tables need explaining:
 | `CIMIS_API_KEY` | For CIMIS | empty | CIMIS's key (section 11) |
 | `NOAA_CDO_TOKEN` | For NOAA | empty | NOAA's key (section 11) |
 | `OPENET_API_KEY` | For OpenET | empty | OpenET's key (section 11) |
+| `USGS_API_KEY` | No | empty | USGS's free key, which raises how many requests an hour USGS accepts from the site (section 11) |
 | `OPENET_MONTHLY_BUDGET` <!-- defines: openet_budget --> | No | `100` | OpenH2O stops sending OpenET requests when the month's count reaches this number. Raise it to the account's allowance |
 | `OPENET_CACHE_DAYS` | No | `30` | How long OpenH2O keeps an OpenET estimate before asking again |
 | `OPENET_MODE` | No | `api` | `api` fetches ET from OpenET's service. <!-- defines: google_earth_engine -->`gee` fetches the same data from Google Earth Engine, Google's service for analysing satellite imagery, as [docs/earth-engine-tier-setup.md](docs/earth-engine-tier-setup.md) describes |

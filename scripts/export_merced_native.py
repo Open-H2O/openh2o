@@ -217,7 +217,7 @@ MONITORING_WELLS = {
 # Tuple: (code, name, url, authType, syncIntervalHours).
 DATA_SOURCES = [
     ("USGS-NWIS", "USGS National Water Information System",
-     "https://waterservices.usgs.gov/nwis/", "none", 24),
+     "https://api.waterdata.usgs.gov/ogcapi/v1/", "none", 24),
     ("CDEC", "CA DWR - California Data Exchange Center",
      "https://cdec.water.ca.gov/", "none", 6),
     ("CIMIS", "CA DWR - California Irrigation Management Information System",

@@ -1,9 +1,16 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
-USGS NWIS (National Water Information System) adapter.
+USGS Water Data APIs adapter (daily values and station discovery).
 
-API docs: https://waterservices.usgs.gov/
-No auth required (API key optional for higher rate limits).
+API docs: https://api.waterdata.usgs.gov/docs/ogcapi/
+USGS retires its older WaterServices site on 2027-02-22; this
+adapter talks to the OGC API collections that replace it: ``daily`` for the
+readings, ``time-series-metadata`` for what each site measures and until when,
+and ``monitoring-locations`` for names and coordinates.
+
+No key is required. A free key from USGS (set USGS_API_KEY) raises the request
+allowance, and when it is set it travels in the ``X-Api-Key`` header, never in
+the URL, so it stays out of logged addresses.
 
 Parameters:
   00060 - Discharge (cfs)
@@ -15,16 +22,25 @@ Parameters:
 """
 
 import logging
-
-import requests
+import os
+from datetime import date
 
 from datasync.adapters import register_adapter
 from datasync.adapters.base import BaseAdapter
 
 logger = logging.getLogger(__name__)
 
-DV_URL = "https://waterservices.usgs.gov/nwis/dv/"
-SITE_URL = "https://waterservices.usgs.gov/nwis/site/"
+BASE_URL = "https://api.waterdata.usgs.gov/ogcapi/v1/collections"
+DAILY_URL = f"{BASE_URL}/daily/items"
+SERIES_URL = f"{BASE_URL}/time-series-metadata/items"
+LOCATIONS_URL = f"{BASE_URL}/monitoring-locations/items"
+
+# A "next" link is followed only when it stays on the USGS host, so the key
+# header can never be sent anywhere else.
+TRUSTED_PREFIX = "https://api.waterdata.usgs.gov/"
+MAX_PAGES = 20
+LOCATION_CHUNK = 100
+FRESH_DAYS = 365
 
 PARAMETER_MAP = {
     "00060": {"name": "Discharge", "unit": "cfs"},
@@ -38,88 +54,144 @@ PARAMETER_MAP = {
 STREAM_PARAMS = ["00060", "00065", "00010"]
 GW_PARAMS = ["72019", "72020", "62610"]
 
-# The two site searches discovery makes, one HTTP call each.
-SITE_TYPE_CONFIGS = [
-    {"siteType": "ST", "params": STREAM_PARAMS, "label": "stream",
-     "parameterCd": "00060"},
-    {"siteType": "GW", "params": GW_PARAMS, "label": "groundwater",
-     "parameterCd": "72019"},
-]
+# The service spells two units differently from the pages and charts here.
+UNIT_MAP = {"ft^3/s": "ft3/s", "degC": "deg C"}
+
+
+def _today():
+    """Today's date; a function so a test can fix the clock."""
+    return date.today()
 
 
 class USGSAdapter(BaseAdapter):
     source_code = "usgs"
     rate_limit_seconds = 1.0
 
-    # Discovery makes two calls (streams, then groundwater) inside ONE wizard
-    # poll, and gunicorn kills a worker at 60 s. 2 x 25 s plus the 1 s pause
-    # between calls is 51 s, which leaves 9 s of margin. The wide groundwater
-    # search measured 28.0 s on 2026-10-28, so a service that slow is reported
-    # as not answering in time rather than hanging the poll.
-    discovery_timeout = 25.0
+    # Discovery makes two calls inside ONE wizard poll, and gunicorn kills a
+    # worker at 60 s. The two calls measured 0.2 to 0.5 s on 2026-10-29,
+    # against 15 to 47 s for the old site search, so 15 s each is a generous
+    # cap that still leaves the poll well inside the worker limit.
+    discovery_timeout = 15.0
+
+    @staticmethod
+    def _api_key():
+        return os.environ.get("USGS_API_KEY", "")
+
+    def _headers(self):
+        """Request options carrying the optional key; empty when no key is set."""
+        key = self._api_key()
+        return {"headers": {"X-Api-Key": key}} if key else {}
 
     def fetch(self, station, start_date, end_date):
-        """Fetch daily values from USGS NWIS."""
+        """Fetch daily values from the USGS Water Data APIs.
+
+        Returns the list of GeoJSON features from every page. The service
+        refuses a duration such as P3D for ``datetime`` with a 400, so the
+        range is always two explicit dates.
+        """
         param_codes = station.parameters or list(PARAMETER_MAP.keys())
         params = {
-            "format": "json",
-            "sites": station.external_station_id,
-            "parameterCd": ",".join(param_codes),
-            "startDT": start_date.strftime("%Y-%m-%d"),
-            "endDT": end_date.strftime("%Y-%m-%d"),
+            "f": "json",
+            "monitoring_location_id": f"USGS-{station.external_station_id}",
+            "parameter_code": ",".join(param_codes),
+            "datetime": f"{start_date.strftime('%Y-%m-%d')}/{end_date.strftime('%Y-%m-%d')}",
+            "limit": 10000,
         }
-        resp = self._request("GET", DV_URL, params=params)
-        return resp.json()
+        features = []
+        url, query = DAILY_URL, params
+        for _ in range(MAX_PAGES):
+            resp = self._request("GET", url, params=query, **self._headers())
+            body = resp.json()
+            page = body.get("features", []) if isinstance(body, dict) else []
+            if not page:
+                break
+            features.extend(page)
+            next_url = next(
+                (lk.get("href") for lk in body.get("links", []) if lk.get("rel") == "next"),
+                None,
+            )
+            if not next_url:
+                break
+            if not next_url.startswith(TRUSTED_PREFIX):
+                logger.warning(
+                    "usgs: not following a next link to another host: %s", next_url
+                )
+                break
+            url, query = next_url, None
+        return features
 
     def parse(self, raw_data):
-        """Parse USGS WaterML JSON into standard records."""
+        """Parse Water Data API daily features into standard records.
+
+        Records already in the standard shape (the offline fixture) pass
+        through unchanged.
+        """
+        if isinstance(raw_data, dict):
+            raw_data = raw_data.get("features", [])
         records = []
-        time_series = (
-            raw_data.get("value", {}).get("timeSeries", [])
-            if isinstance(raw_data, dict) else []
-        )
-        for ts in time_series:
-            var_code = (
-                ts.get("variable", {})
-                .get("variableCode", [{}])[0]
-                .get("value", "")
-            )
-            unit = (
-                ts.get("variable", {})
-                .get("unit", {})
-                .get("unitCode", PARAMETER_MAP.get(var_code, {}).get("unit", ""))
-            )
-            site_code = (
-                ts.get("sourceInfo", {})
-                .get("siteCode", [{}])[0]
-                .get("value", "")
-            )
-            for values_set in ts.get("values", []):
-                for val in values_set.get("value", []):
-                    raw_val = val.get("value")
-                    if raw_val in (None, ""):
-                        value = None
-                    else:
-                        # Guard the per-value parse: one non-numeric NWIS reading
-                        # (e.g. a text qualifier like "Ice") must drop only that
-                        # record, not raise and sink the whole station batch.
-                        try:
-                            value = float(raw_val)
-                        except (ValueError, TypeError):
-                            logger.warning(
-                                "usgs: dropping non-numeric reading %r for %s on %s",
-                                raw_val, site_code, val.get("dateTime", ""),
-                            )
-                            continue
-                    records.append({
-                        "station_id": site_code,
-                        "observation_date": val.get("dateTime", ""),
-                        "parameter_code": var_code,
-                        "value": value,
-                        "unit": unit,
-                        "qualifiers": val.get("qualifiers", []),
-                    })
-        return records
+        for feature in raw_data or []:
+            props = feature.get("properties") if isinstance(feature, dict) else None
+            if props is None:
+                if isinstance(feature, dict) and "parameter_code" in feature:
+                    records.append(feature)
+                continue
+            site_code = str(props.get("monitoring_location_id", "")).removeprefix("USGS-")
+            day = props.get("time", "")
+            raw_val = props.get("value")
+            if raw_val in (None, ""):
+                value = None
+            else:
+                # Guard the per-value parse: one non-numeric reading (e.g. a
+                # text value like "Ice") must drop only that record, not raise
+                # and sink the whole station batch.
+                try:
+                    value = float(raw_val)
+                except (ValueError, TypeError):
+                    logger.warning(
+                        "usgs: dropping non-numeric reading %r for %s on %s",
+                        raw_val, site_code, day,
+                    )
+                    continue
+            code = props.get("parameter_code", "")
+            unit_raw = props.get("unit_of_measure")
+            unit = UNIT_MAP.get(unit_raw, unit_raw) or PARAMETER_MAP.get(code, {}).get("unit", "")
+            qualifiers = []
+            status = props.get("approval_status")
+            if status == "Provisional":
+                qualifiers.append("P")
+            elif status == "Approved":
+                qualifiers.append("A")
+            extra = props.get("qualifier")
+            if isinstance(extra, str) and extra:
+                qualifiers.append(extra)
+            elif isinstance(extra, list):
+                qualifiers.extend(str(q) for q in extra if q)
+            records.append({
+                "station_id": site_code,
+                "observation_date": day,
+                "parameter_code": code,
+                "value": value,
+                "unit": unit,
+                "qualifiers": qualifiers,
+                "statistic_id": props.get("statistic_id", ""),
+            })
+
+        # The service returns one feature per statistic (for water temperature
+        # the daily maximum, minimum and mean) and in no fixed order, but a
+        # station, code and day holds one stored value. Keep the lowest
+        # statistic code, the daily maximum for temperature, which is the
+        # figure this adapter has always stored.
+        best = {}
+        passthrough = []
+        for rec in records:
+            if "statistic_id" not in rec:
+                passthrough.append(rec)
+                continue
+            key = (rec["station_id"], rec["parameter_code"], rec["observation_date"])
+            held = best.get(key)
+            if held is None or rec["statistic_id"] < held["statistic_id"]:
+                best[key] = rec
+        return list(best.values()) + passthrough
 
     def validate(self, records):
         """Validate USGS records, reject missing and provisional-bad."""
@@ -140,102 +212,87 @@ class USGSAdapter(BaseAdapter):
         """
         Discover USGS stream gauges and groundwater wells in the boundary.
 
-        Uses the Site Service in RDB (tab-delimited) format. The older
-        ``format=mapper`` endpoint was retired and now 404s; RDB is the stable
-        machine-readable format. We require ``hasDataTypeCd=dv`` so we only wire
-        sites that actually publish daily values, and pass a representative
-        ``parameterCd`` so we don't return gauges that lack the variable we want.
+        Two calls. The first asks ``time-series-metadata`` which daily series
+        for discharge (00060) and depth to water (72019) exist in the box; a
+        series that ended more than a year ago belongs to a site that no longer
+        reports, so only recent ones count. The second asks
+        ``monitoring-locations`` for the names and coordinates of those sites.
         """
-        # Expand the boundary box by the search radius (USGS wants a bBox, and a
-        # small GSA boundary often contains no active daily gauges on its own).
-        # ~111 km per degree of latitude; widen lon by the same rough amount.
+        # Expand the boundary box by the search radius (a small GSA boundary
+        # often contains no active daily gauges on its own). ~111 km per degree
+        # of latitude; widen lon by the same rough amount.
         deg = max(radius_km, 1) / 111.0
         x0, y0, x1, y1 = boundary_geometry.extent  # (xmin, ymin, xmax, ymax)
         bbox_str = f"{x0 - deg:.4f},{y0 - deg:.4f},{x1 + deg:.4f},{y1 + deg:.4f}"
 
+        # A timeout, a refused connection or an error status propagates, so
+        # the caller reports a provider that did not answer.
+        resp = self._discover_request(
+            "GET", SERIES_URL,
+            params={
+                "f": "json",
+                "bbox": bbox_str,
+                "parameter_code": "00060,72019",
+                "computation_period_identifier": "Daily",
+                "limit": 10000,
+            },
+            **self._headers(),
+        )
+        today = _today()
+        kept = set()
+        has_flow = set()
+        for feature in resp.json().get("features", []):
+            props = feature.get("properties", {})
+            site = props.get("monitoring_location_id") or ""
+            if not site.startswith("USGS-"):
+                continue
+            try:
+                ended = date.fromisoformat((props.get("end") or "")[:10])
+            except ValueError:
+                continue
+            if (today - ended).days > FRESH_DAYS:
+                continue
+            kept.add(site)
+            if props.get("parameter_code") == "00060":
+                has_flow.add(site)
+        if not kept:
+            return []
+
+        ids = sorted(kept)
         stations = []
         seen = set()
-        for config in SITE_TYPE_CONFIGS:
-            params = {
-                "format": "rdb",
-                "bBox": bbox_str,
-                "siteType": config["siteType"],
-                "siteStatus": "active",
-                "hasDataTypeCd": "dv",
-                "parameterCd": config["parameterCd"],
-            }
-            # A timeout, a refused connection or an error status propagates, so
-            # the caller reports a provider that did not answer. The one answer
-            # that is not a failure is the site service's "no sites match": an
-            # HTTP 404 with an empty body.
-            try:
-                resp = self._discover_request("GET", SITE_URL, params=params)
-                rows = self._parse_rdb(resp.text)
-            except requests.HTTPError as exc:
-                if not self._is_no_sites_answer(exc):
-                    raise
-                rows = []
-
-            for row in rows:
-                sid = row.get("site_no", "")
-                lat = row.get("dec_lat_va", "")
-                lon = row.get("dec_long_va", "")
-                name = row.get("station_nm", "")
-                site_type = row.get("site_tp_cd", config["siteType"])
-                if not (sid and lat and lon) or sid in seen:
+        for i in range(0, len(ids), LOCATION_CHUNK):
+            resp = self._discover_request(
+                "GET", LOCATIONS_URL,
+                params={
+                    "f": "json",
+                    "id": ",".join(ids[i:i + LOCATION_CHUNK]),
+                    "properties": "monitoring_location_name,site_type_code",
+                    "limit": 10000,
+                },
+                **self._headers(),
+            )
+            for feature in resp.json().get("features", []):
+                site = feature.get("id") or ""
+                coords = (feature.get("geometry") or {}).get("coordinates") or []
+                if site not in kept or site in seen or len(coords) < 2:
                     continue
                 try:
-                    lat_f, lon_f = float(lat), float(lon)
+                    lon_f, lat_f = float(coords[0]), float(coords[1])
                 except (ValueError, TypeError):
                     continue
-                seen.add(sid)
+                props = feature.get("properties", {})
+                seen.add(site)
                 stations.append({
-                    "station_id": sid,
-                    "name": name,
+                    "station_id": site.removeprefix("USGS-"),
+                    "name": props.get("monitoring_location_name") or "",
                     "latitude": lat_f,
                     "longitude": lon_f,
-                    "parameters": config["params"],
-                    "site_type": site_type,
+                    "parameters": STREAM_PARAMS if site in has_flow else GW_PARAMS,
+                    "site_type": props.get("site_type_code") or "",
                 })
-
+        stations.sort(key=lambda st: st["station_id"])
         return stations
-
-    @staticmethod
-    def _is_no_sites_answer(exc):
-        """True for the site service's answer to a box with no matching sites."""
-        response = exc.response
-        return (
-            response is not None
-            and response.status_code == 404
-            and not (response.text or "").strip()
-        )
-
-    @staticmethod
-    def _parse_rdb(text):
-        """
-        Parse a USGS RDB (tab-delimited) response into a list of dict rows.
-
-        RDB files have ``#`` comment lines, then a header row of column names,
-        then a format-spec row (e.g. ``5s 15s``) which must be skipped, then
-        tab-delimited data rows.
-        """
-        import re
-        fmt_token = re.compile(r"^\d+[sndSND]$")
-        header = None
-        rows = []
-        for line in text.splitlines():
-            if not line or line.startswith("#"):
-                continue
-            fields = line.split("\t")
-            if header is None:
-                header = fields
-                continue
-            # Skip the format-spec row that follows the header (e.g. "5s\t15s\t50s").
-            nonempty = [f.strip() for f in fields if f.strip()]
-            if nonempty and all(fmt_token.match(f) for f in nonempty):
-                continue
-            rows.append(dict(zip(header, fields)))
-        return rows
 
 
 register_adapter("usgs", USGSAdapter)

@@ -1,0 +1,303 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "id": "1b08db5a60f14db5a368aa6ba3b25e68",
+    "unit_of_measure": "ft",
+    "parameter_name": "Water level, depth LSD",
+    "parameter_code": "72019",
+    "statistic_id": "00001",
+    "last_modified": "2022-05-02T21:39:54.778490",
+    "begin": "2010-08-04T07:00:00+00:00",
+    "end": "2020-09-29T07:00:00+00:00",
+    "computation_period_identifier": "Daily",
+    "computation_identifier": "Max",
+    "thresholds": [],
+    "sublocation_identifier": null,
+    "primary": "Primary",
+    "monitoring_location_id": "USGS-364518120222001",
+    "web_description": null,
+    "parameter_description": "Depth to water level, feet below land surface",
+    "parent_time_series_id": "1328d294f47a4aa4829efe303a20b5d3",
+    "data_gap_interval": null,
+    "statistics_begin": null
+   },
+   "id": "1b08db5a60f14db5a368aa6ba3b25e68",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -120.37325,
+     36.7551666666667
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "id": "1c2c88755abb4f94972ba5a8b6568e17",
+    "unit_of_measure": "ft",
+    "parameter_name": "Water level, depth LSD",
+    "parameter_code": "72019",
+    "statistic_id": "00002",
+    "last_modified": "2023-04-05T18:52:42.834580",
+    "begin": "2010-08-05T07:00:00+00:00",
+    "end": "2014-03-11T07:00:00+00:00",
+    "computation_period_identifier": "Daily",
+    "computation_identifier": "Min",
+    "thresholds": [],
+    "sublocation_identifier": null,
+    "primary": "Primary",
+    "monitoring_location_id": "USGS-364422120210601",
+    "web_description": null,
+    "parameter_description": "Depth to water level, feet below land surface",
+    "parent_time_series_id": "89f9f671bd984220ad36689ced8f3de0",
+    "data_gap_interval": null,
+    "statistics_begin": null
+   },
+   "id": "1c2c88755abb4f94972ba5a8b6568e17",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -120.351694444444,
+     36.7396666666667
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "id": "339b24ffac054718929d249a14ab9e6b",
+    "unit_of_measure": "ft",
+    "parameter_name": "Water level, depth LSD",
+    "parameter_code": "72019",
+    "statistic_id": "00008",
+    "last_modified": "2022-05-02T21:40:43.866632",
+    "begin": "2010-08-04T07:00:00+00:00",
+    "end": "2020-09-29T07:00:00+00:00",
+    "computation_period_identifier": "Daily",
+    "computation_identifier": "Median",
+    "thresholds": [],
+    "sublocation_identifier": null,
+    "primary": "Primary",
+    "monitoring_location_id": "USGS-364518120222001",
+    "web_description": null,
+    "parameter_description": "Depth to water level, feet below land surface",
+    "parent_time_series_id": "1328d294f47a4aa4829efe303a20b5d3",
+    "data_gap_interval": null,
+    "statistics_begin": null
+   },
+   "id": "339b24ffac054718929d249a14ab9e6b",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -120.37325,
+     36.7551666666667
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "id": "495cb8dcbad542ac9db3508027bb63c3",
+    "unit_of_measure": "ft",
+    "parameter_name": "Water level, depth LSD",
+    "parameter_code": "72019",
+    "statistic_id": "00008",
+    "last_modified": "2023-04-05T18:52:42.771455",
+    "begin": "2010-08-05T07:00:00+00:00",
+    "end": "2014-03-11T07:00:00+00:00",
+    "computation_period_identifier": "Daily",
+    "computation_identifier": "Median",
+    "thresholds": [],
+    "sublocation_identifier": null,
+    "primary": "Primary",
+    "monitoring_location_id": "USGS-364422120210601",
+    "web_description": null,
+    "parameter_description": "Depth to water level, feet below land surface",
+    "parent_time_series_id": "89f9f671bd984220ad36689ced8f3de0",
+    "data_gap_interval": null,
+    "statistics_begin": null
+   },
+   "id": "495cb8dcbad542ac9db3508027bb63c3",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -120.351694444444,
+     36.7396666666667
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "id": "4ed5cf81198d48308c0a5f1b48286520",
+    "unit_of_measure": "ft",
+    "parameter_name": "Water level, depth LSD",
+    "parameter_code": "72019",
+    "statistic_id": "00001",
+    "last_modified": "2023-04-05T18:52:42.756925",
+    "begin": "2010-08-05T07:00:00+00:00",
+    "end": "2014-03-11T07:00:00+00:00",
+    "computation_period_identifier": "Daily",
+    "computation_identifier": "Max",
+    "thresholds": [],
+    "sublocation_identifier": null,
+    "primary": "Primary",
+    "monitoring_location_id": "USGS-364422120210601",
+    "web_description": null,
+    "parameter_description": "Depth to water level, feet below land surface",
+    "parent_time_series_id": "89f9f671bd984220ad36689ced8f3de0",
+    "data_gap_interval": null,
+    "statistics_begin": null
+   },
+   "id": "4ed5cf81198d48308c0a5f1b48286520",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -120.351694444444,
+     36.7396666666667
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "id": "936319669c2840cfb7c02e4f4cb75a85",
+    "unit_of_measure": "ft",
+    "parameter_name": "Water level, depth LSD",
+    "parameter_code": "72019",
+    "statistic_id": "00002",
+    "last_modified": "2026-10-06T18:44:09.613218",
+    "begin": "2010-08-04T07:00:00+00:00",
+    "end": "2026-09-07T07:00:00+00:00",
+    "computation_period_identifier": "Daily",
+    "computation_identifier": "Min",
+    "thresholds": [],
+    "sublocation_identifier": null,
+    "primary": "Primary",
+    "monitoring_location_id": "USGS-364518120222001",
+    "web_description": null,
+    "parameter_description": "Depth to water level, feet below land surface",
+    "parent_time_series_id": "1328d294f47a4aa4829efe303a20b5d3",
+    "data_gap_interval": null,
+    "statistics_begin": null
+   },
+   "id": "936319669c2840cfb7c02e4f4cb75a85",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -120.37325,
+     36.7551666666667
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "id": "c48ba9ceef5e471c91588e238f7c117c",
+    "unit_of_measure": "ft",
+    "parameter_name": "Water level, depth LSD",
+    "parameter_code": "72019",
+    "statistic_id": "00002",
+    "last_modified": "2026-08-24T21:35:41.787700",
+    "begin": "2016-12-12T08:00:00+00:00",
+    "end": "2026-07-21T07:00:00+00:00",
+    "computation_period_identifier": "Daily",
+    "computation_identifier": "Min",
+    "thresholds": [],
+    "sublocation_identifier": null,
+    "primary": "Primary",
+    "monitoring_location_id": "USGS-365325120391505",
+    "web_description": null,
+    "parameter_description": "Depth to water level, feet below land surface",
+    "parent_time_series_id": "a90fe900541949c798856a41d4e8177a",
+    "data_gap_interval": null,
+    "statistics_begin": null
+   },
+   "id": "c48ba9ceef5e471c91588e238f7c117c",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -120.655777777778,
+     36.8903333333333
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "id": "c5e6d07128c243d1bae2784c5a19d1af",
+    "unit_of_measure": "ft",
+    "parameter_name": "Water level, depth LSD",
+    "parameter_code": "72019",
+    "statistic_id": "00001",
+    "last_modified": "2022-05-02T21:46:47.962132",
+    "begin": "2016-12-12T08:00:00+00:00",
+    "end": "2020-09-29T07:00:00+00:00",
+    "computation_period_identifier": "Daily",
+    "computation_identifier": "Max",
+    "thresholds": [],
+    "sublocation_identifier": null,
+    "primary": "Primary",
+    "monitoring_location_id": "USGS-365325120391505",
+    "web_description": null,
+    "parameter_description": "Depth to water level, feet below land surface",
+    "parent_time_series_id": "a90fe900541949c798856a41d4e8177a",
+    "data_gap_interval": null,
+    "statistics_begin": null
+   },
+   "id": "c5e6d07128c243d1bae2784c5a19d1af",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -120.655777777778,
+     36.8903333333333
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "id": "d10d9ae6277d48dfa7a2405a0b238494",
+    "unit_of_measure": "ft",
+    "parameter_name": "Water level, depth LSD",
+    "parameter_code": "72019",
+    "statistic_id": "00008",
+    "last_modified": "2022-05-02T21:47:00.085108",
+    "begin": "2016-12-12T08:00:00+00:00",
+    "end": "2020-09-29T07:00:00+00:00",
+    "computation_period_identifier": "Daily",
+    "computation_identifier": "Median",
+    "thresholds": [],
+    "sublocation_identifier": null,
+    "primary": "Primary",
+    "monitoring_location_id": "USGS-365325120391505",
+    "web_description": null,
+    "parameter_description": "Depth to water level, feet below land surface",
+    "parent_time_series_id": "a90fe900541949c798856a41d4e8177a",
+    "data_gap_interval": null,
+    "statistics_begin": null
+   },
+   "id": "d10d9ae6277d48dfa7a2405a0b238494",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -120.655777777778,
+     36.8903333333333
+    ]
+   }
+  }
+ ],
+ "numberReturned": 9,
+ "links": [
+  {
+   "type": "application/geo+json",
+   "rel": "self",
+   "title": "This document as GeoJSON",
+   "href": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/time-series-metadata/items?f=json&bbox=-121.4289,36.5940,-119.6010,37.9735&parameter_code=72019&computation_period_identifier=Daily&limit=1000"
+  }
+ ],
+ "timeStamp": "2026-10-29T15:19:19.554050Z"
+}

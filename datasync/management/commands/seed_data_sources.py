@@ -21,7 +21,7 @@ DATA_SOURCES = [
     {
         "name": "USGS NWIS",
         "code": "usgs",
-        "url": "https://waterservices.usgs.gov",
+        "url": "https://api.waterdata.usgs.gov",
         "auth_type": "api_key",
         "sync_interval_hours": 24,
         "description": "USGS National Water Information System",

@@ -1,0 +1,239 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "id": "cb722597d065446883719e2f8d2577cc",
+    "unit_of_measure": "ft^3/s",
+    "parameter_name": "Discharge",
+    "parameter_code": "00060",
+    "statistic_id": "00003",
+    "last_modified": "2026-10-29T08:21:57.081044",
+    "begin": "1939-10-01T08:00:00+00:00",
+    "end": "2026-10-27T07:00:00+00:00",
+    "computation_period_identifier": "Daily",
+    "computation_identifier": "Mean",
+    "thresholds": [],
+    "sublocation_identifier": null,
+    "primary": "Primary",
+    "monitoring_location_id": "USGS-11153000",
+    "web_description": null,
+    "parameter_description": "Discharge, cubic feet per second",
+    "parent_time_series_id": "916690cdb41f497ba8165f04c86780aa",
+    "data_gap_interval": null,
+    "statistics_begin": null
+   },
+   "id": "cb722597d065446883719e2f8d2577cc",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -121.38027777777778,
+     36.980000000000004
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "id": "025c0c6137d04add8ad0a80b9261a45f",
+    "unit_of_measure": "ft^3/s",
+    "parameter_name": "Discharge",
+    "parameter_code": "00060",
+    "statistic_id": "00003",
+    "last_modified": "2026-03-23T20:22:11.875489",
+    "begin": "2022-10-01T07:00:00+00:00",
+    "end": "2023-09-11T07:00:00+00:00",
+    "computation_period_identifier": "Daily",
+    "computation_identifier": "Mean",
+    "thresholds": [],
+    "sublocation_identifier": null,
+    "primary": "Primary",
+    "monitoring_location_id": "USGS-11254000",
+    "web_description": null,
+    "parameter_description": "Discharge, cubic feet per second",
+    "parent_time_series_id": null,
+    "data_gap_interval": "P1D",
+    "statistics_begin": null
+   },
+   "id": "025c0c6137d04add8ad0a80b9261a45f",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -120.37822555561,
+     36.810504607127
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "id": "4ff066a814a247eeb1a857d40fef3300",
+    "unit_of_measure": "ft^3/s",
+    "parameter_name": "Discharge",
+    "parameter_code": "00060",
+    "statistic_id": "00003",
+    "last_modified": "2021-12-22T16:30:35.183279",
+    "begin": "1939-10-01T08:00:00+00:00",
+    "end": "2021-12-08T08:00:00+00:00",
+    "computation_period_identifier": "Daily",
+    "computation_identifier": "Mean",
+    "thresholds": [],
+    "sublocation_identifier": null,
+    "primary": "Primary",
+    "monitoring_location_id": "USGS-11254000",
+    "web_description": null,
+    "parameter_description": "Discharge, cubic feet per second",
+    "parent_time_series_id": "4037c348425c487e9da3f9cd7e7d3b93",
+    "data_gap_interval": null,
+    "statistics_begin": null
+   },
+   "id": "4ff066a814a247eeb1a857d40fef3300",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -120.37822555561,
+     36.810504607127
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "id": "1d4dfb1d135d4e488f704faee83932b4",
+    "unit_of_measure": "ft^3/s",
+    "parameter_name": "Discharge",
+    "parameter_code": "00060",
+    "statistic_id": "00003",
+    "last_modified": "2026-10-29T08:48:07.737919",
+    "begin": "1985-10-01T07:00:00+00:00",
+    "end": "2026-10-27T07:00:00+00:00",
+    "computation_period_identifier": "Daily",
+    "computation_identifier": "Mean",
+    "thresholds": [],
+    "sublocation_identifier": null,
+    "primary": "Primary",
+    "monitoring_location_id": "USGS-11261100",
+    "web_description": null,
+    "parameter_description": "Discharge, cubic feet per second",
+    "parent_time_series_id": "51d80d5c0c0a4fda9867f91e1fde71c1",
+    "data_gap_interval": null,
+    "statistics_begin": null
+   },
+   "id": "1d4dfb1d135d4e488f704faee83932b4",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -120.85210753547155,
+     37.247691204592385
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "id": "39bcf258acd945a98202e6abe4f44f7e",
+    "unit_of_measure": "ft^3/s",
+    "parameter_name": "Discharge",
+    "parameter_code": "00060",
+    "statistic_id": "00001",
+    "last_modified": "2019-06-11T16:57:01.733600",
+    "begin": "1992-10-01T07:00:00+00:00",
+    "end": "2013-09-30T07:00:00+00:00",
+    "computation_period_identifier": "Daily",
+    "computation_identifier": "Max",
+    "thresholds": [],
+    "sublocation_identifier": null,
+    "primary": "Primary",
+    "monitoring_location_id": "USGS-11261100",
+    "web_description": null,
+    "parameter_description": "Discharge, cubic feet per second",
+    "parent_time_series_id": "51d80d5c0c0a4fda9867f91e1fde71c1",
+    "data_gap_interval": null,
+    "statistics_begin": null
+   },
+   "id": "39bcf258acd945a98202e6abe4f44f7e",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -120.85210753547155,
+     37.247691204592385
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "id": "8351e6bad7a6470cbf3ace14bf5bcdd4",
+    "unit_of_measure": "ft^3/s",
+    "parameter_name": "Discharge",
+    "parameter_code": "00060",
+    "statistic_id": "00002",
+    "last_modified": "2019-06-11T16:57:02.256872",
+    "begin": "1992-10-01T07:00:00+00:00",
+    "end": "2013-09-30T07:00:00+00:00",
+    "computation_period_identifier": "Daily",
+    "computation_identifier": "Min",
+    "thresholds": [],
+    "sublocation_identifier": null,
+    "primary": "Primary",
+    "monitoring_location_id": "USGS-11261100",
+    "web_description": null,
+    "parameter_description": "Discharge, cubic feet per second",
+    "parent_time_series_id": "51d80d5c0c0a4fda9867f91e1fde71c1",
+    "data_gap_interval": null,
+    "statistics_begin": null
+   },
+   "id": "8351e6bad7a6470cbf3ace14bf5bcdd4",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -120.85210753547155,
+     37.247691204592385
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "id": "031fc92088554932bdf2dc35eb241435",
+    "unit_of_measure": "ft^3/s",
+    "parameter_name": "Discharge",
+    "parameter_code": "00060",
+    "statistic_id": "00003",
+    "last_modified": "2026-10-29T08:06:56.809286",
+    "begin": "1937-04-01T08:00:00+00:00",
+    "end": "2026-10-27T07:00:00+00:00",
+    "computation_period_identifier": "Daily",
+    "computation_identifier": "Mean",
+    "thresholds": [],
+    "sublocation_identifier": null,
+    "primary": "Primary",
+    "monitoring_location_id": "USGS-11261500",
+    "web_description": null,
+    "parameter_description": "Discharge, cubic feet per second",
+    "parent_time_series_id": "6373f8d13df74fa9a5df5d2d6211d8d9",
+    "data_gap_interval": null,
+    "statistics_begin": null
+   },
+   "id": "031fc92088554932bdf2dc35eb241435",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -120.93099930031353,
+     37.309911502700444
+    ]
+   }
+  }
+ ],
+ "numberReturned": 7,
+ "links": [
+  {
+   "type": "application/geo+json",
+   "rel": "self",
+   "title": "This document as GeoJSON",
+   "href": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/time-series-metadata/items?f=json&bbox=-121.4289,36.5940,-119.6010,37.9735&parameter_code=00060&computation_period_identifier=Daily&limit=1000"
+  }
+ ],
+ "timeStamp": "2026-10-29T15:19:19.095957Z"
+}

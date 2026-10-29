@@ -9,6 +9,7 @@ stored under tests/fixtures/discovery_06/, and no test reaches the network.
 import json
 import logging
 import re
+from datetime import date
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -168,12 +169,29 @@ def test_step_result_row_shows_the_basins_note_instead_of_none_found():
 
 # ── Row 7: USGS discovery ───────────────────────────────────────────────────
 
-RDB = (
-    "# comment\n"
-    "agency_cd\tsite_no\tstation_nm\tsite_tp_cd\tdec_lat_va\tdec_long_va\n"
-    "5s\t15s\t50s\t7s\t16s\t16s\n"
-    "USGS\t11111111\tTEST CREEK NEAR NOWHERE\tST\t37.0\t-120.1\n"
-)
+SERIES = json.dumps({
+    "type": "FeatureCollection",
+    "features": [{
+        "type": "Feature",
+        "properties": {
+            "monitoring_location_id": "USGS-11111111",
+            "parameter_code": "00060",
+            "statistic_id": "00003",
+            "computation_period_identifier": "Daily",
+            "end": "2026-10-27T07:00:00+00:00",
+        },
+    }],
+})
+LOCATIONS = json.dumps({
+    "type": "FeatureCollection",
+    "features": [{
+        "type": "Feature",
+        "id": "USGS-11111111",
+        "properties": {"monitoring_location_name": "TEST CREEK NEAR NOWHERE", "site_type_code": "ST"},
+        "geometry": {"type": "Point", "coordinates": [-120.1, 37.0]},
+    }],
+})
+NO_SERIES = json.dumps({"type": "FeatureCollection", "features": []})
 
 
 def _usgs_with(*responses):
@@ -183,18 +201,20 @@ def _usgs_with(*responses):
     )
 
 
-def test_usgs_empty_404_is_zero_sites_and_logs_no_warning(caplog):
-    adapter, req = _usgs_with(_response(404, ""), _response(404, "  \n"))
-    with req, caplog.at_level(logging.DEBUG):
+def test_usgs_a_box_with_no_series_is_zero_sites_and_logs_no_warning(caplog):
+    adapter, req = _usgs_with(_response(200, NO_SERIES))
+    with req as request, caplog.at_level(logging.DEBUG):
         assert adapter.discover_stations(BOX) == []
+    assert request.call_count == 1
     assert [r for r in caplog.records if r.levelno >= logging.WARNING] == []
 
 
-def test_usgs_empty_404_on_one_site_type_keeps_the_other():
-    adapter, req = _usgs_with(_response(200, RDB), _response(404, ""))
-    with req:
+def test_usgs_finds_a_site_from_its_series_and_name():
+    adapter, req = _usgs_with(_response(200, SERIES), _response(200, LOCATIONS))
+    with req, patch.object(usgs_module, "_today", return_value=date(2026, 10, 29)):
         stations = adapter.discover_stations(BOX)
     assert [s["station_id"] for s in stations] == ["11111111"]
+    assert (stations[0]["latitude"], stations[0]["longitude"]) == (37.0, -120.1)
 
 
 def test_usgs_404_with_a_body_is_a_failure():
@@ -209,10 +229,11 @@ def test_usgs_server_error_is_a_failure():
         adapter.discover_stations(BOX)
 
 
-def test_usgs_groundwater_timeout_after_streams_is_not_swallowed():
-    adapter, req = _usgs_with(_response(200, RDB), requests.Timeout("slow"))
-    with req, pytest.raises(requests.Timeout):
-        adapter.discover_stations(BOX)
+def test_usgs_names_timeout_after_the_series_is_not_swallowed():
+    adapter, req = _usgs_with(_response(200, SERIES), requests.Timeout("slow"))
+    with req, patch.object(usgs_module, "_today", return_value=date(2026, 10, 29)):
+        with pytest.raises(requests.Timeout):
+            adapter.discover_stations(BOX)
 
 
 def test_usgs_timeout_keeps_its_two_calls_inside_one_poll():
@@ -220,10 +241,9 @@ def test_usgs_timeout_keeps_its_two_calls_inside_one_poll():
         re.search(r"GUNICORN_TIMEOUT:-(\d+)", (BASE_DIR / "entrypoint.sh").read_text()).group(1)
     )
     adapter = get_adapter("usgs")
-    calls = len(usgs_module.SITE_TYPE_CONFIGS)
-    assert calls == 2
+    calls = 2
     worst_case = calls * adapter.discovery_timeout + (calls - 1) * adapter.rate_limit_seconds
-    # The measured wide groundwater search took 28.0 s on 2026-10-28; the cap
-    # is for a service that has stopped answering, and leaves 5 s of margin.
+    # The cap is for a service that has stopped answering, and leaves 5 s of
+    # margin under the worker limit.
     assert worst_case <= worker_timeout - 5
     assert adapter.discovery_timeout > get_adapter("cdec").discovery_timeout

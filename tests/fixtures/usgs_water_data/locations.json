@@ -1,0 +1,90 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "monitoring_location_name": "PACHECO C NR DUNNEVILLE CA",
+    "site_type_code": "ST"
+   },
+   "id": "USGS-11153000",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -121.38027777777778,
+     36.980000000000004
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "monitoring_location_name": "SALT SLOUGH A HWY 165 NR STEVINSON CA",
+    "site_type_code": "ST"
+   },
+   "id": "USGS-11261100",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -120.85210753547155,
+     37.247691204592385
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "monitoring_location_name": "SAN JOAQUIN R A FREMONT FORD BRIDGE CA",
+    "site_type_code": "ST"
+   },
+   "id": "USGS-11261500",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -120.93099930031353,
+     37.309911502700444
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "monitoring_location_name": "013S015E31J006M",
+    "site_type_code": "GW"
+   },
+   "id": "USGS-364518120222001",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -120.37325,
+     36.7551666666667
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "monitoring_location_name": "012S012E16H006M",
+    "site_type_code": "GW"
+   },
+   "id": "USGS-365325120391505",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -120.655777777778,
+     36.8903333333333
+    ]
+   }
+  }
+ ],
+ "numberReturned": 5,
+ "links": [
+  {
+   "type": "application/geo+json",
+   "rel": "self",
+   "title": "This document as GeoJSON",
+   "href": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/monitoring-locations/items?f=json&id=USGS-11153000,USGS-11156500,USGS-11157500,USGS-11158600,USGS-11251000,USGS-11255575,USGS-11261100,USGS-11261500,USGS-11262900,USGS-11266500,USGS-11273400,USGS-11274000,USGS-11274500,USGS-11274550,USGS-11274630,USGS-11274790,USGS-11276500,USGS-11276600,USGS-11276900,USGS-11277300,USGS-11278000,USGS-11278300,USGS-11278400,USGS-11284400,USGS-11289000,USGS-11289500,USGS-11289650,USGS-11289651,USGS-11289850,USGS-11290000,USGS-11299600,USGS-11303000,USGS-11303500,USGS-364518120222001,USGS-365325120391504,USGS-365325120391505&limit=1000&properties=monitoring_location_name,site_type_code"
+  }
+ ],
+ "timeStamp": "2026-10-29T15:20:19.575042Z"
+}

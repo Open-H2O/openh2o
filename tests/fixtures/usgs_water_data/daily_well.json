@@ -1,0 +1,84 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "time_series_id": "ce22e62684374923b5fb5ab1f9d25f7a",
+    "monitoring_location_id": "USGS-365325120391504",
+    "parameter_code": "72019",
+    "statistic_id": "00002",
+    "time": "2026-08-27",
+    "value": "132.79",
+    "unit_of_measure": "ft",
+    "approval_status": "Provisional",
+    "qualifier": null,
+    "last_modified": "2026-10-07T18:15:13.807936+00:00"
+   },
+   "id": "0185263f-92be-477d-a7cd-ccb3b9fb1e0e",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -120.655416666667,
+     36.8903333333333
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "time_series_id": "ce22e62684374923b5fb5ab1f9d25f7a",
+    "monitoring_location_id": "USGS-365325120391504",
+    "parameter_code": "72019",
+    "statistic_id": "00002",
+    "time": "2026-08-31",
+    "value": "133.01",
+    "unit_of_measure": "ft",
+    "approval_status": "Provisional",
+    "qualifier": null,
+    "last_modified": "2026-10-07T18:15:13.807936+00:00"
+   },
+   "id": "1e983453-db56-4166-8b4f-b1c2a3b4e941",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -120.655416666667,
+     36.8903333333333
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "time_series_id": "ce22e62684374923b5fb5ab1f9d25f7a",
+    "monitoring_location_id": "USGS-365325120391504",
+    "parameter_code": "72019",
+    "statistic_id": "00002",
+    "time": "2026-09-06",
+    "value": "133.38",
+    "unit_of_measure": "ft",
+    "approval_status": "Provisional",
+    "qualifier": null,
+    "last_modified": "2026-10-06T18:17:11.117201+00:00"
+   },
+   "id": "381b87ce-7279-48f3-a93d-e7f597161da6",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -120.655416666667,
+     36.8903333333333
+    ]
+   }
+  }
+ ],
+ "numberReturned": 3,
+ "links": [
+  {
+   "type": "application/geo+json",
+   "rel": "self",
+   "title": "This document as GeoJSON",
+   "href": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/daily/items?f=json&monitoring_location_id=USGS-365325120391504&parameter_code=72019,72020,62610&datetime=2026-08-25%2F2026-09-07&limit=1000"
+  }
+ ],
+ "timeStamp": "2026-10-29T15:20:19.845518Z"
+}
