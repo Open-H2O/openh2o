@@ -38,6 +38,10 @@
 set -euo pipefail
 
 OPENH2O_DIR="${OPENH2O_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
+
+# Refuse in a protected checkout unless it is also the demonstration host. FORCE does not
+# bypass this: it skips a staleness or identity check, and this is a different question.
+bash "$(dirname "$0")/guard-demo-target.sh" snapshot-demo "$OPENH2O_DIR" || exit 1
 SNAPDIR="${OPENH2O_SNAPSHOT_DIR:-$HOME/$(basename "$OPENH2O_DIR")-demo-snapshot}"
 SNAP="${1:-$SNAPDIR/golden.dump}"
 META="${SNAP%.dump}.meta"

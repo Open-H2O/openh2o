@@ -33,13 +33,15 @@
 #
 # Exit codes:
 #   0  released: the live page shows the new version
-#   1  refused, nothing changed: not the demonstration host, no web container, the live page does
-#      not show the checkout's version, or make deploy stopped before its reset
+#   1  refused, nothing changed: RELEASE_SITE not set, not the demonstration host, no web
+#      container, the live page does not show the checkout's version, or make deploy stopped
+#      before its reset
 #   2  bad arguments, or no smoke.sh beside this script
 #   5  the new release failed and the previous one is back, its smoke test passing
 #   6  the rollback did not finish, or its smoke test failed: read the release log
 #
-# Settings: RELEASE_SITE (default https://openh2o.com), OPENH2O_SNAPSHOT_DIR (read as
+# Settings: RELEASE_SITE (required: the address of the site being released, such as
+# https://water.example.org, which the smoke test asks), OPENH2O_SNAPSHOT_DIR (read as
 # promote-golden.sh reads it), RELEASE_LOG_DIR (default $HOME), RELEASE_SMOKE_TRIES and
 # RELEASE_SMOKE_WAIT (smoke.sh's --tries and --wait, default 20 and 3).
 #
@@ -63,6 +65,10 @@ for a in "$@"; do
   esac
 done
 [ -n "$ref" ] || usage "REF=<commit> is required"
+if [ -z "${RELEASE_SITE:-}" ]; then
+  echo "release: REFUSING: RELEASE_SITE is not set. Set it to the address of the site being released, such as RELEASE_SITE=https://water.example.org, so the smoke test asks the right site. Nothing changed."
+  exit 1
+fi
 
 here=$(cd "$(dirname "$0")" && pwd)
 [ -f "$here/smoke.sh" ] || usage "no smoke.sh beside $0"
@@ -80,7 +86,7 @@ if [ -z "${RELEASE_SH_RUNNING:-}" ]; then
 fi
 SMOKE=$here/smoke.sh
 
-site=${RELEASE_SITE:-https://openh2o.com}
+site=$RELEASE_SITE
 site=${site%/}
 home="$site/"
 missing="$site/smoke-drill-page-that-does-not-exist/"

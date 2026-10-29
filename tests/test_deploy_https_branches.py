@@ -14,9 +14,10 @@ them structural:
 2. A Caddy site address in §4 that carries a hostname with no ``http://``
    prefix appears **only** inside the ``own-certificate`` branch. A bare domain
    offered anywhere else is the original defect returning.
-3. The shipped `Caddyfile`'s first site address is still ``:80``. Two of the
-   three branches tell the operator to leave the file as shipped, and that
-   advice silently becomes wrong the day a domain is committed into it.
+3. The shipped `Caddyfile`'s first site address is still the setting with ``:80`` as
+   its default, ``{$OPENH2O_SITE_ADDRESS::80}``. Two of the three branches tell the
+   operator to leave the setting unset, and that advice silently becomes wrong the
+   day a domain is committed into the file.
 4. The `Caddyfile` still carries ``header_up X-Forwarded-Proto https``. The
    ``upstream-terminator`` branch's correctness rests on it, and
    ``production.py``'s ``SECURE_PROXY_SSL_HEADER`` is the other half of the pair.
@@ -205,14 +206,14 @@ def test_a_bare_hostname_is_offered_only_where_a_certificate_is_wanted():
     )
 
 
-def test_the_shipped_caddyfile_still_binds_a_bare_port():
+def test_the_shipped_caddyfile_still_defaults_to_a_bare_port():
     first = _scan_the_real_files().caddyfile_first_address
 
-    assert first == ":80", (
-        f"the shipped Caddyfile's first site address is {first!r}, not ':80'. "
-        "Two of DEPLOY.md §4's three branches tell the operator to leave this "
-        "file exactly as shipped; a hostname committed here makes that advice "
-        "silently wrong and orders a certificate nobody asked for."
+    assert first == "{$OPENH2O_SITE_ADDRESS::80}", (
+        f"the shipped Caddyfile's first site address is {first!r}, not "
+        "'{$OPENH2O_SITE_ADDRESS::80}'. Two of DEPLOY.md §4's three branches tell "
+        "the operator to leave that setting unset; a hostname committed here "
+        "makes that advice silently wrong and orders a certificate nobody asked for."
     )
 
 
@@ -267,7 +268,7 @@ http://your-domain.com {
 
 _GOOD_CADDYFILE = """\
 # A comment that mentions example.com and must not be read as an address.
-:80 {
+{$OPENH2O_SITE_ADDRESS::80} {
     handle {
         reverse_proxy web:8000 {
             header_up X-Forwarded-Proto https
@@ -284,7 +285,7 @@ _DEPLOY_WITH_A_BARE_DOMAIN_ON_THE_WRONG_BRANCH = _GOOD_DEPLOY.replace(
     "http://your-domain.com {", "example.com {"
 )
 
-_CADDYFILE_WITH_A_DOMAIN = _GOOD_CADDYFILE.replace(":80 {", "example.com {")
+_CADDYFILE_WITH_A_DOMAIN = _GOOD_CADDYFILE.replace("{$OPENH2O_SITE_ADDRESS::80} {", "example.com {")
 
 
 def test_the_fixtures_are_clean_before_anything_is_broken():
@@ -293,7 +294,7 @@ def test_the_fixtures_are_clean_before_anything_is_broken():
 
     assert set(REQUIRED_BRANCHES).issubset(seam.branch_markers)
     assert not seam.bare_hostnames_outside_the_certificate_branch
-    assert seam.caddyfile_first_address == ":80"
+    assert seam.caddyfile_first_address == "{$OPENH2O_SITE_ADDRESS::80}"
     assert seam.caddyfile_has_forwarded_proto
 
 

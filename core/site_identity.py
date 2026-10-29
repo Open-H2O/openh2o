@@ -56,6 +56,13 @@ NON_PUBLIC_HOSTS = frozenset(
 )
 
 
+#: The addresses of the computer itself. A site that only its own computer reaches lists
+#: just these, and one of them is then the right web address for it: a password-reset link
+#: to ``http://localhost/`` opens on that computer and nowhere else, which is who can use it.
+#: ``0.0.0.0`` is not one of them. It names no address a browser can open.
+LOOPBACK_HOSTS = NON_PUBLIC_HOSTS - {"0.0.0.0"}  # noqa: S104
+
+
 @dataclass(frozen=True)
 class SiteIdentity:
     """What the platform can work out about itself. Either field may be None.
@@ -74,22 +81,32 @@ def derive_domain(allowed_hosts=None) -> str | None:
     """The first entry of ALLOWED_HOSTS that is a real, public hostname.
 
     Skips the loopback names production appends for its own health probe, and
-    skips wildcards — ``*`` (development's default) and Django's leading-dot
+    skips wildcards: ``*`` (development's default) and Django's leading-dot
     subdomain form, whose leading dot is stripped rather than rejected because
     ``.water.example.org`` does name a real host.
+
+    When the list names no public host but does name the computer itself, the
+    first of those names is the answer. A site that only its own computer
+    reaches lists ``localhost`` and nothing else, and a public name always wins
+    over a loopback one however the list is ordered.
     """
     if allowed_hosts is None:
         allowed_hosts = getattr(settings, "ALLOWED_HOSTS", [])
 
+    first_loopback = None
     for entry in allowed_hosts:
         host = (entry or "").strip().lstrip(".")
         if not host or "*" in host:
+            continue
+        if host.lower() in LOOPBACK_HOSTS:
+            if first_loopback is None:
+                first_loopback = host
             continue
         if host.lower() in NON_PUBLIC_HOSTS:
             continue
         return host
 
-    return None
+    return first_loopback
 
 
 def derive_name() -> str | None:
@@ -126,6 +143,8 @@ def apply_site_identity(**kwargs) -> bool:
     identity = resolve_site_identity()
     changed = []
 
+    # A loopback address saved while the site was reached only from its own
+    # computer counts as a placeholder too, once a public host is known.
     # Each field is guarded on ITS OWN placeholder, not on the pair. That is
     # what the real deployment sequence requires: `scripts/rebuild-golden.sh`
     # runs `migrate` on an empty database and only then seeds, so the first
@@ -133,7 +152,13 @@ def apply_site_identity(**kwargs) -> bool:
     # the name (no SiteConfig row exists yet). Guarding both on the domain
     # would leave the name stuck at the placeholder forever — and the name is
     # the half that shows up in the subject line.
-    if identity.domain and site.domain == PLACEHOLDER:
+    if identity.domain and (
+        site.domain == PLACEHOLDER
+        or (
+            site.domain.lower() in LOOPBACK_HOSTS
+            and identity.domain.lower() not in LOOPBACK_HOSTS
+        )
+    ):
         site.domain = identity.domain
         changed.append("domain")
     if identity.name and site.name == PLACEHOLDER:

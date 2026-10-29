@@ -271,7 +271,7 @@ ACCOUNT_FORMS = {
 # that added a second one is gone (config/urls.py); this holds the rule for
 # any allauth path that could still add one.
 ACCOUNT_MAX_EMAIL_ADDRESSES = 1
-# Brent 2026-10-20: no email to an address with no account.
+# No email goes to an address that has no account.
 ACCOUNT_EMAIL_UNKNOWN_ACCOUNTS = False
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
@@ -296,7 +296,7 @@ EMAIL_BACKEND = env(
     "EMAIL_BACKEND",
     default="django.core.mail.backends.console.EmailBackend",
 )
-DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="noreply@openh2o.com")
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="noreply@localhost")
 EMAIL_HOST = env("EMAIL_HOST", default="")
 EMAIL_PORT = env.int("EMAIL_PORT", default=587)
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
@@ -325,9 +325,9 @@ EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 # configured" apart from "mail is merely intended".
 #
 # An explicitly set ACCOUNT_EMAIL_VERIFICATION always wins over the derivation,
-# in either direction. openh2o.com and its staging twin pin "none" for exactly
-# that reason: they have mail configured and open self-registration, and a
-# public demo must never ask a casual visitor to confirm an address.
+# in either direction. A public demonstration site pins "none" for exactly that
+# reason: it has mail configured and open self-registration, and a demonstration
+# must never ask a casual visitor to confirm an address.
 #
 # An unrecognised value is refused at boot rather than silently falling back,
 # because a silent fallback to "none" would present to the operator as
@@ -414,7 +414,7 @@ GEE_SERVICE_ACCOUNT_EMAIL = env("GEE_SERVICE_ACCOUNT_EMAIL", default="")
 
 # -- Health dashboard --------------------------------------------------------
 # HEALTH_DEMO_MODE marks an instance whose database is restored from a frozen
-# golden snapshot every night (our public demo at openh2o.com). On such a box,
+# golden snapshot every night (a public demonstration site). On such a box,
 # external-feed timestamps and demo-seeded zero-amount ledger rows are static by
 # design, so the sync-freshness and zero-amount-ledger checks would otherwise
 # alarm forever on a non-fault. When True, those two checks report green (the

@@ -3,9 +3,12 @@
 # Install:   make install-cron
 # Verify:    make show-cron
 #
-# Set the two paths below to match YOUR deployment before installing:
-#   OPENH2O_DIR      where you cloned the repo (the dir holding docker-compose.yml)
-#   OPENH2O_LOG_DIR  a directory the cron user can write logs to
+# `make install-cron` copies this file into the schedule, and writes two lines of its
+# own above the jobs, so this file needs no edit:
+#   OPENH2O_DIR      this checkout (the folder holding docker-compose.yml)
+#   OPENH2O_LOG_DIR  where the jobs write their logs: $HOME/openh2o-logs, or the folder
+#                    named on the command line (make install-cron OPENH2O_LOG_DIR=/path)
+# When OPENH2O_NTFY_URL is set in .env or in the environment, it writes that line too.
 #
 # Jobs:
 #   run-sync.sh    - Resilient external-data sync (ensures container is up,
@@ -25,9 +28,6 @@
 #                      scripts/restore.sh.
 #   run_health_checks - Check database, disk, SSL, migrations, and sync freshness
 #   prune_old_data    - Delete staging records and logs older than retention thresholds
-
-OPENH2O_DIR=/opt/openh2o
-OPENH2O_LOG_DIR=/opt/openh2o-logs
 
 # Hourly: live stream / reservoir telemetry (near-real-time flow & stage)
 0 * * * * $OPENH2O_DIR/scripts/run-sync.sh cdec usgs

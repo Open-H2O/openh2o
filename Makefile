@@ -12,11 +12,11 @@ VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 export APP_VERSION = $(VERSION)
 
 .PHONY: help up down build logs shell dbshell migrate makemigrations \
-        createsuperuser collectstatic seed seed-roles seed-water-types \
+        createsuperuser collectstatic seed seed-water-types \
         seed-data-sources seed-report-templates seed-water-right-types \
         seed-well-types demo remove-demo \
         check test test-droppable guard-fresh fresh snapshot-demo reset-demo calc-rebuild verify-clean install-cron show-cron sync guard-prod guard-demo-host deploy rebuild-golden \
-        verify-candidate promote-golden ci-gate release upgrade
+        verify-candidate promote-golden ci-gate release upgrade guard-demo-target
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | \
@@ -110,13 +110,10 @@ guard-demo-host:
 		echo "  demonstration data. That is correct on the public demo site and catastrophic"; \
 		echo "  anywhere else, which is why this checkout has to opt in by name."; \
 		echo ""; \
-		echo "  TO UPGRADE AN AGENCY DEPLOYMENT, run these four instead — they update the"; \
-		echo "  code and the database structure and leave your data alone:"; \
-		echo "      git pull origin main"; \
-		echo "      docker compose up -d --build"; \
-		echo "      docker compose exec web python manage.py migrate"; \
-		echo "      docker compose exec web python manage.py collectstatic --noinput"; \
-		echo "  They are written out with their explanations in DEPLOY.md, section 11"; \
+		echo "  TO UPGRADE AN AGENCY DEPLOYMENT, run this instead. It backs up first, then"; \
+		echo "  updates the code and the database structure and leaves your data alone:"; \
+		echo "      make upgrade"; \
+		echo "  The steps it takes are written out in DEPLOY.md, section 11"; \
 		echo "  ('Ongoing Operations' -> 'Upgrades')."; \
 		echo ""; \
 		echo "  If this genuinely IS the public demonstration host, create the marker file"; \
@@ -253,9 +250,6 @@ test-droppable: guard-fresh ## Prove every optional module can be dropped (see t
 seed: ## Run ALL required seed commands (reference data)
 	$(EXEC) seed_data
 
-seed-roles: ## Seed user roles
-	$(EXEC) seed_roles
-
 seed-water-types: ## Seed water type definitions
 	$(EXEC) seed_water_types
 
@@ -271,10 +265,10 @@ seed-water-right-types: ## Seed water right type definitions
 seed-well-types: ## Seed well type definitions
 	$(EXEC) seed_well_types
 
-demo: ## Load the demonstration data (the Merced Subbasin) into a site that holds no records of its own
+demo: guard-demo-target ## Load the demonstration data (the Merced Subbasin) into a site that holds no records of its own
 	$(EXEC) load_demonstration
 
-remove-demo: ## Remove the demonstration data, leaving users, reference lists and settings
+remove-demo: guard-demo-target ## Remove the demonstration data, leaving users, reference lists and settings
 	$(EXEC) remove_demonstration
 
 # ---------------------------------------------------------------------------
@@ -287,9 +281,8 @@ health: ## Run health checks
 prune: ## Prune old staging data and sync logs
 	$(EXEC) prune_old_data
 
-install-cron: ## Install crontab.txt entries (appends, preserves existing entries)
-	(crontab -l 2>/dev/null; cat crontab.txt) | crontab -
-	@echo "Cron entries installed. Run 'make show-cron' to verify."
+install-cron: ## Install crontab.txt in the schedule: this checkout's path and a log folder (OPENH2O_LOG_DIR=/path to choose it) are written for you; run again to refresh
+	@bash scripts/install-cron.sh
 
 show-cron: ## Display current crontab entries
 	crontab -l
@@ -328,6 +321,13 @@ guard-prod:
 		exit 1; \
 	fi
 
+# The demonstration targets: refuse in a protected checkout unless it is also the
+# demonstration host (.demo-host), as the nightly reset on that host needs. The rule is in
+# scripts/guard-demo-target.sh, which reset-demo.sh and snapshot-demo.sh run as well, so a
+# script run by hand or from cron is guarded the same way.
+guard-demo-target:
+	@bash scripts/guard-demo-target.sh "$(firstword $(MAKECMDGOALS))" .
+
 fresh: guard-prod down ## Full reset: destroy volumes, rebuild, migrate, seed, Merced demo
 	$(COMPOSE) down -v
 	$(COMPOSE) up -d --build
@@ -343,13 +343,13 @@ fresh: guard-prod down ## Full reset: destroy volumes, rebuild, migrate, seed, M
 # path. It stamps a golden from whatever the live database happens to hold, which
 # is the photocopy habit this milestone replaced — so what it writes is temporary
 # by construction.
-snapshot-demo: ## ESCAPE HATCH: stamp a golden from the LIVE database — the next `make deploy` REPLACES it (the repository is the source of truth)
+snapshot-demo: guard-demo-target ## ESCAPE HATCH: stamp a golden from the LIVE database — the next `make deploy` REPLACES it (the repository is the source of truth)
 	bash scripts/snapshot-demo.sh
 
-reset-demo: ## Restore the demo DB to its golden snapshot NOW (wipes visitor-added data); the same script runs nightly via cron
+reset-demo: guard-demo-target ## Restore the demo DB to its golden snapshot NOW (wipes visitor-added data); the same script runs nightly via cron
 	bash scripts/reset-demo.sh
 
-calc-rebuild: ## Re-run accounting calc for PERIOD=YYYY-MM and re-stamp the golden — TEMPORARY, the next deploy replaces it (durable fix = change the seed)
+calc-rebuild: guard-demo-target ## Re-run accounting calc for PERIOD=YYYY-MM and re-stamp the golden — TEMPORARY, the next deploy replaces it (durable fix = change the seed)
 	@test -n "$(PERIOD)" || { echo "Usage: make calc-rebuild PERIOD=YYYY-MM"; exit 1; }
 	$(EXEC) run_calculations --period $(PERIOD)
 	# The snapshot call stays. Without it a recalculation would survive until the

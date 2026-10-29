@@ -57,12 +57,16 @@ class TestDerivingTheAddress:
         # config/settings/local.py defaults the whole list to ["*"].
         assert derive_domain(["*"]) is None
 
+    def test_a_list_naming_only_the_computer_itself_gives_its_first_name(self):
+        # A site that only its own computer reaches: its address is that name.
+        assert derive_domain(["", "localhost", "*.example.org"]) == "localhost"
+
     def test_it_reads_djangos_leading_dot_subdomain_form(self):
         assert derive_domain([f".{REAL_HOST}"]) == REAL_HOST
 
     def test_a_list_naming_no_real_host_is_an_answer_not_a_crash(self):
         assert derive_domain([]) is None
-        assert derive_domain(["", "localhost", "*.example.org"]) is None
+        assert derive_domain(["", "*.example.org"]) is None
 
     @override_settings(ALLOWED_HOSTS=[REAL_HOST, "127.0.0.1"])
     def test_it_reads_the_live_setting_when_given_no_list(self):
@@ -119,6 +123,38 @@ class TestApplyingIt:
         site = Site.objects.get(pk=1)
         assert site.name == "Chosen By Hand"
         assert site.domain == "chosen-by-hand.example.org"
+
+    @pytest.mark.parametrize("saved", ["localhost", "127.0.0.1", "::1"])
+    @override_settings(ALLOWED_HOSTS=[REAL_HOST, "localhost"])
+    def test_a_saved_loopback_address_is_replaced_by_a_public_host(
+        self, placeholder_site, saved
+    ):
+        Site.objects.filter(pk=1).update(domain=saved)
+        Site.objects.clear_cache()
+
+        assert apply_site_identity() is True
+
+        assert Site.objects.get(pk=1).domain == REAL_HOST
+
+    @override_settings(ALLOWED_HOSTS=["localhost"])
+    def test_a_saved_loopback_address_stays_when_no_public_host_exists(
+        self, placeholder_site
+    ):
+        Site.objects.filter(pk=1).update(domain="127.0.0.1")
+        Site.objects.clear_cache()
+
+        assert apply_site_identity() is False
+
+        assert Site.objects.get(pk=1).domain == "127.0.0.1"
+
+    @override_settings(ALLOWED_HOSTS=["second.example.org"])
+    def test_a_saved_public_address_is_never_overwritten(self, placeholder_site):
+        Site.objects.filter(pk=1).update(domain=REAL_HOST)
+        Site.objects.clear_cache()
+
+        assert apply_site_identity() is False
+
+        assert Site.objects.get(pk=1).domain == REAL_HOST
 
     @override_settings(ALLOWED_HOSTS=[REAL_HOST])
     def test_running_it_twice_changes_nothing_the_second_time(

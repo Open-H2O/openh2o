@@ -32,8 +32,13 @@ static/css/output.css
 .DS_Store
 Thumbs.db
 
-# Tailwind binary
+# Tailwind binary, as downloaded (tailwindcss-<platform>) and as the native install
+# guide renames it (tailwindcss)
 tailwindcss-*
+/tailwindcss
+
+# A Python virtual environment, such as the one the native install guide creates
+.venv/
 
 # Media (user-uploaded / generated reports)
 media/

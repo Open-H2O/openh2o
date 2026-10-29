@@ -1,8 +1,17 @@
-# Entry point for both local dev (plain HTTP on LAN) and the Cloudflare Tunnel.
-# TLS is terminated at the Cloudflare edge; the tunnel forwards plain HTTP here,
-# so we assert X-Forwarded-Proto=https to the app. Django's production settings
-# trust that header (SECURE_PROXY_SSL_HEADER); without it SECURE_SSL_REDIRECT
-# would bounce every request to https and loop through the tunnel forever.
+# Entry point for both local dev (plain HTTP on LAN) and a service in front of the
+# server that handles the encryption (the organization's own proxy or a load
+# balancer, for example). That service forwards plain HTTP here, so the site below asserts
+# X-Forwarded-Proto=https to the app. Django's production settings trust that header
+# (SECURE_PROXY_SSL_HEADER); without it SECURE_SSL_REDIRECT would bounce every
+# request to https and loop forever behind such a service.
+#
+# The site address is OPENH2O_SITE_ADDRESS, read from .env through docker-compose.yml,
+# and it is ":80" when .env does not set it. Leave it unset on a site reached only from
+# this computer or the office network, or behind a service that handles the encryption.
+# Set it to a bare domain (water.example.org) and Caddy obtains its own certificate for
+# that domain. Set it to http://water.example.org to answer only at that name over plain
+# HTTP. Caddy reads it only when its container starts: run `docker compose up -d` after
+# a change. DEPLOY.md, section 4, says which to choose.
 
 # Half two of the request record. The site below sends its access log
 # to a file; this sends the SAME entries to stderr as well, which is what
@@ -31,7 +40,7 @@
 		include http.log.access.access_file
 	}
 }
-:80 {
+{$OPENH2O_SITE_ADDRESS::80} {
     encode gzip
 
     # The record of who asked for what, half one of two. Before this
@@ -178,17 +187,3 @@
         header Retry-After "30"
     }
 }
-
-# Production config (uncomment and replace domain):
-# openh2o.com {
-#     encode gzip
-#
-#     handle /static/* {
-#         root * /srv
-#         file_server
-#     }
-#
-#     handle {
-#         reverse_proxy web:8000
-#     }
-# }

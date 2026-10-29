@@ -13,6 +13,7 @@
 #   backup_fail    the backup exits 1
 #   unhealthy      the web container never reports healthy
 #   health_fail    run_health_checks exits 1
+#   crontab        the installed schedule the stand-in `crontab` reads and writes (absent: none)
 #
 # Run: bash tests/deploy/test_upgrade.sh   (bash 3.2 on a Mac, bash 5 on Linux)
 set -uo pipefail
@@ -63,12 +64,23 @@ case $1 in
 esac
 exit 0
 EOF
+# A stand-in crontab: `-l` prints the schedule file (exit 1 when there is none), `-` replaces it.
+cat > "$T/bin/crontab" <<'EOF'
+#!/usr/bin/env bash
+echo "crontab $*" >> "$S/calls.log"
+case $1 in
+  -l) [ -f "$S/crontab" ] && cat "$S/crontab" || exit 1 ;;
+  -) cat > "$S/crontab" ;;
+esac
+exit 0
+EOF
 chmod +x "$T/bin/"*
 
 setup() {
   export S="$T/case$1/state" CO="$T/case$1/co" OLD_V NEW_V
   mkdir -p "$S" "$CO/scripts" "$CO/backups" "$T/case$1/logs"
-  cp "$REPO/scripts/upgrade.sh" "$CO/scripts/"
+  cp "$REPO/scripts/upgrade.sh" "$REPO/scripts/install-cron.sh" "$CO/scripts/"
+  printf 'OPENH2O_DIR=/stale\n0 6 * * * cd $OPENH2O_DIR && fresh-job\n0 7 * * * new-job\n' > "$CO/crontab.txt"
   cat > "$CO/scripts/backup.sh" <<'EOS'
 echo "backup.sh" >> "$S/calls.log"
 [ -f "$S/backup_fail" ] && exit 1
@@ -91,6 +103,7 @@ check() { if eval "$2"; then ok "$1"; else bad "$1"; fi; }
 called()     { grep -qF -- "$1" "$S/calls.log"; }
 not_called() { ! grep -qF -- "$1" "$S/calls.log"; }
 says()       { case $OUT in *"$1"*) return 0 ;; esac; return 1; }
+wrote_schedule() { grep -qx "crontab -" "$S/calls.log"; }
 at() { grep -nF -- "$1" "$S/calls.log" | head -1 | cut -d: -f1; }
 
 # (1) a good upgrade: order, version, summary.
@@ -148,6 +161,28 @@ setup 11; : > "$S/fetch_fail"; run
 check "8 a failed fetch stops before the backup" '[ $RC = 1 ] && not_called backup.sh && says "Nothing was changed"'
 setup 12; : > "$CO/.restore-in-progress"; run
 check "8 a restore in progress stops everything" '[ $RC = 1 ] && [ ! -s "$S/calls.log" ]'
+
+# (10) the installed schedule is refreshed after a good upgrade.
+BEGIN='# BEGIN OpenH2O schedule (written by make install-cron, replaced each time it runs)'
+END='# END OpenH2O schedule'
+setup 13
+printf 'MAILTO=me@example.org\n%s\nOPENH2O_DIR=/old/path\nOPENH2O_LOG_DIR=%s/custom-logs\n0 6 * * * old-job\n%s\n' \
+  "$BEGIN" "$T" "$END" > "$S/crontab"
+run
+check "10 a schedule with the marker is rewritten from crontab.txt after a good upgrade" '[ $RC = 0 ] && grep -qF "new-job" "$S/crontab" && ! grep -qF "old-job" "$S/crontab"'
+check "10 it keeps the operator log folder and the lines outside the block" 'grep -qxF "OPENH2O_LOG_DIR=$T/custom-logs" "$S/crontab" && grep -qxF "MAILTO=me@example.org" "$S/crontab" && grep -qxF "OPENH2O_DIR=$(cd "$CO" && pwd)" "$S/crontab"'
+check "10 it runs after the health checks" '[ "$(at run_health_checks)" -lt "$(grep -nx "crontab -" "$S/calls.log" | head -1 | cut -d: -f1)" ]'
+check "10 the block appears once" '[ "$(grep -cF "# BEGIN OpenH2O schedule" "$S/crontab")" = 1 ]'
+
+setup 14
+printf '0 6 * * * old-job\n' > "$S/crontab"
+run
+check "10 a schedule with no marker is left alone and the output says to run make install-cron" '[ $RC = 0 ] && says "make install-cron" && ! wrote_schedule && grep -qF "old-job" "$S/crontab"'
+
+setup 15
+printf '%s\nOPENH2O_DIR=/old/path\nOPENH2O_LOG_DIR=%s/custom-logs\n0 6 * * * old-job\n%s\n' "$BEGIN" "$T" "$END" > "$S/crontab"
+: > "$S/unhealthy"; run
+check "10 a failed upgrade does not touch the schedule" '[ $RC = 1 ] && grep -qF "old-job" "$S/crontab" && ! wrote_schedule'
 
 # (9) make upgrade runs the script under a .production-lock, and make deploy is untouched.
 if command -v make >/dev/null 2>&1; then

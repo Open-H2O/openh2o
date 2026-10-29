@@ -6,8 +6,8 @@
 # own target and replaces the database with a canned one.
 #
 # In order:
-#   1. git fetch (changes nothing in the working tree). Local edits are normal on a real site: the
-#      guide has an agency edit the top of crontab.txt and, on some installs, the Caddyfile. So a
+#   1. git fetch (changes nothing in the working tree). Local edits are normal on a real site: an
+#      older guide had every site edit the top of crontab.txt and some the Caddyfile. So a
 #      locally edited file only stops the upgrade when this update ALSO changes that file; the
 #      script names it and stops before the backup, before anything changes. Edited files the
 #      update does not touch are kept, and listed.
@@ -23,10 +23,15 @@
 #   5. Waits for the web container to report healthy (bounded). On timeout it prints the last 50
 #      log lines, names the backup to restore from, and exits 1.
 #   6. run_health_checks, then prints the old version, the new version and the backup file name.
+#   7. After a good upgrade, refreshes the installed schedule so a job the update added to
+#      crontab.txt takes effect: when the schedule carries the `# BEGIN OpenH2O schedule` marker,
+#      scripts/install-cron.sh rewrites that block, keeping the log folder the block names.
+#      A schedule without the marker is left alone, with one sentence naming `make install-cron`.
 #
 # Environment (all optional):
 #   OPENH2O_DIR          the checkout (default: the folder above scripts/)
 #   OPENH2O_LOG_DIR      where backup.log goes (default: backups/logs in the checkout)
+#   CRONTAB              the command that reads and writes the schedule (default: crontab)
 #   UPGRADE_WAIT_TRIES   how many health polls to make (default 90)
 #   UPGRADE_WAIT_SECS    seconds between polls (default 5)
 set -uo pipefail
@@ -117,5 +122,24 @@ echo "Backup:      backups/$backup_file"
 if [ "$health_rc" != 0 ]; then
   echo "run_health_checks reported a problem (exit $health_rc). Read its output above." >&2
   exit 1
+fi
+
+# 7. Refresh the installed schedule, so a job this update added to crontab.txt takes effect.
+crontab_cmd=${CRONTAB:-crontab}
+installed=$("$crontab_cmd" -l 2>/dev/null || true)
+if printf '%s\n' "$installed" | grep -q '^# BEGIN OpenH2O schedule'; then
+  block_logdir=$(printf '%s\n' "$installed" | awk '
+    /^# BEGIN OpenH2O schedule/ { inblock = 1; next }
+    /^# END OpenH2O schedule/ { inblock = 0 }
+    inblock && /^OPENH2O_LOG_DIR=/ { sub(/^OPENH2O_LOG_DIR=/, ""); print; exit }
+  ')
+  if ! (
+    if [ -n "$block_logdir" ]; then export OPENH2O_LOG_DIR="$block_logdir"; else unset OPENH2O_LOG_DIR; fi
+    bash "$OPENH2O_DIR/scripts/install-cron.sh"
+  ); then
+    echo "The upgrade finished, but the installed schedule was not refreshed. Run \`make install-cron\` to refresh it." >&2
+  fi
+else
+  echo "The installed schedule was not written by \`make install-cron\`, so the upgrade did not refresh it. Run \`make install-cron\` to install the jobs in crontab.txt (DEPLOY.md, Scheduled Jobs)."
 fi
 exit 0
