@@ -1084,7 +1084,8 @@ make test
 
 `make test` checks that the image matches the code, then runs the test suite with
 every section of OpenH2O switched on, under the development settings the tests are
-written for.
+written for. `make test T=tests/test_example.py` runs one file. CONTRIBUTING.md says how a
+programmer runs a test against edited code without rebuilding the image.
 
 ### Database Backup
 

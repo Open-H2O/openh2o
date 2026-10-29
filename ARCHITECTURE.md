@@ -248,15 +248,19 @@ The suite is pytest with pytest-django and factory_boy, in `tests/` (`tests/fact
 - **Whole suite:** `make test`. It runs every module (`OPENH2O_MODULES=all`) with
   `--ds=config.settings.local`, because the production settings refuse to start with a known
   default database password or an empty `ALLOWED_HOSTS` (`config/settings/production.py`).
-- **One file:** `docker compose exec -e OPENH2O_MODULES=all web python -m pytest tests/test_name.py --ds=config.settings.local`.
+- **One file or one test:** `make test T=tests/test_name.py` (a pytest path or node id).
 - **Before a commit or pull request:** `make test` and `ruff check .` both pass. On every push to
   `main` and every pull request, `.github/workflows/tests.yml` runs `ruff check .` (ruff pinned to
   0.16.10) and the pytest suite without the tests marked `network`;
   `.github/workflows/clean-install.yml` checks that no migration is missing, that a fresh install
   migrates and seeds with no demonstration content, and that the Merced seed sequence (`seed_merced`, one
   step of `load_demonstration`) names no real organization.
-- **The image has no source mount.** The `web` image copies the code when it is built, so after
-  adding or changing a file run `docker compose up -d --build web` before testing.
+- **The image has no source mount, unless the development file is in use.** The `web` image copies the
+  code when it is built, so after adding or changing a file run `docker compose up -d --build web`
+  before testing. `make dev-up` starts the stack with `docker-compose.dev.yml` as well, which mounts
+  the checkout over `/app` (and compiles `static/css/output.css` into it first), so an edit takes effect
+  with no rebuild; no deploy, upgrade or release script names that file. `make test` asks Docker whether
+  `/app` is mounted and skips the freshness check when it is. Otherwise
   `scripts/assert-image-fresh.sh`, which `make test` runs first, compares the container with
   the files the image is built from, tracked or not yet tracked, of nine types (Python, templates and
   data files), so it cannot see an edited JavaScript, CSS or Markdown file.
