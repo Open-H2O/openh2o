@@ -25,13 +25,18 @@ a reader. This script does not try to find them.
 It reads three surfaces:
 
 1. Every template under ``templates/``, the ``.html`` pages and the ``.txt``
-   emails and messages, with comments, ``<script>`` and ``<style>`` removed, a
+   emails and messages, with comments and ``<style>`` removed, a
    ``{{ }}`` figure read as one word, and the text a reader sees in ``title``,
    ``placeholder``, ``aria-label`` and ``alt`` attributes kept. Words passed to
    a tag or filter that puts them on screen are read too: an included
    partial's ``text=`` and the like, ``{% source_label ... detail="..." %}``,
    the nouns of ``{% module_nouns %}``, and the argument of the ``default``,
    ``default_if_none``, ``blank`` and ``yesno`` filters.
+   A ``<script>`` is read only for the string literals it passes to a call or
+   assignment that puts words on screen (``textContent =``, ``innerHTML =``,
+   ``alert(``, ``toast(``, ``setHTML(`` and the others in ``_JS_PROPERTY`` and
+   ``_JS_CALL``) and for the markup a popup function returns; a sentence built
+   from a variable alone is listed by ``script_words`` as unreadable.
 2. String literals in every application Python file: each top-level package
    except ``tests``, outside its ``migrations``, ``management``, ``settings``
    and ``tests`` folders, less the files in ``NOT_SCREEN_PYTHON``, whose
@@ -327,6 +332,252 @@ def tag_arguments(source: str) -> list:
     return found
 
 
+# -- Words a page script prints -------------------------------------------------
+
+#: Comments and tags that carry no script, blanked in place so a line number survives.
+_BLANKED = (
+    re.compile(r"\{%\s*comment\s*%\}.*?\{%\s*endcomment\s*%\}", re.S),
+    re.compile(r"\{#.*?#\}", re.S),
+    re.compile(r"<!--.*?-->", re.S),
+    re.compile(r"\{%.*?%\}", re.S),
+)
+_SCRIPT_BLOCK = re.compile(r"<script\b[^>]*>(.*?)</script>", re.S | re.I)
+_VARIABLE = re.compile(r"\{\{.*?\}\}", re.S)
+#: A template variable inside a script, kept the same length as it was.
+_HOLE = "\x01"
+#: A property a script assigns words to.
+_JS_PROPERTY = re.compile(
+    r"\.(textContent|innerText|innerHTML|outerHTML|title|placeholder|text|alt)\s*(\+?=)(?![=>])")
+#: A call whose first argument is words for the screen.
+_JS_CALL = re.compile(r"(?<![\w$])(alert|confirm|prompt|toast|showToast|setHTML|setText|setCoordText|showCoordWarning)\s*\(")
+#: A call whose second argument is words for the screen.
+_JS_ATTRIBUTE = re.compile(
+    r"""\.setAttribute\s*\(\s*(['"])(?:aria-label|title|placeholder|alt)\1\s*,""")
+_JS_INSERT = re.compile(r"\.insertAdjacentHTML\s*\(\s*[^,()]+,")
+#: A function that builds a popup or a fragment hands it back, or keeps it in a variable.
+_JS_RETURN = re.compile(r"(?<![\w$.])return\b")
+_JS_ASSIGN = re.compile(r"(?<![\w$])[\w$]+\s*\+?=(?![=>])")
+#: Variables a script keeps words in before it prints them (``hint = n + ' corners placed'``).
+_JS_WORD_NAMES = {"hint", "text", "message", "msg", "caption", "warning", "html", "info", "label"}
+_HTML_LITERAL = re.compile(r"<[A-Za-z]")
+_ALTERNATIVES = ("||", "&&", "??", "?", ":")
+_COMPARISON = re.compile(r"[=!]==?|[<>]=?|\binstanceof\b|\bin\b")
+
+
+def _blank(match) -> str:
+    return re.sub(r"[^\n]", " ", match.group(0))
+
+
+def _string_end(source: str, at: int) -> int:
+    """Index just past the string literal that opens at ``at``."""
+    quote = source[at]
+    i = at + 1
+    while i < len(source):
+        if source[i] == "\\":
+            i += 2
+            continue
+        if source[i] == quote:
+            return i + 1
+        if source[i] == "\n" and quote != "`":
+            return i
+        i += 1
+    return len(source)
+
+
+def _mask_comments(js: str) -> str:
+    """The script with its ``//`` and ``/* */`` comments blanked."""
+    out = list(js)
+    i = 0
+    while i < len(js):
+        char = js[i]
+        if char in "'\"`":
+            i = _string_end(js, i)
+        elif js.startswith("//", i):
+            end = js.find("\n", i)
+            end = len(js) if end < 0 else end
+            out[i:end] = " " * (end - i)
+            i = end
+        elif js.startswith("/*", i):
+            end = js.find("*/", i + 2)
+            end = len(js) if end < 0 else end + 2
+            out[i:end] = [" " if c != "\n" else c for c in js[i:end]]
+            i = end
+        else:
+            i += 1
+    return "".join(out)
+
+
+def _expression_end(js: str, start: int, argument: bool) -> int:
+    """Index where the expression that begins at ``start`` ends: a ``;`` at depth 0, a closing
+    bracket that was never opened, or (for a call argument) the ``,`` that ends the argument."""
+    depth = 0
+    i = start
+    while i < len(js):
+        char = js[i]
+        if char in "'\"`":
+            i = _string_end(js, i)
+            continue
+        if char in "([{":
+            depth += 1
+        elif char in ")]}":
+            if depth == 0:
+                return i
+            depth -= 1
+        elif depth == 0 and (char == ";" or (argument and char == ",")):
+            return i
+        i += 1
+    return len(js)
+
+
+def _split_top(expr: str, separators: tuple) -> list:
+    """``expr`` cut at every separator that sits outside strings and brackets."""
+    pieces, depth, last, i = [], 0, 0, 0
+    while i < len(expr):
+        char = expr[i]
+        if char in "'\"`":
+            i = _string_end(expr, i)
+            continue
+        if char in "([{":
+            depth += 1
+        elif char in ")]}":
+            depth -= 1
+        elif depth == 0:
+            for sep in separators:
+                if expr.startswith(sep, i):
+                    if sep == "?" and (expr[i + 1:i + 2] == "." or expr[i + 1:i + 2] == "?"):
+                        continue
+                    if sep == "+" and (expr[i + 1:i + 2] == "+" or expr[i - 1:i] == "+"):
+                        continue
+                    pieces.append(expr[last:i])
+                    i += len(sep) - 1
+                    last = i + 1
+                    break
+        i += 1
+    pieces.append(expr[last:])
+    return pieces
+
+
+def _is_condition(piece: str) -> bool:
+    """True when the piece compares things at depth 0, so its strings are not shown."""
+    skeleton, depth, i = [], 0, 0
+    while i < len(piece):
+        char = piece[i]
+        if char in "'\"`":
+            i = _string_end(piece, i)
+            skeleton.append("\x02")
+            continue
+        if char in "([{":
+            depth += 1
+        elif char in ")]}":
+            depth -= 1
+        elif depth == 0:
+            skeleton.append(char)
+        i += 1
+    return bool(_COMPARISON.search("".join(skeleton)))
+
+
+def _unescape(literal: str) -> str:
+    body = literal[1:-1] if len(literal) > 1 and literal[-1] == literal[0] else literal[1:]
+    body = re.sub(r"\\u([0-9a-fA-F]{4})", lambda m: chr(int(m.group(1), 16)), body)
+    body = re.sub(r"\$\{[^}]*\}", " " + _HOLE + " ", body) if literal[0] == "`" else body
+    return re.sub(r"\\(.)", r"\1", body)
+
+
+def _js_alternatives(expr: str) -> tuple:
+    """``(runs of words, held variable words)`` an expression can put on screen.
+
+    The expression is cut at ``?``, ``:``, ``||``, ``&&`` and ``??`` into the values it can take;
+    a piece that compares things is a condition and shows nothing. Each value is a chain joined by
+    ``+``: a string literal is read, a parenthesised group is read the same way, and anything else
+    (a name, a call, a property) is a variable, written ``X`` in the run it sits in."""
+    runs, variable = [], False
+    for alternative in _split_top(expr, _ALTERNATIVES):
+        alternative = alternative.strip()
+        if not alternative or _is_condition(alternative):
+            continue
+        text, literal = [], False
+        for operand in _split_top(alternative, ("+",)):
+            operand = operand.strip()
+            if not operand:
+                continue
+            if operand[0] in "'\"`" and _string_end(operand, 0) == len(operand):
+                text.append(_unescape(operand))
+                literal = True
+            elif operand[0] == "(" and operand[-1] == ")":
+                inner, held = _js_alternatives(operand[1:-1])
+                variable = variable or held
+                if len(_split_top(operand[1:-1], _ALTERNATIVES)) == 1 and len(inner) == 1:
+                    text.append(inner[0])
+                    literal = True
+                else:
+                    runs.extend(inner)
+                    text.append(_HOLE)
+            else:
+                text.append(_HOLE)
+                variable = True
+        if literal:
+            runs.append(" ".join("".join(text).split()))
+    return runs, variable
+
+
+def _script_runs(text: str) -> list:
+    return [run for run in _runs(re.sub(_HOLE + "+", " X ", text)) if re.search(r"[A-Za-z]{2}", run.replace("X", ""))]
+
+
+def script_words(source: str) -> tuple:
+    """``(found, unreadable)`` for the ``<script>`` blocks of a template.
+
+    ``found`` is ``[(line, kind, [run, ...]), ...]``: each string literal a script passes to a call or
+    assignment that puts words on screen (``textContent =``, ``innerHTML =``, ``alert(``, ``toast(``
+    and the others named above), and each HTML fragment it builds. ``unreadable`` is
+    ``[(line, kind, expression), ...]``: a sink whose words are all variables, which nothing here
+    can read."""
+    for pattern in _BLANKED:
+        source = pattern.sub(_blank, source)
+    found, unreadable = [], []
+    for block in _SCRIPT_BLOCK.finditer(source):
+        start = block.start(1)
+        js = _VARIABLE.sub(lambda m: _HOLE * len(m.group(0)), block.group(1))
+        js = _mask_comments(js)
+        seen = set()
+        candidates = []
+        for pattern, kind in ((_JS_PROPERTY, None), (_JS_CALL, None), (_JS_ATTRIBUTE, "attribute"),
+                              (_JS_INSERT, "insertAdjacentHTML")):
+            for match in pattern.finditer(js):
+                name = kind or match.group(1)
+                if pattern is _JS_CALL and js[:match.start()].rstrip().endswith("function"):
+                    continue
+                is_call = pattern is not _JS_PROPERTY
+                candidates.append((match.end(), name, is_call, 2))
+        for pattern, name in ((_JS_RETURN, "return"), (_JS_ASSIGN, "assignment")):
+            for match in pattern.finditer(js):
+                target = re.match(r"[\w$]+", match.group(0))
+                mode = 1 if name == "assignment" and target.group(0) in _JS_WORD_NAMES else 0
+                candidates.append((match.end(), name, False, mode))
+        for at, kind, is_call, certain in sorted(candidates, key=lambda c: (c[0], -c[3])):
+            if at in seen:
+                continue
+            seen.add(at)
+            end = _expression_end(js, at, is_call)
+            expr = js[at:end]
+            runs, variable = _js_alternatives(expr)
+            literals = [m for m in _split_top(expr, ("+", "||", "&&", "?", ":")) if m.strip()[:1] in "'\"`"]
+            if certain == 0 and not any(_HTML_LITERAL.search(piece) for piece in literals):
+                continue
+            line = source.count("\n", 0, start + at) + 1
+            words = [run for text in runs for run in _script_runs(text)]
+            if words:
+                found.append((line, kind, words))
+            elif variable and certain == 2:
+                unreadable.append((line, kind, " ".join(expr.split())))
+    return found, unreadable
+
+
+def script_arguments(source: str) -> list:
+    """The words the ``<script>`` blocks of a template put on screen, one run each."""
+    return [run for _line, _kind, words in script_words(source)[0] for run in words]
+
+
 def _runs(source: str) -> list:
     """Template source (comments already gone) as the runs of text it shows."""
     source = " ".join(source.split())
@@ -352,6 +603,7 @@ def _runs(source: str) -> list:
 
 def template_text(source: str) -> tuple:
     """``(runs, headings)``: every run of text a template shows, and its headings."""
+    original = source
     source = _strip_not_copy(source)
     headings = []
     for match in _TITLE_BLOCK.finditer(source):
@@ -359,6 +611,7 @@ def template_text(source: str) -> tuple:
     for match in _HEADING_TAG.finditer(source):
         headings.append(" ".join(_runs(match.group(2))))
     runs = _runs(source) + include_arguments(source) + tag_arguments(source)
+    runs += script_arguments(original)
     return runs, [h for h in headings if h]
 
 

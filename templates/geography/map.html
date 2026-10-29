@@ -477,20 +477,20 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
         },{% endif %}
         {% if 'recharge' in enabled_modules %}
         'recharge-fill': function(p) {
-            return '<strong>' + (p.name || 'Unknown Site') + '</strong><br>' +
+            return '<strong>' + (p.name || 'Unknown site') + '</strong><br>' +
                    'Type: ' + (p.site_type || '—') + '<br>' +
                    'Capacity: ' + (p.capacity_acre_feet ? parseFloat(p.capacity_acre_feet).toFixed(2) + ' AF' : '—') + '<br>' +
                    '<a href="/recharge/' + p.pk + '/" style="color:'+OH2O.colors.gold+'">View details →</a>';
         },
         'recharge-points': function(p) {
-            return '<strong>' + (p.name || 'Unknown Site') + '</strong><br>' +
+            return '<strong>' + (p.name || 'Unknown site') + '</strong><br>' +
                    'Type: ' + (p.site_type || '—') + '<br>' +
                    'Capacity: ' + (p.capacity_acre_feet ? parseFloat(p.capacity_acre_feet).toFixed(2) + ' AF' : '—') + '<br>' +
                    '<a href="/recharge/' + p.pk + '/" style="color:'+OH2O.colors.gold+'">View details →</a>';
         },
         {% endif %}
         {% if 'wells' in enabled_modules %}'wells-points': function(p) {
-            return '<strong>' + (p.name || 'Unnamed Well') + '</strong><br>' +
+            return '<strong>' + (p.name || 'Unnamed well') + '</strong><br>' +
                    'Local registration ID: ' + (p.well_registration_id || '—') + '<br>' +
                    'Depth: ' + (p.depth_ft ? parseFloat(p.depth_ft).toFixed(0) + ' ft' : '—') + '<br>' +
                    'Status: ' + (p.status || '—') + '<br>' +
@@ -522,7 +522,7 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
         },
         {% endif %}
         {% if 'datasync' in enabled_modules %}'stations-points': function(p) {
-            return '<strong>' + (p.station_name || 'Unknown Station') + '</strong><br>' +
+            return '<strong>' + (p.station_name || 'Unknown station') + '</strong><br>' +
                    'Source: ' + (p.data_source_code || '—') + '<br>' +
                    'ID: ' + (p.external_station_id || '—') + '<br>' +
                    'Last data: ' + (p.last_data_at ? p.last_data_at.slice(0,10) : '—') + '<br>' +

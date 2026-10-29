@@ -763,7 +763,7 @@
     if (parcelMode === 'draw') exitParcelMode();
     var btn = this;
     if (!parcelsLoaded) {
-      btn.textContent = 'Loading...';
+      btn.textContent = 'Loading…';
       fetch(parcelGeojsonUrl, { credentials: 'same-origin' })
         .then(function(r) { return r.json(); })
         .then(function(data) {
@@ -865,7 +865,7 @@
     body.append('geometry_json', JSON.stringify(parcelDrawGeometry));
     body.append('csrfmiddlewaretoken', csrfToken);
     var btn = this;
-    btn.textContent = 'Saving...';
+    btn.textContent = 'Saving…';
     btn.disabled = true;
     fetch(parcelCreateUrl, { method: 'POST', body: body, credentials: 'same-origin' })
       .then(function(r) {
