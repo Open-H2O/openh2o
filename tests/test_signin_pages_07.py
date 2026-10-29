@@ -160,6 +160,10 @@ def test_signing_in_from_a_link_lands_on_the_linked_page():
     assert response["Location"] == LINK
 
 
+# A site's own address list decides what counts as "this site". The local
+# settings default to accepting any address (["*"]), which the sign-in's check
+# then also accepts, so the test names the one address a real site would list.
+@override_settings(ALLOWED_HOSTS=["localhost"])
 def test_an_address_on_another_site_lands_on_home():
     _account()
     response = Client(SERVER_NAME="localhost").post(
