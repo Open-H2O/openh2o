@@ -31,11 +31,11 @@
     <p class="text-base text-secondary mt-md">OpenH2O saves nothing until you press Create.</p>
     <p class="text-base text-secondary mt-sm">{% if infra_type == "well" %}OpenH2O skips a row whose name or registration ID is already on file or appears earlier in the file.{% else %}OpenH2O skips a row whose name is already on file or appears earlier in the file.{% endif %}</p>
     <p class="text-secondary text-sm mt-sm">To enter one {{ record_noun }} record by hand, use <a href="{% url 'infrastructure:add' %}?type={{ infra_type }}">Add {{ infra_label|lower }}</a>.</p>
-    {% comment %}What every type's file must carry, from infrastructure/importer.py
-    (name; a geometry or latitude and longitude inside the United States; the well registration
-    ID check). The per-type field list is the mapping step's; the page cannot reach it
-    without a view change.{% endcomment %}
+    {% comment %}One row per field the type's file can carry, required ones first. The rows come
+    from infrastructure/importer.py (import_fields and FIELD_HOLDS), the same list the matching
+    step offers.{% endcomment %}
     <h3 class="section-header-sm mt-lg">Columns OpenH2O reads</h3>
+    <p class="text-secondary text-sm mt-sm">On the next step, OpenH2O matches each column to a field by name.</p>
     <div class="table-scroll mt-md">
       <table class="data-table help-cases-table">
         <thead>
@@ -46,21 +46,13 @@
           </tr>
         </thead>
         <tbody>
+          {% for field in import_fields %}
           <tr>
-            <td class="col-name">Name</td>
-            <td>Yes</td>
-            <td>The {{ record_noun }}'s name.</td>
+            <td class="col-name">{{ field.label }}</td>
+            <td>{{ field.required_text }}</td>
+            <td>{{ field.holds }}</td>
           </tr>
-          <tr>
-            <td class="col-name">Latitude and longitude, or a geometry</td>
-            <td>Yes</td>
-            <td>Decimal degrees inside the United States, or the shapefile, GeoJSON or KML geometry. For a line or an area, OpenH2O records the center point.</td>
-          </tr>
-          <tr>
-            <td class="col-name">The other {{ infra_label|lower }} columns</td>
-            <td>No</td>
-            <td>On the next step, OpenH2O matches each column to a field by name.</td>
-          </tr>
+          {% endfor %}
         </tbody>
       </table>
     </div>

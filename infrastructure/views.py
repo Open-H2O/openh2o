@@ -448,13 +448,11 @@ def infrastructure_add(request):
     if infra_type == "well":
         return _add_well(request, name, status, notes, geometry_json, parcel)
 
-    elif infra_type == "diversion":
+    if infra_type == "diversion":
         return _add_diversion(request, name, status, notes, geometry_json, parcel)
 
-    elif infra_type in ("recharge_site", "storage"):
-        return _add_recharge_site(request, infra_type, name, status, notes, geometry_json)
-
-    return _add_error(request, infra_type, "Invalid infrastructure type.")
+    # `_supported_type` returns only the four types handled here.
+    return _add_recharge_site(request, infra_type, name, status, notes, geometry_json)
 
 
 # ---------------------------------------------------------------------------
@@ -504,6 +502,23 @@ def infrastructure_import(request):
             "infra_type": infra_type,
             "infra_label": ADD_TYPE_LABEL[infra_type],
             "record_noun": IMPORT_RECORD_NOUN[infra_type],
+            # One row per field the type's file can carry, the required ones
+            # first, read from the same list the matching step uses.
+            "import_fields": [
+                {
+                    "label": label,
+                    "required": required,
+                    "required_text": importer.REQUIRED_NOTE.get(
+                        field, "Yes" if required else "No"
+                    ),
+                    "holds": (
+                        f"The {IMPORT_RECORD_NOUN[infra_type]}'s name."
+                        if field == "name"
+                        else importer.FIELD_HOLDS.get(field, "")
+                    ),
+                }
+                for field, label, required in importer.import_fields(infra_type)
+            ],
             "back_url": reverse(back_name),
             "back_label": back_label,
             # The OTHER types this deployment can serve, built exactly as
@@ -553,7 +568,7 @@ def infrastructure_import_preview(request):
     # the first few data rows aligned to `columns`.
     field_rows = [
         {"field": field, "label": label, "guess": mapping.get(field, "")}
-        for field, label in importer.import_fields(infra_type)
+        for field, label, _required in importer.import_fields(infra_type)
     ]
     sample_table = [
         [importer.sample_cell(col, row.get(col, "")) for col in columns]
@@ -640,7 +655,7 @@ def _commit_failure_context(infra_type, rows, mapping, exc, error=None):
     columns = _columns_from_rows(rows)
     field_rows = [
         {"field": field, "label": label, "guess": mapping.get(field, "")}
-        for field, label in importer.import_fields(infra_type)
+        for field, label, _required in importer.import_fields(infra_type)
     ]
     sample_table = [
         [importer.sample_cell(col, row.get(col, "")) for col in columns]

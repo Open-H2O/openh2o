@@ -55,9 +55,6 @@ def _csv_file(text):
     return io.BytesIO(text.encode("utf-8"))
 
 
-WELLS_HEADER = "name,WCR_NO,LAT,LON,CASING_DIA,SCREEN_TOP,YIELD_GPM,PUMP_TYPE"
-
-
 # ---------------------------------------------------------------------------
 # parse_upload
 # ---------------------------------------------------------------------------

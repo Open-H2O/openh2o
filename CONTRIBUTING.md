@@ -25,7 +25,7 @@ make test                   # confirm a green baseline
 ## Ground rules
 
 - **Add tests.** Anything with logic needs a test in [tests/](tests/): a model method, a view, a data adapter or a report generator. The tests use pytest and factory_boy.
-- **Run the suite with `make test` before you open a pull request.** It uses the local settings, because the production settings refuse to start without a strong database password.
+- **Run `make test` and `ruff check .` before you open a pull request.** `make test` uses the local settings, because the production settings refuse to start with an empty ALLOWED_HOSTS or a database password that is empty, `openh2o`, `postgres`, `password` or `changeme`.
 - **Keep the standards check passing.** If you change the data model or an adapter, run `python manage.py check_conformance` and update the crosswalk if it reports a gap (see [docs/DATA-STANDARDS.md](docs/DATA-STANDARDS.md)).
 - **Keep to the stack's limits.** OpenH2O has no Node.js build step, does not use Celery or Redis, and serves one organization per site. "Limits of the stack" in [ARCHITECTURE.md](ARCHITECTURE.md) gives the reasons.
 - **Use the design tokens.** Interface work uses the one typeface and the tokens in `static/css/tokens.css`. Do not add new fonts or one-off colors.
@@ -33,7 +33,7 @@ make test                   # confirm a green baseline
 
 ## Adding a data adapter
 
-New external data sources are the most common contribution. An adapter lives in `datasync/adapters/`, defines a `PARAMETER_MAP`, registers itself, and is added to the list of sources in `datasync/adapters/registry.py`, which is where the crosswalk and its test read the adapters from. Then map the source's own codes to OpenH2O's measured quantities in the `CODE_TO_KEY` table in `standards/management/commands/seed_observed_properties.py`, which keeps the crosswalk and the conformance check complete. A test checks that every adapter code maps to an observed property.
+New external data sources are the most common contribution. An adapter lives in `datasync/adapters/`, registers itself, and, when it reports named measurements, defines a `PARAMETER_MAP` (the two OpenET adapters do not) and is added to the list of sources in `datasync/adapters/registry.py`, which is where the crosswalk and its test read the adapters from. Then map the source's own codes to OpenH2O's measured quantities in the `CODE_TO_KEY` table in `standards/management/commands/seed_observed_properties.py`, which keeps the crosswalk and the conformance check complete. A test checks that every adapter code maps to an observed property.
 
 ## Reporting bugs and ideas
 

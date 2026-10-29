@@ -205,7 +205,7 @@ def _health_ordered_stations(
     }
     stations_ordered = sorted(
         queryset,
-        key=lambda s: HEALTH_RANK.get(station_health.get(s.pk), 3),
+        key=lambda s: HEALTH_RANK[station_health[s.pk]],
     )
 
     # Freshness is source-aware and computed in Python, so it filters here

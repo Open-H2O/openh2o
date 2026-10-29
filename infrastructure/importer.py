@@ -322,11 +322,6 @@ FIELD_LABELS = {
 }
 
 
-#: What a map file's geometry column is called on the matching step and in
-#: the sample table; the key itself stays GEOMETRY_COL.
-GEOMETRY_COL_LABEL = "The file's geometry"
-
-
 def sample_cell(column, value):
     """A sample-table cell: a map file's geometry shows only its shape type."""
     if column == GEOMETRY_COL:
@@ -337,10 +332,62 @@ def sample_cell(column, value):
     return value
 
 
+#: The fields a file must carry. The name is needed for every type; a location
+#: is needed as a geometry or as a latitude and longitude pair (the matching
+#: step refuses a file with neither), so all three location fields count as
+#: required and their "What it holds" sentences say either way works.
+REQUIRED_FIELDS = ("name", "latitude", "longitude", "geometry")
+
+#: What the import page's Required cell says for a field that is required only
+#: when the other form of location is missing.
+REQUIRED_NOTE = {
+    "latitude": "Unless the file has a geometry",
+    "longitude": "Unless the file has a geometry",
+    "geometry": "Unless the file has latitude and longitude",
+}
+
+#: What each field holds, for the "What it holds" column on the import page:
+#: the software's reading of the column, never an explanation of the water.
+FIELD_HOLDS = {
+        "latitude": "Decimal degrees inside the United States. A file with a geometry column does not need latitude and longitude.",
+    "longitude": "Decimal degrees inside the United States, negative for the western hemisphere. A file with a geometry column does not need latitude and longitude.",
+    "geometry": "The shapefile, GeoJSON or KML geometry. For a line or an area, OpenH2O records the center point. A file with latitude and longitude does not need a geometry.",
+    "well_registration_id": "Your own registration ID for the well. OpenH2O skips a row whose ID is already on file or appears earlier in the file.",
+    "wcr_number": "The well completion report (WCR) number. OpenH2O copies it unchanged.",
+    "state_well_number": "The state well number (SWN). OpenH2O copies it unchanged.",
+    "capacity_gpm": "Pump capacity in gallons per minute.",
+    "tested_yield_gpm": "Tested yield in gallons per minute.",
+    "depth_ft": "Total depth in feet.",
+    "casing_diameter_in": "Casing diameter in inches.",
+    "casing_material": "OpenH2O copies the casing material unchanged.",
+    "screen_top_ft": "Top of the screened section in feet.",
+    "screen_bottom_ft": "Bottom of the screened section in feet.",
+    "pump_type": "Submersible, turbine, centrifugal or other, in any capitalization. OpenH2O imports the well without a pump type when the file gives anything else, and notes it on the preview.",
+    "year_pumping_began": "A four-digit year.",
+    "measurement_method": "Certified meter, unmetered estimate, power conversion or ET method, in any capitalization. OpenH2O imports the well without a measurement method when the file gives anything else, and notes it on the preview.",
+    "owner_name": "OpenH2O copies the owner's name unchanged.",
+    "stream_name": "OpenH2O copies the stream name unchanged.",
+    "local_name": "The name the people who run the point of diversion call it. OpenH2O copies it unchanged.",
+    "max_rate_cfs": "Maximum rate in cubic feet per second.",
+    "water_right": "The application number of a water right on file. OpenH2O refuses a row whose number is not on file, so import the water right first.",
+    "parcel_number": "The parcel number of a use area on file. When it matches, OpenH2O links the point of diversion to that use area. When it does not, OpenH2O imports the point of diversion without a use area.",
+    "site_type": "One of spreading_basin, injection_well, streambed, asr_well, storage_pond or storage_tank. OpenH2O saves the value as written. When the file has no site type column, OpenH2O uses storage_pond for a storage pond file and spreading_basin for a recharge site file.",
+    "capacity_acre_feet": "The volume the site holds per fill, in acre-feet.",
+    "operator": "OpenH2O copies the operator's name unchanged.",
+}
+
+
 def import_fields(infra_type):
-    """Ordered [(model_field, label)] the import UI offers a column mapping for."""
+    """Ordered [(model_field, label, required)] the import UI offers a column mapping for.
+
+    The required fields come first, each group in the alias table's order.
+    """
     table = ALIASES.get(infra_type, _WELL_ALIASES)
-    return [(field, FIELD_LABELS.get(field, field)) for field in table.keys()]
+    fields = [
+        (field, FIELD_LABELS.get(field, field), field in REQUIRED_FIELDS)
+        for field in table
+    ]
+    return sorted(fields, key=lambda f: not f[2])
 
 
 def _normalize(col):
@@ -619,6 +666,10 @@ def _read_choices_and_strings(
         val = src(field)
         if val:
             data[field] = val
+
+    # A storage pond file with no site type saves each row as a storage pond.
+    if infra_type == "storage":
+        data.setdefault("site_type", "storage_pond")
 
 
 def _resolve_water_right(

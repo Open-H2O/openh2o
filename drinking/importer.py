@@ -812,7 +812,6 @@ def _match_analyte(
     src: Callable[[str], str],
     mapping: dict,
     lookups: dict,
-    new_analyte_names: set,
     data: dict,
     errors: list,
     warnings: list,
@@ -837,11 +836,9 @@ def _match_analyte(
         if analyte_pk is not None:
             data["analyte_id"] = analyte_pk
         else:
-            # Not an error. DDW's own file is the vocabulary source; we
-            # record that the file is extending it so the operator sees it
-            # before committing.
-            if key not in new_analyte_names:
-                new_analyte_names.add(key)
+            # Not an error. DDW's own file is the vocabulary source; the
+            # warning tells the operator the file is extending it before
+            # they commit.
             warnings.append(
                 f"No analyte on file is named {analyte_name}. OpenH2O will "
                 f"add {analyte_name} as a new analyte."
@@ -967,7 +964,6 @@ def _validate_row(
     mapping: dict,
     lookups: dict,
     seen_in_batch: set,
-    new_analyte_names: set,
 ) -> dict:
     """Validate one row into {index, data, errors, warnings}."""
     errors: list = []
@@ -980,9 +976,7 @@ def _validate_row(
         src, mapping, data, errors, warnings
     )
     event_key = (sample_date, sample_time, sample_type)
-    analyte_name = _match_analyte(
-        src, mapping, lookups, new_analyte_names, data, errors, warnings
-    )
+    analyte_name = _match_analyte(src, mapping, lookups, data, errors, warnings)
     _read_finding(src, data, errors)
     _read_limits_and_analysis_date(src, mapping, data, warnings)
 
@@ -1020,10 +1014,9 @@ def validate_rows(rows, mapping):
     # Within-batch bookkeeping: a file that repeats a row is as much a duplicate
     # as one that repeats what is already stored.
     seen_in_batch: set = set()
-    new_analyte_names: set = set()
 
     return [
-        _validate_row(index, row, mapping, lookups, seen_in_batch, new_analyte_names)
+        _validate_row(index, row, mapping, lookups, seen_in_batch)
         for index, row in enumerate(rows)
     ]
 

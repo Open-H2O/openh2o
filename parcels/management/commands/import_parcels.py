@@ -147,7 +147,9 @@ class Command(BaseCommand):
             try:
                 # Extract parcel number
                 try:
-                    parcel_number = str(feature[parcel_number_field].value).strip()
+                    # A null value is a missing number, not the text "None".
+                    value = feature[parcel_number_field].value
+                    parcel_number = "" if value is None else str(value).strip()
                 except Exception:
                     parcel_number = None
 
