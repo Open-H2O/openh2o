@@ -5,9 +5,7 @@ by the dashboard's own card (_dashboard_content.html) and the accounts list
 table with a search). Extracted here
 so the two pages render the SAME markup over the SAME context keys
 (account_summaries, has_allocations, engine_has_never_run, grand_*) rather
-than a second copy of the table drifting from the first, and so the
-`floatformat` figures in it stay ONE set of sites in the figure ledger
-instead of two.
+than a second copy of the table drifting from the first.
 
 Reads: account_summaries, has_allocations, engine_has_never_run,
 grand_supply_surface, grand_supply_groundwater, grand_supply_precip,
@@ -133,6 +131,6 @@ budget); a unit stated once in the caller's own subtitle, never on a column.
 <p class="text-tertiary text-sm mb-sm">No active accounts yet.</p>
 <a href="{% url 'accounting:account_create' %}" class="link-accent text-sm">+ New account</a>
 {% endif %}
-{% comment %}Dashboard: the heading "Water balance", the row "Total", the empty-site line, the over-budget count, the Remaining pop-out and the fields-table pop-out are approved sentences. A balance that prints 0.00 is "Balanced". Notes sit at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
-{% comment %}"Effective precipitation" (CalculationRun.effective_precip_af). Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
+{% comment %}Dashboard: the heading "Water balance", the row "Total", the empty-site line, the over-budget count, the Remaining pop-out and the fields-table pop-out are approved sentences. A balance that prints 0.00 is "Balanced".{% endcomment %}
+{% comment %}"Effective precipitation" (CalculationRun.effective_precip_af).{% endcomment %}
 {% comment %}The Balance pop-out on the Water year page.{% endcomment %}

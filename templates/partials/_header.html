@@ -15,7 +15,7 @@
 
         {% if user.is_authenticated %}
         {% comment %}
-          Global search (E2): spans the record types this deployment actually
+          Global search: spans the record types this deployment actually
           has. `config/views.py::_search_groups` gates parcels, wells, surface
           diversions, monitoring stations and accounts on `is_enabled`, and
           always searches zones; the results dropdown links straight to each

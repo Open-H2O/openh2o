@@ -31,11 +31,8 @@ def _fmt(value, places=4):
 def _mm_to_in(mm):
     """Convert a millimeter breakdown value to inches (÷25.4), or None if missing.
 
-    Kept out of a template filter on purpose (DESIGN.md rule 10): a new
-    `floatformat` site would renumber the accounting figure ledger, and this
-    conversion feeds a derivation sentence in `_step_detail_summary`, not a
-    figure of its own. The ledger already covers the mm and AF figures this
-    sentence is built from.
+    Kept out of a template filter on purpose: this conversion feeds a
+    derivation sentence in `_step_detail_summary`, not a figure of its own.
     """
     if mm is None or mm == "":
         return None
@@ -175,8 +172,7 @@ def _over_delivery_left_af(run):
 def _over_delivery_share_pct(run):
     """The stamped leave-behind share, as a percent number for the
     template's own ``floatformat:0`` (never a pre-formatted string, so the
-    figure ledger can trace the site the same way it traces every other
-    number on this page)."""
+    share is formatted the same way as every other number on this page)."""
     if run.over_delivery_leave_behind is None:
         return None
     return run.over_delivery_leave_behind * 100

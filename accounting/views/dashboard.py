@@ -74,7 +74,7 @@ def _account_rollup(
 ) -> dict[str, object]:
     """The active-account rows and the grand totals and counts rolled up from them."""
     account_summaries = []
-    # v1.10 lens: the grand totals roll up ESTIMATED CONSUMPTIVE USE (gross ET) as
+    # The grand totals roll up ESTIMATED CONSUMPTIVE USE (gross ET) as
     # the demand line and the three SUPPLIES that met it (surface + groundwater +
     # precip). grand_consumptive_use replaces the old grand_usage (which only ever
     # counted groundwater); grand_supply_total replaces grand_supply.
@@ -379,7 +379,7 @@ def dashboard(request):
     )
     unmet_demand_count = len(unmet_demand_rows)
 
-    # "What needs attention" strip (E1): three exception counts a returning admin
+    # "What needs attention" strip: three exception counts a returning admin
     # should see at a glance, each derived from data the dashboard already has.
     # Lives inside the HTMX-swapped content so the period-dependent over-budget
     # count refreshes when the period selector changes.

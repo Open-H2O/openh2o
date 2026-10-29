@@ -895,7 +895,7 @@ class SamplingSchedule(models.Model):
     adds a month to ``last_done``, because the schedule is the one the state
     set for the system and the operator keeps, and a software-computed date
     that disagreed with it would be a second, wrong schedule. The product
-    holds a schedule (the memo's J11).
+    holds a schedule.
 
     A row names what is sampled either by ``analyte`` (the platform's own
     vocabulary) or by ``group_label`` (coliform, a siting plan, anything the

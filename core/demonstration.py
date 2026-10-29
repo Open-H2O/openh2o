@@ -176,7 +176,6 @@ CONTENT_LABELS = [
 #: they are.
 REFERENCE_LABELS = [
     "accounting.WaterType",
-    "core.Role",
     "datasync.DataSource",
     "drinking.Analyte",
     "drinking.RegulatoryLimit",
@@ -191,7 +190,6 @@ REFERENCE_LABELS = [
 #: People, settings and the site's health: never part of a load or a removal.
 KEPT_LABELS = [
     "core.User",
-    "core.UserRole",
     "core.SiteConfig",
     "health.HealthCheckResult",
     "feedback.Feedback",

@@ -8,9 +8,9 @@ when standing up an instance so the report types are available to generate.
 **Each row is gated on the module whose water it describes**. GEARS is
 a groundwater filing and belongs to ``wells``; CalWATRS is a surface-water filing
 and belongs to ``surface``. A deployment that does not run a domain is not
-offered its filings -- before v2.4 an agency with no surface water was seeded two
-CalWATRS templates anyway and invited to prepare a filing it could not make. The
-owner mapping is ``reporting.report_types.REPORT_TYPE_OWNER``, which the generate
+offered its filings: seeding every template regardless would give an agency with no
+surface water two CalWATRS templates and invite it to prepare a filing it could not
+make. The owner mapping is ``reporting.report_types.REPORT_TYPE_OWNER``, which the generate
 form reads too; it is not restated here.
 
 **The GEARS half of this gate withholds when ``wells`` is switched off.**

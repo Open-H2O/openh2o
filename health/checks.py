@@ -1367,8 +1367,7 @@ def _latest_calculation_card(last) -> dict:
 
 BACKUP_STALE_AFTER = timedelta(hours=36)
 
-# The line every card the organization cannot fix itself ends with (Brent,
-# 2026-10-16, Site health message C row 9).
+# The line every card the organization cannot fix itself ends with.
 _HAND_OFF = (
     "Pass this card to the AI that maintains the site; the fix is in "
     "OpenH2O's operator guide."

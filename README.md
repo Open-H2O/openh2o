@@ -49,7 +49,7 @@ proves the address belongs to the site. A site that only people inside the
 building can reach can run without either.
 
 <!-- defines: docker -->
-Each path normally uses Docker, and each can also be done without it. OpenH2O
+Each path normally uses Docker. A site that only this computer or the office network reaches can also be done without it. OpenH2O
 ships as three *containers*. A container is a sealed package that holds one part
 of the program and everything that part needs, and it runs the same way on any
 computer. Docker is the program that builds and runs containers. Without Docker,
@@ -130,7 +130,7 @@ can install OpenH2O and then keep running the site and explaining it to the staf
   such as a county assessor's parcel export, a set of spreadsheets or an export
   from an old system. The agent works out how your columns match OpenH2O's
   importers and loads the records. Most of the import tools accept your own column
-  names, and each checks a file in a dry run or a preview before writing anything.
+  names, and each can check a file in a dry run or a preview before writing anything.
   `import_parcels` holds the file in a staging table and stops without importing when
   an outline cannot be read or a parcel cannot be saved; the other imports save each row
   that passes their checks and list the rows they refused. See
@@ -148,15 +148,15 @@ installation and through each of these jobs.
 
 ## What it looks like
 
-These screenshots are from the live demo at [openh2o.com](https://openh2o.com),
-which runs the demonstration data. Invented sample data carries a *Demo* label
+These screenshots show the demonstration data, the same records the live demo at
+[openh2o.com](https://openh2o.com) runs. Invented sample data carries a *Demo* label
 and appears beside the real published records.
 
 **The dashboard** shows the water balance for the water year: supplies by source,
 uses (crop ET from OpenET's satellite estimate and pumped water not consumed), the balance between them, and how many
 accounts are in surplus or in deficit.
 
-![The OpenH2O dashboard for water year 2025-2026, showing supplies of 15,173.16 acre-feet by source, crop ET of 16,209.28 acre-feet and a balance of -1,036.12 acre-feet](docs/screenshots/dashboard.png)
+![The OpenH2O dashboard for water year 2025-2026, showing supplies of 15,846.63 acre-feet by source, uses of 17,515.96 acre-feet (crop ET of 16,209.28 plus pumped water not consumed of 1,306.68) and a balance of -1,669.32 acre-feet](docs/screenshots/dashboard.png)
 
 **The map** shows the boundary, management areas, surface service areas, rivers
 and canals, points of diversion, use areas, wells, recharge sites and
@@ -212,7 +212,7 @@ platform, the registry and the crosswalk are the parts you can reuse directly.
 <!-- defines: cron -->
 <!-- defines: docker_compose -->
 **Caddy** is a *reverse proxy*: a program that receives traffic from outside and
-passes it to OpenH2O. Caddy also obtains the encryption certificate automatically.
+passes it to OpenH2O. Caddy also obtains the encryption certificate automatically once `OPENH2O_SITE_ADDRESS` names the site's domain.
 ***cron*** is Linux's built-in scheduler, which runs commands on a timetable, such
 as every night at 2 a.m. **Docker Compose** is a tool installed with Docker that
 starts, stops and rebuilds all three containers together from one file,

@@ -146,8 +146,8 @@ class WaterAccount(models.Model):
     # exist in every configuration and the reference cannot dangle. Declaring
     # `wells` in `accounting.requires` would force every accounting deployment
     # to carry the Wells module (shape 1 has `accounting` and `surface` with
-    # no `wells` at all), which is exactly the assumption this milestone
-    # exists to remove -- so this arrow is a SCHEMA_EXCEPTIONS record instead,
+    # no `wells` at all), which is exactly the single-agency-type
+    # assumption the platform is built to avoid -- so this arrow is a SCHEMA_EXCEPTIONS record instead,
     # the same shape as `drinking.SystemFacility.well`.
     delivery_well = models.ForeignKey(
         "wells.Well",

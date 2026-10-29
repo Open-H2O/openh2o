@@ -25,9 +25,13 @@ from ``config/settings/base.py``, so it must never touch the app registry —
 doing so deadlocks app loading. This file needs the live registry, so it can
 only ever live on this side of the line.
 
-The nine tolerated violations are ``core.modules.SCHEMA_EXCEPTIONS``. A tenth
-fails here. So does an exception record that no longer describes real code: the
-allowlist can never quietly outlive the thing it excused.
+The ten tolerated relationships are ``core.modules.SCHEMA_EXCEPTIONS``. An
+eleventh fails here. So does an exception record that no longer describes real
+code: the allowlist can never quietly outlive the thing it excused.
+
+An undeclared relation passes when a record excuses it, so rule 2 is checked
+together with the records and not on its own. Six of the ten start from a
+module everybody gets (rule 1); four join two optional modules.
 """
 
 from pathlib import Path

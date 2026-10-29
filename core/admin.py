@@ -3,7 +3,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from .models import Role, SiteConfig, User, UserRole
+from .models import SiteConfig, User
 
 
 @admin.register(User)
@@ -13,19 +13,6 @@ class UserAdmin(BaseUserAdmin):
     fieldsets = BaseUserAdmin.fieldsets + (
         ("Role and contact", {"fields": ("agency_admin", "read_only", "phone", "title")}),
     )
-
-
-@admin.register(Role)
-class RoleAdmin(admin.ModelAdmin):
-    list_display = ["name", "description"]
-    search_fields = ["name"]
-
-
-@admin.register(UserRole)
-class UserRoleAdmin(admin.ModelAdmin):
-    list_display = ["user", "role"]
-    list_filter = ["role"]
-    raw_id_fields = ["user"]
 
 
 @admin.register(SiteConfig)

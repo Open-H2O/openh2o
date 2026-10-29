@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Wire the Plan-01 allocation kernel to real recorded data.
+"""Wire the allocation kernel to real recorded data.
 
-This is the v1.10 capability the platform was missing: an unmetered district
+An unmetered district
 records ONE surface delivery total for a month (a ``DiversionRecord``), but the
 parcels that point of diversion serves grow different crops with different water
 demand. ``allocate_district_delivery`` reads those recorded diversions, finds the

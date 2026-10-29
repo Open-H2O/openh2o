@@ -59,7 +59,7 @@ def box(w, s, e, n):
 
 
 def seed_reference():
-    for cmd in ("seed_roles", "seed_water_types", "seed_well_types", "seed_water_right_types",
+    for cmd in ("seed_water_types", "seed_well_types", "seed_water_right_types",
                 "seed_calculation_plan"):
         out = io.StringIO()
         call_command(cmd, stdout=out)

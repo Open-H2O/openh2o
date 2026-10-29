@@ -83,7 +83,7 @@ def shorthand_in_use(names):
 
     Returns a sorted list of ``(term, meaning)``. Only terms that genuinely
     appear are returned: a page that lists every abbreviation the domain has is
-    a wall, and a wall is what this module exists to remove.
+    a wall, and this module does not build one.
     """
     seen = set()
     for name in names:

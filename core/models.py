@@ -5,8 +5,7 @@ Core models.
 Cross-cutting models shared by every app. User is the custom AUTH_USER_MODEL
 ('core.User') and the home of the two-tier is_administrator access rule;
 SiteConfig holds the single agency's deployment-wide settings,
-including demonstration_mode. Role/UserRole are a deprecated, dormant RBAC
-scheme kept only to avoid a destructive migration — do not build on them.
+including demonstration_mode.
 """
 from decimal import Decimal
 
@@ -86,29 +85,6 @@ class User(AbstractUser):
         the switch-aware decorator that enforces this.
         """
         return bool(self.is_active and (self.is_staff or self.agency_admin))
-
-
-# DEPRECATED: superseded by the two-tier agency_admin access model
-# (see User.is_administrator + core.access). Role/UserRole are a dormant RBAC
-# scheme that gated nothing; retained only to avoid a destructive migration.
-# Safe to remove in a later cleanup phase. Do NOT build on these.
-class Role(models.Model):
-    name = models.CharField(max_length=50, unique=True)
-    description = models.TextField(blank=True)
-
-    def __str__(self):
-        return self.name
-
-
-class UserRole(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_roles")
-    role = models.ForeignKey(Role, on_delete=models.CASCADE, related_name="user_roles")
-
-    class Meta:
-        unique_together = ("user", "role")
-
-    def __str__(self):
-        return f"{self.user} - {self.role}"
 
 
 @track_changes()
@@ -233,22 +209,21 @@ class SiteConfig(models.Model):
         choices=DIVERSION_USE_TYPE_RULE_CHOICES,
         default="drop",
         help_text="What a USE row in the state's Water Use Reported file "
-        "means here (the memo's J3).",
+        "means here.",
     )
     diversion_report_year_rule = models.CharField(
         max_length=20,
         choices=DIVERSION_REPORT_YEAR_RULE_CHOICES,
         default="water_year",
         help_text="How a YEAR and MONTH in the state's Water Use Reported "
-        "file become a calendar month (the memo's J6 and M2).",
+        "file become a calendar month.",
     )
     season_start_month = models.IntegerField(
         null=True,
         blank=True,
         validators=[MinValueValidator(1), MaxValueValidator(12)],
         help_text="The month (1-12) this deployment's irrigation season "
-        "starts. Used only when the report year rule above is a season "
-        "(the memo's J6).",
+        "starts. Used only when the report year rule above is a season.",
     )
 
     # --- Water year ---

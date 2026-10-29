@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Refresh the Merced demo's ACCOUNTING layer under the corrected v1.10 model.
+"""Refresh the Merced demo's ACCOUNTING layer under the corrected model.
 
 WHY this command exists — the ordering trap. The accounting model is built
 around estimated consumptive use: net consumptive use (gross ET minus
@@ -56,7 +56,7 @@ Idempotent: every underlying command is delete-then-insert, so re-running this
 sequence reproduces the same end state. The Merced demo's prior water year
 (``WY 2024-2025``) is FINALIZED, so ``run_calculations`` is invoked with
 ``--force`` — this command deliberately recomputes the in-development demo's
-figures (the v1.9/v1.10 demo is framed as not-yet-submittable).
+figures (the demo is framed as not-yet-submittable).
 """
 
 from django.core.management import call_command

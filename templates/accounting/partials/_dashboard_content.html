@@ -72,8 +72,7 @@
         {% comment %}
           The parts of this figure are its coverage, as on the account
           page -- how many of the active accounts the estimate reaches, and
-          the calculation runs the sum came from. Counts, not figures: no
-          new formatted-number site, so the figure ledger's ids hold. The cell
+          the calculation runs the sum came from. Counts, not figures. The cell
           would stop at its caption beside a Supplies cell three lines taller.
         {% endcomment %}
         {% if not engine_has_never_run %}
@@ -408,6 +407,6 @@
   here would be invisible to any deployment that does not do groundwater accounting.
   See the block there.
 {% endcomment %}
-{% comment %}Dashboard: the heading "Water balance", the row "Total", the empty-site line, the over-budget count, the Remaining pop-out and the fields-table pop-out are approved sentences. A balance that prints 0.00 is "Balanced". Notes sit at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
-{% comment %}"Effective precipitation" (CalculationRun.effective_precip_af). Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
-{% comment %}The zones table's "Added" column. The column is zone_carryover, the groundwater year-end carry-over alone; the zone page lists the recharge and seepage pools apart from it. Note at the end of the file so the figure ledger's line numbers stand.{% endcomment %}
+{% comment %}Dashboard: the heading "Water balance", the row "Total", the empty-site line, the over-budget count, the Remaining pop-out and the fields-table pop-out are approved sentences. A balance that prints 0.00 is "Balanced".{% endcomment %}
+{% comment %}"Effective precipitation" (CalculationRun.effective_precip_af).{% endcomment %}
+{% comment %}The zones table's "Added" column. The column is zone_carryover, the groundwater year-end carry-over alone; the zone page lists the recharge and seepage pools apart from it.{% endcomment %}

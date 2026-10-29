@@ -4,8 +4,7 @@
 A deliberately small Users area so non-technical district staff never have to
 touch the developer-facing Django back-end (/admin/). It manages exactly two
 things per user -- a role of three (administrator, operator or viewer)
-and active-or-not -- not a general RBAC scheme (the dormant Role/UserRole
-models are DEPRECATED; see core.models).
+and active-or-not -- not a general RBAC scheme.
 
 Every view stacks @login_required + @admin_required, so the whole area rides the
 same ACCESS_CONTROL_ENFORCED master switch as the rest of access control: invisible

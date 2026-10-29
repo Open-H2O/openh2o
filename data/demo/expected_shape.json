@@ -139,11 +139,6 @@
       "tolerance": 0,
       "reason": "Reference data from seed_data: the water types the accounting engine apportions across. Production carries the same 6."
     },
-    "core.Role": {
-      "expected": 3,
-      "tolerance": 0,
-      "reason": "Reference data from seed_roles. Roles are structure; the users that would hold them are deliberately absent."
-    },
     "core.SiteConfig": {
       "expected": 1,
       "tolerance": 0,
@@ -163,11 +158,6 @@
       "expected": 0,
       "tolerance": 0,
       "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
-    },
-    "core.UserRole": {
-      "expected": 0,
-      "tolerance": 0,
-      "reason": "Follows core.User. A role assignment cannot exist without a user to assign it to, so any non-zero count here means the same leak."
     },
     "datasync.DataRecordStaging": {
       "expected": 30217,

@@ -25,15 +25,13 @@ Two layouts, recognised by header (``recognise_layout``):
   ``local_name``), a month source (``date``, first of its month, or
   ``month``), and either a volume-ish column (``volume``, ``acre_feet``,
   ``af``) or, absent that, ``flow_cfs`` and ``hours`` together (rate times
-  duration, 1.9835 acre-feet per cfs-day, M... the memo's own conversion
-  block). ``acre_feet``/``af`` are already acre-feet and need no factor
+  duration, 1.9835 acre-feet per cfs-day). ``acre_feet``/``af`` are already acre-feet and need no factor
   named; ``volume`` needs a paired ``unit`` column (af / gallons / gal /
   ccf / mg / cfs_hours) to know which factor applies.
 
 Conversions named on every row that needed one: gallons to acre-feet at
 325,851 gallons per acre-foot; CCF to gallons at 748.05; MG at 1,000,000
-gallons; cfs-hours to acre-feet at 1.9835 acre-feet per cfs-day (the memo's
-M1 and M7).
+gallons; cfs-hours to acre-feet at 1.9835 acre-feet per cfs-day.
 
 Rules enforced here, in order:
 
@@ -115,7 +113,7 @@ _STATE_REQUIRED = {"APPL_ID", "YEAR", "MONTH", "DIVERSION_TYPE", "AMOUNT"}
 _POINT_COLUMNS = ("local_name", "headgate", "point", "name")
 _VOLUME_COLUMNS = ("acre_feet", "af")
 
-#: M1, M7: the memo's own conversion factors, named on every row that uses
+#: The conversion factors, named on every row that uses
 #: them so a reader never has to trust an unlabeled number.
 GALLONS_PER_ACRE_FOOT = Decimal("325851")
 GALLONS_PER_CCF = Decimal("748.05")

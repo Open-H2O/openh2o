@@ -32,27 +32,6 @@ class TestSeedData:
         call_command("seed_data", stdout=StringIO())
 
 
-class TestSeedRoles:
-    def test_seed_roles_runs_without_error(self):
-        out = StringIO()
-        call_command("seed_roles", stdout=out)
-
-    def test_seed_roles_creates_roles(self):
-        from core.models import Role
-
-        call_command("seed_roles", stdout=StringIO())
-        assert Role.objects.exists()
-
-    def test_seed_roles_idempotent(self):
-        from core.models import Role
-
-        call_command("seed_roles", stdout=StringIO())
-        count_before = Role.objects.count()
-        call_command("seed_roles", stdout=StringIO())
-        count_after = Role.objects.count()
-        assert count_before == count_after
-
-
 class TestSeedWaterTypes:
     def test_seed_water_types_runs_without_error(self):
         out = StringIO()

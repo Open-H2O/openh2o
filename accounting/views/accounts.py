@@ -380,7 +380,7 @@ def _account_detail_context(account, period_param=None):
     periods = ReportingPeriod.objects.order_by("-start_date")
     selected_period = _detail_selected_period(periods, period_param, acct_parcel_ids)
 
-    # Account-level balance, in the corrected v1.10 lens: estimated consumptive
+    # Account-level balance, as estimated consumptive
     # use (gross ET) against the surface / groundwater / precip supplies that met
     # it. account_consumptive_balance selects the SAME active assignments
     # account_balance did, so the roll-up partitions identically.

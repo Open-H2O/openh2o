@@ -3,10 +3,9 @@
 
 A GEARS filing reports groundwater extraction, so it only means anything in a
 deployment that runs ``wells``. A CalWATRS filing reports surface diversions, so
-it only means anything in a deployment that runs ``surface``. Before v2.4 the
-platform said neither out loud, and a deployment with no surface water was still
-seeded two CalWATRS templates and still offered a Generate button for them
-(measured on a deployment without ``surface``).
+it only means anything in a deployment that runs ``surface``. Without this
+mapping a deployment with no surface water would be seeded two CalWATRS
+templates and offered a Generate button for them.
 
 **This mapping lives here and nowhere else.** The seed command and the generate
 form both read it. A second copy could drift, and a drifted copy is worse than

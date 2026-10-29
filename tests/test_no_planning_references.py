@@ -22,7 +22,16 @@ and the README files under data/) for five shapes:
   ``-EVIDENCE`` in it. These files are the maintainer's private record, not
   part of the repository;
 - a review row: ``R-`` and three digits, or ``F-<word>-<digits>``, the row
-  numbers of review registers that are not in the repository.
+  numbers of review registers that are not in the repository;
+- a version tag standing for a past release: ``v2.4`` or ``v1.10`` beside
+  "lens", "model", "capability" or "exists to remove", after "before", "until"
+  or "corrected", or in a pair such as ``v1.9/v1.10``; and the words "exists to
+  remove" on their own, which point at a plan's goal;
+- a labelled item of a plan: ``(E1)`` and the like;
+- the name of a planning document: "the memo's" and "figure ledger";
+- a first name in a comment: "Brent" (the author lines in ``NOTICE``,
+  ``pyproject.toml`` and ``templates/about.html`` stay, and the first two are
+  not scanned).
 
 ``Phase 2`` and other single-digit phases are the AI operator guide's own
 steps (docs/AI-OPERATOR-GUIDE.md) and do not match. ``tests/`` and the
@@ -46,7 +55,19 @@ PATTERNS = {
         r"\bISSUES\.md\b|\bSTATE\.md\b|\bRESUME\.md\b|-(PLAN|SUMMARY|DISCOVERY|RESEARCH|EVIDENCE)\b"
     ),
     "review row": re.compile(r"\bR-\d{3}\b|\bF-[a-z]+-\d+\b"),
+    "version tag": re.compile(
+        r"\bv\d+\.\d+(/v\d+\.\d+)? (lens|model|capability)\b"
+        r"|\b(before|until|corrected) v\d+\.\d+\b"
+        r"|\bv\d+\.\d+/v\d+\.\d+\b"
+        r"|\bexists to remove\b"
+    ),
+    "plan label": re.compile(r"\(E\d\)"),
+    "planning document": re.compile(r"\bthe memo\b|\bmemo's\b|\bfigure ledger\b", re.IGNORECASE),
+    "first name": re.compile(r"\bBrent\b"),
 }
+
+# Files whose author line is meant to stay.
+AUTHOR_LINE_FILES = {"templates/about.html"}
 
 SUFFIXES = {".py", ".html", ".js", ".css", ".sh"}
 NAMED_FILES = {"Makefile", "docker-compose.yml", "entrypoint.sh", "Dockerfile", "Caddyfile", "crontab.txt"}
@@ -73,7 +94,7 @@ def _scanned_files():
         if any(part in SKIP_DIRS for part in rel.parts[:-1]):
             continue
         name = rel.as_posix()
-        if name in SKIP_FILES:
+        if name in SKIP_FILES or name in AUTHOR_LINE_FILES:
             continue
         if (
             path.suffix in SUFFIXES

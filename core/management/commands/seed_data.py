@@ -2,7 +2,7 @@
 """Umbrella management command that runs every reference-data seed command.
 
 An operator runs it once during setup to load all baseline lookup tables in
-order (roles, the observed-property crosswalk, water types, water-right types,
+order (the observed-property crosswalk, water types, water-right types,
 well types, data sources, report templates); each underlying command is
 idempotent, so re-running is safe.
 """
@@ -12,7 +12,6 @@ from django.core.management.base import BaseCommand
 from core.modules import is_enabled
 
 SEED_COMMANDS = [
-    "seed_roles",
     # The standards crosswalk — the "born-compliant" claim the README makes, and
     # until now the one seed nothing ran. Not `seed_data`, not `seed_merced`, not
     # the Makefile, not DEPLOY.md: only the test suite called it. An adopter who
@@ -45,7 +44,7 @@ OPTIONAL_SEED_COMMANDS = [
     # same quiet kind.
     #
     # The schema-resident commands are listed first so the resolved order on a
-    # full deployment is: roles, water types, well types, data sources, then
+    # full deployment is: the observed-property crosswalk, water types, well types, data sources, then
     # the commands below.
     #
     # `parcels` declares NO seed command (`MODULE_REGISTRY["parcels"].seed_commands`

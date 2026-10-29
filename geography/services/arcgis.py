@@ -94,7 +94,7 @@ class ArcGISTraversalError(RuntimeError):
     The hint is attached ONLY where resuming can actually help — an exhausted
     retry budget. A non-retryable error code means the query itself is wrong, so
     resuming would fail in exactly the same place; promising otherwise would be
-    the same kind of false promise this phase exists to remove.
+    a false promise.
     """
 
     def __init__(self, message: str, last_oid: int | None = None) -> None:

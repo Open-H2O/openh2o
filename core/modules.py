@@ -30,7 +30,7 @@ The composition rule
 --------------------
 
 OpenH2O only keeps its promise — run the domains you have, leave the rest out —
-if the code respects two constraints. Until v2.4 neither was written down
+if the code respects two constraints. Neither used to be written down
 anywhere, which is exactly how eight of them came to be broken by people each
 doing something perfectly reasonable:
 
@@ -50,10 +50,13 @@ has already missed a reverse accessor and a multi-line field declaration in this
 codebase. That test lives in ``tests/`` rather than here precisely
 because it needs the live registry, which this file must never touch.
 
-The ten pre-existing violations are tolerated only as the written, reasoned
-records in ``SCHEMA_EXCEPTIONS`` below. The tripwire fails on an eleventh, and
-equally on an exception record that has outlived the code it excused, so the
-allowlist can never quietly become fiction.
+Ten pre-existing relationships are tolerated only as the written, reasoned
+records in ``SCHEMA_EXCEPTIONS`` below. Six of them break rule 1: a module
+everybody gets points at an optional one. The other four join two optional
+modules, so only rule 2 applies to them; two of those four are declared in
+``requires`` as well. The tripwire fails on an eleventh, and equally on an
+exception record that has outlived the code it excused, so the allowlist can
+never quietly become fiction.
 
 Two independent axes
 --------------------
@@ -409,7 +412,6 @@ MODULE_REGISTRY: dict = {
                 visibility=VISIBILITY_AGENCY_ADMIN,
             ),
         ),
-        seed_commands=("seed_roles",),
         # AUTH_USER_MODEL = 'core.User'. Disabling core is not a configuration,
         # it is a broken install.
         required=True,
@@ -520,7 +522,7 @@ MODULE_REGISTRY: dict = {
         ),
         seed_commands=("seed_well_types",),
         # `parcels` for WellIrrigatedParcel.parcel, `measurements` for
-        # WellMeter.meter — both measured, both undeclared before v2.4.
+        # WellMeter.meter — both measured, and both were once undeclared.
         requires=("geography", "parcels", "measurements"),
         # Optional but schema-resident (demoted model-only, not removed).
         # Module-scope imports are not the barrier: `manage.py check` is clean
@@ -1045,10 +1047,13 @@ SCHEMA_PRESENT_MODULE_NAMES: tuple = tuple(
 
 
 # -- The tolerated backwards arrows ------------------------------------------
-# Nine relationships run the wrong way: a module a deployment always gets holds
-# a database reference into a module that is meant to be optional. Every one was
-# added by someone doing something reasonable, with no rule to stop them — which
-# is the whole reason rule 1 in the module docstring now exists.
+# Ten relationships are tolerated. Six run the wrong way: a module a deployment
+# always gets holds a database reference into a module that is meant to be
+# optional. The other four join two optional modules, where a missing
+# `requires` entry is the only thing wrong; two of the four are declared and
+# two are not. Every one was added by someone doing something reasonable, with
+# no rule to stop them — which is the whole reason the rules in the module
+# docstring now exist.
 #
 # They are not being turned around. Each record says why, and prices the
 # reversal so a future decision is made on numbers rather than vibes. The
@@ -1197,7 +1202,7 @@ SCHEMA_EXCEPTIONS: tuple = (
             "arrow has to be tolerated rather than declared, because declaring "
             "it in `requires` would force every drinking-water deployment to "
             "carry a groundwater section it may never use — which is exactly "
-            "the assumption v2.4 exists to remove."
+            "the single-agency-type assumption the platform is built to avoid."
         ),
         reversing_it=(
             "A wells.WellFacility link table plus a data migration over the "
@@ -1236,7 +1241,7 @@ SCHEMA_EXCEPTIONS: tuple = (
             "in accounting.requires instead would force every accounting "
             "deployment to carry the Wells module (shape 1 runs accounting "
             "and surface with no wells at all), which is exactly the "
-            "single-agency-type assumption v2.4 exists to remove; the same "
+            "single-agency-type assumption the platform is built to avoid; the same "
             "reasoning drinking.SystemFacility.well already stands on."
         ),
         reversing_it=(

@@ -121,7 +121,7 @@ def _describe(facility):
     # EPA's name is often just the type again ("DISTRIBUTION SYSTEM" on a
     # facility already typed Distribution System). Showing both produced the
     # heading "Distribution System — DISTRIBUTION SYSTEM", which is the exact
-    # code-soup this rewrite exists to remove. Applied to the facility select's
+    # code-soup this function avoids. Applied to the facility select's
     # option text too, the one other place this heading shape
     # is built.
     label = (facility.get_facility_type_display() or "").strip().lower()

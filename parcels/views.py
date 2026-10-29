@@ -213,7 +213,7 @@ def _parcel_detail_context(parcel, period_id=None):
     all_periods = list(ReportingPeriod.objects.order_by("-start_date"))
     balance_period = _balance_period(parcel, all_periods, period_id)
 
-    # The corrected v1.10 lens + the closing identity, both
+    # The consumptive-use balance + the closing identity, both
     # read from the same source fields so the card is internally consistent.
     consumptive_balance = parcel_consumptive_balance(parcel, balance_period)
     mass_balance = parcel_mass_balance(parcel, balance_period)
