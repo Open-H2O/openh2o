@@ -77,10 +77,12 @@ gcloud config set project my-openh2o
 gcloud billing accounts list
 gcloud billing projects link my-openh2o --billing-account=XXXXXX-XXXXXX-XXXXXX
 
-# Enable the Earth Engine API and (used by some export paths) the Drive API
+# Enable the Earth Engine API
 gcloud services enable earthengine.googleapis.com
-gcloud services enable drive.googleapis.com
 ```
+
+Only `scripts/benchmarks/gee_eecu_bench.py` needs the Drive API. To run that script,
+also run `gcloud services enable drive.googleapis.com`.
 
 ### 2. Register the project for Earth Engine in the browser
 
@@ -161,8 +163,9 @@ signs in to Google without a browser and prints ET for five parcels:
 docker compose exec web python manage.py prove_gee_auth --limit 5
 ```
 
-If the command prints a table of ET and no sign-in error, the Earth Engine tier is
-working. To go back to the API-key tier, set `OPENET_MODE=api` and restart the web
+If the command prints a table of ET and no sign-in error, the key and the project
+work. The command does not read `OPENET_MODE`. Once the tier is on, the first line
+`sync_openet_parcels` prints reads `OPENET_MODE=gee -> GEEOpenETAdapter`. To go back to the API-key tier, set `OPENET_MODE=api` and restart the web
 container.
 
 ### 5. Get ET for every parcel

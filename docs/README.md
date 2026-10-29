@@ -11,7 +11,7 @@ OpenH2O is, [DEPLOY.md](../DEPLOY.md) how to run it and
 |---|---|
 | [AI-OPERATOR-GUIDE.md](AI-OPERATOR-GUIDE.md) | Takes an AI agent from a bare server to a running site with demonstration data. Start here if an agent is doing the installation. |
 | [DATA-IMPORT.md](DATA-IMPORT.md) | How to load an organization's existing records. |
-| [DATA-STANDARDS.md](DATA-STANDARDS.md) | The crosswalk from each source's codes to OpenH2O's measured quantities, and the `check_conformance` check that keeps it complete when you add an adapter. `crosswalk.csv` holds its data. |
+| [DATA-STANDARDS.md](DATA-STANDARDS.md) | The crosswalk from each source's codes to OpenH2O's measured quantities, and the `check_conformance` check, which reports a kind of measurement with no UCUM unit. `crosswalk.csv` holds its data. |
 | [water-budget-terms.md](water-budget-terms.md) | How each of OpenH2O's water quantities lines up with DWR's draft water-budget handbook and the C2VSimFG model's budget columns, and which quantities have no state term. |
 | [INSTALL-WITHOUT-DOCKER.md](INSTALL-WITHOUT-DOCKER.md) | Installing OpenH2O directly on a computer, without Docker. |
 | [earth-engine-tier-setup.md](earth-engine-tier-setup.md) | Setting up the optional Earth Engine tier for satellite ET. |

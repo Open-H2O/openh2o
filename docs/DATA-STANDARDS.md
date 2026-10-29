@@ -118,8 +118,10 @@ they do not compare the result with the MCL.
 python manage.py check_conformance
 ```
 
-The command exits with an error when a kind of measurement has no UCUM unit or a
-source code maps to no key, so a script can stop on either gap. It also lists the
+The command exits with an error when a kind of measurement has no UCUM unit, so a
+script can stop on that gap. A source code that maps to no key is not caught here: the
+seed command, `seed_observed_properties`, prints a warning for each one, and
+`tests/test_standards_registry.py` fails. The check also lists the
 kinds of measurement that have no USGS code, and it counts the stored measurements
 that are linked to no kind of measurement. Neither of those reports makes the
 command exit with an error. Nothing runs the command automatically. Run it by hand

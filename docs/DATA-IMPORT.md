@@ -105,8 +105,9 @@ docker compose exec web python manage.py import_parcels /tmp/parcels.geojson
 
 The command reads every feature into a holding table first, then adds the new
 parcels to the site. A parcel whose APN is already on the site is skipped. When a
-feature's outline cannot be read, the command names the feature and stops without
-importing any of the file's parcels. If any parcel cannot be added, the command stops
+feature has no APN, the command skips that feature, counts it as an error and imports
+the rest of the file. When a feature's outline cannot be read, the command names the
+feature and stops without importing any of the file's parcels. If any parcel cannot be added, the command stops
 without adding any and names the ones it refused.
 
 ### Wells: `import_wells`
@@ -148,8 +149,9 @@ and the command names it. Pass `--skip-duplicates` to skip such rows instead.
 
 The Wells, Surface Diversions and Recharge sites pages each have an Import button,
 and all three open the same import screen (`/infrastructure/import/?type=well`,
-`diversion` or `recharge_site`). Storage ponds have no Import button, so open
-`/infrastructure/import/?type=storage` directly. The screen reads a CSV file, a
+`diversion` or `recharge_site`). Each import screen links to the others under
+"Importing something else?", so the storage pond import
+(`/infrastructure/import/?type=storage`) is one link away when the recharge module is on. The screen reads a CSV file, a
 GeoJSON file, a zipped shapefile or a KML file of up to 500 rows and 25 MB. A mapping
 step shows the column OpenH2O matched to each field, and you can change any match
 before you import.
@@ -161,8 +163,11 @@ For a well, it also reads tested yield, casing material, the top and bottom of t
 well screen, pump type and measurement method. For a point of diversion, it reads
 the stream name, the local name, the maximum rate, the water right (`APPL_ID`) and
 the parcel the point serves. For a recharge site, it reads the site type, the
-capacity in acre-feet and the operator. The mapping step lists every field for the
-type you chose.
+capacity in acre-feet and the operator. Before you upload, the screen lists each
+column it reads for the type you chose, and which are required: a name, and either a
+latitude and a longitude or a geometry. The mapping step then lists every field for
+that type. A file with no site type column saves each recharge site row as a spreading
+basin and each storage pond row as a storage pond.
 
 Unlike `import_wells`, the screen refuses a row whose name is already on the site or
 appears twice in the file. A point of diversion that names a water right needs that
@@ -222,14 +227,15 @@ each row it converted.
 The report-year setting is on the Delivery Settings page, under Diversion records.
 When a Water Use Reported file has no `calendar_month` column, OpenH2O uses the
 setting to find the calendar year of each month. The report year can be a water
-year from October to September, whatever month the site's own water year starts in, a calendar year, or a season that starts in a month you choose.
+year from October to September, a calendar year, or a season that starts in a month you choose. The water year choice always runs October to September, whatever month the site's own water year starts in.
 
 When a file has rows of the type `USE`, the import screen asks how to handle them,
 and the mapping step shows how many there are. The choices are:
 
 - leave them out;
 - record as water returned the amount by which each `USE` row exceeds the matching
-  `DIRECT` row;
+  `DIRECT` row, never more than that `DIRECT` row's volume. A `USE` row with no matching
+  `DIRECT` row for its point and month is refused;
 - import them as direct diversions.
 
 OpenH2O keeps your answer and offers it again the next time a file has `USE` rows.
@@ -326,7 +332,9 @@ California, so upload only the rows for the water systems on your site.
 OpenH2O recognizes the Division of Drinking Water's column headings, such as
 `PS Code`, `Sample Date`, `Analyte Code` and `Result`, and several headings that
 commercial labs use instead. OpenH2O imports a row when it has a PS Code, a sample
-date, an analyte and a result. A row with a blank result is imported as a
+date, an Analyte Name and a result. A row with an Analyte Code and no Analyte Name is a
+row error. A row that repeats a result already on file, or an earlier row of the same
+file, is skipped and counted as a duplicate. A row with a blank result is imported as a
 non-detect when its "Less than reporting level" column is marked and it gives a
 reporting level.
 

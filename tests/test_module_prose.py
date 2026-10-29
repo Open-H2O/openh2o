@@ -269,7 +269,7 @@ class TestRenderedPages:
 
         settings.OPENH2O_MODULES = NINE_MODULE_DRINKING
         drinking = admin_client.get("/help/getting-started/").content.decode()
-        assert "The Setup Wizard needs a boundary, which is the outline of the land your records cover." in drinking
+        assert "The Setup Wizard&rsquo;s populate step needs a boundary, which is the outline of the land your records cover." in drinking
         assert "the wizard brings in the groundwater subbasins and streams inside it and nearby." in drinking
         assert "Run the wizard before Step 2, because it does part of that step." in drinking
 
