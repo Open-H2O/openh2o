@@ -11,14 +11,41 @@ to accidentally publish the software pre-loaded with sample data. Operators can
 also run it locally (`make verify-clean`) to confirm a deployment is pristine
 before they start entering real data.
 
-Exit code 1 (CommandError) if any content is found; 0 if clean.
+Exit code 1 (CommandError) if any content is found, or if a module that is on has
+an empty reference table; 0 if clean.
 """
 
+from django.apps import apps
 from django.core.management.base import BaseCommand, CommandError
 
 from core import demonstration
 from core.models import SiteConfig
-from datasync.models import DataSource
+from core.modules import is_enabled
+
+#: The reference table each module's seed command fills, which `seed_data` runs
+#: for every module that is on. A module that is off is not asked for its table,
+#: because its seed command did not run. The standards vocabulary is not a
+#: module a deployment can switch off, so its entry has no owner to check.
+SEED_TABLES = [
+    (None, "standards.ObservedProperty"),
+    ("accounting", "accounting.WaterType"),
+    ("wells", "wells.WellType"),
+    ("datasync", "datasync.DataSource"),
+    ("drinking", "drinking.Analyte"),
+    ("surface", "surface.WaterRightType"),
+    ("reporting", "reporting.ReportTemplate"),
+]
+
+
+def seed_tables():
+    """``[(name, filled)]`` for each reference table an enabled module seeds."""
+    found = []
+    for module, label in SEED_TABLES:
+        if module is not None and not is_enabled(module):
+            continue
+        model = apps.get_model(label)
+        found.append((model._meta.verbose_name, model.objects.exists()))
+    return found
 
 
 class Command(BaseCommand):
@@ -57,19 +84,23 @@ class Command(BaseCommand):
                 "— for a clean install."
             )
 
-        # Positive signal: reference data must actually be present, so a
-        # silently-broken seed_data (zero everything) doesn't masquerade as clean.
-        # seed_data_sources ships the external provider rows the app needs.
-        ref_count = DataSource.objects.count()
-        if ref_count == 0:
+        # Positive signal: every module that is on must have its reference table
+        # filled, so a silently-broken seed_data (zero everything) doesn't
+        # masquerade as clean. A module that is off has no table to fill.
+        tables = seed_tables()
+        empty = [name for name, filled in tables if not filled]
+        if empty:
+            for name in empty:
+                self.stderr.write(self.style.ERROR(f"  - The {name} table is empty."))
             raise CommandError(
-                "No reference data found (zero DataSource rows). "
-                "Run `make seed` before this check — an empty database is broken, not clean."
+                "No reference data found in "
+                f"{len(empty)} table(s). Run `make seed` before this check "
+                "(an empty database is broken, not clean)."
             )
 
         self.stdout.write(
             self.style.SUCCESS(
-                f"Clean-install check PASSED — {ref_count} reference data source(s) loaded, "
-                "no demo/agency content."
+                f"Clean-install check PASSED — reference data loaded in {len(tables)} "
+                "table(s), no demo/agency content."
             )
         )

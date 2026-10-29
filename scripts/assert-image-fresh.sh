@@ -18,6 +18,7 @@
 # digest — which is exactly the drift we want to catch.
 #
 # Exit codes: 0 = in sync; 1 = drift (or the container is not running).
+# `--list` and `--count` print the file set and exit 0 without a container.
 
 set -euo pipefail
 
@@ -25,16 +26,47 @@ COMPOSE="${COMPOSE:-docker compose}"
 
 # The file set that affects test behavior. Restricted to code + fixtures so the
 # guard stays fast and never trips on a generated artifact (output.css, staticfiles).
+#
+# It is the files the image is built from, as the developer has them: tracked
+# files AND files git has not been told about yet (a new file is exactly when
+# the image is stale), minus what .gitignore ignores and minus what the Docker
+# build leaves out (.dockerignore), because a file the image never holds would
+# report a stale image for ever. A .dockerignore pattern is read from the top
+# folder only, so each is anchored with a leading slash before git reads it.
+#
+# `--list` prints the file names and `--count` prints how many, then exit; no
+# container is needed for either.
+#
 # Read into an array with a while-loop rather than `mapfile` — macOS ships bash
 # 3.2, which predates `mapfile`.
+PATTERNS=('*.py' '*.html' '*.tab' '*.csv' '*.txt' '*.json' '*.toml' '*.cfg' '*.ini')
+
+image_excludes="$(mktemp)"
+trap 'rm -f "$image_excludes"' EXIT
+if [ -f .dockerignore ]; then
+  sed -e 's/[[:space:]]*$//' -e '/^#/d' -e '/^$/d' \
+      -e 's|^!/*|!/|' -e 's|^\([^!/]\)|/\1|' -e 's|^/\{2,\}|/|' \
+      .dockerignore > "$image_excludes"
+fi
+
+all_files() {
+  git ls-files --cached --others --exclude-standard -- "${PATTERNS[@]}"
+}
+left_out_of_image() {
+  git ls-files --cached --others --ignored --exclude-from="$image_excludes" -- "${PATTERNS[@]}"
+}
+
 FILES=()
 while IFS= read -r _line; do
-  FILES+=("$_line")
+  [ -f "$_line" ] && FILES+=("$_line")
 done < <(
-  git ls-files -- \
-    '*.py' '*.html' '*.tab' '*.csv' '*.txt' '*.json' '*.toml' '*.cfg' '*.ini' \
-  | sort
+  { all_files; left_out_of_image; left_out_of_image; } | sort | uniq -u
 )
+
+case "${1:-}" in
+  --list)  [ "${#FILES[@]}" -gt 0 ] && printf '%s\n' "${FILES[@]}"; exit 0 ;;
+  --count) echo "${#FILES[@]}"; exit 0 ;;
+esac
 
 if [ "${#FILES[@]}" -eq 0 ]; then
   echo "assert-image-fresh: no tracked source files found — run from the repo root." >&2

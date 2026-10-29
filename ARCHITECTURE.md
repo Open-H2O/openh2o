@@ -22,10 +22,12 @@ per account. It runs in Docker Compose (`docker-compose.yml`): a `web` container
 - **No background job queue (such as Celery) and no Redis.** The platform is designed for a small
   server with 2 to 4 GB of memory (`config/settings/base.py`). Work longer than a request, such as
   the calculation, runs as its own `manage.py` process (see "The calculation" below), and
-  scheduled work runs from cron (`crontab.txt`).
-- **Caddy in front** (`Caddyfile`). As shipped it serves plain HTTP on port 80, for a deployment
-  where HTTPS ends before the request reaches it (a tunnel, or a local network); the commented
-  site block at the end of `Caddyfile` is the starting point for a site with its own domain name.
+  scheduled work runs from cron (`crontab.txt`, installed by `make install-cron`).
+- **Caddy in front** (`Caddyfile`). It answers at the address in `OPENH2O_SITE_ADDRESS` from `.env`.
+  Unset, that is port 80 at any address over plain HTTP, for a site reached only from this computer or
+  the office network, or one behind a service that handles the HTTPS (a tunnel, for example); a bare
+  domain gets Caddy's own certificate. The
+  `Caddyfile` itself is not edited.
 - **One organization per site.** Each organization runs its own copy, so there is no tenant
   model; the site-wide settings are one `SiteConfig` row (`core/models.py`).
 - **`AUTH_USER_MODEL` is `core.User`** (`config/settings/base.py`).
@@ -255,9 +257,9 @@ The suite is pytest with pytest-django and factory_boy, in `tests/` (`tests/fact
   step of `load_demonstration`) names no real organization.
 - **The image has no source mount.** The `web` image copies the code when it is built, so after
   adding or changing a file run `docker compose up -d --build web` before testing.
-  `scripts/assert-image-fresh.sh`, which `make test` runs first, compares the container only with
-  tracked files of nine types (Python, templates and data files), so it cannot see a new untracked
-  file or an edited JavaScript, CSS or Markdown file.
+  `scripts/assert-image-fresh.sh`, which `make test` runs first, compares the container with
+  the files the image is built from, tracked or not yet tracked, of nine types (Python, templates and
+  data files), so it cannot see an edited JavaScript, CSS or Markdown file.
 
 Some tests check the code and the documents themselves rather than running the site:
 

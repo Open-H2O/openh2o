@@ -20,11 +20,9 @@
 # The override file lives at ${TMPDIR:-/tmp}/openh2o-shape-<n>.override.yml, never
 # inside this repository, and `git status` must never show it.
 #
-# `verify_clean_install` fails (exit 1, "No reference data found (zero DataSource
-# rows)") on any shape whose module list omits `datasync`, shapes 1, 2 and 5.
-# That is a known positive-signal bug in the check, not a broken install
-# (every module-appropriate reference table IS seeded), so this script prints
-# the failure and continues rather than treating it as fatal.
+# `verify_clean_install` checks one reference table per enabled module, so it
+# passes a correct install of every shape. A non-zero exit from it is a real
+# failure, and this script stops on it.
 
 set -euo pipefail
 
@@ -141,9 +139,7 @@ cmd_up() {
   $COMPOSE -p "$project" exec -T web python manage.py seed_data
 
   echo "shape_stack: manage.py verify_clean_install"
-  if ! $COMPOSE -p "$project" exec -T web python manage.py verify_clean_install; then
-    echo "shape_stack: verify_clean_install exited non-zero (expected on any shape without datasync)"
-  fi
+  $COMPOSE -p "$project" exec -T web python manage.py verify_clean_install
 
   echo "shape_stack: composed OPENH2O_MODULES"
   $COMPOSE -p "$project" exec -T web python manage.py shell -c \
@@ -160,9 +156,7 @@ cmd_seed() {
   $COMPOSE -p "$project" exec -T web python manage.py seed_data
 
   echo "shape_stack: manage.py verify_clean_install"
-  if ! $COMPOSE -p "$project" exec -T web python manage.py verify_clean_install; then
-    echo "shape_stack: verify_clean_install exited non-zero (expected on any shape without datasync)"
-  fi
+  $COMPOSE -p "$project" exec -T web python manage.py verify_clean_install
 }
 
 cmd_login_check() {

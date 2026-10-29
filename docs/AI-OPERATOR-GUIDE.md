@@ -235,7 +235,7 @@ warns about them. If it does, switch the site to the production settings.
 
    | Who needs to reach it | What to do |
    |---|---|
-   | People outside | Choose one of the two setups in section 4 of [DEPLOY.md](../DEPLOY.md). In the first, Caddy obtains the certificate: point the domain's A record at this computer and name the domain in the `Caddyfile`. In the second, a tunnel, the organization's own proxy or a load balancer in front of this computer handles the encryption, and the `Caddyfile` stays as shipped. The shipped `Caddyfile` does not name a domain, so pointing DNS at the computer does not produce a certificate by itself. Keep the three settings on. |
+   | People outside | Choose one of the two setups in section 4 of [DEPLOY.md](../DEPLOY.md). In the first, Caddy obtains the certificate: point the domain's A record at this computer and set `OPENH2O_SITE_ADDRESS` in `.env` to the bare domain, then run `docker compose up -d`. In the second, a tunnel, the organization's own proxy or a load balancer in front of this computer handles the encryption, and `OPENH2O_SITE_ADDRESS` stays unset. With the setting unset, Caddy answers at any address over plain HTTP, so pointing DNS at the computer does not produce a certificate by itself. Keep the three settings on. |
    | Only this computer, or the office network | There is no certificate to obtain. Turn the three settings off in `.env`: <br>`SECURE_SSL_REDIRECT=False`<br>`SESSION_COOKIE_SECURE=False`<br>`CSRF_COOKIE_SECURE=False` |
 
    After you change `.env`, run `docker compose up -d` so the website container reads
@@ -451,7 +451,7 @@ one in full.
 | A list of wells, as a CSV file | The import screen at `/infrastructure/import/?type=well`, or `import_wells` | Both create the same records. The screen asks you to match the file's columns first. |
 | A list of water rights | `/surface/rights/import/` | It reads a CSV file. Import the water rights before the points of diversion. |
 | Points of diversion, as a CSV, GeoJSON, KML or shapefile | The same import screen as the wells, at `/infrastructure/import/?type=diversion` | |
-| Storage ponds or recharge sites | The same import screen, with `?type=storage` or `?type=recharge_site` | No page links to the storage pond import yet, so type its address. |
+| Storage ponds or recharge sites | The same import screen, with `?type=storage` or `?type=recharge_site` | Each of these import pages links to the others under "Importing something else?". |
 | A public water system, by its PWSID | `/drinking/onboard/` | A PWSID is the identification number of a public water system in EPA's records. The page looks the system up in EPA's Envirofacts records and adds the system and its facilities. A site keeps the records of one water system: once a system is on the site, the page turns down a different PWSID, and the same PWSID again updates the system from EPA's current record. Add the sampling points on the page that follows. |
 | Laboratory results | `/drinking/import/` | It matches the column headings of California's Division of Drinking Water and several headings that commercial labs use. |
 | A year of production by month and source | `/drinking/production/import/`, or `import_production` | It reads an eAR export or a monthly log. The screen and the command both save to the site's water system. The command needs `--pwsid` only when someone has added a second system another way, such as on the administration site. |
@@ -524,19 +524,27 @@ needs `NOAA_CDO_TOKEN`, and OpenET needs `OPENET_API_KEY`. The comments in
 as "needs key".
 
 <!-- defines: cron -->
-The schedule in `crontab.txt` runs on cron, the scheduler built into Linux and
-macOS. At the top of `crontab.txt`, set `OPENH2O_DIR` to the folder that holds this
-site's `docker-compose.yml`, and set `OPENH2O_LOG_DIR` to a folder for the logs.
-Then install it:
+The schedule runs on cron, the scheduler built into Linux and macOS. Nothing in
+`crontab.txt` is edited by hand. `make install-cron` writes this checkout's folder as
+`OPENH2O_DIR`, and a folder for the logs as `OPENH2O_LOG_DIR`, which is `openh2o-logs`
+in the home folder of the account that runs it. To put the logs elsewhere, add the
+folder to the command, as in `make install-cron OPENH2O_LOG_DIR=/var/log/openh2o`. The
+account that runs it must be able to create that folder, so make the folder first and
+give it to that account when the account cannot write to its parent.
+Install the schedule:
 
 ```bash
 make install-cron
 make show-cron     # shows what is installed
 ```
 
-`make install-cron` adds the lines to whatever is already installed, so run it only
-once. To change the schedule after that, edit it with `crontab -e`. The schedule
-runs these jobs:
+`make install-cron` writes the jobs between a line that begins
+`# BEGIN OpenH2O schedule` and a line that begins `# END OpenH2O schedule`, and keeps
+every other line already installed. Run it again to replace its block, which also
+applies a changed log folder, and the jobs never run twice. Do not edit between the two
+lines, because the next run replaces them. When the installed schedule holds OpenH2O
+jobs without those two lines, the command changes nothing and says so
+(Upgrades in section 11 of DEPLOY.md). The schedule runs these jobs:
 
 - Every hour, it syncs CDEC and USGS.
 - Every day at 1:25, it backs up the database and the uploaded files into the
@@ -553,9 +561,10 @@ station gives the time of its next scheduled fetch, in the site's time zone (set
 computer's clock to the same zone. CIMIS and NOAA are fetched
 only when their keys are set; without a key, each is skipped in one line. The schedule
 does not fetch OpenET: fetch it with `sync_openet_parcels` when the organization wants
-new months. To get an alert when a sync fails, add the line
-`OPENH2O_NTFY_URL=` at the top of `crontab.txt`, followed by the address of a topic
-on ntfy, a service that sends notifications to a phone or a browser.
+new months. To get an alert when a sync fails, put
+`OPENH2O_NTFY_URL=` in `.env`, followed by the address of a topic
+on ntfy, a service that sends notifications to a phone or a browser, and run
+`make install-cron` again, which copies the address into the schedule.
 
 Windows has no cron, and this guide does not yet give Windows steps for the
 schedule. On a Windows computer, tell the organization that the syncs, the nightly
@@ -661,10 +670,6 @@ site, who should work with the records and who only needs to read them.
 signed-in person can open the administrator pages and anyone can sign up. That suits
 only an open demonstration site. A viewer stays read-only either way.
 
-The administration site at `/admin/` also lists three older roles: admin, manager
-and viewer. They come from an earlier design and control nothing. Set roles on the
-Users page.
-
 Then walk the organization's staff through a first session: signing in, confirming
 the boundary and reviewing the accounts, the allocations and the recorded data.
 Reporting is under development and off by default, so leave it off. OpenH2O does not
@@ -686,8 +691,8 @@ goes in at `/admin/` under Core > Site configs, and the address goes in
 `ALLOWED_HOSTS` in `.env`. After a change to `.env`, run `docker compose up -d`. Then
 run `docker compose exec web python manage.py migrate` and check again.
 `manage.py check` also reports a missing name or address, as `openh2o.W002`. A site
-reached only at `localhost` keeps `example.com` as its address and keeps the
-warning, because OpenH2O skips `localhost` when it works out the address.
+reached only at `localhost` takes `localhost` as its address, and the warning clears
+once the name is set and the migrations have run.
 
 If a consultant set up the site, finish with *Handing a site over* in section 11 of
 DEPLOY.md. The organization's host administrator then deactivates the consultant's
@@ -718,11 +723,11 @@ page where someone at the organization corrects them.
 | Database | OpenH2O cannot reach the database. Run `docker compose ps`. If `db` is not `Up (healthy)`, run `docker compose up -d` and read `docker compose logs db`. |
 | Disk | The disk is over 80% full. Over 90%, the card changes to Action required. Run `docker system df` to see what Docker holds, and `docker image prune` to remove images no container uses. Ask the organization before you delete anything else. On a Mac, Docker Desktop keeps OpenH2O on a virtual disk with a size limit set in Docker Desktop's settings. If pruning does not free enough space, raise that limit. |
 | Database name | OpenH2O is connected to a database other than the one its settings name. With Docker, the database's name comes from `POSTGRES_DB` in `.env`, and the compose file builds the connection from it. Check `POSTGRES_DB`, then run `docker compose up -d`. Without Docker, the name comes from `DATABASE_URL` in `.env`. |
-| SSL | The certificate expires in under 30 days, or OpenH2O cannot read it. Where the `Caddyfile` names the domain, Caddy renews the certificate by itself, so this card means the renewal is failing. Check that the domain's A record still points at this computer and that ports 80 and 443 are open, then read `docker compose logs caddy`. Where a tunnel or the organization's own proxy handles the encryption, renew the certificate there. On a site with no public domain, the card says there is no certificate to check, and nothing needs fixing. |
+| SSL | The certificate expires in under 30 days, or OpenH2O cannot read it. Where `OPENH2O_SITE_ADDRESS` names the domain, Caddy renews the certificate by itself, so this card means the renewal is failing. Check that the domain's A record still points at this computer and that ports 80 and 443 are open, then read `docker compose logs caddy`. Where a tunnel or the organization's own proxy handles the encryption, renew the certificate there. On a site with no public domain, the card says there is no certificate to check, and nothing needs fixing. |
 | Migrations | The database is missing updates this version of OpenH2O needs. Run `docker compose exec web python manage.py migrate`. |
-| Sync Freshness | A data source with a station turned on has not synced for more than 48 hours. After 7 days, or when it has never synced, the card changes to Action required. Run `crontab -l` to check that the schedule is installed. Then run `docker compose exec web python manage.py sync_source` with the source's code, such as `usgs`, and read what it prints. The scheduled syncs write to `sync.log` in the log folder set in `crontab.txt`. The card leaves out a source whose key is missing, and the monitoring dashboard shows that source as "needs key". |
-| Calculation | A calculation has waited more than 15 minutes to start, or it stopped before it finished. Run it with `docker compose exec web python manage.py run_accounting --request` and the request number from the card's JSON details, or ask the organization to run it again from the water year's page. The card also asks for attention when no calculation has finished in 48 hours while a water year is still open. For that, run `crontab -l` to check that the schedule is installed, and read `calculation.log` in the log folder set in `crontab.txt`. |
-| Backup | The card asks for attention or action when OpenH2O cannot find the backups folder or read the record of the last backup, or when the last backup failed, ran 36 hours ago or more, or is missing tables. A failed backup's reason is in the card's JSON details; read it first. When OpenH2O cannot find the folder, check that `docker-compose.yml` mounts the checkout's `backups` folder at `/backups`, then run `docker compose up -d`. Otherwise run `crontab -l` to check that the schedule is installed, read `backup.log` in the log folder set in `crontab.txt`, then run `scripts/backup.sh` and read what it prints. |
+| Sync Freshness | A data source with a station turned on has not synced for more than 48 hours. After 7 days, or when it has never synced, the card changes to Action required. Run `crontab -l` to check that the schedule is installed. Then run `docker compose exec web python manage.py sync_source` with the source's code, such as `usgs`, and read what it prints. The scheduled syncs write to `sync.log` in the log folder (`openh2o-logs` in the home folder unless `make install-cron` was given another). The card leaves out a source whose key is missing, and the monitoring dashboard shows that source as "needs key". |
+| Calculation | A calculation has waited more than 15 minutes to start, or it stopped before it finished. Run it with `docker compose exec web python manage.py run_accounting --request` and the request number from the card's JSON details, or ask the organization to run it again from the water year's page. The card also asks for attention when no calculation has finished in 48 hours while a water year is still open. For that, run `crontab -l` to check that the schedule is installed, and read `calculation.log` in the log folder (`openh2o-logs` in the home folder unless `make install-cron` was given another). |
+| Backup | The card asks for attention or action when OpenH2O cannot find the backups folder or read the record of the last backup, or when the last backup failed, ran 36 hours ago or more, or is missing tables. A failed backup's reason is in the card's JSON details; read it first. When OpenH2O cannot find the folder, check that `docker-compose.yml` mounts the checkout's `backups` folder at `/backups`, then run `docker compose up -d`. Otherwise run `crontab -l` to check that the schedule is installed, read `backup.log` in the log folder (`openh2o-logs` in the home folder unless `make install-cron` was given another), then run `scripts/backup.sh` and read what it prints. |
 | Cache Duplication | OpenH2O holds two OpenET estimates for the same months at some use areas. No figure changes, because OpenH2O uses the newer estimate. Report it as a bug at github.com/Open-H2O/openh2o/issues and attach the card's JSON details. |
 
 The schedule backs up the database and the uploaded files every night at 1:25 into the
@@ -750,9 +755,9 @@ them, so an error that names one of them means the build went wrong.
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| The `web` container will not start, and its log mentions `ImproperlyConfigured` | The production checks refused a setting. The database password is empty or a common default, `ALLOWED_HOSTS` is empty or `SECRET_KEY` is missing. Or `ACCOUNT_EMAIL_VERIFICATION` holds a value other than `none`, `optional` or `mandatory`. Or `OPENH2O_MODULES` names an unknown section or leaves out a section that another one needs. | Read `docker compose logs web`, where the message names the setting. Correct it in `.env` and run `docker compose up -d`. |
+| The `web` container will not start, and its log mentions `ImproperlyConfigured` | The production checks refused a setting. The database password is empty or a common default, `ALLOWED_HOSTS` is empty or `SECRET_KEY` is missing. Or `ACCOUNT_EMAIL_VERIFICATION` holds a value other than `none`, `optional` or `mandatory`. Or `OPENH2O_MODULES` names an unknown section, lists a section twice, leaves out `core`, `geography`, `measurements` or `standards`, or leaves out a section that another one needs. | Read `docker compose logs web`, where the message names the setting. Correct it in `.env` and run `docker compose up -d`. |
 | The Docker build fails on GDAL, GEOS or PROJ | The build could not install the map libraries. | Read the first error in the build output, then see the troubleshooting section of DEPLOY.md. |
-| The site loads at its public domain, but without HTTPS | The shipped `Caddyfile` serves plain web traffic on port 80 and does not name a domain, so pointing DNS at the computer does not produce a certificate. | Name the domain in the `Caddyfile` as section 4 of DEPLOY.md describes, then run `docker compose restart caddy`. |
+| The site loads at its public domain, but without HTTPS | With `OPENH2O_SITE_ADDRESS` unset, Caddy serves plain web traffic on port 80 at any address, so pointing DNS at the computer does not produce a certificate. | Set `OPENH2O_SITE_ADDRESS` in `.env` to the bare domain as section 4 of DEPLOY.md describes, then run `docker compose up -d`. |
 | A source on the monitoring dashboard shows "needs key", "no stations" or "no recent data" | "Needs key": its key is missing from `.env`. "No stations": it has no station turned on. "No recent data": the source publishes rarely, as the groundwater sources do, or its sync is failing. | Add the key to `.env` and run `docker compose up -d`. Turn the stations on as Phase 4 describes. Run `sync_source` for the source with an earlier `--start` and read what it prints. |
 | The reset page says the site does not send email, or a reset email never arrives | The site has no SMTP settings. | Add `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` and `DEFAULT_FROM_EMAIL` to `.env` and run `docker compose up -d`. Until then, an administrator sets a temporary password for the person on the Users page. For the only host administrator, run `docker compose exec web python manage.py changepassword` with the account's username. The username is the email address unless the account was given a different one. |
 | 502 Bad Gateway after the computer restarts | The website container is still starting, or Docker did not start with the computer. | Set Docker to start when the computer starts. The compose file sets `restart: unless-stopped`, so the containers start again when Docker does. Run `docker compose ps`. If `web` is not `Up (healthy)`, run `docker compose up -d` and read `docker compose logs web`. |
@@ -769,7 +774,9 @@ them, so an error that names one of them means the build went wrong.
   run `make upgrade` (Upgrades in section 11 of DEPLOY.md). On a live site, create
   the `.production-lock` file that section 11 describes. With that file in place,
   `make up`, `make down`, `make build` and `make fresh` refuse to run, and
-  `make upgrade` still runs. Never run `make deploy`, which serves only the
+  `make upgrade` still runs. The demonstration targets (`make demo`, `make remove-demo`,
+  `make reset-demo`, `make snapshot-demo` and `make calc-rebuild`) refuse to run under that
+  file too, unless the checkout also carries `.demo-host`. Never run `make deploy`, which serves only the
   project's own demonstration site and will not run anywhere else.
 - **Leave** `ACCOUNT_EMAIL_VERIFICATION` unset. When it is unset, it follows
   `EMAIL_HOST`. A person who signs up must confirm their email address when the site

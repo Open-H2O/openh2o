@@ -88,7 +88,7 @@ pwd
 ```
 
 `pwd` prints the folder's full path, such as `/home/operator/openh2o`. Note it,
-because the schedule in section 11 needs it.
+because the upgrade steps in section 11 start with `cd` into this folder.
 
 ---
 
@@ -165,7 +165,8 @@ CSRF_TRUSTED_ORIGINS=
 The production settings always add `127.0.0.1` and `localhost` to `ALLOWED_HOSTS`,
 so commands run on the server itself can reach the site.
 
-Section 12 lists every setting the code reads, with its default.
+Section 12 lists every setting the website reads, with its default. The settings that only
+the scheduled jobs read, such as `OPENH2O_NTFY_URL`, are in Scheduled Jobs (section 11).
 
 ---
 
@@ -182,31 +183,33 @@ Caddy passes it to OpenH2O. OpenH2O supports this setup.
 
 The second is the encryption. *HTTPS* is the encrypted connection a browser marks
 with a padlock. It depends on a *certificate*, a file that proves the address
-belongs to this site. The table shows what to do with the `Caddyfile`, depending
-on who needs to reach the site:
+belongs to this site. The `Caddyfile` itself is not edited: it takes the address it
+answers at from the setting `OPENH2O_SITE_ADDRESS` in `.env`. The table shows what
+to set, depending on who needs to reach the site:
 
-| Who needs to reach the site | What to do with the `Caddyfile` | Follow |
+| Who needs to reach the site | What to set | Follow |
 |---|---|---|
-| Only this computer, or the office network | Leave it as shipped | **Branch A** |
-| The public internet, and this server obtains its own certificate | Replace `:80` with your bare domain | **Branch B** |
-| The public internet, and something in front of the server handles the encryption | Leave `:80` as shipped, or write `http://your-domain.com` | **Branch C** |
+| Only this computer, or the office network | Leave `OPENH2O_SITE_ADDRESS` unset | **Branch A** |
+| The public internet, and this server obtains its own certificate | Set `OPENH2O_SITE_ADDRESS` to your bare domain | **Branch B** |
+| The public internet, and something in front of the server handles the encryption | Leave `OPENH2O_SITE_ADDRESS` unset, or set it to `http://your-domain.com` | **Branch C** |
 
 Phase 2 of [docs/AI-OPERATOR-GUIDE.md](docs/AI-OPERATOR-GUIDE.md) asks the same
-question. Follow Phase 2 for the `.env` settings and this section for the
-`Caddyfile`.
+question. Follow Phase 2 for the `.env` settings and this section for the address
+Caddy answers at.
 
-⚠ The `Caddyfile` examples below are shortened. The shipped file carries more: two access logs (section 11 reads them), a
+⚠ The `Caddyfile` examples below are shortened, and show what Caddy serves once the
+address is set. The shipped file carries more: two access logs (section 11 reads them), a
 security header, a caching rule for the styling and scripts, the header that tells
 OpenH2O a request arrived over HTTPS, retry timings for the first moments after a restart,
-and a page to show while the site is down. Edit the shipped file. If you replace it
-with one of the examples, you lose all of these.
+and a page to show while the site is down. Do not replace the shipped file with one of
+the examples, because you would lose all of these.
 
 <!-- branch: no-public-access -->
 
 ### Branch A: Only this computer, or the office network
 
-Leave the `Caddyfile` as it ships. There is no domain to name and no certificate to
-obtain. You reach the site at `http://localhost`, or at the computer's address on
+Leave `OPENH2O_SITE_ADDRESS` unset in `.env`, so Caddy answers at any
+address. There is no domain to name and no certificate to obtain. You reach the site at `http://localhost`, or at the computer's address on
 the office network.
 
 Then set these three settings in `.env`:
@@ -244,9 +247,16 @@ network can reach the site.
 
 ### Branch B: Public internet, and this server obtains its own certificate
 
-Replace `:80` with your domain, written as a bare address with no `http://` or
-`https://` in front of it. When the domain is written bare, Caddy obtains a free
-certificate for it on its own.
+Set `OPENH2O_SITE_ADDRESS` in `.env` to your domain, written as a bare address with
+no `http://` or `https://` in front of it:
+
+```bash
+OPENH2O_SITE_ADDRESS=your-domain.com
+```
+
+When the domain is written bare, Caddy obtains a free certificate for it on its own.
+Caddy reads the setting when its container starts, so run `docker compose up -d` after
+a change. Caddy then serves a site like this one:
 
 ```caddy
 your-domain.com {
@@ -291,9 +301,15 @@ This branch is for a tunnel service, the organization's own proxy or a load
 balancer: anything that receives the encrypted traffic, decrypts it and sends plain
 traffic on to this server.
 
-Leave `:80` as shipped. If you want the `Caddyfile` to answer only at your domain,
-write the domain with the `http://` prefix. Do not write a bare domain on this
+Leave `OPENH2O_SITE_ADDRESS` unset. If you want Caddy to answer only at your domain,
+set it to the domain with the `http://` prefix. Do not set a bare domain on this
 branch.
+
+```bash
+OPENH2O_SITE_ADDRESS=http://your-domain.com
+```
+
+Caddy then serves a site like this one:
 
 ```caddy
 http://your-domain.com {
@@ -387,7 +403,9 @@ Create the account in one of two ways.
 
 Set `DJANGO_SUPERUSER_EMAIL` and `DJANGO_SUPERUSER_PASSWORD` in `.env`, then run
 `docker compose up -d`. When the website container starts and the site does not have an active
-host administrator, it creates the account from these two lines. This happens at the
+host administrator, it creates the account from these two lines, unless an account
+already uses that email address. It then skips, says so in the website's log, and
+needs a different `DJANGO_SUPERUSER_EMAIL`. This happens at the
 first start and after the database is wiped. While the site has an active host
 administrator, the container does not change any account. A password changed on the
 site stays changed.
@@ -445,11 +463,10 @@ loads the reference lists every site needs. Section 9 loads the demonstration da
 docker compose exec web python manage.py seed_data
 ```
 
-`seed_data` runs these commands in this order. The first two always run. Each of
+`seed_data` runs these commands in this order. The first always runs. Each of
 the others belongs to a module of OpenH2O that a site can switch off (section 12).
 On a site without that module, `seed_data` skips the command and says so.
 
-- `seed_roles` (admin, manager, viewer)
 - `seed_observed_properties` (the standards crosswalk, which maps each data source's
   own parameter codes to a standard list of measured properties. `check_conformance`
   checks the data against it.)
@@ -465,7 +482,7 @@ On a site without that module, `seed_data` skips the command and says so.
 To run one of them on its own:
 
 ```bash
-docker compose exec web python manage.py seed_roles
+docker compose exec web python manage.py seed_water_types
 ```
 
 Running `seed_data` again adds nothing twice. It does switch each data source back on or off as it was first seeded, puts the federal drinking-water limits back to their seeded values, and puts each kind of measurement and each source code's mapping back to the values written in `seed_observed_properties`. A change made to those by hand is overwritten.
@@ -503,7 +520,8 @@ docker compose exec web python manage.py remove_demonstration
 
 or press Remove the demonstration data on the Demonstration data page, which lists what goes and how
 many records people added since the load. The removal deletes every record the site
-holds and keeps the users and the reference lists. When the site still carries the
+holds. It keeps the users, the Site health records and the feedback reports, and it
+sets the reference lists back to what `seed_data` wrote. When the site still carries the
 demonstration's name, the load made its settings, so the removal deletes them too,
 with any setting changed while the demonstration was loaded; otherwise it keeps them
 and turns Demonstration mode off. `make demo` and
@@ -532,8 +550,7 @@ data yet, `run_calculations` skips every parcel and reports that it has no ET
 data. Removing the demonstration also removes its calculation method.
 
 <!-- defines: idempotent -->
-`load_demonstration` runs `seed_merced` as one of its steps, and `seed_merced` is *idempotent* in every
-step but one: running it again gives the same result as running it once. To rebuild the demonstration, remove
+`load_demonstration` runs `seed_merced` as one of its steps, and `seed_merced` is *idempotent*: running it again gives the same result as running it once. On a site with the production settings, a second run stops at its operations step and names `--allow-prod-clobber`, because that step rebuilds the demonstration's parcel and well shapes. To rebuild the demonstration, remove
 it and load it again.
 
 The demonstration's monitoring stations are the 335 in OpenH2O's own list. Of those, 42 are
@@ -570,10 +587,12 @@ curl -s -o /dev/null -w '%{http_code}' http://localhost
 # Expected: 200 or 302
 ```
 
-This check works on Branch A and Branch C, where Caddy answers on port 80 at any
-address. On Branch B the `Caddyfile` names one domain, so Caddy refuses a request
-made to `localhost`. Run this check and the health API check below against the
-domain over `https://` instead.
+This check works on Branch A and on Branch C with `OPENH2O_SITE_ADDRESS` unset, where
+Caddy answers on port 80 at any address. On Branch B, `OPENH2O_SITE_ADDRESS` names one
+domain, so Caddy refuses a request made to `localhost`. On Branch C with
+`OPENH2O_SITE_ADDRESS` set to `http://your-domain.com`, Caddy answers only at that
+name. Run this check and the health API check below against the domain instead, over
+`https://` on Branch B and over `http://` on Branch C.
 
 <!-- defines: postgis -->
 **PostGIS:** PostgreSQL is the database that stores every record the site
@@ -617,7 +636,11 @@ docker compose logs web --tail=50
 **The name the site's emails go out under:** every email the site sends starts its
 subject line with the site's name. OpenH2O takes that name from the organization's
 name, which is set at `/admin/` under Core > Site configs. It takes the site's
-address from `ALLOWED_HOSTS`, and it saves both when the migrations run. Set the
+address from `ALLOWED_HOSTS`, and it saves both when the migrations run. It saves
+each only while the value reads `example.com`. The address is also replaced while it
+reads `localhost`, `127.0.0.1` or `::1` and `ALLOWED_HOSTS` now names a public host,
+so a site first set up on its own computer takes its domain when it moves. A public
+address that is already saved is never changed. Set the
 organization's name there after the superuser exists. Check what it saved:
 
 ```bash
@@ -628,10 +651,9 @@ The command should print the organization's name and the site's web address.
 `docker compose exec web python manage.py check` also reports a missing name or
 address, with the warning code `openh2o.W002`. If the name is missing, set the organization's name at
 `/admin/` under Core > Site configs, then run the migrations again (section 6). A
-site reached only at `localhost` keeps `example.com` as its address and keeps the
-warning, because OpenH2O skips `localhost` and `127.0.0.1` when it works out the
-address. On such a site the warning is harmless. A site on the office network takes
-the computer's address on that network.
+site reached only at `localhost` takes `localhost` as its address, and the warning
+clears once the name is set and the migrations have run. A site on the office network
+takes the computer's address on that network.
 
 **Who can reach the site:** the checks above show that the site answers. They do not
 show who can reach it. A site can work correctly and still be open to the whole
@@ -708,8 +730,8 @@ make upgrade
 are. It runs these steps in order and stops at the first one that fails:
 
 1. It fetches the new version and compares it with the files edited on this server,
-   usually `crontab.txt` and the `Caddyfile`. If the new version changes a file edited
-   here, it stops before it changes anything and names the file.
+   A site set up with this version does not edit them. If the new version changes a
+   file edited here, it stops before it changes anything and names the file.
 2. It backs up the database and the uploaded files, as the nightly backup does
    (Database Backup, below). If the backup fails, it stops and changes nothing.
 3. It moves the code to the new version. If this checkout has commits of its own, it
@@ -718,6 +740,11 @@ are. It runs these steps in order and stops at the first one that fails:
    it starts.
 5. It waits for the website to answer, runs the health checks, and prints the old
    version, the new version and the name of the backup.
+6. When the upgrade worked, it refreshes the installed schedule, so a job the new
+   version added to `crontab.txt` starts running. It does this only when the schedule
+   was written by `make install-cron`, and it keeps the log folder that schedule
+   names. When the schedule was not written by `make install-cron`, it prints one
+   sentence saying to run `make install-cron` (Scheduled Jobs).
 
 The footer of every page then shows the version the site runs. `make upgrade` runs on a
 site that carries `.production-lock` (below).
@@ -727,12 +754,21 @@ meter reading and no entered volume, run the calculation again for each water ye
 not finalized. The upgrade deletes those estimated records from the open years, and the run
 removes the canal water that was divided from them.
 
-When it stops at the first step, save a copy of your edits to the file it names, run
-`git checkout -- <file>` with that file's name and run `make upgrade` again. Then make
-your edits again in the new version of the file. Do not copy the saved file over it,
-because that would undo the update's own changes. After editing the `Caddyfile`, run
-`docker compose restart caddy`. Edits to `crontab.txt` need not be made again, because
-the installed schedule is a copy and already holds them.
+When it stops at the first step, the file it names was edited on this server under an
+earlier version of this guide, which had every site edit `crontab.txt` and sites with
+a domain edit the `Caddyfile`. Save a copy of your edits, run `git checkout -- <file>`
+with that file's name and run `make upgrade` again. Do not copy the saved file over
+the new one, because that would undo the update's own changes. Then carry the edit
+over once:
+
+- For `crontab.txt`, nothing needs to be carried over. The installed schedule is a
+  copy and already holds your paths, so it keeps working, but `make upgrade` does not
+  refresh it. To let `make install-cron` manage it, and `make upgrade` refresh it, from
+  now on, open it with `crontab -e`, delete the OpenH2O lines
+  (`OPENH2O_DIR`, `OPENH2O_LOG_DIR` and every job), save, and run `make install-cron`.
+- For the `Caddyfile`, put the domain in `.env` as `OPENH2O_SITE_ADDRESS=` followed by
+  the domain (section 4): the bare domain on Branch B, or `http://` and the domain on
+  Branch C. Then run `docker compose up -d`.
 
 When the website does not answer after the rebuild, `make upgrade` prints the website's
 last 50 log lines, the version the site ran before and the names of the backup files it
@@ -783,10 +819,12 @@ touch .production-lock
 ```
 
 `make upgrade` still runs with the file in place, because upgrading the site is its
-purpose. The file does not guard the demonstration targets, such as
-`make demo`, `make remove-demo` and `make reset-demo`, or
-`docker compose down -v`, which deletes the database. Never run those on a site that
-holds records.
+purpose. The file also stops the demonstration commands, `make demo`,
+`make remove-demo`, `make reset-demo`, `make snapshot-demo` and `make calc-rebuild`, and
+the scripts behind them, `scripts/reset-demo.sh` and `scripts/snapshot-demo.sh`. The one
+exception is a checkout that also carries `.demo-host`, the public demonstration site.
+The file does not stop `docker compose down -v`, which deletes the database. Never run
+that on a site that holds records.
 
 ### Handing a site over
 
@@ -836,8 +874,9 @@ guide).
 
 You can also run the calculation by hand, for one water year or one month:
 `docker compose exec web python manage.py run_accounting --period "WY 2025-2026"` or
-`--month 2026-03`. Only one calculation runs at a time, and a second one waits for
-the first.
+`--month 2026-03`. Only one calculation runs at a time. A second request stays queued and
+the second command exits, and the calculation already running picks the request up
+when it finishes its own.
 
 `check_conformance` is not on the schedule, because its answer changes only when
 someone loads data or turns on a new source. Run it after the organization's own
@@ -850,17 +889,23 @@ docker compose exec web python manage.py check_conformance
 
 `scripts/run-sync.sh` runs `docker compose up -d` first, which starts the containers
 again if a restart of the server left them stopped. It then runs each sync and
-writes to `sync.log` in `$OPENH2O_LOG_DIR`. When a sync fails and `OPENH2O_NTFY_URL`
-is set, it sends an alert through ntfy, a service that sends notifications to a
-phone or a browser.
+writes to `sync.log` in `$OPENH2O_LOG_DIR`. When a sync command exits with an error and
+`OPENH2O_NTFY_URL` is set, it sends an alert through ntfy, a service that sends
+notifications to a phone or a browser. A source whose stations all fail makes the
+command exit with an error only on the third run in a row. A source whose key is not set, or
+that is switched off, exits without one, so it does not send an alert.
 
-Before you install the schedule, edit the top of `crontab.txt`. Set `OPENH2O_DIR` to
-the folder `pwd` printed in section 2, and `OPENH2O_LOG_DIR` to a folder your own
-account can write logs to, such as `/home/operator/openh2o-logs`. The defaults are
-`/opt/openh2o` and `/opt/openh2o-logs`. For failure alerts, also add a line at the top
-of `crontab.txt` that reads `OPENH2O_NTFY_URL=` followed by the address of an ntfy
-topic, the channel your alerts go to. The setting has to be in the schedule, because
-a value in `.env` never reaches the script. Then install the schedule:
+Install the schedule with one command. `crontab.txt` is not edited: the command writes
+this checkout's folder as `OPENH2O_DIR`, and a folder for the logs as
+`OPENH2O_LOG_DIR`, which is `openh2o-logs` in the home folder of the account that runs
+it. It creates that folder. To put the logs somewhere else, add `OPENH2O_LOG_DIR=` and
+the folder to the command, as in `make install-cron OPENH2O_LOG_DIR=/var/log/openh2o`.
+The account that runs it must be able to create that folder, so make the folder first
+and give it to that account when the account cannot write to its parent.
+For failure alerts, put `OPENH2O_NTFY_URL=` followed by the address of an ntfy topic,
+the channel your alerts go to, in `.env`. The command copies it into the schedule,
+because a value in `.env` never reaches the script by itself. Then install the
+schedule:
 
 ```bash
 make install-cron
@@ -868,12 +913,16 @@ make install-cron
 make show-cron
 ```
 
-`make install-cron` copies `crontab.txt` as it is at that moment, and it adds the
-lines to whatever is already installed. To change the schedule later, or to replace
-older OpenH2O lines, edit the installed schedule with `crontab -e`. Running
-`make install-cron` again adds the lines a second time, and every job would then run
-twice. If `crontab -l` shows no `backup.sh` line, run `crontab -e` and copy that line in
-from `crontab.txt`.
+`make install-cron` writes the jobs as one block between a line that begins
+`# BEGIN OpenH2O schedule` and a line that begins `# END OpenH2O schedule`, and keeps
+every other line of the installed schedule. Running it again replaces the block, so it
+is also how a changed `crontab.txt` or log folder takes effect, and the jobs never run
+twice. Do not edit between the two lines, because the next run replaces them. A
+schedule installed by an earlier version holds the same jobs without those two lines.
+The command stops there and changes nothing: open the schedule with `crontab -e`,
+delete the OpenH2O lines (`OPENH2O_DIR`, `OPENH2O_LOG_DIR` and every job), and run
+`make install-cron` again. If `crontab -l` shows no `backup.sh` line, run
+`make install-cron` again.
 
 <!-- defines: api_key -->
 ### External Data API Keys
@@ -1057,8 +1106,9 @@ When the dump cannot be read, or holds fewer tables than the database, the scrip
 deletes it, writes the reason to `last-backup-failure.json` and stops with an error.
 When `OPENH2O_NTFY_URL` is set in the schedule, it also sends an alert. After each
 backup that works, it deletes all but the newest 14 of each kind of file. To keep a
-different number, add a line such as `OPENH2O_BACKUP_KEEP=30` at the top of the
-schedule: in `crontab.txt` before you install it, or with `crontab -e` afterwards. The
+different number, add a line such as `OPENH2O_BACKUP_KEEP=30` to the schedule with
+`crontab -e`, above the line that begins `# BEGIN OpenH2O schedule`. `make install-cron`
+keeps it. The
 schedule writes the script's log to `backup.log` in `$OPENH2O_LOG_DIR`. A run by hand
 writes it to `backups/logs`.
 
@@ -1135,7 +1185,7 @@ docker compose exec caddy ls -lh /var/log/caddy/
 To keep visits for longer, copy the file elsewhere on a schedule. Leave the size
 limit as it is, because the limit stops the log from filling the disk.
 
-The website checks its own health every few seconds from inside its container, so
+The website checks its own health every 15 seconds from inside its container, so
 those checks never pass through Caddy and stay out of this record. They do appear in
 `docker compose logs web`.
 
@@ -1170,9 +1220,10 @@ Two terms in the tables need explaining:
 | `SESSION_COOKIE_SECURE` | No | `True` | Sends the sign-in cookie only over HTTPS. Set `False` on Branch A |
 | `CSRF_COOKIE_SECURE` | No | `True` | Sends the form-check cookie only over HTTPS. Set `False` on Branch A |
 | `ACCESS_CONTROL_ENFORCED` | No | `True` | Closes sign-up and keeps the administrator pages for administrators. Set `False` only on an open demonstration site, where anyone may sign up. A viewer stays read-only either way |
+| `OPENH2O_SITE_ADDRESS` | No | `:80` | The address Caddy answers at. A bare domain such as `water.example.org` makes Caddy obtain a certificate for it (section 4, Branch B). `http://water.example.org` answers only at that name over plain HTTP (Branch C). Caddy reads it when its container starts, so run `docker compose up -d` after a change |
 | `OPENH2O_MODULES` | No | every module except `reporting` | The modules of OpenH2O the site runs, separated by commas, or `all`. The list must include `core`, `geography`, `measurements` and `standards`. A list that leaves out a module another module needs stops the site at start with an error that names the missing module. The demonstration needs every module the default includes |
 | `TIME_ZONE` | No | `America/Los_Angeles` | The site's time zone |
-| `LOG_DIR` | No | `/app/logs` | The folder for the error log, `openh2o.log`, which rotates at 10 MB and keeps five files. Inside Docker it is on the `logs_data` volume |
+| `LOG_DIR` | No | `/app/logs` | The folder for the error log, `openh2o.log`, which rotates at 10 MB and keeps five older files beside the live one. Inside Docker it is on the `logs_data` volume |
 | `DJANGO_SUPERUSER_EMAIL`, `DJANGO_SUPERUSER_PASSWORD` | No | empty | Create the first host administrator when the site has none (section 7) |
 | `DJANGO_SUPERUSER_USERNAME` | No | the email address | The username for that account |
 | `GUNICORN_WORKERS`, `GUNICORN_THREADS`, `GUNICORN_TIMEOUT` | No | `3`, `4`, `60` | How many requests the web server handles at once, and how many seconds it gives each one |
@@ -1195,7 +1246,7 @@ Two terms in the tables need explaining:
 | `EMAIL_USE_TLS` | No | `True` | Encrypt the connection to the SMTP server |
 | `EMAIL_HOST_USER` | No | empty | The SMTP user |
 | `EMAIL_HOST_PASSWORD` | No | empty | The SMTP password |
-| `DEFAULT_FROM_EMAIL` | No | `noreply@openh2o.com` | The sender address. Set it to an address at your own domain |
+| `DEFAULT_FROM_EMAIL` | No | `noreply@localhost` | The sender address. Set it to an address at your own domain |
 | `EMAIL_BACKEND` | No | SMTP under production; printing to the log under the development settings | How the site sends email |
 | `ACCOUNT_EMAIL_VERIFICATION` | No | follows `EMAIL_HOST`: `mandatory` with a mail server, `none` without | Whether a person who signs up must confirm their email address: `none` lets them in at once, `optional` sends the email without waiting, `mandatory` waits for the confirmation. Any other value stops the site at start |
 
@@ -1353,7 +1404,8 @@ docker compose exec web python manage.py seed_data
 ```
 
 When the website container starts, it runs the migrations. It also creates the
-superuser if `.env` holds the two settings from section 7. Otherwise create it with
+superuser if `.env` holds the two settings from section 7 and the email address is not already
+in use by an account. Otherwise create it with
 `docker compose exec web python manage.py createsuperuser`.
 
 **Check the settings for problems:**
