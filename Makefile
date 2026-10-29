@@ -15,7 +15,7 @@ export APP_VERSION = $(VERSION)
         createsuperuser collectstatic seed seed-water-types \
         seed-data-sources seed-report-templates seed-water-right-types \
         seed-well-types demo remove-demo \
-        check test test-droppable guard-fresh fresh snapshot-demo reset-demo calc-rebuild verify-clean install-cron show-cron sync guard-prod guard-demo-host deploy rebuild-golden \
+        check test test-droppable golden-update dev-up dev-css guard-fresh fresh snapshot-demo reset-demo calc-rebuild verify-clean install-cron show-cron sync guard-prod guard-demo-host deploy rebuild-golden \
         verify-candidate promote-golden ci-gate release upgrade guard-demo-target
 
 help: ## Show this help message
@@ -237,8 +237,40 @@ verify-clean: ## Assert this install has reference data only (no demo/agency con
 guard-fresh: ## Fail loudly if the web image's source has drifted from the working tree
 	@COMPOSE="$(COMPOSE)" bash scripts/assert-image-fresh.sh
 
-test: guard-fresh ## Run test suite (pinned to local settings; --ds outranks the container's prod env; every module on, reporting included)
-	$(COMPOSE) exec -e OPENH2O_MODULES=all web python -m pytest tests/ -v --ds=config.settings.local
+# The development overlay (docker-compose.dev.yml) bind-mounts this folder over /app.
+# DEV_BIND prints "bind" when the running web container is in that state: the real
+# mount is asked, not a variable, so a stale shell cannot answer wrongly.
+DEV_COMPOSE = $(COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml
+DEV_BIND = $$(id=$$($(COMPOSE) ps -q web 2>/dev/null); [ -n "$$id" ] && docker inspect -f '{{range .Mounts}}{{if eq .Destination "/app"}}{{.Type}}{{end}}{{end}}' $$id 2>/dev/null)
+
+# T is the pytest path or node id; all of tests/ when it is not given.
+T ?= tests/
+
+dev-css: ## Compile static/css/output.css from this folder with the image's Tailwind binary (the bind mount hides the image's copy)
+	$(COMPOSE) run --rm --no-deps -T -v "$$PWD":/src -w /src --entrypoint /app/tailwindcss web -i static/css/input.css -o static/css/output.css --minify
+
+dev-up: guard-prod dev-css ## Start the stack with docker-compose.dev.yml: edits are live in the web container with no rebuild
+	$(DEV_COMPOSE) up -d --build
+
+test: ## Run the tests in T (a path or node id; all of tests/ when T is not given), pinned to local settings with every module on
+	@if [ "$(DEV_BIND)" = "bind" ]; then \
+		echo "guard-fresh skipped: docker-compose.dev.yml is in use, so the web container runs this folder's own source."; \
+	else \
+		$(MAKE) --no-print-directory guard-fresh; \
+	fi
+	$(COMPOSE) exec -e OPENH2O_MODULES=all web python -m pytest $(T) -v --ds=config.settings.local
+
+golden-update: ## Rewrite the golden files for the tests in T (required), then copy tests/golden out of the container unless docker-compose.dev.yml is in use
+	@test -n "$(T)" -a "$(T)" != "tests/" || { echo "Usage: make golden-update T=tests/test_nav_golden.py"; exit 1; }
+	@if [ "$(DEV_BIND)" = "bind" ]; then \
+		echo "guard-fresh skipped: docker-compose.dev.yml is in use, so the web container runs this folder's own source."; \
+	else \
+		$(MAKE) --no-print-directory guard-fresh; \
+	fi
+	$(COMPOSE) exec -e OPENH2O_MODULES=all -e GOLDEN_UPDATE=1 web python -m pytest $(T) -v --ds=config.settings.local
+	@if [ "$(DEV_BIND)" != "bind" ]; then \
+		$(COMPOSE) cp web:/app/tests/golden/. tests/golden/ && echo "Copied tests/golden out of the container."; \
+	fi
 
 test-droppable: guard-fresh ## Prove every optional module can be dropped (see tests/droppability/README.md)
 	$(COMPOSE) exec -e OPENH2O_MODULES=all web python -m pytest tests/test_droppability_acceptance.py -v --ds=config.settings.local

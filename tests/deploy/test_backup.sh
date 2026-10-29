@@ -151,7 +151,13 @@ check "9 the safety backup deletes no old backup, so the oldest can still be res
 # the image holds no backups folder and no restore marker.
 if [ -f "$REPO/.dockerignore" ]; then
   check "10 .gitignore keeps the dumps out, .dockerignore keeps backups/ out of the image" 'grep -qx "backups/\*" "$REPO/.gitignore" && grep -qx "backups/" "$REPO/.dockerignore"'
-  check "10 the backups folder itself ships, so Docker never creates it owned by root" 'grep -qx "!backups/.gitkeep" "$REPO/.gitignore" && git -C "$REPO" ls-files --error-unmatch backups/.gitkeep >/dev/null 2>&1'
+  # Under docker-compose.dev.yml the checkout is mounted into the container, which has no git:
+  # there the check is that the kept file is present and not ignored.
+  if command -v git >/dev/null 2>&1; then
+    check "10 the backups folder itself ships, so Docker never creates it owned by root" 'grep -qx "!backups/.gitkeep" "$REPO/.gitignore" && git -C "$REPO" ls-files --error-unmatch backups/.gitkeep >/dev/null 2>&1'
+  else
+    check "10 the backups folder itself ships, so Docker never creates it owned by root" 'grep -qx "!backups/.gitkeep" "$REPO/.gitignore" && [ -f "$REPO/backups/.gitkeep" ]'
+  fi
   check "10 the restore marker is in both too" 'grep -qx ".restore-in-progress" "$REPO/.gitignore" && grep -qx ".restore-in-progress" "$REPO/.dockerignore"'
 else
   check "10 (inside the image) no backups folder and no restore marker were built in" '[ ! -e "$REPO/backups" ] && [ ! -e "$REPO/.restore-in-progress" ]'

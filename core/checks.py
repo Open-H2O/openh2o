@@ -18,8 +18,11 @@ and block every developer. The point is a message somebody can act on, not a
 blocked workflow.
 """
 
+from urllib.parse import urlsplit
+
 from django.conf import settings
 from django.core.checks import Warning as CheckWarning
+from django.core.checks import register
 from django.db import DatabaseError
 
 #: Stable id. Django reserves ``security.*``, ``models.*`` and friends for
@@ -28,6 +31,15 @@ DEBUG_WARNING_ID = "openh2o.W001"
 
 #: The site-identity placeholder warning.
 SITE_IDENTITY_WARNING_ID = "openh2o.W002"
+
+#: The source-code link setting.
+SOURCE_CODE_URL_WARNING_ID = "openh2o.W003"
+
+
+def is_web_address(value):
+    """True for an http:// or https:// address with a host."""
+    parts = urlsplit(value)
+    return parts.scheme in ("http", "https") and bool(parts.netloc)
 
 
 def check_development_settings_in_use(app_configs, **kwargs):
@@ -102,5 +114,31 @@ def check_site_identity_is_set(app_configs, **kwargs):
                 "what applies it. See DEPLOY.md, section 10."
             ),
             id=SITE_IDENTITY_WARNING_ID,
+        )
+    ]
+
+
+# Registered here, where the check is defined, so the module that loads this
+# file needs no second line for it.
+@register()
+def check_source_code_url(app_configs, **kwargs):
+    """Warn when SOURCE_CODE_URL is set and is not a web address.
+
+    The footer link then keeps the default, so the page is never left with a link
+    that goes nowhere or runs script. An empty value counts as not set."""
+    if not settings.SOURCE_CODE_URL or is_web_address(settings.SOURCE_CODE_URL.strip()):
+        return []
+
+    return [
+        CheckWarning(
+            "SOURCE_CODE_URL is not an http:// or https:// address, so the "
+            "Source code link at the foot of every page points at "
+            f"{settings.SOURCE_CODE_URL_DEFAULT}.",
+            hint=(
+                "Set SOURCE_CODE_URL in .env to the full web address of the "
+                "repository this site runs from, starting with https://, or remove "
+                "the line to use the default."
+            ),
+            id=SOURCE_CODE_URL_WARNING_ID,
         )
     ]

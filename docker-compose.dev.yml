@@ -1,0 +1,25 @@
+# Development overlay: the source in this folder is the source the web container runs.
+#
+# Compose loads only docker-compose.yml and docker-compose.override.yml on its own,
+# so this file is never read unless a command names it:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+#
+# `make dev-up` does that. No deploy, upgrade or release script names it, and a
+# production checkout never needs it.
+#
+# What the bind mount hides. The image builds two things into /app that are not in
+# the repository: static/css/output.css (compiled by the Tailwind step) and the
+# tailwindcss binary. A bind mount of this folder over /app hides both, so
+# `make dev-css` compiles output.css into this folder (git ignores it) using the
+# image's own binary. The collected static files (/app/staticfiles), uploads, logs
+# and the other mounts in docker-compose.yml stay on their named volumes.
+
+services:
+  web:
+    volumes:
+      - .:/app
+    environment:
+      # Gunicorn reads this variable itself: a saved .py file restarts the workers,
+      # so the running site follows an edit as the test runs do.
+      GUNICORN_CMD_ARGS: "--reload"

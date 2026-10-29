@@ -791,6 +791,6 @@ them, so an error that names one of them means the build went wrong.
   OpenH2O's code and runs it for its users, the AGPL (section 13), the license
   OpenH2O is published under, requires the site to offer those users the changed
   source code. The Source code link at the foot of every page points at
-  github.com/Open-H2O/openh2o, and no setting can change it yet. Change it in
-  `templates/base.html` and `templates/base_auth.html` to wherever the organization
-  publishes its changes. See [NOTICE](../NOTICE).
+  github.com/Open-H2O/openh2o. Set `SOURCE_CODE_URL` in `.env` to wherever the
+  organization publishes its changes, then run `docker compose up -d`. See
+  [NOTICE](../NOTICE).

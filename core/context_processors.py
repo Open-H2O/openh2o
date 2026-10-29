@@ -199,6 +199,19 @@ def app_version(request):
     return {"app_version": settings.APP_VERSION}
 
 
+def source_code(request):
+    """The address the footer's "Source code" link points at.
+
+    A value that is not an http:// or https:// address (the openh2o.W003 check
+    reports it) is not used: the link keeps the default."""
+    from core.checks import is_web_address
+
+    configured = (settings.SOURCE_CODE_URL or "").strip()
+    if configured and is_web_address(configured):
+        return {"source_code_url": configured}
+    return {"source_code_url": settings.SOURCE_CODE_URL_DEFAULT}
+
+
 def google_sign_in(request):
     """Expose whether Google sign-in actually exists on this deployment.
 

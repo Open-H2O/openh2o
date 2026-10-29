@@ -150,6 +150,7 @@ TEMPLATES = [
                 "core.context_processors.modules",
                 "core.context_processors.setup_status",
                 "core.context_processors.app_version",
+                "core.context_processors.source_code",
             ],
         },
     },
@@ -432,6 +433,15 @@ HEALTH_DEMO_MODE = env.bool("HEALTH_DEMO_MODE", default=False)
 # the Caddyfile's Content-Security-Policy reads.
 UMAMI_WEBSITE_ID = env("UMAMI_WEBSITE_ID", default="")
 UMAMI_SCRIPT_URL = env("UMAMI_SCRIPT_URL", default="")
+
+# -- Source code link --------------------------------------------------------
+# The footer's "Source code" link. The platform is AGPL-3.0-or-later, so a site
+# that runs a modified copy points visitors at its own copy by setting
+# SOURCE_CODE_URL. A value that is not an http:// or https:// address is reported
+# by the openh2o.W003 check and the footer keeps the default (see
+# core.context_processors.source_code).
+SOURCE_CODE_URL_DEFAULT = "https://github.com/Open-H2O/openh2o"
+SOURCE_CODE_URL = env("SOURCE_CODE_URL", default=SOURCE_CODE_URL_DEFAULT)
 
 # -- In-app feedback widget --------------------------------------------------
 # The widget now POSTs to the platform's OWN intake endpoint (feedback.views.
