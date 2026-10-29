@@ -92,6 +92,8 @@ tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 git show origin/main:scripts/release.sh > "$tmp/release.sh" </dev/null
 git show origin/main:scripts/smoke.sh > "$tmp/smoke.sh" </dev/null
+# The release script asks the site it released; it has no default address.
+export RELEASE_SITE=https://openh2o.com
 if [ "$2" = --drill-smoke-missing-page ]; then
   bash "$tmp/release.sh" REF="$ref" --drill-smoke-missing-page </dev/null
 else
