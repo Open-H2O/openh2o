@@ -156,28 +156,27 @@ RIGHT_CONFIGS = [
 #
 # `frac` (0..1) walks the named segments west→east so several PODs on the same
 # river land at distinct, plausible reaches rather than stacking on one segment.
-# `story` is "lower" for every diversion now (the upper watershed was removed).
 #
 # Headgates legitimately sit ON the canal — and a canal often runs through the
 # town it is named for, so a headgate near a town is CORRECT. The fields it serves
 # do NOT belong next to the headgate; they live on the open cropland of the
 # service area (see PARCEL_CLUSTER_CONFIGS).
 #
-# Each entry: pod_name, right_id, story, line_name, feature_type, frac, max_rate_cfs.
+# Each entry: pod_name, right_id, line_name, feature_type, frac, max_rate_cfs.
 # ---------------------------------------------------------------------------
 POD_CONFIGS = [
     # MID canal headgates (complex) + two Merced River main-stem diversions.
-    ("MER-POD-004-DEMO Atwater Canal Headgate", "MER-WR-004-DEMO", "lower",
+    ("MER-POD-004-DEMO Atwater Canal Headgate", "MER-WR-004-DEMO",
      "Atwater Canal", CANAL, 0.50, Decimal("900.0")),
-    ("MER-POD-005-DEMO Le Grand Canal Headgate", "MER-WR-005-DEMO", "lower",
+    ("MER-POD-005-DEMO Le Grand Canal Headgate", "MER-WR-005-DEMO",
      "Le Grand Canal", CANAL, 0.50, Decimal("220.0")),
-    ("MER-POD-006-DEMO Stevinson Diversion Canal Headgate", "MER-WR-006-DEMO", "lower",
+    ("MER-POD-006-DEMO Stevinson Diversion Canal Headgate", "MER-WR-006-DEMO",
      "Diversion Canal", CANAL, 0.50, Decimal("260.0")),
-    ("MER-POD-007-DEMO Plainsburg El Nido Canal Headgate", "MER-WR-009-DEMO", "lower",
+    ("MER-POD-007-DEMO Plainsburg El Nido Canal Headgate", "MER-WR-009-DEMO",
      "El Nido Canal", CANAL, 0.50, Decimal("130.0")),
-    ("MER-POD-008-DEMO Crocker-Huffman River Diversion", "MER-WR-004-DEMO", "lower",
+    ("MER-POD-008-DEMO Crocker-Huffman River Diversion", "MER-WR-004-DEMO",
      "Merced River", RIVER, 0.88, Decimal("700.0")),
-    ("MER-POD-009-DEMO Bottomlands Riparian Take", "MER-WR-008-DEMO", "lower",
+    ("MER-POD-009-DEMO Bottomlands Riparian Take", "MER-WR-008-DEMO",
      "Merced River", RIVER, 0.15, Decimal("45.0")),
 ]
 
@@ -633,7 +632,7 @@ class Command(BaseCommand):
         # never lands on the wrong creek and its stream_name is truthful.
         self.stdout.write("Placing points of diversion on named rivers/canals...")
         pods = []
-        for name, rid, story, line_name, ftype, frac, max_cfs in POD_CONFIGS:
+        for name, rid, line_name, ftype, frac, max_cfs in POD_CONFIGS:
             # Prefer a free-flowing "Channel Line" reach for a river diversion and
             # a "Canal" segment for a canal headgate, but fall back to any named
             # segment (the lower Merced main stem is all "Waterbody Connector").

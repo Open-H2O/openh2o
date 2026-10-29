@@ -23,7 +23,6 @@ from datasync.adapters.base import BaseAdapter
 
 logger = logging.getLogger(__name__)
 
-IV_URL = "https://waterservices.usgs.gov/nwis/iv/"
 DV_URL = "https://waterservices.usgs.gov/nwis/dv/"
 SITE_URL = "https://waterservices.usgs.gov/nwis/site/"
 

@@ -33,9 +33,6 @@ BASIN = "basin"
 CONJUNCTIVE = "conjunctive"
 FLOOD_MAR = "flood_mar"
 
-#: All recharge archetypes, in routing-precedence order (well first).
-RECHARGE_ARCHETYPES = (CONJUNCTIVE, FLOOD_MAR, BASIN)
-
 
 def parcel_recharge_archetype(parcel):
     """Classify ``parcel`` into one of the three recharge archetypes from its links.

@@ -56,30 +56,6 @@ SQ_KM_TO_SQ_MI = 0.386102158542
 _CODE_MAX_LENGTH = 20
 
 
-def feature_properties(geojson) -> dict:
-    """
-    The properties dict for whichever shape ``parse_geojson_boundary`` accepted.
-
-    FeatureCollection → the first feature's properties (the same feature whose
-    geometry becomes the boundary); Feature → its own; a raw geometry carries
-    none. Anything that isn't a dict is treated as no properties at all.
-    """
-    if not isinstance(geojson, dict):
-        return {}
-
-    gtype = geojson.get("type")
-    if gtype == "FeatureCollection":
-        features = geojson.get("features") or []
-        first = features[0] if features else None
-        properties = first.get("properties") if isinstance(first, dict) else None
-    elif gtype == "Feature":
-        properties = geojson.get("properties")
-    else:
-        properties = None
-
-    return properties if isinstance(properties, dict) else {}
-
-
 def _normalise_property_keys(properties: dict) -> dict:
     """Re-key ``properties`` by lowercase letters-and-digits, first key wins."""
     normalised = {}

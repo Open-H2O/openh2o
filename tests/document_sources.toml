@@ -668,7 +668,6 @@ heading = "8. Seed Reference Data"
 files = [
   "core/management/commands/seed_data.py",
   "core/modules.py",
-  "core/management/commands/seed_roles.py",
   "standards/management/commands/seed_observed_properties.py",
   "accounting/management/commands/seed_water_types.py",
   "wells/management/commands/seed_well_types.py",
@@ -1973,7 +1972,6 @@ files = [
   "core/adapters.py",
   "config/settings/base.py",
   "config/settings/production.py",
-  "core/management/commands/seed_roles.py",
   "core/models.py",
   "core/admin.py",
   "core/site_identity.py",
@@ -2160,7 +2158,7 @@ checked_at = "41b90b6"
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
 heading = "6. Build the site's styling"
-files = ["scripts/build-css.sh", "static/css/input.css", "config/settings/base.py"]
+files = ["static/css/input.css", "config/settings/base.py"]
 labels = []
 checked_at = "71c50e2"
 

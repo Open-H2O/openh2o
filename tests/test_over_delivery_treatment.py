@@ -65,7 +65,6 @@ GROSS_ET = Decimal("10.0000")
 OVER = Decimal("4.0000")
 SHARE = Decimal("0.100")
 CREDITED = Decimal("3.6000")
-LEFT_BEHIND = Decimal("0.4000")
 
 
 def _config(**kwargs):

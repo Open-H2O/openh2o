@@ -38,11 +38,6 @@ GEOJSON_EXTENSIONS = (".geojson", ".json")
 SHAPEFILE_EXTENSIONS = (".zip",)
 KML_EXTENSIONS = (".kml",)
 
-#: The three formats, as one phrase every refusal that names them shares.
-THREE_FORMATS = (
-    "a zipped shapefile (.zip), a KML (.kml) or a GeoJSON (.geojson or .json) file"
-)
-
 #: The Setup Wizard's wrong-type sentence.
 UNSUPPORTED_SENTENCE = "This page imports .zip, .kml, .geojson and .json files only."
 

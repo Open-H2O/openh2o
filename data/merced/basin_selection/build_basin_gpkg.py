@@ -31,7 +31,6 @@ MERCED = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 HERE = os.path.join(MERCED, "basin_selection")
 PARCEL_SEL = os.path.join(MERCED, "parcel_selection")
 CANDIDATE_PARCELS = f"{HERE}/merced_candidate_parcels.geojson"
-CROP_FIELDS_GPKG = f"{PARCEL_SEL}/merced_parcel_picker.gpkg"
 OUT = f"{HERE}/merced_basin_picker.gpkg"
 
 # Context columns worth keeping so the picker can tell parcels apart and judge a

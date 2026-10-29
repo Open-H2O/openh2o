@@ -62,7 +62,6 @@ OPEN_WY = "WY 2025-2026"
 # with a surface delivery is June 2025, so July–September are dry.
 FIRST_DRY_MONTH = date(2025, 7, 1)
 SUBSTITUTION_MONTHS = {7, 8, 9}
-QUANT = Decimal("0.0001")
 
 # Surface districts modeled in the fixture (a right whose POD(s) serve real parcels).
 NORMAL_RIGHT = "MER-WR-004"

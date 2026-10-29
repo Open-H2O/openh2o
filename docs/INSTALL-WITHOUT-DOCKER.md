@@ -49,7 +49,7 @@ it can manage with the tools it already uses.
 On this path you install and update the database, the map libraries and the Python
 packages yourself. The Docker build bundles them. This path also has no reverse
 proxy. The Docker installation runs Caddy, a *reverse proxy* that receives web
-traffic and passes it to the website. Caddy also handles HTTPS, the encrypted
+traffic and passes it to the website. Caddy can also handle HTTPS, the encrypted
 connection a browser marks with a padlock. Because this path has no Caddy, this
 guide covers only a site that this computer or the office network can reach.
 Section 9 explains the choice.
@@ -233,10 +233,6 @@ Two parts of these commands need explaining:
 - The `-f` in `curl -sfLO` makes curl stop with an error when the download fails.
   Without it, curl saves the server's error page under the program's name and
   reports success.
-
-⚠ Do not use `scripts/build-css.sh` on this path. The script always downloads the
-Intel and AMD version and leaves out the `-f`, so it can fail in both of the ways
-above.
 
 ---
 
@@ -530,8 +526,9 @@ same network, and confirm that the connection is refused.
 
 Use `config.settings.production` on this path, with the three settings from
 section 7 turned off. The production settings keep `DEBUG` off and sign-up closed,
-so people get accounts only from an administrator. They also require a strong
-database password and the site's address in `ALLOWED_HOSTS`. The development
+so people get accounts only from an administrator. They refuse to start when the
+database password is empty or one of four common defaults (`openh2o`, `postgres`, `password` and
+`changeme`), or when `ALLOWED_HOSTS` is empty. Set a strong password and the site's address anyway. The development
 settings, `config.settings.local`, are for work on the code. They turn `DEBUG` on,
 which shows the site's error traces, settings and database queries on any page that
 hits an error. Check the settings:

@@ -60,7 +60,7 @@ import django
 
 # Run as `python scripts/render_crawl.py`, so sys.path[0] is scripts/ rather than
 # the project root -- put the root back or `config` does not import. Same repair
-# scripts/render_baseline.py makes, for the same reason.
+# the other scripts make, for the same reason.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.production")

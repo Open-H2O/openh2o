@@ -155,7 +155,6 @@ class _Region(HTMLParser):
         self.depth = None
         self.done = False
         self.root_tag = None
-        self.root_classes = set()
         self.children = []
         self.ids = set()
 
@@ -168,7 +167,6 @@ class _Region(HTMLParser):
             if self.cls in classes:
                 self.depth = 0
                 self.root_tag = tag
-                self.root_classes = classes
             return
         if attrs.get("id"):
             self.ids.add(attrs["id"])

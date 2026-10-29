@@ -42,7 +42,6 @@ FIELD_LABEL = "Surface water in excess of ETAW:"
 OVER = Decimal("4.0000")
 SHARE = Decimal("0.100")
 CREDITED = Decimal("3.6000")
-LEFT = Decimal("0.4000")
 
 CREDITED_ROWS = (
     "<span>Credited to this field</span><b>3.60</b>",

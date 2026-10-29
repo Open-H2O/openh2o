@@ -104,10 +104,9 @@ def overview(request):
         # sentence that is right on exactly one deployment.
         #
         # Derived from the three counts already gathered above — no fourth
-        # aggregate query. Step 1 is done by definition inside the loop: this
-        # system exists, so it was onboarded (or admin-created, which is the
-        # same evidence).
-        system.step_onboard_done = True
+        # aggregate query. Step 1 has no flag: inside the loop this system
+        # exists, so it was onboarded (or admin-created, which is the same
+        # evidence).
         system.step_points_done = system.sampling_point_count > 0
         system.step_results_done = system.result_count > 0
 

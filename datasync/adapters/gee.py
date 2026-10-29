@@ -65,7 +65,6 @@ EE_BAND_TO_VARIABLE = {
 # reduce_precip_by_parcel); it is NOT a band swap on the ET path.
 GRIDMET_COLLECTION = "IDAHO_EPSCOR/GRIDMET"
 GRIDMET_BAND = "pr"  # daily precipitation amount, mm
-GRIDMET_NATIVE_SCALE = 4638  # GRIDMET native grid (~4.6 km), for reference only.
 
 # We reduce precip at the OpenET native scale (30 m), NOT GRIDMET's 4.6 km. At the
 # coarse native scale, reduceRegions(mean) returns NULL for a parcel smaller than

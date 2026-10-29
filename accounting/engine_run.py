@@ -84,9 +84,6 @@ MONTH_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
 #: How many lines of the traceback are kept in ``error_detail``.
 TRACEBACK_TAIL_LINES = 20
 
-#: The names of the request's statuses a run has finished with.
-FINISHED_STATUSES = ("succeeded", "finished_with_notes", "failed")
-
 
 # --------------------------------------------------------------------------
 # Month helpers

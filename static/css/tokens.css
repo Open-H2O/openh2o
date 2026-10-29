@@ -103,8 +103,8 @@
              -- '*.css' '*.js' '*.html' '*.py' \
              | sort | uniq -c | awk '$1 > 1 {print $2}'
 
-       5 consumed, 19 reserved. `.text-furnace` and `.text-forest` in app.css are
-       the only two that reach a stop through a class; every other consumer is an
+       5 consumed, 19 reserved. `.text-furnace` in app.css is
+       the only one that reaches a stop through a class; every other consumer is an
        inline style="color: var(--ramp-step)" in a template. No code builds a
        ramp name dynamically — checked, because a grep-based unused-token claim
        is worthless if it does. (`rampLo`/`rampHi` in map-core.js are circle-

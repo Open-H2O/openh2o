@@ -49,7 +49,6 @@ PANEL_SIZE = 10
 
 LABEL_BEFORE = LABEL_BEFORE_UPDATE
 LABEL_INSERT = "insert"
-LABEL_UPDATE = "update"
 LABEL_DELETE = "delete"
 
 # Columns a reader never needs in a list of changes: the row's own key and the
@@ -315,7 +314,6 @@ class ChangeRow:
     who: str
     note: str
     changes: list = field(default_factory=list)
-    model_label: str = ""
     object_id: int = 0
 
 
@@ -625,7 +623,6 @@ def _row_for(label, obj_id, first, last, at, metadata, people, names, live, only
         who=who_for(metadata, people),
         note=str(metadata.get("note") or metadata.get("reason") or ""),
         changes=changes,
-        model_label=label,
         object_id=obj_id,
     )
 

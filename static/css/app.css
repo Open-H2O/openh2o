@@ -416,21 +416,6 @@ html { color-scheme: dark; }
     outline-offset: 2px;
 }
 
-.app-header-title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--color-text-primary);
-    margin: 0;
-    justify-self: center;
-    text-align: center;
-    /* Never let an unusually long title shove the side columns into overflow. */
-    min-width: 0;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
 .app-header-user {
     display: flex;
     align-items: center;
@@ -443,7 +428,7 @@ html { color-scheme: dark; }
     color: var(--color-text-secondary);
 }
 
-/* -- Global search (E2) -------------------------------------------------- */
+/* -- Global search ------------------------------------------------------- */
 
 .app-header-left {
     display: flex;
@@ -619,10 +604,6 @@ html { color-scheme: dark; }
     box-shadow: var(--shadow-raised-hov), 0 0 12px var(--color-accent-muted), inset 0 1px 0 var(--edge);
 }
 
-.dashboard-card-wide {
-    grid-column: 1 / -1;
-}
-
 .dashboard-card-label {
     font-size: 0.75rem;
     font-weight: 600;
@@ -746,22 +727,6 @@ html { color-scheme: dark; }
     border-radius: 50%;
 }
 
-/* Generic status dot for cards outside the hero. The landing page's dot used
-   Tailwind w-2/h-2 utilities that the compiled sheet doesn't carry, so it
-   rendered 0x0 — invisible — while its inline color read fine in devtools. */
-.status-dot {
-    display: inline-block;
-    flex: none;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-}
-
-.status-dot--ok {
-    background-color: var(--color-supply);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-supply) 14%, transparent);
-}
-
 .home-hero-dot--ok {
     background-color: var(--forest-500);
     box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.12);
@@ -769,10 +734,6 @@ html { color-scheme: dark; }
 
 .home-hero-dot--idle {
     background-color: #9ca3af;
-}
-
-.home-status-sep {
-    color: var(--color-text-tertiary);
 }
 
 /* Primary task cards — bigger and more deliberate than dashboard cards,
@@ -961,12 +922,6 @@ html { color-scheme: dark; }
     grid-template-rows: subgrid;
     grid-row: span 2;
     align-content: start;
-}
-
-.page-grid-2col-wide {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: var(--space-lg);
 }
 
 /* The account detail pane, composed as a PAGE (DESIGN.md
@@ -1301,29 +1256,11 @@ html { color-scheme: dark; }
     background-color: color-mix(in srgb, var(--color-accent) 8%, transparent);
 }
 
-/* A reading and the note under it are ONE entry (not a note on its
-   own row). No rule between the two, the rule comes after the note, and the
-   zebra stripe, which counts physical rows, must not split the pair. With a
-   rule between them, the note sat pressed against the line above it. */
-.data-table tr.row-has-note td {
-    border-bottom: none;
-    padding-bottom: 2px;
-}
-
-.data-table tr.row-note td {
-    padding-top: 0;
-}
-
-.data-table tbody tr.row-has-note:nth-child(even) td,
-.data-table tbody tr.row-note:nth-child(even) td {
-    background-color: transparent;
-}
-
 /* A full-width divider naming the kind of row that follows (
    the Zones table mixes zones with a groundwater budget and zones without,
    and the second kind dashes three cells; the divider says why, once, instead
    of five times). Left-aligned so it sits over the zone names. Excluded
-   from the zebra stripe, same shape as `tr.row-note`. */
+   from the zebra stripe. */
 .data-table tr.row-group td {
     text-align: left;
     /* The water-year headers on the well's two grouped tables stand out from
@@ -1927,53 +1864,6 @@ html { color-scheme: dark; }
     pointer-events: auto;
 }
 
-/* -- Deep Dive ----------------------------------------------------------- */
-
-.deep-dive {
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    background: var(--color-surface-elevated, var(--color-elevated));
-    padding: var(--space-sm) var(--space-md);
-    margin-top: var(--space-md);
-}
-
-.deep-dive-summary {
-    display: flex;
-    align-items: center;
-    gap: var(--space-xs);
-    cursor: pointer;
-    list-style: none;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-    color: var(--color-text-secondary);
-    transition: color 150ms;
-}
-
-.deep-dive-summary::-webkit-details-marker {
-    display: none;
-}
-
-.deep-dive-summary:hover {
-    color: var(--color-text-primary);
-}
-
-.deep-dive-caret {
-    color: var(--color-accent);
-    font-size: 0.75rem;
-    transition: transform 150ms;
-}
-
-.deep-dive[open] .deep-dive-caret {
-    transform: rotate(90deg);
-}
-
-.deep-dive-body {
-    margin-top: var(--space-sm);
-    padding-top: var(--space-sm);
-    border-top: 1px solid var(--color-border);
-}
-
 /* -- Explainer pop-out --------------------------------------------------- */
 
 .explainer-popout {
@@ -2086,47 +1976,6 @@ html { color-scheme: dark; }
     text-decoration-thickness: 2px;
 }
 
-/* "Supplies − Use = Balance" equation row, colour-keyed to the stat-card accents. */
-.concept-equation {
-    display: flex;
-    align-items: stretch;
-    gap: var(--space-sm);
-    flex-wrap: wrap;
-    margin: var(--space-lg) 0 var(--space-sm);
-}
-
-.concept-equation .stat-card {
-    flex: 1 1 160px;
-    padding: var(--space-md);
-}
-
-.concept-op {
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: var(--color-text-tertiary);
-    font-family: var(--font-display);
-}
-
-/* Two-panel "use vs. supply" comparison. */
-.concept-panel {
-    background: var(--color-inset);
-    border-radius: var(--radius-md);
-    padding: var(--space-lg);
-    border-top: 3px solid var(--color-border);
-}
-
-.concept-panel-use {
-    border-top-color: var(--color-text-tertiary);
-}
-
-.concept-panel-supply {
-    border-top-color: var(--forest-400);
-}
-
 .concept-panel-title {
     display: flex;
     align-items: baseline;
@@ -2137,18 +1986,6 @@ html { color-scheme: dark; }
     margin-bottom: var(--space-xs);
 }
 
-/* Gold label that heads a concept-panel whose body is prose (not a larger
-   title). Sized to LEAD its paragraph — unlike .step-eyebrow, which is
-   intentionally tiny because it sits above a bigger heading; using the eyebrow
-   here made the gold label read smaller than its own body text. */
-.concept-panel-label {
-    display: block;
-    font-size: 0.9375rem;
-    font-weight: 700;
-    color: var(--color-accent);
-    margin-bottom: var(--space-xs);
-}
-
 .concept-list {
     margin: var(--space-sm) 0 0;
     padding-left: var(--space-lg);
@@ -2156,36 +1993,6 @@ html { color-scheme: dark; }
 
 .concept-list li {
     margin-bottom: var(--space-xs);
-}
-
-/* Highlighted "the rule" callout. Emphasis comes from a faint gold wash and
-   hairline rather than an accent stripe — color suffuses the box instead of
-   flagging its edge. */
-.callout-rule {
-    background: var(--color-accent-muted);
-    border: 1px solid color-mix(in srgb, var(--color-gold) 18%, transparent);
-    border-radius: var(--radius-sm);
-    padding: var(--space-md) var(--space-lg);
-    margin: var(--space-lg) 0 var(--space-xs);
-}
-
-/* The "honesty note": the panel that says a number on this page is a DERIVED
-   estimate rather than a measurement. It appears on the calculation run, the
-   methodology settings, and the methodology preview, and it was copy-pasted
-   into all three as an inline style carrying `rgba(228,163,23,…)` — the
-   pre-Deep-Water gold, frozen at the moment it was pasted and unable to follow
-   the palette. Composes onto `.card-raised.card-inset`.
-
-   Its lead sentence is primary text, not `--color-accent`: teal means
-   interactive, and this sentence is not a link. The gold wash and hairline
-   carry the caution on their own. */
-.honesty-note {
-    border: 1px solid color-mix(in srgb, var(--color-gold) 35%, transparent);
-    background: color-mix(in srgb, var(--color-gold) 8%, transparent);
-}
-
-.honesty-note strong {
-    color: var(--color-text-primary);
 }
 
 /* -- Help Pages ---------------------------------------------------------- */
@@ -2260,28 +2067,6 @@ html { color-scheme: dark; }
     border-top: 0;
 }
 
-/* `.callout-rule` carries its own margins for pages that drop it into running
-   prose; here the utilities set the rhythm, so it sits flush like every other
-   block. */
-.help-page .callout-rule {
-    margin: 0;
-}
-
-/* Three panels that belong together sit three across. The default card grid
-   (auto-fill at 300px) packs two into the 752px card and orphans the third
-   in a row of its own, which read as a layout accident. Compound selectors:
-   `.card-grid` itself is declared further down this file and would otherwise
-   win on source order. */
-.card-grid.card-grid--3 {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-@media (max-width: 767px) {
-    .card-grid.card-grid--3 {
-        grid-template-columns: 1fr;
-    }
-}
-
 /* Link cards whose count depends on which modules are on (two or three): as
    many across as there are, so a module switched off leaves no empty slot. */
 .card-grid.card-grid--fit {
@@ -2294,33 +2079,6 @@ html { color-scheme: dark; }
    page's link cards on one row. */
 .help-page .card-grid.card-grid--fit {
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-}
-
-/* A panel whose last line says how its figure is known ("Estimated from
-   weather data for the area"): the panel is a column and the foot sits at the
-   bottom, ruled off, so the three lines sit level across the row whatever the
-   length of the sentence above each. The same shape as `.stat-card-note`, the
-   provenance line under a stat figure, at a size a full sentence can be read
-   at. It was a pill: a sentence in a pill wrapped into a five-line tinted
-   slab. */
-.card-grid--3 > .concept-panel {
-    display: flex;
-    flex-direction: column;
-}
-
-.concept-panel-foot {
-    margin-top: auto;
-    padding-top: var(--space-sm);
-    border-top: 1px solid var(--color-border);
-    font-size: 0.8125rem;
-    line-height: 1.4;
-    color: var(--color-text-secondary);
-}
-
-/* The body keeps a fixed gap above the rule; `margin-top: auto` on the foot
-   only adds to it. */
-.concept-panel > p:has(+ .concept-panel-foot) {
-    margin-bottom: var(--space-md);
 }
 
 /* The ledger table ("Where this field's water came from"): the name, the
@@ -2393,10 +2151,6 @@ html { color-scheme: dark; }
     font-weight: 600;
 }
 
-.help-steps-table .col-setting {
-    width: 26%;
-}
-
 .help-steps-table .step-num {
     display: inline-block;
     min-width: 1.6em;
@@ -2417,12 +2171,6 @@ html { color-scheme: dark; }
 .help-cases-table .col-name {
     width: 24%;
     font-weight: 600;
-}
-
-/* The sources table on How water balances work: its names are one
-   or two words, so the sentence columns take the room a 24% name column wasted. */
-.help-cases-table--short-names .col-name {
-    width: 14%;
 }
 
 /* Its How sure column holds the same pills as `.how-sure-table`, one line,
@@ -2522,47 +2270,6 @@ html { color-scheme: dark; }
 
 .receipt-short .receipt-lead {
     margin-bottom: 0;
-}
-
-
-/* `.step-list` and `.step-card--inset` (the Methods page's five step panels)
-   do not exist: the page is tables now and no other template used them. */
-
-.glossary-letter-heading {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--color-blue);
-    padding: var(--space-xs) 0;
-    margin-top: var(--space-md);
-    margin-bottom: var(--space-sm);
-    border-bottom: 2px solid oklch(0.35 0.08 220 / 0.4);
-}
-
-.glossary-letter-heading:first-child {
-    margin-top: 0;
-}
-
-.glossary-entry {
-    padding: var(--space-sm) 0;
-    border-bottom: 1px solid oklch(0.20 0.01 250 / 0.5);
-}
-
-.glossary-entry:last-child {
-    border-bottom: none;
-}
-
-.glossary-term {
-    font-weight: 600;
-    color: var(--color-text-primary);
-    font-size: 0.9375rem;
-    margin-bottom: 2px;
-}
-
-.glossary-def {
-    margin: 0;
-    color: var(--color-text-secondary);
-    font-size: 0.875rem;
-    line-height: 1.5;
 }
 
 .jump-nav {
@@ -2887,26 +2594,6 @@ html { color-scheme: dark; }
     color: var(--color-text-tertiary);
     letter-spacing: 0.04em;
     margin-bottom: var(--space-sm);
-}
-
-.stat-card-value {
-    font-size: 2.25rem;
-    font-weight: 800;
-    font-family: var(--font-display);
-    font-variant-numeric: tabular-nums;
-    line-height: 1.1;
-}
-
-.stat-card-accent-supply {
-    border-top: 3px solid var(--forest-400);
-}
-
-.stat-card-accent-usage {
-    border-top: 3px solid var(--color-text-tertiary);
-}
-
-.stat-card-accent-balance {
-    border-top: 3px solid var(--color-accent);
 }
 
 /* -- Budget panel -------------------------------------------------------- */
@@ -3270,44 +2957,6 @@ html { color-scheme: dark; }
         padding-top: 1.45rem;
     }
 }
-/* A row of two or three result figures with NO operator between
-   them, the calculation page's result row (its three stacked .result-card
-   bands, each a small label far left and one figure far right, took a
-   third of the page for three numbers: two fresh readers, DO NOT SHIP,
-   2026-09-28). The cells pack to the left at their own width, since two
-   figures spread across a 1,600px panel read as far apart as the bands
-   did (checked at 1,730 the same day); the rule between cells is drawn on
-   the cell, since there is no operator to carry it. In the stacked layout
-   under 700px the rule turns into a top border, one figure per row. */
-.budget-panel-body .budget-panel-row--figures {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: var(--space-md) 0;
-}
-.budget-panel-body .budget-panel-row--figures > .budget-seg {
-    flex: 0 1 auto;
-    min-width: 14rem;
-    max-width: 26rem;
-    padding-right: var(--space-xl);
-}
-.budget-panel-body .budget-panel-row--figures > .budget-seg + .budget-seg {
-    border-left: 1px solid var(--color-border);
-    padding-left: var(--space-xl);
-}
-@container (max-width: 700px) {
-    .budget-panel-body .budget-panel-row--figures > .budget-seg {
-        flex-basis: 100%;
-        max-width: none;
-        padding-right: 0;
-    }
-    .budget-panel-body .budget-panel-row--figures > .budget-seg + .budget-seg {
-        border-left: none;
-        padding-left: 0;
-        border-top: 1px solid var(--color-border);
-        padding-top: var(--space-md);
-    }
-}
 .budget-panel-row {
     display: flex;
     align-items: flex-start;
@@ -3354,111 +3003,11 @@ html { color-scheme: dark; }
     }
     .budget-op { display: none; }
 }
-
-/* Concept variant — the same gradient panel, but carrying descriptive text
-   instead of live AF figures. Lets the Help explainers' teaching equation wear
-   the exact skin as the dashboard's real balance, so the page that explains the
-   balance and the page that shows it now read as one family. Flexes to any
-   number of segments (water_balances uses 3; methods uses 5). */
-.budget-panel--concept .budget-panel-row {
-    display: flex;
-    align-items: stretch;
-    gap: var(--space-sm);
-    padding: var(--space-lg);
-}
-/* Equal columns that share one row regardless of count (3 on water_balances,
-   5 on methods) — flex-basis 0 lets every segment shrink to fit, so the
-   equation never breaks mid-line into a stranded 3+2; long labels just wrap
-   inside their own column. */
-.budget-panel--concept .budget-seg {
-    flex: 1 1 0;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    /* centred, as it was before 142 left-packed the base .budget-seg */
-    text-align: center;
-}
-.budget-panel--concept .budget-seg-value {
-    font-size: 1.05rem;
-    font-weight: 700;
-    line-height: 1.25;
-}
-.budget-panel--concept .budget-op {
-    display: flex;
-    align-items: center;
-    font-size: 1.3rem;
-    font-family: var(--font-display);
-    color: var(--color-text-tertiary);
-    /* vertically centred by flex, so no baseline padding from the base rule */
-    padding: 0 var(--space-xs);
-}
 .budget-seg-caption {
     font-size: 0.72rem;
     color: var(--color-text-tertiary);
     margin-top: 8px;
 }
-/* Stack the equation vertically on narrow screens (operators hidden by the
-   base .budget-op mobile rule). */
-@media (max-width: 767px) {
-    .budget-panel--concept .budget-panel-row {
-        flex-direction: column;
-    }
-}
-
-/* -- Accent feature card ------------------------------------------------- */
-/* A left-accent card for a labeled entity that carries a description + an
-   action (the report-type heroes) — replaces the old top-stripe stat cards.
-   The accent rides the left edge and tints a small icon chip in the header;
-   the body flexes so footers line up across a row of equal-height cards. */
-.accent-card {
-    display: flex;
-    flex-direction: column;
-}
-.accent-card-head {
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-    margin-bottom: var(--space-sm);
-}
-.accent-card-icon {
-    flex-shrink: 0;
-    width: 38px;
-    height: 38px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--radius-md);
-    color: var(--color-text-secondary);
-    background: rgba(120, 150, 185, 0.1);
-}
-.accent-card-title {
-    font-size: 1.125rem;
-    font-weight: 700;
-    color: var(--color-text-primary);
-    margin: 0;
-}
-.accent-card-body {
-    flex: 1;
-}
-.accent-card-foot {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-md);
-    margin-top: var(--space-md);
-}
-/* Identity now rides entirely in the icon chip (functional colour), not an
-   edge stripe — the report type reads from its gold/blue glyph. */
-.accent-card--gold .accent-card-icon {
-    color: var(--color-accent);
-    background: color-mix(in srgb, var(--color-gold) 12%, transparent);
-}
-.accent-card--blue .accent-card-icon {
-    color: var(--color-blue);
-    background: rgba(46, 107, 150, 0.16);
-}
-
 .stat-card-value-sm {
     font-size: 1.25rem;
     font-weight: 800;
@@ -3469,19 +3018,6 @@ html { color-scheme: dark; }
     font-size: 0.75rem;
     color: var(--color-text-tertiary);
     margin-top: 4px;
-}
-
-/* Where a stat-card's figure came from. A number the reader cannot trace to a
-   source is a number they cannot act on, so provenance gets its own
-   line — quieter than the unit line, separated by a rule so it reads as a note
-   about the figure rather than more of the figure. */
-.stat-card-note {
-    font-size: 0.7rem;
-    line-height: 1.35;
-    color: var(--color-text-tertiary);
-    margin-top: var(--space-xs);
-    padding-top: var(--space-xs);
-    border-top: 1px solid var(--color-border);
 }
 
 .inset-card {
@@ -3651,14 +3187,6 @@ div[id$="-map"] {
     gap: var(--space-sm);
 }
 
-/* -- Filter group (flex filter bar item) --------------------------------- */
-
-.filter-group {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-xs);
-}
-
 /* -- Field value size variants ------------------------------------------- */
 
 .field-value-sm {
@@ -3734,16 +3262,8 @@ div[id$="-map"] {
     text-decoration: underline;
 }
 
-.text-blue {
-    color: var(--color-blue-bright); /* Phase F (F2): readable as body text */
-}
-
 .text-furnace {
     color: var(--furnace-500);
-}
-
-.text-forest {
-    color: var(--forest-500);
 }
 
 /* -- Semantic water accounting colors ------------------------------------ */
@@ -3783,42 +3303,7 @@ div[id$="-map"] {
     color: var(--color-text-secondary);
 }
 
-/* -- About page: credit cards & inline links ---------------------------- */
-.credit-card {
-    margin-bottom: var(--space-md);
-}
-.credit-card--lead {
-    border-top: 3px solid var(--color-accent);
-}
-.credit-eyebrow {
-    display: block;
-    font-size: 0.6875rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    color: var(--color-text-secondary);
-    margin-bottom: var(--space-sm);
-}
-.credit-card--lead .credit-eyebrow {
-    color: var(--color-accent);
-}
-.credit-title {
-    font-size: 1.0625rem;
-    font-weight: 600;
-    color: var(--color-text-primary);
-    margin: 0 0 var(--space-sm) 0;
-}
-.about-credits .credit-body {
-    color: var(--color-text-primary);
-    font-size: 0.9375rem;
-    line-height: 1.65;
-    margin: 0 0 var(--space-sm) 0;
-}
-.about-credits .credit-note {
-    color: var(--color-text-tertiary);
-    font-size: 0.8125rem;
-    line-height: 1.6;
-    margin: 0;
-}
+/* -- Inline links ------------------------------------------------------- */
 .text-link {
     color: var(--color-accent);
     text-decoration: underline;
@@ -4034,14 +3519,6 @@ div[id$="-map"] {
     border-top: none;
 }
 
-/* -- Large stat value ---------------------------------------------------- */
-
-.stat-value-lg {
-    font-size: 1.25rem;
-    font-weight: 800;
-    color: var(--color-text-primary);
-}
-
 /* -- Required field asterisk -------------------------------------------- */
 
 .required-mark {
@@ -4084,15 +3561,6 @@ div[id$="-map"] {
     border-top: 1px solid var(--color-border);
 }
 
-/* -- Form subsection: a ruled-off group of levers under a step's main grid
-   (methodology editor's "Banked surplus") ------------------------- */
-
-.form-subsection {
-    border-top: 1px solid var(--color-border);
-    padding-top: var(--space-md);
-    margin-top: var(--space-md);
-}
-
 /* -- Disclosure mark: the chevron on a <summary> that shows it opens (the
    compliance strip's own convention, reused by the parcel-link disclosure)
    ------------------------------------------------------------------ */
@@ -4111,10 +3579,7 @@ details[open] > summary .disclosure-mark {
 .pt-md { padding-top: var(--space-md); }
 
 /* -- Margin utilities ---------------------------------------------------- */
-
-.ml-xs { margin-left: var(--space-xs); }
 .ml-sm { margin-left: var(--space-sm); }
-.mr-xs { margin-right: var(--space-xs); }
 
 /* The five most-repeated inline styles in the template tree, counted rather
    than guessed: `margin: 0` appeared 81 times and the three `margin-top`
@@ -4259,7 +3724,7 @@ details[open] > summary .disclosure-mark {
     -webkit-overflow-scrolling: touch;
 }
 
-/* Phone-only horizontal scroll for dense tables (E5). Confines a wide table's
+/* Phone-only horizontal scroll for dense tables. Confines a wide table's
    sideways scroll to the table itself instead of letting the whole page content
    scroll sideways. Scoped to phones so it does NOT add an overflow context on
    desktop — the ledger's sticky <thead> sticks relative to .app-content and
@@ -4363,95 +3828,6 @@ details[open] > summary .disclosure-mark {
     margin: var(--space-md) auto 0;
 }
 
-.about-credits p {
-    font-size: 0.875rem;
-    color: var(--color-text-secondary);
-    margin: 0 0 var(--space-xs) 0;
-}
-
-.about-narrative {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-md);
-}
-
-.about-narrative p {
-    font-size: 0.9375rem;
-    color: var(--color-text-secondary);
-    line-height: 1.65;
-    margin: 0;
-}
-
-.about-narrative strong {
-    color: var(--color-text-primary);
-    font-weight: 600;
-}
-
-/* -- Timeline ------------------------------------------------------------ */
-
-.timeline {
-    position: relative;
-    padding-left: var(--space-xl);
-}
-
-.timeline::before {
-    content: '';
-    position: absolute;
-    left: 11px;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background: var(--color-accent);
-    border-radius: var(--radius-sm);
-}
-
-.timeline-entry {
-    position: relative;
-    margin-bottom: var(--space-lg);
-}
-
-.timeline-entry::before {
-    content: '';
-    position: absolute;
-    left: calc(-1 * var(--space-xl) + 7px);
-    top: 6px;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--color-accent);
-    border: 2px solid var(--color-base);
-}
-
-.timeline-year {
-    display: inline-block;
-    background: var(--color-accent);
-    color: var(--color-base);
-    font-size: 0.75rem;
-    font-weight: 700;
-    padding: 2px 10px;
-    border-radius: var(--radius-sm);
-    margin-bottom: var(--space-xs);
-}
-
-.timeline-content {
-    background: var(--color-card);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    padding: var(--space-md);
-}
-
-.timeline-content strong {
-    color: var(--color-text-primary);
-    font-size: 0.9375rem;
-}
-
-.timeline-content p {
-    color: var(--color-text-secondary);
-    font-size: 0.875rem;
-    margin: var(--space-xs) 0 0 0;
-    line-height: 1.5;
-}
-
 /* -- Report type badges (history table) ---------------------------------- */
 /* Badge styles handled by existing .badge-pill + .badge-gold / .badge-blue */
 
@@ -4509,35 +3885,6 @@ details[open] > summary .disclosure-mark {
 .station-card-link:hover {
     border-color: var(--color-border-hover);
     box-shadow: var(--shadow-pop-sm);
-}
-
-/* -- Filter tabs --------------------------------------------------------- */
-
-.filter-tabs {
-    display: flex;
-    gap: 0;
-}
-
-.filter-tab {
-    padding: var(--space-sm) var(--space-md);
-    font-size: 0.8125rem;
-    font-weight: 600;
-    color: var(--color-text-tertiary);
-    border: none;
-    border-bottom: 2px solid transparent;
-    cursor: pointer;
-    transition: color 150ms, border-color 150ms;
-    background: none;
-    text-decoration: none;
-}
-
-.filter-tab:hover {
-    color: var(--color-text-secondary);
-}
-
-.filter-tab.active {
-    color: var(--color-text-primary);
-    border-bottom-color: var(--color-accent);
 }
 
 /* -- Freshness dots ------------------------------------------------------ */
@@ -4713,10 +4060,6 @@ details[open] > summary .disclosure-mark {
 
 @media (max-width: 1023px) {
     .page-grid-2col {
-        grid-template-columns: 1fr;
-    }
-
-    .page-grid-2col-wide {
         grid-template-columns: 1fr;
     }
 
@@ -4908,13 +4251,6 @@ details[open] > summary .disclosure-mark {
 /* The second .upload-zone rule set stood here until 2026-08-26. It
    is folded into the single rule set beside the first one, above. */
 
-.upload-zone-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-xs);
-}
-
 .parcel-results-list {
     display: flex;
     flex-direction: column;
@@ -4940,8 +4276,7 @@ details[open] > summary .disclosure-mark {
 }
 
 /* The row advertises a click with `cursor: pointer`, so it owes feedback. It
-   brightens to --color-hover, the platform's topmost interactive lift — the same
-   value the waterfall table's row hover uses. */
+   brightens to --color-hover, the platform's topmost interactive lift. */
 .parcel-result-item:hover {
     background: var(--color-hover);
 }
@@ -4959,31 +4294,6 @@ details[open] > summary .disclosure-mark {
 }
 
 /* -- Drinking onboarding: sampling-point builder --------------- */
-
-/* Each facility is a contained inset panel. It carried `.card-raised
-   .card-inset` until both render paths moved inside a
-   `.card-raised` section — and a raised card nested in a raised card draws the
-   border and the pop shadow twice. The root is now `.card-inset` alone, which
-   supplies only the darker background, so the padding and radius `.card-raised`
-   used to give it are supplied here instead. Horizontal padding is `--space-lg`
-   to match `.card-raised`; vertical stays `--space-md` for the tighter builder
-   rhythm this block already set. No border: the inset background against the
-   section's card background is what separates one panel from the next. */
-.facility-panel {
-    border-radius: var(--radius-lg);
-    padding-top: var(--space-md);
-    padding-bottom: var(--space-md);
-    padding-left: var(--space-lg);
-    padding-right: var(--space-lg);
-}
-
-/* Tighter table rhythm inside a facility panel — the listed-points and any
-   inline tables read as a compact reference, not a full data page. */
-.facility-panel .data-table th,
-.facility-panel .data-table td {
-    padding-top: var(--space-xs);
-    padding-bottom: var(--space-xs);
-}
 
 /* The "add a sampling point" row: a defined grid instead of a wrapping flex
    row, so facility / number / description / kind / button keep a stable
@@ -5120,68 +4430,6 @@ details[open] > summary .disclosure-mark {
 .methodology-step--off .methodology-step-num {
     background: rgba(120, 150, 185, 0.1);
     color: var(--color-text-tertiary);
-}
-
-/* Calculation-run waterfall — tint each row by what the step does to the
-   running total: a reduction (subtraction) carries a furnace left-edge and a
-   faint warm wash; an addition carries a forest edge; the starting gross
-   figure and pass-throughs stay neutral. Scoped to .waterfall so the global
-   zebra stripe steps aside and the type-shading reads cleanly; hover still
-   wins (declared last). */
-/* Neutralise the global zebra stripe on the waterfall so the type-shading
-   reads cleanly. The type tints below match this rule's specificity and are
-   declared after it, so they win; the hover rule is declared last so it wins
-   over everything. */
-.data-table.waterfall tbody tr:nth-child(even) td {
-    background-color: transparent;
-}
-.data-table.waterfall td:first-child {
-    border-left: 3px solid transparent;
-}
-.data-table.waterfall tbody tr.wf-start td:first-child {
-    border-left-color: var(--color-text-tertiary);
-}
-.data-table.waterfall tbody tr.wf-reduce td:first-child {
-    border-left-color: var(--furnace-400);
-}
-.data-table.waterfall tbody tr.wf-add td:first-child {
-    border-left-color: var(--forest-400);
-}
-.data-table.waterfall tbody tr.wf-reduce td {
-    background-color: oklch(0.49 0.14 50 / 0.07);
-}
-.data-table.waterfall tbody tr.wf-add td {
-    background-color: oklch(0.49 0.11 145 / 0.07);
-}
-.data-table.waterfall tbody tr:hover td {
-    background-color: var(--color-hover);
-}
-
-/* Result card — the single figure a page produces (the final billable
-   groundwater), as a gold-accent hero so it reads as the answer, not a
-   footnote. */
-/* The single figure a page produces. It reads as "the answer" from the gold
-   value itself (functional colour, matching the home stat figures) plus the
-   gradient lift and pop-shadow — no accent stripe needed. */
-.result-card {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-lg);
-    background: linear-gradient(180deg, var(--color-card), var(--color-inset));
-    border: 1px solid var(--color-border-hover);
-    border-radius: var(--radius-lg);
-    padding: var(--space-lg) var(--space-xl);
-    box-shadow: var(--shadow-pop-sm);
-}
-.result-card-value {
-    font-size: 2.25rem;
-    font-weight: 800;
-    font-family: var(--font-display);
-    font-variant-numeric: tabular-nums;
-    color: var(--color-accent);
-    line-height: 1;
-    white-space: nowrap;
 }
 
 /* On-brand radio options — each choice is a selectable tile; the native dot is
@@ -5881,20 +5129,6 @@ details[open] > summary .disclosure-mark {
     .form-grid--row {
         grid-template-columns: minmax(0, 1fr);
     }
-}
-
-/* B2. Cards two or three across, each ending at its content: the settings
-   pages' one-control cards ("boxed into a narrow center-left column")
-   and the wizard's two boundary choices, which stacked put the second below
-   a 1,000px fold. 380px is the floor the home page's count cards use. */
-.card-columns {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-    gap: var(--space-lg);
-    align-items: start;
-}
-.card-columns > .card-columns-span {
-    grid-column: 1 / -1;
 }
 
 /* -- C. Tables ---------------------------------------------------------- */

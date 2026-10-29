@@ -251,7 +251,6 @@ UNDEFINED_CLASS_ALLOWLIST = {
     "sel": "feedback widget state: the chosen category, its own <style> block and script",
     # No rule anywhere: these do nothing today. Recorded, not fixed, in 150-04
     # (that plan adds no CSS rule beyond its own block).
-    "deep-dive-label": "no rule: partials/_deep_dive.html summary label",
     "help-letter-row": "no rule: help/glossary.html letter divider row",
     "receipt": "no rule: accounting/calculation_run_detail.html card (receipt-short and receipt-table are defined)",
     "search-results-inner": "no rule: partials/_search_results.html list wrapper",

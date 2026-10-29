@@ -169,31 +169,12 @@ SEASONAL_WEIGHTS = {
 SURFACE_RATE = 2.2          # AF/acre/yr — allocation ceiling + delivery fallback
 GW_RATE = 1.8               # AF/acre/yr — allocation ceiling + meter fallback
 
-# Measured-ET supply bands. Each is a per-source multiple of a parcel's
-# measured net consumptive-use demand, deterministic by parcel index so re-runs
-# are stable and parcels scatter instead of tracking ET identically.
-#
-# SURFACE: lean generous (a canal district over-delivers; the surplus percolates
-#   as incidental recharge → the parcel's books close to ~0 regardless of the
-#   exact over-delivery). Always ≥ 1.0 so a surface parcel off the El Nido canal
-#   never shows a deficit — the ONLY surface deficits in the demo come from the
-#   El Nido canal running dry after June 2025.
-# METER: pumps a little MORE than the crop consumed (on-farm loss / return flow).
-#   Always ≥ 1.0 so a metered farm never reads as "in trouble"; the small excess
-#   is its positive, non-alarming residual (no recharge sink for a meter reading).
-SURFACE_SUPPLY_LO = Decimal("1.02")   # surface over-delivery band [1.02, 1.16]
-SURFACE_SUPPLY_SPAN = Decimal("0.14")
-METER_SUPPLY_LO = Decimal("1.05")     # meter over-pump band [1.05, 1.18]
-METER_SUPPLY_SPAN = Decimal("0.13")
-
-# The flat index-keyed bands above are NOT the delivered-supply basis. They are
-# kept because `_allocation_rows` and the no-CalculationRun fallbacks still
-# reference the same idea of a deterministic band. Do NOT route delivered supply
-# back through them: an index is not a field, and a per-index band gives a
-# flood-irrigated alfalfa field the same applied-water multiple as a
-# micro-irrigated almond block (the aggregate irrigation efficiency across all
-# 74 valley fields would come out near-drip everywhere, including the
-# alfalfa).
+# Delivered supply is a parcel's measured net consumptive-use demand divided by
+# its crop's irrigation efficiency (below), never a flat band keyed by parcel
+# index: an index is not a field, and a per-index band gives a flood-irrigated
+# alfalfa field the same applied-water multiple as a micro-irrigated almond
+# block (the aggregate irrigation efficiency across all 74 valley fields would
+# come out near-drip everywhere, including the alfalfa).
 #
 # CROP → IRRIGATION METHOD → EFFICIENCY. One entry per crop
 # `seed_merced_cropland.CROPS` assigns, round-robin by parcel index. Applied
@@ -977,7 +958,7 @@ class Command(BaseCommand):
             .order_by("name")
         )
 
-        for pod_seq, pod in enumerate(pods):
+        for pod in pods:
             if pod.name.startswith(UNMETERED_POD_PREFIX):
                 continue  # no meter and no typed volume: no record, no delivery
             runs_dry = pod.name.startswith(EL_NIDO_POD_PREFIX)

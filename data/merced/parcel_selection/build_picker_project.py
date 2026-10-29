@@ -45,17 +45,6 @@ WATER_SOURCE = [
     {"Groundwater (well only)": "groundwater"},
     {"Conjunctive (canal + well)": "conjunctive"},
 ]
-# Distinct fill per readable crop class. "Other" catches anything unmapped
-# so the categorized renderer never leaves a field invisible.
-CLASS_COLORS = {
-    "Deciduous fruits & nuts": "#c8902f", "Field crops": "#e8c63a",
-    "Truck/nursery/berry": "#7fb069", "Grain & hay": "#d4b483",
-    "Pasture": "#5f8d4e", "Vineyard": "#b048c8", "Rice": "#3a9cc5",
-    "Citrus & subtropical": "#e07a1f", "Idle": "#9aa0a6",
-    "Fallow/unclassified": "#c98b6b", "Other": "#8899aa",
-}
-FILL_ALPHA = 155  # opaque enough to read crop color over satellite imagery
-
 # Progress symbology: tagged fields light up by the headgate they serve, so
 # the picker can see what's done and where the gaps are. (code, color, label)
 HEADGATE_STYLE = [

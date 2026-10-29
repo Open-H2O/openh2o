@@ -99,8 +99,7 @@ distinct job — authoritative values live in `static/css/tokens.css`:
   doubt, the accent is teal.
 - **California Gold — CTAs ONLY, used sparingly.** `--color-gold: #E0A446`
   (hover `#EAB25E`, muted `rgba(224,164,70,0.10)`). Reserved for "gold acts" —
-  primary call-to-action buttons and the single figure a page produces
-  (`.result-card`). Do **not** use gold as a general-purpose emphasis or callout
+  primary call-to-action buttons and the single figure a page produces. Do **not** use gold as a general-purpose emphasis or callout
   color; that is the mistake that makes a page look off-brand. (The pre-Deep-Water
   gold `#E4A317` that older rules hardcoded was migrated to `var(--color-gold)`
   color-mixes in 2026-08; if you see a raw gold hex in a diff, it is a regression.)
@@ -109,7 +108,7 @@ distinct job — authoritative values live in `static/css/tokens.css`:
 
 **Emphasizing prose:** do not reach for a color at all. Body and intro text is
 plain left-aligned prose; when a passage needs lifting, wrap it in the same
-`.card-raised` panel the credit cards and Help "short version" blocks use — no
+`.card-raised` panel the Help "short version" blocks use — no
 colored left-stripe. A colored stripe or filled accent box around a lone
 paragraph reads as a generic AI callout, not this design system.
 
@@ -207,28 +206,20 @@ the same idea always looks the same. All live in `static/css/app.css`.
 - `.budget-panel` — a supply-vs-use summary: one gradient panel that reads as
   the balance equation (supplies − use = balance) with a supply breakdown foot.
   It is one summary view among many data surfaces, not the product's centerpiece.
-  Used on the dashboard, period detail, account detail, and (as
-  `.budget-panel--concept`, carrying descriptive text instead of live AF figures)
-  the Help explainers.
-- `.accent-card` — a left-accent feature card for a labeled entity with a
-  description + an action (e.g. the report-type heroes). `--gold` / `--blue`
-  modifiers tint the left edge and a small icon chip.
-- `.concept-panel` (+ `-use` / `-supply`) — a two-up "use vs. supply"
-  comparison with a colored top border.
-- `.result-card`: a gold-accent hero for the single figure a page produces.
-  The calculation page no longer uses it: its three stacked result bands became
-  one `.budget-panel` row of two or three figures on 2026-09-28 (two fresh
-  readers faulted the bands for spending a third of the page on three numbers).
-- `.callout-rule` — a gold left-border inset for "the rule" of a page.
+  Used on the dashboard, period detail and account detail.
 - `.step-card` / `.step-number` / `.step-eyebrow` — the ordered-sequence idiom
   (Help steps; the methodology editor uses `.methodology-step` + a numbered
   badge, with a muted dashed variant for disabled steps).
-- `.card-grid` + `.card-link` — a responsive grid of linked cards (page footers).
+- `.card-grid` + `.card-link` — a responsive grid of linked cards (page footers);
+  `.concept-panel-title` is the bold title line inside such a card.
 - `.prose-link` — an underlined inline link inside prose (visibly a link).
 - `.radio-option` / `.input-suffix` — on-brand radio tiles and an input with an
   attached unit (e.g. an efficiency percent + "%").
-- `.data-table.waterfall` — calculation-run tables shaded by step type
-  (reduction = furnace, addition = forest, start/pass-through = neutral).
+
+To lift a passage or a single figure, use a plain `.card-raised` (or a
+`.budget-panel` row when the figure belongs beside the supplies, use and balance
+equation). No page uses a left-accent card, a two-up comparison panel, a gold
+figure card or a gold left-rule inset, so none of them is defined.
 
 ### The layout rules
 
@@ -239,10 +230,10 @@ was measured live and fixed at its shared cause where one existed. The rules, ea
 - **A form is a grid, not a column of bars.** `.form-grid` lays field groups in two tracks; a field
   whose value is a sentence or a name spans both (`.form-span-2`); a one-line form (a step with no
   options) is `.form-grid--row`. Form pages sit at `.page-medium` with `page-head--medium`; the 640 px
-  measure is for a page of one or two fields. `.card-columns` (one-control cards two or three
-  across, each ending at its content) exists and was tried on the settings page and the wizard's
+  measure is for a page of one or two fields. One-control cards two or three
+  across, each ending at its content, were tried on the settings page and the wizard's
   two boundary cards; both read DO NOT SHIP on the cards' unequal heights, worse than the single
-  column, so neither uses it; it stays for a set of cards of one height.
+  column, so both keep the single column and the layout is not defined.
 - **A record's fields across a wide card** sit on `.field-grid-auto` (as many 280 px tracks as
   fit), never two columns 700 px apart (the facility page).
 - **A footer's figures wrap.** `.tfoot-figures` on a footer cell that holds several figures; a
@@ -330,8 +321,7 @@ below was judged on the whole page, not a table in isolation, and they apply to 
    word has the same shape on every table. **A header cell that spans both rows is bottom-aligned**, so
    every leaf-level word sits on one line; a spanning cell otherwise centres over the two-row height and
    floats half a line above its neighbours.
-10. *Retired 2026-10-17.* It described the figure ledger, a record of the September 2026 figure check
-    that is no longer kept in the repository.
+10. *Retired 2026-10-17.*
 
 Rules 11 to 18 come from reading the pages on staging at 1,730. Each is pinned by a guard so it is not
 re-learned, and each holds on every page that copies these shapes:
