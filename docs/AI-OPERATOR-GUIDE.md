@@ -567,10 +567,23 @@ new months. To get an alert when a sync fails, put
 on ntfy, a service that sends notifications to a phone or a browser, and run
 `make install-cron` again, which copies the address into the schedule.
 
-Windows has no cron, and this guide does not yet give Windows steps for the
-schedule. On a Windows computer, tell the organization that the syncs, the nightly
-backup, the nightly calculation and the health checks every 6 hours will not run on
-their own.
+On Windows, Task Scheduler runs the schedule. The jobs run in Git
+Bash, which comes with Git for Windows (https://git-scm.com/download/win), so install
+Git for Windows first. Then open PowerShell in the checkout and install the schedule:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\windows\install-schedule.ps1
+Get-ScheduledTask -TaskPath '\OpenH2O\' | Get-ScheduledTaskInfo     # shows what is installed
+```
+
+The script writes one task for each job above into Task Scheduler's OpenH2O folder,
+at the same times. It writes the logs to `openh2o-logs` in the home folder. To put
+them elsewhere, add `-LogDir` and the folder. Run it again to replace the tasks, and
+the jobs never run twice. The tasks run as the account that installed them, and only
+while that account is signed in to Windows. Docker Desktop also runs only then. Each
+run adds a line to `schedule.log` in the log folder with the time, the job and its
+exit code. On Windows, the schedule reads the alert address from `.env` at each run,
+so a changed `OPENH2O_NTFY_URL` takes effect at the next run.
 
 ### Turn on the monitoring stations
 
