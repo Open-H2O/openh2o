@@ -1,0 +1,8 @@
+# Every text file is checked out with LF line endings, on Windows too. With Git for
+# Windows' default (core.autocrlf=true) a clone otherwise gets CRLF, and the image's
+# entrypoint.sh then fails with "exec /app/entrypoint.sh: no such file or directory".
+* text=auto eol=lf
+
+# Kept byte for byte: these two hold CRLF on purpose.
+docs/crosswalk.csv -text
+tests/fixtures/drinking_le_grand_lab_results.tab -text
