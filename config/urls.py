@@ -13,7 +13,7 @@ from core.oauth import (
     google_login_guard,
 )
 
-from config.views import about, demonstration_data, index, getting_started, glossary, budgets_allocations, surface_deliveries, water_balances, methods, settings_explained, profile, set_nav_mode, global_search
+from config.views import about, demonstration_data, index, getting_started, glossary, budgets_allocations, surface_deliveries, water_balances, methods, settings_explained, profile, settings_page, global_search
 
 # Module-owned routes, composed from OPENH2O_MODULES via the registry, in the
 # same prefix order the hand-written list used. A DISABLED module's paths are
@@ -35,7 +35,7 @@ def _accounts_root(request):
 
 
 # Everything below is hand-written and NOT module-owned: the Django admin,
-# allauth, the root index, the static help/about pages, the nav-mode toggle and
+# allauth, the root index, the static help/about pages, the Settings page and
 # global search.
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -82,7 +82,7 @@ urlpatterns = [
     path("help/settings/", settings_explained, name="settings_explained"),
     path("profile/", profile, name="profile"),
     path("profile/choose-password/", choose_password, name="choose_password"),
-    path("nav-mode/", set_nav_mode, name="set_nav_mode"),
+    path("settings/", settings_page, name="settings"),
     path("search/", global_search, name="global_search"),
     # Persistent identifiers. Top-level rather than under
     # core's own `users/` prefix, and hand-written rather than module-owned:

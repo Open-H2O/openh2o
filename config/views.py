@@ -8,7 +8,7 @@ from django.http import Http404
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
-from core.access import public_in_open_demo
+from core.access import admin_required, public_in_open_demo
 
 from datasync import freshness
 from datasync.models import DataSyncLog, MonitoredStation
@@ -135,22 +135,64 @@ def index(request):
     return render(request, "home.html", context)
 
 
-def set_nav_mode(request):
-    """Flip the sidebar between Operations and Admin density, then return.
+#: The sentence each Settings row carries beside its link, by the url_name of
+#: the registry entry it describes (Delivery Settings has its own function,
+#: below). A row for an entry with no sentence is a registry change that forgot
+#: the page, and the view raises KeyError rather than draw a bare link.
+SETTINGS_SENTENCES = {
+    "accounting:methodology_settings": (
+        "Methodology sets the steps of the monthly calculation, their order, "
+        "the rain method and the floor."
+    ),
+    "core:users_list": "Users lists who can sign in and each person's role.",
+    "health:dashboard": (
+        "Site Health shows the latest result of each of OpenH2O's checks on "
+        "this site's records and server."
+    ),
+    "setup:wizard": (
+        "The Setup Wizard sets the area this site covers and loads the public "
+        "records inside it."
+    ),
+}
 
-    A view preference, not a state change, so a plain GET link is fine. The
-    value lives in a year-long cookie read by the ``nav_mode`` context
-    processor; we bounce back to wherever the click came from.
-    """
-    mode = request.GET.get("mode", "operations")
-    if mode not in ("operations", "admin"):
-        mode = "operations"
-    destination = request.META.get("HTTP_REFERER") or reverse("index")
-    response = redirect(destination)
-    response.set_cookie(
-        "nav_mode", mode, max_age=60 * 60 * 24 * 365, samesite="Lax"
+
+def _delivery_settings_sentence():
+    """The Delivery Settings row's sentence.
+
+    A site without surface water has no deliveries to divide, so its sentence
+    names only the year-end rule, as the Delivery Settings page's own
+    description does."""
+    if is_enabled("surface"):
+        return (
+            "Delivery Settings decide how OpenH2O divides surface deliveries "
+            "among use areas and what happens to a zone's unused allocation at "
+            "the end of the water year."
+        )
+    return (
+        "Delivery Settings decide what happens to a zone's unused allocation "
+        "at the end of the water year."
     )
-    return response
+
+
+@admin_required
+def settings_page(request):
+    """The settings that apply to the whole site, one row each.
+
+    The rows are the registry's settings entries for the modules this site
+    runs, so a dropped module takes its row with it. Visibility is left to the
+    template, which applies each entry's own predicate as the sidebar once did.
+    """
+    from core.modules import enabled_modules, settings_entries_for
+
+    sentences = {
+        **SETTINGS_SENTENCES,
+        "accounting:delivery_settings": _delivery_settings_sentence(),
+    }
+    rows = [
+        {"entry": entry, "sentence": sentences[entry.url_name]}
+        for entry in settings_entries_for(enabled_modules())
+    ]
+    return render(request, "settings.html", {"rows": rows})
 
 
 # Global search ---------------------------------------------------------------

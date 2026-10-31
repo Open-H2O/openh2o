@@ -163,6 +163,15 @@ def test_the_page_heading_description_and_crumb(enforced):
     assert "breadcrumb-current" in crumb.group(1)
 
 
+def test_an_open_demonstration_site_does_not_say_only_an_administrator_sees_it(settings):
+    """With sign-in roles off, any signed-in person reaches the page, so it does not claim otherwise."""
+    settings.ACCESS_CONTROL_ENFORCED = False
+    html = _client(_user("set-open", is_staff=False)).get("/settings/").content.decode()
+    description = re.search(r'<p class="page-description">(.*?)</p>', html, re.S)
+    assert description
+    assert _text(description.group(1)) == "This page lists the settings that apply to the whole site."
+
+
 def test_an_administrator_sees_the_five_rows_in_order_with_their_sentences(enforced):
     html = _client(_user("set-rows", is_staff=True)).get("/settings/").content.decode()
     main = _main(html)
@@ -338,6 +347,7 @@ def test_a_nav_mode_cookie_changes_nothing_on_the_page(enforced, path):
 
     def stable(html):
         html = re.sub(r"hx-headers='[^']*'", "", html)
+        html = re.sub(r'csrf: "[^"]*"', "", html)
         return re.sub(r'name="csrfmiddlewaretoken" value="[^"]*"', "", html)
 
     assert stable(with_cookie) == stable(plain)

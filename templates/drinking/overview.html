@@ -2,15 +2,16 @@
 {% load humanize placeholders %}
 {% load drinking_display %}
 
-{% block title %}Drinking Water - Open Water Accounting Platform{% endblock %}
-{% block page_title %}Drinking water{% endblock %}
+{% block title %}Water systems - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Water systems{% endblock %}
+
+{% block page_actions %}{% if user_can_write and not systems %}<a href="{% url 'drinking:onboard' %}" class="btn-primary btn-sm">+ Add a water system</a>{% endif %}{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
-    <span>Water Data</span>
-    <span class="breadcrumb-separator">/</span>
-    <span class="breadcrumb-current">Drinking Water</span>
+    {% include "partials/_crumb_root.html" %}
+    <span class="breadcrumb-current">Water Systems</span>
   </nav>
   {% comment %}
     `drinking.requires` is ("standards",), so this page runs

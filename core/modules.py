@@ -128,34 +128,34 @@ them.
 gets believed.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Optional
 
 from django.core.exceptions import ImproperlyConfigured
 
 # -- Nav sections ------------------------------------------------------------
-# Display order of the sidebar's section headings. `requires_admin_mode` mirrors
-# the template's outer `{% if nav_mode == 'admin' %}` wrapper: the whole
-# Administration block is hidden in Operations mode regardless of who is looking.
-# An entry's own `visibility` is an ADDITIONAL predicate applied inside its
-# section, never a replacement for the section gate.
+# Display order of the sidebar's section headings, grouped by what the records
+# are about. `settings` is never drawn in the sidebar: its entries are the rows
+# of the Settings page (`settings_entries_for`), opened from the top bar. An
+# entry's own `visibility` is an additional predicate applied inside its
+# section.
 
 SECTION_OVERVIEW = "overview"
-SECTION_WATER_DATA = "water_data"
-SECTION_ADMINISTRATION = "administration"
+SECTION_WATER_ACCOUNTING = "water_accounting"
+SECTION_SOURCES_MONITORING = "sources_monitoring"
+SECTION_DRINKING_WATER = "drinking_water"
 SECTION_REPORTING = "reporting"
+SECTION_SETTINGS = "settings"
 SECTION_HELP = "help"
 
-# Per-entry visibility predicates, mirroring the four the sidebar uses today.
+# Per-entry visibility predicates.
 VISIBILITY_ALWAYS = "always"  # no extra predicate
-VISIBILITY_ADMIN_MODE = "admin_mode"  # nothing beyond the section gate
 VISIBILITY_AGENCY_ADMIN = "agency_admin"  # {% if user_is_admin %}
 VISIBILITY_SETUP_GATE = "setup_gate"  # {% if not access_enforced or user_is_admin %}
 
 VALID_VISIBILITIES = frozenset(
     {
         VISIBILITY_ALWAYS,
-        VISIBILITY_ADMIN_MODE,
         VISIBILITY_AGENCY_ADMIN,
         VISIBILITY_SETUP_GATE,
     }
@@ -164,29 +164,32 @@ VALID_VISIBILITIES = frozenset(
 
 @dataclass(frozen=True)
 class NavSection:
-    """A sidebar section heading plus the entries resolved into it."""
+    """A section heading plus the entries resolved into it.
+
+    `in_sidebar` is False for the settings section, which the sidebar never
+    draws. `collapsible` marks a group the sidebar draws as a `<details>`
+    block the reader can open and close.
+    """
 
     key: str
     label: str
-    requires_admin_mode: bool = False
+    in_sidebar: bool = True
+    collapsible: bool = False
     entries: tuple = ()
 
     def with_entries(self, entries) -> "NavSection":
-        return NavSection(
-            key=self.key,
-            label=self.label,
-            requires_admin_mode=self.requires_admin_mode,
-            entries=tuple(entries),
-        )
+        return replace(self, entries=tuple(entries))
 
 
-# Ordered. `overview` deliberately carries an empty label — it renders with no
-# section heading today.
+# Ordered. `overview` deliberately carries an empty label: it renders with no
+# section heading.
 NAV_SECTIONS: tuple = (
     NavSection(SECTION_OVERVIEW, ""),
-    NavSection(SECTION_WATER_DATA, "Water Data"),
-    NavSection(SECTION_ADMINISTRATION, "Administration", requires_admin_mode=True),
+    NavSection(SECTION_WATER_ACCOUNTING, "Water accounting"),
+    NavSection(SECTION_SOURCES_MONITORING, "Sources and monitoring"),
+    NavSection(SECTION_DRINKING_WATER, "Drinking water", collapsible=True),
     NavSection(SECTION_REPORTING, "Reporting"),
+    NavSection(SECTION_SETTINGS, "Settings", in_sidebar=False),
     NavSection(SECTION_HELP, "Help"),
 )
 
@@ -202,7 +205,7 @@ class NavEntry:
     a prefix of its own sub-pages: Surface Diversions matches ``/surface/`` but
     must NOT light up on ``/surface/rights``, which is its own entry.
 
-    **`active_excludes` is a tuple, not a single string.** The Drinking Water
+    **`active_excludes` is a tuple, not a single string.** The Water Systems
     entry needs several: ``/drinking/`` is a prefix of both ``/drinking/results/``
     and ``/drinking/sampling-points/``, and there is no single substring that
     covers both. A one-element tuple is exactly as expressive as a lone string.
@@ -212,14 +215,15 @@ class NavEntry:
     `writes` marks an entry that opens a write flow; the sidebar hides it from
     a read-only (viewer) account.
 
-    `starts_group` draws a hairline rule ABOVE this entry, splitting the tail of
-    a section into its own visual block without giving it a second heading. It
-    is a property of the ENTRY, not of the section, precisely so the rule
-    belongs to the module that owns the entry and disappears with it: a
-    deployment without `drinking` gets no orphaned line where its links used to
-    be. The sidebar suppresses the rule when the entry lands first in its
-    section, so dropping everything above it cannot leave a line hanging
-    directly under the section label.
+    `starts_group` draws a hairline rule ABOVE this entry, splitting a section
+    into visual blocks. It is a property of the ENTRY, so the rule belongs to
+    the module that owns the entry and disappears with it; the sidebar
+    suppresses it on the first entry of a section. No entry sets it today.
+
+    `section_without` is a pair ``(module_name, section_key)``: when that
+    module is not enabled, the entry belongs to that section instead of
+    `section`. Zones belongs to Water accounting, and to the unlabelled top
+    block on a site that does not run it.
     """
 
     url_name: str
@@ -236,14 +240,8 @@ class NavEntry:
     #: so it lights that one: the calculation receipt lights Dashboard, the
     #: monitoring page lights Monitoring Stations.
     also_matches: tuple = ()
-    #: Module names of which at least one must be enabled for this entry to
-    #: exist at all. Empty means no condition. Applied where the
-    #: sidebar is composed (`nav_sections_for`, `sidebar_entries`) rather
-    #: than in the template, because an entry hidden in the template still
-    #: counts as the first of its section and would draw a `starts_group`
-    #: rule directly under the section label.
-    requires_any_module: tuple = ()
     writes: bool = False
+    section_without: tuple = ()
 
     def owned_prefix_length(self, path: str) -> int:
         """Length of the longest prefix of `path` this entry owns, or -1.
@@ -406,8 +404,8 @@ MODULE_REGISTRY: dict = {
                 url_name="core:users_list",
                 label="Users",
                 icon="users",
-                section=SECTION_ADMINISTRATION,
-                order=60,
+                section=SECTION_SETTINGS,
+                order=30,
                 active_match="/users/",
                 visibility=VISIBILITY_AGENCY_ADMIN,
             ),
@@ -439,10 +437,11 @@ MODULE_REGISTRY: dict = {
                 url_name="geography:zone_list",
                 label="Zones",
                 icon="zone",
-                section=SECTION_ADMINISTRATION,
-                order=50,
+                section=SECTION_WATER_ACCOUNTING,
+                order=40,
                 active_match="/map/zones",
-                visibility=VISIBILITY_ADMIN_MODE,
+                visibility=VISIBILITY_ALWAYS,
+                section_without=("accounting", SECTION_OVERVIEW),
             ),
         ),
         # Owns the boundary/zone spine every spatial model and the map lean on.
@@ -463,8 +462,8 @@ MODULE_REGISTRY: dict = {
                 url_name="parcels:list",
                 label="Use Areas",
                 icon="parcel",
-                section=SECTION_WATER_DATA,
-                order=20,
+                section=SECTION_WATER_ACCOUNTING,
+                order=30,
                 active_match="/parcels/",
             ),
         ),
@@ -515,8 +514,8 @@ MODULE_REGISTRY: dict = {
                 url_name="wells:list",
                 label="Wells",
                 icon="well",
-                section=SECTION_WATER_DATA,
-                order=30,
+                section=SECTION_SOURCES_MONITORING,
+                order=10,
                 active_match="/wells/",
             ),
         ),
@@ -590,7 +589,7 @@ MODULE_REGISTRY: dict = {
                 url_name="accounting:ledger_list",
                 label="Use Ledger",
                 icon="ledger",
-                section=SECTION_WATER_DATA,
+                section=SECTION_WATER_ACCOUNTING,
                 order=10,
                 active_match="/accounting/ledger",
             ),
@@ -598,35 +597,35 @@ MODULE_REGISTRY: dict = {
                 url_name="accounting:accounts_list",
                 label="Accounts",
                 icon="account",
-                section=SECTION_ADMINISTRATION,
+                section=SECTION_WATER_ACCOUNTING,
                 order=20,
                 active_match="/accounting/accounts",
-                visibility=VISIBILITY_ADMIN_MODE,
+                visibility=VISIBILITY_ALWAYS,
             ),
             NavEntry(
                 url_name="accounting:periods_list",
                 label="Water Years",
                 icon="calendar",
-                section=SECTION_ADMINISTRATION,
-                order=30,
+                section=SECTION_WATER_ACCOUNTING,
+                order=60,
                 active_match="/accounting/reporting-periods",
-                visibility=VISIBILITY_ADMIN_MODE,
+                visibility=VISIBILITY_ALWAYS,
             ),
             NavEntry(
                 url_name="accounting:allocations_list",
                 label="Allocations",
                 icon="allocation",
-                section=SECTION_ADMINISTRATION,
-                order=40,
+                section=SECTION_WATER_ACCOUNTING,
+                order=50,
                 active_match="/accounting/allocations",
-                visibility=VISIBILITY_ADMIN_MODE,
+                visibility=VISIBILITY_ALWAYS,
             ),
             NavEntry(
                 url_name="accounting:methodology_settings",
                 label="Methodology",
                 icon="methodology",
-                section=SECTION_ADMINISTRATION,
-                order=70,
+                section=SECTION_SETTINGS,
+                order=10,
                 active_match="/accounting/methodology",
                 visibility=VISIBILITY_AGENCY_ADMIN,
             ),
@@ -634,8 +633,8 @@ MODULE_REGISTRY: dict = {
                 url_name="accounting:delivery_settings",
                 label="Delivery Settings",
                 icon="delivery",
-                section=SECTION_ADMINISTRATION,
-                order=80,
+                section=SECTION_SETTINGS,
+                order=20,
                 active_match="/accounting/delivery-settings",
                 visibility=VISIBILITY_AGENCY_ADMIN,
             ),
@@ -668,8 +667,8 @@ MODULE_REGISTRY: dict = {
                 url_name="surface:pod_list",
                 label="Surface Diversions",
                 icon="diversion",
-                section=SECTION_WATER_DATA,
-                order=40,
+                section=SECTION_SOURCES_MONITORING,
+                order=20,
                 active_match="/surface/",
                 # Must not light up on the Water Rights pages, which live
                 # under the same prefix and own their own entry.
@@ -679,10 +678,10 @@ MODULE_REGISTRY: dict = {
                 url_name="surface:water_rights_list",
                 label="Water Rights",
                 icon="water-right",
-                section=SECTION_ADMINISTRATION,
-                order=10,
+                section=SECTION_SOURCES_MONITORING,
+                order=30,
                 active_match="/surface/rights",
-                visibility=VISIBILITY_ADMIN_MODE,
+                visibility=VISIBILITY_ALWAYS,
             ),
         ),
         seed_commands=("seed_water_right_types",),
@@ -710,10 +709,10 @@ MODULE_REGISTRY: dict = {
                 url_name="recharge:list",
                 # One name for the record, the one the detail page,
                 # the counts, the map card and the popup already use.
-                label="Recharge sites",
+                label="Recharge Sites",
                 icon="recharge",
-                section=SECTION_WATER_DATA,
-                order=50,
+                section=SECTION_SOURCES_MONITORING,
+                order=40,
                 active_match="/recharge/",
             ),
         ),
@@ -740,8 +739,8 @@ MODULE_REGISTRY: dict = {
                 url_name="datasync:station_list",
                 label="Monitoring Stations",
                 icon="station",
-                section=SECTION_WATER_DATA,
-                order=60,
+                section=SECTION_SOURCES_MONITORING,
+                order=50,
                 active_match="/datasync/stations",
                 # The station-health page is the stations' own.
                 also_matches=("/datasync/monitoring/",),
@@ -797,10 +796,10 @@ MODULE_REGISTRY: dict = {
                 url_name="health:dashboard",
                 label="Site Health",
                 icon="health",
-                section=SECTION_ADMINISTRATION,
-                order=90,
+                section=SECTION_SETTINGS,
+                order=40,
                 active_match="/health/",
-                visibility=VISIBILITY_ADMIN_MODE,
+                visibility=VISIBILITY_ALWAYS,
             ),
         ),
     ),
@@ -816,8 +815,8 @@ MODULE_REGISTRY: dict = {
                 url_name="setup:wizard",
                 label="Setup Wizard",
                 icon="setup",
-                section=SECTION_ADMINISTRATION,
-                order=100,
+                section=SECTION_SETTINGS,
+                order=50,
                 active_match="/setup/",
                 visibility=VISIBILITY_SETUP_GATE,
                 writes=True,
@@ -832,27 +831,6 @@ MODULE_REGISTRY: dict = {
         url_prefix="infrastructure/",
         url_module="infrastructure.urls",
         url_order=110,
-        nav=(
-            # The add and import pages light this entry. It opens the add page, which carries the type cards (a
-            # link into the importer with no ?type= would silently serve the
-            # first type, the defect tests/test_page_offers_what_it_lists.py
-            # names); the import page is under the same prefix and lights it too. Hidden in the sidebar for a read-only
-            # account (a write page; _sidebar.html), and absent on a
-            # deployment that runs none of the three types it imports, where
-            # the page has nothing to offer (`requires_any_module`).
-            NavEntry(
-                url_name="infrastructure:add",
-                label="Infrastructure",
-                icon="infrastructure",
-                section=SECTION_WATER_DATA,
-                # 65: after Monitoring Stations (60), before the drinking
-                # water block (70).
-                order=65,
-                active_match="/infrastructure/",
-                requires_any_module=("wells", "surface", "recharge"),
-                writes=True,
-            ),
-        ),
     ),
     "feedback": ModuleSpec(
         name="feedback",
@@ -878,32 +856,25 @@ MODULE_REGISTRY: dict = {
         nav=(
             NavEntry(
                 url_name="drinking:overview",
-                label="Drinking Water",
+                label="Water Systems",
                 icon="drinking",
-                section=SECTION_WATER_DATA,
-                order=70,
+                section=SECTION_DRINKING_WATER,
+                order=10,
                 active_match="/drinking/",
-                # Six excludes, not four: `/drinking/` is a prefix of every
-                # sub-page, each of which owns its own entry below. Adding a
-                # sub-route without adding its exclusion leaves Overview lit
-                # while the operator is somewhere else. The facilities exclusion
-                # also correctly moves the facility DETAIL page's highlight from
-                # Overview to Facilities. `/drinking/production` and
-                # `/drinking/schedule` are excluded for the same reason:
-                # without them Overview would stay lit on every page under them.
+                # `/drinking/` is a prefix of every sub-page, each of which
+                # owns its own entry below. Adding a sub-route without adding
+                # its exclusion leaves Water Systems lit while the reader is
+                # somewhere else. The facilities exclusion also moves the
+                # facility DETAIL page's highlight to Facilities. The
+                # onboarding and import pages have no entry of their own and
+                # light Water Systems.
                 active_excludes=(
                     "/drinking/facilities",
                     "/drinking/sampling-points",
                     "/drinking/results",
-                    "/drinking/onboard",
                     "/drinking/production",
                     "/drinking/schedule",
                 ),
-                # Water Data runs to eleven links on a full deployment, and the
-                # last five of them are all drinking water. The rule splits them
-                # off as their own block so a utility reading the sidebar sees
-                # its own domain rather than the tail of somebody else's list.
-                starts_group=True,
             ),
             NavEntry(
                 url_name="drinking:facilities",
@@ -914,25 +885,25 @@ MODULE_REGISTRY: dict = {
                 # destination. `well` is another module's identity, so a
                 # facility icon was drawn: two tanks on a ground line.
                 icon="facility",
-                section=SECTION_WATER_DATA,
+                section=SECTION_DRINKING_WATER,
                 # 75: between overview's 70 and sampling points' 80.
-                order=75,
+                order=20,
                 active_match="/drinking/facilities",
             ),
             NavEntry(
                 url_name="drinking:sampling_points",
                 label="Sampling Points",
                 icon="sampling-point",
-                section=SECTION_WATER_DATA,
-                order=80,
+                section=SECTION_DRINKING_WATER,
+                order=30,
                 active_match="/drinking/sampling-points",
             ),
             NavEntry(
                 url_name="drinking:results",
                 label="Sample Results",
                 icon="sample-result",
-                section=SECTION_WATER_DATA,
-                order=90,
+                section=SECTION_DRINKING_WATER,
+                order=40,
                 active_match="/drinking/results",
             ),
             NavEntry(
@@ -942,9 +913,9 @@ MODULE_REGISTRY: dict = {
                 # holds one to one. A simple axis-and-line chart: a month-by-
                 # month figure is the whole point of the page it opens.
                 icon="production",
-                section=SECTION_WATER_DATA,
+                section=SECTION_DRINKING_WATER,
                 # 95: between Sample Results (90) and Add a water system (100).
-                order=95,
+                order=50,
                 active_match="/drinking/production",
             ),
             NavEntry(
@@ -953,23 +924,10 @@ MODULE_REGISTRY: dict = {
                 # Its own glyph (`test_icon_keys_are_unique`): a clipboard
                 # with one ticked line, the operator's checklist.
                 icon="schedule",
-                section=SECTION_WATER_DATA,
+                section=SECTION_DRINKING_WATER,
                 # 97: after Production (95), before Add a water system (100).
-                order=97,
+                order=60,
                 active_match="/drinking/schedule",
-            ),
-            NavEntry(
-                url_name="drinking:onboard",
-                # The entry says what the page does.
-                label="Add a water system",
-                # Its own icon key, not a reuse: `test_icon_keys_are_unique`
-                # holds one glyph to one destination, so a shared icon would
-                # make two different nav rows look like the same place.
-                icon="onboard",
-                section=SECTION_WATER_DATA,
-                order=100,
-                active_match="/drinking/onboard",
-                writes=True,
             ),
         ),
         # The first module to ship a dashboard card. It renders only when a
@@ -1413,6 +1371,12 @@ FIXED_NAV_ENTRIES: tuple = (
         order=0, active_match="/",
     ),
     NavEntry(
+        # The Settings page. Its entries (the settings section) light it, and
+        # the sidebar never draws it: the header's Settings button does.
+        url_name="settings", label="Settings", icon="",
+        section=SECTION_SETTINGS, order=0, active_match="/settings/",
+    ),
+    NavEntry(
         url_name="getting_started", label="Getting Started", icon="",
         section=SECTION_HELP, order=10, active_match="/help/getting-started/",
     ),
@@ -1442,46 +1406,53 @@ FIXED_NAV_ENTRIES: tuple = (
 )
 
 
-def _entry_exists(entry, module_names) -> bool:
-    """Whether an entry's `requires_any_module` condition holds."""
-    if not entry.requires_any_module:
-        return True
-    return any(name in module_names for name in entry.requires_any_module)
+def _resolved(entry, names):
+    """The entry as this deployment composes it.
+
+    An entry carrying `section_without` moves to that section when the named
+    module is not enabled. Resolved once, here, so lighting, the body class and
+    the crumb root all read the section the sidebar draws.
+    """
+    if entry.section_without and entry.section_without[0] not in names:
+        return replace(entry, section=entry.section_without[1])
+    return entry
+
+
+def _composed_entries(modules) -> list:
+    """Every module-owned entry, resolved for the enabled modules."""
+    names = {spec.name for spec in modules}
+    return [_resolved(entry, names) for spec in modules for entry in spec.nav]
 
 
 def sidebar_entries(modules) -> list:
-    """Every link the sidebar can light: the modules' entries and the fixed ones."""
-    names = {spec.name for spec in modules}
-    module_entries = [
-        entry for spec in modules for entry in spec.nav if _entry_exists(entry, names)
-    ]
-    return module_entries + list(FIXED_NAV_ENTRIES)
-
-
-def section_requires_admin_mode(section_key: str) -> bool:
-    """Whether the sidebar hides this section in Operations mode."""
-    return any(s.key == section_key and s.requires_admin_mode for s in NAV_SECTIONS)
+    """Every link the page can light: the modules' entries and the fixed ones."""
+    return _composed_entries(modules) + list(FIXED_NAV_ENTRIES)
 
 
 def nav_sections_for(modules) -> list:
     """Sidebar sections in display order, each carrying its ordered entries.
 
-    Sections with no entries are omitted. Visibility is NOT evaluated here —
-    each entry carries its predicate key and the template applies it, which
-    keeps this file free of any request or Django-model dependency.
+    Sections with no entries are omitted, and so is the settings section, which
+    the sidebar never draws. Visibility is NOT evaluated here: each entry carries
+    its predicate key and the template applies it, which keeps this file free of
+    any request or Django-model dependency.
     """
-    names = {spec.name for spec in modules}
     by_section: dict = {}
-    for spec in modules:
-        for entry in spec.nav:
-            if _entry_exists(entry, names):
-                by_section.setdefault(entry.section, []).append(entry)
+    for entry in _composed_entries(modules):
+        by_section.setdefault(entry.section, []).append(entry)
 
     sections = []
     for section in NAV_SECTIONS:
         entries = by_section.get(section.key, [])
-        if not entries:
+        if not entries or not section.in_sidebar:
             continue
         entries.sort(key=lambda e: (e.order, e.url_name))
         sections.append(section.with_entries(entries))
     return sections
+
+
+def settings_entries_for(modules) -> list:
+    """The settings section's entries in order: the rows of the Settings page."""
+    entries = [e for e in _composed_entries(modules) if e.section == SECTION_SETTINGS]
+    entries.sort(key=lambda e: (e.order, e.url_name))
+    return entries

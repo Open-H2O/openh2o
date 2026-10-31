@@ -40,12 +40,13 @@ from wells.models import (
 )
 
 
-# preselect type -> (list-view url name, breadcrumb/back label)
+# preselect type -> (list-view url name, breadcrumb/back label). The add and
+# import pages light the sidebar entry of the list they return to.
 ADD_TYPE_BACK = {
     "well": ("wells:list", "Wells"),
     "diversion": ("surface:pod_list", "Surface Diversions"),
-    "storage": ("recharge:list", "Recharge sites"),
-    "recharge_site": ("recharge:list", "Recharge sites"),
+    "storage": ("recharge:list", "Recharge Sites"),
+    "recharge_site": ("recharge:list", "Recharge Sites"),
 }
 ADD_TYPE_LABEL = {
     "well": "Well",
@@ -183,6 +184,16 @@ def _add_context(infra_type, **extra):
     }
     context.update(extra)
     return context
+
+
+def _light_list_of(request, infra_type):
+    """Make the sidebar light the list this type's add and import pages return to.
+
+    "Add well" lights Wells, "Add diversion" Surface Diversions, and the two
+    recharge types Recharge Sites. The path is read by
+    ``core.context_processors._lit_entry``.
+    """
+    request.nav_lights_path = reverse(ADD_TYPE_BACK[infra_type][0])
 
 
 def _zones_for_select():
@@ -422,11 +433,9 @@ def _add_recharge_site(
 @login_required
 def infrastructure_add(request):
     if request.method == "GET":
-        return render(
-            request,
-            "infrastructure/add.html",
-            _add_context(request.GET.get("type", "").strip()),
-        )
+        context = _add_context(request.GET.get("type", "").strip())
+        _light_list_of(request, context["preselect_type"])
+        return render(request, "infrastructure/add.html", context)
 
     # Normalised, not taken raw: a POST naming a demoted module's type would
     # otherwise write rows into a switched-off module and then redirect to a
@@ -434,6 +443,7 @@ def infrastructure_add(request):
     infra_type = _supported_type(request.POST.get("infra_type", ""))
     if infra_type is None:
         raise Http404("No infrastructure type is available in this configuration.")
+    _light_list_of(request, infra_type)
     name = request.POST.get("name", "").strip()
     status = request.POST.get("status", "active")
     notes = request.POST.get("notes", "").strip()
@@ -495,6 +505,7 @@ def infrastructure_import(request):
             UNSUPPORTED_IMPORT_TYPE_MESSAGE, content_type="text/plain"
         )
     back_name, back_label = ADD_TYPE_BACK[infra_type]
+    _light_list_of(request, infra_type)
     return render(
         request,
         "infrastructure/import.html",

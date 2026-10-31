@@ -734,7 +734,7 @@ def test_a_settings_entry_page_links_its_crumb_root_to_the_settings_page(walk):
     _client, _response, html = sidebar_page(walk, "/accounting/methodology/")
     nav = _CRUMB_NAV.search(html).group(1)
     assert re.search(r'<a href="/settings/"[^>]*>\s*Settings\s*</a>', nav), nav
-    assert crumb_trail(html)[:2] == ["Settings", "Methodology"]
+    assert crumb_trail(html)[:2] == ["Settings", "Methodology Settings"]
 
 
 def test_the_drinking_crumbs_read_drinking_water_then_water_systems(walk):

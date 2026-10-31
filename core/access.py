@@ -102,12 +102,12 @@ def admin_required(view_func):
 UNSAFE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 
 #: URL names a viewer may still POST to: their own sign-in and account, the
-#: feedback button, the sidebar density switch and their own contact details.
+#: feedback button and their own contact details.
 #: None of them changes a record. Matched by URL NAME, never by path, so a
 #: moved route cannot quietly fall out of (or into) the list.
 #: ``tests/test_viewer_role.py`` pins this set.
 VIEWER_ALLOWED_URL_NAMES = frozenset(
-    {"feedback:submit", "set_nav_mode", "profile", "choose_password"}
+    {"feedback:submit", "profile", "choose_password"}
 )
 
 #: allauth's own account views (sign out, password change, email addresses,

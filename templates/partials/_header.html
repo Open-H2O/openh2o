@@ -45,7 +45,7 @@
                    id="global-search-input"
                    name="q"
                    class="global-search-input"
-                   placeholder="Search {% if 'parcels' in enabled_modules %}parcels, {% endif %}{% if 'wells' in enabled_modules %}wells, {% endif %}{% if 'accounting' in enabled_modules %}accounts{% else %}zones{% endif %}…"
+                   placeholder="Search {% if 'parcels' in enabled_modules %}use areas, {% endif %}{% if 'wells' in enabled_modules %}wells, {% endif %}{% if 'accounting' in enabled_modules %}accounts{% else %}zones{% endif %}…"
                    autocomplete="off"
                    role="combobox"
                    aria-expanded="false"
@@ -69,14 +69,20 @@
 
     <!-- User menu -->
     <div class="app-header-user">
-        {% comment %}The STORED mode, not the displayed one: an
-        Administration page shows that section in Operations for its own
-        request only, and the person has not chosen Admin mode.{% endcomment %}
-        {% if nav_mode_stored == 'admin' %}
-            <a href="{% url 'set_nav_mode' %}?mode=operations" class="header-mode-badge"
-               title="You are in Admin mode. Click to return to Operations.">Admin mode</a>
-        {% endif %}
         {% if user.is_authenticated %}
+            {% comment %}The Settings button follows the rule the Settings page
+            applies (core.access.admin_required): an administrator always, any
+            signed-in person while the site does not enforce roles. A settings
+            page lights it, so `nav_lit_section` marks it current.{% endcomment %}
+            {% if user_is_admin or not access_enforced %}
+            <a href="{% url 'settings' %}" class="btn-secondary btn-sm header-settings{% if nav_lit_section == 'settings' %} active{% endif %}"{% if nav_lit_section == 'settings' %} aria-current="page"{% endif %}>
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+                Settings
+            </a>
+            {% endif %}
             <a href="{% url 'profile' %}" class="app-header-email">{{ user.email }}</a>
             <a href="{% url 'account_logout' %}" class="btn-secondary btn-sm">Sign out</a>
         {% else %}

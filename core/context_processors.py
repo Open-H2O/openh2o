@@ -2,7 +2,7 @@
 """Django template context processors that inject site-wide values everywhere.
 
 Each function returns a dict merged into every template's context: site config,
-access-control/admin flags for sidebar gating, whether Google sign-in exists on
+access-control/admin flags for the Settings button and page, whether Google sign-in exists on
 this deployment, a fresh-install setup prompt, and opt-in Umami analytics and
 in-app feedback endpoints.
 """
@@ -19,15 +19,15 @@ def site_config(request):
 def access_flags(request):
     """Expose the access-control switch + the viewer's admin status to templates.
 
-    Drives the admin-only sidebar grouping:
+    Drives the Settings button, the Settings page's rows and the write controls:
       - ``access_enforced`` mirrors the ACCESS_CONTROL_ENFORCED master switch.
       - ``user_is_admin`` is the anonymous-safe two-tier check (core.access).
       - ``user_can_write`` is False only for a Viewer (read-only) account;
         every control that changes a record sits inside it.
 
-    Admin-only links (Users, Methodology) show only when ``user_is_admin``; the
-    Setup Wizard stays visible to everyone while the switch is OFF so the demo's
-    navigation is byte-for-byte unchanged, then narrows to admins once it flips.
+    The Settings page's admin-only rows (Users, Methodology, Delivery Settings)
+    show only when ``user_is_admin``; the Setup Wizard row is visible to everyone
+    while the switch is OFF, then narrows to admins once it flips.
     """
     return {
         "access_enforced": settings.ACCESS_CONTROL_ENFORCED,
@@ -55,48 +55,19 @@ def site_sends_email() -> bool:
     return settings.EMAIL_BACKEND not in _NO_DELIVERY_BACKENDS
 
 
-def nav_mode(request):
-    """Operations (default) vs Admin sidebar density.
-
-    Operations mode shows only the everyday working tools and hides the
-    Administration section (accounts, water years, allocations, zones, users,
-    methodology, delivery settings, site health, setup). One click flips to
-    Admin to bring the configuration tools back. Cookie-backed so the choice
-    survives logout without needing a DB migration; unknown values fall back to
-    the safe default.
-    """
-    stored = request.COOKIES.get("nav_mode", "operations")
-    if stored not in ("operations", "admin"):
-        stored = "operations"
-    # A page whose lit entry lives in a section
-    # Operations hides (Administration: water rights, accounts, water years)
-    # renders the sidebar in Admin mode, for this request only. The cookie is
-    # never written here, so the next page is back in the stored mode.
-    # `nav_mode_stored` is what the person chose; the header's "Admin mode"
-    # badge reads it, so it never offers to leave a mode they did not pick.
-    mode = stored
-    lit = _lit_entry(request)
-    if stored == "operations" and lit is not None:
-        from core.modules import section_requires_admin_mode
-
-        if section_requires_admin_mode(lit.section):
-            mode = "admin"
-    return {"nav_mode": mode, "nav_mode_stored": stored}
-
-
 def _lit_entry(request):
     """The one sidebar entry this request's page lights, or None.
 
-    Computed once per request and kept on it, because two processors read it:
-    ``nav_mode`` (the per-page Admin override) and ``modules`` (the sidebar's
-    active link and the body's section class).
+    The path that decides it is ``request.nav_lights_path`` when a view sets
+    one (the infrastructure add and import pages name the list they return
+    to), else the request's own path. Computed once per request and kept on
+    it.
     """
     if not hasattr(request, "_openh2o_nav_lit"):
         from core.modules import enabled_modules, lit_entry, sidebar_entries
 
-        request._openh2o_nav_lit = lit_entry(
-            getattr(request, "path", "") or "", sidebar_entries(enabled_modules())
-        )
+        path = getattr(request, "nav_lights_path", None) or getattr(request, "path", "") or ""
+        request._openh2o_nav_lit = lit_entry(path, sidebar_entries(enabled_modules()))
     return request._openh2o_nav_lit
 
 
@@ -105,23 +76,43 @@ def modules(request):
 
     ``nav_sections`` is the sidebar rebuilt from the registry: sections in
     display order, each carrying its ordered entries. Visibility is deliberately
-    NOT evaluated here — every entry carries its predicate key (``always``,
-    ``admin_mode``, ``agency_admin``, ``setup_gate``) and the template applies
-    it, exactly as the hand-written sidebar does today.
+    NOT evaluated here: every entry carries its predicate key (``always``,
+    ``agency_admin``, ``setup_gate``) and the template applies it.
 
     ``module_dashboard_cards`` is the flat list of template partials the enabled
     modules contribute to the overview dashboard, in registry order. It is empty
     when no enabled module contributes a card: a module without one adds
     nothing rather than an invented tile. The drinking-water module contributes
     the one real card.
+
+    ``nav_lit_section_label`` is the heading of the section the lit entry
+    belongs to, which the breadcrumb's root repeats. ``drinking_group_open`` is
+    whether the sidebar draws the Drinking water group open: the lit entry's
+    section when it is drinking water, else the reader's ``sidebar_drinking``
+    cookie, else open exactly when water accounting is not enabled.
     """
-    from core.modules import dashboard_cards_for, enabled_modules, nav_sections_for
+    from core.modules import (
+        NAV_SECTIONS,
+        SECTION_DRINKING_WATER,
+        dashboard_cards_for,
+        enabled_modules,
+        nav_sections_for,
+    )
 
     specs = enabled_modules()
     sections = nav_sections_for(specs)
     lit = _lit_entry(request)
+    names = [spec.name for spec in specs]
+    labels = {section.key: section.label for section in NAV_SECTIONS}
+    stored = (getattr(request, "COOKIES", None) or {}).get("sidebar_drinking")
+    if lit is not None and lit.section == SECTION_DRINKING_WATER:
+        drinking_open = True
+    elif stored in ("open", "closed"):
+        drinking_open = stored == "open"
+    else:
+        drinking_open = "accounting" not in names
     return {
-        "enabled_modules": [spec.name for spec in specs],
+        "enabled_modules": names,
         "nav_sections": sections,
         "module_dashboard_cards": dashboard_cards_for(specs),
         # The url_name of the one entry this page lights, and its
@@ -129,6 +120,8 @@ def modules(request):
         # when it is one of Help's own.
         "nav_lit": lit.url_name if lit is not None else None,
         "nav_lit_section": lit.section if lit is not None else "",
+        "nav_lit_section_label": labels[lit.section] if lit is not None else "",
+        "drinking_group_open": drinking_open,
         "page_section": _page_section(lit),
     }
 

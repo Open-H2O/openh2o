@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Settings{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    {% include "partials/_crumb_root.html" %}
+    <span class="breadcrumb-current">Settings</span>
+  </nav>
+  <p class="page-description">This page lists the settings that apply to the whole site.{% if access_enforced %} Only an administrator sees it.{% endif %}</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack page-wide">
+  {% comment %}One row per settings entry the registry gives this site
+  (core.modules.settings_entries_for), with the same predicates the sidebar
+  applied to its entries: an administrator-only row is left out for anyone who
+  is not one, the setup row follows the sign-in switch, and a row that opens a
+  write flow is left out for a viewer. Written as empty guard branches so the
+  row markup appears once. `user_can_write == False` is the strict comparison
+  the sidebar uses.{% endcomment %}
+  <div class="card-raised settings-list">
+    {% for row in rows %}{% with entry=row.entry %}{% if entry.visibility == 'agency_admin' and not user_is_admin %}{% elif entry.visibility == 'setup_gate' and access_enforced and not user_is_admin %}{% elif entry.writes and user_can_write == False %}{% else %}
+    <div class="settings-row">
+      <a href="{% url entry.url_name %}" class="settings-row-label">
+        {% include "partials/_nav_icon.html" with icon_key=entry.icon %}
+        {{ entry.label }}
+      </a>
+      <p class="settings-row-sentence">{{ row.sentence }}</p>
+    </div>
+    {% endif %}{% endwith %}{% endfor %}
+  </div>
+</div>
+{% endblock %}

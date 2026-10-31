@@ -18,44 +18,30 @@
   a link by hand: add a NavEntry to the owning module's ModuleSpec instead, or a
   deployment that switches that module off will still show a dead link.
 
-  Everything outside the loop — the brand, Home, the Help section, the view-mode
-  toggle, the mobile-collapse script — is not module-owned and stays written out
-  longhand.
+  Everything outside the loop (the brand, Home, the Help section, the
+  mobile-collapse script) is not module-owned and stays written out longhand.
+
+  Sections group the pages by what their records are about. The settings
+  section is never drawn here: its entries are the rows of the Settings page,
+  opened from the top bar.
 
   Which ONE link is lit is decided once per request, for every link
   including Home and Help, by `core.modules.lit_entry` (the longest owning
   prefix wins; Home and the Help pages are `FIXED_NAV_ENTRIES` there). It
   arrives as `nav_lit`, the winner's url_name, with `nav_lit_section`; no link
-  here tests the path itself. On a page whose lit entry is in Administration
-  the `nav_mode` processor sets `nav_mode` to 'admin' for that request only,
-  so the section shows with its entry lit; the stored cookie is untouched.
-  The Infrastructure entry is hidden from a read-only account, like the two
-  write flows below (it opens a write page).
+  here tests the path itself.
 
-  The hairline `<hr>` inside a section comes from the same place: an entry
-  carrying `starts_group` opens a new visual block. It is suppressed on the
-  first entry of a section so a reduced deployment cannot end up with a rule
-  sitting directly under the section label.
+  The Drinking water section is a `<details>` block. It is open when the lit
+  entry is one of its own, else when the reader last left it open, else when the
+  site does not run water accounting; the `modules` processor decides this and
+  hands it over as `drinking_group_open`. The script after the sidebar writes the
+  reader's choice to the `sidebar_drinking` cookie.
 
-  Two gates, deliberately at different levels. A section carrying
-  `requires_admin_mode` is hidden wholesale in Operations mode — that is the
-  Administration block. An entry's own `visibility` is an ADDITIONAL predicate
-  applied inside a visible section, and it is written below as empty guard
-  branches ("hidden" cases first, render in the {% templatetag openblock %} else {% templatetag closeblock %}) so the link markup
-  appears exactly once.
-
-  The `<!-- SECTION -->` landmarks are emitted OUTSIDE the admin gate, which is
-  where the hand-written file had them: view-source showed "ADMINISTRATION
-  (Admin view only)" in both modes, and the golden fixtures caught the one
-  version that tidied it inside.
-
-  `tests/test_nav_golden.py` pins this file's rendered output byte-for-byte
-  against fixtures captured before the rewrite. Change the markup here and that
-  suite tells you exactly which permutation moved.
-
-  An entry that opens a write flow rather than a page (the Setup Wizard, Add a
-  water system, Infrastructure) carries `writes=True` in the module registry,
-  and the loop below leaves it out of a viewer's sidebar. Checked with
+  An entry's own `visibility` is a predicate applied inside its section,
+  written below as empty guard branches ("hidden" cases first, render in the
+  {% templatetag openblock %} else {% templatetag closeblock %}) so the link markup appears exactly once. An entry
+  that opens a write flow carries `writes=True` in the module registry, and the
+  loop leaves it out of a viewer's sidebar. Checked with
   `user_can_write == False` rather than `not user_can_write`:
   `test_nav_golden.py` renders this template directly, without the
   `access_flags` context processor, so `user_can_write` is simply absent from
@@ -64,6 +50,10 @@
   renders untouched. A real request always carries the flag as an actual
   Python bool, so the strict comparison changes nothing for a signed-in
   viewer's own browser.
+
+  `tests/test_nav_golden.py` pins this file's rendered output byte-for-byte
+  against fixtures. Change the markup here and that suite tells you exactly
+  which permutation moved.
 {% endcomment %}
         <!-- OVERVIEW (no label) -->
         <a href="{% url 'index' %}"
@@ -75,7 +65,14 @@
             <span class="sidebar-link-text">Home</span>
         </a>
 {% for section in nav_sections %}{% if section.label %}
-        <!-- {{ section.label|upper }}{% if section.requires_admin_mode %} (Admin view only){% endif %} -->{% endif %}{% if not section.requires_admin_mode or nav_mode == 'admin' %}{% if section.label %}
+        <!-- {{ section.label|upper }} -->{% endif %}{% if section.collapsible %}
+        <details class="sidebar-collapsible sidebar-group-drinking"{% if drinking_group_open %} open{% endif %}>
+        <summary class="sidebar-section sidebar-collapsible-summary">
+            <span class="sidebar-link-text sidebar-section-label">{{ section.label }}</span>
+            <svg class="sidebar-collapsible-chevron" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+            </svg>
+        </summary>{% elif section.label %}
         <div class="sidebar-section">
             <span class="sidebar-link-text sidebar-section-label">{{ section.label }}</span>
         </div>{% endif %}{% for entry in section.entries %}{% if entry.visibility == 'agency_admin' and not user_is_admin %}{% elif entry.visibility == 'setup_gate' and access_enforced and not user_is_admin %}{% elif entry.writes and user_can_write == False %}{% else %}{% if entry.starts_group and not forloop.first %}
@@ -84,7 +81,8 @@
            class="sidebar-link{% if entry|nav_active:nav_lit %} active{% endif %}">
             {% include "partials/_nav_icon.html" with icon_key=entry.icon %}
             <span class="sidebar-link-text">{{ entry.label }}</span>
-        </a>{% endif %}{% endfor %}{% endif %}{% endfor %}{% if 'reporting' not in enabled_modules %}
+        </a>{% endif %}{% endfor %}{% if section.collapsible %}
+        </details>{% endif %}{% endfor %}{% if 'reporting' not in enabled_modules %}
         {% comment %}2026-10-12: the reports pages are turned off and the
         sidebar entry is greyed out, shown as under development.
         Reporting is off unless a site names it in OPENH2O_MODULES
@@ -184,16 +182,6 @@
             <span class="sidebar-link-text">Send feedback</span>
         </button>
         {% endif %}
-
-        <!-- VIEW MODE — segmented toggle, tucked at the foot of the nav -->
-        <div class="nav-mode-toggle" role="group" aria-label="Sidebar view mode">
-            <a href="{% url 'set_nav_mode' %}?mode=operations"
-               class="nav-mode-option{% if nav_mode != 'admin' %} active{% endif %}"
-               title="Everyday tools only">Operations</a>
-            <a href="{% url 'set_nav_mode' %}?mode=admin"
-               class="nav-mode-option{% if nav_mode == 'admin' %} active{% endif %}"
-               title="Show setup &amp; administration tools">Admin</a>
-        </div>
     </nav>
 </aside>
 <script>
@@ -207,5 +195,19 @@
         if (window.matchMedia('(max-width: 767px)').matches) {
             document.getElementById('sidebar').setAttribute('data-collapsed', 'true');
         }
+    })();
+</script>
+<script>
+    // The reader's choice for the Drinking water group, kept for a year. It is
+    // written from a click on the summary, reading the state the click leads
+    // to, because the browser also reports a group that the server drew open.
+    (function () {
+        var group = document.querySelector('.sidebar-group-drinking');
+        var summary = group && group.querySelector('summary');
+        if (!summary) { return; }
+        summary.addEventListener('click', function () {
+            var state = !group.open ? 'open' : 'closed';
+            document.cookie = 'sidebar_drinking=' + state + '; path=/; max-age=31536000; samesite=lax';
+        });
     })();
 </script>

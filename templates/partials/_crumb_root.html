@@ -1,0 +1,8 @@
+{% comment %}
+  The first crumb: the heading of the sidebar section the page belongs to,
+  taken from the entry the page lights (`nav_lit_section_label`, set by the
+  `modules` context processor). A page in the settings section opens with a link
+  to the Settings page, except the Settings page itself, whose own crumb says
+  Settings. A page that lights nothing, or whose entry sits in the unlabelled top
+  block, renders no root.
+{% endcomment %}{% if nav_lit_section == 'settings' %}{% if nav_lit != 'settings' %}<a href="{% url 'settings' %}">Settings</a><span class="breadcrumb-separator">/</span>{% endif %}{% elif nav_lit_section_label %}<span>{{ nav_lit_section_label }}</span><span class="breadcrumb-separator">/</span>{% endif %}

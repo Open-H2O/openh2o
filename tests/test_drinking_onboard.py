@@ -447,8 +447,8 @@ class TestReachable:
         assert not any(e.url_name == "drinking:onboard" for e in entries)
         assert any(e.label == "Water Systems" for e in entries)
 
-    def test_overview_is_not_active_on_the_wizard(self):
-        """The third exclusion. `/drinking/` is a prefix of `/drinking/onboard/`."""
+    def test_overview_lights_on_the_wizard(self):
+        """Add a water system has no sidebar entry of its own: its pages light Water Systems."""
         from core.modules import MODULE_REGISTRY
 
         overview_entry = next(
@@ -456,4 +456,4 @@ class TestReachable:
             if e.url_name == "drinking:overview"
         )
         assert overview_entry.is_active("/drinking/") is True
-        assert overview_entry.is_active("/drinking/onboard/") is False
+        assert overview_entry.is_active("/drinking/onboard/") is True

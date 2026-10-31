@@ -103,9 +103,6 @@ def _authenticated_client():
     )
     client = Client()
     client.force_login(user)
-    # nav_mode=admin is the render that carries the whole sidebar; the operations
-    # mode shows a subset. Crawling admin reaches strictly more of the app.
-    client.cookies["nav_mode"] = "admin"
     return client, user
 
 
