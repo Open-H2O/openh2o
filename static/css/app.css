@@ -5238,18 +5238,18 @@ details[open] > summary .disclosure-mark {
     color: var(--color-text-tertiary);
     font-variant-numeric: tabular-nums;
 }
-/* The year's balance: one band in the table foot's colour, the figures at table size.
-   The band is as wide as its figures: across the card's whole width the equation filled
-   its left half and the rest read as an empty bar (two page reads, 2026-10-31). */
+/* The year's balance: one band in the table foot's colour, the figures at table size,
+   the three terms spread across the table's width. Left-aligned, the equation filled the
+   band's left half and the rest read as empty; as wide as its figures, the band ended short
+   of the table above it (page reads, 2026-10-31). */
 .statement-balance {
     display: flex;
-    width: fit-content;
-    max-width: 100%;
     flex-wrap: wrap;
+    justify-content: space-between;
     align-items: baseline;
     gap: var(--space-xs) var(--space-md);
     padding: 12px 17px;
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     background-color: color-mix(in srgb, var(--color-elevated) 85%, transparent);
     font-variant-numeric: tabular-nums;
 }
