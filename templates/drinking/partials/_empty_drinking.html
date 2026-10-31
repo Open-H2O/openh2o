@@ -83,10 +83,10 @@
   </div>
     {% elif has_system %}{# Two or more systems and no points; the overview links each system's builder #}
   <p class="text-tertiary text-sm" style="max-width: 460px; margin: var(--space-sm) auto 0 auto;">
-    Choose Add sampling points beside a water system on Drinking Water.
+    Choose Add sampling points beside a water system on Water Systems.
   </p>
   <div class="form-footer" style="justify-content: center; margin-top: var(--space-md);">
-    <a href="{% url 'drinking:overview' %}" class="btn-primary">Drinking Water</a>
+    <a href="{% url 'drinking:overview' %}" class="btn-primary">Water Systems</a>
   </div>
     {% else %}
   <p class="text-tertiary text-sm" style="max-width: 460px; margin: var(--space-sm) auto 0 auto;">

@@ -704,7 +704,7 @@ facts attached to them, such as a name and an area. You can also type the area's
 north, south, east and west edges by hand, or start without a boundary.
 
 - **Where it is.** Click **Settings** in the top bar, beside your sign-in name, then
-  **Setup Wizard**. Only an administrator sees the Settings button.
+  **Setup Wizard**. An administrator sees the Settings button. On a site with `ACCESS_CONTROL_ENFORCED=False`, every signed-in person sees it.
 - **Who can open it.** Only a signed-in administrator can open it. On a site with
   `ACCESS_CONTROL_ENFORCED=False`, any signed-in person can open it. Create the
   superuser (section 7) first.

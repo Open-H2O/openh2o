@@ -147,7 +147,7 @@ and the command names it. Pass `--skip-duplicates` to skip such rows instead.
 
 ### Wells, points of diversion, storage ponds and recharge sites: the Import screen
 
-The Wells, Surface Diversions and Recharge sites pages each have an Import button,
+The Wells, Surface Diversions and Recharge Sites pages each have an Import button,
 and all three open the same import screen (`/infrastructure/import/?type=well`,
 `diversion` or `recharge_site`). Each import screen links to the others under
 "Importing something else?", so the storage pond import
@@ -344,8 +344,7 @@ a system in another state, enter each point's code exactly as it appears in the 
 results file. A PS Code that does not match any sampling
 point on the site is a row error. OpenH2O does not create a sampling point from a lab
 file, because a mistyped code would then add a monitoring location that does not
-exist. Add the sampling point first with Add sampling points on the Drinking Water
-page, then import the file again.
+exist. Add the sampling point first with Add sampling points on the Water Systems page (Drinking water > Water Systems), then import the file again.
 
 An analyte the site does not have yet is added from the file's Analyte Code and
 Analyte Name, and the preview says so. When the file carries MCL and DLR columns,
@@ -434,7 +433,7 @@ These records have no file import and no public source. Each has its own page:
 - Water accounts: `/accounting/accounts/create/`
 - Allocations: `/accounting/allocations/create/`
 - Water system facilities that the PWSID lookup did not add: `/drinking/facilities/add/`
-- Sampling points: Add sampling points on the Drinking Water page
+- Sampling points: Add sampling points on the Water Systems page (Drinking water > Water Systems)
 - The sampling schedule: `/drinking/schedule/add/`
 
 Water-level readings on a well and readings at a monitoring station have no page in

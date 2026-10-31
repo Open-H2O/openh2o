@@ -430,10 +430,10 @@ place the table gives:
 | Which year a season belongs to | The report-year setting on the Delivery Settings page (`/accounting/delivery-settings/`), under Diversion records. It is set once for the whole site. |
 | Which month your water year starts in | The water year setting on the Delivery Settings page (`/accounting/delivery-settings/`). The default is 10, October. Set it before the first allocation. |
 | The unit of the rows in a production file whose unit is blank | **Unit for rows with a blank unit**, on the preview of the production import screen. |
-| Which facility each name in the organization's files means | The facility's local name, on its add or edit page under Drinking Water facilities. |
+| Which facility each name in the organization's files means | The facility's local name, on its add or edit page, reached from Drinking water > Facilities. |
 | Whether any laboratory results exist only on paper | A CSV file with the lab import's columns, typed up from the paper and imported at `/drinking/import/`. |
 | Which meter feeds which water source | The source column of the production file: one of the six source columns of a monthly log, or `TypeCode` in an export of California's Electronic Annual Report (eAR). |
-| Whether the organization wants OpenH2O to hold its sampling schedule | The Schedule page under Drinking Water, from **+ Add row**. |
+| Whether the organization wants OpenH2O to hold its sampling schedule | The Schedule page under Drinking water, from **+ Add row**. |
 
 ### Option B: The organization's own records
 
@@ -462,8 +462,7 @@ month it chooses. Set the answer on the Delivery Settings page
 appears only when the site runs the `surface` section. This answer applies only to
 diversion files, and it is separate from the month the site's water year starts in.
 
-Water accounts and allocations have no import. Create them on their pages under
-Accounting. Before the first allocation, set the month the water year starts in on Delivery Settings, and create each water year from the first day of a month to the last day of a month. OpenH2O has no page yet for entering water-level readings at a well or
+Water accounts and allocations have no import. Create them on their pages under Water accounting: Accounts and Allocations. Before the first allocation, set the month the water year starts in on Delivery Settings, and create each water year from the first day of a month to the last day of a month. OpenH2O has no page yet for entering water-level readings at a well or
 readings at a monitoring station. Someone with a staff account, such as the
 superuser from Phase 2, can add them on the administration site at `/admin/`. The
 Data import guide lists every record that is entered by hand and the page for each.
