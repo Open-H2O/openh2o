@@ -28,6 +28,7 @@ from django.test import Client
 from django.urls import reverse
 
 from accounting.models import CalculationRequest, CalculationRun, ReportingPeriod
+from core.map_labels import map_label
 from parcels.models import Parcel, ParcelLedger
 from surface.models import UnallocatedDelivery
 from surface.services import allocate_district_delivery
@@ -691,46 +692,52 @@ def field_page(parcel, rp):
     return client.get(reverse("parcels:detail", args=[parcel.pk]), {"period": rp.pk}).content.decode()
 
 
-def test_the_field_page_says_a_single_fallow_month_took_no_share():
+def card_text(body):
+    """The visible words of the Water use card."""
+    import html as html_lib
+    import re
+
+    card = body.split("statement-head", 1)[1].split("page-grid-2col", 1)[0]
+    return " ".join(html_lib.unescape(re.sub(r"<[^>]+>", " ", card)).split())
+
+
+def test_the_field_page_says_a_single_fallow_month_was_divided_among_the_others():
     rp, pod, a, b, c = page_world([(FEB, FEB)])
-    body = field_page(c, rp)
     assert (
-        "This use area was fallow in February 2024, so OpenH2O gave it no share of the canal water "
-        "that month. Record any water spread on it to recharge as To Storage."
-    ) in body
-    assert "budget-breakdown-group--under" in body
+        f"In the fallow month OpenH2O counted crop ET as 0 and divided {map_label(pod.name)}'s "
+        "water among the other use areas on it."
+    ) in card_text(field_page(c, rp))
 
 
 def test_the_field_page_names_a_run_of_months_once():
     rp, pod, a, b, c = page_world([(JAN, MAR)])
-    body = field_page(c, rp)
     assert (
-        "This use area was fallow from January 2024 to March 2024, so OpenH2O gave it no share of "
-        "the canal water in those months. Record any water spread on it to recharge as To Storage."
-    ) in body
+        f"In the fallow months OpenH2O counted crop ET as 0 and divided {map_label(pod.name)}'s "
+        "water among the other use areas on it."
+    ) in card_text(field_page(c, rp))
 
 
-def test_the_field_page_names_months_that_are_not_in_one_run():
+def test_the_field_page_uses_the_same_words_for_months_that_are_not_in_one_run():
     rp, pod, a, b, c = page_world([(JAN, JAN), (MAR, MAR)])
-    body = field_page(c, rp)
     assert (
-        "This use area was fallow in January 2024 and March 2024, so OpenH2O gave it no share of "
-        "the canal water in those months."
-    ) in body
+        f"In the fallow months OpenH2O counted crop ET as 0 and divided {map_label(pod.name)}'s "
+        "water among the other use areas on it."
+    ) in card_text(field_page(c, rp))
 
 
-def test_the_field_page_names_three_separate_months_with_commas():
+def test_the_field_page_uses_the_same_words_for_three_separate_months():
     rp, pod, a, b, c = page_world(
         [(JAN, JAN), (MAR, MAR), (dt.date(2024, 5, 1), dt.date(2024, 5, 1))],
         record_months=(JAN, MAR, dt.date(2024, 5, 1)),
     )
-    body = field_page(c, rp)
-    assert "was fallow in January 2024, March 2024 and May 2024, so OpenH2O" in body
+    assert "In the fallow months OpenH2O counted crop ET as 0 and divided" in card_text(
+        field_page(c, rp)
+    )
 
 
 def test_the_field_page_says_nothing_for_a_fallow_month_with_no_canal_water():
     rp, pod, a, b, c = page_world([(JAN, MAR)], record_months=())
-    assert "gave it no share of the canal water" not in field_page(c, rp)
+    assert "and divided" not in card_text(field_page(c, rp))
 
 
 def test_the_field_page_says_nothing_for_a_fallow_month_when_the_field_has_its_own_record():
@@ -740,7 +747,7 @@ def test_the_field_page_says_nothing_for_a_fallow_month_when_the_field_has_its_o
         source_type="surface_diversion", description="Reading at the field turnout",
         reporting_period=rp,
     )
-    assert "gave it no share of the canal water" not in field_page(c, rp)
+    assert "and divided" not in card_text(field_page(c, rp))
 
 
 def test_the_field_page_says_nothing_for_a_to_storage_record_alone():
@@ -749,16 +756,19 @@ def test_the_field_page_says_nothing_for_a_to_storage_record_alone():
     CalculationRun.objects.create(
         parcel=c, period="2024-02", gross_et_af=D("0"), net_consumptive_use_af=D("0"), final_af=D("0"))
     make_period(c, FEB, FEB)
-    assert "gave it no share of the canal water" not in field_page(c, rp)
+    assert "and divided" not in card_text(field_page(c, rp))
 
 
 def test_the_turnout_page_names_the_fallow_use_area_under_its_month():
     rp, pod, a, b, c = page_world([(FEB, FEB)])
     body = operator_client().get(reverse("surface:pod_detail", args=[pod.pk])).content.decode()
     assert (
-        "Use area APN-C was fallow in February 2024, so OpenH2O gave it no share of this month&#x27;s water."
-        in body
-    ) or "Use area APN-C was fallow in February 2024, so OpenH2O gave it no share of this month's water." in body
+        f"Use area APN-C was fallow in February 2024. OpenH2O divided this month&#x27;s water "
+        f"among the other use areas on {map_label(pod.name)}."
+    ) in body or (
+        f"Use area APN-C was fallow in February 2024. OpenH2O divided this month's water "
+        f"among the other use areas on {map_label(pod.name)}."
+    ) in body
     assert body.count("was fallow in") == 1
 
 

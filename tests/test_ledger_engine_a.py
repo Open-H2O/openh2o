@@ -93,13 +93,15 @@ def test_d2_august_unmetered_point_reduces_no_fields_groundwater_need(ref):
     assert pumped(d2["G3"], "2025-08") == D("8.0000")
 
 
-def test_the_field_page_says_no_canal_delivery_is_recorded(ref):
+def test_the_field_page_names_the_point_and_makes_no_delivery_up(ref):
     field, _ = worked_example_field()
     ld.run_months(["2025-07"])
     page = Client()
     page.force_login(User.objects.create_user(username="reader", password="x", is_active=True))
     body = page.get(reverse("parcels:detail", args=[field.pk])).content.decode()
-    assert "No canal delivery is recorded for this use area." in body
+    card = body.split("statement-head", 1)[1].split("page-grid-2col", 1)[0]
+    assert "X headgate" in card
+    assert "No canal delivery is recorded" not in body
     assert "AF estimated" not in body
 
 

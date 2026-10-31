@@ -581,10 +581,16 @@ def budget_segment(html, label):
     return matching[0]
 
 
+def water_use_card(html):
+    """The markup of the Water use card, from its head to the use area details beside the ledger."""
+    return html.split("statement-head", 1)[1].split("page-grid-2col", 1)[0]
+
+
 def test_parcel_pane_states_one_subtraction_with_the_badge_inside_it():
     """One `calculated` row of 110 AF against 100 AF of gross ET.
 
-    Inputs 110 (the engine's row, charged as recorded because its run stamped
+    The pane's Water use card states the 100.00 AF of crop ET and carries no
+    residual or badge. The fixture's story: inputs 110 (the engine's row, charged as recorded because its run stamped
     no extracted figure), outputs 100 (ET), so the residual is +10.00 AF: 10%
     of ET, inside REALISTIC_RESIDUAL_BAND (25%), and the balance does not
     close, so the badge is the green Residual (case B: no meter, no closing
@@ -626,31 +632,14 @@ def test_parcel_pane_states_one_subtraction_with_the_badge_inside_it():
     assert response.status_code == 200
     html = response.content.decode()
 
-    supplies = budget_segment(html, "Supplies")
-    uses = budget_segment(html, "Uses")
-    residual = budget_segment(html, "Residual")
-
+    # The Water use card states the year's crop ET; the supplies-minus-uses
+    # statement and its badge are not on the use area page.
+    card = water_use_card(html)
     assert (
-        '<div class="budget-seg-value text-supply">110.00'
-        '<span class="budget-seg-unit">AF</span></div>'
-    ) in supplies
-    assert (
-        '<div class="budget-seg-value text-usage">100.00'
-        '<span class="budget-seg-unit">AF</span></div>'
-    ) in uses
-    assert (
-        '<div class="budget-seg-value text-surplus">10.00'
-        '<span class="budget-seg-unit">AF</span></div>'
-    ) in residual
-
-    assert '<span class="badge badge-green">Residual</span>' in residual, (
-        "the badge is not inside the residual segment. ISS-148 is that the pane "
-        "gave the answer twice in two identities and put the badge beside the "
-        "one it does not judge; the badge belongs in the statement it judges."
-    )
-    assert "Supplies from the meter" not in residual, (
-        "the metered case's sentence printed on a field with no meter reading"
-    )
+        '<div class="budget-seg-value">100.00<span class="budget-seg-unit">AF</span></div>'
+    ) in card
+    assert "budget-seg-label\">Supplies<" not in html
+    assert "badge-green\">Residual<" not in html
 
     assert "Supplies \u2212 consumptive use" not in html, (
         "card 3 (supplies minus gross ET) is still on the pane. The panel states "
@@ -715,32 +704,18 @@ def test_parcel_pane_panel_reads_a_flood_mar_field_as_a_deficit():
     assert response.status_code == 200
     html = response.content.decode()
 
-    assert (
-        '<div class="budget-seg-value text-supply">110.00'
-        '<span class="budget-seg-unit">AF</span></div>'
-    ) in budget_segment(html, "Supplies")
-    assert (
-        '<div class="budget-seg-value text-usage">120.00'
-        '<span class="budget-seg-unit">AF</span></div>'
-    ) in budget_segment(html, "Uses")
+    # The reader still states the Flood-MAR field's mass balance as a deficit; the
+    # use area page's card carries no residual or Deficit word.
+    from accounting.services import parcel_mass_balance
 
-    residual = budget_segment(html, "Residual")
-    assert (
-        '<div class="budget-seg-value text-deficit">-10.00'
-        '<span class="budget-seg-unit">AF</span></div>'
-    ) in residual
-    assert '<span class="badge badge-orange">Deficit</span>' not in residual, (
-        "a metered field printed a badge word; its residual is a difference "
-        "between records and the number stands with its colour (148-03)"
-    )
-    assert "This balance compares the field's metered groundwater and surface water deliveries with the satellite estimate of crop ET." in residual
-
-    assert "<span>Managed recharge</span><b>20.00</b>" in html, (
-        "the uses breakdown does not show the 20.00 AF that left this field for the "
-        "basin, so the residual is not legible from the panel. The row sums only "
-        "recorded managed recharge (148-04), so it carries no (estimated) tag "
-        "(148-03)."
-    )
+    balance = parcel_mass_balance(parcel, rp)
+    assert balance["inputs_total"] == Decimal("110.0000")
+    assert balance["outputs_total"] == Decimal("120.0000")
+    assert balance["residual_af"] == Decimal("-10.0000")
+    assert balance["outputs"]["recharge"] == Decimal("20.0000")
+    card = water_use_card(html)
+    assert "Deficit" not in card and "Residual" not in card
+    assert "Managed recharge" not in card
 
 
 def test_a_balanced_field_does_not_paint_its_residual_as_a_deficit():
@@ -783,18 +758,15 @@ def test_a_balanced_field_does_not_paint_its_residual_as_a_deficit():
     response = client.get(reverse("parcels:detail", args=[parcel.pk]), HTTP_HX_REQUEST="true")
     assert response.status_code == 200
 
-    residual = budget_segment(response.content.decode(), "Residual")
-    assert "Balanced" not in residual, (
-        "the word Balanced is back on the pane; it retired on 2026-09-28 (148-03)"
-    )
-    assert '<span class="badge badge-grey">Estimated</span>' not in residual, (
-        "a metered field that closes was labelled Estimated; nothing in this "
-        "balance is the engine's estimate"
-    )
-    assert "budget-seg-value text-deficit" not in residual, (
-        "a field whose books CLOSE is painting its residual deficit orange"
-    )
-    assert "budget-seg-value text-neutral" in residual
+    from accounting.services import parcel_mass_balance
+
+    balance = parcel_mass_balance(parcel, rp)
+    assert balance["closes"] is True
+    assert balance["band_status"] == "closes"
+    card = water_use_card(response.content.decode())
+    assert "Balanced" not in card
+    assert "text-deficit" not in card
+    assert "Residual" not in card
 
 
 def test_a_plugged_figure_says_it_is_an_estimate():
@@ -811,7 +783,12 @@ def test_a_plugged_figure_says_it_is_an_estimate():
     from django.test import Client
     from django.urls import reverse
 
-    from tests.factories import ParcelFactory, ParcelLedgerFactory, ReportingPeriodFactory
+    from tests.factories import (
+        ParcelFactory,
+        ParcelLedgerFactory,
+        ReportingPeriodFactory,
+        WellIrrigatedParcelFactory,
+    )
 
     rp = ReportingPeriodFactory(
         name="Water Year 2025-2026",
@@ -839,39 +816,38 @@ def test_a_plugged_figure_says_it_is_an_estimate():
 
     # The engine wrote this pumping figure: a `calculated` row.
     plugged = ParcelFactory()
+    WellIrrigatedParcelFactory(parcel=plugged)
     ParcelLedgerFactory(
         parcel=plugged, reporting_period=rp, source_type="calculated",
         amount_acre_feet=Decimal("-100.0000"),
         transaction_date=dt.date(2026, 1, 15), effective_date=dt.date(2026, 1, 15),
     )
     run_for(plugged)
-    # 143-01: the figure sits in a titled breakdown row, marker beside the
-    # name and the number in the row's own <b>.
-    plugged_html = render(plugged)
+    # The card says the figure is the engine's estimate, in a line of its own,
+    # and states the extraction in its lead figures.
+    plugged_card = water_use_card(render(plugged))
     assert (
-        '<span>Groundwater extraction<span class="budget-breakdown-note">estimated</span></span><b>100.00</b>'
-    ) in plugged_html
-    # 148-03, case A: 100 in (the engine's own row) against 100 of ET closes
-    # by arithmetic, and the badge says so in one word.
-    plugged_residual = budget_segment(plugged_html, "Residual")
-    assert '<span class="badge badge-grey">Estimated</span>' in plugged_residual
-    assert "This field has no meter readings for the water year, so OpenH2O estimated its groundwater extraction from its ETAW met by groundwater, and this balance closes at zero by arithmetic. A meter reading would replace the estimate." in plugged_residual
+        '<div class="budget-seg-value">100.00<span class="budget-seg-unit">AF</span></div>'
+    ) in plugged_card
+    assert (
+        "OpenH2O estimated the groundwater extraction, because no meter readings are on "
+        "record for the water year."
+    ) in plugged_card
 
     # A meter owns this one: the engine had nothing to solve for.
     metered = ParcelFactory()
+    WellIrrigatedParcelFactory(parcel=metered)
     ParcelLedgerFactory(
         parcel=metered, reporting_period=rp, source_type="meter_reading",
         amount_acre_feet=Decimal("-110.0000"),
         transaction_date=dt.date(2026, 1, 15), effective_date=dt.date(2026, 1, 15),
     )
     run_for(metered)
-    metered_html = render(metered)
-    assert "<span>Groundwater extraction</span><b>110.00</b>" in metered_html, (
+    metered_card = water_use_card(render(metered))
+    assert (
+        '<div class="budget-seg-value">110.00<span class="budget-seg-unit">AF</span></div>'
+    ) in metered_card
+    assert "estimated the groundwater extraction" not in metered_card, (
         "a metered groundwater figure is a recorded measurement and must not be "
         "labelled an estimate"
-    )
-    assert "(estimated)" not in metered_html
-    assert "budget-breakdown-note" not in metered_html
-    assert "Estimated</span>" not in metered_html, (
-        "a metered field printed the Estimated badge (148-03, case C: no word)"
     )

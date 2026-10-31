@@ -12,6 +12,7 @@ the arithmetic without re-deriving it.
 
 Runs in the web container (needs the DB).
 """
+import datetime as dt
 from decimal import Decimal
 
 import pytest
@@ -21,7 +22,7 @@ from django.urls import reverse
 
 from accounting.models import CalculationRun
 from core.models import SiteConfig
-from tests.factories import ParcelFactory
+from tests.factories import ParcelFactory, ReportingPeriodFactory
 
 User = get_user_model()
 
@@ -37,7 +38,7 @@ pytestmark = pytest.mark.django_db
 EXCESS_LABEL = "<span>Surface water in excess of ETAW"
 EXCESS_FIGURE = 'title="4.0000 acre-feet">4.00</b>'
 ETAW_MET_BY_SURFACE = 'title="2.0000 acre-feet">2.00<'
-FIELD_LABEL = "Surface water in excess of ETAW:"
+FIELD_LABEL = "Surface water in excess of ETAW came to"
 
 OVER = Decimal("4.0000")
 SHARE = Decimal("0.100")
@@ -107,6 +108,10 @@ def _calc_page(parcel, period):
 
 
 def _field_page(parcel):
+    # The Water use card is drawn for a reporting period.
+    ReportingPeriodFactory(
+        name="WY 2025-2026", start_date=dt.date(2025, 10, 1), end_date=dt.date(2026, 9, 30),
+    )
     resp = _client().get(
         reverse("parcels:detail", args=[parcel.pk]), HTTP_HX_REQUEST="true",
     )
@@ -208,8 +213,10 @@ class TestFieldPageLine:
 
         html = _field_page(parcel)
         assert FIELD_LABEL in html
-        assert "5.50" in html, "4.0000 + 1.5000 named_line AF, the credited run excluded"
-        assert "AF, neither credited nor charged" in html
+        assert (
+            "Surface water in excess of ETAW came to 5.50 AF. OpenH2O neither credits it to "
+            "the landowner nor charges it to R148-04-G."
+        ) in " ".join(html.split()), "4.0000 + 1.5000 named_line AF, the credited run excluded"
 
     def test_absent_for_a_field_with_no_named_line_run(self):
         parcel = ParcelFactory(parcel_number="R148-04-H")
@@ -220,7 +227,7 @@ class TestFieldPageLine:
         )
 
         html = _field_page(parcel)
-        assert "AF, neither credited nor charged" not in html
+        assert FIELD_LABEL not in html
 
 
 class TestNoRecharge:

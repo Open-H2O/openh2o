@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 from urllib.parse import parse_qs
 
@@ -28,13 +29,13 @@ from core.workspace import list_response, redirect_to_selected
 from accounting.models import ReportingPeriod
 from accounting.services import (
     parcel_consumptive_balance,
-    parcel_mass_balance,
     parcel_over_delivery_shown,
-    parcel_over_delivery_total,
     parcel_receipt_periods,
     parcel_run_periods,
     parcel_unmet_demand,
+    parcel_water_use_months,
 )
+from core.map_labels import map_label
 from core.modules import is_enabled
 from core.validation import FieldValidationError, coerce_decimal, coerce_int
 from parcels.forms import FallowPeriodForm
@@ -179,19 +180,6 @@ def parcels_list(request):
 
 #: The month table's figure columns, in the order of its `All N months` row.
 
-def _served_with_no_canal_delivery(parcel, mass_balance):
-    """True when a canal point serves this field and no canal delivery is on record for the period.
-
-    False where the surface module is off (the page then names no canal) and for
-    a field no point of diversion serves.
-    """
-    if not is_enabled("surface") or mass_balance["inputs"]["surface"]:
-        return False
-    from surface.models import PointOfDiversionParcel
-
-    return PointOfDiversionParcel.objects.filter(parcel=parcel).exists()
-
-
 def _parcel_detail_context(parcel, period_id=None):
     """Build the per-parcel water-balance context.
 
@@ -208,30 +196,23 @@ def _parcel_detail_context(parcel, period_id=None):
     all_periods = list(ReportingPeriod.objects.order_by("-start_date"))
     balance_period = _balance_period(parcel, all_periods, period_id)
 
-    # The consumptive-use balance + the closing identity, both
-    # read from the same source fields so the card is internally consistent.
+    # Only the no-run branch reads the consumptive balance (its recorded supplies).
     consumptive_balance = parcel_consumptive_balance(parcel, balance_period)
-    mass_balance = parcel_mass_balance(parcel, balance_period)
-    # Months this parcel was engine-run — each links to its own audit waterfall
-    # Empty when ET was never computed (a surface-only use area),
-    # which the template renders as an honest "ET not yet computed" state rather
-    # than a scary red residual.
+    # Months this parcel was engine-run: none means ET was never computed, which the
+    # card says in a sentence rather than printing a table of zeros.
     run_periods = parcel_run_periods(parcel, balance_period)
     # The months that link to a calculation receipt are only those
     # with a well and no meter; a field with none shows no link block at all.
     receipt_periods = parcel_receipt_periods(parcel, balance_period)
-    # Unmet demand, as the platform already stores it.
-    unmet_demand_af = parcel_unmet_demand(parcel, balance_period)
     # Canal water beyond what the crop could use, on a run stamped
     # to show it as its own named line rather than a credit.
     over_delivery_shown_af = parcel_over_delivery_shown(parcel, balance_period)
-    # The same figure under every setting value, the cause line under
-    # a residual that is real (a field with no meter and no closing estimate).
-    over_delivery_total_af = parcel_over_delivery_total(parcel, balance_period)
 
-    # A field a canal point serves, with no canal delivery on record: the pane
-    # says so, because OpenH2O makes no delivery up from crop need.
-    no_canal_delivery = _served_with_no_canal_delivery(parcel, mass_balance)
+    has_well = is_enabled("wells") and related_wells.exists()
+    water_use = None
+    if run_periods and balance_period is not None:
+        water_use = parcel_water_use_months(parcel, balance_period, with_groundwater=has_well)
+    water_use_lines = _water_use_lines(parcel, balance_period, water_use, has_well)
 
     recent_ledger = _recent_ledger(parcel, balance_period)
     geojson = _parcel_geojson(parcel)
@@ -247,17 +228,14 @@ def _parcel_detail_context(parcel, period_id=None):
         # Every period, newest first — the options of the pane's period control.
         "all_periods": all_periods,
         "consumptive_balance": consumptive_balance,
-        "mass_balance": mass_balance,
-        "run_periods": run_periods,
+        "water_use": water_use,
+        "water_use_lines": water_use_lines,
+        "serving_points": _serving_points(parcel),
         "receipt_periods": receipt_periods,
-        "unmet_demand_af": unmet_demand_af,
         "over_delivery_shown_af": over_delivery_shown_af,
-        "over_delivery_total_af": over_delivery_total_af,
-        "no_canal_delivery": no_canal_delivery,
         "editable_fields": editable_fields,
         "editable_fields_with_values": editable_fields_with_values,
         "fallow": fallow_row_context(parcel),
-        "fallow_share_sentence": _fallow_share_sentence(parcel, balance_period),
         # Pass the Python object (or None); the template escapes it via
         # json_script so operator free-text can't break out of <script>.
         "geojson": geojson,
@@ -265,49 +243,144 @@ def _parcel_detail_context(parcel, period_id=None):
     return context
 
 
-def _month_firsts(start, end):
-    """Every first-of-month date from ``start`` through ``end``."""
-    months = []
-    month = start.replace(day=1)
-    while month <= end:
-        months.append(month)
-        month = (month.replace(day=28) + dt.timedelta(days=4)).replace(day=1)
-    return months
+_NUMBER_WORDS = (
+    "one", "two", "three", "four", "five", "six",
+    "seven", "eight", "nine", "ten", "eleven", "twelve",
+)
 
 
-def _fallow_share_sentence(parcel, balance_period):
-    """The line saying canal water skipped this field in the period's fallow months, or "".
+def _in_words(n):
+    """``n`` as a word from one to twelve, as digits above that."""
+    return _NUMBER_WORDS[n - 1] if 1 <= n <= len(_NUMBER_WORDS) else str(n)
 
-    A month counts when the field was fallow in it, a point of diversion
-    serving it delivered water for use above 0, and the field had no delivery
-    record of its own, so it was one of the fields the water was divided
-    among. Empty where the surface module is off or no month qualifies.
+
+def _acre_feet(value):
+    """``value`` to two places, half up, with thousands separators."""
+    return f"{Decimal(value).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP):,.2f}"
+
+
+def _serving_points(parcel):
+    """The points of diversion that serve ``parcel``, by name, as ``(pk, label)``; none where surface is off."""
+    if not is_enabled("surface"):
+        return []
+    from surface.models import PointOfDiversionParcel
+
+    links = PointOfDiversionParcel.objects.filter(parcel=parcel).select_related(
+        "point_of_diversion"
+    ).order_by("point_of_diversion__name", "point_of_diversion__pk")
+    return [
+        (link.point_of_diversion.pk, map_label(link.point_of_diversion.name)) for link in links
+    ]
+
+
+def _unmet_sentence(parcel, balance_period, unmet_months):
+    """The line saying how much of the period's crop ET no supply on record met, or "".
+
+    ``unmet_months`` are the first days of the months whose run recorded unmet demand above 0.
     """
-    if balance_period is None or not is_enabled("surface"):
+    total = parcel_unmet_demand(parcel, balance_period)
+    if total <= 0 or not unmet_months:
         return ""
-    from surface.services import fallow_months_without_share
-
-    months = fallow_months_without_share(
-        parcel, _month_firsts(balance_period.start_date, balance_period.end_date)
-    )
-    if not months:
-        return ""
-    tail = "Record any water spread on it to recharge as To Storage."
-    if len(months) == 1:
+    ending = "OpenH2O records the difference as water use recorded, no supply reported."
+    if len(unmet_months) == 1:
         return (
-            f"This use area was fallow in {months[0]:%B %Y}, so OpenH2O gave it no share "
-            f"of the canal water that month. {tail}"
+            f"Crop ET exceeded the supplies on record in {unmet_months[0]:%B %Y} "
+            f"by {_acre_feet(total)} AF. {ending}"
         )
-    in_one_run = months == _month_firsts(months[0], months[-1])
-    if in_one_run:
-        when = f"from {months[0]:%B %Y} to {months[-1]:%B %Y}"
-    else:
-        labels = [f"{m:%B %Y}" for m in months]
-        when = "in " + ", ".join(labels[:-1]) + f" and {labels[-1]}"
     return (
-        f"This use area was fallow {when}, so OpenH2O gave it no share of the canal "
-        f"water in those months. {tail}"
+        f"Crop ET exceeded the supplies on record in {_in_words(len(unmet_months))} months, "
+        f"{_acre_feet(total)} AF in all. {ending}"
     )
+
+
+def _points_that_divided(parcel, fallow_months):
+    """The labels of the points of diversion whose water was divided among other fields in ``fallow_months``."""
+    from surface.models import PointOfDiversionParcel
+    from surface.services import fallow_fields_left_out
+
+    links = PointOfDiversionParcel.objects.filter(parcel=parcel).select_related(
+        "point_of_diversion"
+    ).order_by("point_of_diversion__name", "point_of_diversion__pk")
+    labels = []
+    for link in links:
+        left_out = fallow_fields_left_out(link.point_of_diversion, fallow_months)
+        if any(parcel in fields for fields in left_out.values()):
+            labels.append(map_label(link.point_of_diversion.name))
+    return labels
+
+
+def _fallow_sentence(parcel, fallow_months):
+    """The line saying what OpenH2O did in the period's fallow months, or "".
+
+    Names each point of diversion whose water was divided among the other use areas
+    in those months (any month, whether or not the months are next to each other).
+    """
+    if not fallow_months:
+        return ""
+    noun = "fallow month" if len(fallow_months) == 1 else "fallow months"
+    sentence = f"In the {noun} OpenH2O counted crop ET as 0"
+    if is_enabled("surface"):
+        from surface.services import fallow_months_without_share
+
+        if fallow_months_without_share(parcel, fallow_months):
+            labels = _points_that_divided(parcel, fallow_months)
+            if len(labels) == 1:
+                return (
+                    f"{sentence} and divided {labels[0]}'s water among the other use areas on it."
+                )
+            if labels:
+                possessive = [f"{label}'s" for label in labels]
+                named = ", ".join(possessive[:-1]) + f" and {possessive[-1]}"
+                return f"{sentence} and divided {named} water among the other use areas on them."
+    return f"{sentence}."
+
+
+def _estimate_sentence(water_use, has_well):
+    """The line saying the groundwater extraction includes OpenH2O's estimate, or ""."""
+    if not has_well or not water_use["gw_is_estimated"]:
+        return ""
+    if water_use["gw_is_metered"]:
+        return (
+            "OpenH2O estimated the groundwater extraction in the months with no meter "
+            "reading on record."
+        )
+    return (
+        "OpenH2O estimated the groundwater extraction, because no meter readings are on "
+        "record for the water year."
+    )
+
+
+def _efficiency_sentence(parcel, water_use):
+    """The foot's sentence on the efficiency delivered water counts at, or "" where none was delivered."""
+    efficiencies = water_use["efficiencies"]
+    if not is_enabled("surface") or not efficiencies:
+        return ""
+    if len(efficiencies) > 1:
+        return "Surface water counts toward crop ET at each month's irrigation efficiency."
+    (efficiency,) = efficiencies
+    if efficiency is None:
+        return ""
+    percent = format((efficiency * 100).normalize(), "f")
+    if ParcelIrrigationMethod.objects.filter(parcel=parcel).exists():
+        return f"Surface water counts toward crop ET at this use area's {percent}% irrigation efficiency."
+    return (
+        f"Surface water counts toward crop ET at the {percent}% irrigation efficiency "
+        "on Delivery Settings."
+    )
+
+
+def _water_use_lines(parcel, balance_period, water_use, has_well):
+    """The sentences the Water use card prints under its figures and in its foot; empty without a run."""
+    lines = {"unmet": "", "fallow": "", "estimate": "", "efficiency": ""}
+    if water_use is None:
+        return lines
+    lines["unmet"] = _unmet_sentence(parcel, balance_period, water_use["unmet_months"])
+    lines["fallow"] = _fallow_sentence(
+        parcel, [m["month"] for m in water_use["months"] if m["fallow"]]
+    )
+    lines["estimate"] = _estimate_sentence(water_use, has_well)
+    lines["efficiency"] = _efficiency_sentence(parcel, water_use)
+    return lines
 
 
 def _balance_period(

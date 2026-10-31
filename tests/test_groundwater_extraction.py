@@ -531,7 +531,8 @@ def test_the_balance_panel_rows_add_up_to_uses(admin_client):
     )
     assert listed == result["outputs_total"]
 
-    html = admin_client.get(
-        reverse("parcels:detail", args=[parcel.id])
-    ).content.decode()
-    assert "Applied water not consumed" in html
+    # The use area page's Water use card does not list the uses; the rows above
+    # are the reader's, which the dashboard and account pages still print.
+    response = admin_client.get(reverse("parcels:detail", args=[parcel.id]))
+    assert response.status_code == 200
+    assert "Supplies by source" not in response.content.decode()

@@ -128,7 +128,10 @@ def test_the_field_page_states_the_figure_under_the_settled_words():
         "the field consumed 363.26 AF with 330.37 AF of it unexplained, and the "
         "page says nothing about it (ISS-157)"
     )
-    assert '<span class="td-num">330.37</span>' in html
+    assert (
+        "Crop ET exceeded the supplies on record in January 2026 by 330.37 AF. OpenH2O records "
+        "the difference as water use recorded, no supply reported."
+    ) in " ".join(html.split())
 
 
 def test_a_period_with_no_unmet_disposition_says_nothing():

@@ -32,294 +32,108 @@
 
 <div class="pane-stack">
 
-  {# Water balance: ONE statement, stated once: the parcel MASS balance. #}
+  {# Water use: the year's figures, what is off, then one row for each month. #}
   {% url 'methods' as methods_help_url %}
   {% url 'water_balances' as wb_help_url %}
   <div class="card-raised">
-    {% if run_periods %}
-    {% comment %}
-      Two balance identities disagree in sign on 32 of 76
-      wet-year and 24 of 76 dry-year parcels, so the pane gives one answer,
-      first and largest.
-      smallest. This panel states the MASS balance — supplies minus uses, where
-      uses carry consumptive use, applied water not consumed, managed recharge and the
-      change in banked storage, and nothing else.
-
-      Why this identity and not the dashboard's (supplies minus gross ET): the
-      badge is DEFINED on this residual, DESIGN.md rule 12 defines "Residual"
-      this way, and on a Flood-MAR field the dashboard's identity prints water
-      that left for the basin as spare supply. The two differ by exactly the
-      recharge and storage terms, so on the 70 fields with neither they are
-      equal and this panel reads the same as the dashboard's.
-
-      Rejected: keep the dashboard identity and drop the mass balance (the badge
-      would then judge a number the panel does not show); keep both and reorder
-      the divs.
-
-      This is the house .budget-panel component, the same one the dashboard and
-      the account pane use (DESIGN.md → House "concept" components). Do not
-      write a second panel for the same idea.
-    {% endcomment %}
-    <div class="budget-panel">
-      <div class="budget-panel-head">
-        <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Surface water, groundwater extraction and managed recharge come from the water year's Use ledger entries. Effective precipitation, crop ET and storage change come from the water year's calculation runs. Applied water not consumed is the canal water and pumped water the crop did not use. The residual is supplies minus uses. The Residual badge is green within a quarter of crop ET and orange beyond it." link=methods_help_url link_label="Methods behind the numbers" %}</span>
+    <div class="statement-head">
+      <h2 class="section-header-flush">Water use</h2>
+      <div class="row-start">
+        <a href="{% url 'accounting:ledger_list' %}?q={{ parcel.parcel_number|urlencode }}" class="text-tertiary back-link text-xs">All ledger entries</a>
         {% include "parcels/partials/_period_control.html" %}
       </div>
-      {% comment %}
-        The body is three figure cells, each figure with its own parts beneath it,
-        not a two-column body (equation packed left, both breakdowns at the far
-        right), which left ~1,300px of nothing between them at 2560.
-        The shape was judged by eye on the live page.
-
-        Supplies carries "by
-        source", Uses carries "by destination", and the result carries its
-        badge plus the lines that judge it, inside the panel.
-
-
-        The Groundwater extracted cell is the engine's OWN OUTPUT re-entering
-        the balance as an input on a field with a well and no meter, which is
-        why it carries "(estimated)": the leftover after crop use minus rain
-        minus the canal water the crop could use IS the groundwater figure (the
-        `calculated` row, divided to the extracted amount), so the books close
-        by arithmetic. The badge under the residual says so in one word
-        (Estimated). Managed recharge carries no tag: the
-        row sums only recorded managed recharge, never a credit the engine
-        wrote. Measured 2026-09-06, before the badge word
-        changed: 113 of 152 field-years read 0.00, every one with the engine's
-        own row available, and not one field-year carrying a meter closed.
-
-        Runoff is deliberately NOT here: FIG-parcels-013 is a fixed-zero
-        bookkeeping placeholder (its figure-ledger verdict is EXPLAINED) and a
-        cell that can only ever read 0.00 says nothing. The key stays in the dict.
-
-        Titles: "by source" for the supplies breakdown, not "of which"
-        (DESIGN.md copy rule 13).
-        The uses side mirrors it with the one word that answers the opposite
-        question -- where the water went -- and repeats nothing from the
-        heading above it.
-      {% endcomment %}
-      <div class="budget-panel-body">
-      <div class="budget-panel-row">
-        <div class="budget-seg">
-          <div class="budget-seg-label">Supplies</div>
-          <div class="budget-seg-value text-supply">{{ mass_balance.inputs_total|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
-          <div class="budget-breakdown-group">
-            <div class="budget-breakdown-title">Supplies by source</div>
-            <div class="budget-breakdown-row"><span>Surface{% if no_canal_delivery %}<span class="budget-breakdown-note budget-breakdown-note--wrap">No canal delivery is recorded for this use area.</span>{% endif %}</span><b>{{ mass_balance.inputs.surface|floatformat:2|intcomma }}</b></div>
-            {% comment %} The part of Surface the calculation
-                 subtracted (CalculationRun.surface_water_af, summed), with the
-                 efficiency when one applied to every delivered month; else the
-                 month table below carries each month's. Omitted with no
-                 delivery (0.00 says nothing, rule 8). {% endcomment %}
-            {% if mass_balance.inputs.surface %}
-            {% endif %}
-            <div class="budget-breakdown-row"><span>Groundwater extraction{% if mass_balance.gw_is_estimated %}<span class="budget-breakdown-note">estimated</span>{% endif %}</span><b>{{ mass_balance.inputs.gw_recovered|floatformat:2|intcomma }}</b></div>
-            <div class="budget-breakdown-row"><span>Effective precipitation</span><b>{{ mass_balance.inputs.precip|floatformat:2|intcomma }}</b></div>
-          </div>
-        </div>
-        <div class="budget-op">&minus;</div>
-        <div class="budget-seg">
-          <div class="budget-seg-label">Uses</div>
-          <div class="budget-seg-value text-usage">{{ mass_balance.outputs_total|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
-          <div class="budget-breakdown-group">
-            <div class="budget-breakdown-title">Uses by destination</div>
-            <div class="budget-breakdown-row"><span>Crop ET</span><b>{{ mass_balance.outputs.et|floatformat:2|intcomma }}</b></div>
-            {% comment %} Two lines: on one, its figure met the divider at 1,730 (staging read, 2026-10-27). {% endcomment %}
-            <div class="budget-breakdown-row"><span>Applied water<br>not consumed</span><b>{{ mass_balance.deep_percolation_af|floatformat:2|intcomma }}</b></div>
-            {% comment %} The two parts of the row above, each
-                 printed only when it is not zero (rule 8). {% endcomment %}
-            {% if mass_balance.outputs.deep_percolation_surface_af %}
-            {% endif %}
-            {% if mass_balance.outputs.deep_percolation_gw_af %}
-            {% endif %}
-            <div class="budget-breakdown-row"><span>Managed recharge</span><b>{{ mass_balance.outputs.recharge|floatformat:2|intcomma }}</b></div>
-            <div class="budget-breakdown-row"><span>Storage change</span><b>{{ mass_balance.outputs.delta_storage|floatformat:2|intcomma }}</b></div>
-          </div>
-        </div>
-        <div class="budget-op">&equals;</div>
-        <div class="budget-seg budget-seg--result">
-          <div class="budget-seg-label">Residual</div>
-          {% comment %}
-            The colour must agree with the badge word. `is_surplus` is
-            `residual >= 0`, so without the band check a field that CLOSES on a residual of a few
-            ten-thousandths below zero (MER-APN-032 sits at -0.0001) would take
-            deficit orange while its badge read the grey Balanced. So a
-            balanced residual is
-            neutral, matching badge-grey, and only a residual outside the
-            closing tolerance takes a direction colour.
-          {% endcomment %}
-          <div class="budget-seg-value {% if mass_balance.band_status == "closes" %}text-neutral{% elif mass_balance.is_surplus %}text-surplus{% else %}text-deficit{% endif %}">{{ mass_balance.residual_af|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
-          {% comment %}
-            The badge says what closed the balance, by what the field HAS
-            (DESIGN.md rule 12, the Residual row). Three
-            cases:
-
-            A. The balance closed on the engine's own estimate (a field with
-               a well and no meter): grey "Estimated". The residual reads 0.00
-               because the well's share was worked out as the remainder and
-               then put back in as a supply; it is zero by arithmetic, not
-               because two records agreed. "Balanced" said the opposite and
-               is not used for this case.
-            B. The residual is real (no meter, and no closing estimate: a
-               field with no well, or a well field whose covered months wrote
-               a 0 AF estimate): "Residual" for a positive figure, "Deficit"
-               for a negative one. The
-               COLOUR carries the size: a deficit is orange at any size; a
-               positive residual is green until it passes
-               REALISTIC_RESIDUAL_BAND, then orange. "Surplus" read as good
-               news to a water manager, and a positive residual here is the
-               opposite.
-            C. A metered field: no word. The figure stands with its colour,
-               because the residual is a difference between records and there
-               is nothing to name it but the number. A metered field that
-               closes within 0.01 AF also prints no word: a closed balance
-               with no estimate in it needs no label. A field with no meter
-               and no estimate that happens to close is treated the same way.
-
-            The badge sits INSIDE this segment because it judges THIS number.
-            The cause lines
-            under it are chosen by the same three cases.
-
-            This block tag is required for a note this long: Django's hash-style
-            template comment is SINGLE-LINE only, and a multi-line one renders
-            onto the page as visible text. That shipped on
-            2026-09-05.
-          {% endcomment %}
-          {% if mass_balance.band_status == "closes" %}
-          {% if mass_balance.gw_is_estimated and not mass_balance.gw_is_metered %}
-          <div class="mt-sm">
-            <span class="badge badge-grey">Estimated</span>
-          </div>
-          {% endif %}
-          {% elif not mass_balance.gw_is_metered %}
-          <div class="mt-sm">
-            {% if not mass_balance.is_surplus %}
-            <span class="badge badge-orange">Deficit</span>
-            {% elif mass_balance.band_status == "realistic" %}
-            <span class="badge badge-green">Residual</span>
-            {% else %}
-            <span class="badge badge-orange">Residual</span>
-            {% endif %}
-          </div>
-          {% endif %}
-          <div class="budget-seg-notes">
-          {% comment %}
-            The cause lines, by the badge's three cases (the comment
-            above). Case A and case C each state in one sentence what the
-            residual IS on that kind of field. Case B prints the stored figures
-            where they are nonzero (the canal figure here, the unmet-demand
-            line below, and a closing line for rain beyond the crop's water
-            use, whose figure is not stored on the run and so is not printed)
-            and never claims the residual equals any one of them: over a
-            period with both kinds of months the residual is the canal figure
-            plus rain beyond crop use minus the shortfall. The four sentences
-            that used to sit at the foot of this block (on-farm loss, deficit
-            irrigation, ditch seepage, a curtailment shortfall) explained the
-            water (DESIGN.md copy rule 11) and are gone.
-
-            Case B's two figure lines say in their
-            LABEL how each sits in the residual (added, subtracted), never that
-            it equals the residual: measured 2026-10-07 on the local demo, the
-            residual equals minus the unmet-demand figure on 45 of the 87
-            field-periods carrying one and differs on 42 (a canal figure in the
-            same period). The last line, under every case, says where losses
-            are: canal losses come off the headgate total before it is divided
-            (surface/services.py::_month_losses), and the field's applied
-            water not consumed is a Use, so neither is in the residual.
-          {% endcomment %}
-          {% if mass_balance.band_status == "closes" and mass_balance.gw_is_estimated and not mass_balance.gw_is_metered %}
-          <p class="text-tertiary">
-            This field has no meter readings for the water year, so OpenH2O estimated its groundwater extraction from its ETAW met by groundwater, and this balance closes at zero by arithmetic. A meter reading would replace the estimate.
-          </p>
-          {% elif mass_balance.gw_is_metered %}
-          <p class="text-tertiary">
-            This balance compares the field's metered groundwater and surface water deliveries with the satellite estimate of crop ET.
-          </p>
-          {% elif over_delivery_total_af > 0 %}
-          <p class="text-secondary">
-            <strong>Surface water in excess of ETAW:</strong>
-            <span class="td-num">{{ over_delivery_total_af|floatformat:2|intcomma }}</span> AF, counted under Uses in applied water not consumed
-          </p>
-          {% endif %}
-
-          {% comment %}
-            The field's surface. The platform records this: on a
-            field with no well the engine writes the leftover as unmet demand rather
-            than inventing pumping.
-
-            ⛔ It is a figure, not a finding. The words are settled: *water use recorded, no supply reported*. Never unauthorized,
-            unpermitted, unlawful, illegal or stolen, never implying them, and no
-            editorialising either — "unexplained", "suspicious" and "should be
-            investigated" are all out. It states the arithmetic and stops. DESIGN.md
-            rule 12's row gates the words; the tone is on whoever edits this next.
-
-            A zero renders NOTHING — not "0.00", not "none" (DESIGN.md rule 8). A zero
-            here would read as a clearance, and a clearance is a finding.
-
-            No colour accent, no badge, no icon: it sits in the house style of the
-            cause lines below it, because it is the same kind of sentence.
-          {% endcomment %}
-          {% if unmet_demand_af > 0 %}
-          <p class="text-secondary">
-            <strong>Water use recorded, no supply reported:</strong>
-            <span class="td-num">{{ unmet_demand_af|floatformat:2|intcomma }}</span> AF, subtracted in the residual above{% include "partials/_explainer_popout.html" with title="Water use recorded, no supply reported" text="This figure is the ETAW that recorded surface water did not meet on a field without a well, summed over the water year's calculation runs. OpenH2O never counts this water as pumping." link=wb_help_url link_label="How water balances work" %}
-          </p>
-          {% endif %}
-
-          {% comment %}
-            The deployment can set canal water beyond what a
-            field's crop could use to show as its own line rather than a
-            credit (Delivery Settings, "named_line"). This is that line: a
-            month set another way never reaches this figure, so a field
-            reads as its own history under whichever setting was in force
-            when each month ran. A zero renders NOTHING, the same rule the
-            unmet-demand line above follows.
-          {% endcomment %}
-          {% if over_delivery_shown_af > 0 %}
-          <p class="text-secondary">
-            <strong>Surface water in excess of ETAW:</strong>
-            <span class="td-num">{{ over_delivery_shown_af|floatformat:2|intcomma }}</span> AF, neither credited nor charged{% include "partials/_explainer_popout.html" with title="Surface water in excess of ETAW" text="An administrator set Delivery Settings to show surface water in excess of ETAW as its own line. OpenH2O records it with the month's calculation, and neither credits it to the landowner nor charges it to this field." link=wb_help_url link_label="How water balances work" %}
-          </p>
-          {% endif %}
-
-          {% if not mass_balance.gw_is_metered and mass_balance.band_status != "closes" and mass_balance.is_surplus and mass_balance.residual_af > 0 %}
-          <p class="text-tertiary">
-            The residual is effective precipitation in excess of crop ET, less any water use recorded with no supply reported.
-          </p>
-          {% endif %}
-
-          {% comment %} Whether the residual includes losses is
-               answered as two labelled lines, one per kind of loss,
-               each saying where that loss is counted instead; the panel's own
-               breakdown rows, because two fresh readers read the sentences as a
-               paragraph. {% endcomment %}
-          </div>
-          {% comment %} The group is a direct child of the segment so the panel's
-               own row rules apply (`.budget-seg > .budget-breakdown-group`);
-               inside .budget-seg-notes the rows ran together. {% endcomment %}
-          <div class="budget-breakdown-group">
-            <div class="budget-breakdown-title">Not in this residual</div>
-            {% if 'surface' in enabled_modules %}
-            <div class="budget-breakdown-row"><span>Canal losses</span><b>at the headgate</b></div>
-            {% endif %}
-            <div class="budget-breakdown-row"><span>Applied water not consumed</span><b>under Uses</b></div>
-          </div>
-        </div>
+    </div>
+    {% if water_use %}
+    {% comment %}
+      Each figure below is read once, by accounting.services.parcel_water_use_months:
+      the lead figures are the table's foot, and the month cells are rounded so they
+      add to it. A figure that rounds to 0.00 prints as an empty cell, and the lines
+      under the figures each print only when they apply.
+    {% endcomment %}
+    <div class="statement-lead{% if 'surface' in enabled_modules and 'wells' in enabled_modules and related_wells %} statement-lead--four{% endif %}">
+      <div>
+        <div class="budget-seg-label">Crop ET</div>
+        <div class="budget-seg-value">{{ water_use.totals.et|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+        <p class="statement-lead-note">{{ parcel.area_acres|floatformat:2|intcomma }} acres</p>
       </div>
-      {% if 'surface' in enabled_modules and fallow_share_sentence %}
-      <div class="budget-breakdown-group--under" style="grid-template-columns: minmax(0, 1fr);">
-        <div class="text-secondary" style="max-width: 75ch;">{{ fallow_share_sentence }}</div>
+      {% if 'surface' in enabled_modules %}
+      <div>
+        <div class="budget-seg-label">Surface water delivered</div>
+        <div class="budget-seg-value">{{ water_use.totals.surface|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+        {% if serving_points %}
+        <p class="statement-lead-note">{% for pk, label in serving_points %}<a href="{% url 'surface:pod_detail' pk %}" class="prose-link">{{ label }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+        {% endif %}
       </div>
       {% endif %}
+      {% if 'wells' in enabled_modules and related_wells %}
+      <div>
+        <div class="budget-seg-label">Groundwater extraction</div>
+        <div class="budget-seg-value">{{ water_use.totals.groundwater|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+        <p class="statement-lead-note">{% for wip in related_wells %}<a href="{% url 'wells:detail' wip.well.pk %}" class="prose-link">{{ wip.well.name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+      </div>
+      {% endif %}
+      <div>
+        <div class="budget-seg-label">Effective precipitation</div>
+        <div class="budget-seg-value">{{ water_use.totals.precip|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+        {% if 'wells' in enabled_modules and not related_wells %}
+        <p class="statement-lead-note">No well on this use area</p>
+        {% endif %}
       </div>
     </div>
-
+    {% if water_use_lines.unmet or water_use_lines.fallow or water_use_lines.estimate or over_delivery_shown_af > 0 %}
+    <div class="statement-notes">
+      {% if water_use_lines.unmet %}
+      <p>{{ water_use_lines.unmet }}{% include "partials/_explainer_popout.html" with title="Water use recorded, no supply reported" text="This figure is the ETAW that recorded surface water did not meet on a field without a well, summed over the water year's calculation runs. OpenH2O never counts this water as pumping." link=wb_help_url link_label="How water balances work" %}</p>
+      {% endif %}
+      {% if water_use_lines.fallow %}
+      <p>{{ water_use_lines.fallow }}</p>
+      {% endif %}
+      {% if water_use_lines.estimate %}
+      <p>{{ water_use_lines.estimate }}</p>
+      {% endif %}
+      {% comment %} Delivery Settings can show canal water beyond the crop's use as its own line instead of a credit. {% endcomment %}
+      {% if over_delivery_shown_af > 0 %}
+      <p>Surface water in excess of ETAW came to {{ over_delivery_shown_af|floatformat:2|intcomma }} AF. OpenH2O neither credits it to the landowner nor charges it to {{ parcel.parcel_number }}.{% include "partials/_explainer_popout.html" with title="Surface water in excess of ETAW" text="An administrator set Delivery Settings to show surface water in excess of ETAW as its own line. OpenH2O records it with the month's calculation, and neither credits it to the landowner nor charges it to this field." link=wb_help_url link_label="How water balances work" %}</p>
+      {% endif %}
+    </div>
+    {% endif %}
+    <div class="statement-table-title">By month</div>
+    <table class="data-table text-sm statement-table">
+      <thead>
+        <tr>
+          <th>Month</th>
+          <th class="th-right th-nowrap">Crop ET</th>
+          {% if 'surface' in enabled_modules %}<th class="th-right">Surface water delivered</th>{% endif %}
+          {% if 'wells' in enabled_modules and related_wells %}<th class="th-right">Groundwater extraction</th>{% endif %}
+          <th class="th-right">Effective precipitation</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in water_use.months %}
+        <tr>
+          <td><a href="{% url 'accounting:ledger_list' %}?q={{ parcel.parcel_number|urlencode }}&amp;start_date={{ m.month|date:'Y-m-d' }}&amp;end_date={{ m.last|date:'Y-m-d' }}" class="data-table-link">{{ m.month|date:"M Y" }}</a></td>
+          {% if m.fallow %}<td class="td-fallow">Fallow</td>{% else %}<td class="td-num">{% if m.et %}{{ m.et|floatformat:2|intcomma }}{% endif %}</td>{% endif %}
+          {% if 'surface' in enabled_modules %}<td class="td-num">{% if m.surface %}{{ m.surface|floatformat:2|intcomma }}{% endif %}</td>{% endif %}
+          {% if 'wells' in enabled_modules and related_wells %}<td class="td-num">{% if m.groundwater %}{{ m.groundwater|floatformat:2|intcomma }}{% endif %}</td>{% endif %}
+          <td class="td-num">{% if m.precip %}{{ m.precip|floatformat:2|intcomma }}{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td class="tfoot-total">{{ balance_period.name }}</td>
+          <td class="td-num td-total">{{ water_use.totals.et|floatformat:2|intcomma }}</td>
+          {% if 'surface' in enabled_modules %}<td class="td-num td-total">{{ water_use.totals.surface|floatformat:2|intcomma }}</td>{% endif %}
+          {% if 'wells' in enabled_modules and related_wells %}<td class="td-num td-total">{{ water_use.totals.groundwater|floatformat:2|intcomma }}</td>{% endif %}
+          <td class="td-num td-total">{{ water_use.totals.precip|floatformat:2|intcomma }}</td>
+        </tr>
+      </tfoot>
+    </table>
 
     {% comment %} Only a month with a well and no meter has a receipt
        to show (where its estimated pumping came from), so only those months
        link, and a field with none (no well, or every month metered) has no
-       block here at all. `receipt_periods` is parcel_receipt_periods(); the
-       panel above stays gated on the wider run_periods. {% endcomment %}
+       block here at all. `receipt_periods` is parcel_receipt_periods(). {% endcomment %}
     {% if receipt_periods %}
     <div class="border-separator">
       <div class="text-tertiary text-xs mb-sm">Estimated groundwater extraction, month by month:</div>
@@ -330,13 +144,13 @@
       </div>
     </div>
     {% endif %}
-    {% else %}
-    <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-      <h2 class="section-header-flush" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Surface water, groundwater extraction and managed recharge come from the water year's Use ledger entries. Effective precipitation, crop ET and storage change come from the water year's calculation runs. Applied water not consumed is the canal water and pumped water the crop did not use. The residual is supplies minus uses. The Residual badge is green within a quarter of crop ET and orange beyond it." link=methods_help_url link_label="Methods behind the numbers" %}</h2>
-      {% include "parcels/partials/_period_control.html" %}
+    <div class="statement-foot">
+      <p>Acre-feet. {% if water_use_lines.efficiency %}{{ water_use_lines.efficiency }} {% endif %}A month opens its ledger entries. An empty cell is a month with nothing on record.</p>
+      <a href="{{ methods_help_url }}" class="text-tertiary back-link text-xs" style="white-space: nowrap;">Methods behind the numbers &rarr;</a>
     </div>
+    {% else %}
     <div class="alert-warning">
-      OpenH2O has not calculated crop ET for this use area in this water year, so there is no balance yet. Recorded supplies:
+      OpenH2O has not calculated crop ET for this use area in this water year. Recorded supplies:
       <span class="text-supply">surface {{ consumptive_balance.supplies.surface|floatformat:2 }}</span> &middot;
       <span class="text-supply">groundwater {{ consumptive_balance.supplies.groundwater|floatformat:2 }}</span> AF.
     </div>

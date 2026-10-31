@@ -140,10 +140,12 @@ class TestParcelBalanceCard:
         resp = auth_client.get(reverse("parcels:detail", args=[parcel.pk]))
         assert resp.status_code == 200
 
-        mb = resp.context["mass_balance"]
-        assert mb["closes"] is True
+        from accounting.services import parcel_mass_balance
+
+        assert parcel_mass_balance(parcel, rp)["closes"] is True
         assert resp.context["balance_period"].pk == rp.pk
-        assert resp.context["run_periods"] == ["2024-01"]
+        # the Water use card reads the one engine-run month
+        assert resp.context["water_use"]["totals"]["et"] == Decimal("20.00")
         # consumptive lens present and consistent (surface from the ledger).
         assert resp.context["consumptive_balance"]["supplies"]["surface"] == Decimal("10")
 
@@ -162,7 +164,7 @@ class TestParcelBalanceCard:
 
         resp = auth_client.get(reverse("parcels:detail", args=[parcel.pk]))
         assert resp.status_code == 200
-        assert resp.context["run_periods"] == []          # nothing to audit yet
+        assert resp.context["water_use"] is None          # nothing to audit yet
         body = resp.content.decode()
         assert "OpenH2O has not calculated crop ET" in body          # honest open state
         # surface supply still shown honestly, no fabricated closing term.

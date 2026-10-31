@@ -119,7 +119,7 @@ def _mark_fallow_notes(records, pod):
             continue
         placed.add(month)
         record.fallow_notes = [
-            fallow_left_out_sentence(parcel.parcel_number, month) for parcel in left_out[month]
+            fallow_left_out_sentence(parcel.parcel_number, month, pod) for parcel in left_out[month]
         ]
     return records
 

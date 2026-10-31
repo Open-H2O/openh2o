@@ -477,5 +477,5 @@ class TestTheFieldPageLinks:
         html = _field_page(parcel, rp.pk)
         assert "Estimated groundwater extraction, month by month:" not in html
         assert "calculation-run" not in html
-        # The balance panel is still gated on the wider run_periods.
-        assert "Water balance" in html
+        # The Water use card is still gated on the wider run_periods.
+        assert "By month" in html

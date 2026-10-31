@@ -70,6 +70,7 @@ from django.utils import timezone
 
 from accounting.allocation_math import allocate_by_demand, apportion_shared_supply
 from accounting.carryover_math import water_year_of
+from core.map_labels import map_label
 from core.water_year import water_year_start_month
 from accounting.ledger_words import delivery_share_words, percent_words
 from accounting.models import CalculationRun, ReportingPeriod, WaterType
@@ -355,11 +356,11 @@ def fallow_months_without_share(parcel: Parcel, months: Iterable[date]) -> list[
     return sorted(skipped)
 
 
-def fallow_left_out_sentence(parcel_number: str, month: date) -> str:
-    """The line under a turnout's month naming a fallow field that took no share."""
+def fallow_left_out_sentence(parcel_number: str, month: date, pod: PointOfDiversion) -> str:
+    """The line under a turnout's month naming a fallow field its water was divided around."""
     return (
-        f"Use area {parcel_number} was fallow in {month:%B %Y}, so OpenH2O gave it "
-        f"no share of this month's water."
+        f"Use area {parcel_number} was fallow in {month:%B %Y}. OpenH2O divided this "
+        f"month's water among the other use areas on {map_label(pod.name)}."
     )
 
 

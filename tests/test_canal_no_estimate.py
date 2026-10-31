@@ -129,7 +129,11 @@ def test_the_field_page_says_no_canal_delivery_is_recorded_and_never_says_estima
     f1, _, _ = _two_fields(with_point=True)
     ld.run_months(["2025-07"])
     body = _reader().get(reverse("parcels:detail", args=[f1.pk])).content.decode()
-    assert "No canal delivery is recorded for this use area." in body
+    # The Water use card names the point that serves the field and leaves the
+    # month's surface cell empty: nothing was delivered and nothing was made up.
+    card = body.split("statement-head", 1)[1].split("page-grid-2col", 1)[0]
+    assert "Unmetered headgate" in card
+    assert "No canal delivery is recorded" not in body
     assert "AF estimated" not in body
 
 

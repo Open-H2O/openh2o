@@ -2784,13 +2784,6 @@ html { color-scheme: dark; }
     font-size: 0.75rem;
     color: var(--color-text-tertiary);
 }
-/* A note longer than any label wraps at the label track's width instead of
-   setting it: a use area's "includes 60.09 AF estimated, not subtracted from
-   the groundwater figure" on one line pushed the Supplies figures 216px into
-   the Uses cell at 1,730 (staging read, 2026-10-27). */
-.budget-breakdown-note--wrap {
-    contain: inline-size;
-}
 .budget-breakdown-row > span {
     padding: 2px 0;
 }
@@ -3297,10 +3290,6 @@ div[id$="-map"] {
        `.text-tertiary` / `.text-gold` on this same class elsewhere). Same
        red the badge uses, color only. */
     color: oklch(0.65 0.20 25);
-}
-
-.text-neutral {
-    color: var(--color-text-secondary);
 }
 
 /* -- Inline links ------------------------------------------------------- */
@@ -5239,4 +5228,84 @@ details[open] > summary .disclosure-mark {
     margin-top: var(--space-lg);
     padding-top: var(--space-lg);
     border-top: 1px solid var(--color-border);
+}
+
+/* The use area page's Water use card: the year's figures, the lines that say what is
+   off, then one row for each month. The figure labels and values are the
+   `.budget-seg-*` ones, which do not depend on a `.budget-panel` around them. */
+.statement-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    padding-bottom: var(--space-sm);
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: var(--space-md);
+}
+.statement-lead {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-lg);
+    margin-bottom: var(--space-md);
+}
+.statement-lead--four {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.statement-lead .budget-seg-value {
+    font-size: 1.75rem;
+}
+.statement-lead-note {
+    margin: 4px 0 0;
+    font-size: 0.8rem;
+    color: var(--color-text-tertiary);
+}
+.statement-notes {
+    margin: 0 0 var(--space-md);
+    display: grid;
+    gap: var(--space-xs);
+}
+.statement-notes p {
+    margin: 0;
+    max-width: 75ch;
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+.statement-table-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: var(--space-md) 0 var(--space-xs);
+}
+.statement-table th.th-nowrap,
+.statement-table td.tfoot-total {
+    white-space: nowrap;
+}
+.statement-table td.td-fallow {
+    text-align: right;
+    color: var(--color-text-tertiary);
+    font-variant-numeric: tabular-nums;
+}
+.statement-foot {
+    margin-top: var(--space-md);
+    padding-top: var(--space-sm);
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-md);
+    align-items: baseline;
+}
+.statement-foot p {
+    margin: 0;
+    max-width: 75ch;
+    color: var(--color-text-tertiary);
+    font-size: 0.8rem;
+}
+@media (max-width: 767px) {
+    .statement-lead,
+    .statement-lead--four {
+        grid-template-columns: minmax(0, 1fr);
+    }
 }

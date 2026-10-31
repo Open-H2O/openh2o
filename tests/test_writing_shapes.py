@@ -144,11 +144,6 @@ EXCEPTIONS: tuple = (
     ("accounting/ledger_words.py", "Incidental recharge \u2014 deep percolation",
      ("em dash",), "LEGACY_INCIDENTAL_RECHARGE_WORDS matches the description older "
      "ledger rows were written with; it is never printed as new copy."),
-    # Approved word for word on the fallow mock-up (2026-10-29 15:16).
-    ("parcels/views.py", "OpenH2O gave it no share",
-     ("no for not",), _APPROVED.format("2026-10-29")),
-    ("surface/services.py", "no share of this month's water",
-     ("no for not",), _APPROVED.format("2026-10-29")),
     # Approved word for word, and kept (2026-10-18 09:34).
     ("templates/drinking/partials/_onboard_review.html", "not for the agency that regulates it",
      ("negation frame",), _APPROVED.format("2026-10-13")),

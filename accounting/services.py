@@ -29,8 +29,8 @@ from __future__ import annotations
 import io
 import logging
 from collections.abc import Iterable
-from datetime import date, datetime
-from decimal import ROUND_HALF_UP, Decimal
+from datetime import date, datetime, timedelta
+from decimal import ROUND_FLOOR, ROUND_HALF_UP, Decimal
 from typing import IO, TYPE_CHECKING, Any, cast
 
 from django.db import transaction
@@ -1504,30 +1504,125 @@ def parcel_over_delivery_shown(parcel: Parcel, reporting_period: ReportingPeriod
     return total.quantize(Decimal("0.0001"))
 
 
-def parcel_over_delivery_total(parcel: Parcel, reporting_period: ReportingPeriod | None = None) -> Decimal:
-    """Canal water beyond what this field's crop could use, every month, every setting (AF).
+def round_to_total(values: Iterable[Decimal], places: int = 2) -> list[Decimal]:
+    """Round each value to ``places`` so the cells add exactly to the rounded sum (largest remainder)."""
+    step = Decimal(1).scaleb(-places)
+    exact = [Decimal(v) for v in values]
+    total_units = int(
+        (sum(exact, Decimal("0")) / step).quantize(Decimal(1), rounding=ROUND_HALF_UP)
+    )
+    units = [int((v / step).to_integral_value(rounding=ROUND_FLOOR)) for v in exact]
+    # The floors fall short of the total by fewer cells than there are; the cells with
+    # the largest remainders take the one extra unit each.
+    by_remainder = sorted(range(len(exact)), key=lambda i: exact[i] / step - units[i], reverse=True)
+    for i in by_remainder[: max(total_units - sum(units), 0)]:
+        units[i] += 1
+    return [Decimal(u) * step for u in units]
 
-    The field page's residual is real on a field with no meter and no
-    closing estimate (a field with no well, or a well field whose covered
-    months wrote a 0 AF estimate), and its cause lines print the stored
-    figures where they are nonzero. This is the canal figure: the sum of
-    ``CalculationRun.over_delivery_af`` over the same runs
-    ``_calculation_runs_for_period`` selects for the balance beside it,
-    whatever ``over_delivery_treatment`` each run was stamped with.
-    ``parcel_over_delivery_shown`` above sums only the named-line runs and is
-    the field page's own line under that setting; this read is the cause
-    line under the residual, and a run contributes here under every value.
 
-    Returns:
-        Decimal: the summed amount, quantized to 4 places; ``Decimal("0")``
-        when no run in the period recorded one.
+def _first_of_next_month(day: date) -> date:
+    return (day.replace(day=28) + timedelta(days=4)).replace(day=1)
+
+
+def _month_starts(start: date, end: date) -> list[date]:
+    """The first day of every calendar month from ``start``'s month through ``end``'s."""
+    months = []
+    month = start.replace(day=1)
+    while month <= end:
+        months.append(month)
+        month = _first_of_next_month(month)
+    return months
+
+
+def parcel_water_use_months(
+    parcel: Parcel,
+    reporting_period: ReportingPeriod,
+    with_groundwater: bool = True,
+) -> dict[str, Any]:
+    """One use area's water use by calendar month over a reporting period, and the year's figures.
+
+    The four figures, and where each is read:
+
+    * crop ET: the month's ``CalculationRun.gross_et_af``;
+    * effective precipitation: the run's ``effective_precip_af``;
+    * surface water delivered: the magnitude of the billable ``surface_diversion``
+      ledger rows by the month of ``effective_date`` (the basis
+      ``_mass_balance_ledger_terms`` reads);
+    * groundwater extraction: ``_balance_dict(...)["usage"]`` on the month's billable
+      rows, the charged figure the old balance panel read. Skipped (zero) unless
+      ``with_groundwater``.
+
+    Each column's month cells are rounded by ``round_to_total`` so they add exactly to
+    the year figure, which is the exact sum rounded half-up to 0.01. Every month of the
+    period is returned, in order, whether or not anything is on record for it.
+
+    Returns ``{"months": [{"month", "last", "fallow", "et", "surface", "groundwater",
+    "precip"}], "totals": {"et", "surface", "groundwater", "precip"}, "unmet_months":
+    [first days], "efficiencies": {the efficiency each delivered month ran at},
+    "gw_is_estimated", "gw_is_metered"}``.
     """
-    total = _calculation_runs_for_period(parcel, reporting_period).aggregate(
-        s=Sum("over_delivery_af")
-    )["s"]
-    if total is None:
-        return Decimal("0")
-    return total.quantize(Decimal("0.0001"))
+    starts = _month_starts(reporting_period.start_date, reporting_period.end_date)
+    zero = Decimal("0")
+    exact: dict[str, dict[date, Decimal]] = {
+        key: {m: zero for m in starts} for key in ("et", "surface", "groundwater", "precip")
+    }
+    unmet_months: set[date] = set()
+    efficiencies: set[Decimal | None] = set()
+    for month_run in _calculation_runs_for_period(parcel, reporting_period):
+        month = month_run.period_start
+        if month not in exact["et"]:
+            continue
+        exact["et"][month] += month_run.gross_et_af or zero
+        exact["precip"][month] += month_run.effective_precip_af or zero
+        if month_run.residual_disposition == "unmet_demand" and (month_run.unmet_demand_af or zero) > 0:
+            unmet_months.add(month)
+        if month_run.surface_delivered_af:
+            efficiencies.add(month_run.surface_efficiency)
+
+    billable = _billable_parcel_ledger(parcel, reporting_period)
+    by_month = (
+        billable.filter(source_type="surface_diversion")
+        .annotate(month=TruncMonth("effective_date"))
+        .order_by()
+        .values("month")
+        .annotate(total=Sum("amount_acre_feet"))
+    )
+    for row in by_month:
+        if row["month"] in exact["surface"]:
+            exact["surface"][row["month"]] = abs(row["total"] or zero)
+    if with_groundwater:
+        for month in starts:
+            exact["groundwater"][month] = _balance_dict(
+                billable.filter(
+                    effective_date__gte=month, effective_date__lt=_first_of_next_month(month)
+                )
+            )["usage"]
+
+    cents = Decimal("0.01")
+    totals = {
+        key: sum(exact[key].values(), zero).quantize(cents, rounding=ROUND_HALF_UP) for key in exact
+    }
+    shown = {key: round_to_total(exact[key][m] for m in starts) for key in exact}
+    gw_is_estimated, gw_is_metered = _groundwater_source_flags(billable)
+    months = []
+    for i, month in enumerate(starts):
+        months.append({
+            "month": month,
+            "last": _first_of_next_month(month) - timedelta(days=1),
+            "fallow": parcel.is_fallow_in(month),
+            "et": shown["et"][i],
+            "surface": shown["surface"][i],
+            "groundwater": shown["groundwater"][i],
+            "precip": shown["precip"][i],
+        })
+    return {
+        "months": months,
+        "totals": totals,
+        "unmet_months": sorted(unmet_months),
+        "efficiencies": efficiencies,
+        "gw_is_estimated": gw_is_estimated,
+        "gw_is_metered": gw_is_metered,
+    }
 
 
 def balance_state(value: Decimal | float | str | None) -> str | None:
