@@ -21,7 +21,7 @@ own page. The decided list is
   another system", a link that led to a refusal, and the add-a-system result
   drops the same button.
 
-Water years are not tested here: whether they link is still an open question.
+Water years are not tested here: Brent ruled that a water year stays plain text.
 """
 from datetime import date
 from decimal import Decimal
@@ -135,7 +135,7 @@ def _links_to(root, name, url):
 
 
 def _field_value(root, label):
-    """The `.field-value` div of the `.field-group` whose label reads ``label``."""
+    """The `.field-value` (or `.field-value-mono`) div of the `.field-group` labelled ``label``."""
     for group in root.walk():
         classes = (group.attrs.get("class") or "").split()
         if group.tag != "div" or "field-group" not in classes:
@@ -147,7 +147,7 @@ def _field_value(root, label):
         )
         if label_node is not None and _squash(label_node.text()) == label:
             for k in kids:
-                if "field-value" in (k.attrs.get("class") or "").split():
+                if {"field-value", "field-value-mono"} & set((k.attrs.get("class") or "").split()):
                     return k
     raise AssertionError(f"no field {label!r} on the page")
 
@@ -390,7 +390,7 @@ class TestWaterSystemsStopsOfferingAnotherSystem:
         url = reverse("drinking:onboard")
         refresh = [
             a for a in _anchors(page)
-            if _squash(a.text()).removesuffix("→").strip() == "Refresh from EPA's record"
+            if _squash(a.text()).removesuffix("→").strip() == "Refresh from EPA’s record"
             and a.attrs.get("href") == url
         ]
         assert len(refresh) == 1

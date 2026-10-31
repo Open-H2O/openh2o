@@ -341,7 +341,7 @@
         {% if zone_memberships %}
           {% for pz in zone_memberships %}
           <div class="item-row row-start">
-            <span class="field-value-sm">{{ pz.zone.name }}</span>
+            <a href="{% url 'geography:zone_detail' pz.zone.pk %}" class="data-table-link field-value-sm">{{ pz.zone.name }}</a>
             {% if pz.zone.zone_type %}
             <span class="pill-tag">{{ pz.zone.get_zone_type_display }}</span>
             {% endif %}

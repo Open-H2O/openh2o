@@ -282,7 +282,7 @@
       <span class="step-eyebrow">Step 1 &middot; done{% if system.facility_count %} &middot; {{ system.facility_count|intcomma }} facilit{{ system.facility_count|pluralize:"y,ies" }}{% endif %}</span>
       <h2 class="section-header">Add a water system</h2>
       <p class="text-secondary text-base">Enter a PWSID, and OpenH2O reads the system and its facilities from EPA&rsquo;s Envirofacts record. OpenH2O saves nothing until you review the record and confirm.</p>
-      {% if user_can_write %}<a href="{% url 'drinking:onboard' %}" class="text-sm text-accent">Add another system &rarr;</a>{% endif %}
+      {% if user_can_write %}<a href="{% url 'drinking:onboard' %}" class="text-sm text-accent">Refresh from EPA&rsquo;s record &rarr;</a>{% endif %}
     </div>
   </div>
 

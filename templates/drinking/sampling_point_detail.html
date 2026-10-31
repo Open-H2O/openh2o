@@ -111,7 +111,7 @@
       </div>
       <div class="field-group">
         <div class="field-label">Water system</div>
-        <div class="field-value">{{ point.facility.system.name }} <span class="text-mono text-secondary">({{ point.facility.system.pwsid }})</span></div>
+        <div class="field-value"><a href="{% url 'drinking:overview' %}" class="data-table-link">{{ point.facility.system.name }}</a> <span class="text-mono text-secondary">({{ point.facility.system.pwsid }})</span></div>
       </div>
       {% comment %}
         "Facility" sits in the point's own grid

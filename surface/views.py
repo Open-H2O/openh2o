@@ -1281,7 +1281,7 @@ def _water_right_detail_context(water_right):
     # keys with no secondary sort.
     all_records = list(
         DiversionRecord.objects.filter(point_of_diversion__water_right=water_right)
-        .select_related("point_of_diversion")
+        .select_related("point_of_diversion", "reporting_period")
         .order_by("-month", "point_of_diversion__name")
     )
     record_groups = _group_diversion_records(all_records)
@@ -1324,22 +1324,23 @@ def _water_right_detail_context(water_right):
 
 
 def _pod_breakdown(current_totals: dict[str, Any] | None) -> list[dict[str, Any]]:
-    """The current period's recorded volume per point of diversion, by POD name."""
+    """The current period's recorded volume per point of diversion, grouped by point."""
     # "By point of diversion": the current period's rows broken down by the
     # POD that recorded them, so the panel's Recorded segment can show where
-    # the sum came from without a second query against the database.
+    # the sum came from without a second query against the database. Grouped
+    # by the point itself (its pk), not its name, so two different points that
+    # share a name stay separate rows and each can link to its own page.
     pod_breakdown = []
     if current_totals:
-        totals_by_pod: dict[str, Decimal] = {}
+        totals_by_pod: dict[int, dict[str, Any]] = {}
         for record in current_totals["rows"]:
-            name = record.point_of_diversion.name
-            totals_by_pod[name] = totals_by_pod.get(name, Decimal("0")) + abs(
-                record.volume_acre_feet
+            pod_id = record.point_of_diversion_id
+            entry = totals_by_pod.setdefault(
+                pod_id,
+                {"pk": pod_id, "name": record.point_of_diversion.name, "total": Decimal("0")},
             )
-        pod_breakdown = [
-            {"name": name, "total": total}
-            for name, total in sorted(totals_by_pod.items())
-        ]
+            entry["total"] += abs(record.volume_acre_feet)
+        pod_breakdown = sorted(totals_by_pod.values(), key=lambda r: (r["name"], r["pk"]))
     return pod_breakdown
 
 

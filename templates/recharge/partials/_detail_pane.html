@@ -80,7 +80,7 @@
 
         <div class="field-group field-grid-2-span" id="site-zone">
           <div class="field-label">Zone</div>
-          <div class="field-value">{% if site.zone %}Recharge here is recorded in the basin recharge pool of {{ site.zone.name }}.{% else %}This site has no zone, so recharge here is not deposited to a basin recharge pool.{% endif %}</div>
+          <div class="field-value">{% if site.zone %}Recharge here is recorded in the basin recharge pool of <a href="{% url 'geography:zone_detail' site.zone.pk %}" class="prose-link">{{ site.zone.name }}</a>.{% else %}This site has no zone, so recharge here is not deposited to a basin recharge pool.{% endif %}</div>
           {% if user_can_write %}
           <form method="post" action="{% url 'recharge:site_zone' site.pk %}" class="row-start mt-sm" style="gap: var(--space-sm);">
             {% csrf_token %}
@@ -93,7 +93,7 @@
 
         <div class="field-group field-grid-2-span">
           <div class="field-label">Credited to</div>
-          <div class="field-value">{% if site.water_account %}Recharge here is credited to {{ site.water_account.name }}.{% else %}Recharge here is not credited to a water account.{% endif %}</div>
+          <div class="field-value">{% if site.water_account %}Recharge here is credited to {% if 'accounting' in enabled_modules %}<a href="{% url 'accounting:account_detail' site.water_account.pk %}" class="prose-link">{{ site.water_account.name }}</a>{% else %}{{ site.water_account.name }}{% endif %}.{% else %}Recharge here is not credited to a water account.{% endif %}</div>
           {% if user_can_write %}
           <form method="post" action="{% url 'recharge:site_account' site.pk %}" class="row-start mt-sm" style="gap: var(--space-sm);">
             {% csrf_token %}

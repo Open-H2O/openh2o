@@ -209,7 +209,7 @@
             <div class="budget-breakdown-group budget-breakdown-group--under">
               <div class="budget-breakdown-title">Recorded, by point of diversion</div>
               {% for row in pod_breakdown %}
-              <div class="budget-breakdown-row"><span>{{ row.name }}</span><b>{{ row.total|floatformat:2|intcomma }}</b></div>
+              <div class="budget-breakdown-row"><span><a href="{% url 'surface:pod_detail' row.pk %}" class="data-table-link">{{ row.name }}</a></span><b>{{ row.total|floatformat:2|intcomma }}</b></div>
               {% endfor %}
             </div>
             {% endif %}
@@ -324,7 +324,7 @@
               {{ record.month|date:"M Y" }}
               {% if record.method == "estimated_from_use" %}<span class="badge badge-grey" title="OpenH2O estimated this delivery from the ETAW of the fields this point serves, before it stopped making estimates. It is not a measurement.">Estimated</span>{% endif %}
             </td>
-            <td class="text-secondary">{{ record.point_of_diversion.name }}</td>
+            <td class="text-secondary"><a href="{% url 'surface:pod_detail' record.point_of_diversion_id %}" class="data-table-link">{{ record.point_of_diversion.name }}</a></td>
             <td class="td-num">{{ record.volume_acre_feet|floatformat:2|intcomma }}</td>
             <td class="text-tertiary">{{ record.get_diversion_type_display }}</td>
           </tr>
