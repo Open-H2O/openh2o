@@ -3397,7 +3397,7 @@ div[id$="-map"] {
 }
 .settings-row {
     display: grid;
-    grid-template-columns: 200px minmax(0, 72ch);
+    grid-template-columns: 200px minmax(0, 1fr);
     align-items: center;
     gap: var(--space-lg);
     padding: var(--space-md) var(--space-lg);
