@@ -24,8 +24,7 @@
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
-    <span>Water Data</span>
-    <span class="breadcrumb-separator">/</span>
+    {% include "partials/_crumb_root.html" %}
     <span class="breadcrumb-current">Wells</span>
   </nav>
   <p class="page-description">Search or filter the list, then select a well to open its page.</p>

@@ -510,7 +510,7 @@ The load refuses to start on a site that already holds records of its own, and i
 says what it found. It also refuses when a module the demonstration needs is switched
 off. In either case it leaves the site as it was.
 
-An administrator can do the same from Administration > Setup Wizard > Demonstration
+An administrator can do the same from Settings > Setup Wizard > Demonstration
 data, which starts the load as its own process and refreshes until it ends. To take
 the demonstration off the site again, run:
 
@@ -703,11 +703,8 @@ a KML file or a GeoJSON file. GeoJSON is a plain-text format for map shapes and 
 facts attached to them, such as a name and an area. You can also type the area's
 north, south, east and west edges by hand, or start without a boundary.
 
-- **Where it is.** The wizard is in the left sidebar, under Administration. The Administration
-  section is hidden in the sidebar's everyday view. At the bottom of the sidebar, a
-  switch reads **Operations** and **Admin**. Click **Admin**, then **Setup Wizard**.
-  A new site opens in the Operations view, which is the usual reason someone cannot
-  find the wizard.
+- **Where it is.** Click **Settings** in the top bar, beside your sign-in name, then
+  **Setup Wizard**. Only an administrator sees the Settings button.
 - **Who can open it.** Only a signed-in administrator can open it. On a site with
   `ACCESS_CONTROL_ENFORCED=False`, any signed-in person can open it. Create the
   superuser (section 7) first.

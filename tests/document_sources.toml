@@ -757,9 +757,7 @@ files = [
   "datasync/management/commands/sync_source.py",
 ]
 labels = [
-  { text = "Administration", where = "core/modules.py" },
-  { text = "Operations", where = "templates/partials/_sidebar.html" },
-  { text = "Admin", where = "templates/partials/_sidebar.html" },
+  { text = "Settings", where = "templates/partials/_header.html" },
   { text = "Setup Wizard", where = "core/modules.py" },
   { text = "Enable all", where = "templates/setup/partials/_station_review.html" },
 ]
@@ -1782,10 +1780,8 @@ files = [
   "datasync/management/commands/activate_stations.py",
 ]
 labels = [
-  { text = "Admin", where = "templates/partials/_sidebar.html" },
-  { text = "Operations", where = "templates/partials/_sidebar.html" },
+  { text = "Settings", where = "templates/partials/_header.html" },
   { text = "Setup Wizard", where = "core/modules.py" },
-  { text = "Administration", where = "core/modules.py" },
   { text = "Select an existing boundary", where = "templates/setup/wizard.html" },
   { text = "Upload a boundary file", where = "templates/setup/wizard.html" },
   { text = "Type an extent", where = "templates/setup/wizard.html" },
@@ -1982,8 +1978,7 @@ files = [
 ]
 labels = [
   { text = "Users", where = "core/modules.py" },
-  { text = "Administration", where = "core/modules.py" },
-  { text = "Admin", where = "templates/partials/_sidebar.html" },
+  { text = "Settings", where = "templates/partials/_header.html" },
   { text = "Administrator", where = "templates/core/users_list.html" },
   { text = "Operator", where = "templates/core/users_list.html" },
   { text = "Viewer", where = "templates/core/users_list.html" },
@@ -2454,9 +2449,9 @@ files = [
   "accounting/management/commands/run_calculations.py",
 ]
 labels = [
-  { text = "Water Data", where = "core/modules.py" },
-  { text = "Administration", where = "core/modules.py" },
-  { text = "Add a water system", where = "core/modules.py" },
+  { text = "Water accounting", where = "core/modules.py" },
+  { text = "Sources and monitoring", where = "core/modules.py" },
+  { text = "Add a water system", where = "templates/drinking/overview.html" },
   { text = "Setup Wizard", where = "core/modules.py" },
   { text = "Zones", where = "core/modules.py" },
   { text = "Use Areas", where = "core/modules.py" },
@@ -2802,7 +2797,7 @@ labels = [
   { text = "Delivery settings", where = "templates/accounting/delivery_settings.html" },
   { text = "Use Ledger", where = "core/modules.py" },
   { text = "Water Years", where = "core/modules.py" },
-  { text = "Add a water system", where = "core/modules.py" },
+  { text = "Add a water system", where = "templates/drinking/overview.html" },
   { text = "Sampling Points", where = "core/modules.py" },
   { text = "Monitoring Stations", where = "core/modules.py" },
   { text = "Site Health", where = "core/modules.py" },

@@ -71,7 +71,7 @@ class Command(BaseCommand):
                 # command line has no link, so the path is the place.
                 raise CommandError(
                     f"Water year not found: {period_name}. Create it first under "
-                    "Administration > Water Years "
+                    "Water accounting > Water Years "
                     f"({reverse('accounting:period_create')}), or pass an "
                     "existing water year's name."
                 )

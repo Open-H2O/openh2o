@@ -60,7 +60,7 @@
 
 
   {% else %}
-    <p class="text-secondary text-sm">This point has no linked water right. Water rights are listed under Administration &gt; <a href="{% url 'surface:water_rights_list' %}" class="text-accent">Water Rights</a>.</p>
+    <p class="text-secondary text-sm">This point has no linked water right. Water rights are listed under Sources and monitoring &gt; <a href="{% url 'surface:water_rights_list' %}" class="text-accent">Water Rights</a>.</p>
   {% endif %}
 
   {% if user_can_write %}

@@ -30,9 +30,8 @@
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
-    <span>Water Data</span>
-    <span class="breadcrumb-separator">/</span>
-    <span class="breadcrumb-current">Recharge sites</span>
+    {% include "partials/_crumb_root.html" %}
+    <span class="breadcrumb-current">Recharge Sites</span>
   </nav>
   <p class="page-description">Select a site in the list, or select View recharge site in its pop-up on the map, to open its page.</p>
 </div>

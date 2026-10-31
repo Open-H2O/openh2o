@@ -326,11 +326,8 @@ setting a boundary, not after.
 
 The Setup Wizard at `/setup/` sets the area the site covers and fills that area in
 from public sources. Use it when you have a browser. Only an administrator can open
-it, so sign in as the administrator first. In the left sidebar, the Operations and
-Admin switch sits at the bottom. Click **Admin**, then click **Setup Wizard** under
-Administration. The Administration section is hidden in the Operations view, and
-that is the usual reason someone cannot find the wizard. You can also go straight
-to `/setup/`.
+it, so sign in as the administrator first. Click **Settings** in the top bar, beside
+your sign-in name, then **Setup Wizard**. You can also go straight to `/setup/`.
 
 <!-- defines: geojson -->
 The wizard's first step offers four choices:
@@ -381,7 +378,7 @@ key. It runs as one transaction, so a load that fails saves nothing.
 
 It refuses to start on a site that already holds records of its own, or when a module it needs is switched off,
 and it says which. In either case it leaves the site as it was. An administrator can also
-load it from Administration > Setup Wizard > Demonstration data.
+load it from Settings > Setup Wizard > Demonstration data.
 
 When the organization is ready for its own records, remove the demonstration first:
 
@@ -455,7 +452,7 @@ one in full.
 | A public water system, by its PWSID | `/drinking/onboard/` | A PWSID is the identification number of a public water system in EPA's records. The page looks the system up in EPA's Envirofacts records and adds the system and its facilities. A site keeps the records of one water system: once a system is on the site, the page turns down a different PWSID, and the same PWSID again updates the system from EPA's current record. Add the sampling points on the page that follows. |
 | Laboratory results | `/drinking/import/` | It matches the column headings of California's Division of Drinking Water and several headings that commercial labs use. |
 | A year of production by month and source | `/drinking/production/import/`, or `import_production` | It reads an eAR export or a monthly log. The screen and the command both save to the site's water system. The command needs `--pwsid` only when someone has added a second system another way, such as on the administration site. |
-| Past ledger entries, as a CSV file | `import_ledger_csv`, or the Upload CSV page of the Use Ledger (`/accounting/ledger/upload/`) | The Upload CSV page imports the file at once unless you tick Dry run. Each entry counts in the water year its date falls in, so create the water years first, under Administration > Water Years. An entry dated outside every water year is saved in no water year and joins one when a water year covering its date is created. With `--reporting-period`, the command imports only the rows dated inside that water year. |
+| Past ledger entries, as a CSV file | `import_ledger_csv`, or the Upload CSV page of the Use Ledger (`/accounting/ledger/upload/`) | The Upload CSV page imports the file at once unless you tick Dry run. Each entry counts in the water year its date falls in, so create the water years first, under Water accounting > Water Years. An entry dated outside every water year is saved in no water year and joins one when a water year covering its date is created. With `--reporting-period`, the command imports only the rows dated inside that water year. |
 | A year of diversion volumes, in California's Water Use Reported export or the organization's own book of deliveries | `/surface/diversion/import/`, or `import_diversion_records` | OpenH2O tells the two layouts apart by their column headings, and the preview names every conversion. Set the report year first, as the next paragraph describes. |
 
 Before you import diversion records, ask how the organization counts a reporting
@@ -662,7 +659,7 @@ behind it.
 ## Phase 5: Bring in the people
 
 OpenH2O has four roles. An administrator sets each person's role on the Users page
-(`/users/`), under Administration in the Admin view of the sidebar. Only a host
+(`/users/`), which opens from the Settings page. Only a host
 administrator can make someone a host administrator.
 
 - An **Administrator** manages users, runs the Setup Wizard, changes the

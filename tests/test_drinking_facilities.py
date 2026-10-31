@@ -228,9 +228,9 @@ class TestBothEmptyStates:
         # The import half stands unchanged: a lab file creates results, never
         # structure, so offering it here would still be a dead end.
         #
-        # Still asserted on the BUTTON LABELS, not the URLs — the sidebar links
-        # /drinking/onboard on every page, so a URL assertion would be about the
-        # nav rather than about this empty state. (The same trap caught three
+        # Still asserted on the BUTTON LABELS, not the URLs, so the assertion is
+        # about this empty state and not about any link elsewhere on the page.
+        # (The same trap caught three
         # assertions in tests/test_drinking_module_shows_what_to_do.py during
         # its red run; that file scopes by CSS class instead.)
         assert "Add a water system" in html

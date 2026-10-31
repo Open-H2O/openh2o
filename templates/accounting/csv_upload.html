@@ -7,8 +7,7 @@
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a href="{% url 'accounting:ledger_list' %}">Water Data</a>
-    <span class="breadcrumb-separator">/</span>
+    {% include "partials/_crumb_root.html" %}
     <a href="{% url 'accounting:ledger_list' %}">Use Ledger</a>
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">CSV Upload</span>

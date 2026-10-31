@@ -22,8 +22,7 @@
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
-    <span>Water Data</span>
-    <span class="breadcrumb-separator">/</span>
+    {% include "partials/_crumb_root.html" %}
     <span class="breadcrumb-current">Monitoring Stations</span>
   </nav>
   <p class="page-description">This page lists every monitoring station on file and the public data source OpenH2O syncs it from. The map colors each station by how recently it reported. Open a station from the map or the list to see its readings and chart.</p>

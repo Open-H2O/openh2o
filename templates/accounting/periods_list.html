@@ -10,8 +10,7 @@
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
-    <span>Administration</span>
-    <span class="breadcrumb-separator">/</span>
+    {% include "partials/_crumb_root.html" %}
     <span class="breadcrumb-current">Water Years</span>
   </nav>
   <p class="page-description">OpenH2O organizes and reports your water data by water year.</p>

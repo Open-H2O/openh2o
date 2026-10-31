@@ -7,8 +7,7 @@
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
-    <span>Administration</span>
-    <span class="breadcrumb-separator">/</span>
+    {% include "partials/_crumb_root.html" %}
     <a href="{% url 'accounting:accounts_list' %}">Accounts</a>
     <span class="breadcrumb-separator">/</span>
     <a href="{% url 'accounting:account_detail' account.pk %}">{{ account.account_number }}</a>

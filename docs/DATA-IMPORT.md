@@ -51,7 +51,7 @@ users and reference lists kept. Settings changed while the demonstration was loa
 go back to their defaults unless the site had its own settings before the load.
 Remove it before you import your own records, and load it before you run the Setup
 Wizard, whose boundary is a record of the site's own. An administrator can do both
-from Administration > Setup Wizard > Demonstration data.
+from Settings > Setup Wizard > Demonstration data.
 
 ---
 

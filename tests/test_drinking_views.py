@@ -182,9 +182,8 @@ class TestPagesRender:
         assert "next update" not in text, (
             "The empty state still promises an import that has already shipped"
         )
-        # 150-03: the sidebar now carries an Infrastructure entry on every page
-        # (its href is the bulk importer), so the assertion reads the page BELOW
-        # the sidebar: the empty state itself must never route there.
+        # The assertion reads the page BELOW the sidebar (past </aside>): the
+        # empty state itself must never route to the bulk importer.
         content = text.split("</aside>", 1)[-1]
         assert "infrastructure/import" not in content, (
             "The drinking empty state must never route to infrastructure's import"

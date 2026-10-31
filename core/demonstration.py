@@ -5,8 +5,8 @@ The demonstration is a real groundwater basin (the Merced Subbasin) with a made
 up water accounting layer on top. An operator can load it into a new site to
 try OpenH2O, and remove it again before adding the site's own records:
 
-* ``manage.py load_demonstration`` and the button on Administration >
-  Demonstration data run :func:`load`.
+* ``manage.py load_demonstration`` and the button on Settings >
+  Setup Wizard > Demonstration data run :func:`load`.
 * ``manage.py remove_demonstration`` and the same page run :func:`remove`.
 
 **One way to build it.** :data:`STEPS` is the whole sequence that builds the
