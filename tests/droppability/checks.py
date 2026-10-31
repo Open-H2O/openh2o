@@ -48,7 +48,6 @@ from django.urls import NoReverseMatch, reverse
 
 from core import modules as mod
 from tests.droppability.crawl import crawl
-from tests.droppability.crawl import links_on as crawl_links
 
 # ---------------------------------------------------------------------------
 # What this process is actually missing
@@ -124,6 +123,9 @@ _PAGES = (
     # so it was read as a visitor with no session and never as a signed-in
     # operator, which is the render that carries the whole sidebar.
     ("/health/", "health"),
+    # 151.8-01: the Settings page, one row per settings entry a kept module owns.
+    # Served on every configuration (config), and the crawl follows its rows.
+    ("/settings/", None),
     ("/users/", "core"),
     ("/profile/", None),
     # 147-01: the change history. Served on every configuration (`core`), and
@@ -668,40 +670,22 @@ class _UserFactory(factory.django.DjangoModelFactory):
     is_superuser = True
 
 
-#: The two sidebars this platform renders.
-#:
-#: ``operations`` is the DEFAULT — ``core/context_processors.py::nav_mode`` reads
-#: a plain cookie and falls back to it for anything unrecognised, so it is what
-#: every real user sees until they toggle. ``admin`` is what this harness pinned
-#: from the start, deliberately (see ``_logged_in_client``), with the consequence
-#: that until Plan 90-02 the default sidebar had **never been rendered under any
-#: drop configuration**.
-NAV_MODES = ("admin", "operations")
+def _logged_in_client():
+    """A logged-in superuser.
 
-
-def _logged_in_client(nav_mode="admin"):
-    """A logged-in superuser with the sidebar in the named mode.
-
-    Admin mode matters and is easy to get wrong: the Administration section is
-    wrapped in ``{% if nav_mode == 'admin' %}``, and ``health`` and ``setup``
-    contribute their only nav entries there. Under the default Operations mode
-    the whole block is hidden, so the "no link into a dropped module" assertion
-    below would pass without ever having rendered the links it is looking for.
-
-    The cookie is set explicitly for BOTH modes rather than left off for the
-    default. An absent cookie and a cookie reading ``operations`` resolve to the
-    same mode today, but only one of them is a state a user is actually in after
-    using the toggle, and a test should sit in the state it means.
+    The sidebar has one shape (plan 151.8-01 removed the Operations/Admin
+    switch), so there is no mode to pin and no cookie to set. The sidebar draws
+    the same links for this client as for any administrator; the settings
+    entries are rows of the Settings page, which `_PAGES` lists.
     """
     c = Client()
     c.force_login(_UserFactory())
-    c.cookies["nav_mode"] = nav_mode
     return c
 
 
 def _admin_client():
     """The historic name, kept because four fixtures below read it."""
-    return _logged_in_client("admin")
+    return _logged_in_client()
 
 
 @pytest.fixture
@@ -740,31 +724,12 @@ def seeded_client():
 
 
 @pytest.fixture
-def seeded_operations_client():
-    """``seeded_client``'s twin, with the sidebar in its DEFAULT mode.
-
-    A SEPARATE fixture rather than a mode switch on ``auth_client``/
-    ``seeded_client``, deliberately: every existing assertion in this file was
-    written against the Admin-mode render and has to keep getting it. Operations
-    is what every real user sees, and no drop configuration had ever rendered it
-    (Plan 90-02).
-    """
-    from tests.droppability.fixture import seed_droppable_fixture
-
-    client = _logged_in_client("operations")
-    client.seeded = seed_droppable_fixture()
-    return client
-
-
-@pytest.fixture
 def anon_client():
     """A visitor with no session — the other half of ``config.views.index``.
 
     Not merely ``auth_client`` without the login. ``index`` branches on
     authentication and serves a DIFFERENT TEMPLATE to each side, so this fixture
     is the only way any assertion in this file reaches ``templates/index.html``.
-    No ``nav_mode`` cookie: an anonymous visitor has not set one, and inventing
-    it would test a state no real visitor is in.
     """
     return Client()
 
@@ -1287,31 +1252,8 @@ def test_pod_detail_renders_with_a_row(auth_client):
 # declared page. See tests/droppability/crawl.py.
 
 
-def _admin_only_nav_paths():
-    """Sidebar paths this configuration shows only in Admin mode.
-
-    Derived from the live registry — ``nav_sections_for`` over
-    ``enabled_modules()``, keeping the sections that carry
-    ``requires_admin_mode`` — rather than from a literal list, because which
-    sections survive is exactly what a drop configuration changes.
-    """
-    from core.modules import enabled_modules, nav_sections_for
-
-    paths = []
-    for section in nav_sections_for(enabled_modules()):
-        if not section.requires_admin_mode:
-            continue
-        for entry in section.entries:
-            try:
-                paths.append(reverse(entry.url_name))
-            except NoReverseMatch:
-                continue
-    return tuple(paths)
-
-
-@pytest.mark.parametrize("nav_mode", NAV_MODES)
-def test_no_kept_page_reachable_by_a_link_returns_5xx(request, nav_mode):
-    """Nothing a person can click their way to may crash. Both sidebars.
+def test_no_kept_page_reachable_by_a_link_returns_5xx(seeded_client):
+    """Nothing a person can click their way to may crash.
 
     **The bar is 5xx and deliberately nothing wider.** A 404 stays legal — a
     dropped module's route is *supposed* to 404, and
@@ -1321,19 +1263,13 @@ def test_no_kept_page_reachable_by_a_link_returns_5xx(request, nav_mode):
     fires on intended behaviour gets weakened rather than obeyed, and this
     codebase has that lesson written down in three places already.
 
-    **Both modes, because they render different sidebars — not because they
-    reach different pages.** Measured 2026-07-22 on a full deployment: the two
-    modes visit an IDENTICAL set of 59 paths, because ``KEPT_PAGES`` seeds every
-    nav target directly and a seed is a seed in either mode. What differs is the
-    RENDER: the home page carries 34 links in Admin mode against 26 in
-    Operations. So an unguarded ``{% url %}`` inside the Operations branch of a
-    nav conditional would crash in one mode and not the other while both crawls
-    visited the same list. ``test_the_two_nav_modes_render_different_sidebars``
-    below is what keeps that difference real.
+    **One sidebar, one crawl.** The Operations/Admin switch is gone (plan
+    151.8-01), so the sidebar draws the same links for every signed-in person
+    and the crawl runs once. The settings entries are rows of the Settings
+    page (`/settings/` is a kept page below), so their links are followed from
+    there in every configuration.
     """
-    client = request.getfixturevalue(
-        "seeded_client" if nav_mode == "admin" else "seeded_operations_client"
-    )
+    client = seeded_client
     result = crawl(client, KEPT_PAGES)
 
     # A crawl that silently stopped following links is a permanently green
@@ -1341,7 +1277,7 @@ def test_no_kept_page_reachable_by_a_link_returns_5xx(request, nav_mode):
     # empty database this phase is fixing.
     assert len(result.visited) > len(KEPT_PAGES), (
         f"The crawl visited {len(result.visited)} paths from "
-        f"{len(KEPT_PAGES)} seeds in {nav_mode!r} mode, so it followed no links "
+        f"{len(KEPT_PAGES)} seeds, so it followed no links "
         f"at all. Either every kept page is a leaf, or link extraction is "
         f"broken — and the second one is a gate that proves nothing while "
         f"passing."
@@ -1362,7 +1298,7 @@ def test_no_kept_page_reachable_by_a_link_returns_5xx(request, nav_mode):
         failures.append(line)
     assert not failures, (
         f"{len(failures)} URL(s) reachable by a link returned 5xx in "
-        f"{nav_mode!r} nav mode with {list(DROPPED_NAMES)} dropped:\n  "
+        f"the crawl with {list(DROPPED_NAMES)} dropped:\n  "
         + "\n  ".join(failures)
         + f"\nCrawled {len(result.visited)} paths from {len(KEPT_PAGES)} seeds."
     )
@@ -1421,38 +1357,80 @@ def test_the_crawl_reaches_a_drinking_detail_page(seeded_client):
     assert not broken, f"Drinking detail pages reached and failed: {broken}"
 
 
-def test_the_two_nav_modes_render_different_sidebars():
-    """The mode cookie takes effect, so the parametrization above proves something.
+_DRINKING_DETAILS = re.compile(
+    r'<details\s[^>]*class="[^"]*\bsidebar-group-drinking\b[^"]*"[^>]*>'
+)
+_SECTION_LABELS = re.compile(r'sidebar-section-label">([^<]+)</span>')
 
-    If both modes rendered the same sidebar, running the crawl twice would be
-    twice the runtime for one mode's coverage — a gate paying full price for half
-    a result and reporting success either way.
 
-    Asserts on the LINKS a page carries rather than on the paths the crawl
-    reaches, because those are the same in both modes by construction (see the
-    docstring above). Skips honestly when this configuration has no admin-gated
-    section left to hide.
-    """
-    admin_only = _admin_only_nav_paths()
-    if not admin_only:
-        pytest.skip(
-            "This configuration keeps no nav section gated on Admin mode, so "
-            "the two sidebars are legitimately identical and there is nothing "
-            "for this assertion to see."
-        )
+def _home_sidebar(client):
+    body = client.get("/").content.decode()
+    start = body.index('<aside id="sidebar"')
+    return body[start: body.index("</aside>", start)]
 
-    admin_links = set(crawl_links(_logged_in_client("admin").get("/").content.decode()))
-    ops_links = set(
-        crawl_links(_logged_in_client("operations").get("/").content.decode())
-    )
-    hidden = admin_links - ops_links
-    assert hidden, (
-        f"The signed-in home page carried the same {len(admin_links)} links in "
-        f"both nav modes, but the registry says this configuration gates "
-        f"{len(admin_only)} nav path(s) on Admin mode: {sorted(admin_only)}. "
-        f"The nav_mode cookie is not taking effect, and every two-mode "
-        f"assertion here is running the same case twice."
-    )
+
+def _drinking_details_tag(sidebar):
+    found = _DRINKING_DETAILS.search(sidebar)
+    return found.group(0) if found else None
+
+
+@pytest.mark.skipif(
+    "accounting" in ENABLED_NAMES or "drinking" not in ENABLED_NAMES,
+    reason="the no-water-accounting flavor only: accounting dropped, drinking kept",
+)
+def test_a_deployment_without_water_accounting_opens_drinking_water_and_has_no_accounting_heading(
+    auth_client,
+):
+    """The utility flavor: Drinking water is the site, so its group is open on
+    Home with no cookie, there is no "Water accounting" heading (the dropped
+    vocabulary table forbids "water account" there), and Zones, which
+    geography owns on every site, sits in the unlabelled top block with Home,
+    and Map."""
+    sidebar = _home_sidebar(auth_client)
+    tag = _drinking_details_tag(sidebar)
+    assert tag, "the Drinking water group is missing from the sidebar"
+    assert re.search(r"\sopen(\s|=|>)", tag), f"Drinking water is closed on Home: {tag}"
+    assert "Water accounting" not in _SECTION_LABELS.findall(sidebar)
+    assert "water account" not in sidebar.lower()
+    top_block = sidebar[: sidebar.index("sidebar-section-label")]
+    for label in ("Home", "Map", "Zones"):
+        assert f">{label}</span>" in top_block, f"{label} is not in the top block"
+
+
+@pytest.mark.skipif(
+    "accounting" not in ENABLED_NAMES or "drinking" not in ENABLED_NAMES,
+    reason="the full-accounting flavor only: accounting and drinking both kept",
+)
+def test_a_deployment_with_water_accounting_starts_drinking_water_closed(auth_client):
+    sidebar = _home_sidebar(auth_client)
+    tag = _drinking_details_tag(sidebar)
+    assert tag, "the Drinking water group is missing from the sidebar"
+    assert not re.search(r"\sopen(\s|=|>)", tag), f"Drinking water is open on Home: {tag}"
+    assert "Water accounting" in _SECTION_LABELS.findall(sidebar)
+
+
+def test_the_sidebar_never_draws_the_settings_section_or_a_mode_switch(auth_client):
+    sidebar = _home_sidebar(auth_client)
+    assert "Settings" not in _SECTION_LABELS.findall(sidebar)
+    assert "nav-mode" not in sidebar and "Admin mode" not in sidebar
+
+
+def test_the_settings_page_lists_only_rows_this_deployment_has(auth_client):
+    """Each row belongs to a module, so a dropped module takes its row away and
+    no row links into a dropped prefix (the page itself is a kept page)."""
+    from core.modules import enabled_modules, settings_entries_for
+
+    html = auth_client.get("/settings/").content.decode()
+    body = re.search(r"<main\b.*?</main>", html, re.S).group(0)
+    expected = list(settings_entries_for(enabled_modules()))
+    assert expected, "this configuration keeps no settings entry at all"
+    text = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", body))
+    for entry in expected:
+        assert entry.label in text, f"the Settings page lacks its {entry.label} row"
+    for name in DROPPED_NAMES:
+        spec = mod.MODULE_REGISTRY[name]
+        if spec.url_prefix:
+            assert f'href="/{spec.url_prefix}' not in body, name
 
 
 # ---------------------------------------------------------------------------

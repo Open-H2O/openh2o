@@ -321,7 +321,7 @@ GHOST = dict(
             url_name="ghost:list",
             label="Ghost",
             icon="ghost",
-            section=mod.SECTION_WATER_DATA,
+            section="sources_monitoring",
             order=999,
             active_match="/ghost/",
         ),
@@ -526,18 +526,19 @@ class TestNavResolution:
 
     def test_nav_entry_count_matches_todays_sidebar(self):
         entries = [e for s in mod.enabled_modules() for e in s.nav]
-        # 27 module-owned links: 19 through Phase 77, the three 78-02 adds to
-        # Water Data, 80-02's onboarding wizard, 100-01's facility list,
-        # 146-02 Task 4's Curtailment Orders beside Water Rights, and
-        # 146-04 Task 2's Production under Drinking Water, and 146-04 Task 4's
-        # Schedule after it. 147-01 added a Change History entry under
-        # Overview; 147-02 removed it from the
-        # sidebar, so the count is back to 27. 150-03 added Infrastructure
-        # under Water Data (the add and import pages lit nothing): 28.
-        # 150.5-01 removed Curtailment Orders with the feature: 27.
-        # The sidebar also renders `index`, the nav-mode toggle and six static
-        # help/about pages, none of which are module-owned.
-        assert len(entries) == 27
+        # 25 module-owned entries: the earlier 27 less the Infrastructure entry
+        # and the Add a water system entry, which are buttons on the lists and
+        # on Water Systems now. Five of the 25 are the Settings page's rows.
+        # The sidebar also renders `index` and six static help/about pages,
+        # and the fixed Settings entry lights the header button; none of
+        # those is module-owned.
+        assert len(entries) == 25
+        assert len([e for e in entries if e.section == mod.SECTION_SETTINGS]) == 5
+
+    def test_the_infrastructure_and_add_a_water_system_entries_are_gone(self):
+        url_names = {e.url_name for s in mod.enabled_modules() for e in s.nav}
+        assert "infrastructure:add" not in url_names
+        assert "drinking:onboard" not in url_names
 
     def test_icon_keys_are_unique(self):
         icons = [e.icon for s in mod.enabled_modules() for e in s.nav]
@@ -551,12 +552,120 @@ class TestNavResolution:
 
     def test_sections_resolve_in_display_order(self):
         keys = [s.key for s in mod.nav_sections_for(mod.enabled_modules())]
-        assert keys == ["overview", "water_data", "administration", "reporting"]
+        assert keys == [
+            "overview",
+            "water_accounting",
+            "sources_monitoring",
+            "drinking_water",
+            "reporting",
+        ]
 
-    def test_administration_section_is_admin_mode_gated(self):
-        sections = {s.key: s for s in mod.nav_sections_for(mod.enabled_modules())}
-        assert sections["administration"].requires_admin_mode is True
-        assert sections["water_data"].requires_admin_mode is False
+    def test_the_section_registry_names_the_seven_sections(self):
+        assert [(s.key, s.label) for s in mod.NAV_SECTIONS] == [
+            ("overview", ""),
+            ("water_accounting", "Water accounting"),
+            ("sources_monitoring", "Sources and monitoring"),
+            ("drinking_water", "Drinking water"),
+            ("reporting", "Reporting"),
+            ("settings", "Settings"),
+            ("help", "Help"),
+        ]
+
+    def test_only_settings_stays_out_of_the_sidebar_and_only_drinking_collapses(self):
+        by_key = {s.key: s for s in mod.NAV_SECTIONS}
+        assert [k for k, s in by_key.items() if not s.in_sidebar] == ["settings"]
+        assert [k for k, s in by_key.items() if s.collapsible] == ["drinking_water"]
+
+    def test_the_admin_mode_vocabulary_is_gone(self):
+        for name in (
+            "SECTION_WATER_DATA",
+            "SECTION_ADMINISTRATION",
+            "VISIBILITY_ADMIN_MODE",
+            "section_requires_admin_mode",
+        ):
+            assert not hasattr(mod, name), name
+        assert "requires_admin_mode" not in mod.NavSection.__dataclass_fields__
+        assert "admin_mode" not in mod.VALID_VISIBILITIES
+
+    def test_entries_sit_in_the_order_and_under_the_labels_of_the_design(self):
+        sections = {
+            s.key: [e.label for e in s.entries]
+            for s in mod.nav_sections_for(mod.enabled_modules())
+        }
+        assert sections["overview"] == ["Dashboard", "Map"]
+        assert sections["water_accounting"] == [
+            "Use Ledger", "Accounts", "Use Areas", "Zones", "Allocations", "Water Years",
+        ]
+        assert sections["sources_monitoring"] == [
+            "Wells", "Surface Diversions", "Water Rights", "Recharge Sites",
+            "Monitoring Stations",
+        ]
+        assert sections["drinking_water"] == [
+            "Water Systems", "Facilities", "Sampling Points", "Sample Results",
+            "Production", "Schedule",
+        ]
+        assert sections["reporting"] == ["Reports"]
+
+    def test_no_sidebar_entry_starts_a_group(self):
+        assert not [
+            e.url_name for s in mod.enabled_modules() for e in s.nav if e.starts_group
+        ]
+
+    def test_nav_sections_for_returns_sidebar_sections_only(self):
+        keys = {s.key for s in mod.nav_sections_for(mod.enabled_modules())}
+        assert "settings" not in keys
+
+    def test_settings_entries_for_lists_the_settings_page_rows_in_order(self):
+        entries = mod.settings_entries_for(mod.enabled_modules())
+        assert [e.label for e in entries] == [
+            "Methodology", "Delivery Settings", "Users", "Site Health", "Setup Wizard",
+        ]
+        assert [e.order for e in entries] == [10, 20, 30, 40, 50]
+        by_label = {e.label: e for e in entries}
+        for label in ("Methodology", "Delivery Settings", "Users"):
+            assert by_label[label].visibility == mod.VISIBILITY_AGENCY_ADMIN, label
+        assert by_label["Site Health"].visibility == mod.VISIBILITY_ALWAYS
+        assert by_label["Setup Wizard"].visibility == mod.VISIBILITY_SETUP_GATE
+        assert by_label["Setup Wizard"].writes is True
+
+    def test_a_dropped_module_takes_its_settings_rows_with_it(self):
+        kept = [n for n in mod.ALL_MODULE_NAMES if n not in {"health", "setup"}]
+        labels = [e.label for e in mod.settings_entries_for(mod.enabled_modules(kept))]
+        assert "Site Health" not in labels
+        assert "Setup Wizard" not in labels
+        assert "Users" in labels
+
+    def test_zones_move_to_the_top_block_when_water_accounting_is_off(self):
+        from tests.test_droppability_acceptance import drop_closure
+
+        kept = [n for n in mod.ALL_MODULE_NAMES if n not in drop_closure("accounting")]
+        assert "accounting" not in kept
+        sections = {
+            s.key: [e.label for e in s.entries]
+            for s in mod.nav_sections_for(mod.enabled_modules(kept))
+        }
+        assert "water_accounting" not in sections
+        assert "Zones" in sections["overview"]
+        zones = next(
+            e for e in mod.sidebar_entries(mod.enabled_modules(kept)) if e.label == "Zones"
+        )
+        assert zones.section == mod.SECTION_OVERVIEW
+
+    def test_zones_belong_to_water_accounting_when_it_is_on(self):
+        zones = next(
+            e for e in mod.sidebar_entries(mod.enabled_modules()) if e.label == "Zones"
+        )
+        assert zones.section == "water_accounting"
+        assert zones.section_without == ("accounting", mod.SECTION_OVERVIEW)
+
+    def test_a_nav_entry_without_a_fallback_section_keeps_its_own(self):
+        assert mod.NavEntry.__dataclass_fields__["section_without"].default == ()
+
+    def test_the_fixed_settings_entry_owns_the_settings_path(self):
+        entry = next(e for e in mod.FIXED_NAV_ENTRIES if e.url_name == "settings")
+        assert entry.label == "Settings"
+        assert entry.section == mod.SECTION_SETTINGS
+        assert entry.active_match == "/settings/"
 
     def test_surface_diversions_excludes_the_water_rights_path(self):
         """The original compound active-state case.
@@ -591,7 +700,7 @@ class TestNavResolution:
             if e.url_name == "drinking:overview"
         )
         assert entry.active_match == "/drinking/"
-        assert len(entry.active_excludes) == 6
+        assert len(entry.active_excludes) == 5
         assert entry.is_active("/drinking/") is True
         assert entry.is_active("/drinking/facilities/") is False
         # The facility DETAIL page owns no nav entry, so it inherits this
@@ -599,7 +708,9 @@ class TestNavResolution:
         assert entry.is_active("/drinking/facilities/12/") is False
         assert entry.is_active("/drinking/sampling-points/") is False
         assert entry.is_active("/drinking/results/") is False
-        assert entry.is_active("/drinking/onboard/") is False
+        # The onboarding pages belong to Water Systems now.
+        assert entry.is_active("/drinking/onboard/") is True
+        assert entry.is_active("/drinking/import/") is True
         assert entry.is_active("/drinking/production/") is False
         assert entry.is_active("/drinking/schedule/") is False
 
@@ -612,10 +723,29 @@ class TestContextProcessor:
         assert ctx["enabled_modules"] == list(mod.ALL_MODULE_NAMES)
         assert [s.key for s in ctx["nav_sections"]] == [
             "overview",
-            "water_data",
-            "administration",
+            "water_accounting",
+            "sources_monitoring",
+            "drinking_water",
             "reporting",
         ]
+
+    def test_the_switch_processor_is_gone(self, settings):
+        import core.context_processors as cp
+
+        processors = settings.TEMPLATES[0]["OPTIONS"]["context_processors"]
+        assert "core.context_processors.nav_mode" not in processors
+        assert not hasattr(cp, "nav_mode")
+
+    def test_the_processor_exposes_the_drinking_group_state_and_section_label(self, rf):
+        from core.context_processors import modules
+
+        ctx = modules(rf.get("/drinking/"))
+        assert ctx["drinking_group_open"] is True
+        assert ctx["nav_lit_section_label"] == "Drinking water"
+        ctx = modules(rf.get("/wells/"))
+        assert ctx["nav_lit_section_label"] == "Sources and monitoring"
+        assert ctx["drinking_group_open"] is False
+        assert modules(rf.get("/"))["nav_lit_section_label"] == ""
 
     def test_processor_is_registered(self, settings):
         processors = settings.TEMPLATES[0]["OPTIONS"]["context_processors"]

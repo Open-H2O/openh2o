@@ -24,13 +24,14 @@ import re
 import pytest
 from django.test import Client
 
-# Verified against the running application, 2026-08-26 (122-01-EVIDENCE.md 17.4).
+# Section keys per core/modules.py NAV_SECTIONS.
 SECTION_FIXTURES = [
-    ("/wells/", "water_data"),
-    ("/accounting/accounts/", "administration"),
-    ("/surface/rights/", "administration"),
-    ("/drinking/results/", "water_data"),
-    ("/setup/", "administration"),
+    ("/wells/", "sources_monitoring"),
+    ("/accounting/accounts/", "water_accounting"),
+    ("/surface/rights/", "sources_monitoring"),
+    ("/drinking/results/", "drinking_water"),
+    ("/setup/", "settings"),
+    ("/accounting/methodology/", "settings"),
     ("/reporting/reports/", "reporting"),
 ]
 
@@ -92,13 +93,21 @@ def test_body_carries_at_most_one_section_token(client_admin, path, _section):
 
 
 def test_the_section_keeps_the_platforms_own_spelling(client_admin):
-    """`section-water_data`, underscore and all.
+    """`section-sources_monitoring`, underscore and all.
 
-    `core/modules.py` spells the section keys `water_data`, `administration`,
-    `reporting`, `help`, `overview`. Kebab-casing them in the template would
-    mint a second spelling of one identifier that nothing enforces — the exact
-    defect Phase 122 exists to remove.
+    `core/modules.py` spells the section keys `water_accounting`,
+    `sources_monitoring`, `drinking_water`, `reporting`, `settings`, `help` and
+    `overview`. Kebab-casing them in the template would mint a second spelling
+    of one identifier that nothing enforces, the exact defect Phase 122 exists
+    to remove.
     """
     tag = body_tag(client_admin.get("/wells/", follow=True))
-    assert "section-water_data" in tag, tag
-    assert "section-water-data" not in tag, f"kebab-cased second spelling: {tag}"
+    assert "section-sources_monitoring" in tag, tag
+    assert "section-sources-monitoring" not in tag, f"kebab-cased second spelling: {tag}"
+
+
+@pytest.mark.parametrize("old", ["water_data", "administration"])
+def test_the_retired_section_keys_appear_on_no_page(client_admin, old):
+    for path in ("/wells/", "/accounting/accounts/", "/setup/", "/drinking/results/"):
+        tag = body_tag(client_admin.get(path, follow=True))
+        assert f"section-{old}" not in tag, f"{path}: {tag}"

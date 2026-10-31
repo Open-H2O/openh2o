@@ -42,7 +42,7 @@ passes only under one posture would be a gap the other posture never noticed.
 
 A resolved URL is only allowed when ``core.access.viewer_may_post`` says the
 viewer may act on it: logout, password change and the other ``account_*``
-allauth views, the feedback widget, the nav-mode switch, the profile page.
+allauth views, the feedback widget, the profile page.
 Anything else is an offender, and the assertion message names the page, the
 attribute that carried it, and the URL name it resolved to, so a failure is
 its own fix list.

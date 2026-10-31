@@ -570,9 +570,8 @@ class TestCopyRules:
     def test_every_page_breadcrumb_starts_at_its_nav_section(
         self, client_logged_in, unlocated
     ):
-        """Rule 1. Every Water Data page on the platform roots its breadcrumb at
-        the section name the sidebar shows — 19 of 19 non-drinking pages did,
-        and 6 of 10 drinking pages did not.
+        """Rule 1. Every drinking page roots its breadcrumb at the section name
+        the sidebar shows, then names the Water Systems entry that heads it.
         """
         offenders = []
         for name, path in _read_surfaces(unlocated):
@@ -583,10 +582,10 @@ class TestCopyRules:
                 for c in re.findall(r">([^<>]+)</(?:a|span)>", nav.group(0))
                 if c.strip() and c.strip() != "/"
             ]
-            if crumbs[:2] != ["Water Data", "Drinking Water"]:
+            if crumbs[:2] != ["Drinking water", "Water Systems"]:
                 offenders.append(f"{name}: {crumbs[:2]}")
         assert offenders == [], (
-            f"breadcrumbs not rooted at Water Data / Drinking Water: {offenders}"
+            f"breadcrumbs not rooted at Drinking water / Water Systems: {offenders}"
         )
 
     #: Words this screen invented to be gentler than the state's own, and the

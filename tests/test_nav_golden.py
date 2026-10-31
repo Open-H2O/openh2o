@@ -13,11 +13,14 @@ template you just changed; that turns the gate into a rubber stamp. Regeneration
 (``GOLDEN_UPDATE=1``) exists only for a *deliberate*, reviewed nav change, and
 the resulting fixture diff must be read line by line before it is committed.
 
-Two axes are covered, because they fail in different ways:
+Three axes are covered, because they fail in different ways:
 
-* **Visibility** — every combination of ``nav_mode`` x ``user_is_admin`` x
-  ``access_enforced`` (8), rendered at ``/``. These pin the four predicates the
-  registry loop has to reproduce.
+* **Visibility**: every combination of ``user_is_admin`` x ``access_enforced``
+  (4), rendered at ``/``. These pin the predicates the registry loop applies.
+  There is no sidebar mode: the Operations/Admin switch is gone (151.8-01).
+* **Drinking water state**: the collapsible Drinking water group rendered open
+  and rendered closed (2), because the ``open`` attribute is the one thing the
+  group's three conditions change.
 * **Active state** — one representative path per nav entry (24), rendered at a
   fixed permutation that shows every link. These pin the ``active`` class. The
   pair ``/surface/`` and ``/surface/rights/`` is the whole reason this axis
@@ -37,7 +40,6 @@ from django.template.loader import render_to_string
 from django.test import RequestFactory
 
 from core.modules import (
-    SECTION_WATER_DATA,
     enabled_modules,
     lit_entry,
     nav_sections_for,
@@ -47,7 +49,7 @@ from core.modules import (
 GOLDEN_DIR = Path(__file__).parent / "golden"
 
 #: Any valid section key; the is_active unit tests never look at the section.
-SECTION_FOR_TEST = SECTION_WATER_DATA
+SECTION_FOR_TEST = "sources_monitoring"
 
 #: Set GOLDEN_UPDATE=1 to rewrite the fixtures. See the module docstring — this
 #: is for a deliberate nav change, never for making a red test go green.
@@ -67,16 +69,20 @@ def normalize(html: str) -> str:
 # -- Permutations ------------------------------------------------------------
 
 VISIBILITY_CASES = [
-    (nav_mode, user_is_admin, access_enforced)
-    for nav_mode in ("operations", "admin")
+    (user_is_admin, access_enforced)
     for user_is_admin in (True, False)
     for access_enforced in (True, False)
 ]
 
+#: The Drinking water group's two renders: fixture name, `drinking_group_open`.
+DRINKING_STATES = [
+    ("sidebar_drinking-group_open", True),
+    ("sidebar_drinking-group_closed", False),
+]
+
 #: One representative request path per nav entry, plus the two static-page paths
-#: that drive the Help section's auto-open. Rendered at nav_mode=admin /
-#: user_is_admin=True / access_enforced=False, the permutation that shows every
-#: link at once.
+#: that drive the Help section's auto-open. Rendered at user_is_admin=True /
+#: access_enforced=False, the permutation that shows every link at once.
 ACTIVE_PATHS = [
     "/",
     "/accounting/dashboard/",
@@ -98,22 +104,22 @@ ACTIVE_PATHS = [
     "/drinking/facilities/",
     "/drinking/sampling-points/",
     "/drinking/results/",
-    # 80-02's wizard. Same reason as the two above: `/drinking/` is a prefix of
-    # it too, so it needs its own exclusion on the Overview entry.
+    # The onboarding pages light Water Systems (151.8-01): no exclusion for them.
     "/drinking/onboard/",
+    "/drinking/import/",
     # 146-04 Task 2's production door. Same trap again: `/drinking/` is a
     # prefix of it too.
     "/drinking/production/",
     # 146-04 Task 4's schedule door, and the same trap once more.
     "/drinking/schedule/",
     "/datasync/stations/",
-    # 150-03's Infrastructure entry, and its add page under the same prefix.
-    "/infrastructure/import/",
-    "/infrastructure/add/",
     "/accounting/accounts/",
     "/accounting/reporting-periods/",
     "/accounting/allocations/",
     "/map/zones/",
+    # A settings page lights no sidebar link; its fixture is the sidebar with
+    # nothing lit (the header button carries the state, tested elsewhere).
+    "/settings/",
     "/users/",
     "/accounting/methodology/",
     "/accounting/delivery-settings/",
@@ -125,8 +131,8 @@ ACTIVE_PATHS = [
 ]
 
 
-def render_sidebar(path="/", nav_mode="operations", user_is_admin=False,
-                   access_enforced=False, module_names=None):
+def render_sidebar(path="/", user_is_admin=False, access_enforced=False,
+                   module_names=None, drinking_group_open=None):
     """Render the sidebar with an explicit context.
 
     Deliberately does NOT go through RequestContext/context processors: the
@@ -138,22 +144,25 @@ def render_sidebar(path="/", nav_mode="operations", user_is_admin=False,
     150-03: the lit link is decided once per request by `lit_entry`, which the
     `modules` processor runs; it is computed here from the same entries and
     passed as `nav_lit` / `nav_lit_section`, the two values the template reads.
-    `nav_mode` is passed as given: the per-request Admin override belongs to
-    the `nav_mode` processor and `tests/test_sidebar_lighting.py` tests it.
+    `drinking_group_open` is what the `modules` processor computes (D8); when
+    not given it is the lit section rule only, so a drinking path opens the
+    group and any other path leaves it closed.
     """
     specs = enabled_modules(module_names)
     lit = lit_entry(path, sidebar_entries(specs))
+    if drinking_group_open is None:
+        drinking_group_open = lit is not None and lit.section == "drinking_water"
     return render_to_string(
         SIDEBAR,
         {
             "request": RequestFactory().get(path),
-            "nav_mode": nav_mode,
             "user_is_admin": user_is_admin,
             "access_enforced": access_enforced,
             "enabled_modules": [spec.name for spec in specs],
             "nav_sections": nav_sections_for(specs),
             "nav_lit": lit.url_name if lit is not None else None,
             "nav_lit_section": lit.section if lit is not None else "",
+            "drinking_group_open": drinking_group_open,
         },
     )
 
@@ -182,18 +191,26 @@ def check(name: str, html: str):
 # -- Tests -------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("nav_mode,user_is_admin,access_enforced", VISIBILITY_CASES)
-def test_sidebar_visibility_permutations(nav_mode, user_is_admin, access_enforced):
+@pytest.mark.parametrize("user_is_admin,access_enforced", VISIBILITY_CASES)
+def test_sidebar_visibility_permutations(user_is_admin, access_enforced):
     name = (
-        f"sidebar_visibility_{nav_mode}"
-        f"_admin-{str(user_is_admin).lower()}"
+        f"sidebar_visibility_admin-{str(user_is_admin).lower()}"
         f"_enforced-{str(access_enforced).lower()}"
     )
     check(name, render_sidebar(
         path="/",
-        nav_mode=nav_mode,
         user_is_admin=user_is_admin,
         access_enforced=access_enforced,
+    ))
+
+
+@pytest.mark.parametrize("name,is_open", DRINKING_STATES)
+def test_sidebar_drinking_group_states(name, is_open):
+    check(name, render_sidebar(
+        path="/",
+        user_is_admin=True,
+        access_enforced=False,
+        drinking_group_open=is_open,
     ))
 
 
@@ -202,7 +219,6 @@ def test_sidebar_active_state_by_path(path):
     slug = path.strip("/").replace("/", "_") or "root"
     check(f"sidebar_active_{slug}", render_sidebar(
         path=path,
-        nav_mode="admin",
         user_is_admin=True,
         access_enforced=False,
     ))
@@ -215,8 +231,8 @@ def test_diversions_not_active_on_water_rights_page():
     `/surface/rights/`. Stated as its own test so a regression names itself
     instead of surfacing as an opaque byte diff.
     """
-    on_surface = render_sidebar(path="/surface/", nav_mode="admin", user_is_admin=True)
-    on_rights = render_sidebar(path="/surface/rights/", nav_mode="admin", user_is_admin=True)
+    on_surface = render_sidebar(path="/surface/", user_is_admin=True)
+    on_rights = render_sidebar(path="/surface/rights/", user_is_admin=True)
 
     def link_classes(html, url):
         match = re.search(
@@ -230,28 +246,30 @@ def test_diversions_not_active_on_water_rights_page():
     assert "active" in link_classes(on_rights, "/surface/rights/")
 
 
-def test_drinking_water_not_active_on_its_own_sub_pages():
-    """The two-exclude case, asserted directly rather than only via fixture.
+def test_water_systems_is_active_on_its_own_pages_and_not_on_the_sub_pages():
+    """The exclude case, asserted directly rather than only via fixture.
 
-    Same failure mode as Surface Diversions, one step worse: `/drinking/` is a
-    prefix of EVERY sub-page, so a single exclusion silently fixes one of them
-    and leaves the rest lit. Stated here so a regression names itself.
+    Same failure mode as Surface Diversions: `/drinking/` is a prefix of EVERY
+    sub-page, so a missing exclusion leaves Water Systems lit while the reader
+    is somewhere else. The onboarding and import pages are the exception: they
+    belong to Water Systems (151.8-01), so it stays lit there and no exclusion
+    names them.
 
     The facility DETAIL path is included on purpose. It is not a nav entry of
-    its own, so no golden fixture covers it, and before 100-01 gave the module a
-    Facilities entry it correctly lit Drinking Water. Now it must light
-    Facilities instead — a property the exclusion tuple delivers for free and
-    could take away just as quietly.
+    its own, so no golden fixture covers it; it must light Facilities.
     """
     pages = {
-        p: render_sidebar(path=p, nav_mode="admin", user_is_admin=True)
+        p: render_sidebar(path=p, user_is_admin=True)
         for p in (
             "/drinking/",
             "/drinking/facilities/",
             "/drinking/facilities/12/",
             "/drinking/sampling-points/",
             "/drinking/results/",
+            "/drinking/production/",
+            "/drinking/schedule/",
             "/drinking/onboard/",
+            "/drinking/import/",
         )
     }
 
@@ -262,13 +280,13 @@ def test_drinking_water_not_active_on_its_own_sub_pages():
         assert match, f"No sidebar link found for {url}"
         return match.group(1)
 
-    # The overview lights up on its own page only.
-    assert "active" in link_classes(pages["/drinking/"], "/drinking/")
-    assert "active" not in link_classes(pages["/drinking/facilities/"], "/drinking/")
-    assert "active" not in link_classes(pages["/drinking/facilities/12/"], "/drinking/")
-    assert "active" not in link_classes(pages["/drinking/sampling-points/"], "/drinking/")
-    assert "active" not in link_classes(pages["/drinking/results/"], "/drinking/")
-    assert "active" not in link_classes(pages["/drinking/onboard/"], "/drinking/")
+    for lit_here in ("/drinking/", "/drinking/onboard/", "/drinking/import/"):
+        assert "active" in link_classes(pages[lit_here], "/drinking/"), lit_here
+    for sub in (
+        "/drinking/facilities/", "/drinking/facilities/12/", "/drinking/sampling-points/",
+        "/drinking/results/", "/drinking/production/", "/drinking/schedule/",
+    ):
+        assert "active" not in link_classes(pages[sub], "/drinking/"), sub
 
     # And each sub-page lights up its own entry.
     assert "active" in link_classes(
@@ -281,7 +299,8 @@ def test_drinking_water_not_active_on_its_own_sub_pages():
         pages["/drinking/sampling-points/"], "/drinking/sampling-points/"
     )
     assert "active" in link_classes(pages["/drinking/results/"], "/drinking/results/")
-    assert "active" in link_classes(pages["/drinking/onboard/"], "/drinking/onboard/")
+    assert "active" in link_classes(pages["/drinking/production/"], "/drinking/production/")
+    assert "active" in link_classes(pages["/drinking/schedule/"], "/drinking/schedule/")
 
 
 def test_nav_entry_is_active_handles_multiple_excludes():
@@ -312,29 +331,27 @@ def test_disabling_a_module_removes_only_its_own_nav():
     """The point of the whole phase: omit a module, lose exactly its links.
 
     Uses `reporting`, `health` and `setup` because those are genuinely droppable
-    today (see OPTIONAL_MODULE_NAMES). The plan's example, `recharge`, is marked
-    required=True by 77-01 after ~100 cross-app module-scope imports were found,
-    so dropping it is a startup error, not a nav change.
+    today (see OPTIONAL_MODULE_NAMES). Site Health and the Setup Wizard are rows
+    of the Settings page now, so the sidebar test is about `reporting`; the
+    other two leave `settings_entries_for`.
 
     `reporting` is the interesting one: it is the ONLY entry in its section.
     Since 2026-10-12, dropping it leaves its heading over one
     greyed, unlinked "Reports" marked "Under development", and no link into
     /reporting/.
     """
-    from core.modules import ALL_MODULE_NAMES
+    from core.modules import ALL_MODULE_NAMES, settings_entries_for
 
     dropped = {"reporting", "health", "setup"}
     kept = [n for n in ALL_MODULE_NAMES if n not in dropped]
 
-    full = render_sidebar(path="/", nav_mode="admin", user_is_admin=True,
-                          access_enforced=False)
-    trimmed = render_sidebar(path="/", nav_mode="admin", user_is_admin=True,
-                             access_enforced=False, module_names=kept)
+    full = render_sidebar(path="/", user_is_admin=True, access_enforced=False)
+    trimmed = render_sidebar(path="/", user_is_admin=True, access_enforced=False,
+                             module_names=kept)
 
-    gone = ["Reports", "Site Health", "Setup Wizard"]
-    for label in gone:
-        assert f">{label}</span>" in full, f"{label} should be in the full sidebar"
-        assert f">{label}</span>" not in trimmed, f"{label} survived its module being dropped"
+    assert ">Reports</span>" in full
+    # The greyed entry that stands in its place is not the linked one.
+    assert ">Reports</span>" not in trimmed
 
     # Reporting stays as a greyed, unlinked entry; nothing links into it.
     assert "sidebar-section-label\">Reporting</span>" in full
@@ -343,8 +360,16 @@ def test_disabling_a_module_removes_only_its_own_nav():
     assert 'aria-disabled="true" title="Under development"' in trimmed
     assert '<span class="sidebar-link-note">Under development</span>' in trimmed
 
+    # The settings rows leave with their modules.
+    full_settings = [e.label for e in settings_entries_for(enabled_modules())]
+    trimmed_settings = [e.label for e in settings_entries_for(enabled_modules(kept))]
+    for label in ("Site Health", "Setup Wizard"):
+        assert label in full_settings
+        assert label not in trimmed_settings
+        assert f">{label}</span>" not in trimmed
+
     # Sections that still have entries keep their headings.
-    for label in ("Water Data", "Administration"):
+    for label in ("Water accounting", "Sources and monitoring", "Drinking water"):
         assert f"sidebar-section-label\">{label}</span>" in trimmed
 
     # Nothing else moved: every other entry survives, in the same order.
@@ -380,52 +405,41 @@ def test_every_registry_icon_key_has_a_partial():
     assert not missing, f"Registry icon keys with no partial: {sorted(set(missing))}"
 
 
-def test_every_nav_entry_is_rendered():
-    """All 28 module-owned entries appear when every gate is open.
+def test_every_sidebar_entry_is_rendered_and_no_settings_entry_is():
+    """All 20 sidebar entries appear when every gate is open; the 5 settings
+    entries (Methodology, Delivery Settings, Users, Site Health, Setup Wizard)
+    are the Settings page's rows and never appear here.
 
     Guards the failure mode a byte-diff cannot: if the registry loop silently
     drops an entry AND the fixture were regenerated, this still fails.
-
-    19 through Phase 77; 78-02 adds Drinking Water, Sampling Points and Sample
-    Results to the Water Data section, 80-02 adds the onboarding wizard (now
-    "Add a water system"), and 100-01
-    adds Facilities. 146-02 Task 4 added Curtailment Orders beside Water Rights
-    and 150.5-01 removed it with the feature. 146-04 Task 2 adds Production beside the other drinking-water sub-pages,
-    and 146-04 Task 4 adds Schedule after it. 147-01 added Change History to
-    Overview; 147-02 removed it from the sidebar,
-    so the count is back to 27. 150-03 adds Infrastructure under Water Data: 28.
-    150.5-01 removes Curtailment Orders: 27.
     """
-    html = render_sidebar(path="/", nav_mode="admin", user_is_admin=True,
-                          access_enforced=False)
-    expected = [e for spec in enabled_modules() for e in spec.nav]
-    assert len(expected) == 27
-    for entry in expected:
+    html = render_sidebar(path="/", user_is_admin=True, access_enforced=False)
+    every = [e for spec in enabled_modules() for e in spec.nav]
+    assert len(every) == 25
+    settings_rows = [e for e in every if e.section == "settings"]
+    drawn = [e for e in every if e.section != "settings"]
+    assert len(settings_rows) == 5 and len(drawn) == 20
+    for entry in drawn:
         assert f">{entry.label}</span>" in html, (
             f"Nav entry {entry.url_name!r} ({entry.label}) is missing from the sidebar"
         )
+    for entry in settings_rows:
+        assert f">{entry.label}</span>" not in html, (
+            f"Settings entry {entry.url_name!r} ({entry.label}) is drawn in the sidebar"
+        )
 
 
-def test_group_divider_renders_above_drinking_water_but_never_leads_a_section():
-    """The Water Data group break, and the one case where it must not draw.
+def test_the_sidebar_draws_no_group_divider_because_each_group_has_a_heading():
+    """`starts_group` is gone: Drinking water has its own heading, so no hairline
+    rule splits the tail of another section.
 
-    A full deployment runs eleven Water Data links and the last five are all
-    drinking water, so `starts_group` on the Drinking Water entry splits them
-    into their own block. The fixtures pin where the rule lands; this pins the
-    two things a byte-diff cannot explain.
-
-    The second half is the reason the template guards on `forloop.first`. Drop
-    the accounting/parcels pair and five more sections go with it, leaving
-    drinking water alone at the top of Water Data — where an unguarded rule
-    would draw a line directly under the section label, separating the heading
-    from the links it names.
+    The second half keeps the case the old divider guarded: drop the
+    accounting/parcels pair and five more sections go with it, leaving drinking
+    water alone. Its heading and links must still render, with no rule and no
+    "Water accounting" heading.
     """
-    full = render_sidebar(path="/", nav_mode="admin", user_is_admin=True,
-                          access_enforced=False)
-    assert full.count('class="sidebar-divider"') == 1
-    before, _, after = full.partition('<hr class="sidebar-divider">')
-    assert ">Monitoring Stations</span>" in before
-    assert after.lstrip().startswith('<a href="/drinking/"')
+    full = render_sidebar(path="/", user_is_admin=True, access_enforced=False)
+    assert "sidebar-divider" not in full
 
     from core.modules import ALL_MODULE_NAMES
 
@@ -438,7 +452,10 @@ def test_group_divider_renders_above_drinking_water_but_never_leads_a_section():
     kept = [n for n in ALL_MODULE_NAMES if n not in gone]
     assert "drinking" in kept
 
-    drinking_only = render_sidebar(path="/", nav_mode="admin", user_is_admin=True,
-                                   access_enforced=False, module_names=kept)
-    assert ">Drinking Water</span>" in drinking_only
+    drinking_only = render_sidebar(path="/", user_is_admin=True, access_enforced=False,
+                                   module_names=kept, drinking_group_open=True)
+    assert ">Water Systems</span>" in drinking_only
+    assert "sidebar-section-label\">Drinking water</span>" in drinking_only
     assert "sidebar-divider" not in drinking_only
+    assert "Water accounting" not in drinking_only
+    assert ">Zones</span>" in drinking_only

@@ -127,5 +127,5 @@ def test_the_check_reads_the_real_registries():
     """The check asks Django and the Makefile; it holds no copy of either."""
     assert "seed_data" in names.commands()
     assert "test" in names.make_targets()
-    assert ("Administration", "Zones") in names.sidebar()
+    assert ("Water accounting", "Zones") in names.sidebar()
     assert "SECRET_KEY" in names.settings_read_from_environment()

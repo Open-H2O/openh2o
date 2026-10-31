@@ -438,11 +438,14 @@ class TestReachable:
         assert "Build sampling points" in with_system
         assert "Add a water system" not in with_system
 
-    def test_the_wizard_has_a_nav_entry(self):
+    def test_the_wizard_has_no_nav_entry_of_its_own(self):
+        """It is a button on Water Systems (tests/test_drinking_module_shows_what_to_do.py)
+        and its pages light the Water Systems entry."""
         from core.modules import MODULE_REGISTRY
 
         entries = MODULE_REGISTRY["drinking"].nav
-        assert any(e.url_name == "drinking:onboard" for e in entries)
+        assert not any(e.url_name == "drinking:onboard" for e in entries)
+        assert any(e.label == "Water Systems" for e in entries)
 
     def test_overview_is_not_active_on_the_wizard(self):
         """The third exclusion. `/drinking/` is a prefix of `/drinking/onboard/`."""

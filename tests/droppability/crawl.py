@@ -78,16 +78,6 @@ SKIPPED_EXACT = (
         "login wall and the run would still finish green, having proved nothing "
         "past the first logout link it happened to follow.",
     ),
-    (
-        "/nav-mode/",
-        "Sets the `nav_mode` cookie and bounces back (config.views.set_nav_mode). "
-        "Measured 2026-07-22: the sidebar links to it, this crawl drops query "
-        "strings, and a bare GET defaults `mode` to 'operations' — so an "
-        "un-skipped visit silently flips the client OUT of the mode the test "
-        "chose, roughly a third of the way through a sorted frontier. Nothing "
-        "would fail; the two-mode parametrization in checks.py would simply stop "
-        "meaning anything, which is worse.",
-    ),
 )
 
 #: Path suffixes the crawl never opens.

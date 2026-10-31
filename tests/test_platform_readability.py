@@ -502,10 +502,8 @@ EXPECTED_UNREACHABLE = {
     "/accounting/methodology/preview/": "HTMX fragment, not a document",
     "/infrastructure/parcels/search/": "HTMX fragment, not a document",
     "/search/": "HTMX fragment, not a document",
-    # Redirects that are the point of the route: a preference toggle bounces
-    # back, and a setup step that has nothing to confirm sends you to the step
+    # Redirects that are the point of the route: a setup step that has nothing to confirm sends you to the step
     # that does.
-    "/nav-mode/": "HTTP 302",
     "/setup/confirm/": "HTTP 302",
     "/setup/run/": "HTTP 302",
     # A page folded into another keeps its address as a permanent redirect

@@ -19,6 +19,7 @@ facility, a sample or a source IS — three tests that did exactly that reverted
 every hand correction on the next run.
 """
 import html as html_module
+import re
 from html.parser import HTMLParser
 
 import factory
@@ -158,11 +159,10 @@ class _AnchorAudit(HTMLParser):
         self.anchors = []
         #: (href, {classes}) for every anchor, so an assertion can be scoped to
         #: the element it is actually about. This is load-bearing: the sidebar
-        #: registers an "Add a water system" nav entry (core/modules.py), so a
-        #: bare `reverse("drinking:onboard") in html` is satisfied by the NAV on
-        #: every drinking page and proves nothing about an empty state. Three
-        #: assertions here passed against the pre-change tree for exactly that
-        #: reason before being scoped.
+        #: carried an "Add a water system" nav entry, so a bare
+        #: `reverse("drinking:onboard") in html` was satisfied by the NAV on
+        #: every drinking page and proved nothing about an empty state. The
+        #: assertions stay scoped to the element they are about.
         self.by_class = []
         #: (tag_name, href_or_None, style_attr) for every `stat-card` element.
         self.stat_cards = []
@@ -610,3 +610,58 @@ class TestTheEmptyStateDoorsOpen:
         assert reverse("drinking:onboard") not in doors
         assert reverse("drinking:onboard_points", args=["CA2410009"]) not in doors
         assert reverse("drinking:onboard_points", args=["CA9999999"]) not in doors
+
+
+# -- The Add a water system button on Water Systems ---------------------------
+
+
+def _page_head_actions(html):
+    """The inner markup of the page head's actions slot (where Wells puts + Add well)."""
+    match = re.search(r'<div class="page-head-actions">(.*?)</div>', html, re.S)
+    assert match, "the page has no page-head-actions slot"
+    return match.group(1)
+
+
+class TestAddAWaterSystemIsAButtonOnWaterSystems:
+    def test_a_writer_on_a_site_with_no_system_gets_a_primary_button_in_the_page_head(
+        self, client_in
+    ):
+        actions = _page_head_actions(
+            client_in.get(reverse("drinking:overview")).content.decode()
+        )
+        anchors = re.findall(r"<a\s[^>]*>.*?</a>", actions, re.S)
+        wizard = [a for a in anchors if f'href="{reverse("drinking:onboard")}"' in a]
+        assert len(wizard) == 1, actions
+        assert "btn-primary" in wizard[0] and "btn-sm" in wizard[0]
+        assert "Add a water system" in re.sub(r"<[^>]+>", "", wizard[0])
+
+    def test_the_button_is_gone_once_the_site_has_its_system(self, client_in):
+        """A site keeps one water system's records, so the button would be a dead end."""
+        WaterSystemFactory(pwsid="CA2410009", name="Cedar Grove Water District")
+        actions = _page_head_actions(
+            client_in.get(reverse("drinking:overview")).content.decode()
+        )
+        assert reverse("drinking:onboard") not in actions
+        assert "Add a water system" not in actions
+
+    def test_a_viewer_gets_no_button_even_with_no_system(self, db, django_user_model):
+        viewer = django_user_model.objects.create_user(
+            username="ws-viewer", email="ws-viewer@example.org",
+            password="a-good-passw0rd", is_active=True, read_only=True,
+        )
+        client = Client()
+        client.force_login(viewer)
+        actions = _page_head_actions(
+            client.get(reverse("drinking:overview")).content.decode()
+        )
+        assert reverse("drinking:onboard") not in actions
+
+    def test_the_heading_and_tab_title_say_water_systems(self, client_in):
+        html = client_in.get(reverse("drinking:overview")).content.decode()
+        assert re.search(r'<h1 class="page-title">\s*Water systems\s*</h1>', html)
+        assert re.search(r"<title>\s*Water systems\b", html)
+
+    def test_the_sidebar_no_longer_links_the_wizard(self, client_in):
+        html = client_in.get(reverse("drinking:overview")).content.decode()
+        sidebar = html.split("</aside>", 1)[0]
+        assert reverse("drinking:onboard") not in sidebar

@@ -22,9 +22,16 @@ same time — it boots a Django process that never had the module and asserts:
 - **nothing a person can click their way to returns 5xx** — the crawl below
   follows every in-app link out of every kept page, and asserts `status < 500`
   on all of it (Plan 90-02);
-- **both sidebars render.** Every assertion here used to run in Admin mode only,
-  so Operations — the default every real user gets — had never been rendered
-  under any drop configuration. The crawl runs in both.
+- **the sidebar and the Settings page render.** The sidebar has one shape (the
+  Operations/Admin switch is gone), so the crawl runs once. The settings
+  entries (Methodology, Delivery Settings, Users, Site Health, Setup Wizard)
+  are rows of the Settings page, which is a kept page in every configuration,
+  so the crawl follows their links from there and a dropped module takes its
+  row away;
+- **the Drinking water group follows the deployment.** With water accounting
+  dropped, the group renders `open` on Home with no cookie, the sidebar has no
+  "Water accounting" heading, and Zones sits in the unlabelled top block with
+  Home and Map. With water accounting kept, the group starts closed on Home.
 
 The 5xx bar is deliberately narrow. A **404 stays legal**: a dropped module's
 route is supposed to 404 and a permission wall is supposed to 403, and both are
@@ -168,7 +175,6 @@ same set — the queue drains in sorted order precisely so that stays true.
 |---|---|
 | `/admin/` | Django's own admin renders from `ModelAdmin`, not these templates — and its delete confirmations sit one form-post from the fixture the rest of the crawl is reading. |
 | `/accounts/logout/` | Ends the crawl's own session. Every later page becomes a redirect to the login wall, and the run still finishes green having proved nothing. |
-| `/nav-mode/` | Sets the `nav_mode` cookie and bounces back. Since the crawl drops query strings, a bare GET defaults it to `operations` — silently flipping the client out of the mode the test chose, about a third of the way through. Nothing fails; the two-mode parametrization just stops meaning anything. |
 | `*/export/`, `*/download/`, `*/template/` | Stream bytes rather than render a template, so they answer nothing about whether a page renders. |
 
 **Two stated limits.** The crawl is GET-only — it never issues a POST, so a form

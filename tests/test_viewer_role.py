@@ -5,7 +5,7 @@ A viewer signs in and reads every page; every unsafe request it makes is
 refused by ``core.access.ReadOnlyMiddleware`` with a 403 and one sentence in
 plain words, on every route, whatever ACCESS_CONTROL_ENFORCED says. An
 operator's identical request still goes through. The allowlist (the viewer's
-own sign-in and account, the feedback button, the sidebar switch and their
+own sign-in and account, the feedback button and their
 own contact details) is pinned here by name.
 """
 import datetime as dt
@@ -184,7 +184,7 @@ def test_an_inactive_viewer_is_not_special_cased(viewer):
 
 def test_the_allowlist_is_exactly_this():
     assert VIEWER_ALLOWED_URL_NAMES == frozenset(
-        {"feedback:submit", "set_nav_mode", "profile", "choose_password"}
+        {"feedback:submit", "profile", "choose_password"}
     )
     assert VIEWER_ALLOWED_URL_NAME_PREFIX == "account_"
     assert viewer_may_post("account_logout") is True
@@ -237,10 +237,10 @@ def test_a_viewer_reaches_the_feedback_intake(viewer):
     assert response.json() == {"ok": True, "ref": None}
 
 
-def test_a_viewer_can_flip_the_sidebar(viewer):
-    response = _client(viewer).get(reverse("set_nav_mode"), {"mode": "admin"})
-    assert response.status_code == 302
-    assert response.cookies["nav_mode"].value == "admin"
+def test_a_viewer_has_no_sidebar_switch_to_flip(viewer):
+    """The sidebar has one shape, so there is no route that sets a mode."""
+    assert _client(viewer).get("/nav-mode/", {"mode": "admin"}).status_code == 404
+    assert viewer_may_post("set_nav_mode") is False
 
 
 def test_the_template_flag_is_false_only_for_a_viewer(viewer, operator):

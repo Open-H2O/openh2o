@@ -86,7 +86,7 @@ class TestNoWaterYearNamesWaterYears:
             fragment = _fragment(body, NO_WATER_YEAR)
             assert (
                 f'No water year on record. <a href="{reverse("accounting:period_create")}" '
-                'class="text-accent">Add one</a> under Administration &gt; '
+                'class="text-accent">Add one</a> under Water accounting &gt; '
                 f'<a href="{reverse("accounting:periods_list")}" '
                 'class="text-accent">Water Years</a>.'
             ) in fragment, path
@@ -97,7 +97,7 @@ class TestNoWaterYearNamesWaterYears:
             fragment = _fragment(body, NO_WATER_YEAR)
             assert (
                 "No water year on record. Water years are kept under "
-                f'Administration &gt; <a href="{reverse("accounting:periods_list")}" '
+                f'Water accounting &gt; <a href="{reverse("accounting:periods_list")}" '
                 'class="text-accent">Water Years</a>.'
             ) in fragment, path
             assert reverse("accounting:period_create") not in fragment, path
@@ -117,7 +117,7 @@ class TestNoWaterRightNamesWaterRights:
 
     def _expected(self):
         return (
-            "This point has no linked water right. Water rights are listed under Administration &gt; "
+            "This point has no linked water right. Water rights are listed under Sources and monitoring &gt; "
             f'<a href="{reverse("surface:water_rights_list")}" '
             'class="text-accent">Water Rights</a>.'
         )
@@ -208,7 +208,7 @@ class TestTheImportCommandNamesWhereAWaterYearIsCreated:
             )
         assert str(raised.value) == (
             "Water year not found: 2025 Water Year. Create it first under "
-            "Administration > Water Years (/accounting/reporting-periods/create/), "
+            "Water accounting > Water Years (/accounting/reporting-periods/create/), "
             "or pass an existing water year's name."
         )
         assert reverse("accounting:period_create") == "/accounting/reporting-periods/create/"
