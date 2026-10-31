@@ -93,9 +93,9 @@ def has_balance_panel(body):
 
 
 def card_of(body):
-    """The Water use card: from its head to the use area details beside the ledger."""
+    """The Water use card: from its head to the map and Use area card beside it."""
     assert "statement-head" in body, "the page has no Water use card"
-    return body.split("statement-head", 1)[1].split("page-grid-2col", 1)[0]
+    return body.split("statement-head", 1)[1].split('id="detail-map-card"', 1)[0]
 
 
 def words(fragment):
