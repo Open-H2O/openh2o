@@ -268,8 +268,9 @@ and the footer"; with the footer riding the content, the same pages read DO NOT 
 floating mid-page" (one read SHIP 4 with that as its worst fault). The same reader faulted a panel
 beside a taller card both stretched ("mostly an empty dark box") and at its content's height ("a
 large dead gap under the stats panel"). Two readers contradicting each other on one element is the
-stop rule: the shell and the matched row stay, and the one shape that fills the gap is the
-field page's card-beside-map grid.
+stop rule: the shell and the matched row stay. The field page's card-beside-map grid, which
+stretched the map to the card's height, was withdrawn on 2026-10-31: once the card held a month
+table, the stretched map was a narrow strip. The map now sits beside the Use area card.
 
 ### Casing convention
 

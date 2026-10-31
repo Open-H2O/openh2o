@@ -1,10 +1,8 @@
 {% load placeholders humanize accounting_extras %}{% comment %}
-  Per-parcel detail BODY, swapped into #detail-body on row click (and reused by
-  the standalone detail.html page). The map itself is NOT here — it lives as a
-  persistent element (#detail-map) in the pane shell so it is built ONCE and
-  merely re-pointed at the new parcel on each switch (no teardown/rebuild, so no
-  startup flash). This fragment carries the new parcel's geometry + the small
-  script that creates-or-updates that persistent map.
+  The use area page's body, swapped into #detail-body when the water year
+  changes (and included by the standalone detail.html page). The map card sits
+  in the right column beside the Use area card and is kept across that swap
+  (hx-preserve), so the map is built once and only re-pointed after a swap.
 {% endcomment %}
 
 {% if not on_full_page %}
@@ -268,8 +266,18 @@
 
     </div>
 
-    {# Right column: ledger activity #}
+    {# Right column: the map beside the Use area card, then ledger activity. #}
     <div class="page-stack">
+
+      {% comment %}
+        hx-preserve keeps this card, and the map built in it, across the period
+        control's swap of #detail-body, so switching the water year does not
+        rebuild the map. The script below shows the card when the use area has
+        geometry.
+      {% endcomment %}
+      <div id="detail-map-card" class="card-raised" hx-preserve="true" style="padding: 0; overflow: hidden; display: none;">
+        <div id="detail-map" class="map-embed" style="height: 380px; position: relative; overflow: hidden; background: var(--color-base);"></div>
+      </div>
 
       <div class="card-raised">
         <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
@@ -353,7 +361,7 @@
 </div>
 
 {% comment %}
-  Geometry for the PERSISTENT map (#detail-map lives in the pane shell). The
+  Geometry for the PERSISTENT map (#detail-map, kept across swaps). The
   script builds the map once, then on every later swap just re-points it at the
   new parcel via setData + fitBounds — no rebuild, so no startup flash. It is
   defensive: polls until maplibre + the OH2O toolkit are ready, and no-ops if
@@ -375,11 +383,8 @@
 
     var geojson = JSON.parse(dataEl.textContent);
 
-    // Beside the tall Water use card the map runs past the first screen, so the
-    // parcel is framed in the map's top 560px rather than its middle.
     function frame() {
-      var extra = Math.max(0, host.clientHeight - 560);
-      return { padding: { top: 32, left: 32, right: 32, bottom: 32 + extra }, maxZoom: 16, duration: 0 };
+      return { padding: 32, maxZoom: 16, duration: 0 };
     }
 
     // Flatten every vertex to frame the parcel.
@@ -421,14 +426,11 @@
       fadeDuration: 0   // no tile cross-fade flicker
     });
     window._parcelPaneMap = map;
-    // On the standalone page the map sits in a grid cell whose
-    // width can change after the map is built (the grid placing it, the
-    // container query stacking it under 1,150px). A map whose host changed
-    // width after build paints blank on the right, so it re-measures its host
-    // whenever the host's size changes, not only when the window's does.
+    // The map sits in a grid column whose width can change after the map is
+    // built (the two columns stacking on a narrow window). A map whose host
+    // changed width after build paints blank on the right, so it re-measures its
+    // host whenever the host's size changes, and frames the use area again.
     if (window.ResizeObserver) {
-      // The host grows to the card's height after the map is built, so the frame
-      // is set again for the new height.
       new ResizeObserver(function () {
         map.resize();
         if (map.__oh2oReady && window._parcelPaneBounds) map.fitBounds(window._parcelPaneBounds, frame());
