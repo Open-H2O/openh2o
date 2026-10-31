@@ -176,6 +176,27 @@ def test_the_workspace_pane_shows_the_same_card():
     assert "All ledger entries" in words(card_of(body))
 
 
+def test_switching_the_period_on_the_standalone_page_brings_no_second_head():
+    rp = water_year()
+    parcel = use_area()
+    run(parcel, NOV, et="4.0000")
+    user, _ = User.objects.get_or_create(username="operator", defaults={"is_active": True})
+    client = Client()
+    client.force_login(user)
+    page_url = reverse("parcels:detail", args=[parcel.pk])
+    on_page = client.get(
+        page_url, {"period": rp.pk},
+        HTTP_HX_REQUEST="true", HTTP_HX_CURRENT_URL=f"https://example.test{page_url}",
+    ).content.decode()
+    assert "pane-header" not in on_page
+    assert "Open full page" not in on_page
+    elsewhere = client.get(
+        page_url, {"period": rp.pk},
+        HTTP_HX_REQUEST="true", HTTP_HX_CURRENT_URL="https://example.test/parcels/",
+    ).content.decode()
+    assert "Open full page" in elsewhere
+
+
 def test_the_period_control_is_the_card_s_own_select():
     water_year()
     rp2 = ReportingPeriodFactory(

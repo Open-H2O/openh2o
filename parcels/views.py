@@ -14,7 +14,7 @@ import datetime as dt
 import json
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
-from urllib.parse import parse_qs
+from urllib.parse import parse_qs, urlsplit
 
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
@@ -22,6 +22,7 @@ from django.core.serializers import serialize
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, render
+from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 from core.access import public_in_open_demo
 from core.workspace import list_response, redirect_to_selected
@@ -510,6 +511,10 @@ def parcel_detail(request, pk):
         parcel, period_id=request.GET.get("period", "").strip()
     )
     if request.headers.get("HX-Request"):
+        # The period control swaps this fragment into the standalone page too, which
+        # carries its own head, so the fragment leaves out the pane's head there.
+        current_path = urlsplit(request.headers.get("HX-Current-URL", "")).path
+        context["on_full_page"] = current_path == reverse("parcels:detail", args=[parcel.pk])
         return render(request, "parcels/partials/_detail_pane.html", context)
     return render(request, "parcels/detail.html", context)
 

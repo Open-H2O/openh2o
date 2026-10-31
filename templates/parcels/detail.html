@@ -24,7 +24,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">{{ parcel.parcel_number }}</span>
   </nav>
-  <p class="page-description">This page shows the use area's map and details, and its water balance and ledger entries for the chosen water year.{% if user_can_write %} Edit a value with its pencil.{% endif %}</p>
+  <p class="page-description">This page shows the use area's map and details, and its water use and ledger entries for the chosen water year.{% if user_can_write %} Edit a value with its pencil.{% endif %}</p>
 </div>
 {% endblock %}
 
@@ -39,7 +39,7 @@
     <a href="{% url 'parcels:list' %}" class="back-link">&larr; Back to Use Areas</a>
   </div>
   {% comment %}
-    The top of the page is a grid, the water balance card (two
+    The top of the page is a grid, the water use card (two
     parts) beside the map card (one part), so the balance is in the first
     viewport. The map card stays OUTSIDE #detail-body because the period
     control swaps the body; `.page-grid-field` (app.css) lets the body's cards

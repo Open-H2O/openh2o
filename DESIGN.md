@@ -269,7 +269,7 @@ floating mid-page" (one read SHIP 4 with that as its worst fault). The same read
 beside a taller card both stretched ("mostly an empty dark box") and at its content's height ("a
 large dead gap under the stats panel"). Two readers contradicting each other on one element is the
 stop rule: the shell and the matched row stay, and the one shape that fills the gap is the
-field page's balance-beside-map grid.
+field page's card-beside-map grid.
 
 ### Casing convention
 
@@ -644,8 +644,8 @@ supply reported" under "Fields with water use recorded and no supply reported"),
 was titled "Supplies, of which", an idiom a reader had to ask about.
 A label is read under the heading above it. If the heading already says the thing, the label says what is
 left to say: the arithmetic ("Not met by supplies"), the unit, the scope ("by source"). The settled phrase
-stays the quantity's NAME where it stands alone (the field's own page prints "Water use recorded, no supply
-reported: 330.37 AF"); only the repeat under its own title goes. Rule 4 still holds: this stops a restating,
+stays the quantity's NAME where it stands alone (the use area page's popout is titled "Water use recorded,
+no supply reported"); only the repeat under its own title goes. Rule 4 still holds: this stops a restating,
 it never renames a quantity.
 
 ### 14. Text an engine writes onto a record is a sentence a reader can use
