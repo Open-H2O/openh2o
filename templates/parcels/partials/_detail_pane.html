@@ -1,7 +1,7 @@
 {% load placeholders humanize accounting_extras %}{% comment %}
   The use area page's body, swapped into #detail-body when the water year
-  changes (and included by the standalone detail.html page). The map card sits
-  above the Use area card, the two beside the Water use card, and is kept across that swap
+  changes (and included by the standalone detail.html page). The map card heads
+  the right column, above the Use area card, and is kept across that swap
   (hx-preserve), so the map is built once and only re-pointed after a swap.
 {% endcomment %}
 
@@ -30,133 +30,217 @@
 
 <div class="pane-stack">
 
-  {# The top: the Water use card beside the map and the Use area card. #}
+  {# Two columns: the Water use card, then the ledger (left); the map, the Use area card, zones and wells (right). #}
   <div class="page-grid-field">
 
-    {# Water use: the year's figures, what is off, then one row for each month. #}
-    {% url 'methods' as methods_help_url %}
-    {% url 'water_balances' as wb_help_url %}
-    <div class="card-raised">
-      <div class="statement-head">
-        <h2 class="section-header-flush">Water use</h2>
-        <div class="row-start">
-          <a href="{% url 'accounting:ledger_list' %}?q={{ parcel.parcel_number|urlencode }}" class="text-tertiary back-link text-xs">All ledger entries</a>
-          {% include "parcels/partials/_period_control.html" %}
-        </div>
-      </div>
-      {% if water_use %}
-      {% comment %}
-        Each figure below is read once, by accounting.services.parcel_water_use_months:
-        the lead figures are the table's foot, and the month cells are rounded so they
-        add to it. A figure that rounds to 0.00 prints as an empty cell, and the lines
-        under the figures each print only when they apply.
-      {% endcomment %}
-      <div class="statement-lead{% if 'surface' in enabled_modules and 'wells' in enabled_modules and related_wells %} statement-lead--four{% endif %}">
-        <div>
-          <div class="budget-seg-label">Crop ET</div>
-          <div class="budget-seg-value">{{ water_use.totals.et|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
-          <p class="statement-lead-note">{{ parcel.area_acres|floatformat:2|intcomma }} acres</p>
-        </div>
-        {% if 'surface' in enabled_modules %}
-        <div>
-          <div class="budget-seg-label">Surface water delivered</div>
-          <div class="budget-seg-value">{{ water_use.totals.surface|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
-          {% if serving_points %}
-          <p class="statement-lead-note">{% for pk, label in serving_points %}<a href="{% url 'surface:pod_detail' pk %}" class="prose-link">{{ label }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</p>
-          {% endif %}
-        </div>
-        {% endif %}
-        {% if 'wells' in enabled_modules and related_wells %}
-        <div>
-          <div class="budget-seg-label">Groundwater extraction</div>
-          <div class="budget-seg-value">{{ water_use.totals.groundwater|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
-          <p class="statement-lead-note">{% for wip in related_wells %}<a href="{% url 'wells:detail' wip.well.pk %}" class="prose-link">{{ wip.well.name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</p>
-        </div>
-        {% endif %}
-        <div>
-          <div class="budget-seg-label">Effective precipitation</div>
-          <div class="budget-seg-value">{{ water_use.totals.precip|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
-          {% if 'wells' in enabled_modules and not related_wells %}
-          <p class="statement-lead-note">No well on this use area</p>
-          {% endif %}
-        </div>
-      </div>
-      {% if water_use_lines.unmet or water_use_lines.fallow or water_use_lines.estimate or over_delivery_shown_af > 0 %}
-      <div class="statement-notes">
-        {% if water_use_lines.unmet %}
-        <p>{{ water_use_lines.unmet }}{% include "partials/_explainer_popout.html" with title="Water use recorded, no supply reported" text="This figure is the ETAW that recorded surface water did not meet on a field without a well, summed over the water year's calculation runs. OpenH2O never counts this water as pumping." link=wb_help_url link_label="How water balances work" %}</p>
-        {% endif %}
-        {% if water_use_lines.fallow %}
-        <p>{{ water_use_lines.fallow }}</p>
-        {% endif %}
-        {% if water_use_lines.estimate %}
-        <p>{{ water_use_lines.estimate }}</p>
-        {% endif %}
-        {% comment %} Delivery Settings can show canal water beyond the crop's use as its own line instead of a credit. {% endcomment %}
-        {% if over_delivery_shown_af > 0 %}
-        <p>Surface water in excess of ETAW came to {{ over_delivery_shown_af|floatformat:2|intcomma }} AF. OpenH2O neither credits it to the landowner nor charges it to {{ parcel.parcel_number }}.{% include "partials/_explainer_popout.html" with title="Surface water in excess of ETAW" text="An administrator set Delivery Settings to show surface water in excess of ETAW as its own line. OpenH2O records it with the month's calculation, and neither credits it to the landowner nor charges it to this field." link=wb_help_url link_label="How water balances work" %}</p>
-        {% endif %}
-      </div>
-      {% endif %}
-      <div class="statement-table-title">By month</div>
-      <table class="data-table text-sm statement-table">
-        <thead>
-          <tr>
-            <th>Month</th>
-            <th class="th-right th-nowrap">Crop ET</th>
-            {% if 'surface' in enabled_modules %}<th class="th-right">Surface water delivered</th>{% endif %}
-            {% if 'wells' in enabled_modules and related_wells %}<th class="th-right">Groundwater extraction</th>{% endif %}
-            <th class="th-right">Effective precipitation</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for m in water_use.months %}
-          <tr>
-            <td><a href="{% url 'accounting:ledger_list' %}?q={{ parcel.parcel_number|urlencode }}&amp;start_date={{ m.month|date:'Y-m-d' }}&amp;end_date={{ m.last|date:'Y-m-d' }}" class="data-table-link">{{ m.month|date:"M Y" }}</a></td>
-            {% if m.fallow %}<td class="td-fallow">Fallow</td>{% else %}<td class="td-num">{% if m.et %}{{ m.et|floatformat:2|intcomma }}{% endif %}</td>{% endif %}
-            {% if 'surface' in enabled_modules %}<td class="td-num">{% if m.surface %}{{ m.surface|floatformat:2|intcomma }}{% endif %}</td>{% endif %}
-            {% if 'wells' in enabled_modules and related_wells %}<td class="td-num">{% if m.groundwater %}{{ m.groundwater|floatformat:2|intcomma }}{% endif %}</td>{% endif %}
-            <td class="td-num">{% if m.precip %}{{ m.precip|floatformat:2|intcomma }}{% endif %}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-        <tfoot>
-          <tr>
-            <td class="tfoot-total">{{ balance_period.name }}</td>
-            <td class="td-num td-total">{{ water_use.totals.et|floatformat:2|intcomma }}</td>
-            {% if 'surface' in enabled_modules %}<td class="td-num td-total">{{ water_use.totals.surface|floatformat:2|intcomma }}</td>{% endif %}
-            {% if 'wells' in enabled_modules and related_wells %}<td class="td-num td-total">{{ water_use.totals.groundwater|floatformat:2|intcomma }}</td>{% endif %}
-            <td class="td-num td-total">{{ water_use.totals.precip|floatformat:2|intcomma }}</td>
-          </tr>
-        </tfoot>
-      </table>
+    {# Left column: water use, then ledger activity #}
+    <div class="page-stack">
 
-      {% comment %} Only a month with a well and no meter has a receipt
-         to show (where its estimated pumping came from), so only those months
-         link, and a field with none (no well, or every month metered) has no
-         block here at all. `receipt_periods` is parcel_receipt_periods(). {% endcomment %}
-      {% if receipt_periods %}
-      <div class="border-separator">
-        <div class="text-tertiary text-xs mb-sm">Estimated groundwater extraction, month by month:</div>
-        <div class="row-start" style="flex-wrap: wrap; gap: var(--space-xs);">
-          {% for period in receipt_periods %}
-          <a href="{% url 'accounting:calculation_run_detail' parcel.pk period %}" class="badge badge-blue">{{ period }}</a>
-          {% endfor %}
+      {# Water use: the year's figures, what is off, then one row for each month. #}
+      {% url 'methods' as methods_help_url %}
+      {% url 'water_balances' as wb_help_url %}
+      <div class="card-raised">
+        <div class="statement-head">
+          <h2 class="section-header-flush">Water use</h2>
+          <div class="row-start">
+            <a href="{% url 'accounting:ledger_list' %}?q={{ parcel.parcel_number|urlencode }}" class="text-tertiary back-link text-xs">All ledger entries</a>
+            {% include "parcels/partials/_period_control.html" %}
+          </div>
         </div>
+        {% if water_use %}
+        {% comment %}
+          Each figure below is read once, by accounting.services.parcel_water_use_months:
+          the lead figures are the table's foot, and the month cells are rounded so they
+          add to it. A figure that rounds to 0.00 prints as an empty cell, and the lines
+          under the figures each print only when they apply.
+        {% endcomment %}
+        <div class="statement-lead{% if 'surface' in enabled_modules and 'wells' in enabled_modules and related_wells %} statement-lead--four{% endif %}">
+          <div>
+            <div class="budget-seg-label">Crop ET</div>
+            <div class="budget-seg-value">{{ water_use.totals.et|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+            <p class="statement-lead-note">{{ parcel.area_acres|floatformat:2|intcomma }} acres</p>
+          </div>
+          {% if 'surface' in enabled_modules %}
+          <div>
+            <div class="budget-seg-label">Surface water delivered</div>
+            <div class="budget-seg-value">{{ water_use.totals.surface|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+            {% if serving_points %}
+            <p class="statement-lead-note">{% for pk, label in serving_points %}<a href="{% url 'surface:pod_detail' pk %}" class="prose-link">{{ label }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+            {% endif %}
+          </div>
+          {% endif %}
+          {% if 'wells' in enabled_modules and related_wells %}
+          <div>
+            <div class="budget-seg-label">Groundwater extraction</div>
+            <div class="budget-seg-value">{{ water_use.totals.groundwater|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+            <p class="statement-lead-note">{% for wip in related_wells %}<a href="{% url 'wells:detail' wip.well.pk %}" class="prose-link">{{ wip.well.name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+          </div>
+          {% endif %}
+          <div>
+            <div class="budget-seg-label">Effective precipitation</div>
+            <div class="budget-seg-value">{{ water_use.totals.precip|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+            {% if 'wells' in enabled_modules and not related_wells %}
+            <p class="statement-lead-note">No well on this use area</p>
+            {% endif %}
+          </div>
+        </div>
+        {% if water_use_lines.unmet or water_use_lines.fallow or water_use_lines.estimate or over_delivery_shown_af > 0 %}
+        <div class="statement-notes">
+          {% if water_use_lines.unmet %}
+          <p>{{ water_use_lines.unmet }}{% include "partials/_explainer_popout.html" with title="Water use recorded, no supply reported" text="This figure is the ETAW that recorded surface water did not meet on a field without a well, summed over the water year's calculation runs. OpenH2O never counts this water as pumping." link=wb_help_url link_label="How water balances work" %}</p>
+          {% endif %}
+          {% if water_use_lines.fallow %}
+          <p>{{ water_use_lines.fallow }}</p>
+          {% endif %}
+          {% if water_use_lines.estimate %}
+          <p>{{ water_use_lines.estimate }}</p>
+          {% endif %}
+          {% comment %} Delivery Settings can show canal water beyond the crop's use as its own line instead of a credit. {% endcomment %}
+          {% if over_delivery_shown_af > 0 %}
+          <p>Surface water in excess of ETAW came to {{ over_delivery_shown_af|floatformat:2|intcomma }} AF. OpenH2O neither credits it to the landowner nor charges it to {{ parcel.parcel_number }}.{% include "partials/_explainer_popout.html" with title="Surface water in excess of ETAW" text="An administrator set Delivery Settings to show surface water in excess of ETAW as its own line. OpenH2O records it with the month's calculation, and neither credits it to the landowner nor charges it to this field." link=wb_help_url link_label="How water balances work" %}</p>
+          {% endif %}
+        </div>
+        {% endif %}
+        <div class="statement-table-title">By month</div>
+        <table class="data-table text-sm statement-table">
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th class="th-right th-nowrap">Crop ET</th>
+              {% if 'surface' in enabled_modules %}<th class="th-right">Surface water delivered</th>{% endif %}
+              {% if 'wells' in enabled_modules and related_wells %}<th class="th-right">Groundwater extraction</th>{% endif %}
+              <th class="th-right">Effective precipitation</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in water_use.months %}
+            <tr>
+              <td><a href="{% url 'accounting:ledger_list' %}?q={{ parcel.parcel_number|urlencode }}&amp;start_date={{ m.month|date:'Y-m-d' }}&amp;end_date={{ m.last|date:'Y-m-d' }}" class="data-table-link">{{ m.month|date:"M Y" }}</a></td>
+              {% if m.fallow %}<td class="td-fallow">Fallow</td>{% else %}<td class="td-num">{% if m.et %}{{ m.et|floatformat:2|intcomma }}{% endif %}</td>{% endif %}
+              {% if 'surface' in enabled_modules %}<td class="td-num">{% if m.surface %}{{ m.surface|floatformat:2|intcomma }}{% endif %}</td>{% endif %}
+              {% if 'wells' in enabled_modules and related_wells %}<td class="td-num">{% if m.groundwater %}{{ m.groundwater|floatformat:2|intcomma }}{% endif %}</td>{% endif %}
+              <td class="td-num">{% if m.precip %}{{ m.precip|floatformat:2|intcomma }}{% endif %}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td class="tfoot-total">{{ balance_period.name }}</td>
+              <td class="td-num td-total">{{ water_use.totals.et|floatformat:2|intcomma }}</td>
+              {% if 'surface' in enabled_modules %}<td class="td-num td-total">{{ water_use.totals.surface|floatformat:2|intcomma }}</td>{% endif %}
+              {% if 'wells' in enabled_modules and related_wells %}<td class="td-num td-total">{{ water_use.totals.groundwater|floatformat:2|intcomma }}</td>{% endif %}
+              <td class="td-num td-total">{{ water_use.totals.precip|floatformat:2|intcomma }}</td>
+            </tr>
+          </tfoot>
+        </table>
+
+        {% comment %} Only a month with a well and no meter has a receipt
+           to show (where its estimated pumping came from), so only those months
+           link, and a field with none (no well, or every month metered) has no
+           block here at all. `receipt_periods` is parcel_receipt_periods(). {% endcomment %}
+        {% if receipt_periods %}
+        <div class="border-separator">
+          <div class="text-tertiary text-xs mb-sm">Estimated groundwater extraction, month by month:</div>
+          <div class="row-start" style="flex-wrap: wrap; gap: var(--space-xs);">
+            {% for period in receipt_periods %}
+            <a href="{% url 'accounting:calculation_run_detail' parcel.pk period %}" class="badge badge-blue">{{ period }}</a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        <div class="statement-foot">
+          <p>Acre-feet. {% if water_use_lines.efficiency %}{{ water_use_lines.efficiency }} {% endif %}A month opens its ledger entries. An empty cell is a month with nothing on record.</p>
+          <a href="{{ methods_help_url }}" class="text-tertiary back-link text-xs" style="white-space: nowrap;">Methods behind the numbers &rarr;</a>
+        </div>
+        {% else %}
+        <div class="alert-warning">
+          OpenH2O has not calculated crop ET for this use area in this water year. Recorded supplies:
+          <span class="text-supply">surface {{ consumptive_balance.supplies.surface|floatformat:2 }}</span> &middot;
+          <span class="text-supply">groundwater {{ consumptive_balance.supplies.groundwater|floatformat:2 }}</span> AF.
+        </div>
+        {% endif %}
       </div>
-      {% endif %}
-      <div class="statement-foot">
-        <p>Acre-feet. {% if water_use_lines.efficiency %}{{ water_use_lines.efficiency }} {% endif %}A month opens its ledger entries. An empty cell is a month with nothing on record.</p>
-        <a href="{{ methods_help_url }}" class="text-tertiary back-link text-xs" style="white-space: nowrap;">Methods behind the numbers &rarr;</a>
+
+      <div class="card-raised">
+        <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+          <h2 class="section-header-flush">Recent ledger entries</h2>
+          <div class="row-start">
+            <a href="{% url 'accounting:ledger_list' %}?q={{ parcel.parcel_number }}"
+               class="text-tertiary back-link text-xs">
+              View all
+            </a>
+            {% if user_can_write %}<a href="{% url 'accounting:ledger_create' %}?parcel={{ parcel.pk }}"
+               class="btn-primary btn-sm">
+              + Add entry
+            </a>{% endif %}
+          </div>
+        </div>
+        {% comment %}
+          The card names its period, and its Amount column explains its minus sign.
+
+          The card SAYS which period it is showing, so a reader can see that
+          it agrees with the water use card above it rather than having to trust
+          that it does. The query behind it is bounded by the same period
+          (`parcels/views.py`), so these rows are not the
+          parcel's whole history, which routinely belonged to a different year than
+          the balance.
+
+          And the Amount column prints 241.56 beside -36.55, so the card says
+          which direction a minus sign means. The sentence is
+          carried VERBATIM in meaning from the Use Ledger, not reworded: one
+          quantity, one wording, wherever it is shown (copy rule 12).
+
+          The Use Ledger's own facts
+          line above its table is two short facts at 14px, and this card's copy
+          matches it: same
+          two clauses, same wording, both places. Its Water column is the
+          same merged column the ledger uses (the
+          `ledger_row_words` filter, loaded from `accounting_extras` and
+          backed by `accounting/ledger_words.py::ledger_row_words`), so a row
+          reads the same way on both screens instead of a plain badge word
+          here and the merged wording there.
+          `tests/test_parcel_detail.py` asserts the facts line's new wording;
+          `tests/test_ledger_navigation.py` asserts the ledger's copy of the
+          same text.
+
+          The unit moved off the column header into this line with it, because
+          the card has one numeric column and rule 4 states a single-unit
+          table's unit once.
+        {% endcomment %}
+        <p class="text-secondary text-base" style="margin: 0 0 var(--space-md);">{% if balance_period %}{{ balance_period.name }} &middot; {% endif %}Acre-feet. Negative amounts are deliveries, pumping and estimates of use; positive amounts are credits.</p>
+        {% if recent_ledger %}
+        <table class="data-table text-sm">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th class="th-right">Amount</th>
+              <th>Water</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry in recent_ledger %}
+            <tr>
+              <td class="text-secondary">{{ entry.effective_date|date:"M d, Y" }}</td>
+              <td class="td-num {% if entry.amount_acre_feet >= 0 %}text-supply{% endif %}">{{ entry.amount_acre_feet|floatformat:2 }}</td>
+              <td class="text-tertiary">{{ entry|ledger_row_words }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+          {% comment %}
+            "yet" was true when this card showed the parcel's whole history. Now
+            that it is bounded by the period, an empty card means empty
+            FOR THIS YEAR — the use area may well have entries in another, and
+            the period control above is how a reader gets to them.
+          {% endcomment %}
+          <p class="text-tertiary text-base">No ledger entries{% if balance_period %} for {{ balance_period.name }}{% endif %}.</p>
+        {% endif %}
       </div>
-      {% else %}
-      <div class="alert-warning">
-        OpenH2O has not calculated crop ET for this use area in this water year. Recorded supplies:
-        <span class="text-supply">surface {{ consumptive_balance.supplies.surface|floatformat:2 }}</span> &middot;
-        <span class="text-supply">groundwater {{ consumptive_balance.supplies.groundwater|floatformat:2 }}</span> AF.
-      </div>
-      {% endif %}
+
     </div>
+
+    {# Right column: the map, the use area's details, its zones and wells #}
     <div class="page-stack">
 
       {% comment %}
@@ -237,15 +321,6 @@
         </div>
       </div>
 
-    </div>
-  </div>
-
-  {# SUPPORTING INFO: zones and wells (left) + ledger (right). #}
-  <div class="page-grid-2col">
-
-    {# Left column: zones and wells #}
-    <div class="page-stack">
-
       {# Zone Memberships card #}
       <div class="card-raised">
         <h2 class="section-header mb-md">Zone memberships</h2>
@@ -280,88 +355,6 @@
           <p class="text-tertiary text-base">No wells linked to this parcel.</p>
         {% endif %}
       </div>{% endif %}
-
-    </div>
-
-    {# Right column: ledger activity #}
-    <div class="page-stack">
-
-      <div class="card-raised">
-        <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-          <h2 class="section-header-flush">Recent ledger entries</h2>
-          <div class="row-start">
-            <a href="{% url 'accounting:ledger_list' %}?q={{ parcel.parcel_number }}"
-               class="text-tertiary back-link text-xs">
-              View all
-            </a>
-            {% if user_can_write %}<a href="{% url 'accounting:ledger_create' %}?parcel={{ parcel.pk }}"
-               class="btn-primary btn-sm">
-              + Add entry
-            </a>{% endif %}
-          </div>
-        </div>
-        {% comment %}
-          The card names its period, and its Amount column explains its minus sign.
-
-          The card SAYS which period it is showing, so a reader can see that
-          it agrees with the water use card above it rather than having to trust
-          that it does. The query behind it is bounded by the same period
-          (`parcels/views.py`), so these rows are not the
-          parcel's whole history, which routinely belonged to a different year than
-          the balance.
-
-          And the Amount column prints 241.56 beside -36.55, so the card says
-          which direction a minus sign means. The sentence is
-          carried VERBATIM in meaning from the Use Ledger, not reworded: one
-          quantity, one wording, wherever it is shown (copy rule 12).
-
-          The Use Ledger's own facts
-          line above its table is two short facts at 14px, and this card's copy
-          matches it: same
-          two clauses, same wording, both places. Its Water column is the
-          same merged column the ledger uses (the
-          `ledger_row_words` filter, loaded from `accounting_extras` and
-          backed by `accounting/ledger_words.py::ledger_row_words`), so a row
-          reads the same way on both screens instead of a plain badge word
-          here and the merged wording there.
-          `tests/test_parcel_detail.py` asserts the facts line's new wording;
-          `tests/test_ledger_navigation.py` asserts the ledger's copy of the
-          same text.
-
-          The unit moved off the column header into this line with it, because
-          the card has one numeric column and rule 4 states a single-unit
-          table's unit once.
-        {% endcomment %}
-        <p class="text-secondary text-base" style="margin: 0 0 var(--space-md);">{% if balance_period %}{{ balance_period.name }} &middot; {% endif %}Acre-feet. Negative amounts are deliveries, pumping and estimates of use; positive amounts are credits.</p>
-        {% if recent_ledger %}
-        <table class="data-table text-sm">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th class="th-right">Amount</th>
-              <th>Water</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for entry in recent_ledger %}
-            <tr>
-              <td class="text-secondary">{{ entry.effective_date|date:"M d, Y" }}</td>
-              <td class="td-num {% if entry.amount_acre_feet >= 0 %}text-supply{% endif %}">{{ entry.amount_acre_feet|floatformat:2 }}</td>
-              <td class="text-tertiary">{{ entry|ledger_row_words }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-        {% else %}
-          {% comment %}
-            "yet" was true when this card showed the parcel's whole history. Now
-            that it is bounded by the period, an empty card means empty
-            FOR THIS YEAR — the use area may well have entries in another, and
-            the period control above is how a reader gets to them.
-          {% endcomment %}
-          <p class="text-tertiary text-base">No ledger entries{% if balance_period %} for {{ balance_period.name }}{% endif %}.</p>
-        {% endif %}
-      </div>
 
     </div>
   </div>

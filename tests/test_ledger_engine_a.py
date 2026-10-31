@@ -99,7 +99,7 @@ def test_the_field_page_names_the_point_and_makes_no_delivery_up(ref):
     page = Client()
     page.force_login(User.objects.create_user(username="reader", password="x", is_active=True))
     body = page.get(reverse("parcels:detail", args=[field.pk])).content.decode()
-    card = body.split("statement-head", 1)[1].split("page-grid-2col", 1)[0]
+    card = body.split("statement-head", 1)[1].split("Recent ledger entries", 1)[0]
     assert "X headgate" in card
     assert "No canal delivery is recorded" not in body
     assert "AF estimated" not in body

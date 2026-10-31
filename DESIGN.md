@@ -270,8 +270,8 @@ beside a taller card both stretched ("mostly an empty dark box") and at its cont
 large dead gap under the stats panel"). Two readers contradicting each other on one element is the
 stop rule: the shell and the matched row stay. The field page's card-beside-map grid, which
 stretched the map to the card's height, was withdrawn on 2026-10-31: once the card held a month
-table, the stretched map was a narrow strip. The map now keeps its own 380px height above the Use
-area card, the two beside the Water use card (`.page-grid-field`).
+table, the stretched map was a narrow strip. The page is now two columns (`.page-grid-field`): the
+Water use card and the ledger; the map at its own 380px height, the Use area card, zones and wells.
 
 ### Casing convention
 

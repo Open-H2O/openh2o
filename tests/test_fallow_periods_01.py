@@ -697,7 +697,7 @@ def card_text(body):
     import html as html_lib
     import re
 
-    card = body.split("statement-head", 1)[1].split("page-grid-2col", 1)[0]
+    card = body.split("statement-head", 1)[1].split("Recent ledger entries", 1)[0]
     return " ".join(html_lib.unescape(re.sub(r"<[^>]+>", " ", card)).split())
 
 

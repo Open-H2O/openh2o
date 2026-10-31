@@ -583,7 +583,7 @@ def budget_segment(html, label):
 
 def water_use_card(html):
     """The markup of the Water use card, from its head to the use area details beside the ledger."""
-    return html.split("statement-head", 1)[1].split("page-grid-2col", 1)[0]
+    return html.split("statement-head", 1)[1].split("Recent ledger entries", 1)[0]
 
 
 def test_parcel_pane_states_one_subtraction_with_the_badge_inside_it():

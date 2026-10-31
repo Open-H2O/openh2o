@@ -4983,12 +4983,14 @@ details[open] > summary .disclosure-mark {
 }
 
 /* -- The use area page's top -------------------------------------------- */
-/* The Water use card (three parts) beside a column of the map at its own
-   380px and the Use area card (two parts), each card its content's height.
-   The map is not stretched to the Water use card's height: beside a card
-   holding a month table that made it a narrow strip (2026-10-31). Below a
-   1,150px pane the Water use card's figures no longer fit three fifths of the
-   row, so the top is one column: the card, the map, the Use area card. */
+/* Two columns, each a stack of cards at their content's height: the Water
+   use card and the ledger (three parts); the map at its own 380px, the Use
+   area card, zones and wells (two parts). Columns, not rows, so no card waits
+   for a taller neighbour and no gap opens between them (2026-10-31: a row of
+   the card beside the map left a hole under the card). The map is not
+   stretched to the Water use card's height: beside a month table that made
+   it a narrow strip. Below a 1,150px pane the Water use card's figures no
+   longer fit three fifths of the row, so the columns stack. */
 .page-grid-field {
     display: grid;
     grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
