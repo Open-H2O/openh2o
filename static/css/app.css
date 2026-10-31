@@ -4982,6 +4982,25 @@ details[open] > summary .disclosure-mark {
     vertical-align: top;
 }
 
+/* -- The use area page's top -------------------------------------------- */
+/* The Water use card (three parts) beside a column of the map at its own
+   380px and the Use area card (two parts), each card its content's height.
+   The map is not stretched to the Water use card's height: beside a card
+   holding a month table that made it a narrow strip (2026-10-31). Below a
+   1,150px pane the Water use card's figures no longer fit three fifths of the
+   row, so the top is one column: the card, the map, the Use area card. */
+.page-grid-field {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    gap: var(--space-lg);
+    align-items: start;
+}
+@container (max-width: 1150px) {
+    .page-grid-field {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
 /* ======================================================================
    The layout rules. Six shared rules, each designed on one page and
    checked by a fresh read before it was applied.
