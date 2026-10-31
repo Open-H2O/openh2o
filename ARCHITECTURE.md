@@ -293,6 +293,8 @@ For a new page in the accounting app, as an example:
 4. A sidebar link, if it needs one: a `NavEntry` in the module's entry in `core/modules.py`. If the
    page opens a write flow, give the entry `writes=True` so a viewer's sidebar leaves it out.
    `tests/test_modules.py` pins the number of module sidebar links, so that count changes too.
+   A page that sets something for the whole site takes `section=SECTION_SETTINGS` instead: it is
+   listed on the Settings page, behind the Settings button in the top bar, and not in the sidebar.
 5. A test in `tests/`.
 6. If the page's URL name contains `import` or `onboard`, the "Option B" section of
    `docs/AI-OPERATOR-GUIDE.md` must name its path:
