@@ -375,6 +375,13 @@
 
     var geojson = JSON.parse(dataEl.textContent);
 
+    // Beside the tall Water use card the map runs past the first screen, so the
+    // parcel is framed in the map's top 560px rather than its middle.
+    function frame() {
+      var extra = Math.max(0, host.clientHeight - 560);
+      return { padding: { top: 32, left: 32, right: 32, bottom: 32 + extra }, maxZoom: 16, duration: 0 };
+    }
+
     // Flatten every vertex to frame the parcel.
     var coords = [];
     geojson.features.forEach(function (f) {
@@ -398,7 +405,8 @@
       // UPDATE the existing map in place — no rebuild, no flash.
       map.getSource('parcel').setData(geojson);
       map.resize();  // card may have been display:none (zeroes the canvas)
-      if (bounds) map.fitBounds(bounds, { padding: 32, maxZoom: 16, duration: 0 });
+      window._parcelPaneBounds = bounds;
+      if (bounds) map.fitBounds(bounds, frame());
       return;
     }
     if (map) return;  // a map is mid-build; its load handler will use current data
@@ -419,7 +427,12 @@
     // width after build paints blank on the right, so it re-measures its host
     // whenever the host's size changes, not only when the window's does.
     if (window.ResizeObserver) {
-      new ResizeObserver(function () { map.resize(); }).observe(host);
+      // The host grows to the card's height after the map is built, so the frame
+      // is set again for the new height.
+      new ResizeObserver(function () {
+        map.resize();
+        if (map.__oh2oReady && window._parcelPaneBounds) map.fitBounds(window._parcelPaneBounds, frame());
+      }).observe(host);
     }
     map.on('load', function () {
       map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
@@ -449,11 +462,13 @@
           gj.features.forEach(function (f) { if (f.geometry && f.geometry.coordinates) f.geometry.coordinates.forEach(function (poly) { poly.forEach(function (ring) { ring.forEach(function (pt) { cs.push(pt); }); }); }); });
           if (cs.length) {
             var lo = cs.map(function (c) { return c[0]; }), la = cs.map(function (c) { return c[1]; });
-            map.fitBounds([[Math.min.apply(null, lo), Math.min.apply(null, la)], [Math.max.apply(null, lo), Math.max.apply(null, la)]], { padding: 32, maxZoom: 16, duration: 0 });
+            window._parcelPaneBounds = [[Math.min.apply(null, lo), Math.min.apply(null, la)], [Math.max.apply(null, lo), Math.max.apply(null, la)]];
+            map.fitBounds(window._parcelPaneBounds, frame());
           }
         } catch (e) {}
       } else if (bounds) {
-        map.fitBounds(bounds, { padding: 32, maxZoom: 16, duration: 0 });
+        window._parcelPaneBounds = bounds;
+        map.fitBounds(bounds, frame());
       }
       map.__oh2oReady = true;
     });
