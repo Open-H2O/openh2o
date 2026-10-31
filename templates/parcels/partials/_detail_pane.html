@@ -134,6 +134,20 @@
           </tfoot>
         </table>
 
+        {% comment %} The year's balance, the account page's and the Dashboard's figure
+           (supplies minus crop ET and the pumped water not consumed), coloured by its sign
+           and never named Surplus. `balance_line` is parcels.views._balance_line(). {% endcomment %}
+        <div class="statement-table-title">Water balance</div>
+        <div class="statement-balance">
+          <span><span class="statement-balance-label">Supplies</span> <b>{{ balance_line.supplies|floatformat:2|intcomma }}</b> <span class="statement-balance-unit">AF</span></span>
+          <span class="statement-balance-op">&minus;</span>
+          <span><span class="statement-balance-label">Uses</span> <b>{{ balance_line.uses|floatformat:2|intcomma }}</b> <span class="statement-balance-unit">AF</span></span>
+          <span class="statement-balance-op">=</span>
+          <span><span class="statement-balance-label">Balance</span> <b class="statement-balance-value{% with cls=balance_line.balance|balance_class %}{% if cls %} {{ cls }}{% endif %}{% endwith %}">{{ balance_line.balance|floatformat:2|intcomma }}</b> <span class="statement-balance-unit">AF</span></span>
+          {% include "partials/_explainer_popout.html" with title="Water balance" text="This use area's supplies minus its uses for the water year: crop ET and the pumped water it did not consume. The account page and the Dashboard show the same figure." link=wb_help_url link_label="How water balances work" %}
+        </div>
+        <p class="statement-balance-note">{{ balance_line.sentence }}</p>
+
         {% comment %} Only a month with a well and no meter has a receipt
            to show (where its estimated pumping came from), so only those months
            link, and a field with none (no well, or every month metered) has no

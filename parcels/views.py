@@ -197,7 +197,7 @@ def _parcel_detail_context(parcel, period_id=None):
     all_periods = list(ReportingPeriod.objects.order_by("-start_date"))
     balance_period = _balance_period(parcel, all_periods, period_id)
 
-    # Only the no-run branch reads the consumptive balance (its recorded supplies).
+    # The account page's balance: the card's Water balance line and the no-run branch's recorded supplies.
     consumptive_balance = parcel_consumptive_balance(parcel, balance_period)
     # Months this parcel was engine-run: none means ET was never computed, which the
     # card says in a sentence rather than printing a table of zeros.
@@ -231,6 +231,7 @@ def _parcel_detail_context(parcel, period_id=None):
         "consumptive_balance": consumptive_balance,
         "water_use": water_use,
         "water_use_lines": water_use_lines,
+        "balance_line": _balance_line(consumptive_balance, water_use, has_well),
         "serving_points": _serving_points(parcel),
         "receipt_periods": receipt_periods,
         "over_delivery_shown_af": over_delivery_shown_af,
@@ -382,6 +383,28 @@ def _water_use_lines(parcel, balance_period, water_use, has_well):
     lines["estimate"] = _estimate_sentence(water_use, has_well)
     lines["efficiency"] = _efficiency_sentence(parcel, water_use)
     return lines
+
+
+def _balance_line(consumptive_balance, water_use, has_well):
+    """The Water use card's balance line: the account page's figures and one sentence naming each side."""
+    if water_use is None:
+        return None
+    supplies = ["effective precipitation"]
+    if has_well:
+        supplies.insert(0, "groundwater extraction")
+    if is_enabled("surface"):
+        supplies.insert(0, "surface water delivered")
+    named = supplies[0] if len(supplies) == 1 else f"{', '.join(supplies[:-1])} and {supplies[-1]}"
+    not_consumed = consumptive_balance["water_not_consumed"].quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    uses = "crop ET"
+    if not_consumed > 0:
+        uses = f"crop ET and the pumped water not consumed, {not_consumed:,.2f} AF"
+    return {
+        "supplies": consumptive_balance["supply_total"],
+        "uses": consumptive_balance["uses_total"],
+        "balance": consumptive_balance["net_vs_supply"],
+        "sentence": f"Supplies are {named}. Uses are {uses}.",
+    }
 
 
 def _balance_period(

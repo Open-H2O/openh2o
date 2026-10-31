@@ -5238,6 +5238,39 @@ details[open] > summary .disclosure-mark {
     color: var(--color-text-tertiary);
     font-variant-numeric: tabular-nums;
 }
+/* The year's balance: one band in the table foot's colour, the figures at table size. */
+.statement-balance {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-xs) var(--space-md);
+    padding: 12px 17px;
+    border-radius: 6px;
+    background-color: color-mix(in srgb, var(--color-elevated) 85%, transparent);
+    font-variant-numeric: tabular-nums;
+}
+.statement-balance b {
+    font-weight: 600;
+}
+.statement-balance b.statement-balance-value {
+    font-weight: 700;
+}
+.statement-balance-label {
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+    margin-right: 6px;
+}
+.statement-balance-unit,
+.statement-balance-op {
+    color: var(--color-text-tertiary);
+    font-size: 0.75rem;
+}
+.statement-balance-note {
+    margin: 6px 0 0;
+    max-width: 75ch;
+    color: var(--color-text-tertiary);
+    font-size: 0.8rem;
+}
 .statement-foot {
     margin-top: var(--space-md);
     padding-top: var(--space-sm);
