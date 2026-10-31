@@ -22,6 +22,7 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.test import Client
 from django.urls import reverse
+from django.utils.html import strip_tags
 
 from accounting.models import AccountCredit, AllocationCarryover, WaterAccount, WaterAccountParcel
 from core.models import SiteConfig
@@ -102,7 +103,8 @@ def test_the_site_page_names_the_account_that_is_credited(d3, client):
     d3["site"].water_account = d3["account"]
     d3["site"].save()
     body = client.get(reverse("recharge:detail", args=[d3["site"].pk])).content.decode()
-    assert "Recharge here is credited to D3 District." in body
+    # The account's name is a link to its page, so the sentence is read as text.
+    assert "Recharge here is credited to D3 District." in strip_tags(body)
 
 
 def test_the_site_form_names_the_account(d3, client):
