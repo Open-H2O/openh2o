@@ -2811,6 +2811,19 @@ html { color-scheme: dark; }
     display: flex;
     align-items: center;
 }
+/* In a panel 700 to 950px wide (an account or zone panel at 1,730, any panel at
+   1,153 and 1,265) the full margins pushed a figure up to a few px across its
+   divider (staging sweep, 2026-11-01), up to 10px at 1,153; the pill keeps 4px
+   either side and a narrower padding, at the same type size. */
+@container (max-width: 950px) {
+    .budget-breakdown-group--kinds .budget-breakdown-row > .kind-cell {
+        margin: 0 var(--space-xs);
+    }
+    .budget-breakdown-group--kinds .kind-pill {
+        min-width: 4.4em;
+        padding: 0 0.35em;
+    }
+}
 .kind-pill {
     display: inline-flex;
     justify-content: center;

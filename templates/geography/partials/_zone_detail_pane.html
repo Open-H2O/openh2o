@@ -127,7 +127,7 @@
                 {% comment %} The Used figure by kind of water, each line with its pill; they add to the figure above. {% endcomment %}
                 <div class="budget-breakdown-group budget-breakdown-group--kinds">
                   <div class="budget-breakdown-title">Used by source</div>
-                  {% include "accounting/partials/_supply_kind_rows.html" with label=b.water_type.name lines=b.used_lines total=b.used %}
+                  {% include "accounting/partials/_supply_kind_rows.html" with label=b.is_groundwater|yesno:"Groundwater,Surface" lines=b.used_lines total=b.used %}
                 </div>
                 <div class="budget-breakdown-group">
                   <div class="budget-breakdown-title">Recorded in</div>
