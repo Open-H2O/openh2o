@@ -2329,7 +2329,7 @@ labels = [
   { text = "Glossary", where = "templates/help/glossary.html" },
   { text = "How water balances work", where = "templates/help/water_balances.html" },
 ]
-checked_at = "a5905879"
+checked_at = "9f909215"
 
 [[section]]
 document = "templates/about_demonstration_data.html"
@@ -2534,7 +2534,7 @@ files = [
   "parcels/services.py",
 ]
 labels = []
-checked_at = "a5905879"
+checked_at = "9f909215"
 
 [[section]]
 document = "templates/help/water_balances.html"
