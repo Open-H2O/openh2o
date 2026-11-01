@@ -2824,6 +2824,13 @@ html { color-scheme: dark; }
     display: flex;
     align-items: center;
 }
+/* Every pill in a breakdown fills its cell, so all of them take the widest one's
+   width (Estimated) and the column stays as wide as it was. With min-width alone
+   Metered and Unknown drew narrower than Estimated in a narrow panel (staging,
+   2026-11-01). */
+.budget-breakdown-group--kinds .kind-cell > .kind-pill {
+    flex: 1 1 auto;
+}
 /* In a panel 700 to 950px wide (an account or zone panel at 1,730, any panel at
    1,153 and 1,265) the full margins pushed a figure up to a few px across its
    divider (staging sweep, 2026-11-01), up to 10px at 1,153; the pill keeps 4px
