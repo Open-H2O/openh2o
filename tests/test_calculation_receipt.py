@@ -297,7 +297,7 @@ class TestTheReceipt:
         html = _page(parcel, "2026-07")
         assert (
             '<div class="budget-seg-caption">Receipt test pivot, '
-            "the use area's irrigation method</div>"
+            "the irrigation method on file</div>"
         ) in html
 
     def test_a_run_from_before_extraction_was_stamped_stops_at_etaw_met_by_groundwater(self):

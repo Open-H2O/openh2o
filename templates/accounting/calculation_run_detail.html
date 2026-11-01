@@ -108,7 +108,7 @@
           <div class="budget-seg-caption">delivery &times; irrigation efficiency, up to ETAW</div>
           <div class="budget-breakdown-group">
             {% if run.surface_delivered_af is not None %}<div class="budget-breakdown-row"><span>Delivered{% if delivery_split %}<span class="budget-breakdown-note">share of the headgate total</span>{% endif %}</span><b title="{{ run.surface_delivered_af }} acre-feet">{{ run.surface_delivered_af|floatformat:2|intcomma }}</b></div>{% endif %}
-            {% if irrigation_efficiency_pct is not None %}<div class="budget-breakdown-row"><span>Irrigation efficiency<span class="budget-breakdown-note">{% if irrigation_efficiency_source == "method" %}{% if irrigation_method_name %}{{ irrigation_method_name }}, the use area's irrigation method{% else %}the use area's irrigation method{% endif %}{% else %}Delivery Settings default{% endif %}</span></span><b>{{ irrigation_efficiency_pct|floatformat:0 }}%</b></div>{% endif %}
+            {% if irrigation_efficiency_pct is not None %}<div class="budget-breakdown-row"><span>Irrigation efficiency<span class="budget-breakdown-note">{% if irrigation_efficiency_source == "method" %}{% if irrigation_method_name %}{{ irrigation_method_name }}, the irrigation method on file{% else %}the irrigation method on file{% endif %}{% else %}Delivery Settings default{% endif %}</span></span><b>{{ irrigation_efficiency_pct|floatformat:0 }}%</b></div>{% endif %}
             {% if run.over_delivery_af > 0 %}<div class="budget-breakdown-row"><span>Surface water in excess of ETAW{% if run.over_delivery_treatment == "named_line" %}<span class="budget-breakdown-note">shown on the use area's page as its own line</span>{% endif %}</span><b title="{{ run.over_delivery_af }} acre-feet">{{ run.over_delivery_af|floatformat:2|intcomma }}</b></div>
             {% if run.over_delivery_treatment == "credited" and over_delivery_left_af is not None %}<div class="budget-breakdown-row"><span>Credited to this use area</span><b>{{ run.over_delivery_credited_af|floatformat:2|intcomma }}</b></div>
             <div class="budget-breakdown-row"><span>Left in the basin ({{ over_delivery_share_pct|floatformat:0 }}%)</span><b>{{ over_delivery_left_af|floatformat:2|intcomma }}</b></div>{% endif %}{% endif %}
@@ -139,7 +139,7 @@
           <div class="budget-seg-label">Irrigation efficiency</div>
           {% if gw_efficiency_pct is not None %}
           <div class="budget-seg-value">{{ gw_efficiency_pct|floatformat:0 }}%</div>
-          {% if gw_efficiency_source == "method" %}<div class="budget-seg-caption">{% if gw_efficiency_method_name %}{{ gw_efficiency_method_name }}, the use area's irrigation method{% else %}the use area's irrigation method{% endif %}</div>{% elif gw_efficiency_source == "agency" %}<div class="budget-seg-caption">Delivery Settings default</div>{% endif %}
+          {% if gw_efficiency_source == "method" %}<div class="budget-seg-caption">{% if gw_efficiency_method_name %}{{ gw_efficiency_method_name }}, the irrigation method on file{% else %}the irrigation method on file{% endif %}</div>{% elif gw_efficiency_source == "agency" %}<div class="budget-seg-caption">Delivery Settings default</div>{% endif %}
           {% else %}
           <div class="budget-seg-value text-tertiary">&ndash;</div>
           {% endif %}
