@@ -85,6 +85,13 @@ docker compose exec web python manage.py import_boundary --file /tmp/boundary.ge
 
 ## 3. File imports
 
+Five import screens take a file in two steps: the preview, then Import. OpenH2O
+keeps the uploaded file on the server between the two, so a file is limited by
+its size (25 MB), not by its number of rows. Import runs in a background process,
+and the screen shows the result when it finishes. An upload waits at most a day
+for Import: after that, upload the file again. OpenH2O deletes the stored file
+once Import finishes, whether or not it succeeds.
+
 ### Parcels: `import_parcels`
 
 Wells, accounts and the ledger are all attached to parcels, so parcels come first.
@@ -152,7 +159,7 @@ and all three open the same import screen (`/infrastructure/import/?type=well`,
 `diversion` or `recharge_site`). Each import screen links to the others under
 "Importing something else?", so the storage pond import
 (`/infrastructure/import/?type=storage`) is one link away when the recharge module is on. The screen reads a CSV file, a
-GeoJSON file, a zipped shapefile or a KML file of up to 500 rows and 25 MB. A mapping
+GeoJSON file, a zipped shapefile or a KML file of up to 25 MB. A mapping
 step shows the column OpenH2O matched to each field, and you can change any match
 before you import.
 
@@ -178,7 +185,7 @@ right on the site first, so import the water rights before the points of diversi
 The Import button on the Water Rights page opens the import screen
 (`/surface/rights/import/`). It reads the CSV list of water rights exported from
 eWRIMS, the State Water Resources Control Board's water rights system. A file can
-hold up to 500 rows and 25 MB.
+be up to 25 MB.
 
 | Column | Required | Notes |
 |---|---|---|
@@ -201,8 +208,8 @@ can add it on the right's edit page (`/surface/rights/<id>/edit/`).
 
 You can import a file of monthly diversion volumes through Import diversion records
 on the Surface Diversions page (`/surface/diversion/import/`) or with the
-`import_diversion_records` command. The file is a CSV file of up to 2,000 rows and
-25 MB. OpenH2O reads two layouts and tells them apart by their column headings:
+`import_diversion_records` command. The file is a CSV file, up to 25 MB on the
+screen. OpenH2O reads two layouts and tells them apart by their column headings:
 
 | Layout | Recognized by | How OpenH2O reads it |
 |---|---|---|
@@ -222,7 +229,7 @@ row so you can add a point column or choose a whole-file point, then import agai
 
 OpenH2O converts units at 325,851 gallons per acre-foot, 748.05 gallons per CCF,
 1,000,000 gallons per MG and 1.9835 acre-feet per cfs-day, and the preview names
-each row it converted.
+the first 200 rows it converted and counts the rest.
 
 The report-year setting is on the Delivery Settings page, under Diversion records.
 When a Water Use Reported file has no `calendar_month` column, OpenH2O uses the
@@ -251,8 +258,9 @@ months in a water year that has been finalized.
 In the mapping step you also choose the measurement method and the data state for
 every record in the file. By default the method is left blank and the data state is
 provisional. Choose a different data state when the file holds figures that have
-already been published. The preview shows every conversion, every combined month,
-every row without a point and every error before anything is saved. The import
+already been published. Before anything is saved, the preview shows each error
+message with its rows, the first 200 conversions and combined months, and the first
+500 rows without a point, and counts any it does not list. The import
 reports the same counts and assigns each record to the water year that holds its
 month.
 
@@ -328,7 +336,7 @@ docker compose exec web python manage.py import_ledger_csv /tmp/ledger.csv \
 
 To import a lab results file, use the Import lab results button on the Sample
 Results page (`/drinking/import/`). There is no command for lab results. The file
-can be a .csv, .tab or .txt file of up to 5,000 rows and 25 MB, and OpenH2O works
+can be a .csv, .tab or .txt file of up to 25 MB, and OpenH2O works
 out a .txt file's separator by reading it. California's Division of Drinking Water
 publishes lab results in its Safe Drinking Water Information System (SDWIS) files.
 They are tab-separated files in zip archives, with one file for each span of years,
@@ -361,7 +369,7 @@ with them.
 
 You can import a file of a water system's monthly production with the Import button
 on the Production page (`/drinking/production/import/`) or with the
-`import_production` command. The file is a CSV file of up to 2,000 rows and 25 MB.
+`import_production` command. The file is a CSV file, up to 25 MB on the screen.
 OpenH2O reads two layouts and tells them apart by their column headings:
 
 | Layout | Recognized by | How OpenH2O reads it |

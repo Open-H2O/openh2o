@@ -21,7 +21,8 @@ per account. It runs in Docker Compose (`docker-compose.yml`): a `web` container
   Docker.
 - **No background job queue (such as Celery) and no Redis.** The platform is designed for a small
   server with 2 to 4 GB of memory (`config/settings/base.py`). Work longer than a request, such as
-  the calculation, runs as its own `manage.py` process (see "The calculation" below), and
+  the calculation and a file import's commit, runs as its own `manage.py` process (see "The
+  calculation" below; an import runs `run_pending_import`, `core/pending_imports.py`), and
   scheduled work runs from cron (`crontab.txt`, installed by `make install-cron`).
 - **Caddy in front** (`Caddyfile`). It answers at the address in `OPENH2O_SITE_ADDRESS` from `.env`.
   Unset, that is port 80 at any address over plain HTTP, for a site reached only from this computer or

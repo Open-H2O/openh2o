@@ -726,5 +726,5 @@ def test_no_import_page_names_a_row_cap(auth_client, route):
 
     body = auth_client.get(url).content.decode()
 
-    assert not re.search(r"up to [\d,]+ (rows|map features)", body, re.I)
-    assert not re.search(r"[\d,]+ rows per file", body, re.I)
+    assert not re.search(r"up to [\d,]+ (rows|records|map features)", body, re.I)
+    assert not re.search(r"[\d,]+ (rows|records) per file", body, re.I)

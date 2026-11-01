@@ -25,9 +25,9 @@ import zipfile
 
 from django.contrib.gis.gdal import DataSource, GDALException
 
-# Hard byte ceilings so an oversized or zip-bomb upload can't exhaust the small
-# VPS (2-4GB) before any row cap is even reached; a row cap is checked only
-# AFTER a full parse, so it is no defense against a 5GB file. MAX_UPLOAD_BYTES
+# Hard byte ceilings so an oversized or zip-bomb upload can't exhaust a small
+# server's memory. They are checked before any parse; the import pages have no
+# row cap, so these are the only bound on a file's size. MAX_UPLOAD_BYTES
 # bounds the raw uploaded file; MAX_EXTRACTED_BYTES bounds the total
 # uncompressed bytes a zip is allowed to expand to (a small zip can decompress
 # to gigabytes).

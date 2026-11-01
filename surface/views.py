@@ -1137,9 +1137,9 @@ def parse_stored_diversions(pending):
 def diversion_import_preview(request):
     """Parse the upload (or re-run with changed settings) and show the
 
-    mapping step: the whole-file point, method and data state, every
-    conversion, every combined month, every unresolved row and every error
-    -- before anything is written (dry_run=True throughout). The first call
+    mapping step: the whole-file point, method and data state, the
+    conversions, combined months, unresolved rows and errors (long lists
+    capped, with a count of the rest), before anything is written (dry_run=True throughout). The first call
     saves the upload; a settings change posts the same token and re-reads the
     stored file.
     """
