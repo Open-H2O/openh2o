@@ -125,7 +125,6 @@ SETTINGS_EXPLAINED_WORDS: dict = {
     "Fixed percentage": "Fraction",
     "Soil moisture storage": "Soil storage (in)",
     "Lowest remainder": "Floor (AF)",
-    "Unused allocation at year-end": "doesn't use its full allocation by the end of the water year",
 }
 
 #: (document, name, reason). A name here is not reported for that document.

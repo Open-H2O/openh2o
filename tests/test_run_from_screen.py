@@ -362,7 +362,7 @@ def test_editing_a_diversion_record_moves_the_split_and_says_so(world, full_effi
     own = ParcelLedger.objects.get(pk=world.own.pk)
     assert own.amount_acre_feet == Decimal("-4.0000")  # field A's own record is never touched
     assert (
-        "OpenH2O is recalculating the fields this water serves for January 2024."
+        "OpenH2O is recalculating the use areas this water serves for January 2024."
         in response.content.decode()
     )
 
@@ -387,7 +387,7 @@ def test_creating_a_diversion_record_recalculates_its_month(world, full_efficien
     assert sorted(split) == ["RA-A", "RA-B", "RA-C"]
     assert sum(split.values()) == Decimal("-25.0000")
     assert (
-        "OpenH2O is recalculating the fields this water serves for February 2024."
+        "OpenH2O is recalculating the use areas this water serves for February 2024."
         in response.content.decode()
     )
 
@@ -407,7 +407,7 @@ def test_deleting_a_diversion_record_clears_the_months_divided_up_rows(world, fu
     own = ParcelLedger.objects.get(pk=world.own.pk)
     assert own.amount_acre_feet == Decimal("-4.0000")
     assert (
-        "OpenH2O is recalculating the fields this water serves for January 2024."
+        "OpenH2O is recalculating the use areas this water serves for January 2024."
         in response.content.decode()
     )
 
@@ -462,7 +462,7 @@ def test_a_diversion_import_recalculates_the_months_it_created(world, full_effic
     assert DiversionRecord.objects.filter(point_of_diversion=world.pod).count() == 2
     assert _saved("diversion_saved").get().months == ["2024-01", "2024-02"]
     assert (
-        "OpenH2O is recalculating the fields this water serves for January 2024 "
+        "OpenH2O is recalculating the use areas this water serves for January 2024 "
         "through February 2024." in html
     )
     assert _split(JAN) == {"RA-B": Decimal("-10.0000"), "RA-C": Decimal("-10.0000")}
@@ -494,7 +494,7 @@ def test_a_hand_entered_delivery_row_recalculates_its_month(world, full_efficien
     assert response.redirect_chain == [(reverse("accounting:ledger_list"), 302)]
     assert "Entry saved." in html
     assert (
-        "OpenH2O is recalculating the fields this water serves for January 2024."
+        "OpenH2O is recalculating the use areas this water serves for January 2024."
         in html
     )
     assert _saved("ledger_saved").get().months == ["2024-01"]
@@ -535,7 +535,7 @@ def test_an_imported_delivery_row_recalculates_its_month(world, full_efficiency,
     html = response.content.decode()
     assert response.status_code == 200
     assert (
-        "OpenH2O is recalculating the fields this water serves for January 2024."
+        "OpenH2O is recalculating the use areas this water serves for January 2024."
         in html
     )
     assert _saved("ledger_saved").get().months == ["2024-01"]

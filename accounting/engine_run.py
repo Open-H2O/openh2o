@@ -274,7 +274,7 @@ def _own_over_headgate_sentence(note: dict[str, Any]) -> str:
     """The attention sentence for a field's own deliveries exceeding the headgate."""
     if Decimal(note.get("lost_af") or 0) > 0:
         where = (
-            f"more than reached the fields from the headgate after "
+            f"more than reached the use areas from the headgate after "
             f"canal losses in {month_label(note['month'])}."
         )
     else:
@@ -283,7 +283,7 @@ def _own_over_headgate_sentence(note: dict[str, Any]) -> str:
             f"{month_label(note['month'])}."
         )
     return (
-        f"Fields' own delivery records at {note['pod']} add up to "
+        f"Use areas' own delivery records at {note['pod']} add up to "
         f"{_amount(note['excess_af'])} AF {where}"
     )
 
@@ -298,7 +298,7 @@ def _unexplained_sentence(unexplained: dict[str, Decimal]) -> str:
         for pod, af in sorted(unexplained.items(), key=lambda kv: (-kv[1], kv[0]))
     )
     return (
-        f"{_amount(total)} AF of headgate water was left after each field "
+        f"{_amount(total)} AF of headgate water was left after each use area "
         f"received its ETAW divided by its irrigation efficiency ({each}). "
         f"OpenH2O lists it on Site Health under Unallocated Delivery."
     )
@@ -327,9 +327,9 @@ def _canal_losses_sentence(evaporation: Decimal, spill: Decimal, loss_points: se
 def _seepage_no_zone_sentence(note: dict[str, Any]) -> str:
     """The sentence for canal seepage that had no zone to go to."""
     return (
-        f"OpenH2O credited the {_amount(note['amount_af'])} AF of canal seepage "
-        f"at {note['pod']} in {month_label(note['month'])} to no zone, because "
-        f"no management area contains the point or the field that received "
+        f"OpenH2O did not credit the {_amount(note['amount_af'])} AF of canal seepage "
+        f"at {note['pod']} in {month_label(note['month'])} to a zone, because "
+        f"no management area contains the point or the use area that received "
         f"the most of that month's delivery."
     )
 
@@ -388,7 +388,7 @@ def _note_sentences(raw, *, tabled=False):
 # Site Health's first note is still a sentence.
 _TABLE_LABELS = {
     "unallocated": (
-        "Headgate water left after each field received its ETAW divided by its "
+        "Headgate water left after each use area received its ETAW divided by its "
         "irrigation efficiency.",
         " Listed on Site Health under Unallocated Delivery.",
     ),
@@ -878,7 +878,7 @@ def _months_where(months):
 
 def recalculation_sentence(months):
     """The line a saving page shows beneath its success message."""
-    return f"OpenH2O is recalculating the fields this water serves for {_months_where(months)}."
+    return f"OpenH2O is recalculating the use areas this water serves for {_months_where(months)}."
 
 
 def recalculating_months_sentence(months):

@@ -348,13 +348,13 @@ def test_the_existing_recalculation_sentence_is_unchanged():
     from accounting.engine_run import recalculation_sentence
 
     assert recalculation_sentence(["2026-03"]) == (
-        "OpenH2O is recalculating the fields this water serves for March 2026."
+        "OpenH2O is recalculating the use areas this water serves for March 2026."
     )
     assert recalculation_sentence(["2026-03", "2026-04", "2026-05"]) == (
-        "OpenH2O is recalculating the fields this water serves for March 2026 through May 2026."
+        "OpenH2O is recalculating the use areas this water serves for March 2026 through May 2026."
     )
     assert recalculation_sentence(["2026-03", "2026-05", "2026-06"]) == (
-        "OpenH2O is recalculating the fields this water serves for "
+        "OpenH2O is recalculating the use areas this water serves for "
         "March 2026, May 2026 and June 2026."
     )
 

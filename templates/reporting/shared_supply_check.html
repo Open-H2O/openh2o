@@ -22,9 +22,9 @@
     <span class="breadcrumb-current">Shared-supply check</span>
   </nav>
   <p class="page-description">
-    When one well or canal feeds several fields, someone sets each field's share of
+    When one well or canal feeds several use areas, someone sets each use area's share of
     that water by hand. This page compares each hand-entered share with the share
-    satellite crop-water use (ET) implies. It flags a field where the two are far apart
+    satellite crop-water use (ET) implies. It flags a use area where the two are far apart
     for a check on the source's page, and it never changes a split.
   </p>
 </div>
@@ -67,10 +67,10 @@
         </div>
       </form>
       <p class="text-secondary text-base" style="margin-top: var(--space-md);">
-        A field is flagged when its entered share is {{ divergence_points }} or more
+        A use area is flagged when its entered share is {{ divergence_points }} or more
         percentage points from the share its estimated crop-water use (ET) implies.
-        The check reads how a shared source's water is split among its fields; it
-        does not judge whether a field's balance closes, and it never changes a
+        The check reads how a shared source's water is split among its use areas; it
+        does not judge whether a use area's balance closes, and it never changes a
         split.
       </p>
     </div>
@@ -86,7 +86,7 @@
             <div class="budget-seg budget-seg--result">
               <div class="budget-seg-label">Sources flagged</div>
               <div class="budget-seg-value{% if flagged_count %} text-deficit{% endif %}">{{ flagged_count }}</div>
-              <div class="budget-seg-caption">at least one field {{ divergence_points }} or more points from its ET-implied share</div>
+              <div class="budget-seg-caption">at least one use area {{ divergence_points }} or more points from its ET-implied share</div>
             </div>
             <div class="budget-op"></div>
             <div class="budget-seg">
@@ -96,7 +96,7 @@
             </div>
             <div class="budget-op"></div>
             <div class="budget-seg">
-              <div class="budget-seg-label">Fields to review</div>
+              <div class="budget-seg-label">Use areas to review</div>
               <div class="budget-seg-value">{{ flagged_rows }}</div>
               <div class="budget-seg-caption">flagged rows across the flagged sources</div>
             </div>
@@ -108,8 +108,8 @@
     <div class="card-raised page-grid-account-full" style="padding: 0;">
       {% if groups %}
       <div class="ledger-card-head">
-        <div class="text-secondary text-base">{{ groups_shown|length }} of {{ source_count }} source{{ source_count|pluralize }}{% if show == "flagged" %}, the flagged ones{% endif %} &middot; {{ rows_shown }} field{{ rows_shown|pluralize }}.</div>
-        <div class="text-secondary text-base">Shares are each field's share of the source water, in percent. Gap is the difference between the two shares, in percentage points.</div>
+        <div class="text-secondary text-base">{{ groups_shown|length }} of {{ source_count }} source{{ source_count|pluralize }}{% if show == "flagged" %}, the flagged ones{% endif %} &middot; {{ rows_shown }} use area{{ rows_shown|pluralize }}.</div>
+        <div class="text-secondary text-base">Shares are each use area's share of the source water, in percent. Gap is the difference between the two shares, in percentage points.</div>
       </div>
       {% if groups_shown %}
       <div class="table-scroll">
@@ -140,11 +140,11 @@
                   {% endif %}
                 </div>
                 {% if group.any_flag %}
-                <span class="badge badge-orange" title="At least one field's entered share is far from its ET-implied share">Entered split looks off</span>
+                <span class="badge badge-orange" title="At least one use area's entered share is far from its ET-implied share">Entered split looks off</span>
                 {% elif group.has_et_signal %}
-                <span class="badge badge-green" title="Every field's entered share is close to its ET-implied share">Split looks reasonable</span>
+                <span class="badge badge-green" title="Every use area's entered share is close to its ET-implied share">Split looks reasonable</span>
                 {% else %}
-                <span class="badge badge-grey" title="No estimated ET demand yet for these fields">No ET signal yet</span>
+                <span class="badge badge-grey" title="No estimated ET demand yet for these use areas">No ET signal yet</span>
                 {% endif %}
               </div>
             </td>
@@ -162,7 +162,7 @@
               {% if row.gap_points is not None %}{{ row.gap_points|floatformat:2 }}{% else %}<span class="value-empty">No ET estimate</span>{% endif %}
             </td>
             <td class="th-right">
-              {% if row.flag %}<span class="badge badge-orange" title="This field's entered share is {{ divergence_points }}+ points from its ET-implied share">review split</span>{% endif %}
+              {% if row.flag %}<span class="badge badge-orange" title="This use area's entered share is {{ divergence_points }}+ points from its ET-implied share">review split</span>{% endif %}
             </td>
           </tr>
           {% endfor %}

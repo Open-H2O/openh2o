@@ -45,10 +45,10 @@ SHARE = Decimal("0.100")
 CREDITED = Decimal("3.6000")
 
 CREDITED_ROWS = (
-    "<span>Credited to this field</span><b>3.60</b>",
+    "<span>Credited to this use area</span><b>3.60</b>",
     "<span>Left in the basin (10%)</span><b>0.40</b>",
 )
-NAMED_LINE_NOTE = "shown on the field's page as its own line"
+NAMED_LINE_NOTE = "shown on the use area's page as its own line"
 
 
 def _user(name="r148-04-reader"):
@@ -129,10 +129,10 @@ class TestCalculationPageSentenceByStamp:
         assert EXCESS_LABEL in html
         assert EXCESS_FIGURE in html
         assert ETAW_MET_BY_SURFACE in html
-        assert "Credited to this field" not in html
+        assert "Credited to this use area" not in html
         assert "its own line" not in html
 
-    def test_credited_to_the_field(self):
+    def test_credited_to_the_use_area(self):
         parcel = ParcelFactory(parcel_number="R148-04-B")
         _run(
             parcel, "2026-08", treatment="credited",
@@ -162,14 +162,14 @@ class TestCalculationPageSentenceByStamp:
         )
         html = _calc_page(parcel, "2026-08")
         assert EXCESS_FIGURE in html
-        assert "Credited to this field" not in html
+        assert "Credited to this use area" not in html
 
     def test_zero_over_delivery_shows_no_excess_row(self):
         parcel = ParcelFactory(parcel_number="R148-04-E")
         _run(parcel, "2026-08", over_delivery_af=Decimal("0.0000"), treatment="credited")
         html = _calc_page(parcel, "2026-08")
         assert EXCESS_LABEL not in html
-        assert "Credited to this field" not in html
+        assert "Credited to this use area" not in html
 
 
 class TestSentenceIsTheRunsOwnStamp:
@@ -188,7 +188,7 @@ class TestSentenceIsTheRunsOwnStamp:
 
         html = _calc_page(parcel, "2026-08")
         assert EXCESS_FIGURE in html
-        assert "Credited to this field" not in html
+        assert "Credited to this use area" not in html
 
 
 class TestFieldPageLine:

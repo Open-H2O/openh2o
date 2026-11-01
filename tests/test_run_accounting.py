@@ -507,7 +507,7 @@ def test_own_records_over_the_headgate_are_the_note_that_needs_attention(world):
 
     assert req.status == "finished_with_notes"
     assert req.notes[0] == (
-        "Fields' own delivery records at Test Canal Headgate add up to 4.00 AF "
+        "Use areas' own delivery records at Test Canal Headgate add up to 4.00 AF "
         "more than the headgate recorded for January 2024."
     )
 
@@ -528,7 +528,7 @@ def test_canal_water_beyond_what_the_crops_could_use_is_one_plain_note(world):
     group = req.notes[-1]
     assert group["table"] == "unallocated"
     assert group["lead"] == (
-        "Headgate water left after each field received its ETAW divided by its "
+        "Headgate water left after each use area received its ETAW divided by its "
         "irrigation efficiency."
     )
     assert group["rest"] == " Listed on Site Health under Unallocated Delivery."

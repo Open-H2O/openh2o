@@ -371,7 +371,7 @@ def methodology_preview(request):
         except (ValueError, TypeError):
             parcel = None
     if parcel is None:
-        context["error"] = "Pick a parcel to preview."
+        context["error"] = "Pick a use area to preview."
         return render(request, "accounting/partials/_methodology_preview.html", context)
     context["parcel"] = parcel
 

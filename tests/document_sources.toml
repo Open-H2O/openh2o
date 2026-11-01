@@ -1281,7 +1281,7 @@ labels = [
   { text = "Import diversion records", where = "templates/surface/pod_list.html" },
   { text = "Surface diversions", where = "templates/surface/pod_list.html" },
   { text = "Delivery settings", where = "templates/accounting/delivery_settings.html" },
-  { text = "Diversion records", where = "templates/accounting/delivery_settings.html" },
+  { text = "Reporting year", where = "templates/accounting/delivery_settings.html" },
   { text = "Data status", where = "templates/surface/partials/_diversion_import_preview.html" },
 ]
 checked_at = "d09cd007"
@@ -1835,11 +1835,11 @@ labels = [
   { text = "Known locally as", where = "templates/surface/partials/_detail_pane.html" },
   { text = "Add device", where = "templates/surface/partials/_device_panel.html" },
   { text = "Delivery Settings", where = "core/modules.py" },
-  { text = "Diversion records", where = "templates/accounting/delivery_settings.html" },
+  { text = "Reporting year", where = "templates/accounting/delivery_settings.html" },
   { text = "Unit for rows with a blank unit", where = "templates/drinking/partials/_production_import_preview.html" },
   { text = "Drinking Water", where = "core/modules.py" },
   { text = "Schedule", where = "core/modules.py" },
-  { text = "+ Add row", where = "templates/drinking/schedule.html" },
+  { text = "+ Add to schedule", where = "templates/drinking/schedule.html" },
 ]
 checked_at = "d09cd007"
 
@@ -1877,7 +1877,7 @@ labels = [
   { text = "Upload CSV", where = "templates/accounting/ledger_list.html" },
   { text = "Dry run", where = "templates/accounting/csv_upload.html" },
   { text = "Delivery Settings", where = "core/modules.py" },
-  { text = "Diversion records", where = "templates/accounting/delivery_settings.html" },
+  { text = "Reporting year", where = "templates/accounting/delivery_settings.html" },
 ]
 checked_at = "d09cd007"
 
@@ -2467,7 +2467,7 @@ labels = [
   { text = "Add well", where = "templates/wells/list.html" },
   { text = "Import", where = "templates/wells/list.html" },
   { text = "Add station", where = "templates/datasync/station_list.html" },
-  { text = "New entry", where = "templates/accounting/ledger_list.html" },
+  { text = "Add ledger entry", where = "templates/accounting/ledger_list.html" },
   { text = "Upload CSV", where = "templates/accounting/ledger_list.html" },
   { text = "Run the calculation", where = "templates/accounting/period_detail.html" },
 ]
@@ -2583,7 +2583,7 @@ files = [
 ]
 labels = [
   { text = "Canal losses", where = "templates/surface/partials/_detail_pane.html" },
-  { text = "Fields' own records", where = "templates/surface/partials/_detail_pane.html" },
+  { text = "Use areas' own records", where = "templates/surface/partials/_detail_pane.html" },
 ]
 checked_at = "d09cd007"
 
@@ -2655,10 +2655,10 @@ labels = [
   { text = "Default irrigation efficiency", where = "core/forms.py" },
   { text = "Surface water in excess of ETAW", where = "core/forms.py" },
   { text = "Not credited to anyone", where = "core/models.py" },
-  { text = "Shown on the field's page as its own line", where = "core/models.py" },
+  { text = "Shown on the use area's page as its own line", where = "core/models.py" },
   { text = "Credited to the landowner, less a share left in the basin", where = "core/models.py" },
   { text = "Share left in the basin", where = "core/forms.py" },
-  { text = "When a zone doesn't use its full allocation by the end of the water year", where = "core/forms.py" },
+  { text = "What happens to a zone's unused allocation at the end of the water year?", where = "core/forms.py" },
   { text = "Which months does a reporting year cover?", where = "core/forms.py" },
   { text = "Where your record addresses are published", where = "core/forms.py" },
 ]

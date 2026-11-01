@@ -88,7 +88,7 @@ def test_inactive_page_words():
         "An administrator has deactivated this account. Ask an administrator to "
         "reactivate it if you need it again."
     ) in body
-    assert "Back to login" in body
+    assert "Back to Sign in" in body
     assert "This account is inactive." not in body
 
 

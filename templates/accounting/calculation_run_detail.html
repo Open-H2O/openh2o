@@ -108,9 +108,9 @@
           <div class="budget-seg-caption">delivery &times; irrigation efficiency, up to ETAW</div>
           <div class="budget-breakdown-group">
             {% if run.surface_delivered_af is not None %}<div class="budget-breakdown-row"><span>Delivered{% if delivery_split %}<span class="budget-breakdown-note">share of the headgate total</span>{% endif %}</span><b title="{{ run.surface_delivered_af }} acre-feet">{{ run.surface_delivered_af|floatformat:2|intcomma }}</b></div>{% endif %}
-            {% if irrigation_efficiency_pct is not None %}<div class="budget-breakdown-row"><span>Irrigation efficiency<span class="budget-breakdown-note">{% if irrigation_efficiency_source == "method" %}{% if irrigation_method_name %}{{ irrigation_method_name }}, the field's irrigation method{% else %}the field's irrigation method{% endif %}{% else %}Delivery Settings default{% endif %}</span></span><b>{{ irrigation_efficiency_pct|floatformat:0 }}%</b></div>{% endif %}
-            {% if run.over_delivery_af > 0 %}<div class="budget-breakdown-row"><span>Surface water in excess of ETAW{% if run.over_delivery_treatment == "named_line" %}<span class="budget-breakdown-note">shown on the field's page as its own line</span>{% endif %}</span><b title="{{ run.over_delivery_af }} acre-feet">{{ run.over_delivery_af|floatformat:2|intcomma }}</b></div>
-            {% if run.over_delivery_treatment == "credited" and over_delivery_left_af is not None %}<div class="budget-breakdown-row"><span>Credited to this field</span><b>{{ run.over_delivery_credited_af|floatformat:2|intcomma }}</b></div>
+            {% if irrigation_efficiency_pct is not None %}<div class="budget-breakdown-row"><span>Irrigation efficiency<span class="budget-breakdown-note">{% if irrigation_efficiency_source == "method" %}{% if irrigation_method_name %}{{ irrigation_method_name }}, the use area's irrigation method{% else %}the use area's irrigation method{% endif %}{% else %}Delivery Settings default{% endif %}</span></span><b>{{ irrigation_efficiency_pct|floatformat:0 }}%</b></div>{% endif %}
+            {% if run.over_delivery_af > 0 %}<div class="budget-breakdown-row"><span>Surface water in excess of ETAW{% if run.over_delivery_treatment == "named_line" %}<span class="budget-breakdown-note">shown on the use area's page as its own line</span>{% endif %}</span><b title="{{ run.over_delivery_af }} acre-feet">{{ run.over_delivery_af|floatformat:2|intcomma }}</b></div>
+            {% if run.over_delivery_treatment == "credited" and over_delivery_left_af is not None %}<div class="budget-breakdown-row"><span>Credited to this use area</span><b>{{ run.over_delivery_credited_af|floatformat:2|intcomma }}</b></div>
             <div class="budget-breakdown-row"><span>Left in the basin ({{ over_delivery_share_pct|floatformat:0 }}%)</span><b>{{ over_delivery_left_af|floatformat:2|intcomma }}</b></div>{% endif %}{% endif %}
           </div>
           {% endif %}
@@ -119,7 +119,7 @@
         <div class="budget-seg{% if run.gw_extracted_af is None %} budget-seg--result{% endif %}">
           <div class="budget-seg-label">ETAW met by groundwater</div>
           <div class="budget-seg-value" title="{{ run.final_af }} acre-feet">{{ run.final_af|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
-          <div class="budget-seg-caption">recorded on the field's ledger</div>
+          <div class="budget-seg-caption">recorded on the use area's ledger</div>
           {% if floor_raised %}
           <div class="budget-breakdown-group">
             <div class="budget-breakdown-row"><span>Floor<span class="budget-breakdown-note">Methodology Settings</span></span><b>{{ floor_af|floatformat:2|intcomma }}</b></div>
@@ -139,7 +139,7 @@
           <div class="budget-seg-label">Irrigation efficiency</div>
           {% if gw_efficiency_pct is not None %}
           <div class="budget-seg-value">{{ gw_efficiency_pct|floatformat:0 }}%</div>
-          {% if gw_efficiency_source == "method" %}<div class="budget-seg-caption">{% if gw_efficiency_method_name %}{{ gw_efficiency_method_name }}, the field's irrigation method{% else %}the field's irrigation method{% endif %}</div>{% elif gw_efficiency_source == "agency" %}<div class="budget-seg-caption">Delivery Settings default</div>{% endif %}
+          {% if gw_efficiency_source == "method" %}<div class="budget-seg-caption">{% if gw_efficiency_method_name %}{{ gw_efficiency_method_name }}, the use area's irrigation method{% else %}the use area's irrigation method{% endif %}</div>{% elif gw_efficiency_source == "agency" %}<div class="budget-seg-caption">Delivery Settings default</div>{% endif %}
           {% else %}
           <div class="budget-seg-value text-tertiary">&ndash;</div>
           {% endif %}
@@ -168,9 +168,9 @@
     <h2 class="receipt-headline">No groundwater extraction estimated for {{ month_label }}</h2>
     <p class="text-secondary receipt-lead">
       {% if run.residual_disposition == "metered" %}
-      This field has a meter reading for {{ month_label }}, so OpenH2O takes the groundwater extraction from the meter and does not estimate it.
+      This use area has a meter reading for {{ month_label }}, so OpenH2O takes the groundwater extraction from the meter and does not estimate it.
       {% else %}
-      This field has no well on record, so there is no groundwater extraction to estimate.
+      This use area has no well on record, so there is no groundwater extraction to estimate.
       {% endif %}
     </p>
   </div>

@@ -274,7 +274,7 @@ class PointOfDiversionForm(forms.ModelForm):
             "spill_device": "Spill measured at",
             "loss_basis": "Basis of the loss shares",
             "lining": "Lining",
-            "division_method": "How the water is divided among the fields",
+            "division_method": "How the water is divided among the use areas",
             "owner_account": "Canal owner",
         }
         help_texts = {

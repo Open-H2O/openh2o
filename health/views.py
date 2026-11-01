@@ -77,7 +77,7 @@ WHERE_TO_LOOK = {
     "calculation": (
         "accounting:periods_list",
         None,
-        "the reporting periods",
+        "the water years",
         "accounting",
     ),
 }

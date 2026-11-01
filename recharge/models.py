@@ -51,8 +51,8 @@ class RechargeSite(models.Model):
         "accounting.WaterAccount", on_delete=models.SET_NULL, null=True, blank=True,
         related_name="recharge_sites",
         help_text="Each event logged at this site is credited to this water "
-        "account, less the share left in the basin. Leave it blank to credit "
-        "no one.",
+        "account, less the share left in the basin. Leave it blank if "
+        "no account is credited.",
     )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
     operator = models.CharField(max_length=200, blank=True)

@@ -93,18 +93,18 @@
         <tbody>
           <tr>
             <td class="col-name">Default irrigation efficiency</td>
-            <td>The efficiency of a field with no irrigation method on file. A field with an irrigation method on file uses the efficiency of its method, for both its surface water and its groundwater.</td>
+            <td>The efficiency of a use area with no irrigation method on file. A use area with an irrigation method on file uses the efficiency of its method, for both its surface water and its groundwater.</td>
             <td>75 percent</td>
           </tr>
           <tr>
             <td class="col-name">Surface water in excess of ETAW</td>
-            <td>Not credited to anyone, or shown on the field&rsquo;s page as its own line.</td>
+            <td>Not credited to anyone, or shown on the use area&rsquo;s page as its own line.</td>
             <td>Not credited to anyone</td>
           </tr>
           <tr>
             <td class="col-name">Canal seepage</td>
-            <td>Whether a water account is credited with a canal&rsquo;s seepage. Credited to no one; shared by acre among the fields the canal serves, less the share left in the basin; or credited to the canal&rsquo;s owner only, less the share left in the basin. OpenH2O records the seepage in the basin&rsquo;s water budget under every choice. The owner is the water account named on the canal&rsquo;s headgate page.</td>
-            <td>Credited to no one</td>
+            <td>Whether a water account is credited with a canal&rsquo;s seepage. Not credited to anyone; shared by acre among the use areas the canal serves, less the share left in the basin; or credited to the canal&rsquo;s owner only, less the share left in the basin. OpenH2O records the seepage in the basin&rsquo;s water budget under every choice. The owner is the water account named on the canal&rsquo;s point of diversion page.</td>
+            <td>Not credited to anyone</td>
           </tr>
           <tr>
             <td class="col-name">Share left in the basin</td>
@@ -195,7 +195,7 @@
     <div class="card-grid card-grid--fit mt-md">
       {% if show_methods %}<a href="{% url 'methods' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Methods Behind the Numbers</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">This page explains how OpenH2O calculates each month&rsquo;s figures for a field.</p>
+        <p class="text-secondary text-sm">This page explains how OpenH2O calculates each month&rsquo;s figures for a use area.</p>
       </a>{% endif %}
       {% if 'accounting' in enabled_modules %}<a href="{{ methodology_url }}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Methodology Settings</span><span class="text-accent">&rarr;</span></div>

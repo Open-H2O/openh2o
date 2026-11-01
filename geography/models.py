@@ -146,11 +146,11 @@ class ParcelZone(models.Model):
     # so taking a field out later leaves a finished year as it was.
     start_date = models.DateField(
         null=True, blank=True,
-        help_text="First day the field is in this zone. Blank means it always has been.",
+        help_text="First day the use area is in this zone. Blank means it always has been.",
     )
     end_date = models.DateField(
         null=True, blank=True,
-        help_text="Last day the field is in this zone. Blank means it still is.",
+        help_text="Last day the use area is in this zone. Blank means it still is.",
     )
 
     class Meta:

@@ -13,8 +13,8 @@
     </form>
     {% else %}
     <h1 class="auth-title">Confirmation link expired</h1>
-    <p class="text-sm mb-md" style="color: var(--furnace-500);">Log in to request a new link.</p>
-    <a href="{% url 'account_login' %}" class="btn-secondary">Back to login</a>
+    <p class="text-sm mb-md" style="color: var(--furnace-500);">Sign in to request a new link.</p>
+    <a href="{% url 'account_login' %}" class="btn-secondary">Back to Sign in</a>
     {% endif %}
 </div>
 {% endblock %}

@@ -266,7 +266,7 @@ class TestTheIdentifierCardSaysWhatItIsFor:
         setting does and that it matters before registering with Geoconnex, so
         no second line restates it (the line appears exactly once)."""
         body = admin_client.get(reverse("accounting:delivery_settings")).content.decode()
-        assert '<h2 class="section-header">Web addresses for your records</h2>' in body
-        assert "Record addresses" not in body
+        assert '<h2 class="section-header">Record addresses</h2>' in body
+        assert "Web addresses for your records" not in body
         assert body.count("Set it before you register this site with Geoconnex") == 1
 

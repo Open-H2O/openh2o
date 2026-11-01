@@ -622,7 +622,7 @@ MODULE_REGISTRY: dict = {
             ),
             NavEntry(
                 url_name="accounting:methodology_settings",
-                label="Methodology",
+                label="Methodology Settings",
                 icon="methodology",
                 section=SECTION_SETTINGS,
                 order=10,

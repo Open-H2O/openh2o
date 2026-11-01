@@ -120,7 +120,7 @@ def _step_detail_summary(step, *, delivery_split=None):
         # ledger rows by `_delivery_split_kind`; the run stores no split flag).
         if detail.get("delivered_af") is not None and detail.get("efficiency"):
             whose = (
-                "the field's irrigation method"
+                "the use area's irrigation method"
                 if detail.get("efficiency_source") == "method"
                 else "the Delivery Settings default"
             )

@@ -51,7 +51,7 @@ X_GROSS_TOTAL = Decimal("363.2600")
 SECTION_HEADING = "Use areas with water use recorded and no supply reported"
 COLUMN_HEADING = "Not met by supplies"  # 142-01: the card title carries the settled phrase
 SECTION_ANCHOR = "unmet-demand"
-PILL_WORDS = "field with water use recorded, no supply reported"
+PILL_WORDS = "use area with water use recorded, no supply reported"
 
 
 class UserFactory(factory.django.DjangoModelFactory):
@@ -234,7 +234,7 @@ def test_a_period_with_no_such_field_says_so_in_one_sentence(basin, viewer):
     assert resp.context["unmet_demand_count"] == 0
     section = _section(resp.content.decode())
     assert (
-        f"In {quiet.name}, no field had water use recorded and no supply reported."
+        f"In {quiet.name}, no use area had water use recorded and no supply reported."
         in section
     )
     assert PILL_WORDS not in resp.content.decode()

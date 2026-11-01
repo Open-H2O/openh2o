@@ -618,11 +618,11 @@ class TestNavResolution:
     def test_settings_entries_for_lists_the_settings_page_rows_in_order(self):
         entries = mod.settings_entries_for(mod.enabled_modules())
         assert [e.label for e in entries] == [
-            "Methodology", "Delivery Settings", "Users", "Site Health", "Setup Wizard",
+            "Methodology Settings", "Delivery Settings", "Users", "Site Health", "Setup Wizard",
         ]
         assert [e.order for e in entries] == [10, 20, 30, 40, 50]
         by_label = {e.label: e for e in entries}
-        for label in ("Methodology", "Delivery Settings", "Users"):
+        for label in ("Methodology Settings", "Delivery Settings", "Users"):
             assert by_label[label].visibility == mod.VISIBILITY_AGENCY_ADMIN, label
         assert by_label["Site Health"].visibility == mod.VISIBILITY_ALWAYS
         assert by_label["Setup Wizard"].visibility == mod.VISIBILITY_SETUP_GATE

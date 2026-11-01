@@ -94,7 +94,7 @@ def _add_signed_in_context(context: dict) -> None:
     # Records decide what the home page offers.
     # Module flags cannot: `surface` and `datasync` both pull the
     # parcels/accounting pair on, so accounting can be running with no use
-    # area to log against and no water year to balance. "Log water use" reads
+    # area to log against and no water year to balance. "Add ledger entry" reads
     # `parcel_count`, built above; "Water balance" reads this.
     if is_enabled("accounting"):
         context["has_water_year"] = ReportingPeriod.objects.exists()
@@ -709,17 +709,17 @@ def glossary(request):
         "CDEC": "California Data Exchange Center, where the California Department of Water Resources publishes real-time station readings.",
         "CFS (Cubic Feet per Second)": "The unit OpenH2O uses for rates: the maximum rate on a point of diversion and on a water right, and the maximum flow rate on a monthly diversion record.",
         "CIMIS": "California Irrigation Management Information System, the California Department of Water Resources' network of agricultural weather stations.",
-        "Crop ET (Evapotranspiration)": "A field's crop evapotranspiration for the month, in acre-feet. OpenH2O reads it from OpenET. See Help > How Water Balances Work.",
+        "Crop ET (Evapotranspiration)": "A use area's crop evapotranspiration for the month, in acre-feet. OpenH2O reads it from OpenET. See Help > How Water Balances Work.",
         "Data Source": "OpenH2O's record of one outside agency or service that OpenH2O reads data from. It holds the source's name, code and web address, how often OpenH2O reads it and the time of the last read.",
         "Delivery Settings": "The screen where an administrator sets the default irrigation efficiency, the treatment of surface water in excess of ETAW, the treatment of canal seepage, the share left in the basin, the year-end choice for unused allocation, the month the water year starts in, the reporting year and the web address used in each record's permanent address. See Help > Settings explained.",
         "DLR": "Detection Limit for purposes of Reporting. OpenH2O stores the DLR that a lab file lists for each result, exactly as reported and in the result's units, and shows it on the result's page under the lab file's MCL.",
-        "Effective Precipitation": "OpenH2O estimates each field's effective precipitation for the month from rainfall in the gridMET weather dataset. By default it uses the USDA-SCS method. See Help > Methods Behind the Numbers.",
+        "Effective Precipitation": "OpenH2O estimates each use area's effective precipitation for the month from rainfall in the gridMET weather dataset. By default it uses the USDA-SCS method. See Help > Methods Behind the Numbers.",
         "ELAP": "Environmental Laboratory Accreditation Program, California's program for accrediting laboratories. OpenH2O stores the ELAP certification number of the laboratory that ran each result and shows it on the result's page.",
-        "ETAW (Evapotranspiration of Applied Water)": "A field's crop ET minus its effective precipitation for the month. See Help > Methods Behind the Numbers.",
-        "ETAW Met by Surface Water": "The part of a field's ETAW that its surface water delivery meets. It is the delivery times the field's irrigation efficiency or the month's ETAW, whichever is smaller. See Help > Methods Behind the Numbers.",
-        "ETAW Met by Groundwater": "The part of a field's ETAW that surface water does not meet, when the field has a well. If the well has no meter, the month's calculated row on the Use Ledger holds this figure. See Help > Methods Behind the Numbers.",
-        "Groundwater Extraction": "The groundwater a well pumps in a month. OpenH2O uses the meter reading where the well has a meter, and otherwise divides ETAW met by groundwater by the field's irrigation efficiency. See Help > Methods Behind the Numbers.",
-        "Surface Water in Excess of ETAW": "The amount by which a field's surface water delivery times its irrigation efficiency exceeds its ETAW for the month. See Help > Settings explained.",
+        "ETAW (Evapotranspiration of Applied Water)": "A use area's crop ET minus its effective precipitation for the month. See Help > Methods Behind the Numbers.",
+        "ETAW Met by Surface Water": "The part of a use area's ETAW that its surface water delivery meets. It is the delivery times the use area's irrigation efficiency or the month's ETAW, whichever is smaller. See Help > Methods Behind the Numbers.",
+        "ETAW Met by Groundwater": "The part of a use area's ETAW that surface water does not meet, when the use area has a well. If the well has no meter, the month's calculated row on the Use Ledger holds this figure. See Help > Methods Behind the Numbers.",
+        "Groundwater Extraction": "The groundwater a well pumps in a month. OpenH2O uses the meter reading where the well has a meter, and otherwise divides ETAW met by groundwater by the use area's irrigation efficiency. See Help > Methods Behind the Numbers.",
+        "Surface Water in Excess of ETAW": "The amount by which a use area's surface water delivery times its irrigation efficiency exceeds its ETAW for the month. See Help > Settings explained.",
         "GEARS": "Groundwater Extraction Annual Reporting System, the State Water Board's system for annual reports of groundwater extraction. OpenH2O does not submit reports to the state.",
         "GSA": "Groundwater Sustainability Agency, a local agency that manages groundwater in a basin under SGMA.",
         "GSP": "Groundwater Sustainability Plan, the plan under SGMA for managing a basin's groundwater.",
@@ -730,13 +730,13 @@ def glossary(request):
         "Methodology / Calculation Plan": "The calculation steps on Methodology Settings and the choices that go with them: the order of the steps, which steps are switched on, the effective precipitation method and the lowest remainder. See Help > Settings explained.",
         "Monitoring Station": "OpenH2O's record of one outside station, such as a stream gauge, a weather station or a groundwater level well. The record holds the station's name, its ID at the data source, its location and the parameters it reports.",
         "OpenET": "A service that estimates evapotranspiration from satellite data. It is the source of OpenH2O's crop ET.",
-        "Use Area": "OpenH2O's record of one field, with its Assessor Parcel Number (APN), owner, area in acres and outline on the map. OpenH2O calculates each month's figures for every use area.",
+        "Use Area": "OpenH2O's record of one use area, with its Assessor Parcel Number (APN), owner, area in acres and outline on the map. OpenH2O calculates each month's figures for every use area.",
         "PS Code": "Primary Station Code, the identifier of one sampling point. For a California water system, it is the PWSID, the state's facility ID and the point number, joined by underscores. For a system in another state, it is the code the lab results file uses. OpenH2O files each imported lab result under the sampling point with that PS Code, and rejects a row when no sampling point on file has its PS Code.",
         "PWSID": "Public Water System Identification number. When an administrator or operator enters a PWSID on Add a water system, OpenH2O reads the system and its facilities from EPA's records. Every California PS Code begins with the system's PWSID.",
         "Point of Diversion (POD)": "OpenH2O's record of one point of diversion, with its location, the water right it diverts under, its stream or flowline, its maximum rate in CFS, its canal losses, the use areas it serves and its monthly diversion records.",
         "Sampling Schedule": "The checklist of samples taken on a cycle at a drinking-water system. Each row holds what is sampled, the frequency, the date last done and the date next due. Both dates are entered by hand; OpenH2O does not calculate the next due date from the frequency.",
         "Reporting Level": "OpenH2O stores the reporting level that a lab file lists for each numeric result. When a result is marked Less Than Reporting Level, OpenH2O shows it as < and that level, such as < 0.005 mg/L, or as < RL when no level is given.",
-        "Water Year": "OpenH2O's record of one accounting period on the Water Years page, with its name and its start and end dates. A water year starts on the first day of a month and ends on the last day of a month. While a water year is finalized, its ledger entries, allocations, diversion records and calculation results cannot be added, changed or removed.",
+        "Water Year": "OpenH2O's record of one water year on the Water Years page, with its name and its start and end dates. A water year starts on the first day of a month and ends on the last day of a month. While a water year is finalized, its ledger entries, allocations, diversion records and calculation results cannot be added, changed or removed.",
         "Sampling Point": "OpenH2O's record of one place on a facility where samples are taken, with its PS Code, a name and a point type. An administrator or operator adds sampling points on the water system's Sampling points page, and OpenH2O builds each PS Code for a California water system.",
         "SGMA": "Sustainable Groundwater Management Act, California's 2014 law under which GSAs manage groundwater basins.",
         "Up to date / Slightly behind / Dormant": "OpenH2O labels each station on the Monitoring stations page by the age of its latest reading, measured against how often the station's source usually publishes (CDEC and CNRFC 36 hours; USGS and CIMIS 2 days; NOAA 3 days; OpenET 45 days; DWR-WDL and DWR-SGMA 120 days; any other source 1 day). A station is Up to date within 1.5 times its source's interval, Slightly behind within 4 times, and Dormant after that or with no reading at all.",

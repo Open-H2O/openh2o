@@ -108,7 +108,7 @@
           <tr>
             <td class="col-step"><span class="step-num">{{ steps.ledger }}</span>Record water use</td>
             <td class="col-where">Water accounting &gt; Use Ledger<br><a href="{% url 'accounting:ledger_list' %}" class="text-sm text-accent">Go to Use Ledger &rarr;</a></td>
-            <td>Record meter readings, deliveries and adjustments one at a time with New entry, or many at once with Upload CSV. OpenH2O files each entry under the water year that includes its date. An entry counts as groundwater only when its water type is groundwater, when it is a Meter Reading with no water type, {% if 'wells' in enabled_modules %}when its source type is Calculated, or when its source type is ET Estimate and the use area has a well{% else %}or when its source type is Calculated{% endif %}. OpenH2O calculates each month&rsquo;s figures for a water year when you press Run the calculation on that water year&rsquo;s page, and every night once your server&rsquo;s scheduled jobs are installed.{% if 'wells' in enabled_modules %} For each use area that has a well and no meter reading, OpenH2O enters the use area&rsquo;s ETAW met by groundwater on the Use Ledger.{% endif %}</td>
+            <td>Record meter readings, deliveries and adjustments one at a time with Add ledger entry, or many at once with Upload CSV. OpenH2O files each entry under the water year that includes its date. An entry counts as groundwater only when its water type is groundwater, when it is a Meter Reading with no water type, {% if 'wells' in enabled_modules %}when its source type is Calculated, or when its source type is ET Estimate and the use area has a well{% else %}or when its source type is Calculated{% endif %}. OpenH2O calculates each month&rsquo;s figures for a water year when you press Run the calculation on that water year&rsquo;s page, and every night once your server&rsquo;s scheduled jobs are installed.{% if 'wells' in enabled_modules %} For each use area that has a well and no meter reading, OpenH2O enters the use area&rsquo;s ETAW met by groundwater on the Use Ledger.{% endif %}</td>
           </tr>{% endif %}
         </tbody>
       </table>
@@ -123,11 +123,11 @@
     <div class="card-grid card-grid--fit mt-md">
       {% if show_water_balances %}<a href="{% url 'water_balances' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>How Water Balances Work</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">This page works through one field&rsquo;s month with real figures.</p>
+        <p class="text-secondary text-sm">This page works through one use area&rsquo;s month with real figures.</p>
       </a>{% endif %}
       {% if show_methods %}<a href="{% url 'methods' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Methods Behind the Numbers</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">This page explains how OpenH2O calculates each month&rsquo;s figures for a field.</p>
+        <p class="text-secondary text-sm">This page explains how OpenH2O calculates each month&rsquo;s figures for a use area.</p>
       </a>{% endif %}
       {% if show_settings %}<a href="{% url 'settings_explained' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>Settings explained</span><span class="text-accent">&rarr;</span></div>

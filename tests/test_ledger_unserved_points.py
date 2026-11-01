@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""A point that serves no field still accounts for its water; a record keeps its day.
+"""A point that serves no use area still accounts for its water; a record keeps its day.
 
 * Every active point with a direct-use record in the month is visited, whatever
   day the record is dated.
-* A point that serves no field books what is left after its canal losses to a
-  destination the canal page shows: the recharge site it feeds, or "no field".
+* A point that serves no use area books what is left after its canal losses to a
+  destination the canal page shows: the recharge site it feeds, or none.
   That water credits no one, writes no recharge event or account credit, and is
   not the water Site Health reports as undivided.
 * Editing a diversion record keeps the day it was stored with, and a second
@@ -73,8 +73,8 @@ def _row(pod, month):
     raise AssertionError(f"no canal row for {month}")
 
 
-# --------------------------------------------------------------- a point that serves no field
-def test_a_point_serving_no_field_books_its_water_to_no_field():
+# --------------------------------------------------------------- a point that serves no use area
+def test_a_point_serving_no_use_area_books_its_water_to_no_destination():
     ld.seed_reference()
     pod = _point("Re-diversion test point")
     _record(pod, date(2025, 6, 15), 300)
@@ -85,7 +85,7 @@ def test_a_point_serving_no_field_books_its_water_to_no_field():
     assert stored.unserved_af == D("300.0000")
     row = _row(pod, JUN)
     assert row["unserved"] == D("300.0000")
-    assert row["unserved_to"] == "no field"
+    assert row["unserved_to"] == ""
     assert row["adds_up"] is True
     assert UnallocatedDelivery.objects.filter(point_of_diversion=pod).count() == 0
 
@@ -136,10 +136,10 @@ def test_the_canal_page_names_the_destination_and_the_site_health_card_stays_qui
 
     html = _client().get(reverse("surface:pod_detail", args=[pod.pk])).content.decode()
     section = html[html.index('id="where-the-water-went"'):]
-    assert "Delivered to no field" in section
-    # A point that serves no field shows the destination in place of the
-    # two field columns, which could only read 0.00 there.
-    assert "Divided up among the other fields" not in section
+    assert "Not delivered to a use area" in section
+    # A point that serves no use area shows the destination in place of the
+    # two use area columns, which could only read 0.00 there.
+    assert "Divided up among the other use areas" not in section
     assert "300.00" in section
 
 

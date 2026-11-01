@@ -136,7 +136,7 @@
   <p class="empty-state-text">No allocation matches &ldquo;{{ q }}&rdquo;{% if period_id %} in {{ period_name }}{% endif %}.</p>
   {% else %}
   <p class="empty-state-text">No allocations{% if period_id %} in {{ period_name }}{% endif %} yet.</p>
-  {% if user_can_write %}<a href="{% url 'accounting:allocation_create' %}" class="btn-primary btn-sm mt-sm">+ New allocation</a>{% endif %}
+  {% if user_can_write %}<a href="{% url 'accounting:allocation_create' %}" class="btn-primary btn-sm mt-sm">+ Add allocation</a>{% endif %}
   {% endif %}
 </div>
 {% endif %}

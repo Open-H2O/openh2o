@@ -10,7 +10,7 @@
   guards); the words-only variant below (A.4) covers that case so the page
   still teaches the arithmetic with no figures in it.
 
-  Pill colours: grey for an estimate and for a field's own delivery record
+  Pill colours: grey for an estimate and for a use area's own delivery record
   (delivery_split "own", a row the canal split did not
   write), gold for a delivery the software divided up from a headgate total,
   and the existing orange
@@ -31,10 +31,10 @@
   the shape check (tests/test_help_shape.py) on both pages that include it;
   the verb is "subtract", never "take off".
 {% endcomment %}<div class="help-subsection">
-  <h3 class="concept-panel-title">Where this field's water came from</h3>
+  <h3 class="concept-panel-title">Where this use area's water came from</h3>
 
   {% if example %}
-  <p class="text-secondary text-base">The example follows one field in this deployment, {{ field_label }}, in {{ month_label }}. Figures are in acre-feet.</p>
+  <p class="text-secondary text-base">The example follows one use area in this deployment, {{ field_label }}, in {{ month_label }}. Figures are in acre-feet.</p>
 
   <div class="table-scroll mt-md">
     <table class="data-table how-sure-table">
@@ -49,7 +49,7 @@
         <tr>
           <td class="col-name">Crop ET</td>
           <td class="col-amount td-num">{{ gross_et_af|floatformat:2|intcomma }}</td>
-          <td>OpenET's satellite estimate for this field and month.</td>
+          <td>OpenET's satellite estimate for this use area and month.</td>
           <td class="col-sure"><span class="badge badge-pill badge-grey">Estimated</span></td>
         </tr>
 
@@ -57,7 +57,7 @@
         <tr>
           <td class="col-name">Effective precipitation</td>
           <td class="col-amount td-num">{{ effective_precip_af|floatformat:2|intcomma }}</td>
-          <td>OpenH2O estimates effective precipitation from gridMET rainfall, by the method set on Methodology Settings, not from a gauge on this field.</td>
+          <td>OpenH2O estimates effective precipitation from gridMET rainfall, by the method set on Methodology Settings, not from a gauge on this use area.</td>
           <td class="col-sure"><span class="badge badge-pill badge-grey">Estimated</span></td>
         </tr>
         <tr>
@@ -77,13 +77,13 @@
 
         {% if surface_delivered_af is not None %}
         <tr>
-          <td class="col-name">Delivered to this field</td>
+          <td class="col-name">Delivered to this use area</td>
           <td class="col-amount td-num">{{ surface_delivered_af|floatformat:2|intcomma }}</td>
           <td>
             {% if delivery_split == "own" %}
-            This is the field's own delivery record, typed on its ledger or imported.
+            This is the use area's own delivery record, typed on its ledger or imported.
             {% elif delivery_split == "fixed_share" %}
-            The delivery record is the headgate's monthly total, from a meter or the ditch tender's estimate. The total was divided by the shares entered for each field, or by acreage where none were entered.
+            The delivery record is the headgate's monthly total, from a meter or the ditch tender's estimate. The total was divided by the shares entered for each use area, or by acreage where none were entered.
             {% else %}
             The delivery record is the headgate's monthly total, from a meter or the ditch tender's estimate.
             {% endif %}
@@ -93,7 +93,7 @@
         <tr>
           <td class="col-name">Delivery &times; irrigation efficiency</td>
           <td class="col-amount td-num">{{ surface_water_af|floatformat:2|intcomma }}</td>
-          <td>The field's irrigation efficiency is {{ irrigation_efficiency_pct|floatformat:0 }}%, {% if irrigation_efficiency_source == "method" %}{% if irrigation_method_name %}from its irrigation method on file, {{ irrigation_method_name }}{% else %}from its irrigation method on file{% endif %}{% else %}the default on Delivery Settings{% endif %}.</td>
+          <td>The use area's irrigation efficiency is {{ irrigation_efficiency_pct|floatformat:0 }}%, {% if irrigation_efficiency_source == "method" %}{% if irrigation_method_name %}from its irrigation method on file, {{ irrigation_method_name }}{% else %}from its irrigation method on file{% endif %}{% else %}the default on Delivery Settings{% endif %}.</td>
           <td class="col-sure"><span class="badge badge-pill badge-orange">Rule of thumb</span></td>
         </tr>
         {% elif surface_water_af is not None %}
@@ -134,7 +134,7 @@
             {% if extracted_af == 0 %}
             ETAW met by groundwater is zero this month, so the estimated groundwater extraction is zero too.
             {% else %}
-            ETAW met by groundwater divided by {{ gw_efficiency_pct|floatformat:0 }}%, the field's irrigation efficiency. OpenH2O charges this volume against the groundwater allocation.
+            ETAW met by groundwater divided by {{ gw_efficiency_pct|floatformat:0 }}%, the use area's irrigation efficiency. OpenH2O charges this volume against the groundwater allocation.
             {% endif %}
           </td>
           <td class="col-sure"><span class="badge badge-pill badge-orange">Assumed share</span></td>
@@ -145,12 +145,12 @@
 
 
   {% else %}
-  <p class="text-secondary text-base">Once a month has been calculated for a field with a well and no meter reading, this page works through that field's numbers. Until then, here is the arithmetic in words.</p>
+  <p class="text-secondary text-base">Once a month has been calculated for a use area with a well and no meter reading, this page works through that use area's numbers. Until then, here is the arithmetic in words.</p>
   <ol class="concept-list text-secondary text-base mt-sm">
     <li>Start with crop ET for the month, OpenET's satellite estimate in acre-feet.</li>
     <li>Subtract effective precipitation, estimated from gridMET rainfall. The result is ETAW.</li>
-    <li>Subtract the delivery on record times the field's irrigation efficiency. What is left is ETAW met by groundwater.</li>
-    <li>Divide ETAW met by groundwater by the field's irrigation efficiency. The result is the estimated groundwater extraction, which OpenH2O charges against the groundwater allocation.</li>
+    <li>Subtract the delivery on record times the use area's irrigation efficiency. What is left is ETAW met by groundwater.</li>
+    <li>Divide ETAW met by groundwater by the use area's irrigation efficiency. The result is the estimated groundwater extraction, which OpenH2O charges against the groundwater allocation.</li>
     <li>In a month with a meter reading on record, the reading stands. The same arithmetic runs for comparison but does not write a groundwater row or an estimated extraction.</li>
   </ol>
   {% endif %}

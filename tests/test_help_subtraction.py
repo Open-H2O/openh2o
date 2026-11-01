@@ -352,7 +352,7 @@ class TestDeliverySplitOwnRecord:
     ``divided_from_headgate`` False) reads as "own", and the help page's
     Delivered row says so instead of "Divided up"."""
 
-    OWN_SENTENCE = "This is the field's own delivery record, typed on its ledger or imported."
+    OWN_SENTENCE = "This is the use area's own delivery record, typed on its ledger or imported."
 
     def _field_month(self, *, divided_from_headgate, description):
         parcel = ParcelFactory(parcel_number="TEST-APN-OWN")
@@ -400,7 +400,7 @@ class TestDeliverySplitOwnRecord:
         html = render_to_string(
             "help/partials/_the_subtraction.html", example_field_month()
         )
-        start = html.index("Delivered to this field")
+        start = html.index("Delivered to this use area")
         row = html[start:html.index("</tr>", start)]
 
         assert self.OWN_SENTENCE in row
@@ -417,7 +417,7 @@ class TestDeliverySplitOwnRecord:
         html = render_to_string(
             "help/partials/_the_subtraction.html", example_field_month()
         )
-        start = html.index("Delivered to this field")
+        start = html.index("Delivered to this use area")
         row = html[start:html.index("</tr>", start)]
 
         assert self.OWN_SENTENCE not in row

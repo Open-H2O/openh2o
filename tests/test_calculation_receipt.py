@@ -66,11 +66,11 @@ REJECTED = (
     "How was this calculated?",
 )
 NO_WELL_SENTENCE = (
-    "This field has no well on record, so there is no groundwater extraction "
+    "This use area has no well on record, so there is no groundwater extraction "
     "to estimate."
 )
 METERED_SENTENCE = (
-    "This field has a meter reading for {month}, so OpenH2O takes the "
+    "This use area has a meter reading for {month}, so OpenH2O takes the "
     "groundwater extraction from the meter and does not estimate it."
 )
 
@@ -207,7 +207,7 @@ class TestTheReceipt:
         assert '<div class="budget-seg-caption">Delivery Settings default</div>' in html
         assert "set on Delivery Settings when this month was calculated" not in html
         assert "charged to the groundwater allocation" in html
-        assert "recorded on the field's ledger" in html
+        assert "recorded on the use area's ledger" in html
         # A field's own delivery (no split row on the ledger) says nothing
         # about a split; no excess, no excess row.
         assert "share of the headgate total" not in html
@@ -297,7 +297,7 @@ class TestTheReceipt:
         html = _page(parcel, "2026-07")
         assert (
             '<div class="budget-seg-caption">Receipt test pivot, '
-            "the field's irrigation method</div>"
+            "the use area's irrigation method</div>"
         ) in html
 
     def test_a_run_from_before_extraction_was_stamped_stops_at_etaw_met_by_groundwater(self):
@@ -361,7 +361,7 @@ class TestAZeroMonth:
         assert ">75%<" in html
         assert '<div class="budget-seg-caption">Delivery Settings default</div>' in html
         # The default treatment (not credited) says nothing more.
-        assert "Credited to this field" not in html
+        assert "Credited to this use area" not in html
         assert "its own line" not in html
         assert "A meter reading for December 2025 would replace this estimate." in html
 
@@ -374,14 +374,14 @@ class TestAZeroMonth:
             over_delivery_credited_af=Decimal("3.6000"),
         )
         html = _page(parcel, "2025-12")
-        assert "<span>Credited to this field</span><b>3.60</b>" in html
+        assert "<span>Credited to this use area</span><b>3.60</b>" in html
         assert "<span>Left in the basin (10%)</span><b>0.40</b>" in html
 
     def test_under_the_named_line_setting_the_excess_says_where_it_shows(self):
         parcel = ParcelFactory(parcel_number="RCPT-APN-013")
         _zero_run(parcel, over_delivery_treatment="named_line")
         html = _page(parcel, "2025-12")
-        assert "shown on the field's page as its own line" in html
+        assert "shown on the use area's page as its own line" in html
 
     def test_the_breakdown_is_the_runs_own_stamp_not_the_live_setting(self):
         parcel = ParcelFactory(parcel_number="RCPT-APN-014")
@@ -391,7 +391,7 @@ class TestAZeroMonth:
         config.over_delivery_leave_behind = Decimal("0.100")
         config.save()
         html = _page(parcel, "2025-12")
-        assert "Credited to this field" not in html
+        assert "Credited to this use area" not in html
 
 
 class TestTheShortPage:

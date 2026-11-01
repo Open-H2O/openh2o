@@ -32,8 +32,8 @@ or a sentence that names a page carries that page's name).
    record or a data field; it may only fall.
 6. **Setting names agree**: each heading on the Delivery Settings page is a
    name in the Delivery Settings table on Settings explained.
-7. **A Settings row carries its page's name**: the row label begins the title
-   of the page it opens.
+7. **A Settings row carries its page's name**: the row label is the title of
+   the page it opens, or begins it before a colon ("Setup wizard: Boundary").
 
 A test never mandates a domain description (CLAUDE.md). These checks only forbid
 retired words and require two screens to agree.
@@ -77,19 +77,28 @@ def _load():
 shapes = _load()
 
 #: Per file, how many "field" words stay because they mean land outside the
-#: record (the demonstration page's crop-map outlines) or a data field. EMPTY on
-#: 2026-10-31, so every file that still uses "field" for the record fails. The
-#: sweep that changes "field" to "use area" fills this in afterwards, with only
-#: the files whose remaining uses are not the record, each with a reason. A
-#: ceiling may fall and never rise; an entry above the file's count fails.
-FIELD_WORD_KEPT: dict = {}
+#: record (the demonstration page's crop-map outlines) or a data field. It was
+#: empty when the guard was written, so every file still using "field" for the
+#: record failed (222 hits in 36 files); after the sweep only the files below
+#: keep the word, each with its reason. A ceiling may fall and never rise; an
+#: entry above the file's count fails.
+FIELD_WORD_KEPT: dict = {
+    # The public records the demonstration was built from: the crop map's field
+    # outlines, the basin's canals and fields, and the ET and rainfall estimated
+    # on each of them. Land outside the record, measured 2026-10-31.
+    "templates/about_demonstration_data.html": 5,
+    # "its boundaries, fields and monitoring stations are public records": the
+    # same public land, in the demonstration's one-paragraph description.
+    "templates/setup/partials/_demonstration_status.html": 1,
+    "templates/setup/wizard.html": 1,
+}
 
 #: Titles that start "New " or "Create " and are not a new record, one reason
 #: each: (template path, the title's first words, reason).
 EXCEPTIONS: tuple = (
     ("templates/account/signup.html", "Create account",
      "a person signing up makes their own sign-in, which is not a record an Add page makes; "
-     "the main session may rule it \"Sign up\" or keep it"),
+     "kept (151.8-03)"),
 )
 
 

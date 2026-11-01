@@ -230,7 +230,7 @@
     {% endcomment %}
     <div class="card-raised page-grid-account-full">
       <h2 class="section-header mb-md">Losses in the canal below this headgate</h2>
-      <p class="text-secondary text-sm mb-md">Each loss below is a percentage of the water kept at the headgate, the water taken less the water returned. Every month, OpenH2O subtracts these losses before dividing the rest among the fields.</p>
+      <p class="text-secondary text-sm mb-md">Each loss below is a percentage of the water kept at the headgate, the water taken less the water returned. Every month, OpenH2O subtracts these losses before dividing the rest among the use areas.</p>
       <div class="field-grid-2">
         <div class="field-group">
           <div class="field-label">Basis</div>
@@ -272,8 +272,8 @@
 
       Wording in this section: the section heading, the intro
       sentence, the column labels ("Taken at the headgate", "Canal losses" with
-      Evaporation / Seepage / Spill, "Fields' own records", "Divided up among
-      the other fields", and since 2026-10-13 the Water year page's approved
+      Evaporation / Seepage / Spill, "Use areas' own records", "Divided up among
+      the other use areas", and since 2026-10-13 the Water year page's approved
       unallocated label), the totals label and the "Not yet calculated" / "Does not add
       up" flags. A month whose parts do not sum to the headgate figure is
       flagged, never hidden; one line under the table, shown only
@@ -314,10 +314,10 @@
               <th rowspan="2">Month</th>
               <th rowspan="2" class="th-right">Taken at the headgate</th>
               <th colspan="3" class="th-group-label col-sep">Canal losses</th>
-              {% if group.totals.own or group.totals.divided or not group.totals.unserved %}<th rowspan="2" class="th-right">Fields' own records</th>
-              <th rowspan="2" class="th-right">Divided up among the other fields</th>{% endif %}
-              {% if pod.division_method == "crop_need" %}<th rowspan="2" class="th-right">Left after each field received its ETAW divided by its irrigation efficiency</th>{% endif %}
-              {% if group.totals.unserved %}<th rowspan="2" class="th-right">Delivered to {{ group.totals.unserved_to }}</th>{% endif %}
+              {% if group.totals.own or group.totals.divided or not group.totals.unserved %}<th rowspan="2" class="th-right">Use areas' own records</th>
+              <th rowspan="2" class="th-right">Divided up among the other use areas</th>{% endif %}
+              {% if pod.division_method == "crop_need" %}<th rowspan="2" class="th-right">Left after each use area received its ETAW divided by its irrigation efficiency</th>{% endif %}
+              {% if group.totals.unserved %}<th rowspan="2" class="th-right">{% if group.totals.unserved_to %}Delivered to {{ group.totals.unserved_to }}{% else %}Not delivered to a use area{% endif %}</th>{% endif %}
             </tr>
             <tr>
               <th class="th-right col-sep">Evaporation</th>

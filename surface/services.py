@@ -455,7 +455,7 @@ def _month_losses(
         raise CanalLossesTooLarge(
             f"In {month:%B %Y}, the evaporation, seepage and spill shares at "
             f"{pod.name} add up to {percent_words(total_fraction)}% of the "
-            f"diverted water and leave nothing for the fields."
+            f"diverted water and leave nothing for the use areas."
         )
     evaporation = (diverted * pod.evaporation_fraction).quantize(_Q)
     seepage = (diverted * pod.seepage_fraction).quantize(_Q)
@@ -1225,7 +1225,7 @@ def _period_of(month: date, periods: list[ReportingPeriod]) -> ReportingPeriod |
 
 
 def _destination_of(pod: PointOfDiversion) -> str:
-    """Where a point that serves no field delivers: its recharge site(s), else "no field"."""
+    """Where a point that serves no use area delivers: its recharge site(s), else "" (the page then reads "Not delivered to a use area")."""
     from core.modules import is_enabled
 
     if is_enabled("recharge"):
@@ -1234,7 +1234,7 @@ def _destination_of(pod: PointOfDiversion) -> str:
         )
         if names:
             return ", ".join(names)
-    return "no field"
+    return ""
 
 
 def _canal_month_row(
@@ -1243,7 +1243,7 @@ def _canal_month_row(
     loss: CanalMonthLoss | None,
     divided: dict[date, Decimal],
     beyond: dict[date, Decimal],
-    destination: str = "no field",
+    destination: str = "",
 ) -> dict[str, Any]:
     """One month's row for the canal page, from its stored loss row or, lacking one, its records."""
     tolerance = Decimal("0.0001")
@@ -1305,7 +1305,7 @@ def _add_group_totals(ordered: list[dict[str, Any]]) -> None:
         totals["count"] = len(rows)
         totals["uncalculated"] = sum(1 for r in rows if not r["calculated"])
         totals["estimated"] = any(r["estimated"] for r in rows)
-        totals["unserved_to"] = rows[0]["unserved_to"] if rows else "no field"
+        totals["unserved_to"] = rows[0]["unserved_to"] if rows else ""
         totals["adds_up"] = all(r["adds_up"] for r in rows)
         group["totals"] = totals
 
@@ -1328,7 +1328,7 @@ def canal_water_by_month(pod: PointOfDiversion) -> list[dict[str, Any]]:
          "losses" (their sum), "own", "divided", "beyond", "unserved":
          Decimal | None, "taken" and "returned" (the records' volume and what
          was returned; "headgate" is the volume less the return), "unserved_to"
-         (where a point that serves no field delivers), "estimated": bool, "calculated": bool, "adds_up": bool}
+         (where a point that serves no use area delivers: a recharge site name, or "" for none), "estimated": bool, "calculated": bool, "adds_up": bool}
 
     Every figure is read from a stored row: the headgate figure and the three
     losses from ``CanalMonthLoss``; ``divided`` is the magnitude of this

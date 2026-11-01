@@ -253,7 +253,7 @@ def test_surface_step_summary_writes_delivery_times_efficiency():
         "(the Delivery Settings default) = 92.3827 AF"
     )
     by_method = {"step_type": "subtract_surface_water", "detail": dict(step["detail"], efficiency_source="method")}
-    assert _step_detail_summary(by_method).endswith("(the field's irrigation method) = 92.3827 AF")
+    assert _step_detail_summary(by_method).endswith("(the use area's irrigation method) = 92.3827 AF")
     old = {"step_type": "subtract_surface_water", "detail": {"surface_water_af": "5"}}
     assert _step_detail_summary(old) == "5.0000 AF delivered and subtracted in full"
 

@@ -407,7 +407,7 @@ def test_delivery_settings_offers_no_separate_groundwater_efficiency(admin_clien
     assert "Groundwater irrigation efficiency" not in body
     assert 'name="groundwater_efficiency_percent"' not in body
     assert (
-        "Typical: 75%. OpenH2O uses this efficiency for every field with no "
+        "Typical: 75%. OpenH2O uses this efficiency for every use area with no "
         "irrigation method on file."
     ) in body
 
@@ -503,7 +503,7 @@ def test_a_metered_calculation_page_shows_no_extracted_figure(admin_client):
     assert "= pumped" not in html
     assert "No groundwater extraction estimated for May 2025" in html
     assert (
-        "This field has a meter reading for May 2025, so OpenH2O takes the "
+        "This use area has a meter reading for May 2025, so OpenH2O takes the "
         "groundwater extraction from the meter and does not estimate it."
     ) in html
 

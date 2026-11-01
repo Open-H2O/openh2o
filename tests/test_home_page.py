@@ -3,7 +3,7 @@
 
 The rule (2026-10-08):
 
-* **Start a task.** "Log water use" needs at least one use area to log against,
+* **Start a task.** "Add ledger entry" needs at least one use area to log against,
   and "Water balance" needs at least one water year to balance. Module flags
   alone cannot decide either tile: `surface` and `datasync` both pull `parcels`
   and `accounting` on, so a deployment can run accounting with no use area and
@@ -174,14 +174,14 @@ def _stat(audit, label):
 
 
 class TestStartATaskFollowsTheRecords:
-    def test_log_water_use_needs_a_use_area(self, client_in):
+    def test_add_ledger_entry_needs_a_use_area(self, client_in):
         """Accounting on, a writer signed in, no use area: nothing to log
         against, so no tile. One use area brings it back."""
-        assert "Log water use" not in _task_labels(_home(client_in))
+        assert "Add ledger entry" not in _task_labels(_home(client_in))
 
         ParcelFactory()
         tasks = _home(client_in).tasks
-        log = [task for task in tasks if task["label"] == "Log water use"]
+        log = [task for task in tasks if task["label"] == "Add ledger entry"]
         assert len(log) == 1
         assert log[0]["href"] == reverse("accounting:ledger_create")
 
@@ -274,7 +274,7 @@ def test_drinking_only_deployment_with_rows(client_in, settings):
 
     audit = _home(client_in)  # asserts the 200
     labels = _task_labels(audit)
-    assert "Log water use" not in labels
+    assert "Add ledger entry" not in labels
     assert "Water balance" not in labels
     assert "Your data" in audit.sections
     assert [(s["label"], s["value"], s["href"]) for s in audit.stats] == [

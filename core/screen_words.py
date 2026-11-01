@@ -39,8 +39,7 @@ RETIRED_SIGN_IN: tuple = (
 NEW_RECORD_TITLE_STARTS: tuple = ("New ", "Create ")
 NEW_RECORD_BUTTON = r"\+\s*New\b"
 
-#: The record a crop sits on is "use area" everywhere (Brent, 2026-10-31 17:36,
-#: ruling 59, "Use area everywhere (Recommended)").
+#: The record a crop sits on is called "use area" on every screen.
 FIELD_WORD = r"\b[Ff]ields?\b|\b[Ff]ield(?:'|’)s\b"
 
 #: Phrases where "field" is a data field (a form box, a column, a key, a model
@@ -69,5 +68,5 @@ FIELD_OTHER_SENSES: tuple = (
 #: Files left out of the "field" count, each with a reason.
 FIELD_WORD_EXCLUDED_FILES: tuple = (
     ("accounting/ledger_words.py", "its sentences are stored on ledger rows and change only "
-     "with a data migration (ISS-333's class)"),
+     "with a data migration"),
 )

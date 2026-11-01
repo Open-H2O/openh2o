@@ -130,9 +130,9 @@ class ParcelLedger(models.Model):
     divided_from_headgate = models.BooleanField(
         default=False,
         help_text=(
-            "Written by the canal split: this field's share of a headgate "
+            "Written by the canal split: this use area's share of a headgate "
             "total. Replaced whenever that headgate's month is recalculated. "
-            "Unticked rows are the field's own recorded delivery and are "
+            "Unticked rows are the use area's own recorded delivery and are "
             "never replaced by the split."
         ),
     )
@@ -146,7 +146,7 @@ class ParcelLedger(models.Model):
         help_text=(
             "On a canal split row, the point of diversion whose headgate total "
             "it is a share of, so recalculating one point never replaces "
-            "another point's shares on a field both serve. Blank on a field's "
+            "another point's shares on a use area both serve. Blank on a use area's "
             "own recorded delivery, and on split rows written before this field existed."
         ),
     )

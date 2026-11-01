@@ -366,7 +366,7 @@ def test_the_accounts_footer_equals_the_panel():
     assert '>-42.50<span class="budget-seg-unit">' in html
     # And the Zones table has no footer: a parcel can lie in more than one zone.
     assert "<tfoot>" not in _zones_table(html)
-    assert "A parcel can lie in more than one zone, so the table has no total row." in html
+    assert "A use area can lie in more than one zone, so the table has no total row." in html
 
 
 def test_no_leaf_header_carries_a_unit_and_each_card_states_it_once():

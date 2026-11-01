@@ -333,7 +333,7 @@ def test_the_point_form_saves_the_owner(d3, client):
 def test_the_canal_page_shows_the_left_over_column_only_when_dividing_by_crop_et(d3, client):
     run_d3()
     url = reverse("surface:pod_detail", args=[d3["P3"].pk])
-    heading = "Left after each field received its ETAW divided by its irrigation efficiency"
+    heading = "Left after each use area received its ETAW divided by its irrigation efficiency"
     assert heading not in client.get(url).content.decode()
     d3["P3"].division_method = "crop_need"
     d3["P3"].save()

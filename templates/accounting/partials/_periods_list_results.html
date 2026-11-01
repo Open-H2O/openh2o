@@ -79,7 +79,7 @@
   <p class="empty-state-text">No water year matches &ldquo;{{ q }}&rdquo;.</p>
   {% else %}
   <p class="empty-state-text">No water years yet.</p>
-  {% if user_can_write %}<a href="{% url 'accounting:period_create' %}" class="btn-primary btn-sm mt-sm">+ New water year</a>{% endif %}
+  {% if user_can_write %}<a href="{% url 'accounting:period_create' %}" class="btn-primary btn-sm mt-sm">+ Add water year</a>{% endif %}
   {% endif %}
 </div>
 {% endif %}

@@ -275,9 +275,9 @@ def test_the_page_shows_the_headings_and_the_totals():
         "Evaporation",
         "Seepage",
         "Spill",
-        "Fields' own records",
-        "Divided up among the other fields",
-        "Left after each field received its ETAW divided by its irrigation efficiency",
+        "Use areas' own records",
+        "Divided up among the other use areas",
+        "Left after each use area received its ETAW divided by its irrigation efficiency",
     ):
         assert heading in section, heading
     assert "All 2 months" in section

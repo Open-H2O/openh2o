@@ -214,7 +214,7 @@ def period_create(request):
                 request,
                 f"Water year created. OpenH2O attached "
                 f"{counts['diversion_records']} diversion records and "
-                f"{counts['ledger_rows']} ledger rows dated inside it to this "
+                f"{counts['ledger_rows']} ledger entries dated inside it to this "
                 f"water year.",
             )
             return redirect("accounting:period_detail", pk=period.pk)

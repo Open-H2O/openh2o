@@ -44,7 +44,7 @@
       frequency and dates.
     </p>
     <div class="row-start mt-lg">
-      <a href="{% url 'drinking:schedule_add' %}" class="btn-primary">+ Add row</a>
+      <a href="{% url 'drinking:schedule_add' %}" class="btn-primary">+ Add to schedule</a>
     </div>
     {% endif %}
   </div>
@@ -52,7 +52,7 @@
   <div class="card-raised table-scroll" style="padding: 0;">
     <div class="ledger-card-head row-start" style="justify-content: space-between; gap: var(--space-md);">
       <div class="text-secondary text-base">{{ rows|length }} row{{ rows|length|pluralize }}, earliest date first</div>
-      {% if user_can_write %}<a href="{% url 'drinking:schedule_add' %}" class="btn-secondary btn-sm">+ Add row</a>{% endif %}
+      {% if user_can_write %}<a href="{% url 'drinking:schedule_add' %}" class="btn-secondary btn-sm">+ Add to schedule</a>{% endif %}
     </div>
     <table class="data-table">
       <thead>

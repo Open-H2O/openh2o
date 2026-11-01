@@ -399,7 +399,7 @@ def check_ledger_integrity():
             have = "has" if zero_count == 1 else "have"
             months = "that month" if zero_count == 1 else "those months"
             msg += (
-                f" {_count(zero_count, 'calculated ledger row', 'calculated ledger rows')} "
+                f" {_count(zero_count, 'calculated ledger entry', 'calculated ledger entries')} "
                 f"{have} no ETAW met by groundwater, so the estimated groundwater "
                 f"extraction for {months} is zero."
             )
@@ -419,7 +419,7 @@ def check_orphans():
     # depends on a requires-edge should say which edge it is leaning on.
     if not is_enabled("parcels") or not is_enabled("accounting"):
         return not_applicable(
-            "orphans", "parcels", "parcel-to-account assignment"
+            "orphans", "parcels", "use areas assigned to accounts"
         )
 
     from parcels.models import Parcel
@@ -818,13 +818,13 @@ def check_unallocated_delivery():
         points = rows.values("point_of_diversion").distinct().count()
         msg = (
             f"At {_count(points, 'point', 'points')} of diversion, {total:,.2f} AF "
-            "of headgate water was left after each field received its ETAW "
+            "of headgate water was left after each use area received its ETAW "
             "divided by its irrigation efficiency."
         )
     else:
         status = "green"
         msg = (
-            "No headgate water was left after each field received its ETAW "
+            "No headgate water was left after each use area received its ETAW "
             "divided by its irrigation efficiency."
         )
 

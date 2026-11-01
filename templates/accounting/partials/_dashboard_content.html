@@ -4,7 +4,7 @@
 <div class="empty-state">
   <p class="empty-state-text text-secondary">No water years yet.</p>
   <a href="{% url 'accounting:period_create' %}" class="btn-primary">
-    + New water year
+    + Add water year
   </a>
 </div>
 {% else %}
@@ -200,7 +200,7 @@
 <div class="card-raised">
   <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
     <h2 class="section-header-flush">Zones</h2>
-    <span class="text-tertiary text-xs">One row per zone. A parcel can lie in more than one zone, so the table has no total row. Figures are acre-feet (AF) for {{ selected_period.name }}.</span>
+    <span class="text-tertiary text-xs">One row per zone. A use area can lie in more than one zone, so the table has no total row. Figures are acre-feet (AF) for {{ selected_period.name }}.</span>
   </div>
   {% if zone_summaries %}
   <div class="table-scroll">
@@ -349,7 +349,7 @@
 <div class="card-raised" id="unmet-demand">
   <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
     <h2 class="section-header-flush">Use areas with water use recorded and no supply reported</h2>
-    <span class="text-tertiary text-xs">{{ selected_period.name }}{% include "partials/_explainer_popout.html" with title="How a row is counted" text="One row per field whose water use in a month of this water year was more than the water on its record. Each figure adds the field's monthly amounts not met by supplies, and the column adds to the total at the bottom." link=wb_help_url link_label="How water balances work" %} · Figures are acre-feet (AF).</span>
+    <span class="text-tertiary text-xs">{{ selected_period.name }}{% include "partials/_explainer_popout.html" with title="How a row is counted" text="One row per use area whose water use in a month of this water year was more than the water on its record. Each figure adds the use area's monthly amounts not met by supplies, and the column adds to the total at the bottom." link=wb_help_url link_label="How water balances work" %} · Figures are acre-feet (AF).</span>
   </div>
   {% if unmet_demand_rows %}
   <div class="table-scroll">
@@ -395,7 +395,7 @@
   </table>
   </div>
   {% else %}
-  <p class="text-tertiary text-sm">In {{ selected_period.name }}, no field had water use recorded and no supply reported.</p>
+  <p class="text-tertiary text-sm">In {{ selected_period.name }}, no use area had water use recorded and no supply reported.</p>
   {% endif %}
 </div>
 {% endif %}

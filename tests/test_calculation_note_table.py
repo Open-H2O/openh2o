@@ -68,7 +68,7 @@ def test_the_labels_are_the_approved_words():
     groups = {g["table"]: g for g in _note_table(RAW)}
 
     assert groups["unallocated"]["lead"] + groups["unallocated"]["rest"] == (
-        "Headgate water left after each field received its ETAW divided by its "
+        "Headgate water left after each use area received its ETAW divided by its "
         "irrigation efficiency. Listed on Site Health under Unallocated Delivery."
     )
     assert groups["evaporation"]["lead"] == (
@@ -83,8 +83,8 @@ def test_tabled_sentences_leave_out_only_what_the_table_carries():
     _attention, plain = _note_sentences(RAW)
 
     assert tabled == [
-        "OpenH2O credited the 3.50 AF of canal seepage at Old Gate in October 2025 to no zone, "
-        "because no management area contains the point or the field that received the most of "
+        "OpenH2O did not credit the 3.50 AF of canal seepage at Old Gate in October 2025 to a zone, "
+        "because no management area contains the point or the use area that received the most of "
         "that month's delivery."
     ]
     assert len(plain) == 3
@@ -94,7 +94,7 @@ def test_note_lines_prints_a_group_as_its_label_and_one_line_per_point():
     left = _note_table(RAW)[0]
 
     assert note_lines(left) == [
-        "Headgate water left after each field received its ETAW divided by its "
+        "Headgate water left after each use area received its ETAW divided by its "
         "irrigation efficiency. Listed on Site Health under Unallocated Delivery.",
         "    Crocker: 27.35 AF",
         "    Stevinson: 16.05 AF",

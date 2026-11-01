@@ -27,7 +27,7 @@ budget); a unit stated once in the caller's own subtitle, never on a column.
       <th rowspan="2" style="min-width: 170px;">Account</th>
       <th colspan="4" class="th-group-label">Supplies</th>
       <th colspan="2" class="th-group-label">Uses</th>
-      <th rowspan="2" class="th-right">Balance{% include "partials/_explainer_popout.html" with title="Balance" text="This account's total supplies minus its uses for the period: crop ET and the water its fields did not consume. A positive balance means the supplies on record were more than those uses." link=wb_help_url link_label="How water balances work" %}</th>
+      <th rowspan="2" class="th-right">Balance{% include "partials/_explainer_popout.html" with title="Balance" text="This account's total supplies minus its uses for the period: crop ET and the water its use areas did not consume. A positive balance means the supplies on record were more than those uses." link=wb_help_url link_label="How water balances work" %}</th>
       {% if has_allocations %}
       {% comment %}The label is "Groundwater budget", same as the Zones table's identical group
            header in _dashboard_content.html -- one label, both tables (rule
@@ -44,7 +44,7 @@ budget); a unit stated once in the caller's own subtitle, never on a column.
       <th class="th-right"><span class="th-stack">Pumped water not consumed</span></th>
       {% if has_allocations %}
       <th class="th-right col-sep">Allocation{% include "partials/_explainer_popout.html" with title="Groundwater allocation" text="This account's share of the water year's groundwater allocation, pro-rated by the acres of its use areas in each groundwater zone. Surface-water allocation is a separate budget and is not counted here." link=budgets_help_url link_label="How budgets & allocations work" %}</th>
-      <th class="th-right">Remaining{% include "partials/_explainer_popout.html" with title="Groundwater remaining" text="Groundwater allocation, plus any amount carried forward, minus pumping. A field with a meter counts its meter readings; a field without one counts its estimated pumping, its ETAW met by groundwater divided by its irrigation efficiency. A negative number means the account pumped more than its groundwater allocation this water year." link=budgets_help_url link_label="How budgets & allocations work" %}</th>
+      <th class="th-right">Remaining{% include "partials/_explainer_popout.html" with title="Groundwater remaining" text="Groundwater allocation, plus any amount carried forward, minus pumping. A use area with a meter counts its meter readings; a use area without one counts its estimated pumping, its ETAW met by groundwater divided by its irrigation efficiency. A negative number means the account pumped more than its groundwater allocation this water year." link=budgets_help_url link_label="How budgets & allocations work" %}</th>
       {% endif %}
     </tr>
   </thead>
@@ -129,7 +129,7 @@ budget); a unit stated once in the caller's own subtitle, never on a column.
 <p class="text-tertiary text-sm mb-sm">No active account matches &ldquo;{{ q }}&rdquo;.</p>
 {% else %}
 <p class="text-tertiary text-sm mb-sm">No active accounts yet.</p>
-<a href="{% url 'accounting:account_create' %}" class="link-accent text-sm">+ New account</a>
+<a href="{% url 'accounting:account_create' %}" class="link-accent text-sm">+ Add account</a>
 {% endif %}
 {% comment %}Dashboard: the heading "Water balance", the row "Total", the empty-site line, the over-budget count, the Remaining pop-out and the fields-table pop-out are approved sentences. A balance that prints 0.00 is "Balanced".{% endcomment %}
 {% comment %}"Effective precipitation" (CalculationRun.effective_precip_af).{% endcomment %}

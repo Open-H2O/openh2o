@@ -148,7 +148,7 @@ class TestWaterRightRecordOrder:
 # ---------------------------------------------------------------------------
 ESTIMATED_BADGE = (
     '<span class="badge badge-grey" title="OpenH2O estimated this delivery from '
-    "the ETAW of the fields this point serves, before it stopped making "
+    "the ETAW of the use areas this point serves, before it stopped making "
     'estimates. It is not a measurement.">Estimated</span>'
 )
 

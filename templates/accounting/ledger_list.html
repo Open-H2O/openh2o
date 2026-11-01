@@ -12,7 +12,7 @@
   Upload CSV
 </a>
 <a href="{% url 'accounting:ledger_create' %}" class="btn-primary btn-sm">
-  + New entry
+  + Add ledger entry
 </a>{% endif %}
 {% endblock %}
 
@@ -27,7 +27,7 @@
        them (user_can_write, the page_actions guard above). The sign rule is
        stated once on this page, in the results head directly above the table
        (`_ledger_list_results.html`), not repeated here. {% endcomment %}
-  <p class="page-description">This page lists the Use Ledger for the water year you choose, or for every water year. Download CSV saves the rows that match the filters on this page, search and zone included.{% if user_can_write %} Upload CSV adds the entries in a file, and New entry adds a single entry.{% endif %}</p>
+  <p class="page-description">This page lists the Use Ledger for the water year you choose, or for every water year. Download CSV saves the rows that match the filters on this page, search and zone included.{% if user_can_write %} Upload CSV adds the entries in a file, and Add ledger entry adds a single entry.{% endif %}</p>
 </div>
 {% endblock %}
 

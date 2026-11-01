@@ -334,9 +334,9 @@ def test_no_zone_at_all_deposits_nothing_and_says_so_in_words():
     assert info == [
         "OpenH2O subtracted 0.95 AF of canal evaporation and 1.90 AF of spill "
         "from the water diverted at 1 point of diversion in the months calculated.",
-        "OpenH2O credited the 11.40 AF of canal seepage at Plain Canal Headgate "
-        "in January 2024 to no zone, because no management area contains the "
-        "point or the field that received the most of that month's delivery.",
+        "OpenH2O did not credit the 11.40 AF of canal seepage at Plain Canal Headgate "
+        "in January 2024 to a zone, because no management area contains the "
+        "point or the use area that received the most of that month's delivery.",
     ]
 
 
@@ -445,7 +445,7 @@ def test_shares_that_take_the_whole_refuse_the_month_and_write_nothing():
     assert caught.value.sentence == (
         "In January 2024, the evaporation, seepage and spill shares at Plain "
         "Canal Headgate add up to 100% of the diverted water and leave "
-        "nothing for the fields."
+        "nothing for the use areas."
     )
     assert not _split_rows().exists()
     assert not CanalMonthLoss.objects.exists()
@@ -495,7 +495,7 @@ def test_a_month_that_loses_everything_fails_with_a_named_sentence(engine_world)
     assert req.outcome == (
         "In January 2024, the evaporation, seepage and spill shares at Test "
         "Canal Headgate add up to 100% of the diverted water and leave "
-        "nothing for the fields. OpenH2O changed nothing in January 2024."
+        "nothing for the use areas. OpenH2O changed nothing in January 2024."
     )
     assert not _split_rows().exists()
     assert not CanalMonthLoss.objects.exists()
@@ -523,9 +523,9 @@ def test_a_run_with_losses_stays_green_and_says_what_was_written_off(engine_worl
     ]
     assert groups["spill"]["rows"] == [{"af": "0.60", "where": "Test Canal Headgate"}]
     assert (
-        "OpenH2O credited the 3.60 AF of canal seepage at Test Canal Headgate "
-        "in January 2024 to no zone, because no management area contains the "
-        "point or the field that received the most of that month's delivery."
+        "OpenH2O did not credit the 3.60 AF of canal seepage at Test Canal Headgate "
+        "in January 2024 to a zone, because no management area contains the "
+        "point or the use area that received the most of that month's delivery."
     ) in req.notes
     assert CanalMonthLoss.objects.get().available_af == Decimal("25.5000")
 

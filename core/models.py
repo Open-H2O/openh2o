@@ -113,7 +113,7 @@ class SiteConfig(models.Model):
         max_digits=4,
         decimal_places=3,
         default=Decimal("0.750"),
-        help_text="The default irrigation efficiency, for a field with no irrigation method on file.",
+        help_text="The default irrigation efficiency, for a use area with no irrigation method on file.",
     )
 
     # What a canal delivery that
@@ -128,12 +128,12 @@ class SiteConfig(models.Model):
     OVER_DELIVERY_TREATMENT_CHOICES = [
         ("not_credited", "Not credited to anyone"),
         ("credited", "Credited to the landowner, less a share left in the basin"),
-        ("named_line", "Shown on the field's page as its own line"),
+        ("named_line", "Shown on the use area's page as its own line"),
     ]
     #: What a site can choose now.
     OVER_DELIVERY_TREATMENT_OFFERED = [
         ("not_credited", "Not credited to anyone"),
-        ("named_line", "Shown on the field's page as its own line"),
+        ("named_line", "Shown on the use area's page as its own line"),
     ]
     over_delivery_treatment = models.CharField(
         max_length=20,
@@ -149,7 +149,7 @@ class SiteConfig(models.Model):
         default=Decimal("0.100"),
         validators=[MinValueValidator(0), MaxValueValidator(1)],
         help_text="OpenH2O leaves this share of the water it credits from a "
-        "recharge event or from canal seepage in the basin, credited to no one. "
+        "recharge event or from canal seepage in the basin, not credited to anyone. "
         "Enter it as a fraction: the default, 0.100, is 10 percent.",
     )
     #: What happens to the water a canal loses to seepage. Belongs to `surface`
@@ -157,8 +157,8 @@ class SiteConfig(models.Model):
     #: seepage adds to the basin stays whatever is chosen; this decides whether
     #: any water account is credited too.
     CANAL_SEEPAGE_CREDIT_CHOICES = [
-        ("none", "Credited to no one"),
-        ("by_acre", "Shared by acre among the fields the canal serves"),
+        ("none", "Not credited to anyone"),
+        ("by_acre", "Shared by acre among the use areas the canal serves"),
         ("owner", "Credited to the canal's owner only"),
     ]
     canal_seepage_credit = models.CharField(
@@ -166,10 +166,10 @@ class SiteConfig(models.Model):
         choices=CANAL_SEEPAGE_CREDIT_CHOICES,
         default="none",
         help_text="Whether a canal's seepage is credited to water accounts. "
-        "Credited to no one (the default) leaves it in the basin's water budget "
-        "alone. Shared by acre credits the accounts of the fields the canal "
+        "Not credited to anyone (the default) leaves it in the basin's water budget "
+        "alone. Shared by acre credits the accounts of the use areas the canal "
         "serves, and the owner choice credits the account named on the canal's "
-        "headgate. Both choices leave the Share left in the basin out of the credit.",
+        "point of diversion. Both choices leave the Share left in the basin out of the credit.",
     )
 
     # There is no separate groundwater efficiency: there is one irrigation

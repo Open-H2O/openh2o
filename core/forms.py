@@ -415,7 +415,7 @@ class DeliverySettingsForm(forms.Form):
         label="Default irrigation efficiency",
         # The sentence avoids the `recharge` module's noun, which a
         # deployment that does not run that module must not name.
-        help_text="Typical: 75%. OpenH2O uses this efficiency for every field "
+        help_text="Typical: 75%. OpenH2O uses this efficiency for every use area "
         "with no irrigation method on file.",
         widget=forms.NumberInput(
             attrs={"class": "form-input", "style": "width: 6rem;", "step": "1"}
@@ -463,8 +463,8 @@ class DeliverySettingsForm(forms.Form):
         # Worded without "surface water": the setting applies on a deployment
         # that may have none.
         label=(
-            "When a zone doesn't use its full allocation by the end of the "
-            "water year:"
+            "What happens to a zone's unused allocation at the end of the "
+            "water year?"
         ),
         widget=forms.RadioSelect,
     )
@@ -606,11 +606,11 @@ class DeliverySettingsForm(forms.Form):
             # page is served without that module.
             self.fields["over_delivery_treatment"].choices = [
                 ("not_credited", "Not credited to anyone."),
-                ("named_line", "Shown on the field's page as its own line."),
+                ("named_line", "Shown on the use area's page as its own line."),
             ]
             self.fields["canal_seepage_credit"].choices = [
-                ("none", "Credited to no one."),
-                ("by_acre", "Shared by acre among the fields the canal serves, less the share left in the basin."),
+                ("none", "Not credited to anyone."),
+                ("by_acre", "Shared by acre among the use areas the canal serves, less the share left in the basin."),
                 ("owner", "Credited to the canal's owner only, less the share left in the basin."),
             ]
         if self.shows_diversion_settings:
@@ -638,7 +638,7 @@ class DeliverySettingsForm(forms.Form):
                 "Nothing else happens to the amount. This is the default."
             ),
             "named_line": (
-                "OpenH2O neither credits nor charges the amount. The field's "
+                "OpenH2O neither credits nor charges the amount. The use area's "
                 "water balance is the same under both choices."
             ),
         }
@@ -670,16 +670,16 @@ class DeliverySettingsForm(forms.Form):
         descriptions = {
             "none": (
                 "OpenH2O records the seepage in the basin's water budget and "
-                "credits it to no water account. This is the default."
+                "does not credit it to a water account. This is the default."
             ),
             "by_acre": (
-                "Each served field's water account is credited its share of the "
-                "seepage by acre. A field that is not in a water account is "
-                "skipped, and its part is credited to no one."
+                "Each served use area's water account is credited its share of the "
+                "seepage by acre. A use area that is not in a water account is "
+                "skipped, and its part is not credited to anyone."
             ),
             "owner": (
-                "The water account named as owner on the canal's headgate is "
-                "credited. A headgate with no owner named credits no one."
+                "The water account named as owner on the canal's point of diversion is "
+                "credited. When the point of diversion does not name an owner, the seepage is not credited to anyone."
             ),
         }
         return [

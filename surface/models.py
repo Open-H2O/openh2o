@@ -382,17 +382,17 @@ class PointOfDiversion(models.Model):
         blank=True,
         related_name="owned_points",
         help_text="When Delivery Settings credit seepage to the owner only, "
-        "this water account is credited with it. Leave it blank to credit "
-        "no one.",
+        "this water account is credited with it. Leave it blank if "
+        "no account is credited.",
     )
     division_method = models.CharField(
         max_length=10,
         choices=DIVISION_METHOD_CHOICES,
         default="shares",
-        help_text="How each month's water is divided among the fields this "
-        "headgate serves. By shares uses the share entered for each field, or "
-        "the field's acreage where no share is entered, and books all of the "
-        "water to the fields. By crop ET caps each field at its crop ET divided "
+        help_text="How each month's water is divided among the use areas this "
+        "headgate serves. By shares uses the share entered for each use area, or "
+        "the use area's acreage where no share is entered, and books all of the "
+        "water to the use areas. By crop ET caps each use area at its crop ET divided "
         "by its irrigation efficiency and lists the rest as not divided.",
     )
 
@@ -796,7 +796,7 @@ class DiversionRecord(models.Model):
         ("apportioned", "Apportioned from a shared aggregate, 934(a)(8)"),
         ("below_threshold", "Under 10 acre-feet a year: no standard applies"),
         ("outage_estimate", "Estimated during a device outage, 937(b)(4)"),
-        ("estimated_from_use", "Estimated from the fields' crop water use"),
+        ("estimated_from_use", "Estimated from the use areas' crop water use"),
     ]
     #: What a form offers. ``estimated_from_use`` is left out: OpenH2O no longer
     #: writes it and no one can choose it, but a record a finalized year still
@@ -1055,23 +1055,23 @@ class CanalMonthLoss(models.Model):
         verbose_name="Left after canal losses (AF)",
         max_digits=12,
         decimal_places=4,
-        help_text="What is left for the fields after the three losses.",
+        help_text="What is left for the use areas after the three losses.",
     )
     own_af = models.DecimalField(
-        verbose_name="Fields' own records (AF)",
+        verbose_name="Use areas' own records (AF)",
         max_digits=12,
         decimal_places=4,
         default=Decimal("0"),
-        help_text="The served fields' own recorded deliveries for the month, "
+        help_text="The served use areas' own recorded deliveries for the month, "
         "taken from what was left before the rest was divided up.",
     )
     unserved_af = models.DecimalField(
-        verbose_name="Delivered to no field (AF)",
+        verbose_name="Not delivered to a use area (AF)",
         max_digits=12,
         decimal_places=4,
         default=Decimal("0"),
-        help_text="For a point that does not serve a field: what was left after the "
-        "three losses. Nobody is credited with it. Zero for a point that serves fields.",
+        help_text="For a point that does not serve a use area: what was left after the "
+        "three losses. It is not credited to anyone. Zero for a point that serves use areas.",
     )
     seepage_zone = models.ForeignKey(
         "geography.Zone",
@@ -1107,5 +1107,5 @@ class CanalMonthLoss(models.Model):
     def __str__(self):
         return (
             f"{self.point_of_diversion} {self.month:%Y-%m}: "
-            f"{self.available_af} AF of {self.diverted_af} AF reached the fields"
+            f"{self.available_af} AF of {self.diverted_af} AF reached the use areas"
         )

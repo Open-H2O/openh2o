@@ -83,7 +83,7 @@ def admin_client(db):
 def test_diversion_settings_render_when_surface_is_enabled(admin_client):
     resp = admin_client.get(reverse("accounting:delivery_settings"))
     body = resp.content.decode()
-    assert "Diversion records" in body
+    assert '<h2 class="section-header">Reporting year</h2>' in body
     assert "Which months does a reporting year cover?" in body
     assert "OpenH2O applies this rule to a diversion file that gives a year and a month but no date." in body
     # 146-03 Task 6: the USE-row question moved to the import screen and no
@@ -128,7 +128,7 @@ def test_diversion_settings_absent_on_a_drinking_only_configuration(admin_client
     resp = admin_client.get(reverse("accounting:delivery_settings"))
     assert resp.status_code == 200
     body = resp.content.decode()
-    assert "Diversion records" not in body
+    assert '<h2 class="section-header">Reporting year</h2>' not in body
     assert "Which months does a reporting year cover?" not in body
     # The page's other setting is unaffected by surface being gone.
     assert "unused water" in body.lower() or "allotment" in body.lower()

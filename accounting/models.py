@@ -129,7 +129,7 @@ class WaterAccount(models.Model):
         null=True,
         blank=True,
         help_text="Choose what this account represents: a farm unit that "
-        "holds fields, a place of use under a water right, the water right "
+        "holds use areas, a place of use under a water right, the water right "
         "itself, or Other.",
     )
     # `delivery_pod` (a point of diversion) is NOT a field here. `accounting`
@@ -332,7 +332,7 @@ class CalculationStep(models.Model):
         ("et_gross", "Gross ET"),
         ("subtract_effective_precip", "Subtract effective precipitation"),
         ("subtract_surface_water", "Subtract delivery × irrigation efficiency"),
-        ("facility_only_zero", "Zero out facility-only parcels"),
+        ("facility_only_zero", "Zero out facility-only use areas"),
         ("clamp_floor", "Clamp at floor"),
     ]
 
@@ -678,7 +678,7 @@ class CalculationRun(models.Model):
         decimal_places=4,
         null=True,
         blank=True,
-        help_text="Recorded delivery for the month (AF), before the field's "
+        help_text="Recorded delivery for the month (AF), before the use area's "
         "efficiency is applied. Null when no surface-water step ran or the run "
         "predates the efficiency step.",
     )
@@ -687,7 +687,7 @@ class CalculationRun(models.Model):
         decimal_places=3,
         null=True,
         blank=True,
-        help_text="The field-efficiency factor applied to this run's surface "
+        help_text="The use-area efficiency factor applied to this run's surface "
         "delivery. Null when the apply_efficiency knob is off, nothing was "
         "delivered, or the step ran on a plan that predates the efficiency step.",
     )
@@ -696,7 +696,7 @@ class CalculationRun(models.Model):
         max_digits=12,
         decimal_places=4,
         default=Decimal("0"),
-        help_text="An over-delivery is nobody's credit under the default: "
+        help_text="Under the default, an over-delivery is not credited to anyone: "
         "the month's canal water the crop could use beyond its net "
         "use, read off the clamp_floor step's incidental_recharge_af. Under "
         "the default (not_credited) and under named_line, the engine "
@@ -729,27 +729,27 @@ class CalculationRun(models.Model):
         "'not_credited' or 'named_line'.",
     )
     over_delivery_credited_af = models.DecimalField(
-        verbose_name="Credited to this field (AF)",
+        verbose_name="Credited to this use area (AF)",
         max_digits=12,
         decimal_places=4,
         null=True,
         blank=True,
         help_text="The amount this run credited, to the "
-        "field's own ledger (over_delivery_credit_pooled False) or to its "
+        "use area's own ledger (over_delivery_credit_pooled False) or to its "
         "zone's shared pool (over_delivery_credit_pooled True). Null unless "
         "'credited' treatment credited something this run: a month with no "
-        "over-delivery credits nothing, and a no-well field with no "
+        "over-delivery credits nothing, and a no-well use area with no "
         "management-area zone has nowhere to credit it either.",
     )
     over_delivery_credit_pooled = models.BooleanField(
         default=False,
         help_text="True when over_delivery_credited_af went to the "
-        "field's zone's shared basin pool, not to the field's own ledger. "
-        "A no-well field has no well to pump a personal credit back with, "
+        "use area's zone's shared basin pool, not to the use area's own ledger. "
+        "A no-well use area has no well to pump a personal credit back with, "
         "so its credited share joins the zone's shared account. "
         "(the same routing rule, applied under 'credited'). False "
         "(the default) on every run that credited nothing, or credited the "
-        "field itself.",
+        "use area itself.",
     )
     net_consumptive_use_af = models.DecimalField(
         verbose_name="ETAW (AF)",
@@ -760,7 +760,7 @@ class CalculationRun(models.Model):
         "an ET-based estimate used where meters are absent. This is distinct from the "
         "calculation-chain residual, which goes a step further and also subtracts "
         "surface water; the two 'net consumptive use' senses are not the same number. "
-        "A source-agnostic quantity, recorded for every parcel with ET regardless of "
+        "A source-agnostic quantity, recorded for every use area with ET regardless of "
         "supply source or whether a well exists.",
     )
     residual_disposition = models.CharField(
@@ -777,9 +777,9 @@ class CalculationRun(models.Model):
         ],
         default="groundwater",
         help_text="How the ET − precip − surface residual was resolved: written as "
-        "a calculated groundwater extraction (the parcel has a well), recorded as "
+        "a calculated groundwater extraction (the use area has a well), recorded as "
         "unmet demand (no well — under-irrigation or a surface-allocation error), or "
-        "marked metered (the parcel carries an authoritative meter reading that owns "
+        "marked metered (the use area carries an authoritative meter reading that owns "
         "its groundwater — the run is an ET reference value, no calculated row).",
     )
     gw_extracted_af = models.DecimalField(
@@ -788,8 +788,8 @@ class CalculationRun(models.Model):
         decimal_places=4,
         null=True,
         blank=True,
-        help_text="The estimated field's pumped magnitude: "
-        "final_af divided by groundwater_application_efficiency, the field's own "
+        help_text="The estimated use area's pumped magnitude: "
+        "final_af divided by groundwater_application_efficiency, the use area's own "
         "irrigation efficiency AT COMPUTE TIME (stamped beside this "
         "figure, never re-derived from a setting that may have moved since). A "
         "finalized period's billable groundwater must not move when someone tunes "
@@ -802,10 +802,10 @@ class CalculationRun(models.Model):
         decimal_places=3,
         null=True,
         blank=True,
-        help_text="The field's irrigation efficiency this run divided "
+        help_text="The use area's irrigation efficiency this run divided "
         "ETAW met by groundwater by (its irrigation method's, else the Delivery "
         "Settings default, read when the run was computed). The same figure the "
-        "field's canal water is multiplied by: one field, one irrigation system. "
+        "use area's canal water is multiplied by: one use area, one irrigation system. "
         "Null on a metered or no-well run, and on a run that predates this stamp.",
     )
     groundwater_efficiency_source = models.CharField(
@@ -813,7 +813,7 @@ class CalculationRun(models.Model):
         blank=True,
         default="",
         choices=[
-            ("method", "The field's irrigation method"),
+            ("method", "The use area's irrigation method"),
             ("agency", "Delivery Settings default"),
         ],
         help_text="Where groundwater_application_efficiency came from "
@@ -830,7 +830,7 @@ class CalculationRun(models.Model):
         help_text="gw_extracted_af minus final_af: the "
         "pumped water the crop did not consume, returning to the aquifer. "
         "Neither crop use nor a credit; feeds parcel_mass_balance's own output "
-        "term of the same name so an estimated field-year still closes. Null "
+        "term of the same name so an estimated use-area year still closes. Null "
         "wherever gw_extracted_af is null.",
     )
     unmet_demand_af = models.DecimalField(
@@ -838,7 +838,7 @@ class CalculationRun(models.Model):
         max_digits=12,
         decimal_places=4,
         default=Decimal("0"),
-        help_text="Positive shortfall (ET − precip − surface) on a parcel with no "
+        help_text="Positive shortfall (ET − precip − surface) on a use area with no "
         "well: under-irrigation or a surface-allocation error. Recorded explicitly, "
         "NEVER written as a calculated groundwater row.",
     )

@@ -12,7 +12,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Edit</span>
   </nav>
-  <p class="page-description">Change the point's name, stream, local name, maximum rate, status and notes. Set the three canal losses between the headgate and the fields it serves, how each month's water is divided among those fields, and the water account that owns the canal.</p>
+  <p class="page-description">Change the point's name, stream, local name, maximum rate, status and notes. Set the three canal losses between the headgate and the use areas it serves, how each month's water is divided among those use areas, and the water account that owns the canal.</p>
 </div>
 {% endblock %}
 
@@ -62,7 +62,7 @@
       </div>
 
       <h2 class="card-header-ruled mt-lg form-span-2">Losses in the canal below this headgate</h2>
-      <p class="text-secondary text-sm mb-md form-span-2">Each loss below is a percentage of the water taken at the headgate. Every month, OpenH2O subtracts these losses before dividing the rest among the fields.</p>
+      <p class="text-secondary text-sm mb-md form-span-2">Each loss below is a percentage of the water taken at the headgate. Every month, OpenH2O subtracts these losses before dividing the rest among the use areas.</p>
 
       <div class="form-group">
         <label class="form-label" for="{{ form.lining.id_for_label }}">{{ form.lining.label }}</label>

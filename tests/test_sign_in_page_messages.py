@@ -32,7 +32,7 @@ class TestResetPage:
         body = _get("account_reset_password")
         assert "This site does not send email. Ask an administrator to set a temporary password for you." in body
         assert 'name="email"' not in body
-        assert "Back to login" in body
+        assert "Back to Sign in" in body
 
     def test_reset_sent(self):
         body = _get("account_reset_password_done")
@@ -40,7 +40,7 @@ class TestResetPage:
             "OpenH2O emails a password reset link to the address you entered when it "
             "belongs to an account. If the email does not arrive, check your spam folder."
         ) in body
-        assert "Back to login" in body and "Back to Login" not in body
+        assert "Back to Sign in" in body and "Back to Login" not in body
 
 
 @pytest.mark.django_db

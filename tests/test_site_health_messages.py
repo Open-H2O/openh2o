@@ -315,7 +315,7 @@ def test_leftover_headgate_water_green():
 
     if not UnallocatedDelivery.objects.exists():
         assert checks.check_unallocated_delivery()["message"] == (
-            "No headgate water was left after each field received its ETAW "
+            "No headgate water was left after each use area received its ETAW "
             "divided by its irrigation efficiency."
         )
 

@@ -251,7 +251,7 @@ def _gears_by_et_warnings(reporting_period: ReportingPeriod) -> list[PreflightMe
             "level": "error",
             "message": (
                 "The by-ET file would be empty for this period. Either ET "
-                "estimates are not recorded, or every field with one is metered "
+                "estimates are not recorded, or every use area with one is metered "
                 "and is in the by-well file."
             ),
         })
@@ -262,7 +262,7 @@ def _gears_by_et_warnings(reporting_period: ReportingPeriod) -> list[PreflightMe
             "message": (
                 f"The by-ET file will hold {len(rows)} "
                 f"{'row' if len(rows) == 1 else 'rows'}, {total:.2f} AF in all. "
-                "Metered field-months are in the by-well file and are left out here."
+                "Metered use area months are in the by-well file and are left out here."
             ),
         })
 
@@ -346,7 +346,7 @@ def _orphan_diversion_warnings(reporting_period: ReportingPeriod, diversion_type
             "level": "error",
             "message": (
                 f"{orphans_in_range} diversion record(s) dated inside this period are "
-                "attached to no water year; they would be silently missing from "
+                "not attached to a water year; they would be silently missing from "
                 "this CalWATRS filing. Create or edit the water year that covers these "
                 "months; records attach when the year is saved, or open each record "
                 "and save it."
@@ -364,8 +364,8 @@ def _orphan_diversion_warnings(reporting_period: ReportingPeriod, diversion_type
         warnings.append({
             "level": "warning",
             "message": (
-                f"{orphans_elsewhere} diversion record(s) outside this period belong to "
-                "no water year; they will never appear in any filing "
+                f"{orphans_elsewhere} diversion record(s) outside this period do not belong to "
+                "a water year; they will never appear in any filing "
                 "until a period covering their month exists."
             ),
         })

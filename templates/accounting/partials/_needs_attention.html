@@ -64,7 +64,7 @@
   {% if unmet_demand_count %}
   <a href="#unmet-demand" class="attention-row">
     <span class="attention-count attention-count--over">{{ unmet_demand_count }}</span>
-    <span class="attention-row-text">field{{ unmet_demand_count|pluralize }} with water use recorded, no supply reported<span class="block text-tertiary text-xs">This counts each field whose water use in a month was more than the water on its record.</span></span>
+    <span class="attention-row-text">use area{{ unmet_demand_count|pluralize }} with water use recorded, no supply reported<span class="block text-tertiary text-xs">This counts each use area whose water use in a month was more than the water on its record.</span></span>
   </a>
   {% endif %}
 
