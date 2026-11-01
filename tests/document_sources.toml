@@ -44,7 +44,7 @@ document = "README.md"
 heading = "Who this is for"
 files = ["core/modules.py", "accounting/services.py"]
 labels = []
-checked_at = "d09cd007"
+checked_at = "a5905879"
 
 [[section]]
 document = "README.md"
@@ -144,7 +144,7 @@ labels = [
   { text = "Population served", where = "templates/drinking/overview.html" },
   { text = "EPA Envirofacts", where = "drinking/provenance.py" },
 ]
-checked_at = "d09cd007"
+checked_at = "a5905879"
 
 [[section]]
 document = "README.md"
@@ -706,7 +706,7 @@ files = [
   "config/settings/base.py",
 ]
 labels = []
-checked_at = "d09cd007"
+checked_at = "a5905879"
 
 [[section]]
 document = "DEPLOY.md"
@@ -1110,7 +1110,7 @@ files = [
 labels = [
   { text = "Delivery Settings", where = "core/modules.py" },
 ]
-checked_at = "3a340c75"
+checked_at = "a5905879"
 
 [[section]]
 document = "docs/ROADMAP.md"
@@ -1309,7 +1309,7 @@ labels = [
   { text = "Dry run", where = "templates/accounting/csv_upload.html" },
   { text = "Water years", where = "templates/accounting/periods_list.html" },
 ]
-checked_at = "d09cd007"
+checked_at = "a5905879"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1583,7 +1583,7 @@ labels = [
   { text = "Methodology Settings", where = "templates/accounting/methodology_settings.html" },
   { text = "Delivery settings", where = "templates/accounting/delivery_settings.html" },
 ]
-checked_at = "3a340c75"
+checked_at = "a5905879"
 
 [[section]]
 document = "docs/water-budget-terms.md"
@@ -1879,7 +1879,7 @@ labels = [
   { text = "Delivery Settings", where = "core/modules.py" },
   { text = "Reporting year", where = "templates/accounting/delivery_settings.html" },
 ]
-checked_at = "d09cd007"
+checked_at = "a5905879"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -2292,7 +2292,7 @@ files = [
   "recharge/models.py",
 ]
 labels = []
-checked_at = "d09cd007"
+checked_at = "a5905879"
 
 [[section]]
 document = "templates/about.html"
@@ -2329,7 +2329,7 @@ labels = [
   { text = "Glossary", where = "templates/help/glossary.html" },
   { text = "How water balances work", where = "templates/help/water_balances.html" },
 ]
-checked_at = "d09cd007"
+checked_at = "a5905879"
 
 [[section]]
 document = "templates/about_demonstration_data.html"
@@ -2351,7 +2351,7 @@ files = [
   "drinking/management/commands/seed_merced_drinking.py",
 ]
 labels = []
-checked_at = "3a340c75"
+checked_at = "a5905879"
 
 [[section]]
 document = "templates/about_demonstration_data.html"
@@ -2389,7 +2389,7 @@ files = [
 labels = [
   { text = "Use Ledger", where = "core/modules.py" },
 ]
-checked_at = "3a340c75"
+checked_at = "a5905879"
 
 [[section]]
 document = "templates/about_demonstration_data.html"
@@ -2506,7 +2506,7 @@ labels = [
   { text = "Methodology Settings", where = "templates/accounting/methodology_settings.html" },
   { text = "Delivery settings", where = "templates/accounting/delivery_settings.html" },
 ]
-checked_at = "d09cd007"
+checked_at = "a5905879"
 
 [[section]]
 document = "templates/help/water_balances.html"
@@ -2522,7 +2522,7 @@ files = [
 labels = [
   { text = "water use recorded, no supply reported", where = "templates/accounting/partials/_needs_attention.html" },
 ]
-checked_at = "d09cd007"
+checked_at = "a5905879"
 
 [[section]]
 document = "templates/help/water_balances.html"
@@ -2534,7 +2534,7 @@ files = [
   "parcels/services.py",
 ]
 labels = []
-checked_at = "d09cd007"
+checked_at = "a5905879"
 
 [[section]]
 document = "templates/help/water_balances.html"
@@ -2543,7 +2543,7 @@ files = ["templates/accounting/partials/_dashboard_content.html", "accounting/vi
 labels = [
   { text = "Dashboard", where = "core/modules.py" },
 ]
-checked_at = "d09cd007"
+checked_at = "a5905879"
 
 [[section]]
 document = "templates/help/methods.html"
@@ -2568,7 +2568,7 @@ files = [
   "templates/accounting/partials/_dashboard_content.html",
 ]
 labels = []
-checked_at = "d09cd007"
+checked_at = "a5905879"
 
 [[section]]
 document = "templates/help/methods.html"
@@ -2662,7 +2662,7 @@ labels = [
   { text = "Which months does a reporting year cover?", where = "core/forms.py" },
   { text = "Where your record addresses are published", where = "core/forms.py" },
 ]
-checked_at = "d09cd007"
+checked_at = "a5905879"
 
 [[section]]
 document = "templates/help/settings_explained.html"
@@ -2687,7 +2687,7 @@ files = [
   "surface/diversion_import.py",
 ]
 labels = []
-checked_at = "d09cd007"
+checked_at = "a5905879"
 
 [[section]]
 document = "templates/help/settings_explained.html"
@@ -2739,7 +2739,7 @@ files = [
   "templates/accounting/partials/_active_accounts_table.html",
 ]
 labels = []
-checked_at = "d09cd007"
+checked_at = "a5905879"
 
 [[section]]
 document = "templates/help/budgets_allocations.html"
