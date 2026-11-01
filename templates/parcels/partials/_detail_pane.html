@@ -64,6 +64,7 @@
           <div>
             <div class="budget-seg-label">Surface water delivered</div>
             <div class="budget-seg-value">{{ water_use.totals.surface|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+            {% include "parcels/partials/_figure_kinds.html" with lines=water_use.kinds.surface %}
             {% if serving_points %}
             <p class="statement-lead-note">{% for pk, label in serving_points %}<a href="{% url 'surface:pod_detail' pk %}" class="prose-link">{{ label }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</p>
             {% endif %}
@@ -73,6 +74,7 @@
           <div>
             <div class="budget-seg-label">Groundwater extraction</div>
             <div class="budget-seg-value">{{ water_use.totals.groundwater|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+            {% include "parcels/partials/_figure_kinds.html" with lines=water_use.kinds.groundwater %}
             <p class="statement-lead-note">{% for wip in related_wells %}<a href="{% url 'wells:detail' wip.well.pk %}" class="prose-link">{{ wip.well.name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</p>
           </div>
           {% endif %}

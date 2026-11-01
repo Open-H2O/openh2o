@@ -1,0 +1,6 @@
+{% comment %}
+  The pills under a lead figure: one per kind of water in the year, on their own
+  line above the link note. Two kinds in one year show both. Passed: lines
+  (accounting.services.supply_kind_lines). A kind with no pill (hand-entered rows)
+  and a year with no water show nothing.
+{% endcomment %}{% if lines %}<div class="figure-kind">{% for line in lines %}{% if line.pill %}<span class="kind-pill kind-pill--{{ line.pill_class }}">{{ line.pill }}</span>{% endif %}{% endfor %}</div>{% endif %}

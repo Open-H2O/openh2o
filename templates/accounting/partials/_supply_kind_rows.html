@@ -1,0 +1,7 @@
+{% load humanize %}{% comment %}
+  One Supplies line per kind of water, each with its pill, in the three-track
+  breakdown (static/css/app.css, `.budget-breakdown-group--kinds`). `lines` come
+  from accounting.services.supply_kind_lines() and add exactly to `total`. With
+  no lines (a zero figure) it prints the one plain line, with an empty pill cell.
+  Passed: label, lines, total.
+{% endcomment %}{% for line in lines %}<div class="budget-breakdown-row"><span>{{ label }}</span><span class="kind-cell">{% if line.pill %}<span class="kind-pill kind-pill--{{ line.pill_class }}">{{ line.pill }}</span>{% endif %}</span><b>{{ line.amount|floatformat:2|intcomma }}</b></div>{% empty %}<div class="budget-breakdown-row"><span>{{ label }}</span><span class="kind-cell"></span><b>{{ total|floatformat:2|intcomma }}</b></div>{% endfor %}

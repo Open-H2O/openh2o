@@ -22,7 +22,7 @@ from accounting.locks import (
     refuse_if_period_finalized,
 )
 from accounting.forms import CsvUploadForm, ParcelLedgerForm
-from accounting.models import ReportingPeriod, WaterType
+from accounting.models import CalculationRun, ReportingPeriod, WaterType
 from accounting.ledger_words import DEMONSTRATION_FILE_LINE
 from core.models import SiteConfig
 from core.modules import is_enabled
@@ -613,6 +613,33 @@ def csv_template(request):
     return response
 
 
+def _calculation_methods(queryset: QuerySet[ParcelLedger]) -> dict[tuple[int, date], str]:
+    """The method and settings code of each calculated row's run, in ONE query.
+
+    A ledger row has no link to its run; a calculated row's run is the one for
+    its parcel and month (``period_start`` is the first of the month, as is the
+    row's ``effective_date``). Keyed that way so the export never asks the
+    database once per row. A month with more than one run takes the newest.
+    A row whose run is gone is simply absent, and its cell stays blank.
+    """
+    runs = (
+        CalculationRun.objects.filter(
+            parcel_id__in=queryset.filter(source_type="calculated").values("parcel_id")
+        )
+        .order_by("created_at")
+        .values_list("parcel_id", "period_start", "methodology_plan_name", "config_hash")
+    )
+    methods = {}
+    for parcel_id, month, plan_name, config_hash in runs:
+        if not plan_name and not config_hash:
+            continue
+        methods[(parcel_id, month)] = (
+            f"{plan_name}, settings {config_hash[:12]}" if plan_name and config_hash
+            else plan_name or f"settings {config_hash[:12]}"
+        )
+    return methods
+
+
 @login_required
 def ledger_export(request):
     """Export the ledger entries the screen's own filters match, as CSV."""
@@ -628,14 +655,19 @@ def ledger_export(request):
     if getattr(SiteConfig.objects.first(), "demonstration_mode", False):
         writer.writerow([DEMONSTRATION_FILE_LINE])
     # Round-trip contract: emit EXACTLY the columns the importer reads
-    # (import_ledger_csv / parse_ledger_csv), in their order, so a downloaded
+    # (import_ledger_csv / parse_ledger_csv), in their order, and then the one
+    # it ignores (calculation_method, below), so a downloaded
     # export re-imports losslessly. Previously this wrote a water_type *name* and a
     # reporting_period the importer ignores, and omitted transaction_date — so the
     # app's own export could not be fed back into its own import.
+    # calculation_method is last and informational: the plan name and settings code of
+    # the run behind a calculated row, so a file handed to someone else says
+    # which rules made those rows. The import skips it (the template does not carry it).
     writer.writerow([
         "parcel_number", "effective_date", "amount_acre_feet", "source_type",
-        "water_type_code", "description", "transaction_date",
+        "water_type_code", "description", "transaction_date", "calculation_method",
     ])
+    methods = _calculation_methods(queryset)
     for entry in queryset.iterator():
         # safe_row neutralizes CSV formula injection in the free-text cells
         # (parcel_number, water_type code, description) without touching the
@@ -648,5 +680,7 @@ def ledger_export(request):
             entry.water_type.code if entry.water_type else "",
             entry.description,
             entry.transaction_date,
+            methods.get((entry.parcel_id, entry.effective_date), "")
+            if entry.source_type == "calculated" else "",
         ]))
     return response

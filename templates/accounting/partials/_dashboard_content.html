@@ -46,11 +46,12 @@
           ~1,300px from the figure at 2560. The title says "by source"
           (DESIGN.md copy rule 13).
         {% endcomment %}
-        <div class="budget-breakdown-group">
+        {% comment %} A kind of water gets a line and a pill; precipitation gets neither. "Effective" breaks before "precipitation" so the name track stays narrow. {% endcomment %}
+        <div class="budget-breakdown-group budget-breakdown-group--kinds">
           <div class="budget-breakdown-title">Supplies by source</div>
-          <div class="budget-breakdown-row"><span>Surface</span><b>{{ grand_supply_surface|floatformat:2|intcomma }}</b></div>
-          <div class="budget-breakdown-row"><span>Groundwater</span><b>{{ grand_supply_groundwater|floatformat:2|intcomma }}</b></div>
-          <div class="budget-breakdown-row"><span>Effective precipitation</span><b>{{ grand_supply_precip|floatformat:2|intcomma }}</b></div>
+          {% include "accounting/partials/_supply_kind_rows.html" with label="Surface" lines=grand_surface_lines total=grand_supply_surface %}
+          {% include "accounting/partials/_supply_kind_rows.html" with label="Groundwater" lines=grand_groundwater_lines total=grand_supply_groundwater %}
+          <div class="budget-breakdown-row"><span>Effective<br>precipitation</span><span class="kind-cell"></span><b>{{ grand_supply_precip|floatformat:2|intcomma }}</b></div>
         </div>
       </div>
       <div class="budget-op">&minus;</div>

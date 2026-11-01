@@ -21,8 +21,12 @@ from accounting.models import (
 )
 from core.modules import is_enabled
 from accounting.services import (
+    account_parcel_ids,
+    add_kind_terms,
     balance_state,
     runs_in_period,
+    supply_kind_lines,
+    supply_kind_terms,
     unmet_demand_by_parcel,
     zone_consumptive_balance,
     zone_groundwater_budget,
@@ -84,6 +88,11 @@ def _account_rollup(
     grand_supply_groundwater = Decimal("0")
     grand_supply_precip = Decimal("0")
     grand_not_consumed = Decimal("0")
+    # The exact per-kind parts of the surface and groundwater totals, added over
+    # the same accounts and read once into lines at the end, so the lines add to
+    # the figure the panel prints (supply_kind_lines).
+    surface_terms: list = []
+    groundwater_terms: list = []
     # Only an account with calculation runs has a balance (the table dashes the
     # others), so only those add to the balance in the footer.
     grand_net = Decimal("0")
@@ -112,6 +121,9 @@ def _account_rollup(
             account, selected_period, has_allocations, groundwater_type
         )
         account_summaries.append(row)
+        kinds = supply_kind_terms(account_parcel_ids(account, selected_period), selected_period)
+        surface_terms = add_kind_terms(surface_terms, kinds["surface"])
+        groundwater_terms = add_kind_terms(groundwater_terms, kinds["groundwater"])
         grand_consumptive_use += row["consumptive_use_gross"]
         grand_supply_total += row["supply_total"]
         grand_supply_surface += row["surface"]
@@ -138,6 +150,8 @@ def _account_rollup(
         "grand_supply_surface": grand_supply_surface,
         "grand_supply_groundwater": grand_supply_groundwater,
         "grand_supply_precip": grand_supply_precip,
+        "grand_surface_lines": supply_kind_lines(surface_terms),
+        "grand_groundwater_lines": supply_kind_lines(groundwater_terms),
         "grand_not_consumed": grand_not_consumed,
         "grand_uses_total": grand_consumptive_use + grand_not_consumed,
         "grand_net": grand_net,
@@ -306,6 +320,8 @@ def _period_budget_sections(
         "grand_supply_surface": Decimal("0"),
         "grand_supply_groundwater": Decimal("0"),
         "grand_supply_precip": Decimal("0"),
+        "grand_surface_lines": [],
+        "grand_groundwater_lines": [],
         "grand_not_consumed": Decimal("0"),
         "grand_uses_total": Decimal("0"),
         "grand_net": Decimal("0"),

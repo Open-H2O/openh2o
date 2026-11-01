@@ -354,9 +354,12 @@ def calculation_run_detail(request, parcel_id, period):
         "month_label": (
             run.period_start.strftime("%B %Y") if run.period_start else period
         ),
-        # The run's config_hash (a 12-character fingerprint) is NOT printed:
-        # no page compares two runs by it.
+        # The method as the ledger file names it: the plan name, then the run's
+        # config_hash (a 12-character settings fingerprint). The export's
+        # calculation_method column carries the same text, so a row in a
+        # downloaded file can be matched to this page.
         "methodology_plan_name": run.methodology_plan_name,
+        "methodology_settings_code": run.config_hash,
         "receipt": False,
     }
     if run.residual_disposition == "groundwater":

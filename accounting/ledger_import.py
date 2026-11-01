@@ -458,6 +458,8 @@ def import_ledger_rows(
     picked_is_finalized = bool(reporting_period and reporting_period.is_finalized)
 
     for line_num, row in enumerate(reader, start=first_data_line):
+        # Only the columns this importer names are read: the export's calculation_method
+        # column (informational) is in the row dict and never looked at.
         row = {k.strip().lower(): v.strip() for k, v in row.items() if k}
         row_errors, fields = _check_row(
             row, line_num,

@@ -27,6 +27,7 @@ from accounting.models import AllocationPlan
 from accounting.services import (
     billable_ledger,
     current_period_id as compute_current_period_id,
+    supply_kinds,
     zone_credit_sources,
     zone_groundwater_budget,
     zone_parcel_ids as parcels_in_zone,
@@ -214,7 +215,7 @@ def _zone_budget_captions(is_groundwater, period_name):
     if is_groundwater:
         return {
             "available": f"allocation plus carry-over, {period_name}",
-            "used": f"pumped, metered or estimated, {period_name}",
+            "used": f"pumped, {period_name}",
             "remaining": f"available less pumped, {period_name}",
         }
     return {
@@ -308,6 +309,9 @@ def _zone_budget_row(alloc: AllocationPlan, zone: Zone, zone_parcel_ids: list[in
             # re-derived here, so it cannot drift from `remaining`.
             "available": gw["available"],
             "used": gw["used"],
+            # The Used figure by kind of water, one line each with its pill,
+            # on the same rows and basis as `used` (services.supply_kinds).
+            "used_lines": supply_kinds(zone_parcel_ids, alloc.reporting_period)["groundwater"],
             "used_label": "pumped",
             "is_groundwater": True,
             # What the carry-over sum is made of, by kind.
@@ -343,6 +347,7 @@ def _zone_budget_row(alloc: AllocationPlan, zone: Zone, zone_parcel_ids: list[in
         # A surface allocation has nothing to add before it is spent.
         "available": budget,
         "used": used,
+        "used_lines": supply_kinds(zone_parcel_ids, alloc.reporting_period)["surface"],
         "used_label": used_label,
         "remaining": budget - used,
         "available_caption": captions["available"],

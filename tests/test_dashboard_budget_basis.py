@@ -242,9 +242,11 @@ def test_the_breakdown_says_of_which():
     html = _dashboard(period).content.decode()
 
     assert "Supplies by source" in html
-    assert "<span>Surface</span><b>0.00</b>" in html
-    assert "<span>Groundwater</span><b>37.50</b>" in html
-    assert "<span>Effective precipitation</span><b>0.00</b>" in html
+    # Each line is name, pill cell, figure (the kind pills; a zero figure has an empty pill cell).
+    pill = r'<span class="kind-cell">(<span class="kind-pill kind-pill--\w+">[^<]+</span>)?</span>'
+    assert re.search(r"<span>Surface</span>" + pill + r"<b>0\.00</b>", html)
+    assert re.search(r"<span>Groundwater</span>" + pill + r"<b>37\.50</b>", html)
+    assert re.search(r"<span>Effective<br>precipitation</span>" + pill + r"<b>0\.00</b>", html)
 
 
 def test_the_panel_names_its_population():

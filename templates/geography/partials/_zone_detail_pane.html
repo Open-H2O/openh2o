@@ -124,6 +124,11 @@
                 <div class="budget-seg-label">Used</div>
                 <div class="budget-seg-value">{{ b.used|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
                 <div class="budget-seg-caption">{{ b.used_caption }}</div>
+                {% comment %} The Used figure by kind of water, each line with its pill; they add to the figure above. {% endcomment %}
+                <div class="budget-breakdown-group budget-breakdown-group--kinds">
+                  <div class="budget-breakdown-title">Used by source</div>
+                  {% include "accounting/partials/_supply_kind_rows.html" with label=b.water_type.name lines=b.used_lines total=b.used %}
+                </div>
                 <div class="budget-breakdown-group">
                   <div class="budget-breakdown-title">Recorded in</div>
                   <div class="budget-breakdown-row"><span>Use ledger</span><b><a href="{{ ledger_url }}?period={{ b.period.pk }}&amp;zone={{ zone.pk }}" class="data-table-link">{{ b.ledger_count }} entr{{ b.ledger_count|pluralize:"y,ies" }}</a></b></div>

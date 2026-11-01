@@ -154,7 +154,7 @@
       {% endif %}
 
     </div>
-    <div class="budget-panel-note">Methodology: {{ methodology_plan_name|blank }}. Calculated {{ run.created_at|date:"F j, Y, g:i A" }}. A changed setting affects a past month only when that month is recalculated. A meter reading for {{ month_label }} would replace this estimate. Figures are rounded to two decimals. OpenH2O calculates from the unrounded values.</div>
+    <div class="budget-panel-note">Methodology: {{ methodology_plan_name|blank }}{% if methodology_settings_code %}, settings {{ methodology_settings_code }}{% endif %}. Calculated {{ run.created_at|date:"F j, Y, g:i A" }}. A changed setting affects a past month only when that month is recalculated. A meter reading for {{ month_label }} would replace this estimate. Figures are rounded to two decimals. OpenH2O calculates from the unrounded values.</div>
   </div>
 
   {% else %}
@@ -162,7 +162,7 @@
      a direct URL (the field page links only estimated months). Not a 404,
      because the run exists and the reader deserves the one sentence. {% endcomment %}
   <div class="text-tertiary text-sm receipt-facts">
-    {{ parcel.parcel_number }}{% if parcel.owner_name %} &middot; {{ parcel.owner_name }}{% endif %} &middot; {{ parcel.area_acres|floatformat:2 }} acres &middot; Methodology: {{ methodology_plan_name|blank }}
+    {{ parcel.parcel_number }}{% if parcel.owner_name %} &middot; {{ parcel.owner_name }}{% endif %} &middot; {{ parcel.area_acres|floatformat:2 }} acres &middot; Methodology: {{ methodology_plan_name|blank }}{% if methodology_settings_code %}, settings {{ methodology_settings_code }}{% endif %}
   </div>
   <div class="card-raised receipt receipt-short">
     <h2 class="receipt-headline">No groundwater extraction estimated for {{ month_label }}</h2>

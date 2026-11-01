@@ -286,6 +286,12 @@ Dry run.
 | `transaction_date` | no | The date the entry was recorded. |
 | `description` | no | Any text. |
 
+A ledger file downloaded from the Use Ledger has one more column, `calculation_method`,
+last. On a `calculated` row it names the calculation's methodology and its settings
+code, for example `Default Methodology, settings a582bd80c59b`, the same text the row's
+"How was this calculated?" page prints; on every other row it is blank. The import
+ignores the column, so a downloaded file imports back unchanged.
+
 On the ledger, water taken against the allocation is a negative amount and water added to it is a positive amount. The table below gives the sign for each source type. Manual entries, CSV imports and adjustments keep the sign you give them.
 
 When an amount's sign does not match its source type, OpenH2O reverses the sign and

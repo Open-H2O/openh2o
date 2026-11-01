@@ -23,10 +23,12 @@ from core.workspace import redirect_to_selected
 from accounting.services import (
     account_consumptive_balance,
     account_groundwater_budget,
+    account_parcel_ids,
     balance_state,
     current_period_id as compute_current_period_id,
     parcel_consumptive_balance,
     runs_in_period,
+    supply_kinds,
 )
 from parcels.models import Parcel, ParcelLedger
 from accounting.views.common import _account_summary_row
@@ -403,6 +405,9 @@ def _account_detail_context(account, period_param=None):
         "account": account,
         "assignments": assignments,
         "balance": balance,
+        # The Supplies breakdown's lines, one per kind of water with its pill
+        # (the same parts every panel reads, services.supply_kinds).
+        "supply_kinds": supply_kinds(account_parcel_ids(account, selected_period), selected_period),
         "groundwater_budget": groundwater_budget,
         "parcel_balances": parcel_balances,
         **state_counts,

@@ -53,11 +53,11 @@
           title the dashboard's Water balance panel gives the same three
           rows.
         {% endcomment %}
-        <div class="budget-breakdown-group">
+        <div class="budget-breakdown-group budget-breakdown-group--kinds">
           <div class="budget-breakdown-title">Supplies by source</div>
-          <div class="budget-breakdown-row"><span>Surface</span><b>{{ balance.supplies.surface|floatformat:2|intcomma }}</b></div>
-          <div class="budget-breakdown-row"><span>Groundwater</span><b>{{ balance.supplies.groundwater|floatformat:2|intcomma }}</b></div>
-          <div class="budget-breakdown-row"><span>Effective precipitation</span><b>{{ balance.supplies.precip|floatformat:2|intcomma }}</b></div>
+          {% include "accounting/partials/_supply_kind_rows.html" with label="Surface" lines=supply_kinds.surface total=balance.supplies.surface %}
+          {% include "accounting/partials/_supply_kind_rows.html" with label="Groundwater" lines=supply_kinds.groundwater total=balance.supplies.groundwater %}
+          <div class="budget-breakdown-row"><span>Effective<br>precipitation</span><span class="kind-cell"></span><b>{{ balance.supplies.precip|floatformat:2|intcomma }}</b></div>
         </div>
       </div>
       <div class="budget-op">&minus;</div>

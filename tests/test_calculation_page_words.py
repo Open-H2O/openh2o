@@ -78,14 +78,14 @@ def _run(parcel, period="2026-08", config_hash="abc123def456"):
 
 
 @pytest.mark.django_db
-class TestCalculationPageDoesNotPrintTheConfigHash:
-    """R-045 (143-09): the
-    twelve-character config hash is a machine key no page lets a reader
-    compare, so it is not printed at all. The head names the methodology and
-    stops. (The plan's first answer, naming the code as a "fingerprint" with
-    a sentence about a hash, was struck as meaningless to a reader.)"""
+class TestCalculationPageNamesTheSettingsCode:
+    """The head names the methodology and its settings code, the same text the
+    downloaded ledger file's calculation_method column carries, so a reader
+    holding the file can match a row to this page. It never explains the code
+    as a "fingerprint" or a "hash": an earlier sentence that did was struck as
+    meaningless to a reader."""
 
-    def test_head_names_the_methodology_and_no_code(self):
+    def test_head_names_the_methodology_and_its_settings_code(self):
         parcel = ParcelFactory(parcel_number="R045-APN-001")
         _run(parcel)
         client = _auth_client()
@@ -98,7 +98,7 @@ class TestCalculationPageDoesNotPrintTheConfigHash:
         assert resp.status_code == 200
         body = resp.content.decode()
         assert "Methodology:" in body
-        assert "abc123def456" not in body
+        assert ", settings abc123def456" in body
         assert "fingerprint" not in body.lower()
         assert "hash" not in body.lower()
 

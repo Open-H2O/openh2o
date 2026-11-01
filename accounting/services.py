@@ -1559,7 +1559,9 @@ def parcel_water_use_months(
     Returns ``{"months": [{"month", "last", "fallow", "et", "surface", "groundwater",
     "precip"}], "totals": {"et", "surface", "groundwater", "precip"}, "unmet_months":
     [first days], "efficiencies": {the efficiency each delivered month ran at},
-    "gw_is_estimated", "gw_is_metered"}``.
+    "gw_is_estimated", "gw_is_metered", "kinds": {"surface": [...], "groundwater": [...]}}``.
+    ``kinds`` holds the lines ``supply_kind_lines`` gives for the year's rows, in
+    order, for the pills under the lead figures.
     """
     starts = _month_starts(reporting_period.start_date, reporting_period.end_date)
     zero = Decimal("0")
@@ -1622,6 +1624,11 @@ def parcel_water_use_months(
         "efficiencies": efficiencies,
         "gw_is_estimated": gw_is_estimated,
         "gw_is_metered": gw_is_metered,
+        # The kinds present that year, for the pills under the lead figures.
+        "kinds": {
+            "surface": supply_kind_lines(surface_kind_terms(billable)),
+            "groundwater": supply_kind_lines(groundwater_kind_terms(billable)) if with_groundwater else [],
+        },
     }
 
 
@@ -1732,6 +1739,114 @@ def _consumptive_supply_terms(
         or Decimal("0")
     )
     return groundwater, groundwater_charged, surface
+
+
+#: The kinds a balance line can carry, each with the pill word and the pill's
+#: style class (``static/css/app.css``, ``.kind-pill--*``). ``other`` is the
+#: hand-entered and uploaded rows that are neither a meter reading nor the
+#: calculation's estimate: they stay in the figure and carry no pill.
+SUPPLY_KINDS = {
+    "metered": ("Metered", "metered"),
+    "estimated": ("Estimated", "estimated"),
+    "well_share": ("Well share", "share"),
+    "headgate": ("Headgate", "headgate"),
+    "other": (None, None),
+}
+
+
+def groundwater_kind_terms(billable: QuerySet[ParcelLedger]) -> list[tuple[str, Decimal]]:
+    """The groundwater figure split by kind: ``(kind, exact AF)`` for every non-zero kind.
+
+    Each part is ``charged_groundwater`` of that kind's rows, the same basis as
+    ``supplies["groundwater"]``, so a calculated row charges its run's extraction
+    figure and the parts add to the total before rounding. A meter reading the
+    calculation wrote by dividing a shared well's reading (its description starts
+    with ``WELL_METER_SHARE_WORDS``) is ``well_share``. A kind with a zero amount
+    is left out: a use area with a zero-amount calculated row beside its meter
+    readings is metered only.
+    """
+    from accounting.management.commands.run_calculations import WELL_METER_SHARE_WORDS
+
+    meter = billable.filter(source_type="meter_reading")
+    shared = Q(description__startswith=WELL_METER_SHARE_WORDS)
+    parts = [
+        ("metered", meter.exclude(shared)),
+        ("estimated", billable.filter(source_type="calculated")),
+        ("well_share", meter.filter(shared)),
+        ("other", billable.exclude(source_type__in=("meter_reading", "calculated"))),
+    ]
+    terms = [(kind, charged_groundwater(rows)) for kind, rows in parts]
+    return [(kind, amount) for kind, amount in terms if amount]
+
+
+def surface_kind_terms(billable: QuerySet[ParcelLedger]) -> list[tuple[str, Decimal]]:
+    """The surface figure split by kind: ``(kind, exact AF)`` for every non-zero kind.
+
+    The same magnitude basis as ``supplies["surface"]``: a share of a headgate
+    total (``divided_from_headgate``) is ``headgate``, a use area's own delivery
+    record is ``metered``.
+    """
+    surface = billable.filter(source_type="surface_diversion")
+    terms = []
+    for kind, divided in (("metered", False), ("headgate", True)):
+        total = surface.filter(divided_from_headgate=divided).aggregate(s=Sum("amount_acre_feet"))["s"]
+        terms.append((kind, abs(total or Decimal("0"))))
+    return [(kind, amount) for kind, amount in terms if amount]
+
+
+def supply_kind_terms(
+    parcel_ids: Iterable[int], reporting_period: ReportingPeriod | None = None
+) -> dict[str, list[tuple[str, Decimal]]]:
+    """Exact per-kind parts of the surface and groundwater supplies for a parcel set.
+
+    Read over the same rows as ``consumptive_use_balance``. Pages that add
+    several parcel sets (the Dashboard adds its accounts) add these exact parts
+    and then call ``supply_kind_lines`` once.
+    """
+    qs = ParcelLedger.objects.filter(parcel_id__in=list(parcel_ids))
+    if reporting_period is not None:
+        qs = qs.filter(reporting_period=reporting_period)
+    billable = billable_ledger(qs)
+    return {
+        "surface": surface_kind_terms(billable),
+        "groundwater": groundwater_kind_terms(billable),
+    }
+
+
+def add_kind_terms(
+    *term_lists: list[tuple[str, Decimal]],
+) -> list[tuple[str, Decimal]]:
+    """Add several ``(kind, exact AF)`` lists kind by kind."""
+    total: dict[str, Decimal] = {}
+    for terms in term_lists:
+        for kind, amount in terms:
+            total[kind] = total.get(kind, Decimal("0")) + amount
+    return list(total.items())
+
+
+def supply_kind_lines(terms: list[tuple[str, Decimal]]) -> list[dict[str, Any]]:
+    """Display lines for a figure's kinds, rounded with ``round_to_total``.
+
+    The lines add exactly to the figure as shown. Each line is
+    ``{"kind", "pill", "pill_class", "amount"}``; ``pill`` is None for ``other``.
+    Empty when the figure is zero, and the page then prints one plain line.
+    """
+    order = list(SUPPLY_KINDS)
+    terms = sorted((t for t in terms if t[1]), key=lambda t: order.index(t[0]))
+    amounts = round_to_total(amount for _, amount in terms)
+    lines = []
+    for (kind, _), amount in zip(terms, amounts):
+        pill, pill_class = SUPPLY_KINDS[kind]
+        lines.append({"kind": kind, "pill": pill, "pill_class": pill_class, "amount": amount})
+    return lines
+
+
+def supply_kinds(
+    parcel_ids: Iterable[int], reporting_period: ReportingPeriod | None = None
+) -> dict[str, list[dict[str, Any]]]:
+    """The display lines for a parcel set's surface and groundwater supplies."""
+    terms = supply_kind_terms(parcel_ids, reporting_period)
+    return {key: supply_kind_lines(value) for key, value in terms.items()}
 
 
 def _metered_pumping_by_month(

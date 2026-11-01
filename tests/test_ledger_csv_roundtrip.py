@@ -62,7 +62,8 @@ def _header_row(response):
 def test_export_header_matches_importer_columns(auth_client):
     resp = auth_client.get(reverse("accounting:ledger_export"))
     assert resp.status_code == 200
-    assert _header_row(resp) == IMPORT_COLUMNS
+    # The export adds calculation_method last; the import ignores it.
+    assert _header_row(resp) == IMPORT_COLUMNS + ["calculation_method"]
 
 
 def test_template_header_matches_importer_columns(auth_client):

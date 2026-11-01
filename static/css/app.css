@@ -2794,6 +2794,67 @@ html { color-scheme: dark; }
     font-weight: 700;
     font-variant-numeric: tabular-nums;
 }
+/* Kind pills: a balance line that holds more than one kind of
+   water is one breakdown line per kind. The Supplies breakdown takes the --kinds
+   modifier: three content-sized tracks (name, pill, figure), every pill one
+   width, a row with no pill keeps an empty pill cell. Colours come from tokens. */
+.budget-seg > .budget-breakdown-group.budget-breakdown-group--kinds {
+    grid-template-columns: max-content max-content max-content;
+    column-gap: 0;
+}
+.budget-breakdown-group--kinds > .budget-breakdown-title {
+    grid-column: 1 / -1;
+}
+.budget-breakdown-group--kinds .budget-breakdown-row > .kind-cell {
+    padding: 2px 0;
+    margin: 0 var(--space-md) 0 var(--space-sm);
+    display: flex;
+    align-items: center;
+}
+.kind-pill {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+    min-width: 5.4em;
+    height: 1.45em;
+    padding: 0 0.6em;
+    border-radius: var(--radius-pill);
+    border: 1px solid transparent;
+    font-size: 0.72em;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+}
+.kind-pill--metered {
+    color: var(--color-supply);
+    background: color-mix(in srgb, var(--color-supply) 14%, transparent);
+    border-color: color-mix(in srgb, var(--color-supply) 35%, transparent);
+}
+.kind-pill--estimated {
+    color: var(--color-warning);
+    background: color-mix(in srgb, var(--color-warning) 14%, transparent);
+    border-color: color-mix(in srgb, var(--color-warning) 35%, transparent);
+}
+.kind-pill--headgate,
+.kind-pill--share {
+    color: var(--color-text-secondary);
+    background: color-mix(in srgb, var(--color-muted) 14%, transparent);
+    border-color: color-mix(in srgb, var(--color-muted) 30%, transparent);
+}
+/* The use area's lead figure: its pills sit on their own line under the figure,
+   above the link note. Two kinds in one year sit side by side. */
+.statement-lead .figure-kind {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    margin-top: 6px;
+    line-height: 1;
+}
+.statement-lead .figure-kind .kind-pill {
+    font-size: 0.75rem;
+}
 /* The lines that judge the result (the pane's unmet-demand figure and the
    cause sentence) live in the result cell, under the number they are about. */
 .budget-seg-notes {
