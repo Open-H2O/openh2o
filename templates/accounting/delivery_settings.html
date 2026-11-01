@@ -13,8 +13,8 @@
   </nav>
   {% comment %}The description says "surface deliveries" only on deployments
   with the Surface module,
-  since the sharing half of the sentence goes with the
-  setting it describes.{% endcomment %}<p class="page-description">{% if 'surface' in enabled_modules %}These settings decide how the platform shares surface deliveries across farms and what{% else %}These settings decide what{% endif %} happens to a zone's unused water at year-end.</p>
+  since the surface half of the sentence goes with the
+  setting it describes.{% endcomment %}<p class="page-description">{% if 'surface' in enabled_modules %}These settings decide how OpenH2O counts surface deliveries and canal seepage, and what{% else %}These settings decide what{% endif %} happens to a zone's unused allocation at year-end.</p>
 </div>
 {% endblock %}
 
