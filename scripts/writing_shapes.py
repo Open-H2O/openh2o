@@ -75,6 +75,8 @@ NOT_APPLICATION_PARTS: tuple = ("migrations", "management", "settings", "tests")
 NOT_SCREEN_PYTHON: tuple = (
     ("core/checks.py", "Django system checks, printed by manage.py check and at start-up in a "
      "terminal or the container log; no view imports them."),
+    ("core/screen_words.py", "the retired-word list tests/test_screen_words_are_consistent.py "
+     "checks the pages against; its strings are a term list, never shown."),
     ("core/domain_vocabulary.py", "the term list tests/test_domain_vocabulary.py checks the "
      "pages against; no view or template imports it."),
     ("core/operator_vocabulary.py", "the term list tests/test_operator_vocabulary.py checks the "
