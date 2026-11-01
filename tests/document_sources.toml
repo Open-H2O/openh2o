@@ -389,7 +389,7 @@ files = [
   "core/models.py",
 ]
 labels = []
-checked_at = "3a340c75"
+checked_at = "60a428b8"
 
 [[section]]
 document = "ARCHITECTURE.md"
@@ -1166,7 +1166,7 @@ labels = [
   { text = "Use ledger", where = "templates/accounting/ledger_list.html" },
   { text = "Dry run", where = "templates/accounting/csv_upload.html" },
 ]
-checked_at = "d09cd007"
+checked_at = "60a428b8"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1240,7 +1240,7 @@ labels = [
   { text = "Surface diversions", where = "templates/surface/pod_list.html" },
   { text = "Recharge sites", where = "templates/recharge/list.html" },
 ]
-checked_at = "d09cd007"
+checked_at = "60a428b8"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1259,7 +1259,7 @@ labels = [
   { text = "Import", where = "templates/surface/water_rights_list.html" },
   { text = "Import water rights", where = "templates/surface/right_import.html" },
 ]
-checked_at = "d09cd007"
+checked_at = "60a428b8"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1284,7 +1284,7 @@ labels = [
   { text = "Reporting year", where = "templates/accounting/delivery_settings.html" },
   { text = "Data status", where = "templates/surface/partials/_diversion_import_preview.html" },
 ]
-checked_at = "d09cd007"
+checked_at = "60a428b8"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1330,7 +1330,7 @@ labels = [
   { text = "Add sampling points", where = "templates/drinking/overview.html" },
   { text = "Drinking water", where = "templates/drinking/overview.html" },
 ]
-checked_at = "d09cd007"
+checked_at = "60a428b8"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1352,7 +1352,7 @@ labels = [
   { text = "Unit for rows with a blank unit", where = "templates/drinking/partials/_production_import_preview.html" },
   { text = "Report year", where = "templates/drinking/partials/_production_import_preview.html" },
 ]
-checked_at = "d09cd007"
+checked_at = "60a428b8"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1879,7 +1879,7 @@ labels = [
   { text = "Delivery Settings", where = "core/modules.py" },
   { text = "Reporting year", where = "templates/accounting/delivery_settings.html" },
 ]
-checked_at = "a5905879"
+checked_at = "60a428b8"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
