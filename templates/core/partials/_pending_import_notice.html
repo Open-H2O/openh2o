@@ -1,0 +1,7 @@
+{% comment %}
+  A bulk import's status route answers with this when the upload is not the
+  signed-in person's, is older than a day, or is gone. Caller supplies `error`.
+{% endcomment %}
+<div class="card-raised" style="border-left: 3px solid var(--color-error); padding: var(--space-md);">
+  <p class="text-base" style="margin: 0; color: var(--color-error);">{{ error }}</p>
+</div>

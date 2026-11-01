@@ -101,12 +101,6 @@ def _facility_geojson(facility, extra_properties=None):
     }
 
 
-# The surface water imports' sentence: rows_json is empty or not a list of rows.
-_ROWS_NOT_RECEIVED = (
-    "OpenH2O did not receive the file's rows from the preview. "
-    "Upload the file again."
-)
-
 
 def _describe(facility):
     """Flag whether EPA's name for this facility repeats its type label.

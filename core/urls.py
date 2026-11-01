@@ -9,6 +9,11 @@ app_name = "core"
 urlpatterns = [
     path("", views.users_list, name="users_list"),
     path("add/", views.user_create, name="user_create"),
+    path(
+        "imports/<uuid:token>/status/",
+        views.pending_import_status,
+        name="pending_import_status",
+    ),
     path("<int:pk>/role/", views.user_set_role, name="user_set_role"),
     path("<int:pk>/toggle-active/", views.user_toggle_active, name="user_toggle_active"),
     path("<int:pk>/email/", views.user_email_edit, name="user_email_edit"),

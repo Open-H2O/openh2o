@@ -15,7 +15,7 @@
   results.
 
   Caller supplies: recognised, preview_rows, error_rows, warning_rows,
-  row_count, error_count, duplicate_count, new_analytes, committable, rows_json,
+  row_count, error_count, duplicate_count, new_analytes, committable, token,
   agency (for the regulating-agency line).
 {% endcomment %}
 <div class="card-raised">
@@ -156,6 +156,7 @@
       {% endfor %}
     </tbody>
   </table>
+  {% include "core/partials/_rows_not_listed.html" with count=error_rows_not_listed what="rows with errors" %}
   {% endif %}
 
   {% if warning_rows %}
@@ -182,6 +183,7 @@
       {% endfor %}
     </tbody>
   </table>
+  {% include "core/partials/_rows_not_listed.html" with count=warning_rows_not_listed what="rows with a note" %}
   {% endif %}
 
   <h3 class="text-base mt-lg">{% if shown_count < row_count %}The first {{ shown_count }} of {{ row_count }} rows{% else %}All rows{% endif %}</h3>
@@ -223,8 +225,7 @@
     hx-target="#import-area"
     hx-indicator="#commit-spinner">
     {% csrf_token %}
-    <input type="hidden" name="rows_json" value="{{ rows_json }}">
-    <input type="hidden" name="source_file" value="{{ source_file }}">
+    <input type="hidden" name="token" value="{{ token }}">
     <div class="row-start" style="gap: var(--space-sm);">
       <button type="submit" class="btn-primary" {% if not committable and not limits_fill_count %}disabled{% endif %}>
         {% if committable or not limits_fill_count %}Import {{ committable }} result{{ committable|pluralize }}{% else %}Add the MCL and DLR to {{ limits_fill_count }} result{{ limits_fill_count|pluralize }}{% endif %}

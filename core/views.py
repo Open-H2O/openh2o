@@ -25,6 +25,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.cache import patch_vary_headers
 from django.views.decorators.http import require_POST, require_safe
 
+from core import pending_imports
 from core.access import admin_required
 from core.forms import (
     HOST_ADMINISTRATOR_CHOICE,
@@ -395,3 +396,10 @@ def change_history(request):
             "querystring": query.urlencode(),
         },
     )
+
+
+@login_required
+@require_safe
+def pending_import_status(request, token):
+    """What a bulk import's polling block gets back (core/pending_imports.py)."""
+    return pending_imports.status_response(request, token)

@@ -1,0 +1,8 @@
+{% load humanize %}{% comment %}
+  The line under a capped list of rows on a bulk import preview or result: the
+  list shows the first rows (core/pending_imports.py ERROR_ROW_LIMIT) and this
+  says how many it left out. Caller supplies `count` and `what`, for example
+  "rows with errors".
+{% endcomment %}{% if count %}
+<p class="text-tertiary text-sm mt-sm">OpenH2O does not list the other {{ count|intcomma }} {{ what }}.</p>
+{% endif %}

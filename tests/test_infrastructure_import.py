@@ -25,6 +25,7 @@ from django.test import Client
 from django.urls import reverse
 
 from infrastructure import importer
+from tests.import_flow import infrastructure_import_rows
 from wells.models import Well
 
 
@@ -77,12 +78,11 @@ class TestParseUpload:
         with pytest.raises(ImportError):
             importer.parse_upload(_csv_file("name,reg_id\n"), "wells.csv")
 
-    def test_over_cap_raises_naming_the_limit(self):
+    def test_a_file_over_the_old_500_row_cap_is_read_whole(self):
         rows = "\n".join(f"Well {i},WELL-{i}" for i in range(501))
         text = "name,reg_id\n" + rows + "\n"
-        with pytest.raises(ImportError) as exc:
-            importer.parse_upload(_csv_file(text), "wells.csv")
-        assert "500" in str(exc.value)
+        result = importer.parse_upload(_csv_file(text), "wells.csv")
+        assert len(result["rows"]) == 501
 
     def test_geojson_rows_carry_geometry(self):
         geojson = (
@@ -300,11 +300,10 @@ class TestImportFlowViews:
         # The mapping table offers the well fields and pre-selects the right column.
         assert "Casing diameter (in)" in body  # the Add page label (message W)
         assert "WCR_NO" in body
-        assert 'name="rows_json"' in body
+        assert 'name="rows_json"' not in body
+        assert 'name="token"' in body
 
     def test_commit_creates_rows_and_reports_counts(self, auth_client):
-        import json as _json
-
         rows = [
             {"name": "Alpha Well", "WCR_NO": "WCR-1", "LAT": "37.20", "LON": "-119.50",
              "CASING_DIA": "8", "SCREEN_TOP": "120", "YIELD_GPM": "500", "PUMP_TYPE": "submersible"},
@@ -312,11 +311,10 @@ class TestImportFlowViews:
              "CASING_DIA": "10", "SCREEN_TOP": "140", "YIELD_GPM": "650", "PUMP_TYPE": "turbine"},
         ]
         before = Well.objects.count()
-        resp = auth_client.post(
-            reverse("infrastructure:import_commit"),
+        resp = infrastructure_import_rows(
+            auth_client,
+            rows,
             {
-                "infra_type": "well",
-                "rows_json": _json.dumps(rows),
                 "map:name": "name",
                 "map:wcr_number": "WCR_NO",
                 "map:latitude": "LAT",
@@ -336,29 +334,19 @@ class TestImportFlowViews:
         assert created.tested_yield_gpm == Decimal("500")
         assert created.pump_type == "submersible"
 
-    def test_commit_re_enforces_row_cap(self, auth_client):
-        import json as _json
-
-        # rows_json is a client-controlled hidden field, so a user can hand-edit
-        # it to blow past the upload parser's MAX_ROWS cap. Commit must re-check it.
+    def test_a_file_over_the_old_row_cap_imports_whole(self, auth_client):
+        """There is no row cap: the commit runs in its own process."""
         rows = [
-            {"name": f"W{i}", "LAT": "37.20", "LON": "-119.50"}
-            for i in range(importer.MAX_ROWS + 1)
+            {"name": f"W{i}", "LAT": "37.20", "LON": "-119.50"} for i in range(501)
         ]
         before = Well.objects.count()
-        resp = auth_client.post(
-            reverse("infrastructure:import_commit"),
-            {
-                "infra_type": "well",
-                "rows_json": _json.dumps(rows),
-                "map:name": "name",
-                "map:latitude": "LAT",
-                "map:longitude": "LON",
-            },
+        resp = infrastructure_import_rows(
+            auth_client,
+            rows,
+            {"map:name": "name", "map:latitude": "LAT", "map:longitude": "LON"},
         )
         assert resp.status_code == 200
-        assert str(importer.MAX_ROWS) in resp.content.decode()
-        assert Well.objects.count() == before, "no rows may be created over the cap"
+        assert Well.objects.count() == before + 501
 
     def test_old_upload_route_is_gone(self):
         from django.urls import NoReverseMatch
@@ -369,8 +357,6 @@ class TestImportFlowViews:
     def test_result_counts_reconcile(self, auth_client):
         """created + skipped must equal the total shown — the result screen's
         whole job is an honest count, so the badges must never disagree."""
-        import json as _json
-
         rows = [
             {"name": "", "LAT": "37.2", "LON": "-119.5", "reg_id": "R-1"},          # bad: no name
             {"name": "Dup", "LAT": "37.3", "LON": "-119.6", "reg_id": "DUP-IT"},    # bad: dup (below)
@@ -381,11 +367,10 @@ class TestImportFlowViews:
 
         WellFactory(well_registration_id="DUP-IT")
 
-        resp = auth_client.post(
-            reverse("infrastructure:import_commit"),
+        resp = infrastructure_import_rows(
+            auth_client,
+            rows,
             {
-                "infra_type": "well",
-                "rows_json": _json.dumps(rows),
                 "map:name": "name",
                 "map:latitude": "LAT",
                 "map:longitude": "LON",

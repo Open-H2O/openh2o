@@ -196,6 +196,9 @@ NOT_REQUESTED = {
     "/reporting/reports/<int:pk>/download/": (
         "streams a generated report file, never a page; a draft has no file, so it 404s"
     ),
+    "/users/imports/<uuid:token>/status/": (
+        "the fragment an import's waiting block polls for one person's own upload, never a page"
+    ),
 }
 
 #: Pages with no crumb trail at all.

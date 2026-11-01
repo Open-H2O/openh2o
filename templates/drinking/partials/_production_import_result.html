@@ -17,7 +17,7 @@ and why.
     {% if skipped_duplicates %}<span class="badge badge-orange">{{ skipped_duplicates }} already on file</span>{% endif %}
     {% if duplicate_rows_in_file %}<span class="badge badge-orange">{{ duplicate_rows_in_file }} repeated in this file</span>{% endif %}
     {% if skipped_rows %}<span class="badge badge-grey">{{ skipped_rows|length }} not a month</span>{% endif %}
-    {% if errors %}<span class="badge badge-orange">{{ errors|length }} with errors</span>{% endif %}
+    {% if error_count %}<span class="badge badge-orange">{{ error_count }} with errors</span>{% endif %}
   </div>
 
   {% comment %}
@@ -49,6 +49,7 @@ and why.
       {% endfor %}
     </tbody>
   </table>
+  {% include "core/partials/_rows_not_listed.html" with count=errors_not_listed what="rows with errors" %}
   {% endif %}
 
   <div class="row-start pt-sm" style="margin-top: var(--space-lg); gap: var(--space-sm);">

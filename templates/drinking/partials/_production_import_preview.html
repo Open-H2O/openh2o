@@ -1,25 +1,18 @@
 {% comment %}
 Mapping/preview step for the production import. Same
 two-button idiom as the diversion and water-rights importers: one form,
-whose hidden rows_json and mapping-step settings are shared by two submit
+whose hidden token (the stored upload) and mapping-step settings are shared by two submit
 buttons -- "Update preview" re-runs the same dry-run against changed
 settings, "Import" commits. Nothing is written until the second button is
 pressed.
 
-`error`: set only when a re-render after Import raised.
 {% endcomment %}
-{% if error %}
-<div class="card-raised" style="border-left: 3px solid var(--color-error); padding: var(--space-md); margin-bottom: var(--space-md);">
-  <p class="text-base" style="margin: 0; color: var(--color-error);">{{ error }}</p>
-</div>
-{% endif %}
-
 <div class="card-raised">
   <h2 class="card-header-ruled">{{ row_count }} row{{ row_count|pluralize }} from {% if layout == "ear" %}an eAR export{% else %}a monthly log{% endif %}</h2>
 
   <form id="production-import-mapping-form" class="mt-lg">
     {% csrf_token %}
-    <input type="hidden" name="rows_json" value="{{ rows_json }}">
+    <input type="hidden" name="token" value="{{ token }}">
 
     {% if layout == "ear" %}
     <div class="form-group">
@@ -72,7 +65,7 @@ pressed.
     {% if skipped_duplicates %}<span class="badge badge-orange">{{ skipped_duplicates }} already on file</span>{% endif %}
     {% if duplicate_rows_in_file %}<span class="badge badge-orange">{{ duplicate_rows_in_file }} repeated in this file</span>{% endif %}
     {% if skipped_rows %}<span class="badge badge-grey">{{ skipped_rows|length }} not a month</span>{% endif %}
-    {% if errors %}<span class="badge badge-orange">{{ errors|length }} with errors</span>{% endif %}
+    {% if error_count %}<span class="badge badge-orange">{{ error_count }} with errors</span>{% endif %}
   </div>
 </div>
 
@@ -102,10 +95,11 @@ pressed.
       {% endfor %}
     </tbody>
   </table>
+  {% include "core/partials/_rows_not_listed.html" with count=errors_not_listed what="rows with errors" %}
 </div>
 {% endif %}
 
-{% comment %} The file's own rows under its own column names, the first 50 at most (drinking/views/production.py::PRODUCTION_PREVIEW_ROW_LIMIT). {% endcomment %}
+{% comment %} The file's own rows under its own column names, the first 200 at most (core/pending_imports.py PREVIEW_ROW_LIMIT). {% endcomment %}
 {% if preview_rows %}
 <div class="card-raised">
   {% if row_count > preview_rows|length %}

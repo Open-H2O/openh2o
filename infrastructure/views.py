@@ -26,6 +26,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
+from core import pending_imports
 from core.modules import is_enabled
 from core.validation import FieldValidationError, coerce_decimal, coerce_int
 from infrastructure import importer
@@ -562,7 +563,12 @@ def infrastructure_import_preview(request):
         )
 
     try:
-        parsed = importer.parse_upload(uploaded, uploaded.name)
+        pending, parsed = pending_imports.receive(
+            request,
+            "infrastructure",
+            uploaded,
+            lambda file: importer.parse_upload(file, uploaded.name),
+        )
     except ImportError as exc:
         return render(
             request,
@@ -606,7 +612,7 @@ def infrastructure_import_preview(request):
             "sample_count": len(sample_table),
             "row_count": len(rows),
             "map_file": importer.is_map_rows(rows),
-            "rows_json": json.dumps(rows),
+            "token": pending.token,
         },
     )
 
@@ -644,26 +650,13 @@ def _diversion_water_right_preview_column(infra_type, rows, mapping, columns, sa
     return list(columns) + ["Water right on file"]
 
 
-def _columns_from_rows(rows):
-    """Union of every row's keys, first-seen order (mirrors importer._features_to_rows)."""
-    seen = []
-    for row in rows:
-        for key in row:
-            if key not in seen:
-                seen.append(key)
-    return seen
+def _mapping_context(infra_type, columns, rows, mapping, token, error=None):
+    """The mapping-step context for a stored file, for the step shown again.
 
-
-def _commit_failure_context(infra_type, rows, mapping, exc, error=None):
-    """Rebuild the mapping-step context after a commit-time crash.
-
-    The same shape `infrastructure_import_preview` renders the first time,
-    from the `rows_json` and confirmed `mapping` the crashed POST already
-    carried, so the operator can fix a mapping and press Create again
-    instead of re-uploading the file. `error` is the one thing added;
-    `_import_mapping.html` prints it above the table.
+    The same shape `infrastructure_import_preview` renders the first time.
+    `error` is the one thing added; `_import_mapping.html` prints it above
+    the table.
     """
-    columns = _columns_from_rows(rows)
     field_rows = [
         {"field": field, "label": label, "guess": mapping.get(field, "")}
         for field, label, _required in importer.import_fields(infra_type)
@@ -672,7 +665,7 @@ def _commit_failure_context(infra_type, rows, mapping, exc, error=None):
         [importer.sample_cell(col, row.get(col, "")) for col in columns]
         for row in rows[:5]
     ]
-    return {
+    context = {
         "infra_type": infra_type,
         "infra_label": ADD_TYPE_LABEL[infra_type],
         "columns": columns,
@@ -681,18 +674,11 @@ def _commit_failure_context(infra_type, rows, mapping, exc, error=None):
         "sample_count": len(sample_table),
         "row_count": len(rows),
         "map_file": importer.is_map_rows(rows),
-        "rows_json": json.dumps(rows),
-        "error": error or importer.unexpected_error_message(exc),
+        "token": token,
     }
-
-
-def _posted_rows(request: HttpRequest) -> list:
-    """The parsed rows the preview step posted back, or [] when missing or unreadable."""
-    try:
-        rows = json.loads(request.POST.get("rows_json", "") or "[]")
-    except json.JSONDecodeError:
-        rows = []
-    return rows
+    if error:
+        context["error"] = error
+    return context
 
 
 def _confirmed_mapping(request: HttpRequest) -> dict[str, str]:
@@ -719,15 +705,31 @@ def _existing_registration_ids(infra_type: str) -> set[str]:
 def _import_result_context(
     results: list, created: int, rows: list, infra_type: str
 ) -> dict:
-    """Context for the import result partial: counts, skipped and noted rows, back link."""
-    skipped = [r for r in results if r["errors"]]
-    noted = [r for r in results if r["warnings"] and not r["errors"]]
+    """Context for the import result partial: counts, skipped and noted rows, back link.
+
+    The skipped and noted rows are cut down to what the partial reads (row
+    number and sentences) and capped, with the full counts beside them.
+    """
+    skipped = [
+        {"index": r["index"], "errors": r["errors"]} for r in results if r["errors"]
+    ]
+    noted = [
+        {"index": r["index"], "warnings": r["warnings"]}
+        for r in results
+        if r["warnings"] and not r["errors"]
+    ]
+    shown_skipped, skipped_not_listed = pending_imports.cap_error_rows(skipped)
+    shown_noted, noted_not_listed = pending_imports.cap_error_rows(noted)
 
     back_name, back_label = ADD_TYPE_BACK[infra_type]
     return {
         "created": created,
-        "skipped": skipped,
-        "noted": noted,
+        "skipped": shown_skipped,
+        "skipped_count": len(skipped),
+        "skipped_not_listed": skipped_not_listed,
+        "noted": shown_noted,
+        "noted_count": len(noted),
+        "noted_not_listed": noted_not_listed,
         "total": len(results),
         "map_file": importer.is_map_rows(rows),
         "infra_type": infra_type,
@@ -738,83 +740,67 @@ def _import_result_context(
     }
 
 
+def parse_stored_infrastructure(pending):
+    """The stored infrastructure file, read again: (columns, rows)."""
+    with pending_imports.stored_file(pending) as file:
+        parsed = importer.parse_upload(file, pending.original_name)
+    return parsed["columns"], parsed["rows"]
+
+
+def commit_stored_infrastructure(pending):
+    """Validate the confirmed mapping against the stored file and bulk-create.
+
+    Runs in the import worker (core/pending_imports.py); returns the result
+    block's context. `commit_rows`' per-row savepoint isolates a single bad
+    row (see its own docstring); anything else that goes wrong is raised to
+    the worker, which stores the unexpected-error sentence for the screen and
+    logs the detail.
+    """
+    infra_type = pending.settings["infra_type"]
+    mapping = pending.settings.get("mapping", {})
+    _columns, rows = parse_stored_infrastructure(pending)
+
+    results = importer.validate_rows(
+        rows, mapping, infra_type, _existing_registration_ids(infra_type),
+        existing_names=importer.existing_names(infra_type),
+    )
+    created = importer.commit_rows(results, infra_type)
+    return _import_result_context(results, created, rows, infra_type)
+
+
 @login_required
 @require_POST
 def infrastructure_import_commit(request):
-    """Validate the confirmed mapping against the parsed rows and bulk-create."""
+    """Start writing the stored file with the confirmed column mapping."""
     infra_type = _import_type(request.POST.get("infra_type"))
     if infra_type is None:
         return HttpResponseNotFound(
             UNSUPPORTED_IMPORT_TYPE_MESSAGE, content_type="text/plain"
         )
 
-    rows = _posted_rows(request)
-
-    if not rows:
-        return render(
-            request,
-            "infrastructure/partials/_import_result.html",
-            {"error": importer.ROWS_NOT_RECEIVED_MESSAGE},
-        )
-
-    # Re-enforce the row cap on COMMIT, not just on preview. rows_json is a hidden
-    # field the browser posts back, so a logged-in user can hand-edit it to submit
-    # far more rows than the upload parser allowed — a cheap way to push tens of
-    # thousands of rows through on a 2-4GB VPS. The upload cap is meaningless if
-    # commit doesn't check it too. (Raw payload size is separately bounded by
-    # Django's DATA_UPLOAD_MAX_MEMORY_SIZE before this view runs.)
-    if len(rows) > importer.MAX_ROWS:
-        return render(
-            request,
-            "infrastructure/partials/_import_result.html",
-            {"error": importer.row_cap_message(
-                len(rows), map_file=importer.is_map_rows(rows)
-            )},
-        )
-
     mapping = _confirmed_mapping(request)
 
-    # No
-    # column matched to the name or the location keeps the matching step on
+    # No column matched to the name or the location keeps the matching step on
     # screen with one sentence, instead of failing every row the same way.
     refusal = importer.mapping_refusal(mapping)
     if refusal:
+        pending = pending_imports.previewed(request, "infrastructure")
+        if pending is None:
+            return pending_imports.refused(request, "infrastructure")
+        try:
+            columns, rows = parse_stored_infrastructure(pending)
+        except FileNotFoundError:
+            return pending_imports.refused(request, "infrastructure")
         return render(
             request,
             "infrastructure/partials/_import_mapping.html",
-            _commit_failure_context(infra_type, rows, mapping, None, error=refusal),
+            _mapping_context(
+                infra_type, columns, rows, mapping, pending.token, error=refusal
+            ),
         )
 
-    existing_reg_ids = _existing_registration_ids(infra_type)
-
-    # commit_rows' per-row savepoint already isolates a single bad row
-    # (see its own docstring), so anything that still reaches here (a module
-    # this deployment does not have but that the module guard missed, a
-    # programming error, anything) is genuinely unexpected. A 500 would swap
-    # nothing in HTMX, so the operator would see the exact
-    # same mapping table come back with no explanation. Instead they get that
-    # same table back with one line saying
-    # nothing was created and why, at 200 so HTMX actually swaps it in.
-    try:
-        results = importer.validate_rows(
-            rows, mapping, infra_type, existing_reg_ids,
-            existing_names=importer.existing_names(infra_type),
-        )
-        created = importer.commit_rows(results, infra_type)
-    except Exception as exc:
-        logger.exception(
-            "infrastructure import commit failed (infra_type=%s)", infra_type
-        )
-        return render(
-            request,
-            "infrastructure/partials/_import_mapping.html",
-            _commit_failure_context(infra_type, rows, mapping, exc),
-            status=200,
-        )
-    return render(
-        request,
-        "infrastructure/partials/_import_result.html",
-        _import_result_context(results, created, rows, infra_type),
+    return pending_imports.start_import(
+        request, "infrastructure", {"infra_type": infra_type, "mapping": mapping}
     )
 
 

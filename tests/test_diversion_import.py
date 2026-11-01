@@ -24,7 +24,6 @@ The two corrections from the main session that this file proves:
 import csv
 import io
 from html import unescape
-import json
 from datetime import date
 from decimal import Decimal
 
@@ -41,6 +40,7 @@ from core.models import SiteConfig
 from surface import diversion_import
 from surface.models import DiversionRecord
 from tests.factories import PointOfDiversionFactory, WaterRightFactory
+from tests.import_flow import import_and_read, token_of
 
 pytestmark = pytest.mark.django_db
 
@@ -151,6 +151,15 @@ def _import(columns, rows, **kwargs):
 
 def _parse(text):
     return diversion_import.parse_csv(io.StringIO(text))
+
+
+def _preview_then_import(client, text, data, name="monthly-diversion.csv"):
+    """Upload ``text`` to the preview, press Import with ``data``, read the status."""
+    upload = SimpleUploadedFile(name, text.encode(), content_type="text/csv")
+    preview = client.post(reverse("surface:diversion_import_preview"), {"file": upload})
+    return import_and_read(
+        client, reverse("surface:diversion_import_commit"), token_of(preview), data
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -410,10 +419,8 @@ def test_preview_hides_use_question_for_the_direct_only_shape1_fixture(auth_clie
 def test_commit_with_a_different_use_rule_saves_it_back_to_site_config(auth_client, db):
     point, text = _use_rule_fixture()
     config = SiteConfig.objects.create(agency_name="Test Agency", diversion_use_type_rule="drop")
-    columns, rows = _parse(text)
 
-    resp = auth_client.post(reverse("surface:diversion_import_commit"), {
-        "rows_json": json.dumps(rows),
+    resp = _preview_then_import(auth_client, text, {
         "method": "",
         "data_state": "provisional",
         "use_rule": "as_direct",
@@ -429,10 +436,8 @@ def test_commit_with_a_different_use_rule_saves_it_back_to_site_config(auth_clie
 def test_commit_with_the_same_use_rule_as_stored_does_not_say_it_saved(auth_client, db):
     point, text = _use_rule_fixture()
     config = SiteConfig.objects.create(agency_name="Test Agency", diversion_use_type_rule="as_direct")
-    columns, rows = _parse(text)
 
-    resp = auth_client.post(reverse("surface:diversion_import_commit"), {
-        "rows_json": json.dumps(rows),
+    resp = _preview_then_import(auth_client, text, {
         "method": "",
         "data_state": "provisional",
         "use_rule": "as_direct",
@@ -566,15 +571,14 @@ def test_diversion_import_preview_shows_mapping_and_totals(auth_client, shape1_p
     assert resp.status_code == 200
     body = resp.content.decode()
     assert "from a Water Use Reported export" in body
-    assert "rows_json" in body
+    assert "rows_json" not in body
+    assert 'name="token"' in body
 
 
 def test_diversion_import_commit_creates_records_through_the_view(auth_client, shape1_points):
     right, p1, p2, p3 = shape1_points
-    columns, rows = _parse(STATE_CSV_TEXT)
 
-    resp = auth_client.post(reverse("surface:diversion_import_commit"), {
-        "rows_json": json.dumps(rows),
+    resp = _preview_then_import(auth_client, STATE_CSV_TEXT, {
         "point": str(p1.pk),
         "method": "",
         "data_state": "provisional",

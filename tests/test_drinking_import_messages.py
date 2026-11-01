@@ -7,7 +7,8 @@ file picker let only a .csv be chosen although the importer reads the
 Division of Drinking Water's .tab file; a 25.5 MB file read "25 MB" against a
 25 MB cap; an empty file and a file of column names alone read the same.
 """
-import json
+import csv
+import io
 
 import factory
 import pytest
@@ -17,6 +18,7 @@ from django.test import Client
 from django.urls import reverse
 
 from drinking import importer
+from tests.import_flow import import_and_read, token_of
 
 
 class _UserFactory(factory.django.DjangoModelFactory):
@@ -41,6 +43,31 @@ def _preview(client, name, text):
     return client.post(reverse("drinking:import_preview"), {"file": upload})
 
 
+def _csv_of(rows):
+    """The rows as the text of a CSV file, the first row's keys as its header."""
+    out = io.StringIO()
+    writer = csv.DictWriter(out, fieldnames=list(rows[0]))
+    writer.writeheader()
+    writer.writerows(rows)
+    return out.getvalue()
+
+
+def _import_rows(client, rows, name="lab.csv"):
+    """Upload ``rows`` as a lab file, press Import, and return the status body."""
+    preview = _preview(client, name, _csv_of(rows))
+    return import_and_read(
+        client, reverse("drinking:import_commit"), token_of(preview)
+    ).content.decode()
+
+
+def _import_production_rows(client, rows, name="p.csv", data=None):
+    upload = SimpleUploadedFile(name, _csv_of(rows).encode(), content_type="text/csv")
+    preview = client.post(reverse("drinking:production_import_preview"), {"file": upload})
+    return import_and_read(
+        client, reverse("drinking:production_import_commit"), token_of(preview), data
+    ).content.decode()
+
+
 class TestTheImportPage:
     def test_the_picker_accepts_the_files_the_importer_reads(self, auth_client):
         body = auth_client.get(reverse("drinking:import")).content.decode()
@@ -50,7 +77,10 @@ class TestTheImportPage:
         body = auth_client.get(reverse("drinking:import")).content.decode()
         assert "This page imports sample results from a lab results file." in body
         assert "OpenH2O saves nothing until you press Import on the preview." in body
-        assert "A .csv, .tab or .txt file of up to 5,000 rows and 25 MB." in body
+        assert (
+            "OpenH2O imports a .csv, .tab or .txt file of up to 25 MB, however many "
+            "rows it has."
+        ) in body
         assert "Upload only the rows for the water systems on file." in body
         assert "SDWIS.CSV export" not in body
 
@@ -92,17 +122,14 @@ class TestWholeFileMessages:
 
 
 class TestTheImportStep:
-    @pytest.mark.parametrize("rows_json", ["", "[]", "[1]", "not json"])
-    def test_rows_not_received(self, auth_client, rows_json):
+    @pytest.mark.parametrize("token", ["", "[]", "not-a-uuid", "00000000-0000-0000-0000-000000000000"])
+    def test_a_token_that_is_not_an_upload_is_refused(self, auth_client, token):
         body = auth_client.post(
-            reverse("drinking:import_commit"), {"rows_json": rows_json}
+            reverse("drinking:import_commit"), {"token": token}
         ).content.decode()
         assert (
-            "OpenH2O did not receive the file&#x27;s rows from the preview. "
-            "Upload the file again."
-        ) in body or (
-            "OpenH2O did not receive the file's rows from the preview. "
-            "Upload the file again."
+            "This upload has expired or belongs to someone else. Upload the "
+            "file again."
         ) in body
 
     def test_the_preview_button_reads_import(self, auth_client):
@@ -314,10 +341,7 @@ class TestThePageAfterImport:
         good = {"PS Code": point.ps_code, "Sample Date": "2024-03-05",
                 "Analyte Name": "Nitrate", "Result": "1"}
         bad = dict(good, **{"PS Code": ""})
-        body = auth_client.post(
-            reverse("drinking:import_commit"),
-            {"rows_json": json.dumps([good, good, bad])},
-        ).content.decode()
+        body = _import_rows(auth_client, [good, good, bad])
         assert "1 result</span>" in body
         assert "1 repeated in this file" in body
         assert "already on file</span>" not in body
@@ -340,9 +364,7 @@ class TestThePageAfterImport:
              "Analyte Name": "Nitrate", "Result": str(n), "Regulating Agency": a}
             for n, a in enumerate(["A", "B", "C"], start=1)
         ]
-        body = auth_client.post(
-            reverse("drinking:import_commit"), {"rows_json": json.dumps(rows)}
-        ).content.decode()
+        body = _import_rows(auth_client, rows)
         assert (
             "The rows of this file name 3 different regulating agencies for "
             f"{point.facility.system.name}: A, B and C. OpenH2O records a "
@@ -392,11 +414,8 @@ class TestRowNumbers:
         csv_text = "PS Code,Sample Date,Analyte Name,Result\n,2024-03-05,Nitrate,1\n"
         body = _preview(auth_client, "lab.csv", csv_text).content.decode()
         assert '<td class="text-mono">2</td>' in body
-        body = auth_client.post(
-            reverse("drinking:import_commit"),
-            {"rows_json": json.dumps([{"PS Code": "", "Sample Date": "2024-03-05",
-                                       "Analyte Name": "Nitrate", "Result": "1"}])},
-        ).content.decode()
+        body = _import_rows(auth_client, [{"PS Code": "", "Sample Date": "2024-03-05",
+                                           "Analyte Name": "Nitrate", "Result": "1"}])
         assert '<td class="text-mono">2</td>' in body
 
     def test_the_water_rights_result(self, db):
@@ -417,7 +436,7 @@ class TestTheProductionImport:
         assert "This page imports monthly production figures from a CSV file" in body
         assert "OpenH2O saves nothing until you press Import on the preview." in body
         assert "OpenH2O skips a row whose month and type of water are already on file." in body
-        assert "A CSV file of up to 2,000 rows and 25 MB." in body
+        assert "OpenH2O imports a CSV file of up to 25 MB, however many rows it has." in body
         assert "Production file" in body
 
     def test_whole_file_messages(self):
@@ -480,15 +499,14 @@ class TestTheProductionRowErrors:
         log = ("Date/Month,Water Produced from Groundwater (Wells)\n"
                "January,100\n")
         upload = SimpleUploadedFile("log.csv", log.encode(), content_type="text/csv")
-        body = auth_client.post(
+        preview = auth_client.post(
             reverse("drinking:production_import_preview"), {"file": upload}
-        ).content.decode()
+        )
+        body = preview.content.decode()
         assert "Enter the report year above, then press Update preview." in body
         assert "carries no year;" not in body
-        rows = json.dumps([{"Date/Month": "January",
-                            "Water Produced from Groundwater (Wells)": "100"}])
         body = auth_client.post(
-            reverse("drinking:production_import_commit"), {"rows_json": rows}
+            reverse("drinking:production_import_commit"), {"token": token_of(preview)}
         ).content.decode()
         assert "Enter the report year above, then press Update preview." in body
 
@@ -507,13 +525,11 @@ class TestTheProductionRowErrors:
                      "OpenH2O applies this unit to every row that does not give a unit.",
                      ">Not chosen<"):
             assert line in body, line
-        rows = json.dumps([{"PWSID": "CA2410009", "Year": "2024", "Month": "May",
-                            "DateStartOfMonth": "", "TypeCode": "GW",
-                            "Units of Measure As Reported": "G",
-                            "Quantity as in Units Reported": "1"}])
-        body = auth_client.post(
-            reverse("drinking:production_import_commit"), {"rows_json": rows}
-        ).content.decode()
+        rows = [{"PWSID": "CA2410009", "Year": "2024", "Month": "May",
+                 "DateStartOfMonth": "", "TypeCode": "GW",
+                 "Units of Measure As Reported": "G",
+                 "Quantity as in Units Reported": "1"}]
+        body = _import_production_rows(auth_client, rows)
         assert "1 imported" in body
         assert "OpenH2O imported 1 production record." in body
         assert ws.production_records.count() == 1

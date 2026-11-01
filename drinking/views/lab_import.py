@@ -1,14 +1,12 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """The lab-file import: choose a file, preview what it would write, then commit."""
-import json
-
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.views.decorators.http import require_GET, require_POST
+from core import pending_imports
 from drinking import importer
 from drinking.ps_codes import uses_california_ps_codes
 from drinking.models import WaterSystem
-from drinking.views.common import _ROWS_NOT_RECEIVED
 
 
 # ---------------------------------------------------------------------------
@@ -28,7 +26,7 @@ from drinking.views.common import _ROWS_NOT_RECEIVED
 @require_GET
 def import_page(request):
     """The lab-file upload page (the dropzone)."""
-    return render(request, "drinking/import.html", {"max_rows": importer.MAX_ROWS})
+    return render(request, "drinking/import.html", {})
 
 
 def _unknown_ps_code_routes(validated):
@@ -118,7 +116,12 @@ def import_preview(request):
         )
 
     try:
-        parsed = importer.parse_upload(uploaded, uploaded.name)
+        pending, parsed = pending_imports.receive(
+            request,
+            "lab_results",
+            uploaded,
+            lambda file: importer.parse_upload(file, uploaded.name),
+        )
     except ImportError as exc:
         return render(
             request,
@@ -132,6 +135,7 @@ def import_preview(request):
 
     missing = [f for f in importer.REQUIRED_FIELDS if not mapping.get(f)]
     if missing:
+        pending_imports.discard(pending)
         return render(
             request,
             "drinking/partials/_import_result.html",
@@ -143,6 +147,9 @@ def import_preview(request):
 
     error_rows = [r for r in preview if r["errors"]]
     warning_rows = [r for r in preview if r["warnings"] and not r["errors"]]
+    error_count = len(error_rows)
+    error_rows, error_rows_not_listed = pending_imports.cap_error_rows(error_rows)
+    warning_rows, warning_rows_not_listed = pending_imports.cap_error_rows(warning_rows)
     repeat_count = sum(
         1 for item in validated if item["data"].get("repeat_in_file")
     )
@@ -179,12 +186,14 @@ def import_preview(request):
                 (importer.FIELD_LABELS[field], col)
                 for field, col in mapping.items()
             ],
-            "preview_rows": preview[:200],
-            "shown_count": min(len(preview), 200),
+            "preview_rows": preview[: pending_imports.PREVIEW_ROW_LIMIT],
+            "shown_count": min(len(preview), pending_imports.PREVIEW_ROW_LIMIT),
             "error_rows": error_rows,
             "warning_rows": warning_rows,
             "row_count": len(rows),
-            "error_count": len(error_rows),
+            "error_count": error_count,
+            "error_rows_not_listed": error_rows_not_listed,
+            "warning_rows_not_listed": warning_rows_not_listed,
             "duplicate_count": duplicate_count,
             "repeat_count": repeat_count,
             "new_analytes": new_analytes,
@@ -194,59 +203,34 @@ def import_preview(request):
             # The regulating-agency line the commit will print,
             # decided by the same function the commit calls; nothing written.
             "agency": importer.regulating_agency_outcomes(rows, mapping, validated),
-            "rows_json": json.dumps(rows),
-            # Carried to the commit so each result can say which file the
-            # limits it carries arrived in.
-            "source_file": uploaded.name,
+            # The stored upload; Import posts only this.
+            "token": pending.token,
         },
     )
 
 
-@login_required
-@require_POST
-def import_commit(request):
-    """Re-validate the posted rows and write them."""
-    try:
-        rows = json.loads(request.POST.get("rows_json", "") or "[]")
-    except json.JSONDecodeError:
-        rows = []
+def parse_stored_lab(pending):
+    """The stored lab file, read again: (columns, rows)."""
+    with pending_imports.stored_file(pending) as file:
+        parsed = importer.parse_upload(file, pending.original_name)
+    return parsed["columns"], parsed["rows"]
 
-    if not rows:
-        return render(
-            request,
-            "drinking/partials/_import_result.html",
-            {"error": _ROWS_NOT_RECEIVED},
-        )
 
-    # Re-enforce the row cap on COMMIT, not just on preview. `rows_json` is a
-    # hidden field the browser posts back, so a logged-in user can hand-edit it
-    # to submit far more rows than the upload parser allowed. The upload cap is
-    # meaningless if commit does not check it too.
-    if len(rows) > importer.MAX_ROWS:
-        return render(
-            request,
-            "drinking/partials/_import_result.html",
-            {"error": importer.row_cap_message(len(rows))},
-        )
+def commit_stored_lab(pending):
+    """Write the stored lab file; the result block's context.
 
-    if not isinstance(rows, list) or not all(isinstance(r, dict) for r in rows):
-        return render(
-            request,
-            "drinking/partials/_import_result.html",
-            {"error": _ROWS_NOT_RECEIVED},
-        )
-
-    # Re-derive the mapping and re-validate from scratch. The preview's verdict
-    # is never trusted: between preview and commit another operator may have
-    # added the very sampling point a row was rejected for, or the duplicate a
-    # row is about to become.
-    columns = list(rows[0].keys())
+    Runs in the import worker (core/pending_imports.py). The mapping is
+    re-derived and every row re-validated from scratch: the preview's verdict
+    is never trusted, because between preview and Import another operator may
+    have added the very sampling point a row was rejected for, or the
+    duplicate a row is about to become.
+    """
+    columns, rows = parse_stored_lab(pending)
     mapping = importer.auto_map_columns(columns)
     validated = importer.validate_rows(rows, mapping)
-    counts = importer.commit_rows(
-        validated,
-        source_file=(request.POST.get("source_file", "") or "").strip()[:255],
-    )
+    # The file's name goes with the commit so each result can say which file
+    # the limits it carries arrived in.
+    counts = importer.commit_rows(validated, source_file=pending.original_name[:255])
     # After the commit, so a file that lands nothing still records the agency
     # it names for the system its rows resolved to.
     agency = importer.record_regulating_agency(rows, mapping, validated)
@@ -256,15 +240,23 @@ def import_commit(request):
         for item in validated
         if item["errors"]
     ]
+    skipped, skipped_not_listed = pending_imports.cap_error_rows(skipped)
 
-    return render(
-        request,
-        "drinking/partials/_import_result.html",
-        {
-            "counts": counts,
-            "on_file": counts["duplicates"] - counts["repeats"],
-            "skipped": skipped,
-            "total": len(validated),
-            "agency": agency,
-        },
-    )
+    return {
+        "counts": counts,
+        "on_file": counts["duplicates"] - counts["repeats"],
+        "skipped": skipped,
+        "skipped_not_listed": skipped_not_listed,
+        "total": len(validated),
+        "agency": [
+            {**entry, "system": {"name": entry["system"].name}}
+            for entry in agency or ()
+        ],
+    }
+
+
+@login_required
+@require_POST
+def import_commit(request):
+    """Start writing the stored file; the page polls for the result."""
+    return pending_imports.start_import(request, "lab_results", {})

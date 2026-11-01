@@ -58,9 +58,6 @@ from wells.models import MEASUREMENT_METHOD_CHOICES, PUMP_TYPE_CHOICES
 # Synthetic column name carrying a feature geometry as a GeoJSON string.
 GEOMETRY_COL = "__geometry__"
 
-# Hard cap on a single import (preserved from the old infrastructure_upload).
-MAX_ROWS = 500
-
 # The byte ceilings (25 MB raw upload, 50 MB extracted from a zip) live in
 # core/geofiles.py beside the readers that enforce them. Both names
 # stay importable from here: parse_upload checks MAX_UPLOAD_BYTES below, and
@@ -77,10 +74,6 @@ WRONG_TYPE_MESSAGE = (
 )
 NO_COLUMNS_MESSAGE = "This file has no column names on its first line."
 NO_ROWS_MESSAGE = "This file has column names but no rows below them."
-ROWS_NOT_RECEIVED_MESSAGE = (
-    "OpenH2O did not receive the file's rows from the preview. "
-    "Upload the file again."
-)
 # NO_FEATURES_MESSAGE, NOT_GEOJSON_MESSAGE, NOT_KML_MESSAGE, NOT_ZIP_MESSAGE,
 # NOT_SHAPEFILE_MESSAGE and too_large_message come from core.geofiles (the
 # Setup Wizard shows the same sentences).
@@ -94,26 +87,6 @@ def is_map_rows(rows):
     the file's order.
     """
     return bool(rows) and GEOMETRY_COL in rows[0]
-
-
-def row_cap_message(row_count, map_file=False):
-    if map_file:
-        return (
-            f"This file has {row_count:,} map features, and OpenH2O imports up to "
-            f"{MAX_ROWS:,} map features from one file. Split the file and import "
-            "each part."
-        )
-    return (
-        f"This file has {row_count:,} rows, and OpenH2O imports up to "
-        f"{MAX_ROWS:,} rows from one file. Split the file and import each part."
-    )
-
-
-def unexpected_error_message(exc):
-    return (
-        "An unexpected error stopped the import, and OpenH2O saved nothing "
-        f"from this file. Details: {type(exc).__name__}: {exc}"
-    )
 
 
 # ---------------------------------------------------------------------------
@@ -130,7 +103,7 @@ def parse_upload(file, filename):
 
     Raises ImportError with the sentence the page shows on: a file over the
     size cap, an unsupported extension, a damaged map file (these were server
-    errors before), no rows or map features, or > MAX_ROWS of them.
+    errors before), or no rows or map features.
     """
     name = (filename or "").lower()
 
@@ -171,8 +144,6 @@ def parse_upload(file, filename):
     else:
         raise ImportError(WRONG_TYPE_MESSAGE)
 
-    if len(rows) > MAX_ROWS:
-        raise ImportError(row_cap_message(len(rows), map_file=map_file))
     if not rows:
         raise ImportError(NO_FEATURES_MESSAGE if map_file else NO_ROWS_MESSAGE)
 

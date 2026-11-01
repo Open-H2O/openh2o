@@ -16,8 +16,8 @@ and why.
     <span class="badge badge-green">Created {{ created }}</span>
     <span class="badge badge-grey">{{ total_af }} AF</span>
     {% if skipped_duplicates %}<span class="badge badge-orange">Already on file {{ skipped_duplicates }}</span>{% endif %}
-    {% if unresolved_rows %}<span class="badge badge-orange">Unresolved {{ unresolved_rows|length }}</span>{% endif %}
-    {% if errors %}<span class="badge badge-orange">Errors {{ errors|length }}</span>{% endif %}
+    {% if unresolved_count %}<span class="badge badge-orange">Unresolved {{ unresolved_count }}</span>{% endif %}
+    {% if error_count %}<span class="badge badge-orange">Errors {{ error_count }}</span>{% endif %}
   </div>
 
   <p class="text-base text-secondary mt-md">
@@ -59,6 +59,7 @@ and why.
       {% endfor %}
     </tbody>
   </table>
+  {% include "core/partials/_rows_not_listed.html" with count=combined_not_listed what="rows combined into one month" %}
   {% endif %}
 
   {% if unresolved_rows %}
@@ -71,6 +72,7 @@ and why.
       {% endfor %}
     </tbody>
   </table>
+  {% include "core/partials/_rows_not_listed.html" with count=unresolved_not_listed what="unresolved rows" %}
   {% endif %}
 
   {% if errors %}
@@ -83,6 +85,7 @@ and why.
       {% endfor %}
     </tbody>
   </table>
+  {% include "core/partials/_rows_not_listed.html" with count=errors_not_listed what="rows with errors" %}
   {% endif %}
 
   <div class="row-start pt-sm" style="margin-top: var(--space-lg); gap: var(--space-sm);">

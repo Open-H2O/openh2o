@@ -81,6 +81,7 @@
       {% endfor %}
     </tbody>
   </table>
+  {% include "core/partials/_rows_not_listed.html" with count=skipped_not_listed what="rows with errors" %}
   <p class="text-tertiary text-sm mt-sm">Correct these rows in the file and upload the file again. OpenH2O skips every row already on file.</p>
   {% endif %}
 

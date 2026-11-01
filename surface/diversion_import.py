@@ -90,7 +90,6 @@ from surface.importer import (
 )
 from surface.models import DiversionRecord, PointOfDiversion, WaterRight
 
-MAX_ROWS = 2000
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MB, the same ceiling every other importer uses
 
 #: The import screen's own USE-row question: same three values as
@@ -158,20 +157,7 @@ def parse_csv(file_obj, filename=""):
     rows = [{k: ("" if v is None else v) for k, v in row.items()} for row in reader]
     if not rows:
         raise ImportError(NO_ROWS_MESSAGE)
-    if len(rows) > MAX_ROWS:
-        raise ImportError(row_cap_message(len(rows)))
     return columns, rows
-
-
-def row_cap_message(row_count):
-    """Split by point or by year: a split that puts one point's month in two
-    files loses the second part's volume, because the second import skips
-    that point, month and type as already on file (commit_rows)."""
-    return (
-        f"This file has {row_count:,} rows, and OpenH2O imports up to "
-        f"{MAX_ROWS:,} rows from one file. Split the file by point or by year "
-        "and import each part."
-    )
 
 
 def recognise_layout(columns):

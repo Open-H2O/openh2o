@@ -40,7 +40,6 @@ from django.db import transaction
 
 from surface.models import WaterRight, WaterRightType
 
-MAX_ROWS = 500
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MB, same ceiling as the infrastructure importer
 
 #: The state's own rights-LIST unit values. A face value or a maximum rate in
@@ -58,32 +57,12 @@ NOT_CSV_MESSAGE = (
 )
 NO_COLUMNS_MESSAGE = "This file has no column names on its first line."
 NO_ROWS_MESSAGE = "This file has column names but no rows below them."
-ROWS_NOT_RECEIVED_MESSAGE = (
-    "OpenH2O did not receive the file's rows from the preview. "
-    "Upload the file again."
-)
-
-
 def too_large_message(size, cap):
     """The size is rounded UP, so a file over the cap never reads as equal to it."""
     mb = 1024 * 1024
     return (
         f"This file is {math.ceil(size / mb)} MB. "
         f"OpenH2O imports files of up to {cap // mb} MB."
-    )
-
-
-def unexpected_error_message(exc):
-    return (
-        "An unexpected error stopped the import, and OpenH2O saved nothing "
-        f"from this file. Details: {type(exc).__name__}: {exc}"
-    )
-
-
-def row_cap_message(row_count):
-    return (
-        f"This file has {row_count:,} rows, and OpenH2O imports up to "
-        f"{MAX_ROWS:,} rows from one file. Split the file and import each part."
     )
 
 
@@ -95,7 +74,7 @@ def row_cap_message(row_count):
 def parse_upload(file, filename):
     """Parse an uploaded CSV into {"columns": [...], "rows": [dict, ...]}.
 
-    Raises ImportError on: a non-CSV extension, no rows, or > MAX_ROWS rows.
+    Raises ImportError on: a non-CSV extension, or no rows.
     Same shape ``infrastructure.importer.parse_upload`` raises, so the view
     layer's error handling is identical.
     """
@@ -118,8 +97,6 @@ def parse_upload(file, filename):
         raise ImportError(NO_COLUMNS_MESSAGE)
     if not rows:
         raise ImportError(NO_ROWS_MESSAGE)
-    if len(rows) > MAX_ROWS:
-        raise ImportError(row_cap_message(len(rows)))
 
     return {"columns": columns, "rows": rows}
 

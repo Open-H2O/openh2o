@@ -21,7 +21,6 @@ before writing this fixture): twelve GW months sum to 91,371,800 gallons =
 280.41 acre-feet at 325,851 gallons per acre-foot.
 """
 import io
-import json
 from decimal import Decimal
 
 import factory
@@ -34,6 +33,7 @@ from django.urls import reverse
 
 from drinking import production_import
 from drinking.models import SystemProduction, WaterSystem
+from tests.import_flow import import_and_read, token_of
 
 pytestmark = pytest.mark.django_db
 
@@ -450,15 +450,17 @@ def test_production_import_preview_shows_layout_and_totals(auth_client, le_grand
     assert resp.status_code == 200
     body = resp.content.decode()
     assert "eAR export" in body  # 149.1-06: the preview heading names the layout in words
-    assert "rows_json" in body
+    assert "rows_json" not in body
+    assert 'name="token"' in body
 
 
 def test_production_import_commit_creates_records_through_the_view(auth_client, le_grand):
-    columns, rows = _parse(EAR_CSV_TEXT)
+    upload = SimpleUploadedFile("ear-2022-production.csv", EAR_CSV_TEXT.encode(), content_type="text/csv")
+    preview = auth_client.post(reverse("drinking:production_import_preview"), {"file": upload})
 
-    resp = auth_client.post(reverse("drinking:production_import_commit"), {
-        "rows_json": json.dumps(rows),
-    })
+    resp = import_and_read(
+        auth_client, reverse("drinking:production_import_commit"), token_of(preview)
+    )
 
     assert resp.status_code == 200
     assert SystemProduction.objects.filter(system=le_grand, type_code="GW").count() == 12

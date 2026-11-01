@@ -7,6 +7,7 @@ Cross-cutting models shared by every app. User is the custom AUTH_USER_MODEL
 SiteConfig holds the single agency's deployment-wide settings,
 including demonstration_mode.
 """
+import uuid
 from decimal import Decimal
 
 from django.contrib.auth.models import AbstractUser
@@ -261,3 +262,63 @@ class SiteConfig(models.Model):
 
     def __str__(self):
         return self.agency_name
+
+
+class PendingImport(models.Model):
+    """A file uploaded to an import page, kept on disk until Import finishes.
+
+    The preview saves the upload once; the page then carries only this row's
+    token and its settings, never the file's rows. Import re-reads the stored
+    file in a detached worker (``core/pending_imports.py``), stores the result
+    block's context here, and the status route shows it once and deletes the
+    row. The file is deleted whether the commit succeeds or fails.
+
+    Deliberately NOT tracked by the change history: it is a person's upload
+    in transit, not a record of water.
+    """
+
+    KIND_CHOICES = [
+        ("water_rights", "Water rights"),
+        ("diversions", "Diversion volumes"),
+        ("lab_results", "Lab results"),
+        ("production", "Production"),
+        ("infrastructure", "Wells, diversions and recharge sites"),
+    ]
+    STATUS_CHOICES = [
+        ("previewed", "Previewed"),
+        ("waiting", "Waiting to start"),
+        ("running", "Running"),
+        ("finished", "Finished"),
+        ("failed", "Stopped"),
+    ]
+
+    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    kind = models.CharField(max_length=24, choices=KIND_CHOICES)
+    user = models.ForeignKey(
+        "core.User", on_delete=models.CASCADE, related_name="pending_imports"
+    )
+    original_name = models.CharField(max_length=255)
+    size_bytes = models.PositiveBigIntegerField(default=0)
+    stored_path = models.CharField(
+        max_length=255,
+        help_text="Under MEDIA_ROOT, a random name. Never the uploaded name.",
+    )
+    settings = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="The mapping and page options the person confirmed.",
+    )
+    status = models.CharField(
+        max_length=12, choices=STATUS_CHOICES, default="previewed"
+    )
+    result = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="The context the page's result block renders.",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.original_name} ({self.get_status_display()})"

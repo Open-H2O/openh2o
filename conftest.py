@@ -15,3 +15,16 @@ def calculation_runs_inline(settings):
     process; the suite must never spawn one.
     """
     settings.OPENH2O_CALCULATION_INLINE = True
+
+
+@pytest.fixture(autouse=True)
+def import_runs_inline(settings, tmp_path):
+    """Import on a bulk import page commits in-process, on a throwaway disk.
+
+    Production starts ``manage.py run_pending_import --token <uuid>`` as its
+    own process; the suite must never spawn one. A preview saves the upload
+    under ``MEDIA_ROOT/imports/``, so the suite points that at the test's own
+    temporary folder.
+    """
+    settings.OPENH2O_IMPORT_INLINE = True
+    settings.MEDIA_ROOT = tmp_path / "media"

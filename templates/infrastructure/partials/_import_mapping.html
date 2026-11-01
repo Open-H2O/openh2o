@@ -2,12 +2,10 @@
 Column-mapping step. Renders one row per model field with a <select> of the
 uploaded file's columns (pre-set to the auto-detected guess), plus a sample of
 the first rows, and a button that posts the confirmed mapping to import/commit/.
-The parsed rows ride along as a hidden JSON field so commit needs no re-upload.
+The stored upload rides along as a hidden token so commit needs no re-upload.
 
-`error`: set only when this is a RE-render after Create crashed.
-Commit posts back here, at 200, with one line saying nothing was created and
-why, instead of a 500 HTMX swaps nothing for (the operator would press
-Create and get this same table back with no explanation at all).
+`error`: set only when Create found no column matched to the name or the
+location; the step comes back with one sentence saying why.
 {% endcomment %}
 {% if error %}
 <div class="card-raised" style="border-left: 3px solid var(--color-error); padding: var(--space-md); margin-bottom: var(--space-md);">
@@ -25,7 +23,7 @@ Create and get this same table back with no explanation at all).
     hx-indicator="#commit-spinner">
     {% csrf_token %}
     <input type="hidden" name="infra_type" value="{{ infra_type }}">
-    <input type="hidden" name="rows_json" value="{{ rows_json }}">
+    <input type="hidden" name="token" value="{{ token }}">
 
     <table class="data-table">
       <thead>

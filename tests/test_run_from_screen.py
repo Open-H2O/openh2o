@@ -19,7 +19,6 @@ evenly, 4.0000 each.
 
 Every assertion is a stored value or an exact sentence.
 """
-import json
 import zoneinfo
 from datetime import date, datetime
 from decimal import Decimal
@@ -38,6 +37,7 @@ from core.models import SiteConfig
 from parcels.models import ParcelLedger
 from surface.models import DiversionRecord
 from tests.factories import ReportingPeriodFactory, WaterRightFactory
+from tests.import_flow import csv_text_of, import_and_read, token_of
 from tests.test_run_accounting import (  # noqa: F401  (world is a fixture)
     FEB,
     JAN,
@@ -447,14 +447,19 @@ def test_a_diversion_import_recalculates_the_months_it_created(world, full_effic
         for month, name, amount in ((1, "January", "30"), (2, "February", "25"))
     ]
 
-    response = _client(operator).post(
+    client = _client(operator)
+    preview = client.post(
+        reverse("surface:diversion_import_preview"),
+        {"file": SimpleUploadedFile(
+            "monthly-diversion-2024.csv", csv_text_of(rows).encode(),
+            content_type="text/csv",
+        )},
+    )
+    response = import_and_read(
+        client,
         reverse("surface:diversion_import_commit"),
-        {
-            "rows_json": json.dumps(rows),
-            "point": str(world.pod.pk),
-            "method": "",
-            "data_state": "provisional",
-        },
+        token_of(preview),
+        {"point": str(world.pod.pk), "method": "", "data_state": "provisional"},
     )
 
     html = response.content.decode()

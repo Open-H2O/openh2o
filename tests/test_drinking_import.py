@@ -45,6 +45,7 @@ from drinking.models import (
     SampleResult,
 )
 from tests.factories import SamplingPointFactory, SystemFacilityFactory, WaterSystemFactory
+from tests.import_flow import import_and_read, token_of
 
 FIXTURE = Path(__file__).parent / "fixtures" / "drinking_sample_results.csv"
 
@@ -189,12 +190,12 @@ class TestParseUpload:
         ):
             importer.parse_upload(f, "lab.csv")
 
-    def test_rejects_more_than_max_rows(self, fixture_text):
+    def test_a_file_with_many_rows_is_read_whole(self, fixture_text):
+        """There is no row cap: the commit runs in its own process."""
         lines = fixture_text.strip().split("\n")
         header, first = lines[0], lines[1]
-        bloated = "\n".join([header] + [first] * (importer.MAX_ROWS + 1))
-        with pytest.raises(ImportError, match="This file has 5,001 rows, and OpenH2O imports up to 5,000 rows"):
-            importer.parse_upload(_csv_file(bloated), "lab.csv")
+        bloated = "\n".join([header] + [first] * 5001)
+        assert len(importer.parse_upload(_csv_file(bloated), "lab.csv")["rows"]) == 5001
 
 
 class TestParseUploadReadsTheStatesRealFormat:
@@ -570,16 +571,15 @@ class TestImportViews:
         assert "No sampling point on file has the PS Code" in body  # the blocking error
         assert SampleResult.objects.count() == 0
 
-        rows_json = preview.context["rows_json"]
+        token = token_of(preview)
+        assert "rows_json" not in body
         assert preview.context["committable"] == EXPECTED_RESULTS
         assert preview.context["error_count"] == EXPECTED_ERRORS
         # Row 29 repeats row 1 in the file: its own count.
         assert preview.context["duplicate_count"] == 0
         assert preview.context["repeat_count"] == EXPECTED_DUPLICATES
 
-        commit = auth_client.post(
-            reverse("drinking:import_commit"), {"rows_json": rows_json}
-        )
+        commit = import_and_read(auth_client, reverse("drinking:import_commit"), token)
         assert commit.status_code == 200
         assert commit.context["counts"]["results"] == EXPECTED_RESULTS
         assert SampleResult.objects.count() == EXPECTED_RESULTS
@@ -615,21 +615,6 @@ class TestImportViews:
         response = auth_client.post(reverse("drinking:import_preview"), {})
         assert response.status_code == 200
         assert "Choose a lab results file to upload." in response.content.decode()
-
-    def test_commit_re_enforces_the_row_cap(self, auth_client, system):
-        """rows_json is a hidden field the browser posts back, so the cap has
-        to hold on commit too — otherwise it is trivially bypassed."""
-        import json
-
-        rows = [
-            {"PS Code": "CA0000042_001_001", "Sample Date": "2026-03-10",
-             "Analyte Name": "Arsenic", "Result": "0.004"}
-        ] * (importer.MAX_ROWS + 1)
-        response = auth_client.post(
-            reverse("drinking:import_commit"), {"rows_json": json.dumps(rows)}
-        )
-        assert "Split the file and import each part." in response.content.decode()
-        assert SampleResult.objects.count() == 0
 
     @pytest.mark.parametrize(
         "url_name", ["import", "import_preview", "import_commit"]
@@ -1313,11 +1298,18 @@ class TestARepeatIsNotAlwaysARepeat:
 
 
 def _commit_through_the_view(client, rows):
-    import json
+    """Upload ``rows`` as a lab file, press Import, and return the status response."""
+    import csv
 
-    return client.post(
-        reverse("drinking:import_commit"), {"rows_json": json.dumps(rows)}
+    columns = list(dict.fromkeys(key for row in rows for key in row))
+    out = io.StringIO()
+    writer = csv.DictWriter(out, fieldnames=columns)
+    writer.writeheader()
+    writer.writerows(rows)
+    preview = client.post(
+        reverse("drinking:import_preview"), {"file": _csv_file(out.getvalue())}
     )
+    return import_and_read(client, reverse("drinking:import_commit"), token_of(preview))
 
 
 class TestRegulatingAgency:

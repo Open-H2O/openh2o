@@ -192,6 +192,7 @@ REFERENCE_LABELS = [
 KEPT_LABELS = [
     "core.User",
     "core.SiteConfig",
+    "core.PendingImport",
     "health.HealthCheckResult",
     "feedback.Feedback",
     "feedback.FeedbackAttachment",

@@ -4,13 +4,17 @@
 An operator runs it (typically on a schedule) to delete aged published staging
 records, health-check results, and sync logs past their day thresholds
 (--staging-days/--health-days/--sync-days, each default 365); it defaults to a
-dry-run preview and only deletes when passed --confirm.
+dry-run preview and only deletes when passed --confirm. It also removes bulk
+import uploads that nobody finished (older than 24 hours, file and row), the
+same cleanup each new import preview runs.
 """
 from datetime import timedelta
 
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
+from core.models import PendingImport
+from core.pending_imports import EXPIRY, purge_expired
 from datasync.models import DataRecordStaging, DataSyncLog
 from health.models import HealthCheckResult
 
@@ -61,8 +65,11 @@ class Command(BaseCommand):
         staging_count = staging_qs.count()
         health_count = health_qs.count()
         sync_count = sync_qs.count()
+        pending_count = PendingImport.objects.filter(
+            created_at__lt=now - EXPIRY
+        ).count()
 
-        total = staging_count + health_count + sync_count
+        total = staging_count + health_count + sync_count + pending_count
 
         if not confirm:
             self.stdout.write(self.style.WARNING("DRY RUN (use --confirm to delete)"))
@@ -79,6 +86,10 @@ class Command(BaseCommand):
         self.stdout.write(
             f"{'Sync logs':<30} {sync_count:<10} {sync_cutoff.date()}"
         )
+        self.stdout.write(
+            f"{'Unfinished import uploads':<30} {pending_count:<10} "
+            f"{(now - EXPIRY).date()}"
+        )
         self.stdout.write("-" * 60)
         self.stdout.write(f"{'Total':<30} {total}")
         self.stdout.write("")
@@ -91,10 +102,12 @@ class Command(BaseCommand):
             staging_deleted, _ = staging_qs.delete()
             health_deleted, _ = health_qs.delete()
             sync_deleted, _ = sync_qs.delete()
+            pending_deleted = purge_expired(now)
 
             self.stdout.write(
                 self.style.SUCCESS(
-                    f"Deleted: {staging_deleted} staging, {health_deleted} health, {sync_deleted} sync log records"
+                    f"Deleted: {staging_deleted} staging, {health_deleted} health, {sync_deleted} sync log records, "
+                    f"{pending_deleted} unfinished import uploads"
                 )
             )
         else:

@@ -100,29 +100,10 @@ from drinking.models import (
     WaterSystem,
 )
 
-# Hard cap on a single import. Higher than infrastructure's 500 for the same
-# small-VPS rationale: one well is one row, but one sample event is a dozen-plus
-# analyte rows, so a single quarter of routine monitoring is already hundreds of
-# rows.
-#
-# MEASURED, not assumed (2026-07-19): every row for CA1010001 (Bakman
-# Water Company, Fresno — 17,393 people, 2,675 connections, 18 sampling points)
-# was counted out of the state's real `SDWIS4.tab` export. That system's whole
-# 2023-to-present history is **2,471 rows / 721,121 bytes**, so a genuine
-# single-system slice clears this cap with 2x headroom and the byte ceiling with
-# 35x. The cap therefore stands as written.
-#
-# The one case it would NOT clear: DDW publishes the archive in four files
-# (SDWIS1 2011-2014, SDWIS2 2015-2018, SDWIS3 2019-2022, SDWIS4 2023-present).
-# An operator who concatenated all four into a single 15-year upload would land
-# near ~10,000 rows and be refused. That is the intended behaviour — the refusal
-# names the cap and says to split the file — but it is why this number is
-# documented rather than merely chosen.
-MAX_ROWS = 5000
-
-# Raw-upload byte ceiling, mirroring infrastructure's rationale: MAX_ROWS is
-# only checked AFTER a full parse, so it is no defense against a 5GB file.
-# The measured single-system slice above is 0.69 MB, well inside this.
+# Raw-upload byte ceiling: a file is checked for size before it is parsed, so
+# a 5GB file never reaches the parser. The state's whole Merced three-year
+# file is about 20 MB, well inside this. There is no row cap: the commit runs
+# in its own process (core/pending_imports.py).
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MB
 
 
@@ -134,13 +115,6 @@ def too_large_message(size):
     return (
         f"This file is {math.ceil(size / mb)} MB. "
         f"OpenH2O imports files of up to {MAX_UPLOAD_BYTES // mb} MB."
-    )
-
-
-def row_cap_message(row_count):
-    return (
-        f"This file has {row_count:,} rows, and OpenH2O imports up to "
-        f"{MAX_ROWS:,} rows from one file. Split the file and import each part."
     )
 
 
@@ -238,8 +212,7 @@ def parse_upload(file, filename):
     Accepts `.csv` (comma), `.tab` (tab, the state's current export), and
     `.txt` (sniffed).
 
-    Raises ImportError on: oversize upload, unsupported extension, no rows, or
-    more than MAX_ROWS rows.
+    Raises ImportError on: oversize upload, unsupported extension, or no rows.
     """
     name = (filename or "").lower()
 
@@ -258,8 +231,6 @@ def parse_upload(file, filename):
 
     rows, columns = _parse_csv(file, _DELIMITERS[extension])
 
-    if len(rows) > MAX_ROWS:
-        raise ImportError(row_cap_message(len(rows)))
     if not columns:
         raise ImportError("This file has no column names on its first line.")
     if not rows:

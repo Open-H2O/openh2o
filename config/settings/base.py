@@ -236,11 +236,13 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 # -- Upload limits -----------------------------------------------------------
 # Bound request bodies so a multi-GB or zip-bomb upload can't exhaust the small
-# target VPS (2-4GB). DATA_UPLOAD_MAX_MEMORY_SIZE caps non-file POST bodies (the
-# bulk-import "commit" step re-posts parsed rows as JSON — 10 MB is generous for
-# the 500-row cap while still bounding it). FILE_UPLOAD_MAX_MEMORY_SIZE is the
-# threshold above which an uploaded file spools to a temp file instead of RAM.
-# These do NOT cap the uploaded FILE size itself — that hard ceiling lives in
+# target VPS (2-4GB). DATA_UPLOAD_MAX_MEMORY_SIZE caps non-file POST bodies. No
+# rows travel in a form any more: a bulk import saves the uploaded file once and
+# its pages post only a token and the page's settings (core/pending_imports.py),
+# so 10 MB is far more than any form here needs and still bounds the body.
+# FILE_UPLOAD_MAX_MEMORY_SIZE is the threshold above which an uploaded file
+# spools to a temp file instead of RAM.
+# These do NOT cap the uploaded FILE size itself; that hard ceiling lives in
 # core.geofiles (MAX_UPLOAD_BYTES / MAX_EXTRACTED_BYTES), shared by the bulk
 # importer and the Setup Wizard.
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10 MB

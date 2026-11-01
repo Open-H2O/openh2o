@@ -54,6 +54,14 @@ def _option_b_section(guide_text: str) -> str:
     return "### Option B" + "\n".join(lines[:end])
 
 
+#: Routes whose names match but that no person opens, with the reason.
+NOT_DOORS = {
+    "/users/imports/<uuid:token>/status/": (
+        "the fragment an import's waiting block polls after Import is pressed"
+    ),
+}
+
+
 def _walk_url_names_containing(resolver, needle_names, prefix=""):
     """Every (full_path, name) pair whose name contains one of needle_names.
 
@@ -109,7 +117,7 @@ def test_full_module_set_is_what_this_guard_reads():
 def test_every_import_or_onboard_route_is_named_in_option_b():
     resolver = get_resolver()
     raw = _walk_url_names_containing(resolver, needle_names=("import", "onboard"))
-    doors = _reduce_to_shortest_prefixes(raw)
+    doors = [d for d in _reduce_to_shortest_prefixes(raw) if d not in NOT_DOORS]
     assert doors, "no import/onboard routes found at all — the resolver walk is broken"
 
     section = _option_b_section(_guide_text())

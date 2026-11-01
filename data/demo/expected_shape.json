@@ -139,6 +139,11 @@
       "tolerance": 0,
       "reason": "Reference data from seed_data: the water types the accounting engine apportions across. Production carries the same 6."
     },
+    "core.PendingImport": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "A file someone uploaded to a bulk import page and has not finished importing (the upload waits at most a day). The demonstration is built by management commands that never press Import, so a golden never carries one."
+    },
     "core.SiteConfig": {
       "expected": 1,
       "tolerance": 0,

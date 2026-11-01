@@ -14,15 +14,15 @@ infrastructure/partials/_import_result.html:
 
   <div class="row-start" style="gap: var(--space-sm); margin-top: var(--space-md);">
     <span class="badge badge-green">Created {{ created }}</span>
-    {% if skipped %}<span class="badge badge-orange">Skipped {{ skipped|length }}</span>{% endif %}
+    {% if skipped_count %}<span class="badge badge-orange">Skipped {{ skipped_count }}</span>{% endif %}
     <span class="badge badge-grey">{{ total }} row{{ total|pluralize }} total</span>
   </div>
 
   <p class="text-base text-secondary mt-md">
     {% comment %} OpenH2O records a right, it never grants one. {% endcomment %}
     OpenH2O created {{ created }} water right record{{ created|pluralize }}.
-    {% if noted %}{{ noted|length }} of them {{ noted|length|pluralize:"has a note,have notes" }} below.{% endif %}
-    {% if skipped %}OpenH2O skipped {{ skipped|length }} row{{ skipped|length|pluralize }} because of the problems below.{% elif not noted %}Every row was valid.{% endif %}
+    {% if noted_count %}{{ noted_count }} of them {{ noted_count|pluralize:"has a note,have notes" }} below.{% endif %}
+    {% if skipped_count %}OpenH2O skipped {{ skipped_count }} row{{ skipped_count|pluralize }} because of the problems below.{% elif not noted_count %}Every row was valid.{% endif %}
   </p>
 
   {% if noted %}
@@ -48,6 +48,7 @@ infrastructure/partials/_import_result.html:
       {% endfor %}
     </tbody>
   </table>
+  {% include "core/partials/_rows_not_listed.html" with count=noted_not_listed what="rows with a note" %}
   {% endif %}
 
   {% if skipped %}
@@ -71,6 +72,7 @@ infrastructure/partials/_import_result.html:
       {% endfor %}
     </tbody>
   </table>
+  {% include "core/partials/_rows_not_listed.html" with count=skipped_not_listed what="rows with errors" %}
   {% endif %}
 
   <div class="row-start pt-sm" style="margin-top: var(--space-lg); gap: var(--space-sm);">

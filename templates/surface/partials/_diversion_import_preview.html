@@ -1,19 +1,11 @@
 {% comment %}
 Mapping/preview step for the diversion import. Same two-
 button idiom as the infrastructure and water-rights importers: one form,
-whose hidden rows_json and settings selects are shared by two submit
+whose hidden token (the stored upload) and settings selects are shared by two submit
 buttons -- "Update preview" re-runs the same dry-run against changed
 settings, "Import" commits. Nothing is written until the second button is
 pressed.
-
-`error`: set only when a re-render after Import raised.
 {% endcomment %}
-{% if error %}
-<div class="card-raised" style="border-left: 3px solid var(--color-error); padding: var(--space-md); margin-bottom: var(--space-md);">
-  <p class="text-base" style="margin: 0; color: var(--color-error);">{{ error }}</p>
-</div>
-{% endif %}
-
 <div class="card-raised">
   {% comment %} The heading names the file kind, and the year sentence shows for a Water Use Reported file only (a book's dates are read as written). {% endcomment %}
   <h2 class="card-header-ruled">{{ row_count }} row{{ row_count|pluralize }} from {% if layout == "state" %}a Water Use Reported export{% else %}a book of deliveries{% endif %}</h2>
@@ -21,7 +13,7 @@ pressed.
 
   <form id="diversion-import-mapping-form" class="mt-lg">
     {% csrf_token %}
-    <input type="hidden" name="rows_json" value="{{ rows_json }}">
+    <input type="hidden" name="token" value="{{ token }}">
 
     <div class="form-row-2col">
       <div class="form-group">
@@ -94,8 +86,8 @@ pressed.
     <span class="badge badge-green">New records {{ created }}</span>
     <span class="badge badge-grey">{{ total_af }} AF</span>
     {% if skipped_duplicates %}<span class="badge badge-orange">Already on file {{ skipped_duplicates }}</span>{% endif %}
-    {% if unresolved_rows %}<span class="badge badge-orange">Unresolved {{ unresolved_rows|length }}</span>{% endif %}
-    {% if errors %}<span class="badge badge-orange">Errors {{ errors|length }}</span>{% endif %}
+    {% if unresolved_count %}<span class="badge badge-orange">Unresolved {{ unresolved_count }}</span>{% endif %}
+    {% if error_count %}<span class="badge badge-orange">Errors {{ error_count }}</span>{% endif %}
     {% if use_rows_dropped %}<span class="badge badge-grey">USE rows ignored {{ use_rows_dropped }}</span>{% endif %}
   </div>
 </div>
@@ -116,6 +108,7 @@ pressed.
       {% endfor %}
     </tbody>
   </table>
+  {% include "core/partials/_rows_not_listed.html" with count=combined_not_listed what="rows combined into one month" %}
 </div>
 {% endif %}
 
@@ -136,6 +129,7 @@ pressed.
       {% endfor %}
     </tbody>
   </table>
+  {% include "core/partials/_rows_not_listed.html" with count=conversions_not_listed what="conversions" %}
 </div>
 {% endif %}
 
@@ -150,10 +144,11 @@ pressed.
       {% endfor %}
     </tbody>
   </table>
+  {% include "core/partials/_rows_not_listed.html" with count=unresolved_not_listed what="unresolved rows" %}
 </div>
 {% endif %}
 
-{% if errors %}
+{% if error_count %}
 <div class="card-raised">
   <h3 class="section-header-sm">Row errors</h3>
   <table class="data-table mt-md">

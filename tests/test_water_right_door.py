@@ -205,37 +205,28 @@ def _upload_csv(client, contents):
 
 
 def _commit_from_preview(client, preview_resp, csv_text):
-    """Post the confirmed mapping + the parsed rows to commit, the same
-    round trip the browser makes from the mapping partial.
+    """Press Import with the token the mapping partial carries, then read the
+    status route, the same round trip the browser makes.
 
-    ``rows_json`` is pulled out of the rendered partial (an HTML-escaped JSON
-    string, unescaped here) so this proves the real value the view rendered
-    round-trips; the column -> field mapping is rebuilt with
-    ``importer.auto_map_columns`` against the same header rather than
-    scraping each <select>'s "selected" option, which is equivalent to an
-    operator accepting every auto-detected guess unchanged.
+    The column -> field mapping is rebuilt with ``importer.auto_map_columns``
+    against the same header rather than scraping each <select>'s "selected"
+    option, which is equivalent to an operator accepting every auto-detected
+    guess unchanged.
     """
     import csv
-    import html
     import io
-    import re
 
     from surface import importer
+    from tests.import_flow import import_and_read, token_of
 
-    body = preview_resp.content.decode()
-    rows_json_match = re.search(r'name="rows_json" value="([^"]*)"', body)
-    assert rows_json_match, "rows_json hidden field missing from the mapping partial"
-    rows_json = html.unescape(rows_json_match.group(1))
-
+    token = token_of(preview_resp)
     columns = next(csv.reader(io.StringIO(csv_text)))
     mapping = importer.auto_map_columns(columns)
 
-    post_data = {"rows_json": rows_json}
-    for field, source_col in mapping.items():
-        post_data[f"map:{field}"] = source_col
+    post_data = {f"map:{field}": source_col for field, source_col in mapping.items()}
 
-    return client.post(
-        reverse("surface:water_right_import_commit"), post_data, HTTP_HX_REQUEST="true"
+    return import_and_read(
+        client, reverse("surface:water_right_import_commit"), token, post_data
     )
 
 

@@ -42,6 +42,7 @@ from tests.factories import (
     SystemFacilityFactory,
     WaterSystemFactory,
 )
+from tests.import_flow import import_and_read, token_of
 
 LE_GRAND = Path(__file__).parent / "fixtures" / "drinking_le_grand_lab_results.tab"
 LE_GRAND_ROWS = 160
@@ -224,10 +225,9 @@ class TestTheImporterReadsTheLimitsAsReported:
         body = preview.content.decode()
         assert f"Add the MCL and DLR to {LE_GRAND_ROWS} results" in body
         assert "disabled" not in body.split("Add the MCL and DLR to")[0].rsplit("<button", 1)[1]
-        commit = client_in.post(reverse("drinking:import_commit"), {
-            "rows_json": preview.context["rows_json"],
-            "source_file": preview.context["source_file"],
-        })
+        commit = import_and_read(
+            client_in, reverse("drinking:import_commit"), token_of(preview)
+        )
         assert commit.context["counts"]["limits_filled"] == LE_GRAND_ROWS
         assert SampleResult.objects.filter(
             mcl_as_reported__isnull=False
@@ -238,11 +238,9 @@ class TestTheImporterReadsTheLimitsAsReported:
     ):
         with LE_GRAND.open("rb") as handle:
             preview = client_in.post(reverse("drinking:import_preview"), {"file": handle})
-        assert preview.context["source_file"] == LE_GRAND.name
-        client_in.post(reverse("drinking:import_commit"), {
-            "rows_json": preview.context["rows_json"],
-            "source_file": preview.context["source_file"],
-        })
+        import_and_read(
+            client_in, reverse("drinking:import_commit"), token_of(preview)
+        )
         # Recorded on every row, limit or none: the date is what tells "the
         # file carried none" apart from "imported before limits were kept".
         assert SampleResult.objects.filter(

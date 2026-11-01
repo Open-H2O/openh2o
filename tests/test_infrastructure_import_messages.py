@@ -21,6 +21,7 @@ from django.test import Client
 from django.urls import reverse
 
 from infrastructure import importer
+from tests.import_flow import csv_text_of, infrastructure_import_rows, token_of
 from wells.models import Well
 
 
@@ -78,22 +79,21 @@ class TestWholeFileMessages:
             auth_client, "wells.csv", "name,lat,lon\n"
         )
 
-    def test_row_cap_csv_and_map_file(self, auth_client):
+    def test_a_file_over_the_old_row_cap_is_read_whole(self, auth_client):
+        """There is no row cap: the preview counts every row and map feature."""
         csv_text = "name,lat,lon\n" + "".join(f"W{i},37.3,-120.5\n" for i in range(501))
-        assert (
-            "This file has 501 rows, and OpenH2O imports up to 500 rows from one "
-            "file. Split the file and import each part."
-        ) in _preview(auth_client, "wells.csv", csv_text)
+        body = _preview(auth_client, "wells.csv", csv_text)
+        assert "imports up to" not in body
+        assert "<strong>501</strong> row" in body
         features = [
             {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-120.5, 37.3]},
              "properties": {"name": f"W{i}"}}
             for i in range(501)
         ]
         gj = json.dumps({"type": "FeatureCollection", "features": features})
-        assert (
-            "This file has 501 map features, and OpenH2O imports up to 500 map "
-            "features from one file. Split the file and import each part."
-        ) in _preview(auth_client, "wells.geojson", gj)
+        body = _preview(auth_client, "wells.geojson", gj)
+        assert "imports up to" not in body
+        assert "<strong>501</strong> map feature" in body
 
     def test_map_file_with_no_features(self, auth_client):
         gj = json.dumps({"type": "FeatureCollection", "features": []})
@@ -126,22 +126,15 @@ class TestWholeFileMessages:
             "file opens in a GIS program, then upload it again."
         ) in _preview(auth_client, "wells.zip", buf.getvalue())
 
-    def test_rows_not_received_at_create(self, auth_client):
-        resp = auth_client.post(
-            reverse("infrastructure:import_commit"), {"infra_type": "well", "rows_json": ""}
-        )
-        body = resp.content.decode().replace("&#x27;", "'")
-        assert (
-            "OpenH2O did not receive the file's rows from the preview. Upload the file again."
-        ) in body
-
-    def test_row_cap_at_create_names_map_features_for_a_map_file(self, auth_client):
-        rows = [{"name": f"W{i}", importer.GEOMETRY_COL: ""} for i in range(501)]
+    def test_a_token_that_is_not_an_upload_is_refused_at_create(self, auth_client):
         resp = auth_client.post(
             reverse("infrastructure:import_commit"),
-            {"infra_type": "well", "rows_json": json.dumps(rows)},
+            {"infra_type": "well", "token": "00000000-0000-0000-0000-000000000000"},
         )
-        assert "This file has 501 map features" in resp.content.decode()
+        body = resp.content.decode()
+        assert (
+            "This upload has expired or belongs to someone else. Upload the file again."
+        ) in body
 
 
 class TestImportPage:
@@ -158,7 +151,10 @@ class TestImportPage:
             "or appears earlier in the file."
         ) in body
         assert "To enter one well record by hand, use" in body
-        assert "A file of up to 500 rows or map features and 25 MB." in body
+        assert (
+            "OpenH2O imports a file of up to 25 MB, however many rows or map "
+            "features it has."
+        ) in body
         assert "Reading the file…" in body
         assert "A row already on file" not in body
 
@@ -349,13 +345,21 @@ class TestMatchingStepRefusals:
     def test_refusal_keeps_the_matching_step(self, auth_client, mapping, sentence):
         rows = [{"name": "W1", "lat": "37.3", "lon": "-120.5"}]
         before = Well.objects.count()
+        preview = auth_client.post(
+            reverse("infrastructure:import_preview"),
+            {
+                "infra_type": "well",
+                "file": _upload("wells.csv", csv_text_of(rows)),
+            },
+        )
+        token = token_of(preview)
         resp = auth_client.post(
             reverse("infrastructure:import_commit"),
-            {"infra_type": "well", "rows_json": json.dumps(rows), **mapping},
+            {"infra_type": "well", "token": token, **mapping},
         )
         body = resp.content.decode().replace("&#x27;", "'")
         assert sentence in body
-        assert 'name="rows_json"' in body
+        assert f'name="token" value="{token}"' in body
         assert Well.objects.count() == before
 
 
@@ -364,10 +368,9 @@ class TestPageAfterCreate:
     """Message Y (2026-10-15 18:35): the page after Create and its notes."""
 
     def _commit(self, client, rows, mapping, infra_type="well"):
-        resp = client.post(
-            reverse("infrastructure:import_commit"),
-            {"infra_type": infra_type, "rows_json": json.dumps(rows),
-             **{f"map:{k}": v for k, v in mapping.items()}},
+        resp = infrastructure_import_rows(
+            client, rows, {f"map:{k}": v for k, v in mapping.items()},
+            infra_type=infra_type,
         )
         return resp.content.decode().replace("&#x27;", "'")
 

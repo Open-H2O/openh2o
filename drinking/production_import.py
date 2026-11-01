@@ -52,7 +52,6 @@ from drinking.models import (
     SystemProduction,
 )
 
-MAX_ROWS = 2000
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MB, the ceiling every importer here uses
 
 
@@ -65,12 +64,6 @@ def too_large_message(size):
         f"OpenH2O imports files of up to {MAX_UPLOAD_BYTES // mb} MB."
     )
 
-
-def row_cap_message(row_count):
-    return (
-        f"This file has {row_count:,} rows, and OpenH2O imports up to "
-        f"{MAX_ROWS:,} rows from one file. Split the file and import each part."
-    )
 
 _UNIT_CODES = {code for code, _label in PRODUCTION_UNIT_CHOICES}
 
@@ -120,8 +113,7 @@ def parse_csv(file_obj, filename=""):
 
     ``rows`` is a list of raw string dicts, exactly as the file wrote them --
     layout recognition and coercion happen later. Raises ImportError on a
-    non-CSV extension, an oversized file, no headers, no data rows, or more
-    rows than MAX_ROWS.
+    non-CSV extension, an oversized file, no headers, or no data rows.
     """
     name = (filename or "").lower()
     if name and not name.endswith(".csv"):
@@ -144,8 +136,6 @@ def parse_csv(file_obj, filename=""):
     rows = [{k: ("" if v is None else v) for k, v in row.items() if k is not None} for row in reader]
     if not rows:
         raise ImportError("This file has column names but no rows below them.")
-    if len(rows) > MAX_ROWS:
-        raise ImportError(row_cap_message(len(rows)))
     return columns, rows
 
 

@@ -34,6 +34,7 @@ from django.db.models import Count, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
+from core import pending_imports
 from core.access import public_in_open_demo
 from core.map_labels import map_label
 
@@ -565,16 +566,21 @@ def device_mark_removed(request, pk):
 
 
 def _recalculate_months(request, trigger, months):
-    """Start the calculation of ``months`` after a record saved; return the line to show.
+    """Start the calculation of ``months`` after a record saved; return the line to show."""
+    return _recalculate_months_for(request.user, trigger, months)
 
-    A saved diversion record moves the fields its point of diversion
+
+def _recalculate_months_for(user, trigger, months):
+    """Start the calculation of ``months`` for ``user``; return the line to show.
+
+    The one behind ``_recalculate_months`` and the import worker. A saved diversion record moves the fields its point of diversion
     serves, so the month is recalculated by itself. Months in a finalized
     water year are left alone (the save is refused there anyway). Returns ""
     when the surface module is off or nothing was left to calculate.
     """
     if not is_enabled("surface"):
         return ""
-    started = request_for_months(trigger, months, requested_by=request.user)
+    started = request_for_months(trigger, months, requested_by=user)
     covered = sorted({m for r in started for m in r.months})
     return recalculation_sentence(covered) if covered else ""
 
@@ -918,32 +924,20 @@ def water_right_import(request):
     return render(request, "surface/right_import.html", {})
 
 
-def _rights_columns_from_rows(rows):
-    seen = []
-    for row in rows:
-        for key in row:
-            if key not in seen:
-                seen.append(key)
-    return seen
-
-
-def _rights_mapping_context(columns, rows, mapping, error=None):
+def _rights_mapping_context(columns, rows, mapping, token):
     field_rows = [
         {"field": field, "label": label, "guess": mapping.get(field, "")}
         for field, label in importer.import_fields()
     ]
     sample_table = [[row.get(col, "") for col in columns] for row in rows[:5]]
-    context = {
+    return {
         "columns": columns,
         "field_rows": field_rows,
         "sample_table": sample_table,
         "sample_count": len(sample_table),
         "row_count": len(rows),
-        "rows_json": json.dumps(rows),
+        "token": token,
     }
-    if error:
-        context["error"] = error
-    return context
 
 
 @login_required
@@ -959,7 +953,12 @@ def water_right_import_preview(request):
         )
 
     try:
-        parsed = importer.parse_upload(uploaded, uploaded.name)
+        pending, parsed = pending_imports.receive(
+            request,
+            "water_rights",
+            uploaded,
+            lambda file: importer.parse_upload(file, uploaded.name),
+        )
     except ImportError as exc:
         return render(
             request, "surface/partials/_right_import_result.html", {"error": str(exc)},
@@ -972,65 +971,62 @@ def water_right_import_preview(request):
     return render(
         request,
         "surface/partials/_right_import_mapping.html",
-        _rights_mapping_context(columns, rows, mapping),
+        _rights_mapping_context(columns, rows, mapping, pending.token),
     )
+
+
+def parse_stored_rights(pending):
+    """The stored rights file, read again: (columns, rows)."""
+    with pending_imports.stored_file(pending) as file:
+        parsed = importer.parse_upload(file, pending.original_name)
+    return parsed["columns"], parsed["rows"]
+
+
+def commit_stored_rights(pending):
+    """Validate the confirmed mapping against the stored file and bulk-create.
+
+    Runs in the import worker (core/pending_imports.py); returns the result
+    block's context.
+    """
+    _columns, rows = parse_stored_rights(pending)
+    mapping = pending.settings.get("mapping", {})
+
+    existing_right_ids = set(WaterRight.objects.values_list("right_id", flat=True))
+    results = importer.validate_rows(rows, mapping, existing_right_ids)
+    created = importer.commit_rows(results)
+    skipped = [
+        {"index": r["index"], "errors": r["errors"]} for r in results if r["errors"]
+    ]
+    # Message E rows 5 and 6: a right created without a figure in another unit.
+    noted = [
+        {"index": r["index"], "warnings": r["warnings"]}
+        for r in results
+        if not r["errors"] and r["warnings"]
+    ]
+    shown_skipped, skipped_not_listed = pending_imports.cap_error_rows(skipped)
+    shown_noted, noted_not_listed = pending_imports.cap_error_rows(noted)
+    return {
+        "created": created,
+        "skipped": shown_skipped,
+        "skipped_count": len(skipped),
+        "skipped_not_listed": skipped_not_listed,
+        "noted": shown_noted,
+        "noted_count": len(noted),
+        "noted_not_listed": noted_not_listed,
+        "total": len(results),
+    }
 
 
 @login_required
 @require_POST
 def water_right_import_commit(request):
-    """Validate the confirmed mapping against the parsed rows and bulk-create."""
-    try:
-        rows = json.loads(request.POST.get("rows_json", "") or "[]")
-    except json.JSONDecodeError:
-        rows = []
-
-    if not rows:
-        return render(
-            request,
-            "surface/partials/_right_import_result.html",
-            {"error": importer.ROWS_NOT_RECEIVED_MESSAGE},
-        )
-
-    if len(rows) > importer.MAX_ROWS:
-        return render(
-            request,
-            "surface/partials/_right_import_result.html",
-            {"error": importer.row_cap_message(len(rows))},
-        )
-
+    """Start writing the stored file with the confirmed column mapping."""
     mapping = {
         key[len("map:"):]: val
         for key, val in request.POST.items()
         if key.startswith("map:") and val
     }
-
-    existing_right_ids = set(WaterRight.objects.values_list("right_id", flat=True))
-
-    try:
-        results = importer.validate_rows(rows, mapping, existing_right_ids)
-        created = importer.commit_rows(results)
-    except Exception as exc:
-        logger.exception("water right import commit failed")
-        columns = _rights_columns_from_rows(rows)
-        return render(
-            request,
-            "surface/partials/_right_import_mapping.html",
-            _rights_mapping_context(
-                columns, rows, mapping,
-                error=importer.unexpected_error_message(exc),
-            ),
-            status=200,
-        )
-    skipped = [r for r in results if r["errors"]]
-    # Message E rows 5 and 6: a right created without a figure in another unit.
-    noted = [r for r in results if not r["errors"] and r["warnings"]]
-
-    return render(
-        request,
-        "surface/partials/_right_import_result.html",
-        {"created": created, "skipped": skipped, "noted": noted, "total": len(results)},
-    )
+    return pending_imports.start_import(request, "water_rights", {"mapping": mapping})
 
 
 # ---------------------------------------------------------------------------
@@ -1051,13 +1047,13 @@ def _diversion_import_settings_context(points, *, selected_point=None, method=""
     }
 
 
-def _posted_use_rule(request):
+def _use_rule_from(data):
     """The import screen's own USE-row question, or ``None``
 
-    to fall back to the deployment's remembered default. A blank posted
-    value means "not chosen yet", exactly like an un-checked radio group.
+    to fall back to the deployment's remembered default. A blank value means
+    "not chosen yet", exactly like an un-checked radio group.
     """
-    value = request.POST.get("use_rule", "").strip()
+    value = (data.get("use_rule") or "").strip()
     return value or None
 
 
@@ -1115,6 +1111,27 @@ def diversion_import(request):
     )
 
 
+def _posted_diversion_settings(data):
+    """The page's settings as posted, as the stored upload remembers them."""
+    return {
+        "point": (data.get("point") or "").strip(),
+        "method": data.get("method", ""),
+        "data_state": data.get("data_state", "") or "provisional",
+        "use_rule": (data.get("use_rule") or "").strip(),
+    }
+
+
+def _diversion_whole_file_point(page_settings):
+    point_pk = page_settings.get("point", "")
+    return PointOfDiversion.objects.filter(pk=point_pk).first() if point_pk.isdigit() else None
+
+
+def parse_stored_diversions(pending):
+    """The stored diversion file, read again: (columns, rows)."""
+    with pending_imports.stored_file(pending) as file:
+        return diversion_import_service.parse_csv(file, pending.original_name)
+
+
 @login_required
 @require_POST
 def diversion_import_preview(request):
@@ -1122,60 +1139,67 @@ def diversion_import_preview(request):
 
     mapping step: the whole-file point, method and data state, every
     conversion, every combined month, every unresolved row and every error
-    -- before anything is written (dry_run=True throughout).
+    -- before anything is written (dry_run=True throughout). The first call
+    saves the upload; a settings change posts the same token and re-reads the
+    stored file.
     """
     points = PointOfDiversion.objects.filter(status="active").order_by("name")
     uploaded = request.FILES.get("file")
-    rows_json_raw = request.POST.get("rows_json", "")
+    new_upload = bool(uploaded)
 
     if uploaded:
         try:
-            columns, rows = diversion_import_service.parse_csv(uploaded, uploaded.name)
+            pending, (columns, rows) = pending_imports.receive(
+                request,
+                "diversions",
+                uploaded,
+                lambda file: diversion_import_service.parse_csv(file, uploaded.name),
+            )
         except ImportError as exc:
             return render(
                 request, "surface/partials/_diversion_import_result.html",
                 {"error": str(exc)},
             )
-    elif rows_json_raw:
+    elif request.POST.get("token"):
+        pending = pending_imports.previewed(request, "diversions")
+        if pending is None:
+            return pending_imports.refused(request, "diversions")
         try:
-            rows = json.loads(rows_json_raw)
-        except json.JSONDecodeError:
-            rows = []
-        if not rows:
+            columns, rows = parse_stored_diversions(pending)
+        except FileNotFoundError:
+            return pending_imports.refused(request, "diversions")
+        except ImportError as exc:
             return render(
                 request, "surface/partials/_diversion_import_result.html",
-                {"error": importer.ROWS_NOT_RECEIVED_MESSAGE},
+                {"error": str(exc)},
             )
-        columns = list(rows[0].keys())
     else:
         return render(
             request, "surface/partials/_diversion_import_result.html",
             {"error": importer.NO_FILE_MESSAGE},
         )
 
-    if len(rows) > diversion_import_service.MAX_ROWS:
-        return render(
-            request, "surface/partials/_diversion_import_result.html",
-            {"error": diversion_import_service.row_cap_message(len(rows))},
-        )
-
     try:
         layout = diversion_import_service.recognise_layout(columns)
     except ImportError as exc:
+        if new_upload:
+            pending_imports.discard(pending)
         return render(
             request, "surface/partials/_diversion_import_result.html",
             {"error": f"{exc} {LAYOUT_TABLES_SENTENCE}"},
         )
 
-    point_pk = request.POST.get("point", "")
-    whole_file_point = PointOfDiversion.objects.filter(pk=point_pk).first() if point_pk else None
-    method = request.POST.get("method", "")
-    data_state = request.POST.get("data_state", "") or "provisional"
-    use_rule = _posted_use_rule(request)
+    page_settings = _posted_diversion_settings(request.POST)
+    pending.settings = page_settings
+    pending.save(update_fields=["settings"])
+    whole_file_point = _diversion_whole_file_point(page_settings)
+    method = page_settings["method"]
+    data_state = page_settings["data_state"]
 
     result = diversion_import_service.import_diversion_rows(
         columns, rows, layout=layout, whole_file_point=whole_file_point,
-        method=method, data_state=data_state, dry_run=True, use_rule=use_rule,
+        method=method, data_state=data_state, dry_run=True,
+        use_rule=_use_rule_from(page_settings),
     )
 
     context = _diversion_import_settings_context(
@@ -1187,66 +1211,47 @@ def diversion_import_preview(request):
     # raw POST, which is blank until the operator picks one.
     context["use_rule"] = result["settings"]["diversion_use_type_rule"]
     context["error_groups"] = _group_row_errors(result["errors"])
-    context["rows_json"] = json.dumps(rows)
+    context["error_count"] = len(result["errors"])
+    context["unresolved_count"] = len(result["unresolved_rows"])
+    context["unresolved_rows"], context["unresolved_not_listed"] = (
+        pending_imports.cap_error_rows(result["unresolved_rows"])
+    )
+    # Rows that are not errors are listed up to the preview's row limit.
+    limit = pending_imports.PREVIEW_ROW_LIMIT
+    context["combined_not_listed"] = max(len(result["combined_rows"]) - limit, 0)
+    context["combined_rows"] = result["combined_rows"][:limit]
+    context["conversions_not_listed"] = max(len(result["conversions"]) - limit, 0)
+    context["conversions"] = result["conversions"][:limit]
+    context["token"] = pending.token
     context["row_count"] = len(rows)
     return render(request, "surface/partials/_diversion_import_preview.html", context)
 
 
-@login_required
-@require_POST
-def diversion_import_commit(request):
-    """Re-run the confirmed settings against the parsed rows and write them.
+def commit_stored_diversions(pending):
+    """Write the stored diversion file with the confirmed settings.
 
-    When the file had USE rows and the posted ``use_rule``
-    differs from the deployment's remembered default, the chosen rule is
-    written back onto ``SiteConfig`` here (commit only, never preview) so
-    the same file, imported again next year, defaults to the same answer.
+    Runs in the import worker (core/pending_imports.py). When the file had USE
+    rows and the confirmed ``use_rule`` differs from the deployment's
+    remembered default, the chosen rule is written back onto ``SiteConfig``
+    here (commit only, never preview) so the same file, imported again next
+    year, defaults to the same answer. Returns the result block's context.
     """
-    points = PointOfDiversion.objects.filter(status="active").order_by("name")
-    try:
-        rows = json.loads(request.POST.get("rows_json", "") or "[]")
-    except json.JSONDecodeError:
-        rows = []
-
-    if not rows:
-        return render(
-            request, "surface/partials/_diversion_import_result.html",
-            {"error": importer.ROWS_NOT_RECEIVED_MESSAGE},
-        )
-
-    columns = list(rows[0].keys())
+    columns, rows = parse_stored_diversions(pending)
     try:
         layout = diversion_import_service.recognise_layout(columns)
     except ImportError as exc:
-        return render(
-            request, "surface/partials/_diversion_import_result.html",
-            {"error": f"{exc} {LAYOUT_TABLES_SENTENCE}"},
-        )
+        return {"error": f"{exc} {LAYOUT_TABLES_SENTENCE}"}
 
-    point_pk = request.POST.get("point", "")
-    whole_file_point = PointOfDiversion.objects.filter(pk=point_pk).first() if point_pk else None
-    method = request.POST.get("method", "")
-    data_state = request.POST.get("data_state", "") or "provisional"
-    use_rule = _posted_use_rule(request)
-
+    whole_file_point = _diversion_whole_file_point(pending.settings)
+    use_rule = _use_rule_from(pending.settings)
     site_config, _ = SiteConfig.objects.get_or_create(defaults={"agency_name": "OpenH2O"})
 
-    try:
-        result = diversion_import_service.import_diversion_rows(
-            columns, rows, layout=layout, whole_file_point=whole_file_point,
-            method=method, data_state=data_state, dry_run=False,
-            site_config=site_config, use_rule=use_rule,
-        )
-    except Exception as exc:
-        logger.exception("diversion import commit failed")
-        context = _diversion_import_settings_context(
-            points, selected_point=whole_file_point, method=method, data_state=data_state,
-        )
-        context["rows_json"] = json.dumps(rows)
-        context["row_count"] = len(rows)
-        context["use_rule"] = use_rule or site_config.diversion_use_type_rule
-        context["error"] = importer.unexpected_error_message(exc)
-        return render(request, "surface/partials/_diversion_import_preview.html", context)
+    result = diversion_import_service.import_diversion_rows(
+        columns, rows, layout=layout, whole_file_point=whole_file_point,
+        method=pending.settings.get("method", ""),
+        data_state=pending.settings.get("data_state") or "provisional",
+        dry_run=False, site_config=site_config, use_rule=use_rule,
+    )
 
     use_rule_saved = bool(
         result["use_rows_present"]
@@ -1256,12 +1261,42 @@ def diversion_import_commit(request):
     if use_rule_saved:
         site_config.diversion_use_type_rule = use_rule
         site_config.save(update_fields=["diversion_use_type_rule"])
-    result["use_rule_saved"] = use_rule_saved
-    result["recalculation_line"] = _recalculate_months(
-        request, "diversion_saved", result.get("months_created", [])
-    ) if result.get("months_created") else ""
+    recalculation_line = (
+        _recalculate_months_for(pending.user, "diversion_saved", result["months_created"])
+        if result.get("months_created")
+        else ""
+    )
 
-    return render(request, "surface/partials/_diversion_import_result.html", result)
+    errors, errors_not_listed = pending_imports.cap_error_rows(result["errors"])
+    unresolved, unresolved_not_listed = pending_imports.cap_error_rows(
+        result["unresolved_rows"]
+    )
+    combined, combined_not_listed = pending_imports.cap_error_rows(result["combined_rows"])
+    return {
+        "created": result["created"],
+        "total_af": result["total_af"],
+        "skipped_duplicates": result["skipped_duplicates"],
+        "periods_attached": result["periods_attached"],
+        "use_rule_saved": use_rule_saved,
+        "recalculation_line": recalculation_line,
+        "errors": errors,
+        "error_count": len(result["errors"]),
+        "errors_not_listed": errors_not_listed,
+        "unresolved_rows": unresolved,
+        "unresolved_count": len(result["unresolved_rows"]),
+        "unresolved_not_listed": unresolved_not_listed,
+        "combined_rows": combined,
+        "combined_not_listed": combined_not_listed,
+    }
+
+
+@login_required
+@require_POST
+def diversion_import_commit(request):
+    """Start writing the stored file with the confirmed settings."""
+    return pending_imports.start_import(
+        request, "diversions", _posted_diversion_settings(request.POST)
+    )
 
 
 def _water_right_detail_context(water_right):

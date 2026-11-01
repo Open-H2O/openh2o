@@ -89,11 +89,10 @@ POINT_TYPE_BY_FACILITY_TYPE = {
     "DS": "distribution",
 }
 
-#: Chunk size for the import pipeline. ``importer.MAX_ROWS`` is an *upload*
-#: guard on a browser form, not a data rule, so a seed reading a committed file
-#: is not subject to it — but ``validate_rows`` holds a batch in memory and
-#: re-reads the existing-result keys per call, so feeding 22k rows as one batch
-#: would be wasteful rather than wrong. 2000 keeps both bounded.
+#: Chunk size for the import pipeline. The import page has no row cap now (it
+#: commits the whole file in a worker), but ``validate_rows`` holds a batch in
+#: memory and re-reads the existing-result keys per call, so feeding 22k rows
+#: as one batch would be wasteful rather than wrong. 2000 keeps both bounded.
 CHUNK_ROWS = 2000
 
 

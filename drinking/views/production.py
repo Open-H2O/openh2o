@@ -2,7 +2,6 @@
 """Water production by month and source: the year table, the by-hand form and the file import."""
 from __future__ import annotations
 
-import json
 import logging
 from decimal import Decimal
 
@@ -11,6 +10,7 @@ from django.http import HttpRequest
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
+from core import pending_imports
 from drinking import production_import as production_import_service
 from drinking.forms import SystemProductionForm
 from drinking.models import (
@@ -21,7 +21,6 @@ from drinking.models import (
     SystemProduction,
     WaterSystem,
 )
-from drinking.views.common import _ROWS_NOT_RECEIVED
 
 
 logger = logging.getLogger(__name__)
@@ -247,15 +246,7 @@ def production_add(request):
 @require_GET
 def production_import_page(request):
     """The production-import landing page: the eAR export, or the operator's own log."""
-    return render(
-        request,
-        "drinking/production_import.html",
-        {"max_rows": production_import_service.MAX_ROWS},
-    )
-
-
-#: The production preview lists at most this many of the file's rows.
-PRODUCTION_PREVIEW_ROW_LIMIT = 50
+    return render(request, "drinking/production_import.html", {})
 
 
 def _production_import_settings_context(*, unit_for_blank="", operator_year="",
@@ -268,13 +259,51 @@ def _production_import_settings_context(*, unit_for_blank="", operator_year="",
     }
 
 
+def _posted_production_settings(data):
+    """The mapping-step settings as posted, as the stored upload remembers them."""
+    return {
+        "unit_for_blank": data.get("unit_for_blank", "").strip(),
+        "operator_year": data.get("operator_year", "").strip(),
+        "operator_unit": data.get("operator_unit", "").strip() or "G",
+    }
+
+
+def _production_run_settings(page_settings):
+    """The importer's keyword arguments for a set of stored settings."""
+    year = page_settings.get("operator_year", "")
+    return {
+        "unit_for_blank": page_settings.get("unit_for_blank") or None,
+        "operator_year": int(year) if year.isdigit() else None,
+        "operator_unit": page_settings.get("operator_unit") or "G",
+    }
+
+
+def _capped_errors(result):
+    """``result`` with its error rows capped, the full count kept beside them."""
+    errors, not_listed = pending_imports.cap_error_rows(result["errors"])
+    return {
+        **result,
+        "errors": errors,
+        "error_count": len(result["errors"]),
+        "errors_not_listed": not_listed,
+    }
+
+
+def parse_stored_production(pending):
+    """The stored production file, read again: (columns, rows)."""
+    with pending_imports.stored_file(pending) as file:
+        return production_import_service.parse_csv(file, pending.original_name)
+
+
 @login_required
 @require_POST
 def production_import_preview(request):
     """Parse the upload (or re-run with changed mapping-step settings) and
 
     show what a commit would do -- every skipped row and every error -- with
-    nothing written yet (dry_run=True throughout).
+    nothing written yet (dry_run=True throughout). The first call saves the
+    upload; a settings change posts the same token and re-reads the stored
+    file.
     """
     system = WaterSystem.objects.first()
     if system is None:
@@ -285,29 +314,36 @@ def production_import_preview(request):
         )
 
     uploaded = request.FILES.get("file")
-    rows_json_raw = request.POST.get("rows_json", "")
+    new_upload = bool(uploaded)
 
     if uploaded:
         try:
-            columns, rows = production_import_service.parse_csv(uploaded, uploaded.name)
+            pending, (columns, rows) = pending_imports.receive(
+                request,
+                "production",
+                uploaded,
+                lambda file: production_import_service.parse_csv(file, uploaded.name),
+            )
         except ImportError as exc:
             return render(
                 request,
                 "drinking/partials/_production_import_result.html",
                 {"error": str(exc)},
             )
-    elif rows_json_raw:
+    elif request.POST.get("token"):
+        pending = pending_imports.previewed(request, "production")
+        if pending is None:
+            return pending_imports.refused(request, "production")
         try:
-            rows = json.loads(rows_json_raw)
-        except json.JSONDecodeError:
-            rows = []
-        if not rows:
+            columns, rows = parse_stored_production(pending)
+        except FileNotFoundError:
+            return pending_imports.refused(request, "production")
+        except ImportError as exc:
             return render(
                 request,
                 "drinking/partials/_production_import_result.html",
-                {"error": _ROWS_NOT_RECEIVED},
+                {"error": str(exc)},
             )
-        columns = list(rows[0].keys())
     else:
         return render(
             request,
@@ -315,120 +351,88 @@ def production_import_preview(request):
             {"error": "Choose a CSV file to upload."},
         )
 
-    if len(rows) > production_import_service.MAX_ROWS:
-        return render(
-            request,
-            "drinking/partials/_production_import_result.html",
-            {"error": production_import_service.row_cap_message(len(rows))},
-        )
-
     try:
         layout = production_import_service.recognise_layout(columns)
     except ImportError as exc:
+        if new_upload:
+            pending_imports.discard(pending)
         return render(
             request,
             "drinking/partials/_production_import_result.html",
             {"error": str(exc)},
         )
 
-    unit_for_blank = request.POST.get("unit_for_blank", "").strip()
-    operator_year_raw = request.POST.get("operator_year", "").strip()
-    operator_year = int(operator_year_raw) if operator_year_raw.isdigit() else None
-    operator_unit = request.POST.get("operator_unit", "").strip() or "G"
+    page_settings = _posted_production_settings(request.POST)
+    pending.settings = page_settings
+    pending.save(update_fields=["settings"])
 
     result = production_import_service.import_production_rows(
         columns, rows, system=system, layout=layout,
-        unit_for_blank=unit_for_blank or None,
-        operator_year=operator_year, operator_unit=operator_unit,
+        **_production_run_settings(page_settings),
         dry_run=True,
     )
 
-    context = _production_import_settings_context(
-        unit_for_blank=unit_for_blank, operator_year=operator_year_raw,
-        operator_unit=operator_unit,
-    )
-    context.update(result)
-    context["rows_json"] = json.dumps(rows)
+    context = _production_import_settings_context(**page_settings)
+    context.update(_capped_errors(result))
+    context["token"] = pending.token
     context["row_count"] = len(rows)
     # The file's own rows under its own column names, bounded.
     context["preview_columns"] = columns
     context["preview_rows"] = [
         [row.get(column, "") for column in columns]
-        for row in rows[:PRODUCTION_PREVIEW_ROW_LIMIT]
+        for row in rows[: pending_imports.PREVIEW_ROW_LIMIT]
     ]
     return render(
         request, "drinking/partials/_production_import_preview.html", context
     )
 
 
-@login_required
-@require_POST
-def production_import_commit(request):
-    """Re-run the confirmed mapping-step settings against the parsed rows and write them."""
+def commit_stored_production(pending):
+    """Write the stored production file; the result block's context.
+
+    Runs in the import worker (core/pending_imports.py).
+    """
     system = WaterSystem.objects.first()
     if system is None:
-        return render(
-            request,
-            "drinking/partials/_production_import_result.html",
-            {"error": "This site has no water system yet. Add a water system first."},
-        )
+        return {"error": "This site has no water system yet. Add a water system first."}
 
-    try:
-        rows = json.loads(request.POST.get("rows_json", "") or "[]")
-    except json.JSONDecodeError:
-        rows = []
-
-    if not rows:
-        return render(
-            request,
-            "drinking/partials/_production_import_result.html",
-            {"error": _ROWS_NOT_RECEIVED},
-        )
-
-    columns = list(rows[0].keys())
+    columns, rows = parse_stored_production(pending)
     try:
         layout = production_import_service.recognise_layout(columns)
     except ImportError as exc:
-        return render(
-            request,
-            "drinking/partials/_production_import_result.html",
-            {"error": str(exc)},
-        )
+        return {"error": str(exc)}
 
-    unit_for_blank = request.POST.get("unit_for_blank", "").strip()
-    operator_year_raw = request.POST.get("operator_year", "").strip()
-    operator_year = int(operator_year_raw) if operator_year_raw.isdigit() else None
-    operator_unit = request.POST.get("operator_unit", "").strip() or "G"
+    result = production_import_service.import_production_rows(
+        columns, rows, system=system, layout=layout,
+        **_production_run_settings(pending.settings),
+        dry_run=False,
+    )
+    return _capped_errors(result)
+
+
+@login_required
+@require_POST
+def production_import_commit(request):
+    """Start writing the stored file with the confirmed mapping-step settings."""
+    page_settings = _posted_production_settings(request.POST)
 
     # A log with no year imports nothing: show the preview again, with the
     # year box asking for it.
-    if layout == "operator_log" and operator_year is None:
-        return production_import_preview(request)
+    if not page_settings["operator_year"].isdigit():
+        pending = pending_imports.previewed(request, "production")
+        if pending is not None:
+            try:
+                columns, _rows = parse_stored_production(pending)
+                layout = production_import_service.recognise_layout(columns)
+            except FileNotFoundError:
+                return pending_imports.refused(request, "production")
+            except ImportError as exc:
+                return render(
+                    request,
+                    "drinking/partials/_production_import_result.html",
+                    {"error": str(exc)},
+                )
+            if layout == "operator_log":
+                return production_import_preview(request)
 
-    try:
-        result = production_import_service.import_production_rows(
-            columns, rows, system=system, layout=layout,
-            unit_for_blank=unit_for_blank or None,
-            operator_year=operator_year, operator_unit=operator_unit,
-            dry_run=False,
-        )
-    except Exception as exc:
-        logger.exception("production import commit failed")
-        context = _production_import_settings_context(
-            unit_for_blank=unit_for_blank, operator_year=operator_year_raw,
-            operator_unit=operator_unit,
-        )
-        context["rows_json"] = json.dumps(rows)
-        context["row_count"] = len(rows)
-        context["error"] = (
-            "An unexpected error stopped the import, and OpenH2O saved nothing "
-            f"from this file. Details: {type(exc).__name__}: {exc}"
-        )
-        return render(
-            request, "drinking/partials/_production_import_preview.html", context,
-            status=200,
-        )
-
-    return render(
-        request, "drinking/partials/_production_import_result.html", result
-    )
+    return pending_imports.start_import(request, "production", page_settings)

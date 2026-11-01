@@ -27,7 +27,6 @@ Four faults, each proven RED against the unfixed code before this plan's fix
       the crosswalk aliases added for it.
 """
 
-import json
 import os
 import subprocess
 import sys
@@ -44,6 +43,7 @@ from django.urls import reverse
 from core.modules import ALL_MODULE_NAMES
 from infrastructure import importer
 from infrastructure.views import UNSUPPORTED_IMPORT_TYPE_MESSAGE
+from tests.import_flow import infrastructure_import_rows
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -168,12 +168,16 @@ def test_diversion_commit_works_without_recharge_module():
 
 
 @pytest.mark.django_db
-def test_commit_failure_renders_nothing_was_created(auth_client, monkeypatch):
+def test_commit_failure_renders_nothing_was_created(auth_client, monkeypatch, settings):
     """`commit_rows` already isolates a single bad row with its own per-row
     savepoint (see its docstring); this proves the OUTER catch that guards
     against anything else: a module Task 2.1's guard missed, a programming
     error, anything genuinely unexpected. Monkeypatches `commit_rows` itself
     to raise, so this is independent of the recharge-specific fix in (a).
+
+    151.6-03: the commit runs in a worker, so a crash ends in the failed
+    status result. The status route answers 200 with the unexpected-error
+    sentence and no exception detail, and the stored file is gone.
     """
 
     def _boom(results, infra_type):
@@ -182,15 +186,10 @@ def test_commit_failure_renders_nothing_was_created(auth_client, monkeypatch):
     monkeypatch.setattr(importer, "commit_rows", _boom)
 
     rows = [{"name": "Alpha Well", "LAT": "37.20", "LON": "-119.50"}]
-    resp = auth_client.post(
-        reverse("infrastructure:import_commit"),
-        {
-            "infra_type": "well",
-            "rows_json": json.dumps(rows),
-            "map:name": "name",
-            "map:latitude": "LAT",
-            "map:longitude": "LON",
-        },
+    resp = infrastructure_import_rows(
+        auth_client,
+        rows,
+        {"map:name": "name", "map:latitude": "LAT", "map:longitude": "LON"},
     )
     assert resp.status_code == 200, (
         "A commit-time crash must render 200 (HTMX swaps nothing on a 500, "
@@ -198,15 +197,14 @@ def test_commit_failure_renders_nothing_was_created(auth_client, monkeypatch):
     )
     body = resp.content.decode()
     # 150.1-02 (2026-10-15): the surface imports' unexpected-error sentence,
-    # reused word for word.
+    # without the exception detail (151.6-03: the detail goes to the log).
     assert (
         "An unexpected error stopped the import, and OpenH2O saved nothing "
-        "from this file. Details: RuntimeError: synthetic outer-path failure"
+        "from this file."
     ) in body
-    # The mapping table comes back too, so the operator can retry without
-    # re-uploading the file.
-    assert 'name="map:name"' in body
-    assert 'name="rows_json"' in body
+    assert "synthetic outer-path failure" not in body
+    assert "RuntimeError" not in body
+    assert list((Path(settings.MEDIA_ROOT) / "imports").glob("*")) == []
 
 
 # ---------------------------------------------------------------------------
@@ -240,7 +238,7 @@ def test_unsupported_type_404_on_commit_too(auth_client):
     reach `commit_rows` at all."""
     resp = auth_client.post(
         reverse("infrastructure:import_commit"),
-        {"infra_type": "parcel", "rows_json": "[]"},
+        {"infra_type": "parcel", "token": "00000000-0000-0000-0000-000000000000"},
     )
     assert resp.status_code == 404
     assert resp.content.decode() == UNSUPPORTED_IMPORT_TYPE_MESSAGE

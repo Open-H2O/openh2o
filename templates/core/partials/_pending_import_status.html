@@ -1,0 +1,12 @@
+{% comment %}
+  The block Import returns while a bulk import commits in its own process. It
+  polls the status route every 2 seconds and replaces itself with the page's
+  result block when the import finishes; the result block carries no
+  hx-trigger, so polling stops by itself. No hx-on and no inline script (the
+  content security policy allows neither).
+{% endcomment %}
+<div id="pending-import-status" hx-get="{% url 'core:pending_import_status' token %}" hx-trigger="every 2s" hx-swap="outerHTML" aria-live="polite">
+  <div class="card-raised">
+    <p class="text-base m-0">OpenH2O is importing {{ file_name }}. OpenH2O shows the result here when it finishes.</p>
+  </div>
+</div>

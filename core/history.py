@@ -54,7 +54,11 @@ from django.db import models
 # Commands whose writes are not an operator's: schema work, static files and the
 # test runner. The pghistory documentation's own pattern skips the same set.
 UNATTRIBUTED_COMMANDS = frozenset(
-    {"runserver", "migrate", "makemigrations", "test", "collectstatic", "check"}
+    {
+        "runserver", "migrate", "makemigrations", "test", "collectstatic", "check",
+        # Opens its own context naming the person who pressed Import.
+        "run_pending_import",
+    }
 )
 
 # The label on the event that records a row as it was just before an update.

@@ -82,13 +82,6 @@ def test_rights_import_tells_an_empty_file_from_a_header_only_file():
         importer.parse_upload(io.BytesIO(b"APPLICATION_NUMBER\n"), "r.csv")
 
 
-def test_diversion_row_cap_says_split_by_point_or_year():
-    assert diversion_import.row_cap_message(2001) == (
-        "This file has 2,001 rows, and OpenH2O imports up to 2,000 rows from one "
-        "file. Split the file by point or by year and import each part."
-    )
-
-
 def test_a_book_with_no_point_column_takes_the_whole_file_point(one_point):
     text = "date,acre_feet\n2025-01-01,3\n"
     columns, _rows = _parse(text)
@@ -256,7 +249,7 @@ def test_the_rights_result_says_records_and_counts_the_notes(db):
     html = render_to_string(
         "surface/partials/_right_import_result.html",
         {"created": 3, "skipped": [], "total": 3,
-         "noted": [{"index": 0, "warnings": ["A note."]}]},
+         "noted": [{"index": 0, "warnings": ["A note."]}], "noted_count": 1},
     )
     text = " ".join(html.split())
     assert "OpenH2O created 3 water right records. 1 of them has a note below." in text

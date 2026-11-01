@@ -45,6 +45,7 @@ from tests.factories import (
 # The lab-file fixtures V3 reads, reused rather than copied: the real seeded
 # analyte vocabulary and the 30-row file whose rows all say "District 99".
 from tests.test_drinking_import import _csv_file, fixture_text, parsed, system  # noqa: F401
+from tests.import_flow import import_and_read, token_of
 
 pytestmark = pytest.mark.django_db
 
@@ -183,18 +184,19 @@ def test_v2_a_three_row_file_lists_its_three_rows(auth_client):
     assert "first 50 of" not in body
 
 
-def test_v2_a_sixty_row_file_lists_fifty_and_says_so(auth_client):
-    """Red before: ``'id="production-import-rows"' in body``."""
+def test_v2_a_long_file_lists_two_hundred_and_says_so(auth_client):
+    """Red before: ``'id="production-import-rows"' in body``. The preview listed
+    50 rows until every import preview came to list 200 (151.6-03)."""
     _production_system()
-    upload = SimpleUploadedFile("sixty.csv", _ear_text(60).encode(), content_type="text/csv")
+    upload = SimpleUploadedFile("long.csv", _ear_text(260).encode(), content_type="text/csv")
 
     body = auth_client.post(
         reverse("drinking:production_import_preview"), {"file": upload}
     ).content.decode()
 
     assert 'id="production-import-rows"' in body
-    assert _listed_rows(body) == 50
-    assert "The file&rsquo;s first 50 of 60 rows" in body
+    assert _listed_rows(body) == 200
+    assert "The file&rsquo;s first 200 of 260 rows" in body
 
 
 # ---------------------------------------------------------------------------
@@ -221,8 +223,8 @@ def test_v3_the_preview_carries_the_commits_agency_sentence_and_writes_nothing(
     assert RECORDED_SENTENCE not in preview_body
     assert system["system"].regulating_agency == "", "the preview wrote the agency"
 
-    commit = auth_client.post(
-        reverse("drinking:import_commit"), {"rows_json": preview.context["rows_json"]}
+    commit = import_and_read(
+        auth_client, reverse("drinking:import_commit"), token_of(preview)
     )
     system["system"].refresh_from_db()
     assert RECORDED_SENTENCE in commit.content.decode()
