@@ -1251,3 +1251,19 @@ def test_the_whole_storm_reaches_the_to_storage_file_when_the_intake_has_a_right
     ]
     assert bool(warnings) is intake_named, (
         f"validator warnings naming the intake: {warnings}")
+
+
+@pytest.mark.django_db
+def test_the_seed_states_how_its_diversion_records_were_measured(seeded):
+    """Every record the seed writes names a measuring device, except one point's.
+
+    The point named by ``UNSTATED_METHOD_POD_PREFIX`` keeps its method blank, so
+    the demonstration shows a delivery whose measurement was never stated.
+    """
+    from core.management.commands.seed_merced_ledgers import UNSTATED_METHOD_POD_PREFIX
+
+    records = DiversionRecord.objects.select_related("point_of_diversion")
+    assert records.exists(), "fixture should produce diversion records"
+    for record in records:
+        unstated = record.point_of_diversion.name.startswith(UNSTATED_METHOD_POD_PREFIX)
+        assert record.method == ("" if unstated else "device"), record.point_of_diversion.name

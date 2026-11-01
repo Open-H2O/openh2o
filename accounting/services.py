@@ -1742,15 +1742,27 @@ def _consumptive_supply_terms(
 
 
 #: The kinds a balance line can carry, each with the pill word and the pill's
-#: style class (``static/css/app.css``, ``.kind-pill--*``). ``other`` is the
-#: hand-entered and uploaded rows that are neither a meter reading nor the
-#: calculation's estimate: they stay in the figure and carry no pill.
+#: style class (``static/css/app.css``, ``.kind-pill--*``). The pill answers one
+#: question, how the figure was measured, and every line carries one.
 SUPPLY_KINDS = {
     "metered": ("Metered", "metered"),
     "estimated": ("Estimated", "estimated"),
-    "well_share": ("Well share", "share"),
-    "headgate": ("Headgate", "headgate"),
-    "other": (None, None),
+    "unknown": ("Unknown", "unknown"),
+}
+
+#: The kind of each ``DiversionRecord.METHOD_CHOICES`` code, and of a record that
+#: states none (""). Plain strings: ``surface`` is an optional module and
+#: accounting does not import it at module level. A test pins that every code
+#: the model offers has a kind here.
+SURFACE_METHOD_KINDS = {
+    "device": "metered",
+    "methodology": "metered",
+    "outage_estimate": "estimated",
+    "estimated_from_use": "estimated",
+    "": "unknown",
+    "alternative_compliance": "unknown",
+    "apportioned": "unknown",
+    "below_threshold": "unknown",
 }
 
 
@@ -1759,21 +1771,17 @@ def groundwater_kind_terms(billable: QuerySet[ParcelLedger]) -> list[tuple[str, 
 
     Each part is ``charged_groundwater`` of that kind's rows, the same basis as
     ``supplies["groundwater"]``, so a calculated row charges its run's extraction
-    figure and the parts add to the total before rounding. A meter reading the
-    calculation wrote by dividing a shared well's reading (its description starts
-    with ``WELL_METER_SHARE_WORDS``) is ``well_share``. A kind with a zero amount
+    figure and the parts add to the total before rounding. A meter reading is
+    ``metered``, and so is one the calculation wrote by dividing a shared well's
+    reading among its use areas. The calculation's own estimate is ``estimated``.
+    Every other row (typed or uploaded) is ``unknown``. A kind with a zero amount
     is left out: a use area with a zero-amount calculated row beside its meter
     readings is metered only.
     """
-    from accounting.management.commands.run_calculations import WELL_METER_SHARE_WORDS
-
-    meter = billable.filter(source_type="meter_reading")
-    shared = Q(description__startswith=WELL_METER_SHARE_WORDS)
     parts = [
-        ("metered", meter.exclude(shared)),
+        ("metered", billable.filter(source_type="meter_reading")),
         ("estimated", billable.filter(source_type="calculated")),
-        ("well_share", meter.filter(shared)),
-        ("other", billable.exclude(source_type__in=("meter_reading", "calculated"))),
+        ("unknown", billable.exclude(source_type__in=("meter_reading", "calculated"))),
     ]
     terms = [(kind, charged_groundwater(rows)) for kind, rows in parts]
     return [(kind, amount) for kind, amount in terms if amount]
@@ -1782,15 +1790,67 @@ def groundwater_kind_terms(billable: QuerySet[ParcelLedger]) -> list[tuple[str, 
 def surface_kind_terms(billable: QuerySet[ParcelLedger]) -> list[tuple[str, Decimal]]:
     """The surface figure split by kind: ``(kind, exact AF)`` for every non-zero kind.
 
-    The same magnitude basis as ``supplies["surface"]``: a share of a headgate
-    total (``divided_from_headgate``) is ``headgate``, a use area's own delivery
-    record is ``metered``.
+    The same magnitude basis as ``supplies["surface"]``. A delivery takes the
+    measurement method of the diversion record behind it. A use area's own
+    delivery (no diversion record behind it) and a share written before shares
+    named their point are ``unknown``. A use area's share of a point's month takes
+    the methods of that point's direct-use records in that month, split by the
+    records' volumes where they differ, so the parts add exactly to the share. A
+    share whose point has no record that month, records that total no volume, or
+    the surface module being off, is ``unknown``. Three queries however many rows.
     """
     surface = billable.filter(source_type="surface_diversion")
-    terms = []
-    for kind, divided in (("metered", False), ("headgate", True)):
-        total = surface.filter(divided_from_headgate=divided).aggregate(s=Sum("amount_acre_feet"))["s"]
-        terms.append((kind, abs(total or Decimal("0"))))
+    parts: dict[str, Decimal] = {}
+
+    def add(kind: str, amount: Decimal) -> None:
+        parts[kind] = parts.get(kind, Decimal("0")) + amount
+
+    own = surface.filter(Q(divided_from_headgate=False) | Q(divided_from_point_pk__isnull=True))
+    add("unknown", own.aggregate(s=Sum("amount_acre_feet"))["s"] or Decimal("0"))
+    groups = {
+        (row["divided_from_point_pk"], row["month"]): row["s"]
+        for row in surface.filter(divided_from_headgate=True, divided_from_point_pk__isnull=False)
+        .annotate(month=TruncMonth("effective_date"))
+        .values("divided_from_point_pk", "month")
+        .annotate(s=Sum("amount_acre_feet"))
+    }
+    methods: dict[tuple[int, date], dict[str, Decimal]] = {}
+    if groups and is_enabled("surface"):
+        from surface.models import DiversionRecord
+
+        first = min(month for _, month in groups)
+        last = max(month for _, month in groups)
+        after_last = date(last.year + (last.month == 12), last.month % 12 + 1, 1)
+        records = (
+            DiversionRecord.objects.filter(
+                diversion_type="direct_use",
+                point_of_diversion_id__in={point for point, _ in groups},
+                month__gte=first,
+                month__lt=after_last,
+            )
+            .annotate(record_month=TruncMonth("month"))
+            .values("point_of_diversion_id", "record_month", "method")
+            .annotate(v=Sum("volume_acre_feet"))
+        )
+        for row in records:
+            month = row["record_month"]
+            kind = SURFACE_METHOD_KINDS.get(row["method"], "unknown")
+            by_kind = methods.setdefault((row["point_of_diversion_id"], month), {})
+            by_kind[kind] = by_kind.get(kind, Decimal("0")) + (row["v"] or Decimal("0"))
+    for key, amount in groups.items():
+        by_kind = methods.get(key, {})
+        total = sum(by_kind.values(), Decimal("0"))
+        if not total:
+            add("unknown", amount)
+            continue
+        kinds = list(by_kind.items())
+        left = amount
+        for kind, volume in kinds[:-1]:
+            share = amount * volume / total
+            add(kind, share)
+            left -= share
+        add(kinds[-1][0], left)
+    terms = [(kind, abs(amount)) for kind, amount in parts.items()]
     return [(kind, amount) for kind, amount in terms if amount]
 
 
@@ -1828,7 +1888,7 @@ def supply_kind_lines(terms: list[tuple[str, Decimal]]) -> list[dict[str, Any]]:
     """Display lines for a figure's kinds, rounded with ``round_to_total``.
 
     The lines add exactly to the figure as shown. Each line is
-    ``{"kind", "pill", "pill_class", "amount"}``; ``pill`` is None for ``other``.
+    ``{"kind", "pill", "pill_class", "amount"}``.
     Empty when the figure is zero, and the page then prints one plain line.
     """
     order = list(SUPPLY_KINDS)

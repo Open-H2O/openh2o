@@ -55,6 +55,7 @@
         {% endcomment %}
         <div class="budget-breakdown-group budget-breakdown-group--kinds">
           <div class="budget-breakdown-title">Supplies by source</div>
+          {% if supply_kinds.surface or supply_kinds.groundwater %}<div class="kind-heading">How measured</div>{% endif %}
           {% include "accounting/partials/_supply_kind_rows.html" with label="Surface" lines=supply_kinds.surface total=balance.supplies.surface %}
           {% include "accounting/partials/_supply_kind_rows.html" with label="Groundwater" lines=supply_kinds.groundwater total=balance.supplies.groundwater %}
           <div class="budget-breakdown-row"><span>Effective<br>precipitation</span><span class="kind-cell"></span><b>{{ balance.supplies.precip|floatformat:2|intcomma }}</b></div>

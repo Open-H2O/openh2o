@@ -265,6 +265,17 @@ EL_NIDO_POD_PREFIX = "MER-POD-007"
 # Matched by its id prefix: the demo marker suffix ("-DEMO") is not on every
 # build's names.
 UNMETERED_POD_PREFIX = "MER-POD-004"
+# The Bottomlands Riparian Take. Its diversion records keep the method blank so
+# the demonstration shows a delivery whose measurement is not stated; every other
+# record states a measuring device.
+UNSTATED_METHOD_POD_PREFIX = "MER-POD-009"
+
+
+def _record_method(pod):
+    """The method a demonstration diversion record states: blank for the unstated point, else a device."""
+    return "" if pod.name.startswith(UNSTATED_METHOD_POD_PREFIX) else "device"
+
+
 # Journey calendar, as MONTH NUMBERS so it reproduces in any water
 # year. June/July/August are drawn fully by the downstream re-diversion
 # (returned_af = 0, wholly consumptive); May is the one partially-returned month,
@@ -982,6 +993,7 @@ class Command(BaseCommand):
                         defaults={
                             "reporting_period": period,
                             "volume_acre_feet": Decimal("0"),
+                            "method": _record_method(pod),
                         },
                     )
                     continue
@@ -1021,6 +1033,7 @@ class Command(BaseCommand):
                     defaults={
                         "reporting_period": period,
                         "volume_acre_feet": total,
+                        "method": _record_method(pod),
                     },
                 )
 
@@ -1251,7 +1264,8 @@ class Command(BaseCommand):
                 point_of_diversion=upstream, month=month_date,
                 diversion_type="direct_use",
                 defaults={"reporting_period": period,
-                          "volume_acre_feet": hydro_af, "returned_af": hydro_af},
+                          "volume_acre_feet": hydro_af, "returned_af": hydro_af,
+                          "method": _record_method(upstream)},
             )
             created += 1
 
@@ -1268,7 +1282,8 @@ class Command(BaseCommand):
                 point_of_diversion=downstream, month=month_date,
                 diversion_type="direct_use",
                 defaults={"reporting_period": period,
-                          "volume_acre_feet": volume, "returned_af": returned},
+                          "volume_acre_feet": volume, "returned_af": returned,
+                          "method": _record_method(downstream)},
             )
             created += 1
 
@@ -1405,6 +1420,7 @@ class Command(BaseCommand):
                         "reporting_period": period,
                         "volume_acre_feet": _q(volume),
                         "returned_af": Decimal("0"),
+                        "method": _record_method(pod),
                         "max_flow_rate_cfs": _q(peak_cfs),
                         "notes": (
                             f"High-flow diversion on the {month_name} storm, "

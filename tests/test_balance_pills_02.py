@@ -1,18 +1,28 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Pills on balance figures (Phase 151.6, plan 02), worked by hand.
+"""How measured: pills on balance figures (Phase 151.6, plan 02), worked by hand.
 
-A groundwater figure says how it was obtained: a green "Metered" pill for a meter
-reading, an amber "Estimated" pill for groundwater worked out from crop water
-use, a grey "Well share" pill for a meter reading the calculation divided among a
-shared well's use areas. A surface figure says "Headgate" (a share of a headgate
-total) or "Metered" (a use area's own delivery record). Crop ET, effective
-precipitation, pumped water not consumed, balance, available and remaining carry
-no pill. Where a figure holds two or more kinds it becomes one line per kind and
-the lines add exactly to the figure shown.
+A Surface or Groundwater figure says how it was measured, with three pills under a
+small "How measured" heading: green "Metered", amber "Estimated", grey "Unknown".
 
-The district is ``tests.ledger_districts.build_d1`` plus five more use areas, each
-a different case. Every expected figure is a literal worked with a calculator
-from the inputs below, never recomputed in a test.
+* Groundwater: a meter reading is Metered, a shared well's reading divided among
+  its use areas included; OpenH2O's calculated pumping is Estimated; any other
+  row (typed or uploaded) is Unknown.
+* Surface: a delivery takes the measurement method of the diversion record behind
+  it. A use area's share of a point's month takes that point's month records'
+  methods, split by their volumes where they differ. A measuring device or a
+  measurement methodology is Metered; an outage estimate or an estimate from crop
+  water use is Estimated; no method stated, an alternative compliance plan,
+  apportioned or under 10 acre-feet is Unknown. A delivery with no record behind
+  it (a use area's own delivery, or a share written before shares named their
+  point) is Unknown.
+
+Crop ET, effective precipitation, pumped water not consumed, balance, available
+and remaining carry no pill. Where a figure holds two or more kinds it becomes one
+line per kind and the lines add exactly to the figure shown.
+
+The district is ``tests.ledger_districts.build_d1`` plus more use areas, each a
+different case. Every expected figure is a literal worked with a calculator from
+the inputs below, never recomputed in a test.
 
 Groundwater, WY 2024-2025 (July to September 2025):
 
@@ -21,19 +31,32 @@ Groundwater, WY 2024-2025 (July to September 2025):
 * F3, F4 (account B): no meter. Crop water use over efficiency charges
   66.6667 and 50.0000 = 116.6667.
 * F5 (account M): July estimated 26.6667 (20 AF of crop use over 0.75), August
-  metered 4.0000, and a July headgate delivery of 3.0000.
+  metered 4.0000, and a July share of 3.0000 written with no point named.
 * F6 (account W): a September meter reading of 9.0000 that the calculation wrote
   by dividing a shared well's reading (its description starts with
   ``WELL_METER_SHARE_WORDS``).
+* F7 (account O): a typed August entry of 5.0000.
 
-Surface:
+Surface, July 2025 unless named; every point has no canal losses and divides by
+the shares entered:
 
-* S1 (account S1): a July headgate-divided delivery, 12.5000.
+* S1 (account S1): Device Canal serves S1 alone; its record, 12.5000 by a
+  measuring device.
 * S2 (account S2): its own August delivery record, 7.2500.
+* S3 (account S3): Outage Canal serves S3 alone; its record, 8.0000, an outage
+  estimate.
+* S4 (account X4) and S5 (no account): Mixed Canal serves both at 0.5 each. Two
+  July records, 30.0000 by a measuring device on the 1st and 10.0000 with no
+  method on the 15th, so S4 receives 15.0000 + 5.0000 = 20.0000 and that share
+  splits 30 : 10 by volume, Metered 15.0000 and Unknown 5.0000.
+* S6 (account S6): Old Canal's August record, 6.0000, estimated from crop water
+  use (a record only a finalized year still holds), with its share written by
+  hand after the runs.
 
-The Dashboard therefore reads Surface 22.75 = 15.50 Headgate + 7.25 Metered and
-Groundwater 261.33 = 109.00 Metered + 143.33 Estimated + 9.00 Well share. The
-group's zone (F1 to F6) reads Used 261.33 the same way.
+The Dashboard therefore reads
+Surface 56.75 = 27.50 Metered + 14.00 Estimated + 15.25 Unknown and
+Groundwater 266.33 = 118.00 Metered + 143.33 Estimated + 5.00 Unknown.
+The group's zone (F1 to F7) reads Used 266.33 the same way.
 """
 import re
 from decimal import Decimal as D
@@ -45,8 +68,11 @@ from django.urls import reverse
 
 from accounting.management.commands.run_calculations import WELL_METER_SHARE_WORDS
 from accounting.models import ReportingPeriod, WaterAccount, WaterAccountParcel
+from accounting.services import supply_kind_terms
 from core.models import User
 from geography.views import _zone_budget_captions
+from parcels.models import ParcelLedger
+from surface.models import DiversionRecord, WaterRight, WaterRightType
 
 from . import ledger_districts as ld
 
@@ -161,11 +187,33 @@ def _parse(html):
 
 
 # ---------------------------------------------------------------- the district
-def _surface_row(parcel, date, amount, divided):
-    row = ld.ledger(parcel, date, amount, "surface_diversion", "SW",
-                    "headgate share (test input)" if divided else "own delivery (test input)")
-    ld.ParcelLedger.objects.filter(pk=row.pk).update(divided_from_headgate=divided)
+def _record(point, month, af, method):
+    return DiversionRecord.objects.create(
+        point_of_diversion=point, reporting_period=ld.period_of(month), month=month,
+        volume_acre_feet=D(af), returned_af=D("0"), diversion_type="direct_use", method=method)
+
+
+def _right(right_id):
+    return WaterRight.objects.create(
+        right_id=right_id, right_type=WaterRightType.objects.get(code="POST14"), holder_name="Pill district",
+        face_value_acre_feet=D("500.0000"), direct_season_start_month=4, direct_season_start_day=1,
+        direct_season_end_month=10, direct_season_end_day=31)
+
+
+def _point(name, right, served):
+    return ld.make_point(name, -120.42, 37.15, right, "0", "0", "0", served)
+
+
+def _share_row(parcel, date, amount, point):
+    """A share written by hand: ``point`` None is a share from before shares named their point."""
+    row = ld.ledger(parcel, date, amount, "surface_diversion", "SW", "headgate share (test input)")
+    ParcelLedger.objects.filter(pk=row.pk).update(
+        divided_from_headgate=True, divided_from_point_pk=point.pk if point else None)
     return row
+
+
+def _own_delivery(parcel, date, amount):
+    return ld.ledger(parcel, date, amount, "surface_diversion", "SW", "own delivery (test input)")
 
 
 def _account(name, number, *parcels):
@@ -183,27 +231,43 @@ def district():
     f5 = ld.add_field("F5", 100, "Alfalfa", None, [gsa], -120.47, 37.2, [{"2025-07": 60.96}],
                       ld.make_well("W5P", -120.425, 37.21))
     f6 = ld.add_field("F6", 100, None, None, [gsa], -120.45, 37.2, [], ld.make_well("W6P", -120.405, 37.21))
-    s1 = ld.add_field("S1", 100, "Alfalfa", None, [], -120.43, 37.2, [{"2025-07": 30.48}])
-    s2 = ld.add_field("S2", 100, "Alfalfa", None, [], -120.41, 37.2, [{"2025-07": 30.48}])
+    f7 = ld.add_field("F7", 100, None, None, [gsa], -120.44, 37.2, [], ld.make_well("W7P", -120.395, 37.21))
+    s = {}
+    for i, name in enumerate(("S1", "S2", "S3", "S4", "S5", "S6")):
+        s[name] = ld.add_field(name, 100, "Alfalfa", None, [], -120.43 + i * 0.01, 37.2, [{"2025-07": 30.48}])
+    right = _right("RP")
+    _record(_point("Device Canal", right, [(s["S1"], "1")]), JUL, "12.5000", "device")
+    _record(_point("Outage Canal", right, [(s["S3"], "1")]), JUL, "8.0000", "outage_estimate")
+    mixed = _point("Mixed Canal", right, [(s["S4"], "0.5"), (s["S5"], "0.5")])
+    _record(mixed, JUL, "30.0000", "device")
+    _record(mixed, JUL.replace(day=15), "10.0000", "")
     for month in ("2025-07", "2025-08", "2025-09"):
         ld.run_months([month])
     # Hand-entered rows go in after the runs, so no month's recalculation can replace them.
     ld.ledger(f5, AUG, "-4.0000", "meter_reading", "GW", "meter reading entered on the use area")
-    _surface_row(f5, JUL, "-3.0000", True)
+    _share_row(f5, JUL, "-3.0000", None)
     ld.ledger(f6, SEP, "-9.0000", "meter_reading", "GW",
               f"{WELL_METER_SHARE_WORDS} W6P pumped 18.0000 AF this month, this use area's share is 50%")
+    ld.ledger(f7, AUG, "-5.0000", "manual_entry", "GW", "typed on the ledger (test input)")
     ld.ledger(d1["F1"], AUG, "0", "calculated", "GW", "calculated, nothing to estimate")
-    _surface_row(s1, JUL, "-12.5000", True)
-    _surface_row(s2, AUG, "-7.2500", False)
+    _own_delivery(s["S2"], AUG, "-7.2500")
+    # A run deletes a record estimated from crop water use, so this one goes in after them.
+    old = _point("Old Canal", right, [(s["S6"], "1")])
+    _record(old, AUG, "6.0000", "estimated_from_use")
+    _share_row(s["S6"], AUG, "-6.0000", old)
     accounts = {
         "A": WaterAccount.objects.get(account_number="D1-A"),
         "B": WaterAccount.objects.get(account_number="D1-B"),
         "M": _account("Mixed account", "M-1", f5),
         "W": _account("Well share account", "W-1", f6),
-        "S1": _account("Headgate account", "S-1", s1),
-        "S2": _account("Own delivery account", "S-2", s2),
+        "O": _account("Typed entry account", "O-1", f7),
+        "S1": _account("Device account", "S-1", s["S1"]),
+        "S2": _account("Own delivery account", "S-2", s["S2"]),
+        "S3": _account("Outage account", "S-3", s["S3"]),
+        "X4": _account("Two methods account", "S-4", s["S4"]),
+        "S6": _account("Old estimate account", "S-6", s["S6"]),
     }
-    return {**d1, "F5": f5, "F6": f6, "S1": s1, "S2": s2, "accounts": accounts}
+    return {**d1, "F5": f5, "F6": f6, "F7": f7, **s, "accounts": accounts}
 
 
 @pytest.fixture
@@ -281,7 +345,14 @@ def _money(text):
     return D(text.replace(",", ""))
 
 
-# ---------------------------------------------------------------- (a) the pill rules
+def _heading(group):
+    """The words of the group's "How measured" heading, or None."""
+    found = group.select(".kind-heading")
+    assert len(found) <= 1, "one heading per breakdown"
+    return _words(found[0]) if found else None
+
+
+# ---------------------------------------------------------------- (a) the groundwater rule
 def test_a_metered_use_area_shows_one_metered_line(district, client):
     # F1 and F2: meter readings 70.00 + 35.00. The zero-amount calculated row on F1
     # beside its readings adds no Estimated line and no pill.
@@ -300,24 +371,74 @@ def test_a_use_area_with_both_kinds_shows_a_line_for_each(district, client):
     assert _supply_lines(page, "Groundwater") == [("Estimated", "26.67"), ("Metered", "4.00")]
 
 
-def test_a_headgate_divided_delivery_shows_the_headgate_pill(district, client):
-    page = _account_page(client, district["accounts"]["S1"])
-    assert _supply_lines(page, "Surface") == [("Headgate", "12.50")]
-
-
-def test_a_use_areas_own_delivery_shows_the_metered_pill(district, client):
-    page = _account_page(client, district["accounts"]["S2"])
-    assert _supply_lines(page, "Surface") == [("Metered", "7.25")]
-
-
-def test_a_well_share_meter_row_shows_the_well_share_pill(district, client):
+def test_a_shared_wells_divided_reading_is_metered(district, client):
     page = _account_page(client, district["accounts"]["W"])
-    assert _supply_lines(page, "Groundwater") == [("Well share", "9.00")]
+    assert _supply_lines(page, "Groundwater") == [("Metered", "9.00")]
 
 
-def test_a_mixed_account_names_its_surface_kind_beside_its_groundwater_kinds(district, client):
+def test_a_typed_groundwater_entry_is_unknown(district, client):
+    page = _account_page(client, district["accounts"]["O"])
+    assert _supply_lines(page, "Groundwater") == [("Unknown", "5.00")]
+
+
+# ---------------------------------------------------------------- (a) the surface rule
+def test_a_share_of_a_device_record_is_metered(district, client):
+    page = _account_page(client, district["accounts"]["S1"])
+    assert _supply_lines(page, "Surface") == [("Metered", "12.50")]
+
+
+def test_a_share_of_an_outage_estimate_is_estimated(district, client):
+    page = _account_page(client, district["accounts"]["S3"])
+    assert _supply_lines(page, "Surface") == [("Estimated", "8.00")]
+
+
+def test_a_share_of_a_record_estimated_from_crop_water_use_is_estimated(district, client):
+    page = _account_page(client, district["accounts"]["S6"])
+    assert _supply_lines(page, "Surface") == [("Estimated", "6.00")]
+
+
+def test_a_share_of_a_month_with_two_methods_splits_by_the_records_volumes(district, client):
+    # 20.0000 received; the month's records are 30 by device and 10 with no method.
+    page = _account_page(client, district["accounts"]["X4"])
+    assert _supply_lines(page, "Surface") == [("Metered", "15.00"), ("Unknown", "5.00")]
+
+
+def test_a_use_areas_own_delivery_with_no_record_behind_it_is_unknown(district, client):
+    page = _account_page(client, district["accounts"]["S2"])
+    assert _supply_lines(page, "Surface") == [("Unknown", "7.25")]
+
+
+def test_a_share_that_names_no_point_is_unknown(district, client):
     page = _account_page(client, district["accounts"]["M"])
-    assert _supply_lines(page, "Surface") == [("Headgate", "3.00")]
+    assert _supply_lines(page, "Surface") == [("Unknown", "3.00")]
+
+
+@pytest.mark.parametrize(("method", "kind"), [
+    ("device", "metered"),
+    ("methodology", "metered"),
+    ("outage_estimate", "estimated"),
+    ("estimated_from_use", "estimated"),
+    ("", "unknown"),
+    ("alternative_compliance", "unknown"),
+    ("apportioned", "unknown"),
+    ("below_threshold", "unknown"),
+])
+def test_every_measurement_method_gives_its_kind(method, kind):
+    ld.seed_reference()
+    parcel = ld.add_field("P1", 100, None, None, [], -120.5, 37.2, [])
+    point = _point("Method Canal", _right("RM"), [(parcel, "1")])
+    _record(point, JUL, "4.0000", method)
+    _share_row(parcel, JUL, "-4.0000", point)
+    period = ReportingPeriod.objects.get(name=WY)
+    assert supply_kind_terms([parcel.pk], period)["surface"] == [(kind, D("4.0000"))]
+
+
+def test_every_method_a_diversion_record_offers_has_a_kind():
+    from accounting.services import SURFACE_METHOD_KINDS
+
+    methods = {code for code, _ in DiversionRecord.METHOD_CHOICES} | {""}
+    assert set(SURFACE_METHOD_KINDS) == methods
+    assert set(SURFACE_METHOD_KINDS.values()) == {"metered", "estimated", "unknown"}
 
 
 # ---------------------------------------------------------------- (b) the lines add to the figure
@@ -359,38 +480,55 @@ def test_plain_rounding_would_be_a_cent_off_so_the_dashboard_lines_are_adjusted(
 # ---------------------------------------------------------------- (c) the rendered pages
 def test_the_dashboard_water_balance_panel_shows_each_kind_with_its_pill(district, client):
     page = _dashboard(client)
-    assert _supply_lines(page, "Surface") == [("Headgate", "15.50"), ("Metered", "7.25")]
-    assert _supply_lines(page, "Groundwater") == [
-        ("Estimated", "143.33"), ("Metered", "109.00"), ("Well share", "9.00")]
+    assert _supply_lines(page, "Surface") == [("Estimated", "14.00"), ("Metered", "27.50"), ("Unknown", "15.25")]
+    assert _supply_lines(page, "Groundwater") == [("Estimated", "143.33"), ("Metered", "118.00"), ("Unknown", "5.00")]
 
 
 def test_the_dashboard_lines_add_exactly_to_the_figures_in_the_panel(district, client):
     page = _dashboard(client)
     rows = [_row(r) for r in _group(page, "Supplies by source").select(".budget-breakdown-row")]
     total = _seg(page, "Supplies").select_one(".budget-seg-value").get_text(strip=True).removesuffix("AF")
-    assert total == "284.08"
+    assert total == "323.08"
     assert sum(_money(r["figure"]) for r in rows) == _money(total)
+
+
+def test_the_dashboard_supplies_carry_the_how_measured_heading(district, client):
+    group = _group(_dashboard(client), "Supplies by source")
+    assert _heading(group) == "How measured"
+    html = str(group)
+    assert html.index("kind-heading") < html.index("budget-breakdown-row")
 
 
 def test_the_dashboard_puts_a_pill_on_no_other_line(district, client):
     page = _dashboard(client)
     panel = _group(page, "Supplies by source").find_parent(class_="budget-panel")
-    assert len(panel.select(".kind-pill")) == 5  # two Surface lines and three Groundwater lines
+    assert len(panel.select(".kind-pill")) == 6  # three Surface lines and three Groundwater lines
     precip = [_row(r) for r in _group(page, "Supplies by source").select(".budget-breakdown-row")
               if _row(r)["label"] == "Effective precipitation"]
     assert [(r["pills"], r["figure"]) for r in precip] == [([], "0.00")]
     for title in ("Uses by destination", "Estimate coverage", "Balance by account"):
         assert _group(page, title).select(".kind-pill") == []
+        assert _heading(_group(page, title)) is None
     for label in ("Uses", "Balance"):
         assert _seg(page, label).select(".kind-pill") == []
 
 
+def test_no_pill_reads_headgate_or_well_share(district, client):
+    for page in (_dashboard(client), _account_page(client, district["accounts"]["M"]),
+                 _zone_page(client, district["gsa"]), _use_area_page(client, district["F5"])):
+        words = {_words(p) for p in page.select(".kind-pill")}
+        assert words <= {"Metered", "Estimated", "Unknown"}, words
+        classes = {c for p in page.select(".kind-pill") for c in p.classes}
+        assert classes <= {"kind-pill", "kind-pill--metered", "kind-pill--estimated", "kind-pill--unknown"}, classes
+
+
 def test_the_account_page_puts_a_pill_on_no_other_line(district, client):
     page = _account_page(client, district["accounts"]["M"])
-    panel = _group(page, "Supplies by source").find_parent(class_="budget-panel")
+    group = _group(page, "Supplies by source")
+    panel = group.find_parent(class_="budget-panel")
     assert len(panel.select(".kind-pill")) == 3  # one Surface line and two Groundwater lines
+    assert _heading(group) == "How measured"
     assert _group(page, "Uses by destination").select(".kind-pill") == []
-    assert _seg(page, "Supplies").select(".kind-pill") != []
     assert _seg(page, "Balance").select(".kind-pill") == []
 
 
@@ -399,14 +537,16 @@ def test_the_zone_used_cell_lists_its_kinds_as_lines_with_pills(district, client
     used = _seg(page, "Used")
     lines = sorted((_words(r.select_one(".kind-pill")), r.find("b").get_text(strip=True))
                    for r in used.select(".budget-breakdown-row") if r.select_one(".kind-pill"))
-    assert lines == [("Estimated", "143.33"), ("Metered", "109.00"), ("Well share", "9.00")]
-    assert used.select_one(".budget-seg-value").get_text(strip=True).removesuffix("AF") == "261.33"
+    assert lines == [("Estimated", "143.33"), ("Metered", "118.00"), ("Unknown", "5.00")]
+    assert used.select_one(".budget-seg-value").get_text(strip=True).removesuffix("AF") == "266.33"
+    assert _heading(used) == "How measured"
 
 
 def test_the_zone_available_and_remaining_cells_carry_no_pill(district, client):
     page = _zone_page(client, district["gsa"])
-    assert _seg(page, "Available").select(".kind-pill") == []
-    assert _seg(page, "Remaining").select(".kind-pill") == []
+    for label in ("Available", "Remaining"):
+        assert _seg(page, label).select(".kind-pill") == []
+        assert _heading(_seg(page, label)) is None
 
 
 def _lead_cells(page):
@@ -422,40 +562,53 @@ def _cell_pills(cell):
     return sorted(_words(p) for p in cell.select(".kind-pill"))
 
 
-def test_a_metered_use_area_page_puts_the_metered_pill_under_its_extraction(district, client):
+def _cell_value(cell):
+    return cell.select_one(".budget-seg-value").get_text(strip=True)
+
+
+def _how_measured(cell):
+    """The words of the cell's pill line: "How measured" and then its pills, or None."""
+    line = cell.select_one(".figure-kind")
+    return _words(line) if line is not None else None
+
+
+def test_a_metered_use_area_page_reads_how_measured_metered(district, client):
     cells = _lead_cells(_use_area_page(client, district["F1"]))
-    assert cells["Groundwater extraction"].select_one(".budget-seg-value").get_text(strip=True) == "70.00AF"
-    assert _cell_pills(cells["Groundwater extraction"]) == ["Metered"]
-    # The pill sits above the link note to the well.
+    assert _cell_value(cells["Groundwater extraction"]) == "70.00AF"
+    assert _how_measured(cells["Groundwater extraction"]) == "How measured Metered"
+    # The pill line sits above the link note to the well.
     html = str(cells["Groundwater extraction"])
     assert html.index("kind-pill") < html.index("prose-link")
-    assert _cell_pills(cells["Surface water delivered"]) == []
+    # A figure with no water has no pill and no words before one.
+    assert _how_measured(cells["Surface water delivered"]) is None
 
 
-def test_an_estimated_use_area_page_puts_the_estimated_pill_under_its_extraction(district, client):
+def test_an_estimated_use_area_page_reads_how_measured_estimated(district, client):
     cells = _lead_cells(_use_area_page(client, district["F4"]))
-    assert cells["Groundwater extraction"].select_one(".budget-seg-value").get_text(strip=True) == "50.00AF"
-    assert _cell_pills(cells["Groundwater extraction"]) == ["Estimated"]
+    assert _cell_value(cells["Groundwater extraction"]) == "50.00AF"
+    assert _how_measured(cells["Groundwater extraction"]) == "How measured Estimated"
 
 
-def test_a_use_area_page_with_both_kinds_shows_both_pills(district, client):
+def test_a_use_area_page_with_both_kinds_shows_both_pills_after_one_heading(district, client):
     cells = _lead_cells(_use_area_page(client, district["F5"]))
-    assert cells["Groundwater extraction"].select_one(".budget-seg-value").get_text(strip=True) == "30.67AF"
+    assert _cell_value(cells["Groundwater extraction"]) == "30.67AF"
     assert _cell_pills(cells["Groundwater extraction"]) == ["Estimated", "Metered"]
-    assert cells["Surface water delivered"].select_one(".budget-seg-value").get_text(strip=True) == "3.00AF"
-    assert _cell_pills(cells["Surface water delivered"]) == ["Headgate"]
+    assert _how_measured(cells["Groundwater extraction"]).count("How measured") == 1
+    assert _cell_value(cells["Surface water delivered"]) == "3.00AF"
+    assert _how_measured(cells["Surface water delivered"]) == "How measured Unknown"
 
 
-def test_a_use_area_page_shows_the_headgate_pill_under_a_divided_delivery(district, client):
-    cells = _lead_cells(_use_area_page(client, district["S1"]))
-    assert cells["Surface water delivered"].select_one(".budget-seg-value").get_text(strip=True) == "12.50AF"
-    assert _cell_pills(cells["Surface water delivered"]) == ["Headgate"]
-
-
-def test_a_use_area_page_shows_the_metered_pill_under_its_own_delivery(district, client):
-    cells = _lead_cells(_use_area_page(client, district["S2"]))
-    assert cells["Surface water delivered"].select_one(".budget-seg-value").get_text(strip=True) == "7.25AF"
-    assert _cell_pills(cells["Surface water delivered"]) == ["Metered"]
+@pytest.mark.parametrize(("key", "figure", "pills"), [
+    ("S1", "12.50AF", ["Metered"]),
+    ("S2", "7.25AF", ["Unknown"]),
+    ("S3", "8.00AF", ["Estimated"]),
+    ("S4", "20.00AF", ["Metered", "Unknown"]),
+    ("S6", "6.00AF", ["Estimated"]),
+])
+def test_a_use_area_page_names_how_its_delivery_was_measured(district, client, key, figure, pills):
+    cells = _lead_cells(_use_area_page(client, district[key]))
+    assert _cell_value(cells["Surface water delivered"]) == figure
+    assert _cell_pills(cells["Surface water delivered"]) == pills
 
 
 def test_a_use_area_page_puts_no_pill_on_crop_et_or_effective_precipitation(district, client):
@@ -463,6 +616,7 @@ def test_a_use_area_page_puts_no_pill_on_crop_et_or_effective_precipitation(dist
         cells = _lead_cells(_use_area_page(client, district[key]))
         assert _cell_pills(cells["Crop ET"]) == [], key
         assert _cell_pills(cells["Effective precipitation"]) == [], key
+        assert _how_measured(cells["Crop ET"]) is None, key
 
 
 # ---------------------------------------------------------------- (d) the zone caption

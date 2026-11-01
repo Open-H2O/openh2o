@@ -2794,16 +2794,29 @@ html { color-scheme: dark; }
     font-weight: 700;
     font-variant-numeric: tabular-nums;
 }
-/* Kind pills: a balance line that holds more than one kind of
-   water is one breakdown line per kind. The Supplies breakdown takes the --kinds
-   modifier: three content-sized tracks (name, pill, figure), every pill one
-   width, a row with no pill keeps an empty pill cell. Colours come from tokens. */
+/* Kind pills: a balance figure says how it was measured, and a figure that
+   holds more than one way is one breakdown line per way. The Supplies breakdown
+   takes the --kinds modifier: three content-sized tracks (name, pill, figure),
+   every pill one width, a row with no pill keeps an empty pill cell. Colours come
+   from tokens. */
 .budget-seg > .budget-breakdown-group.budget-breakdown-group--kinds {
     grid-template-columns: max-content max-content max-content;
     column-gap: 0;
 }
 .budget-breakdown-group--kinds > .budget-breakdown-title {
     grid-column: 1 / -1;
+}
+.budget-breakdown-group--kinds > .kind-heading {
+    grid-column: 2 / 4;
+    text-align: left;
+    margin-left: var(--space-sm);
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-tertiary);
+    line-height: 1.2;
+    margin-bottom: 2px;
 }
 .budget-breakdown-group--kinds .budget-breakdown-row > .kind-cell {
     padding: 2px 0;
@@ -2816,6 +2829,9 @@ html { color-scheme: dark; }
    divider (staging sweep, 2026-11-01), up to 10px at 1,153; the pill keeps 4px
    either side and a narrower padding, at the same type size. */
 @container (max-width: 950px) {
+    .budget-breakdown-group--kinds > .kind-heading {
+        margin-left: var(--space-xs);
+    }
     .budget-breakdown-group--kinds .budget-breakdown-row > .kind-cell {
         margin: 0 var(--space-xs);
     }
@@ -2850,16 +2866,16 @@ html { color-scheme: dark; }
     background: color-mix(in srgb, var(--color-warning) 14%, transparent);
     border-color: color-mix(in srgb, var(--color-warning) 35%, transparent);
 }
-.kind-pill--headgate,
-.kind-pill--share {
+.kind-pill--unknown {
     color: var(--color-text-secondary);
     background: color-mix(in srgb, var(--color-muted) 14%, transparent);
     border-color: color-mix(in srgb, var(--color-muted) 30%, transparent);
 }
-/* The use area's lead figure: its pills sit on their own line under the figure,
-   above the link note. Two kinds in one year sit side by side. */
+/* The use area's lead figure: "How measured" and its pills sit on their own line
+   under the figure, above the link note. Two kinds in one year sit side by side. */
 .statement-lead .figure-kind {
     display: flex;
+    align-items: center;
     flex-wrap: wrap;
     gap: var(--space-xs);
     margin-top: 6px;
@@ -2867,6 +2883,11 @@ html { color-scheme: dark; }
 }
 .statement-lead .figure-kind .kind-pill {
     font-size: 0.75rem;
+}
+.figure-kind-label {
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+    font-weight: 400;
 }
 /* The lines that judge the result (the pane's unmet-demand figure and the
    cause sentence) live in the result cell, under the number they are about. */
