@@ -660,7 +660,7 @@ labels = [
   { text = "Change email", where = "templates/core/users_list.html" },
   { text = "Users", where = "core/modules.py" },
 ]
-checked_at = "8a99d70d"
+checked_at = "685236c9"
 
 [[section]]
 document = "DEPLOY.md"
@@ -729,7 +729,7 @@ files = [
 labels = [
   { text = "Site health", where = "templates/health/dashboard.html" },
 ]
-checked_at = "38b6199e"
+checked_at = "685236c9"
 
 [[section]]
 document = "DEPLOY.md"
@@ -1567,7 +1567,7 @@ labels = [
   { text = "Delivery settings", where = "templates/accounting/delivery_settings.html" },
   { text = "Where your record addresses are published", where = "core/forms.py" },
 ]
-checked_at = "953a3149"
+checked_at = "685236c9"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
