@@ -181,37 +181,41 @@ def _five():
     return _load("daily_five_stations.json")["features"]
 
 
-def test_parse_gives_one_record_per_station_code_and_day():
+def test_parse_keeps_every_statistic_one_record_per_station_code_day_and_statistic():
     records = _adapter().parse(_five())
-    keys = [(r["station_id"], r["parameter_code"], r["observation_date"]) for r in records]
+    keys = [
+        (r["station_id"], r["parameter_code"], r["observation_date"], r["statistic_id"])
+        for r in records
+    ]
     assert len(keys) == len(set(keys))
+    assert len(records) == len(_five())
     assert {r["station_id"] for r in records} == {
         "11261100", "11261500", "11262900", "11273400", "11274000",
     }
     assert all(not r["station_id"].startswith("USGS-") for r in records)
 
 
-def test_water_temperature_is_the_daily_maximum_as_before():
+def test_water_temperature_keeps_the_daily_high_low_and_average():
     records = _adapter().parse(_five())
-    temp = [
-        r for r in records
+    temp = {
+        r["statistic_id"]: r["value"]
+        for r in records
         if r["station_id"] == "11261500" and r["parameter_code"] == "00010"
         and r["observation_date"] == "2026-10-28"
-    ]
-    assert len(temp) == 1
-    assert temp[0]["value"] == 17.3
-    assert temp[0]["statistic_id"] == "00001"
+    }
+    assert temp == {"00001": 17.3, "00002": 14.3, "00003": 15.7}
 
 
-def test_lowest_statistic_wins_whatever_the_order():
+def test_every_statistic_is_kept_whatever_the_order():
     features = list(reversed(_five()))
     records = _adapter().parse(features)
-    rec = next(
-        r for r in records
+    held = {
+        r["statistic_id"]: r["value"]
+        for r in records
         if r["station_id"] == "11273400" and r["parameter_code"] == "00010"
         and r["observation_date"] == "2026-10-29"
-    )
-    assert rec["value"] == 15.8
+    }
+    assert held == {"00001": 15.8, "00002": 15.1}
 
 
 def test_units_use_the_spelling_the_pages_print():

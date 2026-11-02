@@ -153,9 +153,13 @@ def test_add_station_words(auth_client):
     DataSource.objects.create(code="probe_add", name="Probe Add Source", is_active=True)
     body = auth_client.get(reverse("datasync:station_add")).content.decode().replace("&#x27;", "'")
     assert (
-        "This page adds one monitoring station for OpenH2O to sync from a public data "
-        "source. The external station ID is the source's own identifier for the station, "
-        "such as 11303000 at USGS."
+        "This page adds one monitoring station. OpenH2O syncs its readings from a "
+        "public data source, or a person types them on the station's page."
+    ) in body
+    assert "External station ID" not in body
+    assert (
+        "The source's own ID, such as 11303000 at USGS, or the organization's own name "
+        "or number for a station entered by hand."
     ) in body
     assert '<option value="">Choose a data source</option>' in body
     option = body.split("Probe Add Source", 1)[0].rsplit("<option", 1)[1]

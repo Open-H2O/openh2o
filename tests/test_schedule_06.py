@@ -211,6 +211,19 @@ class TestTheStationPage:
         assert "Syncing is off, so OpenH2O's schedule skips this station." in body
         assert "The next fetch is at" not in body
 
+    def test_a_station_entered_by_hand_says_who_types_its_readings(
+        self, crontab, station_page
+    ):
+        for syncing in (True, False):
+            body = station_page("manual", "Entered by hand", syncing=syncing)
+            assert (
+                "An Operator or Administrator types each reading on this page." in body
+            )
+            assert "OpenH2O fetches readings from" not in body
+            assert "Syncing is off" not in body
+            assert "schedule does not fetch" not in body
+            MonitoredStation.objects.all().delete()
+
     def test_an_unreadable_file_leaves_the_page_without_a_sentence(
         self, settings, tmp_path, station_page
     ):

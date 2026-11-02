@@ -263,7 +263,8 @@ WRITE_PAGES = [
     "accounting:methodology_step_toggle", "accounting:parcel_search_for_assignment",
     "accounting:period_create", "accounting:period_finalize", "accounting:remove_parcel",
     "core:pending_import_status",
-    "core:user_create", "core:user_email_edit", "datasync:station_add", "datasync:station_toggle",
+    "core:user_create", "core:user_email_edit", "datasync:station_add",
+    "datasync:station_reading_add", "datasync:station_toggle",
     "drinking:facility_add", "drinking:facility_edit", "drinking:import",
     "drinking:import_commit", "drinking:import_preview", "drinking:onboard",
     "drinking:onboard_commit", "drinking:onboard_lookup", "drinking:onboard_points",
@@ -341,3 +342,36 @@ def test_a_viewer_opening_an_inline_editor_is_refused(viewer):
         reverse("parcels:edit_field", args=[parcel.pk]), {"field": "area_acres"}
     )
     assert _refused(response) == (403, True)
+
+
+def test_a_viewer_cannot_fetch_or_type_a_reading_and_an_operator_can(viewer, operator):
+    """The two station-page writes (151.6-05): Fetch readings now and Add a reading."""
+    from django.contrib.gis.geos import Point
+
+    from datasync.models import DataRecordStaging, DataSource, DataSyncLog, MonitoredStation
+
+    usgs, _ = DataSource.objects.get_or_create(code="usgs", defaults={"name": "USGS NWIS"})
+    hand, _ = DataSource.objects.get_or_create(
+        code="manual", defaults={"name": "Entered by hand"}
+    )
+    gauge = MonitoredStation.objects.create(
+        data_source=usgs, external_station_id="VIEW-F1", station_name="Viewer fetch gauge",
+        location=Point(-120.0, 37.0, srid=4326),
+    )
+    staff = MonitoredStation.objects.create(
+        data_source=hand, external_station_id="VIEW-H1", station_name="Viewer hand gauge",
+        location=Point(-120.0, 37.0, srid=4326),
+    )
+    fetch = reverse("datasync:station_fetch_now", args=[gauge.pk])
+    add = reverse("datasync:station_reading_add", args=[staff.pk])
+    typed = {"observation_date": "2026-10-30", "value": "3.42", "parameter": "00065"}
+
+    client = _client(viewer)
+    assert _refused(client.post(fetch)) == (403, True)
+    assert _refused(client.post(add, typed)) == (403, True)
+    assert _refused(client.get(add)) == (403, True)
+    assert not DataSyncLog.objects.exists()
+    assert not DataRecordStaging.objects.exists()
+
+    assert _client(operator).post(add, typed).status_code == 302
+    assert DataRecordStaging.objects.count() == 1
