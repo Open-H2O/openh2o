@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Import water levels - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Import water levels{% endblock %}
+{% block page_head_class %}page-head--medium{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    {% include "partials/_crumb_root.html" %}
+    <a href="{% url 'wells:list' %}">Wells</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Import Water Levels</span>
+  </nav>
+  <p class="page-description">This page imports water levels from a CSV file, such as DWR's export or a spreadsheet of your own.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack page-medium">
+
+  <a href="{% url 'wells:list' %}" class="back-link">&larr; Back to Wells</a>
+
+  <div class="card-raised">
+    {% comment %} The heading is the quantity alone, the remainder after the title "Import water levels" (copy rule 13). The first sentence is the diversion import's; the second says what the import skips. The columns table has a DWR's column so DWR's names are recognised without a sentence saying so. {% endcomment %}
+    <h2 class="card-header-ruled">Depth to water</h2>
+    <p class="text-base text-secondary mt-md">OpenH2O saves nothing until you press Import on the preview.</p>
+    <p class="text-base text-secondary mt-sm">OpenH2O skips a row whose well, date and depth are already on file.</p>
+    <h3 class="section-header-sm mt-lg">Columns OpenH2O reads</h3>
+    <div class="table-scroll mt-md">
+      <table class="data-table help-cases-table">
+        <thead>
+          <tr>
+            <th>Column</th>
+            <th>DWR's column</th>
+            <th>Required</th>
+            <th>What it holds</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-name">Well</td>
+            <td><code>WELL_NAME</code></td>
+            <td>Yes</td>
+            <td>Its name, state well number or WCR number.</td>
+          </tr>
+          <tr>
+            <td class="col-name">Date</td>
+            <td><code>MSMT_DATE</code></td>
+            <td>Yes</td>
+            <td>YYYY-MM-DD or M/D/YYYY, with or without a time.</td>
+          </tr>
+          <tr>
+            <td class="col-name">Depth</td>
+            <td><code>GSE_GWE</code></td>
+            <td>One of two</td>
+            <td>Feet below land surface.</td>
+          </tr>
+          <tr>
+            <td class="col-name">Reason</td>
+            <td><code>WLM_QA_DESC</code></td>
+            <td>One of two</td>
+            <td>One of the reasons on the well page.</td>
+          </tr>
+          <tr>
+            <td class="col-name">Method</td>
+            <td><code>WLM_DESC</code></td>
+            <td>No</td>
+            <td>One of the methods on the well page.</td>
+          </tr>
+          <tr>
+            <td class="col-name">Notes</td>
+            <td><code>MSMT_CMT</code></td>
+            <td>No</td>
+            <td>OpenH2O copies the notes unchanged.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <form class="mt-lg"
+      id="import-upload-form"
+      method="post"
+      action="{% url 'wells:water_level_import_preview' %}"
+      enctype="multipart/form-data"
+      hx-post="{% url 'wells:water_level_import_preview' %}"
+      hx-target="#import-area"
+      hx-encoding="multipart/form-data"
+      hx-indicator="#import-spinner">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label class="form-label" for="import-file">Data file <span class="required-mark">*</span></label>
+        <div class="file-picker">
+          <label class="btn-secondary file-picker-button">
+            Choose file
+            <input type="file" id="import-file" name="file"
+                   accept=".csv"
+                   required class="file-picker-input">
+          </label>
+          <span class="file-picker-name text-tertiary text-sm" id="import-file-name">No file chosen</span>
+        </div>
+        <div class="form-help">OpenH2O imports a CSV file of up to 25 MB, however many rows it has.</div>
+      </div>
+
+      <div class="row-start pt-sm">
+        <button type="submit" class="btn-primary">Upload &amp; preview</button>
+        <span id="import-spinner" class="htmx-indicator text-tertiary text-sm">Reading the file&hellip;</span>
+      </div>
+    </form>
+  </div>
+
+  {# The matching step, the preview and the result are swapped in here by HTMX #}
+  <div id="import-area"></div>
+
+</div>
+
+<script>
+  // Show the chosen filename beside the styled "Choose file" button.
+  (function() {
+    var input = document.getElementById('import-file');
+    var name = document.getElementById('import-file-name');
+    if (!input || !name) return;
+    input.addEventListener('change', function() {
+      name.textContent = (input.files && input.files.length)
+        ? input.files[0].name
+        : 'No file chosen';
+    });
+  })();
+</script>
+{% endblock %}

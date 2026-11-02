@@ -273,6 +273,14 @@
             </div>
             {% endif %}
           </div>
+          {% if user_can_write %}
+          {% include "wells/partials/_water_level_form.html" %}
+          {% endif %}
+        </div>
+        {% elif user_can_write %}
+        {# A well with no monitoring row still takes a typed water level: the same form, in a card of its own where the Monitoring data card would sit. #}
+        <div class="card-raised">
+          {% include "wells/partials/_water_level_form.html" with standalone=True %}
         </div>
         {% endif %}
 
@@ -307,25 +315,36 @@
 
     {% comment %}
       Measurement history.
-      Two tables side by side: each current meter's totalizer reads (ONE table
-      per meter, grouped by water year with its own closing subtotal row --
-      footer A, no tfoot, rule 7) and the monthly depth-to-water digest (grouped,
-      no subtotal: levels are not amounts, rule 5). Both come from
+      Up to three tables, two to a row, in this order: each current meter's
+      totalizer reads (ONE table per meter, grouped by water year with its own
+      closing subtotal row -- footer A, no tfoot, rule 7), the visits (levels a
+      person measured by hand or imported: a depth, or the reason none was read)
+      and a logger's monthly depth-to-water digest (grouped, with a net-change
+      row closing each year; levels are not amounts, rule 5). All come from
       wells/measurement_history.py, newest first; nothing is computed here. A
       table, not a chart: this page loads no charting library and gains none.
+      `history_rows` (measurement_history.history_rows) names the tables of each
+      row. Each row is its own .history-grid, because the grid is a two-row
+      subgrid and a second row of columns in the same grid would overlap the
+      first.
 
       The empty-case sentence below must stay the first `</div>`-closing content
-      after this heading (tests/test_wells_measurement_history.py reads
-      `html[:html.index("</div>")]` from the heading) -- so the facts line above
-      the grid is a `<p>`, never a wrapping `<div>`, in both branches.
+      after the head row (tests/test_wells_measurement_history.py reads from the
+      `</div>` that closes `.row-between`) -- so the facts line above the grid
+      is a `<p>`, never a wrapping `<div>`, in both branches.
     {% endcomment %}
     <div class="card-raised page-grid-account-full">
-      <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">Measurement history</h2>
+      <div class="row-between" style="margin-bottom: var(--space-xs);">
+        <h2 class="section-header-flush">Measurement history</h2>
+        {% if user_can_write %}<a href="{% url 'wells:water_level_import' %}" class="btn-secondary btn-sm">Import water levels</a>{% endif %}
+      </div>
       <p class="text-secondary text-base" style="margin: 0 0 var(--space-md) 0;">Meter reads and depth to water are grouped by water year.</p>
-      {% if meter_history or water_levels %}
-      {# .history-grid: each column is a subgrid of two rows (facts line, table), so the two tables' heads sit on one line even when one facts line wraps and the other does not. A second meter's facts line and table follow in the left column's implicit rows. #}
-      <div class="page-grid-2col history-grid">
-
+      {% if history_rows %}
+      {% for names in history_rows %}
+      {# .history-grid: each column is a subgrid of two rows (facts line, table), so the tables' heads sit on one line even when one facts line wraps and the other does not. A second meter's facts line and table follow in the meter column's implicit rows. #}
+      <div class="page-grid-2col history-grid"{% if not forloop.first %} style="margin-top: var(--space-lg);"{% endif %}>
+        {% for name in names %}
+        {% if name == "meters" %}
         <div>
           {% for group in meter_history %}
             {# The unit stated ONCE, here, in this meter's own facts line (rule 4); no unit on either header below. #}
@@ -365,15 +384,41 @@
             </table>
             </div>
           {% endfor %}
-          {% if not meter_history %}
-          <p class="text-tertiary text-base">No meter read is recorded for this well.</p>
-          {% endif %}
         </div>
-
+        {% elif name == "visits" %}
         <div>
-          {% if water_levels %}
+          <p class="text-tertiary text-xs" style="margin: 0 0 var(--space-sm) 0;">Visits &middot; depth to water, ft below land surface</p>
+          <div class="table-scroll">
+          <table class="data-table text-sm">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th class="th-right">Depth</th>
+                <th>Method</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for year in visits %}
+              <tr class="row-group">
+                <td colspan="3">{{ year.label }}</td>
+              </tr>
+              {% for visit in year.visits %}
+              <tr>
+                <td class="text-secondary">{{ visit.when|date:"M j, Y" }}</td>
+                {# A visit with no depth prints its reason where the depth would be, in tertiary text; no figure, so nothing for a chart to plot. #}
+                <td class="td-num">{% if visit.value is None %}<span class="text-tertiary">{{ visit.reason|default:"&mdash;" }}</span>{% else %}{{ visit.value|floatformat:2 }}{% endif %}</td>
+                <td class="text-secondary">{% if visit.method %}{{ visit.method }}{% else %}<span class="text-tertiary">&mdash;</span>{% endif %}</td>
+              </tr>
+              {% endfor %}
+              {% endfor %}
+            </tbody>
+          </table>
+          </div>
+        </div>
+        {% elif name == "digest" %}
+        <div>
           {# Levels are not amounts (rule 5): the Close column never sums; the year closes on its net change. #}
-          <p class="text-tertiary text-xs" style="margin: 0 0 var(--space-sm) 0;">Depth to water, ft below land surface &middot; monthly close from the well's {{ water_levels.source }} record &middot; change is against the previous month's close; positive is deeper.</p>
+          <p class="text-tertiary text-xs" style="margin: 0 0 var(--space-sm) 0;">Logger, monthly close &middot; change is against the previous month's close; positive is deeper</p>
           <div class="table-scroll">
           <table class="data-table text-sm data-table--grouped">
             <thead>
@@ -405,12 +450,15 @@
             </tbody>
           </table>
           </div>
-          {% else %}
-          <p class="text-tertiary text-base">No water-level reading is recorded for this well.</p>
-          {% endif %}
         </div>
-
+        {% else %}
+        <div>
+          <p class="text-tertiary text-base">No water-level reading is recorded for this well.</p>
+        </div>
+        {% endif %}
+        {% endfor %}
       </div>
+      {% endfor %}
       {% else %}
       <p class="text-tertiary text-base">No meter read or water-level reading is recorded for this well.</p>
       {% endif %}

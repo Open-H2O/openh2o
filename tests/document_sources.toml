@@ -1244,6 +1244,26 @@ checked_at = "60a428b8"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
+heading = "Water levels: the Import water levels screen"
+files = [
+  "wells/water_level_import.py",
+  "wells/views.py",
+  "wells/urls.py",
+  "measurements/models.py",
+  "templates/wells/water_level_import.html",
+  "templates/wells/partials/_water_level_import_preview.html",
+  "templates/wells/list.html",
+  "templates/wells/partials/_detail_pane.html",
+]
+labels = [
+  { text = "Import water levels", where = "templates/wells/list.html" },
+  { text = "Import water levels", where = "templates/wells/partials/_detail_pane.html" },
+  { text = "Add a water level", where = "templates/wells/partials/_water_level_form.html" },
+]
+checked_at = "161e4cec"
+
+[[section]]
+document = "docs/DATA-IMPORT.md"
 heading = "Water rights: the Water Rights Import screen"
 files = [
   "surface/importer.py",

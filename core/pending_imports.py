@@ -109,6 +109,12 @@ KINDS = {
         commit_url_name="infrastructure:import_commit",
         extensions=(".csv", ".geojson", ".json", ".kml", ".zip"),
     ),
+    "water_levels": Kind(
+        commit="wells.water_level_import:commit_stored_water_levels",
+        result_template="wells/partials/_water_level_import_result.html",
+        commit_url_name="wells:water_level_import_commit",
+        extensions=(".csv",),
+    ),
 }
 
 

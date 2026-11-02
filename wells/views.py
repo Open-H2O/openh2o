@@ -18,14 +18,16 @@ from django.db.models import Q
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from django.views.decorators.http import require_http_methods, require_POST
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
+from core import pending_imports
 from core.access import public_in_open_demo
 
 from core.validation import FieldValidationError, coerce_decimal, coerce_int
 from core.workspace import detail_response, list_response, redirect_to_selected
 from core.modules import is_enabled
 from wells import measurement_history
-from wells.forms import MeterReadingForm
+from wells import water_level_import as water_level_file
+from wells.forms import MeterReadingForm, WaterLevelForm
 from wells.models import (
     ACCURACY_BAND_CHOICES,
     DWR_DIRECT_OR_ESTIMATE_CHOICES,
@@ -261,7 +263,7 @@ def published_source_publisher(well):
     return PUBLISHED_SUPPLY_SOURCE
 
 
-def _well_detail_context(well, reading_form=None):
+def _well_detail_context(well, reading_form=None, level_form=None):
     """Build the per-well detail context.
 
     Shared by the standalone detail page, the in-pane HTMX render, and the
@@ -280,6 +282,9 @@ def _well_detail_context(well, reading_form=None):
     if reading_form is None:
         reading_form = MeterReadingForm(well=well)
     water_levels = measurement_history.water_level_history(well)
+    visits = measurement_history.visit_history(well)
+    if level_form is None:
+        level_form = WaterLevelForm()
 
     geojson = None
     if well.location:
@@ -314,6 +319,13 @@ def _well_detail_context(well, reading_form=None):
         "meter_history": meter_history,
         "reading_form": reading_form,
         "water_levels": water_levels,
+        "visits": visits,
+        # The history card's tables, two to a row, by name (see
+        # measurement_history.history_rows).
+        "history_rows": measurement_history.history_rows(
+            bool(meter_history), bool(visits), bool(water_levels)
+        ),
+        "level_form": level_form,
         "ef": editable_fields_map,
         # DWR's three-part identity line, computed once here so
         # the template states it rather than re-deriving it (rule 12).
@@ -386,6 +398,133 @@ def meter_reading_add(request, pk):
         if covered:
             messages.success(request, recalculation_sentence(covered))
     return redirect("wells:detail", pk=well.pk)
+
+
+@login_required
+@require_POST
+def water_level_add(request, pk):
+    """Save one depth to water typed on the well's page, or a visit with no depth and its reason."""
+    well = get_object_or_404(Well.objects.select_related("well_type"), pk=pk)
+    form = WaterLevelForm(request.POST)
+    if not form.is_valid():
+        return render(
+            request, "wells/detail.html", _well_detail_context(well, level_form=form),
+            status=200,
+        )
+    form.save(well, user=request.user)
+    messages.success(request, "Water level saved.")
+    return redirect("wells:detail", pk=well.pk)
+
+
+# ---------------------------------------------------------------------------
+# Import water levels: page -> preview/match -> import
+# ---------------------------------------------------------------------------
+
+WATER_LEVEL_RESULT_TEMPLATE = "wells/partials/_water_level_import_result.html"
+
+
+@login_required
+@require_GET
+def water_level_import(request):
+    """The page that takes a CSV file of water levels."""
+    return render(request, "wells/water_level_import.html")
+
+
+def _stored_water_levels(pending):
+    """The stored file, read again: ``(columns, rows)``."""
+    with pending_imports.stored_file(pending) as file:
+        return water_level_file.parse_csv(file, pending.original_name)
+
+
+def _water_level_preview_context(pending, columns, rows, mapping, error=""):
+    """What the matching step shows for a stored file and a set of column matches.
+
+    The counts come from the same ``plan_rows`` Import runs. A match that
+    cannot make a level (``error``) shows the step with one sentence and no counts.
+    """
+    context = {
+        "token": pending.token,
+        "columns": columns,
+        "field_rows": [
+            {"field": field, "label": label, "guess": mapping.get(field, "")}
+            for field, label in water_level_file.FIELDS
+        ],
+        "row_count": len(rows),
+        "sample_table": [[row.get(col, "") for col in columns] for row in rows[:5]],
+        "sample_count": min(len(rows), 5),
+        "error": error,
+        "planned": False,
+    }
+    if not error:
+        plan = water_level_file.plan_rows(rows, mapping)
+        groups, not_listed = pending_imports.cap_error_rows(
+            water_level_file.group_errors(plan["errors"])
+        )
+        context.update(
+            planned=True,
+            new_count=len(plan["new"]),
+            duplicate_count=plan["duplicates"],
+            error_count=len(plan["errors"]),
+            error_groups=groups,
+            error_groups_not_listed=not_listed,
+        )
+    return context
+
+
+@login_required
+@require_POST
+def water_level_import_preview(request):
+    """Read the upload (or the stored file again, with changed matches) and show what Import would do."""
+    uploaded = request.FILES.get("file")
+    if uploaded:
+        try:
+            pending, (columns, rows) = pending_imports.receive(
+                request, "water_levels", uploaded,
+                lambda file: water_level_file.parse_csv(file, uploaded.name),
+            )
+        except ImportError as exc:
+            return render(request, WATER_LEVEL_RESULT_TEMPLATE, {"error": str(exc)})
+        mapping = water_level_file.auto_map(columns)
+    elif request.POST.get("token"):
+        pending = pending_imports.previewed(request, "water_levels")
+        if pending is None:
+            return pending_imports.refused(request, "water_levels")
+        try:
+            columns, rows = _stored_water_levels(pending)
+        except FileNotFoundError:
+            return pending_imports.refused(request, "water_levels")
+        except ImportError as exc:
+            return render(request, WATER_LEVEL_RESULT_TEMPLATE, {"error": str(exc)})
+        mapping = water_level_file.posted_mapping(request.POST)
+    else:
+        return render(
+            request, WATER_LEVEL_RESULT_TEMPLATE,
+            {"error": water_level_file.NO_FILE_MESSAGE},
+        )
+
+    context = _water_level_preview_context(
+        pending, columns, rows, mapping, error=water_level_file.mapping_refusal(mapping)
+    )
+    return render(request, "wells/partials/_water_level_import_preview.html", context)
+
+
+@login_required
+@require_POST
+def water_level_import_commit(request):
+    """Start writing the stored file with the confirmed column matches."""
+    mapping = water_level_file.posted_mapping(request.POST)
+    refusal = water_level_file.mapping_refusal(mapping)
+    if refusal:
+        pending = pending_imports.previewed(request, "water_levels")
+        if pending is None:
+            return pending_imports.refused(request, "water_levels")
+        try:
+            columns, rows = _stored_water_levels(pending)
+        except FileNotFoundError:
+            return pending_imports.refused(request, "water_levels")
+        context = _water_level_preview_context(pending, columns, rows, mapping, error=refusal)
+        return render(request, "wells/partials/_water_level_import_preview.html", context)
+    return pending_imports.start_import(request, "water_levels", {"mapping": mapping})
 
 
 @login_required

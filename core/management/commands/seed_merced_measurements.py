@@ -794,6 +794,7 @@ class Command(BaseCommand):
                     # Shadow the logger for the same date, a few hundredths off.
                     depth += Decimal(str(round(rng.uniform(-0.12, 0.12), 4)))
                     depth += Decimal(str(round(rng.uniform(-0.09, 0.09), 4)))
+                    method = "Steel tape measurement"
                     notes = (
                         f"Steel-tape check against the transducer on the {agency} "
                         f"field round. Reads a few hundredths off the logger, "
@@ -801,6 +802,7 @@ class Command(BaseCommand):
                         f"way they always do."
                     )
                 else:
+                    method = "Electric sounder measurement"
                     depth += Decimal(str(round(rng.uniform(-0.18, 0.18), 4)))
                     notes = (
                         f"{declared} sounder reading, measured down from the "
@@ -818,6 +820,7 @@ class Command(BaseCommand):
                     source="manual",
                     recorded_by=None,   # ⛔ gate 2 requires core.User = 0
                     notes=notes,
+                    method=method,
                 )
                 created += 1
                 day += datetime.timedelta(days=visit_step)

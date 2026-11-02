@@ -16,7 +16,12 @@
 
 {% block page_actions %}
 {% if user_can_write and 'infrastructure' in enabled_modules %}
-<a href="{% url 'infrastructure:import' %}?type=well" class="btn-secondary btn-sm">Import</a>
+<a href="{% url 'infrastructure:import' %}?type=well" class="btn-secondary btn-sm">Import wells</a>
+{% endif %}
+{% if user_can_write %}
+<a href="{% url 'wells:water_level_import' %}" class="btn-secondary btn-sm">Import water levels</a>
+{% endif %}
+{% if user_can_write and 'infrastructure' in enabled_modules %}
 <a href="{% url 'infrastructure:add' %}?type=well" class="btn-primary btn-sm">+ Add well</a>
 {% endif %}
 {% endblock %}

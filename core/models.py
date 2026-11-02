@@ -283,6 +283,7 @@ class PendingImport(models.Model):
         ("lab_results", "Lab results"),
         ("production", "Production"),
         ("infrastructure", "Wells, diversions and recharge sites"),
+        ("water_levels", "Water levels"),
     ]
     STATUS_CHOICES = [
         ("previewed", "Previewed"),

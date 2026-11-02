@@ -446,6 +446,7 @@ one in full.
 | Only a boundary | `import_boundary`, then `auto_populate` | `import_boundary` loads a GeoJSON boundary file. `auto_populate` then downloads basins, parcels, streams and monitoring stations for that boundary, which must already be on the site. |
 | Parcel outlines, as GeoJSON or a shapefile | `import_parcels` | Water accounts link to parcels, so import the parcels before you create accounts. |
 | A list of wells, as a CSV file | The import screen at `/infrastructure/import/?type=well`, or `import_wells` | Both create the same records. The screen asks you to match the file's columns first. |
+| Water levels measured at the wells, as a CSV file | `/wells/water-levels/import/` | It reads DWR's groundwater level export and a sheet of the organization's own. Each row names its well by name, state well number or WCR number, so import the wells first. |
 | A list of water rights | `/surface/rights/import/` | It reads a CSV file. Import the water rights before the points of diversion. |
 | Points of diversion, as a CSV, GeoJSON, KML or shapefile | The same import screen as the wells, at `/infrastructure/import/?type=diversion` | |
 | Storage ponds or recharge sites | The same import screen, with `?type=storage` or `?type=recharge_site` | Each of these import pages links to the others under "Importing something else?". |
@@ -462,8 +463,8 @@ month it chooses. Set the answer on the Delivery Settings page
 appears only when the site runs the `surface` section. This answer applies only to
 diversion files, and it is separate from the month the site's water year starts in.
 
-Water accounts and allocations have no import. Create them on their pages under Water accounting: Accounts and Allocations. Before the first allocation, set the month the water year starts in on Delivery Settings, and create each water year from the first day of a month to the last day of a month. OpenH2O has no page yet for entering water-level readings at a well or
-readings at a monitoring station. Someone with a staff account, such as the
+Water accounts and allocations have no import. Create them on their pages under Water accounting: Accounts and Allocations. Before the first allocation, set the month the water year starts in on Delivery Settings, and create each water year from the first day of a month to the last day of a month. Water levels can be typed one at a time on the well's page. OpenH2O has no page yet for
+entering readings at a monitoring station. Someone with a staff account, such as the
 superuser from Phase 2, can add them on the administration site at `/admin/`. The
 Data import guide lists every record that is entered by hand and the page for each.
 

@@ -22,5 +22,26 @@ urlpatterns = [
         views.meter_reading_add,
         name="meter_reading_add",
     ),
+    # A depth to water is entered once, on the well, or imported from a file.
+    path(
+        "<int:pk>/water-level/add/",
+        views.water_level_add,
+        name="water_level_add",
+    ),
+    path(
+        "water-levels/import/",
+        views.water_level_import,
+        name="water_level_import",
+    ),
+    path(
+        "water-levels/import/preview/",
+        views.water_level_import_preview,
+        name="water_level_import_preview",
+    ),
+    path(
+        "water-levels/import/commit/",
+        views.water_level_import_commit,
+        name="water_level_import_commit",
+    ),
     path("geojson/", views.wells_geojson, name="geojson"),
 ]

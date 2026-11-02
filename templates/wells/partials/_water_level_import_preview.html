@@ -1,0 +1,107 @@
+{% comment %}
+Matching and preview step for the water level import. The matching card is the
+infrastructure import's (_import_mapping.html) with the diversion preview's
+two buttons: "Update preview" runs the same dry run against changed matches,
+"Import" commits. Nothing is written until the second is pressed. The stored
+upload rides along as a hidden token.
+
+`error`: set when the matches cannot make a level (no Well, Date, or Depth or
+Reason); the step then shows one sentence and no counts.
+{% endcomment %}
+{% if error %}
+<div class="card-raised" style="border-left: 3px solid var(--color-error); padding: var(--space-md); margin-bottom: var(--space-md);">
+  <p class="text-base" style="margin: 0; color: var(--color-error);">{{ error }}</p>
+</div>
+{% endif %}
+<div class="card-raised">
+  <h2 class="card-header-ruled">Match the file's columns</h2>
+  <p class="text-base text-secondary mt-md">OpenH2O found <strong>{{ row_count }}</strong> row{{ row_count|pluralize }} and <strong>{{ columns|length }}</strong> column{{ columns|pluralize }}, and matched the fields below to the file's columns by name. Change any match that is wrong, then press Import.</p>
+
+  <form class="mt-lg" id="import-mapping-form">
+    {% csrf_token %}
+    <input type="hidden" name="token" value="{{ token }}">
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width: 45%;">Field</th>
+          <th>Your column</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for fr in field_rows %}
+        <tr>
+          <td>{{ fr.label }}</td>
+          <td>
+            <select name="map:{{ fr.field }}" class="form-select">
+              <option value="">Not imported</option>
+              {% for col in columns %}
+              <option value="{{ col }}"{% if fr.guess == col %} selected{% endif %}>{{ col }}</option>
+              {% endfor %}
+            </select>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="row-start pt-sm mt-lg" style="gap: var(--space-sm);">
+      <button type="submit" class="btn-secondary"
+        hx-post="{% url 'wells:water_level_import_preview' %}"
+        hx-target="#import-area"
+        hx-include="closest form">Update preview</button>
+      <button type="submit" class="btn-primary"
+        hx-post="{% url 'wells:water_level_import_commit' %}"
+        hx-target="#import-area"
+        hx-include="closest form">Import{% if planned %} {{ new_count }} level{{ new_count|pluralize }}{% endif %}</button>
+      <span id="commit-spinner" class="htmx-indicator text-tertiary text-sm">Creating&hellip;</span>
+    </div>
+  </form>
+</div>
+
+{% if planned %}
+<div class="card-raised">
+  <h3 class="section-header-sm">What the import would do</h3>
+  <div class="row-start" style="gap: var(--space-sm); margin-top: var(--space-md);">
+    <span class="badge badge-green">New levels {{ new_count }}</span>
+    {% if duplicate_count %}<span class="badge badge-orange">Already on file {{ duplicate_count }}</span>{% endif %}
+    {% if error_count %}<span class="badge badge-orange">Errors {{ error_count }}</span>{% endif %}
+  </div>
+</div>
+
+{% if error_count %}
+<div class="card-raised">
+  <h3 class="section-header-sm">Row errors</h3>
+  <table class="data-table mt-md">
+    <thead><tr><th style="width: 6rem;">Row</th><th>Problem</th></tr></thead>
+    <tbody>
+      {% comment %} One row per distinct message (wells/water_level_import.py group_errors), its row count and first rows. {% endcomment %}
+      {% for group in error_groups %}
+      <tr><td class="text-mono">{% if group.count == 1 %}{{ group.first_rows.0 }}{% else %}{{ group.count }} rows: {{ group.first_rows|join:", " }}{% if group.more %} ...{% endif %}{% endif %}</td><td class="text-furnace">{{ group.message }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% include "core/partials/_rows_not_listed.html" with count=error_groups_not_listed what="kinds of row error" %}
+</div>
+{% endif %}
+{% endif %}
+
+<div class="card-raised">
+  <h3 class="section-header-sm">The file's first {{ sample_count }} row{{ sample_count|pluralize }}</h3>
+  <div style="overflow-x: auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          {% for col in columns %}<th class="text-mono">{{ col }}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for cells in sample_table %}
+        <tr>
+          {% for cell in cells %}<td>{{ cell|default:"" }}</td>{% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>

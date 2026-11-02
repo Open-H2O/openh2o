@@ -1,0 +1,68 @@
+{% comment %}
+  Add a water level (wells/forms.py WaterLevelForm, wells/views.py water_level_add).
+  Shown to a writer on every well, at the foot of the Monitoring data card, or
+  in a card of its own where that card would sit (`standalone`). The form is the
+  meter form's shape: a ruled top, an h3, a .form-grid of .form-group cells.
+
+  With scripts off the Reason select sits under the No measurement box and both
+  the depth and the reason show; the form refuses the pair with a sentence. The
+  script at the foot moves the Reason into the depth's place and shows one of
+  the two for the box's state, clearing the depth when the box is ticked.
+{% endcomment %}
+<form method="post" action="{% url 'wells:water_level_add' well.pk %}" class="form-grid" {% if standalone %}style="margin: 0;"{% else %}style="padding-top: var(--space-md); margin-top: var(--space-md); border-top: 1px solid var(--color-border);"{% endif %}>
+  {% csrf_token %}
+  <h3 class="text-sm font-semibold text-secondary m-0 form-span-2">Add a water level</h3>
+  {% if level_form.non_field_errors %}
+  <div class="text-xs form-span-2" style="color: var(--furnace-400);">{{ level_form.non_field_errors|join:", " }}</div>
+  {% endif %}
+  <div class="form-group">
+    <label class="field-label" for="{{ level_form.level_date.id_for_label }}">Date</label>
+    {{ level_form.level_date }}
+    {% if level_form.level_date.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ level_form.level_date.errors|join:", " }}</span>{% endif %}
+  </div>
+  <div class="form-group">
+    <label class="field-label" for="{{ level_form.method.id_for_label }}">Method</label>
+    {{ level_form.method }}
+    {% if level_form.method.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ level_form.method.errors|join:", " }}</span>{% endif %}
+  </div>
+  <div class="form-group">
+    <label class="field-label" for="{{ level_form.depth_ft.id_for_label }}">Depth to water (ft below land surface)</label>
+    {{ level_form.depth_ft }}
+    {% if level_form.depth_ft.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ level_form.depth_ft.errors|join:", " }}</span>{% endif %}
+  </div>
+  <div class="form-group" style="align-self: end;">
+    <label class="ledger-check"><input type="checkbox" name="no_measurement" value="1" id="id_no_measurement"{% if level_form.no_measurement.value %} checked{% endif %}> No measurement</label>
+    <div id="level-reason-cell">
+      <label class="field-label" for="{{ level_form.reason.id_for_label }}" style="margin-top: var(--space-sm);">Reason</label>
+      {{ level_form.reason }}
+      {% if level_form.reason.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ level_form.reason.errors|join:", " }}</span>{% endif %}
+    </div>
+  </div>
+  <div class="form-group form-span-2">
+    <label class="field-label" for="{{ level_form.notes.id_for_label }}">Notes</label>
+    {{ level_form.notes }}
+  </div>
+  <div class="form-span-2"><button type="submit" class="btn-primary btn-sm">Save level</button></div>
+</form>
+<script>
+(function () {
+  var box = document.getElementById('id_no_measurement');
+  var depth = document.getElementById('id_depth_ft');
+  var reasonCell = document.getElementById('level-reason-cell');
+  if (!box || !depth || !reasonCell) return;
+  var depthCell = depth.parentNode;
+  // Move the reason into the depth's place: one of the two shows at a time.
+  depthCell.parentNode.insertBefore(reasonCell, depthCell.nextSibling);
+  reasonCell.className = 'form-group';
+  reasonCell.firstElementChild.style.marginTop = '0';
+  function sync() {
+    depthCell.hidden = box.checked;
+    reasonCell.hidden = !box.checked;
+  }
+  box.addEventListener('change', function () {
+    if (box.checked) depth.value = '';
+    sync();
+  });
+  sync();
+})();
+</script>

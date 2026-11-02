@@ -1,11 +1,11 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""The well page's measurement history: meter reads and a monthly water-level digest.
+"""The well page's measurement history: meter reads, hand-entered visits and a logger's monthly digest.
 
 The well page promises "measurement history". The rows exist — the ``measurements`` app is model-only by design
 (``core/modules.py``, "no views, no nav"), so a meter's reads and a logger's
 water levels have no page of their own and belong on the well they measure.
 
-Two shapes come out of here, both grouped by WATER YEAR (October through
+Three shapes come out of here, all grouped by WATER YEAR (October through
 September unless the site sets another month, named for the year it ends in,
 ``WY 2025-2026``) and listed newest
 first. A single year hides the comparison that makes the record worth having.
@@ -13,25 +13,28 @@ first. A single year hides the comparison that makes the record worth having.
 * ``meter_history(well)`` — every current meter's totalizer reads, the read and
   the delta the seed wrote into ``calculated_volume``. No arithmetic here: the
   delta is the stored column, and the ledger recomputes it from the two reads.
-* ``water_level_history(well)`` — a monthly digest of depth to water. The
-  month's close is its LAST reading; the change is that close minus the previous
-  month's close, chronologically, so a dry year reads as a run of positive
-  changes (deeper) and a wet winter as negatives. Built here, never in the
-  template.
+* ``visit_history(well)``: the levels a person measured by hand or imported
+  from a file, one row each, newest first: a depth, or the reason no depth
+  could be read.
+* ``water_level_history(well)``: a monthly digest of a LOGGER's depth to
+  water. The month's close is its LAST reading; the change is that close minus
+  the previous month's close, chronologically, so a dry year reads as a run of
+  positive changes (deeper) and a wet winter as negatives. Built here, never in
+  the template.
 
-**Which record the digest reads.** A logger (a ``Sensor`` on the well) wins
-where the well has one; a well with only the hand-entered ``WaterMeasurement``
-record gets that instead. The two are not mixed: the seed deliberately sets the
-manual sounder a few hundredths off the transducer, and a digest that
-interleaved them would print that disagreement as movement. Readings are
-selected by the observed property ``groundwater_level_depth``; a sensor's
-anomalous rows are dropped when the sensor asks for it (``exclude_anomalies``),
-because a transducer logging in air during a calibration visit "is the
-instrument, not the aquifer" (the seed's own note on that row).
+**Why the two are separate tables.** The digest reads the logger only. The seed
+deliberately sets the manual sounder a few hundredths off the transducer, and a
+digest that interleaved them would print that disagreement as movement; a
+well with no logger has no digest, and its visits table is its record. A
+sensor's anomalous rows are dropped when the sensor asks for it
+(``exclude_anomalies``), because a transducer logging in air during a
+calibration visit "is the instrument, not the aquifer" (the seed's own note on
+that row).
 """
 from collections import OrderedDict
 from decimal import Decimal
 
+from django.db.models import Q
 from django.utils import timezone
 
 from accounting.carryover_math import water_year_label as _label
@@ -116,15 +119,59 @@ def _logger_points(well):
     return points
 
 
-def _hand_entered_points(well):
-    qs = WaterMeasurement.objects.filter(
-        well=well, observed_property__key=DEPTH_PROPERTY
-    ).order_by("measurement_date")
-    return [(row.measurement_date, row.value) for row in qs]
+def visit_history(well):
+    """The well's hand-entered levels by water year, newest first; ``[]`` when it has none.
+
+    A visit is a ``WaterMeasurement`` of the depth-to-water property or of the
+    groundwater-level type. Each year is ``{"label", "visits"}`` and each visit
+    has ``when``, ``value`` (``None`` when no depth was read), ``reason`` and
+    ``method``.
+    """
+    start_month = water_year_start_month()
+    rows = (
+        WaterMeasurement.objects.filter(well=well)
+        .filter(Q(observed_property__key=DEPTH_PROPERTY) | Q(measurement_type="groundwater_level"))
+        .order_by("-measurement_date", "-pk")
+    )
+    by_year = OrderedDict()
+    for row in rows:
+        when = timezone.localtime(row.measurement_date)
+        visit = {
+            "when": when,
+            "value": row.value,
+            "reason": row.no_measurement_reason,
+            "method": row.method,
+        }
+        by_year.setdefault(water_year(when.date(), start_month), []).append(visit)
+    return [
+        {"label": water_year_label(wy, start_month), "visits": visits}
+        for wy, visits in sorted(by_year.items(), reverse=True)
+    ]
+
+
+def history_rows(has_meters, has_visits, has_digest):
+    """How the history card lays its tables out: rows of up to two, by name.
+
+    The order is meter reads, visits, logger digest. A well with meter reads
+    and neither of the others keeps the sentence that says no level is
+    recorded, in the second place. ``[]`` means the well has nothing to show.
+    """
+    if not (has_meters or has_visits or has_digest):
+        return []
+    names = []
+    if has_meters:
+        names.append("meters")
+    if has_visits:
+        names.append("visits")
+    if has_digest:
+        names.append("digest")
+    if has_meters and not (has_visits or has_digest):
+        names.append("no_levels")
+    return [names[i:i + 2] for i in range(0, len(names), 2)]
 
 
 def water_level_history(well):
-    """``{"source": ..., "years": [...]}`` or ``None`` when the well has no record.
+    """``{"years": [...]}`` or ``None`` when the well has no logger record.
 
     ``years`` is newest first; each year's ``months`` newest first; each month
     carries ``month`` (the first of the month), ``opening``, ``close`` and
@@ -133,10 +180,6 @@ def water_level_history(well):
     """
     start_month = water_year_start_month()
     points = _logger_points(well)
-    source = "logger"
-    if not points:
-        points = _hand_entered_points(well)
-        source = "hand-entered"
     if not points:
         return None
 
@@ -173,4 +216,4 @@ def water_level_history(well):
         }
         for wy, rows in sorted(by_year.items(), reverse=True)
     ]
-    return {"source": source, "years": years}
+    return {"years": years}

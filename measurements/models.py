@@ -23,6 +23,42 @@ QUALITY_CHOICES = [
     ("estimated", "Estimated"),
 ]
 
+#: The reasons a hand measurement of depth to water was not made, in DWR's
+#: order. Each value is DWR's wording exactly (a published identifier keeps
+#: the publisher's casing, DESIGN.md copy rule 2), so a DWR file imports
+#: without translation.
+NO_MEASUREMENT_REASONS = [
+    (reason, reason)
+    for reason in (
+        "Pumping",
+        "Temporarily inaccessible",
+        "Dry well",
+        "Can't get tape in casing",
+        "Measurement Discontinued",
+        "Tape hung up",
+        "Well has been destroyed",
+        "Pump house locked",
+        "Flowing artesian well",
+        "Unable to locate well",
+        "Casing leaking or wet",
+        "Special/Other",
+    )
+]
+
+#: The ways a depth to water was measured, in DWR's order and wording.
+WATER_LEVEL_METHODS = [
+    (method, method)
+    for method in (
+        "Electric sounder measurement",
+        "Steel tape measurement",
+        "Acoustic or sonic sounder",
+        "Airline measurement, pressure gage, or manometer",
+        "Electronic pressure transducer",
+        "Other",
+        "Unknown",
+    )
+]
+
 
 class Meter(models.Model):
     METER_TYPE_CHOICES = [
@@ -170,7 +206,9 @@ class WaterMeasurement(models.Model):
         blank=True,
         related_name="water_measurements",
     )
-    value = models.DecimalField(max_digits=14, decimal_places=4)
+    #: Empty only for a groundwater level with a ``no_measurement_reason``: the
+    #: visit happened and no depth was read.
+    value = models.DecimalField(max_digits=14, decimal_places=4, null=True, blank=True)
     unit = models.CharField(max_length=20)
     measurement_date = models.DateTimeField()
     parcel = models.ForeignKey(
@@ -184,10 +222,34 @@ class WaterMeasurement(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
     )
     notes = models.TextField(blank=True)
+    no_measurement_reason = models.CharField(
+        verbose_name="Reason",
+        max_length=40, blank=True, default="", choices=NO_MEASUREMENT_REASONS
+    )
+    method = models.CharField(
+        verbose_name="Method",
+        max_length=60, blank=True, default="", choices=WATER_LEVEL_METHODS
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["-measurement_date"]
+        constraints = [
+            # A groundwater level is either a depth or a reason no depth was
+            # read, never both and never neither. Other kinds are not held to it.
+            models.CheckConstraint(
+                condition=(
+                    ~models.Q(measurement_type="groundwater_level")
+                    | (
+                        models.Q(value__isnull=False, no_measurement_reason="")
+                        | models.Q(value__isnull=True, no_measurement_reason__gt="")
+                    )
+                ),
+                name="groundwater_level_depth_or_reason",
+            ),
+        ]
 
     def __str__(self):
+        if self.value is None:
+            return f"{self.name}: {self.no_measurement_reason} @ {self.measurement_date}"
         return f"{self.name}: {self.value} {self.unit} @ {self.measurement_date}"

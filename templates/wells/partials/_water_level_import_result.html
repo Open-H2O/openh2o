@@ -1,0 +1,40 @@
+{% comment %}
+Outcome of a water level import. Two shapes, like the other importers' result
+blocks: an error before any row was considered, or the count of what was saved
+and skipped, with the row errors grouped by message.
+{% endcomment %}
+{% if error %}
+<div class="card-raised" style="border-left: 3px solid var(--color-error); padding: var(--space-md);">
+  <p class="text-base" style="margin: 0; color: var(--color-error);">{{ error }}</p>
+</div>
+{% else %}
+<div class="card-raised">
+  <h2 class="card-header-ruled">Import complete</h2>
+
+  <div class="row-start" style="gap: var(--space-sm); margin-top: var(--space-md);">
+    <span class="badge badge-green">New levels {{ created }}</span>
+    {% if skipped_duplicates %}<span class="badge badge-orange">Already on file {{ skipped_duplicates }}</span>{% endif %}
+    {% if error_count %}<span class="badge badge-orange">Errors {{ error_count }}</span>{% endif %}
+  </div>
+
+  <p class="text-base text-secondary mt-md">OpenH2O imported {{ created }} water level{{ created|pluralize }} and skipped {{ skipped_duplicates }} already on file.</p>
+
+  {% if error_count %}
+  <h3 class="section-header-sm mt-lg">Row errors</h3>
+  <table class="data-table mt-md">
+    <thead><tr><th style="width: 6rem;">Row</th><th>Problem</th></tr></thead>
+    <tbody>
+      {% for group in error_groups %}
+      <tr><td class="text-mono">{% if group.count == 1 %}{{ group.first_rows.0 }}{% else %}{{ group.count }} rows: {{ group.first_rows|join:", " }}{% if group.more %} ...{% endif %}{% endif %}</td><td class="text-furnace">{{ group.message }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% include "core/partials/_rows_not_listed.html" with count=error_groups_not_listed what="kinds of row error" %}
+  {% endif %}
+
+  <div class="row-start pt-sm" style="margin-top: var(--space-lg); gap: var(--space-sm);">
+    <a href="{% url 'wells:list' %}" class="btn-primary">View Wells</a>
+    <a href="{% url 'wells:water_level_import' %}" class="btn-secondary">Import another file</a>
+  </div>
+</div>
+{% endif %}

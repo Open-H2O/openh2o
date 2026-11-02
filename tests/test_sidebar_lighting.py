@@ -159,6 +159,7 @@ EXPECTED_LIT = {
     "/users/<int:pk>/temporary-password/": "Users",
     "/wells/": "Wells",
     "/wells/<int:pk>/": "Wells",
+    "/wells/water-levels/import/": "Wells",
 }
 
 #: The infrastructure add and import pages by ``?type=``: each lights the list

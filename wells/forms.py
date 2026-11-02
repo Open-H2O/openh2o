@@ -5,7 +5,17 @@ import datetime as dt
 from django import forms
 from django.utils import timezone
 
-from measurements.models import MeterReading
+from measurements.models import (
+    NO_MEASUREMENT_REASONS,
+    WATER_LEVEL_METHODS,
+    MeterReading,
+    WaterMeasurement,
+)
+from standards.models import ObservedProperty
+
+#: The observed property every hand-entered depth to water carries (the seed
+#: and the imported levels use it too).
+DEPTH_PROPERTY_KEY = "groundwater_level_depth"
 
 
 class MeterReadingForm(forms.Form):
@@ -84,4 +94,89 @@ class MeterReadingForm(forms.Form):
             calculated_volume=self.volume,
             notes=data.get("notes", ""),
             read_by=user if getattr(user, "is_authenticated", False) else None,
+        )
+
+
+def level_name(well):
+    """The name a well's depth-to-water record carries: its registration ID, else its name."""
+    return f"{well.well_registration_id or well.name} depth to water"
+
+
+def level_moment(day):
+    """Noon, in the site's time zone, on ``day``: when a level has a date and no time."""
+    return timezone.make_aware(dt.datetime(day.year, day.month, day.day, 12, 0))
+
+
+class WaterLevelForm(forms.Form):
+    """One depth to water read by hand, or a visit where none could be read.
+
+    A person gives a depth or ticks No measurement and picks the reason, never
+    both and never neither. The script on the page hides the unused field; with
+    scripts off both show, and this form refuses the pair.
+    """
+
+    level_date = forms.DateField(
+        label="Date",
+        widget=forms.DateInput(attrs={"type": "date", "class": "form-input"}),
+    )
+    method = forms.ChoiceField(
+        label="Method",
+        required=False,
+        choices=[("", "Not stated")] + WATER_LEVEL_METHODS,
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+    depth_ft = forms.DecimalField(
+        label="Depth to water (ft below land surface)",
+        required=False,
+        max_digits=14,
+        decimal_places=4,
+        widget=forms.NumberInput(attrs={"class": "form-input", "step": "0.01"}),
+    )
+    no_measurement = forms.BooleanField(label="No measurement", required=False)
+    reason = forms.ChoiceField(
+        label="Reason",
+        required=False,
+        choices=[("", "")] + NO_MEASUREMENT_REASONS,
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+    notes = forms.CharField(
+        label="Notes",
+        required=False,
+        widget=forms.Textarea(
+            attrs={"class": "form-textarea", "rows": 2, "id": "id_level_notes"}
+        ),
+    )
+
+    def clean(self):
+        cleaned = super().clean()
+        if "depth_ft" in self.errors or "reason" in self.errors:
+            return cleaned
+        depth = cleaned.get("depth_ft")
+        unmeasured = cleaned.get("no_measurement")
+        if depth is None and not unmeasured:
+            raise forms.ValidationError("Enter a depth to water or tick No measurement.")
+        if depth is not None and unmeasured:
+            raise forms.ValidationError(
+                "Enter a depth to water or tick No measurement, not both."
+            )
+        if unmeasured and not cleaned.get("reason"):
+            raise forms.ValidationError("Pick a reason, or untick No measurement.")
+        return cleaned
+
+    def save(self, well, user=None):
+        data = self.cleaned_data
+        unmeasured = data["no_measurement"]
+        return WaterMeasurement.objects.create(
+            name=level_name(well),
+            measurement_type="groundwater_level",
+            observed_property=ObservedProperty.objects.filter(key=DEPTH_PROPERTY_KEY).first(),
+            value=None if unmeasured else data["depth_ft"],
+            unit="ft",
+            measurement_date=level_moment(data["level_date"]),
+            well=well,
+            source="manual",
+            recorded_by=user if getattr(user, "is_authenticated", False) else None,
+            notes=data.get("notes", ""),
+            method=data.get("method", ""),
+            no_measurement_reason=data["reason"] if unmeasured else "",
         )

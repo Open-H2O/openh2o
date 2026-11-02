@@ -132,7 +132,7 @@ docker compose exec web python manage.py import_wells /tmp/wells.csv
 
 | Field | Column read | Flag for a different name | Notes |
 |---|---|---|---|
-| Well name | `WELL_NAME` | `--name-field` | |
+| Well name | WELL_NAME | `--name-field` | |
 | Latitude | `LATITUDE` | `--lat-field` | |
 | Longitude | `LONGITUDE` | `--lon-field` | |
 | Well registration ID | `WELL_REG_ID` | `--reg-id-field` | The organization's own number for the well. A row whose registration ID is already on the site is skipped. |
@@ -179,6 +179,30 @@ basin and each storage pond row as a storage pond.
 Unlike `import_wells`, the screen refuses a row whose name is already on the site or
 appears twice in the file. A point of diversion that names a water right needs that
 right on the site first, so import the water rights before the points of diversion.
+
+### Water levels: the Import water levels screen
+
+The Import water levels button on the Wells page, and the same button in a well's
+Measurement history, open the import screen (`/wells/water-levels/import/`). It
+reads a CSV file of up to 25 MB, such as the Department of Water Resources' (DWR)
+groundwater level export or a sheet of the organization's own. Each row is one visit
+to a well: a depth to water in feet below land surface, or the reason the depth was not read.
+
+| Column | DWR's column | Required | Notes |
+|---|---|---|---|
+| Well | WELL_NAME | yes | The well's name, state well number or WCR number, as it is on the site. Capital letters and spaces at either end do not matter. A row whose well matches none, or more than one, is listed as an error. |
+| Date | MSMT_DATE | yes | Written as `YYYY-MM-DD` or `M/D/YYYY`, with or without a time. A date with no time is saved at noon. |
+| Depth | GSE_GWE | a depth or a reason | Feet below land surface. |
+| Reason | WLM_QA_DESC | a depth or a reason | One of the twelve reasons on the well page, in DWR's wording. On a row that has a depth, DWR's quality remark in this column is kept in the notes. |
+| Method | WLM_DESC | no | One of the seven methods on the well page, in DWR's wording. Any other method is kept in the notes. |
+| Notes | MSMT_CMT | no | Copied as written. |
+
+The mapping step shows the column OpenH2O matched to each field, and you can change
+any match. The preview counts the new levels, the rows already on file and the
+errors. A row whose well, date and depth (or reason) are already on the site is
+skipped. The import does not convert units: a file in meters, or one that gives a
+groundwater elevation or a depth below the top of the casing, needs a depth in feet
+below land surface before you import it.
 
 ### Water rights: the Water Rights Import screen
 
@@ -450,7 +474,8 @@ These records have no file import and no public source. Each has its own page:
 - Sampling points: Add sampling points on the Water Systems page (Drinking water > Water Systems)
 - The sampling schedule: `/drinking/schedule/add/`
 
-Water-level readings on a well and readings at a monitoring station have no page in
+A water level, or a visit with no measurement and its reason, is typed on the well's
+page under Add a water level. Readings at a monitoring station have no page in
 OpenH2O yet. Someone with a staff account can add them on the administration site at
 `/admin/`.
 
@@ -465,6 +490,7 @@ OpenH2O yet. Someone with a staff account can add them on the administration sit
    stations, and basins, parcels and streams if you need them.
 3. Import your parcels with `import_parcels`.
 4. Import your wells with `import_wells` or the Wells page's Import screen.
+   Then import the wells' water levels on the Import water levels screen.
 5. Import your water rights, or add them by hand, before the points of diversion.
    Then import points of diversion, storage ponds and recharge sites on the Import
    screen.
