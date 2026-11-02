@@ -1,0 +1,11 @@
+WELL_NAME,MSMT_DATE,GSE_GWE,WLM_QA_DESC,WLM_DESC,MSMT_CMT
+WCR0123456,3/5/2025,88.5,,Steel tape measurement,Spring round
+TWIN,2025-03-05,90,,,
+wcr0123456,03/05/2025 14:30,88.5,,Steel tape measurement,
+,2025-03-05,90,,,
+Alpha,2025-03-05,,Not a listed reason,,
+Alpha,2025-03-05,,,,
+Alpha,2025-03-05,x12,,,
+Alpha,not-a-date,70,,Dip meter,
+Alpha,2025-03-06,-1.5,Special/Other,Dip meter,
+Alpha,2025-03-07T08:15:00,,pumping,,

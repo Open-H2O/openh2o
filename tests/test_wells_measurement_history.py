@@ -27,7 +27,8 @@ below, never ``> 0`` and never a re-derivation of the page's own arithmetic
   Aug and Sep 2025 fall in WY 2024-2025; Oct and Nov 2025 in WY 2025-2026.
 * Water levels from a hand-entered record, on a well with no logger: 86.9398
   on 10 September 2025 and 87.5136 on 10 October 2025 render as 86.94 and
-  87.51, and the October change is 87.5136 - 86.9398 = 0.5738 -> 0.57.
+  87.51 in the Visits table, newest first. A well with no logger has no
+  monthly digest (151.6-04), so no change is printed.
 """
 import re
 from datetime import datetime
@@ -191,7 +192,7 @@ def test_each_water_year_of_the_depth_digest_closes_on_its_net_change():
     figure the closing row prints (typed here from the fixture, not summed)."""
     html = _page(_logged_well())
     section = html[html.index(SECTION_HEADING):]
-    digest = section[section.index("Depth to water"):]
+    digest = section[section.index("Logger, monthly close"):]
     table = digest[digest.index("<table"):digest.index("</table>")]
     closing = re.findall(r'<tr class="row-subtotal">.*?</tr>', table, re.S)
     assert len(closing) == 2
@@ -203,16 +204,23 @@ def test_each_water_year_of_the_depth_digest_closes_on_its_net_change():
     assert closing[0].count("<td></td>") == 1
 
 
-def test_a_well_with_only_a_hand_entered_record_still_gets_a_digest():
+def test_a_well_with_only_a_hand_entered_record_gets_visits_and_no_digest():
+    """The visits table is that well's record. A monthly digest of the same
+    rows would print the hand levels as movement, so only a logger gets one."""
     html = _page(_sounded_well())
     section = html[html.index(SECTION_HEADING):]
-    assert "86.94" in section
-    assert "87.51" in section
-    assert "0.57" in section
-    assert "hand-entered" in section
+    assert "Visits &middot; depth to water, ft below land surface" in section
+    table = section[section.index("<table"):section.index("</table>")]
+    assert "86.94" in table
+    assert "87.51" in table
+    assert table.index("87.51") < table.index("86.94")
+    assert "Logger, monthly close" not in section
+    assert "Net change" not in section
+    assert "0.57" not in section
+    assert "hand-entered" not in section
 
 
-def test_the_logger_wins_where_a_well_has_both_records():
+def test_the_logger_digest_reads_the_logger_only_where_a_well_has_both_records():
     well = _logged_well()
     prop = _depth_property()
     WaterMeasurement.objects.create(
@@ -221,13 +229,21 @@ def test_the_logger_wins_where_a_well_has_both_records():
     )
     section = _page(well)
     section = section[section.index(SECTION_HEADING):]
-    assert "80.35" in section
-    assert "55.55" not in section
+    digest = section[section.index("Logger, monthly close"):]
+    digest = digest[:digest.index("</table>")]
+    assert "80.35" in digest
+    assert "55.55" not in digest
+    # The hand level is a visit, beside the digest.
+    visits = section[section.index("Visits &middot;"):]
+    assert "55.55" in visits[:visits.index("</table>")]
 
 
 def test_a_well_with_nothing_recorded_renders_the_empty_sentence_and_no_table():
     html = _page(WellFactory(name="Bare well"))
     section = html[html.index(SECTION_HEADING):]
+    # The head is a .row-between (the heading and the import link), so the
+    # sentence follows the first `</div>`, not the heading.
+    section = section[section.index("</div>") + len("</div>"):]
     section = section[: section.index("</div>")]
     assert EMPTY_SENTENCE in section
     assert "<table" not in section

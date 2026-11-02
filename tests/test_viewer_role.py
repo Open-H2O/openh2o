@@ -285,6 +285,8 @@ WRITE_PAGES = [
     "surface:water_right_import_commit", "surface:water_right_import_preview",
     "surface:water_right_remove_parcel", "wells:edit_field",
     "wells:irrigated_parcel_edit_share", "wells:meter_reading_add",
+    "wells:water_level_add", "wells:water_level_import",
+    "wells:water_level_import_commit", "wells:water_level_import_preview",
 ]
 
 
