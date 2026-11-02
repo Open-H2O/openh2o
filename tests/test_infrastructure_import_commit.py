@@ -21,7 +21,8 @@ Four faults, each proven RED against the unfixed code before this plan's fix
       line saying nothing was created and why.
   (c) `?type=parcel` (also `use_area`, `usearea`) fell through `_supported_type`'s
       "unrecognised value" fallback and silently served the Well importer
-      (shape 6's own correction). It must now be a 404 naming `import_parcels`.
+      (shape 6's own correction). It was made a 404 naming `import_parcels`;
+      151.6-06 sends it to the Import use areas page instead.
   (d) The state's own OSWCR well export (`wells-oswcr.csv`, header read
       2026-09-20) matches none of the pre-existing alias spellings, which pins
       the crosswalk aliases added for it.
@@ -42,7 +43,10 @@ from django.urls import reverse
 
 from core.modules import ALL_MODULE_NAMES
 from infrastructure import importer
-from infrastructure.views import UNSUPPORTED_IMPORT_TYPE_MESSAGE
+from infrastructure.views import (
+    UNSUPPORTED_IMPORT_TYPE_MESSAGE,
+    USE_AREA_IMPORT_TYPE_MESSAGE,
+)
 from tests.import_flow import infrastructure_import_rows
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -208,27 +212,34 @@ def test_commit_failure_renders_nothing_was_created(auth_client, monkeypatch, se
 
 
 # ---------------------------------------------------------------------------
-# (c) an unsupported ?type is a 404 naming import_parcels, never a fallback
-#     to a different importer than the one asked for
+# (c) a use-area ?type goes to the Import use areas page; any other
+#     unsupported ?type is a 404, never a fallback to a different importer
+#     than the one asked for
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize("bad_type", ["parcel", "use_area", "usearea", "nonsense"])
-def test_unsupported_type_is_404_not_the_well_importer(auth_client, bad_type):
-    """Before this fix, `?type=parcel` (also `use_area`, `usearea`) fell
-    through `_supported_type`'s unrecognised-value fallback and returned 200
-    showing the Well importer's mapping page, headed "Well". Shape 6's own
-    correction is what caught it. `_import_type` must not do that: an
-    unsupported type is a 404 naming the real door for use areas.
+@pytest.mark.parametrize("use_area_type", ["parcel", "use_area", "usearea"])
+def test_a_use_area_type_goes_to_the_use_area_import_page(auth_client, use_area_type):
+    """`?type=parcel` (also `use_area`, `usearea`) once fell through
+    `_supported_type`'s unrecognised-value fallback and returned 200 showing
+    the Well importer's mapping page, headed "Well"; it was then a 404 naming
+    the import_parcels command. Use areas now have their own import page, so
+    the old address sends the person there.
     """
-    resp = auth_client.get(reverse("infrastructure:import") + f"?type={bad_type}")
+    resp = auth_client.get(reverse("infrastructure:import") + f"?type={use_area_type}")
+    assert resp.status_code == 302
+    assert resp["Location"] == reverse("parcels:use_area_import")
+
+
+@pytest.mark.django_db
+def test_an_unsupported_type_is_404_not_the_well_importer(auth_client):
+    resp = auth_client.get(reverse("infrastructure:import") + "?type=nonsense")
     assert resp.status_code == 404
     body = resp.content.decode()
     assert body == UNSUPPORTED_IMPORT_TYPE_MESSAGE
-    assert "import_parcels" in body
-    assert "docs/DATA-IMPORT.md" in body
-    assert "The bulk import page does not import this type." in body
+    assert body == "The bulk import page does not import this type."
+    assert "import_parcels" not in body
 
 
 @pytest.mark.django_db
@@ -241,7 +252,11 @@ def test_unsupported_type_404_on_commit_too(auth_client):
         {"infra_type": "parcel", "token": "00000000-0000-0000-0000-000000000000"},
     )
     assert resp.status_code == 404
-    assert resp.content.decode() == UNSUPPORTED_IMPORT_TYPE_MESSAGE
+    assert resp.content.decode() == USE_AREA_IMPORT_TYPE_MESSAGE
+    assert resp.content.decode() == (
+        "The bulk import page does not import use areas. "
+        "Import them on the Import use areas page."
+    )
 
 
 # ---------------------------------------------------------------------------

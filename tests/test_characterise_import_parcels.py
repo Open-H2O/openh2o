@@ -6,6 +6,7 @@ shown to change neither the Parcel rows nor the console output.
 """
 
 import json
+import zipfile
 from io import StringIO
 
 import pytest
@@ -106,5 +107,81 @@ class TestImportParcelsCharacterisation:
     def test_unreadable_file_reports_gdal_failure(self, tmp_path):
         bad = tmp_path / "bad.geojson"
         bad.write_text("not json at all")
-        with pytest.raises(CommandError, match="Failed to open file with GDAL"):
+        with pytest.raises(CommandError, match="OpenH2O cannot read this file as GeoJSON"):
             _run(str(bad))
+
+
+# ---------------------------------------------------------------------------
+# 151.6-06: the command reads through core/geofiles.py
+# ---------------------------------------------------------------------------
+
+@pytest.mark.django_db
+class TestFormatsAndJoining:
+    def test_a_zipped_shapefile_and_a_kml_import_as_the_page_reads_them(self, tmp_path):
+        from pathlib import Path
+
+        fixtures = Path(__file__).parent / "fixtures" / "real_map_files"
+        out = _run(str(fixtures / "sj_valley_subbasins_2227.zip"), "--parcel-number-field", "Basin_Subb")
+        assert out.splitlines() == ["Imported 5 parcels, 0 duplicates skipped, 0 errors"]
+        Parcel.objects.all().delete()
+        out = _run(str(fixtures / "sj_valley_subbasins_names.kml"), "--parcel-number-field", "Name")
+        assert out.splitlines() == ["Imported 5 parcels, 0 duplicates skipped, 0 errors"]
+
+    def test_a_bare_shapefile_path_is_still_read(self, tmp_path):
+        from pathlib import Path
+
+        fixtures = Path(__file__).parent / "fixtures" / "real_map_files"
+        with zipfile.ZipFile(fixtures / "sj_valley_subbasins_2227.zip") as zf:
+            zf.extractall(tmp_path)
+        shp = next(tmp_path.glob("*.shp"))
+        out = _run(str(shp), "--parcel-number-field", "Basin_Subb", "--dry-run")
+        assert out.splitlines()[-1] == "Imported 5 parcels, 0 duplicates skipped, 0 errors"
+
+    def test_two_features_on_one_number_are_one_parcel_holding_both(self, tmp_path):
+        path = tmp_path / "joined.geojson"
+        path.write_text(json.dumps({
+            "type": "FeatureCollection",
+            "features": [
+                _feature("CHAR-JOIN", "First Owner", -119.50),
+                _feature("CHAR-JOIN", "Second Owner", -119.40),
+                _feature("CHAR-ONE", "Solo", -119.30),
+            ],
+        }))
+
+        dry = _run(str(path), "--dry-run")
+        assert dry.splitlines() == [
+            "[DRY RUN] No records will be promoted.",
+            "Imported 2 parcels, 0 duplicates skipped, 0 errors",
+        ]
+        assert not Parcel.objects.filter(parcel_number__startswith="CHAR-").exists()
+
+        real = _run(str(path))
+        assert real.splitlines() == ["Imported 2 parcels, 0 duplicates skipped, 0 errors"]
+        joined = Parcel.objects.get(parcel_number="CHAR-JOIN")
+        assert joined.geometry.geom_type == "MultiPolygon"
+        assert joined.geometry.num_geom == 2
+        assert joined.owner_name == "First Owner"
+        assert ParcelStaging.objects.count() == 0
+
+    def test_a_joined_number_already_on_file_is_one_duplicate(self, tmp_path):
+        ParcelFactory(parcel_number="CHAR-JOIN")
+        path = tmp_path / "joined.geojson"
+        path.write_text(json.dumps({
+            "type": "FeatureCollection",
+            "features": [_feature("CHAR-JOIN", "A", -119.50), _feature("CHAR-JOIN", "B", -119.40)],
+        }))
+        assert _run(str(path)).splitlines() == [
+            "Imported 0 parcels, 1 duplicates skipped, 0 errors"
+        ]
+
+    def test_coordinates_that_are_not_longitude_and_latitude_are_refused(self, tmp_path):
+        feature = _feature("CHAR-FEET", "Feet", 0)
+        feature["geometry"]["coordinates"] = [[
+            [6_400_000, 2_000_000], [6_400_100, 2_000_000], [6_400_100, 2_000_100],
+            [6_400_000, 2_000_100], [6_400_000, 2_000_000],
+        ]]
+        path = tmp_path / "feet.geojson"
+        path.write_text(json.dumps({"type": "FeatureCollection", "features": [feature]}))
+        with pytest.raises(CommandError, match="not longitude and latitude"):
+            _run(str(path))
+        assert not Parcel.objects.filter(parcel_number="CHAR-FEET").exists()

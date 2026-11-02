@@ -546,3 +546,56 @@ class TestTheDropZone:
         assert match, "no drop-zone sentence"
         text = re.sub(r"<[^>]+>", "", match.group(1))
         assert " ".join(text.split()) == DROP_ZONE_SENTENCE
+
+
+# --------------------------------------------------------------------------
+# 151.6-06: a zip holding several shapefiles is refused, naming them
+# --------------------------------------------------------------------------
+
+def _zip_of(*names):
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        for name in names:
+            zf.writestr(name, b"x")
+    return buf.getvalue()
+
+
+@pytest.mark.django_db
+class TestAZipOfSeveralShapefiles:
+    """The reader used to take the first .shp by sorted path and ignore the
+    rest, so a zip of thirteen shapefiles whose first was empty said "This file
+    has no map features." It now refuses, on every page that reads a zip."""
+
+    def test_the_wizard_names_the_shapefiles_and_makes_no_boundary(self):
+        data = _zip_of("Shape/b.shp", "Shape/a.shp", "Shape/a.dbf")
+        resp = _post(_admin_client(), "two.zip", data)
+        assert _errors(resp) == [
+            "This zip holds 2 shapefiles: a.shp, b.shp. Upload a zip with only the one you want."
+        ]
+        assert Boundary.objects.count() == 0
+
+    def test_names_are_listed_without_their_folders_and_in_path_order(self):
+        data = _zip_of("z/one.shp", "a/two.shp")
+        errors = _errors(_post(_admin_client(), "two.zip", data))
+        assert errors == [
+            "This zip holds 2 shapefiles: two.shp, one.shp. Upload a zip with only the one you want."
+        ]
+
+    def test_ten_are_listed_and_the_rest_are_counted(self):
+        data = _zip_of(*[f"layer{n:02d}.shp" for n in range(15)])
+        errors = _errors(_post(_admin_client(), "many.zip", data))
+        listed = ", ".join(f"layer{n:02d}.shp" for n in range(10))
+        assert errors == [
+            f"This zip holds 15 shapefiles: {listed}, and 5 more. "
+            "Upload a zip with only the one you want."
+        ]
+
+    def test_exactly_ten_are_listed_with_no_more_clause(self):
+        data = _zip_of(*[f"layer{n:02d}.shp" for n in range(10)])
+        (error,) = _errors(_post(_admin_client(), "ten.zip", data))
+        assert error.startswith("This zip holds 10 shapefiles: layer00.shp")
+        assert error.endswith("layer09.shp. Upload a zip with only the one you want.")
+        assert "more" not in error
+
+    def test_one_shapefile_still_reads_as_before(self):
+        _assert_lands_on_confirm(_post(_admin_client(), "square.zip"))
