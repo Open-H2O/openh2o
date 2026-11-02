@@ -109,7 +109,7 @@ files = [
   "crontab.txt",
 ]
 labels = []
-checked_at = "8a99d70d"
+checked_at = "953a3149"
 
 [[section]]
 document = "README.md"
@@ -247,7 +247,7 @@ files = [
   "static/js/map-core.js",
 ]
 labels = []
-checked_at = "8a99d70d"
+checked_at = "953a3149"
 
 [[section]]
 document = "README.md"
@@ -389,7 +389,7 @@ files = [
   "core/models.py",
 ]
 labels = []
-checked_at = "38b6199e"
+checked_at = "953a3149"
 
 [[section]]
 document = "ARCHITECTURE.md"
@@ -443,7 +443,7 @@ files = [
   "core/forms.py",
 ]
 labels = []
-checked_at = "8a99d70d"
+checked_at = "953a3149"
 
 [[section]]
 document = "ARCHITECTURE.md"
@@ -761,7 +761,7 @@ labels = [
   { text = "Setup Wizard", where = "core/modules.py" },
   { text = "Enable all", where = "templates/setup/partials/_station_review.html" },
 ]
-checked_at = "8a99d70d"
+checked_at = "953a3149"
 
 [[section]]
 document = "DEPLOY.md"
@@ -856,7 +856,7 @@ labels = [
   { text = "Aerial", where = "static/js/map-core.js" },
   { text = "Dark", where = "static/js/map-core.js" },
 ]
-checked_at = "d09cd007"
+checked_at = "953a3149"
 
 [[section]]
 document = "DEPLOY.md"
@@ -945,7 +945,7 @@ files = [
   "feedback/models.py",
 ]
 labels = []
-checked_at = "38b6199e"
+checked_at = "953a3149"
 
 [[section]]
 document = "DEPLOY.md"
@@ -1054,7 +1054,7 @@ labels = [
   { text = "Continue with Google", where = "templates/account/signup.html" },
   { text = "Users", where = "core/modules.py" },
 ]
-checked_at = "8a99d70d"
+checked_at = "953a3149"
 
 [[section]]
 document = "DEPLOY.md"
@@ -1110,7 +1110,7 @@ files = [
 labels = [
   { text = "Delivery Settings", where = "core/modules.py" },
 ]
-checked_at = "8a99d70d"
+checked_at = "953a3149"
 
 [[section]]
 document = "docs/ROADMAP.md"
@@ -1166,7 +1166,7 @@ labels = [
   { text = "Use ledger", where = "templates/accounting/ledger_list.html" },
   { text = "Dry run", where = "templates/accounting/csv_upload.html" },
 ]
-checked_at = "60a428b8"
+checked_at = "953a3149"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1195,7 +1195,7 @@ labels = [
   { text = "Type an extent", where = "templates/setup/wizard.html" },
   { text = "Start without one", where = "templates/setup/wizard.html" },
 ]
-checked_at = "d09cd007"
+checked_at = "953a3149"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1203,14 +1203,14 @@ heading = "3. File imports"
 files = []
 why_none = "Heading line only; no claim about the code."
 labels = []
-checked_at = "d09cd007"
+checked_at = "953a3149"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
 heading = "Use areas: the Import use areas screen, or `import_parcels`"
 files = ["parcels/management/commands/import_parcels.py", "parcels/models.py", "infrastructure/views.py", "parcels/use_area_import.py", "parcels/views.py", "templates/parcels/use_area_import.html", "templates/parcels/partials/_use_area_import_preview.html", "core/geofiles.py"]
 labels = []
-checked_at = "d09cd007"
+checked_at = "953a3149"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1240,7 +1240,7 @@ labels = [
   { text = "Surface diversions", where = "templates/surface/pod_list.html" },
   { text = "Recharge sites", where = "templates/recharge/list.html" },
 ]
-checked_at = "38b6199e"
+checked_at = "953a3149"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1304,7 +1304,7 @@ labels = [
   { text = "Reporting year", where = "templates/accounting/delivery_settings.html" },
   { text = "Data status", where = "templates/surface/partials/_diversion_import_preview.html" },
 ]
-checked_at = "38b6199e"
+checked_at = "953a3149"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1452,21 +1452,21 @@ labels = [
   { text = "Import", where = "templates/wells/list.html" },
   { text = "Upload CSV", where = "templates/accounting/ledger_list.html" },
 ]
-checked_at = "38b6199e"
+checked_at = "953a3149"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
 heading = "Data Standards & Interoperability"
 files = ["standards/management/commands/seed_observed_properties.py", "standards/management/commands/export_crosswalk.py", "docker-compose.yml"]
 labels = []
-checked_at = "8a99d70d"
+checked_at = "953a3149"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
 heading = "1. The kinds of measurement (ObservedProperty)"
 files = ["standards/management/commands/seed_observed_properties.py", "standards/models.py"]
 labels = []
-checked_at = "8a99d70d"
+checked_at = "953a3149"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
@@ -1486,14 +1486,14 @@ files = [
   "datasync/models.py",
 ]
 labels = []
-checked_at = "8a99d70d"
+checked_at = "953a3149"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
 heading = "3. Quality flags and vertical datum"
 files = ["measurements/models.py", "measurements/admin.py", "wells/models.py"]
 labels = []
-checked_at = "38b6199e"
+checked_at = "953a3149"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
@@ -1507,7 +1507,7 @@ files = [
   "templates/drinking/sampling_point_detail.html",
 ]
 labels = []
-checked_at = "3a340c75"
+checked_at = "953a3149"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
@@ -1519,7 +1519,7 @@ files = [
   "Makefile",
 ]
 labels = []
-checked_at = "38b6199e"
+checked_at = "953a3149"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
@@ -1531,7 +1531,7 @@ files = [
   "core/modules.py",
 ]
 labels = []
-checked_at = "8a99d70d"
+checked_at = "953a3149"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
@@ -1548,7 +1548,7 @@ labels = [
   { text = "Methodology Settings", where = "templates/accounting/methodology_settings.html" },
   { text = "USDA-SCS (TR-21)", where = "accounting/precip_math.py" },
 ]
-checked_at = "3a340c75"
+checked_at = "953a3149"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
@@ -1567,14 +1567,14 @@ labels = [
   { text = "Delivery settings", where = "templates/accounting/delivery_settings.html" },
   { text = "Where your record addresses are published", where = "core/forms.py" },
 ]
-checked_at = "38b6199e"
+checked_at = "953a3149"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
 heading = "Reusing the design in another platform"
 files = ["standards/management/commands/check_conformance.py", "standards/management/commands/seed_observed_properties.py"]
 labels = []
-checked_at = "8a99d70d"
+checked_at = "953a3149"
 
 [[section]]
 document = "docs/water-budget-terms.md"
@@ -1603,7 +1603,7 @@ labels = [
   { text = "Methodology Settings", where = "templates/accounting/methodology_settings.html" },
   { text = "Delivery settings", where = "templates/accounting/delivery_settings.html" },
 ]
-checked_at = "38b6199e"
+checked_at = "953a3149"
 
 [[section]]
 document = "docs/water-budget-terms.md"
@@ -1809,7 +1809,7 @@ labels = [
   { text = "I have my own data", where = "templates/setup/run.html" },
   { text = "Enable all", where = "templates/setup/partials/_station_review.html" },
 ]
-checked_at = "8a99d70d"
+checked_at = "953a3149"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1861,7 +1861,7 @@ labels = [
   { text = "Schedule", where = "core/modules.py" },
   { text = "+ Add to schedule", where = "templates/drinking/schedule.html" },
 ]
-checked_at = "8a99d70d"
+checked_at = "953a3149"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1899,7 +1899,7 @@ labels = [
   { text = "Delivery Settings", where = "core/modules.py" },
   { text = "Reporting year", where = "templates/accounting/delivery_settings.html" },
 ]
-checked_at = "8a99d70d"
+checked_at = "953a3149"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -2004,7 +2004,7 @@ labels = [
   { text = "Viewer", where = "templates/core/users_list.html" },
   { text = "+ Add user", where = "templates/core/users_list.html" },
 ]
-checked_at = "8a99d70d"
+checked_at = "953a3149"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -2349,7 +2349,7 @@ labels = [
   { text = "Glossary", where = "templates/help/glossary.html" },
   { text = "How water balances work", where = "templates/help/water_balances.html" },
 ]
-checked_at = "8a99d70d"
+checked_at = "953a3149"
 
 [[section]]
 document = "templates/about_demonstration_data.html"
@@ -2429,7 +2429,7 @@ heading = "(top)"
 files = []
 why_none = "Title, breadcrumb and a one-line description of the page itself; the code comment block is not shown to readers."
 labels = []
-checked_at = "d09cd007"
+checked_at = "953a3149"
 
 [[section]]
 document = "templates/help/getting_started.html"
@@ -2491,7 +2491,7 @@ labels = [
   { text = "Upload CSV", where = "templates/accounting/ledger_list.html" },
   { text = "Run the calculation", where = "templates/accounting/period_detail.html" },
 ]
-checked_at = "8a99d70d"
+checked_at = "953a3149"
 
 [[section]]
 document = "templates/help/getting_started.html"
@@ -2499,7 +2499,7 @@ heading = "Where to go next"
 files = []
 why_none = "Link cards to the other Help pages, each with a one-line description of that page; pointers are checked separately."
 labels = []
-checked_at = "d09cd007"
+checked_at = "953a3149"
 
 [[section]]
 document = "templates/help/water_balances.html"
@@ -2588,7 +2588,7 @@ files = [
   "templates/accounting/partials/_dashboard_content.html",
 ]
 labels = []
-checked_at = "38b6199e"
+checked_at = "953a3149"
 
 [[section]]
 document = "templates/help/methods.html"
@@ -2682,7 +2682,7 @@ labels = [
   { text = "Which months does a reporting year cover?", where = "core/forms.py" },
   { text = "Where your record addresses are published", where = "core/forms.py" },
 ]
-checked_at = "38b6199e"
+checked_at = "953a3149"
 
 [[section]]
 document = "templates/help/settings_explained.html"
