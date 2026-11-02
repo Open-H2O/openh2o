@@ -427,7 +427,7 @@ place the table gives:
 | How to count the `USE` rows in California's Water Use Reported export: left out, as water returned, or as direct diversions | The diversion import screen asks on its preview when a file has `USE` rows, and it keeps the answer for the next file. |
 | Which parcels each point of diversion serves, each field's share of that point's water, and whether the water is divided by crop ET instead | The share on the link between the point and the parcel, set on the point's own page. Where a share is not entered, OpenH2O divides the water by acreage. To divide by crop ET, set **How the water is divided among the fields** on the point's edit page. |
 | Each measuring device's nickname, calibration date and accuracy | The device record, from **Add device** on the point's own page. |
-| Which year a season belongs to | The report-year setting on the Delivery Settings page (`/accounting/delivery-settings/`), under Diversion records. It is set once for the whole site. |
+| Which year a season belongs to | The report-year setting on the Delivery Settings page (`/accounting/delivery-settings/`), under Reporting year. It is set once for the whole site. |
 | Which month your water year starts in | The water year setting on the Delivery Settings page (`/accounting/delivery-settings/`). The default is 10, October. Set it before the first allocation. |
 | The unit of the rows in a production file whose unit is blank | **Unit for rows with a blank unit**, on the preview of the production import screen. |
 | Which facility each name in the organization's files means | The facility's local name, on its add or edit page, reached from Drinking water > Facilities. |
@@ -446,7 +446,7 @@ one in full.
 | Only a boundary | `import_boundary`, then `auto_populate` | `import_boundary` loads a GeoJSON boundary file. `auto_populate` then downloads basins, parcels, streams and monitoring stations for that boundary, which must already be on the site. |
 | Parcel outlines, as GeoJSON or a shapefile | `import_parcels` | Water accounts link to parcels, so import the parcels before you create accounts. |
 | A list of wells, as a CSV file | The import screen at `/infrastructure/import/?type=well`, or `import_wells` | Both create the same records. The screen asks you to match the file's columns first. |
-| Water levels measured at the wells, as a CSV file | `/wells/water-levels/import/` | It reads DWR's groundwater level export and a sheet of the organization's own. Each row names its well by name, state well number or WCR number, so import the wells first. |
+| Water levels measured at the wells, as a CSV file | `/wells/water-levels/import/` | It reads the groundwater level data DWR publishes from its SGMA Portal, and a sheet of the organization's own. Each row names its well by name, state well number or WCR number, so import the wells first. |
 | A list of water rights | `/surface/rights/import/` | It reads a CSV file. Import the water rights before the points of diversion. |
 | Points of diversion, as a CSV, GeoJSON, KML or shapefile | The same import screen as the wells, at `/infrastructure/import/?type=diversion` | |
 | Storage ponds or recharge sites | The same import screen, with `?type=storage` or `?type=recharge_site` | Each of these import pages links to the others under "Importing something else?". |
@@ -459,7 +459,7 @@ one in full.
 Before you import diversion records, ask how the organization counts a reporting
 year: as an October-to-September water year, a calendar year, or an irrigation season that starts in a
 month it chooses. Set the answer on the Delivery Settings page
-(`/accounting/delivery-settings/`), under Diversion records. That part of the page
+(`/accounting/delivery-settings/`), under Reporting year. That part of the page
 appears only when the site runs the `surface` section. This answer applies only to
 diversion files, and it is separate from the month the site's water year starts in.
 

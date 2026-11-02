@@ -78,7 +78,7 @@
           {% if 'wells' in enabled_modules %}<tr>
             <td class="col-step"><span class="step-num">{{ steps.wells }}</span>Import your wells</td>
             <td class="col-where">Sources and monitoring &gt; Wells<br><a href="{% url 'wells:list' %}" class="text-sm text-accent">Go to Wells &rarr;</a></td>
-            <td>{% if 'infrastructure' in enabled_modules %}Add wells one at a time with Add well, or many at once with Import, from a CSV file, a zipped shapefile, a GeoJSON file or a KML file.{% else %}To load your wells, run the import_wells command on the server, with a CSV file or a shapefile.{% endif %} Each well needs a name and a location.</td>
+            <td>{% if 'infrastructure' in enabled_modules %}Add wells one at a time with Add well, or many at once with Import wells, from a CSV file, a zipped shapefile, a GeoJSON file or a KML file.{% else %}To load your wells, run the import_wells command on the server, with a CSV file or a shapefile.{% endif %} Each well needs a name and a location.</td>
           </tr>{% endif %}
           {% if 'surface' in enabled_modules %}<tr>
             <td class="col-step"><span class="step-num">{{ steps.surface }}</span>{% if 'recharge' in enabled_modules %}Add surface diversions and recharge sites{% else %}Add surface diversions{% endif %}</td>

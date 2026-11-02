@@ -154,8 +154,8 @@ and the command names it. Pass `--skip-duplicates` to skip such rows instead.
 
 ### Wells, points of diversion, storage ponds and recharge sites: the Import screen
 
-The Wells, Surface Diversions and Recharge Sites pages each have an Import button,
-and all three open the same import screen (`/infrastructure/import/?type=well`,
+The Import wells button on the Wells page and the Import buttons on the Surface
+Diversions and Recharge Sites pages open the same import screen (`/infrastructure/import/?type=well`,
 `diversion` or `recharge_site`). Each import screen links to the others under
 "Importing something else?", so the storage pond import
 (`/infrastructure/import/?type=storage`) is one link away when the recharge module is on. The screen reads a CSV file, a
@@ -184,8 +184,8 @@ right on the site first, so import the water rights before the points of diversi
 
 The Import water levels button on the Wells page, and the same button in a well's
 Measurement history, open the import screen (`/wells/water-levels/import/`). It
-reads a CSV file of up to 25 MB, such as the Department of Water Resources' (DWR)
-groundwater level export or a sheet of the organization's own. Each row is one visit
+reads a CSV file of up to 25 MB, such as the groundwater level data the Department of
+Water Resources (DWR) publishes from its SGMA Portal, or a sheet of the organization's own. Each row is one visit
 to a well: a depth to water in feet below land surface, or the reason the depth was not read.
 
 | Column | DWR's column | Required | Notes |
@@ -199,8 +199,8 @@ to a well: a depth to water in feet below land surface, or the reason the depth 
 
 The mapping step shows the column OpenH2O matched to each field, and you can change
 any match. The preview counts the new levels, the rows already on file and the
-errors. A row whose well, date and depth (or reason) are already on the site is
-skipped. The import does not convert units: a file in meters, or one that gives a
+errors. A row is skipped when its well, date and depth (or reason) are already on the
+site or repeat an earlier row of the file. The import does not convert units: a file in meters, or one that gives a
 groundwater elevation or a depth below the top of the casing, needs a depth in feet
 below land surface before you import it.
 
@@ -255,7 +255,7 @@ OpenH2O converts units at 325,851 gallons per acre-foot, 748.05 gallons per CCF,
 1,000,000 gallons per MG and 1.9835 acre-feet per cfs-day, and the preview names
 the first 200 rows it converted and counts the rest.
 
-The report-year setting is on the Delivery Settings page, under Diversion records.
+The report-year setting is on the Delivery Settings page, under Reporting year.
 When a Water Use Reported file has no `calendar_month` column, OpenH2O uses the
 setting to find the calendar year of each month. The report year can be a water
 year from October to September, a calendar year, or a season that starts in a month you choose. The water year choice always runs October to September, whatever month the site's own water year starts in.
