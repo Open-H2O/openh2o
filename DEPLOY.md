@@ -472,7 +472,7 @@ On a site without that module, `seed_data` skips the command and says so.
   checks the data against it.)
 - `seed_water_types` (Groundwater, Surface Water, Recycled Water and others)
 - `seed_well_types` (Production, Monitoring, Injection, Observation)
-- `seed_data_sources` (CDEC, USGS, OpenET, CIMIS, CNRFC, DWR, NOAA)
+- `seed_data_sources` (CDEC, USGS, OpenET, CIMIS, CNRFC, DWR, NOAA, and Entered by hand, the source of stations whose readings a person types)
 - `seed_drinking` (the federal maximum contaminant levels for the drinking-water
   module)
 - `seed_water_right_types` (Appropriative, Pre-1914, Riparian and others)
@@ -709,8 +709,8 @@ north, south, east and west edges by hand, or start without a boundary.
   `ACCESS_CONTROL_ENFORCED=False`, any signed-in person can open it. Create the
   superuser (section 7) first.
 - **Its last step.** **Enable all** turns on every switched-off station inside the
-  boundary. The populate step creates stations switched off, and a sync fetches data
-  only for stations that are on. Over SSH, `activate_stations` does the same:
+  boundary. The populate step creates stations switched off, and the schedule fetches
+  data only for stations that are on. Over SSH, `activate_stations` does the same:
   `docker compose exec web python manage.py activate_stations --boundary-name "<the boundary's name>"`.
 
 ### Upgrades
@@ -858,10 +858,10 @@ health. The jobs are in `crontab.txt`:
 | `run-sync.sh dwr_wdl dwr_sgma noaa cimis` | Every day at 2:00 | Groundwater levels, climate data and CIMIS weather (CIMIS and NOAA only when their keys are set) |
 | `run_accounting --open-periods --trigger schedule` | Every day at 3:30 | Calculates every reporting period that is not finalized, after the 2:00 sync. A finalized period is never changed. Each run's record shows on the period's page and on Site health |
 | `run_health_checks` | Every 6 hours | Checks the database, the disk, the certificate, the migrations and the data sources |
-| `prune_old_data --confirm` | The 1st of each month at 3:00 | Deletes sync logs, health-check results and published staging records older than a year |
+| `prune_old_data --confirm` | The 1st of each month at 3:00 | Deletes sync logs, health-check results and published staging records older than a year. It keeps readings typed at a station entered by hand |
 
 The times are in the server's own time zone. The page of each switched-on
-station gives the time of its next scheduled fetch, in the site's time zone (set at
+station that OpenH2O syncs gives the time of its next scheduled fetch, in the site's time zone (set at
 `/admin/` under Core > Site configs, or `TIME_ZONE` when none is set), so set the
 server's clock to the same zone. The schedule fetches CIMIS and
 NOAA only when their keys are set, and skips each in one line when it is not. It does
@@ -1073,8 +1073,9 @@ docker compose exec web python manage.py sync_source cdec
 A sync fetches from the live public services. A source whose key is missing is
 skipped until the key is in `.env`. Fetch readings now on a station's page fetches that
 one station in the background over the same period as the scheduled sync; from the
-command line, `sync_source usgs --station <id>` does the same, where `<id>` is the number
-in the station page's address. Stations of the Entered by hand source are never synced:
+command line, `sync_source` with the station's own source code and `--station <id>` does
+the same, as in `sync_source usgs --station 12`, where `<id>` is the number in the station
+page's address. Only an Operator or Administrator sees the button. Stations of the Entered by hand source are never synced:
 their readings are typed on each station's page.
 
 ### Running Tests

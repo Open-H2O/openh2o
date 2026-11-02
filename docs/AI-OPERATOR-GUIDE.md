@@ -463,9 +463,10 @@ month it chooses. Set the answer on the Delivery Settings page
 appears only when the site runs the `surface` section. This answer applies only to
 diversion files, and it is separate from the month the site's water year starts in.
 
-Water accounts and allocations have no import. Create them on their pages under Water accounting: Accounts and Allocations. Before the first allocation, set the month the water year starts in on Delivery Settings, and create each water year from the first day of a month to the last day of a month. Water levels can be typed one at a time on the well's page. OpenH2O has no page yet for
-entering readings at a monitoring station. Someone with a staff account, such as the
-superuser from Phase 2, can add them on the administration site at `/admin/`. The
+Water accounts and allocations have no import. Create them on their pages under Water accounting: Accounts and Allocations. Before the first allocation, set the month the water year starts in on Delivery Settings, and create each water year from the first day of a month to the last day of a month. Water levels can be typed one at a time on the well's page. A reading at a station the
+organization measures itself is typed on the station's page under Add a reading: an
+Operator or Administrator adds the station first on Add monitoring station
+(`/datasync/stations/add/`) with the data source Entered by hand. The
 Data import guide lists every record that is entered by hand and the page for each.
 
 ✋ **Checkpoint:** before you create accounts, confirm with the person that the
@@ -551,10 +552,11 @@ jobs without those two lines, the command changes nothing and says so
 - Every day at 3:30, it calculates every reporting period that is not finalized.
 - Every 6 hours, it runs the health checks.
 - On the 1st of each month at 3:00, `prune_old_data` deletes staging records and
-  logs older than their retention period.
+  logs older than their retention period. It keeps every reading typed at a station
+  entered by hand, whatever its age.
 
 The times are in the computer's own time zone. The page of each switched-on
-station gives the time of its next scheduled fetch, in the site's time zone (set at
+station that OpenH2O syncs gives the time of its next scheduled fetch, in the site's time zone (set at
 `/admin/` under Core > Site configs, or `TIME_ZONE` when none is set), so set the
 computer's clock to the same zone. CIMIS and NOAA are fetched
 only when their keys are set; without a key, each is skipped in one line. The schedule
@@ -593,7 +595,7 @@ ago. Left on the map, they fill the monitoring view with grey Dormant markers. F
 stations report, keep those, and remove the rest before you hand the site over.
 
 1. **Turn on the stations in the boundary.** The populate step creates every station
-   switched off, and `sync_source` fetches data only for stations that are on. With
+   switched off, and the schedule fetches data only for stations that are on. With
    none on, it says how many stations are switched off and names `activate_stations`
    and the Setup Wizard's Enable all. The stations are already found and only need to
    be turned on.
@@ -633,7 +635,8 @@ stations report, keep those, and remove the rest before you hand the site over.
 
 3. **Remove the stations that have no usable data.** This command deletes every
    switched-on station with too few readings to draw a chart. With
-   `--purge-inactive`, it also deletes every station that is still switched off:
+   `--purge-inactive`, it also deletes every station that is still switched off. It
+   leaves every station of the Entered by hand source alone, with or without readings:
 
    ```bash
    docker compose exec web python manage.py prune_dataless_stations --delete --purge-inactive --dry-run
@@ -651,8 +654,8 @@ stations report, keep those, and remove the rest before you hand the site over.
    stations, so turn the stations in the boundary back on before you remove the rest.
 
 ✋ **Checkpoint:** the monitoring map shows mostly green and amber markers, which
-mark stations with recent readings, and every marker on it has a real reading
-behind it.
+mark stations with recent readings, and every marker for a station OpenH2O syncs has a
+real reading behind it.
 
 ---
 
@@ -736,7 +739,7 @@ page where someone at the organization corrects them.
 | Database name | OpenH2O is connected to a database other than the one its settings name. With Docker, the database's name comes from `POSTGRES_DB` in `.env`, and the compose file builds the connection from it. Check `POSTGRES_DB`, then run `docker compose up -d`. Without Docker, the name comes from `DATABASE_URL` in `.env`. |
 | SSL | The certificate expires in under 30 days, or OpenH2O cannot read it. Where `OPENH2O_SITE_ADDRESS` names the domain, Caddy renews the certificate by itself, so this card means the renewal is failing. Check that the domain's A record still points at this computer and that ports 80 and 443 are open, then read `docker compose logs caddy`. Where a tunnel or the organization's own proxy handles the encryption, renew the certificate there. On a site with no public domain, the card says there is no certificate to check, and nothing needs fixing. |
 | Migrations | The database is missing updates this version of OpenH2O needs. Run `docker compose exec web python manage.py migrate`. |
-| Sync Freshness | A data source with a station turned on has not synced for more than 48 hours. After 7 days, or when it has never synced, the card changes to Action required. Run `crontab -l` to check that the schedule is installed. Then run `docker compose exec web python manage.py sync_source` with the source's code, such as `usgs`, and read what it prints. The scheduled syncs write to `sync.log` in the log folder (`openh2o-logs` in the home folder unless `make install-cron` was given another). The card leaves out a source whose key is missing, and the monitoring dashboard shows that source as "Needs API key". |
+| Sync Freshness | A data source with a station turned on has not synced for more than 48 hours. After 7 days, or when it has never synced, the card changes to Action required. Run `crontab -l` to check that the schedule is installed. Then run `docker compose exec web python manage.py sync_source` with the source's code, such as `usgs`, and read what it prints. The scheduled syncs write to `sync.log` in the log folder (`openh2o-logs` in the home folder unless `make install-cron` was given another). The card leaves out a source whose key is missing, and the monitoring dashboard shows that source as "Needs API key". It also leaves out the Entered by hand source, whose readings are typed, and Fetch readings now on a station's page does not count as its source's sync. |
 | Calculation | A calculation has waited more than 15 minutes to start, or it stopped before it finished. Run it with `docker compose exec web python manage.py run_accounting --request` and the request number from the card's JSON details, or ask the organization to run it again from the water year's page. The card also asks for attention when no calculation has finished in 48 hours while a water year is still open. For that, run `crontab -l` to check that the schedule is installed, and read `calculation.log` in the log folder (`openh2o-logs` in the home folder unless `make install-cron` was given another). |
 | Backup | The card asks for attention or action when OpenH2O cannot find the backups folder or read the record of the last backup, or when the last backup failed, ran 36 hours ago or more, or is missing tables. A failed backup's reason is in the card's JSON details; read it first. When OpenH2O cannot find the folder, check that `docker-compose.yml` mounts the checkout's `backups` folder at `/backups`, then run `docker compose up -d`. Otherwise run `crontab -l` to check that the schedule is installed, read `backup.log` in the log folder (`openh2o-logs` in the home folder unless `make install-cron` was given another), then run `scripts/backup.sh` and read what it prints. |
 | Cache Duplication | OpenH2O holds two OpenET estimates for the same months at some use areas. No figure changes, because OpenH2O uses the newer estimate. Report it as a bug at github.com/Open-H2O/openh2o/issues and attach the card's JSON details. |

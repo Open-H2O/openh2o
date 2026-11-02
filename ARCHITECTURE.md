@@ -218,7 +218,11 @@ arrives through adapters in `datasync/adapters/`. Each adapter subclasses `BaseA
 `parse`, `validate` and `discover_stations`, and registers itself with `register_adapter`
 (`datasync/adapters/__init__.py`). Most also define a `PARAMETER_MAP` naming their measurements;
 the two OpenET adapters do not. `manage.py sync_source` runs one source; `scripts/run-sync.sh` is
-what the sync cron jobs call. To add a source, follow "Adding a data adapter" in
+what the sync cron jobs call. A station page's Fetch readings now button runs `sync_source` for
+that one station in its own process (`datasync/fetch_now.py`). Each reading carries the daily
+statistic its source names, such as the USGS daily high or daily average. The Entered by hand
+source does not have an adapter: an Operator or Administrator types its readings on the station's page
+(`datasync/typed_readings.py`). To add a source, follow "Adding a data adapter" in
 [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Maps

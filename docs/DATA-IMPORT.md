@@ -479,7 +479,7 @@ page under Add a water level. A reading at a station the organization measures i
 such as a staff gauge, is typed on the station's page under Add a reading. Add the
 station first on Add monitoring station (`/datasync/stations/add/`) with the data source
 Entered by hand. A station of a public source (CDEC, USGS, NOAA, DWR) takes its
-readings only from that source, so it has no Add a reading form.
+readings only from that source, so it does not have an Add a reading form.
 
 ---
 

@@ -34,7 +34,7 @@ make test                   # confirm a green baseline
 
 ## Adding a data adapter
 
-New external data sources are the most common contribution. An adapter lives in `datasync/adapters/`, registers itself, and, when it reports named measurements, defines a `PARAMETER_MAP` (the two OpenET adapters do not) and is added to the list of sources in `datasync/adapters/registry.py`, which is where the crosswalk and its test read the adapters from. Then map the source's own codes to OpenH2O's measured quantities in the `CODE_TO_KEY` table in `standards/management/commands/seed_observed_properties.py`, which keeps the crosswalk and the conformance check complete. A test checks that every adapter code maps to an observed property.
+New external data sources are the most common contribution. An adapter lives in `datasync/adapters/`, registers itself, and, when it reports named measurements, defines a `PARAMETER_MAP` (the two OpenET adapters do not) and is added to the list of sources in `datasync/adapters/registry.py`, which is where the crosswalk and its test read the adapters from. Then map the source's own codes to OpenH2O's measured quantities in the `CODE_TO_KEY` table in `standards/management/commands/seed_observed_properties.py`, which keeps the crosswalk and the conformance check complete. A test checks that every adapter code maps to an observed property. When a source publishes more than one daily statistic for a code, give each parsed record its `statistic_id`, as `datasync/adapters/usgs.py` does: OpenH2O keeps one reading per station, code, statistic and time, so two statistics without one collide and one is lost.
 
 ## Reporting bugs and ideas
 

@@ -74,7 +74,11 @@ to `discharge`, so their figures can be compared and published together.
 | DWR SGMA Portal | `gw_level` | The same dataset, limited to wells in the SGMA monitoring program |
 | California Irrigation Management Information System (CIMIS) | `day-asce-eto`, `day-precip`, `day-sol-rad-avg`, `day-wind-spd-avg`, `day-air-tmp-avg` | Daily reference ET and weather |
 | NOAA Global Historical Climatology Network Daily (GHCND) | `PRCP`, `TMAX`, `TMIN`, `SNOW` | Daily climate. `TMAX` and `TMIN` both map to `air_temperature`. |
+| Entered by hand | `00060`, `00065`, `00010`, `72019`, `72020`, `62610` | Readings a person types on a station's page, with the USGS codes |
 | California Nevada River Forecast Center (CNRFC) | `streamflow`, `precip` | Forecasts of river flow and precipitation |
+
+A USGS reading also carries its daily statistic (daily high, low or average). The mapping
+goes by code alone, so all three of water temperature map to `water_temperature`.
 
 DWR is the California Department of Water Resources. OpenET's evapotranspiration
 (ET) and GRIDMET's precipitation are not in this table. OpenH2O stores them for each
