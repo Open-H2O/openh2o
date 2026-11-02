@@ -172,7 +172,7 @@ def test_add_station_errors(auth_client):
     body = resp.content.decode()
     for line in (
         "Choose a data source.",
-        "Enter the external station ID.",
+        "Enter the station ID.",
         "Enter the station name.",
         "Enter the latitude and longitude in decimal degrees.",
     ):

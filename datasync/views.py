@@ -728,7 +728,7 @@ def station_add(request):
         if data_source is None:
             errors.append("Choose a data source.")
         if not external_id:
-            errors.append("Enter the external station ID.")
+            errors.append("Enter the station ID.")
         if not name:
             errors.append("Enter the station name.")
         try:
