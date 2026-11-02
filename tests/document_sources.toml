@@ -37,14 +37,14 @@ document = "README.md"
 heading = "OpenH2O (Open Water Accounting Platform)"
 files = ["core/modules.py", "datasync/adapters/openet.py"]
 labels = []
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "README.md"
 heading = "Who this is for"
 files = ["core/modules.py", "accounting/services.py"]
 labels = []
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "README.md"
@@ -109,7 +109,7 @@ files = [
   "crontab.txt",
 ]
 labels = []
-checked_at = "d09cd007"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "README.md"
@@ -184,7 +184,7 @@ files = [
   "templates/partials/_feedback_widget.html",
 ]
 labels = []
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "README.md"
@@ -198,7 +198,7 @@ files = [
   "crontab.txt",
 ]
 labels = []
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "README.md"
@@ -247,7 +247,7 @@ files = [
   "static/js/map-core.js",
 ]
 labels = []
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "README.md"
@@ -341,7 +341,7 @@ files = [
   "standards/management/commands/seed_observed_properties.py",
 ]
 labels = []
-checked_at = "3a340c75"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "CONTRIBUTING.md"
@@ -408,7 +408,7 @@ files = [
   "templates/base.html",
 ]
 labels = []
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "ARCHITECTURE.md"
@@ -420,7 +420,7 @@ files = [
   "Makefile",
 ]
 labels = []
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "ARCHITECTURE.md"
@@ -443,7 +443,7 @@ files = [
   "core/forms.py",
 ]
 labels = []
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "ARCHITECTURE.md"
@@ -471,7 +471,7 @@ files = [
   "crontab.txt",
 ]
 labels = []
-checked_at = "3a340c75"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "ARCHITECTURE.md"
@@ -509,7 +509,7 @@ document = "ARCHITECTURE.md"
 heading = "Adding a page"
 files = ["accounting/urls.py", "core/modules.py"]
 labels = []
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "ARCHITECTURE.md"
@@ -660,7 +660,7 @@ labels = [
   { text = "Change email", where = "templates/core/users_list.html" },
   { text = "Users", where = "core/modules.py" },
 ]
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "DEPLOY.md"
@@ -678,7 +678,7 @@ files = [
   "standards/management/commands/check_conformance.py",
 ]
 labels = []
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "DEPLOY.md"
@@ -706,7 +706,7 @@ files = [
   "config/settings/base.py",
 ]
 labels = []
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "DEPLOY.md"
@@ -761,7 +761,7 @@ labels = [
   { text = "Setup Wizard", where = "core/modules.py" },
   { text = "Enable all", where = "templates/setup/partials/_station_review.html" },
 ]
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "DEPLOY.md"
@@ -822,7 +822,7 @@ files = [
 labels = [
   { text = "Site health", where = "templates/health/dashboard.html" },
 ]
-checked_at = "d09cd007"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "DEPLOY.md"
@@ -840,7 +840,7 @@ files = [
   "docker-compose.yml",
 ]
 labels = []
-checked_at = "d09cd007"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "DEPLOY.md"
@@ -888,7 +888,7 @@ files = [
 labels = [
   { text = "Users", where = "core/modules.py" },
 ]
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "DEPLOY.md"
@@ -902,7 +902,7 @@ document = "DEPLOY.md"
 heading = "Data Pruning"
 files = ["health/management/commands/prune_old_data.py", "Makefile"]
 labels = []
-checked_at = "d09cd007"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "DEPLOY.md"
@@ -917,7 +917,7 @@ files = [
   "Makefile",
 ]
 labels = []
-checked_at = "d09cd007"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "DEPLOY.md"
@@ -930,7 +930,7 @@ files = [
   "docker-compose.yml",
 ]
 labels = []
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "DEPLOY.md"
@@ -996,7 +996,7 @@ files = [
   "entrypoint.sh",
 ]
 labels = []
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "DEPLOY.md"
@@ -1027,7 +1027,7 @@ files = [
   "docker-compose.yml",
 ]
 labels = []
-checked_at = "d09cd007"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "DEPLOY.md"
@@ -1054,7 +1054,7 @@ labels = [
   { text = "Continue with Google", where = "templates/account/signup.html" },
   { text = "Users", where = "core/modules.py" },
 ]
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "DEPLOY.md"
@@ -1083,7 +1083,7 @@ document = "docs/ROADMAP.md"
 heading = "Roadmap"
 files = ["core/modules.py"]
 labels = []
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "docs/ROADMAP.md"
@@ -1110,7 +1110,7 @@ files = [
 labels = [
   { text = "Delivery Settings", where = "core/modules.py" },
 ]
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "docs/ROADMAP.md"
@@ -1129,7 +1129,7 @@ document = "docs/ROADMAP.md"
 heading = "Planned: publishing open data"
 files = ["standards/models.py", "standards/management/commands/seed_observed_properties.py", "config/urls.py"]
 labels = []
-checked_at = "3a340c75"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "docs/ROADMAP.md"
@@ -1428,7 +1428,7 @@ labels = [
   { text = "Add sampling points", where = "templates/drinking/overview.html" },
   { text = "Drinking water", where = "templates/drinking/overview.html" },
 ]
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1459,14 +1459,14 @@ document = "docs/DATA-STANDARDS.md"
 heading = "Data Standards & Interoperability"
 files = ["standards/management/commands/seed_observed_properties.py", "standards/management/commands/export_crosswalk.py", "docker-compose.yml"]
 labels = []
-checked_at = "3a340c75"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
 heading = "1. The kinds of measurement (ObservedProperty)"
 files = ["standards/management/commands/seed_observed_properties.py", "standards/models.py"]
 labels = []
-checked_at = "3a340c75"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
@@ -1486,7 +1486,7 @@ files = [
   "datasync/models.py",
 ]
 labels = []
-checked_at = "3a340c75"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
@@ -1531,7 +1531,7 @@ files = [
   "core/modules.py",
 ]
 labels = []
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
@@ -1574,7 +1574,7 @@ document = "docs/DATA-STANDARDS.md"
 heading = "Reusing the design in another platform"
 files = ["standards/management/commands/check_conformance.py", "standards/management/commands/seed_observed_properties.py"]
 labels = []
-checked_at = "3a340c75"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "docs/water-budget-terms.md"
@@ -1752,7 +1752,7 @@ files = [
   "core/management/commands/seed_data.py",
 ]
 labels = []
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1778,7 +1778,7 @@ document = "docs/AI-OPERATOR-GUIDE.md"
 heading = "Phase 3: Load data"
 files = ["core/management/commands/seed_merced.py", "core/demonstration.py", "setup/views.py"]
 labels = []
-checked_at = "d09cd007"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1809,7 +1809,7 @@ labels = [
   { text = "I have my own data", where = "templates/setup/run.html" },
   { text = "Enable all", where = "templates/setup/partials/_station_review.html" },
 ]
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1861,7 +1861,7 @@ labels = [
   { text = "Schedule", where = "core/modules.py" },
   { text = "+ Add to schedule", where = "templates/drinking/schedule.html" },
 ]
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1899,7 +1899,7 @@ labels = [
   { text = "Delivery Settings", where = "core/modules.py" },
   { text = "Reporting year", where = "templates/accounting/delivery_settings.html" },
 ]
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1924,7 +1924,7 @@ files = [
   "accounting/management/commands/sync_openet_to_ledger.py",
 ]
 labels = []
-checked_at = "d09cd007"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1953,7 +1953,7 @@ files = [
 labels = [
   { text = "Needs API key", where = "datasync/freshness.py" },
 ]
-checked_at = "d09cd007"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1973,7 +1973,7 @@ labels = [
   { text = "Enable all", where = "templates/setup/partials/_station_review.html" },
   { text = "Setup Wizard", where = "core/modules.py" },
 ]
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -2004,7 +2004,7 @@ labels = [
   { text = "Viewer", where = "templates/core/users_list.html" },
   { text = "+ Add user", where = "templates/core/users_list.html" },
 ]
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -2045,7 +2045,7 @@ labels = [
   { text = "ET / Meter Agreement", where = "health/models.py" },
   { text = "Needs API key", where = "datasync/freshness.py" },
 ]
-checked_at = "d09cd007"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -2069,7 +2069,7 @@ labels = [
   { text = "None up to date", where = "datasync/freshness.py" },
   { text = "OpenH2O is temporarily unavailable", where = "error-pages/503.html" },
 ]
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -2231,7 +2231,7 @@ files = [
   "requirements.lock",
 ]
 labels = []
-checked_at = "3a340c75"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -2248,7 +2248,7 @@ files = [
   "health/management/commands/prune_old_data.py",
 ]
 labels = []
-checked_at = "3a340c75"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -2296,7 +2296,7 @@ document = "templates/about.html"
 heading = "(top)"
 files = ["config/views.py", "core/templatetags/prose.py"]
 labels = []
-checked_at = "d09cd007"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "templates/about.html"
@@ -2312,14 +2312,14 @@ files = [
   "recharge/models.py",
 ]
 labels = []
-checked_at = "a5905879"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "templates/about.html"
 heading = "Where OpenH2O comes from"
 files = ["datasync/adapters/openet.py", "datasync/adapters/cdec.py", "datasync/adapters/usgs.py"]
 labels = []
-checked_at = "d09cd007"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "templates/about.html"
@@ -2349,7 +2349,7 @@ labels = [
   { text = "Glossary", where = "templates/help/glossary.html" },
   { text = "How water balances work", where = "templates/help/water_balances.html" },
 ]
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "templates/about_demonstration_data.html"
@@ -2409,7 +2409,7 @@ files = [
 labels = [
   { text = "Use Ledger", where = "core/modules.py" },
 ]
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "templates/about_demonstration_data.html"
@@ -2491,7 +2491,7 @@ labels = [
   { text = "Upload CSV", where = "templates/accounting/ledger_list.html" },
   { text = "Run the calculation", where = "templates/accounting/period_detail.html" },
 ]
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "templates/help/getting_started.html"
@@ -2563,7 +2563,7 @@ files = ["templates/accounting/partials/_dashboard_content.html", "accounting/vi
 labels = [
   { text = "Dashboard", where = "core/modules.py" },
 ]
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "templates/help/methods.html"
@@ -2739,7 +2739,7 @@ files = ["accounting/models.py", "accounting/views/allocations.py", "accounting/
 labels = [
   { text = "Allocations", where = "core/modules.py" },
 ]
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "templates/help/budgets_allocations.html"
@@ -2768,7 +2768,7 @@ files = ["templates/accounting/allocations_list.html", "accounting/views/allocat
 labels = [
   { text = "Allocations", where = "core/modules.py" },
 ]
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "templates/help/glossary.html"
@@ -2822,7 +2822,7 @@ labels = [
   { text = "Monitoring Stations", where = "core/modules.py" },
   { text = "Site Health", where = "core/modules.py" },
 ]
-checked_at = "38b6199e"
+checked_at = "8a99d70d"
 
 [[section]]
 document = "templates/help/glossary.html"
