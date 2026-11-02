@@ -164,18 +164,26 @@ def features_from_upload(uploaded_file):
 def features_from_path(path):
     """Every feature in the map file at ``path``, read the way an upload is.
 
-    A ``.zip``, ``.kml``, ``.geojson`` or ``.json`` goes through
-    ``features_from_upload`` (so the size cap and the several-shapefiles
-    refusal apply); any other extension, such as a bare ``.shp``, is opened
-    with GDAL and read with the same feature extraction and no size cap: the
-    file is already on the server, and the command has always read a bare
-    shapefile of any size.
+    A ``.zip`` goes through ``features_from_upload``, so the size caps and the
+    several-shapefiles refusal apply. Any other file (a ``.geojson``, ``.json``,
+    ``.kml`` or a bare ``.shp``) is opened with GDAL where it lies and read
+    with the same feature extraction and no size cap: it is already on the
+    server, and the command has always read a GeoJSON or a shapefile of any
+    size.
     """
     name = os.path.basename(path)
-    if extension(name) in GEOJSON_EXTENSIONS + SHAPEFILE_EXTENSIONS + KML_EXTENSIONS:
+    ext = extension(name)
+    if ext in SHAPEFILE_EXTENSIONS:
         with open(path, "rb") as handle:
             return features_from_upload(File(handle, name=name))
-    return _extract_features_from_datasource(path)
+    try:
+        return _extract_features_from_datasource(path)
+    except GDALException:
+        if ext in GEOJSON_EXTENSIONS:
+            raise ValueError(NOT_GEOJSON_MESSAGE)
+        if ext in KML_EXTENSIONS:
+            raise ValueError(NOT_KML_MESSAGE)
+        raise
 
 
 def _positions(geometry):

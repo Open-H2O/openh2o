@@ -104,6 +104,16 @@ class TestImportParcelsCharacterisation:
         with pytest.raises(CommandError, match="Cannot detect format from extension '.csv'. Use --format."):
             _run(str(odd))
 
+    def test_a_geojson_on_the_server_has_no_upload_size_cap(self, geojson_file, monkeypatch):
+        """The command read a GeoJSON of any size before the upload readers
+        joined it; the 25 MB cap is for files sent through a browser."""
+        monkeypatch.setattr("core.geofiles.MAX_UPLOAD_BYTES", 100)
+        assert geojson_file.stat().st_size > 100
+
+        output = _run(str(geojson_file), "--dry-run")
+
+        assert "Imported 3 parcels" in output
+
     def test_unreadable_file_reports_gdal_failure(self, tmp_path):
         bad = tmp_path / "bad.geojson"
         bad.write_text("not json at all")
