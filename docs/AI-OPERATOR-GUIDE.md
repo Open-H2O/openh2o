@@ -444,7 +444,7 @@ one in full.
 | The organization has | Use | Notes |
 |---|---|---|
 | Only a boundary | `import_boundary`, then `auto_populate` | `import_boundary` loads a GeoJSON boundary file. `auto_populate` then downloads basins, parcels, streams and monitoring stations for that boundary, which must already be on the site. |
-| Parcel outlines, as GeoJSON or a shapefile | `import_parcels` | Water accounts link to parcels, so import the parcels before you create accounts. |
+| Parcel outlines, as a zipped shapefile, KML or GeoJSON | The Import use areas screen at `/parcels/import/`, or `import_parcels` | Both read the same files. Water accounts link to parcels, so import the parcels before you create accounts. |
 | A list of wells, as a CSV file | The import screen at `/infrastructure/import/?type=well`, or `import_wells` | Both create the same records. The screen asks you to match the file's columns first. |
 | Water levels measured at the wells, as a CSV file | `/wells/water-levels/import/` | It reads the groundwater level data DWR publishes from its SGMA Portal, and a sheet of the organization's own. Each row names its well by name, state well number or WCR number, so import the wells first. |
 | A list of water rights | `/surface/rights/import/` | It reads a CSV file. Import the water rights before the points of diversion. |

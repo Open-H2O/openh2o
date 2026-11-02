@@ -22,7 +22,7 @@
   reads "load it with the import_parcels command", nothing about who runs the
   server; the rest point to a screen. Each was checked against the code: the wizard's
   steps (setup/services.py WIZARD_STEPS, geography/management/commands/
-  auto_populate.py), use areas loaded by command only (docs/DATA-IMPORT.md,
+  auto_populate.py), use areas loaded on the Import use areas page (docs/DATA-IMPORT.md,
   infrastructure/views.py UNSUPPORTED_IMPORT_TYPE_MESSAGE), the screen
   importer's formats and required name and location (infrastructure/
   importer.py), stations added with syncing off, the calculation's button and
@@ -73,7 +73,7 @@
           {% if 'parcels' in enabled_modules %}<tr>
             <td class="col-step"><span class="step-num">{{ steps.use_areas }}</span>Import your use areas</td>
             <td class="col-where">Water accounting &gt; Use Areas<br><a href="{% url 'parcels:list' %}" class="text-sm text-accent">Go to Use Areas &rarr;</a></td>
-            <td>OpenH2O keeps its records by use area, and each parcel is one use area. {% if 'setup' in enabled_modules %}The Setup Wizard brings in every parcel that overlaps your boundary, with its Assessor Parcel Number (APN), from the California Department of Water Resources&rsquo; parcel map, which covers all 58 counties. To load your own parcel file instead, run the import_parcels command on the server.{% else %}To load your parcel file, run the import_parcels command on the server.{% endif %} The file can be a GeoJSON file or a shapefile. Each parcel needs its APN and an outline OpenH2O can read. A parcel with no APN is skipped, and if any outline cannot be read, the command imports nothing and names each parcel it refused.</td>
+            <td>OpenH2O keeps its records by use area, and each parcel is one use area. {% if 'setup' in enabled_modules %}The Setup Wizard brings in every parcel that overlaps your boundary, with its Assessor Parcel Number (APN), from the California Department of Water Resources&rsquo; parcel map, which covers all 58 counties. To load your own parcel file instead, use Import use areas on the Use Areas page.{% else %}To load your parcel file, use Import use areas on the Use Areas page.{% endif %} The file can be a zipped shapefile, a KML file or a GeoJSON file. The preview counts the new use areas and those it leaves out: already on file, outside your boundary, or without a parcel number or an outline OpenH2O can read.</td>
           </tr>{% endif %}
           {% if 'wells' in enabled_modules %}<tr>
             <td class="col-step"><span class="step-num">{{ steps.wells }}</span>Import your wells</td>

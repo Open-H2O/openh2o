@@ -25,6 +25,12 @@ with the same name, so copy all of them and give the command the path of the `.s
 file. An import screen uploads the file from your browser, so you do not need to
 copy it.
 
+A zipped shapefile holds one shapefile and its `.prj` file. OpenH2O refuses a zip
+that holds several shapefiles and names them, so you can send the one you want. It
+reads any projection the `.prj` file states, including the State Plane and UTM
+projections county and state files use, and refuses a file whose coordinates are not
+longitude and latitude when no `.prj` file says what they are.
+
 An AI agent can do the column matching for you. Point the agent at your file and ask
 it to import the records. The file might be a county assessor's export, a
 spreadsheet or an export from an old system. The agent matches your column names to
@@ -85,18 +91,30 @@ docker compose exec web python manage.py import_boundary --file /tmp/boundary.ge
 
 ## 3. File imports
 
-Five import screens take a file in two steps: the preview, then Import. OpenH2O
+Seven import screens take a file in two steps: the preview, then Import. OpenH2O
 keeps the uploaded file on the server between the two, so a file is limited by
 its size (25 MB), not by its number of rows. Import runs in a background process,
 and the screen shows the result when it finishes. An upload waits at most a day
 for Import: after that, upload the file again. OpenH2O deletes the stored file
 once Import finishes, whether or not it succeeds.
 
-### Parcels: `import_parcels`
+### Use areas: the Import use areas screen, or `import_parcels`
 
-Wells, accounts and the ledger are all attached to parcels, so parcels come first.
-`import_parcels` reads a GeoJSON file or a shapefile. It is a command, and there is
-no import screen for parcels.
+Wells, accounts and the ledger are all attached to use areas (parcels), so they
+come first. The Import use areas button on the Use Areas page opens the screen
+(`/parcels/import/`). It reads a zipped shapefile, a KML file or a GeoJSON file of
+up to 25 MB, such as a county's parcel file or a Google Earth file of field
+outlines. OpenH2O matches a column to the parcel number (and, if you choose one,
+the owner) and shows the first five values beside each choice. The preview counts
+what Import would do: new use areas with their acres, numbers already on file
+(skipped, never changed), outlines outside the site's boundary, and features with no
+readable outline or no parcel number (not imported). A parcel is inside the boundary
+when a point within its outline is inside it. Outlines that share a parcel number
+become one use area holding all of them. For a Google Earth file whose outlines carry
+only names, choose the Name column: each name becomes the use area's number.
+
+`import_parcels` does the same from the command line, and reads the same four file
+types or a bare shapefile:
 
 ```bash
 docker compose cp parcels.geojson web:/tmp/
@@ -110,12 +128,14 @@ docker compose exec web python manage.py import_parcels /tmp/parcels.geojson
 | Owner name | `OWNER` | `--owner-field` | no |
 | Outline | the feature's geometry | none | yes |
 
-The command reads every feature into a holding table first, then adds the new
-parcels to the site. A parcel whose APN is already on the site is skipped. When a
-feature has no APN, the command skips that feature, counts it as an error and imports
-the rest of the file. When a feature's outline cannot be read, the command names the
-feature and stops without importing any of the file's parcels. If any parcel cannot be added, the command stops
-without adding any and names the ones it refused.
+The command joins the outlines that share an APN into one parcel, reads every parcel
+into a holding table, then adds the new parcels to the site; `--dry-run` reports the
+same counts a real run gives. A parcel whose APN is already on the site is skipped.
+When a feature has no APN, the command skips that feature, counts it as an error and
+imports the rest of the file. When a feature's outline cannot be read, the command
+names the feature and stops without importing any of the file's parcels. If any
+parcel cannot be added, the command stops without adding any and names the ones it
+refused.
 
 ### Wells: `import_wells`
 
@@ -490,7 +510,7 @@ readings only from that source, so it does not have an Add a reading form.
 2. Open the Setup Wizard (`/setup/`), choose Start with your own records, and choose,
    upload or type a boundary, or start without one. With a boundary, run the wizard's populate step to add monitoring
    stations, and basins, parcels and streams if you need them.
-3. Import your parcels with `import_parcels`.
+3. Import your use areas on the Import use areas screen, or with `import_parcels`.
 4. Import your wells with `import_wells` or the Wells page's Import screen.
    Then import the wells' water levels on the Import water levels screen.
 5. Import your water rights, or add them by hand, before the points of diversion.

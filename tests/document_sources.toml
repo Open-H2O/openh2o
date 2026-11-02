@@ -1207,8 +1207,8 @@ checked_at = "d09cd007"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
-heading = "Parcels: `import_parcels`"
-files = ["parcels/management/commands/import_parcels.py", "parcels/models.py", "infrastructure/views.py"]
+heading = "Use areas: the Import use areas screen, or `import_parcels`"
+files = ["parcels/management/commands/import_parcels.py", "parcels/models.py", "infrastructure/views.py", "parcels/use_area_import.py", "parcels/views.py", "templates/parcels/use_area_import.html", "templates/parcels/partials/_use_area_import_preview.html", "core/geofiles.py"]
 labels = []
 checked_at = "d09cd007"
 
