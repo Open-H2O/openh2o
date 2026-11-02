@@ -492,6 +492,8 @@ EXPECTED_UNREACHABLE = {
     "/infrastructure/import/preview/": "HTTP 405",
     "/infrastructure/parcels/create/": "HTTP 405",
     "/setup/activate-stations/": "HTTP 405",
+    "/parcels/import/commit/": "HTTP 405",
+    "/parcels/import/preview/": "HTTP 405",
     "/setup/progress/": "HTTP 405",
     "/surface/diversion/import/commit/": "HTTP 405",
     "/surface/diversion/import/preview/": "HTTP 405",

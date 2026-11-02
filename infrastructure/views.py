@@ -100,15 +100,34 @@ ADD_TYPE_ORDER = ("well", "diversion", "storage", "recharge_site")
 
 logger = logging.getLogger(__name__)
 
-#: Shown, verbatim, on a 404 from the bulk importer: `?type=parcel`
-#: (also `use_area`, `usearea`) would otherwise fall through to `_supported_type`'s
-#: "unrecognised value" fallback and silently serve the Well importer instead.
+#: The ``?type`` values that name use areas. The bulk import page does not
+#: import them; the Import use areas page does, so the landing page sends the
+#: person there and the preview and commit answer 404 with
+#: ``UNSUPPORTED_IMPORT_TYPE_MESSAGE``.
+USE_AREA_IMPORT_TYPES = ("parcel", "use_area", "usearea")
+
+#: Shown, verbatim, on a 404 from the bulk importer: a type it does not import
+#: would otherwise fall through `_supported_type`'s "unrecognised value"
+#: fallback and silently serve the Well importer instead.
 #: `supported_add_types()` is the list of
 #: truth for what this screen actually takes; use areas are a different door.
-UNSUPPORTED_IMPORT_TYPE_MESSAGE = (
-    "The bulk import page does not import this type. Load use areas from a "
-    "parcel file with the import_parcels command, as docs/DATA-IMPORT.md describes."
+UNSUPPORTED_IMPORT_TYPE_MESSAGE = "The bulk import page does not import this type."
+
+#: The 404 sentence for a use-area type, which names the page that does.
+USE_AREA_IMPORT_TYPE_MESSAGE = (
+    "The bulk import page does not import use areas. "
+    "Import them on the Import use areas page."
 )
+
+
+def _unsupported_import_type(raw):
+    """The 404 for a ``?type`` / ``infra_type`` the bulk import page does not take."""
+    message = (
+        USE_AREA_IMPORT_TYPE_MESSAGE
+        if (raw or "").strip() in USE_AREA_IMPORT_TYPES and is_enabled("parcels")
+        else UNSUPPORTED_IMPORT_TYPE_MESSAGE
+    )
+    return HttpResponseNotFound(message, content_type="text/plain")
 
 
 def supported_add_types() -> tuple:
@@ -500,11 +519,13 @@ def _import_type(raw):
 @require_GET
 def infrastructure_import(request):
     """Bulk import landing page (the file dropzone)."""
+    if (request.GET.get("type") or "").strip() in USE_AREA_IMPORT_TYPES and is_enabled(
+        "parcels"
+    ):
+        return redirect("parcels:use_area_import")
     infra_type = _import_type(request.GET.get("type"))
     if infra_type is None:
-        return HttpResponseNotFound(
-            UNSUPPORTED_IMPORT_TYPE_MESSAGE, content_type="text/plain"
-        )
+        return _unsupported_import_type(request.GET.get("type"))
     back_name, back_label = ADD_TYPE_BACK[infra_type]
     _light_list_of(request, infra_type)
     return render(
@@ -551,9 +572,7 @@ def infrastructure_import_preview(request):
     """Parse the uploaded file, auto-map its columns, return the mapping UI."""
     infra_type = _import_type(request.POST.get("infra_type"))
     if infra_type is None:
-        return HttpResponseNotFound(
-            UNSUPPORTED_IMPORT_TYPE_MESSAGE, content_type="text/plain"
-        )
+        return _unsupported_import_type(request.POST.get("infra_type"))
     uploaded = request.FILES.get("file")
     if not uploaded:
         return render(
@@ -774,9 +793,7 @@ def infrastructure_import_commit(request):
     """Start writing the stored file with the confirmed column mapping."""
     infra_type = _import_type(request.POST.get("infra_type"))
     if infra_type is None:
-        return HttpResponseNotFound(
-            UNSUPPORTED_IMPORT_TYPE_MESSAGE, content_type="text/plain"
-        )
+        return _unsupported_import_type(request.POST.get("infra_type"))
 
     mapping = _confirmed_mapping(request)
 

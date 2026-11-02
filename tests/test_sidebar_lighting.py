@@ -130,6 +130,7 @@ EXPECTED_LIT = {
     "/map/zones/create/": "Zones",
     "/parcels/": "Use Areas",
     "/parcels/<int:pk>/": "Use Areas",
+    "/parcels/import/": "Use Areas",
     "/recharge/": "Recharge Sites",
     "/recharge/<int:pk>/": "Recharge Sites",
     "/recharge/<int:pk>/events/<int:event_pk>/edit/": "Recharge Sites",

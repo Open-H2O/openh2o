@@ -1,0 +1,114 @@
+{% load humanize %}{% comment %}
+Matching and preview step for the use area import. It replaces the upload card:
+the empty #import-card below is an out-of-band swap that clears the card, and
+this card lands in #import-area. Changing a column re-posts the preview to the
+same route with the stored upload's token (the form carries it), and the counts
+come back from the same plan Import runs. Nothing is written until Import is
+pressed. A count of zero has no row.
+{% endcomment %}
+<div id="import-card" hx-swap-oob="true"></div>
+<div class="card-raised">
+  <h2 class="card-header-ruled">Match the file's columns</h2>
+  <p class="text-base text-secondary mt-md">OpenH2O found {{ outline_count|intcomma }} outline{{ outline_count|pluralize }} and {{ columns|length|intcomma }} column{{ columns|length|pluralize }} in {{ file_name }}. Changing a column re-counts below.</p>
+
+  <form class="mt-lg" id="import-mapping-form" method="post" action="{% url 'parcels:use_area_import_commit' %}">
+    {% csrf_token %}
+    <input type="hidden" name="token" value="{{ token }}">
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width: 28%;">Field</th>
+          <th style="width: 30%;">Your column</th>
+          <th>First five</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for fr in field_rows %}
+        <tr>
+          <td>{{ fr.label }}{% if fr.required %} <span class="required-mark">*</span>{% endif %}</td>
+          <td>
+            <select name="map:{{ fr.field }}" class="form-select"
+              hx-post="{% url 'parcels:use_area_import_preview' %}"
+              hx-trigger="change"
+              hx-target="#import-area"
+              hx-include="closest form">
+              {% if not fr.required %}<option value=""{% if not fr.guess %} selected{% endif %}>Not imported</option>{% endif %}
+              {% for col in columns %}
+              <option value="{{ col }}"{% if fr.guess == col %} selected{% endif %}>{{ col }}</option>
+              {% endfor %}
+            </select>
+          </td>
+          <td class="text-tertiary text-sm">{{ fr.sample|join:", " }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <h3 class="section-header-sm mt-lg">What Import would do</h3>
+    <table class="data-table mt-md">
+      <tbody>
+        {% if new_count %}
+        <tr>
+          <td class="td-num">{{ new_count|intcomma }}</td>
+          <td>new use area{{ new_count|pluralize }}, {{ acres|intcomma }} acre{{ acres|pluralize }}</td>
+          <td class="text-secondary">Imported</td>
+        </tr>
+        {% endif %}
+        {% if on_file_count %}
+        <tr>
+          <td class="td-num">{{ on_file_count|intcomma }}</td>
+          <td>already on file</td>
+          <td class="text-secondary">Not imported</td>
+        </tr>
+        {% endif %}
+        {% if outside_count %}
+        <tr>
+          <td class="td-num">{{ outside_count|intcomma }}</td>
+          <td>outside this site's boundary</td>
+          <td class="text-secondary">Not imported</td>
+        </tr>
+        {% endif %}
+        {% if unreadable_count %}
+        <tr>
+          <td class="td-num">{{ unreadable_count|intcomma }}</td>
+          <td>without a readable outline
+            <div class="text-tertiary text-sm mt-sm">{{ unreadable_numbers|join:", " }}</div>
+            {% include "core/partials/_rows_not_listed.html" with count=unreadable_not_listed what="parcel numbers" %}
+          </td>
+          <td class="text-secondary">Not imported</td>
+        </tr>
+        {% endif %}
+        {% if no_number_count %}
+        <tr>
+          <td class="td-num">{{ no_number_count|intcomma }}</td>
+          <td>without a parcel number</td>
+          <td class="text-secondary">Not imported</td>
+        </tr>
+        {% endif %}
+        {% if too_long_count %}
+        <tr>
+          <td class="td-num">{{ too_long_count|intcomma }}</td>
+          <td>with a parcel number over {{ number_max_length }} characters</td>
+          <td class="text-secondary">Not imported</td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+
+    {% if new_count %}
+    <div class="row-start pt-sm mt-lg" style="gap: var(--space-sm);">
+      <button type="submit" class="btn-primary"
+        hx-post="{% url 'parcels:use_area_import_commit' %}"
+        hx-target="#import-area"
+        hx-include="closest form">Import {{ new_count|intcomma }} use area{{ new_count|pluralize }}</button>
+      <a href="{% url 'parcels:use_area_import' %}" class="btn-secondary">Choose another file</a>
+    </div>
+    {% else %}
+    <p class="text-base text-secondary mt-lg">OpenH2O has nothing to import from this file.</p>
+    <div class="row-start pt-sm mt-md" style="gap: var(--space-sm);">
+      <a href="{% url 'parcels:use_area_import' %}" class="btn-secondary">Choose another file</a>
+    </div>
+    {% endif %}
+  </form>
+</div>

@@ -12,6 +12,10 @@ name here, so the importer and its tests behave exactly as before.
 
 A feature is ``{"geometry": <GeoJSON geometry dict>, "properties": {...}}``.
 
+Use areas read through here too (``parcels/use_area_import.py`` and the
+``import_parcels`` command), so every page and the command give one answer for
+one file. A zip that holds more than one shapefile is refused on all of them.
+
 The two caps are read from this module each time a file is handled, never
 copied at import, so a test can shrink them with ``monkeypatch``.
 """
@@ -23,7 +27,13 @@ import shutil
 import tempfile
 import zipfile
 
-from django.contrib.gis.gdal import DataSource, GDALException
+from django.contrib.gis.gdal import (
+    CoordTransform,
+    DataSource,
+    GDALException,
+    SpatialReference,
+)
+from django.core.files import File
 
 # Hard byte ceilings so an oversized or zip-bomb upload can't exhaust a small
 # server's memory. They are checked before any parse; the import pages have no
@@ -54,6 +64,35 @@ NOT_SHAPEFILE_MESSAGE = (
 )
 NO_FEATURES_MESSAGE = "This file has no map features."
 NO_SHP_MESSAGE = "This zip file does not contain a shapefile (.shp)."
+
+#: Shown by every page and command that needs longitude and latitude and was
+#: given coordinates that are not. It lives here because the Setup Wizard
+#: (``setup``), the Import use areas page (``parcels``) and ``import_parcels``
+#: all show it, and ``setup`` may not import ``parcels`` or ``infrastructure``.
+NOT_LONGITUDE_LATITUDE_MESSAGE = (
+    "The coordinates in this file are not longitude and latitude, and the file "
+    "does not say which projection they are in. For a shapefile, include its "
+    ".prj file in the zip."
+)
+
+#: How many shapefile names the several-shapefiles sentence lists.
+SHAPEFILES_LISTED = 10
+
+
+def several_shapefiles_message(names):
+    """The sentence for a zip that holds more than one shapefile.
+
+    ``names`` are the shapefiles' file names without folders, in the order the
+    reader sorts them. Up to ``SHAPEFILES_LISTED`` are listed, then the rest
+    are counted.
+    """
+    listed = list(names[:SHAPEFILES_LISTED])
+    if len(names) > SHAPEFILES_LISTED:
+        listed.append(f"and {len(names) - SHAPEFILES_LISTED} more")
+    return (
+        f"This zip holds {len(names)} shapefiles: {', '.join(listed)}. "
+        "Upload a zip with only the one you want."
+    )
 
 
 def too_large_message(size):
@@ -104,7 +143,12 @@ def features_from_upload(uploaded_file):
     check_upload_size(uploaded_file)
 
     if ext in GEOJSON_EXTENSIONS:
-        return _parse_geojson_file(uploaded_file)
+        try:
+            return _parse_geojson_file(uploaded_file)
+        except (ValueError, AttributeError, TypeError):
+            # ValueError covers json.JSONDecodeError and UnicodeDecodeError;
+            # AttributeError and TypeError a JSON value that is not GeoJSON.
+            raise ValueError(NOT_GEOJSON_MESSAGE)
     try:
         if ext in SHAPEFILE_EXTENSIONS:
             return _parse_shapefile_zip(uploaded_file)
@@ -115,6 +159,73 @@ def features_from_upload(uploaded_file):
         raise ValueError(
             NOT_SHAPEFILE_MESSAGE if ext in SHAPEFILE_EXTENSIONS else NOT_KML_MESSAGE
         )
+
+
+def features_from_path(path):
+    """Every feature in the map file at ``path``, read the way an upload is.
+
+    A ``.zip``, ``.kml``, ``.geojson`` or ``.json`` goes through
+    ``features_from_upload`` (so the size cap and the several-shapefiles
+    refusal apply); any other extension, such as a bare ``.shp``, is opened
+    with GDAL and read with the same feature extraction and no size cap: the
+    file is already on the server, and the command has always read a bare
+    shapefile of any size.
+    """
+    name = os.path.basename(path)
+    if extension(name) in GEOJSON_EXTENSIONS + SHAPEFILE_EXTENSIONS + KML_EXTENSIONS:
+        with open(path, "rb") as handle:
+            return features_from_upload(File(handle, name=name))
+    return _extract_features_from_datasource(path)
+
+
+def _positions(geometry):
+    """Every (x, y) position in a GeoJSON geometry dict."""
+    if isinstance(geometry, dict):
+        if geometry.get("type") == "GeometryCollection":
+            for part in geometry.get("geometries") or []:
+                yield from _positions(part)
+        else:
+            yield from _positions(geometry.get("coordinates"))
+    elif isinstance(geometry, (list, tuple)):
+        if geometry and not isinstance(geometry[0], (list, tuple)):
+            if len(geometry) >= 2:
+                yield geometry[0], geometry[1]
+        else:
+            for part in geometry:
+                yield from _positions(part)
+
+
+def check_longitude_latitude(features):
+    """Refuse features whose coordinates are not longitude and latitude.
+
+    The readers reproject a layer whose projection the file states. A file
+    that does not (a shapefile without its ``.prj``, a GeoJSON written in feet)
+    comes through unchanged, and its positions fall outside -180 to 180 and
+    -90 to 90. Raises ``ValueError`` with ``NOT_LONGITUDE_LATITUDE_MESSAGE``.
+    """
+    for feature in features:
+        for x, y in _positions(feature.get("geometry")):
+            try:
+                inside = -180 <= x <= 180 and -90 <= y <= 90
+            except TypeError:
+                inside = False
+            if not inside:
+                raise ValueError(NOT_LONGITUDE_LATITUDE_MESSAGE)
+
+
+def two_dimensional(coordinates):
+    """``coordinates`` with every position cut to longitude and latitude.
+
+    GDAL reads a KML position as (lon, lat, altitude), and the geometry
+    columns are 2D, so the altitude is dropped before GEOS ever sees it.
+    """
+    if not isinstance(coordinates, (list, tuple)):
+        # A GeoJSON file can hold anything here ("a", null); GEOS refuses it
+        # later instead of this recursing forever.
+        return coordinates
+    if coordinates and not isinstance(coordinates[0], (list, tuple)):
+        return list(coordinates[:2])
+    return [two_dimensional(part) for part in coordinates]
 
 
 # ---------------------------------------------------------------------------
@@ -196,9 +307,20 @@ def _parse_shapefile_zip(uploaded):
             for root, _dirs, files in os.walk(tmp_dir)
             for fn in files
             if fn.lower().endswith(".shp")
+            # A zip made on a Mac carries a "__MACOSX/._name.shp" copy of each
+            # file's metadata beside the real one; it is not a shapefile.
+            and not fn.startswith("._")
+            and "__MACOSX" not in os.path.relpath(root, tmp_dir).split(os.sep)
         )
         if not shp_files:
             raise ImportError(NO_SHP_MESSAGE)
+        if len(shp_files) > 1:
+            # Reading the first of several used to hide the rest (a real USGS
+            # zip of 13 shapefiles gave its first, empty one), so the person
+            # is asked to send the one they want.
+            raise ImportError(
+                several_shapefiles_message([os.path.basename(p) for p in shp_files])
+            )
 
         return _extract_features_from_datasource(shp_files[0])
     finally:
@@ -217,14 +339,29 @@ def _parse_kml_file(uploaded):
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
+def _is_wgs84_longitude_latitude(srs):
+    return srs.srid == 4326
+
+
 def _extract_features_from_datasource(path):
     ds = DataSource(path)
     features = []
     for layer in ds:
+        # A layer that states a projection is reprojected whether or not GDAL
+        # can match it to an EPSG code (an Esri .prj often cannot); a layer
+        # that states none is left as it is.
+        srs = layer.srs
+        reproject = srs is not None and not _is_wgs84_longitude_latitude(srs)
+        # One transformation per layer: building it for every feature took
+        # 6 of 7 seconds on a county file of 12,128 parcels.
+        to_wgs84 = CoordTransform(srs, SpatialReference(4326)) if reproject else None
         for feat in layer:
-            geom = feat.geom
-            if geom.srid and geom.srid != 4326:
-                geom.transform(4326)
+            try:
+                geom = feat.geom
+            except GDALException:
+                geom = None
+            if geom is not None and reproject:
+                geom.transform(to_wgs84)
             properties = {}
             for field_name in feat.fields:
                 val = feat.get(field_name)
@@ -232,7 +369,7 @@ def _extract_features_from_datasource(path):
                     properties[field_name] = str(val)
             features.append(
                 {
-                    "geometry": json.loads(geom.geojson),
+                    "geometry": json.loads(geom.geojson) if geom is not None else None,
                     "properties": properties,
                 }
             )

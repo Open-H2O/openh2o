@@ -1,22 +1,26 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Management command that imports parcels from GeoJSON or a Shapefile.
+"""Management command that imports parcels from a map file.
 
-Stages each feature into ParcelStaging (normalising geometry to SRID 4326 and
-flagging duplicates), then promotes this run's pending rows into the Parcel
-table. Run it to load a county/agency parcel layer; use --dry-run to preview
-without writing Parcel rows.
+Reads a .geojson, .json, .zip (one shapefile), .kml or a bare .shp through
+core/geofiles.py, the reader the Import use areas page uses. Features that
+carry the same parcel number are joined into one parcel whose outline holds
+all of them. Stages each parcel into ParcelStaging (normalising geometry to
+SRID 4326 and flagging duplicates), then promotes this run's pending rows into
+the Parcel table. Run it to load a county/agency parcel layer; use --dry-run to
+preview without writing Parcel rows. The dry run counts what a real run does.
 """
 from __future__ import annotations
 
 import os
 from typing import Any
 
-from django.contrib.gis.gdal import DataSource
-from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Polygon
+from django.contrib.gis.gdal import GDALException
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
 
+from core import geofiles
+from parcels import use_area_import
 from parcels.models import Parcel, ParcelStaging
 
 
@@ -25,13 +29,13 @@ class _PromotionRefused(Exception):
 
 
 class Command(BaseCommand):
-    help = "Import parcels from GeoJSON or Shapefile into the staging table, then promote to Parcel."
+    help = "Import parcels from a GeoJSON, zipped shapefile, KML or shapefile into the staging table, then promote to Parcel."
 
     def add_arguments(self, parser):
         parser.add_argument(
             "file_path",
             type=str,
-            help="Path to the input file (GeoJSON or Shapefile).",
+            help="Path to the input file (GeoJSON, zipped shapefile, KML or Shapefile).",
         )
         parser.add_argument(
             "--format",
@@ -70,9 +74,9 @@ class Command(BaseCommand):
         if dry_run:
             self.stdout.write(self.style.WARNING("[DRY RUN] No records will be promoted."))
 
-        layer = self._open_layer(file_path)
+        features = self._read_features(file_path)
         staged_ids, staged_pending, staged_duplicate, staged_error = self._stage_features(
-            layer, parcel_number_field
+            features, parcel_number_field
         )
         staged_error_outline = self._outline_refusals
 
@@ -112,27 +116,42 @@ class Command(BaseCommand):
             ext = os.path.splitext(file_path)[1].lower()
             if ext in (".geojson", ".json"):
                 fmt = "geojson"
-            elif ext in (".shp",):
+            elif ext in (".shp", ".zip"):
                 fmt = "shapefile"
+            elif ext == ".kml":
+                fmt = "kml"
             else:
                 raise CommandError(
                     f"Cannot detect format from extension '{ext}'. Use --format."
                 )
         return fmt
 
-    def _open_layer(self, file_path: str) -> Any:
-        """Open the file with GDAL and return its first layer."""
-        try:
-            ds = DataSource(file_path)
-        except Exception as exc:
-            raise CommandError(f"Failed to open file with GDAL: {exc}")
+    def _read_features(self, file_path: str) -> list[dict[str, Any]]:
+        """Read the file's features through core/geofiles.py.
 
-        return ds[0]
+        Refuses, in the page's own words, a zip that holds several shapefiles
+        and coordinates that are not longitude and latitude.
+        """
+        try:
+            features = geofiles.features_from_path(file_path)
+        except GDALException as exc:
+            raise CommandError(f"Failed to open file with GDAL: {exc}")
+        except (ValueError, ImportError) as exc:
+            raise CommandError(str(exc))
+        try:
+            geofiles.check_longitude_latitude(features)
+        except ValueError as exc:
+            raise CommandError(str(exc))
+        return features
 
     def _stage_features(
-        self, layer: Any, parcel_number_field: str
+        self, features: list[dict[str, Any]], parcel_number_field: str
     ) -> tuple[list[int], int, int, int]:
-        """Stage every feature; return (staged ids, pending, duplicate, error counts)."""
+        """Stage every parcel; return (staged ids, pending, duplicate, error counts).
+
+        Features that share a parcel number are one parcel whose outline holds
+        all of them, so the counts are the same ones a real run produces.
+        """
         staged_pending = 0
         staged_duplicate = 0
         staged_error = 0
@@ -142,47 +161,51 @@ class Command(BaseCommand):
         # earlier import) and so this run can clear its own scratch afterward.
         staged_ids: list[int] = []
 
-        for line, feature in enumerate(layer, start=1):
-            parcel_number = None
+        # parcel number -> the first feature's line and properties, and every outline
+        parcels: dict[str, dict[str, Any]] = {}
+        for line, feature in enumerate(features, start=1):
+            properties = feature.get("properties") or {}
+            # A null value is a missing number, not the text "None".
+            value = properties.get(parcel_number_field)
+            parcel_number = "" if value is None else str(value).strip()
+
+            if not parcel_number:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"  Skipping feature: missing or empty '{parcel_number_field}' field."
+                    )
+                )
+                staged_error += 1
+                continue
+
+            outline = use_area_import.outline_of(feature.get("geometry"))
+            if outline is None:
+                self.stdout.write(
+                    self.style.ERROR(
+                        f"  Refused {parcel_number} (feature {line}): "
+                        "its outline cannot be read."
+                    )
+                )
+                staged_error += 1
+                self._outline_refusals += 1
+                continue
+
+            parcel = parcels.get(parcel_number)
+            if parcel is None:
+                parcels[parcel_number] = {"properties": properties, "outlines": [outline]}
+            else:
+                parcel["outlines"].append(outline)
+
+        for parcel_number, parcel in parcels.items():
             try:
-                # Extract parcel number
-                try:
-                    # A null value is a missing number, not the text "None".
-                    value = feature[parcel_number_field].value
-                    parcel_number = "" if value is None else str(value).strip()
-                except Exception:
-                    parcel_number = None
-
-                if not parcel_number:
-                    self.stdout.write(
-                        self.style.WARNING(
-                            f"  Skipping feature: missing or empty '{parcel_number_field}' field."
-                        )
-                    )
-                    staged_error += 1
-                    continue
-
-                raw_data = self._feature_properties(layer, feature)
-                geom = self._feature_geometry(feature, parcel_number)
-                if geom is None:
-                    self.stdout.write(
-                        self.style.ERROR(
-                            f"  Refused {parcel_number} (feature {line}): "
-                            "its outline cannot be read."
-                        )
-                    )
-                    staged_error += 1
-                    self._outline_refusals += 1
-                    continue
-
                 # Duplicate detection
                 is_duplicate = Parcel.objects.filter(parcel_number=parcel_number).exists()
                 status = "duplicate" if is_duplicate else "pending"
 
                 staging_row = ParcelStaging.objects.create(
                     parcel_number=parcel_number,
-                    raw_data=raw_data,
-                    geometry=geom,
+                    raw_data=parcel["properties"],
+                    geometry=use_area_import.joined(parcel["outlines"]),
                     status=status,
                 )
                 staged_ids.append(staging_row.id)
@@ -201,37 +224,6 @@ class Command(BaseCommand):
                 staged_error += 1
 
         return staged_ids, staged_pending, staged_duplicate, staged_error
-
-    def _feature_properties(self, layer: Any, feature: Any) -> dict[str, Any]:
-        """Return the feature's attribute values keyed by field name."""
-        # Extract properties as dict
-        raw_data: dict[str, Any] = {}
-        for field_name in layer.fields:
-            try:
-                raw_data[field_name] = feature[field_name].value
-            except Exception:
-                raw_data[field_name] = None
-        return raw_data
-
-    def _feature_geometry(self, feature: Any, parcel_number: str) -> MultiPolygon | None:
-        """Return the feature geometry as a 4326 MultiPolygon, or None if it cannot be read."""
-        # Extract and normalise geometry
-        geom = None
-        try:
-            geom_wkt = feature.geom.wkt
-            geos_geom = GEOSGeometry(geom_wkt, srid=feature.geom.srid or 4326)
-            # Transform to SRID 4326 if needed
-            if geos_geom.srid != 4326:
-                geos_geom.transform(4326)
-            # Wrap Polygon in MultiPolygon
-            if isinstance(geos_geom, Polygon):
-                geos_geom = MultiPolygon(geos_geom)
-            geom = geos_geom
-        except Exception as exc:
-            self.stdout.write(
-                self.style.WARNING(f"  {parcel_number}: geometry error: {exc}.")
-            )
-        return geom
 
     def _promote_staged(self, staged_ids: list[int], owner_field: str) -> tuple[int, int]:
         """Create a Parcel for each pending row this run staged; return (imported, failed) counts."""

@@ -34,9 +34,11 @@ from core.geofiles import (
     GEOJSON_EXTENSIONS,
     NO_FEATURES_MESSAGE,
     NOT_GEOJSON_MESSAGE,
+    NOT_LONGITUDE_LATITUDE_MESSAGE,
     check_upload_size,
     extension,
     features_from_upload,
+    two_dimensional as _two_dimensional,
 )
 
 logger = logging.getLogger(__name__)
@@ -218,21 +220,6 @@ NO_POLYGON_SENTENCE = "This file has only points or lines. The boundary must be 
 _CHECK_IN_GIS = "Check that the file opens in a GIS program, then upload it again."
 
 
-def _two_dimensional(coordinates):
-    """``coordinates`` with every position cut to longitude and latitude.
-
-    GDAL reads a KML position as (lon, lat, altitude), and ``Boundary.geometry``
-    is a 2D column, so the altitude is dropped before GEOS ever sees it.
-    """
-    if not isinstance(coordinates, (list, tuple)):
-        # A GeoJSON file can hold anything here ("a", null); GEOS refuses it
-        # below with the polygon sentence instead of this recursing forever.
-        return coordinates
-    if coordinates and not isinstance(coordinates[0], (list, tuple)):
-        return list(coordinates[:2])
-    return [_two_dimensional(part) for part in coordinates]
-
-
 def _feature_name(properties) -> str:
     """The feature's own name, whatever the case of its key (KML writes ``Name``)."""
     if not isinstance(properties, dict):
@@ -348,11 +335,7 @@ def _boundary_from_features(features, *, fallback_name):
     union.srid = 4326
 
     if not _within_longitude_latitude(union):
-        raise ValueError(
-            "The coordinates in this file are not longitude and latitude, and "
-            "the file does not say which projection they are in. For a "
-            "shapefile, include its .prj file in the zip."
-        )
+        raise ValueError(NOT_LONGITUDE_LATITUDE_MESSAGE)
 
     name = _feature_name(first_properties) or fallback_name
     attrs = boundary_attrs_from_properties(first_properties)

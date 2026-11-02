@@ -284,6 +284,7 @@ class PendingImport(models.Model):
         ("production", "Production"),
         ("infrastructure", "Wells, diversions and recharge sites"),
         ("water_levels", "Water levels"),
+        ("use_areas", "Use areas"),
     ]
     STATUS_CHOICES = [
         ("previewed", "Previewed"),

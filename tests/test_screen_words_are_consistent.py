@@ -91,6 +91,9 @@ FIELD_WORD_KEPT: dict = {
     # same public land, in the demonstration's one-paragraph description.
     "templates/setup/partials/_demonstration_status.html": 1,
     "templates/setup/wizard.html": 1,
+    # "Field outlines": the outlines in the person's own file, before any of
+    # them is a use area (the heading Brent approved on the drawing, ruling 70).
+    "templates/parcels/use_area_import.html": 1,
 }
 
 #: Titles that start "New " or "Create " and are not a new record, one reason

@@ -1,0 +1,19 @@
+{% load humanize %}{% comment %}
+Outcome of a use area import, and every refusal the page shows. Two shapes, like
+the other importers' result blocks: one error sentence (a file the page cannot
+use, or a token that has expired), or the count of what was saved.
+{% endcomment %}
+{% if error %}
+<div class="card-raised" style="border-left: 3px solid var(--color-error); padding: var(--space-md);">
+  <p class="text-base" style="margin: 0; color: var(--color-error);">{{ error }}</p>
+</div>
+{% else %}
+<div class="card-raised">
+  <h2 class="card-header-ruled">Import complete</h2>
+  <p class="text-base text-secondary mt-md">OpenH2O imported {{ created|intcomma }} use area{{ created|pluralize }}, {{ acres|intcomma }} acre{{ acres|pluralize }}.</p>
+  <div class="row-start pt-sm" style="margin-top: var(--space-lg); gap: var(--space-sm);">
+    <a href="{% url 'parcels:list' %}" class="btn-primary">View Use Areas</a>
+    <a href="{% url 'parcels:use_area_import' %}" class="btn-secondary">Import another file</a>
+  </div>
+</div>
+{% endif %}

@@ -23,7 +23,8 @@ from django.db.models import Q
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_GET, require_POST, require_http_methods
+from core import pending_imports
 from core.access import public_in_open_demo
 from core.workspace import list_response, redirect_to_selected
 
@@ -39,6 +40,7 @@ from accounting.services import (
 from core.map_labels import map_label
 from core.modules import is_enabled
 from core.validation import FieldValidationError, coerce_decimal, coerce_int
+from parcels import use_area_import as use_area_file
 from parcels.forms import FallowPeriodForm
 from parcels.models import (
     IrrigationMethod,
@@ -796,3 +798,110 @@ def parcels_geojson(request):
     for f in data["features"]:
         f["properties"]["pk"] = f.get("id")
     return HttpResponse(json.dumps(data), content_type="application/json")
+
+
+# ---------------------------------------------------------------------------
+# Import use areas: page -> preview/match -> import
+# ---------------------------------------------------------------------------
+
+USE_AREA_RESULT_TEMPLATE = "parcels/partials/_use_area_import_result.html"
+USE_AREA_PREVIEW_TEMPLATE = "parcels/partials/_use_area_import_preview.html"
+
+
+@login_required
+@require_GET
+def use_area_import(request):
+    """The page that takes a zipped shapefile, a KML or a GeoJSON of field outlines."""
+    return render(request, "parcels/use_area_import.html")
+
+
+def _stored_use_areas(pending):
+    """The stored file, read again: ``{"features", "columns"}``."""
+    with pending_imports.stored_file(pending) as file:
+        return use_area_file.read_file(file)
+
+
+def _use_area_preview_context(pending, read, mapping):
+    """What the matching step shows for a stored file and a set of column matches.
+
+    The counts come from the same ``plan_features`` Import runs.
+    """
+    features = read["features"]
+    columns = read["columns"]
+    plan = use_area_file.plan_features(features, mapping, use_area_file.site_boundary())
+    unreadable, not_listed = pending_imports.cap_error_rows(plan["unreadable_numbers"])
+    return {
+        "token": pending.token,
+        "file_name": pending.original_name,
+        "outline_count": len(features),
+        "columns": columns,
+        "field_rows": [
+            {
+                "field": "parcel_number",
+                "label": "Parcel number",
+                "required": True,
+                "guess": mapping.get("parcel_number", ""),
+                "sample": use_area_file.first_values(features, mapping.get("parcel_number", "")),
+            },
+            {
+                "field": "owner_name",
+                "label": "Owner",
+                "required": False,
+                "guess": mapping.get("owner_name", ""),
+                "sample": use_area_file.first_values(features, mapping.get("owner_name", "")),
+            },
+        ],
+        "new_count": len(plan["new"]),
+        "acres": plan["acres"],
+        "on_file_count": plan["on_file"],
+        "outside_count": plan["outside"],
+        "unreadable_count": plan["unreadable"],
+        "unreadable_numbers": unreadable,
+        "unreadable_not_listed": not_listed,
+        "no_number_count": plan["no_number"],
+        "too_long_count": plan["too_long"],
+        "number_max_length": use_area_file.NUMBER_MAX_LENGTH,
+    }
+
+
+@login_required
+@require_POST
+def use_area_import_preview(request):
+    """Read the upload (or the stored file again, with changed matches) and show what Import would do."""
+    uploaded = request.FILES.get("file")
+    if uploaded:
+        try:
+            pending, read = pending_imports.receive(
+                request, "use_areas", uploaded, use_area_file.read_file
+            )
+        except ImportError as exc:
+            return render(request, USE_AREA_RESULT_TEMPLATE, {"error": str(exc)})
+        mapping = use_area_file.auto_map(read["columns"])
+    elif request.POST.get("token"):
+        pending = pending_imports.previewed(request, "use_areas")
+        if pending is None:
+            return pending_imports.refused(request, "use_areas")
+        try:
+            read = _stored_use_areas(pending)
+        except FileNotFoundError:
+            return pending_imports.refused(request, "use_areas")
+        except ImportError as exc:
+            return render(request, USE_AREA_RESULT_TEMPLATE, {"error": str(exc)})
+        mapping = use_area_file.posted_mapping(request.POST, read["columns"])
+    else:
+        return render(
+            request, USE_AREA_RESULT_TEMPLATE, {"error": use_area_file.NO_FILE_MESSAGE}
+        )
+    context = _use_area_preview_context(pending, read, mapping)
+    return render(request, USE_AREA_PREVIEW_TEMPLATE, context)
+
+
+@login_required
+@require_POST
+def use_area_import_commit(request):
+    """Start writing the stored file with the confirmed column matches."""
+    mapping = {
+        "parcel_number": request.POST.get("map:parcel_number", ""),
+        "owner_name": request.POST.get("map:owner_name", ""),
+    }
+    return pending_imports.start_import(request, "use_areas", {"mapping": mapping})

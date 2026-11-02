@@ -99,14 +99,14 @@ map to them.
   <p class="empty-state-text" style="max-width: 460px;">No use areas yet.</p>
   {% if 'setup' in enabled_modules %}
   <p class="text-tertiary text-sm" style="max-width: 460px; margin-top: var(--space-sm);">
-    The Setup Wizard loads use areas from the statewide parcel layer; there is no add form.
+    The Setup Wizard loads use areas from the statewide parcel layer{% if user_can_write %}; you can also <a href="{% url 'parcels:use_area_import' %}" class="prose-link">import your own file</a>{% endif %}.
   </p>
   <div class="form-footer" style="margin-top: var(--space-md);">
     <a href="{% url 'setup:wizard' %}" class="btn-primary">Open the Setup Wizard &rarr;</a>
   </div>
-  {% else %}
+  {% elif user_can_write %}
   <p class="text-tertiary text-sm" style="max-width: 460px; margin-top: var(--space-sm);">
-    Load your parcel file with the import_parcels command; there is no add form.
+    You can <a href="{% url 'parcels:use_area_import' %}" class="prose-link">import your own file</a>.
   </p>
   {% endif %}
   {% endif %}

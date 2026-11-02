@@ -14,6 +14,12 @@
 <script src="{% static 'js/map-core.js' %}"></script>
 {% endblock %}
 
+{% block page_actions %}
+{% if user_can_write %}
+<a href="{% url 'parcels:use_area_import' %}" class="btn-secondary btn-sm">Import use areas</a>
+{% endif %}
+{% endblock %}
+
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
