@@ -32,6 +32,12 @@ Usage:
     python manage.py sync_source cdec --start 2024-01-01 --end 2024-01-31
     python manage.py sync_source cdec --start 2024-10-01 --full-resolution
     python manage.py sync_source cdec --mock
+    python manage.py sync_source usgs --station 12 --log 345
+
+``--station`` syncs that one station over the same default window, and ``--log``
+writes into an existing ``DataSyncLog`` row instead of creating one and closes
+it when the run ends. The station page's Fetch readings now button starts the
+command this way (datasync/fetch_now.py).
 """
 
 from __future__ import annotations
@@ -40,12 +46,19 @@ from datetime import date, timedelta
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
-from django.db.models import QuerySet
+from django.db.models import Q, QuerySet
 from django.utils import timezone
 
 from datasync import freshness
 from datasync.adapters import get_adapter
+from datasync.fetch_now import RUNNING_LIMIT
 from datasync.models import DataSource, DataSyncLog, MonitoredStation
+
+#: Printed for the source whose stations never sync; sync_all skips the source.
+MANUAL_SOURCE_SENTENCE = (
+    "Readings at a station entered by hand are typed on the station's page. "
+    "OpenH2O fetches nothing for them."
+)
 
 # Pull twice the source's expected publishing interval, so a single missed
 # publication still lands inside the next window rather than falling through it.
@@ -149,6 +162,20 @@ class Command(BaseCommand):
             help="End date (YYYY-MM-DD). Defaults to today.",
         )
         parser.add_argument(
+            "--station", type=int, default=None,
+            help=(
+                "Sync only the station with this primary key, over the same "
+                "default window. The station need not have syncing turned on."
+            ),
+        )
+        parser.add_argument(
+            "--log", type=int, default=None,
+            help=(
+                "Write into this existing sync log row instead of creating one, "
+                "and close it when the run ends."
+            ),
+        )
+        parser.add_argument(
             "--mock", action="store_true",
             help="Force mock mode (use fixture data instead of live API)",
         )
@@ -171,9 +198,17 @@ class Command(BaseCommand):
         except DataSource.DoesNotExist:
             raise CommandError(f"Data source '{code}' not found. Run seed_data_sources first.")
 
+        # A station entered by hand has nothing to fetch. Say so and stop, with
+        # no adapter lookup (there is none) and no log row.
+        if data_source.is_manual:
+            self.stdout.write(MANUAL_SOURCE_SENTENCE)
+            return
+
         adapter = get_adapter(code)
         if adapter is None:
             raise CommandError(f"No adapter registered for source code '{code}'.")
+
+        one_station, existing_log = self._one_station_and_log(data_source, options)
 
         # Only CDEC publishes finer than daily, so only CDEC has a resolution to
         # give up. setattr rather than a constructor argument keeps every other
@@ -191,6 +226,9 @@ class Command(BaseCommand):
                     "publish). Reactivate the source to sync it."
                 )
             )
+            self._close_unrun_log(
+                existing_log, f"{data_source.name} is switched off in OpenH2O."
+            )
             return
 
         # A source whose key is not set is skipped in one line, not tried: the
@@ -204,13 +242,20 @@ class Command(BaseCommand):
                         f"not set: {missing}."
                     )
                 )
+                self._close_unrun_log(
+                    existing_log, f"{data_source.name} is missing its key."
+                )
                 return
 
         start_date, end_date = _pull_window(code, options["start"], options["end"])
 
-        stations = MonitoredStation.objects.filter(
-            data_source=data_source, is_active=True
-        )
+        if one_station is not None:
+            # One station, whether or not syncing is on for it: the person asked.
+            stations = MonitoredStation.objects.filter(pk=one_station.pk)
+        else:
+            stations = MonitoredStation.objects.filter(
+                data_source=data_source, is_active=True
+            )
 
         if not stations.exists():
             switched_off = MonitoredStation.objects.filter(
@@ -233,6 +278,7 @@ class Command(BaseCommand):
                         f"Run discover_stations {code} first."
                     )
                 )
+            self._close_unrun_log(existing_log, f"No station to fetch for {data_source.name}.")
             return
 
         self.stdout.write(
@@ -240,25 +286,65 @@ class Command(BaseCommand):
             f"({start_date} to {end_date})"
         )
 
-        self._reap_orphaned_logs(data_source, code)
-
-        # Create a shared sync log for all stations in this run
-        sync_log = DataSyncLog.objects.create(
-            data_source=data_source, status="running"
-        )
+        if existing_log is None:
+            self._reap_orphaned_logs(data_source, code)
+            # Create a shared sync log for all stations in this run
+            sync_log = DataSyncLog.objects.create(
+                data_source=data_source, status="running"
+            )
+        else:
+            sync_log = existing_log
 
         failures = self._sync_stations(
-            adapter, stations, start_date, end_date, sync_log, options["mock"]
+            adapter, stations, start_date, end_date, sync_log, options["mock"],
+            one_station=one_station is not None,
         )
 
         _finalize_sync_log(sync_log, failures, stations)
 
-        # Update source timestamp
-        data_source.last_sync_at = timezone.now()
-        data_source.save()
+        # Update source timestamp. A one-station run is not the source's own
+        # sync: the other stations were not pulled, so the source's last sync
+        # does not move.
+        if one_station is None:
+            data_source.last_sync_at = timezone.now()
+            data_source.save()
 
         self._report_outcome(sync_log)
-        self._alert_on_persistent_failure(data_source, sync_log)
+        if one_station is None:
+            self._alert_on_persistent_failure(data_source, sync_log)
+
+    def _one_station_and_log(self, data_source, options):
+        """The station and the existing log named on the command line, each or None."""
+        station = None
+        if options.get("station") is not None:
+            station = MonitoredStation.objects.filter(
+                pk=options["station"], data_source=data_source
+            ).first()
+            if station is None:
+                raise CommandError(
+                    f"Station {options['station']} is not a {data_source.name} station."
+                )
+        log = None
+        if options.get("log") is not None:
+            log = DataSyncLog.objects.filter(
+                pk=options["log"], data_source=data_source
+            ).first()
+            if log is None:
+                raise CommandError(
+                    f"Sync log {options['log']} is not a {data_source.name} log."
+                )
+        return station, log
+
+    @staticmethod
+    def _close_unrun_log(log, message):
+        """Close the log a caller handed in when the run was skipped, so it never sits "running"."""
+        if log is None:
+            return
+        log.status = "failed"
+        log.error_message = message
+        log.completed_at = timezone.now()
+        log.duration_seconds = (log.completed_at - log.started_at).total_seconds()
+        log.save()
 
     def _reap_orphaned_logs(self, data_source: DataSource, code: str) -> None:
         """Close out "running" logs left by a prior run that died mid-flight."""
@@ -269,8 +355,15 @@ class Command(BaseCommand):
         # create and the finalize below. Left alone it latches "running" forever
         # and the monitoring panel shows a permanent "Syncing…". Close them out
         # as failed so the source reflects reality.
+        #
+        # A one-station fetch from a station page runs beside the schedule, so a
+        # station's log is spared until it is older than the limit after which
+        # the page itself stops counting it as running (datasync/fetch_now.py).
         reaped = DataSyncLog.objects.filter(
             data_source=data_source, status="running"
+        ).filter(
+            Q(station__isnull=True)
+            | Q(started_at__lt=timezone.now() - RUNNING_LIMIT)
         ).update(
             status="failed",
             completed_at=timezone.now(),
@@ -291,6 +384,7 @@ class Command(BaseCommand):
         end_date: date,
         sync_log: DataSyncLog,
         mock: bool,
+        one_station: bool = False,
     ) -> int:
         """Sync each station into the shared log; returns how many errored."""
         failures = 0
@@ -301,6 +395,12 @@ class Command(BaseCommand):
             )
             if result.error_message:
                 failures += 1
+                if one_station and getattr(result, "source_did_not_answer", False):
+                    # The station page shows the log's own message, and for a
+                    # connection error or a timeout that is the source not
+                    # answering. The exception text is in the server log. A
+                    # whole-source run keeps the exception text in its log.
+                    result.error_message = f"{station.data_source.name} did not answer."
                 self.stdout.write(self.style.ERROR(f"    Error: {result.error_message}"))
         return failures
 
@@ -373,7 +473,9 @@ class Command(BaseCommand):
         """
         recent = (
             DataSyncLog.objects
-            .filter(data_source=data_source)
+            # A failed one-station fetch is a person's press, not the source
+            # being down, so only whole-source runs make a streak.
+            .filter(data_source=data_source, station__isnull=True)
             .exclude(status="running")
             .order_by("-started_at")
             .values_list("status", flat=True)[:CONSECUTIVE_FAILURES_BEFORE_ALERT]

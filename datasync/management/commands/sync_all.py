@@ -10,7 +10,7 @@ Usage:
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 
-from datasync.models import DataSource
+from datasync.models import MANUAL_SOURCE_CODE, DataSource
 
 
 class Command(BaseCommand):
@@ -23,7 +23,13 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        sources = DataSource.objects.filter(is_active=True).order_by("code")
+        # The source whose stations are typed by hand has nothing to fetch, so
+        # it is not called (and not counted among the sources that were).
+        sources = (
+            DataSource.objects.filter(is_active=True)
+            .exclude(code=MANUAL_SOURCE_CODE)
+            .order_by("code")
+        )
 
         if not sources.exists():
             self.stdout.write(

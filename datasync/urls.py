@@ -11,6 +11,13 @@ urlpatterns = [
     path("stations/add/", views.station_add, name="station_add"),
     path("stations/<int:pk>/", views.station_detail, name="station_detail"),
     path("stations/<int:pk>/toggle/", views.station_toggle, name="station_toggle"),
+    path("stations/<int:pk>/fetch/", views.station_fetch_now, name="station_fetch_now"),
+    path(
+        "stations/<int:pk>/fetch/<int:log_pk>/",
+        views.station_fetch_status,
+        name="station_fetch_status",
+    ),
+    path("stations/<int:pk>/readings/add/", views.station_reading_add, name="station_reading_add"),
     path("stations/<int:pk>/chart-data/", views.station_chart_data, name="station_chart_data"),
     path("stations/geojson/", views.stations_geojson, name="stations_geojson"),
     path("stations/freshness-geojson/", views.stations_freshness_geojson, name="stations_freshness_geojson"),

@@ -203,7 +203,7 @@ def check_sync_freshness():
             "sync_freshness", "datasync", "external-feed freshness"
         )
 
-    from datasync.models import DataSource
+    from datasync.models import MANUAL_SOURCE_CODE, DataSource
 
     # On the public demo the database is restored from a frozen golden snapshot
     # every night, so external-feed timestamps are intentionally static. Staleness
@@ -220,7 +220,11 @@ def check_sync_freshness():
             "details": {"demo_mode": True},
         }
 
-    active_sources = DataSource.objects.filter(is_active=True)
+    # The source whose readings are typed by hand is not fetched from anywhere,
+    # so it never has a last sync to be behind on.
+    active_sources = DataSource.objects.filter(is_active=True).exclude(
+        code=MANUAL_SOURCE_CODE
+    )
     if not active_sources.exists():
         return {
             "category": "sync_freshness",
@@ -272,8 +276,11 @@ def _survey_source_freshness(
         # Row 1: a partial sync (some stations returned data) counts as a
         # sync, as sync_source's own failure streak counts it.
         last_log = (
+            # Whole-source runs only: one station's fetch from its page says
+            # nothing about the other stations.
             DataSyncLog.objects.filter(
-                data_source=source, status__in=("success", "partial")
+                data_source=source, station__isnull=True,
+                status__in=("success", "partial"),
             )
             .order_by("-started_at")
             .first()

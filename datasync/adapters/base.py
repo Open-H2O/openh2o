@@ -252,6 +252,7 @@ class BaseAdapter(ABC):
                         raw_data=rec,
                         observation_date=obs_date,
                         parameter_code=rec.get("parameter_code", ""),
+                        statistic=rec.get("statistic_id", "") or "",
                         value=value,
                         unit=rec.get("unit", ""),
                         status="staged",
@@ -267,14 +268,22 @@ class BaseAdapter(ABC):
 
         return len(staging_objects)
 
-    def publish(self, sync_log):
-        """Promote staged records to published and update station timestamps."""
+    def publish(self, sync_log, station=None):
+        """Promote staged records to published and update station timestamps.
+
+        With a ``station``, only that station's staged rows are promoted. A
+        one-station fetch started from a station page runs beside the scheduled
+        sync, and neither may publish rows the other has staged and not yet
+        finished with. Without one, every staged row of the source is promoted.
+        """
         from django.db.models import Max
 
         staged_qs = DataRecordStaging.objects.filter(
             data_source=sync_log.data_source,
             status="staged",
         )
+        if station is not None:
+            staged_qs = staged_qs.filter(station=station)
         now = timezone.now()
         # Stations that had data staged this run (capture before the update
         # flips them out of "staged").
@@ -341,7 +350,7 @@ class BaseAdapter(ABC):
             sync_log.records_staged += staged_count
 
             # Publish
-            published_count = self.publish(sync_log)
+            published_count = self.publish(sync_log, station=station)
             sync_log.records_published += published_count
 
             if own_log:
@@ -369,6 +378,10 @@ class BaseAdapter(ABC):
         except (requests.RequestException, requests.ConnectionError) as exc:
             logger.error("%s: connection error for %s: %s", self.source_code, station, exc)
             sync_log.error_message = str(exc)
+            # Not a column: a one-station fetch (sync_source --station) reads this
+            # in the same process to tell "the source did not answer" from any
+            # other failure, and words its screen sentence from it.
+            sync_log.source_did_not_answer = True
             if own_log:
                 sync_log.status = "failed"
 

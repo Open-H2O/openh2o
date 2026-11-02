@@ -174,6 +174,8 @@ def _key_missing(source_code: str) -> bool:
 def station_sentence(station, now: datetime | None = None):
     """The sentence a station's page carries about when readings are fetched."""
     name = station.data_source.name
+    if station.data_source.is_manual:
+        return "An Operator or Administrator types each reading on this page."
     if not station.is_active:
         return "Syncing is off, so OpenH2O's schedule skips this station."
     if not station.data_source.is_active:

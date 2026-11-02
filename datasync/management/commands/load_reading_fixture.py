@@ -30,8 +30,11 @@ page catches once every gate is green, so it is stated here rather than left to 
 The field is the adapter's untouched upstream payload; a frozen demonstration has
 no upstream call to record.
 
-Idempotent by ``update_or_create`` on the ``(station, parameter_code,
-observation_date)`` unique triple, which is the model's own constraint.
+Each row may carry a ``"statistic"`` (USGS daily high, low or average); a row
+without the key is a source that publishes none and loads with it blank.
+
+Idempotent by ``update_or_create`` on the ``(station, parameter_code, statistic,
+observation_date)`` unique key, which is the model's own constraint.
 
 Usage:
     python manage.py load_reading_fixture
@@ -105,6 +108,7 @@ class Command(BaseCommand):
                     raw_data={},
                     observation_date=datetime.fromisoformat(r["observation_date"]),
                     parameter_code=r["parameter_code"],
+                    statistic=r.get("statistic", ""),
                     value=None if r["value"] is None else Decimal(r["value"]),
                     unit=r["unit"],
                     # The chart endpoint filters on this. See the docstring.
@@ -114,7 +118,7 @@ class Command(BaseCommand):
             )
 
         # ignore_conflicts rather than update_or_create per row: the model's
-        # unique triple makes a re-run a genuine no-op, and 8k single-row
+        # unique key makes a re-run a genuine no-op, and 8k single-row
         # round-trips would dominate the rebuild's wall clock for no gain.
         DataRecordStaging.objects.bulk_create(
             objs, batch_size=2000, ignore_conflicts=True

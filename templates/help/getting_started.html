@@ -88,7 +88,7 @@
           {% if 'datasync' in enabled_modules %}<tr>
             <td class="col-step"><span class="step-num">{{ steps.stations }}</span>Connect monitoring stations</td>
             <td class="col-where">Sources and monitoring &gt; Monitoring Stations<br><a href="{% url 'datasync:station_list' %}" class="text-sm text-accent">Go to Monitoring Stations &rarr;</a></td>
-            <td>{% if 'setup' in enabled_modules %}The Setup Wizard adds the stations it finds near your boundary and leaves syncing off for each one. {% endif %}Switch syncing on for each station you want to follow, or add a station with Add station. OpenH2O then collects new readings from those stations on your server&rsquo;s schedule.</td>
+            <td>{% if 'setup' in enabled_modules %}The Setup Wizard adds the stations it finds near your boundary and leaves syncing off for each one. {% endif %}Switch syncing on for each station you want to follow, or add a station with Add station. OpenH2O then collects new readings from those stations on your server&rsquo;s schedule, or at once with Fetch readings now on the station&rsquo;s page.</td>
           </tr>{% endif %}
           {% if 'accounting' in enabled_modules %}<tr>
             <td class="col-step"><span class="step-num">{{ steps.accounts }}</span>Set up water accounts</td>

@@ -68,7 +68,7 @@
     </div>
     <p id="chart-empty" class="text-tertiary text-base" style="display: none; margin-top: var(--space-sm);">This station has no published data for this period.</p>
     {% else %}
-    <p class="text-secondary text-base">This station has no published readings.{% if not station.is_active %} Syncing is switched off for it.{% endif %}</p>
+    <p class="text-secondary text-base">This station has no published readings.{% if not station.is_active and not is_manual %} Syncing is switched off for it.{% endif %}</p>
     {% endif %}
   </div>
 
@@ -97,6 +97,8 @@
     <div class="card-raised">
       <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
         <h2 class="section-header-flush">Station information</h2>
+        {% comment %} A station entered by hand has no sync to switch off. {% endcomment %}
+        {% if not is_manual %}
         <div id="toggle-cell" class="row-start">
           {% comment %} "Syncing", not "Active": this switch is the wiring
                axis, and the freshness dot a few lines up is the other one. The
@@ -105,6 +107,7 @@
           <span class="text-tertiary text-xs" style="margin-right: var(--space-xs);" title="Whether OpenH2O's scheduled syncs include this station. The Up to date, Slightly behind or Dormant badge shows how recently the station reported.">Syncing</span>
           {% include "datasync/partials/_station_toggle.html" %}
         </div>
+        {% endif %}
       </div>
 
       <div class="{% if not latest_readings %}field-grid-2{% endif %}">
@@ -122,8 +125,13 @@
 
         <div class="field-group">
           <div class="field-label field-row">
+            {% if is_manual %}
+            Station ID
+            {% include "partials/_help_tooltip.html" with label="Station ID" text="The ID is the organization's own name or number for the station." %}
+            {% else %}
             External station ID
             {% include "partials/_help_tooltip.html" with label="Station ID" text="The code the data source gives this station." %}
+            {% endif %}
           </div>
           <div class="field-value-mono">{{ station.external_station_id }}</div>
         </div>
@@ -145,8 +153,8 @@
           <div class="field-label">Parameters</div>
           {% if enriched_parameters %}
             <div style="display: flex; flex-wrap: wrap; gap: 4px;">
-              {% for p in enriched_parameters %}
-                <span class="pill-tag">{{ p.label }}</span>
+              {% for label in parameter_pills %}
+                <span class="pill-tag">{{ label }}</span>
               {% endfor %}
             </div>
           {% else %}
@@ -208,7 +216,53 @@
     per station (_station_detail_context reads DataSyncLog by data_source),
     so the merged sentence names the source, not the station.
   {% endcomment %}
-  {% if recent_logs or recent_records %}
+  {% if is_manual %}
+  {% comment %} A station entered by hand has no sync logs: the Add a reading card
+       takes that card's cell for a writer, and a Viewer sees the readings card
+       alone at full width. Drawing: 4-station-by-hand.html. {% endcomment %}
+  <div{% if user_can_write %} class="page-grid-2col" style="grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);"{% endif %}>
+
+    {% if user_can_write %}
+    <div class="card-raised">
+      <h2 class="card-header-ruled">Add a reading</h2>
+      {% if reading_errors %}
+      <div class="alert-error">
+        {% for error in reading_errors %}<div>{{ error }}</div>{% endfor %}
+      </div>
+      {% endif %}
+      <form method="post" action="{% url 'datasync:station_reading_add' station.pk %}" class="form-grid">
+        {% csrf_token %}
+        <div class="form-group">
+          <label class="form-label" for="id_reading_date">Date <span class="required-mark">*</span></label>
+          <input type="date" id="id_reading_date" name="observation_date" value="{{ reading_values.observation_date }}" required class="form-input text-mono">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="id_reading_value">Value <span class="required-mark">*</span></label>
+          <input type="number" id="id_reading_value" name="value" step="any" value="{{ reading_values.value }}" required class="form-input text-mono">
+        </div>
+        <div class="form-group form-span-2">
+          <label class="form-label" for="id_reading_parameter">Parameter <span class="required-mark">*</span></label>
+          <select id="id_reading_parameter" name="parameter" required class="form-select">
+            {% for code, label in reading_parameters %}
+            <option value="{{ code }}"{% if reading_values.parameter == code %} selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group form-span-2">
+          <label class="form-label" for="id_reading_notes">Notes</label>
+          <textarea id="id_reading_notes" name="notes" class="form-textarea" style="min-height: 72px;">{{ reading_values.notes }}</textarea>
+        </div>
+        <div class="form-footer-ruled">
+          <button type="submit" class="btn-primary">Add reading</button>
+        </div>
+      </form>
+    </div>
+    {% endif %}
+
+    {% include "datasync/partials/_station_readings_card.html" %}
+
+  </div>
+  {% elif recent_logs or recent_records %}
   <div class="page-grid-2col" style="grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);">
 
     <!-- Recent Sync Logs card -->
@@ -254,52 +308,7 @@
       {% endif %}
     </div>
 
-    <!-- Recent Data Records card -->
-    <div class="card-raised">
-      <div class="row-between mb-md">
-        <h2 class="section-header-flush">Readings, newest first</h2>
-        {% if recent_records|length >= 10 %}
-        <span class="text-tertiary text-xs">Showing 10 most recent</span>
-        {% endif %}
-      </div>
-      {% if recent_records %}
-      <div class="table-scroll">
-      <table class="data-table text-sm">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Parameter</th>
-            <th class="th-right">Value</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for record in recent_records %}
-          <tr>
-            <td class="text-secondary">{{ record.observation_date|date:"M d, Y" }}</td>
-            <td class="text-secondary text-sm">{{ record.param_display }}</td>
-            <td class="td-num">
-              {% if record.value is not None %}{{ record.value|floatformat:2 }} {% if record.unit %}<span class="text-tertiary" style="font-size: 0.7rem;">{{ record.unit }}</span>{% endif %}{% else %}<span class="value-empty">Not recorded</span>{% endif %}
-            </td>
-            <td>
-              <span style="
-                display: inline-flex; align-items: center;
-                border-radius: var(--radius-sm); padding: 1px 6px; font-size: 0.7rem; font-weight: 600;
-                {% if record.status == 'published' %}background: rgba(34,197,94,0.1); color: var(--forest-400);
-                {% elif record.status == 'rejected' %}background: rgba(239,68,68,0.1); color: var(--color-error);
-                {% elif record.status == 'duplicate' %}background: rgba(100,116,139,0.1); color: var(--color-text-secondary);
-                {% else %}background: var(--color-elevated); color: var(--color-text-secondary);{% endif %}
-              ">{{ record.get_status_display }}</span>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      </div>
-      {% else %}
-        <p class="text-tertiary text-base">No readings yet.</p>
-      {% endif %}
-    </div>
+    {% include "datasync/partials/_station_readings_card.html" %}
 
   </div>
   {% else %}
@@ -367,6 +376,10 @@
                      : freshness === 'stale' ? token('--color-stale', axisColor)
                      : token('--color-dormant', axisColor);
     var compareColor = token('--color-blue', '#1B7FAF'); // the compare series
+    // Lines for the other daily statistics of the selected parameter. The daily
+    // high (or a lone line) keeps primaryColor.
+    var averageColor = token('--color-accent', axisColor);
+    var lowColor = token('--color-deficit', axisColor);
     var chartDataUrl = '{{ chart_data_url }}';
 
     var canvas = document.getElementById('telemetry-chart');
@@ -391,7 +404,12 @@
         maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
         plugins: {
-          legend: { display: false },
+          legend: {
+            display: false,
+            position: 'top',
+            align: 'end',
+            labels: { usePointStyle: true, pointStyle: 'line', boxWidth: 14, font: { size: 11 }, color: axisColor }
+          },
           tooltip: {
             callbacks: {
               label: function(context) {
@@ -452,21 +470,35 @@
       }
     });
 
-    // Style helpers for one dataset.
-    function styleDataset(d, isSecondary) {
-      var color = isSecondary ? compareColor : primaryColor;
+    // Style helpers for one dataset. `lines` is how many lines the primary
+    // parameter draws: with one, or for the daily high (00001), the line keeps
+    // the freshness colour and its gradient; the daily average takes the accent
+    // and any other statistic the low colour, neither filled.
+    function styleDataset(d, lines) {
+      var isSecondary = d.axis === 'y1';
+      var color, filled = false;
+      if (isSecondary) {
+        color = compareColor;
+      } else if (lines === 1 || d.statistic === '00001') {
+        color = primaryColor;
+        filled = true;
+      } else if (d.statistic === '00003') {
+        color = averageColor;
+      } else {
+        color = lowColor;
+      }
       return {
         label: d.label,
         data: d.data,
         _unit: d.unit || '',
-        yAxisID: d.axis || (isSecondary ? 'y1' : 'y'),
+        yAxisID: d.axis || 'y',
         borderColor: color,
-        backgroundColor: isSecondary ? hexToRgba(color, 0.0) : gradient,
+        backgroundColor: filled ? gradient : 'transparent',
         borderWidth: 2,
         pointRadius: 2,
         pointHoverRadius: 4,
         tension: 0.3,
-        fill: !isSecondary,
+        fill: filled,
         spanGaps: true
       };
     }
@@ -515,11 +547,11 @@
           // Y axis titles / units.
           chart.options.scales.y.title.text = primaryMeta ? (primaryMeta.unit || '') : '';
           chart.options.scales.y.title.display = !!(primaryMeta && primaryMeta.unit);
-          var ds2 = (data.datasets || [])[1];
+          var ds2 = (data.datasets || []).find(function(d) { return d.axis === 'y1'; });
           chart.options.scales.y1.display = !!ds2;
           chart.options.scales.y1.title.text = ds2 ? (ds2.unit || '') : '';
           chart.options.scales.y1.title.display = !!(ds2 && ds2.unit);
-          chart.options.plugins.legend.display = !!ds2; // show legend only when comparing
+          chart.options.plugins.legend.display = (data.datasets || []).length > 1; // a legend only when several lines are drawn
 
           var empty = document.getElementById('chart-empty');
           var hasData = data.labels && data.labels.length &&
@@ -528,8 +560,9 @@
             });
 
           chart.data.labels = data.labels || [];
-          chart.data.datasets = (data.datasets || []).map(function(d, i) {
-            return styleDataset(d, i === 1);
+          var primaryLines = (data.datasets || []).filter(function(d) { return d.axis !== 'y1'; }).length;
+          chart.data.datasets = (data.datasets || []).map(function(d) {
+            return styleDataset(d, primaryLines);
           });
           chart.update();
           if (empty) empty.style.display = hasData ? 'none' : '';

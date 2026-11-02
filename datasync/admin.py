@@ -28,7 +28,7 @@ class DataSyncLogAdmin(admin.ModelAdmin):
 
 @admin.register(DataRecordStaging)
 class DataRecordStagingAdmin(admin.ModelAdmin):
-    list_display = ["data_source", "station", "parameter_code", "observation_date", "value", "status"]
+    list_display = ["data_source", "station", "parameter_code", "statistic", "observation_date", "value", "status"]
     list_filter = ["data_source", "status", "parameter_code"]
     raw_id_fields = ["station"]
     date_hierarchy = "observation_date"

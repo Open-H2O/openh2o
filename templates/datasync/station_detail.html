@@ -22,7 +22,8 @@
   built from datasync/freshness.py by the view (freshness_thresholds).
 {% endcomment %}
 {% block page_meta %}
-{% if station_freshness == "fresh" %}
+{% if is_manual %}{% comment %} A station entered by hand has no publishing cadence to be behind on. {% endcomment %}
+{% elif station_freshness == "fresh" %}
 <span class="badge badge-dot badge-green" title="{{ freshness_thresholds }}">Up to date</span>
 {% elif station_freshness == "stale" %}
 <span class="badge badge-dot badge-amber" title="{{ freshness_thresholds }}">Slightly behind</span>
@@ -39,7 +40,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">{{ station.station_name }}</span>
   </nav>
-  <p class="page-description">This page shows the station's readings and details, and its data source's recent syncs.</p>
+  <p class="page-description">{% if is_manual %}This page shows the station's readings and details.{% else %}This page shows the station's readings and details, and its data source's recent syncs.{% endif %}</p>
 </div>
 {% endblock %}
 
@@ -53,10 +54,14 @@
   <div>
     <a href="{% url 'datasync:station_list' %}" class="back-link">&larr; Back to Monitoring Stations</a>
   </div>
-  {% comment %} When the schedule next fetches this station's readings (crontab.txt);
-       absent when the file cannot be read. {% endcomment %}
-  {% if fetch_schedule_sentence %}
-  <p class="text-secondary text-base" id="fetch-schedule">{{ fetch_schedule_sentence }}</p>
+  {% comment %} When the schedule next fetches this station's readings (crontab.txt),
+       and for a writer the Fetch readings now button beside it; absent when
+       there is neither. {% endcomment %}
+  {% include "datasync/partials/_fetch_now.html" %}
+  {% if reading_errors and not is_manual %}
+  <div class="alert-error">
+    {% for error in reading_errors %}<div>{{ error }}</div>{% endfor %}
+  </div>
   {% endif %}
   <!-- Persistent map host (the shared body partial builds the map into this). -->
   <div id="detail-map-card" class="card-raised" style="padding: 0; overflow: hidden; display: none;">

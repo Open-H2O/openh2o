@@ -10,7 +10,7 @@ Usage:
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from datasync.models import DataSource, DataSyncLog, MonitoredStation
+from datasync.models import MANUAL_SOURCE_CODE, DataSource, DataSyncLog, MonitoredStation
 
 
 class Command(BaseCommand):
@@ -31,7 +31,8 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.ERROR(f"Source '{code}' not found."))
                 return
         else:
-            sources = DataSource.objects.all().order_by("code")
+            # The source whose readings are typed by hand has no sync to report on.
+            sources = DataSource.objects.exclude(code=MANUAL_SOURCE_CODE).order_by("code")
 
         if not sources.exists():
             self.stdout.write(
@@ -61,7 +62,7 @@ class Command(BaseCommand):
 
             # Last sync log
             last_log = DataSyncLog.objects.filter(
-                data_source=source
+                data_source=source, station__isnull=True
             ).order_by("-started_at").first()
 
             if last_log:
@@ -75,6 +76,7 @@ class Command(BaseCommand):
             week_ago = now - timezone.timedelta(days=7)
             recent_fails = DataSyncLog.objects.filter(
                 data_source=source,
+                station__isnull=True,
                 status="failed",
                 started_at__gte=week_ago,
             ).count()

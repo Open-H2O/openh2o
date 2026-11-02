@@ -747,8 +747,8 @@ MODULE_REGISTRY: dict = {
             ),
         ),
         seed_commands=("seed_data_sources",),
-        # `parcels` for OpenETCache.parcel.
-        requires=("geography", "parcels"),
+        # `parcels` for OpenETCache.parcel, `core` for TypedReading.typed_by.
+        requires=("core", "geography", "parcels"),
         # Optional but schema-resident (demoted model-only), same shape as
         # `wells` above. Demotion keeps the app installed, so module-scope
         # imports never break. The

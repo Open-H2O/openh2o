@@ -22,7 +22,7 @@ Usage:
 from django.core.management.base import BaseCommand
 from django.db.models import Count, Q
 
-from datasync.models import MonitoredStation
+from datasync.models import MANUAL_SOURCE_CODE, MonitoredStation
 
 
 class Command(BaseCommand):
@@ -57,7 +57,10 @@ class Command(BaseCommand):
 
         # Count only PUBLISHED staging rows per active station.
         stations = (
+            # A station entered by hand starts with no readings and waits for
+            # a person to type them, so it is never "dataless" in this sense.
             MonitoredStation.objects.filter(is_active=True)
+            .exclude(data_source__code=MANUAL_SOURCE_CODE)
             .annotate(
                 published_count=Count(
                     "datarecordstaging",
@@ -69,7 +72,9 @@ class Command(BaseCommand):
         to_prune = [s for s in stations if s.published_count < min_records]
 
         # The wide discovery net: inactive stations (none carry published data).
-        inactive_qs = MonitoredStation.objects.filter(is_active=False)
+        inactive_qs = MonitoredStation.objects.filter(is_active=False).exclude(
+            data_source__code=MANUAL_SOURCE_CODE
+        )
         inactive_count = inactive_qs.count() if purge_inactive else 0
 
         if not to_prune and not inactive_count:

@@ -165,14 +165,24 @@
       "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
     },
     "datasync.DataRecordStaging": {
-      "expected": 30217,
+      "expected": 30951,
       "tolerance": 0,
-      "reason": "The demonstration's frozen telemetry: two water years (2024-10-01 onward) for the 42 active stations, loaded from data/merced/readings.json by load_reading_fixture. The previous pin of 0 was right about build hygiene and wrong about the demonstration -- the build makes no network call, so an unfrozen table meant every station chart on the site was blank while the landing hero, reading a frozen last_data_at, announced '37 of 42 stations reporting'. Found on production 2026-08-01, minutes after the v2.8 cutover. The count is the generator's own output, not an estimate: dump_reading_fixture keeps the last real reading of each (station, parameter, calendar day) and two consecutive dumps of the same database were byte-identical (sha256 89b8ec28...). Tolerance stays 0 because nothing here is sampled or random -- if this number moves, the fixture was regenerated and that is a change somebody made."
+      "reason": "The demonstration's frozen telemetry: two water years (2024-10-01 onward) for the 42 active stations, loaded from data/merced/readings.json by load_reading_fixture. The count is the generator's own output: dump_reading_fixture keeps the last real reading of each (station, parameter, statistic, calendar day), and two consecutive dumps of the same database are byte-identical. 30,951 = the 30,217 readings frozen on 2026-08-01 (USGS water temperature stored as the daily high, statistic 00001, and discharge as the daily average, 00003) plus 734 USGS daily average water temperatures (00003) fetched from the USGS Water Data APIs on 2026-11-01 for the same days: 665 at 11261500 and 69 at 11273400, where USGS publishes the average only from 2026-05-25 within these dates. Tolerance stays 0 because nothing here is sampled or random: if this number moves, the fixture was regenerated and that is a change somebody made."
     },
     "datasync.DataSource": {
-      "expected": 8,
+      "expected": 9,
       "tolerance": 0,
-      "reason": "Reference data: the external data sources the platform knows how to pull from. Definitions, not fetched records."
+      "reason": "Reference data: the external data sources the platform knows how to pull from, plus Entered by hand (code manual), the source of stations whose readings a person types on the station's page. Definitions, not fetched records."
+    },
+    "datasync.TypedReading": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "The record of who typed each reading at a station entered by hand. Zero because the demonstration has no such station."
+    },
+    "datasync.TypedReadingEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history of TypedReading. Zero because the demonstration types no readings."
     },
     "datasync.DataSyncLog": {
       "expected": 0,
@@ -465,9 +475,9 @@
       "reason": "The SensorThings crosswalk, seeded by seed_observed_properties. 17 until Phase 132 added `extracted_volume` -- the concept a totalizer meter actually reads, which nothing in the vocabulary meant: reservoir_storage carries the right UCUM atom (acre-foot) and entirely the wrong concept. Its USGS pcode is blank, the documented non-blocking exception (decision 31-01). THIS WAS ZERO IN THE FIRST CANDIDATE and no test and no page would ever have shown it: the standards app ships no views and no urls. seed_observed_properties sits outside the seed_data umbrella deliberately (core/modules.py:320-324), so the build sequence has to call it by name. It is the table check_conformance and every adapter's PARAMETER_MAP resolve against. Fixed in 7f121cc; this entry is the tripwire that keeps it fixed."
     },
     "standards.SourceParameter": {
-      "expected": 26,
+      "expected": 32,
       "tolerance": 0,
-      "reason": "The other half of the same crosswalk, and the other half of the same defect -- 0 vs production's 26 until 7f121cc. Together with ObservedProperty this is the +43 rows that took the candidate from 32,275 to 32,318."
+      "reason": "The other half of the same crosswalk. MOVED 26 -> 32 by Plan 151.6-05: the Entered by hand source (code manual) uses the six USGS codes, so it gains the same six crosswalk rows. Earlier history: the other half of the same defect -- 0 vs production's 26 until 7f121cc. Together with ObservedProperty this is the +43 rows that took the candidate from 32,275 to 32,318."
     },
     "surface.CanalMonthLoss": {
       "expected": 152,

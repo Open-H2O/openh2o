@@ -77,7 +77,7 @@ OBSERVED_PROPERTIES = [
 # ── Step 2: source native code → canonical concept key ──────────────────────
 # Covers every (source, code) registry.get_all_parameter_maps() emits across the
 # seven adapters with a PARAMETER_MAP (cdec, usgs, dwr_wdl, dwr_sgma, cimis,
-# noaa, cnrfc). A regression test locks this against adapter drift.
+# noaa, cnrfc), and the manual source, which borrows the USGS codes. A regression test locks this against adapter drift.
 CODE_TO_KEY = {
     "usgs": {
         "00060": "discharge",
@@ -120,6 +120,9 @@ CODE_TO_KEY = {
         "precip": "precipitation",
     },
 }
+# A reading typed at a station entered by hand uses the USGS codes and labels
+# (datasync.adapters.registry), so it crosswalks the same way.
+CODE_TO_KEY["manual"] = dict(CODE_TO_KEY["usgs"])
 
 
 class Command(BaseCommand):

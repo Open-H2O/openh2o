@@ -12,6 +12,11 @@ No key is required. A free key from USGS (set USGS_API_KEY) raises the request
 allowance, and when it is set it travels in the ``X-Api-Key`` header, never in
 the URL, so it stays out of logged addresses.
 
+The service returns one feature per daily statistic (for water temperature the
+daily maximum, minimum and mean). The adapter keeps every one, each record
+carrying its ``statistic_id``, and the staging table holds one row per
+statistic.
+
 Parameters:
   00060 - Discharge (cfs)
   00065 - Gage height (ft)
@@ -64,6 +69,8 @@ def _today():
 
 
 class USGSAdapter(BaseAdapter):
+    """Daily values from the USGS Water Data APIs, every statistic kept."""
+
     source_code = "usgs"
     rate_limit_seconds = 1.0
 
@@ -123,6 +130,8 @@ class USGSAdapter(BaseAdapter):
     def parse(self, raw_data):
         """Parse Water Data API daily features into standard records.
 
+        One record per feature, so a station, code and day with a daily high,
+        low and average gives three records, each with its ``statistic_id``.
         Records already in the standard shape (the offline fixture) pass
         through unchanged.
         """
@@ -175,23 +184,7 @@ class USGSAdapter(BaseAdapter):
                 "qualifiers": qualifiers,
                 "statistic_id": props.get("statistic_id", ""),
             })
-
-        # The service returns one feature per statistic (for water temperature
-        # the daily maximum, minimum and mean) and in no fixed order, but a
-        # station, code and day holds one stored value. Keep the lowest
-        # statistic code, the daily maximum for temperature, which is the
-        # figure this adapter has always stored.
-        best = {}
-        passthrough = []
-        for rec in records:
-            if "statistic_id" not in rec:
-                passthrough.append(rec)
-                continue
-            key = (rec["station_id"], rec["parameter_code"], rec["observation_date"])
-            held = best.get(key)
-            if held is None or rec["statistic_id"] < held["statistic_id"]:
-                best[key] = rec
-        return list(best.values()) + passthrough
+        return records
 
     def validate(self, records):
         """Validate USGS records, reject missing and provisional-bad."""

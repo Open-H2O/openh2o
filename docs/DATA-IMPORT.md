@@ -475,9 +475,11 @@ These records have no file import and no public source. Each has its own page:
 - The sampling schedule: `/drinking/schedule/add/`
 
 A water level, or a visit with no measurement and its reason, is typed on the well's
-page under Add a water level. Readings at a monitoring station have no page in
-OpenH2O yet. Someone with a staff account can add them on the administration site at
-`/admin/`.
+page under Add a water level. A reading at a station the organization measures itself,
+such as a staff gauge, is typed on the station's page under Add a reading. Add the
+station first on Add monitoring station (`/datasync/stations/add/`) with the data source
+Entered by hand. A station of a public source (CDEC, USGS, NOAA, DWR) takes its
+readings only from that source, so it has no Add a reading form.
 
 ---
 

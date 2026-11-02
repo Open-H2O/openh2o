@@ -28,3 +28,14 @@ def import_runs_inline(settings, tmp_path):
     """
     settings.OPENH2O_IMPORT_INLINE = True
     settings.MEDIA_ROOT = tmp_path / "media"
+
+
+@pytest.fixture(autouse=True)
+def station_fetch_runs_inline(settings):
+    """A press of Fetch readings now runs the fetch in-process.
+
+    Production starts ``manage.py sync_source <code> --station N --log N`` as
+    its own process; the suite must never spawn one. A test that counts the
+    processes turns this off and patches ``subprocess.Popen``.
+    """
+    settings.OPENH2O_FETCH_INLINE = True

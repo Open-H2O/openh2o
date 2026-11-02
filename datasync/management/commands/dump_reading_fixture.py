@@ -15,8 +15,8 @@ Found on production 2026-08-01, minutes after the v2.8 cutover, by opening
 
 **This is a DOWNSAMPLE, not a deduplication, and the distinction matters.**
 ``DataRecordStaging`` carries a ``UniqueConstraint`` on
-``(station, parameter_code, observation_date)`` — duplicate rows cannot exist in
-it. CDEC publishes genuinely sub-daily: measured on production, 197,812 raw rows
+``(station, parameter_code, statistic, observation_date)`` — duplicate rows cannot
+exist in it. CDEC publishes genuinely sub-daily: measured on production, 197,812 raw rows
 across 15 active stations represent 3,348 station-parameter-days, roughly a
 reading every 25 minutes on the busiest sensors. Keeping one row per day
 therefore **discards real measurements**. That is the right trade for a two-year
@@ -24,8 +24,12 @@ demonstration chart (200,000 points do not render meaningfully across two years,
 and the committed file would be ~25 MB instead of ~1 MB), but it must never be
 described as removing duplicates.
 
-**Which reading survives the downsample: the LAST of each day.** Deterministic,
-and it is the value a person reading "today's level" would expect. A daily mean
+**Which reading survives the downsample: the LAST of each day, for each
+statistic.** A USGS station keeps its daily high, low and average of one
+parameter as three rows, so the day's survivor is chosen per (station,
+parameter, statistic, day). The fixture row carries ``"statistic"`` only when it
+is not blank, so the file does not grow a key on the rows of a source that
+publishes none. Deterministic, and it is the value a person reading "today's level" would expect. A daily mean
 was considered and rejected: it invents a number no source ever published, on a
 platform whose whole argument is that every figure names who published it.
 
@@ -34,7 +38,7 @@ every model at tolerance 0, so this fixture's row count must be reproducible
 exactly or every future ``make deploy`` fails gate 2. Rows are ordered by
 (source, station, parameter, date) before writing, and the day's survivor is
 chosen by ``max(observation_date)`` — no ties possible, because the unique
-constraint forbids them.
+constraint forbids them. The sort adds the statistic after the parameter.
 
 **Only ACTIVE stations.** The 293 inactive stations show no chart anywhere, so
 freezing their history would pay file size for nothing.
@@ -102,7 +106,7 @@ class Command(BaseCommand):
             .order_by("observation_date")
         )
 
-        # Keep the LAST reading of each (station, parameter, calendar day).
+        # Keep the LAST reading of each (station, parameter, statistic, calendar day).
         # Iterating in ascending observation_date order means the last write
         # wins, which IS the last reading of the day. No sort key ambiguity.
         survivors = {}
@@ -110,20 +114,21 @@ class Command(BaseCommand):
         for rec in qs.iterator(chunk_size=5000):
             raw_seen += 1
             day = timezone.localtime(rec.observation_date).date()
-            survivors[(rec.station_id, rec.parameter_code, day)] = rec
+            survivors[(rec.station_id, rec.parameter_code, rec.statistic, day)] = rec
 
         rows = []
         for rec in survivors.values():
-            rows.append(
-                {
-                    "source": rec.station.data_source.code,
-                    "external_station_id": rec.station.external_station_id,
-                    "parameter_code": rec.parameter_code,
-                    "observation_date": rec.observation_date.isoformat(),
-                    "value": None if rec.value is None else str(rec.value),
-                    "unit": rec.unit,
-                }
-            )
+            row = {
+                "source": rec.station.data_source.code,
+                "external_station_id": rec.station.external_station_id,
+                "parameter_code": rec.parameter_code,
+                "observation_date": rec.observation_date.isoformat(),
+                "value": None if rec.value is None else str(rec.value),
+                "unit": rec.unit,
+            }
+            if rec.statistic:
+                row["statistic"] = rec.statistic
+            rows.append(row)
 
         # Deterministic order. Gate 2 pins this model at tolerance 0, so a
         # fixture whose contents shuffle between dumps would make every future
@@ -133,6 +138,7 @@ class Command(BaseCommand):
                 r["source"],
                 r["external_station_id"],
                 r["parameter_code"],
+                r.get("statistic", ""),
                 r["observation_date"],
             )
         )

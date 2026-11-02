@@ -12,7 +12,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Add Station</span>
   </nav>
-  <p class="page-description">This page adds one monitoring station for OpenH2O to sync from a public data source. The external station ID is the source's own identifier for the station, such as 11303000 at USGS.</p>
+  <p class="page-description">This page adds one monitoring station. OpenH2O syncs its readings from a public data source, or a person types them on the station's page.</p>
 </div>
 {% endblock %}
 
@@ -55,17 +55,19 @@
         </select>
       </div>
 
-      <!-- External Station ID -->
+      <!-- Station ID -->
       <div class="form-group">
-        <label class="form-label" for="id_external_station_id">External station ID <span class="required-mark">*</span></label>
+        <label class="form-label" for="id_external_station_id">Station ID <span class="required-mark">*</span></label>
         <input
           type="text"
           id="id_external_station_id" name="external_station_id"
           value="{{ form_data.external_station_id|default:'' }}"
-          placeholder="e.g. 11303000"
+          placeholder="e.g. MC-CHK4"
           required
           class="form-input text-mono"
+          aria-describedby="station-id-help"
         >
+        <p class="form-help" id="station-id-help">The source's own ID, such as 11303000 at USGS, or the organization's own name or number for a station entered by hand.</p>
       </div>
 
       <!-- Station Name -->
@@ -75,7 +77,7 @@
           type="text"
           id="id_station_name" name="station_name"
           value="{{ form_data.station_name|default:'' }}"
-          placeholder="e.g. Sacramento River at Keswick"
+          placeholder="e.g. Main Canal at Check 4 staff gauge"
           required
           class="form-input"
         >

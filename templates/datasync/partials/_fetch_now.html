@@ -1,0 +1,32 @@
+{% comment %}
+  The schedule sentence and, for a writer, the Fetch readings now button, with
+  the line under them that says what the last run got. The block replaces
+  itself: Fetch readings now posts to the fetch route, and while a run is going
+  the block polls the status route every 2 seconds (the pattern of
+  core/partials/_pending_import_status.html). The finished block carries no
+  hx-trigger, so polling stops by itself. No hx-on and no inline script (the
+  content security policy allows neither).
+
+  A reader who cannot write, or a station whose source cannot be fetched from
+  (switched off, no adapter, entered by hand, key not set), sees the sentence
+  alone, as the page always showed it. Drawing: 1-fetch-states.html.
+{% endcomment %}
+{% if fetch_available and user_can_write %}
+<div id="fetch-now-block" style="display: flex; flex-direction: column; gap: var(--space-xs);"{% if fetch_log %} hx-get="{% url 'datasync:station_fetch_status' station.pk fetch_log.pk %}" hx-trigger="every 2s" hx-swap="outerHTML"{% endif %} aria-live="polite">
+  <div class="row-start" style="flex-wrap: wrap; gap: var(--space-md);">
+    {% if fetch_schedule_sentence %}
+    <p class="text-secondary text-base m-0" id="fetch-schedule">{{ fetch_schedule_sentence }}</p>
+    {% endif %}
+    {% if fetch_log %}
+    <button type="button" class="btn-secondary btn-sm" id="fetch-now" disabled aria-disabled="true" style="cursor: default; gap: var(--space-xs);"><span class="spinner-sm" aria-hidden="true"></span>Fetching readings…</button>
+    {% else %}
+    <button type="button" class="btn-secondary btn-sm" id="fetch-now" hx-post="{% url 'datasync:station_fetch_now' station.pk %}" hx-target="#fetch-now-block" hx-swap="outerHTML">Fetch readings now</button>
+    {% endif %}
+  </div>
+  {% if fetch_message %}
+  <p class="{% if fetch_message_is_error %}text-error{% else %}text-secondary{% endif %} text-base m-0" id="fetch-status" role="status">{{ fetch_message }}</p>
+  {% endif %}
+</div>
+{% elif fetch_schedule_sentence %}
+<p class="text-secondary text-base" id="fetch-schedule">{{ fetch_schedule_sentence }}</p>
+{% endif %}

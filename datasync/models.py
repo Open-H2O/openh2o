@@ -9,8 +9,17 @@ pipeline that lands raw readings (DataRecordStaging), records each pull
 (OpenETCache). These supply the observed inputs the accounting layer reconciles;
 OpenET evapotranspiration is the consumptive-use spine, not a supply.
 """
+from django.conf import settings
 from django.contrib.gis.db import models
 from django.urls import reverse
+from django.utils import timezone
+
+from core.history import track_changes
+
+# The data source whose stations never sync: a person types each reading on the
+# station's page. Its code is how every list of "sources OpenH2O fetches from"
+# leaves it out (datasync/fetch_now.py, sync_all, the health checks).
+MANUAL_SOURCE_CODE = "manual"
 
 
 class DataSource(models.Model):
@@ -36,6 +45,11 @@ class DataSource(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def is_manual(self):
+        """True for the source whose readings are typed by hand and never fetched."""
+        return self.code == MANUAL_SOURCE_CODE
 
 
 class MonitoredStation(models.Model):
@@ -83,6 +97,16 @@ class DataSyncLog(models.Model):
     ]
 
     data_source = models.ForeignKey(DataSource, on_delete=models.CASCADE)
+    # Set when the run fetched one station only (the station page's Fetch
+    # readings now button); empty for a run over the whole source. A whole-source
+    # view (source health, the failure streak) reads the empty ones.
+    station = models.ForeignKey(
+        "MonitoredStation",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="sync_logs",
+    )
     started_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="running")
@@ -112,6 +136,9 @@ class DataRecordStaging(models.Model):
     raw_data = models.JSONField()
     observation_date = models.DateTimeField()
     parameter_code = models.CharField(max_length=50)
+    # Which daily statistic the value is (USGS 00001 high, 00002 low, 00003
+    # average); blank for a source that publishes none.
+    statistic = models.CharField(max_length=10, blank=True, default="")
     value = models.DecimalField(
         max_digits=14, decimal_places=4, null=True, blank=True
     )
@@ -123,15 +150,62 @@ class DataRecordStaging(models.Model):
     class Meta:
         ordering = ["-observation_date"]
         constraints = [
-            # One observation per station+parameter+timestamp. Lets repeated
+            # One observation per station+parameter+statistic+timestamp. Lets repeated
             # syncs (hourly for live gauges) re-pull the same readings as a
             # no-op via bulk_create(ignore_conflicts=True) instead of piling up
             # duplicate rows that put multiple points per date on charts.
             models.UniqueConstraint(
-                fields=["station", "parameter_code", "observation_date"],
-                name="uniq_staging_station_param_obsdate",
+                fields=["station", "parameter_code", "statistic", "observation_date"],
+                name="uniq_staging_station_param_stat_obsdate",
             ),
         ]
+
+    def __str__(self):
+        return f"{self.station} {self.observation_date}: {self.parameter_code}={self.value}"
+
+
+@track_changes()
+class TypedReading(models.Model):
+    """The record of one reading a person typed on a hand station's page.
+
+    The reading itself is an ordinary published row in ``DataRecordStaging``,
+    so the chart and the readings table need no special case. That table cannot
+    be change-tracked: every sync writes thousands of rows into it. This small
+    table carries the history instead: who typed the reading, when, and what
+    they typed, with a trigger-written event for every later change.
+    """
+
+    station = models.ForeignKey(
+        MonitoredStation,
+        on_delete=models.CASCADE,
+        related_name="typed_readings",
+        verbose_name="monitoring station",
+    )
+    reading = models.OneToOneField(
+        DataRecordStaging,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="typed_record",
+        verbose_name="station reading",
+    )
+    typed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+        verbose_name="typed by",
+    )
+    typed_by_email = models.CharField(max_length=254, blank=True, verbose_name="typed by (email)")
+    typed_at = models.DateTimeField(default=timezone.now, verbose_name="typed at")
+    parameter_code = models.CharField(max_length=50, verbose_name="parameter")
+    observation_date = models.DateField(verbose_name="reading date")
+    value = models.DecimalField(max_digits=14, decimal_places=4, verbose_name="value")
+    notes = models.TextField(blank=True, verbose_name="notes")
+
+    class Meta:
+        ordering = ["-typed_at"]
 
     def __str__(self):
         return f"{self.station} {self.observation_date}: {self.parameter_code}={self.value}"

@@ -11,7 +11,7 @@ from django.utils import timezone
 from core.access import admin_required, public_in_open_demo
 
 from datasync import freshness
-from datasync.models import DataSyncLog, MonitoredStation
+from datasync.models import MANUAL_SOURCE_CODE, DataSyncLog, MonitoredStation
 from geography.models import Zone
 from parcels.models import Parcel
 from wells.models import Well
@@ -44,8 +44,12 @@ def _public_counts() -> dict:
         # so the signed-in hero and the anonymous stations card read one
         # pair of numbers rather than two counts that could drift apart.
         now = timezone.now()
+        # Stations entered by hand are left out: this line counts the stations
+        # OpenH2O syncs, and a hand station has no cadence to be up to date on.
         active = list(
-            MonitoredStation.objects.filter(is_active=True).select_related("data_source")
+            MonitoredStation.objects.filter(is_active=True)
+            .exclude(data_source__code=MANUAL_SOURCE_CODE)
+            .select_related("data_source")
         )
         context["active_station_count"] = len(active)
         context["fresh_stations"] = sum(
@@ -88,7 +92,9 @@ def _add_signed_in_context(context: dict) -> None:
     # anonymous page has no "synced X ago" line to fill.
     if is_enabled("datasync"):
         last_sync = (
-            DataSyncLog.objects.filter(status__in=["success", "partial"]).first()
+            DataSyncLog.objects.filter(
+                status__in=["success", "partial"], station__isnull=True
+            ).first()
         )
         context["last_sync_time"] = last_sync.started_at if last_sync else None
     # Records decide what the home page offers.

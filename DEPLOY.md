@@ -1071,7 +1071,11 @@ docker compose exec web python manage.py sync_source cdec
 ```
 
 A sync fetches from the live public services. A source whose key is missing is
-skipped until the key is in `.env`.
+skipped until the key is in `.env`. Fetch readings now on a station's page fetches that
+one station in the background over the same period as the scheduled sync; from the
+command line, `sync_source usgs --station <id>` does the same, where `<id>` is the number
+in the station page's address. Stations of the Entered by hand source are never synced:
+their readings are typed on each station's page.
 
 ### Running Tests
 

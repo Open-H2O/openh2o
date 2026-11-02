@@ -15,6 +15,12 @@ cnrfc,precip,precipitation,Precipitation,00045,Precipitation,[in_i]
 cnrfc,streamflow,discharge,Stream Discharge,00060,Stream flow,[cft_i]/s
 dwr_sgma,gw_level,groundwater_level_depth,Depth to Groundwater,72019,Depth to water level below land surface,[ft_i]
 dwr_wdl,gw_level,groundwater_level_depth,Depth to Groundwater,72019,Depth to water level below land surface,[ft_i]
+manual,00010,water_temperature,Water Temperature,00010,"Temperature, water",Cel
+manual,00060,discharge,Stream Discharge,00060,Stream flow,[cft_i]/s
+manual,00065,gage_height,Gage Height,00065,"Height, gage",[ft_i]
+manual,62610,groundwater_level,Groundwater Level (NGVD 1929),62610,Groundwater level,[ft_i]
+manual,72019,groundwater_level_depth,Depth to Groundwater,72019,Depth to water level below land surface,[ft_i]
+manual,72020,groundwater_level_elevation,Groundwater Level Elevation (NGVD 1929),72020,,[ft_i]
 noaa,PRCP,precipitation,Precipitation,00045,Precipitation,[in_i]
 noaa,SNOW,snowfall,Snowfall,,,mm
 noaa,TMAX,air_temperature,Air Temperature,00020,"Temperature, air",Cel

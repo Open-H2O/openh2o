@@ -1,0 +1,50 @@
+{% comment %}
+  The "Readings, newest first" card: the station's ten newest readings. A
+  reading typed by hand carries its note as a second line under the parameter.
+  Shared by the sync-log layout and the layout of a station entered by hand.
+{% endcomment %}
+  <div class="card-raised">
+    <div class="row-between mb-md">
+      <h2 class="section-header-flush">Readings, newest first</h2>
+      {% if recent_records|length >= 10 %}
+      <span class="text-tertiary text-xs">Showing 10 most recent</span>
+      {% endif %}
+    </div>
+    {% if recent_records %}
+    <div class="table-scroll">
+    <table class="data-table text-sm">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Parameter</th>
+          <th class="th-right">Value</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for record in recent_records %}
+        <tr>
+          <td class="text-secondary">{{ record.observation_date|date:"M d, Y" }}</td>
+          <td class="text-secondary text-sm">{{ record.param_display }}{% if record.note %}<div class="text-tertiary text-xs" style="margin-top: 2px;">{{ record.note }}</div>{% endif %}</td>
+          <td class="td-num">
+            {% if record.value is not None %}{{ record.value|floatformat:2 }} {% if record.unit %}<span class="text-tertiary" style="font-size: 0.7rem;">{{ record.unit }}</span>{% endif %}{% else %}<span class="value-empty">Not recorded</span>{% endif %}
+          </td>
+          <td>
+            <span style="
+              display: inline-flex; align-items: center;
+              border-radius: var(--radius-sm); padding: 1px 6px; font-size: 0.7rem; font-weight: 600;
+              {% if record.status == 'published' %}background: rgba(34,197,94,0.1); color: var(--forest-400);
+              {% elif record.status == 'rejected' %}background: rgba(239,68,68,0.1); color: var(--color-error);
+              {% elif record.status == 'duplicate' %}background: rgba(100,116,139,0.1); color: var(--color-text-secondary);
+              {% else %}background: var(--color-elevated); color: var(--color-text-secondary);{% endif %}
+            ">{{ record.get_status_display }}</span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% else %}
+      <p class="text-tertiary text-base">No readings yet.</p>
+    {% endif %}
+  </div>

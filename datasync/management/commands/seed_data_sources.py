@@ -2,7 +2,8 @@
 """Management command that seeds the external monitoring DataSource rows.
 
 An operator runs it during setup to register the agencies the sync pipeline can
-pull from (CDEC, USGS, OpenET, CIMIS, CNRFC, DWR WDL/SGMA, NOAA); it is
+pull from (CDEC, USGS, OpenET, CIMIS, CNRFC, DWR WDL/SGMA, NOAA) and the source whose
+readings are typed by hand; it is
 idempotent and enforces each source's is_active flag on re-seed.
 """
 from django.core.management.base import BaseCommand
@@ -79,6 +80,16 @@ DATA_SOURCES = [
         "auth_type": "token",
         "sync_interval_hours": 24,
         "description": "NOAA National Centers for Environmental Information",
+    },
+    {
+        # No adapter and no schedule: a person types each reading on the
+        # station's page. sync_all skips it; sync_source prints a sentence.
+        "name": "Entered by hand",
+        "code": "manual",
+        "url": "",
+        "auth_type": "none",
+        "sync_interval_hours": 24,
+        "description": "Readings typed on the station's page by an Operator or Administrator",
     },
 ]
 

@@ -200,6 +200,9 @@ NOT_REQUESTED = {
     "/users/imports/<uuid:token>/status/": (
         "the fragment an import's waiting block polls for one person's own upload, never a page"
     ),
+    "/datasync/stations/<int:pk>/fetch/<int:log_pk>/": (
+        "the fragment a station's Fetch readings now block polls for one run, never a page"
+    ),
 }
 
 #: Pages with no crumb trail at all.

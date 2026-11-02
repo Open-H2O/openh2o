@@ -15,7 +15,7 @@ from django.utils import timezone
 
 from core.models import PendingImport
 from core.pending_imports import EXPIRY, purge_expired
-from datasync.models import DataRecordStaging, DataSyncLog
+from datasync.models import MANUAL_SOURCE_CODE, DataRecordStaging, DataSyncLog
 from health.models import HealthCheckResult
 
 
@@ -56,9 +56,11 @@ class Command(BaseCommand):
         health_cutoff = now - timedelta(days=options["health_days"])
         sync_cutoff = now - timedelta(days=options["sync_days"])
 
+        # A reading typed by hand is the only record of that measurement (no
+        # provider holds a copy to fetch again), so it is never pruned by age.
         staging_qs = DataRecordStaging.objects.filter(
             status="published", created_at__lt=staging_cutoff
-        )
+        ).exclude(data_source__code=MANUAL_SOURCE_CODE)
         health_qs = HealthCheckResult.objects.filter(checked_at__lt=health_cutoff)
         sync_qs = DataSyncLog.objects.filter(started_at__lt=sync_cutoff)
 

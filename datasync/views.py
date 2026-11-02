@@ -19,18 +19,23 @@ from decimal import Decimal
 from django.contrib.auth.decorators import login_required
 from django.contrib.gis.geos import Point
 from django.core.paginator import Paginator
-from django.db.models import Q, QuerySet
-from django.http import HttpResponse, JsonResponse
+from django.db.models import Count, Q, QuerySet
+from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
-from core.access import public_in_open_demo
+from core.access import public_in_open_demo, read_only_response
 from core.map_labels import map_label
 
 from core.workspace import list_response
-from datasync import freshness, schedule
-from datasync.adapters.registry import get_parameter_label
+from datasync import fetch_now, freshness, typed_readings
+from datasync.adapters.registry import (
+    get_parameter_label,
+    manual_parameter_choices,
+    statistic_words,
+)
 from datasync.models import (
+    MANUAL_SOURCE_CODE,
     DataRecordStaging,
     DataSource,
     DataSyncLog,
@@ -79,7 +84,13 @@ def _build_source_status(boundary, now):
     stations, never a query per state), and an honest status code/label that
     distinguishes "needs key" / "no stations" / "no recent data" from "failed".
     """
-    sources = DataSource.objects.filter(is_active=True).order_by("code")
+    # The source whose readings are typed by hand is not fetched from anywhere,
+    # so it has no card: a card would read "Not yet synced" for good.
+    sources = (
+        DataSource.objects.filter(is_active=True)
+        .exclude(code=MANUAL_SOURCE_CODE)
+        .order_by("code")
+    )
     result = []
     for src in sources:
         src_stations = MonitoredStation.objects.filter(data_source=src)
@@ -97,7 +108,12 @@ def _build_source_status(boundary, now):
                 stale += 1
             else:
                 dead += 1
-        log = DataSyncLog.objects.filter(data_source=src).order_by("-started_at").first()
+        # The source's own runs: a one-station fetch is not the source syncing.
+        log = (
+            DataSyncLog.objects.filter(data_source=src, station__isnull=True)
+            .order_by("-started_at")
+            .first()
+        )
         status_code = freshness.classify_source_status(
             src.code, active, log, fresh, total_stations=total
         )
@@ -212,8 +228,11 @@ def _health_ordered_stations(
     # rather than in SQL — after the ordering, before pagination, so the page
     # count reflects what the operator asked for.
     if reporting in ("fresh", "stale", "dead"):
+        # A hand station has no cadence to be behind on, so it is in none of the
+        # three groups.
         stations_ordered = [
-            s for s in stations_ordered if station_health.get(s.pk) == reporting
+            s for s in stations_ordered
+            if station_health.get(s.pk) == reporting and not s.data_source.is_manual
         ]
     return stations_ordered, station_health
 
@@ -283,6 +302,7 @@ def _enriched_station_rows(
         )
         enriched_stations.append({
             "station": s,
+            "is_manual": s.data_source.is_manual,
             "freshness": station_freshness.get(s.pk, "dead"),
             # The Reporting cell's tooltip states this source's limits.
             "freshness_thresholds": freshness.freshness_thresholds(
@@ -420,67 +440,113 @@ def _station_point_geojson(station: MonitoredStation) -> dict | None:
     return geojson
 
 
-def _measured_parameter_codes(station: MonitoredStation) -> list[str]:
-    """The parameter codes this station has actually published, sorted."""
-    # Only parameters this station has ACTUALLY published — not the declared sensor
-    # list — so it never offers an empty option for a sensor the site doesn't
-    # measure (matches station_chart_data).
-    return sorted(
+def _published_statistics(station: MonitoredStation) -> dict[str, list[str]]:
+    """The statistics this station has published for each parameter code, sorted."""
+    # Only parameters this station has ACTUALLY published, not the declared sensor
+    # list, so it never offers an empty option for a sensor the site doesn't
+    # measure (matches station_chart_data). A source with no statistic holds one
+    # blank entry per parameter.
+    rows = (
         DataRecordStaging.objects
         .filter(station=station, status="published")
-        .order_by()  # clear Meta.ordering (-observation_date) so DISTINCT keys on code alone
-        .values_list("parameter_code", flat=True)
+        .order_by()  # clear Meta.ordering (-observation_date) so DISTINCT keys on code+statistic alone
+        .values_list("parameter_code", "statistic")
         .distinct()
     )
+    held: dict[str, list[str]] = {}
+    for code, statistic in rows:
+        held.setdefault(code, []).append(statistic)
+    for statistics in held.values():
+        statistics.sort()
+    return held
+
+
+def _named_statistic(
+    statistics_by_code: dict[str, list[str]], code: str, statistic: str
+) -> str:
+    """The statistic to put in a label: only where the station holds more than one."""
+    return statistic if len(statistics_by_code.get(code, ())) > 1 else ""
+
+
+def _multi_statistic_pairs(stations) -> set[tuple[int, str]]:
+    """The (station id, parameter code) pairs that hold more than one published statistic."""
+    rows = (
+        DataRecordStaging.objects
+        .filter(station__in=stations, status="published")
+        .order_by()
+        .values("station_id", "parameter_code")
+        .annotate(n=Count("statistic", distinct=True))
+        .filter(n__gt=1)
+    )
+    return {(r["station_id"], r["parameter_code"]) for r in rows}
 
 
 def _latest_parameter_readings(
-    station: MonitoredStation, source_code: str, measured_codes: list[str]
+    station: MonitoredStation, source_code: str, statistics_by_code: dict[str, list[str]]
 ) -> list[dict]:
-    """The newest published value for each measured parameter."""
-    # At-a-glance current readings: the newest published value per parameter.
-    # Read straight from published DataRecordStaging — the scheduled sync writes
+    """The newest published value for each measured parameter and statistic."""
+    # At-a-glance current readings: the newest published value per parameter (and
+    # per statistic, where a source publishes several). Read straight from
+    # published DataRecordStaging; the scheduled sync writes
     # these; the view never calls the external API (a slow provider would hang the page).
     latest_readings = []
-    for code in measured_codes:
-        rec = (
-            DataRecordStaging.objects
-            .filter(station=station, status="published", parameter_code=code)
-            .order_by("-observation_date")
-            .first()
-        )
-        if rec is not None:
-            # The shared label is "Name (unit)"; strip only the trailing unit
-            # parenthetical (keeps qualifiers like "(ASCE)") since the card shows
-            # the unit beside the value — avoids "Air Temperature (F) … 82.3 F".
-            label = get_parameter_label(source_code, code)
-            label = re.sub(r"\s*\([^)]*\)\s*$", "", label) or label
-            latest_readings.append({
-                "label": label,
-                "value": rec.value,
-                "unit": rec.unit,
-                "observation_date": rec.observation_date,
-            })
+    for code in sorted(statistics_by_code):
+        for statistic in statistics_by_code[code]:
+            rec = (
+                DataRecordStaging.objects
+                .filter(
+                    station=station, status="published",
+                    parameter_code=code, statistic=statistic,
+                )
+                .order_by("-observation_date")
+                .first()
+            )
+            if rec is not None:
+                # The shared label is "Name (unit)"; strip only the trailing unit
+                # parenthetical (keeps qualifiers like "(ASCE)") since the card shows
+                # the unit beside the value, which avoids "Air Temperature (F) … 82.3 F".
+                label = get_parameter_label(
+                    source_code, code,
+                    _named_statistic(statistics_by_code, code, statistic),
+                )
+                label = re.sub(r"\s*\([^)]*\)\s*$", "", label) or label
+                latest_readings.append({
+                    "label": label,
+                    "value": rec.value,
+                    "unit": rec.unit,
+                    "observation_date": rec.observation_date,
+                })
     return latest_readings
 
 
-def _station_detail_context(station):
+def _station_detail_context(station, *, reading_errors=None, reading_values=None):
     """Build the per-station detail context.
 
     Shared by the standalone detail page, the in-pane HTMX render, and the
     workspace's pre-loaded ``?selected=`` pane so all three are identical.
+
+    ``reading_errors`` and ``reading_values`` are what a refused Add a reading
+    form hands back: the sentences, and what was typed.
     """
     source_code = station.data_source.code
+    is_manual = station.data_source.is_manual
+
+    statistics_by_code = _published_statistics(station)
 
     recent_records = list(
         DataRecordStaging.objects.filter(station=station).order_by("-observation_date")[:10]
     )
     for rec in recent_records:
-        rec.param_display = get_parameter_label(source_code, rec.parameter_code)
+        rec.param_display = get_parameter_label(
+            source_code, rec.parameter_code,
+            _named_statistic(statistics_by_code, rec.parameter_code, rec.statistic),
+        )
+        # The note a person typed with the reading, drawn under its parameter.
+        rec.note = (rec.raw_data or {}).get("notes", "") if is_manual else ""
 
-    recent_logs = DataSyncLog.objects.filter(data_source=station.data_source).order_by(
-        "-started_at"
-    )[:10]
+    recent_logs = [] if is_manual else DataSyncLog.objects.filter(
+        data_source=station.data_source
+    ).order_by("-started_at")[:10]
 
     geojson = _station_point_geojson(station)
 
@@ -489,17 +555,25 @@ def _station_detail_context(station):
         source_code, station.last_data_at, timezone.now()
     )
 
-    # Build enriched parameter list for the dropdown + PARAMETERS chips.
-    measured_codes = _measured_parameter_codes(station)
+    # The chart's dropdowns list each parameter once; the Parameters pills list
+    # each (parameter, statistic) the station holds.
     enriched_parameters = [
         {"code": code, "label": get_parameter_label(source_code, code)}
-        for code in measured_codes
+        for code in sorted(statistics_by_code)
+    ]
+    parameter_pills = [
+        get_parameter_label(
+            source_code, code, _named_statistic(statistics_by_code, code, statistic)
+        )
+        for code in sorted(statistics_by_code)
+        for statistic in statistics_by_code[code]
     ]
 
-    latest_readings = _latest_parameter_readings(station, source_code, measured_codes)
+    latest_readings = _latest_parameter_readings(station, source_code, statistics_by_code)
 
-    return {
+    context = {
         "station": station,
+        "is_manual": is_manual,
         "recent_records": recent_records,
         "latest_readings": latest_readings,
         "recent_logs": recent_logs,
@@ -512,10 +586,20 @@ def _station_detail_context(station):
         ),
         "chart_data_url": f"/datasync/stations/{station.pk}/chart-data/",
         "enriched_parameters": enriched_parameters,
+        "parameter_pills": parameter_pills,
         # When the schedule next fetches this station's readings, read from
         # crontab.txt; None when that file cannot be read.
-        "fetch_schedule_sentence": schedule.station_sentence(station),
+        **fetch_now.block_context(station),
+        "reading_parameters": manual_parameter_choices() if is_manual else [],
+        "reading_errors": reading_errors or [],
+        "reading_values": reading_values or {
+            "observation_date": typed_readings.today().isoformat(),
+            "parameter": "00065",
+            "value": "",
+            "notes": "",
+        },
     }
+    return context
 
 
 @login_required
@@ -543,6 +627,85 @@ def station_toggle(request, pk):
     station.is_active = not station.is_active
     station.save(update_fields=["is_active", "updated_at"])
     return render(request, "datasync/partials/_station_toggle.html", {"station": station})
+
+
+@login_required
+@require_http_methods(["POST"])
+def station_fetch_now(request, pk):
+    """Fetch this station's readings now: start the run and return the polling block.
+
+    The run is a detached ``manage.py sync_source`` (datasync/fetch_now.py). A
+    press while a run for this station is going starts nothing and says so. A
+    Viewer never gets here: ReadOnlyMiddleware refuses the POST first.
+    """
+    station = get_object_or_404(
+        MonitoredStation.objects.select_related("data_source"), pk=pk
+    )
+    if not request.user.can_write:
+        return read_only_response(request)
+    if not fetch_now.can_fetch(station):
+        return HttpResponseForbidden()
+    log, started = fetch_now.start_fetch(station)
+    context = fetch_now.block_context(
+        station, log=log, notice=None if started else "A fetch is already running."
+    )
+    return render(request, "datasync/partials/_fetch_now.html", context)
+
+
+@login_required
+def station_fetch_status(request, pk, log_pk):
+    """The fetch block as one run stands: still fetching, or what it got."""
+    station = get_object_or_404(
+        MonitoredStation.objects.select_related("data_source"), pk=pk
+    )
+    log = get_object_or_404(DataSyncLog, pk=log_pk, station=station)
+    return render(
+        request, "datasync/partials/_fetch_now.html",
+        fetch_now.block_context(station, log=log),
+    )
+
+
+@login_required
+@require_http_methods(["POST"])
+def station_reading_add(request, pk):
+    """Save one reading a person typed at a station entered by hand.
+
+    A writer only (a Viewer is refused by ReadOnlyMiddleware, and again here).
+    At any other source's station nothing is saved: the public service is the
+    record there. A bad form comes back with its sentences and what was typed.
+    """
+    station = get_object_or_404(
+        MonitoredStation.objects.select_related("data_source"), pk=pk
+    )
+    if not request.user.can_write:
+        return read_only_response(request)
+    if not station.data_source.is_manual:
+        return render(
+            request, "datasync/station_detail.html",
+            _station_detail_context(station, reading_errors=[typed_readings.ONLY_BY_HAND]),
+            status=403,
+        )
+    clean, errors = typed_readings.validate(request.POST)
+    if clean is not None:
+        try:
+            typed_readings.save_reading(station, request.user, clean)
+        except typed_readings.DuplicateReading:
+            errors = [typed_readings.DUPLICATE]
+    if not errors:
+        return redirect("datasync:station_detail", pk=station.pk)
+    return render(
+        request, "datasync/station_detail.html",
+        _station_detail_context(
+            station,
+            reading_errors=errors,
+            reading_values={
+                "observation_date": request.POST.get("observation_date", ""),
+                "value": request.POST.get("value", ""),
+                "parameter": request.POST.get("parameter", ""),
+                "notes": request.POST.get("notes", ""),
+            },
+        ),
+    )
 
 
 @login_required
@@ -727,6 +890,8 @@ def monitoring_dashboard(request):
     # the monitoring view just hides relevant stations.
     active_stations = MonitoredStation.objects.filter(
         is_active=True
+    ).exclude(
+        data_source__code=MANUAL_SOURCE_CODE
     ).select_related("data_source").order_by("data_source__code", "station_name")
 
     station_freshness_by_pk, fresh_count, stale_count, dead_count = (
@@ -821,6 +986,13 @@ def _published_parameter_units(station: MonitoredStation) -> dict[str, str]:
     return {r["parameter_code"]: r["unit"] for r in published_param_rows}
 
 
+def _bare_name(label: str, unit: str) -> str:
+    """A parameter label without its trailing " (unit)"."""
+    if unit and label.endswith(f" ({unit})"):
+        return label[: -(len(unit) + 3)]
+    return label
+
+
 def _chart_parameters_meta(
     source_code: str, param_codes: list[str], units_by_code: dict[str, str]
 ) -> list[dict]:
@@ -829,29 +1001,42 @@ def _chart_parameters_meta(
     for code in param_codes:
         unit = units_by_code.get(code, "")
         label = get_parameter_label(source_code, code)
-        if unit and label.endswith(f" ({unit})"):
-            name = label[: -(len(unit) + 3)]
-        else:
-            name = label
-        parameters_meta.append({"code": code, "name": name, "unit": unit, "label": label})
+        parameters_meta.append(
+            {"code": code, "name": _bare_name(label, unit), "unit": unit, "label": label}
+        )
     return parameters_meta
 
 
 def _chart_series(
     station: MonitoredStation, param: str, date_filter: dict
-) -> dict[str, float | None]:
-    """Return {date: value} for one parameter inside the window."""
+) -> dict[str, dict[str, float | None]]:
+    """Return {statistic: {date: value}} for one parameter inside the window."""
     rows = (
         DataRecordStaging.objects
         .filter(station=station, status="published", parameter_code=param, **date_filter)
         .order_by("observation_date")
-        .values("observation_date", "value")
+        .values("observation_date", "value", "statistic")
     )
-    out = {}
+    out: dict[str, dict[str, float | None]] = {}
     for r in rows:
         key = r["observation_date"].strftime("%Y-%m-%d")
-        out[key] = float(r["value"]) if r["value"] is not None else None
+        out.setdefault(r["statistic"], {})[key] = (
+            float(r["value"]) if r["value"] is not None else None
+        )
     return out
+
+
+def _line_label(
+    source_code: str, code: str, statistic: str, lines: int, unit: str, compare: bool
+) -> str:
+    """A chart line's name: today's label for a lone line, the statistic for several."""
+    if lines == 1:
+        return get_parameter_label(source_code, code)
+    if compare:
+        name = _bare_name(get_parameter_label(source_code, code), unit)
+        return f"{name}, {statistic_words(statistic) or 'statistic not recorded'}"
+    words = statistic_words(statistic) or "statistic not recorded"
+    return words[0].upper() + words[1:]
 
 
 def _chart_datasets(
@@ -860,31 +1045,41 @@ def _chart_datasets(
     parameter: str | None,
     parameter2: str,
     units_by_code: dict[str, str],
+    statistics_by_code: dict[str, list[str]],
     date_filter: dict,
 ) -> tuple[list[str], list[dict]]:
-    """The shared date axis and one dataset per selected parameter."""
+    """The shared date axis and one dataset per statistic of each selected parameter."""
     datasets = []
     labels: list[str] = []
     if parameter:
         primary = _chart_series(station, parameter, date_filter)
         secondary = _chart_series(station, parameter2, date_filter) if parameter2 else {}
-        # Shared, sorted date axis across both series.
-        labels = sorted(set(primary) | set(secondary))
-        datasets.append({
-            "label": get_parameter_label(source_code, parameter),
-            "data": [primary.get(d) for d in labels],
-            "parameter_code": parameter,
-            "unit": units_by_code.get(parameter, ""),
-            "axis": "y",
-        })
-        if parameter2:
-            datasets.append({
-                "label": get_parameter_label(source_code, parameter2),
-                "data": [secondary.get(d) for d in labels],
-                "parameter_code": parameter2,
-                "unit": units_by_code.get(parameter2, ""),
-                "axis": "y1",
-            })
+        # Shared, sorted date axis across every line.
+        days: set[str] = set()
+        for series in (*primary.values(), *secondary.values()):
+            days |= set(series)
+        labels = sorted(days)
+        for code, series_by_stat, axis, compare in (
+            (parameter, primary, "y", False),
+            (parameter2, secondary, "y1", True),
+        ):
+            if not code:
+                continue
+            # Every statistic the station holds draws a line, window or not, so
+            # the names and the legend do not change with the range.
+            statistics = statistics_by_code.get(code) or [""]
+            for statistic in statistics:
+                datasets.append({
+                    "label": _line_label(
+                        source_code, code, statistic, len(statistics),
+                        units_by_code.get(code, ""), compare,
+                    ),
+                    "data": [series_by_stat.get(statistic, {}).get(d) for d in labels],
+                    "parameter_code": code,
+                    "statistic": statistic,
+                    "unit": units_by_code.get(code, ""),
+                    "axis": axis,
+                })
     return labels, datasets
 
 
@@ -903,6 +1098,8 @@ def station_chart_data(request, pk):
         this period" message instead of a blank canvas with a broken dropdown.
       * An optional second parameter (``parameter2``) is returned as a separate
         series so two variables (e.g. flow + stage) can be compared.
+      * A parameter appears once in the list however many daily statistics the
+        station holds for it; each statistic is its own dataset.
     """
     station = get_object_or_404(MonitoredStation, pk=pk)
     source_code = station.data_source.code
@@ -916,6 +1113,7 @@ def station_chart_data(request, pk):
         date_filter["observation_date__gte"] = timezone.now() - timedelta(days=days)
 
     units_by_code = _published_parameter_units(station)
+    statistics_by_code = _published_statistics(station)
     param_codes = sorted(units_by_code.keys())
 
     # Resolve the selected parameter(s) against the stable universe.
@@ -926,7 +1124,8 @@ def station_chart_data(request, pk):
 
     parameters_meta = _chart_parameters_meta(source_code, param_codes, units_by_code)
     labels, datasets = _chart_datasets(
-        station, source_code, parameter, parameter2, units_by_code, date_filter
+        station, source_code, parameter, parameter2, units_by_code,
+        statistics_by_code, date_filter,
     )
 
     result = {
@@ -965,9 +1164,12 @@ def stations_freshness_geojson(request):
     reading_rows = (
         DataRecordStaging.objects
         .filter(station__in=stations, status="published")
-        .order_by("station_id", "-observation_date")
-        .values("station_id", "value", "unit", "parameter_code")
+        # The lowest statistic breaks a tie on the day, so the map shows the daily
+        # high (00001) where a station holds several, as it did when only one was kept.
+        .order_by("station_id", "-observation_date", "statistic")
+        .values("station_id", "value", "unit", "parameter_code", "statistic")
     )
+    multi_statistic = _multi_statistic_pairs(stations)
     for row in reading_rows:
         if row["station_id"] not in latest_reading:
             latest_reading[row["station_id"]] = row
@@ -991,7 +1193,9 @@ def stations_freshness_geojson(request):
                 latest_value = None
             latest_unit = reading["unit"] or ""
             latest_param = get_parameter_label(
-                s.data_source.code, reading["parameter_code"]
+                s.data_source.code, reading["parameter_code"],
+                reading["statistic"]
+                if (s.pk, reading["parameter_code"]) in multi_statistic else "",
             )
 
         features.append({

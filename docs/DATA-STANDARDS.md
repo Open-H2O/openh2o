@@ -83,7 +83,9 @@ parcel as inputs to the monthly water balance and does not map them to the list.
 The mapping of codes to keys is `CODE_TO_KEY`, a table written by hand in
 `seed_observed_properties.py`. When `python manage.py seed_observed_properties`
 runs, it reads each source adapter's list of codes and looks up each code in
-`CODE_TO_KEY`. The test in `tests/test_standards_registry.py` fails when an adapter
+`CODE_TO_KEY`. A reading typed at a station of the Entered by hand source (code
+`manual`) uses the USGS codes, so that source maps them the same way. The test in
+`tests/test_standards_registry.py` fails when an adapter
 emits a code that `CODE_TO_KEY` does not map. [crosswalk.csv](crosswalk.csv) has one
 row for each mapping, with the source, the source's code, and the key's name, USGS
 code, WQX characteristic name and UCUM unit.
