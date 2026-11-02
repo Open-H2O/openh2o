@@ -26,7 +26,8 @@ file. An import screen uploads the file from your browser, so you do not need to
 copy it.
 
 A zipped shapefile holds one shapefile and its `.prj` file. OpenH2O refuses a zip
-that holds several shapefiles and names them, so you can send the one you want. It
+that holds several shapefiles and names them (the first ten, then how many more), so
+you can send the one you want. It
 reads any projection the `.prj` file states, including the State Plane and UTM
 projections county and state files use, and refuses a file whose coordinates are not
 longitude and latitude when no `.prj` file says what they are.
@@ -108,13 +109,16 @@ outlines. OpenH2O matches a column to the parcel number (and, if you choose one,
 the owner) and shows the first five values beside each choice. The preview counts
 what Import would do: new use areas with their acres, numbers already on file
 (skipped, never changed), outlines outside the site's boundary, and features with no
-readable outline or no parcel number (not imported). A parcel is inside the boundary
+readable outline, no parcel number or a parcel number over 50 characters (not
+imported). A parcel is inside the boundary
 when a point within its outline is inside it. Outlines that share a parcel number
 become one use area holding all of them. For a Google Earth file whose outlines carry
 only names, choose the Name column: each name becomes the use area's number.
 
-`import_parcels` does the same from the command line, and reads the same four file
-types or a bare shapefile:
+`import_parcels` reads the same files (a `.zip`, `.kml`, `.geojson` or `.json`) or a
+bare shapefile from the command line. Unlike the screen, it does not leave out parcels
+outside the boundary, it reads the parcel number from `APN` unless you name another
+column, and it stops on an outline it cannot read:
 
 ```bash
 docker compose cp parcels.geojson web:/tmp/
@@ -130,7 +134,8 @@ docker compose exec web python manage.py import_parcels /tmp/parcels.geojson
 
 The command joins the outlines that share an APN into one parcel, reads every parcel
 into a holding table, then adds the new parcels to the site; `--dry-run` reports the
-same counts a real run gives. A parcel whose APN is already on the site is skipped.
+same counts a real run gives, unless a parcel cannot be saved, which only a real run
+finds. A parcel whose APN is already on the site is skipped.
 When a feature has no APN, the command skips that feature, counts it as an error and
 imports the rest of the file. When a feature's outline cannot be read, the command
 names the feature and stops without importing any of the file's parcels. If any

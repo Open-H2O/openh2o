@@ -18,12 +18,11 @@
 
 {% block content %}
 {% comment %}
-  2026-10-10 (150.1): rebuilt from the facts. Six sentences make a claim, and one
-  reads "load it with the import_parcels command", nothing about who runs the
-  server; the rest point to a screen. Each was checked against the code: the wizard's
+  2026-10-10 (150.1): rebuilt from the facts. Six sentences make a claim, and each
+  points to a screen. Each was checked against the code: the wizard's
   steps (setup/services.py WIZARD_STEPS, geography/management/commands/
-  auto_populate.py), use areas loaded on the Import use areas page (docs/DATA-IMPORT.md,
-  infrastructure/views.py UNSUPPORTED_IMPORT_TYPE_MESSAGE), the screen
+  auto_populate.py), use areas loaded on the Import use areas page (parcels/
+  use_area_import.py, templates/parcels/list.html), the screen
   importer's formats and required name and location (infrastructure/
   importer.py), stations added with syncing off, the calculation's button and
   nightly job (accounting/views/periods.py period_calculate, DEPLOY.md Scheduled Jobs)
