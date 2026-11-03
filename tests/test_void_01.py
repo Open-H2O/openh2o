@@ -257,15 +257,15 @@ def test_an_engine_diversion_row_has_edit_only(operator):
     assert "Void this record" not in menu
 
 
-def test_the_well_menu_holds_void_alone_and_is_absent_for_a_viewer_and_a_voided_read(operator, viewer):
+def test_the_well_menu_holds_correct_then_void_and_is_absent_for_a_viewer_and_a_voided_read(operator, viewer):
     well, reading = well_with_reading()
     page = reverse("wells:detail", args=[well.pk])
 
     body = _client(operator).get(page).content.decode()
     assert "Actions for the Sep 30, 2026 reading" in body
     menu = menu_of(body, "meter_reading", reading)
-    assert "Void this record" in menu
-    assert 'role="separator"' not in menu
+    assert menu.index("Correct this record") < menu.index('role="separator"') < menu.index("Void this record")
+    assert "Edit" not in menu
 
     assert "row-actions-btn" not in _client(viewer).get(page).content.decode()
 
@@ -295,19 +295,28 @@ def test_the_ledger_menu_is_on_a_typed_row_and_not_on_an_engine_row(operator, vi
     assert "row-actions-btn" not in _client(viewer).get(page).content.decode()
 
 
-def test_a_recharge_event_in_a_finalized_year_keeps_a_menu_with_edit_only(operator):
-    closed = finalize(dt.date(2023, 10, 1), dt.date(2024, 9, 30))
+def test_a_recharge_event_in_a_finalized_year_has_no_edit_and_a_menu_for_an_administrator_only(
+    operator, settings
+):
+    settings.ACCESS_CONTROL_ENFORCED = True
     site = RechargeSiteFactory(zone=ZoneFactory())
+    # The events go in before the year closes: the lock refuses a write into it after.
     old = RechargeEventFactory(recharge_site=site, start_date=dt.date(2024, 3, 1))
     new = RechargeEventFactory(recharge_site=site, start_date=dt.date(2025, 3, 1))
+    closed = finalize(dt.date(2023, 10, 1), dt.date(2024, 9, 30))
     assert closed.is_finalized
+    page = reverse("recharge:detail", args=[site.pk])
 
-    body = _client(operator).get(reverse("recharge:detail", args=[site.pk])).content.decode()
+    seen = _client(operator).get(page).content.decode()
+    assert f"menu-record-recharge_event-{old.pk}" not in seen
+    new_menu = menu_of(seen, "recharge_event", new)
+    assert new_menu.index("Edit") < new_menu.index("Correct this record") < new_menu.index("Void this record")
 
+    boss = _user("boss", agency_admin=True)
+    body = _client(boss).get(page).content.decode()
     old_menu = menu_of(body, "recharge_event", old)
-    assert "Edit" in old_menu and "Void this record" not in old_menu
-    new_menu = menu_of(body, "recharge_event", new)
-    assert new_menu.index("Edit") < new_menu.index("Void this record")
+    assert "Correct this record" in old_menu and "Void this record" in old_menu
+    assert "Edit" not in old_menu
 
 
 # ------------------------------------------------------------------ (e) a recharge event

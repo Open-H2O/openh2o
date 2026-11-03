@@ -208,6 +208,13 @@ NOT_REQUESTED = {
         "the one-line void form a row's menu swaps in, never a page; a plain GET redirects "
         "to the record's own page"
     ),
+    "/users/records/<slug:kind>/<int:pk>/correct/": (
+        "the correction row a row's menu swaps in, never a page; a plain GET redirects "
+        "to the record's own page"
+    ),
+    "/users/records/attachments/<int:pk>/": (
+        "streams the photo or PDF attached to a correction, never a page"
+    ),
 }
 
 #: Pages with no crumb trail at all.

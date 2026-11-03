@@ -21,6 +21,7 @@ from django.core.management import call_command
 from django.db import DatabaseError, connection, transaction
 from django.test import Client
 from django.urls import reverse
+from django.utils import timezone
 
 from accounting.ledger_import import import_ledger_rows
 from accounting.locks import (
@@ -134,6 +135,72 @@ def _build(label, day, period):
             point_of_diversion=PointOfDiversionFactory(), reporting_period=period,
             month=day, amount_acre_feet=Decimal("1.0000"), delivery_acre_feet=Decimal("5.0000"),
         )
+    return _build_more(label, day)
+
+
+def _noon(day):
+    """Noon in the site's zone on ``day``: a DateTime well inside the day."""
+    return timezone.make_aware(dt.datetime(day.year, day.month, day.day, 12, 0))
+
+
+def _build_more(label, day):
+    """The nine tables 151.7-02 added to the lock (``tests/test_finalized_lock_02.py`` holds their own tests)."""
+    from datasync.models import DataRecordStaging, TypedReading
+    from drinking.models import SystemProduction
+    from measurements.models import Meter, MeterReading, WaterMeasurement
+    from parcels.models import FallowPeriod
+    from recharge.models import RechargeMeasurement
+    from surface.models import CanalMonthLoss
+    from tests.factories import (
+        MonitoredStationFactory,
+        RechargeEventFactory,
+        RechargeSiteFactory,
+        SampleResultFactory,
+        WaterSystemFactory,
+    )
+
+    if label == "measurements.MeterReading":
+        meter = Meter.objects.create(serial_number=f"LOCK-{day}-{Meter.objects.count()}")
+        return MeterReading.objects.create(meter=meter, reading_date=_noon(day), current_value=Decimal("10"))
+    if label == "measurements.WaterMeasurement":
+        return WaterMeasurement.objects.create(
+            name="Lock level", measurement_type="flow", unit="ft",
+            measurement_date=_noon(day), value=Decimal("5"),
+        )
+    if label == "recharge.RechargeEvent":
+        return RechargeEventFactory(start_date=day)
+    if label == "recharge.RechargeMeasurement":
+        return RechargeMeasurement.objects.create(
+            recharge_site=RechargeSiteFactory(), measurement_date=_noon(day),
+            measurement_type="flow_rate", value=Decimal("1"), unit="cfs",
+        )
+    if label == "surface.CanalMonthLoss":
+        return CanalMonthLoss.objects.create(
+            point_of_diversion=PointOfDiversionFactory(), month=day.replace(day=1),
+            diverted_af=Decimal("10"), evaporation_af=Decimal("1"), seepage_af=Decimal("1"),
+            spill_af=Decimal("1"), available_af=Decimal("7"),
+        )
+    if label == "parcels.FallowPeriod":
+        return FallowPeriod.objects.create(parcel=ParcelFactory(), start_month=day.replace(day=1), end_month=day.replace(day=1))
+    if label == "datasync.TypedReading":
+        station = MonitoredStationFactory()
+        observed = _noon(day)
+        published = DataRecordStaging.objects.create(
+            data_source=station.data_source, station=station, raw_data={}, observation_date=observed,
+            parameter_code="gage_height", statistic="", value=Decimal("1"),
+            status="published", published_at=observed,
+        )
+        return TypedReading.objects.create(
+            station=station, reading=published, parameter_code="gage_height",
+            observation_date=day, value=Decimal("1"),
+        )
+    if label == "drinking.SystemProduction":
+        return SystemProduction.objects.create(
+            system=WaterSystemFactory(), year=day.year, month=day.month, type_code="GW",
+            volume_as_reported=Decimal("100"), unit_as_reported="G", provenance="typed",
+        )
+    if label == "drinking.SampleResult":
+        return SampleResultFactory(event__sample_date=day)
     raise AssertionError(label)
 
 
@@ -178,7 +245,7 @@ def test_every_locked_table_carries_the_trigger():
         )
         tables = [row[0] for row in cursor.fetchall()]
     assert tables == sorted(_table(label) for label in LOCKED_MODELS)
-    assert len(LOCK_TRIGGER_URIS) == 10
+    assert len(LOCK_TRIGGER_URIS) == len(LOCKED_MODELS) == 19
 
 
 @pytest.mark.parametrize("label", LOCKED_MODELS)

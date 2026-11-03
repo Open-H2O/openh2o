@@ -2496,6 +2496,21 @@ checked_at = "953a3149"
 
 [[section]]
 document = "templates/help/getting_started.html"
+heading = "Correcting a record"
+files = [
+  "core/corrections.py",
+  "core/corrections_views.py",
+  "core/correction_forms.py",
+  "core/record_attachments.py",
+  "core/templatetags/record_marks.py",
+  "templates/partials/_row_menu.html",
+  "accounting/locks.py",
+]
+labels = []
+checked_at = "fae413f0"
+
+[[section]]
+document = "templates/help/getting_started.html"
 heading = "Where to go next"
 files = []
 why_none = "Link cards to the other Help pages, each with a one-line description of that page; pointers are checked separately."

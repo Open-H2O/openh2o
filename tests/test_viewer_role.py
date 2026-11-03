@@ -262,7 +262,7 @@ WRITE_PAGES = [
     "accounting:methodology_step_config", "accounting:methodology_step_move",
     "accounting:methodology_step_toggle", "accounting:parcel_search_for_assignment",
     "accounting:period_create", "accounting:period_finalize", "accounting:remove_parcel",
-    "core:pending_import_status", "core:record_void",
+    "core:pending_import_status", "core:record_correct", "core:record_void",
     "core:user_create", "core:user_email_edit", "datasync:station_add",
     "datasync:station_reading_add", "datasync:station_toggle",
     "drinking:facility_add", "drinking:facility_edit", "drinking:import",
