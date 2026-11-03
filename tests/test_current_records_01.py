@@ -606,8 +606,6 @@ ALLOWED_READS = {
         "finds the use area the form names; a voided use area can be found",
     ("accounting/views/ledger.py", "_ledger_response"):
         "the ledger page draws voided rows struck; its footer total reads .current()",
-    ("accounting/views/periods.py", "_period_detail_context"):
-        "the water year page counts the ledger rows on file in the year, voided ones included",
     ("accounting/views/settings_pages.py", "methodology_preview"):
         "picks a use area to preview a calculation on",
     ("accounting/views/settings_pages.py", "methodology_settings"):

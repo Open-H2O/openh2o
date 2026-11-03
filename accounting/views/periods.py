@@ -118,7 +118,7 @@ def _period_detail_context(period, finalize_form=None):
     allocations = AllocationPlan.objects.filter(
         reporting_period=period
     ).select_related("zone", "water_type").order_by("water_type__name", "zone__name")
-    ledger_count = ParcelLedger.objects.filter(reporting_period=period).count()
+    ledger_count = ParcelLedger.objects.current().filter(reporting_period=period).count()
 
     # Same shape as the allocations list's per-period subtotals (rule 5's
     # label: what makes a group of rows addable), so the lead panel's figures

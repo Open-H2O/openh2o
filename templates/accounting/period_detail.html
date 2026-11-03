@@ -173,9 +173,9 @@
         <div>
           <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">{% if period.is_finalized %}Reopen this water year{% else %}Finalize this water year{% endif %}</h2>
           {% if period.is_finalized %}
-          <p class="text-secondary text-base m-0">While this water year is finalized, OpenH2O does not let anyone add, change or remove its ledger entries, allocations, diversion records or calculation results. An administrator can reopen it with a reason.</p>
+          <p class="text-secondary text-base m-0">While this water year is finalized, OpenH2O does not let anyone add, change or remove its ledger entries, allocations, diversion records or calculation results, or void any record dated in it. An administrator can reopen it with a reason.</p>
           {% else %}
-          <p class="text-secondary text-base m-0">Finalizing stops this water year's ledger entries, allocations, diversion records and calculation results from being added, changed or removed until an administrator reopens it with a reason, which OpenH2O keeps in the change history.</p>
+          <p class="text-secondary text-base m-0">Finalizing stops this water year's ledger entries, allocations, diversion records and calculation results from being added, changed or removed, and any record dated in it from being voided, until an administrator reopens it with a reason, which OpenH2O keeps in the change history.</p>
           {% endif %}
         </div>
         <form method="post" action="{% url 'accounting:period_finalize' period.pk %}" class="period-close-form">
