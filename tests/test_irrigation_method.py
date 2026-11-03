@@ -127,7 +127,7 @@ def _link_for(parcel):
 
 def _patch(client, parcel, value):
     """PATCH the inline editor the way the HTMX form does (urlencoded body)."""
-    body = urlencode({"field": "irrigation_method", "value": value})
+    body = urlencode({"field": "irrigation_method", "value": value, "reason": "Set from the field survey."})
     return client.patch(
         reverse("parcels:edit_field", args=[parcel.pk]),
         data=body,

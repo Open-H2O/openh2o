@@ -69,7 +69,8 @@ def pool(zone, origin="basin_recharge_pool"):
 
 def event_post(volume, **extra):
     data = {"start_date": "2025-08-01", "end_date": "2025-08-31", "volume_acre_feet": volume,
-            "water_type": ld.wt("GW").pk, "source_description": "", "notes": ""}
+            "water_type": ld.wt("GW").pk, "source_description": "", "notes": "",
+            "reason": "Corrected from the site log."}
     data.update(extra)
     return data
 
@@ -122,9 +123,14 @@ def test_the_view_credits_the_account_and_deleting_the_event_takes_it_back(d3, c
     assert total(d3["account"], "managed_recharge") == D("45.0000")
     assert pool(d3["gsa"]) == D("50.0000")
     event = RechargeEvent.objects.get()
-    resp = client.post(reverse("recharge:event_delete", args=[d3["site"].pk, event.pk]))
+    resp = client.post(
+        reverse("core:record_void", args=["recharge_event", event.pk]),
+        {"void_reason": "Logged on the wrong site."},
+    )
     assert resp.status_code in (200, 302)
-    assert RechargeEvent.objects.count() == 0
+    # Voided, not deleted: the event stays on file and counts nowhere.
+    assert RechargeEvent.objects.count() == 1
+    assert RechargeEvent.objects.current().count() == 0
     assert AccountCredit.objects.count() == 0
     assert AllocationCarryover.objects.filter(origin="basin_recharge_pool").count() == 0
 

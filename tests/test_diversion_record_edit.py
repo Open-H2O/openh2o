@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
-146-02 Task 3, ISS-181: a diversion record can be edited and deleted.
+146-02 Task 3, ISS-181: a diversion record can be edited, and (151.7-01) voided in place of deleted.
 
 Three doors proven here, each RED against the unfixed tree (the exact quotes
 live in 146-02-EVIDENCE.md):
@@ -9,7 +9,8 @@ live in 146-02-EVIDENCE.md):
      page shows the new value; an edit re-runs the reporting-period lookup
      for the (possibly changed) month; an invalid submit keeps the row in
      edit mode with the error visible, never a silent reset.
-  2. POST diversion/<pk>/record/<rpk>/delete/: removes the row.
+  2. core:record_void on a diversion record: the row stays, struck, and leaves
+     the totals (it was a delete before 151.7-01).
   3. A unique-constraint violation on (point_of_diversion, month,
      diversion_type) -- on create or on edit -- renders as a form error, not
      a 500 (before this task, point_of_diversion is excluded from the form's
@@ -43,6 +44,10 @@ class _UserFactory(factory.django.DjangoModelFactory):
     email = factory.Sequence(lambda n: f"editrecuser{n}@example.com")
     password = factory.LazyFunction(lambda: make_password("testpass123"))
     is_active = True
+
+
+#: Every edit of a figure asks why (core.reasons); 10 to 500 characters.
+REASON = "Corrected against the ditch log."
 
 
 @pytest.fixture
@@ -88,6 +93,7 @@ class TestDiversionRecordEdit:
                 "volume_acre_feet": "99.5",
                 "returned_af": "0",
                 "diversion_type": "direct_use",
+                "reason": REASON,
             },
         )
 
@@ -113,6 +119,7 @@ class TestDiversionRecordEdit:
                 "volume_acre_feet": "51",
                 "returned_af": "0",
                 "diversion_type": "direct_use",
+                "reason": REASON,
             },
         )
 
@@ -142,6 +149,7 @@ class TestDiversionRecordEdit:
                 "volume_acre_feet": "33",
                 "returned_af": "0",
                 "diversion_type": "direct_use",
+                "reason": REASON,
             },
         )
 
@@ -162,6 +170,7 @@ class TestDiversionRecordEdit:
                 "volume_acre_feet": "not-a-number",
                 "returned_af": "0",
                 "diversion_type": "direct_use",
+                "reason": REASON,
             },
         )
 
@@ -172,26 +181,30 @@ class TestDiversionRecordEdit:
 
 
 # ---------------------------------------------------------------------------
-# 2. Delete
+# 2. Void
 # ---------------------------------------------------------------------------
 
 
-class TestDiversionRecordDelete:
-    def test_delete_removes_the_row(self, auth_client):
+class TestDiversionRecordVoid:
+    def test_void_keeps_the_row_struck_and_out_of_the_count(self, auth_client):
         pod = PointOfDiversionFactory()
         record = DiversionRecordFactory(point_of_diversion=pod, month=date(2024, 3, 1))
         other = DiversionRecordFactory(point_of_diversion=pod, month=date(2024, 4, 1))
 
         resp = auth_client.post(
-            reverse("surface:diversion_record_delete", args=[pod.pk, record.pk])
+            reverse("core:record_void", args=["diversion_record", record.pk]),
+            {"void_reason": "Entered on the wrong point."},
         )
 
         assert resp.status_code == 200
-        assert not DiversionRecord.objects.filter(pk=record.pk).exists()
-        assert DiversionRecord.objects.filter(pk=other.pk).exists()
+        record.refresh_from_db()
+        assert record.voided_at is not None
+        assert DiversionRecord.objects.filter(pk=other.pk, voided_at__isnull=True).exists()
         body = resp.content.decode()
-        assert "Mar 2024" not in body, "the deleted row's month must not still render"
-        assert "Apr 2024" in body, "the surviving row must still render"
+        assert "Mar 2024" in body, "the voided row stays in its place"
+        assert "Apr 2024" in body, "the other row still renders"
+        assert "Entered on the wrong point." in body
+        assert "1 record over" in body, "the count leaves the voided row out"
 
 
 # ---------------------------------------------------------------------------
@@ -214,6 +227,7 @@ class TestDuplicateRecordIsAFormError:
                 "volume_acre_feet": "10",
                 "returned_af": "0",
                 "diversion_type": "direct_use",
+                "reason": REASON,
             },
         )
 
@@ -239,6 +253,7 @@ class TestDuplicateRecordIsAFormError:
                 "volume_acre_feet": "10",
                 "returned_af": "0",
                 "diversion_type": "direct_use",
+                "reason": REASON,
             },
         )
 

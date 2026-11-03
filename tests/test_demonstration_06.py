@@ -168,6 +168,10 @@ def test_the_three_lists_and_the_registry_describe_each_other():
     for model in apps.get_models():
         if issubclass(model, ph.Event) or model._meta.app_label in demo.KEPT_APPS:
             continue
+        if model._meta.proxy:
+            # A proxy holds no table of its own: core.ChangeContext is a door
+            # for the lock on pghistory's context table (core/models.py).
+            continue
         own.add(model._meta.label)
     assert own == set(named), (
         f"not classed: {sorted(own - set(named))}; named but absent: {sorted(set(named) - own)}"

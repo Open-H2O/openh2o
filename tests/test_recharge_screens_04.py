@@ -193,7 +193,7 @@ class TestThePanelRefreshes:
         assert re.search(r"budget-seg-value[^>]*>\s*42\.50", body)
         assert "2 events, Rc WY" in body
 
-    def test_deleting_an_event_refreshes_the_panel_too(self, writer):
+    def test_voiding_an_event_refreshes_the_panel_too(self, writer):
         ReportingPeriodFactory(
             name="Rc WY", start_date=date(2025, 10, 1), end_date=date(2026, 9, 30)
         )
@@ -205,7 +205,8 @@ class TestThePanelRefreshes:
             recharge_site=site, start_date=date(2025, 12, 1), volume_acre_feet=Decimal("8.0000")
         )
         body = writer.post(
-            reverse("recharge:event_delete", args=[site.pk, event.pk])
+            reverse("core:record_void", args=["recharge_event", event.pk]),
+            {"void_reason": "Logged on the wrong site."},
         ).content.decode()
         assert 'id="water-recharged"' in body
         assert re.search(r"budget-seg-value[^>]*>\s*30\.00", body)

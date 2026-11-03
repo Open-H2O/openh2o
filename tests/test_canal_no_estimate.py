@@ -221,19 +221,19 @@ def _records_in(open_year, closed_year):
     return pod, old, new
 
 
-def test_a_record_in_a_finalized_year_reads_finalized_with_no_edit_or_delete():
+def test_a_record_in_a_finalized_year_reads_finalized_with_no_edit_or_void():
     pod, old, new = _records_in(None, None)
     body = _record_page(pod)
     assert reverse("surface:diversion_record_edit", args=[pod.pk, old.pk]) not in body
-    assert reverse("surface:diversion_record_delete", args=[pod.pk, old.pk]) not in body
+    assert reverse("core:record_void", args=["diversion_record", old.pk]) not in body
     assert "Finalized" in body
 
 
-def test_a_record_in_an_open_year_keeps_edit_and_delete():
+def test_a_record_in_an_open_year_keeps_edit_and_gains_void_in_its_menu():
     pod, old, new = _records_in(None, None)
     body = _record_page(pod)
     assert reverse("surface:diversion_record_edit", args=[pod.pk, new.pk]) in body
-    assert reverse("surface:diversion_record_delete", args=[pod.pk, new.pk]) in body
+    assert reverse("core:record_void", args=["diversion_record", new.pk]) in body
 
 
 def test_a_use_area_assignment_in_a_finalized_year_has_no_remove_control():

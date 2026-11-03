@@ -55,6 +55,7 @@ def administrator():
 
 
 def _patch(client, url, **data):
+    data.setdefault("reason", "Corrected from the survey.")
     return client.patch(
         url, data=urlencode(data), content_type="application/x-www-form-urlencoded"
     )

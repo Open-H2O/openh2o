@@ -76,11 +76,16 @@ def end_url(parcel):
 
 
 def post_add(client, parcel, start, end=""):
-    return client.post(add_url(parcel), {"start_month": start, "end_month": end})
+    return client.post(
+        add_url(parcel),
+        {"start_month": start, "end_month": end, "reason": "Marked from the field survey."},
+    )
 
 
 def post_end(client, parcel, end):
-    return client.post(end_url(parcel), {"end_month": end})
+    return client.post(
+        end_url(parcel), {"end_month": end, "reason": "Ended when the crop went in."}
+    )
 
 
 @pytest.fixture

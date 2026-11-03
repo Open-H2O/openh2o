@@ -172,6 +172,7 @@ def test_editing_only_the_volume_keeps_the_stored_day():
             "volume_acre_feet": "40",
             "returned_af": "0",
             "diversion_type": "direct_use",
+            "reason": "Corrected against the ditch log.",
         },
     )
     assert resp.status_code == 200

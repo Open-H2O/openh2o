@@ -53,7 +53,12 @@ def administrator():
     )
 
 
+#: The reason every inline edit of a figure asks for (core.reasons); it becomes the change's note.
+REASON = "Corrected from the survey."
+
+
 def _patch(client, url, **data):
+    data.setdefault("reason", REASON)
     return client.patch(
         url, data=urlencode(data), content_type="application/x-www-form-urlencoded"
     )
@@ -80,7 +85,7 @@ def test_area_edit_by_patch_records_the_user_and_both_values(operator):
     assert before.area_acres == Decimal("80.00")
     assert after.area_acres == Decimal("81.25")
     assert after.pgh_context_id == before.pgh_context_id
-    assert after.pgh_context.metadata == {"user": operator.pk, "url": url}
+    assert after.pgh_context.metadata == {"user": operator.pk, "url": url, "note": REASON}
 
 
 def test_well_share_edit_by_patch_records_the_user_and_both_values(operator):
@@ -94,7 +99,7 @@ def test_well_share_edit_by_patch_records_the_user_and_both_values(operator):
     before, after = _pair(wip)
     assert before.fraction == Decimal("1.0000")
     assert after.fraction == Decimal("0.4000")
-    assert after.pgh_context.metadata == {"user": operator.pk, "url": url}
+    assert after.pgh_context.metadata == {"user": operator.pk, "url": url, "note": REASON}
 
 
 def test_methodology_step_config_records_user_note_and_config(administrator):

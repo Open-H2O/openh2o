@@ -56,8 +56,11 @@ def test_month_nullable_means_the_year_reported_as_one_figure(system):
     assert record.month is None
 
 
-def test_unique_together_refuses_a_second_row_for_the_same_key(system):
+def test_the_unique_rule_refuses_a_second_current_row_for_the_same_key(system):
     """With a facility attached, the DB constraint fires directly.
+
+    The rule is a UniqueConstraint on the rows that count (not voided), so a
+    voided row does not block entering the right one (tests/test_current_records_01.py).
 
     Postgres treats NULL as distinct from NULL, so a facility-less pair
     (the common case -- neither import layout names one) is NOT caught by

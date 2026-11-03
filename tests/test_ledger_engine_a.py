@@ -179,13 +179,15 @@ def test_a_fallow_period_is_added_and_ended_from_the_field_page(ref):
     page = Client()
     page.force_login(user)
     resp = page.post(reverse("parcels:fallow_period_add", args=[field.pk]),
-                     {"start_month": "2025-07-12", "end_month": ""})
+                     {"start_month": "2025-07-12", "end_month": "",
+                      "reason": "Marked from the field survey."})
     assert resp.status_code == 200
     period = FallowPeriod.objects.get(parcel=field)
     assert (period.start_month, period.end_month) == (dt.date(2025, 7, 1), None)
     assert field.is_fallow_in(dt.date(2025, 7, 1)) is True
     assert "End fallow period" in resp.content.decode()
-    resp = page.post(reverse("parcels:fallow_period_end_edit", args=[field.pk]), {"end_month": "2025-07-30"})
+    resp = page.post(reverse("parcels:fallow_period_end_edit", args=[field.pk]),
+                     {"end_month": "2025-07-30", "reason": "Ended when the crop went in."})
     period.refresh_from_db()
     assert period.end_month == dt.date(2025, 7, 1)
     assert "Add fallow period" in resp.content.decode()

@@ -76,7 +76,7 @@ def _ledger_post(client, parcel):
 def _area_patch(client, parcel, value):
     return client.patch(
         reverse("parcels:edit_field", args=[parcel.pk]),
-        data=urlencode({"field": "area_acres", "value": value}),
+        data=urlencode({"field": "area_acres", "value": value, "reason": "Remeasured the field."}),
         content_type="application/x-www-form-urlencoded",
     )
 
@@ -262,7 +262,7 @@ WRITE_PAGES = [
     "accounting:methodology_step_config", "accounting:methodology_step_move",
     "accounting:methodology_step_toggle", "accounting:parcel_search_for_assignment",
     "accounting:period_create", "accounting:period_finalize", "accounting:remove_parcel",
-    "core:pending_import_status",
+    "core:pending_import_status", "core:record_void",
     "core:user_create", "core:user_email_edit", "datasync:station_add",
     "datasync:station_reading_add", "datasync:station_toggle",
     "drinking:facility_add", "drinking:facility_edit", "drinking:import",
@@ -277,11 +277,11 @@ WRITE_PAGES = [
     "parcels:fallow_period_add", "parcels:fallow_period_end_edit",
     "parcels:use_area_import", "parcels:use_area_import_commit",
     "parcels:use_area_import_preview", "recharge:event_create",
-    "recharge:event_delete", "recharge:event_edit",
+    "recharge:event_edit",
     "surface:device_add", "surface:device_edit", "surface:device_mark_removed",
     "surface:diversion_import", "surface:diversion_import_commit",
     "surface:diversion_import_preview", "surface:diversion_record_create",
-    "surface:diversion_record_delete", "surface:diversion_record_edit", "surface:pod_edit",
+    "surface:diversion_record_edit", "surface:pod_edit",
     "surface:pod_link_right", "surface:pod_parcel_edit_share",
     "surface:water_right_assign_parcel", "surface:water_right_create",
     "surface:water_right_edit", "surface:water_right_import",
@@ -333,7 +333,9 @@ def test_a_viewer_adding_or_ending_a_fallow_period_is_refused(viewer, operator):
     assert _refused(client.get(end)) == (403, True)
     assert not parcel.fallow_periods.exists()
 
-    response = _client(operator).post(add, {"start_month": "2026-03-01"})
+    response = _client(operator).post(
+        add, {"start_month": "2026-03-01", "reason": "The field is left fallow this spring."}
+    )
     assert response.status_code == 200
     assert parcel.fallow_periods.count() == 1
 

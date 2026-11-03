@@ -1254,10 +1254,11 @@ files = [
   "templates/wells/partials/_water_level_import_preview.html",
   "templates/wells/list.html",
   "templates/wells/partials/_detail_pane.html",
+  "templates/wells/partials/_measurement_history.html",
 ]
 labels = [
   { text = "Import water levels", where = "templates/wells/list.html" },
-  { text = "Import water levels", where = "templates/wells/partials/_detail_pane.html" },
+  { text = "Import water levels", where = "templates/wells/partials/_measurement_history.html" },
   { text = "Add a water level", where = "templates/wells/partials/_water_level_form.html" },
 ]
 checked_at = "38b6199e"

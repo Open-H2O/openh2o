@@ -342,9 +342,12 @@ class TestDroppability:
         locked decision 3 (2026-07-21) forbids exactly that: no agency type is
         assumed in either direction, and a district that buys all its water
         wholesale still has a system to sample.
+
+        `core` joined in 151.7-01 for the `voided_by` of SampleResult and
+        SystemProduction; core is never dropped, so it forces nothing on.
         """
         spec = mod.MODULE_REGISTRY["drinking"]
-        assert set(spec.requires) == {"standards"}
+        assert set(spec.requires) == {"core", "standards"}
 
     def test_the_well_edge_is_carried_by_an_exception_record_instead(self):
         """The other half: dropping it from `requires` did not drop it on the floor.

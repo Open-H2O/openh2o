@@ -64,7 +64,7 @@ def auth_client(db):
 
 
 def _patch(client, url, value):
-    body = urlencode({"value": value})
+    body = urlencode({"value": value, "reason": "Corrected from the survey."})
     return client.patch(url, data=body, content_type="application/x-www-form-urlencoded")
 
 

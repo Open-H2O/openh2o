@@ -43,7 +43,7 @@ def auth_client():
 
 def _patch_field(client, url, field, value):
     """PATCH the inline editor the way the HTMX form does (urlencoded body)."""
-    body = urlencode({"field": field, "value": value})
+    body = urlencode({"field": field, "value": value, "reason": "Corrected from the survey."})
     return client.patch(url, data=body, content_type="application/x-www-form-urlencoded")
 
 

@@ -446,7 +446,7 @@ def test_an_allocation_in_a_finalized_year_is_refused_beside_the_form(periods, o
     assert AllocationPlan.objects.count() == 0
 
 
-def test_a_diversion_record_in_a_finalized_year_is_refused_on_create_edit_and_delete(periods, operator):
+def test_a_diversion_record_in_a_finalized_year_is_refused_on_create_edit_and_void(periods, operator):
     closed, _ = periods
     record = DiversionRecordFactory(month=CLOSED_DAY, reporting_period=closed)
     pod = record.point_of_diversion
@@ -465,15 +465,20 @@ def test_a_diversion_record_in_a_finalized_year_is_refused_on_create_edit_and_de
     edited = client.post(
         reverse("surface:diversion_record_edit", args=[pod.pk, record.pk]),
         {"month": "2025-03-01", "volume_acre_feet": "99.0000", "returned_af": "0",
-         "diversion_type": "direct_use", "data_state": "provisional"},
+         "diversion_type": "direct_use", "data_state": "provisional",
+         "reason": "Corrected against the ditch log."},
     )
     assert edited.status_code == 200
     assert REFUSAL in edited.content.decode()
 
-    deleted = client.post(reverse("surface:diversion_record_delete", args=[pod.pk, record.pk]))
-    assert deleted.status_code == 200
-    assert REFUSAL in deleted.content.decode()
+    voided = client.post(
+        reverse("core:record_void", args=["diversion_record", record.pk]),
+        {"void_reason": "Entered on the wrong point."},
+    )
+    assert voided.status_code == 200
+    assert REFUSAL in voided.content.decode()
     record.refresh_from_db()
+    assert record.voided_at is None
     assert record.volume_acre_feet == Decimal("50.0000")
 
 

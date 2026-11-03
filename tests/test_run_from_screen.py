@@ -342,6 +342,7 @@ def _edit_january(world, operator, volume):  # noqa: F811
             "volume_acre_feet": volume,
             "returned_af": "0",
             "diversion_type": record.diversion_type,
+            "reason": "Corrected against the ditch log.",
         },
     )
 
@@ -392,24 +393,23 @@ def test_creating_a_diversion_record_recalculates_its_month(world, full_efficien
     )
 
 
-def test_deleting_a_diversion_record_clears_the_months_divided_up_rows(world, full_efficiency, operator):  # noqa: F811
+def test_voiding_a_diversion_record_clears_the_months_divided_up_rows(world, full_efficiency, operator):  # noqa: F811
     _run_months("2024-01")
     assert _split(JAN) == {"RA-B": Decimal("-10.0000"), "RA-C": Decimal("-10.0000")}
     record = DiversionRecord.objects.get(point_of_diversion=world.pod, month=JAN)
     response = _client(operator).post(
-        reverse("surface:diversion_record_delete", args=[world.pod.pk, record.pk])
+        reverse("core:record_void", args=["diversion_record", record.pk]),
+        {"void_reason": "Entered on the wrong point."},
     )
 
     assert response.status_code == 200
-    assert not DiversionRecord.objects.filter(pk=record.pk).exists()
-    assert _saved("diversion_saved").get().months == ["2024-01"]
+    # Voided, not deleted: the record stays on file and counts nowhere.
+    assert DiversionRecord.objects.filter(pk=record.pk, voided_at__isnull=False).exists()
+    assert _saved("record_voided").get().months == ["2024-01"]
     assert _split(JAN) == {}
     own = ParcelLedger.objects.get(pk=world.own.pk)
     assert own.amount_acre_feet == Decimal("-4.0000")
-    assert (
-        "OpenH2O is recalculating the use areas this water serves for January 2024."
-        in response.content.decode()
-    )
+    assert "Record voided. OpenH2O recalculated Jan 2024." in response.content.decode()
 
 
 def test_a_diversion_save_into_a_finalized_period_is_refused_and_starts_nothing(world, operator):  # noqa: F811

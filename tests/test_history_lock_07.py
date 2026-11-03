@@ -3,8 +3,9 @@
 a recorded change, however the statement arrives.
 
 The lock is on the event tables (``core/history.py`` ``track_changes``). The
-table that says who made a change (``pghistory_context``) is not locked, because
-pghistory updates it when a nested context adds a note.
+table that says who made a change (``pghistory_context``) refuses DELETE and
+allows UPDATE and INSERT, because pghistory updates it when a nested context
+adds a note.
 """
 
 import datetime
@@ -143,12 +144,16 @@ def test_the_note_still_saves_inside_an_open_context():
     assert event.pgh_context.metadata["command"] == "a-command"
 
 
-def test_the_context_table_is_not_locked():
+def test_the_context_table_allows_an_update_and_refuses_a_delete():
     with pghistory.context(command="x"):
         ZoneFactory()
     context = pghistory_models.Context.objects.get()
     pghistory_models.Context.objects.filter(id=context.id).update(metadata={"a": 1})
     assert pghistory_models.Context.objects.get(id=context.id).metadata == {"a": 1}
+    assert _refused(
+        "DELETE FROM pghistory_context WHERE id = %s", [str(context.id)]
+    )
+    assert pghistory_models.Context.objects.filter(id=context.id).exists()
 
 
 def test_the_golden_build_still_empties_every_event_table_and_the_context():

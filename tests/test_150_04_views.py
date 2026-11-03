@@ -489,7 +489,7 @@ def test_t1_the_footer_figures_sit_in_a_wrapping_row_not_a_nowrap_cell(auth_clie
     tfoot = html[html.index("<tfoot>"):html.index("</tfoot>")]
 
     assert 'class="tfoot-figures"' in tfoot
-    assert '<td colspan="3" class="text-xs">' in tfoot
+    assert '<td colspan="4" class="text-xs">' in tfoot
     assert 'colspan="3" class="text-xs" style="white-space: nowrap;"' not in tfoot
 
 
