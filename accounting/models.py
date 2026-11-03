@@ -19,6 +19,8 @@ from django.contrib.postgres.fields import DateRangeField
 from django.contrib.postgres.fields.ranges import RangeOperators
 from django.core.exceptions import ValidationError
 from django.db.models import Func
+from django.utils import timezone
+import pgtrigger
 
 from accounting.locks import finalized_period_lock
 from core.history import track_changes
@@ -1014,3 +1016,115 @@ class CalculationRequest(models.Model):
 
     def __str__(self):
         return f"Calculation request {self.pk}: {self.status}"
+
+
+#: Why an update to a filed-figures record or one of its rows is refused, in the
+#: database: a record of the figures as they stood is never edited.
+STATEMENT_NEVER_UPDATED = "never_updated"
+
+
+@track_changes()
+class PeriodStatement(models.Model):
+    """The figures of one water year as they stood on one day (``accounting.statements``).
+
+    Finalizing a year writes one (``filed``, or ``restated`` when the year was
+    filed before); a year finalized before OpenH2O kept filed figures gets one
+    when the site is upgraded (``recorded_at_upgrade``). Its rows are the figures
+    the pages print, read off the same functions the pages call. A record is
+    never changed after it is written, and reopening the year keeps it.
+    """
+
+    KIND_CHOICES = [
+        ("filed", "Filed"),
+        ("restated", "Restated"),
+        ("recorded_at_upgrade", "Recorded at upgrade"),
+    ]
+
+    period = models.ForeignKey(
+        ReportingPeriod,
+        on_delete=models.PROTECT,
+        related_name="statements",
+        verbose_name="water year",
+    )
+    kind = models.CharField("kind of record", max_length=24, choices=KIND_CHOICES)
+    taken_at = models.DateTimeField("recorded", default=timezone.now)
+    taken_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name="recorded by",
+    )
+    note = models.TextField("words with the record", blank=True)
+
+    class Meta:
+        ordering = ["taken_at", "pk"]
+        verbose_name = "filed figures record"
+        verbose_name_plural = "filed figures records"
+        triggers = [
+            # A finalized water year is closed to change (accounting/locks.py).
+            finalized_period_lock(period_column="period_id"),
+            # A record of the figures as they stood is never edited, not even
+            # through the recorded door (``override`` switches off the lock
+            # trigger above and no other).
+            pgtrigger.Protect(name=STATEMENT_NEVER_UPDATED, operation=pgtrigger.Update),
+        ]
+
+    def __str__(self):
+        return f"{self.period.name}, {self.get_kind_display().lower()} {self.taken_at:%Y-%m-%d}"
+
+
+@track_changes()
+class PeriodStatementRow(models.Model):
+    """One figure of a :class:`PeriodStatement`: a place, a month or the year, a figure and its value.
+
+    ``period`` repeats the record's own water year so the lock trigger can read
+    the row's own column. ``value`` is empty for a figure the page prints as a
+    dash. ``method`` names the calculation method and settings code of the run a
+    run-derived figure came from, where one method applies; ``detail`` holds what
+    the figure key does not say (an account credit's own description).
+    """
+
+    SCOPE_CHOICES = [
+        ("site", "District"),
+        ("account", "Account"),
+        ("use_area", "Use area"),
+        ("zone", "Zone"),
+    ]
+
+    statement = models.ForeignKey(
+        PeriodStatement,
+        on_delete=models.PROTECT,
+        related_name="rows",
+        verbose_name="filed figures record",
+    )
+    period = models.ForeignKey(
+        ReportingPeriod,
+        on_delete=models.PROTECT,
+        related_name="+",
+        verbose_name="water year",
+    )
+    scope = models.CharField("kind of place", max_length=12, choices=SCOPE_CHOICES)
+    scope_id = models.PositiveBigIntegerField("place number", null=True, blank=True)
+    scope_name = models.CharField("place name", max_length=300, blank=True)
+    month = models.DateField("month it covers", null=True, blank=True)
+    figure = models.CharField("kind of figure", max_length=40)
+    value = models.DecimalField(
+        "amount (AF)", max_digits=12, decimal_places=4, null=True, blank=True
+    )
+    method = models.CharField("calculation method used", max_length=260, blank=True)
+    detail = models.CharField("description", max_length=300, blank=True)
+
+    class Meta:
+        ordering = ["pk"]
+        indexes = [models.Index(fields=["statement", "scope", "scope_id"])]
+        verbose_name = "filed figure"
+        verbose_name_plural = "filed figures"
+        triggers = [
+            finalized_period_lock(period_column="period_id"),
+            pgtrigger.Protect(name=STATEMENT_NEVER_UPDATED, operation=pgtrigger.Update),
+        ]
+
+    def __str__(self):
+        return f"{self.scope_name or self.scope} {self.figure} {self.value}"

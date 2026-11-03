@@ -91,8 +91,10 @@ def _clone(row):
     return copy
 
 
-def test_the_new_tables_are_the_last_nine_of_the_lock_tuple():
-    assert tuple(LOCKED_MODELS[-9:]) == NEW_LABELS
+def test_the_new_tables_are_the_nine_before_the_statement_tables_in_the_lock_tuple():
+    # 151.7-03 added the two filed-figures tables after these nine.
+    assert tuple(LOCKED_MODELS[-11:-2]) == NEW_LABELS
+    assert tuple(LOCKED_MODELS[-2:]) == ("accounting.PeriodStatement", "accounting.PeriodStatementRow")
 
 
 # -- (c) every ORM path ----------------------------------------------------------------

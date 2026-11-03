@@ -588,6 +588,8 @@ ALLOWED_READS = {
         "finds the use areas that do not count, to clear the engine's own rows for them",
     ("accounting/services.py", "current_period_id"):
         "picks which water year to open a page on: a default, not a figure",
+    ("accounting/statements.py", "_existing"):
+        "asks which places a filed figure names are still on file, to link them; a voided use area keeps its page",
     ("accounting/views/accounts.py", "_detail_selected_period"):
         "picks which water year to open the account page on: a default, not a figure",
     ("accounting/views/accounts.py", "_period_budget_flags"):

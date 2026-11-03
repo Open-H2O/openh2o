@@ -1,0 +1,46 @@
+{% load humanize %}
+{% comment %}
+  The moved figures: the correction named once above the table when there is one, then
+  the table grouped by place (Figure, As filed, Now; a restated year adds Restated).
+  Several corrections: each group names its own under its heading. Served by
+  accounting.views.periods.period_figures; `oob` also replaces the card's sentence.
+{% endcomment %}
+{% if oob %}<span id="figures-summary" hx-swap-oob="true">{{ comparison.summary }}</span>{% endif %}
+{% if comparison.moved %}
+{% with only=comparison.single_correction %}
+{% if only %}
+<p class="text-secondary text-base" style="margin: var(--space-xs) 0 0;"><a href="{{ only.url }}" class="prose-link">{{ only.label }}</a>{{ only.rest }}</p>
+{% endif %}
+<div class="table-scroll" style="margin-top: var(--space-md);">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Figure</th>
+        <th class="th-right">As filed</th>
+        {% if comparison.restated %}<th class="th-right">Restated</th>{% endif %}
+        <th class="th-right">Now</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for group in comparison.groups %}
+      <tr class="row-group"><td colspan="{% if comparison.restated %}4{% else %}3{% endif %}">{% if group.heading %}{{ group.heading }} {% endif %}{% if group.url %}<a href="{{ group.url }}" class="data-table-link">{{ group.number }}</a>{% else %}{{ group.number }}{% endif %}{% if group.rest %} &middot; {{ group.rest }}{% endif %}</td></tr>
+      {% if not only %}{% for correction in group.corrections %}
+      <tr><td colspan="{% if comparison.restated %}4{% else %}3{% endif %}" class="text-secondary"><a href="{{ correction.url }}" class="prose-link">{{ correction.label }}</a>{{ correction.rest }}</td></tr>
+      {% endfor %}{% endif %}
+      {% if group.moved_words %}
+      <tr><td colspan="{% if comparison.restated %}4{% else %}3{% endif %}" class="text-secondary">{{ group.moved_words }}</td></tr>
+      {% endif %}
+      {% for row in group.rows %}
+      <tr>
+        <td>{{ row.label }}</td>
+        <td class="td-num">{% if row.filed is None %}&mdash;{% else %}{{ row.filed|floatformat:2|intcomma }}{% endif %}</td>
+        {% if comparison.restated %}<td class="td-num">{% if row.restated is None %}&mdash;{% else %}{{ row.restated|floatformat:2|intcomma }}{% endif %}</td>{% endif %}
+        <td class="td-num">{% if row.now is None %}&mdash;{% else %}{{ row.now|floatformat:2|intcomma }}{% endif %}</td>
+      </tr>
+      {% endfor %}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endwith %}
+{% endif %}

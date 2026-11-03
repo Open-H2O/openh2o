@@ -119,6 +119,12 @@
     <p class="text-secondary text-base">Choose Correct this record in a record&rsquo;s ... menu, enter the new figure and a reason, and attach a photo or PDF if you have one. The old record stays on its page, struck, with a line naming its replacement{% if 'accounting' in enabled_modules %}, and OpenH2O recalculates the months affected. In a finalized water year only an administrator can do this{% endif %}.</p>
   </div>
 
+  {% if 'accounting' in enabled_modules %}<div class="card-raised">
+    <h2 class="section-header">Figures as filed</h2>
+    <p class="text-secondary text-base">When an administrator finalizes a water year, OpenH2O keeps its figures as they stood. The water year page lists them under Figures as filed, with every figure that has moved since and the correction that moved it. Reopening the year keeps them, and finalizing it again records the restated figures.</p>
+  </div>
+{% endif %}
+
   {% comment %}Each card is guarded on its own page's availability (config/views.py
   EXPLAINER_MODULES), never on the link alone, and the card set as a whole
   renders when any card can. Every line is a sentence already on an approved

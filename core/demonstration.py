@@ -100,6 +100,9 @@ STEPS = [
     # Re-seeded after the refresh on purpose: the meter reads are the sum of the
     # ledger rows, and the refresh rewrites the ledger.
     ("seed_merced_measurements", []),
+    # Last, so the figures a finalized year is recorded with are the figures the
+    # finished build prints: a fresh build and an upgraded site end alike.
+    ("record_filed_figures", []),
 ]
 
 
@@ -156,6 +159,8 @@ CONTENT_LABELS = [
     "accounting.CalculationStep",
     "accounting.CalculationRun",
     "accounting.CalculationRequest",
+    "accounting.PeriodStatement",
+    "accounting.PeriodStatementRow",
     "datasync.MonitoredStation",
     "datasync.DataRecordStaging",
     "datasync.TypedReading",
@@ -280,6 +285,8 @@ SCREEN_NAMES = {
     "accounting.CalculationStep": ("calculation step", "calculation steps"),
     "accounting.CalculationRun": ("calculation result", "calculation results"),
     "accounting.CalculationRequest": ("calculation request", "calculation requests"),
+    "accounting.PeriodStatement": ("filed figures record", "filed figures records"),
+    "accounting.PeriodStatementRow": ("filed figure", "filed figures"),
     "datasync.MonitoredStation": ("monitoring station", "monitoring stations"),
     "datasync.DataRecordStaging": ("station reading", "station readings"),
     "datasync.TypedReading": ("typed reading", "typed readings"),

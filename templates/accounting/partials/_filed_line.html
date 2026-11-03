@@ -1,0 +1,5 @@
+{% comment %}
+  The one line under a balance when a figure differs from the year as filed: only the figures that moved,
+  in the balance's order. `filed_line` is accounting.statements.filed_line_context().
+{% endcomment %}
+<p class="text-secondary text-sm" style="margin: var(--space-sm) 0 0; font-variant-numeric: tabular-nums;">As {% if filed_line.restated %}restated{% else %}filed{% endif %} for <a href="{{ filed_line.anchor_url }}" class="prose-link">{{ filed_line.period.name }}</a>: {% for name, text in filed_line.parts %}{{ name }} {{ text }}{% if not forloop.last %}, {% endif %}{% endfor %} AF.</p>

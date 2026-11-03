@@ -153,6 +153,7 @@
           {% include "partials/_explainer_popout.html" with title="Water balance" text="This use area's supplies minus its uses for the water year: crop ET and the pumped water it did not consume. The account page and the Dashboard show the same figure." link=wb_help_url link_label="How water balances work" %}
         </div>
         <p class="statement-balance-note">{{ balance_line.sentence }}</p>
+        {% if filed_line %}{% include "accounting/partials/_filed_line.html" %}{% endif %}
 
         {% comment %} Only a month with a well and no meter has a receipt
            to show (where its estimated pumping came from), so only those months

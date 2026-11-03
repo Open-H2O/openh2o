@@ -84,6 +84,26 @@
       "tolerance": 0,
       "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
     },
+    "accounting.PeriodStatement": {
+      "expected": 1,
+      "tolerance": 0,
+      "reason": "ADDED by Plan 151.7-03: one filed-figures record per finalized water year, written by the record_filed_figures step that ends the demonstration build (kind recorded_at_upgrade, because the seed finalizes WY 2024-2025 directly and no person finalized it). Open WY 2025-2026 has none. The count is read off a rebuilt candidate and moves only if the number of finalized years changes."
+    },
+    "accounting.PeriodStatementEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+    },
+    "accounting.PeriodStatementRow": {
+      "expected": 3887,
+      "tolerance": 0,
+      "reason": "ADDED by Plan 151.7-03: the figures of the finalized demonstration year as the pages print them, one row per use area month and year figure, per account, zone and district-wide figure, read off the same functions the pages call by accounting.statements. Read off a rebuilt candidate, never predicted; it moves when a page gains or loses a printed figure or the demonstration's accounts, use areas or zones change."
+    },
+    "accounting.PeriodStatementRowEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+    },
     "accounting.ReportingPeriod": {
       "expected": 2,
       "tolerance": 0,

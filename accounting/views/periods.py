@@ -3,7 +3,9 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Count, Q, Sum
+from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
@@ -13,6 +15,12 @@ from accounting.engine_run import create_request, start_calculation
 from accounting.locks import finalized_message
 from accounting.forms import PeriodFinalizeForm, ReportingPeriodForm
 from accounting.models import AllocationPlan, CalculationRequest, ReportingPeriod
+from accounting.statements import (
+    cached_comparison,
+    card_context,
+    newest_statement,
+    take_statement,
+)
 from core.access import admin_required
 from accounting.services import attach_orphans_to_period
 from parcels.models import ParcelLedger
@@ -109,12 +117,14 @@ def _calculation_card_context(period):
     return context
 
 
-def _period_detail_context(period, finalize_form=None):
+def _period_detail_context(period, finalize_form=None, comparison=None):
     """The period page's context, shared by ``period_detail`` and by
     ``period_finalize`` re-rendering the same page on a rejected note.
 
     ``finalize_form`` lets ``period_finalize`` hand back the bound form
     carrying its validation error; a fresh unbound one is built otherwise.
+    ``comparison`` is the figures-as-filed comparison when the page prints it in
+    place (the figures route opened without scripts); otherwise the card loads it.
     """
     allocations = AllocationPlan.objects.filter(
         reporting_period=period
@@ -137,6 +147,8 @@ def _period_detail_context(period, finalize_form=None):
         "ledger_count": ledger_count,
         "finalize_form": finalize_form
         or PeriodFinalizeForm(reopening=period.is_finalized),
+        # The Figures as filed card: its first line now, the comparison after the page loads.
+        "filed_card": card_context(period, comparison=comparison),
         **_calculation_card_context(period),
     }
 
@@ -256,15 +268,57 @@ def period_finalize(request, pk):
             _period_detail_context(period, finalize_form=form),
         )
 
-    with change_note(form.cleaned_data.get("note")):
+    with change_note(form.cleaned_data.get("note")), transaction.atomic():
+        # Held until the save commits, so two presses of Finalize at once cannot
+        # each write a statement; the second finds the year already changed.
+        period = ReportingPeriod.objects.select_for_update().get(pk=period.pk)
+        if period.is_finalized != reopening:
+            return redirect("accounting:period_detail", pk=period.pk)
         if reopening:
             period.is_finalized = False
             period.finalized_at = None
             period.finalized_by = None
         else:
+            # Write down every figure the year prints BEFORE it is marked
+            # finalized (the lock lets the rows in while the year is open).
+            # Reopening keeps every statement, so finalizing again restates.
+            take_statement(
+                period,
+                kind="restated" if newest_statement(period) else "filed",
+                user=request.user,
+            )
             period.is_finalized = True
             period.finalized_at = timezone.now()
             period.finalized_by = request.user
         period.save()
 
     return redirect("accounting:period_detail", pk=period.pk)
+
+
+@login_required
+@require_GET
+def period_figures(request, pk):
+    """The Figures as filed comparison: the figures filed beside the figures now, and what moved them.
+
+    Read-only, for every signed-in reader. The card on the water year page asks
+    for it with HTMX once the page has loaded (the comparison reads every
+    figure the pages print), and the answer is kept in the cache under the
+    statement and a token of the records the figures read. Opened by address,
+    without scripts, it is the water year page with the comparison printed in
+    the card.
+    """
+    period = get_object_or_404(ReportingPeriod, pk=pk)
+    comparison = cached_comparison(period)
+    if comparison is None:
+        raise Http404("This water year has no figures on file.")
+    if request.headers.get("HX-Request"):
+        return render(
+            request,
+            "accounting/partials/_figures_moved.html",
+            {"comparison": comparison, "oob": True, "period": period},
+        )
+    return render(
+        request,
+        "accounting/period_detail.html",
+        _period_detail_context(period, comparison=comparison),
+    )

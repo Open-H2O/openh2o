@@ -191,6 +191,24 @@ def parcels_list(request):
 
 #: The month table's figure columns, in the order of its `All N months` row.
 
+def water_use_for(parcel, balance_period, related_wells=None):
+    """``(water_use, has_well)`` for the Water use card: the card's figures, or None when it is not shown.
+
+    Months this parcel was engine-run: none means ET was never computed, which the
+    card says in a sentence rather than printing a table of zeros. The detail page
+    and the filed figures (``accounting.statements``) both read the card through
+    here, so a statement keeps exactly the figures the card prints.
+    """
+    if related_wells is None:
+        related_wells = parcel.wellirrigatedparcel_set.all()
+    run_periods = parcel_run_periods(parcel, balance_period)
+    has_well = is_enabled("wells") and related_wells.exists()
+    water_use = None
+    if run_periods and balance_period is not None:
+        water_use = parcel_water_use_months(parcel, balance_period, with_groundwater=has_well)
+    return water_use, has_well
+
+
 def _parcel_detail_context(parcel, period_id=None):
     """Build the per-parcel water-balance context.
 
@@ -209,9 +227,6 @@ def _parcel_detail_context(parcel, period_id=None):
 
     # The account page's balance: the card's Water balance line and the no-run branch's recorded supplies.
     consumptive_balance = parcel_consumptive_balance(parcel, balance_period)
-    # Months this parcel was engine-run: none means ET was never computed, which the
-    # card says in a sentence rather than printing a table of zeros.
-    run_periods = parcel_run_periods(parcel, balance_period)
     # The months that link to a calculation receipt are only those
     # with a well and no meter; a field with none shows no link block at all.
     receipt_periods = parcel_receipt_periods(parcel, balance_period)
@@ -219,10 +234,7 @@ def _parcel_detail_context(parcel, period_id=None):
     # to show it as its own named line rather than a credit.
     over_delivery_shown_af = parcel_over_delivery_shown(parcel, balance_period)
 
-    has_well = is_enabled("wells") and related_wells.exists()
-    water_use = None
-    if run_periods and balance_period is not None:
-        water_use = parcel_water_use_months(parcel, balance_period, with_groundwater=has_well)
+    water_use, has_well = water_use_for(parcel, balance_period, related_wells=related_wells)
     water_use_lines = _water_use_lines(parcel, balance_period, water_use, has_well)
 
     recent_ledger = _recent_ledger(parcel, balance_period)
@@ -231,6 +243,7 @@ def _parcel_detail_context(parcel, period_id=None):
     editable_fields = _editable_fields()
     editable_fields_with_values = _editable_fields_with_values(parcel, editable_fields)
     mark_actions([parcel], can_write=True, finalized=corrections.finalized_ranges())
+    balance_line = _balance_line(consumptive_balance, water_use, has_well)
 
     context = {
         "parcel": parcel,
@@ -243,7 +256,8 @@ def _parcel_detail_context(parcel, period_id=None):
         "consumptive_balance": consumptive_balance,
         "water_use": water_use,
         "water_use_lines": water_use_lines,
-        "balance_line": _balance_line(consumptive_balance, water_use, has_well),
+        "balance_line": balance_line,
+        "filed_line": _filed_line(balance_period, parcel, balance_line),
         "serving_points": _serving_points(parcel),
         "receipt_periods": receipt_periods,
         "over_delivery_shown_af": over_delivery_shown_af,
@@ -417,6 +431,15 @@ def _balance_line(consumptive_balance, water_use, has_well):
         "balance": consumptive_balance["net_vs_supply"],
         "sentence": f"Supplies are {named}. Uses are {uses}.",
     }
+
+
+def _filed_line(balance_period, parcel, balance_line):
+    """The one line under the Water balance band when a figure differs from the year as filed, else None."""
+    if balance_line is None or balance_period is None:
+        return None
+    from accounting.statements import filed_line_context
+
+    return filed_line_context(balance_period, "use_area", parcel.pk, balance_line)
 
 
 def _balance_period(

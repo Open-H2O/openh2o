@@ -80,6 +80,10 @@ LOCKED_MODELS = (
     "datasync.TypedReading",
     "drinking.SystemProduction",
     "drinking.SampleResult",
+    # The figures a finalized year was filed with (accounting/statements.py).
+    # These two also refuse every UPDATE, always, whatever the year's state.
+    "accounting.PeriodStatement",
+    "accounting.PeriodStatementRow",
 )
 
 #: What :func:`override` switches off: the lock triggers and nothing else.

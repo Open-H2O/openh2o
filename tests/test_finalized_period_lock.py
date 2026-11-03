@@ -62,6 +62,12 @@ User = get_user_model()
 REFUSAL = "WY 2024-2025 is finalized. An administrator can reopen it on the water year page."
 REASON = "a test of the recorded override"
 
+#: The two tables 151.7-03 added also refuse every update, always, so the tests below that
+#: update a row in an open year or write it back through the door do not apply to them;
+#: ``tests/test_filed_figures_03.py`` holds their own.
+STATEMENT_MODELS = ("accounting.PeriodStatement", "accounting.PeriodStatementRow")
+UPDATABLE_LOCKED_MODELS = tuple(label for label in LOCKED_MODELS if label not in STATEMENT_MODELS)
+
 CLOSED_DAY = dt.date(2025, 3, 1)
 OPEN_DAY = dt.date(2026, 3, 1)
 
@@ -245,10 +251,10 @@ def test_every_locked_table_carries_the_trigger():
         )
         tables = [row[0] for row in cursor.fetchall()]
     assert tables == sorted(_table(label) for label in LOCKED_MODELS)
-    assert len(LOCK_TRIGGER_URIS) == len(LOCKED_MODELS) == 19
+    assert len(LOCK_TRIGGER_URIS) == len(LOCKED_MODELS) == 21
 
 
-@pytest.mark.parametrize("label", LOCKED_MODELS)
+@pytest.mark.parametrize("label", UPDATABLE_LOCKED_MODELS)
 def test_raw_sql_in_a_finalized_year_is_refused(periods, label):
     closed, _ = periods
     row = _build(label, CLOSED_DAY, closed)
@@ -272,7 +278,7 @@ def test_raw_sql_in_a_finalized_year_is_refused(periods, label):
     assert _count(label, row.pk) == 0
 
 
-@pytest.mark.parametrize("label", LOCKED_MODELS)
+@pytest.mark.parametrize("label", UPDATABLE_LOCKED_MODELS)
 def test_raw_sql_in_an_open_year_succeeds(periods, label):
     closed, opened = periods
     row = _build(label, OPEN_DAY, opened)
@@ -287,7 +293,7 @@ def test_raw_sql_in_an_open_year_succeeds(periods, label):
     assert _count(label, row.pk) == 1
 
 
-@pytest.mark.parametrize("label", LOCKED_MODELS)
+@pytest.mark.parametrize("label", UPDATABLE_LOCKED_MODELS)
 def test_the_override_writes_and_the_history_records_the_reason(periods, label):
     closed, _ = periods
     row = _build(label, CLOSED_DAY, closed)

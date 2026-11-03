@@ -133,6 +133,7 @@ EXPECTED_STEPS = [
     "seed_calculation_plan",
     "refresh_merced_accounting",
     "seed_merced_measurements",
+    "record_filed_figures",
 ]
 
 

@@ -194,6 +194,10 @@ NO_ENTRY_BY_DESIGN = {
 
 #: Patterns this walk does not request at all, with the reason.
 NOT_REQUESTED = {
+    "/accounting/reporting-periods/<int:pk>/figures/": (
+        "the comparison the water year page's Figures as filed card loads; a year with no "
+        "filed figures has none, so it 404s"
+    ),
     "/feedback/attachment/<int:pk>/": "streams an uploaded screenshot file to staff, never a page",
     "/reporting/reports/<int:pk>/download/": (
         "streams a generated report file, never a page; a draft has no file, so it 404s"

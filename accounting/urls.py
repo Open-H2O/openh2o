@@ -32,6 +32,11 @@ urlpatterns = [
         name="period_calculation_status",
     ),
     path(
+        "reporting-periods/<int:pk>/figures/",
+        periods.period_figures,
+        name="period_figures",
+    ),
+    path(
         "reporting-periods/<int:pk>/finalize/",
         periods.period_finalize,
         name="period_finalize",

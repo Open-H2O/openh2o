@@ -2511,6 +2511,19 @@ checked_at = "fae413f0"
 
 [[section]]
 document = "templates/help/getting_started.html"
+heading = "Figures as filed"
+files = [
+  "accounting/statements.py",
+  "accounting/views/periods.py",
+  "accounting/management/commands/record_filed_figures.py",
+  "templates/accounting/partials/_figures_as_filed.html",
+  "templates/accounting/partials/_figures_moved.html",
+]
+labels = []
+checked_at = "c66fb5d1"
+
+[[section]]
+document = "templates/help/getting_started.html"
 heading = "Where to go next"
 files = []
 why_none = "Link cards to the other Help pages, each with a one-line description of that page; pointers are checked separately."

@@ -297,6 +297,59 @@ def _no_months(row):
     return set()
 
 
+# -- Per kind: the use areas a record's figure reaches -------------------------------------------
+
+
+def _no_use_areas(row):
+    """The kinds that feed no use area's figure (a lab result, a recharge measurement)."""
+    return set()
+
+
+def _meter_reading_use_areas(row):
+    """The use areas the reading's well irrigates, through the meter's well link."""
+    from wells.models import WellIrrigatedParcel, WellMeter
+
+    wells = WellMeter.objects.filter(meter_id=row.meter_id).values_list("well_id", flat=True)
+    return set(
+        WellIrrigatedParcel.objects.filter(well_id__in=wells).values_list("parcel_id", flat=True)
+    )
+
+
+def _ledger_entry_use_areas(row):
+    return {row.parcel_id}
+
+
+def _fallow_period_use_areas(row):
+    return {row.parcel_id}
+
+
+def _use_area_use_areas(row):
+    return {row.pk}
+
+
+def _diversion_record_use_areas(row):
+    """The use areas the point of diversion serves, and any that took a canal split row from it that month.
+
+    The record's own ledger rows are written to the use areas linked to the point
+    (``accounting.services.create_diversion_ledger_entries``), and the canal split
+    marks its rows with the point (``divided_from_point_pk``).
+    """
+    from parcels.models import ParcelLedger
+    from surface.models import PointOfDiversionParcel
+
+    found = set(
+        PointOfDiversionParcel.objects.filter(
+            point_of_diversion_id=row.point_of_diversion_id
+        ).values_list("parcel_id", flat=True)
+    )
+    found |= set(
+        ParcelLedger.objects.filter(
+            divided_from_point_pk=row.point_of_diversion_id, effective_date=row.month
+        ).values_list("parcel_id", flat=True)
+    )
+    return found
+
+
 # -- Per kind: what else a void does -------------------------------------------------------
 
 
@@ -644,6 +697,9 @@ def _kind(key, model, module, label, **hooks):
         "module": module,
         "label": label,
         "months": _no_months,
+        # The ids of the use areas whose figures the record feeds (the filed
+        # figures name the corrections that moved a place by these).
+        "use_areas": _no_use_areas,
         "on_void": _nothing,
         "can_void": _always,
         # Correct this record: the figure fields a person may change, what else
@@ -669,7 +725,7 @@ KINDS = {
             "meter_reading", "measurements.MeterReading", "wells", "meter reading",
             summary=_meter_reading_summary, page_url=_meter_reading_url,
             date_of=_meter_reading_date, months=_meter_reading_months,
-            on_void=_meter_reading_on_void,
+            use_areas=_meter_reading_use_areas, on_void=_meter_reading_on_void,
             correct_fields=("reading_date", "current_value", "quality", "notes"),
             on_correct=_meter_reading_on_correct, author=_author_meter_reading,
         ),
@@ -684,7 +740,7 @@ KINDS = {
             "ledger_entry", "parcels.ParcelLedger", "accounting", "ledger entry",
             summary=_ledger_entry_summary, page_url=_ledger_entry_url,
             date_of=lambda row: row.effective_date, months=_ledger_entry_months,
-            can_void=_ledger_entry_can_void,
+            use_areas=_ledger_entry_use_areas, can_void=_ledger_entry_can_void,
             correct_fields=("amount_acre_feet", "effective_date", "water_type", "description"),
             author=_author_created_by, period_field="effective_date",
         ),
@@ -692,12 +748,14 @@ KINDS = {
             "fallow_period", "parcels.FallowPeriod", "parcels", "fallow period",
             summary=_fallow_period_summary, page_url=_fallow_period_url,
             date_of=_fallow_period_date, months=_fallow_period_months,
+            use_areas=_fallow_period_use_areas,
             correct_fields=("start_month", "end_month"), author=_author_created_by,
         ),
         _kind(
             "use_area", "parcels.Parcel", "parcels", "use area",
             summary=_use_area_summary, page_url=_use_area_url,
             date_of=lambda row: None, months=_use_area_months,
+            use_areas=_use_area_use_areas,
             # A replacing row would orphan every ledger row, link and calculation
             # that points at the use area's own row; its acres are changed through
             # the edit screen with a reason, and Change history keeps the old value.
@@ -707,7 +765,7 @@ KINDS = {
             "diversion_record", "surface.DiversionRecord", "surface", "diversion record",
             summary=_diversion_record_summary, page_url=_diversion_record_url,
             date_of=lambda row: row.month, months=_diversion_record_months,
-            can_void=_diversion_record_can_void,
+            use_areas=_diversion_record_use_areas, can_void=_diversion_record_can_void,
             correct_fields=(
                 "month", "volume_acre_feet", "returned_af", "max_flow_rate_cfs",
                 "diversion_type", "method", "device", "data_state", "notes",

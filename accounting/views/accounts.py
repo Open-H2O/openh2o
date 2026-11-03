@@ -31,6 +31,7 @@ from accounting.services import (
     supply_kinds,
 )
 from parcels.models import Parcel, ParcelLedger
+from accounting.statements import filed_line_context
 from accounting.views.common import _account_summary_row
 
 
@@ -416,6 +417,16 @@ def _account_detail_context(account, period_param=None):
         "periods": periods,
         "selected_period": selected_period,
         "delivery_sentence": _account_delivery_sentence(account),
+        "filed_line": filed_line_context(
+            selected_period,
+            "account",
+            account.pk,
+            {
+                "supplies": balance["supply_total"],
+                "uses": balance["uses_total"],
+                "balance": balance["net_vs_supply"],
+            },
+        ),
     }
 
 

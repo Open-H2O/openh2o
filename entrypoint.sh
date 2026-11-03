@@ -24,6 +24,9 @@ fi
 
 python manage.py collectstatic --noinput --clear
 python manage.py migrate --noinput
+# A year finalized before OpenH2O kept filed figures gets them recorded once,
+# at the first start after the upgrade; afterwards this finds nothing to do.
+python manage.py record_filed_figures
 python manage.py createcachetable
 python manage.py ensure_superuser
 
