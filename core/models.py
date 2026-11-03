@@ -10,6 +10,8 @@ including demonstration_mode.
 import uuid
 from decimal import Decimal
 
+import pghistory.models as pghistory_models
+import pgtrigger
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -324,3 +326,23 @@ class PendingImport(models.Model):
 
     def __str__(self):
         return f"{self.original_name} ({self.get_status_display()})"
+
+
+class ChangeContext(pghistory_models.Context):
+    """The table that says who made a change (``pghistory_context``), as a door for a lock.
+
+    A proxy of pghistory's own model, here so the lock on it has a migration in
+    ``core`` (pghistory is a third-party app and takes none). It refuses DELETE
+    and nothing else: pghistory UPDATEs a context row on every nested note, so
+    UPDATE and INSERT stay open. ``pgtrigger.ignore(CONTEXT_LOCK_URI)`` switches
+    the lock off for one block; ``core.demonstration.forget_events`` is the only
+    caller. TRUNCATE does not fire a row trigger, so ``clear_change_history
+    --golden-build`` is unaffected. See ``core/history.py``.
+    """
+
+    class Meta:
+        proxy = True
+        verbose_name = "change context"
+        triggers = [
+            pgtrigger.Protect(name="no_delete", operation=pgtrigger.Delete),
+        ]

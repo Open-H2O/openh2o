@@ -13,6 +13,8 @@ from django.db.models import Q, QuerySet, Sum
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 
+from core import corrections
+from core.corrections_views import mark_actions
 from core.csv_safe import safe_row
 from accounting.engine_run import recalculation_sentence, request_for_months
 from accounting.locks import (
@@ -110,29 +112,33 @@ def ledger_source_type_choices():
     ]
 
 
-def _ledger_filters(request: HttpRequest) -> dict[str, str]:
+def _ledger_filters(request: HttpRequest, params=None) -> dict[str, str]:
     """The ledger's text filters and sort, read from the query string.
 
     Keys: q, period_id, source_type, water_type_id, start_date, end_date,
     active_areas, sort, direction, zone_id. They are also the context keys.
+    ``params`` is where they are read from; a void sends the filters in its
+    POST body, so the table it returns keeps the page's filters.
     """
-    q = request.GET.get("q", "").strip()
-    period_id = request.GET.get("period", "").strip()
-    source_type = request.GET.get("source_type", "").strip()
-    water_type_id = request.GET.get("water_type", "").strip()
-    start_date = request.GET.get("start_date", "").strip()
-    end_date = request.GET.get("end_date", "").strip()
+    if params is None:
+        params = request.GET
+    q = params.get("q", "").strip()
+    period_id = params.get("period", "").strip()
+    source_type = params.get("source_type", "").strip()
+    water_type_id = params.get("water_type", "").strip()
+    start_date = params.get("start_date", "").strip()
+    end_date = params.get("end_date", "").strip()
     # "Active Use Areas" preset chip: restrict to ledger rows on a parcel whose
     # status is active (an inactive use area is not a live water user). Any
     # truthy value means "on"; the chip sends "1".
-    active_areas = request.GET.get("active_areas", "").strip()
+    active_areas = params.get("active_areas", "").strip()
 
     # Navigation params: sort column + direction, Zone facet, page size.
-    sort = request.GET.get("sort", "").strip()
-    direction = request.GET.get("dir", "desc").strip()
+    sort = params.get("sort", "").strip()
+    direction = params.get("dir", "desc").strip()
     if direction not in ("asc", "desc"):
         direction = "desc"
-    zone_id = request.GET.get("zone", "").strip()
+    zone_id = params.get("zone", "").strip()
     return {
         "q": q,
         "period_id": period_id,
@@ -147,10 +153,12 @@ def _ledger_filters(request: HttpRequest) -> dict[str, str]:
     }
 
 
-def _ledger_page_size(request: HttpRequest) -> int:
+def _ledger_page_size(request: HttpRequest, params=None) -> int:
     """The requested page size, or 100 when it is missing or not one of the offered sizes."""
+    if params is None:
+        params = request.GET
     try:
-        page_size = int(request.GET.get("page_size", 100))
+        page_size = int(params.get("page_size", 100))
     except (TypeError, ValueError):
         page_size = 100
     if page_size not in LEDGER_PAGE_SIZES:
@@ -321,7 +329,7 @@ def _ledger_footer_totals(queryset: QuerySet[ParcelLedger]) -> dict[str, Decimal
     from accounting.models import CalculationRun
 
     credit_rows = Q(source_type__in=ParcelLedger.POSITIVE_SOURCE_TYPES)
-    rows = ParcelLedger.objects.filter(pk__in=queryset.values("pk")).annotate(
+    rows = ParcelLedger.objects.current().filter(pk__in=queryset.values("pk")).annotate(
         run_pumped_af=Subquery(
             CalculationRun.objects.filter(
                 parcel_id=OuterRef("parcel_id"),
@@ -410,12 +418,34 @@ def _ledger_active_filter_labels(
 @login_required
 def ledger_list(request):
     """Paginated list of ledger entries with HTMX search and filters."""
-    filters = _ledger_filters(request)
+    return _ledger_response(request, request.GET)
+
+
+def render_ledger_results(
+    request, row, *, void_key=None, void_reason="", void_error="", notice="", warning=""
+):
+    """The results table with the page's filters kept (core.corrections_views.TABLES).
+
+    A void sends the filter form with it (``hx-include``): in the query string
+    for opening or cancelling the reason row, in the body for the void itself.
+    """
+    params = request.POST if request.method == "POST" else request.GET
+    return _ledger_response(
+        request, params, void_key=void_key, void_reason=void_reason,
+        void_error=void_error, notice=notice, warning=warning, force_fragment=True,
+    )
+
+
+def _ledger_response(
+    request, params, *, void_key=None, void_reason="", void_error="", notice="",
+    warning="", force_fragment=False,
+):
+    filters = _ledger_filters(request, params)
     # "period" absent entirely (bare landing) is distinct from "period="
     # (the "All Periods" choice, which the HTMX filters always send). Only the
     # former gets an auto-default applied below.
-    period_present = "period" in request.GET
-    page_size = _ledger_page_size(request)
+    period_present = "period" in params
+    page_size = _ledger_page_size(request, params)
 
     # The tiebreak orders by use-area number ascending, not
     # just -created_at, so within one date a reader sees a field's meter
@@ -442,8 +472,16 @@ def ledger_list(request):
     ledger_totals = _ledger_footer_totals(queryset)
 
     paginator = Paginator(queryset, page_size)
-    page_number = request.GET.get("page", 1)
+    page_number = params.get("page", 1)
     page_obj = paginator.get_page(page_number)
+    # Voided entries stay listed (struck, in place) but are in no count. Each row on
+    # the page is marked for its menu from the page's one finalized_ranges().
+    page_obj.object_list = list(page_obj.object_list)
+    mark_actions(
+        page_obj.object_list, can_write=True, finalized=corrections.finalized_ranges(),
+        void_key=void_key,
+    )
+    current_count = queryset.current().count()
 
     # The subtitle line names the period and the active filters
     # instead of the template re-deriving them from raw ids. period_name is
@@ -465,6 +503,12 @@ def ledger_list(request):
     context = {
         "page_obj": page_obj,
         "total_count": paginator.count,
+        "current_count": current_count,
+        "void_key": void_key,
+        "void_reason": void_reason,
+        "void_error": void_error,
+        "notice": notice,
+        "warning": warning,
         "ledger_total_credits": ledger_totals["credits"] or Decimal("0"),
         "ledger_total_water": abs(ledger_totals["water"] or Decimal("0")),
         **filters,
@@ -489,7 +533,7 @@ def ledger_list(request):
         "recharge_enabled": is_enabled("recharge"),
     }
 
-    if request.headers.get("HX-Request"):
+    if force_fragment or request.headers.get("HX-Request"):
         # The Download CSV link sits above the results, so the fragment carries
         # a fresh copy that HTMX swaps in beside the table.
         context["download_oob"] = True
@@ -644,7 +688,7 @@ def _calculation_methods(queryset: QuerySet[ParcelLedger]) -> dict[tuple[int, da
 def ledger_export(request):
     """Export the ledger entries the screen's own filters match, as CSV."""
     filters = _ledger_filters(request)
-    queryset = ParcelLedger.objects.select_related(
+    queryset = ParcelLedger.objects.current().select_related(
         "parcel", "water_type", "reporting_period"
     ).order_by("-effective_date", "-created_at")
     queryset = _apply_ledger_filters(queryset, filters)

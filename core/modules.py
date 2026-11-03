@@ -686,8 +686,8 @@ MODULE_REGISTRY: dict = {
         ),
         seed_commands=("seed_water_right_types",),
         # `accounting` for the two reporting_period FKs, `geography` for
-        # PointOfDiversion.source_flowline.
-        requires=("geography", "parcels", "accounting"),
+        # PointOfDiversion.source_flowline, `core` for DiversionRecord.voided_by.
+        requires=("core", "geography", "parcels", "accounting"),
         # Every cross-app `surface.models`
         # import runs at function scope, the kept templates that reach into
         # it are guarded, `seed_water_right_types` is module-gated, and
@@ -717,11 +717,12 @@ MODULE_REGISTRY: dict = {
             ),
         ),
         # `surface` for RechargeSitePOD.point_of_diversion, `accounting` for
-        # RechargeEvent.water_type, `geography` for RechargeSite.zone. The
+        # RechargeEvent.water_type, `geography` for RechargeSite.zone, `core`
+        # for the voided_by of RechargeEvent and RechargeMeasurement. The
         # `surface` entry is the load-bearing one: it is what makes dropping
         # `surface` validly drag `recharge` out with it, and the droppability
         # harness computes that closure from exactly this tuple.
-        requires=("geography", "parcels", "accounting", "surface"),
+        requires=("core", "geography", "parcels", "accounting", "surface"),
         # Every cross-app `recharge.models`
         # import runs at function scope, the templates that reach into it are
         # guarded, and `make test-droppable` covers it.
@@ -945,8 +946,9 @@ MODULE_REGISTRY: dict = {
         #
         # This is also what keeps `drop_closure('wells')` from returning
         # `{wells, drinking}`: were the edge declared here, dropping Wells
-        # would drag Drinking Water out with it.
-        requires=("standards",),
+        # would drag Drinking Water out with it. `core` is for the voided_by of
+        # SampleResult and SystemProduction; core is never dropped.
+        requires=("core", "standards"),
         # Droppable by construction: nothing outside `drinking/` imports it at
         # module scope.
         required=False,
@@ -1029,7 +1031,7 @@ SCHEMA_EXCEPTIONS: tuple = (
         model="Sensor",
         field="well",
         target="wells",
-        where="measurements/models.py:148",
+        where="measurements/models.py:150",
         why=(
             "A sensor is physically installed in a well. Recording which one on "
             "the sensor is the natural place for it, and measurements is a "
@@ -1046,7 +1048,7 @@ SCHEMA_EXCEPTIONS: tuple = (
         model="WaterMeasurement",
         field="well",
         target="wells",
-        where="measurements/models.py:217",
+        where="measurements/models.py:219",
         why=(
             "A water measurement records where it was taken; for groundwater "
             "that is a well. Dropping the link would leave readings that cannot "
@@ -1063,7 +1065,7 @@ SCHEMA_EXCEPTIONS: tuple = (
         model="WaterMeasurement",
         field="parcel",
         target="parcels",
-        where="measurements/models.py:214",
+        where="measurements/models.py:216",
         why=(
             "The surface-water counterpart of the arrow above: a measurement "
             "taken on a use area rather than at a well."
@@ -1132,7 +1134,7 @@ SCHEMA_EXCEPTIONS: tuple = (
         model="ParcelLedger",
         field="water_type",
         target="accounting",
-        where="parcels/models.py:118",
+        where="parcels/models.py:122",
         why=(
             "A ledger row has to say which kind of water it moved, and that "
             "vocabulary belongs to accounting."
@@ -1150,7 +1152,7 @@ SCHEMA_EXCEPTIONS: tuple = (
         model="SystemFacility",
         field="well",
         target="wells",
-        where="drinking/models.py:342",
+        where="drinking/models.py:343",
         why=(
             "A drinking-water facility very often IS a well — the same physical "
             "hole in the ground that the extraction ledger meters — so "
@@ -1176,7 +1178,7 @@ SCHEMA_EXCEPTIONS: tuple = (
         model="ParcelLedger",
         field="reporting_period",
         target="accounting",
-        where="parcels/models.py:123",
+        where="parcels/models.py:127",
         why=(
             "A ledger row falls in a water year, and the water-year calendar "
             "belongs to accounting."

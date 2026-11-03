@@ -16,6 +16,7 @@ Returned when the pencil icon is clicked on a POD's linked-use-area share
   <input type="number" name="value" value="{{ value|default:pp.fraction }}"
     step="0.0001" min="0.0001" max="1"
     class="form-input" style="width: 6rem; border-color: var(--color-accent);">
+  {% with reason_id="pod-share-reason-{{ pp.pk }}" %}{% include "partials/_reason_box.html" %}{% endwith %}
   <button type="submit" class="btn-primary btn-sm">Save</button>
   <button type="button" class="btn-secondary btn-sm"
     hx-get="{% url 'surface:pod_parcel_edit_share' pod.pk pp.pk %}?cancel=1"

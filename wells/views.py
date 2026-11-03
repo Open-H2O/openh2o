@@ -15,12 +15,15 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.core.serializers import serialize
 from django.db.models import Q
-from django.http import HttpResponse, HttpResponseBadRequest
+from django.http import Http404, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
-from core import pending_imports
+from core import corrections, pending_imports
 from core.access import public_in_open_demo
+from core.corrections_views import mark_actions
+from core.history import change_note
+from core.reasons import check_reason
 
 from core.validation import FieldValidationError, coerce_decimal, coerce_int
 from core.workspace import detail_response, list_response, redirect_to_selected
@@ -263,6 +266,59 @@ def published_source_publisher(well):
     return PUBLISHED_SUPPLY_SOURCE
 
 
+def _history_context(well, *, void_key=None, void_reason="", void_error="", notice="", warning=""):
+    """What the Measurement history card shows, each record marked for its menu.
+
+    Marks every meter read and every hand-entered visit (``menu_ok``, ``void_ok``,
+    ``void_open``) from ONE ``finalized_ranges()`` for the whole card. ``void_key``
+    (a record's ``record-<kind>-<pk>`` anchor) opens the reason row under it.
+    """
+    meter_history = measurement_history.meter_history(well)
+    water_levels = measurement_history.water_level_history(well)
+    visits = measurement_history.visit_history(well)
+    finalized = corrections.finalized_ranges()
+    for group in meter_history:
+        for year in group["years"]:
+            mark_actions(year["reads"], can_write=True, finalized=finalized, void_key=void_key)
+    for year in visits:
+        mark_actions(
+            [visit["row"] for visit in year["visits"]],
+            can_write=True, finalized=finalized, void_key=void_key,
+        )
+    return {
+        "meter_history": meter_history,
+        "water_levels": water_levels,
+        "visits": visits,
+        "history_rows": measurement_history.history_rows(
+            bool(meter_history), bool(visits), bool(water_levels)
+        ),
+        "void_key": void_key,
+        "void_reason": void_reason,
+        "void_error": void_error,
+        "notice": notice,
+        "warning": warning,
+    }
+
+
+def render_measurement_history(
+    request, row, *, void_key=None, void_reason="", void_error="", notice="", warning=""
+):
+    """The Measurement history card for the well ``row`` belongs to (core.corrections_views.TABLES)."""
+    if hasattr(row, "meter_id"):
+        link = row.meter.wellmeter_set.order_by("-is_current", "-pk").first()
+        well = link.well if link else None
+    else:
+        well = row.well
+    if well is None:
+        raise Http404("This record is not on a well.")
+    context = _history_context(
+        well, void_key=void_key, void_reason=void_reason, void_error=void_error,
+        notice=notice, warning=warning,
+    )
+    context["well"] = well
+    return render(request, "wells/partials/_measurement_history.html", context)
+
+
 def _well_detail_context(well, reading_form=None, level_form=None):
     """Build the per-well detail context.
 
@@ -278,11 +334,12 @@ def _well_detail_context(well, reading_form=None, level_form=None):
     # The page's own description promises "measurement
     # history"; these two are it. Both are built in wells/measurement_history.py,
     # grouped by water year and newest first, never assembled in the template.
-    meter_history = measurement_history.meter_history(well)
+    history = _history_context(well)
+    meter_history = history["meter_history"]
+    visits = history["visits"]
+    water_levels = history["water_levels"]
     if reading_form is None:
         reading_form = MeterReadingForm(well=well)
-    water_levels = measurement_history.water_level_history(well)
-    visits = measurement_history.visit_history(well)
     if level_form is None:
         level_form = WaterLevelForm()
 
@@ -322,9 +379,7 @@ def _well_detail_context(well, reading_form=None, level_form=None):
         "visits": visits,
         # The history card's tables, two to a row, by name (see
         # measurement_history.history_rows).
-        "history_rows": measurement_history.history_rows(
-            bool(meter_history), bool(visits), bool(water_levels)
-        ),
+        "history_rows": history["history_rows"],
         "level_form": level_form,
         "ef": editable_fields_map,
         # DWR's three-part identity line, computed once here so
@@ -636,22 +691,30 @@ def well_irrigated_parcel_edit_share(request, pk, wip_pk):
 
     body_params = parse_qs(request.body.decode("utf-8"))
     raw_value = body_params.get("value", [""])[0].strip()
+    # The engine reads the share, so the change asks why (core.reasons).
+    typed = body_params.get("reason", [""])[0]
+    reason, reason_error = check_reason(typed)
     try:
         fraction = coerce_decimal(
             raw_value, "Share", min_value=0, min_exclusive=True, allow_blank=False
         )
     except FieldValidationError as exc:
         return render(request, "wells/partials/_irrigated_parcel_share_edit.html", {
-            "well": well, "wip": wip, "value": raw_value, "error": str(exc),
+            "well": well, "wip": wip, "value": raw_value, "reason": typed, "error": str(exc),
         })
     if fraction > 1:
         return render(request, "wells/partials/_irrigated_parcel_share_edit.html", {
-            "well": well, "wip": wip, "value": raw_value,
+            "well": well, "wip": wip, "value": raw_value, "reason": typed,
             "error": "Share must be greater than 0 and no more than 1.",
+        })
+    if reason_error:
+        return render(request, "wells/partials/_irrigated_parcel_share_edit.html", {
+            "well": well, "wip": wip, "value": raw_value, "reason": typed, "error": reason_error,
         })
 
     wip.fraction = fraction
-    wip.save(update_fields=["fraction"])
+    with change_note(reason):
+        wip.save(update_fields=["fraction"])
     return render(request, "wells/partials/_irrigated_parcel_share_value.html", {"well": well, "wip": wip})
 
 

@@ -12,6 +12,7 @@ approved / estimated).
 from django.conf import settings
 from django.contrib.gis.db import models
 
+from core.corrections import CorrectableRecord
 from core.history import track_changes
 
 # Observation quality/status, following SensorThings + USGS semantics. Freshly
@@ -60,6 +61,7 @@ WATER_LEVEL_METHODS = [
 ]
 
 
+@track_changes()
 class Meter(models.Model):
     METER_TYPE_CHOICES = [
         ("flow", "Flow"),
@@ -97,7 +99,7 @@ class Meter(models.Model):
 
 
 @track_changes()
-class MeterReading(models.Model):
+class MeterReading(CorrectableRecord):
     meter = models.ForeignKey(Meter, on_delete=models.CASCADE)
     observed_property = models.ForeignKey(
         "standards.ObservedProperty",
@@ -190,7 +192,7 @@ class SensorMeasurement(models.Model):
 
 
 @track_changes()
-class WaterMeasurement(models.Model):
+class WaterMeasurement(CorrectableRecord):
     SOURCE_CHOICES = [
         ("manual", "Manual"),
         ("automated", "Automated"),

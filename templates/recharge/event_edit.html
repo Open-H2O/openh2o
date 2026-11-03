@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load record_marks %}
 
 {% block title %}Edit recharge event - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Edit recharge event{% endblock %}
@@ -37,7 +38,10 @@
         {% for error in field.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
       </div>
       {% endfor %}
+      <div id="void-result"></div>
       <div class="form-footer">
+        {% if can_void %}{% record_void_url event as void_url %}{# Void this record reads the Reason box above and sends the person back to the site's page. #}
+        <button type="button" class="btn-secondary form-void-action" hx-post="{{ void_url }}" hx-vals='{"inline": "1"}' hx-target="#void-result" hx-swap="innerHTML">Void this record</button>{% endif %}
         <button type="submit" class="btn-primary">Save changes</button>
         <a href="{% url 'recharge:detail' site.pk %}" class="btn-secondary">Cancel</a>
       </div>

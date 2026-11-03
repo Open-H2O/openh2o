@@ -76,7 +76,7 @@ def _gears_filing_warnings(reporting_period: ReportingPeriod) -> list[PreflightM
             ),
         })
 
-    ledger_count = ParcelLedger.objects.filter(
+    ledger_count = ParcelLedger.objects.current().filter(
         effective_date__gte=reporting_period.start_date,
         effective_date__lte=reporting_period.end_date,
     ).count()
@@ -146,7 +146,7 @@ def _missing_registration_warnings() -> list[PreflightMessage]:
 def _duplicate_reading_warnings(reporting_period: ReportingPeriod) -> list[PreflightMessage]:
     """Error when a parcel has more than one meter reading in a month."""
     dupes = (
-        ParcelLedger.objects.filter(
+        ParcelLedger.objects.current().filter(
             source_type="meter_reading",
             effective_date__gte=reporting_period.start_date,
             effective_date__lte=reporting_period.end_date,
@@ -218,7 +218,7 @@ def _unlinked_parcel_warnings(reporting_period: ReportingPeriod) -> list[Preflig
     # well row. The generator surfaces it as an unallocated [INCOMPLETE]
     # row rather than dropping the volume — warn so the operator links it.
     metered_parcel_ids = set(
-        ParcelLedger.objects.filter(
+        ParcelLedger.objects.current().filter(
             source_type="meter_reading",
             effective_date__gte=reporting_period.start_date,
             effective_date__lte=reporting_period.end_date,
@@ -270,7 +270,7 @@ def _gears_by_et_warnings(reporting_period: ReportingPeriod) -> list[PreflightMe
     # cell in the file (never a misleading 0). Name them so they get fixed.
     null_area_parcels = sorted(
         set(
-            ParcelLedger.objects.filter(
+            ParcelLedger.objects.current().filter(
                 source_type__in=["et_estimate", "calculated"],
                 effective_date__gte=reporting_period.start_date,
                 effective_date__lte=reporting_period.end_date,
@@ -303,7 +303,7 @@ def _calwatrs_warnings(reporting_period: ReportingPeriod, report_type: str) -> l
     warnings: list[PreflightMessage] = []
 
     diversion_type = "direct_use" if report_type == "calwatrs_a1" else "to_storage"
-    div_count = DiversionRecord.objects.filter(
+    div_count = DiversionRecord.objects.current().filter(
         reporting_period=reporting_period,
         diversion_type=diversion_type,
     ).count()
@@ -335,7 +335,7 @@ def _orphan_diversion_warnings(reporting_period: ReportingPeriod, diversion_type
     # A record saved while no reporting period covered its month carries
     # reporting_period=None and is invisible to every period-scoped filing —
     # it exists on the POD page but would silently never reach CalWATRS.
-    orphans_in_range = DiversionRecord.objects.filter(
+    orphans_in_range = DiversionRecord.objects.current().filter(
         reporting_period__isnull=True,
         diversion_type=diversion_type,
         month__gte=reporting_period.start_date,
@@ -353,7 +353,7 @@ def _orphan_diversion_warnings(reporting_period: ReportingPeriod, diversion_type
             ),
         })
 
-    orphans_elsewhere = DiversionRecord.objects.filter(
+    orphans_elsewhere = DiversionRecord.objects.current().filter(
         reporting_period__isnull=True,
         diversion_type=diversion_type,
     ).exclude(
@@ -377,7 +377,7 @@ def _duplicate_pod_month_warnings(reporting_period: ReportingPeriod, diversion_t
     from surface.models import DiversionRecord
 
     dupes = (
-        DiversionRecord.objects.filter(
+        DiversionRecord.objects.current().filter(
             reporting_period=reporting_period,
             diversion_type=diversion_type,
         )
@@ -434,7 +434,7 @@ def _pod_coverage_warnings(
     active_pods = PointOfDiversion.objects.filter(status="active").count()
     if active_pods > 0 and div_count > 0:
         pods_with_data = (
-            DiversionRecord.objects.filter(
+            DiversionRecord.objects.current().filter(
                 reporting_period=reporting_period,
                 diversion_type=diversion_type,
             )
@@ -499,7 +499,7 @@ def _return_flow_passthrough_warnings(reporting_period: ReportingPeriod, diversi
     passthrough_pods = sorted(
         {
             rec.point_of_diversion.name
-            for rec in DiversionRecord.objects.filter(
+            for rec in DiversionRecord.objects.current().filter(
                 reporting_period=reporting_period,
                 diversion_type=diversion_type,
             ).select_related("point_of_diversion")

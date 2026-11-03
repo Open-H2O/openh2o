@@ -1,16 +1,22 @@
-{% comment %}
+{% load record_marks %}{% comment %}
   The "Readings, newest first" card: the station's ten newest readings. A
   reading typed by hand carries its note as a second line under the parameter.
   Shared by the sync-log layout and the layout of a station entered by hand.
+
+  A reading a person typed (card_records, each with `typed`) ends in the "..." menu for
+  a writer: Void this record. A voided one stays listed in date order, struck, with one
+  line under it; it is off the chart and in no figure. Readings a provider sent get no menu.
 {% endcomment %}
-  <div class="card-raised">
+  <div class="card-raised" id="station-readings-card">
     <div class="row-between mb-md">
       <h2 class="section-header-flush">Readings, newest first</h2>
       {% if recent_records|length >= 10 %}
       <span class="text-tertiary text-xs">Showing 10 most recent</span>
       {% endif %}
     </div>
-    {% if recent_records %}
+    {% if warning %}<p class="text-sm text-deficit" role="alert">{{ warning }}</p>{% endif %}
+    {% if notice %}<p class="text-sm text-secondary" role="status">{{ notice }}</p>{% endif %}
+    {% if card_records %}
     <div class="table-scroll">
     <table class="data-table text-sm">
       <thead>
@@ -19,11 +25,12 @@
           <th>Parameter</th>
           <th class="th-right">Value</th>
           <th>Status</th>
+          {% if user_can_write and station.data_source.is_manual %}<th class="row-actions"><span class="sr-only">Actions</span></th>{% endif %}
         </tr>
       </thead>
       <tbody>
-        {% for record in recent_records %}
-        <tr>
+        {% for record in card_records %}
+        <tr{% if record.typed %} id="{{ record.typed|record_anchor }}"{% if record.typed.voided_at or record.typed.void_open %} class="{% if record.typed.void_open %}row-editing{% endif %}{% if record.typed.voided_at %}record-void{% endif %}"{% endif %}{% endif %}>
           <td class="text-secondary">{{ record.observation_date|date:"M d, Y" }}</td>
           <td class="text-secondary text-sm">{{ record.param_display }}{% if record.note %}<div class="text-tertiary text-xs" style="margin-top: 2px;">{{ record.note }}</div>{% endif %}</td>
           <td class="td-num">
@@ -37,9 +44,14 @@
               {% elif record.status == 'rejected' %}background: rgba(239,68,68,0.1); color: var(--color-error);
               {% elif record.status == 'duplicate' %}background: rgba(100,116,139,0.1); color: var(--color-text-secondary);
               {% else %}background: var(--color-elevated); color: var(--color-text-secondary);{% endif %}
-            ">{{ record.get_status_display }}</span>
+            ">{% if record.status == "voided" %}Voided{% else %}{{ record.get_status_display }}{% endif %}</span>
           </td>
+          {% if user_can_write and station.data_source.is_manual %}
+          <td class="row-actions">{% if record.typed.menu_ok %}{% include "partials/_row_menu.html" with row=record.typed label=record.observation_date|date:"M j, Y"|add:" reading" target="#station-readings-card" swap="outerHTML" void_ok=record.typed.void_ok %}{% endif %}</td>
+          {% endif %}
         </tr>
+        {% if record.typed %}{% if user_can_write and station.data_source.is_manual %}{% record_marks record.typed 5 %}{% else %}{% record_marks record.typed 4 %}{% endif %}
+        {% if record.typed.void_open %}{% include "partials/_void_form.html" with row=record.typed target="#station-readings-card" swap="outerHTML" as_row=True colspan=5 %}{% endif %}{% endif %}
         {% endfor %}
       </tbody>
     </table>

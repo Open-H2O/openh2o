@@ -670,7 +670,7 @@ def _batch_lookups() -> dict:
                 zip(_IDENTITY_FIELDS, stored),
             ),
         ): (pk, limits_date is None)
-        for pk, limits_date, event_id, analyte_id, *stored in SampleResult.objects.values_list(
+        for pk, limits_date, event_id, analyte_id, *stored in SampleResult.objects.current().values_list(
             "pk", "limits_file_date", "event_id", "analyte_id", *_IDENTITY_FIELDS
         )
     }

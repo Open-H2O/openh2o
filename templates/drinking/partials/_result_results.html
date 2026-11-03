@@ -1,7 +1,7 @@
-{% load humanize %}{% load placeholders %}<div class="result-count-bar">
+{% load humanize %}{% load placeholders %}{% load record_marks %}<div class="result-count-bar">
   <span class="text-secondary text-sm">
-    <span class="count-pill">{{ total_count|intcomma }}</span>
-    sample result{{ total_count|pluralize }} found
+    <span class="count-pill">{{ current_count|intcomma }}</span>
+    sample result{{ current_count|pluralize }} found
   </span>
 </div>
 
@@ -15,7 +15,9 @@
   changes is not a repeated note. `result_groups` comes from
   `drinking/views/common.py::group_results_by_event`, the same helper the
   sampling-point detail page calls on its own `recent` slice. No subtotal, no
-  tfoot: rule 5, laboratory findings are never summed.
+  tfoot: rule 5, laboratory findings are never summed. A voided result stays in
+  its place, its result struck, with one line under it; it is in no count. Void
+  this record lives in the "..." menu on the result's own page.
   {% endcomment %}
   <table class="data-table text-sm data-table--grouped">
     <thead>
@@ -38,18 +40,19 @@
         </td>
       </tr>
       {% for result in group.rows %}
-      <tr>
+      <tr id="{{ result|record_anchor }}"{% if result.voided_at %} class="record-void"{% endif %}>
         <td><a href="{% url 'drinking:result_detail' result.pk %}" class="data-table-link">{{ result.analyte.name }}</a></td>
         {% comment %}
           Rendered through result_kind, never as a raw number. The unit lives
           with the value because several limits are percentages, not
           concentrations (total coliform is "% positive samples").
         {% endcomment %}
-        <td class="tabular-nums">{% include "drinking/partials/_result_value.html" with result=result %}</td>
+        <td class="tabular-nums record-figure">{% include "drinking/partials/_result_value.html" with result=result %}</td>
         <td class="text-secondary text-sm tabular-nums">{% include "drinking/partials/_limit_as_reported.html" with result=result %}</td>
         <td class="text-secondary text-sm">{{ result.method|blank }}</td>
         <td class="text-secondary text-sm">{{ result.lab_name|blank }}</td>
       </tr>
+      {% record_marks result 5 %}
       {% endfor %}
       {% endwith %}
       {% endfor %}

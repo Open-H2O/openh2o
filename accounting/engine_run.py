@@ -222,7 +222,7 @@ def _points_of_diversion(first):
     # theirs the 15th, every product path the 1st).
     following = (first.replace(day=28) + dt.timedelta(days=4)).replace(day=1)
     ids = set(
-        DiversionRecord.objects.filter(
+        DiversionRecord.objects.current().filter(
             month__gte=first, month__lt=following
         ).values_list("point_of_diversion_id", flat=True)
     )
@@ -879,6 +879,17 @@ def _months_where(months):
 def recalculation_sentence(months):
     """The line a saving page shows beneath its success message."""
     return f"OpenH2O is recalculating the use areas this water serves for {_months_where(months)}."
+
+
+def recalculated_months_sentence(months):
+    """The line a page shows after a void has started the months again.
+
+    Months in the short form the record tables print ("Sep 2026"), a list
+    reading "A, B and C".
+    """
+    labels = [f"{month_date(m):%b %Y}" for m in sorted({month_text(month_date(m)) for m in months})]
+    where = labels[0] if len(labels) == 1 else ", ".join(labels[:-1]) + f" and {labels[-1]}"
+    return f"OpenH2O recalculated {where}."
 
 
 def recalculating_months_sentence(months):

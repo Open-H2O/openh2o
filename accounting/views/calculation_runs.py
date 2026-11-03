@@ -61,7 +61,7 @@ def _delivery_split_kind(parcel, period):
         year, month = (int(part) for part in period.split("-")[:2])
     except (AttributeError, ValueError):
         return None
-    rows = ParcelLedger.objects.filter(
+    rows = ParcelLedger.objects.current().filter(
         parcel=parcel,
         source_type="surface_diversion",
         divided_from_headgate=True,

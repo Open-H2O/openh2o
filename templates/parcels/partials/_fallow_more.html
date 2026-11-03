@@ -1,10 +1,18 @@
-{% comment %}
-Under the Fallow row: the earlier periods, one line each (newest first), and
-the line a save prints when it starts a recalculation.
+{% load record_marks %}{% comment %}
+Under the Fallow row: the earlier periods, one line each (newest first), then the
+periods that were voided (struck, each with its line under it), and the lines a save or
+a void prints. An earlier period a writer can act on ends in its own "..." menu.
 {% endcomment %}
 {% for line in fallow.earlier %}
-<div class="text-tertiary text-xs" style="margin-top: var(--space-xs);">{{ line }}</div>
+<div class="text-tertiary text-xs row-actions-inline" style="margin-top: var(--space-xs);">{{ line.text }}{% if user_can_write %}{% if line.row.void_open %}{% include "partials/_void_form.html" with row=line.row target="#field-fallow" %}{% elif line.row.menu_ok %}{% include "partials/_row_menu.html" with row=line.row label=line.text target="#field-fallow" void_ok=line.row.void_ok %}{% endif %}{% endif %}</div>
 {% endfor %}
+{% for gone in fallow.voided %}
+<div class="text-tertiary text-xs" id="{{ gone.row|record_anchor }}" style="margin-top: var(--space-xs);"><span class="record-void-text">Fallow: {{ gone.words }}</span></div>
+{% record_marks gone.row 1 "note" %}
+{% endfor %}
+{% if fallow_warning %}
+<p class="text-sm text-deficit" role="alert" style="margin: var(--space-xs) 0 0;">{{ fallow_warning }}</p>
+{% endif %}
 {% if fallow_status_line %}
 <p class="text-sm text-secondary" role="status" style="margin: var(--space-xs) 0 0;">{{ fallow_status_line }}</p>
 {% endif %}

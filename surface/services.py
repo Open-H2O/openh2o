@@ -144,7 +144,7 @@ def _records_for_period(
     # field that month, and a basin fill is already credited through the
     # recharge ledger, so dividing it onto fields would count it twice
     # (see seed_merced_ledgers._seed_recharge_diversion_records).
-    qs = DiversionRecord.objects.filter(
+    qs = DiversionRecord.objects.current().filter(
         point_of_diversion=point_of_diversion, diversion_type="direct_use"
     )
     if months is not None:
@@ -301,7 +301,7 @@ def _fallow_parcel_ids(parcels: Iterable[Parcel], month: date) -> set[int]:
     if not parcels:
         return set()
     return set(
-        FallowPeriod.objects.covering(month)
+        FallowPeriod.objects.current().covering(month)
         .filter(parcel__in=parcels)
         .values_list("parcel_id", flat=True)
     )
@@ -372,7 +372,7 @@ def _own_magnitudes(served: list[Parcel], month: date) -> dict[int, Decimal]:
     The value is the magnitude of the field's own rows for the month, summed.
     """
     sums: dict[int, Decimal] = {}
-    rows = ParcelLedger.objects.filter(
+    rows = ParcelLedger.objects.current().filter(
         parcel__in=served,
         source_type="surface_diversion",
         divided_from_headgate=False,
@@ -406,7 +406,7 @@ def _own_total_for_pod(
         serving.setdefault(parcel_id, set()).add(pod_id)
     pod_ids = {pod_id for ids in serving.values() for pod_id in ids} | {pod.pk}
     recorded = {pod_id: Decimal("0") for pod_id in pod_ids}
-    for record in DiversionRecord.objects.filter(
+    for record in DiversionRecord.objects.current().filter(
         _in_months("month", [month]),
         point_of_diversion_id__in=pod_ids,
         diversion_type="direct_use",
@@ -1168,7 +1168,7 @@ def _consumed_by_month(pod: PointOfDiversion) -> dict[date, dict[str, Any]]:
     """Per calendar month with a direct-use record: taken, returned, kept and whether any record is an estimate."""
     zero = Decimal("0")
     records = list(
-        DiversionRecord.objects.filter(
+        DiversionRecord.objects.current().filter(
             point_of_diversion=pod, diversion_type="direct_use"
         ).order_by("month")
     )
@@ -1194,7 +1194,7 @@ def _consumed_by_month(pod: PointOfDiversion) -> dict[date, dict[str, Any]]:
 def _divided_by_month(pod: PointOfDiversion) -> dict[date, Decimal]:
     """The magnitude of this point's split ledger rows, summed per calendar month."""
     divided: dict[date, Decimal] = {}
-    for amount, day in ParcelLedger.objects.filter(
+    for amount, day in ParcelLedger.objects.current().filter(
         divided_from_headgate=True,
         divided_from_point_pk=pod.pk,
         source_type="surface_diversion",

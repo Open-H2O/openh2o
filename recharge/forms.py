@@ -2,6 +2,7 @@
 """Forms for recharge event data entry."""
 from django import forms
 
+from core.reasons import ReasonField
 from recharge.models import RechargeEvent, RechargeSite
 
 
@@ -46,6 +47,16 @@ class RechargeEventForm(forms.ModelForm):
         if volume is not None and volume <= 0:
             self.add_error("volume_acre_feet", "Volume must be greater than zero.")
         return cleaned
+
+
+class RechargeEventEditForm(RechargeEventForm):
+    """The edit form of a recharge event: the same fields, and a Reason that is required.
+
+    The reason is saved as the change's note, so Change history shows why the
+    figure moved. Logging an event does not ask.
+    """
+
+    reason = ReasonField()
 
 
 class RechargeSiteAccountForm(forms.ModelForm):

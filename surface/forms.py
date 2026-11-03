@@ -6,6 +6,7 @@ from decimal import Decimal
 from django import forms
 from django.db.models import Q
 
+from core.reasons import ReasonField
 from surface.models import (
     DiversionRecord,
     MeasuringDevice,
@@ -168,7 +169,7 @@ class DiversionRecordForm(forms.ModelForm):
         kind = cleaned.get("diversion_type")
         if self.pod is not None and month is not None and kind:
             following = (month.replace(day=28) + timedelta(days=4)).replace(day=1)
-            others = DiversionRecord.objects.filter(
+            others = DiversionRecord.objects.current().filter(
                 point_of_diversion=self.pod,
                 diversion_type=kind,
                 month__gte=month.replace(day=1),
@@ -201,6 +202,16 @@ class DiversionRecordForm(forms.ModelForm):
                 "Return flow cannot exceed the diverted volume."
             )
         return returned
+
+
+class DiversionRecordEditForm(DiversionRecordForm):
+    """The edit form of a diversion record: the same fields, and a Reason that is required.
+
+    The reason is saved as the change's note (``core.history.change_note``), so
+    Change history shows why the figure moved. Adding a record does not ask.
+    """
+
+    reason = ReasonField()
 
 
 class PointOfDiversionForm(forms.ModelForm):

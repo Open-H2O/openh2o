@@ -56,53 +56,7 @@
     </div>
   </div>
 
-  {% comment %}
-    Gallons only: a drinking
-    water system is measured in gallons; acre-feet is the unit of surface
-    diversions and SGMA extraction, so it is not on this page. Each month
-    reads in the unit the system reported it in; the totals are gallons.
-
-    Every source the system reported water from gets a column, surface water
-    and purchased water as much as groundwater; the head line says which
-    sources carried water this year and which were zero every month, so a
-    groundwater-only year never reads as a groundwater-only page.
-
-    The head line's total is water
-    produced or purchased; sold water is named on its own (views.production).
-  {% endcomment %}
-  <div class="card-raised table-scroll" style="padding: 0;">
-    <div class="ledger-card-head">
-      <div class="text-secondary text-base">{{ year }}: {{ grand_total_gallons_whole|intcomma }} gallons produced or purchased{% if shown_labels %}, from {{ shown_labels|join:", " }}{% endif %}.{% if sold_total_gallons_whole %} {{ sold_total_gallons_whole|intcomma }} gallons sold.{% endif %}{% if zero_labels %} Zero or not reported in every month: {{ zero_labels|join:", " }}.{% endif %}</div>
-    </div>
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Month</th>
-          {% for code, label in type_columns %}<th>{{ label }}</th>{% endfor %}
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in rows %}
-        <tr>
-          <td>{{ row.label }}</td>
-          {% for cell in row.cells %}
-          <td class="tabular-nums">
-            {% if cell %}{{ cell.volume_as_reported|plain_decimal|intcomma }} {% if cell.unit_as_reported == "G" %}gal{% else %}{{ cell.unit_as_reported }}{% endif %}{% else %}<span class="value-empty">Not reported</span>{% endif %}
-          </td>
-          {% endfor %}
-        </tr>
-        {% endfor %}
-      </tbody>
-      <tfoot>
-        <tr>
-          <td><strong>Total</strong></td>
-          {% for t in totals %}
-          <td class="tabular-nums"><strong>{{ t.gallons_whole|intcomma }} gal</strong></td>
-          {% endfor %}
-        </tr>
-      </tfoot>
-    </table>
-  </div>
+  {% include "drinking/partials/_production_table.html" %}
   {% endif %}
 
 </div>

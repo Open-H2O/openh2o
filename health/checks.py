@@ -1094,7 +1094,7 @@ def _period_meter_comparison(period) -> tuple[Decimal, Decimal, int, list[dict]]
     # themselves are selected by runs_in_period so period membership has
     # exactly one definition (item 6).
     metered = {}
-    for pid, eff, amt in ParcelLedger.objects.filter(
+    for pid, eff, amt in ParcelLedger.objects.current().filter(
         source_type="meter_reading", parcel_id__in=parcel_ids
     ).values_list("parcel_id", "effective_date", "amount_acre_feet"):
         if eff.strftime("%Y-%m") in months:

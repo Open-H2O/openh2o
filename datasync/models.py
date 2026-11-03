@@ -14,6 +14,7 @@ from django.contrib.gis.db import models
 from django.urls import reverse
 from django.utils import timezone
 
+from core.corrections import CorrectableRecord
 from core.history import track_changes
 
 # The data source whose stations never sync: a person types each reading on the
@@ -165,7 +166,7 @@ class DataRecordStaging(models.Model):
 
 
 @track_changes()
-class TypedReading(models.Model):
+class TypedReading(CorrectableRecord):
     """The record of one reading a person typed on a hand station's page.
 
     The reading itself is an ordinary published row in ``DataRecordStaging``,

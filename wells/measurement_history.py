@@ -90,12 +90,17 @@ def meter_history(well):
         # above, never a second query. The Totalizer has no matching total: a
         # totalizer is a running reading, never summed (it is the delta column
         # that closes).
+        # A voided read stays in ``reads`` (struck, in date order) and is in neither
+        # the count nor the total.
         years = [
             {
                 "label": water_year_label(wy, start_month),
                 "reads": rows,
-                "count": len(rows),
-                "delta_total": sum((r.calculated_volume or Decimal("0") for r in rows), Decimal("0")),
+                "count": sum(1 for r in rows if r.voided_at is None),
+                "delta_total": sum(
+                    (r.calculated_volume or Decimal("0") for r in rows if r.voided_at is None),
+                    Decimal("0"),
+                ),
             }
             for wy, rows in sorted(by_year.items(), reverse=True)
         ]
@@ -124,8 +129,8 @@ def visit_history(well):
 
     A visit is a ``WaterMeasurement`` of the depth-to-water property or of the
     groundwater-level type. Each year is ``{"label", "visits"}`` and each visit
-    has ``when``, ``value`` (``None`` when no depth was read), ``reason`` and
-    ``method``.
+    has ``when``, ``value`` (``None`` when no depth was read), ``reason``,
+    ``method`` and ``row`` (the ``WaterMeasurement``; a voided one stays listed).
     """
     start_month = water_year_start_month()
     rows = (
@@ -141,6 +146,8 @@ def visit_history(well):
             "value": row.value,
             "reason": row.no_measurement_reason,
             "method": row.method,
+            # The record itself, for its menu and its void line.
+            "row": row,
         }
         by_year.setdefault(water_year(when.date(), start_month), []).append(visit)
     return [

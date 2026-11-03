@@ -1,4 +1,4 @@
-{% load humanize accounting_extras %}
+{% load humanize accounting_extras record_marks %}
 {% if download_oob %}<a id="ledger-download" hx-swap-oob="true" href="{% url 'accounting:ledger_export' %}?{{ download_query }}" class="btn-secondary btn-sm">
   Download CSV
 </a>{% endif %}
@@ -26,8 +26,10 @@
        test_kept_pages_never_name_a_dropped_module). {% endcomment %}
   <div class="ledger-card-head">
     <div class="text-secondary text-base">
-      {% if period_auto_defaulted %}Showing <strong class="text-secondary">{{ auto_default_period_name }}</strong>, the latest water year with {% if auto_default_calculated %}calculations{% else %}activity{% endif %}{% else %}{{ period_name }}{% endif %}{% if active_filter_labels %} &middot; filtered: {{ active_filter_labels|join:", " }}{% endif %} &middot; {{ total_count|intcomma }} entr{{ total_count|pluralize:"y,ies" }}
+      {% if period_auto_defaulted %}Showing <strong class="text-secondary">{{ auto_default_period_name }}</strong>, the latest water year with {% if auto_default_calculated %}calculations{% else %}activity{% endif %}{% else %}{{ period_name }}{% endif %}{% if active_filter_labels %} &middot; filtered: {{ active_filter_labels|join:", " }}{% endif %} &middot; {{ current_count|intcomma }} entr{{ current_count|pluralize:"y,ies" }}
     </div>
+    {% if warning %}<p class="text-sm text-deficit" role="alert" style="margin: var(--space-xs) 0 0 0;">{{ warning }}</p>{% endif %}
+    {% if notice %}<p class="text-sm text-secondary" role="status" style="margin: var(--space-xs) 0 0 0;">{{ notice }}</p>{% endif %}
     {% if total_count %}
     <div class="text-secondary text-base">
       Acre-feet. Negative amounts are deliveries, pumping and estimates of use; positive amounts are credits.
@@ -88,6 +90,7 @@
           Amount{% if sort == "amount" %} {% if direction == "asc" %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
         </th>
         <th>Description</th>
+        {% if user_can_write %}<th class="row-actions"><span class="sr-only">Actions</span></th>{% endif %}
       </tr>
     </thead>
     <tbody>
@@ -97,7 +100,7 @@
            writes the Description cell's own sentence
            (accounting/ledger_words.py); the stored entry.description is
            what is shown, unchanged; this template composes nothing. {% endcomment %}
-      <tr>
+      <tr id="{{ entry|record_anchor }}"{% if entry.voided_at or entry.void_open %} class="{% if entry.void_open %}row-editing{% endif %}{% if entry.voided_at %}record-void{% endif %}"{% endif %}>
         <td class="text-secondary" style="white-space: nowrap;">
           {{ entry.effective_date|date:"M d, Y" }}
         </td>
@@ -126,10 +129,15 @@
         <td class="text-secondary" style="white-space: normal;">
           {{ entry.description }}
         </td>
+        {% if user_can_write %}
+        <td class="row-actions">{% if entry.menu_ok %}{% include "partials/_row_menu.html" with row=entry label=entry.effective_date|date:"M j, Y"|add:" ledger entry" target="#ledger-results" void_ok=entry.void_ok include="#ledger-filters" %}{% endif %}</td>
+        {% endif %}
       </tr>
+      {% if user_can_write %}{% record_marks entry 6 %}{% else %}{% record_marks entry 5 %}{% endif %}
+      {% if entry.void_open %}{% include "partials/_void_form.html" with row=entry target="#ledger-results" as_row=True colspan=6 include="#ledger-filters" %}{% endif %}
       {% empty %}
       <tr>
-        <td colspan="5" class="text-tertiary" style="padding: var(--space-lg) var(--space-md); text-align: center;">
+        <td colspan="{% if user_can_write %}6{% else %}5{% endif %}" class="text-tertiary" style="padding: var(--space-lg) var(--space-md); text-align: center;">
           No ledger entries found.
         </td>
       </tr>
@@ -149,9 +157,9 @@
     <tfoot>
       <tr style="border-top: 2px solid var(--color-border); background: var(--color-elevated);">
         <td colspan="2" class="text-secondary" style="font-weight: 600; white-space: nowrap;">
-          All {{ total_count|intcomma }} entr{{ total_count|pluralize:"y,ies" }}
+          All {{ current_count|intcomma }} entr{{ current_count|pluralize:"y,ies" }}
         </td>
-        <td colspan="3" class="text-xs">
+        <td colspan="{% if user_can_write %}4{% else %}3{% endif %}" class="text-xs">
           {% comment %} The figures wrap as a row of parts. The flex row is a div inside the cell, not the cell itself: a td set to display:flex stops being a table cell, and its colspan with it. {% endcomment %}
           <div class="tfoot-figures">
           <span class="text-secondary">Allocation and recharge credits</span>

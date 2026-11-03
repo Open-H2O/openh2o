@@ -287,7 +287,7 @@ def _zone_budget_row(alloc: AllocationPlan, zone: Zone, zone_parcel_ids: list[in
     """
     zone_parcel_ids = parcels_in_zone(zone, alloc.reporting_period)
     period_rows = billable_ledger(
-        ParcelLedger.objects.filter(
+        ParcelLedger.objects.current().filter(
             parcel_id__in=zone_parcel_ids,
             reporting_period=alloc.reporting_period,
         )
@@ -395,7 +395,7 @@ def _current_zone_budgets(zone: Zone, budgets: list[dict]) -> list[dict]:
     ]
     for b in current_budgets:
         b["ledger_count"] = (
-            ParcelLedger.objects
+            ParcelLedger.objects.current()
             .filter(
                 reporting_period_id=b["period"].pk,
                 parcel__parcel_zones__zone_id=zone.pk,
@@ -458,9 +458,12 @@ def _zone_parcels_geojson(parcel_zones: QuerySet) -> dict | None:
     # `{% if parcels_geojson %}` skips the source/layers cleanly.
     parcels_geojson = None
     if is_enabled("parcels"):
-        parcels_with_geometry = [
-            pz.parcel for pz in parcel_zones if pz.parcel.geometry
-        ]
+        # Through the one current-records rule: a voided use area is not drawn.
+        parcels_with_geometry = list(
+            Parcel.objects.current()
+            .filter(pk__in=parcel_zones.values("parcel_id"), geometry__isnull=False)
+            .order_by("parcel_number")
+        )
         if parcels_with_geometry:
             parcels_geojson = json.loads(
                 serialize(

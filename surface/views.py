@@ -35,11 +35,15 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 from core import pending_imports
+from core import corrections
 from core.access import public_in_open_demo
+from core.corrections_views import mark_actions
+from core.history import change_note
+from core.reasons import check_reason
 from core.map_labels import map_label
 
 from accounting.engine_run import recalculation_sentence, request_for_months
-from accounting.locks import PeriodFinalized, refuse_if_finalized, refuse_if_period_finalized
+from accounting.locks import PeriodFinalized, refuse_if_period_finalized
 from accounting.models import ReportingPeriod
 from accounting.services import current_period_id as compute_current_period_id
 from core.models import SiteConfig
@@ -52,6 +56,7 @@ from surface import diversion_import as diversion_import_service
 from surface.services import canal_water_by_month
 from surface.face_value import years_against_face_value
 from surface.forms import (
+    DiversionRecordEditForm,
     DiversionRecordForm,
     MeasuringDeviceForm,
     PointOfDiversionForm,
@@ -83,16 +88,16 @@ logger = logging.getLogger(__name__)
 # groups (the panel's figures are the SAME queryset the table prints, never
 # a second derivation).
 # ---------------------------------------------------------------------------
-def _mark_finalized(records):
+def _mark_finalized(records, finalized=None):
     """Give each record ``in_finalized_year``: its period, or its month, is in a finalized year.
 
     The database lock reads the month as well as the period link, so this does
-    too; a row it marks is one a press on Edit or Delete would refuse. One
-    query for all the rows.
+    too; a row it marks is one a press on Edit would refuse. ``finalized`` is
+    the page's one :func:`core.corrections.finalized_ranges`; without it this
+    asks once itself. One query for all the rows.
     """
-    finalized = list(
-        ReportingPeriod.objects.filter(is_finalized=True).values_list("start_date", "end_date")
-    )
+    if finalized is None:
+        finalized = corrections.finalized_ranges()
     for record in records:
         period = record.reporting_period
         record.in_finalized_year = bool(
@@ -152,6 +157,9 @@ def _group_diversion_records(records):
             }
             groups.append(current)
         current["rows"].append(record)
+        if record.voided_at is not None:
+            # Shown struck in its place; it is in no total and no count.
+            continue
         current["diverted"] += abs(record.volume_acre_feet)
         current["returned"] += record.returned_af
         current["count"] += 1
@@ -274,8 +282,12 @@ def _pod_detail_context(pod):
         .select_related("reporting_period")
         .order_by("-month")
     )
-    _mark_finalized(diversion_records)
+    finalized = corrections.finalized_ranges()
+    _mark_finalized(diversion_records, finalized)
     _mark_fallow_notes(diversion_records, pod)
+    # The menu is drawn per row; `edit=True` because every row here has Edit
+    # (a row in a finalized year prints "Finalized" instead of a menu).
+    mark_actions(diversion_records, can_write=True, finalized=finalized, edit=True)
 
     # The table's own water-year groups, and the
     # CURRENT period's figures read off that SAME grouping -- no second
@@ -309,6 +321,7 @@ def _pod_detail_context(pod):
     return {
         "pod": pod,
         "diversion_records": diversion_records,
+        "record_count": sum(group["count"] for group in record_groups),
         "record_groups": record_groups,
         "current_period": current_period,
         "current_totals": current_totals,
@@ -587,16 +600,19 @@ def _recalculate_months_for(user, trigger, months):
 
 def _render_diversion_records_section(
     request, pod, *, form=None, edit_record=None, edit_form=None, period_warning=None,
-    recalculation_line="",
+    recalculation_line="", void_key=None, void_reason="", void_error="",
 ):
     """Render ``_diversion_records.html`` for ``pod``.
 
-    The one shared builder behind create, edit (GET and POST) and delete, so
+    The one shared builder behind create, edit (GET and POST) and void, so
     the table's grouping, current-period figures and lead-panel totals are
-    computed identically for all four -- never re-derived per view. ``form``
+    computed identically for all of them -- never re-derived per view. ``form``
     is the "Add diversion record" form (bound, on an invalid create submit,
     or fresh otherwise); ``edit_record``/``edit_form`` swap that form out for
     an "Edit diversion record" one when a row's Edit action is in play.
+    ``void_key`` (a row's ``record-diversion_record-<pk>`` anchor) opens the
+    reason row under that record, with what was typed and the sentence for a
+    reason outside the rule.
     """
     diversion_records = list(
         DiversionRecord.objects
@@ -604,8 +620,15 @@ def _render_diversion_records_section(
         .select_related("reporting_period")
         .order_by("-month")
     )
-    _mark_finalized(diversion_records)
+    finalized = corrections.finalized_ranges()
+    _mark_finalized(diversion_records, finalized)
     _mark_fallow_notes(diversion_records, pod)
+    mark_actions(
+        diversion_records, can_write=True, finalized=finalized, void_key=void_key, edit=True
+    )
+    edit_can_void = bool(
+        edit_record is not None and corrections.can_void(edit_record, finalized)
+    )
 
     # The same grouping _pod_detail_context uses, so a POST that
     # swaps this partial back in renders the identical shape (row-group
@@ -628,6 +651,7 @@ def _render_diversion_records_section(
     return render(request, "surface/partials/_diversion_records.html", {
         "pod": pod,
         "diversion_records": diversion_records,
+        "record_count": sum(group["count"] for group in record_groups),
         "record_groups": record_groups,
         "current_period": current_period,
         "current_totals": current_totals,
@@ -636,7 +660,26 @@ def _render_diversion_records_section(
         "recalculation_line": recalculation_line,
         "edit_record": edit_record,
         "edit_form": edit_form,
+        "edit_can_void": edit_can_void,
+        "void_key": void_key,
+        "void_reason": void_reason,
+        "void_error": void_error,
     })
+
+
+def render_diversion_records(
+    request, row, *, void_key=None, void_reason="", void_error="", notice="", warning=""
+):
+    """The records table for the point ``row`` belongs to (core.corrections_views.TABLES).
+
+    The notice takes the slot a saved record's recalculation line uses; a refusal
+    takes the slot a finalized-year refusal uses.
+    """
+    return _render_diversion_records_section(
+        request, row.point_of_diversion,
+        recalculation_line=notice, period_warning=warning or None,
+        void_key=void_key, void_reason=void_reason, void_error=void_error,
+    )
 
 
 #: The message a unique-constraint violation on (point_of_diversion, month,
@@ -667,13 +710,15 @@ def diversion_record_create(request, pk):
         record.reporting_period = period
 
         # point_of_diversion is not a form field, so Django's own ModelForm
-        # unique_together check (which excludes fields absent from the form)
+        # uniqueness check (which excludes fields absent from the form)
         # never runs it -- without this, a duplicate (POD, month, type) hit
         # the database's own constraint as a raw IntegrityError, a 500.
+        # validate_constraints, not validate_unique: the rule is a conditional
+        # UniqueConstraint (records that count), which validate_unique skips.
         try:
             refuse_if_period_finalized(period)
             with transaction.atomic():
-                record.validate_unique()
+                record.validate_constraints()
                 record.save()
         except PeriodFinalized as exc:
             form.add_error(None, str(exc))
@@ -724,10 +769,10 @@ def diversion_record_edit(request, pk, rpk):
     if request.method == "GET":
         return _render_diversion_records_section(
             request, pod, edit_record=record,
-            edit_form=DiversionRecordForm(instance=record, pod=pod),
+            edit_form=DiversionRecordEditForm(instance=record, pod=pod),
         )
 
-    form = DiversionRecordForm(request.POST, instance=record, pod=pod)
+    form = DiversionRecordEditForm(request.POST, instance=record, pod=pod)
     if form.is_valid():
         # The record as stored, before the form's values land on it: a record
         # inside a finalized year can be neither changed nor moved out of it.
@@ -743,8 +788,8 @@ def diversion_record_edit(request, pk, rpk):
         try:
             refuse_if_period_finalized(stored_period)
             refuse_if_period_finalized(updated.reporting_period)
-            with transaction.atomic():
-                updated.validate_unique()
+            with transaction.atomic(), change_note(form.cleaned_data["reason"]):
+                updated.validate_constraints()
                 updated.save()
         except PeriodFinalized as exc:
             form.add_error(None, str(exc))
@@ -763,24 +808,6 @@ def diversion_record_edit(request, pk, rpk):
     return _render_diversion_records_section(
         request, pod, edit_record=record, edit_form=form,
     )
-
-
-@login_required
-@require_POST
-def diversion_record_delete(request, pk, rpk):
-    """Delete one diversion record."""
-    pod = get_object_or_404(PointOfDiversion, pk=pk)
-    record = get_object_or_404(DiversionRecord, pk=rpk, point_of_diversion=pod)
-    try:
-        refuse_if_finalized(record.month)
-    except PeriodFinalized as exc:
-        return _render_diversion_records_section(
-            request, pod, period_warning=f"Nothing was deleted. {exc}",
-        )
-    month = record.month
-    record.delete()
-    line = _recalculate_months(request, "diversion_saved", [month])
-    return _render_diversion_records_section(request, pod, recalculation_line=line)
 
 
 @login_required
@@ -806,22 +833,30 @@ def pod_parcel_edit_share(request, pk, pp_pk):
 
     body_params = parse_qs(request.body.decode("utf-8"))
     raw_value = body_params.get("value", [""])[0].strip()
+    # The engine reads the share, so the change asks why (core.reasons).
+    typed = body_params.get("reason", [""])[0]
+    reason, reason_error = check_reason(typed)
     try:
         fraction = coerce_decimal(
             raw_value, "Share", min_value=0, min_exclusive=True, allow_blank=False
         )
     except FieldValidationError as exc:
         return render(request, "surface/partials/_pod_parcel_share_edit.html", {
-            "pod": pod, "pp": pp, "value": raw_value, "error": str(exc),
+            "pod": pod, "pp": pp, "value": raw_value, "reason": typed, "error": str(exc),
         })
     if fraction > Decimal("1"):
         return render(request, "surface/partials/_pod_parcel_share_edit.html", {
-            "pod": pod, "pp": pp, "value": raw_value,
+            "pod": pod, "pp": pp, "value": raw_value, "reason": typed,
             "error": "Share must be greater than 0 and no more than 1.",
+        })
+    if reason_error:
+        return render(request, "surface/partials/_pod_parcel_share_edit.html", {
+            "pod": pod, "pp": pp, "value": raw_value, "reason": typed, "error": reason_error,
         })
 
     pp.fraction = fraction
-    pp.save(update_fields=["fraction"])
+    with change_note(reason):
+        pp.save(update_fields=["fraction"])
     return render(request, "surface/partials/_pod_parcel_share_value.html", {"pod": pod, "pp": pp})
 
 

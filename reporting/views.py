@@ -460,7 +460,7 @@ def calwatrs_worksheet(request, pk):
     diversion_type = "direct_use" if report_type == "calwatrs_a1" else "to_storage"
 
     records = (
-        DiversionRecord.objects.filter(
+        DiversionRecord.objects.current().filter(
             reporting_period=period,
             diversion_type=diversion_type,
         )

@@ -17,16 +17,12 @@ urlpatterns = [
     path("diversion/import/", views.diversion_import, name="diversion_import"),
     path("diversion/import/preview/", views.diversion_import_preview, name="diversion_import_preview"),
     path("diversion/import/commit/", views.diversion_import_commit, name="diversion_import_commit"),
-    # Edit and delete a diversion record.
+    # Edit a diversion record. A record that feeds a figure is voided, never deleted
+    # (core:record_void).
     path(
         "diversion/<int:pk>/record/<int:rpk>/edit/",
         views.diversion_record_edit,
         name="diversion_record_edit",
-    ),
-    path(
-        "diversion/<int:pk>/record/<int:rpk>/delete/",
-        views.diversion_record_delete,
-        name="diversion_record_delete",
     ),
     # The point-to-right link.
     path("diversion/<int:pk>/link-right/", views.pod_link_right, name="pod_link_right"),

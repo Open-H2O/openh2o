@@ -253,7 +253,7 @@ def sampling_point_detail(request, pk):
         pk=pk,
     )
 
-    at_this_point = SampleResult.objects.filter(event__sampling_point=point)
+    at_this_point = SampleResult.objects.current().filter(event__sampling_point=point)
     summary = at_this_point.aggregate(
         result_count=Count("pk"),
         analyte_count=Count("analyte", distinct=True),

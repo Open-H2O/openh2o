@@ -22,13 +22,16 @@ from django.http import HttpResponse
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
+from core import corrections
 from core.access import public_in_open_demo
+from core.corrections_views import mark_actions
+from core.history import change_note
 from core.map_labels import map_label
 
 from accounting.models import ReportingPeriod
 from accounting.services import current_period_id as compute_current_period_id
 from core.workspace import detail_response, list_response
-from recharge.forms import RechargeEventForm, RechargeSiteAccountForm, RechargeSiteZoneForm
+from recharge.forms import RechargeEventEditForm, RechargeEventForm, RechargeSiteAccountForm, RechargeSiteZoneForm
 from recharge.models import RechargeMeasurement, RechargeEvent, RechargeSite
 
 
@@ -87,6 +90,9 @@ def _group_recharge_events(events, periods):
         )
         group = groups_by_pk[period.pk] if period else outside
         group["rows"].append(event)
+        if event.voided_at is not None:
+            # Shown struck in its place; it is in no total and no count.
+            continue
         group["volume"] += event.volume_acre_feet
         group["count"] += 1
         type_name = event.water_type.name if event.water_type else "Not recorded"
@@ -162,17 +168,31 @@ def recharge_sites_list(request):
     )
 
 
-def _recharge_site_detail_context(site):
-    """Build the per-site detail context.
+def _site_events(site, *, void_key=None):
+    """The site's events, newest first, each marked for its menu (``menu_ok``, ``void_ok``, ``void_open``).
 
-    Shared by the standalone detail page, the in-pane HTMX render, and the
-    workspace's pre-loaded ``?selected=`` pane so all three are identical.
+    Every row has Edit, so a row in a finalized year keeps a menu that holds Edit
+    only. A voided event stays in its place in date order.
     """
     events = list(
         RechargeEvent.objects.filter(recharge_site=site)
         .select_related("water_type")
         .order_by("-start_date")
     )
+    mark_actions(
+        events, can_write=True, finalized=corrections.finalized_ranges(),
+        void_key=void_key, edit=True,
+    )
+    return events
+
+
+def _recharge_site_detail_context(site):
+    """Build the per-site detail context.
+
+    Shared by the standalone detail page, the in-pane HTMX render, and the
+    workspace's pre-loaded ``?selected=`` pane so all three are identical.
+    """
+    events = _site_events(site)
 
     # The table's own water-year groups, and the
     # CURRENT period's figures read off that SAME grouping -- no second
@@ -201,6 +221,7 @@ def _recharge_site_detail_context(site):
     return {
         "site": site,
         "events": events,
+        "event_count": sum(group["count"] for group in event_groups),
         "event_groups": event_groups,
         "current_period": current_period,
         "current_totals": current_totals,
@@ -328,15 +349,12 @@ def recharge_event_create(request, pk):
 
     form = RechargeEventForm(request.POST)
     if not form.is_valid():
-        events = list(
-            RechargeEvent.objects.filter(recharge_site=site)
-            .select_related("water_type")
-            .order_by("-start_date")
-        )
+        events = _site_events(site)
         event_groups = _group_recharge_events(events, ReportingPeriod.objects.all())
         context = {
             "site": site,
             "events": events,
+            "event_count": sum(group["count"] for group in event_groups),
             "event_groups": event_groups,
             "event_form": form,
         }
@@ -353,15 +371,13 @@ def recharge_event_create(request, pk):
         refuse_if_finalized(event.start_date)
     except PeriodFinalized as exc:
         form.add_error("start_date", str(exc))
-        events = list(
-            RechargeEvent.objects.filter(recharge_site=site)
-            .select_related("water_type")
-            .order_by("-start_date")
-        )
+        events = _site_events(site)
+        event_groups = _group_recharge_events(events, ReportingPeriod.objects.all())
         return render(request, "recharge/partials/_event_history.html", {
             "site": site,
             "events": events,
-            "event_groups": _group_recharge_events(events, ReportingPeriod.objects.all()),
+            "event_count": sum(group["count"] for group in event_groups),
+            "event_groups": event_groups,
             "event_form": form,
         })
     event.save()
@@ -372,18 +388,17 @@ def recharge_event_create(request, pk):
 
 
 def _history_response(
-    request, site, *, event_form=None, ledger_msg=None, zone_missing=False
+    request, site, *, event_form=None, ledger_msg=None, zone_missing=False,
+    void_key=None, void_reason="", void_error="",
 ):
     """The event-history partial for a site, with a sentence about what just happened.
 
     The "Water recharged" panel rides along out of band, built from the same
     event groups as the table, so the two agree as soon as the response lands.
+    ``void_key`` (an event's ``record-recharge_event-<pk>`` anchor) opens the
+    reason row under that event.
     """
-    events = list(
-        RechargeEvent.objects.filter(recharge_site=site)
-        .select_related("water_type")
-        .order_by("-start_date")
-    )
+    events = _site_events(site, void_key=void_key)
     event_groups = _group_recharge_events(events, ReportingPeriod.objects.all())
     current_period, current_totals, previous_totals = _current_and_previous_totals(
         event_groups
@@ -391,17 +406,31 @@ def _history_response(
     context = {
         "site": site,
         "events": events,
+        "event_count": sum(group["count"] for group in event_groups),
         "event_groups": event_groups,
         "event_form": event_form or RechargeEventForm(),
         "current_period": current_period,
         "current_totals": current_totals,
         "previous_totals": previous_totals,
         "panel_oob": True,
+        "void_key": void_key,
+        "void_reason": void_reason,
+        "void_error": void_error,
     }
     if ledger_msg:
         context["ledger_msg"] = ledger_msg
         context["zone_missing"] = zone_missing
     return render(request, "recharge/partials/_event_history.html", context)
+
+
+def render_event_history(
+    request, row, *, void_key=None, void_reason="", void_error="", notice="", warning=""
+):
+    """The event history for the site ``row`` belongs to (core.corrections_views.TABLES)."""
+    return _history_response(
+        request, row.recharge_site, ledger_msg=notice or warning or None,
+        void_key=void_key, void_reason=void_reason, void_error=void_error,
+    )
 
 
 def _credit_event(event, lead):
@@ -476,39 +505,23 @@ def recharge_event_edit(request, pk, event_pk):
     event = get_object_or_404(RechargeEvent, pk=event_pk, recharge_site=site)
     if request.method == "POST":
         before = RechargeEvent.objects.select_related("recharge_site", "water_type").get(pk=event.pk)
-        form = RechargeEventForm(request.POST, instance=event)
+        form = RechargeEventEditForm(request.POST, instance=event)
         if form.is_valid() and not _refuse_finalized_event(
             form, before.start_date, form.cleaned_data["start_date"]
         ):
-            with transaction.atomic():
+            with transaction.atomic(), change_note(form.cleaned_data["reason"]):
                 remove_recharge_ledger_entries(before)
                 saved = form.save()
                 _credit_event(saved, "Event saved.")
             return redirect("recharge:detail", pk=pk)
     else:
-        form = RechargeEventForm(instance=event)
-    return render(request, "recharge/event_edit.html", {"site": site, "event": event, "form": form})
-
-
-@login_required
-@require_POST
-def recharge_event_delete(request, pk, event_pk):
-    """Delete a recharge event and take its credit and basin pool entry back."""
-    from accounting.locks import PeriodFinalized, refuse_if_finalized
-    from accounting.services import remove_recharge_ledger_entries
-
-    site = get_object_or_404(RechargeSite, pk=pk)
-    event = get_object_or_404(RechargeEvent, pk=event_pk, recharge_site=site)
-    try:
-        refuse_if_finalized(event.start_date)
-    except PeriodFinalized as exc:
-        return _history_response(request, site, ledger_msg=str(exc))
-    with transaction.atomic():
-        remove_recharge_ledger_entries(event)
-        event.delete()
-    return _history_response(
-        request, site,
-        ledger_msg="Event deleted. Its credit and its entry in the basin recharge pool are gone.",
+        form = RechargeEventEditForm(instance=event)
+    return render(
+        request, "recharge/event_edit.html",
+        {
+            "site": site, "event": event, "form": form,
+            "can_void": corrections.can_void(event, corrections.finalized_ranges()),
+        },
     )
 
 

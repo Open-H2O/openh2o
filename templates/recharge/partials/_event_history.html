@@ -1,4 +1,4 @@
-{% load humanize %}
+{% load humanize record_marks %}
 {% comment %}
   This partial is the HTMX target of BOTH the full
   page load (_recharge_site_detail_context) and recharge_event_create's POST
@@ -8,13 +8,16 @@
   inside the body, no tfoot) and the 640px-capped log form below all copy
   the shape of the diversion page's
   records table (templates/surface/partials/_diversion_records.html).
+  Each row a writer can act on ends in the "..." menu (partials/_row_menu.html):
+  Edit, then Void this record. A row in a finalized year keeps Edit only. A voided
+  event stays in date order, struck, with one line under it, and is in no total.
   Columns are Start, End, Volume, Water type -- a plain record of what was
   logged, not a derivation -- so no column sums into another and there is no
   .col-sep here (rule 3 fires only where the kind of number changes).
 {% endcomment %}
 <div class="ledger-card-head">
   <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">Event history</h2>
-  <div class="text-secondary text-base">{{ events|length }} event{{ events|length|pluralize }} over {{ event_groups|length }} water year{{ event_groups|length|pluralize }}.</div>
+  <div class="text-secondary text-base">{{ event_count }} event{{ event_count|pluralize }} over {{ event_groups|length }} water year{{ event_groups|length|pluralize }}.</div>
   <div class="text-secondary text-base">Volumes are in acre-feet. Each water year has its own total.</div>
 </div>
 {% if ledger_msg %}
@@ -38,7 +41,7 @@
       <td colspan="{% if user_can_write %}5{% else %}4{% endif %}">{{ group.period_name }} &middot; {{ group.count }} event{{ group.count|pluralize }}</td>
     </tr>
     {% for event in group.rows %}
-    <tr>
+    <tr id="{{ event|record_anchor }}"{% if event.voided_at or event.void_open %} class="{% if event.void_open %}row-editing{% endif %}{% if event.voided_at %}record-void{% endif %}"{% endif %}>
       <td class="text-secondary">{{ event.start_date|date:"M d, Y" }}</td>
       <td class="text-secondary">
         {% if event.end_date %}{{ event.end_date|date:"M d, Y" }}{% else %}&mdash;{% endif %}
@@ -48,17 +51,16 @@
         {% if event.water_type %}{{ event.water_type }}{% else %}&mdash;{% endif %}
       </td>
       {% if user_can_write %}
-      <td class="text-secondary">
-        <a href="{% url 'recharge:event_edit' site.pk event.pk %}" class="data-table-link">Edit</a>
-        &middot;
-        <button type="button"
-                hx-post="{% url 'recharge:event_delete' site.pk event.pk %}"
-                hx-target="#event-history" hx-swap="innerHTML"
-                hx-confirm="Delete the {{ event.start_date|date:"M d, Y" }} event of {{ event.volume_acre_feet|floatformat:2|intcomma }} AF? Its credit and its basin pool entry are removed too."
-                style="background: none; border: none; padding: 0; cursor: pointer; color: var(--furnace-400); text-decoration: underline; text-underline-offset: 2px;">Delete</button>
+      <td class="text-secondary row-actions">
+        {% if event.menu_ok %}
+        {% url 'recharge:event_edit' site.pk event.pk as edit_href %}
+        {% include "partials/_row_menu.html" with row=event label=event.start_date|date:"M j, Y"|add:" event" edit_href=edit_href target="#event-history" void_ok=event.void_ok %}
+        {% endif %}
       </td>
       {% endif %}
     </tr>
+    {% if user_can_write %}{% record_marks event 5 %}{% else %}{% record_marks event 4 %}{% endif %}
+    {% if event.void_open %}{% include "partials/_void_form.html" with row=event target="#event-history" as_row=True colspan=5 %}{% endif %}
     {% endfor %}
     <tr class="row-subtotal">
       <td class="tfoot-total">All {{ group.count }} event{{ group.count|pluralize }}, {{ group.period_name }}</td>

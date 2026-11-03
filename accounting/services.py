@@ -664,8 +664,13 @@ def billable_ledger(queryset: QuerySet[ParcelLedger]) -> QuerySet[ParcelLedger]:
     source-type-driven (not reporting-period-driven), so it holds whether or not
     a period filter has already been applied to ``queryset``.
 
+    Rows that do not count (voided rows, and the rows of a voided use area) are
+    left out first, so a voided meter row does not suppress its month's
+    ``et_estimate`` row.
+
     Empty queryset → empty.
     """
+    queryset = queryset.current()
     suppression_keys = set(
         queryset.filter(source_type="calculated").values_list(
             "parcel_id", "effective_date"
@@ -801,7 +806,7 @@ def parcel_balance(parcel: Parcel, reporting_period: ReportingPeriod | None = No
     Returns:
         Decimal total (positive = net supply, negative = net usage).
     """
-    qs = ParcelLedger.objects.filter(parcel=parcel)
+    qs = ParcelLedger.objects.current().filter(parcel=parcel)
     if reporting_period is not None:
         qs = qs.filter(reporting_period=reporting_period)
     qs = billable_ledger(qs)
@@ -825,7 +830,7 @@ def parcel_balance_breakdown(
 
     Returns the same dict shape as _balance_dict: {total, supply, usage, net}.
     """
-    qs = ParcelLedger.objects.filter(parcel=parcel)
+    qs = ParcelLedger.objects.current().filter(parcel=parcel)
     if reporting_period is not None:
         qs = qs.filter(reporting_period=reporting_period)
     return _balance_dict(billable_ledger(qs))
@@ -994,7 +999,7 @@ def account_balance(
     """
     parcel_ids = account_parcel_ids(water_account, reporting_period)
 
-    qs = ParcelLedger.objects.filter(parcel_id__in=parcel_ids)
+    qs = ParcelLedger.objects.current().filter(parcel_id__in=parcel_ids)
     if reporting_period is not None:
         qs = qs.filter(reporting_period=reporting_period)
 
@@ -1013,7 +1018,7 @@ def zone_balance(zone: Zone, reporting_period: ReportingPeriod | None = None) ->
     """
     parcel_ids = zone_parcel_ids(zone, reporting_period)
 
-    qs = ParcelLedger.objects.filter(parcel_id__in=parcel_ids)
+    qs = ParcelLedger.objects.current().filter(parcel_id__in=parcel_ids)
     if reporting_period is not None:
         qs = qs.filter(reporting_period=reporting_period)
 
@@ -1079,8 +1084,13 @@ def runs_in_period(
     dates, and the truncation it implies is surfaced rather than hidden: see
     ``ReportingPeriod``'s mid-month check in ``health.checks``.
 
-    ``reporting_period=None`` is a no-op (every run in the queryset).
+    A run of a use area that does not count (voided) is left out whatever the
+    period: ``CalculationRun`` is not a covered model, so the current-records
+    rule is applied through the use area here, once, for every reader.
+
+    ``reporting_period=None`` leaves every other run in the queryset.
     """
+    queryset = queryset.filter(parcel__in=Parcel.objects.current())
     if reporting_period is None:
         return queryset
     first_month = reporting_period.start_date.replace(day=1)
@@ -1162,7 +1172,7 @@ def _billable_parcel_ledger(
     parcel: Parcel, reporting_period: ReportingPeriod | None
 ) -> QuerySet[ParcelLedger]:
     """The parcel's billable ledger rows, on the SAME basis as parcel_balance_breakdown."""
-    qs = ParcelLedger.objects.filter(parcel=parcel)
+    qs = ParcelLedger.objects.current().filter(parcel=parcel)
     if reporting_period is not None:
         qs = qs.filter(reporting_period=reporting_period)
     return billable_ledger(qs)
@@ -1725,7 +1735,7 @@ def _consumptive_supply_terms(
 ) -> tuple[Decimal, Decimal, Decimal]:
     """Ledger-sourced supplies: ``(groundwater_consumed, groundwater_charged, surface)``."""
     # Ledger-sourced supplies, on the SAME billable basis as the mass balance.
-    qs = ParcelLedger.objects.filter(parcel_id__in=parcel_ids)
+    qs = ParcelLedger.objects.current().filter(parcel_id__in=parcel_ids)
     if reporting_period is not None:
         qs = qs.filter(reporting_period=reporting_period)
     billable = billable_ledger(qs)
@@ -1822,7 +1832,7 @@ def surface_kind_terms(billable: QuerySet[ParcelLedger]) -> list[tuple[str, Deci
         last = max(month for _, month in groups)
         after_last = date(last.year + (last.month == 12), last.month % 12 + 1, 1)
         records = (
-            DiversionRecord.objects.filter(
+            DiversionRecord.objects.current().filter(
                 diversion_type="direct_use",
                 point_of_diversion_id__in={point for point, _ in groups},
                 month__gte=first,
@@ -1863,7 +1873,7 @@ def supply_kind_terms(
     several parcel sets (the Dashboard adds its accounts) add these exact parts
     and then call ``supply_kind_lines`` once.
     """
-    qs = ParcelLedger.objects.filter(parcel_id__in=list(parcel_ids))
+    qs = ParcelLedger.objects.current().filter(parcel_id__in=list(parcel_ids))
     if reporting_period is not None:
         qs = qs.filter(reporting_period=reporting_period)
     billable = billable_ledger(qs)
@@ -1913,7 +1923,7 @@ def _metered_pumping_by_month(
     parcel_ids: list[int], reporting_period: ReportingPeriod | None
 ) -> dict[tuple[int, date], Decimal]:
     """Metered groundwater (positive AF) per ``(parcel id, first of month)``."""
-    qs = ParcelLedger.objects.filter(
+    qs = ParcelLedger.objects.current().filter(
         parcel_id__in=parcel_ids, source_type="meter_reading"
     )
     if reporting_period is not None:
@@ -1956,7 +1966,7 @@ def _consumptive_run_terms(
     not_consumed = Decimal("0")
     run_count = 0
     metered = _metered_pumping_by_month(parcel_ids, reporting_period)
-    for parcel in Parcel.objects.filter(id__in=parcel_ids):
+    for parcel in Parcel.objects.current().filter(id__in=parcel_ids):
         for run in _calculation_runs_for_period(parcel, reporting_period):
             gross += run.gross_et_af or Decimal("0")
             net += run.net_consumptive_use_af or Decimal("0")
@@ -2153,7 +2163,7 @@ def water_year_usage_by_type(
     Returns a dict {water_type_code: Decimal usage (positive)}.
     """
     parcel_ids = zone_parcel_ids(zone, date_start=date_start, date_end=date_end)
-    qs = ParcelLedger.objects.filter(
+    qs = ParcelLedger.objects.current().filter(
         parcel_id__in=parcel_ids,
         effective_date__gte=date_start,
         effective_date__lte=date_end,
@@ -2370,7 +2380,7 @@ def _field_acres(parcel_ids: list[int]) -> dict[int, Decimal]:
     """Each field's area as the field page shows it (a field with no area is 0)."""
     return {
         pid: area or Decimal("0")
-        for pid, area in Parcel.objects.filter(pk__in=parcel_ids).values_list("pk", "area_acres")
+        for pid, area in Parcel.objects.current().filter(pk__in=parcel_ids).values_list("pk", "area_acres")
     }
 
 
@@ -2603,7 +2613,7 @@ def _subtraction_context(run: CalculationRun) -> dict[str, Any]:
     # default when no ledger row matches at all.
     delivery_split = "by_use"
     if run.surface_delivered_af and run.period_start is not None:
-        month_rows = ParcelLedger.objects.filter(
+        month_rows = ParcelLedger.objects.current().filter(
             parcel=run.parcel,
             source_type="surface_diversion",
             effective_date__year=run.period_start.year,

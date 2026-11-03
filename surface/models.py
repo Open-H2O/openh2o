@@ -22,6 +22,7 @@ from django.core.exceptions import ValidationError
 from django.urls import reverse
 
 from accounting.locks import finalized_period_lock
+from core.corrections import CorrectableRecord
 from core.history import track_changes
 
 
@@ -780,7 +781,7 @@ class PointOfDiversionDevice(models.Model):
 
 
 @track_changes()
-class DiversionRecord(models.Model):
+class DiversionRecord(CorrectableRecord):
     DIVERSION_TYPE_CHOICES = [
         ("direct_use", "Direct Use"),
         ("to_storage", "To Storage"),
@@ -858,7 +859,15 @@ class DiversionRecord(models.Model):
 
     class Meta:
         ordering = ["-month"]
-        unique_together = [("point_of_diversion", "month", "diversion_type")]
+        # One record per point, month and kind among the records that count:
+        # a voided record does not block entering the right one.
+        constraints = [
+            models.UniqueConstraint(
+                fields=["point_of_diversion", "month", "diversion_type"],
+                condition=models.Q(voided_at__isnull=True),
+                name="diversionrecord_one_current_per_point_month_kind",
+            ),
+        ]
         # A finalized water year is closed to change (accounting/locks.py).
         triggers = [
             finalized_period_lock(date_column="month", period_column="reporting_period_id")

@@ -1,4 +1,4 @@
-{% load placeholders humanize accounting_extras %}{% comment %}
+{% load placeholders humanize accounting_extras record_marks %}{% comment %}
   The use area page's body, swapped into #detail-body when the water year
   changes (and included by the standalone detail.html page). The map card heads
   the right column, above the Use area card, and is kept across that swap
@@ -14,6 +14,7 @@
   </div>
   <div class="pane-header-meta">
     {% include "parcels/partials/_status_badge.html" with status=parcel.status %}
+    {% include "parcels/partials/_use_area_menu.html" %}
     {% comment %}
       This fragment is the workspace pane AND the standalone page's body, so on
       /parcels/<pk>/ the only forward link in the head would point at the page the
@@ -29,6 +30,9 @@
 {% endif %}
 
 <div class="pane-stack">
+
+  {# A voided use area: the line under its name. Its figures are in no total and it is not drawn on the map. #}
+  {% record_marks parcel 1 "note" %}
 
   {# Two columns: the Water use card, then the ledger (left); the map, the Use area card, zones and wells (right). #}
   <div class="page-grid-field">

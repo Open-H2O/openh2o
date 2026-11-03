@@ -1,0 +1,14 @@
+{% load record_marks %}{% comment %}
+  The "..." menu beside a use area's name (the page head and the workspace pane head): one
+  item, Void this record. A use area has no Edit of its own (its fields edit in place), so
+  the menu holds Void alone. Choosing it swaps this span for the one-line reason form; a good
+  void sends the browser to the use area's page (core.corrections_views, REDIRECTS).
+  Needs `parcel`, marked by core.corrections_views.mark_actions.
+{% endcomment %}<span id="use-area-menu" class="row-actions-inline">
+{% if user_can_write %}
+{% if parcel.void_open %}{% include "partials/_void_form.html" with row=parcel target="#use-area-menu" swap="outerHTML" %}
+{% elif parcel.menu_ok %}{% include "partials/_row_menu.html" with row=parcel label="use area "|add:parcel.parcel_number target="#use-area-menu" swap="outerHTML" void_ok=parcel.void_ok %}
+{% endif %}
+{% if warning %}<span class="record-void-error" role="alert">{{ warning }}</span>{% endif %}
+{% endif %}
+</span>

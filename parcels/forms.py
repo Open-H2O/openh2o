@@ -13,6 +13,7 @@ from django import forms
 
 from accounting.locks import finalized_message
 from accounting.models import CalculationRun, ReportingPeriod
+from core.reasons import ReasonField
 from parcels.models import FallowPeriod, overlap_sentence
 
 
@@ -42,6 +43,8 @@ class FallowPeriodForm(forms.Form):
         error_messages={"invalid": "Pick a day in the end month, or leave it blank."},
         widget=forms.DateInput(attrs={"type": "date", "class": "form-input", "style": "border-color: var(--color-accent);"}),
     )
+    # The engine reads fallow months, so adding or ending a period asks why (core.reasons).
+    reason = ReasonField()
 
     def __init__(self, *args, parcel, ending=None, **kwargs):
         super().__init__(*args, **kwargs)

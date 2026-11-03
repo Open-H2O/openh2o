@@ -387,7 +387,7 @@ def _drop_duplicates(
     if entries_to_create:
         parcel_ids = {key[0] for key, _entry in entries_to_create}
         existing = set(
-            ParcelLedger.objects.filter(parcel_id__in=parcel_ids).values_list(
+            ParcelLedger.objects.current().filter(parcel_id__in=parcel_ids).values_list(
                 "parcel_id", "effective_date", "source_type", "amount_acre_feet"
             )
         )

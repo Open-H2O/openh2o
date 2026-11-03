@@ -7,7 +7,7 @@ On submit: PATCH back with field name and new value, which returns _field_value.
   hx-patch="{% url 'parcels:edit_field' parcel.pk %}"
   hx-target="#field-{{ field }}"
   hx-swap="innerHTML"
-  class="field-row" style="width: 100%;">
+  class="field-row" style="width: 100%; flex-wrap: wrap;">
 
   <input type="hidden" name="field" value="{{ field }}">
 
@@ -31,6 +31,8 @@ On submit: PATCH back with field name and new value, which returns _field_value.
     <input type="text" name="value" value="{{ value }}"
       class="form-input" style="flex: 1; border-color: var(--color-accent);">
   {% endif %}
+
+  {% if needs_reason %}{% with reason_id="reason-"|add:field %}{% include "partials/_reason_box.html" %}{% endwith %}{% endif %}
 
   <button type="submit" class="btn-primary btn-sm">Save</button>
   <button type="button" class="btn-secondary btn-sm"

@@ -1,5 +1,6 @@
 {% comment %}
-The add form, or (`ending`) the form that gives the open period its end month.
+The add form, or (`ending`) the form that gives the open period its end month. Both end
+in a required Reason box (core.reasons), saved with the change.
 Swaps into #field-fallow the way _field_edit.html does. A refusal prints in
 the form, in place of nothing saved; Cancel returns the row.
 {% endcomment %}
@@ -26,6 +27,9 @@ the form, in place of nothing saved; Cancel returns the row.
     <label class="field-label" for="id_end_month">End month ({% if not ending %}optional, {% endif %}pick any day in it)</label>
     <input type="date" name="end_month" class="form-input" id="id_end_month" value="{{ form.end_month.value|default_if_none:'' }}" style="border-color: var(--color-accent);"{% if ending %} required{% endif %}>
     <span class="text-xs text-tertiary">{% if not ending %}Leave this blank while the use area stays fallow. {% endif %}The use area is fallow in its end month too.</span>
+  </div>
+  <div class="form-group form-span-2 row-start" style="display: flex; gap: var(--space-sm); align-items: center; flex-wrap: wrap;">
+    {% with reason_id="id_fallow_reason" reason=form.reason.value|default_if_none:"" %}{% include "partials/_reason_box.html" %}{% endwith %}
   </div>
   <div class="form-span-2 row-start" style="display: flex; gap: var(--space-sm);">
     <button type="submit" class="btn-primary btn-sm">Save</button>

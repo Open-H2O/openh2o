@@ -346,7 +346,7 @@ def _persist_calculation_run(
 def _parcels_in_scope(parcel_number: str | None) -> QuerySet[Parcel]:
     """The parcels this run covers: all of them, or the one named by --parcel."""
     parcels = (
-        Parcel.objects.select_related("irrigation__method")
+        Parcel.objects.current().select_related("irrigation__method")
         .all()
         .order_by("parcel_number")
     )
@@ -357,6 +357,42 @@ def _parcels_in_scope(parcel_number: str | None) -> QuerySet[Parcel]:
                 f"no parcel with parcel_number={parcel_number!r}"
             )
     return parcels
+
+
+def _clear_engine_rows_of_voided_parcels(
+    period: str, eff_date: dt.date, gw_water_type: WaterType
+) -> None:
+    """Treat a use area that does not count (voided) as one with no data for the month.
+
+    The month's engine rows for it are removed, the same ones the engine removes
+    for a use area it figures again (its run, its ``calculated`` row, its share
+    of a well's meter, its incidental recharge credit, and what its last run
+    put in the basin pool), and none are written. The rows a person entered on
+    it are left alone: they stay on its page and count nowhere.
+    """
+    voided = Parcel.objects.exclude(pk__in=Parcel.objects.current().values("pk"))
+    for parcel in voided:
+        with transaction.atomic():
+            routes_personal, pool_zone, prior_run, prior_incidental, prior_old = (
+                _over_delivery_routing(parcel, period)
+            )
+            _adjust_basin_pool(
+                pool_zone, gw_water_type, period,
+                prior_run, prior_incidental, prior_old,
+                routes_personal=routes_personal,
+            )
+            CalculationRun.objects.filter(parcel=parcel, period=period).delete()
+            ParcelLedger.objects.filter(
+                parcel=parcel, effective_date=eff_date, source_type="calculated"
+            ).delete()
+            ParcelLedger.objects.filter(
+                parcel=parcel,
+                source_type="meter_reading",
+                description__startswith=WELL_METER_SHARE_WORDS,
+                effective_date__year=eff_date.year,
+                effective_date__month=eff_date.month,
+            ).delete()
+            _clear_over_delivery_credit(parcel, eff_date)
 
 
 #: What a field's ledger row for its share of a well's meter reading starts
@@ -388,7 +424,7 @@ def _reading_acre_feet(reading) -> Decimal | None:
         volume = reading.current_value - reading.previous_value
     elif meter.meter_type == "totalizer":
         earlier = (
-            MeterReading.objects.filter(
+            MeterReading.objects.current().filter(
                 meter=meter, reading_date__lt=reading.reading_date
             )
             .order_by("-reading_date")
@@ -432,7 +468,7 @@ def _well_meter_shares(year: int, month: int, parcel_ids: set[int]) -> dict[int,
     end = timezone.make_aware(
         dt.datetime(year + (month == 12), month % 12 + 1, 1)
     )
-    readings = MeterReading.objects.filter(
+    readings = MeterReading.objects.current().filter(
         reading_date__gte=start, reading_date__lt=end
     ).select_related("meter")
     by_meter: dict[int, Decimal] = {}
@@ -442,7 +478,7 @@ def _well_meter_shares(year: int, month: int, parcel_ids: set[int]) -> dict[int,
             by_meter[reading.meter_id] = by_meter.get(reading.meter_id, Decimal("0")) + volume
 
     typed_rows = set(
-        ParcelLedger.objects.filter(
+        ParcelLedger.objects.current().filter(
             source_type="meter_reading",
             effective_date__year=year,
             effective_date__month=month,
@@ -532,7 +568,7 @@ def _metered_parcel_ids(year: int, month: int) -> set[int]:
     # authoritative-reading detector; we carry it INTO the loop as a per-parcel
     # `is_metered` flag rather than dropping those parcels up front.
     return set(
-        ParcelLedger.objects.filter(
+        ParcelLedger.objects.current().filter(
             source_type="meter_reading",
             effective_date__year=year,
             effective_date__month=month,
@@ -1062,6 +1098,9 @@ class Command(BaseCommand):
         # The over-delivery treatment and leave-behind share, and the default irrigation efficiency, handed to
         # field_efficiency for each field with no irrigation method on file.
         site_config = SiteConfig.objects.first() or SiteConfig()
+
+        if not dry_run:
+            _clear_engine_rows_of_voided_parcels(period, eff_date, gw_water_type)
 
         counts = {"written": 0, "unmet": 0, "metered": 0}
         skipped_no_et = 0

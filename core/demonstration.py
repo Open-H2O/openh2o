@@ -678,13 +678,15 @@ def forget_events(context_id):
 
     This is the one place that deletes recorded changes. The event tables
     refuse deletes (``core/history.py``), so the deletes run with those locks
-    switched off; the table that says who did it has no lock, so its delete
-    stays outside. The caller's history context is open outside this too, so
+    switched off; the table that says who did it refuses DELETE too, so its
+    delete runs with that lock off as well. The caller's history context is open outside this too, so
     the triggers that record keep their context (django-pghistory issue #237,
     as in ``accounting/locks.py`` ``override``).
     """
     import pgtrigger
     from django.db import connection
+
+    from core.history import CONTEXT_LOCK_URI
 
     with connection.cursor() as cursor:
         with pgtrigger.ignore(*history_lock_uris()):
@@ -692,9 +694,10 @@ def forget_events(context_id):
                 cursor.execute(
                     f'DELETE FROM "{table}" WHERE pgh_context_id = %s', [str(context_id)]
                 )
-        cursor.execute(
-            "DELETE FROM pghistory_context WHERE id = %s", [str(context_id)]
-        )
+        with pgtrigger.ignore(CONTEXT_LOCK_URI):
+            cursor.execute(
+                "DELETE FROM pghistory_context WHERE id = %s", [str(context_id)]
+            )
 
 
 def _clear_cache():

@@ -70,7 +70,7 @@ def _et_estimate_entries(reporting_period: ReportingPeriod) -> QuerySet[ParcelLe
     These are stored negative (ET is consumption); callers take abs() so the
     pre-fill shows positive acre-feet, matching how the CSV generators report.
     """
-    return ParcelLedger.objects.filter(
+    return ParcelLedger.objects.current().filter(
         source_type="et_estimate",
         effective_date__gte=reporting_period.start_date,
         effective_date__lte=reporting_period.end_date,

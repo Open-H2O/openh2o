@@ -89,7 +89,7 @@ class SystemProductionForm(forms.ModelForm):
         if self._system is None or year is None or not type_code:
             return cleaned
         month = cleaned.get("month")
-        on_file = SystemProduction.objects.filter(
+        on_file = SystemProduction.objects.current().filter(
             system=self._system,
             year=year,
             type_code=type_code,

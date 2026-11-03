@@ -38,7 +38,7 @@ def group_results_by_event(rows):
             event_ids.append(row.event_id)
 
     totals = dict(
-        SampleResult.objects.filter(event_id__in=event_ids)
+        SampleResult.objects.current().filter(event_id__in=event_ids)
         .order_by()
         .values("event_id")
         .annotate(n=Count("id"))
@@ -55,7 +55,9 @@ def group_results_by_event(rows):
                 "total": totals.get(row.event_id, 0),
             })
         groups[-1]["rows"].append(row)
-        groups[-1]["shown"] += 1
+        if row.voided_at is None:
+            # A voided result stays in its place, struck, and is in no count.
+            groups[-1]["shown"] += 1
     return groups
 
 

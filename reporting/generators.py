@@ -387,7 +387,7 @@ def _well_reading_volumes(reporting_period: ReportingPeriod) -> dict[tuple[int, 
         dt.datetime.combine(reporting_period.end_date + dt.timedelta(days=1), dt.time.min)
     )
     by_meter: dict[tuple[int, str], Decimal] = {}
-    for reading in MeterReading.objects.filter(
+    for reading in MeterReading.objects.current().filter(
         reading_date__gte=start, reading_date__lt=end
     ).select_related("meter"):
         volume = _reading_acre_feet(reading)
@@ -420,7 +420,7 @@ def _gears_by_well_build(
     from accounting.management.commands.run_calculations import WELL_METER_SHARE_WORDS
 
     entries = (
-        ParcelLedger.objects.filter(
+        ParcelLedger.objects.current().filter(
             source_type="meter_reading",
             effective_date__gte=reporting_period.start_date,
             effective_date__lte=reporting_period.end_date,
@@ -535,7 +535,7 @@ def _gears_by_et_rows(reporting_period: ReportingPeriod) -> list[dict[str, Any]]
     # consistent with the internal bill (same shared suppression helper, so
     # they can never drift), and labels each surviving row by its own source.
     entries = (
-        ParcelLedger.objects.filter(
+        ParcelLedger.objects.current().filter(
             source_type__in=["et_estimate", "calculated"],
             effective_date__gte=reporting_period.start_date,
             effective_date__lte=reporting_period.end_date,
@@ -740,7 +740,7 @@ def generate_calwatrs_csv(reporting_period, template_type="a1"):
     diversion_type = "direct_use" if template_type == "a1" else "to_storage"
 
     records = (
-        DiversionRecord.objects.filter(
+        DiversionRecord.objects.current().filter(
             reporting_period=reporting_period,
             diversion_type=diversion_type,
         )

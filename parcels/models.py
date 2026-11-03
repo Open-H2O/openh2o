@@ -18,6 +18,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from accounting.locks import finalized_period_lock
+from core.corrections import CorrectableQuerySet, CorrectableRecord
 from core.history import track_changes
 
 
@@ -31,7 +32,7 @@ class CropType(models.Model):
 
 
 @track_changes()
-class Parcel(models.Model):
+class Parcel(CorrectableRecord):
     STATUS_CHOICES = [
         ("active", "Active"),
         ("inactive", "Inactive"),
@@ -69,7 +70,7 @@ class Parcel(models.Model):
         and an empty end month has no end, so a period with both empty covers
         every month.
         """
-        return self.fallow_periods.covering(day).exists()
+        return self.fallow_periods.current().covering(day).exists()
 
     @property
     def fallow_now(self):
@@ -98,7 +99,10 @@ NON_POSITIVE_SOURCE_TYPES = (
 
 
 @track_changes()
-class ParcelLedger(models.Model):
+class ParcelLedger(CorrectableRecord):
+    # A ledger row counts only while its use area does (core/corrections.py).
+    current_through = ("parcel",)
+
     SOURCE_TYPE_CHOICES = [
         ("meter_reading", "Meter Reading"),
         ("et_estimate", "ET Estimate"),
@@ -294,7 +298,7 @@ class ParcelIrrigationMethod(models.Model):
         return f"{self.parcel} → {self.method}"
 
 
-class FallowPeriodQuerySet(models.QuerySet):
+class FallowPeriodQuerySet(CorrectableQuerySet):
     def covering(self, day):
         """The periods that include the calendar month ``day`` falls in."""
         first = day.replace(day=1)
@@ -305,7 +309,7 @@ class FallowPeriodQuerySet(models.QuerySet):
 
 
 @track_changes()
-class FallowPeriod(models.Model):
+class FallowPeriod(CorrectableRecord):
     """The months a use area grows nothing.
 
     ``start_month`` and ``end_month`` are each the first day of a month. An
@@ -358,7 +362,7 @@ class FallowPeriod(models.Model):
         """The other periods of this use area that share a month with this one."""
         lo = self.start_month or dt.date.min
         hi = self.end_month or dt.date.max
-        others = FallowPeriod.objects.filter(parcel_id=self.parcel_id)
+        others = FallowPeriod.objects.current().filter(parcel_id=self.parcel_id)
         if self.pk:
             others = others.exclude(pk=self.pk)
         return [

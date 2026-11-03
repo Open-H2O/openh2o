@@ -212,7 +212,7 @@ def _on_file(well_ids):
     """The keys of the levels already on these wells: well, local date, depth or reason."""
     keys = set()
     rows = (
-        WaterMeasurement.objects.filter(well_id__in=well_ids)
+        WaterMeasurement.objects.current().filter(well_id__in=well_ids)
         .filter(
             Q(observed_property__key=DEPTH_PROPERTY_KEY)
             | Q(measurement_type="groundwater_level")

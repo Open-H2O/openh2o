@@ -10,7 +10,8 @@ from django.http import HttpRequest
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
-from core import pending_imports
+from core import corrections, pending_imports
+from core.corrections_views import mark_actions
 from drinking import production_import as production_import_service
 from drinking.forms import SystemProductionForm
 from drinking.models import (
@@ -56,30 +57,33 @@ def _selected_production_year(request: HttpRequest, years: list[int]) -> int | N
     return years[0] if years else None
 
 
-def _production_rows(by_key: dict, type_codes: list[str]) -> list[dict]:
+def _production_rows(by_key: dict, type_codes: list[str], voided_by_key: dict | None = None) -> list[dict]:
     """The table rows: one per month, plus a whole-year row when a record has no month."""
     # A record with month=None (the whole year reported as one figure) is
     # its own row at the foot of the table, never folded into a numbered
     # month it was never attached to.
-    has_annual_row = any(month is None for month, _type_code in by_key)
+    voided_by_key = voided_by_key or {}
+    has_annual_row = any(
+        month is None for month, _type_code in list(by_key) + list(voided_by_key)
+    )
 
-    rows = []
-    for month_num in range(1, 13):
-        rows.append(
-            {
-                "month": month_num,
-                "label": PRODUCTION_MONTH_NAMES[month_num],
-                "cells": [by_key.get((month_num, code)) for code in type_codes],
-            }
-        )
+    def row_for(month_num, label):
+        # ``voided_cells`` holds, per type column, the latest voided record of that
+        # month when nothing counting stands in its place: its figure prints struck.
+        return {
+            "month": month_num,
+            "label": label,
+            "cells": [by_key.get((month_num, code)) for code in type_codes],
+            "voided_cells": [
+                None if by_key.get((month_num, code)) else (voided_by_key.get((month_num, code)) or [None])[0]
+                for code in type_codes
+            ],
+            "voided": [r for code in type_codes for r in voided_by_key.get((month_num, code), [])],
+        }
+
+    rows = [row_for(month_num, PRODUCTION_MONTH_NAMES[month_num]) for month_num in range(1, 13)]
     if has_annual_row:
-        rows.append(
-            {
-                "month": None,
-                "label": "Whole year (one figure)",
-                "cells": [by_key.get((None, code)) for code in type_codes],
-            }
-        )
+        rows.append(row_for(None, "Whole year (one figure)"))
     return rows
 
 
@@ -134,6 +138,103 @@ def _shown_columns(by_key: dict, type_codes: list[str]) -> tuple[list[int], list
     return shown, shown_labels
 
 
+def _production_table_context(system, year, *, void_key=None, void_reason="", void_error="", notice="", warning=""):
+    """What the year table shows for ``system`` and ``year``.
+
+    Figures and totals come from the records that count. A voided record stays
+    on the table: where nothing counting stands in its place its figure prints
+    struck in its cell, and one line under the month says when it was voided.
+    Each counting record takes the "..." menu for a writer (one
+    ``finalized_ranges()`` for the table).
+    """
+    type_codes = [code for code, _label in PRODUCTION_TYPE_CHOICES]
+    records = (
+        SystemProduction.objects.current().filter(system=system, year=year)
+        if year is not None
+        else SystemProduction.objects.none()
+    )
+    by_key = {(r.month, r.type_code): r for r in records}
+    voided_by_key: dict = {}
+    if year is not None:
+        voided = SystemProduction.objects.filter(
+            system=system, year=year, voided_at__isnull=False
+        ).order_by("-voided_at")
+        for record in voided:
+            voided_by_key.setdefault((record.month, record.type_code), []).append(record)
+
+    marked = list(by_key.values()) + [r for rows in voided_by_key.values() for r in rows]
+    mark_actions(
+        marked, can_write=True, finalized=corrections.finalized_ranges(), void_key=void_key
+    )
+
+    rows = _production_rows(by_key, type_codes, voided_by_key)
+    totals = _production_totals(by_key, type_codes)
+
+    # The year
+    # total is water produced or purchased. Water sold to another system came
+    # out of that water, so adding the two sold columns counted it twice; they
+    # are totalled on their own and named after it. Each column's own total in
+    # the table foot is unchanged.
+    supply = [t for t in totals if t["type_code"] not in SOLD_TYPE_CODES]
+    sold = [t for t in totals if t["type_code"] in SOLD_TYPE_CODES]
+    grand_total_gallons = sum((t["gallons"] for t in supply), Decimal("0"))
+    grand_total_af = sum((t["acre_feet"] for t in supply), Decimal("0"))
+    sold_total_gallons = sum((t["gallons"] for t in sold), Decimal("0"))
+
+    shown, shown_labels = _shown_columns(by_key, type_codes)
+    zero_labels = [
+        label.lower()
+        for i, (_code, label) in enumerate(PRODUCTION_TYPE_CHOICES)
+        if i not in shown
+    ]
+    type_columns = [PRODUCTION_TYPE_CHOICES[i] for i in shown]
+    for row in rows:
+        row["cells"] = [row["cells"][i] for i in shown]
+        row["voided_cells"] = [row["voided_cells"][i] for i in shown]
+        # One entry per shown column for the template: the counting record, the voided
+        # one that stands in its place (or None), and the menu's name for the record.
+        row["pairs"] = [
+            {
+                "cell": cell,
+                "voided": voided_cell,
+                "label": f"{row['label']} {year} {column[1].lower()} record",
+            }
+            for cell, voided_cell, column in zip(row["cells"], row["voided_cells"], type_columns)
+        ]
+    totals = [totals[i] for i in shown]
+
+    return {
+        "system": system,
+        "year": year,
+        "type_codes": type_codes,
+        "type_columns": type_columns,
+        "zero_labels": zero_labels,
+        "shown_labels": shown_labels,
+        "rows": rows,
+        "totals": totals,
+        "grand_total_gallons": grand_total_gallons,
+        "grand_total_gallons_whole": int(grand_total_gallons.to_integral_value()),
+        "grand_total_af": grand_total_af,
+        "sold_total_gallons_whole": int(sold_total_gallons.to_integral_value()),
+        "void_key": void_key,
+        "void_reason": void_reason,
+        "void_error": void_error,
+        "notice": notice,
+        "warning": warning,
+    }
+
+
+def render_production_table(
+    request, row, *, void_key=None, void_reason="", void_error="", notice="", warning=""
+):
+    """The year table the production record ``row`` is in (core.corrections_views.TABLES)."""
+    context = _production_table_context(
+        row.system, row.year, void_key=void_key, void_reason=void_reason,
+        void_error=void_error, notice=notice, warning=warning,
+    )
+    return render(request, "drinking/partials/_production_table.html", context)
+
+
 @login_required
 def production(request):
     """The year table: production and delivery by month and source.
@@ -159,60 +260,10 @@ def production(request):
     )
 
     year = _selected_production_year(request, years)
-
-    type_codes = [code for code, _label in PRODUCTION_TYPE_CHOICES]
-    records = (
-        SystemProduction.objects.filter(system=system, year=year)
-        if year is not None
-        else SystemProduction.objects.none()
-    )
-    by_key = {(r.month, r.type_code): r for r in records}
-
-    rows = _production_rows(by_key, type_codes)
-    totals = _production_totals(by_key, type_codes)
-
-    # The year
-    # total is water produced or purchased. Water sold to another system came
-    # out of that water, so adding the two sold columns counted it twice; they
-    # are totalled on their own and named after it. Each column's own total in
-    # the table foot is unchanged.
-    supply = [t for t in totals if t["type_code"] not in SOLD_TYPE_CODES]
-    sold = [t for t in totals if t["type_code"] in SOLD_TYPE_CODES]
-    grand_total_gallons = sum((t["gallons"] for t in supply), Decimal("0"))
-    grand_total_af = sum((t["acre_feet"] for t in supply), Decimal("0"))
-    sold_total_gallons = sum((t["gallons"] for t in sold), Decimal("0"))
-
-    shown, shown_labels = _shown_columns(by_key, type_codes)
-    zero_labels = [
-        label.lower()
-        for i, (_code, label) in enumerate(PRODUCTION_TYPE_CHOICES)
-        if i not in shown
-    ]
-    type_columns = [PRODUCTION_TYPE_CHOICES[i] for i in shown]
-    for row in rows:
-        row["cells"] = [row["cells"][i] for i in shown]
-    totals = [totals[i] for i in shown]
-
-    return render(
-        request,
-        "drinking/production.html",
-        {
-            "system": system,
-            "years": years,
-            "year": year,
-            "type_codes": type_codes,
-            "type_columns": type_columns,
-            "zero_labels": zero_labels,
-            "shown_labels": shown_labels,
-            "rows": rows,
-            "totals": totals,
-            "grand_total_gallons": grand_total_gallons,
-            "grand_total_gallons_whole": int(grand_total_gallons.to_integral_value()),
-            "grand_total_af": grand_total_af,
-            "sold_total_gallons_whole": int(sold_total_gallons.to_integral_value()),
-            "has_any": SystemProduction.objects.filter(system=system).exists(),
-        },
-    )
+    context = _production_table_context(system, year)
+    context["years"] = years
+    context["has_any"] = SystemProduction.objects.filter(system=system).exists()
+    return render(request, "drinking/production.html", context)
 
 
 @login_required

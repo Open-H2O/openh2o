@@ -253,7 +253,7 @@ def subtract_surface_water(running_af, parcel, period, ctx, config):
     from parcels.models import ParcelLedger
 
     year, month = _period_year_month(period)
-    agg = ParcelLedger.objects.filter(
+    agg = ParcelLedger.objects.current().filter(
         parcel=parcel,
         source_type="surface_diversion",
         effective_date__year=year,

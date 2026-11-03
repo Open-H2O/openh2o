@@ -60,7 +60,7 @@ def overview(request):
     }
     result_counts = {
         row["event__sampling_point__facility__system"]: row["n"]
-        for row in SampleResult.objects
+        for row in SampleResult.objects.current()
         .values("event__sampling_point__facility__system")
         .annotate(n=Count("id"))
     }

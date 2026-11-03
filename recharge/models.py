@@ -14,9 +14,11 @@ volume less the share left in the basin.
 from django.contrib.gis.db import models
 from django.urls import reverse
 
+from core.corrections import CorrectableRecord
 from core.history import track_changes
 
 
+@track_changes()
 class RechargeSite(models.Model):
     SITE_TYPE_CHOICES = [
         ("spreading_basin", "Spreading Basin"),
@@ -95,7 +97,7 @@ class RechargeSitePOD(models.Model):
 
 
 @track_changes()
-class RechargeEvent(models.Model):
+class RechargeEvent(CorrectableRecord):
     recharge_site = models.ForeignKey(RechargeSite, on_delete=models.CASCADE)
     start_date = models.DateField()
     end_date = models.DateField(null=True, blank=True)
@@ -115,7 +117,7 @@ class RechargeEvent(models.Model):
 
 
 @track_changes()
-class RechargeMeasurement(models.Model):
+class RechargeMeasurement(CorrectableRecord):
     MEASUREMENT_TYPE_CHOICES = [
         ("water_level", "Water Level"),
         ("flow_rate", "Flow Rate"),

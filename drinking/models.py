@@ -35,6 +35,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.urls import reverse
 
+from core.corrections import CorrectableRecord
 from core.history import track_changes
 
 # -- Published code lists ----------------------------------------------------
@@ -512,6 +513,7 @@ class RegulatoryLimit(models.Model):
                 )
 
 
+@track_changes()
 class SampleEvent(models.Model):
     """One physical collection at one sampling point."""
 
@@ -535,7 +537,7 @@ class SampleEvent(models.Model):
 
 
 @track_changes()
-class SampleResult(models.Model):
+class SampleResult(CorrectableRecord):
     """One analyte's finding within a sample event.
 
     ``result_kind`` exists so a present/absent coliform result is
@@ -775,7 +777,7 @@ _TWO_PLACES = Decimal("0.01")
 
 
 @track_changes()
-class SystemProduction(models.Model):
+class SystemProduction(CorrectableRecord):
     """One month's production or delivery, by source type, for a water system.
 
     D7: shape 2's own gap. The state's eAR export gives one row per
@@ -841,7 +843,13 @@ class SystemProduction(models.Model):
         # key the importer's own dedup query uses
         # (``drinking/production_import.py::commit_rows``), which is the
         # real guard against a duplicate row with no facility.
-        unique_together = [("system", "year", "month", "type_code", "facility")]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["system", "year", "month", "type_code", "facility"],
+                condition=models.Q(voided_at__isnull=True),
+                name="systemproduction_one_current_per_key",
+            ),
+        ]
         verbose_name = "System Production"
         verbose_name_plural = "System Production"
 

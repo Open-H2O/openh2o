@@ -950,7 +950,7 @@ def _vet_candidates(
     existing = set()
     if point_ids:
         existing = set(
-            DiversionRecord.objects.filter(point_of_diversion_id__in=point_ids)
+            DiversionRecord.objects.current().filter(point_of_diversion_id__in=point_ids)
             .values_list("point_of_diversion_id", "month", "diversion_type")
         )
 

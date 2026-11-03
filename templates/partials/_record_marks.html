@@ -1,0 +1,10 @@
+{% comment %}
+  The line under a voided record: "Voided Nov 2, 2026 by J. Lopez: typed on the wrong well."
+  Rendered by {% record_marks row colspan %} (core/templatetags/record_marks.py); nothing for a
+  record that counts. variant "row" is a table row spanning `colspan` cells, variant "note" a
+  plain line for a record that sits outside a table. The record's own row carries
+  class="record-void" and its figure cells are struck by app.css.
+{% endcomment %}
+{% if line %}{% if variant == "note" %}<div class="record-void-note" id="{{ anchor }}-line">{{ line }}</div>{% else %}<tr class="record-void-line" id="{{ anchor }}-line">
+  <td colspan="{{ colspan }}">{{ line }}</td>
+</tr>{% endif %}{% endif %}

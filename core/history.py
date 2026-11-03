@@ -27,10 +27,11 @@ triggers rather than by Django signals.
   an update is recorded twice, as the row was and as it became;
 - the event tables refuse updates and deletes (``append_only``): a recorded
   change cannot be edited or removed by a form, the shell, ``/admin/`` or raw
-  SQL, only inserted. The context table (who did it) is not locked, because
-  pghistory updates a context row when a nested context adds a note, so
-  someone who can write to the database can still change the record of who
-  made a change. The one exception is the demonstration's own clean-up
+  SQL, only inserted. The context table (who did it) refuses DELETE
+  (:data:`CONTEXT_LOCK_URI`) but not UPDATE, because pghistory updates a
+  context row when a nested context adds a note, so someone who can write to
+  the database can still change the record of who made a change, but cannot
+  remove it. The one exception is the demonstration's own clean-up
   (``core/demonstration.py`` ``forget_events``);
 - geometry columns are never copied into history (GeoDjango support in the
   library is undocumented, and a shape is not a figure);
@@ -63,6 +64,12 @@ UNATTRIBUTED_COMMANDS = frozenset(
 
 # The label on the event that records a row as it was just before an update.
 LABEL_BEFORE_UPDATE = "before_update"
+
+# The lock on the who-did-it table: it refuses DELETE (core.models.ChangeContext,
+# a proxy of pghistory's Context). Name it in ``pgtrigger.ignore`` to switch it
+# off for one block. Only DELETE is locked: pghistory UPDATEs the context row on
+# every nested note.
+CONTEXT_LOCK_URI = "core.ChangeContext:no_delete"
 
 # Field names never copied into history, on every tracked model.
 ALWAYS_EXCLUDED = ("updated_at",)

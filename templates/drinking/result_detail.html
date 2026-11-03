@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load drinking_display placeholders %}
+{% load drinking_display placeholders record_marks %}
 
 {% comment %}
   One sample result, whole — the Bucket-3 detail page
@@ -32,6 +32,8 @@
 {% block title %}{{ result.analyte.name }} sampled {{ event.sample_date|date:"Y-m-d" }} - Open Water Accounting Platform{% endblock %}
 {% block page_title %}{{ result.analyte.name }} sampled {{ event.sample_date|date:"Y-m-d" }}{% endblock %}
 
+{% block page_meta %}{% include "drinking/partials/_result_menu.html" %}{% endblock %}
+
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
@@ -48,6 +50,9 @@
 
 {% block content %}
 <div class="page-stack page-wide">
+
+  {# A voided result: the line under its name. Its finding is in no count. #}
+  {% record_marks result 1 "note" %}
 
   <div>
     <a href="{% url 'drinking:results' %}" class="back-link">&larr; Back to Sample Results</a>

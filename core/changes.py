@@ -181,6 +181,7 @@ def field_name(model_field):
     if (
         isinstance(model_field, models.ForeignKey)
         and model_field.related_model._meta.label == "parcels.Parcel"
+        and model_field.name != "replaces"
     ):
         return "Use area"
     return capfirst(str(model_field.verbose_name))

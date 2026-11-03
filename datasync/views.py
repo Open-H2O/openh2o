@@ -15,6 +15,7 @@ import re
 from collections.abc import Iterable
 from datetime import datetime, timedelta
 from decimal import Decimal
+from types import SimpleNamespace
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.gis.geos import Point
@@ -24,7 +25,9 @@ from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
+from core import corrections
 from core.access import public_in_open_demo, read_only_response
+from core.corrections_views import mark_actions
 from core.map_labels import map_label
 
 from core.workspace import list_response
@@ -41,6 +44,7 @@ from datasync.models import (
     DataSyncLog,
     MonitoredStation,
     OpenETCache,
+    TypedReading,
 )
 from geography.models import Boundary
 
@@ -519,6 +523,85 @@ def _latest_parameter_readings(
     return latest_readings
 
 
+def _readings_card_context(
+    station, statistics_by_code=None, *, void_key=None, void_reason="", void_error="",
+    notice="", warning="",
+):
+    """What the "Readings, newest first" card shows.
+
+    ``recent_records`` is the station's ten newest published readings, as ever.
+    ``card_records`` is what the card prints: those, plus (at a station entered by
+    hand) the readings a person typed and later voided. A published reading a person
+    typed carries ``typed`` (its ``TypedReading``), and that is the row that takes the
+    "..." menu; a voided one has no published copy any more (it left the chart when it
+    was voided) and is listed struck with its line. Readings a provider sent never get
+    a menu.
+    """
+    source_code = station.data_source.code
+    is_manual = station.data_source.is_manual
+    if statistics_by_code is None:
+        statistics_by_code = _published_statistics(station)
+
+    recent_records = list(
+        DataRecordStaging.objects.filter(station=station)
+        .select_related("typed_record")
+        .order_by("-observation_date")[:10]
+    )
+    for rec in recent_records:
+        rec.param_display = get_parameter_label(
+            source_code, rec.parameter_code,
+            _named_statistic(statistics_by_code, rec.parameter_code, rec.statistic),
+        )
+        # The note a person typed with the reading, drawn under its parameter.
+        rec.note = (rec.raw_data or {}).get("notes", "") if is_manual else ""
+        rec.typed = getattr(rec, "typed_record", None)
+
+    card_records = list(recent_records)
+    typed = [rec.typed for rec in recent_records if rec.typed is not None]
+    if is_manual:
+        voided = list(
+            TypedReading.objects.filter(station=station, voided_at__isnull=False)
+            .select_related("voided_by")
+            .order_by("-observation_date", "-pk")[:10]
+        )
+        for reading in voided:
+            card_records.append(SimpleNamespace(
+                observation_date=reading.observation_date,
+                param_display=get_parameter_label(
+                    source_code, reading.parameter_code,
+                    _named_statistic(statistics_by_code, reading.parameter_code, ""),
+                ),
+                note=reading.notes, value=reading.value, unit="", status="voided",
+                typed=reading,
+            ))
+        card_records.sort(key=lambda r: r.observation_date, reverse=True)
+        typed += voided
+    mark_actions(
+        typed, can_write=True, finalized=corrections.finalized_ranges(), void_key=void_key,
+    )
+    return {
+        "recent_records": recent_records,
+        "card_records": card_records,
+        "station": station,
+        "void_key": void_key,
+        "void_reason": void_reason,
+        "void_error": void_error,
+        "notice": notice,
+        "warning": warning,
+    }
+
+
+def render_station_readings(
+    request, row, *, void_key=None, void_reason="", void_error="", notice="", warning=""
+):
+    """The readings card for the station ``row`` belongs to (core.corrections_views.TABLES)."""
+    context = _readings_card_context(
+        row.station, void_key=void_key, void_reason=void_reason, void_error=void_error,
+        notice=notice, warning=warning,
+    )
+    return render(request, "datasync/partials/_station_readings_card.html", context)
+
+
 def _station_detail_context(station, *, reading_errors=None, reading_values=None):
     """Build the per-station detail context.
 
@@ -533,16 +616,8 @@ def _station_detail_context(station, *, reading_errors=None, reading_values=None
 
     statistics_by_code = _published_statistics(station)
 
-    recent_records = list(
-        DataRecordStaging.objects.filter(station=station).order_by("-observation_date")[:10]
-    )
-    for rec in recent_records:
-        rec.param_display = get_parameter_label(
-            source_code, rec.parameter_code,
-            _named_statistic(statistics_by_code, rec.parameter_code, rec.statistic),
-        )
-        # The note a person typed with the reading, drawn under its parameter.
-        rec.note = (rec.raw_data or {}).get("notes", "") if is_manual else ""
+    card = _readings_card_context(station, statistics_by_code)
+    recent_records = card["recent_records"]
 
     recent_logs = [] if is_manual else DataSyncLog.objects.filter(
         data_source=station.data_source
@@ -575,6 +650,7 @@ def _station_detail_context(station, *, reading_errors=None, reading_values=None
         "station": station,
         "is_manual": is_manual,
         "recent_records": recent_records,
+        "card_records": card["card_records"],
         "latest_readings": latest_readings,
         "recent_logs": recent_logs,
         "geojson": geojson,

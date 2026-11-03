@@ -941,6 +941,7 @@ class CalculationRequest(models.Model):
         ("schedule", "The nightly schedule"),
         ("diversion_saved", "A diversion record was saved"),
         ("ledger_saved", "A delivery record was saved"),
+        ("record_voided", "A record was voided"),
         ("command", "The command line"),
     ]
     STATUS_CHOICES = [

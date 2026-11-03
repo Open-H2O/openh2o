@@ -123,7 +123,7 @@ VIEWER_ALLOWED_URL_NAME_PREFIX = "account_"
 #: names this matches against the URL configuration.
 VIEWER_WRITE_PAGE_PATTERN = re.compile(
     r"(create|add|_edit$|edit_|upload|import|assign|remove|finalize|delete"
-    r"|_toggle$|_move$|_config$|onboard|link_right|mark_removed|share$)"
+    r"|_toggle$|_move$|_config$|onboard|link_right|mark_removed|share$|void|correct)"
 )
 
 READ_ONLY_MESSAGE = (

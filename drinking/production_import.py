@@ -402,7 +402,7 @@ def commit_rows(built, *, system, provenance, dry_run=False):
     skipped_duplicates = 0
 
     existing = set(
-        SystemProduction.objects.filter(system=system).values_list(
+        SystemProduction.objects.current().filter(system=system).values_list(
             "year", "month", "type_code", "facility_id"
         )
     )

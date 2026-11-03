@@ -56,6 +56,7 @@ _CALCULATION_WHO = {
     "schedule": "the nightly schedule",
     "diversion_saved": "a saved record",
     "ledger_saved": "a saved record",
+    "record_voided": "a voided record",
     "command": "the command line",
 }
 

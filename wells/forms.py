@@ -63,7 +63,7 @@ class MeterReadingForm(forms.Form):
             return cleaned
         moment = timezone.make_aware(dt.datetime(when.year, when.month, when.day, 12, 0))
         previous = (
-            MeterReading.objects.filter(meter=self.meter, reading_date__lt=moment)
+            MeterReading.objects.current().filter(meter=self.meter, reading_date__lt=moment)
             .order_by("-reading_date")
             .first()
         )

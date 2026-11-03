@@ -94,7 +94,7 @@ def drinking_summary():
         "sampling_point_count": SamplingPoint.objects.filter(
             facility__system=system
         ).count(),
-        "result_count": SampleResult.objects.filter(
+        "result_count": SampleResult.objects.current().filter(
             event__sampling_point__facility__system=system
         ).count(),
         "latest_sample_date": _latest_sample_date(system),

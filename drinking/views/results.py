@@ -5,6 +5,8 @@ from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.utils.dateparse import parse_date
+from core import corrections
+from core.corrections_views import mark_actions
 from core.workspace import list_response
 from drinking.models import Analyte, SampleResult, SamplingPoint
 from drinking.views.common import group_results_by_event
@@ -70,6 +72,8 @@ def results(request):
         context={
             "page_obj": page_obj,
             "total_count": paginator.count,
+            # Voided results stay listed, struck; they are not counted.
+            "current_count": queryset.current().count(),
             "result_groups": group_results_by_event(page_obj.object_list),
             "analyte_id": analyte_id,
             "point_id": point_id,
@@ -133,6 +137,17 @@ def _ccr_url(system, sample_date, today=None):
     return CCR_VIEWER_URL.format(pwsid=pwsid, year=sample_date.year)
 
 
+def render_result_menu(
+    request, row, *, void_key=None, void_reason="", void_error="", notice="", warning=""
+):
+    """The ... menu in a lab result page's head, or its reason form (core.corrections_views.TABLES)."""
+    mark_actions([row], can_write=True, finalized=corrections.finalized_ranges(), void_key=void_key)
+    return render(request, "drinking/partials/_result_menu.html", {
+        "result": row, "void_key": void_key, "void_reason": void_reason,
+        "void_error": void_error, "warning": warning,
+    })
+
+
 @login_required
 def result_detail(request, pk):
     """One lab result, whole.
@@ -157,6 +172,7 @@ def result_detail(request, pk):
         pk=pk,
     )
     system = result.event.sampling_point.facility.system
+    mark_actions([result], can_write=True, finalized=corrections.finalized_ranges())
 
     # The lead panel's third peer. The most recent
     # earlier finding of the SAME analyte at the SAME point -- never a
@@ -166,7 +182,7 @@ def result_detail(request, pk):
     # (a re-run, a duplicate row) and still resolves to one deterministic row,
     # ordered by pk so the tie always favors the later-written one.
     previous_finding = (
-        SampleResult.objects
+        SampleResult.objects.current()
         .filter(
             analyte=result.analyte,
             event__sampling_point=result.event.sampling_point,
@@ -177,7 +193,7 @@ def result_detail(request, pk):
         .order_by("-event__sample_date", "-pk")
         .first()
     )
-    finding_count = SampleResult.objects.filter(
+    finding_count = SampleResult.objects.current().filter(
         analyte=result.analyte,
         event__sampling_point=result.event.sampling_point,
     ).count()

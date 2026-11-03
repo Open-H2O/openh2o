@@ -1,0 +1,18 @@
+{% load record_marks %}{% comment %}
+  The one-line reason form that Void this record opens: Reason, Void this record, Cancel.
+  Include with: row, target, swap (default innerHTML), void_reason (what was typed), void_error
+  (the sentence for a reason outside 10 to 500 characters), include (optional hx-include),
+  and as_row + colspan when it sits in a table: then it is the table row under the record.
+  Without as_row it is a plain block (the fallow row, a page header).
+{% endcomment %}{% record_void_url row as void_url %}{% with box_id=row|record_anchor %}{% if as_row %}<tr class="row-editing record-void-form" id="{{ box_id }}-void">
+  <td colspan="{{ colspan }}">{% endif %}
+    {% if void_error %}<p class="record-void-error" role="alert">{{ void_error }}</p>{% endif %}
+    <form hx-post="{{ void_url }}" hx-target="{{ target }}" hx-swap="{{ swap|default:'innerHTML' }}"{% if include %} hx-include="{{ include }}"{% endif %}{% if not as_row %} class="record-void-box"{% endif %}>
+      {% csrf_token %}
+      <label class="field-label" for="void-reason-{{ box_id }}" style="margin: 0;">Reason</label>
+      <input type="text" name="void_reason" id="void-reason-{{ box_id }}" class="form-input" minlength="10" maxlength="500" required autofocus value="{{ void_reason }}">
+      <button type="submit" class="btn-secondary btn-sm">Void this record</button>
+      <button type="button" class="btn-secondary btn-sm" hx-get="{{ void_url }}?cancel=1" hx-target="{{ target }}" hx-swap="{{ swap|default:'innerHTML' }}"{% if include %} hx-include="{{ include }}"{% endif %}>Cancel</button>
+    </form>
+{% if as_row %}  </td>
+</tr>{% endif %}{% endwith %}

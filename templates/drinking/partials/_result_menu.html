@@ -1,0 +1,13 @@
+{% load record_marks %}{% comment %}
+  The "..." menu in a lab result's page head: one item, Void this record. A result has no
+  Edit here, so the menu holds Void alone. Choosing it swaps this span for the one-line
+  reason form; a good void sends the browser to the result's page
+  (core.corrections_views, REDIRECTS). Needs `result`, marked by mark_actions.
+{% endcomment %}<span id="result-menu" class="row-actions-inline">
+{% if user_can_write %}
+{% if result.void_open %}{% include "partials/_void_form.html" with row=result target="#result-menu" swap="outerHTML" %}
+{% elif result.menu_ok %}{% include "partials/_row_menu.html" with row=result label="lab result" target="#result-menu" swap="outerHTML" void_ok=result.void_ok %}
+{% endif %}
+{% if warning %}<span class="record-void-error" role="alert">{{ warning }}</span>{% endif %}
+{% endif %}
+</span>

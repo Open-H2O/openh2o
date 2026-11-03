@@ -24,8 +24,11 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
-from core import pending_imports
+from core import corrections, pending_imports
 from core.access import public_in_open_demo
+from core.corrections_views import mark_actions
+from core.history import change_note
+from core.reasons import check_reason
 from core.workspace import list_response, redirect_to_selected
 
 from accounting.models import ReportingPeriod
@@ -66,6 +69,11 @@ EDITABLE_FIELDS = {
 #: deployment, because the row lives in `parcels`, not `surface`: a field
 #: watered from a well has an irrigation method too.
 IRRIGATION_METHOD = "irrigation_method"
+
+#: The inline fields the engine reads (area for the crop's water, method for its
+#: efficiency). Changing one asks for a reason, saved with the change. Owner,
+#: address, status and notes do not ask.
+REASON_FIELDS = frozenset({"area_acres", IRRIGATION_METHOD})
 
 
 def _editable_fields():
@@ -218,9 +226,11 @@ def _parcel_detail_context(parcel, period_id=None):
     water_use_lines = _water_use_lines(parcel, balance_period, water_use, has_well)
 
     recent_ledger = _recent_ledger(parcel, balance_period)
-    geojson = _parcel_geojson(parcel)
+    # A voided use area is not drawn on the map; the page says so under its name.
+    geojson = None if parcel.voided_at is not None else _parcel_geojson(parcel)
     editable_fields = _editable_fields()
     editable_fields_with_values = _editable_fields_with_values(parcel, editable_fields)
+    mark_actions([parcel], can_write=True, finalized=corrections.finalized_ranges())
 
     context = {
         "parcel": parcel,
@@ -563,6 +573,7 @@ def parcel_edit_field(request, pk):
             "field_meta": editable_fields[field],
             "value": value,
             "display": display,
+            "needs_reason": field in REASON_FIELDS,
         }
         # Cancel action: return the value display instead of the edit form
         if request.GET.get("cancel"):
@@ -584,8 +595,24 @@ def parcel_edit_field(request, pk):
         if new_value not in valid_choices:
             return HttpResponseBadRequest("Invalid choice.")
 
+    # A figure the engine reads asks why it changed; the others do not.
+    needs_reason = field in REASON_FIELDS
+    typed_reason = body_params.get("reason", [""])[0]
+    reason, reason_error = check_reason(typed_reason) if needs_reason else ("", "")
+    if reason_error:
+        return render(request, "parcels/partials/_field_edit.html", {
+            "parcel": parcel,
+            "field": field,
+            "field_meta": field_meta,
+            "value": new_value,
+            "needs_reason": True,
+            "reason": typed_reason,
+            "error": reason_error,
+        })
+
     if field == IRRIGATION_METHOD:
-        _save_irrigation_method(parcel, new_value)
+        with change_note(reason):
+            _save_irrigation_method(parcel, new_value)
         value, display = _field_value(parcel, field)
         context = {
             "parcel": parcel,
@@ -618,13 +645,16 @@ def parcel_edit_field(request, pk):
                 "field": field,
                 "field_meta": field_meta,
                 "value": new_value,
+                "needs_reason": needs_reason,
+                "reason": typed_reason,
                 "error": str(exc),
             }
             return render(request, "parcels/partials/_field_edit.html", context)
     else:
         save_value = new_value
     setattr(parcel, field, save_value)
-    parcel.save(update_fields=[field, "updated_at"])
+    with change_note(reason):
+        parcel.save(update_fields=[field, "updated_at"])
 
     context = {
         "parcel": parcel,
@@ -649,15 +679,46 @@ def _months_text(period):
     return start, end
 
 
-def fallow_row_context(parcel):
+def _period_words(period):
+    """One period as the "Earlier" lines print it: ``Earlier: Mar 2026 to May 2026`` without the lead."""
+    start, end = _months_text(period)
+    if start and end and start == end:
+        return start
+    if start and end:
+        return f"{start} to {end}"
+    if end:
+        return f"fallow until {end}"
+    if start:
+        return f"fallow from {start}"
+    return "fallow, no dates"
+
+
+def fallow_row_context(parcel, *, void_key=None):
     """What the Fallow row shows: the latest period in words, a note, and the earlier ones.
 
-    ``can_end`` is True when a period is still open; the row then offers to
-    end it and not to add another (periods of one use area may not overlap).
+    Only periods that count are read: a voided period gives its months back and is
+    listed apart (``voided``), struck, with its line. ``can_end`` is True when a
+    counting period is still open; the row then offers to end it and not to add
+    another (periods of one use area may not overlap). ``latest`` and each
+    ``earlier`` entry's ``row`` carry the menu marks (``menu_ok``, ``void_ok``,
+    ``void_open``), worked out from one ``finalized_ranges()``.
     """
-    periods = sorted(parcel.fallow_periods.all(), key=_span_key)
+    all_periods = list(parcel.fallow_periods.all())
+    periods = sorted((p for p in all_periods if p.voided_at is None), key=_span_key)
+    voided = [
+        {"row": p, "words": _period_words(p)}
+        for p in sorted((p for p in all_periods if p.voided_at is not None), key=_span_key, reverse=True)
+    ]
+    can_end = bool(periods) and periods[-1].end_month is None
+    mark_actions(
+        periods, can_write=True, finalized=corrections.finalized_ranges(),
+        void_key=void_key, edit=can_end,
+    )
     if not periods:
-        return {"value": "Not fallow", "note": "", "earlier": [], "can_end": False}
+        return {
+            "value": "Not fallow", "note": "", "earlier": [], "can_end": False,
+            "latest": None, "voided": voided, "void_open": False,
+        }
     latest = periods[-1]
     start, end = _months_text(latest)
     if start and end and start == end:
@@ -679,25 +740,37 @@ def fallow_row_context(parcel):
     for period in reversed(periods[:-1]):
         start, end = _months_text(period)
         if start and end and start == end:
-            earlier.append(f"Earlier: {start}")
+            text = f"Earlier: {start}"
         elif start and end:
-            earlier.append(f"Earlier: {start} to {end}")
+            text = f"Earlier: {start} to {end}"
         elif end:
-            earlier.append(f"Earlier: fallow until {end}")
+            text = f"Earlier: fallow until {end}"
         else:
-            earlier.append(f"Earlier: fallow from {start}")
-    return {"value": value, "note": note, "earlier": earlier, "can_end": latest.end_month is None}
+            text = f"Earlier: fallow from {start}"
+        earlier.append({"text": text, "row": period})
+    return {
+        "value": value, "note": note, "earlier": earlier, "can_end": can_end,
+        "latest": latest, "voided": voided,
+        "void_open": any(p.void_open for p in periods),
+    }
 
 
-def _fallow_response(request, parcel, *, form=None, ending=False, status_line=""):
+def _fallow_response(
+    request, parcel, *, form=None, ending=False, status_line="", void_key=None,
+    void_reason="", void_error="", warning="",
+):
     """The Fallow row: the form when ``form`` is given, otherwise the row and its notes."""
     context = {
         "parcel": parcel,
-        "fallow": fallow_row_context(parcel),
+        "fallow": fallow_row_context(parcel, void_key=void_key),
         "fallow_status_line": status_line,
+        "fallow_warning": warning,
         "form": form,
         "ending": ending,
         "error": form.first_error() if form is not None and form.is_bound else "",
+        "void_key": void_key,
+        "void_reason": void_reason,
+        "void_error": void_error,
     }
     template = (
         "parcels/partials/_fallow_form.html" if form is not None
@@ -706,8 +779,29 @@ def _fallow_response(request, parcel, *, form=None, ending=False, status_line=""
     return render(request, template, context)
 
 
+def render_fallow_row(
+    request, row, *, void_key=None, void_reason="", void_error="", notice="", warning=""
+):
+    """The Fallow row for the use area ``row`` belongs to (core.corrections_views.TABLES)."""
+    return _fallow_response(
+        request, row.parcel, status_line=notice, warning=warning, void_key=void_key,
+        void_reason=void_reason, void_error=void_error,
+    )
+
+
+def render_use_area_menu(
+    request, row, *, void_key=None, void_reason="", void_error="", notice="", warning=""
+):
+    """The ... menu in the use area's header, or its reason form (core.corrections_views.TABLES)."""
+    mark_actions([row], can_write=True, finalized=corrections.finalized_ranges(), void_key=void_key)
+    return render(request, "parcels/partials/_use_area_menu.html", {
+        "parcel": row, "void_key": void_key, "void_reason": void_reason,
+        "void_error": void_error, "warning": warning,
+    })
+
+
 def _open_fallow_period(parcel):
-    return parcel.fallow_periods.filter(end_month__isnull=True).first()
+    return parcel.fallow_periods.current().filter(end_month__isnull=True).first()
 
 
 def _save_fallow(request, parcel, ending):
@@ -716,7 +810,8 @@ def _save_fallow(request, parcel, ending):
     if not form.is_valid():
         return _fallow_response(request, parcel, form=form, ending=ending is not None)
     months = form.months_to_recalculate()
-    form.save(user=request.user)
+    with change_note(form.cleaned_data["reason"]):
+        form.save(user=request.user)
     status_line = ""
     if months:
         from accounting.engine_run import recalculating_months_sentence, request_for_months
@@ -772,7 +867,7 @@ def parcels_geojson(request):
     result. With the ``accounting`` module off the parameter is ignored and the
     response is the unfiltered one.
     """
-    parcels = Parcel.objects.filter(geometry__isnull=False)
+    parcels = Parcel.objects.current().filter(geometry__isnull=False)
     account_param = request.GET.get("account")
     if account_param is not None and is_enabled("accounting"):
         try:

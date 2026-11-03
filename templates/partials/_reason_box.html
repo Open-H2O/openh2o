@@ -1,0 +1,7 @@
+{% comment %}
+  The required Reason box that ends an inline edit of a figure (core.reasons: 10 to 500
+  characters, saved as the change's note). Include with reason_id (a unique element id)
+  and reason (what was typed, empty at first). No placeholder: the label says Reason.
+{% endcomment %}
+<label class="field-label" for="{{ reason_id }}" style="margin: 0;">Reason</label>
+<input type="text" name="reason" id="{{ reason_id }}" class="form-input" required minlength="10" maxlength="500" value="{{ reason }}" style="flex: 1 1 14rem; min-width: 10rem; border-color: var(--color-accent);">

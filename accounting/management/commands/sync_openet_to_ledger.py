@@ -116,7 +116,7 @@ def _new_month_entries(
             continue
 
         # Check for existing ParcelLedger entry for this parcel+month+source_type
-        already_exists = ParcelLedger.objects.filter(
+        already_exists = ParcelLedger.objects.current().filter(
             parcel=parcel,
             source_type="et_estimate",
             effective_date__year=effective_date.year,

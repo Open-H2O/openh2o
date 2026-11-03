@@ -12,7 +12,13 @@
 
   The same two-track grid and field pairs as
   _diversion_form.html, at the records card's full width.
-{% endcomment %}
+
+  A Reason box ends the fields: saving a change to a figure asks why, and the
+  reason is saved with the change (surface.forms.DiversionRecordEditForm).
+  "Void this record" sits at the left of the button row, apart from Save, and
+  reads the same Reason box: it posts this form to core:record_void, which
+  takes the reason from the field named reason.
+{% endcomment %}{% load record_marks %}
 <form hx-post="{% url 'surface:diversion_record_edit' pod.pk edit_record.pk %}"
       hx-target="#diversion-records-section"
       hx-swap="innerHTML"
@@ -71,7 +77,14 @@
     <label class="field-label" for="{{ edit_form.notes.id_for_label }}">Notes</label>
     {{ edit_form.notes }}
   </div>
+  <div class="form-group form-span-2">
+    <label class="field-label" for="{{ edit_form.reason.id_for_label }}">Reason</label>
+    {{ edit_form.reason }}
+    {% if edit_form.reason.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ edit_form.reason.errors|join:", " }}</span>{% endif %}
+  </div>
   <div class="row-end form-span-2" style="gap: var(--space-sm);">
+    {% if edit_can_void %}{% record_void_url edit_record as void_url %}<button type="button" class="btn-secondary btn-sm form-void-action"
+      hx-post="{{ void_url }}" hx-target="#diversion-records-section" hx-swap="innerHTML">Void this record</button>{% endif %}
     <a href="{% url 'surface:pod_detail' pod.pk %}" class="btn-secondary btn-sm">Cancel</a>
     <button type="submit" class="btn-primary btn-sm">Save</button>
   </div>

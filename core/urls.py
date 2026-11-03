@@ -2,7 +2,7 @@
 """URL routes for the core app."""
 from django.urls import path
 
-from core import views
+from core import corrections_views, views
 
 app_name = "core"
 
@@ -13,6 +13,13 @@ urlpatterns = [
         "imports/<uuid:token>/status/",
         views.pending_import_status,
         name="pending_import_status",
+    ),
+    # Void this record. core's routes are mounted under users/ (core/modules.py), so the
+    # address is /users/records/<kind>/<pk>/void/; every page reaches it by name.
+    path(
+        "records/<slug:kind>/<int:pk>/void/",
+        corrections_views.record_void,
+        name="record_void",
     ),
     path("<int:pk>/role/", views.user_set_role, name="user_set_role"),
     path("<int:pk>/toggle-active/", views.user_toggle_active, name="user_toggle_active"),
