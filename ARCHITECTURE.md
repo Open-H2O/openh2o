@@ -99,12 +99,13 @@ module left out, and checks that the remaining pages render, the dropped routes 
 The calculation turns each field's crop water use (evapotranspiration), rain, deliveries and well
 records into a month's ledger.
 
-- **What starts it.** Four things queue a calculation: the nightly cron job in `crontab.txt`
+- **What starts it.** Five things queue a calculation: the nightly cron job in `crontab.txt`
   (`manage.py run_accounting --open-periods --trigger schedule`); the Calculate button on a
   reporting period's page (`accounting/views/periods.py`, `period_calculate`), which queues
   nothing while one for that period is already waiting or running; saving ledger entries,
   surface records, a well's meter reading or a field's fallow period (`accounting/views/ledger.py`,
-  `surface/views.py`, `wells/views.py`, `parcels/views.py`, through `engine_run.request_for_months`); and `run_accounting` run by hand. Each creates a
+  `surface/views.py`, `wells/views.py`, `parcels/views.py`, through `engine_run.request_for_months`); voiding a
+  record (`core/corrections_views.py`, trigger `record_voided`); and `run_accounting` run by hand. Each creates a
   `CalculationRequest` (`accounting/models.py`), and the queue in `accounting/engine_run.py`
   (`run_queue`) takes a database lock so one calculation runs at a time. A screen starts
   `run_accounting --request <pk>` as its own process (`start_calculation`), so the request returns
@@ -213,11 +214,15 @@ record a person enters that a figure or a list reads (meter readings, water leve
 fallow periods, use areas, diversion records, recharge events and measurements, lab results,
 production records, typed station readings) inherit the abstract `CorrectableRecord`: `voided_at`,
 `voided_by`, `void_reason`, `replaces` (a one-to-one link to the row a correction replaces, reverse
-name `replaced_by`) and `change_reason`. Their default manager is `CorrectableQuerySet`, whose
+name `replaced_by`) and `change_reason`; nothing writes the last two until Correct this record arrives, and an
+edit's reason today goes into the Change history note through `change_note()`. Their default manager is `CorrectableQuerySet`, whose
 `current()` keeps rows that are neither voided nor replaced, and applies the same two conditions
 through each relation named in the model's `current_through` (a ledger row is current only while
-its use area is). Every calculation, total, duplicate check and map layer reads `.current()`; a page
-that lists records reads every row and draws a voided one struck, with one line under it
+its use area is). Every calculation, every total of a figure, the duplicate checks of the forms and
+imports and the map layers read `.current()`, so a voided record can be entered again correctly. Two
+things still see a voided record: a use area keeps its number, so no new one can take it, and the
+counts of records on file (the home page, the Use Areas list) include it. A page that lists records
+reads every row and draws a voided one struck, with one line under it
 (`templates/partials/_record_marks.html`). `tests/test_current_records_01.py` reads the source of
 the calculation and reporting code and fails on a read of a covered model that is neither
 `.current()` nor on its list of page reads, each with its reason. The `KINDS` registry names each kind's

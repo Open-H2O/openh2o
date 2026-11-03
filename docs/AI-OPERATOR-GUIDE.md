@@ -673,7 +673,8 @@ administrator can make someone a host administrator.
   other's email address and password.
 - An **Operator** works with the records on every other page. A wrong record is voided,
   never deleted: the operator chooses **Void this record** from the `...` menu at the end of its
-  row and gives a reason. It stays on the page, struck through, and no figure counts it.
+  row (in the page heading for a use area or a lab result) and gives a reason. It stays on the page,
+  struck through, and no figure counts it. A record dated in a finalized water year cannot be voided.
 - A **Viewer** reads every page and changes nothing.
 
 Sign-up is closed by default, so each person gets an account from an administrator.

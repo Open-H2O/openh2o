@@ -17,6 +17,10 @@ Every import command takes `--dry-run`. With it, the command checks the file and
 reports what it would do, and your records stay as they were. Run each command with
 `--dry-run` first.
 
+Where an import skips a row that is already on the site, a record someone voided does
+not count as on the site: importing it again adds it as a new record that counts. A
+use area is the exception, because a voided use area keeps its number.
+
 Commands run inside the `web` container, which cannot see the files on your
 computer. Copy the file into the container with `docker compose cp` first, then give
 the command the `/tmp/` path that the copy created. Every command example in this
