@@ -857,7 +857,7 @@ health. The jobs are in `crontab.txt`:
 | `run-sync.sh cdec usgs` | Every hour | Stream and reservoir readings, and USGS well readings |
 | `backup.sh` | Every day at 1:25 | Backs up the database and the uploaded files into the `backups` folder (Database Backup, below) |
 | `run-sync.sh dwr_wdl dwr_sgma noaa cimis` | Every day at 2:00 | Groundwater levels, climate data and CIMIS weather (CIMIS and NOAA only when their keys are set) |
-| `run_accounting --open-periods --trigger schedule` | Every day at 3:30 | Calculates every reporting period that is not finalized, after the 2:00 sync. A finalized period is never changed. Each run's record shows on the period's page and on Site health |
+| `run_accounting --open-periods --trigger schedule` | Every day at 3:30 | Calculates every reporting period that is not finalized, after the 2:00 sync. It never changes a finalized period; only an administrator's correction or void does, for the months it touches. Each run's record shows on the period's page and on Site health |
 | `run_health_checks` | Every 6 hours | Checks the database, the disk, the certificate, the migrations and the data sources |
 | `prune_old_data --confirm` | The 1st of each month at 3:00 | Deletes sync logs, health-check results and published staging records older than a year. It keeps readings typed at a station entered by hand |
 

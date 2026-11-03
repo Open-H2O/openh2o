@@ -99,8 +99,8 @@ code, WQX characteristic name and UCUM unit.
 ## 3. Quality flags and vertical datum
 
 - **Quality flag.** Each meter reading and sensor measurement carries a quality
-  flag of `provisional`, `approved` or `estimated`. A new record is provisional. No
-  screen sets the flag yet.
+  flag of `provisional`, `approved` or `estimated`. A new record is provisional. On a well's page, the meter reading form and
+  Correct this record let a person mark a reading as estimated. No screen marks a record approved.
 - **Vertical datum.** OpenH2O stores each groundwater well's vertical datum as
   `NAVD88` or `NGVD29`.
 

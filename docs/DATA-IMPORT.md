@@ -229,7 +229,8 @@ to a well: a depth to water in feet below land surface, or the reason the depth 
 The mapping step shows the column OpenH2O matched to each field, and you can change
 any match. The preview counts the new levels, the rows already on file and the
 errors. A row is skipped when its well, date and depth (or reason) are already on the
-site or repeat an earlier row of the file. The import does not convert units: a file in meters, or one that gives a
+site or repeat an earlier row of the file. A row dated in a water year that has been finalized is
+listed as an error, in the preview and when you import, even when the same level is already on the site. The import does not convert units: a file in meters, or one that gives a
 groundwater elevation or a depth below the top of the casing, needs a depth in feet
 below land surface before you import it.
 
@@ -306,7 +307,8 @@ Rows for the same point, month and type within one file are added together into 
 record, because a book of deliveries often lists several deliveries a month at one
 headgate. The preview shows how many rows were combined. A record whose point, month
 and type are already on the site is skipped and counted. OpenH2O refuses rows for
-months in a water year that has been finalized.
+months in a water year that has been finalized; to change a record already in such a year, an
+administrator uses Correct this record on its page.
 
 In the mapping step you also choose the measurement method and the data state for
 every record in the file. By default the method is left blank and the data state is
@@ -373,7 +375,8 @@ a row error: OpenH2O lists it and imports the file's other rows.
 
 OpenH2O skips a row that repeats the parcel, date, source type and amount of an
 entry already on the site or of an earlier row in the file. It refuses entries for a
-water year that has been finalized.
+water year that has been finalized; an administrator corrects an entry already in such a year on the
+ledger page.
 
 A water year in OpenH2O is a record on the Water Years page, with a name, a first date on the first day of a month and a last date on the last day of a month. Each imported entry is filed under the water year that includes its date. An entry dated outside every water year on the site waits without one and is filed when a water year covering its date is created. With the command, `--reporting-period` limits the import to one water year: pass its name exactly as the Water Years page shows it, and a row dated outside that water year is not imported and is listed as an error. The command reads a comma-separated file unless you pass another character with `--delimiter`.
 
@@ -401,7 +404,8 @@ OpenH2O recognizes the Division of Drinking Water's column headings, such as
 commercial labs use instead. OpenH2O imports a row when it has a PS Code, a sample
 date, an Analyte Name and a result. A row with an Analyte Code and no Analyte Name is a
 row error. A row that repeats a result already on file, or an earlier row of the same
-file, is skipped and counted as a duplicate. A row with a blank result is imported as a
+file, is skipped and counted as a duplicate. Any other row whose sample date falls in a water year
+that has been finalized is a row error. A row with a blank result is imported as a
 non-detect when its "Less than reporting level" column is marked and it gives a
 reporting level.
 
@@ -434,7 +438,8 @@ OpenH2O converts units with the same figures as the other imports: 325,851 gallo
 per acre-foot, 1,000,000 gallons per MG and 748.05 gallons per CCF.
 
 A row whose month and type of water are already on the site is skipped and counted,
-so importing the same file twice saves nothing the second time. To enter one month
+so importing the same file twice saves nothing the second time. A month in a water year that has
+been finalized is a row error. To enter one month
 by hand, use Enter water produced, purchased or sold on the Production page.
 
 The import screen saves the figures to the site's water system. A site keeps the

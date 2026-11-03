@@ -99,13 +99,13 @@ module left out, and checks that the remaining pages render, the dropped routes 
 The calculation turns each field's crop water use (evapotranspiration), rain, deliveries and well
 records into a month's ledger.
 
-- **What starts it.** Five things queue a calculation: the nightly cron job in `crontab.txt`
-  (`manage.py run_accounting --open-periods --trigger schedule`); the Calculate button on a
-  reporting period's page (`accounting/views/periods.py`, `period_calculate`), which queues
+- **What starts it.** Six things queue a calculation: the nightly cron job in `crontab.txt`
+  (`manage.py run_accounting --open-periods --trigger schedule`); the Run the calculation button on a
+  water year's page (`accounting/views/periods.py`, `period_calculate`), which queues
   nothing while one for that period is already waiting or running; saving ledger entries,
   surface records, a well's meter reading or a field's fallow period (`accounting/views/ledger.py`,
-  `surface/views.py`, `wells/views.py`, `parcels/views.py`, through `engine_run.request_for_months`); voiding a
-  record (`core/corrections_views.py`, trigger `record_voided`); and `run_accounting` run by hand. Each creates a
+  `surface/views.py`, `wells/views.py`, `parcels/views.py`, through `engine_run.request_for_months`); voiding or
+  correcting a record (`core/corrections_views.py`, triggers `record_voided` and `record_corrected`); and `run_accounting` run by hand. Each creates a
   `CalculationRequest` (`accounting/models.py`), and the queue in `accounting/engine_run.py`
   (`run_queue`) takes a database lock so one calculation runs at a time. A screen starts
   `run_accounting --request <pk>` as its own process (`start_calculation`), so the request returns
@@ -214,8 +214,8 @@ record a person enters that a figure or a list reads (meter readings, water leve
 fallow periods, use areas, diversion records, recharge events and measurements, lab results,
 production records, typed station readings) inherit the abstract `CorrectableRecord`: `voided_at`,
 `voided_by`, `void_reason`, `replaces` (a one-to-one link to the row a correction replaces, reverse
-name `replaced_by`) and `change_reason`; nothing writes the last two until Correct this record arrives, and an
-edit's reason today goes into the Change history note through `change_note()`. Their default manager is `CorrectableQuerySet`, whose
+name `replaced_by`), `change_reason` and `replaced_at`; an edit's reason goes into the Change history note
+through `change_note()`. Their default manager is `CorrectableQuerySet`, whose
 `current()` keeps rows that are neither voided nor replaced, and applies the same two conditions
 through each relation named in the model's `current_through` (a ledger row is current only while
 its use area is). Every calculation, every total of a figure, the duplicate checks of the forms and
@@ -227,9 +227,40 @@ reads every row and draws a voided one struck, with one line under it
 the calculation and reporting code and fails on a read of a covered model that is neither
 `.current()` nor on its list of page reads, each with its reason. The `KINDS` registry names each kind's
 page words, the months a void recalculates and `can_void`: rows OpenH2O writes itself cannot be
-voided, because the next run would write them again. `void()` refuses a row in a finalized water
-year, and the view (`core/corrections_views.py`, the `...` menu at the end of a row) requests the
-recalculation.
+voided, because the next run would write them again. The view (`core/corrections_views.py`, the `...`
+menu at the end of a row) requests the recalculation.
+
+**A wrong figure is corrected with a new record, never overwritten.** `correct()` in the same module copies
+the old row, applies the changed fields the kind's `correct_fields` allows, sets `replaces` and
+`change_reason` on the new row, and writes only `replaced_at` on the old one, which stays on its page struck
+with one line naming what replaced it. `replaced_at` is a column on the old row because two kinds keep one
+current row per key with a partial unique index (diversion records per point, month and type; production
+records per key), and an index reads only its own row. Only the newest row of a chain can be corrected or
+voided. A use area is not corrected this way: its number is unique and every ledger row, link and
+calculation points at its own row, so its acres keep the edit with a reason. Correcting a meter read
+refigures the next read, as a void does. A correction may carry one photo or PDF (`core.RecordAttachment`,
+stored under `MEDIA_ROOT/corrections/` with a random name, `core/record_attachments.py`), served only to a
+signed-in person through `core:record_attachment`.
+
+**A finalized year: administrators only, through the one door.** Inside a finalized water year an
+administrator can correct or void a record; the view opens `accounting.locks.override(reason)` with the
+reason the administrator typed around the write and around the recalculation request, which carries it as
+`CalculationRequest.override_reason`, so `run_accounting --request` opens the same door for those months
+and every change carries `override=True` and the reason in Change history. Apart from the Load and Remove
+buttons on the Demonstration data page, nothing else a person does in the browser opens it; the nightly run and "Run the calculation" still refuse a finalized year. Inside the
+door `override_open()` is true and the Python-side refusals (`refuse_if_finalized`, and the finalized-year
+row errors of the water level, lab result and production imports) stand aside as the database lock does,
+which is how the demonstration seeds load their finalized year through the same importers. The diversion
+and ledger imports refuse a finalized-year row even inside the door. The lock itself (`accounting/locks.py`,
+`LOCKED_MODELS`) covers nineteen tables: the ledger, allocations, credits and calculation results, and every kind of record
+a person enters that feeds a figure except use areas (the stored OpenET figures and settings such as
+irrigation methods are not locked). A lab result takes its
+sample's date, a production record its year and month, a fallow period the months it covers (a running
+one can still be ended after the year). A date-and-time column is read as the site's calendar day: each
+Django connection sets the session setting `openh2o.time_zone` to `TIME_ZONE`
+(`accounting.locks.set_session_time_zone`, connected in `core/apps.py`), and the trigger reads it, so the
+lock follows the site's own zone with no migration; a session that never set it (psql by hand) reads
+America/Los_Angeles.
 
 A tracked field with no `verbose_name` prints the name Django makes from the field's name in Change history
 ("Gross et af"). Give such a field a `verbose_name` in the words a page uses for the same figure;
