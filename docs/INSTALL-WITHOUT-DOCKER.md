@@ -350,9 +350,8 @@ set -a && source .env && set +a
 <!-- defines: migrations -->
 `collectstatic` gathers the static files into one folder. `migrate` runs the
 *migrations*, which create or update the database tables to match this version of
-OpenH2O. Run it after every install and every update. `record_filed_figures` keeps the
-figures of a water year finalized before OpenH2O kept them, once; afterwards it finds
-nothing to do. `createcachetable` creates
+OpenH2O. Run it after every install and every update. `record_filed_figures` records, once,
+the figures of each water year finalized before OpenH2O kept them. `createcachetable` creates
 one more table, where OpenH2O keeps short-lived values. `ensure_superuser` creates
 the first account.
 
