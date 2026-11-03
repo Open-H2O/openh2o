@@ -12,7 +12,7 @@
 {% if filed_card %}
 <div class="card-raised page-grid-account-full" id="figures-as-filed">
   <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">Figures as filed</h2>
-  <p class="text-secondary text-base m-0">{{ filed_card.first_line }} <span id="figures-summary">{% if filed_card.comparison %}{{ filed_card.comparison.summary }}{% else %}<a href="{{ filed_card.figures_url }}" class="prose-link">OpenH2O is comparing the figures with the ones filed.</a>{% endif %}</span></p>
+  <p class="text-secondary text-base m-0" style="max-width: 75ch;">{{ filed_card.first_line }} <span id="figures-summary">{% if filed_card.comparison %}{{ filed_card.comparison.summary }}{% else %}<a href="{{ filed_card.figures_url }}" class="prose-link">OpenH2O is comparing the figures with the ones filed.</a>{% endif %}</span></p>
   <div id="figures-detail"{% if not filed_card.comparison %} hx-get="{{ filed_card.figures_url }}" hx-trigger="load" hx-target="this" hx-swap="innerHTML"{% endif %}>{% if filed_card.comparison %}{% include "accounting/partials/_figures_moved.html" with comparison=filed_card.comparison oob=False %}{% endif %}</div>
 </div>
 {% endif %}

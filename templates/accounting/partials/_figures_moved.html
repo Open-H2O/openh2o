@@ -9,9 +9,10 @@
 {% if comparison.moved %}
 {% with only=comparison.single_correction %}
 {% if only %}
-<p class="text-secondary text-base" style="margin: var(--space-xs) 0 0;"><a href="{{ only.url }}" class="prose-link">{{ only.label }}</a>{{ only.rest }}</p>
+<p class="text-secondary text-base" style="margin: var(--space-xs) 0 0; max-width: 75ch;"><a href="{{ only.url }}" class="prose-link">{{ only.label }}</a>{{ only.rest }}</p>
 {% endif %}
-<div class="table-scroll" style="margin-top: var(--space-md);">
+{# Kept to a reading width: across the full card a label sat 750 px from its figures at 1,730. #}
+<div class="table-scroll" style="margin-top: var(--space-md); max-width: 56rem;">
   <table class="data-table">
     <thead>
       <tr>
