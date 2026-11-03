@@ -195,15 +195,36 @@ applied; there is no list to keep. `TRUNCATE` does not fire a row trigger, so
 `clear_change_history --golden-build` (which refuses to run without that flag) still empties the
 tables for the demonstration's golden build.
 
-`pghistory_context`, the table that says who made a change, is not locked: pghistory updates a
-context row when a nested context adds metadata (`change_note`), so a lock would refuse the note.
-Anyone who can write to the database can still change who a change is attributed to.
+`pghistory_context`, the table that says who made a change, refuses `DELETE` and nothing else. The
+lock is a pgtrigger `Protect` trigger on `core.models.ChangeContext`, a proxy of pghistory's model
+that exists so the trigger has a migration in `core`; its URI is `core.history.CONTEXT_LOCK_URI`.
+`UPDATE` stays open because pghistory updates a context row when a nested context adds metadata
+(`change_note`), so a lock on it would refuse the note. Anyone who can write to the database can
+still change who a change is attributed to, but cannot remove the row.
 
 The demonstration is the one door through the lock. `forget_events` in `core/demonstration.py` deletes
 the changes its own load or removal wrote, inside `pgtrigger.ignore(*history_lock_uris())` (the URIs
 are built from the registered event models, so none is typed by hand). The history context stays
 outside the ignore, as in `accounting/locks.py` `override` (django-pghistory issue #237), and the
-context row's delete stays outside it because that table has no lock. Nothing else gets this door.
+context row's delete runs inside `pgtrigger.ignore(CONTEXT_LOCK_URI)`. Nothing else gets this door.
+
+**A wrong record is voided, never deleted.** `core/corrections.py` holds the rule. The eleven kinds of
+record a person enters that a figure or a list reads (meter readings, water levels, ledger entries,
+fallow periods, use areas, diversion records, recharge events and measurements, lab results,
+production records, typed station readings) inherit the abstract `CorrectableRecord`: `voided_at`,
+`voided_by`, `void_reason`, `replaces` (a one-to-one link to the row a correction replaces, reverse
+name `replaced_by`) and `change_reason`. Their default manager is `CorrectableQuerySet`, whose
+`current()` keeps rows that are neither voided nor replaced, and applies the same two conditions
+through each relation named in the model's `current_through` (a ledger row is current only while
+its use area is). Every calculation, total, duplicate check and map layer reads `.current()`; a page
+that lists records reads every row and draws a voided one struck, with one line under it
+(`templates/partials/_record_marks.html`). `tests/test_current_records_01.py` reads the source of
+the calculation and reporting code and fails on a read of a covered model that is neither
+`.current()` nor on its list of page reads, each with its reason. The `KINDS` registry names each kind's
+page words, the months a void recalculates and `can_void`: rows OpenH2O writes itself cannot be
+voided, because the next run would write them again. `void()` refuses a row in a finalized water
+year, and the view (`core/corrections_views.py`, the `...` menu at the end of a row) requests the
+recalculation.
 
 A tracked field with no `verbose_name` prints the name Django makes from the field's name in Change history
 ("Gross et af"). Give such a field a `verbose_name` in the words a page uses for the same figure;

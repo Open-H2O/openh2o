@@ -839,8 +839,9 @@ administrator account. Before handing the site over:
    they click **Deactivate** beside the consultant's account.
 
 The change history keeps the consultant's work under the consultant's name. The
-database refuses to change or delete the recorded changes, but the record of who made
-each one is in a table it does not protect (Data Pruning, below). Anyone
+database refuses to change or delete the recorded changes, and refuses to delete the
+record of who made each one, though someone who can write to the database directly can
+still change that record (Data Pruning, below). Anyone
 who can sign in to the server can still change any account's password or email
 address with the commands in section 7. The organization should know who holds the
 server's logins after the handover.
@@ -1057,8 +1058,9 @@ load or removal made, and no others; and `clear_change_history --golden-build`, 
 is only for building the demonstration, empties the whole change history.
 
 The record of who made each change (the signed-in person or the command) is kept in a
-separate table that this does not protect. Anyone who can write to the database
-directly can still change it.
+separate table. The database refuses to delete a row of it, but not to change one, because
+OpenH2O itself adds a reason to a row as it records a change. Anyone who can write to the
+database directly can still change it.
 
 ### Data Sync
 

@@ -671,7 +671,9 @@ administrator can make someone a host administrator.
   use `/admin/` and change other host administrators' accounts. The superuser from
   Phase 2 is a host administrator. Recommend a second one, so each can change the
   other's email address and password.
-- An **Operator** works with the records on every other page.
+- An **Operator** works with the records on every other page. A wrong record is voided,
+  never deleted: the operator chooses **Void this record** from the `...` menu at the end of its
+  row and gives a reason. It stays on the page, struck through, and no figure counts it.
 - A **Viewer** reads every page and changes nothing.
 
 Sign-up is closed by default, so each person gets an account from an administrator.
