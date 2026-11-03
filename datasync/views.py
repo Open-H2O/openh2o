@@ -534,7 +534,8 @@ def _readings_card_context(
     hand) the readings a person typed and later voided. A published reading a person
     typed carries ``typed`` (its ``TypedReading``), and that is the row that takes the
     "..." menu; a voided one has no published copy any more (it left the chart when it
-    was voided) and is listed struck with its line. Readings a provider sent never get
+    was voided, and a replaced one's copy moved to the corrected reading) and is listed struck
+    with its line. Readings a provider sent never get
     a menu.
     """
     source_code = station.data_source.code
@@ -560,7 +561,8 @@ def _readings_card_context(
     typed = [rec.typed for rec in recent_records if rec.typed is not None]
     if is_manual:
         voided = list(
-            TypedReading.objects.filter(station=station, voided_at__isnull=False)
+            TypedReading.objects.filter(station=station)
+            .filter(Q(voided_at__isnull=False) | Q(replaced_at__isnull=False))
             .select_related("voided_by")
             .order_by("-observation_date", "-pk")[:10]
         )
@@ -571,7 +573,8 @@ def _readings_card_context(
                     source_code, reading.parameter_code,
                     _named_statistic(statistics_by_code, reading.parameter_code, ""),
                 ),
-                note=reading.notes, value=reading.value, unit="", status="voided",
+                note=reading.notes, value=reading.value, unit="",
+                status="voided" if reading.voided_at is not None else "replaced",
                 typed=reading,
             ))
         card_records.sort(key=lambda r: r.observation_date, reverse=True)

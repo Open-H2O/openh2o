@@ -17,6 +17,7 @@ The third role, Viewer, is enforced by :class:`ReadOnlyMiddleware`
 below, and holds whichever way the switch is set.
 """
 import re
+from contextvars import ContextVar
 from functools import wraps
 
 from django.conf import settings
@@ -38,6 +39,33 @@ def is_administrator(user):
         and user.is_active
         and (user.is_staff or getattr(user, "agency_admin", False))
     )
+
+
+def may_override(user):
+    """Whether this person may correct or void a record inside a finalized water year.
+
+    The same rule as :func:`admin_required`: administrators, or any signed-in
+    writer when the switch is off (the hosted demonstration). A viewer never.
+    """
+    if not (getattr(user, "is_authenticated", False) and user.is_active):
+        return False
+    if getattr(user, "read_only", False):
+        return False
+    if not settings.ACCESS_CONTROL_ENFORCED:
+        return True
+    return is_administrator(user)
+
+
+#: Set by :class:`ReadOnlyMiddleware` for the request being served, so a page that
+#: draws the "..." menus (``core.corrections_views.mark_actions``) knows whether the
+#: person may correct or void inside a finalized year without every page view passing
+#: the user down. False outside a request.
+_MAY_OVERRIDE = ContextVar("may_override", default=False)
+
+
+def acting_may_override():
+    """:func:`may_override` for the person whose request is being served."""
+    return _MAY_OVERRIDE.get()
 
 
 def public_in_open_demo(view_func):
@@ -173,6 +201,14 @@ class ReadOnlyMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        user = getattr(request, "user", None)
+        token = _MAY_OVERRIDE.set(may_override(user))
+        try:
+            return self._serve(request)
+        finally:
+            _MAY_OVERRIDE.reset(token)
+
+    def _serve(self, request):
         if is_viewer(getattr(request, "user", None)):
             from django.urls import Resolver404, resolve
 

@@ -82,6 +82,8 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
 
+from accounting.locks import demonstration_seed
+
 # The basin fill schedule lives in the events seed and is imported, not copied.
 # The two commands describe the same storms and must not drift.
 from core.management.commands.seed_merced_recharge_events import (  # noqa: E402
@@ -287,6 +289,7 @@ class Command(BaseCommand):
     )
 
     @transaction.atomic
+    @demonstration_seed
     def handle(self, *args, **options):
         # Local imports: `recharge`, `wells` and `measurements` are optional
         # modules, so a module-scope import raises app_label RuntimeError on a

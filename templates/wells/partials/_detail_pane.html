@@ -199,6 +199,10 @@
               {% if reading_form.current_value.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ reading_form.current_value.errors|join:", " }}</span>{% endif %}
               <span class="text-xs text-tertiary">In the meter's own unit. OpenH2O divides the pumping among this well's use areas by their shares.</span>
             </div>
+            <fieldset class="quality-choice form-group form-span-2">
+              <legend class="field-label">Meter or estimate</legend>
+              <div class="row-start">{% for choice in reading_form.quality %}<label class="radio-option">{{ choice.tag }}<span class="text-secondary text-base">{{ choice.choice_label }}</span></label> {% endfor %}</div>
+            </fieldset>
             <div class="form-group form-span-2">
               <label class="field-label" for="{{ reading_form.notes.id_for_label }}">Notes</label>
               {{ reading_form.notes }}

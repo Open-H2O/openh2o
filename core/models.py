@@ -328,6 +328,45 @@ class PendingImport(models.Model):
         return f"{self.original_name} ({self.get_status_display()})"
 
 
+@track_changes()
+class RecordAttachment(models.Model):
+    """The file a person attached to a correction: a photo of the meter, a scanned page.
+
+    ``kind`` and ``record_pk`` name the NEW record the correction wrote (the
+    kinds of ``core.corrections.KINDS``), so the line under the replaced record
+    can link it. The file sits under ``MEDIA_ROOT/corrections/`` with a random
+    name, never the uploaded one; the page is served only by
+    ``core:record_attachment`` to a signed-in user (``core/record_attachments.py``).
+    At most one per correction.
+    """
+
+    kind = models.CharField("kind of record", max_length=40)
+    record_pk = models.PositiveBigIntegerField("record number")
+    stored_path = models.CharField(
+        "stored as",
+        max_length=255,
+        help_text="Under MEDIA_ROOT, a random name. Never the uploaded name.",
+    )
+    original_name = models.CharField("file name", max_length=255)
+    content_type = models.CharField("file type", max_length=100)
+    size_bytes = models.PositiveBigIntegerField("size in bytes", default=0)
+    uploaded_by = models.ForeignKey(
+        "core.User", null=True, blank=True, on_delete=models.SET_NULL, related_name="+",
+        verbose_name="attached by",
+    )
+    uploaded_at = models.DateTimeField("attached", auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["kind", "record_pk"], name="one_attachment_per_record"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.original_name} ({self.kind} {self.record_pk})"
+
+
 class ChangeContext(pghistory_models.Context):
     """The table that says who made a change (``pghistory_context``), as a door for a lock.
 

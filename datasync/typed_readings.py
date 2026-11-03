@@ -22,6 +22,7 @@ from django.db import IntegrityError, transaction
 from django.db.models import Max
 from django.utils import timezone
 
+from accounting.locks import PeriodFinalized, refuse_if_finalized
 from datasync.adapters.registry import manual_parameter_choices, manual_parameter_unit
 from datasync.models import DataRecordStaging, MonitoredStation, TypedReading
 
@@ -89,6 +90,14 @@ def validate(values):
     if code not in {c for c, _ in manual_parameter_choices()}:
         code = ""
         errors.append(NEED_PARAMETER)
+
+    if day is not None:
+        # A reading dated inside a finalized water year is refused (an
+        # administrator's correction is the way into one).
+        try:
+            refuse_if_finalized(day)
+        except PeriodFinalized as exc:
+            errors.append(str(exc))
 
     if errors:
         return None, errors

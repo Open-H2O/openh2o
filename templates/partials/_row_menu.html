@@ -9,13 +9,16 @@
     edit_url   an HTMX address for the Edit item, or edit_href for a plain link; omit for none
     void_ok    true to offer Void this record (the view marks it, see core.corrections_views.mark_actions)
     include    optional hx-include selector sent with the void request (the ledger's filters)
-    before_void  optional template name of more menu items, placed before the rule (Correct this record, plan 02)
-  The Void item opens the reason row (core:record_void); it never voids by itself.
-{% endcomment %}{% record_void_url row as void_url %}{% with menu_id=row|record_anchor %}
+    before_void  optional template name of more menu items, placed before the rule
+  Correct this record sits between Edit and the rule when the view marked the row correct_ok
+  (mark_actions); it opens the correction row (core:record_correct). The Void item opens the
+  reason row (core:record_void); neither changes anything by itself.
+{% endcomment %}{% record_void_url row as void_url %}{% record_correct_url row as correct_url %}{% with menu_id=row|record_anchor %}
 <button type="button" class="row-actions-btn" aria-haspopup="menu" aria-expanded="false" aria-label="Actions for the {{ label }}" popovertarget="menu-{{ menu_id }}"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button>
 <div id="menu-{{ menu_id }}" class="row-menu" popover="auto" role="menu" aria-label="Actions for the {{ label }}">
   {% if edit_url %}<button type="button" role="menuitem" class="row-menu-item" hx-get="{{ edit_url }}" hx-target="{{ target }}" hx-swap="{{ swap|default:'innerHTML' }}">Edit</button>{% elif edit_href %}<a role="menuitem" class="row-menu-item" href="{{ edit_href }}">Edit</a>{% endif %}
+  {% if row.correct_ok %}<button type="button" role="menuitem" class="row-menu-item" hx-get="{{ correct_url }}" hx-target="{{ target }}" hx-swap="{{ swap|default:'innerHTML' }}"{% if include %} hx-include="{{ include }}"{% endif %}>Correct this record</button>{% endif %}
   {% if before_void %}{% include before_void %}{% endif %}
-  {% if void_ok %}{% if edit_url or edit_href or before_void %}<div class="row-menu-sep" role="separator"></div>{% endif %}<button type="button" role="menuitem" class="row-menu-item row-menu-item--void" hx-get="{{ void_url }}" hx-target="{{ target }}" hx-swap="{{ swap|default:'innerHTML' }}"{% if include %} hx-include="{{ include }}"{% endif %}>Void this record</button>{% endif %}
+  {% if void_ok %}{% if edit_url or edit_href or before_void or row.correct_ok %}<div class="row-menu-sep" role="separator"></div>{% endif %}<button type="button" role="menuitem" class="row-menu-item row-menu-item--void" hx-get="{{ void_url }}" hx-target="{{ target }}" hx-swap="{{ swap|default:'innerHTML' }}"{% if include %} hx-include="{{ include }}"{% endif %}>Void this record</button>{% endif %}
 </div>
 {% endwith %}

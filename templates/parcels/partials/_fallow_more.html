@@ -1,10 +1,11 @@
 {% load record_marks %}{% comment %}
 Under the Fallow row: the earlier periods, one line each (newest first), then the
-periods that were voided (struck, each with its line under it), and the lines a save or
+periods that were voided or replaced (struck, each with its line under it), and the lines a save or
 a void prints. An earlier period a writer can act on ends in its own "..." menu.
 {% endcomment %}
 {% for line in fallow.earlier %}
 <div class="text-tertiary text-xs row-actions-inline" style="margin-top: var(--space-xs);">{{ line.text }}{% if user_can_write %}{% if line.row.void_open %}{% include "partials/_void_form.html" with row=line.row target="#field-fallow" %}{% elif line.row.menu_ok %}{% include "partials/_row_menu.html" with row=line.row label=line.text target="#field-fallow" void_ok=line.row.void_ok %}{% endif %}{% endif %}</div>
+{% if line.row.correct_open %}{% record_marks line.row 1 "note" target="#field-fallow" %}{% endif %}
 {% endfor %}
 {% for gone in fallow.voided %}
 <div class="text-tertiary text-xs" id="{{ gone.row|record_anchor }}" style="margin-top: var(--space-xs);"><span class="record-void-text">Fallow: {{ gone.words }}</span></div>

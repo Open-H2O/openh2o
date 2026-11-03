@@ -45,6 +45,7 @@ def results(request):
             "event__sampling_point__ps_code",
             "event_id",
             "analyte__name",
+            "-pk",
         )
     )
 
@@ -141,10 +142,12 @@ def render_result_menu(
     request, row, *, void_key=None, void_reason="", void_error="", notice="", warning=""
 ):
     """The ... menu in a lab result page's head, or its reason form (core.corrections_views.TABLES)."""
+    from core.corrections_views import correct_state
+
     mark_actions([row], can_write=True, finalized=corrections.finalized_ranges(), void_key=void_key)
     return render(request, "drinking/partials/_result_menu.html", {
         "result": row, "void_key": void_key, "void_reason": void_reason,
-        "void_error": void_error, "warning": warning,
+        "void_error": void_error, "warning": warning, "correct": correct_state(),
     })
 
 

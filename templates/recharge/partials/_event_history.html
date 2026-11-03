@@ -9,8 +9,10 @@
   the shape of the diversion page's
   records table (templates/surface/partials/_diversion_records.html).
   Each row a writer can act on ends in the "..." menu (partials/_row_menu.html):
-  Edit, then Void this record. A row in a finalized year keeps Edit only. A voided
-  event stays in date order, struck, with one line under it, and is in no total.
+  Edit, Correct this record, then Void this record. A finalized year takes Edit away: an
+  administrator's row there holds Correct this record and Void this record, an operator's none,
+  and the year's header ends in "Finalized" for every role. A voided or replaced event stays in
+  date order, struck, with one line under it (a corrected one sits directly above), and is in no total.
   Columns are Start, End, Volume, Water type -- a plain record of what was
   logged, not a derivation -- so no column sums into another and there is no
   .col-sep here (rule 3 fires only where the kind of number changes).
@@ -38,10 +40,10 @@
   <tbody>
     {% for group in event_groups %}
     <tr class="row-group">
-      <td colspan="{% if user_can_write %}5{% else %}4{% endif %}">{{ group.period_name }} &middot; {{ group.count }} event{{ group.count|pluralize }}</td>
+      <td colspan="{% if user_can_write %}5{% else %}4{% endif %}">{{ group.period_name }} &middot; {{ group.count }} event{{ group.count|pluralize }}{% if group.finalized %} &middot; Finalized{% endif %}</td>
     </tr>
     {% for event in group.rows %}
-    <tr id="{{ event|record_anchor }}"{% if event.voided_at or event.void_open %} class="{% if event.void_open %}row-editing{% endif %}{% if event.voided_at %}record-void{% endif %}"{% endif %}>
+    <tr id="{{ event|record_anchor }}"{% if event.is_struck or event.void_open or event.correct_open %} class="{% if event.void_open or event.correct_open %}row-editing{% endif %}{% if event.is_struck %}record-void{% endif %}"{% endif %}>
       <td class="text-secondary">{{ event.start_date|date:"M d, Y" }}</td>
       <td class="text-secondary">
         {% if event.end_date %}{{ event.end_date|date:"M d, Y" }}{% else %}&mdash;{% endif %}
@@ -53,13 +55,17 @@
       {% if user_can_write %}
       <td class="text-secondary row-actions">
         {% if event.menu_ok %}
+        {% if event.edit_ok %}
         {% url 'recharge:event_edit' site.pk event.pk as edit_href %}
         {% include "partials/_row_menu.html" with row=event label=event.start_date|date:"M j, Y"|add:" event" edit_href=edit_href target="#event-history" void_ok=event.void_ok %}
+        {% else %}
+        {% include "partials/_row_menu.html" with row=event label=event.start_date|date:"M j, Y"|add:" event" target="#event-history" void_ok=event.void_ok %}
+        {% endif %}
         {% endif %}
       </td>
       {% endif %}
     </tr>
-    {% if user_can_write %}{% record_marks event 5 %}{% else %}{% record_marks event 4 %}{% endif %}
+    {% if user_can_write %}{% record_marks event 5 target="#event-history" %}{% else %}{% record_marks event 4 %}{% endif %}
     {% if event.void_open %}{% include "partials/_void_form.html" with row=event target="#event-history" as_row=True colspan=5 %}{% endif %}
     {% endfor %}
     <tr class="row-subtotal">

@@ -1,11 +1,13 @@
 {% load record_marks %}{% comment %}
-  The "..." menu in a lab result's page head: one item, Void this record. A result has no
-  Edit here, so the menu holds Void alone. Choosing it swaps this span for the one-line
-  reason form; a good void sends the browser to the result's page
-  (core.corrections_views, REDIRECTS). Needs `result`, marked by mark_actions.
+  The "..." menu in a lab result's page head: Correct this record, then Void this record. A
+  result has no Edit here. Choosing one swaps this span for the correction row or the one-line
+  reason form; a good void or correction sends the browser to the result's page
+  (core.corrections_views, REDIRECTS). Needs `result`, marked by mark_actions, and `correct`
+  (the CorrectState, while the correction row is open).
 {% endcomment %}<span id="result-menu" class="row-actions-inline">
 {% if user_can_write %}
-{% if result.void_open %}{% include "partials/_void_form.html" with row=result target="#result-menu" swap="outerHTML" %}
+{% if result.correct_open and correct %}{% with anchor_id=result|record_anchor %}{% record_correct_url result as correct_link %}{% include "partials/_record_correct_form.html" with state=correct row=result variant="note" anchor=anchor_id correct_url=correct_link target="#result-menu" swap="outerHTML" %}{% endwith %}
+{% elif result.void_open %}{% include "partials/_void_form.html" with row=result target="#result-menu" swap="outerHTML" %}
 {% elif result.menu_ok %}{% include "partials/_row_menu.html" with row=result label="lab result" target="#result-menu" swap="outerHTML" void_ok=result.void_ok %}
 {% endif %}
 {% if warning %}<span class="record-void-error" role="alert">{{ warning }}</span>{% endif %}

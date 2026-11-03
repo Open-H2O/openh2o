@@ -14,6 +14,7 @@ from django.contrib.gis.db import models
 from django.urls import reverse
 from django.utils import timezone
 
+from accounting.locks import finalized_period_lock
 from core.corrections import CorrectableRecord
 from core.history import track_changes
 
@@ -207,6 +208,8 @@ class TypedReading(CorrectableRecord):
 
     class Meta:
         ordering = ["-typed_at"]
+        # A finalized water year is closed to change (accounting/locks.py).
+        triggers = [finalized_period_lock(date_column="observation_date")]
 
     def __str__(self):
         return f"{self.station} {self.observation_date}: {self.parameter_code}={self.value}"

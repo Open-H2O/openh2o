@@ -40,7 +40,7 @@
         </td>
       </tr>
       {% for result in group.rows %}
-      <tr id="{{ result|record_anchor }}"{% if result.voided_at %} class="record-void"{% endif %}>
+      <tr id="{{ result|record_anchor }}"{% if result.is_struck %} class="record-void"{% endif %}>
         <td><a href="{% url 'drinking:result_detail' result.pk %}" class="data-table-link">{{ result.analyte.name }}</a></td>
         {% comment %}
           Rendered through result_kind, never as a raw number. The unit lives

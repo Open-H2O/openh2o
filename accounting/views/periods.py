@@ -57,6 +57,7 @@ _CALCULATION_WHO = {
     "diversion_saved": "a saved record",
     "ledger_saved": "a saved record",
     "record_voided": "a voided record",
+    "record_corrected": "a corrected record",
     "command": "the command line",
 }
 

@@ -35,6 +35,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.urls import reverse
 
+from accounting.locks import finalized_period_lock
 from core.corrections import CorrectableRecord
 from core.history import track_changes
 
@@ -618,6 +619,16 @@ class SampleResult(CorrectableRecord):
     class Meta:
         ordering = ["-event__sample_date", "analyte"]
         verbose_name = "Sample Result"
+        # A finalized water year is closed to change (accounting/locks.py): a
+        # result has no date of its own, its event does.
+        triggers = [
+            finalized_period_lock(
+                date_subquery=(
+                    '(SELECT e."sample_date" FROM "drinking_sampleevent" e '
+                    'WHERE e."id" = {row}."event_id")'
+                )
+            )
+        ]
         constraints = [
             models.CheckConstraint(
                 name="drinking_numeric_result_has_no_presence",
@@ -846,10 +857,12 @@ class SystemProduction(CorrectableRecord):
         constraints = [
             models.UniqueConstraint(
                 fields=["system", "year", "month", "type_code", "facility"],
-                condition=models.Q(voided_at__isnull=True),
+                condition=models.Q(voided_at__isnull=True, replaced_at__isnull=True),
                 name="systemproduction_one_current_per_key",
             ),
         ]
+        # A finalized water year is closed to change (accounting/locks.py).
+        triggers = [finalized_period_lock(year_month_columns=("year", "month"))]
         verbose_name = "System Production"
         verbose_name_plural = "System Production"
 

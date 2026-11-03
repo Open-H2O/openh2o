@@ -1,8 +1,10 @@
 {% load humanize record_marks %}    {% comment %}
   Measurement history. The card is #measurement-history, so a void swaps it whole (wells.views.
   render_measurement_history). Each meter read and each hand-entered visit ends in the "..." menu
-  (partials/_row_menu.html) for a writer: Void this record. A voided read or visit stays in date
-  order, struck, with one line under it, and is in no count and no total.
+  (partials/_row_menu.html) for a writer: Correct this record, then Void this record. A voided or
+  replaced read or visit stays in date order, struck, with one line under it (the corrected one
+  sits directly above), and is in no count and no total. A finalized water year's header ends
+  in "Finalized" for every role.
   
       Up to three tables, two to a row, in this order: each current meter's
       totalizer reads (ONE table per meter, grouped by water year with its own
@@ -53,10 +55,10 @@
               <tbody>
                 {% for year in group.years %}
                 <tr class="row-group">
-                  <td colspan="{% if user_can_write %}4{% else %}3{% endif %}">{{ year.label }} &middot; {{ year.count }} read{{ year.count|pluralize }}</td>
+                  <td colspan="{% if user_can_write %}4{% else %}3{% endif %}">{{ year.label }} &middot; {{ year.count }} read{{ year.count|pluralize }}{% if year.finalized %} &middot; Finalized{% endif %}</td>
                 </tr>
                 {% for read in year.reads %}
-                <tr id="{{ read|record_anchor }}"{% if read.voided_at or read.void_open %} class="{% if read.void_open %}row-editing{% endif %}{% if read.voided_at %}record-void{% endif %}"{% endif %}>
+                <tr id="{{ read|record_anchor }}"{% if read.is_struck or read.void_open or read.correct_open %} class="{% if read.void_open or read.correct_open %}row-editing{% endif %}{% if read.is_struck %}record-void{% endif %}"{% endif %}>
                   <td class="text-secondary">{{ read.reading_date|date:"M d, Y" }}</td>
                   <td class="td-num">{{ read.current_value|floatformat:2|intcomma }}</td>
                   <td class="td-num">
@@ -67,7 +69,7 @@
                   <td class="row-actions">{% if read.menu_ok %}{% include "partials/_row_menu.html" with row=read label=read.reading_date|date:"M j, Y"|add:" reading" target="#measurement-history" swap="outerHTML" void_ok=read.void_ok %}{% endif %}</td>
                   {% endif %}
                 </tr>
-                {% if user_can_write %}{% record_marks read 4 %}{% else %}{% record_marks read 3 %}{% endif %}
+                {% if user_can_write %}{% record_marks read 4 target="#measurement-history" swap="outerHTML" %}{% else %}{% record_marks read 3 %}{% endif %}
                 {% if read.void_open %}{% include "partials/_void_form.html" with row=read target="#measurement-history" swap="outerHTML" as_row=True colspan=4 %}{% endif %}
                 {% endfor %}
                 {# A totalizer is a running reading and is never summed -- only Pumped closes. #}
@@ -99,10 +101,10 @@
             <tbody>
               {% for year in visits %}
               <tr class="row-group">
-                <td colspan="{% if user_can_write %}4{% else %}3{% endif %}">{{ year.label }}</td>
+                <td colspan="{% if user_can_write %}4{% else %}3{% endif %}">{{ year.label }}{% if year.finalized %} &middot; Finalized{% endif %}</td>
               </tr>
               {% for visit in year.visits %}
-              <tr id="{{ visit.row|record_anchor }}"{% if visit.row.voided_at or visit.row.void_open %} class="{% if visit.row.void_open %}row-editing{% endif %}{% if visit.row.voided_at %}record-void{% endif %}"{% endif %}>
+              <tr id="{{ visit.row|record_anchor }}"{% if visit.row.is_struck or visit.row.void_open or visit.row.correct_open %} class="{% if visit.row.void_open or visit.row.correct_open %}row-editing{% endif %}{% if visit.row.is_struck %}record-void{% endif %}"{% endif %}>
                 <td class="text-secondary">{{ visit.when|date:"M j, Y" }}</td>
                 {# A visit with no depth prints its reason where the depth would be, in tertiary text; no figure, so nothing for a chart to plot. #}
                 <td class="td-num">{% if visit.value is None %}<span class="text-tertiary">{{ visit.reason|default:"&mdash;" }}</span>{% else %}{{ visit.value|floatformat:2 }}{% endif %}</td>
@@ -111,7 +113,7 @@
                 <td class="row-actions">{% if visit.row.menu_ok %}{% include "partials/_row_menu.html" with row=visit.row label=visit.when|date:"M j, Y"|add:" water level" target="#measurement-history" swap="outerHTML" void_ok=visit.row.void_ok %}{% endif %}</td>
                 {% endif %}
               </tr>
-              {% if user_can_write %}{% record_marks visit.row 4 %}{% else %}{% record_marks visit.row 3 %}{% endif %}
+              {% if user_can_write %}{% record_marks visit.row 4 target="#measurement-history" swap="outerHTML" %}{% else %}{% record_marks visit.row 3 %}{% endif %}
               {% if visit.row.void_open %}{% include "partials/_void_form.html" with row=visit.row target="#measurement-history" swap="outerHTML" as_row=True colspan=4 %}{% endif %}
               {% endfor %}
               {% endfor %}

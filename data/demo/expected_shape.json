@@ -144,6 +144,16 @@
       "tolerance": 0,
       "reason": "A file someone uploaded to a bulk import page and has not finished importing (the upload waits at most a day). The demonstration is built by management commands that never press Import, so a golden never carries one."
     },
+    "core.RecordAttachment": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "ADDED by Plan 151.7-02: the photo or PDF a person attached to a correction. The demonstration is built by management commands that never press Correct this record, so a golden carries none."
+    },
+    "core.RecordAttachmentEvent": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Change history is cleared before the golden dump (clear_change_history --golden-build); a demonstration carries no invented history."
+    },
     "core.SiteConfig": {
       "expected": 1,
       "tolerance": 0,

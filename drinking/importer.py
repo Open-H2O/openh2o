@@ -89,6 +89,8 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_time
 
+from accounting.locks import finalized_span_message, finalized_spans
+
 from drinking.models import (
     RESULT_KIND_NUMERIC,
     RESULT_KIND_PRESENCE_ABSENCE,
@@ -686,6 +688,9 @@ def _batch_lookups() -> dict:
         "known_analytes_by_code": known_analytes_by_code,
         "existing_keys": existing_keys,
         "existing_events": existing_events,
+        # The finalized water years, read once: a result sampled inside one is
+        # refused as a row error (empty inside accounting.locks.override()).
+        "finalized_spans": finalized_spans(),
     }
 
 
@@ -961,6 +966,16 @@ def _validate_row(
         )
     if not errors:
         _flag_repeat_in_file(data, event_key, analyte_name, seen_in_batch, warnings)
+    # A result already on file stays a duplicate to skip (and gains no limits
+    # from this file, because the stored row is locked); any other result
+    # sampled inside a finalized water year is refused, in the preview as on
+    # commit (the database lock refuses the same rows).
+    if not errors:
+        locked = finalized_span_message(sample_date, lookups["finalized_spans"])
+        if locked and data.get("is_duplicate"):
+            data.pop("fill_limits_pk", None)
+        elif locked:
+            errors.append(locked)
 
     return {"index": index, "data": data, "errors": errors, "warnings": warnings}
 

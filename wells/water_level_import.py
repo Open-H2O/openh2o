@@ -26,6 +26,7 @@ from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 
+from accounting.locks import finalized_span_message, finalized_spans
 from core import pending_imports
 from core.geofiles import MAX_UPLOAD_BYTES, too_large_message
 from measurements.models import (
@@ -239,11 +240,14 @@ def plan_rows(rows, mapping):
     and left out of ``new``.
     """
     by_key, labels = _well_lookup()
+    # A level dated inside a finalized water year is a row error in plain
+    # words, in the preview as on commit (the database lock refuses the same rows).
+    spans = finalized_spans()
     parsed = []
     errors = []
     for index, row in enumerate(rows):
         line = index + 2
-        outcome = _read_row(row, mapping, by_key)
+        outcome = _read_row(row, mapping, by_key, spans)
         if isinstance(outcome, str):
             errors.append({"line": line, "message": outcome})
         else:
@@ -268,7 +272,7 @@ def plan_rows(rows, mapping):
     return {"new": new, "duplicates": duplicates, "errors": errors}
 
 
-def _read_row(row, mapping, by_key):
+def _read_row(row, mapping, by_key, spans=()):
     """A level dict for a good row, or the sentence that says what is wrong with it."""
     well_text = _cell(row, mapping, "well")
     if not well_text:
@@ -287,6 +291,9 @@ def _read_row(row, mapping, by_key):
         moment = parse_moment(date_text)
     except ValueError:
         return f"{date_text} is not a date OpenH2O can read."
+    locked = finalized_span_message(timezone.localtime(moment).date(), spans)
+    if locked:
+        return locked
 
     depth_text = _cell(row, mapping, "depth")
     reason_text = _cell(row, mapping, "reason")

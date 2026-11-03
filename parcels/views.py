@@ -704,10 +704,10 @@ def fallow_row_context(parcel, *, void_key=None):
     ``void_open``), worked out from one ``finalized_ranges()``.
     """
     all_periods = list(parcel.fallow_periods.all())
-    periods = sorted((p for p in all_periods if p.voided_at is None), key=_span_key)
+    periods = sorted((p for p in all_periods if not p.is_struck), key=_span_key)
     voided = [
         {"row": p, "words": _period_words(p)}
-        for p in sorted((p for p in all_periods if p.voided_at is not None), key=_span_key, reverse=True)
+        for p in sorted((p for p in all_periods if p.is_struck), key=_span_key, reverse=True)
     ]
     can_end = bool(periods) and periods[-1].end_month is None
     mark_actions(

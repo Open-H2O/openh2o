@@ -942,6 +942,7 @@ class CalculationRequest(models.Model):
         ("diversion_saved", "A diversion record was saved"),
         ("ledger_saved", "A delivery record was saved"),
         ("record_voided", "A record was voided"),
+        ("record_corrected", "A record was corrected"),
         ("command", "The command line"),
     ]
     STATUS_CHOICES = [
@@ -997,6 +998,14 @@ class CalculationRequest(models.Model):
         blank=True,
         help_text="Exception, month and the end of the traceback. For an "
         "administrator only; never shown to a viewer.",
+    )
+    override_reason = models.CharField(
+        max_length=500,
+        blank=True,
+        help_text="Set only when an administrator's correction or void in a "
+        "finalized year started this run: the reason they typed. The run then "
+        "recalculates the finalized month through the recorded override, and "
+        "every change it writes carries this reason in Change history.",
     )
 
     class Meta:

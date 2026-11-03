@@ -17,7 +17,7 @@ from django.contrib.gis.db import models
 from django.urls import reverse
 from django.utils import timezone
 
-from accounting.locks import finalized_period_lock
+from accounting.locks import finalized_period_lock, finalized_span_lock
 from core.corrections import CorrectableQuerySet, CorrectableRecord
 from core.history import track_changes
 
@@ -332,6 +332,10 @@ class FallowPeriod(CorrectableRecord):
 
     class Meta:
         ordering = ["start_month", "end_month"]
+        # A finalized water year is closed to change (accounting/locks.py): a
+        # period covering any of its months cannot be added, removed or changed,
+        # except that a running period can be ended after the year.
+        triggers = [finalized_span_lock(start_column="start_month", end_column="end_month")]
         constraints = [
             models.CheckConstraint(
                 condition=(
@@ -365,6 +369,9 @@ class FallowPeriod(CorrectableRecord):
         others = FallowPeriod.objects.current().filter(parcel_id=self.parcel_id)
         if self.pk:
             others = others.exclude(pk=self.pk)
+        if self.replaces_id:
+            # A correction's new row sits where the row it replaces sits.
+            others = others.exclude(pk=self.replaces_id)
         return [
             p for p in others
             if (p.start_month or dt.date.min) <= hi and (p.end_month or dt.date.max) >= lo

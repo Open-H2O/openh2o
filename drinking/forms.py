@@ -5,8 +5,11 @@ Forms for the drinking-water domain.
 The production add-month form, the facility forms and the sampling schedule
 form share this file, rather than each starting its own.
 """
+import datetime as dt
+
 from django import forms
 
+from accounting.locks import PeriodFinalized, refuse_if_finalized
 from core.modules import is_enabled
 from drinking.models import (
     PRODUCTION_PROVENANCE_TYPED,
@@ -89,6 +92,13 @@ class SystemProductionForm(forms.ModelForm):
         if self._system is None or year is None or not type_code:
             return cleaned
         month = cleaned.get("month")
+        # A month inside a finalized water year is refused (an administrator's
+        # correction is the way into one).
+        try:
+            refuse_if_finalized(dt.date(year, month or 1, 1))
+        except PeriodFinalized as exc:
+            self.add_error(None, str(exc))
+            return cleaned
         on_file = SystemProduction.objects.current().filter(
             system=self._system,
             year=year,

@@ -63,7 +63,7 @@ from django.db.models import Q, QuerySet
 
 from accounting.calculation import evaluate_chain, plan_config_hash
 from accounting.carryover_math import water_year_of
-from accounting.locks import override
+from accounting.locks import override, override_open
 from accounting.ledger_words import (
     INCIDENTAL_RECHARGE_WORDS,
     LEGACY_INCIDENTAL_RECHARGE_WORDS,
@@ -1149,7 +1149,11 @@ class Command(BaseCommand):
         dry_run: bool,
         force: bool,
     ) -> None:
-        """Refuse to recompute a finalized period unless forced; open the override when forced."""
+        """Refuse to recompute a finalized period unless forced; open the override when forced.
+
+        Passes without a word when the recorded override is already open (the
+        recalculation an administrator's correction starts opens it first).
+        """
         # Finalized-period write guard. A finalized ReportingPeriod
         # is a number already filed with the state; re-running would silently
         # overwrite it. Refuse unless --force, and shout when forced. Guard ONCE
@@ -1157,6 +1161,11 @@ class Command(BaseCommand):
         # parcel, so a per-parcel raise would half-write the period. dry_run is
         # always allowed (it writes nothing — previewing a finalized recompute is
         # safe). A month with no ReportingPeriod has nothing to finalize: proceed.
+        if override_open():
+            # Already inside the recorded door (an administrator's correction
+            # recalculating its month): the reason is on record and every write
+            # below carries it, so there is nothing to refuse or to warn about.
+            return
         if (
             reporting_period is not None
             and reporting_period.is_finalized

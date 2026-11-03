@@ -5439,5 +5439,31 @@ details[open] > summary .disclosure-mark {
 .record-void-form .btn-sm, .record-void-box .btn-sm { white-space: nowrap; }
 .record-void-box { flex-wrap: wrap; }
 .record-void-error { margin: 0; font-size: 0.8125rem; color: var(--color-deficit); }
+/* Correct this record: the correction row under the record. Labels above the boxes, as the
+   site's .form-grid forms have them; drawn in the correct-record mock-up. */
+.record-correct-form form { display: grid; grid-template-columns: max-content max-content minmax(0, 1fr); gap: var(--space-sm) var(--space-md); align-items: end; padding: var(--space-xs) 0; }
+.record-correct-form .correct-item { display: flex; flex-direction: column; min-width: 0; }
+.record-correct-form .correct-item .field-label { margin-bottom: 2px; }
+.record-correct-form .form-input, .record-correct-form .form-select { max-width: none; width: 100%; box-sizing: border-box; font-size: 0.8125rem; padding: var(--space-xs) var(--space-sm); }
+.record-correct-form input[type="date"].form-input { width: 10.5rem; }
+.record-correct-form input[inputmode="decimal"].form-input { width: 9rem; }
+.record-correct-form .correct-check { flex-direction: row; align-items: center; gap: var(--space-xs); }
+.record-correct-form .correct-reason { grid-column: 1 / -1; max-width: 48ch; }
+.record-correct-form .correct-file { grid-column: 1 / 3; }
+.record-correct-form .correct-actions { grid-column: 3; display: flex; justify-content: flex-end; gap: var(--space-sm); align-self: end; }
+.record-correct-form .file-picker { flex-wrap: nowrap; }
+.record-correct-form .correct-note { grid-column: 1 / -1; margin: 0; font-size: 0.8125rem; color: var(--color-text-secondary); }
+.record-correct-form .record-void-error.correct-note { color: var(--color-deficit); }
+/* The one-time response under the struck line: the site's notice style, a row of its own. */
+.data-table tbody tr.record-void-line.record-notice td { font-size: 0.875rem; padding-top: 0; }
+.record-void-note.record-notice { font-size: 0.875rem; }
+/* Meter or estimate: two .radio-option tiles side by side under one field label. */
+.quality-choice { border: 0; padding: 0; margin: 0; min-width: 0; grid-column: 1 / -1; }
+.quality-choice legend { padding: 0; }
+.quality-choice .row-start { flex-wrap: wrap; }
+.quality-choice .radio-option { margin-bottom: 0; }
+.record-correct-form .radio-option { padding: var(--space-xs) var(--space-sm); gap: var(--space-xs); }
+.record-correct-form .radio-option span { font-size: 0.8125rem; }
+.record-correct-form .radio-option input[type="radio"] { width: 16px; height: 16px; margin-top: 1px; }
 /* Void this record on an edit form: at the left of the button row, apart from Save. */
 .form-void-action { margin-right: auto; }

@@ -22,8 +22,12 @@ change-history context carrying ``override=True`` and the reason, and inside it
 switches off ONLY the lock triggers (``pgtrigger.ignore``), so the history
 triggers go on recording every overriding write, with its reason. The history
 context sits outside the ignore on purpose (django-pghistory issue #237). The
-demonstration seeds and ``run_calculations --force`` use it; nothing a person
-does in the browser does.
+demonstration seeds and ``run_calculations --force`` use it, and so does an
+administrator's correction or void inside a finalized year, with the reason the
+administrator typed, and the recalculation that correction starts (a
+``CalculationRequest`` carrying an ``override_reason``). Inside the door
+:func:`override_open` is true and the Python-side checks below stand aside the
+same way the database lock does; nothing else opens it.
 
 **Refusals a person sees** are in plain words and never a 500. The write paths
 a person reaches check first with :func:`refuse_if_finalized` and show the
@@ -37,9 +41,11 @@ scope: ``parcels`` and ``surface`` import this file from their ``models.py``.
 """
 
 from contextlib import contextmanager
+from contextvars import ContextVar
 
 import pghistory
 import pgtrigger
+from django.conf import settings
 
 #: The trigger's name on every locked table.
 LOCK_TRIGGER_NAME = "finalized_period_lock"
@@ -65,6 +71,15 @@ LOCKED_MODELS = (
     "accounting.CalculationRun",
     "surface.DiversionRecord",
     "surface.UnallocatedDelivery",
+    "measurements.MeterReading",
+    "measurements.WaterMeasurement",
+    "recharge.RechargeEvent",
+    "recharge.RechargeMeasurement",
+    "surface.CanalMonthLoss",
+    "parcels.FallowPeriod",
+    "datasync.TypedReading",
+    "drinking.SystemProduction",
+    "drinking.SampleResult",
 )
 
 #: What :func:`override` switches off: the lock triggers and nothing else.
@@ -110,14 +125,84 @@ def _finalized_match(*, date_sql=None, period_column=None, water_year_column=Non
     return " OR ".join(tests)
 
 
+def finalized_span_lock(*, start_column, end_column):
+    """The lock for a row that covers a span of months (a fallow period).
+
+    ``start_column`` and ``end_column`` are each the first day of a month; an
+    empty start reaches back without end and an empty end means the span is
+    still running. A row is refused when it covers any month of a finalized
+    year, on insert and delete; an update is refused when the row covers such
+    a month before or after it, unless the one change is its end month and the
+    months it covers in that year stay the same. So a running period that began in a finalized year can
+    still be ended (the months it stops covering come after the year), and
+    nothing else about it can change.
+    """
+
+    def clipped(row):
+        start = f'GREATEST(COALESCE({row}."{start_column}", p.start_date), p.start_date)'
+        end = (
+            f'LEAST(COALESCE(({row}."{end_column}" + INTERVAL \'1 month\' '
+            f"- INTERVAL '1 day')::date, p.end_date), p.end_date)"
+        )
+        return start, end
+
+    def covers(row):
+        start, end = clipped(row)
+        return f"({start} <= {end})"
+
+    old_start, old_end = clipped("OLD")
+    new_start, new_end = clipped("NEW")
+    raise_sql = (
+        "IF locked_name IS NOT NULL THEN "
+        f"RAISE EXCEPTION USING ERRCODE = '{LOCK_SQLSTATE}', "
+        f"MESSAGE = locked_name || ' {REOPEN_SENTENCE}', "
+        "DETAIL = TG_TABLE_NAME; "
+        "END IF; "
+    )
+    pick = "SELECT p.name INTO locked_name FROM accounting_reportingperiod p WHERE p.is_finalized AND "
+    func = (
+        "IF TG_OP = 'INSERT' THEN "
+        f"{pick}{covers('NEW')} ORDER BY p.start_date LIMIT 1; {raise_sql}"
+        "ELSIF TG_OP = 'DELETE' THEN "
+        f"{pick}{covers('OLD')} ORDER BY p.start_date LIMIT 1; {raise_sql}"
+        "ELSE "
+        f"{pick}({covers('OLD')} OR {covers('NEW')}) AND ("
+        f"(to_jsonb(OLD) - '{end_column}') IS DISTINCT FROM (to_jsonb(NEW) - '{end_column}') "
+        f'OR OLD."{end_column}" IS NOT DISTINCT FROM NEW."{end_column}" '
+        f"OR NOT ({covers('OLD')} AND {covers('NEW')}) "
+        f"OR {old_start} IS DISTINCT FROM {new_start} OR {old_end} IS DISTINCT FROM {new_end}"
+        f") ORDER BY p.start_date LIMIT 1; {raise_sql}"
+        "END IF; "
+        "IF TG_OP = 'DELETE' THEN RETURN OLD; END IF; "
+        "RETURN NEW;"
+    )
+    return pgtrigger.Trigger(
+        name=LOCK_TRIGGER_NAME,
+        when=pgtrigger.Before,
+        operation=pgtrigger.Insert | pgtrigger.Update | pgtrigger.Delete,
+        declare=[("locked_name", "text")],
+        func=func,
+    )
+
+
+def _sql_literal(text):
+    return "'" + str(text).replace("'", "''") + "'"
+
+
 def finalized_period_lock(*, date_column=None, month_text_column=None,
                           fallback_month_text_column=None, period_column=None,
-                          water_year_column=None):
+                          water_year_column=None, datetime_column=None,
+                          year_month_columns=None, fallback_date_column=None,
+                          date_subquery=None):
     """The BEFORE INSERT/UPDATE/DELETE row trigger that locks one table.
 
-    Name the row's date one way: ``date_column`` (a date), ``month_text_column``
-    (``YYYY-MM`` text) or ``water_year_column`` (a water-year label). A
-    ``fallback_month_text_column`` is read when ``date_column`` is empty.
+    Name the row's date one way: ``date_column`` (a date), ``datetime_column``
+    (a timestamp, read as the site's calendar day), ``month_text_column``
+    (``YYYY-MM`` text), ``year_month_columns`` (``(year, month)`` integers; an
+    empty month means January), ``date_subquery`` (an SQL template with
+    ``{row}``, for a table whose date is on another row) or
+    ``water_year_column`` (a water-year label). A ``fallback_month_text_column``
+    or a ``fallback_date_column`` is read when ``date_column`` is empty.
     ``period_column`` is the ``reporting_period`` link, tested as well.
     """
     if date_column and fallback_month_text_column:
@@ -125,8 +210,25 @@ def finalized_period_lock(*, date_column=None, month_text_column=None,
             f'COALESCE({{row}}."{date_column}", '
             f"{_month_text_to_date(fallback_month_text_column)})"
         )
+    elif date_column and fallback_date_column:
+        date_sql = f'COALESCE({{row}}."{date_column}", {{row}}."{fallback_date_column}")'
     elif date_column:
         date_sql = f'{{row}}."{date_column}"'
+    elif datetime_column:
+        # The one limit: the zone is read from settings when the trigger is
+        # declared, so the migration records it. A site that changes TIME_ZONE
+        # after migrating keeps the old zone in the trigger until the migration
+        # is regenerated.
+        zone = _sql_literal(settings.TIME_ZONE)
+        date_sql = f'({{row}}."{datetime_column}" AT TIME ZONE {zone})::date'
+    elif year_month_columns:
+        year, month = year_month_columns
+        date_sql = (
+            f'make_date({{row}}."{year}", CASE WHEN {{row}}."{month}" BETWEEN 1 AND 12 '
+            f'THEN {{row}}."{month}" ELSE 1 END, 1)'
+        )
+    elif date_subquery:
+        date_sql = date_subquery
     elif month_text_column:
         date_sql = _month_text_to_date(month_text_column)
     else:
@@ -193,16 +295,64 @@ def period_for(date):
 
 
 def refuse_if_finalized(date, what=""):
-    """Raise :class:`PeriodFinalized` when ``date`` is inside a finalized period."""
+    """Raise :class:`PeriodFinalized` when ``date`` is inside a finalized period.
+
+    Returns without raising inside :func:`override`: the database lock is off
+    there too.
+    """
+    if override_open():
+        return
     period = period_for(date)
     if period is not None and period.is_finalized:
         raise PeriodFinalized(period, what)
 
 
 def refuse_if_period_finalized(period, what=""):
-    """Raise :class:`PeriodFinalized` when ``period`` itself is finalized."""
+    """Raise :class:`PeriodFinalized` when ``period`` itself is finalized.
+
+    Returns without raising inside :func:`override`, as :func:`refuse_if_finalized` does.
+    """
+    if override_open():
+        return
     if period is not None and period.is_finalized:
         raise PeriodFinalized(period, what)
+
+
+def finalized_spans():
+    """``[(start, end, name), ...]`` of the finalized years: ONE query for a whole file.
+
+    An import checks every row against this list, so the preview and the commit
+    refuse the same rows without a query per row. Empty inside :func:`override`,
+    where the database lock is off too.
+    """
+    from accounting.models import ReportingPeriod
+
+    if override_open():
+        return []
+    return list(
+        ReportingPeriod.objects.filter(is_finalized=True).values_list(
+            "start_date", "end_date", "name"
+        )
+    )
+
+
+def finalized_span_message(day, spans):
+    """The refusal sentence when ``day`` is inside one of ``spans``, else None."""
+    if day is None:
+        return None
+    for start, end, name in spans:
+        if start <= day <= end:
+            return finalized_message(name)
+    return None
+
+
+#: True while a thread is inside :func:`override`.
+_OVERRIDE_OPEN = ContextVar("finalized_period_override_open", default=False)
+
+
+def override_open():
+    """Whether the caller is inside :func:`override`, the one recorded door."""
+    return _OVERRIDE_OPEN.get()
 
 
 @contextmanager
@@ -211,11 +361,16 @@ def override(reason):
 
     Every change made inside carries ``override=True`` and the reason in the
     change history. Only the lock triggers are switched off; the history
-    triggers keep recording.
+    triggers keep recording. :func:`override_open` is true inside, so the
+    Python-side checks stand aside the same way.
     """
     with pghistory.context(override=True, reason=reason):
         with pgtrigger.ignore(*LOCK_TRIGGER_URIS):
-            yield
+            token = _OVERRIDE_OPEN.set(True)
+            try:
+                yield
+            finally:
+                _OVERRIDE_OPEN.reset(token)
 
 
 def lock_error_message(exc):

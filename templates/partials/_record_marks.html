@@ -1,10 +1,17 @@
 {% comment %}
-  The line under a voided record: "Voided Nov 2, 2026 by J. Lopez: typed on the wrong well."
+  What sits under a record: the line under a struck record, the one-time response after a
+  correction, and the correction row while it is open.
   Rendered by {% record_marks row colspan %} (core/templatetags/record_marks.py); nothing for a
-  record that counts. variant "row" is a table row spanning `colspan` cells, variant "note" a
-  plain line for a record that sits outside a table. The record's own row carries
-  class="record-void" and its figure cells are struck by app.css.
+  record that counts and has none of these. variant "row" is a table row spanning `colspan`
+  cells, variant "note" a plain block for a record that sits outside a table. A struck record's
+  own row carries class="record-void" (voided, or replaced by a corrected one) and its figure
+  cells are struck by app.css. The line of a replaced record reads "Replaced Nov 2, 2026 by
+  J. Lopez, now 39,771.39: typed an 8 for a 7." and ends in a link to the attached file.
 {% endcomment %}
-{% if line %}{% if variant == "note" %}<div class="record-void-note" id="{{ anchor }}-line">{{ line }}</div>{% else %}<tr class="record-void-line" id="{{ anchor }}-line">
-  <td colspan="{{ colspan }}">{{ line }}</td>
+{% if line %}{% if variant == "note" %}<div class="record-void-note" id="{{ anchor }}-line">{{ line }}{% if attachment %} <a href="{{ attachment.url }}" class="text-link">{{ attachment.word }}</a>.{% endif %}</div>{% else %}<tr class="record-void-line" id="{{ anchor }}-line">
+  <td colspan="{{ colspan }}">{{ line }}{% if attachment %} <a href="{{ attachment.url }}" class="text-link">{{ attachment.word }}</a>.{% endif %}</td>
 </tr>{% endif %}{% endif %}
+{% if done_text %}{% if variant == "note" %}<div class="record-void-note record-notice" role="status">{{ done_text }}</div>{% else %}<tr class="record-void-line record-notice">
+  <td colspan="{{ colspan }}" role="status">{{ done_text }}</td>
+</tr>{% endif %}{% endif %}
+{% if state %}{% include "partials/_record_correct_form.html" %}{% endif %}

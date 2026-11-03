@@ -55,8 +55,8 @@ def group_results_by_event(rows):
                 "total": totals.get(row.event_id, 0),
             })
         groups[-1]["rows"].append(row)
-        if row.voided_at is None:
-            # A voided result stays in its place, struck, and is in no count.
+        if not row.is_struck:
+            # A voided or replaced result stays in its place, struck, and is in no count.
             groups[-1]["shown"] += 1
     return groups
 

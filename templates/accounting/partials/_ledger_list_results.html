@@ -100,7 +100,7 @@
            writes the Description cell's own sentence
            (accounting/ledger_words.py); the stored entry.description is
            what is shown, unchanged; this template composes nothing. {% endcomment %}
-      <tr id="{{ entry|record_anchor }}"{% if entry.voided_at or entry.void_open %} class="{% if entry.void_open %}row-editing{% endif %}{% if entry.voided_at %}record-void{% endif %}"{% endif %}>
+      <tr id="{{ entry|record_anchor }}"{% if entry.is_struck or entry.void_open or entry.correct_open %} class="{% if entry.void_open or entry.correct_open %}row-editing{% endif %}{% if entry.is_struck %}record-void{% endif %}"{% endif %}>
         <td class="text-secondary" style="white-space: nowrap;">
           {{ entry.effective_date|date:"M d, Y" }}
         </td>
@@ -133,7 +133,7 @@
         <td class="row-actions">{% if entry.menu_ok %}{% include "partials/_row_menu.html" with row=entry label=entry.effective_date|date:"M j, Y"|add:" ledger entry" target="#ledger-results" void_ok=entry.void_ok include="#ledger-filters" %}{% endif %}</td>
         {% endif %}
       </tr>
-      {% if user_can_write %}{% record_marks entry 6 %}{% else %}{% record_marks entry 5 %}{% endif %}
+      {% if user_can_write %}{% record_marks entry 6 target="#ledger-results" include="#ledger-filters" %}{% else %}{% record_marks entry 5 %}{% endif %}
       {% if entry.void_open %}{% include "partials/_void_form.html" with row=entry target="#ledger-results" as_row=True colspan=6 include="#ledger-filters" %}{% endif %}
       {% empty %}
       <tr>

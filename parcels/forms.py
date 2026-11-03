@@ -11,7 +11,7 @@ import datetime as dt
 
 from django import forms
 
-from accounting.locks import finalized_message
+from accounting.locks import finalized_message, override_open
 from accounting.models import CalculationRun, ReportingPeriod
 from core.reasons import ReasonField
 from parcels.models import FallowPeriod, overlap_sentence
@@ -92,7 +92,12 @@ class FallowPeriodForm(forms.Form):
 
     @staticmethod
     def _finalized_period(first, last):
-        """The earliest finalized water year that has a month from ``first`` through ``last`` (None: no end)."""
+        """The earliest finalized water year that has a month from ``first`` through ``last`` (None: no end).
+
+        None inside the recorded override, where the database lock is off too.
+        """
+        if override_open():
+            return None
         periods = ReportingPeriod.objects.filter(is_finalized=True, end_date__gte=first)
         if last is not None:
             periods = periods.filter(start_date__lt=next_month(last))

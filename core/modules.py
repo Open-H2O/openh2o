@@ -1031,7 +1031,7 @@ SCHEMA_EXCEPTIONS: tuple = (
         model="Sensor",
         field="well",
         target="wells",
-        where="measurements/models.py:150",
+        where="measurements/models.py:153",
         why=(
             "A sensor is physically installed in a well. Recording which one on "
             "the sensor is the natural place for it, and measurements is a "
@@ -1048,7 +1048,7 @@ SCHEMA_EXCEPTIONS: tuple = (
         model="WaterMeasurement",
         field="well",
         target="wells",
-        where="measurements/models.py:219",
+        where="measurements/models.py:222",
         why=(
             "A water measurement records where it was taken; for groundwater "
             "that is a well. Dropping the link would leave readings that cannot "
@@ -1065,7 +1065,7 @@ SCHEMA_EXCEPTIONS: tuple = (
         model="WaterMeasurement",
         field="parcel",
         target="parcels",
-        where="measurements/models.py:216",
+        where="measurements/models.py:219",
         why=(
             "The surface-water counterpart of the arrow above: a measurement "
             "taken on a use area rather than at a well."
@@ -1152,7 +1152,7 @@ SCHEMA_EXCEPTIONS: tuple = (
         model="SystemFacility",
         field="well",
         target="wells",
-        where="drinking/models.py:343",
+        where="drinking/models.py:344",
         why=(
             "A drinking-water facility very often IS a well — the same physical "
             "hole in the ground that the extraction ledger meters — so "

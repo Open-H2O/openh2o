@@ -3,7 +3,8 @@ The Fallow row's value and its controls. Fills #field-fallow on the use area pag
 after an add, an end, a void or a cancel. `fallow` is parcels.views.fallow_row_context().
 
 A period is never edited. The latest period ends in the row's "..." menu
-(partials/_row_menu.html): End fallow period while it is open, then Void this record.
+(partials/_row_menu.html): End fallow period while it is open, Correct this record, then Void this
+record.
 Add fallow period stays a visible button whenever no period is open (there is no
 record to put a menu on until one exists). Void this record opens the one-line
 reason form in place of the menu (partials/_void_form.html).
@@ -18,7 +19,9 @@ reason form in place of the menu (partials/_void_form.html).
   hx-swap="innerHTML"
   style="background: none; border: none; padding: 0; cursor: pointer; color: var(--color-accent); text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; font-size: 0.8125rem;"
   title="Add fallow period">Add fallow period</button>{% endif %}
-{% if fallow.latest.void_open %}
+{% if fallow.latest.correct_open %}
+<div style="flex-basis: 100%;">{% record_marks fallow.latest 1 "note" target="#field-fallow" %}</div>
+{% elif fallow.latest.void_open %}
 <div style="flex-basis: 100%;">{% include "partials/_void_form.html" with row=fallow.latest target="#field-fallow" %}</div>
 {% elif fallow.latest.menu_ok %}
 <span class="row-actions-inline">{% url 'parcels:fallow_period_end_edit' parcel.pk as end_url %}{% include "partials/_row_menu.html" with row=fallow.latest label="fallow period" target="#field-fallow" void_ok=fallow.latest.void_ok before_void=fallow.can_end|yesno:"parcels/partials/_fallow_end_item.html," %}</span>

@@ -12,8 +12,8 @@
     The head line's total is water
     produced or purchased; sold water is named on its own (views.production).
 
-    A month's counting record ends in the "..." menu for a writer: Void this record
-    (partials/_row_menu.html). A voided record stays: where nothing counting stands in its
+    A month's counting record ends in the "..." menu for a writer: Correct this record, then Void
+    this record (partials/_row_menu.html). A voided or replaced record stays: where nothing counting stands in its
     place its figure prints struck, and one line under the month says when it was voided and
     why. It is in no total. The card is #production-table so a void swaps it whole.
   {% endcomment %}
@@ -44,7 +44,8 @@
           {% endwith %}
           {% endfor %}
         </tr>
-        {% for gone in row.voided %}{% record_marks gone type_columns|length|add:1 "row" gone.get_type_code_display %}{% endfor %}
+        {% for gone in row.voided %}{% record_marks gone type_columns|length|add:1 "row" gone.get_type_code_display target="#production-table" swap="outerHTML" %}{% endfor %}
+        {% for pair in row.pairs %}{% if pair.cell %}{% record_marks pair.cell type_columns|length|add:1 target="#production-table" swap="outerHTML" %}{% endif %}{% endfor %}
         {% for pair in row.pairs %}{% if pair.cell.void_open %}{% include "partials/_void_form.html" with row=pair.cell target="#production-table" swap="outerHTML" as_row=True colspan=type_columns|length|add:1 %}{% endif %}{% endfor %}
         {% endfor %}
       </tbody>

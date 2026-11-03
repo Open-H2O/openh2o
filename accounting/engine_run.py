@@ -38,9 +38,14 @@ the months are united, and the other one is given the kept one's result when it
 finishes, so a screen still polling it sees how it ended.
 
 **Never ``--force``.** A finalized period is refused up front, naming the
-period, and the database lock refuses anything that gets past that. Nothing here
-opens :func:`accounting.locks.override`. A technician who deliberately means to
-overwrite a filed figure uses ``run_calculations --force``.
+period, and the database lock refuses anything that gets past that. The one
+request that is not refused carries an ``override_reason``: an administrator's
+correction or void in a finalized year starts it (``request_for_months(...,
+reason=)``), and :func:`_run` runs its months inside
+:func:`accounting.locks.override` with that reason, so every change it writes
+is recorded. The nightly run, "Run the calculation" and a plain request stay
+refused. A technician who deliberately means to overwrite a filed figure uses
+``run_calculations --force``.
 
 **Who did it.** The change history records the person through pghistory's
 context, the way the web request does (``pghistory.middleware.HistoryMiddleware``
@@ -69,7 +74,7 @@ from django.core.management.base import CommandError
 from django.db import DEFAULT_DB_ALIAS, connections, transaction
 from django.utils import timezone
 
-from accounting.locks import finalized_message, lock_error_message
+from accounting.locks import finalized_message, lock_error_message, override
 from accounting.models import CalculationPlan, CalculationRequest, ReportingPeriod
 from core.modules import is_enabled
 
@@ -474,8 +479,15 @@ def note_lines(note):
 # --------------------------------------------------------------------------
 
 
-def create_request(trigger="command", *, reporting_period=None, months=None, requested_by=None):
-    """Create a queued request for a period's whole span, or for explicit months."""
+def create_request(
+    trigger="command", *, reporting_period=None, months=None, requested_by=None,
+    override_reason="",
+):
+    """Create a queued request for a period's whole span, or for explicit months.
+
+    ``override_reason`` is for an administrator's correction in a finalized
+    year; see :func:`request_for_months`.
+    """
     if months is None:
         if reporting_period is None:
             raise ValueError("a request needs a reporting period or months")
@@ -486,6 +498,7 @@ def create_request(trigger="command", *, reporting_period=None, months=None, req
         requested_by=requested_by,
         reporting_period=reporting_period,
         months=months,
+        override_reason=override_reason,
     )
 
 
@@ -612,11 +625,13 @@ def _run(request_obj, notes):
         raise _Stopped(_NO_PLAN)
 
     requested = list(request_obj.months or [])
-    if request_obj.reporting_period_id and request_obj.reporting_period.is_finalized:
-        raise _Stopped(finalized_message(request_obj.reporting_period.name))
-    period = _finalized_period_among(requested)
-    if period is not None:
-        raise _Stopped(finalized_message(period.name))
+    reason = request_obj.override_reason
+    if not reason:
+        if request_obj.reporting_period_id and request_obj.reporting_period.is_finalized:
+            raise _Stopped(finalized_message(request_obj.reporting_period.name))
+        period = _finalized_period_among(requested)
+        if period is not None:
+            raise _Stopped(finalized_message(period.name))
 
     to_run, skipped = months_to_run(months=requested) if requested else ([], [])
     request_obj.months = to_run
@@ -625,7 +640,11 @@ def _run(request_obj, notes):
     raw = []
     for index, month in enumerate(to_run):
         try:
-            raw.extend(run_month(month, request=request_obj))
+            if reason:
+                with override(reason):
+                    raw.extend(run_month(month, request=request_obj))
+            else:
+                raw.extend(run_month(month, request=request_obj))
         except Exception as exc:
             stop = _explain_failure(exc, month)
             if index == 1:
@@ -714,7 +733,13 @@ def _merge_overlapping(head, queued):
     """
     months = set(head.months or [])
     absorbed = []
-    remaining = [r for r in queued if r.pk != head.pk]
+    # A request that carries an override reason is merged only with one that
+    # carries the same reason: a plain request must never ride through the door,
+    # and a reason must never be swapped for another.
+    remaining = [
+        r for r in queued
+        if r.pk != head.pk and r.override_reason == head.override_reason
+    ]
     changed = True
     while changed:
         changed = False
@@ -828,11 +853,14 @@ def start_calculation(request_obj):
     transaction.on_commit(_launch)
 
 
-def request_for_months(trigger, months, *, requested_by=None):
+def request_for_months(trigger, months, *, requested_by=None, reason=""):
     """Request and start the calculation of the months a saved record touches.
 
     Months inside a finalized reporting period are dropped (a finalized year
-    is never recalculated). The rest are grouped by the reporting period that
+    is never recalculated), unless ``reason`` is given: an administrator's
+    correction or void in a finalized year keeps those months, and the
+    requests carry the reason as ``override_reason``, so they run through the
+    recorded override. The rest are grouped by the reporting period that
     contains them (or none), one request per group, each started. Returns the
     requests created, each carrying the months it will calculate; an empty
     list when nothing was left to calculate.
@@ -844,7 +872,7 @@ def request_for_months(trigger, months, *, requested_by=None):
         period = next(
             (p for p in periods if p.start_date <= first <= p.end_date), None
         )
-        if period is not None and period.is_finalized:
+        if period is not None and period.is_finalized and not reason:
             continue
         groups.setdefault(period.pk if period else None, (period, []))[1].append(month)
 
@@ -854,6 +882,7 @@ def request_for_months(trigger, months, *, requested_by=None):
             reporting_period=period,
             months=group,
             requested_by=requested_by,
+            override_reason=reason,
         )
         for period, group in groups.values()
     ]

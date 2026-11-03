@@ -14,6 +14,7 @@ volume less the share left in the basin.
 from django.contrib.gis.db import models
 from django.urls import reverse
 
+from accounting.locks import finalized_period_lock
 from core.corrections import CorrectableRecord
 from core.history import track_changes
 
@@ -111,6 +112,8 @@ class RechargeEvent(CorrectableRecord):
 
     class Meta:
         ordering = ["-start_date"]
+        # A finalized water year is closed to change (accounting/locks.py).
+        triggers = [finalized_period_lock(date_column="start_date")]
 
     def __str__(self):
         return f"{self.recharge_site} {self.start_date}: {self.volume_acre_feet} AF"
@@ -137,6 +140,8 @@ class RechargeMeasurement(CorrectableRecord):
 
     class Meta:
         ordering = ["-measurement_date"]
+        # A finalized water year is closed to change (accounting/locks.py).
+        triggers = [finalized_period_lock(datetime_column="measurement_date")]
 
     def __str__(self):
         return f"{self.recharge_site} {self.measurement_type}: {self.value} {self.unit}"

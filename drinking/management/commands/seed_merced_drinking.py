@@ -52,6 +52,7 @@ import os
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
+from accounting.locks import demonstration_seed
 from core.modules import is_enabled
 from drinking import envirofacts_mapping, importer
 from drinking.models import (
@@ -128,6 +129,7 @@ class Command(BaseCommand):
             ),
         )
 
+    @demonstration_seed
     def handle(self, *args, **options):
         if options["flush"]:
             self._flush()

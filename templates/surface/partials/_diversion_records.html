@@ -14,13 +14,15 @@
   type, not wrapped inside the Retained figure.
 
   An Actions column ends each row a writer can act on with the "..." menu
-  (partials/_row_menu.html): Edit, then Void this record. Edit swaps this whole
+  (partials/_row_menu.html): Edit, Correct this record, then Void this record. Edit swaps this whole
   section in for a row's own "Edit diversion record" form (edit_record /
   edit_form below); Void this record opens the reason row under the record
   (core:record_void) and the section comes back with the record struck and one
   line under it. A record is never deleted: its figures leave the totals and
-  the water year's count, and it stays in date order. A row in a finalized year
-  prints "Finalized" in place of the menu.
+  the water year's count, and it stays in date order. A corrected record is
+  struck the same way, with the corrected one directly above it. A finalized
+  water year's header ends in "Finalized" for every role; its rows hold a menu
+  (Correct this record, Void this record, no Edit) for an administrator only.
 
   A "How known" column carries the method label, the device
   nickname when one is set, and the data state as a small word -- the
@@ -57,10 +59,10 @@
   <tbody>
     {% for group in record_groups %}
     <tr class="row-group">
-      <td colspan="7">{{ group.period_name }} &middot; {{ group.count }} record{{ group.count|pluralize }}</td>
+      <td colspan="7">{{ group.period_name }} &middot; {{ group.count }} record{{ group.count|pluralize }}{% if group.finalized %} &middot; Finalized{% endif %}</td>
     </tr>
     {% for record in group.rows %}
-    <tr id="{{ record|record_anchor }}"{% if edit_record.pk == record.pk or record.void_open or record.voided_at %} class="{% if edit_record.pk == record.pk or record.void_open %}row-editing{% endif %}{% if record.voided_at %}record-void{% endif %}"{% endif %}{% if 'reporting' in enabled_modules %} title="{{ record.rule_version }}"{% endif %}>
+    <tr id="{{ record|record_anchor }}"{% if edit_record.pk == record.pk or record.void_open or record.correct_open or record.is_struck %} class="{% if edit_record.pk == record.pk or record.void_open or record.correct_open %}row-editing{% endif %}{% if record.is_struck %}record-void{% endif %}"{% endif %}{% if 'reporting' in enabled_modules %} title="{{ record.rule_version }}"{% endif %}>
       <td class="text-secondary">{{ record.month|date:"M Y" }}</td>
       <td class="td-num">{{ record.volume_acre_feet|floatformat:2|intcomma }}</td>
       <td class="td-num text-secondary">{{ record.returned_af|floatformat:2|intcomma }}</td>
@@ -77,18 +79,20 @@
         {{ record.method_display }}{% if record.device %} &middot; {{ record.device }}{% endif %} &middot; {{ record.get_data_state_display }}
       </td>
       <td class="th-right text-sm row-actions">
-        {% if not user_can_write or record.voided_at or record.void_open %}
-        {% elif record.in_finalized_year %}
-        <span class="text-tertiary">Finalized</span>
+        {% if not user_can_write or record.is_struck or record.void_open or record.correct_open %}
         {% elif edit_record.pk == record.pk %}
         <span class="text-tertiary">Editing below</span>
         {% elif record.menu_ok %}
+        {% if record.edit_ok %}
         {% url 'surface:diversion_record_edit' pod.pk record.pk as edit_url %}
         {% include "partials/_row_menu.html" with row=record label=record.month|date:"M Y"|add:" record" edit_url=edit_url target="#diversion-records-section" void_ok=record.void_ok %}
+        {% else %}
+        {% include "partials/_row_menu.html" with row=record label=record.month|date:"M Y"|add:" record" target="#diversion-records-section" void_ok=record.void_ok %}
+        {% endif %}
         {% endif %}
       </td>
     </tr>
-    {% record_marks record 7 %}
+    {% record_marks record 7 target="#diversion-records-section" %}
     {% if record.void_open %}{% include "partials/_void_form.html" with row=record target="#diversion-records-section" as_row=True colspan=7 %}{% endif %}
     {% for note in record.fallow_notes %}
     <tr>

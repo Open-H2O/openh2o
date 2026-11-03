@@ -864,7 +864,7 @@ class DiversionRecord(CorrectableRecord):
         constraints = [
             models.UniqueConstraint(
                 fields=["point_of_diversion", "month", "diversion_type"],
-                condition=models.Q(voided_at__isnull=True),
+                condition=models.Q(voided_at__isnull=True, replaced_at__isnull=True),
                 name="diversionrecord_one_current_per_point_month_kind",
             ),
         ]
@@ -1101,6 +1101,8 @@ class CanalMonthLoss(models.Model):
     class Meta:
         ordering = ["-month", "point_of_diversion_id"]
         unique_together = [("point_of_diversion", "month")]
+        # A finalized water year is closed to change (accounting/locks.py).
+        triggers = [finalized_period_lock(date_column="month")]
         constraints = [
             models.CheckConstraint(
                 check=models.Q(

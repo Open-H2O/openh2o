@@ -5,6 +5,7 @@ import datetime as dt
 from django import forms
 from django.utils import timezone
 
+from accounting.locks import PeriodFinalized, refuse_if_finalized
 from measurements.models import (
     NO_MEASUREMENT_REASONS,
     WATER_LEVEL_METHODS,
@@ -37,21 +38,38 @@ class MeterReadingForm(forms.Form):
         decimal_places=4,
         widget=forms.NumberInput(attrs={"class": "form-input", "step": "0.0001"}),
     )
+    quality = forms.ChoiceField(
+        label="Meter or estimate",
+        required=False,
+        initial="provisional",
+        choices=[("provisional", "Read from the meter"), ("estimated", "Estimated")],
+        widget=forms.RadioSelect,
+    )
     notes = forms.CharField(
         label="Notes",
         required=False,
         widget=forms.Textarea(attrs={"class": "form-textarea", "rows": 2}),
     )
 
-    def __init__(self, *args, well=None, **kwargs):
+    def __init__(self, *args, well=None, meter=None, exclude_pk=None, **kwargs):
+        """``meter`` and ``exclude_pk`` are for a correction: it keeps the record's own meter,
+        and the reading it replaces is not the previous one."""
         super().__init__(*args, **kwargs)
         self.well = well
+        self.exclude_pk = exclude_pk
+        if meter is not None:
+            self.meter = meter
+            return
         link = (
             well.wellmeter_set.filter(is_current=True).select_related("meter").first()
             if well is not None
             else None
         )
         self.meter = link.meter if link else None
+
+    def clean_quality(self):
+        """A form that does not send the choice reads from the meter."""
+        return self.cleaned_data.get("quality") or "provisional"
 
     def clean(self):
         cleaned = super().clean()
@@ -61,12 +79,18 @@ class MeterReadingForm(forms.Form):
         value = cleaned.get("current_value")
         if when is None or value is None:
             return cleaned
+        # A reading dated inside a finalized water year is refused beside the
+        # date; a correction by an administrator is the way into one.
+        try:
+            refuse_if_finalized(when)
+        except PeriodFinalized as exc:
+            self.add_error("reading_date", str(exc))
+            return cleaned
         moment = timezone.make_aware(dt.datetime(when.year, when.month, when.day, 12, 0))
-        previous = (
-            MeterReading.objects.current().filter(meter=self.meter, reading_date__lt=moment)
-            .order_by("-reading_date")
-            .first()
-        )
+        earlier = MeterReading.objects.current().filter(meter=self.meter, reading_date__lt=moment)
+        if self.exclude_pk:
+            earlier = earlier.exclude(pk=self.exclude_pk)
+        previous = earlier.order_by("-reading_date").first()
         self.moment = moment
         self.previous_value = previous.current_value if previous else None
         if self.meter.meter_type == "totalizer" and self.previous_value is not None:
@@ -92,6 +116,7 @@ class MeterReadingForm(forms.Form):
             previous_value=self.previous_value,
             current_value=data["current_value"],
             calculated_volume=self.volume,
+            quality=data.get("quality") or "provisional",
             notes=data.get("notes", ""),
             read_by=user if getattr(user, "is_authenticated", False) else None,
         )
@@ -161,6 +186,11 @@ class WaterLevelForm(forms.Form):
             )
         if unmeasured and not cleaned.get("reason"):
             raise forms.ValidationError("Pick a reason, or untick No measurement.")
+        # A level dated inside a finalized water year is refused beside the date.
+        try:
+            refuse_if_finalized(cleaned.get("level_date"))
+        except PeriodFinalized as exc:
+            self.add_error("level_date", str(exc))
         return cleaned
 
     def save(self, well, user=None):

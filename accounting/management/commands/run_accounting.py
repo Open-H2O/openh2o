@@ -13,9 +13,12 @@ saved diversion record use (``accounting/engine_run.py``); every run leaves a
     python manage.py run_accounting --request 41      # one the screen created
 
 There is NO ``--force`` option on this command, on purpose. A finalized period
-is refused, naming the period, and nothing is changed. A technician who really
-means to overwrite a filed figure uses ``run_calculations --force`` month by
-month, which records the reason in the change history.
+is refused, naming the period, and nothing is changed. The one request it runs
+into a finalized period is a ``--request`` that carries an ``override_reason``,
+which an administrator's correction or void started: its months run through
+the recorded override and every change carries that reason. A technician who
+really means to overwrite a filed figure uses ``run_calculations --force``
+month by month, which records the reason in the change history.
 
 Exits non-zero when a request ends ``failed``. Months that have no crop water
 use data yet are not a failure: they are reported as a note, and the request

@@ -159,6 +159,9 @@ CONTENT_LABELS = [
     "datasync.MonitoredStation",
     "datasync.DataRecordStaging",
     "datasync.TypedReading",
+    # The photo or PDF a correction carries. Removing the demonstration removes the row;
+    # its file under MEDIA_ROOT/corrections/ stays until the folder is cleared.
+    "core.RecordAttachment",
     "datasync.DataSyncLog",
     "datasync.OpenETCache",
     "drinking.WaterSystem",
@@ -280,6 +283,7 @@ SCREEN_NAMES = {
     "datasync.MonitoredStation": ("monitoring station", "monitoring stations"),
     "datasync.DataRecordStaging": ("station reading", "station readings"),
     "datasync.TypedReading": ("typed reading", "typed readings"),
+    "core.RecordAttachment": ("attached file", "attached files"),
     "datasync.DataSyncLog": ("sync log entry", "sync log entries"),
     "datasync.OpenETCache": ("OpenET record", "OpenET records"),
     "drinking.WaterSystem": ("water system", "water systems"),

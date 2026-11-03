@@ -1,0 +1,51 @@
+{% comment %}
+  The correction row that Correct this record opens, under the record: the kind's own entry
+  boxes prefilled from it, Meter or estimate for a meter read, Reason, Attach a file, Save
+  correction and Cancel. Drawn in the correct-record mock-up (2-well-correct-form.html).
+  Included by {% record_marks %} with: row, state (core.corrections_views.CorrectState: form,
+  note, error, reason, reason_error, file_error), correct_url, target, swap, include, anchor,
+  colspan, variant ("row" is the table row under the record, "note" a plain block).
+  The form posts as multipart because it may carry a file. In a finalized year only, `note`
+  is its first line: the year and the months the save recalculates.
+{% endcomment %}
+{% with form=state.form %}{% if variant == "note" %}<div class="row-editing record-void-form record-correct-form" id="{{ anchor }}-correct">{% else %}<tr class="row-editing record-void-form record-correct-form" id="{{ anchor }}-correct">
+  <td colspan="{{ colspan }}">{% endif %}
+    <form hx-post="{{ correct_url }}" hx-target="{{ target }}" hx-swap="{{ swap }}" hx-encoding="multipart/form-data"{% if include %} hx-include="{{ include }}"{% endif %}>
+      {% csrf_token %}
+      {% if state.note %}<p class="correct-note">{{ state.note }}</p>{% endif %}
+      {% if state.error %}<p class="record-void-error correct-note" role="alert">{{ state.error }}</p>{% endif %}
+      {% for error in form.non_field_errors %}<p class="record-void-error correct-note" role="alert">{{ error }}</p>{% endfor %}
+      {% for field in form %}
+      {% if field.name == "quality" %}
+      <fieldset class="quality-choice">
+        <legend class="field-label">Meter or estimate</legend>
+        <div class="row-start">{% for choice in field %}<label class="radio-option">{{ choice.tag }}<span class="text-secondary text-sm">{{ choice.choice_label }}</span></label> {% endfor %}</div>
+      </fieldset>
+      {% else %}
+      <div class="correct-item{% if field.field.widget.input_type == 'checkbox' %} correct-check{% endif %}">
+        <label class="field-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% for error in field.errors %}<span class="record-void-error" role="alert">{{ error }}</span>{% endfor %}
+      </div>
+      {% endif %}
+      {% endfor %}
+      <div class="correct-item correct-reason">
+        <label class="field-label" for="correct-reason-{{ anchor }}">Reason</label>
+        <input type="text" name="reason" class="form-input" minlength="10" maxlength="500" required id="correct-reason-{{ anchor }}" value="{{ state.reason }}">
+        {% if state.reason_error %}<span class="record-void-error" role="alert">{{ state.reason_error }}</span>{% endif %}
+      </div>
+      <div class="correct-item correct-file">
+        <span class="field-label" id="correct-file-label-{{ anchor }}">Attach a file</span>
+        <div class="file-picker">
+          <label class="btn-secondary btn-sm file-picker-button">Choose file<input type="file" name="file" accept="image/*,.pdf" class="file-picker-input" aria-labelledby="correct-file-label-{{ anchor }}"></label>
+          <span class="file-picker-name text-tertiary text-xs">Optional: a photo or PDF</span>
+        </div>
+        {% if state.file_error %}<span class="record-void-error" role="alert">{{ state.file_error }}</span>{% endif %}
+      </div>
+      <div class="correct-actions">
+        <button type="submit" class="btn-primary btn-sm">Save correction</button>
+        <button type="button" class="btn-secondary btn-sm" hx-get="{{ correct_url }}?cancel=1" hx-target="{{ target }}" hx-swap="{{ swap }}"{% if include %} hx-include="{{ include }}"{% endif %}>Cancel</button>
+      </div>
+    </form>
+{% if variant == "note" %}</div>{% else %}  </td>
+</tr>{% endif %}{% endwith %}

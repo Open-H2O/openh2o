@@ -149,6 +149,7 @@ def _group_diversion_records(records):
                 "period_key": period_key,
                 "period": period,
                 "period_name": period.name if period else "No water year assigned",
+                "finalized": bool(period and period.is_finalized),
                 "rows": [],
                 "diverted": Decimal("0"),
                 "returned": Decimal("0"),
@@ -157,8 +158,9 @@ def _group_diversion_records(records):
             }
             groups.append(current)
         current["rows"].append(record)
-        if record.voided_at is not None:
-            # Shown struck in its place; it is in no total and no count.
+        if record.is_struck:
+            # Shown struck in its place (voided, or replaced by a corrected one); it is in
+            # no total and no count.
             continue
         current["diverted"] += abs(record.volume_acre_feet)
         current["returned"] += record.returned_af
@@ -280,14 +282,17 @@ def _pod_detail_context(pod):
         DiversionRecord.objects
         .filter(point_of_diversion=pod)
         .select_related("reporting_period")
-        .order_by("-month")
+        .order_by("-month", "-pk")
     )
     finalized = corrections.finalized_ranges()
     _mark_finalized(diversion_records, finalized)
     _mark_fallow_notes(diversion_records, pod)
-    # The menu is drawn per row; `edit=True` because every row here has Edit
-    # (a row in a finalized year prints "Finalized" instead of a menu).
-    mark_actions(diversion_records, can_write=True, finalized=finalized, edit=True)
+    # The menu is drawn per row; `edit=True` because every row here has Edit, which a
+    # finalized year takes away (`edit_closes`): an administrator's row there holds
+    # Correct this record and Void this record, an operator's none.
+    mark_actions(
+        diversion_records, can_write=True, finalized=finalized, edit=True, edit_closes=True
+    )
 
     # The table's own water-year groups, and the
     # CURRENT period's figures read off that SAME grouping -- no second
@@ -618,13 +623,14 @@ def _render_diversion_records_section(
         DiversionRecord.objects
         .filter(point_of_diversion=pod)
         .select_related("reporting_period")
-        .order_by("-month")
+        .order_by("-month", "-pk")
     )
     finalized = corrections.finalized_ranges()
     _mark_finalized(diversion_records, finalized)
     _mark_fallow_notes(diversion_records, pod)
     mark_actions(
-        diversion_records, can_write=True, finalized=finalized, void_key=void_key, edit=True
+        diversion_records, can_write=True, finalized=finalized, void_key=void_key, edit=True,
+        edit_closes=True,
     )
     edit_can_void = bool(
         edit_record is not None and corrections.can_void(edit_record, finalized)

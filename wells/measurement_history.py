@@ -39,6 +39,7 @@ from django.utils import timezone
 
 from accounting.carryover_math import water_year_label as _label
 from accounting.carryover_math import water_year_of
+from core import corrections
 from core.water_year import water_year_start_month
 from measurements.models import MeterReading, Sensor, SensorMeasurement, WaterMeasurement
 
@@ -74,10 +75,11 @@ def meter_history(well):
     """Per current meter with at least one read: reads newest first, by water year."""
     groups = []
     start_month = water_year_start_month()
+    finalized = corrections.finalized_ranges()
     links = well.wellmeter_set.filter(is_current=True).select_related("meter")
     for link in links:
         reads = list(
-            MeterReading.objects.filter(meter=link.meter).order_by("-reading_date")
+            MeterReading.objects.filter(meter=link.meter).order_by("-reading_date", "-pk")
         )
         if not reads:
             continue
@@ -90,15 +92,18 @@ def meter_history(well):
         # above, never a second query. The Totalizer has no matching total: a
         # totalizer is a running reading, never summed (it is the delta column
         # that closes).
-        # A voided read stays in ``reads`` (struck, in date order) and is in neither
-        # the count nor the total.
+        # A voided or replaced read stays in ``reads`` (struck, in date order, the
+        # corrected one directly above it) and is in neither the count nor the total.
         years = [
             {
                 "label": water_year_label(wy, start_month),
+                "finalized": corrections.day_in_finalized(
+                    _local_date(rows[0].reading_date), finalized
+                ),
                 "reads": rows,
-                "count": sum(1 for r in rows if r.voided_at is None),
+                "count": sum(1 for r in rows if not r.is_struck),
                 "delta_total": sum(
-                    (r.calculated_volume or Decimal("0") for r in rows if r.voided_at is None),
+                    (r.calculated_volume or Decimal("0") for r in rows if not r.is_struck),
                     Decimal("0"),
                 ),
             }
@@ -133,6 +138,7 @@ def visit_history(well):
     ``method`` and ``row`` (the ``WaterMeasurement``; a voided one stays listed).
     """
     start_month = water_year_start_month()
+    finalized = corrections.finalized_ranges()
     rows = (
         WaterMeasurement.objects.filter(well=well)
         .filter(Q(observed_property__key=DEPTH_PROPERTY) | Q(measurement_type="groundwater_level"))
@@ -151,7 +157,11 @@ def visit_history(well):
         }
         by_year.setdefault(water_year(when.date(), start_month), []).append(visit)
     return [
-        {"label": water_year_label(wy, start_month), "visits": visits}
+        {
+            "label": water_year_label(wy, start_month),
+            "finalized": corrections.day_in_finalized(visits[0]["when"].date(), finalized),
+            "visits": visits,
+        }
         for wy, visits in sorted(by_year.items(), reverse=True)
     ]
 

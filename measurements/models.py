@@ -12,6 +12,7 @@ approved / estimated).
 from django.conf import settings
 from django.contrib.gis.db import models
 
+from accounting.locks import finalized_period_lock
 from core.corrections import CorrectableRecord
 from core.history import track_changes
 
@@ -131,6 +132,8 @@ class MeterReading(CorrectableRecord):
 
     class Meta:
         ordering = ["-reading_date"]
+        # A finalized water year is closed to change (accounting/locks.py).
+        triggers = [finalized_period_lock(datetime_column="reading_date")]
 
     def __str__(self):
         return f"{self.meter} @ {self.reading_date}: {self.current_value}"
@@ -236,6 +239,8 @@ class WaterMeasurement(CorrectableRecord):
 
     class Meta:
         ordering = ["-measurement_date"]
+        # A finalized water year is closed to change (accounting/locks.py).
+        triggers = [finalized_period_lock(datetime_column="measurement_date")]
         constraints = [
             # A groundwater level is either a depth or a reason no depth was
             # read, never both and never neither. Other kinds are not held to it.

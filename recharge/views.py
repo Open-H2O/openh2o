@@ -68,6 +68,7 @@ def _group_recharge_events(events, periods):
             "period_key": period.pk,
             "period": period,
             "period_name": period.name,
+            "finalized": period.is_finalized,
             "rows": [],
             "volume": Decimal("0"),
             "count": 0,
@@ -78,6 +79,7 @@ def _group_recharge_events(events, periods):
         "period_key": None,
         "period": None,
         "period_name": "Outside any water year on record",
+        "finalized": False,
         "rows": [],
         "volume": Decimal("0"),
         "count": 0,
@@ -90,8 +92,9 @@ def _group_recharge_events(events, periods):
         )
         group = groups_by_pk[period.pk] if period else outside
         group["rows"].append(event)
-        if event.voided_at is not None:
-            # Shown struck in its place; it is in no total and no count.
+        if event.is_struck:
+            # Shown struck in its place (voided, or replaced by a corrected one); it is in
+            # no total and no count.
             continue
         group["volume"] += event.volume_acre_feet
         group["count"] += 1
@@ -171,17 +174,18 @@ def recharge_sites_list(request):
 def _site_events(site, *, void_key=None):
     """The site's events, newest first, each marked for its menu (``menu_ok``, ``void_ok``, ``void_open``).
 
-    Every row has Edit, so a row in a finalized year keeps a menu that holds Edit
-    only. A voided event stays in its place in date order.
+    Every row has Edit, which a finalized year takes away: an administrator's row there
+    holds Correct this record and Void this record, an operator's has no menu. A struck
+    event stays in its place in date order.
     """
     events = list(
         RechargeEvent.objects.filter(recharge_site=site)
         .select_related("water_type")
-        .order_by("-start_date")
+        .order_by("-start_date", "-pk")
     )
     mark_actions(
         events, can_write=True, finalized=corrections.finalized_ranges(),
-        void_key=void_key, edit=True,
+        void_key=void_key, edit=True, edit_closes=True,
     )
     return events
 

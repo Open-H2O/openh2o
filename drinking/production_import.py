@@ -39,12 +39,15 @@ own M9: a key can repeat up to five times, always as an exact copy) are
 collapsed the same way, counted separately as ``duplicate_rows_in_file``.
 """
 import csv
+import datetime as dt
 import io
 import math
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
 from django.db import transaction
+
+from accounting.locks import finalized_span_message, finalized_spans
 
 from drinking.models import (
     PRODUCTION_TYPE_CHOICES,
@@ -407,11 +410,23 @@ def commit_rows(built, *, system, provenance, dry_run=False):
         )
     )
 
+    # A month inside a finalized water year is refused as a row error in plain
+    # words, in the preview as on commit (the database lock refuses the same
+    # rows). Empty inside accounting.locks.override().
+    spans = finalized_spans()
+
     survivors = []
     for c in candidates:
         key = (c["year"], c["month"], c["type_code"], None)
         if key in existing:
             skipped_duplicates += 1
+            continue
+        locked = finalized_span_message(dt.date(c["year"], c["month"] or 1, 1), spans)
+        if locked:
+            errors.append({
+                "line": ", ".join(str(n) for n in c["source_lines"]),
+                "message": locked,
+            })
             continue
         survivors.append(c)
 

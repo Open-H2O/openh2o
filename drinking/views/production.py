@@ -6,6 +6,7 @@ import logging
 from decimal import Decimal
 
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from django.http import HttpRequest
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -156,9 +157,10 @@ def _production_table_context(system, year, *, void_key=None, void_reason="", vo
     by_key = {(r.month, r.type_code): r for r in records}
     voided_by_key: dict = {}
     if year is not None:
-        voided = SystemProduction.objects.filter(
-            system=system, year=year, voided_at__isnull=False
-        ).order_by("-voided_at")
+        # Voided, or replaced by a corrected record: struck, with a line under the month.
+        voided = SystemProduction.objects.filter(system=system, year=year).filter(
+            Q(voided_at__isnull=False) | Q(replaced_at__isnull=False)
+        ).order_by("-pk")
         for record in voided:
             voided_by_key.setdefault((record.month, record.type_code), []).append(record)
 

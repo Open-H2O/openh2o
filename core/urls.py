@@ -21,6 +21,17 @@ urlpatterns = [
         corrections_views.record_void,
         name="record_void",
     ),
+    # Correct this record: the same address shape, and the file a correction carries.
+    path(
+        "records/<slug:kind>/<int:pk>/correct/",
+        corrections_views.record_correct,
+        name="record_correct",
+    ),
+    path(
+        "records/attachments/<int:pk>/",
+        corrections_views.record_attachment,
+        name="record_attachment",
+    ),
     path("<int:pk>/role/", views.user_set_role, name="user_set_role"),
     path("<int:pk>/toggle-active/", views.user_toggle_active, name="user_toggle_active"),
     path("<int:pk>/email/", views.user_email_edit, name="user_email_edit"),
