@@ -751,6 +751,11 @@ meter reading and no entered volume, run the calculation again for each water ye
 not finalized. The upgrade deletes those estimated records from the open years, and the run
 removes the canal water that was divided from them.
 
+After upgrading to a version that keeps a finalized water year's figures, the site's first
+start records the figures of each water year that was already finalized, as they stand that
+day, and the water year's page says they were recorded at the upgrade. This takes a few
+seconds for each such year and happens once.
+
 When it stops at the first step, the file it names was edited on this server under an
 earlier version of this guide, which had every site edit `crontab.txt` and sites with
 a domain edit the `Caddyfile`. Save a copy of your edits, run `git checkout -- <file>`

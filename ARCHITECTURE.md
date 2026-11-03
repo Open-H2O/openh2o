@@ -262,6 +262,26 @@ Django connection sets the session setting `openh2o.time_zone` to `TIME_ZONE`
 lock follows the site's own zone with no migration; a session that never set it (psql by hand) reads
 America/Los_Angeles.
 
+**Figures as filed.** Finalizing a water year writes down every figure the pages print for it
+(`accounting/statements.py`): `PeriodStatement` (the period, its kind `filed`, `restated` or
+`recorded_at_upgrade`, when and by whom) and one `PeriodStatementRow` per figure (scope `use_area`, `account`,
+`zone` or `site`, the place's id and printed name, the month or none for the year, a key from `FIGURES`, the
+value to four places, and the run plan's name and settings code where one plan covers the place). The rows are
+read by one collector off the same functions the pages call (`parcels.views.water_use_for` and the balance line,
+`_account_summary_row` and `account_groundwater_budget`, `_zone_summary_rows` and `_zone_budget_row`,
+`_account_rollup`), never a second computation, and `figures_now` reads the same set without saving it.
+`period_finalize` takes the statement before it marks the year finalized, holding the period row so two presses
+write one; reopening keeps every statement and finalizing again writes a `restated` one. A correction or void
+inside a finalized year takes none. Both tables are in `LOCKED_MODELS` on their own period column and also refuse
+every UPDATE, even inside `override`: a statement is never edited. A year finalized before statements existed
+gets one of kind `recorded_at_upgrade` from `record_filed_figures`, which `entrypoint.sh` runs after `migrate`
+(a command, not a migration, because a migration never imports live code) and which is also the demonstration's
+last step. The water year page's Figures as filed card loads its comparison from `accounting:period_figures`,
+kept in the cache under the statement ids and a change token (the newest history id of every table the figures
+read), because reading every figure takes seconds; each moved figure's group names the corrections and voids
+since the oldest statement whose records touch its use areas (the `use_areas` hook in `core/corrections.py`).
+The account and use area pages compare the figures they already computed with the newest statement's.
+
 A tracked field with no `verbose_name` prints the name Django makes from the field's name in Change history
 ("Gross et af"). Give such a field a `verbose_name` in the words a page uses for the same figure;
 `tests/test_change_labels_07.py` fails for a tracked field that has neither a written label nor a place
