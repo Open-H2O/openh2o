@@ -354,7 +354,7 @@ The three containers start one after another. The database has to report healthy
 before the website container starts. The website container then does its own
 start-up work in this order. It gathers the styling and images, runs the
 <!-- defines: migrations -->migrations that create or update the database tables (section 6),
-creates a cache table, and creates the administrator account if `.env` asks for one
+records the figures of any finalized water year that has none on file, creates a cache table, and creates the administrator account if `.env` asks for one
 (section 7). It reports healthy after that, and Caddy starts. A first build takes a few minutes. Check with:
 
 ```bash
@@ -753,8 +753,8 @@ removes the canal water that was divided from them.
 
 After upgrading to a version that keeps a finalized water year's figures, the site's first
 start records the figures of each water year that was already finalized, as they stand that
-day, and the water year's page says they were recorded at the upgrade. This takes a few
-seconds for each such year and happens once.
+day, and the water year's page says they were recorded at the upgrade. It happens once for
+each such year.
 
 When it stops at the first step, the file it names was edited on this server under an
 earlier version of this guide, which had every site edit `crontab.txt` and sites with

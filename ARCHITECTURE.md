@@ -252,8 +252,8 @@ door `override_open()` is true and the Python-side refusals (`refuse_if_finalize
 row errors of the water level, lab result and production imports) stand aside as the database lock does,
 which is how the demonstration seeds load their finalized year through the same importers. The diversion
 and ledger imports refuse a finalized-year row even inside the door. The lock itself (`accounting/locks.py`,
-`LOCKED_MODELS`) covers nineteen tables: the ledger, allocations, credits and calculation results, and every kind of record
-a person enters that feeds a figure except use areas (the stored OpenET figures and settings such as
+`LOCKED_MODELS`) covers twenty-one tables: the ledger, allocations, credits and calculation results, every kind of record
+a person enters that feeds a figure except use areas, and the two tables of filed figures (the stored OpenET figures and settings such as
 irrigation methods are not locked). A lab result takes its
 sample's date, a production record its year and month, a fallow period the months it covers (a running
 one can still be ended after the year). A date-and-time column is read as the site's calendar day: each
@@ -266,7 +266,8 @@ America/Los_Angeles.
 (`accounting/statements.py`): `PeriodStatement` (the period, its kind `filed`, `restated` or
 `recorded_at_upgrade`, when and by whom) and one `PeriodStatementRow` per figure (scope `use_area`, `account`,
 `zone` or `site`, the place's id and printed name, the month or none for the year, a key from `FIGURES`, the
-value to four places, and the run plan's name and settings code where one plan covers the place). The rows are
+value to four places, and, on a figure read from a calculation run, the plan's name and settings code when every run
+behind the place used the same plan and settings). The rows are
 read by one collector off the same functions the pages call (`parcels.views.water_use_for` and the balance line,
 `_account_summary_row` and `account_groundwater_budget`, `_zone_summary_rows` and `_zone_budget_row`,
 `_account_rollup`), never a second computation, and `figures_now` reads the same set without saving it.
@@ -277,9 +278,9 @@ every UPDATE, even inside `override`: a statement is never edited. A year finali
 gets one of kind `recorded_at_upgrade` from `record_filed_figures`, which `entrypoint.sh` runs after `migrate`
 (a command, not a migration, because a migration never imports live code) and which is also the demonstration's
 last step. The water year page's Figures as filed card loads its comparison from `accounting:period_figures`,
-kept in the cache under the statement ids and a change token (the newest history id of every table the figures
-read), because reading every figure takes seconds; each moved figure's group names the corrections and voids
-since the oldest statement whose records touch its use areas (the `use_areas` hook in `core/corrections.py`).
+kept in the cache under the statement ids and a change token (the newest history id of each table in `_FIGURE_MODELS` and of each correction kind, plus
+the newest calculation request and statement), because reading every figure takes seconds; each group of moved figures names the corrections and voids
+made since the oldest statement to records that touch its use areas (the `use_areas` hook in `core/corrections.py`).
 The account and use area pages compare the figures they already computed with the newest statement's.
 
 A tracked field with no `verbose_name` prints the name Django makes from the field's name in Change history

@@ -2210,9 +2210,10 @@ checked_at = "3a340c75"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
-heading = "The four steps"
+heading = "The five steps"
 files = [
   "entrypoint.sh",
+  "accounting/management/commands/record_filed_figures.py",
   "config/settings/base.py",
   "core/management/commands/ensure_superuser.py",
   "core/management/commands/seed_data.py",
