@@ -185,8 +185,27 @@ def finalized_span_lock(*, start_column, end_column):
     )
 
 
-def _sql_literal(text):
-    return "'" + str(text).replace("'", "''") + "'"
+#: The session setting each Django connection carries: the site's TIME_ZONE.
+TIME_ZONE_SETTING = "openh2o.time_zone"
+
+#: SQL: the zone a lock reads a date-and-time column in. The session's setting,
+#: else the shipped default (``config/settings/base.py`` TIME_ZONE).
+SESSION_TIME_ZONE_SQL = (
+    f"COALESCE(NULLIF(current_setting('{TIME_ZONE_SETTING}', true), ''), 'America/Los_Angeles')"
+)
+
+
+def set_session_time_zone(sender, connection, **kwargs):
+    """``connection_created`` receiver: tell the session the site's TIME_ZONE.
+
+    The locks read a date-and-time column as the site's calendar day, the day
+    the pages print and :func:`refuse_if_finalized` checks; Django keeps its
+    own connections in UTC, so the zone has to travel as a setting of its own.
+    """
+    if connection.vendor != "postgresql":
+        return
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT set_config(%s, %s, false)", [TIME_ZONE_SETTING, settings.TIME_ZONE])
 
 
 def finalized_period_lock(*, date_column=None, month_text_column=None,
@@ -215,12 +234,12 @@ def finalized_period_lock(*, date_column=None, month_text_column=None,
     elif date_column:
         date_sql = f'{{row}}."{date_column}"'
     elif datetime_column:
-        # The one limit: the zone is read from settings when the trigger is
-        # declared, so the migration records it. A site that changes TIME_ZONE
-        # after migrating keeps the old zone in the trigger until the migration
-        # is regenerated.
-        zone = _sql_literal(settings.TIME_ZONE)
-        date_sql = f'({{row}}."{datetime_column}" AT TIME ZONE {zone})::date'
+        # The site's calendar day, in the TIME_ZONE the site runs with: every
+        # Django connection sets it as a session setting (see
+        # set_session_time_zone), so the trigger follows the setting without a
+        # new migration. A session that did not set it (psql by hand) reads
+        # the shipped default.
+        date_sql = f'({{row}}."{datetime_column}" AT TIME ZONE {SESSION_TIME_ZONE_SQL})::date'
     elif year_month_columns:
         year, month = year_month_columns
         date_sql = (

@@ -22,6 +22,16 @@ class CoreConfig(AppConfig):
         # Fill in the Site row once migrations have finished, never
         # here: ready() runs before the tables exist. sender=self keeps it to
         # one firing per `migrate`, not one per installed app.
+        # The finalized-year lock reads a date-and-time column as the site's
+        # day; each connection carries the site's TIME_ZONE for it.
+        from django.db.backends.signals import connection_created
+
+        from accounting.locks import set_session_time_zone
+
+        connection_created.connect(
+            set_session_time_zone, dispatch_uid="accounting.locks.set_session_time_zone"
+        )
+
         post_migrate.connect(
             apply_site_identity,
             sender=self,

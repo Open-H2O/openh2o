@@ -214,16 +214,24 @@ def test_23_30_pacific_on_the_last_day_is_locked_and_00_30_on_the_next_years_fir
     assert type(kept).objects.filter(pk=kept.pk).count() == 1
 
 
-def test_the_trigger_records_the_zone_it_was_declared_with():
+def test_the_lock_reads_the_day_in_the_sites_time_zone_whatever_it_is(periods):
+    """Every connection carries the site's TIME_ZONE; a site on Eastern time gets Eastern days."""
+    from accounting.locks import TIME_ZONE_SETTING
+
+    closed, _ = periods
+    _finalize(closed)
     with connection.cursor() as cursor:
-        cursor.execute(
-            "SELECT pg_get_functiondef(t.tgfoid) FROM pg_trigger t "
-            "JOIN pg_class c ON c.oid = t.tgrelid "
-            "WHERE c.relname = 'measurements_meterreading' "
-            "AND t.tgname LIKE 'pgtrigger_finalized_period_lock_%'"
-        )
-        definition = cursor.fetchone()[0]
-    assert "AT TIME ZONE 'America/Los_Angeles'" in definition
+        cursor.execute("SELECT current_setting(%s, true)", [TIME_ZONE_SETTING])
+        assert cursor.fetchone()[0] == settings.TIME_ZONE
+    # 23:30 Pacific on Sep 30 is 02:30 Eastern on Oct 1: in the open year for an Eastern site.
+    last_night = dt.datetime(2025, 9, 30, 23, 30, tzinfo=PACIFIC)
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT set_config(%s, 'America/New_York', true)", [TIME_ZONE_SETTING])
+    kept = _datetime_row("measurements.MeterReading", last_night)
+    assert type(kept).objects.filter(pk=kept.pk).count() == 1
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT set_config(%s, %s, true)", [TIME_ZONE_SETTING, settings.TIME_ZONE])
+    _refused(lambda: _datetime_row("measurements.MeterReading", last_night))
 
 
 # -- the three columns that are not a plain date ---------------------------------------------
