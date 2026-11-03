@@ -11,7 +11,7 @@ EXEC    = $(COMPOSE) exec web python manage.py
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 export APP_VERSION = $(VERSION)
 
-.PHONY: help up down build logs shell dbshell migrate makemigrations \
+.PHONY: help up down build logs shell dbshell migrate makemigrations health prune \
         createsuperuser collectstatic seed seed-water-types \
         seed-data-sources seed-report-templates seed-water-right-types \
         seed-well-types demo remove-demo \
