@@ -354,7 +354,7 @@ The three containers start one after another. The database has to report healthy
 before the website container starts. The website container then does its own
 start-up work in this order. It gathers the styling and images, runs the
 <!-- defines: migrations -->migrations that create or update the database tables (section 6),
-records the figures of any finalized water year that has none on file, creates a cache table, and creates the administrator account if `.env` asks for one
+records the figures of any finalized water year that has none on file, takes the fingerprint of any that has none, creates a cache table, and creates the administrator account if `.env` asks for one
 (section 7). It reports healthy after that, and Caddy starts. A first build takes a few minutes. Check with:
 
 ```bash

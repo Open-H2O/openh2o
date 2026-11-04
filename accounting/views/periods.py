@@ -349,7 +349,7 @@ def period_fingerprint_file(request, pk):
 @login_required
 @require_POST
 def period_fingerprint_check(request, pk):
-    """Recompute the year's fingerprint and answer in place. Writes nothing.
+    """Recompute the year's fingerprint and answer in place. Changes no record.
 
     A viewer may press it (``core.access.VIEWER_ALLOWED_URL_NAMES``). With HTMX the
     answer replaces the line's empty answer; without scripts the water year page

@@ -726,7 +726,7 @@ def glossary(request):
         "ETAW Met by Groundwater": "The part of a use area's ETAW that surface water does not meet, when the use area has a well. If the well has no meter, the month's calculated row on the Use Ledger holds this figure. See Help > Methods Behind the Numbers.",
         "Groundwater Extraction": "The groundwater a well pumps in a month. OpenH2O uses the meter reading where the well has a meter, and otherwise divides ETAW met by groundwater by the use area's irrigation efficiency. See Help > Methods Behind the Numbers.",
         "Surface Water in Excess of ETAW": "The amount by which a use area's surface water delivery times its irrigation efficiency exceeds its ETAW for the month. See Help > Settings explained.",
-        "Fingerprint": "A code OpenH2O computes from a finalized water year's records and their Change history, shown on the water year page, which Check computes again to say whether the records are the same as when it was taken.",
+        "Fingerprint": "A code OpenH2O computes from a finalized water year's records and their Change history, shown on the water year page, which Check computes again to say whether what the code covers is the same as when it was taken.",
         "GEARS": "Groundwater Extraction Annual Reporting System, the State Water Board's system for annual reports of groundwater extraction. OpenH2O does not submit reports to the state.",
         "GSA": "Groundwater Sustainability Agency, a local agency that manages groundwater in a basin under SGMA.",
         "GSP": "Groundwater Sustainability Plan, the plan under SGMA for managing a basin's groundwater.",

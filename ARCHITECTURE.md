@@ -276,8 +276,8 @@ write one; reopening keeps every statement and finalizing again writes a `restat
 inside a finalized year takes none. Both tables are in `LOCKED_MODELS` on their own period column and also refuse
 every UPDATE, even inside `override`: a statement is never edited. A year finalized before statements existed
 gets one of kind `recorded_at_upgrade` from `record_filed_figures`, which `entrypoint.sh` runs after `migrate`
-(a command, not a migration, because a migration never imports live code) and which is also the demonstration's
-last step. The water year page's Figures as filed card loads its comparison from `accounting:period_figures`,
+(a command, not a migration, because a migration never imports live code) and which is the
+demonstration's last step before its fingerprint. The water year page's Figures as filed card loads its comparison from `accounting:period_figures`,
 kept in the cache under the statement ids and a change token (the newest history id of each table in `_FIGURE_MODELS` and of each correction kind, plus
 the newest calculation request and statement), because reading every figure takes seconds; each group of moved figures names the corrections and voids
 made since the oldest statement to records that touch its use areas (the `use_areas` hook in `core/corrections.py`).
@@ -286,24 +286,23 @@ The account and use area pages compare the figures they already computed with th
 **The year's fingerprint.** `core/fingerprint.py` computes one SHA-256 digest per part of a water year and one for the
 whole year: every table in `LOCKED_MODELS` plus the use areas with a ledger row or calculation in the year, rows chosen
 by the same rule the lock reads, read through the default managers so voided and replaced rows are in, and then the
-Change history of those rows with each entry's context. A row is canonical JSON (sorted keys, Decimal as normalized
+Change history of those rows with each entry's context. A row is a JSON array of its columns in the stored order (keys sorted inside a JSON column, Decimal as normalized
 text, float as `repr`, dates in ISO), rows in key order; a column type the module does not know raises. `period_finalize`
 takes the fingerprint after the statement, in the same note and transaction with the period row held; a year already
 finalized gets one from `record_fingerprints`, which `entrypoint.sh` runs after `record_filed_figures`, and a demonstration
-load takes it after `forget_events`, so its own write leaves no history. `ReportingPeriod` keeps the digest, when it was
+load takes it between two `forget_events` calls: the first so it reads the finished load, the second to remove its own write. `ReportingPeriod` keeps the digest, when it was
 taken and, in `fingerprint_parts`, each part's digest and row count and the columns read per table. Reopening keeps them;
 finalizing again takes a new one and keeps the first. A correction or void does not retake it. Check
-(`accounting/fingerprints.py`) recomputes over exactly the stored tables and columns and writes nothing, so a viewer may
+(`accounting/fingerprints.py`) recomputes over exactly the stored tables and columns and changes no record, so a viewer may
 press it. A column or table a later version adds is ignored by an older code; a stored one that no longer exists is
 answered as a part OpenH2O can no longer read, never as a change.
 
-A match says the covered records are the same as when the code was taken. It does not say they were right. Three things
-are left out so ordinary work does not read as a changed record: a use area's acres and other details (the part reads only its
+A match says what the code covers is the same as when it was taken. It does not say the records were right. Everything outside the parts is left out, so ordinary work does not read as a changed record: a use area's acres and other details (the part reads only its
 number and its marking columns, and leaves out its Change history), a fallow period's end month after the year's end (and
-that table's Change history), and links and settings, which feed figures and are not locked (`geography.ParcelZone`,
+that table's Change history), and every table with no part, among them links and settings that feed figures and are not locked (for example `geography.ParcelZone`,
 `geography.Zone`, `accounting.WaterAccount`, `wells.WellIrrigatedParcel`, `wells.WellMeter`,
-`surface.PointOfDiversionParcel`, `core.SiteConfig`). Check runs inside OpenH2O: it cannot catch a change to the software,
-and someone who rewrites the records and the stored code together is caught only by the downloaded page compared by hand.
+`surface.PointOfDiversionParcel`, `core.SiteConfig`) and the stored OpenET figures (`datasync.OpenETCache`). Check runs inside OpenH2O: it cannot catch a change to the software,
+and Check does not catch someone who rewrites the records and the stored code together; the downloaded page compared by hand does.
 The screen and the page print the first 20 characters; the page also prints all 64, because matching a code already on file takes about 2^80 tries, and preparing two versions of the records with the same 20 before finalizing takes about 2^40.
 
 A tracked field with no `verbose_name` prints the name Django makes from the field's name in Change history

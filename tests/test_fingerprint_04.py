@@ -539,8 +539,13 @@ def test_the_download_of_a_year_taken_at_the_upgrade_and_of_a_restated_year(year
     assert f"Taken        {_day(year.fingerprint_at)}, when the year was finalized again" in text
     short = first[:20].upper()
     code = "-".join(short[i:i + 4] for i in range(0, 20, 4))
-    assert f"As filed     {code}, taken {_day(first_at)}" in text
-    assert f"As filed     {first.upper()}" in text
+    # That first code was taken at the upgrade, not at a filing.
+    assert f"First code   {code}, taken {_day(first_at)}" in text
+    assert f"First code   {first.upper()}" in text
+    assert "As filed" not in text
+    body = client.get(reverse("accounting:period_detail", args=[year.pk])).content.decode()
+    assert f"first taken {_day(first_at)}." in body
+    assert "as filed " + _day(first_at) not in body
 
 
 APPROVED_PAGE = """Halvern Valley GSA
@@ -557,10 +562,10 @@ taken, records marked void or replaced included, and from every Change
 history entry of those rows. For a use area with a record in the year, the
 code reads its number and whether it was voided, not its acres or other
 details. For a fallow period it reads the end month only up to the year's
-end. Change history of use areas and fallow periods is left out. Links and
-settings (which zone a use area is in, which well serves it, account names,
-site settings) are not covered, and neither is anything a later version of
-OpenH2O adds.
+end. Change history of use areas and fallow periods is left out. Nothing
+else is covered: links and settings (which zone a use area is in, which well
+serves it, account names, site settings), the stored OpenET figures, and
+anything a later version of OpenH2O adds.
 
   Part                         Rows    Part                         Rows
   Use ledger                  1,057    Water levels                   20

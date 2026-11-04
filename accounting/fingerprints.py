@@ -11,8 +11,9 @@ caller saves the period, inside the transaction that holds its row. A correction
 or a void never retakes it; finalizing a reopened year does, and the first code
 the year ever had is kept beside the newest.
 
-Check reads and writes nothing, so pressing it leaves no Change history behind
-and cannot move the code it is checking.
+Check changes no record, so pressing it leaves no Change history behind and
+cannot move the code it is checking. (The Figures as filed comparison it may read
+keeps its usual entry in the cache.)
 """
 
 import datetime as dt
@@ -55,7 +56,11 @@ def take_fingerprint(period, *, at_upgrade=False):
     if earlier:
         stored["first"] = earlier
     elif period.fingerprint:
-        stored["first"] = {"digest": period.fingerprint, "at": period.fingerprint_at.isoformat() if period.fingerprint_at else ""}
+        stored["first"] = {
+            "digest": period.fingerprint,
+            "at": period.fingerprint_at.isoformat() if period.fingerprint_at else "",
+            "at_upgrade": bool(period.fingerprint_parts.get("at_upgrade")),
+        }
     if at_upgrade:
         stored["at_upgrade"] = True
     period.fingerprint = computed.digest
@@ -92,14 +97,14 @@ def record_upgrade_fingerprints():
 
 
 def _first(period):
-    """``(digest, words)`` of the first code a restated year had, or None."""
+    """``(digest, words, at_upgrade)`` of the first code a restated year had, or None."""
     first = (period.fingerprint_parts or {}).get("first")
     if not first or not first.get("digest"):
         return None
     when = ""
     if first.get("at"):
         when = _day(dt.datetime.fromisoformat(first["at"]))
-    return first["digest"], when
+    return first["digest"], when, bool(first.get("at_upgrade"))
 
 
 def line_context(period):
@@ -113,6 +118,7 @@ def line_context(period):
         "restated": first is not None,
         "first_code": short_code(first[0]) if first else "",
         "first_taken": first[1] if first else "",
+        "first_label": ("first taken" if first[2] else "as filed") if first else "",
     }
 
 
@@ -150,7 +156,7 @@ def _lower(key):
 
 
 def check_fingerprint(period):
-    """Recompute the year over what its fingerprint kept and compare. Writes nothing."""
+    """Recompute the year over what its fingerprint kept and compare. Changes no record."""
     stored = period.fingerprint_parts
     taken = _day(period.fingerprint_at)
     computed = fingerprint.compute(period, stored)
@@ -200,9 +206,9 @@ _COVERS = (
     "entry of those rows. For a use area with a record in the year, the code reads its "
     "number and whether it was voided, not its acres or other details. For a fallow "
     "period it reads the end month only up to the year's end. Change history of use "
-    "areas and fallow periods is left out. Links and settings (which zone a use area "
-    "is in, which well serves it, account names, site settings) are not covered, and "
-    "neither is anything a later version of OpenH2O adds."
+    "areas and fallow periods is left out. Nothing else is covered: links and settings "
+    "(which zone a use area is in, which well serves it, account names, site settings), "
+    "the stored OpenET figures, and anything a later version of OpenH2O adds."
 )
 
 _STEPS = (
@@ -281,9 +287,10 @@ def file_text(period):
         taken_line = f"{taken}, when the year was finalized"
     as_filed = ""
     if first:
+        label = "First code" if first[2] else "As filed"
         as_filed = (
-            f"As filed     {short_code(first[0])}, taken {first[1]}\n"
-            f"As filed     {first[0].upper()}\n"
+            f"{label:<13}{short_code(first[0])}, taken {first[1]}\n"
+            f"{label:<13}{first[0].upper()}\n"
         )
     steps = "\n".join(
         _wrap(f"{number}. " + text.format(name=period.name), indent="   ", first="")

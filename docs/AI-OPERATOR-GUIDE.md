@@ -761,8 +761,9 @@ Docker, follow section 11 of the no-Docker install guide.
 
 Each finalized water year's page shows a fingerprint, a code computed from that year's
 records. When someone reports that Check says "Does not match", read the parts it names and
-the corrections it lists, and tell the organization what the answer says. Change nothing to
-make it match. Reopening the year and finalizing it again takes a new code, and that is the
+the corrections it lists, and tell the organization what the answer says. If it says the stored
+fingerprint no longer agrees with its own parts, compare the code on the page with the
+organization's kept file. Change nothing to make it match. Reopening the year and finalizing it again takes a new code, and that is the
 organization's decision. Check runs inside OpenH2O, so it cannot catch a change to the
 software, and the one-page file the Download link gives is what the organization keeps
 outside OpenH2O.

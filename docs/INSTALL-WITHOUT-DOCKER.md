@@ -332,9 +332,9 @@ of DEPLOY.md, under Email / Password Reset). Generate the password with the same
 `secrets.token_urlsafe` command, and store it in a password manager. Give the
 password to the organization through a channel the organization already trusts.
 
-### The five steps
+### The six steps
 
-Load `.env`, then run these five steps in order. The Docker container runs the same
+Load `.env`, then run these six steps in order. The Docker container runs the same
 steps each time it starts.
 
 ```bash
@@ -353,14 +353,14 @@ set -a && source .env && set +a
 *migrations*, which create or update the database tables to match this version of
 OpenH2O. Run it after every install and every update. `record_filed_figures` records, once,
 the figures of each water year finalized before OpenH2O kept them, and `record_fingerprints` takes
-the fingerprint of each one that has none. `createcachetable` creates
+the fingerprint of each finalized water year that has none. `createcachetable` creates
 one more table, where OpenH2O keeps short-lived values. `ensure_superuser` creates
 the first account.
 
 `ensure_superuser` creates the account only when the site does not have an active host
 administrator. While the site has one, it does not change any account. After you
 first sign in, change the password on your profile page. Keep both lines in `.env`,
-so a wiped database gets the account back the next time the five steps run. You can
+so a wiped database gets the account back the next time the six steps run. You can
 also create the account with `.venv/bin/python manage.py createsuperuser`, which asks
 for each value. Section 7 of [DEPLOY.md](../DEPLOY.md) covers changing the account's
 email address later.

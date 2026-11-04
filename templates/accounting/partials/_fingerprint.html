@@ -9,7 +9,7 @@
   <div class="field-value">
     <span class="text-mono text-sm fingerprint-code">{{ line.code }}</span>
     <div class="text-sm fingerprint-meta"><span class="text-tertiary">taken {{ line.taken }}{% if line.restated %}, restated{% endif %}.</span> <span class="text-tertiary">&middot;</span> <a href="{% url 'accounting:period_fingerprint_file' period.pk %}" class="text-link">Download</a> <span class="text-tertiary">&middot;</span> <form method="post" action="{% url 'accounting:period_fingerprint_check' period.pk %}" style="display: inline;" hx-post="{% url 'accounting:period_fingerprint_check' period.pk %}" hx-target="#fingerprint-answer" hx-swap="outerHTML">{% csrf_token %}<button type="submit" class="btn-as-link text-link">Check</button></form></div>
-    {% if line.restated %}<div class="text-tertiary" style="margin-top: var(--space-xs);"><span class="text-mono text-sm fingerprint-code">{{ line.first_code }}</span><div class="text-sm fingerprint-meta">as filed {{ line.first_taken }}.</div></div>{% endif %}
+    {% if line.restated %}<div class="text-tertiary" style="margin-top: var(--space-xs);"><span class="text-mono text-sm fingerprint-code">{{ line.first_code }}</span><div class="text-sm fingerprint-meta">{{ line.first_label }} {{ line.first_taken }}.</div></div>{% endif %}
     {% if answer %}{% include "accounting/partials/_fingerprint_answer.html" %}{% else %}<span id="fingerprint-answer"></span>{% endif %}
   </div>
 </div>
