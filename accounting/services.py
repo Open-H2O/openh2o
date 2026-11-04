@@ -2409,10 +2409,12 @@ def account_allocation(
         ).aggregate(total=Sum("allocation_acre_feet"))["total"]
         if plans is None:
             continue
-        members = zone_parcel_ids(zone, reporting_period)
+        # The acres are of current use areas only, so a voided one, which keeps its
+        # zone and account links, is in no share.
+        acres = _field_acres(zone_parcel_ids(zone, reporting_period))
+        members = list(acres)
         if not mine.intersection(members):
             continue
-        acres = _field_acres(members)
         zone_acres = sum(acres.values(), Decimal("0"))
         if zone_acres > 0:
             share = sum((acres[p] for p in members if p in mine), Decimal("0")) / zone_acres

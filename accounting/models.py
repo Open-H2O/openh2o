@@ -47,6 +47,11 @@ class ReportingPeriod(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
     )
     notes = models.TextField(blank=True)
+    # The year's fingerprint (core/fingerprint.py): the whole-year digest in full,
+    # when it was taken, and what it was computed from. Kept when the year is reopened.
+    fingerprint = models.CharField("Fingerprint", max_length=64, blank=True, default="")
+    fingerprint_at = models.DateTimeField("Fingerprint taken", null=True, blank=True)
+    fingerprint_parts = models.JSONField("Fingerprint parts", default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

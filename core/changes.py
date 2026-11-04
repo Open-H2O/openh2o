@@ -52,8 +52,10 @@ LABEL_INSERT = "insert"
 LABEL_DELETE = "delete"
 
 # Columns a reader never needs in a list of changes: the row's own key and the
-# time it was first created (neither ever changes).
-HIDDEN_FIELDS = frozenset({"id", "created_at"})
+# time it was first created (neither ever changes), and what a water year's
+# fingerprint was computed from (the digests and column lists of every part; the
+# code itself and when it was taken are shown).
+HIDDEN_FIELDS = frozenset({"id", "created_at", "fingerprint_parts"})
 
 # The longest value shown in a cell before it is cut (a JSON breakdown can run
 # to kilobytes).

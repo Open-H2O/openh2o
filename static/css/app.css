@@ -3405,6 +3405,24 @@ div[id$="-map"] {
     color: var(--color-accent-hover);
 }
 
+/* A button that reads as an inline link (the water year page's Check). */
+.btn-as-link {
+    background: none;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    font-family: inherit;
+    font-weight: inherit;
+    line-height: inherit;
+    cursor: pointer;
+}
+
+/* The year's fingerprint: the code and its line stay on one row. */
+.fingerprint-code,
+.fingerprint-meta {
+    white-space: nowrap;
+}
+
 /* -- Form error box ------------------------------------------------------ */
 
 .form-error-box {

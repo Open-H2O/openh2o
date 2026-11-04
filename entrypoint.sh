@@ -27,6 +27,8 @@ python manage.py migrate --noinput
 # A year finalized before OpenH2O kept filed figures gets them recorded once,
 # at the first start after the upgrade; afterwards this finds nothing to do.
 python manage.py record_filed_figures
+# Likewise the fingerprint of a finalized year: taken once, then left alone.
+python manage.py record_fingerprints
 python manage.py createcachetable
 python manage.py ensure_superuser
 

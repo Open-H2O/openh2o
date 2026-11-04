@@ -1,0 +1,15 @@
+{% comment %}
+  The year's fingerprint line on the water year page (accounting.fingerprints.line_context).
+  Check asks for its answer with HTMX and the answer replaces #fingerprint-answer; without
+  scripts the form posts and the page prints the answer in place. A restated year shows
+  the newest code first and the first code, quieter, under it.
+{% endcomment %}
+<div class="field-group field-grid-2-span" id="fingerprint">
+  <div class="field-label">Fingerprint</div>
+  <div class="field-value">
+    <span class="text-mono text-sm fingerprint-code">{{ line.code }}</span>
+    <div class="text-sm fingerprint-meta"><span class="text-tertiary">taken {{ line.taken }}{% if line.restated %}, restated{% endif %}.</span> <span class="text-tertiary">&middot;</span> <a href="{% url 'accounting:period_fingerprint_file' period.pk %}" class="text-link">Download</a> <span class="text-tertiary">&middot;</span> <form method="post" action="{% url 'accounting:period_fingerprint_check' period.pk %}" style="display: inline;" hx-post="{% url 'accounting:period_fingerprint_check' period.pk %}" hx-target="#fingerprint-answer" hx-swap="outerHTML">{% csrf_token %}<button type="submit" class="btn-as-link text-link">Check</button></form></div>
+    {% if line.restated %}<div class="text-tertiary" style="margin-top: var(--space-xs);"><span class="text-mono text-sm fingerprint-code">{{ line.first_code }}</span><div class="text-sm fingerprint-meta">as filed {{ line.first_taken }}.</div></div>{% endif %}
+    {% if answer %}{% include "accounting/partials/_fingerprint_answer.html" %}{% else %}<span id="fingerprint-answer"></span>{% endif %}
+  </div>
+</div>

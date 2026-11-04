@@ -68,6 +68,8 @@
           </div>
         </div>
 
+        {% if fingerprint_line %}{% include "accounting/partials/_fingerprint.html" with line=fingerprint_line answer=fingerprint_answer %}{% endif %}
+
         <div class="field-group">
           <div class="field-label">Start date</div>
           <div class="field-value">{{ period.start_date|date:"M d, Y" }}</div>

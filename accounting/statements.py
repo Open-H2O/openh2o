@@ -519,6 +519,11 @@ class CorrectionLine:
     rest: str
     at: dt.datetime
     use_areas: frozenset = field(default_factory=frozenset)
+    #: The words the fingerprint's answer uses: the kind (``ledger entry``), the record's
+    #: own date, and what was done (``corrected Nov 3, 2026 by J. Lopez``).
+    kind_label: str = ""
+    day: dt.date | None = None
+    said: str = ""
 
     @property
     def identity(self):
@@ -536,13 +541,15 @@ def _in_period(day, period):
     return day is None or period.start_date <= day <= period.end_date
 
 
-def corrections_since(period, since):
+def corrections_since(period, since, all_records=False):
     """The corrections and voids made after ``since`` that reach a figure of ``period``.
 
     Found through the registry (``core.corrections.KINDS``): the rows of each
     enabled kind marked replaced or voided after ``since`` whose own date falls
     in the year (a row with no date counts), and that touch at least one use
-    area. Newest last.
+    area. Newest last. ``all_records=True`` also keeps the ones that touch no
+    use area (a water level, a lab result), which the fingerprint's answer lists
+    and the moved-figures card does not.
     """
     from core import corrections
     from core.templatetags.record_marks import _author
@@ -561,7 +568,7 @@ def corrections_since(period, since):
             use_areas = frozenset(kind["use_areas"](row))
             if replacement is not None:
                 use_areas |= frozenset(kind["use_areas"](replacement))
-            if not use_areas:
+            if not use_areas and not all_records:
                 continue
             in_year = _in_period(kind["date_of"](row), period) or (
                 replacement is not None and _in_period(kind["date_of"](replacement), period)
@@ -574,12 +581,24 @@ def corrections_since(period, since):
                 who = _who(_author(replacement)) if replacement is not None else "a former user"
                 reason = _sentence_end(replacement.change_reason if replacement else "")
                 rest = f" corrected {local:%b} {local.day}, {local.year} by {who}: {reason}"
-                found.append(CorrectionLine(label, url, rest.rstrip(": "), row.replaced_at, use_areas))
+                said = f"corrected {local:%b} {local.day}, {local.year} by {who}"
+                found.append(
+                    CorrectionLine(
+                        label, url, rest.rstrip(": "), row.replaced_at, use_areas,
+                        kind["label"], kind["date_of"](row), said,
+                    )
+                )
             if row.voided_at is not None and row.voided_at > since:
                 local = timezone.localtime(row.voided_at, pacific)
                 reason = _sentence_end(row.void_reason)
                 rest = f" voided {local:%b} {local.day}, {local.year} by {_who(row.voided_by)}: {reason}"
-                found.append(CorrectionLine(label, url, rest.rstrip(": "), row.voided_at, use_areas))
+                said = f"voided {local:%b} {local.day}, {local.year} by {_who(row.voided_by)}"
+                found.append(
+                    CorrectionLine(
+                        label, url, rest.rstrip(": "), row.voided_at, use_areas,
+                        kind["label"], kind["date_of"](row), said,
+                    )
+                )
     found.sort(key=lambda c: (c.at, c.identity))
     return found
 

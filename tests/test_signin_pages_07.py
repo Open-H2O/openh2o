@@ -68,7 +68,10 @@ def test_a_refused_person_lands_on_home_and_is_told_once(role, screen):
 def test_the_refusal_does_not_reverse_a_water_accounting_address():
     source = inspect.getsource(access.admin_required)
     assert "accounting:" not in source
-    assert "accounting:" not in inspect.getsource(access)
+    # The viewer allowlist names the fingerprint's Check by its URL name, as a string
+    # it compares; nothing in the module turns an accounting name into an address.
+    assert 'reverse("accounting:' not in inspect.getsource(access)
+    assert "reverse('accounting:" not in inspect.getsource(access)
 
 
 class _AddsAMessage:

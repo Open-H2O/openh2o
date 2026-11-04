@@ -5,12 +5,13 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count, Q, Sum
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
 from core.history import change_note
+from accounting import fingerprints
 from accounting.engine_run import create_request, start_calculation
 from accounting.locks import finalized_message
 from accounting.forms import PeriodFinalizeForm, ReportingPeriodForm
@@ -117,7 +118,7 @@ def _calculation_card_context(period):
     return context
 
 
-def _period_detail_context(period, finalize_form=None, comparison=None):
+def _period_detail_context(period, finalize_form=None, comparison=None, fingerprint_answer=None):
     """The period page's context, shared by ``period_detail`` and by
     ``period_finalize`` re-rendering the same page on a rejected note.
 
@@ -125,6 +126,8 @@ def _period_detail_context(period, finalize_form=None, comparison=None):
     carrying its validation error; a fresh unbound one is built otherwise.
     ``comparison`` is the figures-as-filed comparison when the page prints it in
     place (the figures route opened without scripts); otherwise the card loads it.
+    ``fingerprint_answer`` is Check's answer when the page prints it in place (Check
+    pressed without scripts).
     """
     allocations = AllocationPlan.objects.filter(
         reporting_period=period
@@ -149,6 +152,8 @@ def _period_detail_context(period, finalize_form=None, comparison=None):
         or PeriodFinalizeForm(reopening=period.is_finalized),
         # The Figures as filed card: its first line now, the comparison after the page loads.
         "filed_card": card_context(period, comparison=comparison),
+        "fingerprint_line": fingerprints.line_context(period),
+        "fingerprint_answer": fingerprint_answer,
         **_calculation_card_context(period),
     }
 
@@ -290,6 +295,10 @@ def period_finalize(request, pk):
             period.is_finalized = True
             period.finalized_at = timezone.now()
             period.finalized_by = request.user
+            # The year's fingerprint, after its statement, in the same note and
+            # transaction and with the row held. It reads records and Change
+            # history only; the write below adds nothing it reads.
+            fingerprints.take_fingerprint(period)
         period.save()
 
     return redirect("accounting:period_detail", pk=period.pk)
@@ -321,4 +330,41 @@ def period_figures(request, pk):
         request,
         "accounting/period_detail.html",
         _period_detail_context(period, comparison=comparison),
+    )
+
+
+@login_required
+@require_GET
+def period_fingerprint_file(request, pk):
+    """The year's fingerprint as a one-page text file, for every signed-in reader."""
+    period = get_object_or_404(ReportingPeriod, pk=pk)
+    if not fingerprints.has_fingerprint(period):
+        raise Http404("This water year has no fingerprint.")
+    text = fingerprints.file_text(period).rstrip() + "\n"
+    response = HttpResponse(text, content_type="text/plain; charset=utf-8")
+    response["Content-Disposition"] = f'attachment; filename="{fingerprints.file_name(period)}"'
+    return response
+
+
+@login_required
+@require_POST
+def period_fingerprint_check(request, pk):
+    """Recompute the year's fingerprint and answer in place. Writes nothing.
+
+    A viewer may press it (``core.access.VIEWER_ALLOWED_URL_NAMES``). With HTMX the
+    answer replaces the line's empty answer; without scripts the water year page
+    is printed with the answer in place, as ``period_finalize`` prints its error.
+    """
+    period = get_object_or_404(ReportingPeriod, pk=pk)
+    if not fingerprints.has_fingerprint(period):
+        raise Http404("This water year has no fingerprint.")
+    answer = fingerprints.check_fingerprint(period)
+    if request.headers.get("HX-Request"):
+        return render(
+            request, "accounting/partials/_fingerprint_answer.html", {"answer": answer}
+        )
+    return render(
+        request,
+        "accounting/period_detail.html",
+        _period_detail_context(period, fingerprint_answer=answer),
     )

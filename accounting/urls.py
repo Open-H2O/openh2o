@@ -37,6 +37,16 @@ urlpatterns = [
         name="period_figures",
     ),
     path(
+        "reporting-periods/<int:pk>/fingerprint.txt",
+        periods.period_fingerprint_file,
+        name="period_fingerprint_file",
+    ),
+    path(
+        "reporting-periods/<int:pk>/fingerprint/check/",
+        periods.period_fingerprint_check,
+        name="period_fingerprint_check",
+    ),
+    path(
         "reporting-periods/<int:pk>/finalize/",
         periods.period_finalize,
         name="period_finalize",

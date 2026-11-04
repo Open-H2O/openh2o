@@ -743,6 +743,11 @@ def load(stdout=None):
                 site.save(update_fields=["demonstration_mode"])
             counts = content_counts()
             forget_events(context.id)
+            # The fingerprint is taken after the history is forgotten, so it reads the
+            # year as the finished load leaves it. The write on the water year row is
+            # itself a recorded change, so it is forgotten as well.
+            call_command("record_fingerprints", stdout=stdout)
+            forget_events(context.id)
     _clear_cache()
     return counts
 

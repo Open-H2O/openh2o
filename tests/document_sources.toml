@@ -2525,6 +2525,21 @@ checked_at = "c66fb5d1"
 
 [[section]]
 document = "templates/help/getting_started.html"
+heading = "The year’s fingerprint"
+files = [
+  "core/fingerprint.py",
+  "accounting/fingerprints.py",
+  "accounting/views/periods.py",
+  "accounting/management/commands/record_fingerprints.py",
+  "templates/accounting/partials/_fingerprint.html",
+  "templates/accounting/partials/_fingerprint_answer.html",
+  "templates/accounting/fingerprint.txt",
+]
+labels = []
+checked_at = "f605538d"
+
+[[section]]
+document = "templates/help/getting_started.html"
 heading = "Where to go next"
 files = []
 why_none = "Link cards to the other Help pages, each with a one-line description of that page; pointers are checked separately."

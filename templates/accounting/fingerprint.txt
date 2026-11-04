@@ -1,0 +1,20 @@
+{% autoescape off %}{{ site_name }}
+Fingerprint of water year {{ period.name }} ({{ start }} to {{ end }})
+
+Finalized    {{ finalized }}
+Fingerprint  {{ code }}
+Full code    {{ full_code }}
+Taken        {{ taken_line }}
+{{ as_filed }}
+What the fingerprint covers
+{{ covers }}
+
+{{ table }}
+
+How to check
+{{ steps }}
+
+{{ meaning }}
+
+{{ keeping }}
+{% endautoescape %}
