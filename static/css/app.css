@@ -3417,12 +3417,6 @@ div[id$="-map"] {
     cursor: pointer;
 }
 
-/* The year's fingerprint: the code and its line stay on one row. */
-.fingerprint-code,
-.fingerprint-meta {
-    white-space: nowrap;
-}
-
 /* -- Form error box ------------------------------------------------------ */
 
 .form-error-box {
