@@ -638,8 +638,8 @@ def test_the_page_carries_the_line_as_drawn(filed, administrator):
     code = "-".join(f"{filed.fingerprint[i:i + 4]}" for i in range(0, 20, 4)).upper()
     assert body.index("Finalized</span>") < body.index('id="fingerprint"') < body.index(">Start date<")
     assert '<div class="field-group field-grid-2-span" id="fingerprint">' in body
-    assert f'<span class="text-mono text-sm fingerprint-code">{code}</span>' in body
-    assert f'<div class="text-sm fingerprint-meta"><span class="text-tertiary">taken {_day(filed.fingerprint_at)}.</span>' in body
+    assert f'<span class="text-mono text-sm">{code}</span>' in body
+    assert f'<div class="text-sm"><span class="text-tertiary">taken {_day(filed.fingerprint_at)}.</span>' in body
     assert f'<a href="{_file_url(filed)}" class="text-link">Download</a>' in body
     assert f'hx-post="{_check_url(filed)}" hx-target="#fingerprint-answer" hx-swap="outerHTML"' in body
     assert '<button type="submit" class="btn-as-link text-link">Check</button>' in body
