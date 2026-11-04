@@ -343,6 +343,7 @@ set -a && source .env && set +a
 .venv/bin/python manage.py collectstatic --noinput --clear
 .venv/bin/python manage.py migrate --noinput
 .venv/bin/python manage.py record_filed_figures
+.venv/bin/python manage.py record_fingerprints
 .venv/bin/python manage.py createcachetable
 .venv/bin/python manage.py ensure_superuser
 ```
@@ -351,7 +352,8 @@ set -a && source .env && set +a
 `collectstatic` gathers the static files into one folder. `migrate` runs the
 *migrations*, which create or update the database tables to match this version of
 OpenH2O. Run it after every install and every update. `record_filed_figures` records, once,
-the figures of each water year finalized before OpenH2O kept them. `createcachetable` creates
+the figures of each water year finalized before OpenH2O kept them, and `record_fingerprints` takes
+the fingerprint of each one that has none. `createcachetable` creates
 one more table, where OpenH2O keeps short-lived values. `ensure_superuser` creates
 the first account.
 
@@ -607,6 +609,7 @@ git pull
 .venv/bin/python manage.py collectstatic --noinput --clear
 .venv/bin/python manage.py migrate --noinput
 .venv/bin/python manage.py record_filed_figures
+.venv/bin/python manage.py record_fingerprints
 sudo systemctl restart openh2o
 ```
 

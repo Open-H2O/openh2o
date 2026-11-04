@@ -756,6 +756,14 @@ start records the figures of each water year that was already finalized, as they
 day, and the water year's page says they were recorded at the upgrade. It happens once for
 each such year.
 
+After upgrading to a version that keeps fingerprints, the same first start takes the
+fingerprint of each water year already finalized, over its records as they stand that day,
+so the code says nothing about any change made before it. The water year page shows the
+code, a Download link for a one-page text file, and a Check button that computes it again.
+OpenH2O sends that file nowhere. An organization that wants to keep it can file it with
+its board minutes or send it to its watermaster; what it does with the file is its own
+choice.
+
 When it stops at the first step, the file it names was edited on this server under an
 earlier version of this guide, which had every site edit `crontab.txt` and sites with
 a domain edit the `Caddyfile`. Save a copy of your edits, run `git checkout -- <file>`

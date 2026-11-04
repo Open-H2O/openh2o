@@ -759,6 +759,14 @@ Backup, Database Restore and Upgrades in section 11 of DEPLOY.md give the comman
 back up by hand, to restore a backup and to upgrade. Those commands need Docker. Without
 Docker, follow section 11 of the no-Docker install guide.
 
+Each finalized water year's page shows a fingerprint, a code computed from that year's
+records. When someone reports that Check says "Does not match", read the parts it names and
+the corrections it lists, and tell the organization what the answer says. Change nothing to
+make it match. Reopening the year and finalizing it again takes a new code, and that is the
+organization's decision. Check runs inside OpenH2O, so it cannot catch a change to the
+software, and the one-page file the Download link gives is what the organization keeps
+outside OpenH2O.
+
 On an installation without Docker, load the variables in `.env` into the terminal as
 the [no-Docker install guide](INSTALL-WITHOUT-DOCKER.md) shows. Run each command
 above with this installation's Python in place of `docker compose exec web`, and
