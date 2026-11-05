@@ -769,9 +769,12 @@ decision. Check for changes runs inside OpenH2O, so it cannot catch a change to 
 one-page file from Download a copy to keep is what the organization keeps outside OpenH2O.
 
 The As of box on an account, a use area and the Use Ledger shows the records and figures as they
-were at the end of a chosen day, and Download CSV saves that day's rows. Names, status, settings and
-map shapes on such a page are today's, and today's code adds up the totals. A date before a site's
-first record reads zero, and on the demonstration every record is only as old as its last load.
+were at the end of a chosen day, and Download CSV on the Use Ledger saves the rows as they were then.
+Account, zone, well and canal names, a water year's status, settings and map shapes on such a page
+are today's, and today's code adds up the totals. A date before a site's first record reads zero on an
+account and the Use Ledger, and a use area's page says it was not on record and shows today. On the
+demonstration every record is only as old as its last load. The import refuses a file saved from a
+past date.
 
 On an installation without Docker, load the variables in `.env` into the terminal as
 the [no-Docker install guide](INSTALL-WITHOUT-DOCKER.md) shows. Run each command

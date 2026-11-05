@@ -355,6 +355,10 @@ code, for example `Default Methodology, settings a582bd80c59b`, the same text th
 "How was this calculated?" page prints; on every other row it is blank. The import
 ignores the column, so a downloaded file imports back unchanged.
 
+A file saved from a past date with the As of box starts with a line naming that date, and the
+import refuses it: its rows are compared with today's, so a row since corrected or voided would
+come back as a new entry. Download today's file to import.
+
 On the ledger, water taken against the allocation is a negative amount and water added to it is a positive amount. The table below gives the sign for each source type. Manual entries, CSV imports and adjustments keep the sign you give them.
 
 When an amount's sign does not match its source type, OpenH2O reverses the sign and
