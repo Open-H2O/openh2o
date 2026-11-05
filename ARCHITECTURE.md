@@ -350,6 +350,8 @@ those 7 days and any older value USGS changed in them. A value OpenH2O does not 
 before the 7 days is ignored. The other sources keep their date ranges and the same comparison. The
 date is the row's last change at USGS, which is not always the day the figure moved: USGS also re-dates
 rows in bulk.
+A USGS reading dated today is left out until the day is over, because USGS reissues a day's high and
+low as the day goes on, and each reissue would otherwise read as a revision.
 
 ## Maps
 

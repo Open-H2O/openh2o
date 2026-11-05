@@ -207,8 +207,16 @@ class USGSAdapter(BaseAdapter):
         """Validate USGS records, reject missing and provisional-bad."""
         valid = []
         rejected = []
+        # USGS reissues a day's high and low as the day goes on and settles them near
+        # its end (measured Nov 5, 2026: dated 13:42 and 17:57 UTC that day, then 07:41
+        # UTC the next). Taken early, each reissue would read as a revision, so a day
+        # still in progress waits until it is over.
+        today = _today().isoformat()
         for rec in records:
-            if rec["value"] is None:
+            if str(rec.get("observation_date", ""))[:10] >= today:
+                rec["rejection_reason"] = "the day is not over"
+                rejected.append(rec)
+            elif rec["value"] is None:
                 rec["rejection_reason"] = "null value"
                 rejected.append(rec)
             elif rec["value"] < -999:

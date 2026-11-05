@@ -1351,7 +1351,7 @@ def _answer_for(station, count, first_ago=200, bump=1.0, modified=MOD1):
 def _new_features(station, count):
     today = date.today()
     return [
-        _feature(station.external_station_id, today - timedelta(days=i), 50 + i, modified=MOD1)
+        _feature(station.external_station_id, today - timedelta(days=i + 1), 50 + i, modified=MOD1)
         for i in range(count)
     ]
 
@@ -1368,7 +1368,7 @@ def test_both_new_and_revised_readings_are_counted_and_the_revised_count_links_t
 
     markup = _press(_client(operator), station)
 
-    newest = _card_date(date.today())
+    newest = _card_date(date.today() - timedelta(days=1))
     assert _status_text(markup) == f"OpenH2O fetched 7 new readings and 94 revised readings. The newest is from {newest}."
     link = re.search(r'<a [^>]*href="([^"]+)"[^>]*>(\d+ revised readings?)</a>', markup)
     assert link and link.group(1) == _revised_url(station)
@@ -1382,7 +1382,7 @@ def test_one_new_and_one_revised_reading_are_singular(usgs_api, operator):
 
     markup = _press(_client(operator), station)
 
-    newest = _card_date(date.today())
+    newest = _card_date(date.today() - timedelta(days=1))
     assert _status_text(markup) == f"OpenH2O fetched 1 new reading and 1 revised reading. The newest is from {newest}."
     assert re.search(r'<a [^>]*href="%s"[^>]*>1 revised reading</a>' % re.escape(_revised_url(station)), markup)
 
@@ -1394,7 +1394,7 @@ def test_new_readings_only_say_that_the_earlier_ones_did_not_change(usgs_api, op
 
     markup = _press(_client(operator), station)
 
-    newest = _card_date(date.today())
+    newest = _card_date(date.today() - timedelta(days=1))
     assert _status_text(markup) == (
         f"OpenH2O fetched 3 new readings. None of the earlier readings changed. The newest is from {newest}."
     )
@@ -1407,7 +1407,7 @@ def test_one_new_reading_only_is_singular(usgs_api, operator):
 
     markup = _press(_client(operator), station)
 
-    newest = _card_date(date.today())
+    newest = _card_date(date.today() - timedelta(days=1))
     assert _status_text(markup) == (
         f"OpenH2O fetched 1 new reading. None of the earlier readings changed. The newest is from {newest}."
     )
@@ -1729,3 +1729,25 @@ def test_no_calculation_output_moves_when_a_reading_is_revised(ref, usgs_api):
     ld.run_months(["2025-07"])
 
     assert _engine_snapshot() == before
+
+
+# -- a day still in progress -----------------------------------------------------------------------
+
+
+def test_a_usgs_reading_for_a_day_still_in_progress_is_left_out_until_the_day_is_over():
+    """USGS reissues a day's high and low as the day goes on, so today's value is not a first value."""
+    import datetime as dt
+    from unittest import mock
+
+    from datasync.adapters import usgs
+
+    day = dt.date(2026, 11, 5)
+    records = [
+        {"observation_date": "2026-11-05", "value": 15.4, "statistic_id": "00001"},
+        {"observation_date": "2026-11-04", "value": 16.2, "statistic_id": "00001"},
+    ]
+    with mock.patch.object(usgs, "_today", return_value=day):
+        valid, rejected = usgs.USGSAdapter().validate(records)
+    assert [r["observation_date"] for r in valid] == ["2026-11-04"]
+    assert [r["observation_date"] for r in rejected] == ["2026-11-05"]
+    assert rejected[0]["rejection_reason"] == "the day is not over"
