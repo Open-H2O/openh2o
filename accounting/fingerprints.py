@@ -321,14 +321,18 @@ _WIDTH = 76
 _LABEL = 12
 
 _COVERS = (
-    "OpenH2O computed the code from every row below as it stood when the code was "
-    "taken, records marked void or replaced included, and from every Change history "
-    "entry of those rows. For a use area with a record in the year, the code reads its "
-    "number and whether it was voided, not its acres or other details. For a fallow "
-    "period it reads the end month only up to the year's end. Change history of use "
-    "areas and fallow periods is left out. Nothing else is covered: links and settings "
-    "(which zone a use area is in, which well serves it, account names, site settings), "
-    "the stored OpenET figures, and anything a later version of OpenH2O adds."
+    "OpenH2O computed the code from every row below at the moment the code was "
+    "taken, records marked void or replaced included, and from every Change "
+    "history entry of those rows. Station readings means readings typed by hand, "
+    "not readings fetched from a source. For a use area with a record in the "
+    "year, the code reads its number and whether it was voided, not its acres or "
+    "other details. For a fallow period it reads the end month only up to the "
+    "year's end. Change history of use areas and fallow periods is left out. "
+    "Nothing else is covered: links and settings (which zone a use area is in, "
+    "which well and meter serve it, which use areas a point of diversion serves, "
+    "which accounts are active, account names, site settings), the stored OpenET "
+    "figures, and anything a later version of OpenH2O adds. A change to these can "
+    "move the Figures as filed card without changing this code."
 )
 
 _STEPS = (

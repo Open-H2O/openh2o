@@ -551,10 +551,11 @@ jobs without those two lines, the command changes nothing and says so
 - Every day at 2:00, it syncs the Water Data Library, the SGMA Portal, NOAA and CIMIS.
 - Every day at 3:30, it calculates every reporting period that is not finalized.
 - Every 6 hours, it runs the health checks.
-- On the 1st of each month at 3:00, `prune_old_data` deletes staging records and
-  logs older than their retention period. It keeps every reading typed at a station
-  entered by hand, whatever its age, and it removes a revised reading and its earlier
-  values together, when the newest of them has passed the retention period.
+- On the 1st of each month at 3:00, `prune_old_data` deletes published staging records,
+  sync logs and health-check results past their retention period, measured from the day
+  OpenH2O wrote them. It keeps every reading typed at a station entered by hand, whatever
+  its age, and it removes a revised reading and its earlier values together, once the
+  newest of them has passed the retention period.
 
 The times are in the computer's own time zone. The page of each switched-on
 station that OpenH2O syncs gives the time of its next scheduled fetch, in the site's time zone (set at
@@ -635,9 +636,10 @@ stations report, keep those, and remove the rest before you hand the site over.
    and its settings do not need to change.
 
    Later syncs compare what a source sends with what OpenH2O holds. A different value
-   becomes the reading and the first stays struck on the station's page; no water
-   figure moves. A `usgs` sync with no start date asks for what USGS changed in the
-   last 7 days, so after more than 7 days off, sync `usgs` once with `--start`.
+   becomes the reading and the first stays on the station's list of revised readings;
+   no water figure moves. A `usgs` sync with no start or end date asks for what USGS
+   changed in the last 7 days, so after more than 7 days off, sync `usgs` once with
+   `--start`.
 
 3. **Remove the stations that have no usable data.** This command deletes every
    switched-on station with too few readings to draw a chart. With
@@ -673,7 +675,7 @@ administrator can make someone a host administrator.
 
 - An **Administrator** manages users, runs the Setup Wizard, changes the
   methodology and delivery settings and finalizes a reporting period. Finalizing keeps the
-  year's figures as they stood; the water year page lists any figure that has moved since.
+  year's figures as they were; the water year page lists any figure that has moved since.
 - A **Host administrator** can do everything an administrator does. They can also
   use `/admin/` and change other host administrators' accounts. The superuser from
   Phase 2 is a host administrator. Recommend a second one, so each can change the
@@ -682,8 +684,8 @@ administrator can make someone a host administrator.
   never deleted: the operator chooses **Void this record** from the `...` menu at the end of its
   row (in the page heading for a use area or a lab result) and gives a reason. It stays on the page,
   struck through, and no figure counts it. A wrong figure is corrected the same way with **Correct
-  this record**: OpenH2O keeps the old record, struck, with a line naming what replaced it, and
-  recalculates the months it touched. Inside a finalized water year only an administrator can
+  this record**: OpenH2O keeps the old record, struck, with a line naming what replaced it, and,
+  for a record a calculation reads, recalculates the months it touched. Inside a finalized water year only an administrator can
   correct or void a record, each with a reason.
 - A **Viewer** reads every page and changes nothing.
 
@@ -753,7 +755,7 @@ page where someone at the organization corrects them.
 | SSL | The certificate expires in under 30 days, or OpenH2O cannot read it. Where `OPENH2O_SITE_ADDRESS` names the domain, Caddy renews the certificate by itself, so this card means the renewal is failing. Check that the domain's A record still points at this computer and that ports 80 and 443 are open, then read `docker compose logs caddy`. Where a tunnel or the organization's own proxy handles the encryption, renew the certificate there. On a site with no public domain, the card says there is no certificate to check, and nothing needs fixing. |
 | Migrations | The database is missing updates this version of OpenH2O needs. Run `docker compose exec web python manage.py migrate`. |
 | Sync Freshness | A data source with a station turned on has not synced for more than 48 hours. After 7 days, or when it has never synced, the card changes to Action required. Run `crontab -l` to check that the schedule is installed. Then run `docker compose exec web python manage.py sync_source` with the source's code, such as `usgs`, and read what it prints. The scheduled syncs write to `sync.log` in the log folder (`openh2o-logs` in the home folder unless `make install-cron` was given another). The card leaves out a source whose key is missing, and the monitoring dashboard shows that source as "Needs API key". It also leaves out the Entered by hand source, whose readings are typed, and Fetch readings now on a station's page does not count as its source's sync. |
-| Calculation | A calculation has waited more than 15 minutes to start, or it stopped before it finished. Run it with `docker compose exec web python manage.py run_accounting --request` and the request number from the card's JSON details, or ask the organization to run it again from the water year's page. In a finalized water year the water year's page refuses, so an administrator corrects or voids the record again, which starts the calculation again. The card also asks for attention when no calculation has finished in 48 hours while a water year is still open. For that, run `crontab -l` to check that the schedule is installed, and read `calculation.log` in the log folder (`openh2o-logs` in the home folder unless `make install-cron` was given another). |
+| Calculation | A calculation has waited more than 15 minutes to start, or it stopped before it finished. Run it with `docker compose exec web python manage.py run_accounting --request` and the request number from the card's JSON details, or ask the organization to run it again from the water year's page. In a finalized water year the water year's page refuses, so an administrator corrects the replacing record again, which starts the calculation again. The card also asks for attention when no calculation has finished in 48 hours while a water year is still open. For that, run `crontab -l` to check that the schedule is installed, and read `calculation.log` in the log folder (`openh2o-logs` in the home folder unless `make install-cron` was given another). |
 | Backup | The card asks for attention or action when OpenH2O cannot find the backups folder or read the record of the last backup, or when the last backup failed, ran 36 hours ago or more, or is missing tables. A failed backup's reason is in the card's JSON details; read it first. When OpenH2O cannot find the folder, check that `docker-compose.yml` mounts the checkout's `backups` folder at `/backups`, then run `docker compose up -d`. Otherwise run `crontab -l` to check that the schedule is installed, read `backup.log` in the log folder (`openh2o-logs` in the home folder unless `make install-cron` was given another), then run `scripts/backup.sh` and read what it prints. |
 | Cache Duplication | OpenH2O holds two OpenET estimates for the same months at some use areas. No figure changes, because OpenH2O uses the newer estimate. Report it as a bug at github.com/Open-H2O/openh2o/issues and attach the card's JSON details. |
 

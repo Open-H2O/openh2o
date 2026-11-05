@@ -562,15 +562,18 @@ Taken       Nov 4, 2026, when OpenH2O began keeping these codes
             not show in this check.
 
 What the code covers
-OpenH2O computed the code from every row below as it stood when the code was
+OpenH2O computed the code from every row below at the moment the code was
 taken, records marked void or replaced included, and from every Change
-history entry of those rows. For a use area with a record in the year, the
-code reads its number and whether it was voided, not its acres or other
-details. For a fallow period it reads the end month only up to the year's
-end. Change history of use areas and fallow periods is left out. Nothing
-else is covered: links and settings (which zone a use area is in, which well
-serves it, account names, site settings), the stored OpenET figures, and
-anything a later version of OpenH2O adds.
+history entry of those rows. Station readings means readings typed by hand,
+not readings fetched from a source. For a use area with a record in the
+year, the code reads its number and whether it was voided, not its acres or
+other details. For a fallow period it reads the end month only up to the
+year's end. Change history of use areas and fallow periods is left out.
+Nothing else is covered: links and settings (which zone a use area is in,
+which well and meter serve it, which use areas a point of diversion serves,
+which accounts are active, account names, site settings), the stored OpenET
+figures, and anything a later version of OpenH2O adds. A change to these can
+move the Figures as filed card without changing this code.
 
   Part                         Rows    Part                         Rows
   Use ledger                  1,057    Water levels                   20
@@ -639,8 +642,8 @@ def test_the_download_reads_word_for_word_as_the_approved_page():
     )
     text = fingerprints.file_text(period).rstrip() + "\n"
     assert text == APPROVED_PAGE
-    # One page: 57 lines, none wider than 76, and the old word nowhere.
-    assert len(text.splitlines()) == 57
+    # One page: 60 lines, none wider than 76, and the old word nowhere.
+    assert len(text.splitlines()) == 60
     assert max(len(line) for line in text.splitlines()) == 76
     assert "fingerprint" not in text.lower()
     assert fingerprints.file_name(period) == "changes-code-wy-2024-2025.txt"
