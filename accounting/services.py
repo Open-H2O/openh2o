@@ -280,7 +280,7 @@ def _fraction_split_entries(
     # consumed magnitude is apportioned, so returned water never reaches the
     # spine; the description still shows gross volume_acre_feet.
     total_volume = diversion_record.consumed_acre_feet()
-    today = timezone.now().date()
+    today = timezone.localdate()
     entries = []
     distributed = Decimal("0")
 
@@ -337,7 +337,7 @@ def create_diversion_ledger_entries(
         # Backward-compatible: explicit parcel gets a single entry
         entry = ParcelLedger.objects.create(
             parcel=parcel,
-            transaction_date=timezone.now().date(),
+            transaction_date=timezone.localdate(),
             effective_date=diversion_record.month,
             amount_acre_feet=-diversion_record.consumed_acre_feet(),
             source_type="surface_diversion",
@@ -372,7 +372,7 @@ def create_diversion_ledger_entries(
         if link is not None:
             entry = ParcelLedger.objects.create(
                 parcel=link.parcel,
-                transaction_date=timezone.now().date(),
+                transaction_date=timezone.localdate(),
                 effective_date=diversion_record.month,
                 amount_acre_feet=-diversion_record.consumed_acre_feet(),
                 source_type="surface_diversion",

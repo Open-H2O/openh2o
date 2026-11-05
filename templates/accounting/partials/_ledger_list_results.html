@@ -1,4 +1,4 @@
-{% load humanize accounting_extras record_marks %}
+{% load humanize accounting_extras record_marks as_of_links %}
 {% if download_oob %}<a id="ledger-download" hx-swap-oob="true" href="{% url 'accounting:ledger_export' %}?{{ download_query }}" class="btn-secondary btn-sm">
   Download CSV
 </a>{% endif %}
@@ -108,7 +108,7 @@
           {{ entry.effective_date|date:"M d, Y" }}
         </td>
         <td style="white-space: nowrap;">
-          <a href="{% url 'parcels:detail' entry.parcel.pk %}" class="data-table-link">
+          <a href="{% url 'parcels:detail' entry.parcel.pk %}{% as_of_first %}" class="data-table-link">
             {{ entry.parcel.parcel_number }}
           </a>
         </td>

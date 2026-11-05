@@ -142,7 +142,7 @@ def _new_month_entries(
         entries.append(
             ParcelLedger(
                 parcel=parcel,
-                transaction_date=timezone.now().date(),
+                transaction_date=timezone.localdate(),
                 effective_date=effective_date,
                 amount_acre_feet=amount_af.quantize(Decimal("0.0001")),
                 source_type="et_estimate",

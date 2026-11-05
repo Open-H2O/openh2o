@@ -1,4 +1,4 @@
-{% load placeholders %}{% comment %}
+{% load placeholders as_of_links %}{% comment %}
   Per-account detail BODY, swapped into #detail-body on a row click in the
   accounts workspace (and reused by the standalone account_detail.html page), so
   the in-pane view and the full page never drift. Bucket 1 — a heavy, interactive
@@ -36,7 +36,7 @@
       which is the one place it means anything.
     {% endcomment %}
     {% if not on_full_page %}
-    <a href="{% url 'accounting:account_detail' account.pk %}" class="text-tertiary text-xs back-link" title="Open this account on its own page">Open full page &rarr;</a>
+    <a href="{% url 'accounting:account_detail' account.pk %}{% as_of_first %}" class="text-tertiary text-xs back-link" title="Open this account on its own page">Open full page &rarr;</a>
     {% endif %}
   </div>
 </div>

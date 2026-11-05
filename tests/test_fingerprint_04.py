@@ -639,7 +639,7 @@ def test_the_download_reads_word_for_word_as_the_approved_page():
     )
     text = fingerprints.file_text(period).rstrip() + "\n"
     assert text == APPROVED_PAGE
-    # One page: 56 lines, none wider than 76, and the old word nowhere.
+    # One page: 57 lines, none wider than 76, and the old word nowhere.
     assert len(text.splitlines()) == 57
     assert max(len(line) for line in text.splitlines()) == 76
     assert "fingerprint" not in text.lower()

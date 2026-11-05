@@ -1,4 +1,4 @@
-{% comment %}
+{% load as_of_links %}{% comment %}
   The account's assigned use areas, re-rendered here by assign / remove. A flow
   of chips, one per use area, each with its own quiet
   remove control: as a table or a three-column grid, eighteen rows
@@ -13,7 +13,7 @@
 <div class="assignment-chips">
   {% for wap in assignments %}
   <span class="assignment-chip" title="Added {{ wap.added_date|date:"M d, Y" }}">
-    <a href="{% url 'parcels:detail' wap.parcel.pk %}" class="assignment-chip-link">{{ wap.parcel.parcel_number }}</a>
+    <a href="{% url 'parcels:detail' wap.parcel.pk %}{% as_of_first %}" class="assignment-chip-link">{{ wap.parcel.parcel_number }}</a>
     {% if user_can_write and wap.reporting_period.is_finalized %}<span class="text-tertiary text-xs">Finalized</span>{% elif user_can_write %}<button
       type="button"
       hx-post="{% url 'accounting:remove_parcel' account.pk wap.pk %}"

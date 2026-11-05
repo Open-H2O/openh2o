@@ -1,4 +1,4 @@
-{% load placeholders humanize accounting_extras record_marks %}{% comment %}
+{% load placeholders humanize accounting_extras record_marks as_of_links %}{% comment %}
   The use area page's body, swapped into #detail-body when the water year
   changes (and included by the standalone detail.html page). The map card heads
   the right column, above the Use area card, and is kept across that swap
@@ -23,7 +23,7 @@
 
     {% endcomment %}
     {% if not on_full_page %}
-    <a href="{% url 'parcels:detail' parcel.pk %}" class="text-tertiary text-xs back-link" title="Open this use area on its own page">Open full page &rarr;</a>
+    <a href="{% url 'parcels:detail' parcel.pk %}{% as_of_first %}" class="text-tertiary text-xs back-link" title="Open this use area on its own page">Open full page &rarr;</a>
     {% endif %}
   </div>
 </div>
@@ -47,7 +47,7 @@
         <div class="statement-head">
           <h2 class="section-header-flush">Water use</h2>
           <div class="row-start">
-            <a href="{% url 'accounting:ledger_list' %}?q={{ parcel.parcel_number|urlencode }}" class="text-tertiary back-link text-xs">All ledger entries</a>
+            <a href="{% url 'accounting:ledger_list' %}?q={{ parcel.parcel_number|urlencode }}{% as_of_more %}" class="text-tertiary back-link text-xs">All ledger entries</a>
             {% include "parcels/partials/_period_control.html" %}
             {% include "partials/_as_of_box.html" with box=as_of_box %}
           </div>
@@ -122,7 +122,7 @@
           <tbody>
             {% for m in water_use.months %}
             <tr>
-              <td><a href="{% url 'accounting:ledger_list' %}?q={{ parcel.parcel_number|urlencode }}&amp;start_date={{ m.month|date:'Y-m-d' }}&amp;end_date={{ m.last|date:'Y-m-d' }}" class="data-table-link">{{ m.month|date:"M Y" }}</a></td>
+              <td><a href="{% url 'accounting:ledger_list' %}?q={{ parcel.parcel_number|urlencode }}&amp;start_date={{ m.month|date:'Y-m-d' }}&amp;end_date={{ m.last|date:'Y-m-d' }}{% as_of_more %}" class="data-table-link">{{ m.month|date:"M Y" }}</a></td>
               {% if m.fallow %}<td class="td-fallow">Fallow</td>{% else %}<td class="td-num">{% if m.et %}{{ m.et|floatformat:2|intcomma }}{% endif %}</td>{% endif %}
               {% if 'surface' in enabled_modules %}<td class="td-num">{% if m.surface %}{{ m.surface|floatformat:2|intcomma }}{% endif %}</td>{% endif %}
               {% if 'wells' in enabled_modules and related_wells %}<td class="td-num">{% if m.groundwater %}{{ m.groundwater|floatformat:2|intcomma }}{% endif %}</td>{% endif %}
@@ -187,7 +187,7 @@
         <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
           <h2 class="section-header-flush">Recent ledger entries</h2>
           <div class="row-start">
-            <a href="{% url 'accounting:ledger_list' %}?q={{ parcel.parcel_number }}"
+            <a href="{% url 'accounting:ledger_list' %}?q={{ parcel.parcel_number }}{% as_of_more %}"
                class="text-tertiary back-link text-xs">
               View all
             </a>

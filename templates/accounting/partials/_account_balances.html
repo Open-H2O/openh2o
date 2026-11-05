@@ -1,4 +1,4 @@
-{% load humanize accounting_extras %}
+{% load humanize accounting_extras as_of_links %}
 {% url 'water_balances' as wb_help_url %}
 {% comment %}
   This fragment carries the pattern DESIGN.md →
@@ -205,7 +205,7 @@
     {% for pb in parcel_balances %}
     <tr>
       <td>
-        <a href="{% url 'parcels:detail' pb.parcel.pk %}" class="data-table-link">
+        <a href="{% url 'parcels:detail' pb.parcel.pk %}{% as_of_first %}" class="data-table-link">
           {{ pb.parcel.parcel_number }}
         </a>
       </td>

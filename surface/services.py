@@ -168,7 +168,7 @@ def _demand_rows(
     loss_fraction: Decimal | None = None,
 ) -> list[ParcelLedger]:
     """Unsaved demand-weighted ledger rows (NEGATIVE) for one diversion record."""
-    today = timezone.now().date()
+    today = timezone.localdate()
     return [
         ParcelLedger(
             parcel=parcel,
@@ -224,7 +224,7 @@ def _fraction_rows(
     """
     if total is None:
         total = record.consumed_acre_feet()
-    today = timezone.now().date()
+    today = timezone.localdate()
 
     # The shares the district entered win; where it entered none, the fields'
     # acreage divides the water (the ladder's demand rung, fed acres).

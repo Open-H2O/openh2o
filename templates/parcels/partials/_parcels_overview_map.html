@@ -1,4 +1,4 @@
-{% comment %}
+{% load as_of_links %}{% comment %}
 Use Areas overview map: every use area the list is showing, on the parcels
 overview page. Copies the map card's pattern
 (surface/partials/_pods_overview_map.html) with the polygon paint
@@ -65,7 +65,7 @@ The Use Areas list passes neither, so its map is the one described above.
 
     // Resolve the detail URL through Django (a sentinel pk we swap out) so the
     // link tracks the app's URL prefix instead of hardcoding it.
-    var detailUrl = '{% url "parcels:detail" 0 %}';
+    var detailUrl = '{% url "parcels:detail" 0 %}{% as_of_first %}';
 
     map.on('load', function() {
       fetch('{{ geojson_url|default:parcels_geojson_url }}')
