@@ -572,6 +572,8 @@ def _parcel_as_of_scope(request, reading, pk):
         "parcel_ids": [parcel.pk],
         "start": period.start_date if period else None,
         "end": period.end_date if period else None,
+        # Its own row and fallow periods move what this page prints too.
+        "also": [("parcels.Parcel", {"id": parcel.pk}), ("parcels.FallowPeriod", {"parcel_id": parcel.pk})],
     }
 
 

@@ -447,20 +447,30 @@ def test_the_stated_limit_a_correction_and_an_unrecorded_edit_in_the_same_part_r
 
 
 @pytest.mark.parametrize(
-    ("key", "statement"),
+    ("key", "statement", "named"),
     [
-        ("parcels.ParcelLedger", "UPDATE parcels_parcelledger SET description = description || ' edited'"),
-        ("accounting.CalculationRun", "UPDATE accounting_calculationrun SET gross_et_af = gross_et_af + 1"),
+        ("parcels.ParcelLedger", "UPDATE parcels_parcelledger SET description = description || ' edited'", "use ledger"),
+        ("accounting.CalculationRun", "UPDATE accounting_calculationrun SET gross_et_af = gross_et_af + 1", "calculation results"),
     ],
 )
-def test_any_correction_explains_the_parts_the_recalculation_writes(d1, filed, administrator, key, statement):
-    """A water level correction does not recalculate, yet it explains the ledger and the results: they are
-    parts OpenH2O's calculation writes after any correction."""
+def test_a_correction_that_starts_no_recalculation_explains_only_its_own_part(d1, filed, administrator, key, statement, named):
+    """A water level correction recalculates nothing, so a changed ledger or result beside it has no excuse."""
     _correct_level(d1, administrator)
     _sql(statement)
     assert key in _differing(filed)
     _, inner = _answer_p(_client(administrator), filed)
-    assert _visible(inner) == "1 correction since Oct 15, 2025."
+    assert _visible(inner) == f"1 correction since Oct 15, 2025. Changes found with no correction on record. Look at: {named}."
+
+
+def test_every_part_a_recalculation_writes_is_explained_by_a_correction_that_starts_one():
+    """Read from the code: seepage moves carry-over and credits (surface/services.py), and the rest from run_month."""
+    from accounting.fingerprints import RECALCULATION_PARTS
+
+    assert {
+        "parcels.ParcelLedger", "accounting.CalculationRun", "surface.DiversionRecord", "surface.UnallocatedDelivery",
+        "surface.CanalMonthLoss", "accounting.WaterCredit", "accounting.WaterCreditDraw",
+        "accounting.AllocationCarryover", "accounting.AccountCredit",
+    } == RECALCULATION_PARTS
 
 
 def test_a_real_recalculation_is_explained_by_the_correction_that_caused_it(

@@ -921,6 +921,74 @@ def swapped_line(html):
     return found[0]
 
 
+def assert_counts(client, url, params, day, words_):
+    assert words_ in " ".join(visible(page(client, url, params, as_of=day)).split())
+
+
+def test_an_allocation_moved_since_is_counted_on_the_account_page(d1, operator):
+    from accounting.models import AllocationPlan
+
+    client = logged_in(operator)
+    settle()
+    age(5)
+    plan = AllocationPlan.objects.filter(reporting_period=wy25()).first()
+    AllocationPlan.objects.filter(pk=plan.pk).update(allocation_acre_feet=plan.allocation_acre_feet + 1)
+    url, year_ = u_account(acct("D1-A")), {"period": str(wy25().pk)}
+    assert_counts(client, url, year_, day_ago(1), "Since then 1 record changed.")
+    # The next year's page has no rows of its own, and that year's allocation did not move.
+    assert "1 record changed." not in visible(page(client, url, {"period": str(wy26().pk)}, as_of=day_ago(1)))
+
+
+def test_a_use_area_moved_between_accounts_since_is_counted_on_the_account_page(d1, operator):
+    from accounting.models import WaterAccountParcel
+
+    client = logged_in(operator)
+    settle()
+    age(5)
+    link = WaterAccountParcel.objects.filter(water_account=acct("D1-A")).first()
+    WaterAccountParcel.objects.filter(pk=link.pk).update(removed_date=dt.date(2025, 10, 1))
+    assert_counts(client, u_account(acct("D1-A")), {"period": str(wy25().pk)}, day_ago(1), "Since then 1 record changed.")
+
+
+def test_a_credit_moved_since_is_counted_on_the_account_page(d1, operator):
+    from decimal import Decimal
+
+    from accounting.models import AccountCredit
+    from accounting.services import account_water_year
+
+    client = logged_in(operator)
+    settle()
+    age(5)
+    AccountCredit.objects.create(
+        water_account=acct("D1-A"), water_type=ld.wt("GW"), water_year=account_water_year(wy25()),
+        origin="recharge", amount_af=Decimal("5.0000"), source_key="test", description="test credit",
+    )
+    assert_counts(client, u_account(acct("D1-A")), {"period": str(wy25().pk)}, day_ago(1), "Since then 1 record changed.")
+    assert_counts(client, u_account(acct("D1-B")), {"period": str(wy25().pk)}, day_ago(1), "no records changed.")
+
+
+def test_a_use_area_edit_since_is_counted_on_its_own_page_only(d1, operator):
+    from decimal import Decimal
+
+    from parcels.models import Parcel
+
+    client = logged_in(operator)
+    settle()
+    age(5)
+    Parcel.objects.filter(pk=d1["F1"].pk).update(area_acres=d1["F1"].area_acres + Decimal("1"))
+    year_ = {"period": str(wy25().pk)}
+    assert_counts(client, u_parcel(d1["F1"]), year_, day_ago(1), "Since then 1 record changed.")
+    assert_counts(client, u_parcel(d1["F3"]), year_, day_ago(1), "no records changed.")
+
+
+def test_a_rerun_that_moves_nothing_still_counts_zero_on_the_account_page(d1, operator):
+    client = logged_in(operator)
+    settle()
+    age(5)
+    settle()
+    assert_counts(client, u_account(acct("D1-A")), {"period": str(wy25().pk)}, day_ago(1), "no records changed.")
+
+
 def oob_line_of(html):
     return re.sub(r"<[^>]+>", " ", swapped_line(html))
 
@@ -1002,31 +1070,29 @@ def _import(text):
     return import_ledger_rows(io.StringIO(text), dry_run=True)
 
 
-def test_a_file_exported_on_a_reading_re_imports_with_the_line_skipped(d1, operator):
-    age(5)  # the district was set up five days ago: a reading two days back sees it
+PAST_FILE_REFUSED = "This file holds the ledger as of a past date, so its rows may have been corrected or voided since. Download today's file to import."
+
+
+def test_a_file_saved_on_a_reading_is_refused_by_the_import(d1, operator):
+    """Its rows are compared with today's, so a row since corrected would come back as a new entry."""
+    age(5)
     client = logged_in(operator)
     day = day_ago(1)
     params = {"period": str(wy25().pk), "source_type": "meter_reading"}
     reading = get(client, u_export(), params, as_of=day).content.decode("utf-8")
-    today = get(client, u_export(), params).content.decode("utf-8")
     assert reading.splitlines()[0].strip('"') == f"As of the end of {words(day)}."
-    from_reading, from_today = _import(reading), _import(today)
-    assert from_reading["error_count"] == 0, from_reading["errors"]
-    assert from_today["error_count"] == 0
-    assert from_reading["skipped_duplicate"] == from_today["skipped_duplicate"] > 0
-    assert from_reading["created_count"] == from_today["created_count"] == 0
+    result = _import(reading)
+    assert result["created_count"] == 0
+    assert result["errors"] == [{"line": 1, "messages": [PAST_FILE_REFUSED]}]
+    today = _import(get(client, u_export(), params).content.decode("utf-8"))
+    assert today["error_count"] == 0 and today["skipped_duplicate"] > 0
 
 
-def test_the_import_skips_the_date_line_and_the_demonstration_line_in_either_order(d1):
+def test_the_date_line_is_refused_wherever_a_download_puts_it(d1):
     body = ",".join(CSV_COLUMNS) + "\r\nNO-SUCH-PARCEL,2025-01-01,-1,manual_entry,,,,\r\n"
     line = "As of the end of Nov 3, 2026."
-    for head in (f"{line}\r\n", f"{DEMONSTRATION_LINE}\r\n{line}\r\n", f"{line}\r\n{DEMONSTRATION_LINE}\r\n"):
-        result = _import(head + body)
-        assert not any("Missing required columns" in m for e in result["errors"] for m in e["messages"]), head
-        # The one error is the row's own, and it is numbered the way a spreadsheet numbers it.
-        assert [e["line"] for e in result["errors"]] == [head.count("\n") + 2], (head, result["errors"])
-    quoted = _import(f'"{line}"\r\n' + body)
-    assert not any("Missing required columns" in m for e in quoted["errors"] for m in e["messages"])
+    for head in (f"{line}\r\n", f"{DEMONSTRATION_LINE}\r\n{line}\r\n", f'"{line}"\r\n'):
+        assert _import(head + body)["errors"] == [{"line": 1, "messages": [PAST_FILE_REFUSED]}], head
 
 
 @pytest.mark.parametrize("first", [

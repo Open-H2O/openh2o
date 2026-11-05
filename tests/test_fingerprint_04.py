@@ -595,8 +595,9 @@ How to check
 3. Press Check for changes. OpenH2O recomputes the code from the records
    now.
 4. Read the answer. It gives the number of corrections recorded since, and
-   names the parts to look at where changes have no correction on record. A
-   correction and an unrecorded change in the same part read as the
+   names the parts to look at where changes have no correction on record. An
+   unrecorded change in the corrected record's own part, or in a part a
+   recalculation writes when the correction started one, reads as the
    correction alone. "Can no longer read" means a later version removed what
    a part was computed from.
 
@@ -639,7 +640,7 @@ def test_the_download_reads_word_for_word_as_the_approved_page():
     text = fingerprints.file_text(period).rstrip() + "\n"
     assert text == APPROVED_PAGE
     # One page: 56 lines, none wider than 76, and the old word nowhere.
-    assert len(text.splitlines()) == 56
+    assert len(text.splitlines()) == 57
     assert max(len(line) for line in text.splitlines()) == 76
     assert "fingerprint" not in text.lower()
     assert fingerprints.file_name(period) == "changes-code-wy-2024-2025.txt"

@@ -34,8 +34,11 @@ import re
 from collections import Counter
 from contextlib import contextmanager
 
+from django.apps import apps
 from django.db import connection, transaction
 from django.utils import timezone
+
+from core.changes import event_models
 
 # The tables that move a printed figure, as labels. A switched-off module's
 # table is not in ``event_models()`` and is skipped.
@@ -217,13 +220,43 @@ class Reading:
             total += max(sum(removed.values()), sum(added.values()))
         return total
 
-    def changed_count(self, parcel_ids=None, start=None, end=None):
+    def _other_table(self, label, filters):
+        """How many rows of one more table differ between then and now, ``filters`` naming the page's rows.
+
+        Compared as a whole on what a person reads: not the row id or its times (a table the
+        engine rewrites gets new ones), not a shape.
+        """
+        table = apps.get_model(label)._meta.db_table
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT column_name FROM information_schema.columns WHERE table_schema = current_schema() "
+                "AND table_name = %s AND data_type <> 'USER-DEFINED' ORDER BY ordinal_position",
+                [table],
+            )
+            columns = [r[0] for r in cursor.fetchall() if r[0] not in ("id", "created_at", "updated_at")]
+        where, params = [], []
+        for column, value in filters.items():
+            where.append(f'"{column}" = ANY(%s)')
+            params.append(list(value) if isinstance(value, (list, tuple, set)) else [value])
+        clause = ("WHERE " + " AND ".join(where)) if where else ""
+        names = ", ".join(f'"{c}"' for c in columns)
+        then, now = (
+            self._rows(f"SELECT {names} FROM {self._table(table, live)} {clause}", params)
+            for live in (False, True)
+        )
+        return self._differences(self._bag(then, (), columns), self._bag(now, (), columns))
+
+    def changed_count(self, parcel_ids=None, start=None, end=None, also=()):
         """How many records differ between the rows as they stood and the rows now.
 
         Compares current rows only, by what a person calls the same record (a
         ledger row by use area, date, source and water type; a calculation by use
         area and month), so a re-run that moved no figure is 0 however many history
         events it wrote. A correction, a void and a new entry are 1 each.
+        ``also`` adds the other tables that move a figure this page prints, as
+        ``(label, {column: value or values})``, because an allocation moved since would
+        otherwise change the page under a line saying nothing changed. A table of a
+        module that is switched off is skipped.
         """
         then = self._ledger(False, parcel_ids, start, end)
         now = self._ledger(True, parcel_ids, start, end)
@@ -232,11 +265,13 @@ class Reading:
         )
         runs_then, figures = self._runs(False, parcel_ids, start, end)
         runs_now, _ = self._runs(True, parcel_ids, start, end)
-        return count + self._differences(
+        count += self._differences(
             self._bag(runs_then, _RUN_KEY, figures), self._bag(runs_now, _RUN_KEY, figures)
         )
+        running = event_models()
+        return count + sum(self._other_table(label, filters) for label, filters in also if label in running)
 
-    def has_records(self, parcel_ids=None, start=None, end=None):
+    def has_records(self, parcel_ids=None, start=None, end=None, also=()):
         """Whether any ledger row or calculation existed in that scope at the moment."""
         for table, alias, date_column in (
             ("parcels_parcelledger", "l", "effective_date"),
@@ -257,8 +292,6 @@ def reading_as_of(day=None, *, moment=None):
     name, the transaction is read-only, and on the way out everything is rolled
     back, with or without an exception. Yields a :class:`Reading`.
     """
-    from core.changes import event_models
-
     if moment is None:
         moment = moment_after(day)
     events = event_models()

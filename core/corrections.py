@@ -816,6 +816,11 @@ KINDS = {
 }
 
 
+def starts_recalculation(kind):
+    """Whether correcting or voiding a record of this kind recalculates the months it moves."""
+    return kind["months"] is not _no_months
+
+
 def get_kind(word):
     """The kind a URL word names. Raises ``KeyError`` for a word that names none."""
     return KINDS[word]

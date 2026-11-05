@@ -26,12 +26,14 @@ from accounting.services import (
     account_consumptive_balance,
     account_groundwater_budget,
     account_parcel_ids,
+    account_water_year,
     balance_state,
     current_period_id as compute_current_period_id,
     parcel_consumptive_balance,
     runs_in_period,
     supply_kinds,
 )
+from geography.models import ParcelZone
 from parcels.models import Parcel, ParcelLedger
 from accounting.statements import filed_line_context
 from accounting.views.common import _account_summary_row
@@ -443,10 +445,24 @@ def _account_as_of_scope(request, reading, pk):
     period_param = request.GET.get("period") if "period" in request.GET else None
     every = list(_account_assignments(account).values_list("parcel_id", flat=True))
     selected = _detail_selected_period(ReportingPeriod.objects.order_by("-start_date"), period_param, every)
+    parcel_ids = account_parcel_ids(account, selected)
+    # What else moves a figure this page prints: its links, its credits, and the allocations of
+    # the zones its use areas are in.
+    zones = list(ParcelZone.objects.filter(parcel_id__in=parcel_ids).values_list("zone_id", flat=True))
+    credits = {"water_account_id": account.pk}
+    allocations = {"zone_id": zones}
+    if selected is not None:
+        credits["water_year"] = account_water_year(selected)
+        allocations["reporting_period_id"] = selected.pk
     return {
-        "parcel_ids": account_parcel_ids(account, selected),
+        "parcel_ids": parcel_ids,
         "start": selected.start_date if selected else None,
         "end": selected.end_date if selected else None,
+        "also": [
+            ("accounting.WaterAccountParcel", {"water_account_id": account.pk}),
+            ("accounting.AccountCredit", credits),
+            ("accounting.AllocationPlan", allocations),
+        ],
     }
 
 

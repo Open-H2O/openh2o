@@ -62,6 +62,13 @@ def as_of_file_line(day):
     return f"As of the end of {day:%b} {day.day}, {day.year}."
 
 
+#: What the import says of a file saved from a past reading.
+PAST_FILE_REFUSED = (
+    "This file holds the ledger as of a past date, so its rows may have been corrected or voided "
+    "since. Download today's file to import."
+)
+
+
 def is_as_of_file_line(text):
     """True for a line of exactly the form :func:`as_of_file_line` writes."""
     return _AS_OF_FILE_LINE.fullmatch(text) is not None

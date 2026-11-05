@@ -31,7 +31,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 
 from accounting.statements import _day, _who, cached_comparison, corrections_since
-from core import fingerprint
+from core import corrections, fingerprint
 from core.fingerprint import short_code
 
 #: The reason the upgrade records under, so Change history says why.
@@ -132,14 +132,12 @@ def line_context(period):
 # -- Check -----------------------------------------------------------------------------------
 
 
-#: The parts OpenH2O's calculation writes when it recalculates after any correction, read from the
-#: code: ``accounting.engine_run.run_month`` runs ``run_calculations`` (the Use ledger rows and the
-#: Calculation results; it also clears the retired Water credits and Water credit draws of the
-#: parcel-month), then ``surface.services.allocate_district_delivery`` (Canal losses, Unallocated
-#: deliveries) and removes Diversion records the retired estimate left in the month. Carry-over and
-#: Account credits are NOT here: ``rollover_allocations`` writes carry-over and is a separate year-end
-#: command, and Account credits are written by a recharge event's own correction (see
-#: ``KIND_SIDE_EFFECTS``), not by the recalculation.
+#: The parts OpenH2O's calculation writes when it recalculates, read from the code:
+#: ``accounting.engine_run.run_month`` runs ``run_calculations`` (the Use ledger rows and the Calculation
+#: results; it also clears the retired Water credits and Water credit draws of the parcel-month and can
+#: move the carry-over pool), then ``surface.services.allocate_district_delivery`` (Canal losses,
+#: Unallocated deliveries, and through canal seepage the carry-over pool and Account credits) and removes
+#: Diversion records the retired estimate left in the month.
 RECALCULATION_PARTS = frozenset(
     {
         "parcels.ParcelLedger",
@@ -149,13 +147,17 @@ RECALCULATION_PARTS = frozenset(
         "surface.CanalMonthLoss",
         "accounting.WaterCredit",
         "accounting.WaterCreditDraw",
+        "accounting.AllocationCarryover",
+        "accounting.AccountCredit",
     }
 )
 
-#: Parts a correction of one kind writes beyond its own and the recalculation's: correcting or voiding
-#: a recharge event takes its credit back and credits the new row
-#: (``core.corrections._recharge_event_on_correct`` -> ``accounting.services.replace_account_credits``).
-KIND_SIDE_EFFECTS = {"recharge.RechargeEvent": frozenset({"accounting.AccountCredit"})}
+#: Parts a correction of one kind writes itself, with no recalculation: correcting or voiding a recharge
+#: event takes its credit and its pool deposit back and writes the new row's
+#: (``core.corrections._recharge_event_on_correct``, ``accounting.services.create_recharge_ledger_entries``).
+KIND_SIDE_EFFECTS = {
+    "recharge.RechargeEvent": frozenset({"accounting.AccountCredit", "accounting.AllocationCarryover"})
+}
 
 #: The Use areas part reads the use areas that have a ledger row or a calculation in the year. A
 #: recalculation writes no use area row, but the first ledger row or result it writes for a use area
@@ -164,8 +166,8 @@ KIND_SIDE_EFFECTS = {"recharge.RechargeEvent": frozenset({"accounting.AccountCre
 #: use area and is named.
 GROWS_WITH_RECALCULATION = frozenset({"parcels.Parcel"})
 
-# The limit of this rule, as the downloaded file says: a correction and an unrecorded change in the same
-# part read as the correction alone (the code keeps one digest per part, so they cannot be told apart).
+# The limit of this rule, as the downloaded file says: the code keeps one digest per part, so a correction
+# cannot be told apart from an unrecorded change in a part it explains.
 
 
 @dataclass
@@ -245,6 +247,14 @@ def check_fingerprint(period):
     return Answer("matches", taken)
 
 
+def _starts_recalculation(model):
+    """Whether a correction of the kind stored in ``model`` recalculates anything."""
+    return any(
+        kind["model"].lower() == model.lower() and corrections.starts_recalculation(kind)
+        for kind in corrections.KINDS.values()
+    )
+
+
 def _unexplained(differing, kinds, any_correction, stored, computed):
     """The differing parts, in order, that the corrections since do not explain.
 
@@ -257,15 +267,19 @@ def _unexplained(differing, kinds, any_correction, stored, computed):
     if not any_correction:
         others = [key for key in differing if key != fingerprint.HISTORY]
         return others or list(differing)
-    explained = {fingerprint.HISTORY} | RECALCULATION_PARTS
+    explained = {fingerprint.HISTORY}
+    recalculated = False
     for model in kinds:
         explained.add(model)
         explained |= KIND_SIDE_EFFECTS.get(model, frozenset())
+        recalculated = recalculated or _starts_recalculation(model)
+    if recalculated:
+        explained |= RECALCULATION_PARTS
     unexplained = []
     for key in differing:
         if key in explained:
             continue
-        if key in GROWS_WITH_RECALCULATION and computed.parts[key]["rows"] > stored["parts"][key].get("rows", 0):
+        if recalculated and key in GROWS_WITH_RECALCULATION and computed.parts[key]["rows"] > stored["parts"][key].get("rows", 0):
             continue
         unexplained.append(key)
     return unexplained
@@ -324,8 +338,9 @@ _STEPS = (
     "a dispute, download this page again and compare the full code.",
     "Press Check for changes. OpenH2O recomputes the code from the records now.",
     "Read the answer. It gives the number of corrections recorded since, and names the "
-    "parts to look at where changes have no correction on record. A correction and an "
-    "unrecorded change in the same part read as the correction alone. \"Can no longer "
+    "parts to look at where changes have no correction on record. An unrecorded change "
+    "in the corrected record's own part, or in a part a recalculation writes when the "
+    "correction started one, reads as the correction alone. \"Can no longer "
     "read\" means a later version removed what a part was computed from.",
 )
 

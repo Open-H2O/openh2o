@@ -43,9 +43,8 @@ Rules enforced here, in order:
 
 A ledger export from a demonstration site starts with one line saying so
 (``DEMONSTRATION_FILE_LINE``). The import skips that line, and only that line,
-so the site's own export re-imports as downloaded (2026-10-18). A file exported on a past
-reading starts with one more line, ``As of the end of Nov 3, 2026.`` (``as_of_file_line``),
-skipped the same way, in either order with the demonstration line.
+so the site's own export re-imports as downloaded (2026-10-18). A file saved from a past
+reading starts with ``As of the end of Nov 3, 2026.`` (``as_of_file_line``) and is refused.
 """
 from __future__ import annotations
 
@@ -57,7 +56,7 @@ from typing import Any, TextIO
 
 from django.db import transaction
 
-from accounting.ledger_words import DEMONSTRATION_FILE_LINE, is_as_of_file_line
+from accounting.ledger_words import DEMONSTRATION_FILE_LINE, PAST_FILE_REFUSED, is_as_of_file_line
 from accounting.locks import finalized_message
 from accounting.models import ReportingPeriod, WaterType
 from parcels.models import (
@@ -99,25 +98,27 @@ def _fatal(message):
 
 def _open_ledger_reader(
     text_file: TextIO, delimiter: str
-) -> tuple[csv.DictReader[str], int]:
-    """A DictReader over the file, skipping the lines a download puts above the columns.
+) -> tuple[csv.DictReader[str] | None, int]:
+    """A DictReader over the file, past the demonstration line a download may put above the columns.
 
-    Those are the demonstration line and the as-of line (a file exported on a past reading),
-    each once, in either order, and only a line of exactly that form. Also returns the first
-    data line number.
+    Only a line of exactly that form is skipped, once. Also returns the first data line number.
+    A file saved from a past reading (its as-of line, above or below the demonstration line) gets
+    no reader: its rows are compared with today's, so a row since corrected or voided would come
+    back as a new entry.
     """
     first_data_line = 2
-    skipped = set()
-    while len(skipped) < 2:
+    demonstration_seen = False
+    for _ in range(2):
         line = text_file.readline()
         if not line:
             break
         text = line.lstrip('\ufeff').strip().strip('"')
-        kind = "demonstration" if text == DEMONSTRATION_FILE_LINE else "as_of" if is_as_of_file_line(text) else None
-        if kind is None or kind in skipped:
+        if is_as_of_file_line(text):
+            return None, first_data_line
+        if text != DEMONSTRATION_FILE_LINE or demonstration_seen:
             text_file = itertools.chain([line], text_file)
             break
-        skipped.add(kind)
+        demonstration_seen = True
         first_data_line += 1
     reader = csv.DictReader(text_file, delimiter=delimiter)
     return reader, first_data_line
@@ -461,6 +462,8 @@ def import_ledger_rows(
     sign_normalized_rows: list[dict[str, Any]] = []
 
     reader, first_data_line = _open_ledger_reader(text_file, delimiter)
+    if reader is None:
+        return _fatal(PAST_FILE_REFUSED)
     failure = _header_failure(reader)
     if failure is not None:
         return failure

@@ -22,7 +22,7 @@ def access_flags(request):
     Drives the Settings button, the Settings page's rows and the write controls:
       - ``access_enforced`` mirrors the ACCESS_CONTROL_ENFORCED master switch.
       - ``user_is_admin`` is the anonymous-safe two-tier check (core.access).
-      - ``user_can_write`` is False only for a Viewer (read-only) account;
+      - ``user_can_write`` is False for a Viewer (read-only) account and on a past reading;
         every control that changes a record sits inside it.
 
     The Settings page's admin-only rows (Users, Methodology, Delivery Settings)
