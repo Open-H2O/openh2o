@@ -1229,3 +1229,12 @@ def test_a_use_area_asked_for_before_it_existed_shows_today_under_a_sentence_and
     get(client, reverse("parcels:detail", args=[9999999]), status=404)
     # And on a day it was there, the reading is made.
     assert lines_of(page(client, url, year_, as_of=timezone.localdate()))
+
+
+def test_a_table_scrolling_in_its_own_wrapper_does_not_take_the_lines_offset():
+    """Inside a wrapper that scrolls, a sticky header pins to the wrapper, so the line's height would push it over the rows."""
+    from pathlib import Path
+
+    css = (Path(__file__).resolve().parent.parent / "static/css/app.css").read_text()
+    assert '.as-of-reading .table-scroll:not([data-overflow="false"]) .data-table thead th { top: 0; }' in css
+

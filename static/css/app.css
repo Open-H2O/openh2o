@@ -5526,6 +5526,11 @@ details[open] > summary .disclosure-mark {
 /* The grouped two-row header keeps its own stacking (the "Grouped headers" rules above), moved down by the band. */
 .as-of-reading .data-table--grouped thead tr.th-group th { top: var(--as-of-band-h); }
 .as-of-reading .data-table--grouped thead tr.th-group ~ tr th { top: calc(var(--as-of-band-h) + var(--th-group-h, 36px) + 2px); }
+/* A table scrolling inside its own wrapper pins to the wrapper, not under the line: the offset there
+   would push the header down over the table's first rows. */
+.as-of-reading .table-scroll:not([data-overflow="false"]) .data-table thead th { top: 0; }
+.as-of-reading .table-scroll:not([data-overflow="false"]) .data-table--grouped thead tr.th-group th { top: 0; }
+.as-of-reading .table-scroll:not([data-overflow="false"]) .data-table--grouped thead tr.th-group ~ tr th { top: calc(var(--th-group-h, 36px) + 2px); }
 /* The ledger's table card has no padding of its own: its head becomes a row with the box at its end. */
 .ledger-card-head.as-of-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-md); }
 .ledger-card-head.as-of-head > :first-child { flex: 1 1 60ch; min-width: 0; }
