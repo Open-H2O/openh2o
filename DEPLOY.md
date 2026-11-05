@@ -354,7 +354,7 @@ The three containers start one after another. The database has to report healthy
 before the website container starts. The website container then does its own
 start-up work in this order. It gathers the styling and images, runs the
 <!-- defines: migrations -->migrations that create or update the database tables (section 6),
-records the figures of any finalized water year that has none on file, takes the fingerprint of any that has none, creates a cache table, and creates the administrator account if `.env` asks for one
+records the figures of any finalized water year that has none on file, takes the code of any that has none (the Changes to this year's records card), creates a cache table, and creates the administrator account if `.env` asks for one
 (section 7). It reports healthy after that, and Caddy starts. A first build takes a few minutes. Check with:
 
 ```bash
@@ -756,10 +756,11 @@ start records the figures of each water year that was already finalized, as they
 day, and the water year's page says they were recorded at the upgrade. It happens once for
 each such year.
 
-After upgrading to a version that keeps fingerprints, the same first start takes the
-fingerprint of each water year already finalized, over its records as they stand that day,
-so the code says nothing about any change made before it. The water year page shows the
-code, a Download link for a one-page text file, and a Check button that computes it again.
+After upgrading to a version that keeps these codes, the same first start takes the
+code of each water year already finalized, over its records as they stand that day, so the
+code says nothing about any change made before it, and the card says so. The water year page's
+Changes to this year's records card shows the code, Download a copy to keep for a one-page text
+file, and Check for changes, which computes it again.
 OpenH2O sends that file nowhere. An organization that wants to keep it can file it with
 its board minutes or send it to its watermaster; what it does with the file is its own
 choice.

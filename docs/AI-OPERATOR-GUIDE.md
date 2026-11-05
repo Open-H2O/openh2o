@@ -759,14 +759,19 @@ Backup, Database Restore and Upgrades in section 11 of DEPLOY.md give the comman
 back up by hand, to restore a backup and to upgrade. Those commands need Docker. Without
 Docker, follow section 11 of the no-Docker install guide.
 
-Each finalized water year's page shows a fingerprint, a code computed from that year's
-records. When someone reports that Check says "Does not match", read the parts it names and
-the corrections it lists, and tell the organization what the answer says. If it says the stored
-fingerprint no longer agrees with its own parts, compare the code on the page with the
-organization's kept file. Change nothing to make it match. Reopening the year and finalizing it again takes a new code, and that is the
-organization's decision. Check runs inside OpenH2O, so it cannot catch a change to the
-software, and the one-page file the Download link gives is what the organization keeps
-outside OpenH2O.
+Each finalized water year's page has a Changes to this year's records card, with a code
+computed from that year's records. When someone reports that Check for changes says "Changes found
+with no correction on record", read the parts it names after "Look at", and tell the organization
+what the answer says. If it says the stored code no longer agrees with its own parts, compare the
+code on the page with the organization's kept file. Change nothing to make the answer go away.
+Reopening the year and finalizing it again takes a new code, and that is the organization's
+decision. Check for changes runs inside OpenH2O, so it cannot catch a change to the software, and the
+one-page file from Download a copy to keep is what the organization keeps outside OpenH2O.
+
+The As of box on an account, a use area and the Use Ledger shows the records and figures as they
+were at the end of a chosen day, and Download CSV saves that day's rows. Names, status, settings and
+map shapes on such a page are today's, and today's code adds up the totals. A date before a site's
+first record reads zero, and on the demonstration every record is only as old as its last load.
 
 On an installation without Docker, load the variables in `.env` into the terminal as
 the [no-Docker install guide](INSTALL-WITHOUT-DOCKER.md) shows. Run each command

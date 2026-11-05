@@ -353,7 +353,7 @@ set -a && source .env && set +a
 *migrations*, which create or update the database tables to match this version of
 OpenH2O. Run it after every install and every update. `record_filed_figures` records, once,
 the figures of each water year finalized before OpenH2O kept them, and `record_fingerprints` takes
-the fingerprint of each finalized water year that has none. `createcachetable` creates
+the code of each finalized water year that has none (the Changes to this year's records card). `createcachetable` creates
 one more table, where OpenH2O keeps short-lived values. `ensure_superuser` creates
 the first account.
 

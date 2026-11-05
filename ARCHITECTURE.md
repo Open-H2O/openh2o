@@ -283,7 +283,7 @@ the newest calculation request and statement), because reading every figure take
 made since the oldest statement to records that touch its use areas (the `use_areas` hook in `core/corrections.py`).
 The account and use area pages compare the figures they already computed with the newest statement's.
 
-**The year's fingerprint.** `core/fingerprint.py` computes one SHA-256 digest per part of a water year and one for the
+**The year's code.** The screen says "Changes to this year's records" and "code"; the code's own names say fingerprint. `core/fingerprint.py` computes one SHA-256 digest per part of a water year and one for the
 whole year: every table in `LOCKED_MODELS` plus the use areas with a ledger row or calculation in the year, rows chosen
 by the same rule the lock reads, read through the default managers so voided and replaced rows are in, and then the
 Change history of those rows with each entry's context. A row is a JSON array of its columns in the stored order (keys sorted inside a JSON column, Decimal as normalized
@@ -297,13 +297,19 @@ finalizing again takes a new one and keeps the first. A correction or void does 
 press it. A column or table a later version adds is ignored by an older code; a stored one that no longer exists is
 answered as a part OpenH2O can no longer read, never as a change.
 
-A match says what the code covers is the same as when it was taken. It does not say the records were right. Everything outside the parts is left out, so ordinary work does not read as a changed record: a use area's acres and other details (the part reads only its
+"No changes found" says what the code covers is the same as when it was taken. It does not say the records were right. Everything outside the parts is left out, so ordinary work does not read as a changed record: a use area's acres and other details (the part reads only its
 number and its marking columns, and leaves out its Change history), a fallow period's end month after the year's end (and
 that table's Change history), and every table with no part, among them links and settings that feed figures and are not locked (for example `geography.ParcelZone`,
 `geography.Zone`, `accounting.WaterAccount`, `wells.WellIrrigatedParcel`, `wells.WellMeter`,
-`surface.PointOfDiversionParcel`, `core.SiteConfig`) and the stored OpenET figures (`datasync.OpenETCache`). Check runs inside OpenH2O: it cannot catch a change to the software,
-and Check does not catch someone who rewrites the records and the stored code together; the downloaded page compared by hand does.
+`surface.PointOfDiversionParcel`, `core.SiteConfig`) and the stored OpenET figures (`datasync.OpenETCache`). Check for changes runs inside OpenH2O: it cannot catch a change to the software,
+and it does not catch someone who rewrites the records and the stored code together; the downloaded page compared by hand does.
 The screen and the page print the first 20 characters; the page also prints all 64, because matching a code already on file takes about 2^80 tries, and preparing two versions of the records with the same 20 before finalizing takes about 2^40.
+
+Check for changes prints a count of the corrections recorded since and, after "Look at:", only the parts those corrections do not explain (`accounting/fingerprints.py`). A correction explains its own kind's part, Change history, and what a recalculation writes (`RECALCULATION_PARTS`, read from `engine_run.run_month` and `run_calculations`), and a recharge event's correction also explains account credits. Use areas are explained only when the part's row count grew, because a recalculation adds a use area to the part by giving it its first row and never edits one. A correction and an unrecorded change in the same part read as the correction alone, and the kept file says so. A code taken by the upgrade, `at_upgrade` in `fingerprint_parts`, says on the card that changes before it do not show.
+
+**Reading the records as of a date.** `core/as_of.py` is the only as-of code. `reading_as_of(day)` opens one transaction, creates a temporary table of the same name for each table in `AS_OF_TABLES` (the tables that move a printed figure), sets the transaction read-only and always rolls back. Postgres searches temporary tables first, so every existing query reads the past with no change to any calculation and no second path for the arithmetic: no balance function takes a date. Names, status, settings and shapes are not in the set and read as they are today, and the page's totals are added up by today's code. A row's first Change history event after the moment decides it: a `before_update` or `delete` carries the row as it stood, an `insert` means it did not exist yet, and a row with no later event is the live row. `created_at` must be at or before the moment either way. Reading the latest event at or before the moment instead looks equivalent and is wrong: it drops a row whose only event is a delete (the demonstration's load forgets its history) and revives a row whose only event is an old insert. Read-only refuses a write to a table outside the set; a write to one of the temporary copies is thrown away by the rollback.
+
+`core/as_of_views.py` `reads_as_of` wraps the Ledger, account, use area and ledger export views: it renders inside the block so no lazy query escapes it, makes `user_can_write` False, and builds the line. `Reading.changed_count` compares the rows as they stood with the rows now by what a person calls the same record (a ledger row by use area, date, source and water type; a calculation by use area and month), on current rows and figures only, because one nightly re-run writes thousands of history events and moves nothing. The count is scoped to the records behind the page. Generated reports are not read this way: a report is already kept as a file. A reading costs about 0.1 s on the demonstration and grows with the history written since the date: 3 to 5.5 s, measured on 40 copies of today's history, about a year of nightly re-runs on 76 use areas.
 
 A tracked field with no `verbose_name` prints the name Django makes from the field's name in Change history
 ("Gross et af"). Give such a field a `verbose_name` in the words a page uses for the same figure;
