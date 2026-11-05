@@ -32,8 +32,31 @@ def access_flags(request):
     return {
         "access_enforced": settings.ACCESS_CONTROL_ENFORCED,
         "user_is_admin": is_administrator(getattr(request, "user", None)),
-        "user_can_write": not is_viewer(getattr(request, "user", None)),
+        # A past reading (core.as_of_views) has no writing controls, as a Viewer has none.
+        "user_can_write": not is_viewer(getattr(request, "user", None))
+        and getattr(request, "as_of_reading", None) is None,
         "site_sends_email": site_sends_email(),
+    }
+
+
+def as_of_flags(request):
+    """What the as-of line, the box and a refused date need (set by ``core.as_of_views.reads_as_of``).
+
+    ``as_of_value`` is the date of a reading ("" otherwise); ``as_of_line`` its sentence;
+    ``as_of_notice`` the sentence of a date that could not be used; ``as_of_today_href`` the
+    same page with ``as_of`` removed and every other parameter kept.
+    """
+    day = getattr(request, "as_of_day", None)
+    query = request.GET.copy() if hasattr(request, "GET") else None
+    href = ""
+    if query is not None and day is not None:
+        query.pop("as_of", None)
+        href = request.path + (f"?{query.urlencode()}" if query else "")
+    return {
+        "as_of_value": day.isoformat() if day else "",
+        "as_of_line": getattr(request, "as_of_line", ""),
+        "as_of_notice": getattr(request, "as_of_notice", ""),
+        "as_of_today_href": href,
     }
 
 

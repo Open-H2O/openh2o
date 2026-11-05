@@ -582,6 +582,10 @@ GUARDED_FILES = (
 #: with its reason. Function names, never line numbers. A new read of a covered
 #: model that is neither chained to ``.current()`` nor here fails the build.
 ALLOWED_READS = {
+    ("accounting/views/ledger.py", "_ledger_as_of_scope"):
+        "finds which use areas a search or zone names, for the count in the line; the count itself reads current rows",
+    ("parcels/views.py", "_use_area_on_record"):
+        "asks whether the page's use area exists at all, voided or not, so a date before it gets a sentence and a wrong id a 404",
     ("accounting/ledger_import.py", "_lookup_parcel"):
         "finds a use area by number for an upload; a voided use area keeps its number and is refused as a duplicate",
     ("accounting/management/commands/run_calculations.py", "_clear_engine_rows_of_voided_parcels"):

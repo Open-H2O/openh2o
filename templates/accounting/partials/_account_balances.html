@@ -19,10 +19,12 @@
 <div class="card-raised page-grid-account-balance">
   <div class="row-between mb-md page-grid-account-head">
     <h2 class="section-header-flush">Account balance</h2>
+    <div class="as-of-controls">
     <select name="period"
             hx-get="{% url 'accounting:account_detail' account.pk %}"
             hx-target="#balance-section"
             hx-trigger="change"
+            {% if as_of_value %}hx-vals='{"as_of": "{{ as_of_value }}"}'{% endif %}
             {% comment %}
               The width/padding/font-size used to be an inline style
               here, and its `padding` SHORTHAND wiped the right-hand allowance
@@ -37,6 +39,8 @@
       <option value="{{ p.pk }}" {% if selected_period and selected_period.pk == p.pk %}selected{% endif %}>{{ p.name }}</option>
       {% endfor %}
     </select>
+    {% include "partials/_as_of_box.html" with box=as_of_box %}
+    </div>
   </div>
 
 <div class="budget-panel">

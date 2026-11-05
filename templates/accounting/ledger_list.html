@@ -48,6 +48,7 @@
        Active use areas) opens automatically when one of its own filters is
        set. {% endcomment %}
   <form id="ledger-filters" class="ledger-filters-sticky" onsubmit="return false;">
+    {% if as_of_value %}<input type="hidden" name="as_of" value="{{ as_of_value }}">{% endif %}
     <div class="card-raised">
       <div class="ledger-bar">
         <!-- Water year -->

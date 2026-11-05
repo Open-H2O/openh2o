@@ -1,12 +1,13 @@
 {% autoescape off %}{{ site_name }}
-Fingerprint of water year {{ period.name }} ({{ start }} to {{ end }})
+Changes to this year's records: water year {{ period.name }}
+({{ start }} to {{ end }})
 
-Finalized    {{ finalized }}
-Fingerprint  {{ code }}
-Full code    {{ full_code }}
-Taken        {{ taken_line }}
+Finalized   {{ finalized }}
+Code        {{ code }}
+Full code   {{ full_code }}
+Taken       {{ taken_line }}
 {{ as_filed }}
-What the fingerprint covers
+What the code covers
 {{ covers }}
 
 {{ table }}

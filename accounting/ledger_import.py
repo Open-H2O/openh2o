@@ -43,7 +43,9 @@ Rules enforced here, in order:
 
 A ledger export from a demonstration site starts with one line saying so
 (``DEMONSTRATION_FILE_LINE``). The import skips that line, and only that line,
-so the site's own export re-imports as downloaded (2026-10-18).
+so the site's own export re-imports as downloaded (2026-10-18). A file exported on a past
+reading starts with one more line, ``As of the end of Nov 3, 2026.`` (``as_of_file_line``),
+skipped the same way, in either order with the demonstration line.
 """
 from __future__ import annotations
 
@@ -55,7 +57,7 @@ from typing import Any, TextIO
 
 from django.db import transaction
 
-from accounting.ledger_words import DEMONSTRATION_FILE_LINE
+from accounting.ledger_words import DEMONSTRATION_FILE_LINE, is_as_of_file_line
 from accounting.locks import finalized_message
 from accounting.models import ReportingPeriod, WaterType
 from parcels.models import (
@@ -98,13 +100,25 @@ def _fatal(message):
 def _open_ledger_reader(
     text_file: TextIO, delimiter: str
 ) -> tuple[csv.DictReader[str], int]:
-    """A DictReader over the file, skipping the demonstration line; plus the first data line number."""
-    first_line = text_file.readline()
+    """A DictReader over the file, skipping the lines a download puts above the columns.
+
+    Those are the demonstration line and the as-of line (a file exported on a past reading),
+    each once, in either order, and only a line of exactly that form. Also returns the first
+    data line number.
+    """
     first_data_line = 2
-    if first_line.lstrip('﻿').strip().strip('"') == DEMONSTRATION_FILE_LINE:
-        first_data_line = 3
-    elif first_line:
-        text_file = itertools.chain([first_line], text_file)
+    skipped = set()
+    while len(skipped) < 2:
+        line = text_file.readline()
+        if not line:
+            break
+        text = line.lstrip('\ufeff').strip().strip('"')
+        kind = "demonstration" if text == DEMONSTRATION_FILE_LINE else "as_of" if is_as_of_file_line(text) else None
+        if kind is None or kind in skipped:
+            text_file = itertools.chain([line], text_file)
+            break
+        skipped.add(kind)
+        first_data_line += 1
     reader = csv.DictReader(text_file, delimiter=delimiter)
     return reader, first_data_line
 

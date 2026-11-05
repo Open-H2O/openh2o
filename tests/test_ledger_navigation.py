@@ -381,7 +381,7 @@ class TestLedgerSignSentenceInSubtitle:
             "Credits are paper or banked water and are not a supply."
         )
         assert old_sentence not in html
-        head = re.search(r'<div class="ledger-card-head">.*?</div>\s*</div>', html, re.S)
+        head = re.search(r'<div class="ledger-card-head[^"]*">.*?</div>\s*</div>', html, re.S)
         assert head, "subtitle region not found"
         assert sentence in head.group(0)
         tfoot = re.search(r"<tfoot>.*?</tfoot>", html, re.S)

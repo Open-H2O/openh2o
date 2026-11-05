@@ -11,9 +11,9 @@ from the code under test.
 
 * (a) the digest is stable across two computations and equals the stored code;
 * (b) one digit of a meter reading, by raw SQL under the recorded door, changes the
-  digest and Check names Meter readings;
-* (c) a correction through the correct route changes the digest and Check lists it;
-  a correction a figure moved for links to the Figures as filed card;
+  digest and Check for changes says to look at meter readings;
+* (c) a correction through the correct route changes the digest and Check for changes
+  counts it; a correction a figure moved for links to the Figures as filed card;
 * (d) finalizing sets the three fields; ``record_fingerprints`` sets them on a year
   already finalized, once, and leaves a code alone;
 * (e) the download names the parts with the counts the digest used and prints the
@@ -21,16 +21,19 @@ from the code under test.
 * (f) voided and replaced rows are in the digest;
 * (g) a Viewer reads the line, downloads and presses Check;
 * (h) the covered tables are the locked tables plus the correction registry;
-* (i) a use area's acres edited in an open year leave Matches, voiding it does not;
-* (j) ending a running fallow period leaves Matches, any other change does not;
+* (i) a use area's acres edited in an open year leave "No changes found", voiding it does not;
+* (j) ending a running fallow period leaves "No changes found", any other change does not;
 * (k) a later-added column is ignored, a vanished column or table is "can no longer
   read" and never a difference;
-* (l) a correction touching no use area (a water level) is listed as plain text;
-* (m) a demonstration load answers Matches at once;
+* (l) a correction touching no use area (a water level) links the count to Change history;
+* (m) a demonstration load answers "No changes found" at once;
 * (n) a stored code changed by hand is answered as disagreeing with its parts;
 * (o) on the six tables the demonstration has no rows for, the rule agrees with the lock;
-* finalizing then Check, through the real views, answers Matches (the context row's
-  metadata may not move under the code); a reopened year shows no line.
+* finalizing then Check for changes, through the real views, answers "No changes found" (the
+  context row's metadata may not move under the code); a reopened year shows no card.
+
+The screen words are the approved drawing's (rulings 86 and 87); ``tests/test_year_changes_05.py``
+holds the card, the answers and the logic behind them.
 """
 import copy
 import datetime as dt
@@ -59,7 +62,9 @@ HX = {"HTTP_HX_REQUEST": "true"}
 REASON = "Typed 30 for 20; the meter photo shows 20."
 PINNED = dt.datetime(2025, 10, 15, 19, 0, tzinfo=dt.timezone.utc)
 TAKEN = "Oct 15, 2025"
-FORBIDDEN = ("tamper", "audit", "evidence", "proof", "certified", "attestation", "sworn")
+NO_CHANGES = f"No changes found since {TAKEN}."
+UNRECORDED = "Changes found with no correction on record."
+FORBIDDEN = ("tamper", "audit", "evidence", "proof", "certified", "attestation", "sworn", "verify")
 
 PART_NAMES = [
     "Use ledger", "Account use areas", "Allocations", "Water credits", "Water credit draws",
@@ -207,7 +212,7 @@ def _file_url(period):
 def _answer_html(client, period):
     response = client.post(_check_url(period), **HX)
     assert response.status_code == 200
-    found = re.search(r'<p class="text-secondary text-base" id="fingerprint-answer" role="status"[^>]*>(.*)</p>',
+    found = re.search(r'<p class="[^"]*" id="fingerprint-answer" role="status"[^>]*>(.*?)</p>',
                       response.content.decode(), re.S)
     assert found, response.content.decode()
     return found.group(1)
@@ -356,11 +361,11 @@ def test_the_upgrade_command_fingerprints_a_finalized_year_once_and_leaves_a_cod
     assert ReportingPeriodEvent.objects.count() == events
 
 
-def test_a_year_fingerprinted_at_the_upgrade_answers_matches_at_once(year, administrator):
+def test_a_year_fingerprinted_at_the_upgrade_answers_no_changes_found_at_once(year, administrator):
     ReportingPeriod.objects.filter(pk=year.pk).update(is_finalized=True)
     call_command("record_fingerprints")
     year.refresh_from_db()
-    assert _answer(_client(administrator), year).startswith("Matches the fingerprint taken ")
+    assert _answer(_client(administrator), year).startswith("No changes found since ")
 
 
 def test_the_command_does_nothing_with_water_accounting_off():
@@ -371,38 +376,39 @@ def test_the_command_does_nothing_with_water_accounting_off():
 # -- finalize, then Check: the context row's metadata must not move under the code ---------------------
 
 
-def test_finalize_then_check_through_the_real_views_answers_matches(filed, administrator):
+def test_finalize_then_check_through_the_real_views_answers_no_changes_found(filed, administrator):
     client = _client(administrator)
-    assert _answer(client, filed) == f"Matches the fingerprint taken {TAKEN}."
+    assert _answer(client, filed) == NO_CHANGES
     # And the answer is the same without scripts: the page, with the answer in place.
     page = client.post(_check_url(filed))
     assert page.status_code == 200
     body = page.content.decode()
-    assert f"Matches the fingerprint taken {TAKEN}." in body and 'id="figures-as-filed"' in body
+    assert NO_CHANGES in unescape(body) and 'id="figures-as-filed"' in body
 
 
-def test_finalize_with_a_note_then_check_answers_matches(year, administrator):
+def test_finalize_with_a_note_then_check_answers_no_changes_found(year, administrator):
     client = _client(administrator)
     client.post(reverse("accounting:period_finalize", args=[year.pk]), {"note": "Finalized after the board vote."})
     year.refresh_from_db()
     assert year.is_finalized
-    assert _answer(client, year).startswith("Matches the fingerprint taken ")
+    assert _answer(client, year).startswith("No changes found since ")
 
 
-def test_refinalize_then_check_answers_matches(filed, administrator):
+def test_refinalize_then_check_answers_no_changes_found(filed, administrator):
     client = _client(administrator)
     _reopen(client, filed)
     _finalize(client, filed)
-    assert _answer(client, filed).startswith("Matches the fingerprint taken ")
+    assert _answer(client, filed).startswith("No changes found since ")
 
 
 def test_change_history_prints_the_code_and_when_and_not_what_it_read(filed, administrator):
     from core.changes import changes_for
 
     labels = {change.name for row in changes_for(filed) for change in row.changes}
-    assert "Fingerprint" in labels
-    assert "Fingerprint taken" in labels
-    assert not any(label.startswith("Fingerprint parts") for label in labels)
+    assert "Code" in labels
+    assert "Code taken" in labels
+    assert not any(label.startswith("Code parts") for label in labels)
+    assert not any("ingerprint" in label for label in labels)
 
 
 def test_check_writes_nothing(filed, administrator):
@@ -427,10 +433,8 @@ def test_one_digit_of_a_meter_reading_changes_the_digest_and_names_the_part(file
     assert after.digest != before.digest
     changed = [k for k in before.parts if before.parts[k]["digest"] != after.parts[k]["digest"]]
     assert changed == ["measurements.MeterReading", "history"]
-    assert _answer(_client(administrator), filed) == (
-        f"Does not match the fingerprint taken {TAKEN}. Parts that differ: meter readings, change history. "
-        "No correction is recorded since; the records were changed some other way."
-    )
+    # Change history differs too and is not named: a direct edit leaves history behind.
+    assert _answer(_client(administrator), filed) == f"{UNRECORDED} Look at: meter readings."
 
 
 # -- (c) a correction ----------------------------------------------------------------------------------
@@ -450,23 +454,16 @@ def test_a_correction_through_the_route_changes_the_digest_and_check_lists_it(d1
     assert response.status_code == 200
     assert fp().compute(filed).digest != before
     answer = _answer(_client(administrator), filed)
-    day = _day(timezone.now())
-    assert answer.startswith(
-        f"Does not match the fingerprint taken {TAKEN}. Parts that differ: meter readings"
-    )
-    assert "change history" in answer.split("Parts that differ:")[1].split(".")[0]
-    assert f"Corrections recorded since: 1 (meter reading of Jul 31, 2025, corrected {day} by R. Ortiz)." in answer
+    # Meter readings and Change history differ; the correction's own kind and history are explained.
+    assert answer == f"1 correction since {TAKEN}."
+    # The screen counts the correction; the Figures as filed card or Change history says which.
 
 
 def test_a_correction_that_moved_a_figure_links_to_the_figures_as_filed_card(d1, filed, administrator):
     _correct_july(d1, administrator)
     html = _answer_html(_client(administrator), filed)
-    day = _day(timezone.now())
-    assert (
-        f'Corrections recorded since: 1 (<a href="#figures-as-filed" class="prose-link">'
-        f"ledger entry of Jul 1, 2025, corrected {day} by R. Ortiz</a>)."
-    ) in html
-    assert html.startswith(f"Does not match the fingerprint taken {TAKEN}. Parts that differ: use ledger")
+    assert f'<a href="#figures-as-filed" class="prose-link">1 correction</a> since {TAKEN}.' in html
+    assert unescape(re.sub(r"<[^>]+>", "", html)) == f"1 correction since {TAKEN}."
 
 
 # -- (f) struck rows are in --------------------------------------------------------------------------
@@ -502,24 +499,25 @@ def test_the_download_names_the_parts_with_the_counts_the_digest_used(d1, filed,
     response = _client(administrator).get(_file_url(filed))
     assert response.status_code == 200
     assert response["Content-Type"] == "text/plain; charset=utf-8"
-    assert response["Content-Disposition"] == 'attachment; filename="fingerprint-wy-2024-2025.txt"'
+    assert response["Content-Disposition"] == 'attachment; filename="changes-code-wy-2024-2025.txt"'
     text = response.content.decode()
     lines = text.splitlines()
     assert lines[0] == "Hand-calculation test district"
-    assert lines[1] == "Fingerprint of water year WY 2024-2025 (Oct 1, 2024 to Sep 30, 2025)"
+    assert lines[1] == "Changes to this year's records: water year WY 2024-2025"
+    assert lines[2] == "(Oct 1, 2024 to Sep 30, 2025)"
     short = f"{filed.fingerprint[:20].upper()}"
-    assert f"Fingerprint  {'-'.join(short[i:i + 4] for i in range(0, 20, 4))}" in lines
-    assert f"Full code    {filed.fingerprint.upper()}" in lines
-    assert f"Taken        {TAKEN}, when the year was finalized" in lines
-    assert "Finalized    " + _day(filed.finalized_at) + " by R. Ortiz" in lines
-    assert max(len(line) for line in lines) <= 77
+    assert f"Code        {'-'.join(short[i:i + 4] for i in range(0, 20, 4))}" in lines
+    assert f"Full code   {filed.fingerprint.upper()}" in lines
+    assert f"Taken       {TAKEN}, when the year was finalized" in lines
+    assert "Finalized   " + _day(filed.finalized_at) + " by R. Ortiz" in lines
+    assert max(len(line) for line in lines) <= 76
     parts = fp().compute(filed).parts
     for key, part in parts.items():
         if part["rows"]:
             assert re.search(rf"{re.escape(part['name'])} +{part['rows']:,}(\s|$)", text), part["name"]
     assert re.search(r"Meter readings +3(\s|$)", text) and re.search(r"Water levels +1(\s|$)", text)
     assert "No rows in this year: Account use areas, Water credits, Water credit" in text
-    assert "Check runs inside OpenH2O, so it does not catch a change to the software." in text.replace("\n", " ")
+    assert "Check for changes runs inside OpenH2O, so it does not catch a change to the software." in text.replace("\n", " ")
 
 
 def test_the_download_of_a_year_taken_at_the_upgrade_and_of_a_restated_year(year, administrator):
@@ -528,35 +526,42 @@ def test_the_download_of_a_year_taken_at_the_upgrade_and_of_a_restated_year(year
     year.refresh_from_db()
     client = _client(administrator)
     text = client.get(_file_url(year)).content.decode()
-    assert "Finalized    date not on record" in text
-    assert f"Taken        {_day(year.fingerprint_at)}, when OpenH2O began keeping fingerprints" in text
+    assert "Finalized   date not on record" in text
+    assert (
+        f"Taken       {_day(year.fingerprint_at)}, when OpenH2O began keeping these codes\n"
+        "            and after the year was finalized. Changes before that date do\n"
+        "            not show in this check.\n"
+    ) in text
 
     first, first_at = year.fingerprint, year.fingerprint_at
     _reopen(client, year)
     _finalize(client, year)
     year.refresh_from_db()
     text = client.get(_file_url(year)).content.decode()
-    assert f"Taken        {_day(year.fingerprint_at)}, when the year was finalized again" in text
+    assert f"Taken       {_day(year.fingerprint_at)}, when the year was finalized again" in text
     short = first[:20].upper()
     code = "-".join(short[i:i + 4] for i in range(0, 20, 4))
     # That first code was taken at the upgrade, not at a filing.
-    assert f"First code   {code}, taken {_day(first_at)}" in text
-    assert f"First code   {first.upper()}" in text
+    assert f"First code  {code}, taken {_day(first_at)}" in text
+    assert f"First code  {first.upper()}" in text
     assert "As filed" not in text
-    body = client.get(reverse("accounting:period_detail", args=[year.pk])).content.decode()
-    assert f"first taken {_day(first_at)}." in body
+    body = unescape(re.sub(r"<[^>]+>", "", client.get(reverse("accounting:period_detail", args=[year.pk])).content.decode()))
+    assert f"First code {code}, first taken {_day(first_at)}." in re.sub(r"\s+", " ", body)
     assert "as filed " + _day(first_at) not in body
 
 
 APPROVED_PAGE = """Halvern Valley GSA
-Fingerprint of water year WY 2024-2025 (Oct 1, 2024 to Sep 30, 2025)
+Changes to this year's records: water year WY 2024-2025
+(Oct 1, 2024 to Sep 30, 2025)
 
-Finalized    Oct 15, 2025 by R. Ortiz
-Fingerprint  0AB1-0181-4EB9-3DFD-02D4
-Full code    0AB101814EB93DFD02D4D77FE555B4F89BDBE7DFEE873193A4B1048234BA9FBA
-Taken        Oct 15, 2025, when the year was finalized
+Finalized   date not on record
+Code        32A8-3722-E3A1-FE4C-0109
+Full code   32A83722E3A1FE4C0109A0023F91C45E78056DBB3D4E14E49C8D2D9E9CD5901C
+Taken       Nov 4, 2026, when OpenH2O began keeping these codes
+            and after the year was finalized. Changes before that date do
+            not show in this check.
 
-What the fingerprint covers
+What the code covers
 OpenH2O computed the code from every row below as it stood when the code was
 taken, records marked void or replaced included, and from every Change
 history entry of those rows. For a use area with a record in the year, the
@@ -587,14 +592,17 @@ How to check
    change the records could also change the code on the page; this file
    catches that. For a dispute, download this page again and compare the
    full code.
-3. Press Check. OpenH2O recomputes the code from the records now.
-4. Read the answer. "Does not match" names the parts that differ and the
-   corrections recorded since. "Can no longer read" means a later version
-   removed what a part was computed from.
+3. Press Check for changes. OpenH2O recomputes the code from the records
+   now.
+4. Read the answer. It gives the number of corrections recorded since, and
+   names the parts to look at where changes have no correction on record. A
+   correction and an unrecorded change in the same part read as the
+   correction alone. "Can no longer read" means a later version removed what
+   a part was computed from.
 
-"Matches" means what the code covers is the same as when it was taken. It
-does not show that the records were right. Check runs inside OpenH2O, so it
-does not catch a change to the software.
+"No changes found" means what the code covers is the same as when it was
+taken. It does not show that the records were right. Check for changes runs
+inside OpenH2O, so it does not catch a change to the software.
 
 OpenH2O does not send this file anywhere. Keeping it is the organization's
 choice.
@@ -606,7 +614,6 @@ def test_the_download_reads_word_for_word_as_the_approved_page():
     from core.models import SiteConfig
 
     SiteConfig.objects.create(agency_name="Halvern Valley GSA")
-    user = _user("ortiz", first_name="R.", last_name="Ortiz")
     counts = [
         ("parcels.ParcelLedger", 1057), ("accounting.WaterAccountParcel", 76), ("accounting.AllocationPlan", 8),
         ("accounting.WaterCredit", 0), ("accounting.WaterCreditDraw", 0), ("accounting.AllocationCarryover", 3),
@@ -620,29 +627,36 @@ def test_the_download_reads_word_for_word_as_the_approved_page():
     parts = {
         key: {"name": fp().PART_NAMES[key], "digest": "0" * 64, "rows": rows} for key, rows in counts
     }
-    moment = dt.datetime(2025, 10, 15, 19, 0, tzinfo=dt.timezone.utc)
+    moment = dt.datetime(2026, 11, 4, 19, 0, tzinfo=dt.timezone.utc)
+    # The drawn example: a code the upgrade took, on a year whose finalized date is not on record.
     period = ReportingPeriod.objects.create(
         name="WY 2024-2025", start_date=dt.date(2024, 10, 1), end_date=dt.date(2025, 9, 30),
-        is_finalized=True, finalized_at=moment, finalized_by=user,
-        fingerprint="0ab101814eb93dfd02d4d77fe555b4f89bdbe7dfee873193a4b1048234ba9fba",
-        fingerprint_at=moment, fingerprint_parts={"version": 1, "parts": parts, "columns": {}},
+        is_finalized=True,
+        fingerprint="32a83722e3a1fe4c0109a0023f91c45e78056dbb3d4e14e49c8d2d9e9cd5901c",
+        fingerprint_at=moment,
+        fingerprint_parts={"version": 1, "parts": parts, "columns": {}, "at_upgrade": True},
     )
-    assert fingerprints.file_text(period).rstrip() + "\n" == APPROVED_PAGE
+    text = fingerprints.file_text(period).rstrip() + "\n"
+    assert text == APPROVED_PAGE
+    # One page: 56 lines, none wider than 76, and the old word nowhere.
+    assert len(text.splitlines()) == 56
+    assert max(len(line) for line in text.splitlines()) == 76
+    assert "fingerprint" not in text.lower()
+    assert fingerprints.file_name(period) == "changes-code-wy-2024-2025.txt"
 
 
 # -- the line on the page ---------------------------------------------------------------------------------
 
 
-def test_the_page_carries_the_line_as_drawn(filed, administrator):
+def test_the_page_carries_the_card_as_drawn(filed, administrator):
     body = _client(administrator).get(reverse("accounting:period_detail", args=[filed.pk])).content.decode()
     code = "-".join(f"{filed.fingerprint[i:i + 4]}" for i in range(0, 20, 4)).upper()
-    assert body.index("Finalized</span>") < body.index('id="fingerprint"') < body.index(">Start date<")
-    assert '<div class="field-group field-grid-2-span" id="fingerprint">' in body
-    assert f'<span class="text-mono text-sm">{code}</span>' in body
-    assert f'<div class="text-sm"><span class="text-tertiary">taken {_day(filed.fingerprint_at)}.</span>' in body
-    assert f'<a href="{_file_url(filed)}" class="text-link">Download</a>' in body
+    assert body.index("Allocations by water type</h2>") < body.index('id="fingerprint"') < body.index("Calculation</h2>")
+    assert '<div class="card-raised page-grid-account-full" id="fingerprint">' in body
+    assert f'Code <span class="text-mono">{code}</span>, taken {_day(filed.fingerprint_at)}' in body
+    assert f'<a href="{_file_url(filed)}" class="text-link">Download a copy to keep</a>' in body
     assert f'hx-post="{_check_url(filed)}" hx-target="#fingerprint-answer" hx-swap="outerHTML"' in body
-    assert '<button type="submit" class="btn-as-link text-link">Check</button>' in body
+    assert '<button type="submit" class="btn-as-link text-link">Check for changes</button>' in body
     assert '<span id="fingerprint-answer"></span>' in body
 
 
@@ -660,10 +674,11 @@ def test_a_restated_year_shows_the_newest_code_and_the_first_beneath(filed, admi
     body = client.get(reverse("accounting:period_detail", args=[filed.pk])).content.decode()
     new = "-".join(filed.fingerprint[i:i + 4] for i in range(0, 20, 4)).upper()
     old = "-".join(first[i:i + 4] for i in range(0, 20, 4)).upper()
-    assert f"taken {_day(filed.fingerprint_at)}, restated.</span>" in body
+    start = body.index('id="fingerprint"')
+    card = body[start : body.find('<div class="card-raised', start + 20)]
+    assert f"taken {_day(filed.fingerprint_at)}" in card and "restated" not in card.lower()
     assert body.index(new) < body.index(old)
-    assert 'class="text-tertiary" style="margin-top: var(--space-xs);"' in body
-    assert "as filed " in body.split(old)[1][:80]
+    assert f", as filed {TAKEN}." in body.split(old)[1][:80]
 
 
 def test_a_reopened_year_shows_no_line_and_the_routes_answer_not_found(filed, administrator):
@@ -692,12 +707,13 @@ def test_a_finalized_year_with_no_code_answers_not_found_and_shows_no_line(year,
 # -- (g) a Viewer ----------------------------------------------------------------------------------------
 
 
-def test_a_viewer_reads_the_line_downloads_and_checks(filed, viewer):
+def test_a_viewer_reads_the_card_downloads_and_checks(filed, viewer):
     client = _client(viewer)
     page = client.get(reverse("accounting:period_detail", args=[filed.pk]))
     assert page.status_code == 200 and 'id="fingerprint"' in page.content.decode()
+    assert "Check for changes" in page.content.decode()
     assert client.get(_file_url(filed)).status_code == 200
-    assert _answer(client, filed) == f"Matches the fingerprint taken {TAKEN}."
+    assert _answer(client, filed) == NO_CHANGES
     # Finalize stays an administrator's.
     assert client.post(reverse("accounting:period_finalize", args=[filed.pk]), {}).status_code == 403
 
@@ -705,7 +721,7 @@ def test_a_viewer_reads_the_line_downloads_and_checks(filed, viewer):
 # -- (i) a use area -------------------------------------------------------------------------------------------
 
 
-def test_editing_a_use_areas_acres_leaves_matches_and_voiding_it_through_the_door_does_not(
+def test_editing_a_use_areas_acres_leaves_no_changes_found_and_voiding_it_through_the_door_does_not(
     d1, filed, administrator
 ):
     from core import corrections
@@ -713,12 +729,12 @@ def test_editing_a_use_areas_acres_leaves_matches_and_voiding_it_through_the_doo
 
     client = _client(administrator)
     Parcel.objects.filter(pk=d1["F1"].pk).update(area_acres=D("77.00"), notes="Edited in an open year of 2026.")
-    assert _answer(client, filed) == f"Matches the fingerprint taken {TAKEN}."
+    assert _answer(client, filed) == NO_CHANGES
 
     with override("Voided: the use area was entered twice."):
         corrections.void(d1["F1"], user=administrator, reason="Voided: the use area was entered twice.")
-    answer = _answer(client, filed)
-    assert answer.startswith(f"Does not match the fingerprint taken {TAKEN}. Parts that differ: use areas. Corrections recorded since: 1 (")
+    # The void is a correction of the use area's own kind, so it explains the Use areas part.
+    assert _answer(client, filed) == f"1 correction since {TAKEN}."
 
 
 def test_a_voided_use_area_in_an_account_leaves_the_figures_as_filed_card_readable(
@@ -737,14 +753,14 @@ def test_a_voided_use_area_in_an_account_leaves_the_figures_as_filed_card_readab
 # -- (j) a fallow period ------------------------------------------------------------------------------------------
 
 
-def test_ending_a_running_fallow_period_leaves_matches_and_any_other_change_does_not(d1, year, administrator):
+def test_ending_a_running_fallow_period_leaves_no_changes_found_and_any_other_change_does_not(d1, year, administrator):
     from parcels.models import FallowPeriod
 
     running = FallowPeriod.objects.create(parcel=d1["F4"], start_month=dt.date(2025, 8, 1))
     _finalize(_client(administrator), year)
     _pin(year)
     client = _client(administrator)
-    assert _answer(client, year) == f"Matches the fingerprint taken {TAKEN}."
+    assert _answer(client, year) == NO_CHANGES
 
     response = client.post(
         reverse("parcels:fallow_period_end_edit", args=[d1["F4"].pk]),
@@ -753,14 +769,11 @@ def test_ending_a_running_fallow_period_leaves_matches_and_any_other_change_does
     assert response.status_code in (200, 302)
     running.refresh_from_db()
     assert running.end_month == dt.date(2025, 11, 1)
-    assert _answer(client, year) == f"Matches the fingerprint taken {TAKEN}."
+    assert _answer(client, year) == NO_CHANGES
 
     with override("a test of the recorded door"):
         FallowPeriod.objects.filter(pk=running.pk).update(start_month=dt.date(2025, 9, 1))
-    assert _answer(client, year) == (
-        f"Does not match the fingerprint taken {TAKEN}. Parts that differ: fallow periods. "
-        "No correction is recorded since; the records were changed some other way."
-    )
+    assert _answer(client, year) == f"{UNRECORDED} Look at: fallow periods."
 
 
 # -- (k) a column or table that comes or goes ------------------------------------------------------------------------
@@ -784,7 +797,7 @@ def test_a_column_added_later_is_ignored_by_an_older_code(filed, administrator):
     assert older.parts["measurements.MeterReading"]["digest"] != fp().compute(filed).parts[
         "measurements.MeterReading"
     ]["digest"]
-    assert _answer(_client(administrator), filed) == f"Matches the fingerprint taken {TAKEN}."
+    assert _answer(_client(administrator), filed) == NO_CHANGES
 
 
 def test_a_table_added_later_is_ignored_by_an_older_code(filed, administrator):
@@ -793,7 +806,7 @@ def test_a_table_added_later_is_ignored_by_an_older_code(filed, administrator):
     del stored["columns"]["recharge.RechargeEvent"]
     del stored["columns"]["recharge.RechargeEventEvent"]
     _restate(filed, stored)
-    assert _answer(_client(administrator), filed) == f"Matches the fingerprint taken {TAKEN}."
+    assert _answer(_client(administrator), filed) == NO_CHANGES
 
 
 def test_a_stored_column_that_no_longer_exists_is_cannot_read_never_a_change(filed, administrator):
@@ -805,7 +818,7 @@ def test_a_stored_column_that_no_longer_exists_is_cannot_read_never_a_change(fil
         "OpenH2O can no longer read these parts: meter readings, change history, because a later "
         "version removed what they were computed from."
     )
-    assert "Does not match" not in answer
+    assert "Changes found" not in answer and "No changes found" not in answer
 
 
 def test_a_stored_table_that_no_longer_exists_is_cannot_read_never_a_change(filed, administrator):
@@ -826,8 +839,7 @@ def test_an_unreadable_part_beside_a_real_difference_is_named_after_it(filed, ad
     _meter_sql(sql="UPDATE measurements_meterreading SET current_value = 1413.0000 WHERE current_value = 1412.0000")
     answer = _answer(_client(administrator), filed)
     assert answer == (
-        f"Does not match the fingerprint taken {TAKEN}. Parts that differ: meter readings. "
-        "No correction is recorded since; the records were changed some other way. "
+        f"{UNRECORDED} Look at: meter readings. "
         "OpenH2O can no longer read the change history, because a later version removed what it "
         "was computed from."
     )
@@ -836,15 +848,15 @@ def test_an_unreadable_part_beside_a_real_difference_is_named_after_it(filed, ad
 # -- (l) a correction that touches no use area ---------------------------------------------------------------------------
 
 
-def test_a_correction_that_touches_no_use_area_is_listed_as_plain_text(d1, filed, administrator):
+def test_a_correction_that_touches_no_use_area_links_the_count_to_change_history(d1, filed, administrator):
     from core.corrections import correct
 
     with override(REASON):
         correct(d1["level"], user=administrator, reason=REASON, changes={"value": D("6")})
     html = _answer_html(_client(administrator), filed)
-    day = _day(timezone.now())
-    assert f"Corrections recorded since: 1 (water level of Mar 1, 2025, corrected {day} by R. Ortiz)." in html
-    assert "<a " not in html
+    # The Figures as filed card lists no water level, so the count goes to Change history from the day taken.
+    assert f'<a href="/changes/?from=2025-10-15" class="prose-link">1 correction</a> since {TAKEN}.' in html
+    assert "#figures-as-filed" not in html
 
 
 # -- (n) a code changed by hand ----------------------------------------------------------------------------------------------
@@ -852,16 +864,13 @@ def test_a_correction_that_touches_no_use_area_is_listed_as_plain_text(d1, filed
 
 def test_a_stored_code_changed_by_hand_is_answered_as_disagreeing_with_its_parts(filed, administrator):
     ReportingPeriod.objects.filter(pk=filed.pk).update(fingerprint="0" * 64)
-    assert _answer(_client(administrator), filed) == (
-        f"Does not match the fingerprint taken {TAKEN}. The fingerprint stored for this year no "
-        "longer agrees with its own parts."
-    )
+    assert _answer(_client(administrator), filed) == "The stored code no longer agrees with its own parts."
 
 
 # -- (m) the demonstration ----------------------------------------------------------------------------------------------------
 
 
-def test_a_demonstration_load_answers_matches_at_once_and_leaves_no_water_year_history(
+def test_a_demonstration_load_answers_no_changes_found_at_once_and_leaves_no_water_year_history(
     monkeypatch, administrator
 ):
     from core import demonstration as demo
@@ -885,7 +894,7 @@ def test_a_demonstration_load_answers_matches_at_once_and_leaves_no_water_year_h
     assert re.fullmatch(r"[0-9a-f]{64}", year.fingerprint)
     assert year.fingerprint_parts["at_upgrade"] is True
     assert ReportingPeriodEvent.objects.count() == 0
-    assert _answer(_client(administrator), year).startswith("Matches the fingerprint taken ")
+    assert _answer(_client(administrator), year).startswith("No changes found since ")
 
 
 # -- (o) the six tables the demonstration has no rows for ------------------------------------------------------------------------

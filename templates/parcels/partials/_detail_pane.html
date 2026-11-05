@@ -49,6 +49,7 @@
           <div class="row-start">
             <a href="{% url 'accounting:ledger_list' %}?q={{ parcel.parcel_number|urlencode }}" class="text-tertiary back-link text-xs">All ledger entries</a>
             {% include "parcels/partials/_period_control.html" %}
+            {% include "partials/_as_of_box.html" with box=as_of_box %}
           </div>
         </div>
         {% if water_use %}
@@ -164,7 +165,7 @@
           <div class="text-tertiary text-xs mb-sm">Estimated groundwater extraction, month by month:</div>
           <div class="row-start" style="flex-wrap: wrap; gap: var(--space-xs);">
             {% for period in receipt_periods %}
-            <a href="{% url 'accounting:calculation_run_detail' parcel.pk period %}" class="badge badge-blue">{{ period }}</a>
+            {% if as_of_value %}<span class="badge badge-blue">{{ period }}</span>{% else %}<a href="{% url 'accounting:calculation_run_detail' parcel.pk period %}" class="badge badge-blue">{{ period }}</a>{% endif %}
             {% endfor %}
           </div>
         </div>

@@ -68,8 +68,6 @@
           </div>
         </div>
 
-        {% if fingerprint_line %}{% include "accounting/partials/_fingerprint.html" with line=fingerprint_line answer=fingerprint_answer %}{% endif %}
-
         <div class="field-group">
           <div class="field-label">Start date</div>
           <div class="field-value">{{ period.start_date|date:"M d, Y" }}</div>
@@ -146,6 +144,8 @@
       <p class="text-tertiary text-base">This water year has no allocations.</p>
       {% endif %}
     </div>
+
+    {% if fingerprint_line %}{% include "accounting/partials/_fingerprint.html" with line=fingerprint_line answer=fingerprint_answer %}{% endif %}
 
     {% comment %}The Calculation card. Same two-column shape as the finalize / reopen card below it (the `.period-close` grid): what it does and the one primary button on the left, what the last run said on the right. Operators and administrators get the button; a viewer, and any finalized year, see the last outcome and no button.{% endcomment %}
     <div class="card-raised page-grid-account-full">

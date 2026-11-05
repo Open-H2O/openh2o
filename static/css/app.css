@@ -3131,6 +3131,25 @@ html { color-scheme: dark; }
     gap: var(--space-md);
 }
 
+/* Changes to this year's records (water year page): the head row folds when the
+   actions no longer fit beside the sentence, and keeps them at the row's end while
+   they do. space-between (from .row-between) puts the actions at the end on one line
+   and at the start when they fold under the sentence. Tokens only. */
+.year-changes-head {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--space-sm) var(--space-lg);
+}
+
+.year-changes-head > :first-child {
+    flex: 1 1 36ch;
+    min-width: 0;
+}
+
+.year-changes-actions {
+    white-space: normal;
+}
+
 /* -- Misc utilities ------------------------------------------------------ */
 
 .text-secondary {
@@ -3380,6 +3399,13 @@ div[id$="-map"] {
 .text-deficit {
     /* Family rule: a deficit is burnt orange, never alarm red. */
     color: var(--color-deficit);
+}
+
+.text-warning {
+    /* The warning status colour as plain text (amber), the way `.text-error` is
+       the error one: the water year page's "Changes found with no correction on
+       record." Never error red, never gold. */
+    color: var(--color-warning);
 }
 
 .text-error {
@@ -5479,3 +5505,28 @@ details[open] > summary .disclosure-mark {
 .record-correct-form .radio-option input[type="radio"] { width: 16px; height: 16px; margin-top: 1px; }
 /* Void this record on an edit form: at the left of the button row, apart from Save. */
 .form-void-action { margin-right: auto; }
+
+/* As of: one date input in the head of the card that holds the figures, beside the water
+   year control, and, when a date is set, one band at the top of the page content that pins to the
+   viewport while the page scrolls, with every column header pinned directly under it. Sizes match
+   .form-select--compact beside the box; the band is body size in primary ink on the card surface,
+   one step above the page. Tokens only; nothing on these elements moves. */
+.as-of-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-sm); }
+.as-of { display: inline-flex; align-items: center; gap: var(--space-sm); white-space: nowrap; margin: 0; }
+.as-of-label { font-size: 0.8125rem; font-weight: 500; color: var(--color-text-secondary); }
+.as-of-input { width: auto; padding-top: 4px; padding-bottom: 4px; padding-left: var(--space-sm); padding-right: var(--space-sm); font-size: 0.8125rem; font-variant-numeric: tabular-nums; }
+/* The band's height, once, so the column headers can sit under it: one 0.875rem line at 1.5,
+   the band's padding, its two borders. */
+.as-of-reading { --as-of-band-h: calc(1.3125rem + 2 * var(--space-sm) + 2px); }
+.as-of-line { position: sticky; top: 0; z-index: 20; margin: 0 0 var(--space-md) 0; padding: var(--space-sm) var(--space-lg); background-color: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: 0.875rem; line-height: 1.5; color: var(--color-text-primary); }
+.as-of-line .as-of-sep { color: var(--color-text-tertiary); margin: 0 var(--space-xs); }
+/* A date that could not be used: the same place, not pinned. */
+.as-of-notice { margin: 0 0 var(--space-md) 0; padding: var(--space-sm) var(--space-lg); background-color: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: 0.875rem; line-height: 1.5; color: var(--color-text-primary); }
+.as-of-reading .data-table thead th { top: var(--as-of-band-h); }
+/* The grouped two-row header keeps its own stacking (the "Grouped headers" rules above), moved down by the band. */
+.as-of-reading .data-table--grouped thead tr.th-group th { top: var(--as-of-band-h); }
+.as-of-reading .data-table--grouped thead tr.th-group ~ tr th { top: calc(var(--as-of-band-h) + var(--th-group-h, 36px) + 2px); }
+/* The ledger's table card has no padding of its own: its head becomes a row with the box at its end. */
+.ledger-card-head.as-of-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-md); }
+.ledger-card-head.as-of-head > :first-child { flex: 1 1 60ch; min-width: 0; }
+.ledger-card-head.as-of-head .as-of { margin-left: auto; }

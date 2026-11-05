@@ -1,15 +1,20 @@
 {% comment %}
-  The year's fingerprint line on the water year page (accounting.fingerprints.line_context).
-  Check asks for its answer with HTMX and the answer replaces #fingerprint-answer; without
-  scripts the form posts and the page prints the answer in place. A restated year shows
-  the newest code first and the first code, quieter, under it.
+  The "Changes to this year's records" card on the water year page (accounting.fingerprints.line_context),
+  directly under the top row of cards. Check for changes asks for its answer with HTMX and the answer replaces
+  #fingerprint-answer; without scripts the form posts and the page prints the answer in place. The code line is
+  the quietest line and last. A code taken by the upgrade says it was taken after the year was finalized; a year
+  finalized again keeps its first code under the newest, quieter. Internal names (the id, the routes, the
+  module) keep the old word on purpose: the code and its URLs do not change.
 {% endcomment %}
-<div class="field-group field-grid-2-span" id="fingerprint">
-  <div class="field-label">Fingerprint</div>
-  <div class="field-value">
-    <span class="text-mono text-sm">{{ line.code }}</span>
-    <div class="text-sm"><span class="text-tertiary">taken {{ line.taken }}{% if line.restated %}, restated{% endif %}.</span> <span class="text-tertiary">&middot;</span> <a href="{% url 'accounting:period_fingerprint_file' period.pk %}" class="text-link">Download</a> <span class="text-tertiary">&middot;</span> <form method="post" action="{% url 'accounting:period_fingerprint_check' period.pk %}" style="display: inline;" hx-post="{% url 'accounting:period_fingerprint_check' period.pk %}" hx-target="#fingerprint-answer" hx-swap="outerHTML">{% csrf_token %}<button type="submit" class="btn-as-link text-link">Check</button></form></div>
-    {% if line.restated %}<div class="text-tertiary" style="margin-top: var(--space-xs);"><span class="text-mono text-sm">{{ line.first_code }}</span><div class="text-sm">{{ line.first_label }} {{ line.first_taken }}.</div></div>{% endif %}
-    {% if answer %}{% include "accounting/partials/_fingerprint_answer.html" %}{% else %}<span id="fingerprint-answer"></span>{% endif %}
+<div class="card-raised page-grid-account-full" id="fingerprint">
+  <div class="row-between year-changes-head">
+    <div>
+      <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">Changes to this year's records</h2>
+      <p class="text-secondary text-base m-0">Shows whether anything has changed since this code was taken.</p>
+    </div>
+    <div class="text-base year-changes-actions"><form method="post" action="{% url 'accounting:period_fingerprint_check' period.pk %}" style="display: inline;" hx-post="{% url 'accounting:period_fingerprint_check' period.pk %}" hx-target="#fingerprint-answer" hx-swap="outerHTML">{% csrf_token %}<button type="submit" class="btn-as-link text-link">Check for changes</button></form> <span class="text-tertiary">&middot;</span> <a href="{% url 'accounting:period_fingerprint_file' period.pk %}" class="text-link">Download a copy to keep</a></div>
   </div>
+  {% if answer %}{% include "accounting/partials/_fingerprint_answer.html" %}{% else %}<span id="fingerprint-answer"></span>{% endif %}
+  <p class="text-secondary text-sm" style="margin: var(--space-sm) 0 0;">Code <span class="text-mono">{{ line.code }}</span>, taken {{ line.taken }}{% if line.at_upgrade %}, after the year was finalized. <span class="text-primary">Changes before that date do not show here.</span>{% endif %}</p>
+  {% if line.restated %}<p class="text-tertiary text-sm" style="margin: var(--space-xs) 0 0;">First code <span class="text-mono">{{ line.first_code }}</span>, {{ line.first_label }} {{ line.first_taken }}.</p>{% endif %}
 </div>

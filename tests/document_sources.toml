@@ -2525,7 +2525,7 @@ checked_at = "c66fb5d1"
 
 [[section]]
 document = "templates/help/getting_started.html"
-heading = "The year’s fingerprint"
+heading = "Changes to this year’s records"
 files = [
   "core/fingerprint.py",
   "accounting/fingerprints.py",
@@ -2600,6 +2600,20 @@ files = [
 ]
 labels = []
 checked_at = "9f909215"
+
+[[section]]
+document = "templates/help/water_balances.html"
+heading = "Reading the records as of a date"
+files = [
+  "core/as_of_views.py",
+  "core/as_of.py",
+  "core/context_processors.py",
+  "accounting/views/ledger.py",
+  "accounting/views/accounts.py",
+  "parcels/views.py",
+]
+labels = []
+checked_at = "4c41acdf"
 
 [[section]]
 document = "templates/help/water_balances.html"

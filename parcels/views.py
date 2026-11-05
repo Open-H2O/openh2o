@@ -26,6 +26,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 from core import corrections, pending_imports
 from core.access import public_in_open_demo
+from core.as_of_views import as_of_box, day_words, reads_as_of
 from core.corrections_views import mark_actions
 from core.history import change_note
 from core.reasons import check_reason
@@ -209,7 +210,7 @@ def water_use_for(parcel, balance_period, related_wells=None):
     return water_use, has_well
 
 
-def _parcel_detail_context(parcel, period_id=None):
+def _parcel_detail_context(parcel, period_id=None, can_write=True):
     """Build the per-parcel water-balance context.
 
     Shared by the standalone detail page, the in-pane HTMX render, and the
@@ -217,7 +218,8 @@ def _parcel_detail_context(parcel, period_id=None):
     including the period, which is why ``period_id`` is an argument here rather
     than a lookup inside one of the three.
 
-    ``period_id`` is the raw ``?period=`` string, or None.
+    ``period_id`` is the raw ``?period=`` string, or None. ``can_write`` is False on a past
+    reading (core.as_of_views), which has no writing controls.
     """
     zone_memberships = parcel.parcel_zones.select_related("zone").all()
     related_wells = parcel.wellirrigatedparcel_set.select_related("well").all()
@@ -242,7 +244,7 @@ def _parcel_detail_context(parcel, period_id=None):
     geojson = None if parcel.voided_at is not None else _parcel_geojson(parcel)
     editable_fields = _editable_fields()
     editable_fields_with_values = _editable_fields_with_values(parcel, editable_fields)
-    mark_actions([parcel], can_write=True, finalized=corrections.finalized_ranges())
+    mark_actions([parcel], can_write=can_write, finalized=corrections.finalized_ranges())
     balance_line = _balance_line(consumptive_balance, water_use, has_well)
 
     context = {
@@ -251,6 +253,11 @@ def _parcel_detail_context(parcel, period_id=None):
         "related_wells": related_wells,
         "recent_ledger": recent_ledger,
         "balance_period": balance_period,
+        # The As of box leads to this use area's own page, keeping the water year it shows.
+        "as_of_box": as_of_box(
+            reverse("parcels:detail", args=[parcel.pk]),
+            [("period", balance_period.pk)] if balance_period else [],
+        ),
         # Every period, newest first — the options of the pane's period control.
         "all_periods": all_periods,
         "consumptive_balance": consumptive_balance,
@@ -556,7 +563,29 @@ def _editable_fields_with_values(
     return editable_fields_with_values
 
 
+def _parcel_as_of_scope(request, reading, pk):
+    """The records behind the use area page: that use area, in the year shown."""
+    parcel = get_object_or_404(Parcel, pk=pk)
+    periods = list(ReportingPeriod.objects.order_by("-start_date"))
+    period = _balance_period(parcel, periods, request.GET.get("period", "").strip())
+    return {
+        "parcel_ids": [parcel.pk],
+        "start": period.start_date if period else None,
+        "end": period.end_date if period else None,
+    }
+
+
+def _use_area_on_record(pk):
+    """Whether the use area exists today, for a date before it did (``reads_as_of``)."""
+    return Parcel.objects.filter(pk=pk).exists()
+
+
 @login_required
+@reads_as_of(
+    _parcel_as_of_scope,
+    exists=_use_area_on_record,
+    missing=lambda day: f"This use area was not on record on {day_words(day)}. This page shows today.",
+)
 def parcel_detail(request, pk):
     """A single parcel's water-balance detail.
 
@@ -566,7 +595,8 @@ def parcel_detail(request, pk):
     """
     parcel = get_object_or_404(Parcel, pk=pk)
     context = _parcel_detail_context(
-        parcel, period_id=request.GET.get("period", "").strip()
+        parcel, period_id=request.GET.get("period", "").strip(),
+        can_write=getattr(request, "as_of_reading", None) is None,
     )
     if request.headers.get("HX-Request"):
         # The period control swaps this fragment into the standalone page too, which

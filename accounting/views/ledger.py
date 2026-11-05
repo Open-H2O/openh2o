@@ -12,9 +12,11 @@ from django.core.paginator import Paginator
 from django.db.models import Q, QuerySet, Sum
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
+from django.urls import reverse
 
 from core import corrections
 from core.corrections_views import mark_actions
+from core.as_of_views import as_of_box, reads_as_of
 from core.csv_safe import safe_row
 from accounting.engine_run import recalculation_sentence, request_for_months
 from accounting.locks import (
@@ -25,7 +27,7 @@ from accounting.locks import (
 )
 from accounting.forms import CsvUploadForm, ParcelLedgerForm
 from accounting.models import CalculationRun, ReportingPeriod, WaterType
-from accounting.ledger_words import DEMONSTRATION_FILE_LINE
+from accounting.ledger_words import DEMONSTRATION_FILE_LINE, as_of_file_line
 from core.models import SiteConfig
 from core.modules import is_enabled
 from accounting.services import (
@@ -150,7 +152,14 @@ def _ledger_filters(request: HttpRequest, params=None) -> dict[str, str]:
         "sort": sort,
         "direction": direction,
         "zone_id": zone_id,
+        # The date of a reading ("" otherwise): the Download CSV link carries it.
+        "as_of": _as_of_text(request),
     }
+
+
+def _as_of_text(request) -> str:
+    day = getattr(request, "as_of_day", None)
+    return day.isoformat() if day else ""
 
 
 def _ledger_page_size(request: HttpRequest, params=None) -> int:
@@ -369,7 +378,10 @@ _DOWNLOAD_KEYS = (
 
 def _ledger_download_query(filters: dict[str, str]) -> str:
     """The query string that makes the export match the screen's filters."""
-    return urlencode([(key, filters[name]) for key, name in _DOWNLOAD_KEYS])
+    pairs = [(key, filters[name]) for key, name in _DOWNLOAD_KEYS]
+    if filters.get("as_of"):
+        pairs.append(("as_of", filters["as_of"]))  # only on a reading: today's link is unchanged
+    return urlencode(pairs)
 
 
 def _ledger_active_filter_labels(
@@ -415,7 +427,57 @@ def _ledger_active_filter_labels(
     return active_filter_labels
 
 
+def _ledger_box_fields(filters, params, page_size):
+    """The page's parameters the As of box keeps. The water year is kept even when empty (All periods)."""
+    fields = [("period", filters["period_id"])]
+    for name, key in (
+        ("q", "q"), ("zone", "zone_id"), ("source_type", "source_type"), ("water_type", "water_type_id"),
+        ("start_date", "start_date"), ("end_date", "end_date"), ("active_areas", "active_areas"),
+    ):
+        if filters[key]:
+            fields.append((name, filters[key]))
+    if filters["sort"]:
+        fields += [("sort", filters["sort"]), ("dir", filters["direction"])]
+    if "page_size" in params and page_size != 100:
+        fields.append(("page_size", page_size))
+    return fields
+
+
+def _ledger_as_of_scope(request, reading):
+    """The records behind the page, for the count in the as-of line.
+
+    The shown water year's dates and typed dates; every use area unless a search or a zone
+    filter narrows the rows, then the use areas of the filtered rows. The source and water
+    type filters do not narrow it.
+    """
+    filters = _ledger_filters(request)
+    periods = ReportingPeriod.objects.order_by("-start_date")
+    period_id = _ledger_default_period(filters, "period" in request.GET, periods)[0]
+    period = ReportingPeriod.objects.filter(pk=period_id).first() if period_id.isdigit() else None
+    start = period.start_date if period else None
+    end = period.end_date if period else None
+
+    def typed(text):
+        try:
+            return date.fromisoformat(text)
+        except ValueError:
+            return None
+
+    typed_start, typed_end = typed(filters["start_date"]), typed(filters["end_date"])
+    if typed_start and (start is None or typed_start > start):
+        start = typed_start
+    if typed_end and (end is None or typed_end < end):
+        end = typed_end
+    parcel_ids = None
+    if filters["q"] or filters["zone_id"]:
+        narrowed = dict(filters, period_id=period_id, source_type="", water_type_id="")
+        rows = _apply_ledger_filters(ParcelLedger.objects.all(), narrowed)
+        parcel_ids = list(rows.values_list("parcel_id", flat=True).distinct())
+    return {"parcel_ids": parcel_ids, "start": start, "end": end}
+
+
 @login_required
+@reads_as_of(_ledger_as_of_scope)
 def ledger_list(request):
     """Paginated list of ledger entries with HTMX search and filters."""
     return _ledger_response(request, request.GET)
@@ -478,8 +540,8 @@ def _ledger_response(
     # the page is marked for its menu from the page's one finalized_ranges().
     page_obj.object_list = list(page_obj.object_list)
     mark_actions(
-        page_obj.object_list, can_write=True, finalized=corrections.finalized_ranges(),
-        void_key=void_key,
+        page_obj.object_list, can_write=getattr(request, "as_of_reading", None) is None,
+        finalized=corrections.finalized_ranges(), void_key=void_key,
     )
     current_count = queryset.current().count()
 
@@ -525,6 +587,7 @@ def _ledger_response(
         "auto_default_calculated": auto_default_calculated,
         "current_period_id": default_period_id,
         "download_query": _ledger_download_query(filters),
+        "as_of_box": as_of_box(reverse("accounting:ledger_list"), _ledger_box_fields(filters, params, page_size)),
         # The page description names "recharge" (copy rule 11's settled
         # sentence); a deployment without the recharge module must not see
         # that noun (tests/droppability/checks.py::
@@ -685,8 +748,14 @@ def _calculation_methods(queryset: QuerySet[ParcelLedger]) -> dict[tuple[int, da
 
 
 @login_required
+@reads_as_of()
 def ledger_export(request):
-    """Export the ledger entries the screen's own filters match, as CSV."""
+    """Export the ledger entries the screen's own filters match, as CSV.
+
+    On a reading (``?as_of=``) the file is the rows as they were at the end of that day: its
+    name carries the date and its first row says so (after the demonstration line, where that
+    exists). Today's file is unchanged.
+    """
     filters = _ledger_filters(request)
     queryset = ParcelLedger.objects.current().select_related(
         "parcel", "water_type", "reporting_period"
@@ -694,10 +763,14 @@ def ledger_export(request):
     queryset = _apply_ledger_filters(queryset, filters)
 
     response = HttpResponse(content_type="text/csv")
-    response["Content-Disposition"] = 'attachment; filename="ledger_export.csv"'
+    reading_day = getattr(getattr(request, "as_of_reading", None), "day", None)
+    name = f"ledger_export_as_of_{reading_day.isoformat()}.csv" if reading_day else "ledger_export.csv"
+    response["Content-Disposition"] = f'attachment; filename="{name}"'
     writer = csv_module.writer(response)
     if getattr(SiteConfig.objects.first(), "demonstration_mode", False):
         writer.writerow([DEMONSTRATION_FILE_LINE])
+    if reading_day:
+        writer.writerow([as_of_file_line(reading_day)])
     # Round-trip contract: emit EXACTLY the columns the importer reads
     # (import_ledger_csv / parse_ledger_csv), in their order, and then the one
     # it ignores (calculation_method, below), so a downloaded

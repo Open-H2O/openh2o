@@ -31,6 +31,7 @@ what the row actually holds. ``water_type`` is nullable on the model, so
 every branch below has a fallback to the source word alone.
 """
 
+import re
 from decimal import Decimal
 
 from core.map_labels import map_label
@@ -47,6 +48,23 @@ from parcels.models import (
 DEMONSTRATION_FILE_LINE = (
     "This file comes from the OpenH2O demonstration. Its figures are sample data."
 )
+
+
+#: The first line of a ledger file downloaded on a past reading (``?as_of=``): the day, in the
+#: form the pages print it. The import skips a line of exactly this form, and only that.
+_AS_OF_FILE_LINE = re.compile(
+    r"As of the end of (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) (\d{1,2}), (\d{4})\."
+)
+
+
+def as_of_file_line(day):
+    """The line for a reading of ``day``: As of the end of Nov 3, 2026."""
+    return f"As of the end of {day:%b} {day.day}, {day.year}."
+
+
+def is_as_of_file_line(text):
+    """True for a line of exactly the form :func:`as_of_file_line` writes."""
+    return _AS_OF_FILE_LINE.fullmatch(text) is not None
 
 
 def sign_rule_sentence():

@@ -24,7 +24,8 @@
        anyway because a fact about the rows below it has nothing to say when
        there are no rows (tests/droppability/checks.py::
        test_kept_pages_never_name_a_dropped_module). {% endcomment %}
-  <div class="ledger-card-head">
+  <div class="ledger-card-head as-of-head">
+  <div>
     <div class="text-secondary text-base">
       {% if period_auto_defaulted %}Showing <strong class="text-secondary">{{ auto_default_period_name }}</strong>, the latest water year with {% if auto_default_calculated %}calculations{% else %}activity{% endif %}{% else %}{{ period_name }}{% endif %}{% if active_filter_labels %} &middot; filtered: {{ active_filter_labels|join:", " }}{% endif %} &middot; {{ current_count|intcomma }} entr{{ current_count|pluralize:"y,ies" }}
     </div>
@@ -35,6 +36,8 @@
       Acre-feet. Negative amounts are deliveries, pumping and estimates of use; positive amounts are credits.
     </div>
     {% endif %}
+  </div>
+  {% include "partials/_as_of_box.html" with box=as_of_box %}
   </div>
   <table class="data-table">
     <thead>
@@ -111,7 +114,7 @@
         </td>
         <td class="text-secondary" style="white-space: nowrap;">
           {{ entry|ledger_row_words }}
-          {% if entry.source_type == "calculated" %}
+          {% if entry.source_type == "calculated" and not as_of_value %}
           <a href="{% url 'accounting:calculation_run_detail' entry.parcel.id entry.effective_date|date:'Y-m' %}"
              class="data-table-link text-xs" style="display: block; margin-top: 2px; white-space: nowrap;">
             How was this calculated?

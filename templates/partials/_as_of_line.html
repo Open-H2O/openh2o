@@ -1,0 +1,8 @@
+{% comment %}
+  The first thing in the page content after the demonstration notice. A reading shows the
+  pinned line (class as-of-line: the sentence, a separator, Show today); a date that could
+  not be used shows its sentence in the same place, not pinned. Both come from
+  core.context_processors.as_of_flags, so a page that does not read as of a date prints nothing.
+  `swap` sends the line with a fragment (core.as_of_views), out of band.
+{% endcomment %}
+{% if as_of_line %}<p id="as-of-line"{% if swap %} hx-swap-oob="true"{% endif %} class="as-of-line">{{ as_of_line }}<span class="as-of-sep">&middot;</span><a href="{{ as_of_today_href }}" class="text-link">Show today</a></p>{% elif as_of_notice %}<p class="as-of-notice" role="status">{{ as_of_notice }}</p>{% endif %}

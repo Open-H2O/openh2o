@@ -5,6 +5,7 @@ from decimal import Decimal
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q, QuerySet
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
@@ -18,6 +19,7 @@ from accounting.models import (
     WaterAccountParcel,
     WaterType,
 )
+from core.as_of_views import as_of_box, reads_as_of
 from core.modules import is_enabled
 from core.workspace import redirect_to_selected
 from accounting.services import (
@@ -416,6 +418,11 @@ def _account_detail_context(account, period_param=None):
         "use_areas_located_count": use_areas_located_count,
         "periods": periods,
         "selected_period": selected_period,
+        # The As of box leads to this account's own page, keeping the water year it shows.
+        "as_of_box": as_of_box(
+            reverse("accounting:account_detail", args=[account.pk]),
+            [("period", selected_period.pk if selected_period else "")],
+        ),
         "delivery_sentence": _account_delivery_sentence(account),
         "filed_line": filed_line_context(
             selected_period,
@@ -430,7 +437,21 @@ def _account_detail_context(account, period_param=None):
     }
 
 
+def _account_as_of_scope(request, reading, pk):
+    """The records behind the account page: its use areas in the year shown, that year's dates (none on All Time)."""
+    account = get_object_or_404(WaterAccount, pk=pk)
+    period_param = request.GET.get("period") if "period" in request.GET else None
+    every = list(_account_assignments(account).values_list("parcel_id", flat=True))
+    selected = _detail_selected_period(ReportingPeriod.objects.order_by("-start_date"), period_param, every)
+    return {
+        "parcel_ids": account_parcel_ids(account, selected),
+        "start": selected.start_date if selected else None,
+        "end": selected.end_date if selected else None,
+    }
+
+
 @login_required
+@reads_as_of(_account_as_of_scope)
 def account_detail(request, pk):
     """A single water account's detail.
 

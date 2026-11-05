@@ -1,0 +1,12 @@
+{% comment %}
+  The "As of" date box: a plain GET form to the page that holds the figures, with the page's
+  other parameters as hidden fields. Choosing a date goes to that page with `as_of` set
+  (core/as_of_views.py reads it). `box` is {"action", "hidden"} from core.as_of_views.as_of_box;
+  `as_of_value` (core.context_processors.as_of_flags) is the date of a reading, empty otherwise.
+  Inside a workspace pane the action is the standalone page, so a date leaves the pane for it.
+{% endcomment %}
+{% if box %}<form method="get" action="{{ box.action }}" class="as-of">
+  {% for name, value in box.hidden %}<input type="hidden" name="{{ name }}" value="{{ value }}">{% endfor %}
+  <label class="as-of-label" for="as-of-date">As of</label>
+  <input type="date" id="as-of-date" name="as_of" class="form-input as-of-input" value="{{ as_of_value }}" onchange="this.form.submit()">
+</form>{% endif %}

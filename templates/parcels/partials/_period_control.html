@@ -22,6 +22,7 @@
         hx-get="{% url 'parcels:detail' parcel.pk %}"
         hx-target="#detail-body"
         hx-trigger="change"
+        {% if as_of_value %}hx-vals='{"as_of": "{{ as_of_value }}"}'{% endif %}
         {% comment %}
           .form-select is width:100% (app.css), and this sits in a flex head
           that lets it grow — measured 620px wide for a 12-character period

@@ -48,6 +48,7 @@ python_files = ["tests.py", "test_*.py", "*_tests.py"]
 pythonpath = ["."]
 markers = [
     "network: reaches a real public service over the internet; CI runs -m 'not network'",
+    "slow: takes seconds, not milliseconds (a timing budget on a demonstration-sized district)",
 ]
 
 [tool.ruff]

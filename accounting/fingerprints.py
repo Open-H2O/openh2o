@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""A finalized water year's fingerprint: taking it, checking it, and the words about it.
+"""A finalized water year's code: taking it, checking it, and the words about it.
+
+(The screen calls it "Changes to this year's records" and the code a "code". The module,
+the model fields and the routes keep the older name, because the code is computed from the
+parts' names and renaming any of them would flip every stored code to "disagrees".)
 
 ``core.fingerprint`` reads the records and returns the digests. This module keeps
 the result on the water year (``fingerprint``, ``fingerprint_at``,
@@ -22,6 +26,7 @@ from dataclasses import dataclass, field
 
 from django.db import transaction
 from django.template.loader import render_to_string
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
 
@@ -30,7 +35,7 @@ from core import fingerprint
 from core.fingerprint import short_code
 
 #: The reason the upgrade records under, so Change history says why.
-UPGRADE_REASON = "Recorded when OpenH2O began keeping fingerprints."
+UPGRADE_REASON = "Recorded when OpenH2O began keeping these codes."
 
 
 def has_fingerprint(period):
@@ -119,22 +124,74 @@ def line_context(period):
         "first_code": short_code(first[0]) if first else "",
         "first_taken": first[1] if first else "",
         "first_label": ("first taken" if first[2] else "as filed") if first else "",
+        # A code the upgrade took, after the year was finalized: it reaches back only to that date.
+        "at_upgrade": bool((period.fingerprint_parts or {}).get("at_upgrade")),
     }
 
 
 # -- Check -----------------------------------------------------------------------------------
 
 
+#: The parts OpenH2O's calculation writes when it recalculates after any correction, read from the
+#: code: ``accounting.engine_run.run_month`` runs ``run_calculations`` (the Use ledger rows and the
+#: Calculation results; it also clears the retired Water credits and Water credit draws of the
+#: parcel-month), then ``surface.services.allocate_district_delivery`` (Canal losses, Unallocated
+#: deliveries) and removes Diversion records the retired estimate left in the month. Carry-over and
+#: Account credits are NOT here: ``rollover_allocations`` writes carry-over and is a separate year-end
+#: command, and Account credits are written by a recharge event's own correction (see
+#: ``KIND_SIDE_EFFECTS``), not by the recalculation.
+RECALCULATION_PARTS = frozenset(
+    {
+        "parcels.ParcelLedger",
+        "accounting.CalculationRun",
+        "surface.DiversionRecord",
+        "surface.UnallocatedDelivery",
+        "surface.CanalMonthLoss",
+        "accounting.WaterCredit",
+        "accounting.WaterCreditDraw",
+    }
+)
+
+#: Parts a correction of one kind writes beyond its own and the recalculation's: correcting or voiding
+#: a recharge event takes its credit back and credits the new row
+#: (``core.corrections._recharge_event_on_correct`` -> ``accounting.services.replace_account_credits``).
+KIND_SIDE_EFFECTS = {"recharge.RechargeEvent": frozenset({"accounting.AccountCredit"})}
+
+#: The Use areas part reads the use areas that have a ledger row or a calculation in the year. A
+#: recalculation writes no use area row, but the first ledger row or result it writes for a use area
+#: brings that use area into the part, so the part gains a row. After any correction a growth in the
+#: number of rows is the recalculation's doing; a change with the same number of rows is an edit to a
+#: use area and is named.
+GROWS_WITH_RECALCULATION = frozenset({"parcels.Parcel"})
+
+# The limit of this rule, as the downloaded file says: a correction and an unrecorded change in the same
+# part read as the correction alone (the code keeps one digest per part, so they cannot be told apart).
+
+
 @dataclass
 class Answer:
-    """What Check found. ``state`` is matches, differs, disagrees or unreadable."""
+    """What Check for changes found. ``state`` is matches, differs, disagrees or unreadable."""
 
     state: str
     taken: str
+    #: Every part that differs, in words (lower case), in the year's order.
     differing: list = field(default_factory=list)
     unreadable: list = field(default_factory=list)
     #: ``[{"text": ..., "linked": bool}, ...]``, oldest first.
     corrections: list = field(default_factory=list)
+    #: The differing parts the corrections since do not explain, in words.
+    unexplained: list = field(default_factory=list)
+    #: Where the count of corrections leads.
+    count_href: str = ""
+
+    @property
+    def look_at(self):
+        """The parts named after "Look at:": the differing parts no correction explains."""
+        return self.unexplained
+
+    @property
+    def look_at_words(self):
+        return ", ".join(self.unexplained)
 
     @property
     def unreadable_sentence(self):
@@ -155,8 +212,15 @@ def _lower(key):
     return fingerprint.PART_NAMES[key].lower()
 
 
+def _day_iso(moment):
+    """``2025-10-15``: the day the code was taken, in Pacific time as the pages print it."""
+    from accounting.statements import _pacific
+
+    return timezone.localtime(moment, _pacific()).date().isoformat()
+
+
 def check_fingerprint(period):
-    """Recompute the year over what its fingerprint kept and compare. Changes no record."""
+    """Recompute the year over what its code kept and compare. Changes no record."""
     stored = period.fingerprint_parts
     taken = _day(period.fingerprint_at)
     computed = fingerprint.compute(period, stored)
@@ -168,9 +232,11 @@ def check_fingerprint(period):
     unreadable = [_lower(key) for key in computed.unreadable]
     agrees = fingerprint.whole_digest(stored["parts"]) == period.fingerprint
     if differing:
+        found, kinds = _corrections(period)
+        unexplained = _unexplained(differing, kinds, bool(found), stored, computed)
         return Answer(
-            "differs", taken, [_lower(key) for key in differing], unreadable,
-            _corrections(period),
+            "differs", taken, [_lower(key) for key in differing], unreadable, found,
+            [_lower(key) for key in unexplained], _count_href(period, found),
         )
     if not agrees:
         return Answer("disagrees", taken, [], unreadable)
@@ -179,8 +245,45 @@ def check_fingerprint(period):
     return Answer("matches", taken)
 
 
+def _unexplained(differing, kinds, any_correction, stored, computed):
+    """The differing parts, in order, that the corrections since do not explain.
+
+    A part is explained by a correction of its own kind; whatever the kind, Change history and the parts
+    a recalculation writes (:data:`RECALCULATION_PARTS`); a recharge event's own side effects; and
+    the Use areas part when it only gained rows. With no correction nothing is explained, except that
+    Change history is not named beside another part (a direct edit leaves history behind), and is
+    named when it is the only part that differs.
+    """
+    if not any_correction:
+        others = [key for key in differing if key != fingerprint.HISTORY]
+        return others or list(differing)
+    explained = {fingerprint.HISTORY} | RECALCULATION_PARTS
+    for model in kinds:
+        explained.add(model)
+        explained |= KIND_SIDE_EFFECTS.get(model, frozenset())
+    unexplained = []
+    for key in differing:
+        if key in explained:
+            continue
+        if key in GROWS_WITH_RECALCULATION and computed.parts[key]["rows"] > stored["parts"][key].get("rows", 0):
+            continue
+        unexplained.append(key)
+    return unexplained
+
+
+def _count_href(period, found):
+    """The Figures as filed card when it lists one of the corrections, else Change history from the day taken."""
+    if any(c["linked"] for c in found):
+        return "#figures-as-filed"
+    return f"{reverse('change_history')}?from={_day_iso(period.fingerprint_at)}"
+
+
 def _corrections(period):
-    """The corrections recorded since the fingerprint was taken, each marked linked or plain."""
+    """``(corrections, kinds)``: the corrections recorded since the code was taken, each marked linked or
+    plain, and the model labels of the kinds they are of."""
+    from core.corrections import KINDS
+
+    models = {kind["label"]: kind["model"] for kind in KINDS.values()}
     lines = corrections_since(period, period.fingerprint_at, all_records=True)
     listed = set()
     if any(line.use_areas for line in lines):
@@ -193,12 +296,15 @@ def _corrections(period):
         found.append(
             {"text": f"{line.kind_label}{on}, {line.said}", "linked": line.identity in listed}
         )
-    return found
+    return found, {models[line.kind_label] for line in lines}
 
 
 # -- The downloaded page ---------------------------------------------------------------------
 
 _WIDTH = 76
+
+#: The width of the label column of the header rows (Finalized, Code, Full code, Taken, First code).
+_LABEL = 12
 
 _COVERS = (
     "OpenH2O computed the code from every row below as it stood when the code was "
@@ -216,16 +322,17 @@ _STEPS = (
     "Compare the code on the page with the code on this file. Someone able to change "
     "the records could also change the code on the page; this file catches that. For "
     "a dispute, download this page again and compare the full code.",
-    "Press Check. OpenH2O recomputes the code from the records now.",
-    "Read the answer. \"Does not match\" names the parts that differ and the "
-    "corrections recorded since. \"Can no longer read\" means a later version removed "
-    "what a part was computed from.",
+    "Press Check for changes. OpenH2O recomputes the code from the records now.",
+    "Read the answer. It gives the number of corrections recorded since, and names the "
+    "parts to look at where changes have no correction on record. A correction and an "
+    "unrecorded change in the same part read as the correction alone. \"Can no longer "
+    "read\" means a later version removed what a part was computed from.",
 )
 
 _MEANING = (
-    "\"Matches\" means what the code covers is the same as when it was taken. It does "
-    "not show that the records were right. Check runs inside OpenH2O, so it does not "
-    "catch a change to the software."
+    "\"No changes found\" means what the code covers is the same as when it was taken. "
+    "It does not show that the records were right. Check for changes runs inside "
+    "OpenH2O, so it does not catch a change to the software."
 )
 
 _KEEPING = (
@@ -263,7 +370,7 @@ def _ordered(parts):
 
 
 def file_name(period):
-    return f"fingerprint-{slugify(period.name) or 'water-year'}.txt"
+    return f"changes-code-{slugify(period.name) or 'water-year'}.txt"
 
 
 def file_text(period):
@@ -282,15 +389,19 @@ def file_text(period):
     if first:
         taken_line = f"{taken}, when the year was finalized again"
     elif stored.get("at_upgrade"):
-        taken_line = f"{taken}, when OpenH2O began keeping fingerprints"
+        # The drawing breaks the line after "codes", then wraps the rest under the date.
+        taken_line = f"{taken}, when OpenH2O began keeping these codes\n" + _wrap(
+            "and after the year was finalized. Changes before that date do not show in this check.",
+            indent=" " * _LABEL,
+        )
     else:
         taken_line = f"{taken}, when the year was finalized"
     as_filed = ""
     if first:
         label = "First code" if first[2] else "As filed"
         as_filed = (
-            f"{label:<13}{short_code(first[0])}, taken {first[1]}\n"
-            f"{label:<13}{first[0].upper()}\n"
+            f"{label:<{_LABEL}}{short_code(first[0])}, taken {first[1]}\n"
+            f"{label:<{_LABEL}}{first[0].upper()}\n"
         )
     steps = "\n".join(
         _wrap(f"{number}. " + text.format(name=period.name), indent="   ", first="")
