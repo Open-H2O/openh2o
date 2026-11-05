@@ -83,7 +83,7 @@ class Command(BaseCommand):
 
             # Total published records
             from datasync.models import DataRecordStaging
-            total_records = DataRecordStaging.objects.filter(
+            total_records = DataRecordStaging.objects.current().filter(
                 data_source=source,
                 status="published",
             ).count()

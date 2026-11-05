@@ -11,6 +11,7 @@ same cleanup each new import preview runs.
 from datetime import timedelta
 
 from django.core.management.base import BaseCommand
+from django.db.models import Exists, OuterRef
 from django.utils import timezone
 
 from core.models import PendingImport
@@ -58,9 +59,24 @@ class Command(BaseCommand):
 
         # A reading typed by hand is the only record of that measurement (no
         # provider holds a copy to fetch again), so it is never pruned by age.
-        staging_qs = DataRecordStaging.objects.filter(
-            status="published", created_at__lt=staging_cutoff
-        ).exclude(data_source__code=MANUAL_SOURCE_CODE)
+        #
+        # A reading a source revised is a chain of rows with one key (station,
+        # parameter, statistic, observation date). The chain goes whole or stays
+        # whole: a row is pruned only when no row with its key is newer than the
+        # cutoff, so a replaced row never outlives, or is outlived by, its
+        # replacement.
+        recent_with_same_key = DataRecordStaging.objects.filter(
+            station_id=OuterRef("station_id"),
+            parameter_code=OuterRef("parameter_code"),
+            statistic=OuterRef("statistic"),
+            observation_date=OuterRef("observation_date"),
+            created_at__gte=staging_cutoff,
+        )
+        staging_qs = (
+            DataRecordStaging.objects.filter(status="published", created_at__lt=staging_cutoff)
+            .exclude(data_source__code=MANUAL_SOURCE_CODE)
+            .filter(~Exists(recent_with_same_key))
+        )
         health_qs = HealthCheckResult.objects.filter(checked_at__lt=health_cutoff)
         sync_qs = DataSyncLog.objects.filter(started_at__lt=sync_cutoff)
 

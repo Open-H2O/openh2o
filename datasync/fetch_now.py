@@ -28,8 +28,11 @@ from django.core.management import call_command
 from django.db import transaction
 from django.db.models import Max
 from django.template.defaultfilters import date as date_filter
+from django.urls import reverse
 from django.utils import timezone
+from django.utils.html import format_html
 
+from datasync import freshness
 from datasync.adapters import get_adapter
 from datasync.models import DataRecordStaging, DataSyncLog, MonitoredStation
 
@@ -144,29 +147,53 @@ def _run_here(station, log):
 # -- What the page shows ---------------------------------------------------------------
 
 
+def _plural(count, word):
+    return f"{count:,} {word}{'' if count == 1 else 's'}"
+
+
 def outcome(station, log):
     """``(message, is_error)`` for a finished log, or ``(None, False)`` while it has none to give.
 
     A run still going, or one past the limit that never finished, has nothing to
-    say yet. The source's name is ``station.data_source.name``, as the page uses it.
+    say yet. A run that worked says how many readings were new and how many a
+    source revised, in the source's short name (``freshness.source_display``);
+    the revised count links to the list of revised readings. Only that link is
+    markup: the counts and the address are the only inputs to it.
     """
     name = station.data_source.name
     if log.status == "running":
         return None, False
     if log.status == "success":
-        if not log.records_fetched:
-            return f"{name} did not send any readings for this station.", False
-        count = log.records_fetched
-        noun = "reading" if count == 1 else "readings"
+        source = freshness.source_display(station.data_source.code)
+        new, revised = log.records_new, log.records_revised
         newest = (
-            DataRecordStaging.objects.filter(station=station, status="published")
+            DataRecordStaging.objects.current()
+            .filter(station=station, status="published")
             .aggregate(newest=Max("observation_date"))["newest"]
         )
-        message = f"OpenH2O fetched {count:,} {noun}."
-        if newest is not None:
-            # The page's own date format (the station page's "M d, Y").
-            message += f" The newest is from {date_filter(newest, 'M d, Y')}."
-        return message, False
+        # The page's own date format (the station page's "M d, Y").
+        when = date_filter(newest, "M d, Y") if newest is not None else None
+        link = format_html(
+            '<a href="{}" class="prose-link">{}</a>',
+            reverse("datasync:station_revised", args=[station.pk]),
+            _plural(revised, "revised reading"),
+        )
+        if new and revised:
+            lead = format_html("OpenH2O fetched {} and {}.", _plural(new, "new reading"), link)
+            tail = f" The newest is from {when}." if when else ""
+        elif new:
+            lead = format_html(
+                "OpenH2O fetched {}. None of the earlier readings changed.",
+                _plural(new, "new reading"),
+            )
+            tail = f" The newest is from {when}." if when else ""
+        elif revised:
+            lead = format_html("OpenH2O fetched {} and nothing new.", link)
+            tail = f" The newest is still from {when}." if when else ""
+        else:
+            lead = f"{source} did not send any new or revised readings."
+            tail = f" The newest is still from {when}." if when else ""
+        return format_html("{}{}", lead, tail), False
     # Failed or partial: the log's own message. A connection error or timeout
     # was worded as "<source> did not answer." when the run closed (sync_source).
     return log.error_message or f"{name} did not answer.", True

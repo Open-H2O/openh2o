@@ -111,7 +111,7 @@ def save_reading(station: MonitoredStation, user, clean: Clean) -> DataRecordSta
     email = user.email or user.get_username()
     try:
         with transaction.atomic():
-            if DataRecordStaging.objects.filter(
+            if DataRecordStaging.objects.current().filter(
                 station=station,
                 parameter_code=clean.parameter_code,
                 statistic="",
@@ -147,7 +147,7 @@ def save_reading(station: MonitoredStation, user, clean: Clean) -> DataRecordSta
             )
             # The newest reading on file, as a sync sets it: a reading typed for
             # an earlier day does not move it back.
-            newest = DataRecordStaging.objects.filter(
+            newest = DataRecordStaging.objects.current().filter(
                 station=station, status="published"
             ).aggregate(newest=Max("observation_date"))["newest"]
             MonitoredStation.objects.filter(pk=station.pk).update(last_data_at=newest)

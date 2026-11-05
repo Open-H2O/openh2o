@@ -64,7 +64,13 @@ class Command(BaseCommand):
             .annotate(
                 published_count=Count(
                     "datarecordstaging",
-                    filter=Q(datarecordstaging__status="published"),
+                    # A replaced row is the first fetch of a reading that has a
+                    # revision; only the current one is a reading to draw.
+                    filter=Q(
+                        datarecordstaging__status="published",
+                        datarecordstaging__replaced_at__isnull=True,
+                        datarecordstaging__voided_at__isnull=True,
+                    ),
                 )
             )
             .select_related("data_source")

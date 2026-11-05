@@ -66,6 +66,7 @@ class Command(BaseCommand):
                 declared = list(s.parameters or [])
                 observed = set(
                     DataRecordStaging.objects
+                    .current()
                     .filter(station=s, status="published")
                     .values_list("parameter_code", flat=True)
                 )

@@ -3,6 +3,10 @@
   reading typed by hand carries its note as a second line under the parameter.
   Shared by the sync-log layout and the layout of a station entered by hand.
 
+  A reading a source revised after OpenH2O first fetched it shows the first figure struck under the
+  current one, a neutral Revised status, and a line under the table that counts the station's
+  revised readings and links to the list. A source's reading gets no menu.
+
   A reading a person typed (card_records, each with `typed`) ends in the "..." menu for
   a writer: Correct this record, then Void this record. A voided or replaced one stays listed in
   date order, struck, with one line under it; it is off the chart and in no figure. Readings a provider sent get no menu.
@@ -35,16 +39,18 @@
           <td class="text-secondary text-sm">{{ record.param_display }}{% if record.note %}<div class="text-tertiary text-xs" style="margin-top: 2px;">{{ record.note }}</div>{% endif %}</td>
           <td class="td-num">
             {% if record.value is not None %}{{ record.value|floatformat:2 }} {% if record.unit %}<span class="text-tertiary" style="font-size: 0.7rem;">{{ record.unit }}</span>{% endif %}{% else %}<span class="value-empty">Not recorded</span>{% endif %}
+            {% if record.earlier %}<div class="record-void-text text-xs">{% if record.earlier.value is not None %}{{ record.earlier.value|floatformat:2 }}{% if record.earlier.unit %} <span style="font-size: 0.7rem;">{{ record.earlier.unit }}</span>{% endif %}{% else %}Not recorded{% endif %}</div>{% endif %}
           </td>
           <td>
             <span style="
               display: inline-flex; align-items: center;
               border-radius: var(--radius-sm); padding: 1px 6px; font-size: 0.7rem; font-weight: 600;
-              {% if record.status == 'published' %}background: rgba(34,197,94,0.1); color: var(--forest-400);
+              {% if record.earlier %}background: var(--color-elevated); color: var(--color-text-secondary);
+              {% elif record.status == 'published' %}background: rgba(34,197,94,0.1); color: var(--forest-400);
               {% elif record.status == 'rejected' %}background: rgba(239,68,68,0.1); color: var(--color-error);
               {% elif record.status == 'duplicate' %}background: rgba(100,116,139,0.1); color: var(--color-text-secondary);
               {% else %}background: var(--color-elevated); color: var(--color-text-secondary);{% endif %}
-            ">{% if record.status == "voided" %}Voided{% elif record.status == "replaced" %}Replaced{% else %}{{ record.get_status_display }}{% endif %}</span>
+            ">{% if record.earlier %}Revised{% elif record.status == "voided" %}Voided{% elif record.status == "replaced" %}Replaced{% else %}{{ record.get_status_display }}{% endif %}</span>
           </td>
           {% if user_can_write and station.data_source.is_manual %}
           <td class="row-actions">{% if record.typed.menu_ok %}{% include "partials/_row_menu.html" with row=record.typed label=record.observation_date|date:"M j, Y"|add:" reading" target="#station-readings-card" swap="outerHTML" void_ok=record.typed.void_ok %}{% endif %}</td>
@@ -56,6 +62,9 @@
       </tbody>
     </table>
     </div>
+    {% if revised_count %}
+    <p class="text-secondary text-sm" id="readings-foot" style="margin: var(--space-sm) 0 0;">{{ revised_source }} revised <a href="{% url 'datasync:station_revised' station.pk %}" class="prose-link">{{ revised_count }} reading{{ revised_count|pluralize }}</a> after OpenH2O first fetched {% if revised_count == 1 %}it{% else %}them{% endif %}.</p>
+    {% endif %}
     {% else %}
       <p class="text-tertiary text-base">No readings yet.</p>
     {% endif %}

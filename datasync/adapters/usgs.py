@@ -74,6 +74,12 @@ class USGSAdapter(BaseAdapter):
     source_code = "usgs"
     rate_limit_seconds = 1.0
 
+    # USGS can be asked for every value it changed in the last N days, whatever
+    # day the value describes (``last_modified=P7D``). A default sync asks that
+    # way, because a provisional value is approved or corrected months after the
+    # day it describes, far outside a 7-day date range.
+    asks_what_changed = True
+
     # Discovery makes two calls inside ONE wizard poll, and gunicorn kills a
     # worker at 60 s. The two calls measured 0.2 to 0.5 s on 2026-10-29,
     # against 15 to 47 s for the old site search, so 15 s each is a generous
@@ -94,16 +100,23 @@ class USGSAdapter(BaseAdapter):
 
         Returns the list of GeoJSON features from every page. The service
         refuses a duration such as P3D for ``datetime`` with a 400, so the
-        range is always two explicit dates.
+        range is always two explicit dates. When ``changed_within_days`` is set
+        (a default sync), the request is instead ``last_modified=P<n>D``: every
+        value USGS changed in the last n days, with no date range.
         """
         param_codes = station.parameters or list(PARAMETER_MAP.keys())
         params = {
             "f": "json",
             "monitoring_location_id": f"USGS-{station.external_station_id}",
             "parameter_code": ",".join(param_codes),
-            "datetime": f"{start_date.strftime('%Y-%m-%d')}/{end_date.strftime('%Y-%m-%d')}",
             "limit": 10000,
         }
+        if self.changed_within_days:
+            params["last_modified"] = f"P{int(self.changed_within_days)}D"
+        else:
+            params["datetime"] = (
+                f"{start_date.strftime('%Y-%m-%d')}/{end_date.strftime('%Y-%m-%d')}"
+            )
         features = []
         url, query = DAILY_URL, params
         for _ in range(MAX_PAGES):
@@ -175,7 +188,7 @@ class USGSAdapter(BaseAdapter):
                 qualifiers.append(extra)
             elif isinstance(extra, list):
                 qualifiers.extend(str(q) for q in extra if q)
-            records.append({
+            record = {
                 "station_id": site_code,
                 "observation_date": day,
                 "parameter_code": code,
@@ -183,7 +196,11 @@ class USGSAdapter(BaseAdapter):
                 "unit": unit,
                 "qualifiers": qualifiers,
                 "statistic_id": props.get("statistic_id", ""),
-            })
+            }
+            # The date USGS puts on the value lands in raw_data and dates a revision.
+            if props.get("last_modified"):
+                record["last_modified"] = props["last_modified"]
+            records.append(record)
         return records
 
     def validate(self, records):

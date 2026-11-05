@@ -10,6 +10,7 @@ urlpatterns = [
     path("stations/", views.station_list, name="station_list"),
     path("stations/add/", views.station_add, name="station_add"),
     path("stations/<int:pk>/", views.station_detail, name="station_detail"),
+    path("stations/<int:pk>/revised/", views.station_revised, name="station_revised"),
     path("stations/<int:pk>/toggle/", views.station_toggle, name="station_toggle"),
     path("stations/<int:pk>/fetch/", views.station_fetch_now, name="station_fetch_now"),
     path(

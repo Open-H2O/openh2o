@@ -45,7 +45,6 @@ Out of scope, with the reason: the "Show today" link of the as-of line (it is th
 with the date taken off, so it must NOT carry one); the site navigation and breadcrumbs (page
 chrome that leaves the reading on purpose); links to pages that read no date.
 """
-import datetime as dt
 import re
 from html import unescape
 from urllib.parse import parse_qs, urlsplit

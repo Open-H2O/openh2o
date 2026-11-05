@@ -92,6 +92,7 @@ EXPECTED_LIT = {
     "/datasync/monitoring/": "Monitoring Stations",
     "/datasync/stations/": "Monitoring Stations",
     "/datasync/stations/<int:pk>/": "Monitoring Stations",
+    "/datasync/stations/<int:pk>/revised/": "Monitoring Stations",
     "/datasync/stations/add/": "Monitoring Stations",
     "/drinking/": "Water Systems",
     "/drinking/facilities/": "Facilities",

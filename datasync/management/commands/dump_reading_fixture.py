@@ -97,6 +97,7 @@ class Command(BaseCommand):
 
         qs = (
             DataRecordStaging.objects
+            .current()
             .filter(
                 station__is_active=True,
                 status="published",

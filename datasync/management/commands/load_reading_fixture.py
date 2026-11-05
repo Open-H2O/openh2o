@@ -33,8 +33,9 @@ no upstream call to record.
 Each row may carry a ``"statistic"`` (USGS daily high, low or average); a row
 without the key is a source that publishes none and loads with it blank.
 
-Idempotent by ``update_or_create`` on the ``(station, parameter_code, statistic,
-observation_date)`` unique key, which is the model's own constraint.
+Idempotent on the ``(station, parameter_code, statistic, observation_date)`` key:
+loading the same file again writes nothing. A changed value is a revision, as in a
+sync (``datasync/revisions.py``): a new row that replaces the stored one.
 
 Usage:
     python manage.py load_reading_fixture
@@ -49,6 +50,7 @@ from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
 
+from datasync import revisions
 from datasync.models import DataRecordStaging, MonitoredStation
 
 DEFAULT_FIXTURE = "data/merced/readings.json"
@@ -117,14 +119,13 @@ class Command(BaseCommand):
                 )
             )
 
-        # ignore_conflicts rather than update_or_create per row: the model's
-        # unique key makes a re-run a genuine no-op, and 8k single-row
-        # round-trips would dominate the rebuild's wall clock for no gain.
-        DataRecordStaging.objects.bulk_create(
-            objs, batch_size=2000, ignore_conflicts=True
-        )
+        # One door for every reading a source or a fixture brings
+        # (datasync/revisions.py): a new key is added, a changed value replaces the
+        # stored one, the same value writes nothing. Bulk writes, so 30,951 rows
+        # cost a few dozen queries.
+        revisions.record_readings(objs)
 
-        written = DataRecordStaging.objects.filter(status="published").count()
+        written = DataRecordStaging.objects.current().filter(status="published").count()
         per_source = defaultdict(int)
         for r in rows:
             per_source[r["source"]] += 1

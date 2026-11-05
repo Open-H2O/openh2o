@@ -34,6 +34,10 @@ Usage:
     python manage.py sync_source cdec --mock
     python manage.py sync_source usgs --station 12 --log 345
 
+A USGS run with no ``--start`` and no ``--end`` asks USGS for what changed in the
+default window instead of a date range (``changed_within_days``); an explicit date
+stays a date range.
+
 ``--station`` syncs that one station over the same default window, and ``--log``
 writes into an existing ``DataSyncLog`` row instead of creating one and closes
 it when the run ends. The station page's Fetch readings now button starts the
@@ -249,6 +253,16 @@ class Command(BaseCommand):
 
         start_date, end_date = _pull_window(code, options["start"], options["end"])
 
+        # A run with no dates at all asks a source that can say what changed (USGS)
+        # for exactly that, over the source's own default window. A named --start or
+        # --end stays a date range, which is how a site catches up after a long gap.
+        if (
+            adapter.asks_what_changed
+            and not options["start"]
+            and not options["end"]
+        ):
+            adapter.changed_within_days = default_window_days(code)
+
         if one_station is not None:
             # One station, whether or not syncing is on for it: the person asked.
             stations = MonitoredStation.objects.filter(pk=one_station.pk)
@@ -409,7 +423,8 @@ class Command(BaseCommand):
         summary = (
             f"Done: {sync_log.records_fetched} fetched, "
             f"{sync_log.records_staged} staged, "
-            f"{sync_log.records_published} published "
+            f"{sync_log.records_published} published, "
+            f"{sync_log.records_revised} revised "
             f"({sync_log.duration_seconds:.1f}s)"
         )
 

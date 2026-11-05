@@ -46,6 +46,7 @@ from datasync.models import (
     OpenETCache,
     TypedReading,
 )
+from datasync.revisions import source_date
 from geography.models import Boundary
 
 
@@ -369,7 +370,7 @@ def station_list(request):
     # its at-a-glance story (health, trend, current reading) without opening it.
     page_ids = [s.pk for s in page_obj]
     staging_qs = (
-        DataRecordStaging.objects
+        DataRecordStaging.objects.current()
         .filter(station__in=page_ids)
         .order_by("station_id", "-observation_date")
         .values("station_id", "value", "unit")
@@ -451,7 +452,7 @@ def _published_statistics(station: MonitoredStation) -> dict[str, list[str]]:
     # measure (matches station_chart_data). A source with no statistic holds one
     # blank entry per parameter.
     rows = (
-        DataRecordStaging.objects
+        DataRecordStaging.objects.current()
         .filter(station=station, status="published")
         .order_by()  # clear Meta.ordering (-observation_date) so DISTINCT keys on code+statistic alone
         .values_list("parameter_code", "statistic")
@@ -475,7 +476,7 @@ def _named_statistic(
 def _multi_statistic_pairs(stations) -> set[tuple[int, str]]:
     """The (station id, parameter code) pairs that hold more than one published statistic."""
     rows = (
-        DataRecordStaging.objects
+        DataRecordStaging.objects.current()
         .filter(station__in=stations, status="published")
         .order_by()
         .values("station_id", "parameter_code")
@@ -497,7 +498,7 @@ def _latest_parameter_readings(
     for code in sorted(statistics_by_code):
         for statistic in statistics_by_code[code]:
             rec = (
-                DataRecordStaging.objects
+                DataRecordStaging.objects.current()
                 .filter(
                     station=station, status="published",
                     parameter_code=code, statistic=statistic,
@@ -523,6 +524,38 @@ def _latest_parameter_readings(
     return latest_readings
 
 
+def _reading_key(rec):
+    return (rec.parameter_code, rec.statistic, rec.observation_date)
+
+
+def _first_values(station, records):
+    """``{key: first row}`` for the readings among ``records`` that a source revised.
+
+    One query finds the replaced rows of the shown readings; the first of a
+    chain (the lowest id, written first) is the one the card strikes.
+    """
+    keyed = [rec for rec in records if rec.replaces_id is not None]
+    if not keyed:
+        return {}
+    found = {}
+    replaced = (
+        DataRecordStaging.objects.filter(
+            station=station,
+            replaced_at__isnull=False,
+            observation_date__in={rec.observation_date for rec in keyed},
+            parameter_code__in={rec.parameter_code for rec in keyed},
+        )
+        .order_by("pk")
+        .only("parameter_code", "statistic", "observation_date", "value", "unit")
+    )
+    wanted = {_reading_key(rec) for rec in keyed}
+    for row in replaced:
+        key = _reading_key(row)
+        if key in wanted:
+            found.setdefault(key, row)
+    return found
+
+
 def _readings_card_context(
     station, statistics_by_code=None, *, void_key=None, void_reason="", void_error="",
     notice="", warning="",
@@ -544,11 +577,14 @@ def _readings_card_context(
         statistics_by_code = _published_statistics(station)
 
     recent_records = list(
-        DataRecordStaging.objects.filter(station=station)
+        DataRecordStaging.objects.current().filter(station=station)
         .select_related("typed_record")
         .order_by("-observation_date")[:10]
     )
+    earlier = _first_values(station, recent_records)
     for rec in recent_records:
+        # What the source sent first, for a reading it later revised.
+        rec.earlier = earlier.get(_reading_key(rec))
         rec.param_display = get_parameter_label(
             source_code, rec.parameter_code,
             _named_statistic(statistics_by_code, rec.parameter_code, rec.statistic),
@@ -582,10 +618,15 @@ def _readings_card_context(
     mark_actions(
         typed, can_write=True, finalized=corrections.finalized_ranges(), void_key=void_key,
     )
+    revised_count = DataRecordStaging.objects.current().filter(
+        station=station, replaces__isnull=False
+    ).count()
     return {
         "recent_records": recent_records,
         "card_records": card_records,
         "station": station,
+        "revised_count": revised_count,
+        "revised_source": freshness.source_display(source_code),
         "void_key": void_key,
         "void_reason": void_reason,
         "void_error": void_error,
@@ -654,6 +695,8 @@ def _station_detail_context(station, *, reading_errors=None, reading_values=None
         "is_manual": is_manual,
         "recent_records": recent_records,
         "card_records": card["card_records"],
+        "revised_count": card["revised_count"],
+        "revised_source": card["revised_source"],
         "latest_readings": latest_readings,
         "recent_logs": recent_logs,
         "geojson": geojson,
@@ -696,6 +739,102 @@ def station_detail(request, pk):
     return render(
         request, "datasync/station_detail.html", _station_detail_context(station)
     )
+
+
+#: Readings on one page of the revised-readings list.
+REVISED_PAGE_SIZE = 100
+
+
+def _day_words(moment):
+    """A date or moment as the revised list prints it, in the site's zone: Nov 3, 2026."""
+    if moment is None:
+        return None
+    day = timezone.localtime(moment).date() if isinstance(moment, datetime) else moment
+    return f"{day:%b} {day.day}, {day.year}"
+
+
+def _paging_words(page, per_page):
+    """The words at the head of the list and the foot links: ``(head, has_next, has_back)``."""
+    total = page.paginator.count
+    if total <= per_page:
+        return f"Showing all {total}", False, False
+    if page.number == 1:
+        return f"Showing the {per_page} newest of {total}", page.has_next(), False
+    return (
+        f"Showing {page.start_index()} to {page.end_index()} of {total}",
+        page.has_next(),
+        True,
+    )
+
+
+@login_required
+@require_http_methods(["GET"])
+def station_revised(request, pk):
+    """The readings the station's source revised after OpenH2O first fetched them.
+
+    One row per replaced reading, newest observation first: the figure the source
+    sent first, the figure that stands now, the date the source puts on the new
+    value (a source that dates nothing has no Revised column) and the day OpenH2O
+    fetched it. A page is 100 rows; the queries do not grow with the rows.
+    """
+    station = get_object_or_404(
+        MonitoredStation.objects.select_related("data_source"), pk=pk
+    )
+    source_code = station.data_source.code
+    replaced = (
+        DataRecordStaging.objects.filter(station=station, replaced_at__isnull=False)
+        .select_related("replaced_by")
+        .order_by("-observation_date", "parameter_code", "statistic", "pk")
+    )
+    paginator = Paginator(replaced, REVISED_PAGE_SIZE)
+    page = paginator.get_page(request.GET.get("page", 1))
+    rows = list(page)
+
+    dated = DataRecordStaging.objects.filter(
+        station=station, replaces__isnull=False, raw_data__has_key="last_modified"
+    ).exists()
+    standing = {}
+    if rows:
+        found = DataRecordStaging.objects.current().filter(
+            station=station,
+            observation_date__in={r.observation_date for r in rows},
+            parameter_code__in={r.parameter_code for r in rows},
+        )
+        standing = {_reading_key(r): r for r in found}
+    statistics_by_code = _published_statistics(station) if rows else {}
+
+    listed = []
+    for row in rows:
+        now = standing.get(_reading_key(row))
+        replacing = row.replaced_by
+        said = None
+        if dated:
+            said = _day_words(source_date(replacing.raw_data)) or "Not stated"
+        listed.append({
+            "date": _day_words(row.observation_date),
+            "parameter": get_parameter_label(
+                source_code, row.parameter_code,
+                _named_statistic(statistics_by_code, row.parameter_code, row.statistic),
+            ),
+            "value": now.value if now is not None else None,
+            "unit": now.unit if now is not None else "",
+            "earlier": row.value,
+            "revised": said,
+            "fetched": _day_words(replacing.created_at),
+        })
+
+    head, has_next, has_back = _paging_words(page, REVISED_PAGE_SIZE)
+    context = {
+        "station": station,
+        "source_word": freshness.source_display(source_code),
+        "rows": listed,
+        "has_revised_dates": dated,
+        "total": paginator.count,
+        "paging_head": head,
+        "next_page": page.next_page_number() if has_next else None,
+        "show_back": has_back,
+    }
+    return render(request, "datasync/station_revised.html", context)
 
 
 @login_required
@@ -996,7 +1135,7 @@ def monitoring_dashboard(request):
     # Sparkline data: last 10 DataRecordStaging per active station
     station_ids = list(active_stations.values_list("pk", flat=True))
     staging_qs = (
-        DataRecordStaging.objects
+        DataRecordStaging.objects.current()
         .filter(station__in=station_ids)
         .order_by("station_id", "-observation_date")
         .values("station_id", "value", "unit", "observation_date")
@@ -1056,7 +1195,7 @@ def _published_parameter_units(station: MonitoredStation) -> dict[str, str]:
     # it doesn't actually report (e.g. a reservoir gauge that has Inflow declared
     # but never measures it) should not offer that empty option.
     published_param_rows = (
-        DataRecordStaging.objects
+        DataRecordStaging.objects.current()
         .filter(station=station, status="published")
         .order_by()  # clear Meta.ordering (-observation_date) so DISTINCT keys on code+unit alone
         .values("parameter_code", "unit")
@@ -1091,7 +1230,7 @@ def _chart_series(
 ) -> dict[str, dict[str, float | None]]:
     """Return {statistic: {date: value}} for one parameter inside the window."""
     rows = (
-        DataRecordStaging.objects
+        DataRecordStaging.objects.current()
         .filter(station=station, status="published", parameter_code=param, **date_filter)
         .order_by("observation_date")
         .values("observation_date", "value", "statistic")
@@ -1241,7 +1380,7 @@ def stations_freshness_geojson(request):
     # newest-first; the first row seen per station is its latest.
     latest_reading: dict = {}
     reading_rows = (
-        DataRecordStaging.objects
+        DataRecordStaging.objects.current()
         .filter(station__in=stations, status="published")
         # The lowest statistic breaks a tie on the day, so the map shows the daily
         # high (00001) where a station holds several, as it did when only one was kept.

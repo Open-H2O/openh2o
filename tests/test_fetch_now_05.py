@@ -67,6 +67,15 @@ def _client(user=None):
     return client
 
 
+def _ago(days):
+    """A day inside the default window, as the source writes it. Relative, so the test does not age."""
+    return (date.today() - timedelta(days=days)).isoformat()
+
+
+def _newest(days):
+    return f"{date.today() - timedelta(days=days):%b %d, %Y}"
+
+
 def _record(external, day, value=12.5, parameter="00060", statistic="00003"):
     return {
         "station_id": external,
@@ -291,8 +300,8 @@ def test_the_status_route_reports_the_count_and_the_newest_date(
     station, operator, answer
 ):
     answer.rows = [
-        _record(station.external_station_id, "2026-10-30"),
-        _record(station.external_station_id, "2026-10-31"),
+        _record(station.external_station_id, _ago(2)),
+        _record(station.external_station_id, _ago(1)),
     ]
     client = _client(operator)
     _press_inline(client, station)
@@ -300,18 +309,24 @@ def test_the_status_route_reports_the_count_and_the_newest_date(
 
     body = client.get(_status_url(station, log)).content.decode()
 
-    assert "OpenH2O fetched 2 readings. The newest is from Oct 31, 2026." in body
+    assert (
+        "OpenH2O fetched 2 new readings. None of the earlier readings changed. "
+        f"The newest is from {_newest(1)}."
+    ) in body
     assert "hx-trigger" not in body
     assert "Fetch readings now" in body
     assert "disabled" not in body
 
 
 def test_one_reading_is_singular(station, operator, answer):
-    answer.rows = [_record(station.external_station_id, "2026-10-31")]
+    answer.rows = [_record(station.external_station_id, _ago(1))]
     client = _client(operator)
     _press_inline(client, station)
     body = client.get(_status_url(station, DataSyncLog.objects.get())).content.decode()
-    assert "OpenH2O fetched 1 reading. The newest is from Oct 31, 2026." in body
+    assert (
+        "OpenH2O fetched 1 new reading. None of the earlier readings changed. "
+        f"The newest is from {_newest(1)}."
+    ) in body
 
 
 def test_no_readings_says_so_in_the_sources_name(station, operator, answer):
@@ -323,7 +338,7 @@ def test_no_readings_says_so_in_the_sources_name(station, operator, answer):
 
     body = client.get(_status_url(station, log)).content.decode()
 
-    assert "USGS NWIS did not send any readings for this station." in body
+    assert "USGS did not send any new or revised readings." in body
     assert "text-error" not in body
 
 
@@ -432,7 +447,7 @@ def test_sync_source_with_a_station_touches_only_that_station_and_closes_the_log
 ):
     a = _station(usgs, "AAA")
     b = _station(usgs, "BBB")
-    answer.rows = [_record("AAA", "2026-10-30"), _record("AAA", "2026-10-31")]
+    answer.rows = [_record("AAA", _ago(2)), _record("AAA", _ago(1))]
     log = DataSyncLog.objects.create(data_source=usgs, station=a, status="running")
 
     call_command("sync_source", "usgs", "--station", str(a.pk), "--log", str(log.pk))

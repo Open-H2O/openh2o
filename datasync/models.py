@@ -115,6 +115,10 @@ class DataSyncLog(models.Model):
     records_fetched = models.IntegerField(default=0)
     records_staged = models.IntegerField(default=0)
     records_published = models.IntegerField(default=0)
+    # Of the readings staged: how many were new to OpenH2O, and how many were a
+    # source's revision of a reading OpenH2O already held.
+    records_new = models.IntegerField("new readings", default=0)
+    records_revised = models.IntegerField("revised readings", default=0)
     error_message = models.TextField(blank=True)
     duration_seconds = models.FloatField(null=True, blank=True)
 
@@ -125,7 +129,29 @@ class DataSyncLog(models.Model):
         return f"{self.data_source} {self.started_at}: {self.status}"
 
 
-class DataRecordStaging(models.Model):
+class DataRecordStaging(CorrectableRecord):
+    """One reading a source sent, or a person typed on a hand station's page.
+
+    A source that revises a reading it published is recorded the way a person's
+    correction is: the revised reading is a NEW row that ``replaces`` the first,
+    and the first gets ``replaced_at`` and nothing else. ``.current()`` is the
+    rule for "which readings count". This table has no change history and no
+    Void or Correct control: a source's reading is the source's, and the replaced
+    row IS the history.
+    """
+
+    # The mixin's PROTECT would make deleting a station, a source or a pruned
+    # chain raise on any replaced row. RESTRICT lets a delete that takes both rows
+    # of a chain (a cascade from the station, or prune removing the pair) pass.
+    replaces = models.OneToOneField(
+        "self",
+        on_delete=models.RESTRICT,
+        null=True,
+        blank=True,
+        related_name="replaced_by",
+        verbose_name="replaces",
+    )
+
     STATUS_CHOICES = [
         ("staged", "Staged"),
         ("published", "Published"),
@@ -152,12 +178,15 @@ class DataRecordStaging(models.Model):
     class Meta:
         ordering = ["-observation_date"]
         constraints = [
-            # One observation per station+parameter+statistic+timestamp. Lets repeated
-            # syncs (hourly for live gauges) re-pull the same readings as a
-            # no-op via bulk_create(ignore_conflicts=True) instead of piling up
-            # duplicate rows that put multiple points per date on charts.
+            # One CURRENT observation per station+parameter+statistic+timestamp.
+            # Lets repeated syncs (hourly for live gauges) re-pull the same
+            # readings as a no-op instead of piling up duplicate rows that put
+            # multiple points per date on charts. A replaced row (a source's
+            # revision wrote a newer one) is out of the index, so the chain's
+            # rows share one key.
             models.UniqueConstraint(
                 fields=["station", "parameter_code", "statistic", "observation_date"],
+                condition=models.Q(replaced_at__isnull=True),
                 name="uniq_staging_station_param_stat_obsdate",
             ),
         ]

@@ -20,8 +20,10 @@ from pathlib import Path
 
 import requests
 from django.conf import settings
+from django.db import transaction
 from django.utils import timezone
 
+from datasync import revisions
 from datasync.models import DataRecordStaging, DataSyncLog, MonitoredStation
 
 logger = logging.getLogger(__name__)
@@ -90,6 +92,13 @@ class BaseAdapter(ABC):
     source_code: str = ""
     rate_limit_seconds: float = 1.0
     max_retries: int = 3
+
+    # A source that can be asked "what changed in the last N days" (USGS) sets
+    # ``asks_what_changed``; ``sync_source`` then gives a default run
+    # ``changed_within_days`` and the adapter sends that request in place of a date
+    # range. Every other adapter keeps its request and None here.
+    asks_what_changed: bool = False
+    changed_within_days: int | None = None
 
     # Station discovery runs inside the setup wizard's web request, behind a
     # gunicorn worker that SIGKILLs anything past its ~30s timeout. A single slow
@@ -224,8 +233,15 @@ class BaseAdapter(ABC):
 
     # ── Pipeline: stage & publish ───────────────────────────────────────
 
-    def stage(self, records, sync_log, station):
-        """Bulk-create DataRecordStaging rows from validated records."""
+    def stage(self, records, sync_log, station, since=None):
+        """Write validated records as new rows and revisions (``datasync/revisions.py``).
+
+        Returns the number of records it processed, whether each was new, a
+        revision or already known, so a run of only known readings is not a run
+        that staged none. ``sync_log.records_new`` and ``records_revised`` take
+        the split. ``since`` (a date) ignores a reading dated before it that is
+        not already stored, for a change-date request.
+        """
         staging_objects = []
         for rec in records:
             try:
@@ -263,9 +279,9 @@ class BaseAdapter(ABC):
                     "%s: skipping record during staging: %s", self.source_code, exc
                 )
 
-        if staging_objects:
-            DataRecordStaging.objects.bulk_create(staging_objects, ignore_conflicts=True)
-
+        counts = revisions.record_readings(staging_objects, since=since)
+        sync_log.records_new += counts.new
+        sync_log.records_revised += counts.revised
         return len(staging_objects)
 
     def publish(self, sync_log, station=None):
@@ -278,7 +294,7 @@ class BaseAdapter(ABC):
         """
         from django.db.models import Max
 
-        staged_qs = DataRecordStaging.objects.filter(
+        staged_qs = DataRecordStaging.objects.current().filter(
             data_source=sync_log.data_source,
             status="staged",
         )
@@ -299,6 +315,7 @@ class BaseAdapter(ABC):
         for station_id in affected_station_ids:
             latest_obs = (
                 DataRecordStaging.objects
+                .current()
                 .filter(station_id=station_id, status="published")
                 .aggregate(m=Max("observation_date"))["m"]
             )
@@ -345,13 +362,27 @@ class BaseAdapter(ABC):
                     self.source_code, len(rejected), station,
                 )
 
-            # Stage
-            staged_count = self.stage(valid, sync_log, station)
-            sync_log.records_staged += staged_count
-
-            # Publish
-            published_count = self.publish(sync_log, station=station)
-            sync_log.records_published += published_count
+            # Stage and publish together: a reader must never see a replaced row
+            # whose replacement is still staged, so a failure in either rolls back
+            # both. The run's counts follow the same rule.
+            mock_run = self._use_mock(data_source, mock=mock)
+            since = start_date if self.changed_within_days and not mock_run else None
+            counted = (
+                sync_log.records_staged, sync_log.records_new,
+                sync_log.records_revised, sync_log.records_published,
+            )
+            written = False
+            try:
+                with transaction.atomic():
+                    sync_log.records_staged += self.stage(valid, sync_log, station, since=since)
+                    sync_log.records_published += self.publish(sync_log, station=station)
+                written = True
+            finally:
+                if not written:
+                    (
+                        sync_log.records_staged, sync_log.records_new,
+                        sync_log.records_revised, sync_log.records_published,
+                    ) = counted
 
             if own_log:
                 if sync_log.records_fetched > 0 and sync_log.records_staged == 0:

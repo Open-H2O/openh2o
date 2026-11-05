@@ -510,7 +510,7 @@ def _station_reading_on_correct(old, new):
     )
     TypedReading.objects.filter(pk=new.pk).update(reading=published)
     new.reading = published
-    newest = DataRecordStaging.objects.filter(
+    newest = DataRecordStaging.objects.current().filter(
         station_id=published.station_id, status="published"
     ).aggregate(newest=Max("observation_date"))["newest"]
     MonitoredStation.objects.filter(pk=published.station_id).update(last_data_at=newest)

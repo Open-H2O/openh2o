@@ -559,7 +559,7 @@ COVERED = frozenset(
     {
         "MeterReading", "WaterMeasurement", "ParcelLedger", "FallowPeriod", "Parcel",
         "DiversionRecord", "RechargeEvent", "RechargeMeasurement", "SampleResult",
-        "SystemProduction", "TypedReading",
+        "SystemProduction", "TypedReading", "DataRecordStaging",
     }
 )
 WRITERS = frozenset(
@@ -567,8 +567,8 @@ WRITERS = frozenset(
 )
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
-#: Files the guard reads: accounting/ whole, and the named files of the other modules.
-GUARDED = ("accounting",)
+#: Files the guard reads: accounting/ and datasync/ whole, and the named files of the other modules.
+GUARDED = ("accounting", "datasync")
 GUARDED_FILES = (
     "surface/services.py",
     "parcels/views.py",
@@ -626,6 +626,20 @@ ALLOWED_READS = {
         "the use area list shows a voided use area struck; its counts say how many are listed",
     ("reporting/generators.py", "build_shared_supply_comparison"):
         "parcel numbers for use areas already chosen: display of ids, not a figure",
+    ("datasync/management/commands/load_openet_fixture.py", "handle"):
+        "pairs the frozen satellite ET file to use areas by number; the file is a cache of a public source, not a figure",
+    ("datasync/management/commands/prove_gee_auth.py", "_select_parcels"):
+        "picks sample use areas to prove the satellite ET login works; no figure is written",
+    ("datasync/management/commands/sync_openet_parcels.py", "handle"):
+        "chooses the use areas to fetch satellite ET for; whether a voided use area is fetched is not ruled here",
+    ("datasync/management/commands/sync_precip_parcels.py", "handle"):
+        "chooses the use areas to fetch precipitation for; whether a voided use area is fetched is not ruled here",
+    ("datasync/views.py", "_first_values"):
+        "finds the replaced rows of the shown readings, because the card strikes the first figure of a chain",
+    ("datasync/views.py", "_readings_card_context"):
+        "lists a hand-typed reading that was voided or replaced, struck, beside the current ones",
+    ("datasync/views.py", "station_revised"):
+        "the list of revised readings is made of the replaced rows, and asks whether any replacing row carries a source date",
 }
 
 
