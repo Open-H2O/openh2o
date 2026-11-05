@@ -553,7 +553,8 @@ jobs without those two lines, the command changes nothing and says so
 - Every 6 hours, it runs the health checks.
 - On the 1st of each month at 3:00, `prune_old_data` deletes staging records and
   logs older than their retention period. It keeps every reading typed at a station
-  entered by hand, whatever its age.
+  entered by hand, whatever its age, and it removes a revised reading and its earlier
+  values together, when the newest of them has passed the retention period.
 
 The times are in the computer's own time zone. The page of each switched-on
 station that OpenH2O syncs gives the time of its next scheduled fetch, in the site's time zone (set at
@@ -632,6 +633,11 @@ stations report, keep those, and remove the rest before you hand the site over.
 
    Note each station that returns nothing. Such a station has stopped publishing,
    and its settings do not need to change.
+
+   Later syncs compare what a source sends with what OpenH2O holds. A different value
+   becomes the reading and the first stays struck on the station's page; no water
+   figure moves. A `usgs` sync with no start date asks for what USGS changed in the
+   last 7 days, so after more than 7 days off, sync `usgs` once with `--start`.
 
 3. **Remove the stations that have no usable data.** This command deletes every
    switched-on station with too few readings to draw a chart. With

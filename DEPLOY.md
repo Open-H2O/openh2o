@@ -873,7 +873,7 @@ health. The jobs are in `crontab.txt`:
 | `run-sync.sh dwr_wdl dwr_sgma noaa cimis` | Every day at 2:00 | Groundwater levels, climate data and CIMIS weather (CIMIS and NOAA only when their keys are set) |
 | `run_accounting --open-periods --trigger schedule` | Every day at 3:30 | Calculates every reporting period that is not finalized, after the 2:00 sync. It never changes a finalized period; only an administrator's correction or void does, for the months it touches. Each run's record shows on the period's page and on Site health |
 | `run_health_checks` | Every 6 hours | Checks the database, the disk, the certificate, the migrations and the data sources |
-| `prune_old_data --confirm` | The 1st of each month at 3:00 | Deletes sync logs, health-check results and published staging records older than a year. It keeps readings typed at a station entered by hand |
+| `prune_old_data --confirm` | The 1st of each month at 3:00 | Deletes sync logs, health-check results and published staging records older than a year. It keeps readings typed at a station entered by hand, and it removes a revised reading and its earlier values together, when the newest of them is older than a year |
 
 The times are in the server's own time zone. The page of each switched-on
 station that OpenH2O syncs gives the time of its next scheduled fetch, in the site's time zone (set at
@@ -1093,6 +1093,19 @@ command line, `sync_source` with the station's own source code and `--station <i
 the same, as in `sync_source usgs --station 12`, where `<id>` is the number in the station
 page's address. Only an Operator or Administrator sees the button. Stations of the Entered by hand source are never synced:
 their readings are typed on each station's page.
+
+A source can change a reading after publishing it. When a sync brings a different value for a
+reading OpenH2O holds, the new value becomes the reading and the first stays on record, struck on
+the station's page. No calculation reads station readings, so no water figure moves. A USGS sync
+with no start date asks USGS for what it changed in the last 7 days, so a site that was off for
+longer, or a change USGS made more than 7 days before this version was installed, needs one sync
+with a start date to catch up:
+
+```bash
+docker compose exec web python manage.py sync_source usgs --start 2025-01-01
+```
+
+A sync with a start date also adds any reading from that date on that OpenH2O does not hold.
 
 ### Running Tests
 

@@ -331,6 +331,26 @@ source does not have an adapter: an Operator or Administrator types its readings
 (`datasync/typed_readings.py`). To add a source, follow "Adding a data adapter" in
 [CONTRIBUTING.md](CONTRIBUTING.md).
 
+A source can change a reading after publishing it. Every reading from a source goes through one
+write path, `datasync/revisions.py`. A key not yet stored (station, parameter, statistic, observation
+date) is a new row. A stored reading whose value differs, after rounding to the column's four
+places, gets a new row that `replaces` the old one and carries `change_reason`; the old row gets
+`replaced_at` and nothing else. A blank does not replace a figure, and another unit label with the
+same value is not a revision. Every reader of published readings goes through `current()`, which
+the guard in `tests/test_current_records_01.py` enforces. The chart and the Current readings card
+draw the current value, the Readings card strikes the first value under it, and the list at
+`/datasync/stations/<id>/revised/` shows each earlier value with the date the source puts on the new
+value and the day OpenH2O fetched it. No calculation reads these rows, so a revision moves no water
+figure. The table has no change history and no Void or Correct control: a source's reading is not a
+person's record, and the replaced row is the history.
+
+USGS dates every value, and a USGS sync with no `--start` and no `--end` asks for what USGS changed
+in the last 7 days (`last_modified=P7D`) in place of a date range. The answer holds every reading of
+those 7 days and any older value USGS changed in them. A value OpenH2O does not hold and that is dated
+before the 7 days is ignored. The other sources keep their date ranges and the same comparison. The
+date is the row's last change at USGS, which is not always the day the figure moved: USGS also re-dates
+rows in bulk.
+
 ## Maps
 
 Eight list pages draw a map of the records the list shows. Six overview-map partials draw seven

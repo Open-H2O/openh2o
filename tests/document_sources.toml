@@ -464,6 +464,8 @@ heading = "Data sources"
 files = [
   "datasync/adapters/__init__.py",
   "datasync/adapters/base.py",
+  "datasync/revisions.py",
+  "datasync/adapters/usgs.py",
   "datasync/adapters/openet.py",
   "datasync/adapters/openet_gee.py",
   "datasync/management/commands/sync_source.py",
@@ -908,6 +910,8 @@ checked_at = "8a99d70d"
 document = "DEPLOY.md"
 heading = "Data Sync"
 files = [
+  "datasync/revisions.py",
+  "datasync/adapters/usgs.py",
   "datasync/management/commands/sync_all.py",
   "datasync/management/commands/sync_source.py",
   "datasync/adapters/base.py",
