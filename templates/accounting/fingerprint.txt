@@ -5,7 +5,7 @@ Changes to this year's records: water year {{ period.name }}
 Finalized   {{ finalized }}
 Code        {{ code }}
 Full code   {{ full_code }}
-Taken       {{ taken_line }}
+Issued      {{ taken_line }}
 {{ as_filed }}
 What the code covers
 {{ covers }}

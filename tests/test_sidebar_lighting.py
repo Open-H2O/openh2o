@@ -211,7 +211,7 @@ NOT_REQUESTED = {
         "the fragment an import's waiting block polls for one person's own upload, never a page"
     ),
     "/datasync/stations/<int:pk>/fetch/<int:log_pk>/": (
-        "the fragment a station's Fetch readings now block polls for one run, never a page"
+        "the fragment a station's Update readings now block polls for one run, never a page"
     ),
     "/users/records/<slug:kind>/<int:pk>/void/": (
         "the one-line void form a row's menu swaps in, never a page; a plain GET redirects "

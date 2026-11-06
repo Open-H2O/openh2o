@@ -3,7 +3,7 @@
   reading typed by hand carries its note as a second line under the parameter.
   Shared by the sync-log layout and the layout of a station entered by hand.
 
-  A reading a source revised after OpenH2O first fetched it shows the first figure struck under the
+  A reading a source revised after OpenH2O received it shows the first figure struck under the
   current one, a neutral Revised status, and a line under the table that counts the station's
   revised readings and links to the list. A source's reading gets no menu.
 
@@ -63,7 +63,7 @@
     </table>
     </div>
     {% if revised_count %}
-    <p class="text-secondary text-sm" id="readings-foot" style="margin: var(--space-sm) 0 0;">{{ revised_source }} revised <a href="{% url 'datasync:station_revised' station.pk %}" class="prose-link">{{ revised_count }} reading{{ revised_count|pluralize }}</a> after OpenH2O first fetched {% if revised_count == 1 %}it{% else %}them{% endif %}.</p>
+    <p class="text-secondary text-sm" id="readings-foot" style="margin: var(--space-sm) 0 0;">{{ revised_source }} has revised <a href="{% url 'datasync:station_revised' station.pk %}" class="prose-link">{{ revised_count }} reading{{ revised_count|pluralize }}</a> on file.</p>
     {% endif %}
     {% else %}
       <p class="text-tertiary text-base">No readings yet.</p>

@@ -1,7 +1,7 @@
 {% comment %}
-  The schedule sentence and, for a writer, the Fetch readings now button, with
+  The schedule sentence and, for a writer, the Update readings now button, with
   the line under them that says what the last run got. The block replaces
-  itself: Fetch readings now posts to the fetch route, and while a run is going
+  itself: Update readings now posts to the fetch route, and while a run is going
   the block polls the status route every 2 seconds (the pattern of
   core/partials/_pending_import_status.html). The finished block carries no
   hx-trigger, so polling stops by itself. No hx-on and no inline script (the
@@ -18,9 +18,9 @@
     <p class="text-secondary text-base m-0" id="fetch-schedule">{{ fetch_schedule_sentence }}</p>
     {% endif %}
     {% if fetch_log %}
-    <button type="button" class="btn-secondary btn-sm" id="fetch-now" disabled aria-disabled="true" style="cursor: default; gap: var(--space-xs);"><span class="spinner-sm" aria-hidden="true"></span>Fetching readings…</button>
+    <button type="button" class="btn-secondary btn-sm" id="fetch-now" disabled aria-disabled="true" style="cursor: default; gap: var(--space-xs);"><span class="spinner-sm" aria-hidden="true"></span>Updating readings…</button>
     {% else %}
-    <button type="button" class="btn-secondary btn-sm" id="fetch-now" hx-post="{% url 'datasync:station_fetch_now' station.pk %}" hx-target="#fetch-now-block" hx-swap="outerHTML">Fetch readings now</button>
+    <button type="button" class="btn-secondary btn-sm" id="fetch-now" hx-post="{% url 'datasync:station_fetch_now' station.pk %}" hx-target="#fetch-now-block" hx-swap="outerHTML">Update readings now</button>
     {% endif %}
   </div>
   {% if fetch_message %}

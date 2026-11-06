@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Fetch readings now (151.6-05, design B).
+"""Update readings now (151.6-05, design B).
 
 A button beside the schedule sentence on a station's page fetches that one
 station's readings in a detached process and shows what the run got. The suite
@@ -176,7 +176,7 @@ def test_a_press_creates_one_log_for_the_station_and_starts_one_process(
         "--station", str(station.pk), "--log", str(log.pk),
     ]
     body = response.content.decode()
-    assert "Fetching readings…" in body
+    assert "Updating readings…" in body
     assert 'class="spinner-sm"' in body
     assert "disabled" in body
     assert _status_url(station, log) in body
@@ -189,8 +189,8 @@ def test_a_second_press_while_a_run_is_running_is_refused(detached, station, ope
     response = detached(client, station)
 
     body = response.content.decode()
-    assert "A fetch is already running." in body
-    assert "Fetching readings…" in body
+    assert "An update is already running." in body
+    assert "Updating readings…" in body
     assert DataSyncLog.objects.count() == 1
     detached.popen.assert_called_once()
 
@@ -205,7 +205,7 @@ def test_a_run_older_than_ten_minutes_no_longer_blocks_the_button(detached, stat
 
     response = detached(client, station)
 
-    assert "A fetch is already running." not in response.content.decode()
+    assert "An update is already running." not in response.content.decode()
     assert DataSyncLog.objects.filter(station=station).count() == 2
     assert detached.popen.call_count == 2
 
@@ -217,7 +217,7 @@ def test_a_run_inside_ten_minutes_still_blocks_it(detached, station, operator):
 
     response = detached(client, station)
 
-    assert "A fetch is already running." in response.content.decode()
+    assert "An update is already running." in response.content.decode()
     assert detached.popen.call_count == 1
 
 
@@ -227,7 +227,7 @@ def test_a_run_at_another_station_does_not_block_this_one(detached, station, ope
     detached(client, other)
     response = detached(client, station)
 
-    assert "A fetch is already running." not in response.content.decode()
+    assert "An update is already running." not in response.content.decode()
     assert detached.popen.call_count == 2
 
 
@@ -310,11 +310,11 @@ def test_the_status_route_reports_the_count_and_the_newest_date(
     body = client.get(_status_url(station, log)).content.decode()
 
     assert (
-        "OpenH2O fetched 2 new readings. None of the earlier readings changed. "
-        f"The newest is from {_newest(1)}."
+        "USGS sent 2 new readings. "
+        f"The latest reading is dated {_newest(1)}."
     ) in body
     assert "hx-trigger" not in body
-    assert "Fetch readings now" in body
+    assert "Update readings now" in body
     assert "disabled" not in body
 
 
@@ -324,8 +324,8 @@ def test_one_reading_is_singular(station, operator, answer):
     _press_inline(client, station)
     body = client.get(_status_url(station, DataSyncLog.objects.get())).content.decode()
     assert (
-        "OpenH2O fetched 1 new reading. None of the earlier readings changed. "
-        f"The newest is from {_newest(1)}."
+        "USGS sent 1 new reading. "
+        f"The latest reading is dated {_newest(1)}."
     ) in body
 
 
@@ -383,7 +383,7 @@ def test_a_run_still_running_keeps_the_page_polling(station, operator):
     )
     body = _client(operator).get(_status_url(station, log)).content.decode()
 
-    assert "Fetching readings…" in body
+    assert "Updating readings…" in body
     assert 'hx-trigger="every 2s"' in body
     assert _status_url(station, log) in body
 
@@ -393,7 +393,7 @@ def test_a_page_opened_during_a_run_shows_the_fetching_state(station, operator):
         data_source=station.data_source, station=station, status="running"
     )
     body = _page(_client(operator), station)
-    assert "Fetching readings…" in body
+    assert "Updating readings…" in body
     assert 'hx-trigger="every 2s"' in body
 
 
@@ -555,45 +555,45 @@ def test_a_one_station_run_does_not_count_as_the_sources_own_sync(usgs):
 
 def test_the_button_shows_for_a_writer_on_an_active_usgs_station(station, operator):
     body = _page(_client(operator), station)
-    assert "Fetch readings now" in body
+    assert "Update readings now" in body
     assert 'class="btn-secondary btn-sm"' in body
     assert reverse("datasync:station_fetch_now", args=[station.pk]) in body
 
 
 def test_the_button_shows_for_an_administrator(station):
     body = _page(_client(_user("admin-user", agency_admin=True)), station)
-    assert "Fetch readings now" in body
+    assert "Update readings now" in body
 
 
 def test_the_button_does_not_show_for_a_viewer(station, viewer):
-    assert "Fetch readings now" not in _page(_client(viewer), station)
+    assert "Update readings now" not in _page(_client(viewer), station)
 
 
 def test_the_button_does_not_show_when_the_source_is_off(operator):
     station = _station(_source("usgs", "USGS NWIS", active=False))
-    assert "Fetch readings now" not in _page(_client(operator), station)
+    assert "Update readings now" not in _page(_client(operator), station)
 
 
 def test_the_button_does_not_show_when_the_sources_key_is_missing(monkeypatch, operator):
     monkeypatch.delenv("CIMIS_API_KEY", raising=False)
     station = _station(_source("cimis", "CIMIS"), "CIMIS-1")
-    assert "Fetch readings now" not in _page(_client(operator), station)
+    assert "Update readings now" not in _page(_client(operator), station)
 
 
 def test_the_button_shows_once_the_key_is_set(monkeypatch, operator):
     monkeypatch.setenv("CIMIS_API_KEY", "probe-not-a-real-key")
     station = _station(_source("cimis", "CIMIS"), "CIMIS-1")
-    assert "Fetch readings now" in _page(_client(operator), station)
+    assert "Update readings now" in _page(_client(operator), station)
 
 
 def test_the_button_does_not_show_on_a_station_entered_by_hand(operator):
     station = _station(_source("manual", "Entered by hand"), "HAND-1")
-    assert "Fetch readings now" not in _page(_client(operator), station)
+    assert "Update readings now" not in _page(_client(operator), station)
 
 
 def test_the_button_does_not_show_for_a_source_without_an_adapter(operator):
     station = _station(_source("probe_none", "Probe network"), "P-1")
-    assert "Fetch readings now" not in _page(_client(operator), station)
+    assert "Update readings now" not in _page(_client(operator), station)
 
 
 def test_the_button_stands_beside_the_schedule_sentence(station, operator, tmp_path, settings):
@@ -602,7 +602,7 @@ def test_the_button_stands_beside_the_schedule_sentence(station, operator, tmp_p
     body = _page(_client(operator), station)
 
     assert 'id="fetch-schedule"' in body
-    assert body.index('id="fetch-schedule"') < body.index("Fetch readings now")
+    assert body.index('id="fetch-schedule"') < body.index("Update readings now")
     assert "flex-direction: column; gap: var(--space-xs)" in body
 
 
@@ -611,4 +611,4 @@ def test_with_no_schedule_sentence_the_button_stands_alone(station, operator, tm
     body = _page(_client(operator), station)
 
     assert 'id="fetch-schedule"' not in body
-    assert "Fetch readings now" in body
+    assert "Update readings now" in body

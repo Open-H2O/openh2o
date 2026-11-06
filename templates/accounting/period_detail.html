@@ -177,7 +177,7 @@
           {% if period.is_finalized %}
           <p class="text-secondary text-base m-0">While this water year is finalized, its records are closed to editing. An administrator can correct or void a record, or reopen the year, each with a reason.</p>
           {% else %}
-          <p class="text-secondary text-base m-0">Finalizing closes this water year's records to editing. After that an administrator can correct or void a record, or reopen the year, each with a reason that OpenH2O keeps in the change history. OpenH2O keeps the figures as they were when the year was finalized.</p>
+          <p class="text-secondary text-base m-0">Finalizing closes this water year's records to editing. After that an administrator can correct or void a record, or reopen the year, each with a reason that OpenH2O keeps in the change history. OpenH2O keeps a copy of the figures as finalized.</p>
           {% endif %}
         </div>
         <form method="post" action="{% url 'accounting:period_finalize' period.pk %}" class="period-close-form">

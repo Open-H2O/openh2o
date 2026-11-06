@@ -217,7 +217,7 @@ def test_add_station_offers_entered_by_hand_and_creates_such_a_station(manual, o
 def test_a_hand_station_page_drops_the_sync_controls(hand_station, operator):
     body = _page(_client(operator), hand_station)
 
-    assert "Fetch readings now" not in body
+    assert "Update readings now" not in body
     assert "Turn syncing" not in body
     assert 'id="toggle-cell"' not in body
     assert "Up to date" not in body and "Dormant" not in body and "Slightly behind" not in body

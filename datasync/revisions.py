@@ -80,7 +80,7 @@ def change_reason(row, today):
     day = source_date(row.raw_data)
     if day is not None:
         return f"Revised by {name} {_day_words(day)}"
-    return f"Revised by {name}, fetched {_day_words(today)}"
+    return f"Revised by {name}, received {_day_words(today)}"
 
 
 def _key(row):

@@ -820,7 +820,7 @@ def station_revised(request, pk):
             "unit": now.unit if now is not None else "",
             "earlier": row.value,
             "revised": said,
-            "fetched": _day_words(replacing.created_at),
+            "received": _day_words(replacing.created_at),
         })
 
     head, has_next, has_back = _paging_words(page, REVISED_PAGE_SIZE)
@@ -850,7 +850,7 @@ def station_toggle(request, pk):
 @login_required
 @require_http_methods(["POST"])
 def station_fetch_now(request, pk):
-    """Fetch this station's readings now: start the run and return the polling block.
+    """Update this station's readings now: start the run and return the polling block.
 
     The run is a detached ``manage.py sync_source`` (datasync/fetch_now.py). A
     press while a run for this station is going starts nothing and says so. A
@@ -865,7 +865,7 @@ def station_fetch_now(request, pk):
         return HttpResponseForbidden()
     log, started = fetch_now.start_fetch(station)
     context = fetch_now.block_context(
-        station, log=log, notice=None if started else "A fetch is already running."
+        station, log=log, notice=None if started else "An update is already running."
     )
     return render(request, "datasync/partials/_fetch_now.html", context)
 

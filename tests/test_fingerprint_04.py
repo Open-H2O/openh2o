@@ -508,7 +508,7 @@ def test_the_download_names_the_parts_with_the_counts_the_digest_used(d1, filed,
     short = f"{filed.fingerprint[:20].upper()}"
     assert f"Code        {'-'.join(short[i:i + 4] for i in range(0, 20, 4))}" in lines
     assert f"Full code   {filed.fingerprint.upper()}" in lines
-    assert f"Taken       {TAKEN}, when the year was finalized" in lines
+    assert f"Issued      {TAKEN}, when the year was finalized" in lines
     assert "Finalized   " + _day(filed.finalized_at) + " by R. Ortiz" in lines
     assert max(len(line) for line in lines) <= 76
     parts = fp().compute(filed).parts
@@ -528,7 +528,7 @@ def test_the_download_of_a_year_taken_at_the_upgrade_and_of_a_restated_year(year
     text = client.get(_file_url(year)).content.decode()
     assert "Finalized   date not on record" in text
     assert (
-        f"Taken       {_day(year.fingerprint_at)}, when OpenH2O began keeping these codes\n"
+        f"Issued      {_day(year.fingerprint_at)}, when OpenH2O began keeping these codes\n"
         "            and after the year was finalized. Changes before that date do\n"
         "            not show in this check.\n"
     ) in text
@@ -538,15 +538,15 @@ def test_the_download_of_a_year_taken_at_the_upgrade_and_of_a_restated_year(year
     _finalize(client, year)
     year.refresh_from_db()
     text = client.get(_file_url(year)).content.decode()
-    assert f"Taken       {_day(year.fingerprint_at)}, when the year was finalized again" in text
+    assert f"Issued      {_day(year.fingerprint_at)}, when the year was finalized again" in text
     short = first[:20].upper()
     code = "-".join(short[i:i + 4] for i in range(0, 20, 4))
     # That first code was taken at the upgrade, not at a filing.
-    assert f"First code  {code}, taken {_day(first_at)}" in text
+    assert f"First code  {code}, issued {_day(first_at)}" in text
     assert f"First code  {first.upper()}" in text
     assert "As filed" not in text
     body = unescape(re.sub(r"<[^>]+>", "", client.get(reverse("accounting:period_detail", args=[year.pk])).content.decode()))
-    assert f"First code {code}, first taken {_day(first_at)}." in re.sub(r"\s+", " ", body)
+    assert f"First code {code}, first issued {_day(first_at)}." in re.sub(r"\s+", " ", body)
     assert "as filed " + _day(first_at) not in body
 
 
@@ -557,23 +557,23 @@ Changes to this year's records: water year WY 2024-2025
 Finalized   date not on record
 Code        32A8-3722-E3A1-FE4C-0109
 Full code   32A83722E3A1FE4C0109A0023F91C45E78056DBB3D4E14E49C8D2D9E9CD5901C
-Taken       Nov 4, 2026, when OpenH2O began keeping these codes
+Issued      Nov 4, 2026, when OpenH2O began keeping these codes
             and after the year was finalized. Changes before that date do
             not show in this check.
 
 What the code covers
 OpenH2O computed the code from every row below at the moment the code was
-taken, records marked void or replaced included, and from every Change
-history entry of those rows. Station readings means readings typed by hand,
-not readings fetched from a source. For a use area with a record in the
-year, the code reads its number and whether it was voided, not its acres or
-other details. For a fallow period it reads the end month only up to the
-year's end. Change history of use areas and fallow periods is left out.
-Nothing else is covered: links and settings (which zone a use area is in,
-which well and meter serve it, which use areas a point of diversion serves,
-which accounts are active, account names, site settings), the stored OpenET
-figures, and anything a later version of OpenH2O adds. A change to these can
-move the Figures as filed card without changing this code.
+issued, records marked void or replaced included, and from every Change
+history entry of those rows. Station readings covers only readings typed by
+hand. For a use area with a record in the year, the code reads its number
+and whether it was voided, not its acres or other details. For a fallow
+period it reads the end month only up to the year's end. Change history of
+use areas and fallow periods is left out. Nothing else is covered: links and
+settings (which zone a use area is in, which well and meter serve it, which
+use areas a point of diversion serves, which accounts are active, account
+names, site settings), the stored OpenET figures, and anything a later
+version of OpenH2O adds. A change to these can move the Figures as filed
+card without changing this code.
 
   Part                         Rows    Part                         Rows
   Use ledger                  1,057    Water levels                   20
@@ -605,7 +605,7 @@ How to check
    a part was computed from.
 
 "No changes found" means what the code covers is the same as when it was
-taken. It does not show that the records were right. Check for changes runs
+issued. It does not show that the records were right. Check for changes runs
 inside OpenH2O, so it does not catch a change to the software.
 
 OpenH2O does not send this file anywhere. Keeping it is the organization's
@@ -657,7 +657,7 @@ def test_the_page_carries_the_card_as_drawn(filed, administrator):
     code = "-".join(f"{filed.fingerprint[i:i + 4]}" for i in range(0, 20, 4)).upper()
     assert body.index("Allocations by water type</h2>") < body.index('id="fingerprint"') < body.index("Calculation</h2>")
     assert '<div class="card-raised page-grid-account-full" id="fingerprint">' in body
-    assert f'Code <span class="text-mono">{code}</span>, taken {_day(filed.fingerprint_at)}' in body
+    assert f'Code <span class="text-mono">{code}</span>, issued {_day(filed.fingerprint_at)}' in body
     assert f'<a href="{_file_url(filed)}" class="text-link">Download a copy to keep</a>' in body
     assert f'hx-post="{_check_url(filed)}" hx-target="#fingerprint-answer" hx-swap="outerHTML"' in body
     assert '<button type="submit" class="btn-as-link text-link">Check for changes</button>' in body
@@ -680,7 +680,7 @@ def test_a_restated_year_shows_the_newest_code_and_the_first_beneath(filed, admi
     old = "-".join(first[i:i + 4] for i in range(0, 20, 4)).upper()
     start = body.index('id="fingerprint"')
     card = body[start : body.find('<div class="card-raised', start + 20)]
-    assert f"taken {_day(filed.fingerprint_at)}" in card and "restated" not in card.lower()
+    assert f"issued {_day(filed.fingerprint_at)}" in card and "restated" not in card.lower()
     assert body.index(new) < body.index(old)
     assert f", as filed {TAKEN}." in body.split(old)[1][:80]
 

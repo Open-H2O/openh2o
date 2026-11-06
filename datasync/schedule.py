@@ -22,6 +22,8 @@ from zoneinfo import ZoneInfo
 from django.conf import settings
 from django.utils import timezone
 
+from datasync import freshness
+
 logger = logging.getLogger(__name__)
 
 _RUN_SYNC = "run-sync.sh"
@@ -173,7 +175,10 @@ def _key_missing(source_code: str) -> bool:
 
 def station_sentence(station, now: datetime | None = None):
     """The sentence a station's page carries about when readings are fetched."""
-    name = station.data_source.name
+    source = station.data_source
+    # The short name the rest of the block uses (USGS, not USGS NWIS); a source
+    # with none keeps its own name.
+    name = freshness.SOURCE_DISPLAY.get(source.code, source.name)
     if station.data_source.is_manual:
         return "An Operator or Administrator types each reading on this page."
     if not station.is_active:
@@ -187,14 +192,14 @@ def station_sentence(station, now: datetime | None = None):
     if scheduled is None:
         return None
     if scheduled is False:
-        return f"OpenH2O's schedule does not fetch readings from {name}."
+        return f"OpenH2O's schedule does not update readings from {name}."
     words = describe(station.data_source.code)
     following = next_run(station.data_source.code, now)
     if words is None or following is None:
         return None
     if _key_missing(station.data_source.code):
         return (
-            f"OpenH2O's schedule fetches readings from {name} {words} once its "
+            f"OpenH2O's schedule updates readings from {name} {words} once its "
             "key is set. The key is not set on this server."
         )
     zone = following.tzinfo
@@ -205,4 +210,4 @@ def station_sentence(station, now: datetime | None = None):
         when += " tomorrow"
     elif days > 1:
         when += f" on {following:%A}"
-    return f"OpenH2O fetches readings from {name} {words}. The next fetch is at {when}."
+    return f"OpenH2O updates readings from {name} {words}. The next update is at {when}."

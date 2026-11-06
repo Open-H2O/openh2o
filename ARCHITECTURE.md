@@ -277,7 +277,7 @@ inside a finalized year takes none. Both tables are in `LOCKED_MODELS` on their 
 every UPDATE, even inside `override`: a statement is never edited. A year finalized before statements existed
 gets one of kind `recorded_at_upgrade` from `record_filed_figures`, which `entrypoint.sh` runs after `migrate`
 (a command, not a migration, because a migration never imports live code) and which is the
-demonstration's last step before its code is taken. The water year page's Figures as filed card loads its comparison from `accounting:period_figures`,
+demonstration's last step before its code is issued. The water year page's Figures as filed card loads its comparison from `accounting:period_figures`,
 kept in the cache under the statement ids and a change token (the newest history id of each table in `_FIGURE_MODELS` and of each correction kind, plus
 the newest calculation request and statement), because reading every figure takes seconds; each group of moved figures names the corrections and voids
 made since the oldest statement to records that touch its use areas (the `use_areas` hook in `core/corrections.py`).
@@ -291,13 +291,13 @@ text, float as `repr`, dates in ISO), rows in key order; a column type the modul
 takes the year's code after the statement, in the same note and transaction with the period row held; a year already
 finalized gets one from `record_fingerprints`, which `entrypoint.sh` runs after `record_filed_figures`, and a demonstration
 load takes it between two `forget_events` calls: the first so it reads the finished load, the second to remove its own write. `ReportingPeriod` keeps the digest, when it was
-taken and, in `fingerprint_parts`, each part's digest and row count and the columns read per table. Reopening keeps them;
+issued and, in `fingerprint_parts`, each part's digest and row count and the columns read per table. Reopening keeps them;
 finalizing again takes a new one and keeps the first. A correction or void does not retake it. Check for changes
 (`accounting/fingerprints.py`) recomputes over exactly the stored tables and columns and changes no record, so a viewer may
 press it. A column or table a later version adds is ignored by an older code; a stored one that no longer exists is
 answered as a part OpenH2O can no longer read, never as a change.
 
-"No changes found" says what the code covers is the same as when it was taken. It does not say the records were right. Everything outside the parts is left out, so ordinary work does not read as a changed record: a use area's acres and other details (the part reads only its
+"No changes found" says what the code covers is the same as when it was issued. It does not say the records were right. Everything outside the parts is left out, so ordinary work does not read as a changed record: a use area's acres and other details (the part reads only its
 number and its marking columns, and leaves out its Change history), a fallow period's end month after the year's end (and
 that table's Change history), and every table with no part, among them links and settings that feed figures and are not locked (for example `geography.ParcelZone`,
 `geography.Zone`, `accounting.WaterAccount`, `wells.WellIrrigatedParcel`, `wells.WellMeter`,
@@ -305,7 +305,7 @@ that table's Change history), and every table with no part, among them links and
 and it does not catch someone who rewrites the records and the stored code together; the downloaded page compared by hand does.
 The screen and the page print the first 20 characters; the page also prints all 64, because matching a code already on file takes about 2^80 tries, and preparing two versions of the records with the same 20 before finalizing takes about 2^40.
 
-Check for changes prints a count of the corrections recorded since and, after "Look at:", only the parts those corrections do not explain (`accounting/fingerprints.py`). A correction explains its own kind's part and Change history. One that starts a recalculation (a meter reading, a ledger entry, a fallow period, a use area, a diversion record) also explains what a recalculation writes (`RECALCULATION_PARTS`, read from `engine_run.run_month`, `run_calculations` and `allocate_district_delivery`, canal seepage moving carry-over and account credits among them), and a recharge event's correction explains the credit and pool deposit it rewrites. Unless a use area's own correction or void is on record, use areas are explained only when a recalculation ran and the part's row count grew, because a recalculation adds a use area to the part by giving it its first row and never edits one. An unrecorded change in a part a correction explains reads as the correction alone, and the kept file says so. A code taken by the upgrade, `at_upgrade` in `fingerprint_parts`, says on the card that changes before it do not show.
+Check for changes prints a count of the corrections recorded since and, after "Look at:", only the parts those corrections do not explain (`accounting/fingerprints.py`). A correction explains its own kind's part and Change history. One that starts a recalculation (a meter reading, a ledger entry, a fallow period, a use area, a diversion record) also explains what a recalculation writes (`RECALCULATION_PARTS`, read from `engine_run.run_month`, `run_calculations` and `allocate_district_delivery`, canal seepage moving carry-over and account credits among them), and a recharge event's correction explains the credit and pool deposit it rewrites. Unless a use area's own correction or void is on record, use areas are explained only when a recalculation ran and the part's row count grew, because a recalculation adds a use area to the part by giving it its first row and never edits one. An unrecorded change in a part a correction explains reads as the correction alone, and the kept file says so. A code issued by the upgrade, `at_upgrade` in `fingerprint_parts`, says on the card that changes before it do not show.
 
 **Reading the records as of a date.** `core/as_of.py` is the only code that rebuilds rows for a date. `reading_as_of(day)` opens one transaction, creates a temporary table of the same name for each table in `AS_OF_TABLES` (the tables that move a printed figure), sets the transaction read-only and always rolls back. Postgres searches temporary tables first, so every existing query reads the past with no change to any calculation and no second path for the arithmetic: no balance function takes a date. A use area's own number, owner, acres and status are in the set; account, zone, well and canal names, a water year's finalized status, settings and shapes are not, and read as they are today. The page's totals are added up by today's code. A row's first Change history event after the moment decides it: a `before_update` or `delete` carries the row as it was, an `insert` means it did not exist yet, and a row with no later event is the live row. `created_at`, on the seven of the thirteen tables that have one, must be at or before the moment either way. Reading the latest event at or before the moment instead looks equivalent and is wrong: it drops a row whose only event is a delete (the demonstration's load forgets its history) and revives a row whose only event is an old insert. Read-only refuses a write to a table outside the set; a write to one of the temporary copies is thrown away by the rollback.
 
@@ -324,7 +324,7 @@ arrives through adapters in `datasync/adapters/`. Each adapter subclasses `BaseA
 `parse`, `validate` and `discover_stations`, and registers itself with `register_adapter`
 (`datasync/adapters/__init__.py`). Most also define a `PARAMETER_MAP` naming their measurements;
 the two OpenET adapters do not. `manage.py sync_source` runs one source; `scripts/run-sync.sh` is
-what the sync cron jobs call. A station page's Fetch readings now button runs `sync_source` for
+what the sync cron jobs call. A station page's Update readings now button runs `sync_source` for
 that one station in its own process (`datasync/fetch_now.py`). Each reading carries the daily
 statistic its source names, such as the USGS daily high or daily average. The Entered by hand
 source does not have an adapter: an Operator or Administrator types its readings on the station's page
@@ -339,7 +339,7 @@ places, gets a new row that `replaces` the old one and carries `change_reason`; 
 same value is not a revision. Every reader of published readings goes through `current()`, which
 the guard in `tests/test_current_records_01.py` enforces. The chart and the Current readings card
 draw the current value, the Readings card strikes the first value under it, and the list at
-`/datasync/stations/<id>/revised/` shows each earlier value, the day OpenH2O fetched the new one and,
+`/datasync/stations/<id>/revised/` shows each earlier value, the date OpenH2O received the new one and,
 where the source dates its values (USGS), the date it puts on the new one. No calculation reads these rows, so a revision moves no water
 figure. The table has no change history and no Void or Correct control: a source's reading is not a
 person's record, and the replaced row is the history.

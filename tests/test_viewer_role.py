@@ -349,7 +349,7 @@ def test_a_viewer_opening_an_inline_editor_is_refused(viewer):
 
 
 def test_a_viewer_cannot_fetch_or_type_a_reading_and_an_operator_can(viewer, operator):
-    """The two station-page writes (151.6-05): Fetch readings now and Add a reading."""
+    """The two station-page writes (151.6-05): Update readings now and Add a reading."""
     from django.contrib.gis.geos import Point
 
     from datasync.models import DataRecordStaging, DataSource, DataSyncLog, MonitoredStation

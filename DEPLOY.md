@@ -873,7 +873,7 @@ health. The jobs are in `crontab.txt`:
 | `run-sync.sh dwr_wdl dwr_sgma noaa cimis` | Every day at 2:00 | Groundwater levels, climate data and CIMIS weather (CIMIS and NOAA only when their keys are set) |
 | `run_accounting --open-periods --trigger schedule` | Every day at 3:30 | Calculates every reporting period that is not finalized, after the 2:00 sync. It never changes a finalized period; only an administrator's correction or void does, for the months it touches. Each run's record shows on the period's page and on Site health |
 | `run_health_checks` | Every 6 hours | Checks the database, the disk, the certificate, the migrations and the data sources |
-| `prune_old_data --confirm` | The 1st of each month at 3:00 | Deletes sync logs and health-check results older than a year, published staging records OpenH2O fetched more than a year ago whatever date they describe, and unfinished import uploads older than a day. It keeps readings typed at a station entered by hand, and it removes a revised reading and its earlier values together, once OpenH2O fetched the newest of them more than a year ago |
+| `prune_old_data --confirm` | The 1st of each month at 3:00 | Deletes sync logs and health-check results older than a year, published staging records OpenH2O received more than a year ago whatever date they describe, and unfinished import uploads older than a day. It keeps readings typed at a station entered by hand, and it removes a revised reading and its earlier values together, once OpenH2O received the newest of them more than a year ago |
 
 The times are in the server's own time zone. The page of each switched-on
 station that OpenH2O syncs gives the time of its next scheduled fetch, in the site's time zone (set at
@@ -1087,7 +1087,7 @@ docker compose exec web python manage.py sync_source cdec
 ```
 
 A sync fetches from the live public services. A source whose key is missing is
-skipped until the key is in `.env`. Fetch readings now on a station's page fetches that
+skipped until the key is in `.env`. Update readings now on a station's page updates that
 one station in the background over the same period as the scheduled sync; from the
 command line, `sync_source` with the station's own source code and `--station <id>` does
 the same, as in `sync_source usgs --station 12`, where `<id>` is the number in the station

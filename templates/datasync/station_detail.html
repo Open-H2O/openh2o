@@ -55,7 +55,7 @@
     <a href="{% url 'datasync:station_list' %}" class="back-link">&larr; Back to Monitoring Stations</a>
   </div>
   {% comment %} When the schedule next fetches this station's readings (crontab.txt),
-       and for a writer the Fetch readings now button beside it; absent when
+       and for a writer the Update readings now button beside it; absent when
        there is neither. {% endcomment %}
   {% include "datasync/partials/_fetch_now.html" %}
   {% if reading_errors and not is_manual %}

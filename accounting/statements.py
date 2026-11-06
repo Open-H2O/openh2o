@@ -661,7 +661,7 @@ class Comparison:
         figures = f"{self.figure_count} figure{'' if self.figure_count == 1 else 's'}"
         # A restated year's table also lists figures that differ only between As filed and
         # Restated, so "since" reaches back to the first filing.
-        since = "Since it was first filed" if self.restated else "Since then"
+        since = "Since the first filing," if self.restated else "Since then"
         if self.correction_count:
             noun = "correction" if self.correction_count == 1 else "corrections"
             return f"{since} {self.correction_count} {noun} moved {figures}. Acre-feet."

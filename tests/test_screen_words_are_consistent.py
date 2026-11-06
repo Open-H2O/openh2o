@@ -232,6 +232,15 @@ def test_no_is_not_put_on_the_object(pattern, advice):
         + _report(found, advice))
 
 
+# -- 1a. A station's readings are received and updated, never fetched --------------------------
+
+@pytest.mark.parametrize("pattern,advice", words.RETIRED_FETCH)
+def test_a_stations_readings_are_not_fetched_on_a_screen(pattern, advice):
+    found = _all_hits(_screen_files(), pattern)
+    assert not found, (
+        f"{len(found)} sentence(s) use a word struck by ruling 91:\n" + _report(found, advice))
+
+
 # -- 2. A page is named by its own name ----------------------------------------------------
 
 @pytest.mark.parametrize("pattern,advice", words.RETIRED_PAGE_REFERENCES)

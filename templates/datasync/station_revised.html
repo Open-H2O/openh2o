@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
 {% comment %}
-  The readings a station's source revised after OpenH2O first fetched them. The station
-  page's foot line and the Fetch readings now line link here. One row per replaced
+  The readings a station's source revised after OpenH2O received them. The station
+  page's foot line and the Update readings now line link here. One row per replaced
   reading; a page is 100 rows (datasync.views.station_revised).
 {% endcomment %}
 
-{% block title %}Readings {{ source_word }} revised - {{ station.station_name }} - Open Water Accounting Platform{% endblock %}
-{% block page_title %}Readings {{ source_word }} revised{% endblock %}
+{% block title %}Revised readings - {{ station.station_name }} - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Revised readings{% endblock %}
 {% block page_meta %}<span class="text-secondary text-base">{{ station.station_name }}</span>{% endblock %}
 
 {% block breadcrumbs %}
@@ -18,9 +18,9 @@
     <span class="breadcrumb-separator">/</span>
     <a href="{% url 'datasync:station_detail' station.pk %}">{{ station.station_name }}</a>
     <span class="breadcrumb-separator">/</span>
-    <span class="breadcrumb-current">Readings {{ source_word }} revised</span>
+    <span class="breadcrumb-current">Revised readings</span>
   </nav>
-  <p class="page-description">This page lists the readings {{ source_word }} revised after OpenH2O first fetched them. {% if has_revised_dates %}Revised is the date {{ source_word }} puts on the new value. Fetched is the day OpenH2O got it.{% else %}Fetched is the day OpenH2O got the new value.{% endif %}</p>
+  <p class="page-description">{{ source_word }} changed these readings after OpenH2O received them.</p>
 </div>
 {% endblock %}
 
@@ -39,12 +39,12 @@
     <table class="data-table text-sm">
       <thead>
         <tr>
-          <th>Date</th>
+          <th>Reading date</th>
           <th>Parameter</th>
           <th class="th-right">Value</th>
           <th class="th-right"><span class="th-stack">Earlier value</span></th>
-          {% if has_revised_dates %}<th>Revised</th>{% endif %}
-          <th>Fetched</th>
+          {% if has_revised_dates %}<th>Date revised</th>{% endif %}
+          <th>Date received</th>
         </tr>
       </thead>
       <tbody>
@@ -57,7 +57,7 @@
           </td>
           <td class="td-num"><span class="record-void-text">{% if row.earlier is not None %}{{ row.earlier|floatformat:2 }}{% else %}Not recorded{% endif %}</span></td>
           {% if has_revised_dates %}<td class="text-secondary">{{ row.revised }}</td>{% endif %}
-          <td class="text-secondary">{{ row.fetched }}</td>
+          <td class="text-secondary">{{ row.received }}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -69,7 +69,7 @@
     </p>
     {% endif %}
     {% else %}
-    <p class="text-secondary text-base">{{ source_word }} has not revised any reading at this station since OpenH2O first fetched it.</p>
+    <p class="text-secondary text-base">{{ source_word }} has not revised any reading on file for this station.</p>
     {% endif %}
   </div>
 </div>

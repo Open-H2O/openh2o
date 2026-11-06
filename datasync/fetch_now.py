@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Fetch readings now: one station's fetch, started from its page.
+"""Update readings now: one station's fetch, started from its page.
 
 The button on a station's page creates a ``DataSyncLog`` row for that station
 and starts ``manage.py sync_source <code> --station <pk> --log <pk>`` in its own
@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 RUNNING_LIMIT = timedelta(minutes=10)
 
 #: What the page says when the process could not be started at all.
-COULD_NOT_START = "OpenH2O could not start the fetch."
+COULD_NOT_START = "OpenH2O could not start the update. Try again."
 
 
 def can_fetch(station) -> bool:
@@ -155,8 +155,8 @@ def outcome(station, log):
     """``(message, is_error)`` for a finished log, or ``(None, False)`` while it has none to give.
 
     A run still going, or one past the limit that never finished, has nothing to
-    say yet. A run that worked says how many readings were new and how many a
-    source revised, in the source's short name (``freshness.source_display``);
+    say yet. A run that worked says how many new and revised readings the source
+    sent, in the source's short name (``freshness.source_display``);
     the revised count links to the list of revised readings. Only that link is
     markup: the counts and the address are the only inputs to it.
     """
@@ -179,20 +179,15 @@ def outcome(station, log):
             _plural(revised, "revised reading"),
         )
         if new and revised:
-            lead = format_html("OpenH2O fetched {} and {}.", _plural(new, "new reading"), link)
-            tail = f" The newest is from {when}." if when else ""
+            lead = format_html("{} sent {} and {}.", source, _plural(new, "new reading"), link)
         elif new:
-            lead = format_html(
-                "OpenH2O fetched {}. None of the earlier readings changed.",
-                _plural(new, "new reading"),
-            )
-            tail = f" The newest is from {when}." if when else ""
+            lead = format_html("{} sent {}.", source, _plural(new, "new reading"))
         elif revised:
-            lead = format_html("OpenH2O fetched {} and nothing new.", link)
-            tail = f" The newest is still from {when}." if when else ""
+            lead = format_html("{} sent {}.", source, link)
         else:
             lead = f"{source} did not send any new or revised readings."
-            tail = f" The newest is still from {when}." if when else ""
+        still = "" if new else "still "
+        tail = f" The latest reading is {still}dated {when}." if when else ""
         return format_html("{}{}", lead, tail), False
     # Failed or partial: the log's own message. A connection error or timeout
     # was worded as "<source> did not answer." when the run closed (sync_source).

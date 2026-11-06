@@ -157,8 +157,8 @@ class TestTheStationPage:
         )
         body = station_page("alpha", "Probe Alpha Network")
         assert (
-            "OpenH2O fetches readings from Probe Alpha Network every hour, on the hour. "
-            "The next fetch is at 5:00 AM." in body
+            "OpenH2O updates readings from Probe Alpha Network every hour, on the hour. "
+            "The next update is at 5:00 AM." in body
         )
 
     def test_the_day_is_named_when_it_is_not_today(self, crontab, station_page, monkeypatch):
@@ -167,14 +167,14 @@ class TestTheStationPage:
         )
         body = station_page("gamma", "Probe Gamma Network")
         assert (
-            "OpenH2O fetches readings from Probe Gamma Network every day at 2:00 AM. "
-            "The next fetch is at 2:00 AM tomorrow." in body
+            "OpenH2O updates readings from Probe Gamma Network every day at 2:00 AM. "
+            "The next update is at 2:00 AM tomorrow." in body
         )
 
     def test_syncing_on_and_the_source_not_on_the_schedule(self, crontab, station_page):
         body = station_page("epsilon", "Probe Epsilon Network")
         assert (
-            "OpenH2O's schedule does not fetch readings from Probe Epsilon Network." in body
+            "OpenH2O's schedule does not update readings from Probe Epsilon Network." in body
         )
 
     def test_the_source_is_switched_off(self, crontab, station_page):
@@ -183,7 +183,7 @@ class TestTheStationPage:
             "OpenH2O's schedule skips Probe Alpha Network: the source is switched "
             "off in OpenH2O's list of data sources." in body
         )
-        assert "OpenH2O fetches readings from" not in body
+        assert "OpenH2O updates readings from" not in body
 
     def test_the_source_needs_a_key_that_is_not_set(
         self, crontab, station_page, monkeypatch
@@ -192,10 +192,10 @@ class TestTheStationPage:
         crontab("0 2 * * * /x/scripts/run-sync.sh cimis\n")
         body = station_page("cimis", "Probe CIMIS Network")
         assert (
-            "OpenH2O's schedule fetches readings from Probe CIMIS Network every day "
+            "OpenH2O's schedule updates readings from CIMIS every day "
             "at 2:00 AM once its key is set. The key is not set on this server." in body
         )
-        assert "OpenH2O fetches readings from" not in body
+        assert "OpenH2O updates readings from" not in body
 
     def test_the_same_source_with_its_key_set_gets_the_plain_sentence(
         self, crontab, station_page, monkeypatch
@@ -203,13 +203,13 @@ class TestTheStationPage:
         monkeypatch.setenv("CIMIS_API_KEY", "probe-not-a-real-key")
         crontab("0 2 * * * /x/scripts/run-sync.sh cimis\n")
         body = station_page("cimis", "Probe CIMIS Network")
-        assert "OpenH2O fetches readings from Probe CIMIS Network every day at 2:00 AM." in body
+        assert "OpenH2O updates readings from CIMIS every day at 2:00 AM." in body
         assert "key is not set" not in body
 
     def test_syncing_off(self, crontab, station_page):
         body = station_page("alpha", "Probe Alpha Network", syncing=False)
         assert "Syncing is off, so OpenH2O's schedule skips this station." in body
-        assert "The next fetch is at" not in body
+        assert "The next update is at" not in body
 
     def test_a_station_entered_by_hand_says_who_types_its_readings(
         self, crontab, station_page
@@ -219,9 +219,9 @@ class TestTheStationPage:
             assert (
                 "An Operator or Administrator types each reading on this page." in body
             )
-            assert "OpenH2O fetches readings from" not in body
+            assert "OpenH2O updates readings from" not in body
             assert "Syncing is off" not in body
-            assert "schedule does not fetch" not in body
+            assert "schedule does not update" not in body
             MonitoredStation.objects.all().delete()
 
     def test_an_unreadable_file_leaves_the_page_without_a_sentence(
@@ -229,8 +229,8 @@ class TestTheStationPage:
     ):
         settings.BASE_DIR = tmp_path
         body = station_page("alpha", "Probe Alpha Network")
-        assert "OpenH2O fetches readings from" not in body
-        assert "schedule does not fetch" not in body
+        assert "OpenH2O updates readings from" not in body
+        assert "schedule does not update" not in body
 
 
 def test_the_shipped_crontab_fetches_cimis_and_says_why_not_cnrfc(settings):

@@ -323,7 +323,7 @@ def _headers(body):
 
 
 def _press(client, station):
-    """Press Fetch readings now (the suite runs the fetch in-process); return the status paragraph's markup."""
+    """Press Update readings now (the suite runs the fetch in-process); return the status paragraph's markup."""
     client.post(reverse("datasync:station_fetch_now", args=[station.pk]))
     log = DataSyncLog.objects.filter(station=station).order_by("-pk").first()
     body = client.get(reverse("datasync:station_fetch_status", args=[station.pk, log.pk])).content.decode()
@@ -424,7 +424,7 @@ def test_a_second_answer_with_one_changed_value_writes_a_replacement_and_leaves_
     assert log.records_published == 1
 
 
-def test_a_revision_the_source_did_not_date_says_when_it_was_fetched(usgs_api):
+def test_a_revision_the_source_did_not_date_says_when_it_was_received(usgs_api):
     station = _station()
     day = date(2026, 10, 30)
     _usgs_sync(usgs_api, station, [_feature("11261100", day, 12.5)])
@@ -432,7 +432,7 @@ def test_a_revision_the_source_did_not_date_says_when_it_was_fetched(usgs_api):
 
     new = _rows(station)[1]
 
-    assert new.change_reason == f"Revised by USGS, fetched {_words(timezone.localdate())}"
+    assert new.change_reason == f"Revised by USGS, received {_words(timezone.localdate())}"
 
 
 def test_the_sources_date_reaches_raw_data_and_is_read_in_the_sites_zone(usgs_api):
@@ -463,7 +463,7 @@ def test_the_reason_names_the_source_by_its_display_name_where_the_source_has_no
     old, new = _rows(station)
 
     assert new.replaces_id == old.pk
-    assert new.change_reason == f"Revised by CDEC, fetched {_words(timezone.localdate())}"
+    assert new.change_reason == f"Revised by CDEC, received {_words(timezone.localdate())}"
 
 
 def test_stage_alone_marks_the_old_row_and_leaves_the_revision_staged_until_publish(usgs_api):
@@ -921,7 +921,7 @@ def test_the_station_page_shows_the_new_value_the_struck_first_one_a_revised_sta
     assert "row-actions" not in body[body.index('id="station-readings-card"'):]
 
     text = _text(body)
-    assert "USGS revised 1 reading after OpenH2O first fetched it." in text
+    assert "USGS has revised 1 reading on file." in text
     link = re.search(r'<a [^>]*href="([^"]+)"[^>]*>1 reading</a>', body)
     assert link and link.group(1) == _revised_url(station)
 
@@ -933,7 +933,7 @@ def test_a_station_with_no_revision_shows_no_struck_figure_and_no_foot_line(usgs
     body = _get(_client(operator), _station_url(station))
 
     assert "record-void-text" not in body[body.index('id="station-readings-card"'):]
-    assert "after OpenH2O first fetched" not in _text(body)
+    assert "has revised" not in _text(body)
     assert "Revised" not in _text(body[body.index('id="station-readings-card"'):])
 
 
@@ -943,7 +943,7 @@ def test_the_foot_counts_every_revised_reading_of_the_station_not_only_the_ten_s
 
     body = _get(_client(operator), _station_url(station))
 
-    assert "USGS revised 94 readings after OpenH2O first fetched them." in _text(body)
+    assert "USGS has revised 94 readings on file." in _text(body)
     assert re.search(r'<a [^>]*href="%s"[^>]*>94 readings</a>' % re.escape(_revised_url(station)), body)
     assert len(_card_rows(body)) == 10
 
@@ -978,7 +978,7 @@ def test_a_chain_of_three_shows_the_first_value_struck_not_the_second(usgs_api, 
     assert _text(struck) == "10.00 ft3/s"
     assert "11.00" not in row
     # One reading has a replaced predecessor, however long its chain.
-    assert "USGS revised 1 reading after OpenH2O first fetched it." in _text(body)
+    assert "USGS has revised 1 reading on file." in _text(body)
 
 
 def test_a_stored_blank_that_was_revised_shows_not_recorded_struck(usgs_api, operator):
@@ -1003,7 +1003,7 @@ def test_a_source_that_dates_nothing_names_itself_in_the_foot(cdec_api, operator
 
     body = _get(_client(operator), _station_url(station))
 
-    assert "CDEC revised 1 reading after OpenH2O first fetched it." in _text(body)
+    assert "CDEC has revised 1 reading on file." in _text(body)
 
 
 def test_a_station_entered_by_hand_keeps_its_card(operator):
@@ -1014,7 +1014,7 @@ def test_a_station_entered_by_hand_keeps_its_card(operator):
 
     card = body[body.index('id="station-readings-card"'):]
     assert "record-void-text" not in card
-    assert "after OpenH2O first fetched" not in _text(body)
+    assert "has revised" not in _text(body)
     assert "Revised" not in _text(card)
 
 
@@ -1132,16 +1132,13 @@ def test_the_list_page_has_its_title_description_back_link_and_columns(usgs_api,
     body = _get(_client(operator), _revised_url(station))
     text = _text(body)
 
-    assert re.search(r"<h1[^>]*>\s*Readings USGS revised\s*</h1>", body)
+    assert re.search(r"<h1[^>]*>\s*Revised readings\s*</h1>", body)
     assert station.station_name in text
-    assert (
-        "This page lists the readings USGS revised after OpenH2O first fetched them. "
-        "Revised is the date USGS puts on the new value. Fetched is the day OpenH2O got it."
-    ) in text
+    assert "USGS changed these readings after OpenH2O received them." in text
     back = re.search(r'<a [^>]*href="([^"]+)"[^>]*class="back-link"|<a [^>]*class="back-link"[^>]*href="([^"]+)"', body)
     assert back and (back.group(1) or back.group(2)) == _station_url(station)
     assert f"Back to {station.station_name}" in text
-    assert _headers(body) == ["Date", "Parameter", "Value", "Earlier value", "Revised", "Fetched"]
+    assert _headers(body) == ["Reading date", "Parameter", "Value", "Earlier value", "Date revised", "Date received"]
 
 
 def test_the_list_gives_one_row_per_replaced_row_newest_observation_first(usgs_api, operator):
@@ -1209,11 +1206,10 @@ def test_a_source_with_no_dates_has_no_revised_column_and_says_so(cdec_api, oper
     body = _get(_client(operator), _revised_url(station))
     text = _text(body)
 
-    assert re.search(r"<h1[^>]*>\s*Readings CDEC revised\s*</h1>", body)
-    assert _headers(body) == ["Date", "Parameter", "Value", "Earlier value", "Fetched"]
-    assert "This page lists the readings CDEC revised after OpenH2O first fetched them." in text
-    assert "Fetched is the day OpenH2O got the new value." in text
-    assert "Revised is the date" not in text
+    assert re.search(r"<h1[^>]*>\s*Revised readings\s*</h1>", body)
+    assert _headers(body) == ["Reading date", "Parameter", "Value", "Earlier value", "Date received"]
+    assert "CDEC changed these readings after OpenH2O received them." in text
+    assert "Date revised" not in text
     (row,) = _main_rows(body)
     assert _cells(row)[-1] == _words(timezone.localdate())
 
@@ -1225,7 +1221,7 @@ def test_a_row_without_a_date_in_a_list_that_has_them_says_not_stated(operator):
 
     rows = _main_rows(_get(_client(operator), _revised_url(station)))
 
-    assert _headers(_get(_client(operator), _revised_url(station)))[4] == "Revised"
+    assert _headers(_get(_client(operator), _revised_url(station)))[4] == "Date revised"
     assert _cells(rows[0])[4] == MOD1_WORDS
     assert _cells(rows[1])[4] == "Not stated"
 
@@ -1240,7 +1236,7 @@ def test_a_station_with_nothing_revised_says_so_in_a_sentence_and_is_not_a_404(o
     body = response.content.decode()
     assert "<td" not in body[body.index("<main"):]
     assert (
-        "USGS has not revised any reading at this station since OpenH2O first fetched it."
+        "USGS has not revised any reading on file for this station."
         in _text(body)
     )
 
@@ -1327,7 +1323,7 @@ def test_the_list_is_read_only_and_open_to_whoever_may_read_the_station(viewer, 
     assert _client(operator).get(reverse("datasync:station_revised", args=[station.pk + 999])).status_code == 404
 
 
-# -- (g) Fetch readings now ------------------------------------------------------------------------------
+# -- (g) Update readings now ------------------------------------------------------------------------------
 
 
 def _stored_run(station, count, first_ago=200):
@@ -1369,7 +1365,7 @@ def test_both_new_and_revised_readings_are_counted_and_the_revised_count_links_t
     markup = _press(_client(operator), station)
 
     newest = _card_date(date.today() - timedelta(days=1))
-    assert _status_text(markup) == f"OpenH2O fetched 7 new readings and 94 revised readings. The newest is from {newest}."
+    assert _status_text(markup) == f"USGS sent 7 new readings and 94 revised readings. The latest reading is dated {newest}."
     link = re.search(r'<a [^>]*href="([^"]+)"[^>]*>(\d+ revised readings?)</a>', markup)
     assert link and link.group(1) == _revised_url(station)
     assert link.group(2) == "94 revised readings"
@@ -1383,11 +1379,11 @@ def test_one_new_and_one_revised_reading_are_singular(usgs_api, operator):
     markup = _press(_client(operator), station)
 
     newest = _card_date(date.today() - timedelta(days=1))
-    assert _status_text(markup) == f"OpenH2O fetched 1 new reading and 1 revised reading. The newest is from {newest}."
+    assert _status_text(markup) == f"USGS sent 1 new reading and 1 revised reading. The latest reading is dated {newest}."
     assert re.search(r'<a [^>]*href="%s"[^>]*>1 revised reading</a>' % re.escape(_revised_url(station)), markup)
 
 
-def test_new_readings_only_say_that_the_earlier_ones_did_not_change(usgs_api, operator):
+def test_new_readings_only_say_how_many_and_the_latest_date(usgs_api, operator):
     station = _station()
     _stored_run(station, 2)
     usgs_api.features = _answer_for(station, 2, bump=0.0) + _new_features(station, 3)
@@ -1396,7 +1392,7 @@ def test_new_readings_only_say_that_the_earlier_ones_did_not_change(usgs_api, op
 
     newest = _card_date(date.today() - timedelta(days=1))
     assert _status_text(markup) == (
-        f"OpenH2O fetched 3 new readings. None of the earlier readings changed. The newest is from {newest}."
+        f"USGS sent 3 new readings. The latest reading is dated {newest}."
     )
     assert "<a " not in markup
 
@@ -1409,11 +1405,11 @@ def test_one_new_reading_only_is_singular(usgs_api, operator):
 
     newest = _card_date(date.today() - timedelta(days=1))
     assert _status_text(markup) == (
-        f"OpenH2O fetched 1 new reading. None of the earlier readings changed. The newest is from {newest}."
+        f"USGS sent 1 new reading. The latest reading is dated {newest}."
     )
 
 
-def test_revised_readings_only_say_nothing_new_and_that_the_newest_is_still_the_old_one(usgs_api, operator):
+def test_revised_readings_only_say_how_many_and_that_the_latest_date_is_still_the_old_one(usgs_api, operator):
     station = _station()
     _stored_run(station, 94)
     usgs_api.features = _answer_for(station, 94)
@@ -1421,7 +1417,7 @@ def test_revised_readings_only_say_nothing_new_and_that_the_newest_is_still_the_
     markup = _press(_client(operator), station)
 
     newest = _card_date(date.today() - timedelta(days=200))
-    assert _status_text(markup) == f"OpenH2O fetched 94 revised readings and nothing new. The newest is still from {newest}."
+    assert _status_text(markup) == f"USGS sent 94 revised readings. The latest reading is still dated {newest}."
     link = re.search(r'<a [^>]*href="([^"]+)"[^>]*>94 revised readings</a>', markup)
     assert link and link.group(1) == _revised_url(station)
 
@@ -1434,14 +1430,14 @@ def test_one_revised_reading_only_is_singular(usgs_api, operator):
     markup = _press(_client(operator), station)
 
     newest = _card_date(date.today() - timedelta(days=200))
-    assert _status_text(markup) == f"OpenH2O fetched 1 revised reading and nothing new. The newest is still from {newest}."
+    assert _status_text(markup) == f"USGS sent 1 revised reading. The latest reading is still dated {newest}."
 
 
 def test_nothing_new_and_nothing_revised_says_so_whether_the_source_sent_nothing_or_the_same(usgs_api, operator):
     station = _station()
     _stored_run(station, 2)
     newest = _card_date(date.today() - timedelta(days=200))
-    expected = f"USGS did not send any new or revised readings. The newest is still from {newest}."
+    expected = f"USGS did not send any new or revised readings. The latest reading is still dated {newest}."
     client = _client(operator)
 
     usgs_api.features = []
@@ -1565,7 +1561,7 @@ def test_the_loader_behaves_as_the_sync_does(tmp_path):
     old, new = _rows(station)
     assert old.pk == first.pk and old.replaced_at is not None and old.value == D("12.5000")
     assert new.replaces_id == old.pk and new.value == D("14.0000") and new.status == "published"
-    assert new.change_reason == f"Revised by USGS, fetched {_words(timezone.localdate())}"
+    assert new.change_reason == f"Revised by USGS, received {_words(timezone.localdate())}"
     assert list(DataRecordStaging.objects.current()) == [new]
 
     _load(tmp_path, [_fixture_row(value="14.0000")])

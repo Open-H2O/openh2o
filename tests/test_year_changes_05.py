@@ -83,7 +83,10 @@ def real_recalculation():
     return True
 
 HEADING = "Changes to this year's records"
-SENTENCE = "Shows whether anything has changed since this code was taken."
+SENTENCE = (
+    "OpenH2O issued this code from the year's records. "
+    "Check for changes shows whether those records have changed since."
+)
 CARD_OPEN = '<div class="card-raised page-grid-account-full" id="fingerprint">'
 
 NO_CHANGES = f"No changes found since {TAKEN}."
@@ -253,9 +256,9 @@ def test_the_card_is_not_on_an_open_year_a_reopened_year_or_a_year_with_no_code(
 def test_at_rest_an_ordinary_code_reads_code_and_the_day_it_was_taken(filed, administrator):
     card = _card(_detail(_client(administrator), filed))
     code = _short(filed.fingerprint)
-    assert f'Code <span class="text-mono">{code}</span>, taken {TAKEN}' in card
+    assert f'Code <span class="text-mono">{code}</span>, issued {TAKEN}' in card
     text = _visible(card)
-    assert text.endswith(f"Code {code}, taken {TAKEN}")
+    assert text.endswith(f"Code {code}, issued {TAKEN}")
     assert "after the year was finalized" not in text and "do not show here" not in text
     assert "First code" not in text and "restated" not in text.lower()
 
@@ -264,11 +267,11 @@ def test_at_rest_a_code_taken_by_the_upgrade_says_it_was_taken_after_the_year_wa
     card = _card(_detail(_client(administrator), upgraded))
     code = _short(upgraded.fingerprint)
     assert (
-        f'Code <span class="text-mono">{code}</span>, taken {TAKEN}, after the year was finalized. '
+        f'Code <span class="text-mono">{code}</span>, issued {TAKEN}, after the year was finalized. '
         '<span class="text-primary">Changes before that date do not show here.</span>'
     ) in card
     assert _visible(card).endswith(
-        f"Code {code}, taken {TAKEN}, after the year was finalized. Changes before that date do not show here."
+        f"Code {code}, issued {TAKEN}, after the year was finalized. Changes before that date do not show here."
     )
 
 
@@ -281,7 +284,7 @@ def test_at_rest_a_year_finalized_again_keeps_the_older_code_as_a_quieter_line(f
     assert new != old or filed.fingerprint_parts["first"]["digest"] == filed.fingerprint
     card = _card(_detail(client, filed))
     text = _visible(card)
-    assert f"Code {new}, taken {_day(filed.fingerprint_at)}" in text
+    assert f"Code {new}, issued {_day(filed.fingerprint_at)}" in text
     assert f"First code {old}, as filed {TAKEN}." in text
     assert text.index(f"Code {new}") < text.index(f"First code {old}")
     assert f'First code <span class="text-mono">{old}</span>, as filed {TAKEN}.' in card
@@ -294,7 +297,7 @@ def test_at_rest_a_first_code_taken_by_the_upgrade_reads_first_taken(upgraded, a
     _reopen(client, upgraded)
     _finalize(client, upgraded)
     text = _visible(_card(_detail(client, upgraded)))
-    assert f"First code {old}, first taken {TAKEN}." in text
+    assert f"First code {old}, first issued {TAKEN}." in text
     # The newest code was taken at a filing, so it carries the ordinary line.
     assert "after the year was finalized" not in text
 
@@ -622,7 +625,7 @@ def test_the_file_is_named_changes_code_and_reads_in_the_new_words(filed, admini
     assert lines[2] == "(Oct 1, 2024 to Sep 30, 2025)"
     assert f"Code        {_short(filed.fingerprint)}" in lines
     assert f"Full code   {filed.fingerprint.upper()}" in lines
-    assert f"Taken       {TAKEN}, when the year was finalized" in lines
+    assert f"Issued      {TAKEN}, when the year was finalized" in lines
     assert "What the code covers" in lines
     assert max(len(line) for line in lines) <= 76
     low = text.lower()
@@ -637,7 +640,7 @@ def test_the_file_is_named_changes_code_and_reads_in_the_new_words(filed, admini
 def test_the_file_of_a_code_taken_by_the_upgrade_carries_the_two_added_lines(upgraded, administrator):
     text = _client(administrator).get(_file_url(upgraded)).content.decode()
     assert (
-        f"Taken       {TAKEN}, when OpenH2O began keeping these codes\n"
+        f"Issued      {TAKEN}, when OpenH2O began keeping these codes\n"
         "            and after the year was finalized. Changes before that date do\n"
         "            not show in this check.\n"
     ) in text
@@ -653,9 +656,9 @@ def test_the_file_of_a_year_finalized_again_keeps_the_first_code_in_the_same_col
     _reopen(client, filed)
     _finalize(client, filed)
     text = client.get(_file_url(filed)).content.decode()
-    assert f"Taken       {_day(filed.fingerprint_at)}, when the year was finalized again\n" in text
+    assert f"Issued      {_day(filed.fingerprint_at)}, when the year was finalized again\n" in text
     # The label column is 12 wide, as the four header rows are.
-    assert f"As filed    {old}, taken {TAKEN}\n" in text
+    assert f"As filed    {old}, issued {TAKEN}\n" in text
     assert f"As filed    {old_full}\n" in text
     assert "fingerprint" not in text.lower()
 

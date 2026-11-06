@@ -674,8 +674,8 @@ OpenH2O has four roles. An administrator sets each person's role on the Users pa
 administrator can make someone a host administrator.
 
 - An **Administrator** manages users, runs the Setup Wizard, changes the
-  methodology and delivery settings and finalizes a reporting period. Finalizing keeps the
-  year's figures as they were; the water year page lists any figure that has moved since.
+  methodology and delivery settings and finalizes a reporting period. Finalizing keeps a
+  copy of the year's figures; the water year page lists any figure that has moved since.
 - A **Host administrator** can do everything an administrator does. They can also
   use `/admin/` and change other host administrators' accounts. The superuser from
   Phase 2 is a host administrator. Recommend a second one, so each can change the

@@ -123,7 +123,7 @@ def line_context(period):
         "restated": first is not None,
         "first_code": short_code(first[0]) if first else "",
         "first_taken": first[1] if first else "",
-        "first_label": ("first taken" if first[2] else "as filed") if first else "",
+        "first_label": ("first issued" if first[2] else "as filed") if first else "",
         # A code the upgrade took, after the year was finalized: it reaches back only to that date.
         "at_upgrade": bool((period.fingerprint_parts or {}).get("at_upgrade")),
     }
@@ -322,9 +322,9 @@ _LABEL = 12
 
 _COVERS = (
     "OpenH2O computed the code from every row below at the moment the code was "
-    "taken, records marked void or replaced included, and from every Change "
-    "history entry of those rows. Station readings means readings typed by hand, "
-    "not readings fetched from a source. For a use area with a record in the "
+    "issued, records marked void or replaced included, and from every Change "
+    "history entry of those rows. Station readings covers only readings typed by "
+    "hand. For a use area with a record in the "
     "year, the code reads its number and whether it was voided, not its acres or "
     "other details. For a fallow period it reads the end month only up to the "
     "year's end. Change history of use areas and fallow periods is left out. "
@@ -349,7 +349,7 @@ _STEPS = (
 )
 
 _MEANING = (
-    "\"No changes found\" means what the code covers is the same as when it was taken. "
+    "\"No changes found\" means what the code covers is the same as when it was issued. "
     "It does not show that the records were right. Check for changes runs inside "
     "OpenH2O, so it does not catch a change to the software."
 )
@@ -419,7 +419,7 @@ def file_text(period):
     if first:
         label = "First code" if first[2] else "As filed"
         as_filed = (
-            f"{label:<{_LABEL}}{short_code(first[0])}, taken {first[1]}\n"
+            f"{label:<{_LABEL}}{short_code(first[0])}, issued {first[1]}\n"
             f"{label:<{_LABEL}}{first[0].upper()}\n"
         )
     steps = "\n".join(

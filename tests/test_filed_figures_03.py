@@ -426,7 +426,7 @@ def test_reopening_keeps_the_statement_and_finalizing_again_restates(d1, year, a
     )
     assert (row.filed, row.restated, row.now) == (D("30.0000"), D("20.0000"), D("20.0000"))
     assert comparison.correction_count == 1
-    assert comparison.summary.startswith("Since it was first filed 1 correction moved ")
+    assert comparison.summary.startswith("Since the first filing, 1 correction moved ")
 
     page = client.get(
         reverse("accounting:period_figures", args=[year.pk]), HTTP_HX_REQUEST="true"

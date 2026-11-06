@@ -20,6 +20,17 @@ NO_ON_THE_OBJECT: tuple = (
      'say "not ... a <noun>" ("Not delivered to a field", "is not in a water year yet")'),
 )
 
+#: "Fetch" on a station's readings. Brent, 2026-11-05: "Fetched? More AI Slop language." A source
+#: sends readings, OpenH2O receives them, and the button updates them (ruling 91).
+RETIRED_FETCH: tuple = (
+    (r"\b[Ff]irst fetched\b", 'say "received"'),
+    (r"\bOpenH2O fetched\b", 'say what the source sent: "USGS sent 3 new readings."'),
+    (r"\bFetched\b", 'the column is "Date received"'),
+    (r"\bFetch(?:ing)? readings\b", 'the button is "Update readings now"'),
+    (r"\b(?:OpenH2O|schedule) fetches\b", 'say "updates readings"'),
+    (r"\bnext fetch\b", 'say "next update"'),
+)
+
 #: A sentence that names a page carries that page's name (DESIGN.md copy rule 4).
 RETIRED_PAGE_REFERENCES: tuple = (
     (r"\bthe field(?:'|’)s page\b", 'the page is the use area page: "the use area\'s page"'),

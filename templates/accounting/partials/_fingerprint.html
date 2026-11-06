@@ -10,11 +10,11 @@
   <div class="row-between year-changes-head">
     <div>
       <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">Changes to this year's records</h2>
-      <p class="text-secondary text-base m-0">Shows whether anything has changed since this code was taken.</p>
+      <p class="text-secondary text-base m-0">OpenH2O issued this code from the year's records. Check for changes shows whether those records have changed since.</p>
     </div>
     <div class="text-base year-changes-actions"><form method="post" action="{% url 'accounting:period_fingerprint_check' period.pk %}" style="display: inline;" hx-post="{% url 'accounting:period_fingerprint_check' period.pk %}" hx-target="#fingerprint-answer" hx-swap="outerHTML">{% csrf_token %}<button type="submit" class="btn-as-link text-link">Check for changes</button></form> <span class="text-tertiary">&middot;</span> <a href="{% url 'accounting:period_fingerprint_file' period.pk %}" class="text-link">Download a copy to keep</a></div>
   </div>
   {% if answer %}{% include "accounting/partials/_fingerprint_answer.html" %}{% else %}<span id="fingerprint-answer"></span>{% endif %}
-  <p class="text-secondary text-sm" style="margin: var(--space-sm) 0 0;">Code <span class="text-mono">{{ line.code }}</span>, taken {{ line.taken }}{% if line.at_upgrade %}, after the year was finalized. <span class="text-primary">Changes before that date do not show here.</span>{% endif %}</p>
+  <p class="text-secondary text-sm" style="margin: var(--space-sm) 0 0;">Code <span class="text-mono">{{ line.code }}</span>, issued {{ line.taken }}{% if line.at_upgrade %}, after the year was finalized. <span class="text-primary">Changes before that date do not show here.</span>{% endif %}</p>
   {% if line.restated %}<p class="text-tertiary text-sm" style="margin: var(--space-xs) 0 0;">First code <span class="text-mono">{{ line.first_code }}</span>, {{ line.first_label }} {{ line.first_taken }}.</p>{% endif %}
 </div>
