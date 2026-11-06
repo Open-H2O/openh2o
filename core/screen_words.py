@@ -20,8 +20,8 @@ NO_ON_THE_OBJECT: tuple = (
      'say "not ... a <noun>" ("Not delivered to a field", "is not in a water year yet")'),
 )
 
-#: "Fetch" on a station's readings. Brent, 2026-11-05: "Fetched? More AI Slop language." A source
-#: sends readings, OpenH2O receives them, and the button updates them (ruling 91).
+#: "Fetch" on a station's readings: a clerk does not write it. A source sends readings, OpenH2O
+#: receives them, and the button updates them.
 RETIRED_FETCH: tuple = (
     (r"\b[Ff]irst fetched\b", 'say "received"'),
     (r"\bOpenH2O fetched\b", 'say what the source sent: "USGS sent 3 new readings."'),
