@@ -31,3 +31,10 @@ always prints a `PAGE ACTIONS` line: the controls in the page header, above
 the main content, which is where a person actually sees them first. Before
 believing a walk log that says a control is missing, check it against that
 line rather than against the page body text.
+
+## Listing new wording
+
+`scripts/new_wording.py` lists each sentence and label a change puts on a screen or in a guide, so the words can be read
+before they are built. `--since BASE` lists them, `--drawing FILES` lists a mock-up's, and `--rows FILES` exits 1 on any
+line that is not in the Proposed, Fixed or Draft column of an approved table. It needs git and the standard library, so
+it runs on the host; the script's header has the rest.
