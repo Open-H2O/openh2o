@@ -171,8 +171,7 @@ def outcome(station, log):
             .filter(station=station, status="published")
             .aggregate(newest=Max("observation_date"))["newest"]
         )
-        # The page's own date format (the station page's "M d, Y").
-        when = date_filter(newest, "M d, Y") if newest is not None else None
+        when = date_filter(newest, "M j, Y") if newest is not None else None
         link = format_html(
             '<a href="{}" class="prose-link">{}</a>',
             reverse("datasync:station_revised", args=[station.pk]),

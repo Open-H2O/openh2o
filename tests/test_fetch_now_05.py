@@ -73,7 +73,8 @@ def _ago(days):
 
 
 def _newest(days):
-    return f"{date.today() - timedelta(days=days):%b %d, %Y}"
+    day = date.today() - timedelta(days=days)
+    return f"{day:%b} {day.day}, {day.year}"
 
 
 def _record(external, day, value=12.5, parameter="00060", statistic="00003"):

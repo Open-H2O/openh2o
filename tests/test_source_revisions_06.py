@@ -1364,7 +1364,7 @@ def test_both_new_and_revised_readings_are_counted_and_the_revised_count_links_t
 
     markup = _press(_client(operator), station)
 
-    newest = _card_date(date.today() - timedelta(days=1))
+    newest = _words(date.today() - timedelta(days=1))
     assert _status_text(markup) == f"USGS sent 7 new readings and 94 revised readings. The latest reading is dated {newest}."
     link = re.search(r'<a [^>]*href="([^"]+)"[^>]*>(\d+ revised readings?)</a>', markup)
     assert link and link.group(1) == _revised_url(station)
@@ -1378,7 +1378,7 @@ def test_one_new_and_one_revised_reading_are_singular(usgs_api, operator):
 
     markup = _press(_client(operator), station)
 
-    newest = _card_date(date.today() - timedelta(days=1))
+    newest = _words(date.today() - timedelta(days=1))
     assert _status_text(markup) == f"USGS sent 1 new reading and 1 revised reading. The latest reading is dated {newest}."
     assert re.search(r'<a [^>]*href="%s"[^>]*>1 revised reading</a>' % re.escape(_revised_url(station)), markup)
 
@@ -1390,7 +1390,7 @@ def test_new_readings_only_say_how_many_and_the_latest_date(usgs_api, operator):
 
     markup = _press(_client(operator), station)
 
-    newest = _card_date(date.today() - timedelta(days=1))
+    newest = _words(date.today() - timedelta(days=1))
     assert _status_text(markup) == (
         f"USGS sent 3 new readings. The latest reading is dated {newest}."
     )
@@ -1403,7 +1403,7 @@ def test_one_new_reading_only_is_singular(usgs_api, operator):
 
     markup = _press(_client(operator), station)
 
-    newest = _card_date(date.today() - timedelta(days=1))
+    newest = _words(date.today() - timedelta(days=1))
     assert _status_text(markup) == (
         f"USGS sent 1 new reading. The latest reading is dated {newest}."
     )
@@ -1416,7 +1416,7 @@ def test_revised_readings_only_say_how_many_and_that_the_latest_date_is_still_th
 
     markup = _press(_client(operator), station)
 
-    newest = _card_date(date.today() - timedelta(days=200))
+    newest = _words(date.today() - timedelta(days=200))
     assert _status_text(markup) == f"USGS sent 94 revised readings. The latest reading is still dated {newest}."
     link = re.search(r'<a [^>]*href="([^"]+)"[^>]*>94 revised readings</a>', markup)
     assert link and link.group(1) == _revised_url(station)
@@ -1429,14 +1429,14 @@ def test_one_revised_reading_only_is_singular(usgs_api, operator):
 
     markup = _press(_client(operator), station)
 
-    newest = _card_date(date.today() - timedelta(days=200))
+    newest = _words(date.today() - timedelta(days=200))
     assert _status_text(markup) == f"USGS sent 1 revised reading. The latest reading is still dated {newest}."
 
 
 def test_nothing_new_and_nothing_revised_says_so_whether_the_source_sent_nothing_or_the_same(usgs_api, operator):
     station = _station()
     _stored_run(station, 2)
-    newest = _card_date(date.today() - timedelta(days=200))
+    newest = _words(date.today() - timedelta(days=200))
     expected = f"USGS did not send any new or revised readings. The latest reading is still dated {newest}."
     client = _client(operator)
 
