@@ -678,8 +678,8 @@ class DeliverySettingsForm(forms.Form):
                 "credit its part to anyone."
             ),
             "owner": (
-                "The water account named as owner on the canal's point of diversion is "
-                "credited. When the point of diversion does not name an owner, the seepage is not credited to anyone."
+                "OpenH2O credits the water account named as owner on the canal's point of diversion. "
+                "When the point of diversion does not name an owner, OpenH2O does not credit the seepage to anyone."
             ),
         }
         return [

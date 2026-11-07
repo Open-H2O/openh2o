@@ -244,7 +244,7 @@ def test_a_press_on_a_finalized_period_is_refused_and_starts_nothing(world, oper
 def test_before_any_run_the_card_says_none_is_recorded(world, operator):  # noqa: F811
     html = _client(operator).get(_detail_url(world.period)).content.decode()
 
-    assert "No calculation has been recorded for this water year yet." in html
+    assert "OpenH2O has no record of when this water year was last calculated." in html
     assert "Run the calculation" in html
 
 

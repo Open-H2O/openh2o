@@ -8,7 +8,7 @@
 {% endcomment %}
 <div id="calculation-status"{% if calculation_active %} hx-get="{% url 'accounting:period_calculation_status' period.pk %}" hx-trigger="every 3s" hx-swap="outerHTML"{% endif %} aria-live="polite">
   {% if not calculation %}
-  <p class="text-secondary text-base m-0">No calculation has been recorded for this water year yet.</p>
+  <p class="text-secondary text-base m-0">OpenH2O has no record of when this water year was last calculated.</p>
   {% elif calculation.status == "queued" %}
   <p class="text-base m-0">Waiting to start.</p>
   {% elif calculation.status == "running" %}
