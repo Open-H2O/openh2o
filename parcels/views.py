@@ -586,7 +586,7 @@ def _use_area_on_record(pk):
 @reads_as_of(
     _parcel_as_of_scope,
     exists=_use_area_on_record,
-    missing=lambda day: f"This use area was not on record on {day_words(day)}. This page shows today.",
+    missing=lambda day: f"This use area was not on record on {day_words(day)}. This page shows today's records.",
 )
 def parcel_detail(request, pk):
     """A single parcel's water-balance detail.

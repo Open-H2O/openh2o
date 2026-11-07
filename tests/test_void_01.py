@@ -335,7 +335,9 @@ def test_voiding_a_recharge_event_takes_back_its_credit_and_its_pool_entry(opera
 
     response = post_void(_client(operator), "recharge_event", event)
 
-    assert "Event voided. Its credit and its entry in the basin recharge pool are removed." in response.content.decode()
+    assert (
+        "Event voided. OpenH2O removed any credit and took its volume out of the basin recharge pool."
+    ) in response.content.decode()
     assert RechargeEvent.objects.count() == 1
     assert RechargeEvent.objects.current().count() == 0
     assert AccountCredit.objects.count() == 0

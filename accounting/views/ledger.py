@@ -641,9 +641,8 @@ def ledger_create(request):
                 if entry.reporting_period is None:
                     messages.success(
                         request,
-                        "Entry saved. No water year includes its date, so it is "
-                        "not in a water year yet. It joins one when a water year covering "
-                        "the date is created.",
+                        "Entry saved. Its date is outside every water year on file. "
+                        "Adding a water year that covers the date attaches the entry to it.",
                     )
                 else:
                     messages.success(request, "Entry saved.")

@@ -170,12 +170,12 @@ def _delivery_settings_sentence():
     description does."""
     if is_enabled("surface"):
         return (
-            "Delivery Settings decide how OpenH2O divides surface deliveries "
+            "Delivery Settings determine how OpenH2O divides surface deliveries "
             "among use areas and what happens to a zone's unused allocation at "
             "the end of the water year."
         )
     return (
-        "Delivery Settings decide what happens to a zone's unused allocation "
+        "Delivery Settings determine what happens to a zone's unused allocation "
         "at the end of the water year."
     )
 
@@ -710,15 +710,15 @@ def glossary(request):
         "Allocation Ceiling": "The limit, in acre-feet, that an administrator or operator sets for one zone, one water type and one water year. See Help > Allocations & Ceilings.",
         "Allocation": "One account's share of a zone's groundwater allocation ceiling for a water year. See Help > Allocations & Ceilings.",
         "Analyte": "OpenH2O's record of one analyte, with its name and, when known, its four-digit analyte code from the State Water Board's Division of Drinking Water (DDW). OpenH2O adds a record for each new analyte it finds in an imported lab file.",
-        "As of": "A date chosen in the As of box on an account page, a use area page or the use ledger, which then shows the records and figures as they were at the end of that day, with account, zone, well and canal names, settings and map shapes as they are today.",
+        "As of": "A date chosen in the As of box on account pages, use area pages or the Use Ledger. The page shows the records and figures as they were at the end of that day. Account, zone, well and canal names, settings and map shapes stay as they are today.",
         "CalWATRS": "California Water Accounting, Tracking, and Reporting System, the State Water Board's system for reporting surface water diversions. OpenH2O does not submit reports to the state.",
         "Capacity per fill": "The volume the site holds per fill, as entered. OpenH2O stores it in acre-feet on the recharge site's record and shows it as Capacity per fill (AF).",
         "CDEC": "California Data Exchange Center, where the California Department of Water Resources publishes real-time station readings.",
         "CFS (Cubic Feet per Second)": "The unit OpenH2O uses for rates: the maximum rate on a point of diversion and on a water right, and the maximum flow rate on a monthly diversion record.",
-        "Changes to this year's records": "A card on a finalized water year's page that shows whether the records its code covers have changed since OpenH2O took the code, by computing the code again when Check for changes is pressed.",
+        "Changes to this year's records": "A card on a finalized water year's page. Check for changes computes the year's code again and shows whether the records it covers have changed since OpenH2O issued it.",
         "CIMIS": "California Irrigation Management Information System, the California Department of Water Resources' network of agricultural weather stations.",
         "Crop ET (Evapotranspiration)": "A use area's crop evapotranspiration for the month, in acre-feet. OpenH2O reads it from OpenET. See Help > How Water Balances Work.",
-        "Data Source": "OpenH2O's record of one outside agency or service that OpenH2O reads data from, or of Entered by hand, the source of stations whose readings a person types. It holds the source's name, code and web address, how often OpenH2O reads it and the time of the last read.",
+        "Data Source": "OpenH2O's record of one outside agency or service it reads data from. It holds the source's name, code and web address, how often OpenH2O reads it and the time of the last read. Entered by hand is the source for a station whose readings a person enters.",
         "Delivery Settings": "The screen where an administrator sets the default irrigation efficiency, the treatment of surface water in excess of ETAW, the treatment of canal seepage, the share left in the basin, the year-end choice for unused allocation, the month the water year starts in, the reporting year and the web address used in each record's permanent address. See Help > Settings explained.",
         "DLR": "Detection Limit for purposes of Reporting. OpenH2O stores the DLR that a lab file lists for each result, exactly as reported and in the result's units, and shows it on the result's page under the lab file's MCL.",
         "Effective Precipitation": "OpenH2O estimates each use area's effective precipitation for the month from rainfall in the gridMET weather dataset. By default it uses the USDA-SCS method. See Help > Methods Behind the Numbers.",
@@ -732,7 +732,7 @@ def glossary(request):
         "GSA": "Groundwater Sustainability Agency, a local agency that manages groundwater in a basin under SGMA.",
         "GSP": "Groundwater Sustainability Plan, the plan under SGMA for managing a basin's groundwater.",
         "Health Check": "One of OpenH2O's checks on this site's records and server. Each result is green, yellow or red and carries a message. The Site health page shows the latest result of each check.",
-        "Ledger Entry": "One row on the Use Ledger, with its date, use area, water type, amount in acre-feet and description. Negative amounts are deliveries, pumping and estimates of use, and positive amounts are credits. The Delivered and pumped total counts a calculated row at its estimated groundwater extraction.",
+        "Ledger Entry": "One row on the Use Ledger, with its date, use area, water type, amount in acre-feet and description. Negative amounts are deliveries, pumping and estimates of use, and positive amounts are credits. The Delivered and pumped total counts a calculated entry at its estimated groundwater extraction.",
         "Managed Aquifer Recharge (MAR)": "OpenH2O keeps managed aquifer recharge as one record for each recharge site, with its capacity in acre-feet, its zone, its location and outline on the map, the points of diversion that feed it and its recharge events. Each recharge event has its dates, a volume in acre-feet and a water type.",
         "MCL": "Maximum Contaminant Level. OpenH2O stores the MCL that a lab file lists for each result, exactly as reported and in the result's units, and shows it on the result's page and the sampling point's page.",
         "Methodology / Calculation Plan": "The calculation steps on Methodology Settings and the choices that go with them: the order of the steps, which steps are switched on, the effective precipitation method and the lowest remainder. See Help > Settings explained.",
@@ -745,16 +745,16 @@ def glossary(request):
         "Point of Diversion (POD)": "OpenH2O's record of one point of diversion, with its location, the water right it diverts under, its stream or flowline, its maximum rate in CFS, its canal losses, the use areas it serves and its monthly diversion records.",
         "Sampling Schedule": "The checklist of samples taken on a cycle at a drinking-water system. Each row holds what is sampled, the frequency, the date last done and the date next due. Both dates are entered by hand; OpenH2O does not calculate the next due date from the frequency.",
         "Reporting Level": "OpenH2O stores the reporting level that a lab file lists for each numeric result. When a result is marked Less Than Reporting Level, OpenH2O shows it as < and that level, such as < 0.005 mg/L, or as < RL when no level is given.",
-        "Water Year": "OpenH2O's record of one water year on the Water Years page, with its name and its start and end dates. A water year starts on the first day of a month and ends on the last day of a month. While a water year is finalized, its records are closed to editing. An administrator can correct or void a record in it, with a reason, and, where a calculation reads that record, OpenH2O recalculates the months it touches; an administrator can also reopen the year, with a reason. When a water year is finalized, OpenH2O keeps a copy of its figures; the water year page lists any figure that has moved since.",
+        "Water Year": "OpenH2O's record of one water year on the Water Years page, with its name and its start and end dates. A water year starts on the first day of a month and ends on the last day of a month. While a water year is finalized, its records are closed to editing. An administrator can correct or void a record in a finalized year, or reopen the year, with a reason. When a calculation reads a corrected or voided record, OpenH2O recalculates the months that record affects. When a water year is finalized, OpenH2O keeps a copy of its figures; the water year page lists any figure that has changed since.",
         "Sampling Point": "OpenH2O's record of one place on a facility where samples are taken, with its PS Code, a name and a point type. An administrator or operator adds sampling points on the water system's Sampling points page, and OpenH2O builds each PS Code for a California water system.",
         "Revised (station reading)": "A station reading whose value the source changed after OpenH2O received it. The station's Revised readings page lists the earlier value and the date of each change.",
         "SGMA": "Sustainable Groundwater Management Act, California's 2014 law under which GSAs manage groundwater basins.",
         "Up to date / Slightly behind / Dormant": "OpenH2O labels each station on the Monitoring stations page by the age of its latest reading, measured against how often the station's source usually publishes (CDEC and CNRFC 36 hours; USGS and CIMIS 2 days; NOAA 3 days; OpenET 45 days; DWR-WDL and DWR-SGMA 120 days; any other source 1 day). A station is Up to date within 1.5 times its source's interval, Slightly behind within 4 times, and Dormant after that or with no reading at all. A station entered by hand does not carry a label.",
         "USGS": "United States Geological Survey. OpenH2O reads stream flow and groundwater levels from USGS stations.",
-        "Water Account": "OpenH2O's record of one account, with its name, account number, contact, status and the use areas it holds. OpenH2O works out the account's allocation from those use areas, and its remaining allocation from that allocation and the credits listed on the account's page. See Help > Allocations & Ceilings.",
+        "Water Account": "OpenH2O's record of one account, with its name, account number, contact, status and the use areas it holds. OpenH2O calculates the account's allocation from those use areas, and its remaining allocation from that allocation and the credits listed on the account's page. See Help > Allocations & Ceilings.",
         "Water Right": "OpenH2O's record of one water right, with its state ID, type, holder, priority date, face value in acre-feet, diversion seasons and status, and the use areas in its place of use.",
         "Zone / Management Zone": "OpenH2O's record of one area that has its own allocation ceilings. It holds the zone's name, type, outline on the map and the use areas assigned to it. See Help > Allocations & Ceilings.",
-        "Well Type": "One of the well types on record in OpenH2O, chosen on the well's page, which lists them. Not recorded means no well type was entered.",
+        "Well Type": "One of the well types listed on the well's page. Not recorded means no well type was entered.",
         "Well": "OpenH2O's record of one well, with its state well number, well completion report (WCR) number, local ID, meters, depth, casing and screen interval, and the use areas it irrigates.",
     }
     entries = _glossary_entries(terms)

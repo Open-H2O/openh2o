@@ -136,7 +136,7 @@ class ParcelLedger(CorrectableRecord):
         help_text=(
             "Written by the canal split: this use area's share of a headgate "
             "total. Replaced whenever that headgate's month is recalculated. "
-            "Unticked rows are the use area's own recorded delivery and are "
+            "Unchecked rows are the use area's own recorded delivery and are "
             "never replaced by the split."
         ),
     )

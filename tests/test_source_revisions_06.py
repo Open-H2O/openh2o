@@ -1158,8 +1158,8 @@ def test_the_list_gives_one_row_per_replaced_row_newest_observation_first(usgs_a
 
     assert len(rows) == 2
     fetched = _words(timezone.localdate())
-    assert _cells(rows[0]) == ["Oct 30, 2026", "Discharge (cfs)", "14.00 ft3/s", "12.50", MOD1_WORDS, fetched]
-    assert _cells(rows[1]) == ["Oct 28, 2026", "Discharge (cfs)", "6.00 ft3/s", "7.00", MOD2_WORDS, fetched]
+    assert _cells(rows[0]) == ["Oct 30, 2026", "Discharge (cfs)", "14.00", "12.50", MOD1_WORDS, fetched]
+    assert _cells(rows[1]) == ["Oct 28, 2026", "Discharge (cfs)", "6.00", "7.00", MOD2_WORDS, fetched]
     assert "record-void-text" in rows[0]
 
 
@@ -1175,7 +1175,7 @@ def test_a_chain_of_three_is_two_rows_each_with_its_own_earlier_value_and_dates(
     cells = sorted(_cells(row) for row in rows)
     assert len(rows) == 2
     # Both show the chain's current value; each shows the value it replaced and the date of its replacement.
-    assert [c[2] for c in cells] == ["12.00 ft3/s", "12.00 ft3/s"]
+    assert [c[2] for c in cells] == ["12.00", "12.00"]
     assert {(c[3], c[4]) for c in cells} == {("10.00", MOD1_WORDS), ("11.00", MOD2_WORDS)}
 
 

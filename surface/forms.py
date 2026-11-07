@@ -73,7 +73,7 @@ class DiversionRecordForm(forms.ModelForm):
         # whatever day is picked to the 1st. Unlabelled, the date input
         # reads as "Month, no year"; this label says what the field actually
         # wants.
-        labels = {"month": "Month (pick any day in it)"}
+        labels = {"month": "Month (any day in it)"}
 
     def __init__(self, *args, pod=None, **kwargs):
         super().__init__(*args, **kwargs)

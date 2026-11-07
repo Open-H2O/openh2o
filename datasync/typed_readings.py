@@ -30,7 +30,7 @@ NEED_DATE = "Enter the date of the reading."
 NEED_VALUE = "Enter the value as a number."
 NEED_PARAMETER = "Choose a parameter."
 DUPLICATE = "A reading for this measurement on this date is already on file."
-ONLY_BY_HAND = "Readings are typed only at a station entered by hand."
+ONLY_BY_HAND = "Only an Entered by hand station takes readings here."
 
 # The column holds 14 digits, 4 of them after the point.
 _VALUE_LIMIT = Decimal(10) ** 10

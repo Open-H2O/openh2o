@@ -289,7 +289,7 @@ SCREEN_NAMES = {
     "accounting.PeriodStatementRow": ("filed figure", "filed figures"),
     "datasync.MonitoredStation": ("monitoring station", "monitoring stations"),
     "datasync.DataRecordStaging": ("station reading", "station readings"),
-    "datasync.TypedReading": ("typed reading", "typed readings"),
+    "datasync.TypedReading": ("reading entered by hand", "readings entered by hand"),
     "core.RecordAttachment": ("attached file", "attached files"),
     "datasync.DataSyncLog": ("sync log entry", "sync log entries"),
     "datasync.OpenETCache": ("OpenET record", "OpenET records"),
@@ -598,7 +598,7 @@ def status():
             last,
             ok=False,
             running=False,
-            message="The last run stopped before it finished.",
+            message="The last load or removal stopped before it finished.",
         )
     if is_loaded():
         return Status("loaded", record=record, last=last)
@@ -861,8 +861,8 @@ def remove(stdout=None):
             kept_after.pop("core.SiteConfig", None)
             if kept_before != kept_after:
                 raise Refused(
-                    "The demonstration data was not removed, because the removal "
-                    "reached records that are not part of it. Nothing was removed."
+                    "OpenH2O did not remove the demonstration data, because records "
+                    "that are not part of it changed during the removal."
                 )
             forget_events(context.id)
     _clear_cache()

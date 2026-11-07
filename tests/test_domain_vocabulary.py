@@ -474,7 +474,11 @@ BASELINE: dict = {
     #   to zero ...", in the approved words. They say which figure the Groundwater column holds and when
     #   OpenH2O's balance is zero, a data convention, not what groundwater or a
     #   well is: a false positive (copular "groundwater", opening "well").
-    "templates/**/*.html": 15,
+    #   2026-11-07: 15 -> 16 for accounting/period_detail.html, whose note on a finalized
+    #   water year ends "An administrator can reopen the water year.", in the approved words.
+    #   It says who can act on the record, not what a water year is: a false positive
+    #   (opening "water year").
+    "templates/**/*.html": 16,
     "help_text=": 4,
 }
 

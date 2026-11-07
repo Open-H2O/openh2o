@@ -414,7 +414,10 @@ class Command(BaseCommand):
                     # connection error or a timeout that is the source not
                     # answering. The exception text is in the server log. A
                     # whole-source run keeps the exception text in its log.
-                    result.error_message = f"{station.data_source.name} did not answer."
+                    short = freshness.SOURCE_DISPLAY.get(
+                        station.data_source.code, station.data_source.name
+                    )
+                    result.error_message = f"{short} did not answer."
                 self.stdout.write(self.style.ERROR(f"    Error: {result.error_message}"))
         return failures
 

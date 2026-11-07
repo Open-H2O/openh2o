@@ -152,8 +152,8 @@ class TestImportPage:
         ) in body
         assert "To enter one well record by hand, use" in body
         assert (
-            "OpenH2O imports a file of up to 25 MB, however many rows or map "
-            "features it has."
+            "OpenH2O imports a file of up to 25 MB, any number of rows or map "
+            "features."
         ) in body
         assert "Reading the file…" in body
         assert "A row already on file" not in body

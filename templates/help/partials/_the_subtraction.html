@@ -34,7 +34,7 @@
   <h3 class="concept-panel-title">Where this use area's water came from</h3>
 
   {% if example %}
-  <p class="text-secondary text-base">The example follows one use area in this deployment, {{ field_label }}, in {{ month_label }}. Figures are in acre-feet.</p>
+  <p class="text-secondary text-base">The example follows one use area on this site, {{ field_label }}, in {{ month_label }}. Figures are in acre-feet.</p>
 
   <div class="table-scroll mt-md">
     <table class="data-table how-sure-table">
@@ -81,7 +81,7 @@
           <td class="col-amount td-num">{{ surface_delivered_af|floatformat:2|intcomma }}</td>
           <td>
             {% if delivery_split == "own" %}
-            This is the use area's own delivery record, typed on its ledger or imported.
+            This is the use area's own delivery record, entered on its ledger or imported.
             {% elif delivery_split == "fixed_share" %}
             The delivery record is the headgate's monthly total, from a meter or the ditch tender's estimate. The total was divided by the shares entered for each use area, or by acreage where none were entered.
             {% else %}

@@ -280,12 +280,12 @@ def test_no_measurement_with_a_reason_saves_no_depth_and_the_page_shows_the_reas
 @pytest.mark.parametrize(
     "fields, sentence",
     [
-        ({}, "Enter a depth to water or tick No measurement."),
+        ({}, "Enter a depth to water or check No measurement."),
         (
             {"depth_ft": "105.33", "no_measurement": "1", "reason": "Pumping"},
-            "Enter a depth to water or tick No measurement, not both.",
+            "Enter a depth to water or check No measurement, not both.",
         ),
-        ({"no_measurement": "1"}, "Pick a reason, or untick No measurement."),
+        ({"no_measurement": "1"}, "Choose a reason, or uncheck No measurement."),
     ],
 )
 def test_a_form_that_cannot_be_saved_says_why_and_saves_nothing(fields, sentence):
@@ -323,8 +323,8 @@ def test_a_level_on_a_logger_well_shows_in_visits_beside_the_logger_digest():
 
     assert "Visits &middot; depth to water, ft below land surface" in section
     assert (
-        "Logger, monthly close &middot; change is against the previous month's close; "
-        "positive is deeper" in section
+        "Logger, monthly close. Change is from the previous month's close; "
+        "positive is deeper." in section
     )
     assert "78.25" in _visits_table(section)
     assert "Steel tape measurement" in _visits_table(section)
@@ -544,9 +544,9 @@ def test_a_well_is_found_by_wcr_number_and_every_row_rule_has_its_sentence():
     html = unescape(preview.content.decode())
 
     assert "TWIN matches more than one well on file." in html
-    assert "This row has no well." in html
+    assert "This row needs a well." in html
     assert "Not a listed reason is not one of the reasons on the well page." in html
-    assert "This row has no depth and no reason." in html
+    assert "This row needs a depth or a reason." in html
     assert "x12 is not a number." in html
     assert "not-a-date is not a date OpenH2O can read." in html
     assert "New levels 3" in html

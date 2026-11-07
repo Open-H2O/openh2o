@@ -313,8 +313,8 @@ def _zero_reason(step):
         return "This use area is marked fallow this month, so its ET counts as 0."
     if detail.get("rows") == 0:
         return (
-            "No ET is stored for this use area and month, so this figure is 0. "
-            "ET is fetched from OpenET, which needs an API key."
+            "Crop ET is missing for this use area and month, so this figure is 0. "
+            "Crop ET comes from OpenET, which needs an API key."
         )
     return ""
 
@@ -371,7 +371,7 @@ def methodology_preview(request):
         except (ValueError, TypeError):
             parcel = None
     if parcel is None:
-        context["error"] = "Pick a use area to preview."
+        context["error"] = "Choose a use area to preview."
         return render(request, "accounting/partials/_methodology_preview.html", context)
     context["parcel"] = parcel
 

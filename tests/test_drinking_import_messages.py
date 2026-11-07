@@ -78,8 +78,8 @@ class TestTheImportPage:
         assert "This page imports sample results from a lab results file." in body
         assert "OpenH2O saves nothing until you press Import on the preview." in body
         assert (
-            "OpenH2O imports a .csv, .tab or .txt file of up to 25 MB, however many "
-            "rows it has."
+            "OpenH2O imports a .csv, .tab or .txt file of up to 25 MB, any number of "
+            "rows."
         ) in body
         assert "Upload only the rows for the water systems on file." in body
         assert "SDWIS.CSV export" not in body
@@ -436,7 +436,7 @@ class TestTheProductionImport:
         assert "This page imports monthly production figures from a CSV file" in body
         assert "OpenH2O saves nothing until you press Import on the preview." in body
         assert "OpenH2O skips a row whose month and type of water are already on file." in body
-        assert "OpenH2O imports a CSV file of up to 25 MB, however many rows it has." in body
+        assert "OpenH2O imports a CSV file of up to 25 MB, any number of rows." in body
         assert "Production file" in body
 
     def test_whole_file_messages(self):

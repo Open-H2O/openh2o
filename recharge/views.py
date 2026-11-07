@@ -456,12 +456,12 @@ def _credit_event(event, lead):
     if site.water_account_id:
         credited = event.volume_acre_feet * (1 - leave_behind_share())
         return (
-            f"{lead} The basin recharge pool for the site's zone records the "
-            f"water, and {credited:,.2f} AF is credited to {site.water_account.name}."
+            f"{lead} OpenH2O added the water to the zone's basin recharge pool "
+            f"and credited {credited:,.2f} AF to {site.water_account.name}."
         )
     return (
-        f"{lead} The basin recharge pool for the site's zone records the "
-        "water. A water account is not credited, because this site names none."
+        f"{lead} OpenH2O added the water to the zone's basin recharge pool. "
+        "This site does not name a water account to credit."
     )
 
 

@@ -108,7 +108,7 @@
           </tr>
           <tr>
             <td class="col-name">Share left in the basin</td>
-            <td>The share of canal seepage{% if 'recharge' in enabled_modules %}, and of a recharge event&rsquo;s water,{% endif %} that stays in the basin when the rest is credited to a water account. A changed share applies to credits written after the change.</td>
+            <td>The share of canal seepage{% if 'recharge' in enabled_modules %} and of a recharge event&rsquo;s water{% endif %} that stays in the basin when the rest is credited to a water account. A changed share applies to credits recorded after the change.</td>
             <td>10 percent</td>
           </tr>
           <tr>
@@ -118,7 +118,7 @@
           </tr>
           <tr>
             <td class="col-name">Water year</td>
-            <td>The month each water year starts in. OpenH2O uses it to place each month in a water year for carry-over, credits, the face value remaining on a water right and the finalized lock. A water year that starts in January is named by its calendar year. Set it before the first allocation is entered.</td>
+            <td>The month each water year starts in. OpenH2O uses the start month to place each month in a water year for carry-over, credits and the finalized-year lock. A water year that starts in January is named by its calendar year. Set it before the first allocation is entered.</td>
             <td>October</td>
           </tr>
           <tr>
@@ -175,11 +175,11 @@
           </tr>
           <tr>
             <td class="col-name">The water year start</td>
-            <td>A changed month applies at once to every page that places a month in a water year, and to the finalized lock. Carry-over and credits already written keep the water year they were written under.</td>
+            <td>A changed start month applies at once to every page that places a month in a water year and to the finalized-year lock. Carry-over and credits already recorded keep the water year they were recorded under.</td>
           </tr>
           <tr>
             <td class="col-name">The year-end choice</td>
-            <td>OpenH2O writes the carry-over when the rollover_allocations command is run on the server for the water year that closed. A changed choice applies from the next run.</td>
+            <td>OpenH2O records the carry-over when the rollover_allocations command is run on the server for the water year that closed. A changed choice applies from the next run.</td>
           </tr>
           <tr>
             <td class="col-name">The reporting year</td>

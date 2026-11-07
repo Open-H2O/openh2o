@@ -57,11 +57,11 @@
           </tr>
           <tr>
             <td class="col-name">An account&rsquo;s share</td>
-            <td>OpenH2O divides a zone&rsquo;s groundwater ceiling among its accounts by acreage: each account receives the part of the ceiling that its use areas&rsquo; acres are of all the acres in the zone.</td>
+            <td>OpenH2O divides a zone&rsquo;s groundwater ceiling among its accounts by acreage: each account receives a share equal to its use areas&rsquo; acres divided by all the acres in the zone.</td>
           </tr>
           <tr>
             <td class="col-name">A zone with no acreage on record</td>
-            <td>When every use area in a zone lacks an area on record, OpenH2O divides the zone&rsquo;s ceiling equally among its use areas.</td>
+            <td>When no use area in a zone has acres on record, OpenH2O divides the zone&rsquo;s ceiling equally among its use areas.</td>
           </tr>
           <tr>
             <td class="col-name">More than one zone</td>
@@ -129,7 +129,7 @@
           </tr>{% endif %}
           <tr>
             <td class="col-name">Carry-over</td>
-            <td>When the rollover_allocations command is run for a water year that closed, OpenH2O carries each zone&rsquo;s and each account&rsquo;s remaining groundwater allocation into the next year, a debt as well as a surplus. A zone set to let a surplus expire carries only a debt. Surface water is not carried forward.</td>
+            <td>When someone runs the rollover_allocations command for a closed water year, OpenH2O carries each zone&rsquo;s and each account&rsquo;s remaining groundwater allocation into the next year, whether a surplus or a debt. A zone set to let a surplus expire carries only a debt. Surface water is not carried forward.</td>
           </tr>
           <tr>
             <td class="col-name">A zone with no ceiling</td>

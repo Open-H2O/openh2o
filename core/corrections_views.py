@@ -73,9 +73,10 @@ TABLES = {
 #: Kinds whose good void sends the browser to the record's page.
 REDIRECTS = frozenset({"use_area", "lab_result"})
 
-RECHARGE_EVENT_SENTENCE = (
-    "Event voided. Its credit and its entry in the basin recharge pool are removed."
+RECHARGE_EVENT_SENTENCE_ZONE = (
+    "Event voided. OpenH2O removed any credit and took its volume out of the basin recharge pool."
 )
+RECHARGE_EVENT_SENTENCE_NO_ZONE = "Event voided. OpenH2O removed any credit."
 
 
 @dataclass
@@ -212,15 +213,21 @@ def _meter_follows(row):
 
 def _voided_sentence(request, kind_key, row, months, reason=""):
     if kind_key == "recharge_event":
-        return RECHARGE_EVENT_SENTENCE
+        if row.recharge_site.zone is None:
+            return RECHARGE_EVENT_SENTENCE_NO_ZONE
+        return RECHARGE_EVENT_SENTENCE_ZONE
     parts = ["Record voided."]
     covered = _recalculate(request, months, "record_voided", reason)
     if covered:
         from accounting.engine_run import recalculated_months_sentence
 
         parts.append(recalculated_months_sentence(covered))
-    if kind_key == "meter_reading" and _meter_follows(row):
-        parts.append("The next reading's pumped amount is figured again from the last reading still in use.")
+    if (
+        kind_key == "meter_reading"
+        and row.meter.meter_type == "totalizer"
+        and _meter_follows(row)
+    ):
+        parts.append("OpenH2O also recalculated the next reading's pumped amount.")
     return " ".join(parts)
 
 
@@ -306,8 +313,8 @@ def _refusal_for(row):
     kind = corrections.kind_for(row)
     if not kind["can_void"](row):
         return (
-            f"This {kind['label']} was written by OpenH2O's own calculation "
-            "and cannot be voided. Void the record it came from."
+            f"OpenH2O calculated this {kind['label']}, so it cannot be voided. "
+            "Void the record it came from."
         )
     from accounting.locks import PeriodFinalized, refuse_if_finalized
 
@@ -323,7 +330,7 @@ def _refusal_for(row):
 # -- Correct this record ------------------------------------------------------------------------
 
 NOTHING_CHANGED = "Nothing was changed. Change a figure, or press Cancel."
-CLASH = "That correction clashes with a record already on file."
+CLASH = "That correction conflicts with a record already on file."
 
 
 def _month_labels(months):

@@ -14,8 +14,8 @@ swaps itself for the next state.
   {% elif confirming %}
   <div class="card-raised">
     <h2 class="card-header-ruled">Remove the demonstration data</h2>
-    <p class="text-secondary text-sm">Removing deletes every record on this site, {{ total|floatformat:"0g" }} in all. Your users and the reference lists stay.{% if deletes_settings %} The demonstration gave this site its name and settings, so they go too, with any setting changed since the load.{% else %} The site&rsquo;s name and settings stay.{% endif %}</p>
-    <p class="text-secondary text-sm">{% if added %}{{ added|floatformat:"0g" }} of these records {{ added|pluralize:"was,were" }} added by people since the load, and {{ added|pluralize:"it goes,they go" }} too.{% else %}People have not added any records since the load.{% endif %}</p>
+    <p class="text-secondary text-sm">Removing deletes every record on this site, {{ total|floatformat:"0g" }} in all. Your users and the reference lists stay.{% if deletes_settings %} The demonstration gave this site its name and settings, so removing deletes them too, with any setting changed since the load.{% else %} The site&rsquo;s name and settings stay.{% endif %}</p>
+    <p class="text-secondary text-sm">{% if added %}People added {{ added|floatformat:"0g" }} of these records since the load, and removing deletes {{ added|pluralize:"it,them" }} too.{% else %}People have not added any records since the load.{% endif %}</p>
     <div class="table-scroll">
       <table class="data-table">
         <thead><tr><th>Kind of record</th><th>Count</th></tr></thead>
@@ -53,7 +53,7 @@ swaps itself for the next state.
   {% else %}
   <div class="card-raised">
     <h2 class="card-header-ruled">Load the demonstration data</h2>
-    <p class="text-secondary text-sm">The demonstration data is a set of sample records for the Merced Subbasin, a real groundwater basin in the San Joaquin Valley: its boundaries, fields and monitoring stations are public records, and its water accounting data is made up.</p>
+    <p class="text-secondary text-sm">The demonstration data is a set of sample records for the Merced Subbasin in the San Joaquin Valley. Its boundaries, use area outlines and monitoring stations are public records, and its water accounting data is made up.</p>
     <p class="text-secondary text-sm">Loading takes a few minutes, and you can leave this page while it runs. Remove the demonstration data before you add your own records.</p>
     {% if can_change %}
     <form method="post" class="form-footer">

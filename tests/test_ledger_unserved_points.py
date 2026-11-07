@@ -139,7 +139,7 @@ def test_the_canal_page_names_the_destination_and_the_site_health_card_stays_qui
     assert "Not delivered to a use area" in section
     # A point that serves no use area shows the destination in place of the
     # two use area columns, which could only read 0.00 there.
-    assert "Divided up among the other use areas" not in section
+    assert "Divided among the other use areas" not in section
     assert "300.00" in section
 
 

@@ -338,7 +338,7 @@ FIELD_HOLDS = {
     "measurement_method": "Certified meter, unmetered estimate, power conversion or ET method, in any capitalization. OpenH2O imports the well without a measurement method when the file gives anything else, and notes it on the preview.",
     "owner_name": "OpenH2O copies the owner's name unchanged.",
     "stream_name": "OpenH2O copies the stream name unchanged.",
-    "local_name": "The name the people who run the point of diversion call it. OpenH2O copies it unchanged.",
+    "local_name": "The local name for this point of diversion. OpenH2O copies it unchanged.",
     "max_rate_cfs": "Maximum rate in cubic feet per second.",
     "water_right": "The application number of a water right on file. OpenH2O refuses a row whose number is not on file, so import the water right first.",
     "parcel_number": "The parcel number of a use area on file. When it matches, OpenH2O links the point of diversion to that use area. When it does not, OpenH2O imports the point of diversion without a use area.",

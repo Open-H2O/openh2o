@@ -353,7 +353,7 @@ def test_a_connection_error_says_the_source_did_not_answer(station, operator, an
     body = client.get(_status_url(station, log)).content.decode()
 
     assert 'text-error' in body
-    assert "USGS NWIS did not answer." in body
+    assert "USGS did not answer." in body
     assert "Max retries" not in body
 
 
@@ -362,7 +362,7 @@ def test_a_timeout_says_the_source_did_not_answer(station, operator, answer):
     client = _client(operator)
     _press_inline(client, station)
     body = client.get(_status_url(station, DataSyncLog.objects.get())).content.decode()
-    assert "USGS NWIS did not answer." in body
+    assert "USGS did not answer." in body
 
 
 def test_any_other_failure_shows_the_logs_own_message(station, operator, answer):

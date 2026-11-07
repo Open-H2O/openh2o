@@ -36,7 +36,7 @@ BY_HAND_SENTENCE = (
     "Readings at a station entered by hand are typed on the station's page. "
     "OpenH2O fetches nothing for them."
 )
-TYPED_ONLY_AT_HAND = "Readings are typed only at a station entered by hand."
+TYPED_ONLY_AT_HAND = "Only an Entered by hand station takes readings here."
 DUPLICATE = "A reading for this measurement on this date is already on file."
 
 
@@ -153,7 +153,7 @@ def test_the_schedule_sentence_for_a_hand_station(hand_station):
 
     assert (
         schedule.station_sentence(hand_station)
-        == "An Operator or Administrator types each reading on this page."
+        == "An Operator or Administrator enters each reading on this page."
     )
 
 
@@ -190,7 +190,7 @@ def test_add_station_offers_entered_by_hand_and_creates_such_a_station(manual, o
     assert "Entered by hand" in body
     assert (
         "This page adds one monitoring station. OpenH2O syncs its readings from a "
-        "public data source, or a person types them on the station's page."
+        "public data source, or a person enters them on the station's page."
     ) in body
     assert "Station ID" in body
     assert "External station ID" not in body
@@ -221,7 +221,7 @@ def test_a_hand_station_page_drops_the_sync_controls(hand_station, operator):
     assert "Turn syncing" not in body
     assert 'id="toggle-cell"' not in body
     assert "Up to date" not in body and "Dormant" not in body and "Slightly behind" not in body
-    assert "An Operator or Administrator types each reading on this page." in body
+    assert "An Operator or Administrator enters each reading on this page." in body
     assert "This page shows the station's readings and details." in body
     assert "recent syncs" not in body
     assert "Recent sync logs" not in body

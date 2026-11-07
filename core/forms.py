@@ -504,8 +504,8 @@ class DeliverySettingsForm(forms.Form):
             "max_value": "No month is numbered %(show_value)s.",
         },
         label="Which month does your water year start in?",
-        help_text="Enter a month number from 1 to 12. The default is 10, "
-        "October. A year that starts in January is named by its calendar "
+        help_text="Enter a month number from 1 to 12. The default is October (10). "
+        "A year that starts in January is named by its calendar "
         "year. Set this before you enter the first allocation.",
         widget=forms.NumberInput(
             attrs={"class": "form-input", "style": "width: 6rem;", "step": "1", "min": "1", "max": "12"}
@@ -659,7 +659,7 @@ class DeliverySettingsForm(forms.Form):
         return (
             f"Typical: 10%. When OpenH2O credits {' and '.join(sources)} to a "
             "water account, it leaves this share in the basin and credits the "
-            "rest. A changed share applies to credits written after the change."
+            "rest. A changed share applies to credits recorded after the change."
         )
 
     @property
@@ -673,9 +673,9 @@ class DeliverySettingsForm(forms.Form):
                 "does not credit it to a water account. This is the default."
             ),
             "by_acre": (
-                "Each served use area's water account is credited its share of the "
-                "seepage by acre. A use area that is not in a water account is "
-                "skipped, and its part is not credited to anyone."
+                "OpenH2O credits each use area's part to its water account. "
+                "OpenH2O skips a use area that is not in a water account and does not "
+                "credit its part to anyone."
             ),
             "owner": (
                 "The water account named as owner on the canal's point of diversion is "

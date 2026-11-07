@@ -18,15 +18,15 @@ the form, in place of nothing saved; Cancel returns the row.
   {% endif %}
   {% if not ending %}
   <div class="form-group" style="margin-bottom: var(--space-md);">
-    <label class="field-label" for="id_start_month">Start month (pick any day in it)</label>
+    <label class="field-label" for="id_start_month">Start month (any day in it)</label>
     <input type="date" name="start_month" class="form-input" required id="id_start_month" value="{{ form.start_month.value|default_if_none:'' }}" style="border-color: var(--color-accent);">
     <span class="text-xs text-tertiary">Choose the first full month with no crop. If the crop came out partway through a month, start with the next month. The satellite crop ET for the partial month already shows the lower use.</span>
   </div>
   {% endif %}
   <div class="form-group" style="margin-bottom: var(--space-md);">
-    <label class="field-label" for="id_end_month">End month ({% if not ending %}optional, {% endif %}pick any day in it)</label>
+    <label class="field-label" for="id_end_month">End month ({% if not ending %}optional; {% endif %}any day in it)</label>
     <input type="date" name="end_month" class="form-input" id="id_end_month" value="{{ form.end_month.value|default_if_none:'' }}" style="border-color: var(--color-accent);"{% if ending %} required{% endif %}>
-    <span class="text-xs text-tertiary">{% if not ending %}Leave this blank while the use area stays fallow. {% endif %}The use area is fallow in its end month too.</span>
+    <span class="text-xs text-tertiary">{% if not ending %}Leave this blank while the use area stays fallow. {% endif %}The end month counts as fallow too.</span>
   </div>
   <div class="form-group form-span-2 row-start" style="display: flex; gap: var(--space-sm); align-items: center; flex-wrap: wrap;">
     {% with reason_id="id_fallow_reason" reason=form.reason.value|default_if_none:"" %}{% include "partials/_reason_box.html" %}{% endwith %}

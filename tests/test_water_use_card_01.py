@@ -663,7 +663,7 @@ def test_the_foot_names_the_irrigation_efficiency_on_delivery_settings():
     text = words(card(parcel, rp))
     assert (
         "Acre-feet. Surface water counts toward crop ET at the 75% irrigation efficiency on "
-        "Delivery Settings. A month opens its ledger entries. An empty cell is a month with "
+        "Delivery Settings. Choose a month to open its ledger entries. An empty cell is a month with "
         "nothing on record."
     ) in text
     assert "Methods behind the numbers" in text
@@ -701,7 +701,7 @@ def test_the_foot_leaves_the_surface_sentence_out_when_nothing_was_delivered():
     run(parcel, NOV, et="4.0000")
     text = words(card(parcel, rp))
     assert "Surface water counts toward crop ET" not in text
-    assert text.count("Acre-feet. A month opens its ledger entries.") == 1
+    assert text.count("Acre-feet. Choose a month to open its ledger entries.") == 1
 
 
 def test_the_estimated_groundwater_receipt_links_stay_between_the_table_and_the_foot():

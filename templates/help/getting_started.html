@@ -62,7 +62,7 @@
           {% if 'setup' in enabled_modules %}<tr>
             <td class="col-step"><span class="step-num"></span>Run the Setup Wizard</td>
             <td class="col-where">Settings &gt; Setup Wizard{% if user_can_write %}<br><a href="{% url 'setup:wizard' %}" class="text-sm text-accent">Run the Setup Wizard &rarr;</a>{% endif %}</td>
-            <td>The Setup Wizard&rsquo;s populate step needs a boundary, which is the outline of the land your records cover. Upload the boundary as a zipped shapefile, a KML file or a GeoJSON file, or type the north, south, east and west edges of a rectangle around the land. Or choose Start without one, and come back to the boundary later. From the boundary, the wizard brings in the groundwater subbasins{% if 'parcels' in enabled_modules %}, parcels{% endif %}{% if 'datasync' in enabled_modules %}, streams and monitoring stations{% else %} and streams{% endif %} inside it and nearby. Before it starts, you choose which of these to bring in. The subbasins{% if 'parcels' in enabled_modules %} and parcels{% endif %} come from the California Department of Water Resources, so the wizard finds none outside California. Run the wizard before Step{{ wizard_cited_count|pluralize }} {{ wizard_cited_steps }}, because it does part of {% if wizard_cited_count > 1 %}each of those steps{% else %}that step{% endif %}.</td>
+            <td>The Setup Wizard uses a boundary: the outline of the land your records cover. Upload the boundary as a zipped shapefile, a KML file or a GeoJSON file, or type the north, south, east and west edges of a rectangle around the land. Or choose Start without one, and come back to the boundary later. From the boundary, the wizard brings in the groundwater subbasins{% if 'parcels' in enabled_modules %}, parcels{% endif %}{% if 'datasync' in enabled_modules %}, streams and monitoring stations{% else %} and streams{% endif %} inside it and nearby. Before it starts, you choose which of these to bring in. The subbasins{% if 'parcels' in enabled_modules %} and parcels{% endif %} come from the California Department of Water Resources, so the wizard finds none outside California. Run the wizard before Step{{ wizard_cited_count|pluralize }} {{ wizard_cited_steps }}, because it does part of {% if wizard_cited_count > 1 %}each of those steps{% else %}that step{% endif %}.</td>
           </tr>{% endif %}
           <tr>
             <td class="col-step"><span class="step-num">{{ steps.zones }}</span>Create management zones</td>
@@ -77,17 +77,17 @@
           {% if 'wells' in enabled_modules %}<tr>
             <td class="col-step"><span class="step-num">{{ steps.wells }}</span>Import your wells</td>
             <td class="col-where">Sources and monitoring &gt; Wells<br><a href="{% url 'wells:list' %}" class="text-sm text-accent">Go to Wells &rarr;</a></td>
-            <td>{% if 'infrastructure' in enabled_modules %}Add wells one at a time with Add well, or many at once with Import wells, from a CSV file, a zipped shapefile, a GeoJSON file or a KML file.{% else %}To load your wells, run the import_wells command on the server, with a CSV file or a shapefile.{% endif %} Each well needs a name and a location.</td>
+            <td>{% if 'infrastructure' in enabled_modules %}Add wells one at a time with Add well, or many at once with Import wells, from a CSV file, a zipped shapefile, a GeoJSON file or a KML file.{% else %}To load your wells, run the import_wells command on the server with a CSV file or a shapefile.{% endif %} Each well needs a name and a location.</td>
           </tr>{% endif %}
           {% if 'surface' in enabled_modules %}<tr>
             <td class="col-step"><span class="step-num">{{ steps.surface }}</span>{% if 'recharge' in enabled_modules %}Add surface diversions and recharge sites{% else %}Add surface diversions{% endif %}</td>
             <td class="col-where">Sources and monitoring &gt; Water Rights<br><a href="{% url 'surface:water_rights_list' %}" class="text-sm text-accent">Go to Water Rights &rarr;</a><br>Sources and monitoring &gt; Surface Diversions<br><a href="{% url 'surface:pod_list' %}" class="text-sm text-accent">Go to Surface Diversions &rarr;</a>{% if 'recharge' in enabled_modules %}<br>Sources and monitoring &gt; Recharge Sites<br><a href="{% url 'recharge:list' %}" class="text-sm text-accent">Go to Recharge Sites &rarr;</a>{% endif %}</td>
-            <td>On Water Rights, add each water right by hand, or import the State Water Board&rsquo;s water rights list as a CSV file. {% if 'infrastructure' in enabled_modules %}On Surface Diversions, add each point of diversion and link it to its water right.{% endif %}{% if 'recharge' in enabled_modules %} On Recharge Sites, {% if 'infrastructure' in enabled_modules %}add each site and choose its zone, then {% endif %}record each recharge event on the site&rsquo;s page. Recharge at a site without a zone is not recorded in a basin recharge pool, and the zone can be set later on the site&rsquo;s page.{% endif %}</td>
+            <td>On Water Rights, add each water right by hand, or import the State Water Board&rsquo;s water rights list as a CSV file. {% if 'infrastructure' in enabled_modules %}On Surface Diversions, add each point of diversion and link it to its water right.{% endif %}{% if 'recharge' in enabled_modules %} On Recharge Sites, {% if 'infrastructure' in enabled_modules %}add each site and choose its zone, then {% endif %}record each recharge event on the site&rsquo;s page. Only events saved once a site has a zone go into a basin recharge pool. You can set the zone later on the site&rsquo;s page.{% endif %}</td>
           </tr>{% endif %}
           {% if 'datasync' in enabled_modules %}<tr>
             <td class="col-step"><span class="step-num">{{ steps.stations }}</span>Connect monitoring stations</td>
             <td class="col-where">Sources and monitoring &gt; Monitoring Stations<br><a href="{% url 'datasync:station_list' %}" class="text-sm text-accent">Go to Monitoring Stations &rarr;</a></td>
-            <td>{% if 'setup' in enabled_modules %}The Setup Wizard adds the stations it finds near your boundary and leaves syncing off for each one. {% endif %}Switch syncing on for each station you want to follow, or add a station with Add station. OpenH2O then collects new readings from those stations on your server&rsquo;s schedule, or at once with Update readings now on the station&rsquo;s page. At a station added as Entered by hand, each reading is typed on its page.</td>
+            <td>{% if 'setup' in enabled_modules %}The Setup Wizard adds the stations it finds near your boundary and leaves syncing off for each one. {% endif %}Switch syncing on for each station you want to follow, or add a station with Add station. OpenH2O then collects new readings from those stations on your server&rsquo;s schedule, or at once with Update readings now on the station&rsquo;s page. You enter each reading for a station added as Entered by hand on the station&rsquo;s page.</td>
           </tr>{% endif %}
           {% if 'accounting' in enabled_modules %}<tr>
             <td class="col-step"><span class="step-num">{{ steps.accounts }}</span>Set up water accounts</td>
@@ -116,17 +116,17 @@
 
   <div class="card-raised">
     <h2 class="section-header">Correcting a record</h2>
-    <p class="text-secondary text-base">Choose Correct this record in a record&rsquo;s ... menu, enter the new figure and a reason, and attach a photo or PDF if you have one. The old record stays on its page, struck, with a line naming its replacement{% if 'accounting' in enabled_modules %}, and OpenH2O recalculates the months affected. In a finalized water year only an administrator can do this{% endif %}.</p>
+    <p class="text-secondary text-base">Choose Correct this record in a record&rsquo;s ... menu, enter the new figure and a reason, and attach a photo or PDF if you have one. The old record stays on its page, struck through, with a line naming its replacement.{% if 'accounting' in enabled_modules %} OpenH2O recalculates the months affected. In a finalized water year only an administrator can correct a record.{% endif %}</p>
   </div>
 
   {% if 'accounting' in enabled_modules %}<div class="card-raised">
     <h2 class="section-header">Figures as filed</h2>
-    <p class="text-secondary text-base">When an administrator finalizes a water year, OpenH2O keeps a copy of its figures. Under Figures as filed, the water year page lists the figures that have moved since and the corrections behind them. Reopening the year keeps that copy, and finalizing it again records the restated figures.</p>
+    <p class="text-secondary text-base">When an administrator finalizes a water year, OpenH2O keeps a copy of its figures. Under Figures as filed, the water year page lists the figures that have changed since and the corrections behind them. Reopening the year keeps that copy, and finalizing it again records the restated figures.</p>
   </div>
 
   <div class="card-raised">
     <h2 class="section-header">Changes to this year&rsquo;s records</h2>
-    <p class="text-secondary text-base">A finalized water year&rsquo;s page shows whether the records its code covers have changed since the code was issued. Check for changes computes the code again and counts the corrections recorded since. Download a copy to keep saves a one-page file. A code issued after the year was finalized reaches back only to that date.</p>
+    <p class="text-secondary text-base">A finalized water year&rsquo;s page shows whether the records its code covers have changed since the code was issued. Check for changes computes the code again and counts the corrections recorded since. The Download a copy to keep link saves a one-page file. A code issued after the year was finalized shows changes only since it was issued.</p>
   </div>
 {% endif %}
 

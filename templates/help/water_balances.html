@@ -12,7 +12,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">How Water Balances Work</span>
   </nav>
-  <p class="page-description">This page explains how OpenH2O works out each use area's water for a month.</p>
+  <p class="page-description">This page explains how OpenH2O calculates each use area&rsquo;s water balance for a month.</p>
 </div>
 {% endblock %}
 
@@ -95,6 +95,7 @@
         </tbody>
       </table>
     </div>
+    <p class="text-secondary text-sm">A use area with a well and no meter reading balances to zero when it did not receive surface water. When it did receive surface water, its balance is the part of the delivery that OpenH2O does not count toward ETAW. A negative balance means the uses were more than the supplies on record.</p>
   </div>
 
   <div class="card-raised">
@@ -110,7 +111,7 @@
         <tbody>
           <tr>
             <td class="col-name">A headgate total</td>
-            <td>OpenH2O keeps each headgate's delivery as one monthly total, the water taken less any water returned to the stream. It subtracts the canal's losses and any delivery recorded for an individual use area, then divides the remainder among the other use areas by the share entered for each use area, or by acreage where none is entered. A use area marked fallow that month does not get a share. When a point of diversion does not serve a use area, the remainder is not divided. OpenH2O shows it on the point of diversion's page as delivered to the site the point feeds, named, or as Not delivered to a use area, and does not credit it to anyone. A headgate set to divide by crop ET divides it in proportion to each use area's ETAW, up to what each use area can use.</td>
+            <td>OpenH2O records each headgate&rsquo;s delivery as one monthly total: the water taken less any water returned to the stream. It subtracts the canal&rsquo;s losses and any delivery recorded for an individual use area, then divides the remainder among the other use areas by the share entered for each use area, or by acreage where none is entered. A use area marked fallow that month does not receive a share. When a point of diversion does not serve a use area, the remainder is not divided. OpenH2O shows it on the point of diversion&rsquo;s page as delivered to the named site the point feeds, or as Not delivered to a use area, and does not credit it to anyone. A headgate set to divide by crop ET divides the remainder in proportion to each use area&rsquo;s ETAW, up to what each use area can use.</td>
           </tr>
           <tr>
             <td class="col-name">A use area's own record</td>
@@ -118,20 +119,20 @@
           </tr>
           <tr>
             <td class="col-name">A diversion with no meter</td>
-            <td>When a diversion has no meter reading and no volume entered for the month, OpenH2O does not record a delivery for it, and the use areas it serves do not get canal water from it that month.</td>
+            <td>When a diversion has no meter reading and no volume entered for the month, OpenH2O does not record a delivery for it, and the use areas it serves do not receive canal water from it that month.</td>
           </tr>
         </tbody>
       </table>
     </div>
     <div class="help-table-notes mt-md">
-      <p class="text-secondary text-sm">Metered is a meter reading, or water from a diversion record whose method is a measuring device or methodology. Estimated is groundwater OpenH2O calculated from crop ET, or water from a record whose method is an estimate. Unknown is everything else, such as a delivery typed on the use ledger, or a record whose method is not stated.</p>
+      <p class="text-secondary text-sm">Metered is a meter reading, or water from a diversion record whose method is a measuring device or methodology. Estimated is groundwater OpenH2O calculated from crop ET, or water from a record whose method is an estimate. Unknown is everything else, such as a delivery entered on the Use Ledger, or a record whose method is not stated.</p>
       <p class="text-secondary text-sm">A downloaded ledger file names each calculated row's calculation method and settings in its last column.</p>
     </div>
   </div>
 
   <div class="card-raised">
     <h2 class="section-header">Reading the records as of a date</h2>
-    <p class="text-secondary">The As of box on an account, a use area and the use ledger shows the records as they were at the end of a chosen day. Account, zone, well and canal names, settings and map shapes stay as they are today.</p>
+    <p class="text-secondary">The As of box on account pages, use area pages and the Use Ledger shows the records as they were at the end of a chosen day. Account, zone, well and canal names, settings and map shapes stay as they are today.</p>
     <p class="text-secondary">A line at the top counts the records changed since that day. Records cannot be edited while a page shows a past date.</p>
   </div>
 

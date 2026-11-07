@@ -74,7 +74,7 @@ class MeterReadingForm(forms.Form):
     def clean(self):
         cleaned = super().clean()
         if self.meter is None:
-            raise forms.ValidationError("This well has no active meter to record a reading on.")
+            raise forms.ValidationError("This well does not have an active meter.")
         when = cleaned.get("reading_date")
         value = cleaned.get("current_value")
         if when is None or value is None:
@@ -98,7 +98,7 @@ class MeterReadingForm(forms.Form):
             if volume < 0:
                 self.add_error(
                     "current_value",
-                    f"The reading is lower than the previous one, {self.previous_value:,.2f}.",
+                    f"The reading is below the previous reading of {self.previous_value:,.2f}.",
                 )
                 return cleaned
             self.volume = volume
@@ -179,13 +179,13 @@ class WaterLevelForm(forms.Form):
         depth = cleaned.get("depth_ft")
         unmeasured = cleaned.get("no_measurement")
         if depth is None and not unmeasured:
-            raise forms.ValidationError("Enter a depth to water or tick No measurement.")
+            raise forms.ValidationError("Enter a depth to water or check No measurement.")
         if depth is not None and unmeasured:
             raise forms.ValidationError(
-                "Enter a depth to water or tick No measurement, not both."
+                "Enter a depth to water or check No measurement, not both."
             )
         if unmeasured and not cleaned.get("reason"):
-            raise forms.ValidationError("Pick a reason, or untick No measurement.")
+            raise forms.ValidationError("Choose a reason, or uncheck No measurement.")
         # A level dated inside a finalized water year is refused beside the date.
         try:
             refuse_if_finalized(cleaned.get("level_date"))

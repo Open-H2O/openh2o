@@ -60,7 +60,7 @@
         <tbody>
           {% if 'accounting' in enabled_modules %}<tr>
             <td class="col-name">A groundwater agency, an irrigation district or a grower</td>
-            <td>Maps its {% module_nouns "parcels:use areas" "wells:wells" "accounting:water accounts" %}, keeps a monthly ledger and works out a water balance for each use area</td>
+            <td>Maps its {% module_nouns "parcels:use areas" "wells:wells" "accounting:water accounts" %}, keeps a monthly ledger and calculates a water balance for each use area</td>
           </tr>{% endif %}
           {% if 'surface' in enabled_modules %}<tr>
             <td class="col-name">A ditch company or a surface-water diverter</td>
@@ -146,7 +146,7 @@
       a 404 is worse than no card. The predicate is read from the same place
       the view reads it, so the link and the page cannot disagree.{% endcomment %}{% explainer_available "water_balances" as show_water_balances %}{% if show_water_balances %}<a href="{% url 'water_balances' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between;"><span>How Water Balances Work</span><span class="text-accent">&rarr;</span></div>
-        <p class="text-secondary text-sm">This page explains how each use area's crop water use is set against its supplies.</p>
+        <p class="text-secondary text-sm">This page explains how OpenH2O compares each use area&rsquo;s crop water use with its supplies.</p>
       </a>{% endif %}
     </div>
   </div>

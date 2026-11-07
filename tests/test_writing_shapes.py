@@ -259,14 +259,10 @@ EXCEPTIONS: tuple = (
      ("district reader",), _REPORTS),
     ("reporting/models.py", "Legal name of the agency as it appears on st",
      ("district reader",), _REPORTS),
-    ("reporting/models.py", "Correspondence ID mailed by SWRCB to bind th",
-     ("district reader",), _REPORTS),
     ("reporting/models.py", "User-edited OpenET pre-fill values, keyed by",
      ("district reader",), _REPORTS),
     ("standards/models.py", "The SensorThings Sensor — the instrument/pro",
      ("em dash",), _ADMIN_HELP),
-    ("surface/models.py", "CalWATRS PIN mailed by SWRCB for this water",
-     ("district reader",), _ADMIN_HELP),
 )
 
 

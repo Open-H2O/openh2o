@@ -190,7 +190,8 @@ def outcome(station, log):
         return format_html("{}{}", lead, tail), False
     # Failed or partial: the log's own message. A connection error or timeout
     # was worded as "<source> did not answer." when the run closed (sync_source).
-    return log.error_message or f"{name} did not answer.", True
+    short = freshness.SOURCE_DISPLAY.get(station.data_source.code, name)
+    return log.error_message or f"{short} did not answer.", True
 
 
 def block_context(station, *, log=None, notice=None):

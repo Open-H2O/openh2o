@@ -180,7 +180,7 @@ def station_sentence(station, now: datetime | None = None):
     # with none keeps its own name.
     name = freshness.SOURCE_DISPLAY.get(source.code, source.name)
     if station.data_source.is_manual:
-        return "An Operator or Administrator types each reading on this page."
+        return "An Operator or Administrator enters each reading on this page."
     if not station.is_active:
         return "Syncing is off, so OpenH2O's schedule skips this station."
     if not station.data_source.is_active:
@@ -200,7 +200,7 @@ def station_sentence(station, now: datetime | None = None):
     if _key_missing(station.data_source.code):
         return (
             f"OpenH2O's schedule updates readings from {name} {words} once its "
-            "key is set. The key is not set on this server."
+            "API key is set on this server."
         )
     zone = following.tzinfo
     today = (now if now is not None else _now()).astimezone(zone).date()

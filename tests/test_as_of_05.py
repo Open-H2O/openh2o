@@ -500,15 +500,15 @@ def test_parse_as_of_reads_the_date_box():
     assert parse_as_of("", today=today) == (None, "")
     assert parse_as_of("2026-11-03", today=today) == (dt.date(2026, 11, 3), "")
     assert parse_as_of("2026-11-04", today=today) == (today, "")
-    assert parse_as_of("2026-13-45", today=today) == (None, "That date could not be read. This page shows today.")
-    assert parse_as_of("last tuesday", today=today) == (None, "That date could not be read. This page shows today.")
-    assert parse_as_of("2026-11-05", today=today) == (None, "That date is in the future. This page shows today.")
+    assert parse_as_of("2026-13-45", today=today) == (None, "OpenH2O could not read that date. This page shows today's records.")
+    assert parse_as_of("last tuesday", today=today) == (None, "OpenH2O could not read that date. This page shows today's records.")
+    assert parse_as_of("2026-11-05", today=today) == (None, "That date is in the future. This page shows today's records.")
 
 
 def test_parse_as_of_takes_today_from_the_site_clock_when_not_given():
     assert parse_as_of(timezone.localdate().isoformat()) == (timezone.localdate(), "")
     tomorrow = timezone.localdate() + dt.timedelta(days=1)
-    assert parse_as_of(tomorrow.isoformat()) == (None, "That date is in the future. This page shows today.")
+    assert parse_as_of(tomorrow.isoformat()) == (None, "That date is in the future. This page shows today's records.")
 
 
 # ---------------------------------------------------------------- (h) time

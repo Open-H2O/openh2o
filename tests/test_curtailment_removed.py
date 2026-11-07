@@ -62,8 +62,8 @@ def test_the_orders_page_is_gone(client_in):
 
 def test_the_help_sentence_is_the_approved_one(client_in):
     body = client_in.get(reverse("methods")).content.decode()
-    # The estimate sentences went when OpenH2O stopped making a delivery up from crop need.
-    assert "does not estimate a delivery" not in body
+    # OpenH2O stopped making a delivery up from crop need, and the page says so.
+    assert "OpenH2O does not estimate a delivery from the crop need of the use areas." in body
     assert "curtail" not in body.lower()
 
 

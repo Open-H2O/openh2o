@@ -151,7 +151,7 @@ class TestTypedExtent:
         assert Boundary.objects.count() == 1
         boundary = Boundary.objects.get()
         assert boundary.name == "Hand-Typed District"
-        assert boundary.description == "Extent typed on the Setup Wizard"
+        assert boundary.description == "Extent entered on the Setup Wizard"
         assert boundary.geometry.srid == 4326
         assert boundary.geometry.geom_type == "MultiPolygon"
         # One rectangle, one ring, four distinct corners (a closed ring repeats

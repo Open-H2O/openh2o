@@ -226,16 +226,18 @@ class TypedReading(CorrectableRecord):
         blank=True,
         on_delete=models.SET_NULL,
         related_name="+",
-        verbose_name="typed by",
+        verbose_name="entered by",
     )
-    typed_by_email = models.CharField(max_length=254, blank=True, verbose_name="typed by (email)")
-    typed_at = models.DateTimeField(default=timezone.now, verbose_name="typed at")
+    typed_by_email = models.CharField(max_length=254, blank=True, verbose_name="entered by (email)")
+    typed_at = models.DateTimeField(default=timezone.now, verbose_name="entered at")
     parameter_code = models.CharField(max_length=50, verbose_name="parameter")
     observation_date = models.DateField(verbose_name="reading date")
     value = models.DecimalField(max_digits=14, decimal_places=4, verbose_name="value")
     notes = models.TextField(blank=True, verbose_name="notes")
 
     class Meta:
+        verbose_name = "reading entered by hand"
+        verbose_name_plural = "readings entered by hand"
         ordering = ["-typed_at"]
         # A finalized water year is closed to change (accounting/locks.py).
         triggers = [finalized_period_lock(date_column="observation_date")]

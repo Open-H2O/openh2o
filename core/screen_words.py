@@ -31,6 +31,15 @@ RETIRED_FETCH: tuple = (
     (r"\bnext fetch\b", 'say "next update"'),
 )
 
+#: Words struck in the language passes: none of them is how a clerk
+#: or an engineer writes the sentence. "Moved" is left out: it is a common word with other senses.
+RETIRED_WORDS: tuple = (
+    (r"\bworks? out\b", 'say "calculates" or "estimates"'),
+    (r"\b[Uu]ntick(?:ed)?\b|\b[Tt]ick\b", 'say "check" or "uncheck"'),
+    (r"\b[Pp]ick\b", 'say "choose"'),
+    (r"\b(?:is|are) typed\b|\bperson types\b|\b[Tt]yped (?:on|by|at|readings?)\b", 'say "entered"'),
+)
+
 #: A sentence that names a page carries that page's name (DESIGN.md copy rule 4).
 RETIRED_PAGE_REFERENCES: tuple = (
     (r"\bthe field(?:'|’)s page\b", 'the page is the use area page: "the use area\'s page"'),

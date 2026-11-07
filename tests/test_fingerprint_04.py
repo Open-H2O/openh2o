@@ -406,7 +406,7 @@ def test_change_history_prints_the_code_and_when_and_not_what_it_read(filed, adm
 
     labels = {change.name for row in changes_for(filed) for change in row.changes}
     assert "Code" in labels
-    assert "Code taken" in labels
+    assert "Code issued" in labels
     assert not any(label.startswith("Code parts") for label in labels)
     assert not any("ingerprint" in label for label in labels)
 
@@ -563,16 +563,16 @@ Issued      Nov 4, 2026, when OpenH2O began keeping these codes
 
 What the code covers
 OpenH2O computed the code from every row below at the moment the code was
-issued, records marked void or replaced included, and from every Change
-history entry of those rows. Station readings covers only readings typed by
-hand. For a use area with a record in the year, the code reads its number
+issued, including records marked void or replaced, and from every Change
+history entry of those rows. Station readings covers only readings entered
+by hand. For a use area with a record in the year, the code reads its number
 and whether it was voided, not its acres or other details. For a fallow
 period it reads the end month only up to the year's end. Change history of
 use areas and fallow periods is left out. Nothing else is covered: links and
 settings (which zone a use area is in, which well and meter serve it, which
 use areas a point of diversion serves, which accounts are active, account
 names, site settings), the stored OpenET figures, and anything a later
-version of OpenH2O adds. A change to these can move the Figures as filed
+version of OpenH2O adds. These can change a figure on the Figures as filed
 card without changing this code.
 
   Part                         Rows    Part                         Rows
@@ -600,9 +600,8 @@ How to check
 4. Read the answer. It gives the number of corrections recorded since, and
    names the parts to look at where changes have no correction on record. An
    unrecorded change in the corrected record's own part, or in a part a
-   recalculation writes when the correction started one, reads as the
-   correction alone. "Can no longer read" means a later version removed what
-   a part was computed from.
+   recalculation writes, shows only as the correction. "Can no longer read"
+   means a later version removed what a part was computed from.
 
 "No changes found" means what the code covers is the same as when it was
 issued. It does not show that the records were right. Check for changes runs
@@ -642,8 +641,8 @@ def test_the_download_reads_word_for_word_as_the_approved_page():
     )
     text = fingerprints.file_text(period).rstrip() + "\n"
     assert text == APPROVED_PAGE
-    # One page: 60 lines, none wider than 76, and the old word nowhere.
-    assert len(text.splitlines()) == 60
+    # One page: 59 lines, none wider than 76, and the old word nowhere.
+    assert len(text.splitlines()) == 59
     assert max(len(line) for line in text.splitlines()) == 76
     assert "fingerprint" not in text.lower()
     assert fingerprints.file_name(period) == "changes-code-wy-2024-2025.txt"

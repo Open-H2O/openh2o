@@ -153,7 +153,7 @@
         <div>
           <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">Calculation</h2>
           {% if period.is_finalized %}
-          <p class="text-secondary text-base m-0">In a finalized water year OpenH2O recalculates only the months a correction or void changes; the old record stays on its page, struck. An administrator can reopen it.</p>
+          <p class="text-secondary text-base m-0">In a finalized water year OpenH2O recalculates only the months a correction or void changes. The old record stays on its page, struck through. An administrator can reopen the water year.</p>
           {% else %}
           <p class="text-secondary text-base m-0">OpenH2O calculates this water year one month at a time, oldest first. If a month fails, OpenH2O stops there and keeps the months already calculated. Once it is finalized, OpenH2O recalculates only the months a correction or void changes.</p>
           {% endif %}

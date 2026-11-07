@@ -237,8 +237,8 @@ class SiteConfig(models.Model):
         default=10,
         validators=[MinValueValidator(1), MaxValueValidator(12)],
         verbose_name="water year start month",
-        help_text="Enter a month number from 1 to 12. The default is 10, "
-        "October. A year that starts in January is named by its "
+        help_text="Enter a month number from 1 to 12. The default is October (10). "
+        "A year that starts in January is named by its "
         "calendar year.",
     )
 

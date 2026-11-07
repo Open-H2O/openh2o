@@ -313,7 +313,7 @@ def test_a_correction_moves_now_and_the_moved_figures_name_it(d1, year, administ
     assert comparison.restated is False
     assert comparison.correction_count == 1
     assert comparison.summary == (
-        f"Since then 1 correction moved {len(differ)} figures. Acre-feet."
+        f"Since then {len(differ)} figures changed (acre-feet)."
     )
     assert listed[("use_area", d1["F1"].pk, "Groundwater extraction, Jul 2025")] == (
         D("30.0000"), D("20.0000")
@@ -341,7 +341,7 @@ def test_the_figures_route_shows_what_moved(d1, year, administrator):
     body = response.content.decode()
 
     assert response.status_code == 200
-    assert 'id="figures-summary" hx-swap-oob="true">Since then 1 correction moved ' in body
+    assert 'id="figures-summary" hx-swap-oob="true">Since then ' in body
     assert "Groundwater extraction, Jul 2025" in body
     assert ">30.00<" in body and ">20.00<" in body
     assert "Ledger entry</a> corrected " in body and REASON in body
@@ -365,7 +365,7 @@ def test_the_comparison_is_kept_until_a_record_changes(d1, year, administrator):
         _correct_july(d1, administrator)
         body = client.get(url, HTTP_HX_REQUEST="true").content.decode()
         assert spy.call_count == 2
-    assert "Since then 1 correction moved " in body
+    assert "figures changed (acre-feet)." in body
 
 
 def test_a_year_with_nothing_moved_says_so(d1, year, administrator):
@@ -379,7 +379,7 @@ def test_a_year_with_nothing_moved_says_so(d1, year, administrator):
     body = client.get(
         reverse("accounting:period_figures", args=[year.pk]), HTTP_HX_REQUEST="true"
     ).content.decode()
-    assert ">No figure has moved since.<" in body
+    assert ">No figure has changed since.<" in body
     assert "<table" not in body
 
 
@@ -392,8 +392,8 @@ def test_a_move_no_correction_explains_says_when_it_was_recalculated(d1, year, a
     comparison = statements.moved_figures(year)
     assert comparison.figure_count > 0
     assert comparison.correction_count == 0
-    assert comparison.summary == f"Since then {comparison.figure_count} figures moved. Acre-feet."
-    assert {g.moved_words for g in comparison.groups} == {"Moved since the figures were filed."}
+    assert comparison.summary == f"Since then {comparison.figure_count} figures changed (acre-feet)."
+    assert {g.moved_words for g in comparison.groups} == {"Changed since the figures were filed."}
 
 
 # -- (c) reopening keeps the record, finalizing again restates --------------------------------------------
@@ -426,7 +426,7 @@ def test_reopening_keeps_the_statement_and_finalizing_again_restates(d1, year, a
     )
     assert (row.filed, row.restated, row.now) == (D("30.0000"), D("20.0000"), D("20.0000"))
     assert comparison.correction_count == 1
-    assert comparison.summary.startswith("Since the first filing, 1 correction moved ")
+    assert comparison.summary.startswith("Since the first filing, ")
 
     page = client.get(
         reverse("accounting:period_figures", args=[year.pk]), HTTP_HX_REQUEST="true"

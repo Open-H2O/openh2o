@@ -272,7 +272,7 @@
 
       Wording in this section: the section heading, the intro
       sentence, the column labels ("Taken at the headgate", "Canal losses" with
-      Evaporation / Seepage / Spill, "Use areas' own records", "Divided up among
+      Evaporation / Seepage / Spill, "Use areas' own records", "Divided among
       the other use areas", and since 2026-10-13 the Water year page's approved
       unallocated label), the totals label and the "Not yet calculated" / "Does not add
       up" flags. A month whose parts do not sum to the headgate figure is
@@ -315,7 +315,7 @@
               <th rowspan="2" class="th-right">Taken at the headgate</th>
               <th colspan="3" class="th-group-label col-sep">Canal losses</th>
               {% if group.totals.own or group.totals.divided or not group.totals.unserved %}<th rowspan="2" class="th-right">Use areas' own records</th>
-              <th rowspan="2" class="th-right">Divided up among the other use areas</th>{% endif %}
+              <th rowspan="2" class="th-right">Divided among the other use areas</th>{% endif %}
               {% if pod.division_method == "crop_need" %}<th rowspan="2" class="th-right">Left after each use area received its ETAW divided by its irrigation efficiency</th>{% endif %}
               {% if group.totals.unserved %}<th rowspan="2" class="th-right">{% if group.totals.unserved_to %}Delivered to {{ group.totals.unserved_to }}{% else %}Not delivered to a use area{% endif %}</th>{% endif %}
             </tr>

@@ -203,8 +203,8 @@ class TestUseAreaPageLinksItsZones:
 
 
 class TestRechargeSitePageLinksZoneAndAccount:
-    ZONE_SENTENCE = "Recharge here is recorded in the basin recharge pool of Halvern Valley GSA."
-    ACCOUNT_SENTENCE = "Recharge here is credited to Halvern Irrigation District."
+    ZONE_SENTENCE = "OpenH2O records recharge here in the basin recharge pool of Halvern Valley GSA."
+    ACCOUNT_SENTENCE = "OpenH2O credits recharge here to Halvern Irrigation District."
 
     def _site(self):
         zone = ZoneFactory(name="Halvern Valley GSA")
@@ -243,10 +243,10 @@ class TestRechargeSitePageLinksZoneAndAccount:
         zone_value = _field_value(page, "Zone")
         account_value = _field_value(page, "Credited to")
         assert _squash(zone_value.text()) == (
-            "This site has no zone, so recharge here is not deposited to a basin recharge pool."
+            "This site does not have a zone, so recharge here stays out of any basin recharge pool."
         )
         assert _squash(account_value.text()) == (
-            "Recharge here is not credited to a water account."
+            "OpenH2O does not credit recharge here to a water account."
         )
         assert _anchors(zone_value) == []
         assert _anchors(account_value) == []

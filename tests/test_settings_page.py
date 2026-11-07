@@ -37,7 +37,7 @@ ROWS = [
     (
         "Delivery Settings",
         "/accounting/delivery-settings/",
-        "Delivery Settings decide how OpenH2O divides surface deliveries among "
+        "Delivery Settings determine how OpenH2O divides surface deliveries among "
         "use areas and what happens to a zone's unused allocation at the end "
         "of the water year.",
     ),

@@ -97,7 +97,7 @@ def test_a_site_with_no_account_credits_no_one(d3):
 
 def test_the_site_page_says_when_no_account_is_credited(d3, client):
     body = client.get(reverse("recharge:detail", args=[d3["site"].pk])).content.decode()
-    assert "Recharge here is not credited to a water account." in body
+    assert "OpenH2O does not credit recharge here to a water account." in body
 
 
 def test_the_site_page_names_the_account_that_is_credited(d3, client):
@@ -105,7 +105,7 @@ def test_the_site_page_names_the_account_that_is_credited(d3, client):
     d3["site"].save()
     body = client.get(reverse("recharge:detail", args=[d3["site"].pk])).content.decode()
     # The account's name is a link to its page, so the sentence is read as text.
-    assert "Recharge here is credited to D3 District." in strip_tags(body)
+    assert "OpenH2O credits recharge here to D3 District." in strip_tags(body)
 
 
 def test_the_site_form_names_the_account(d3, client):

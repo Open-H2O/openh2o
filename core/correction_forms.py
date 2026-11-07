@@ -252,17 +252,17 @@ class FallowCorrectionForm(forms.Form):
     """A fallow period's start and end month; any day in the month will do."""
 
     start_month = forms.DateField(
-        label="Start month (pick any day in it)",
+        label="Start month (any day in it)",
         error_messages={
-            "required": "Pick a day in the start month.",
-            "invalid": "Pick a day in the start month.",
+            "required": "Choose a day in the start month.",
+            "invalid": "Choose a day in the start month.",
         },
         widget=forms.DateInput(attrs={"type": "date", "class": "form-input"}),
     )
     end_month = forms.DateField(
-        label="End month (optional, pick any day in it)",
+        label="End month (optional; any day in it)",
         required=False,
-        error_messages={"invalid": "Pick a day in the end month, or leave it blank."},
+        error_messages={"invalid": "Choose a day in the end month, or leave it blank."},
         widget=forms.DateInput(attrs={"type": "date", "class": "form-input"}),
     )
 

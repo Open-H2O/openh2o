@@ -171,7 +171,7 @@
         </div>
         {% endif %}
         <div class="statement-foot">
-          <p>Acre-feet. {% if water_use_lines.efficiency %}{{ water_use_lines.efficiency }} {% endif %}A month opens its ledger entries. An empty cell is a month with nothing on record.</p>
+          <p>Acre-feet. {% if water_use_lines.efficiency %}{{ water_use_lines.efficiency }} {% endif %}Choose a month to open its ledger entries. An empty cell is a month with nothing on record.</p>
           <a href="{{ methods_help_url }}" class="text-tertiary back-link text-xs" style="white-space: nowrap;">Methods behind the numbers &rarr;</a>
         </div>
         {% else %}
@@ -328,7 +328,7 @@
         <div class="field-group">
           <div class="field-label field-row">
             Fallow
-            {% include "partials/_help_tooltip.html" with label="Fallow" text="Mark the months a use area grows nothing. In a fallow month OpenH2O counts crop ET as 0. Without the mark it counts the satellite crop ET, whether or not a crop is on record." %}
+            {% include "partials/_help_tooltip.html" with label="Fallow" text="Mark the months a use area is fallow. In a fallow month OpenH2O counts crop ET as 0. Otherwise OpenH2O counts the satellite crop ET, whether or not a crop is on record." %}
           </div>
           <div id="field-fallow" class="field-row">
             {% include "parcels/partials/_fallow_row.html" %}

@@ -29,18 +29,18 @@ class FallowPeriodForm(forms.Form):
     """Add a fallow period, or (``ending`` given) give an open one its end month."""
 
     start_month = forms.DateField(
-        label="Start month (pick any day in it)",
+        label="Start month (any day in it)",
         required=True,
         error_messages={
-            "required": "Pick a day in the start month.",
-            "invalid": "Pick a day in the start month.",
+            "required": "Choose a day in the start month.",
+            "invalid": "Choose a day in the start month.",
         },
         widget=forms.DateInput(attrs={"type": "date", "class": "form-input", "style": "border-color: var(--color-accent);"}),
     )
     end_month = forms.DateField(
-        label="End month (optional, pick any day in it)",
+        label="End month (optional; any day in it)",
         required=False,
-        error_messages={"invalid": "Pick a day in the end month, or leave it blank."},
+        error_messages={"invalid": "Choose a day in the end month, or leave it blank."},
         widget=forms.DateInput(attrs={"type": "date", "class": "form-input", "style": "border-color: var(--color-accent);"}),
     )
     # The engine reads fallow months, so adding or ending a period asks why (core.reasons).
@@ -53,7 +53,8 @@ class FallowPeriodForm(forms.Form):
         if ending is not None:
             del self.fields["start_month"]
             self.fields["end_month"].required = True
-            self.fields["end_month"].error_messages["required"] = "Pick a day in the end month."
+            self.fields["end_month"].error_messages["required"] = "Choose a day in the end month."
+            self.fields["end_month"].error_messages["invalid"] = "Choose a day in the end month."
 
     def first_error(self):
         """The one sentence to show, or ""."""

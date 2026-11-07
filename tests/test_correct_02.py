@@ -407,7 +407,7 @@ def test_a_use_area_cannot_be_corrected():
     area = ParcelFactory()
     with pytest.raises(NotCorrectable) as exc:
         correct(area, user=user, reason=REASON, changes={})
-    assert "not corrected with a new row" in str(exc.value)
+    assert "To correct a use area, change its acres on its page and give a reason." == str(exc.value)
     assert KINDS["use_area"]["correct_fields"] == ()
     assert can_correct(area) is False
 
@@ -424,7 +424,7 @@ def test_an_engine_written_row_cannot_be_corrected():
     ):
         with pytest.raises(NotCorrectable) as exc:
             correct(row, user=user, reason=REASON, changes=changes)
-        assert "written by OpenH2O's own calculation" in str(exc.value)
+        assert "OpenH2O calculated this" in str(exc.value)
         assert can_correct(row) is False
 
 

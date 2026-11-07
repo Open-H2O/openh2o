@@ -570,7 +570,7 @@ class TestAZipOfSeveralShapefiles:
         data = _zip_of("Shape/b.shp", "Shape/a.shp", "Shape/a.dbf")
         resp = _post(_admin_client(), "two.zip", data)
         assert _errors(resp) == [
-            "This zip holds 2 shapefiles: a.shp, b.shp. Upload a zip with only the one you want."
+            "This zip holds 2 shapefiles: a.shp, b.shp. Upload a zip with only the shapefile you want."
         ]
         assert Boundary.objects.count() == 0
 
@@ -578,7 +578,7 @@ class TestAZipOfSeveralShapefiles:
         data = _zip_of("z/one.shp", "a/two.shp")
         errors = _errors(_post(_admin_client(), "two.zip", data))
         assert errors == [
-            "This zip holds 2 shapefiles: two.shp, one.shp. Upload a zip with only the one you want."
+            "This zip holds 2 shapefiles: two.shp, one.shp. Upload a zip with only the shapefile you want."
         ]
 
     def test_ten_are_listed_and_the_rest_are_counted(self):
@@ -587,14 +587,14 @@ class TestAZipOfSeveralShapefiles:
         listed = ", ".join(f"layer{n:02d}.shp" for n in range(10))
         assert errors == [
             f"This zip holds 15 shapefiles: {listed}, and 5 more. "
-            "Upload a zip with only the one you want."
+            "Upload a zip with only the shapefile you want."
         ]
 
     def test_exactly_ten_are_listed_with_no_more_clause(self):
         data = _zip_of(*[f"layer{n:02d}.shp" for n in range(10)])
         (error,) = _errors(_post(_admin_client(), "ten.zip", data))
         assert error.startswith("This zip holds 10 shapefiles: layer00.shp")
-        assert error.endswith("layer09.shp. Upload a zip with only the one you want.")
+        assert error.endswith("layer09.shp. Upload a zip with only the shapefile you want.")
         assert "more" not in error
 
     def test_one_shapefile_still_reads_as_before(self):

@@ -286,7 +286,7 @@
               <option value="{{ z.pk }}" {% if submitted.storage_zone == z.pk|stringformat:"s" %}selected{% endif %}>{{ z.name }}</option>
               {% endfor %}
             </select>
-            <p class="text-xs text-tertiary">Recharge at this site is recorded in the basin recharge pool of its zone. A site with no zone records none; the zone can be set later on the site's page.</p>
+            <p class="text-xs text-tertiary">OpenH2O records recharge at this site in the basin recharge pool of its zone. Only events saved once the site has a zone go in. You can set the zone later on the site's page.</p>
           </div>
         </div>
       </div>
@@ -322,7 +322,7 @@
               <option value="{{ z.pk }}" {% if submitted.zone == z.pk|stringformat:"s" %}selected{% endif %}>{{ z.name }}</option>
               {% endfor %}
             </select>
-            <p class="text-xs text-tertiary">Recharge at this site is recorded in the basin recharge pool of its zone. A site with no zone records none; the zone can be set later on the site's page.</p>
+            <p class="text-xs text-tertiary">OpenH2O records recharge at this site in the basin recharge pool of its zone. Only events saved once the site has a zone go in. You can set the zone later on the site's page.</p>
           </div>
         </div>
       </div>

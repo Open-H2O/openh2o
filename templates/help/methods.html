@@ -55,7 +55,7 @@
           </tr>
           <tr>
             <td class="col-name">The effective precipitation formula</td>
-            <td>The USDA-SCS method works in millimeters. With P the month&rsquo;s precipitation, ET the month&rsquo;s OpenET crop ET (the satellite figure, even in a fallow month) and D the soil storage in inches (3.0 unless the setting is changed), OpenH2O first computes a storage factor, SF = 0.531747 + 0.295164 &times; D &minus; 0.057697 &times; D&sup2; + 0.003804 &times; D&sup3;. Effective precipitation is SF &times; (1.25 &times; P<sup>0.824</sup> &minus; 2.93) &times; 10<sup>(0.000955 &times; ET)</sup>, with P<sup>0.824</sup> taken as 0 when P is 0. The result is held at or below the smaller of P and ET and at or above 0, then converted to acre-feet over the use area&rsquo;s area. The formula is evaluated in ordinary binary floating point.</td>
+            <td>The USDA-SCS method works in millimeters. With P the month&rsquo;s precipitation, ET the month&rsquo;s OpenET crop ET (the satellite figure, even in a fallow month) and D the soil storage in inches (3.0 unless the setting is changed), OpenH2O first computes a storage factor, SF = 0.531747 + 0.295164 &times; D &minus; 0.057697 &times; D&sup2; + 0.003804 &times; D&sup3;. Effective precipitation is SF &times; (1.25 &times; P<sup>0.824</sup> &minus; 2.93) &times; 10<sup>(0.000955 &times; ET)</sup>, with P<sup>0.824</sup> taken as 0 when P is 0. The result is held at or below the smaller of P and ET and at or above 0, then converted to acre-feet over the use area&rsquo;s acres. The formula is evaluated in ordinary binary floating point.</td>
           </tr>
           <tr>
             <td class="col-name">ETAW met by surface water</td>
@@ -67,7 +67,7 @@
           </tr>
           <tr>
             <td class="col-name">Groundwater extraction</td>
-            <td>Where the well has a meter, the use area&rsquo;s share of the well&rsquo;s meter reading is the extraction, divided evenly among its use areas where no shares are entered. Otherwise OpenH2O divides ETAW met by groundwater by the use area&rsquo;s irrigation efficiency to get the extraction, and the extraction minus ETAW met by groundwater is the pumped water not consumed, which the dashboard and the account pages list under Uses.</td>
+            <td>Where the well has a meter, the use area&rsquo;s share of the well&rsquo;s meter reading is the extraction, divided evenly among its use areas where no shares are entered. Otherwise OpenH2O divides ETAW met by groundwater by the use area&rsquo;s irrigation efficiency to calculate the extraction. The extraction minus ETAW met by groundwater is the pumped water not consumed, which the dashboard and the account pages list under Uses.</td>
           </tr>
           <tr>
             <td class="col-name">A fallow period</td>
@@ -111,7 +111,7 @@
           </tr>
           <tr>
             <td class="col-name">Default losses</td>
-            <td>If no losses are entered on the point of diversion, OpenH2O uses 25 percent seepage for an unlined canal, 5 percent for a lined canal and none for a pipe, and none when the lining is not stated. It uses 1 percent evaporation for an open canal, none for a pipe, and no spill.</td>
+            <td>If no losses are entered on the point of diversion, OpenH2O uses 25 percent seepage for an unlined canal, 5 percent for a lined canal and none for a pipe or a canal with no lining stated. It uses 1 percent evaporation for an open canal, none for a pipe, and no spill.</td>
           </tr>
           <tr>
             <td class="col-name">Use areas&rsquo; own records</td>
@@ -119,7 +119,7 @@
           </tr>
           <tr>
             <td class="col-name">The division</td>
-            <td>By default, OpenH2O divides the remainder among the other use areas by the share entered for each use area, or by acreage when no use area&rsquo;s share has been changed from 1.0. When the point of diversion is set to divide by crop ET, OpenH2O divides it in proportion to each use area&rsquo;s ETAW, and no use area receives more than its ETAW divided by its irrigation efficiency.</td>
+            <td>By default, OpenH2O divides the remainder among the other use areas by the share entered for each use area, or by acreage when no use area&rsquo;s share has been changed from 1.0. When the point of diversion is set to divide by crop ET, OpenH2O divides the remainder in proportion to each use area&rsquo;s ETAW, and no use area receives more than its ETAW divided by its irrigation efficiency.</td>
           </tr>
           <tr>
             <td class="col-name">The shares entered</td>
@@ -127,7 +127,7 @@
           </tr>
           <tr>
             <td class="col-name">A use area marked fallow</td>
-            <td>In a month a use area is marked fallow, OpenH2O leaves it out of a division by shares and divides the water among the other use areas. When every use area being divided is fallow that month, OpenH2O shows the water on the point of diversion&rsquo;s page and does not charge it to a use area.</td>
+            <td>In a month a use area is marked fallow, OpenH2O leaves it out of a division by shares and divides the water among the other use areas. When every use area without its own delivery record is fallow that month, OpenH2O shows the water on the point of diversion&rsquo;s page and does not charge it to a use area.</td>
           </tr>
           <tr>
             <td class="col-name">Dividing by crop ET, in detail</td>
@@ -139,7 +139,7 @@
           </tr>
           <tr>
             <td class="col-name">A point that does not serve a use area</td>
-            <td>When a point of diversion does not serve a use area, OpenH2O subtracts the canal&rsquo;s losses and does not divide the rest. It shows the rest on the point of diversion&rsquo;s page as delivered to the site the point feeds, named, or as Not delivered to a use area, and does not credit it to anyone.</td>
+            <td>When a point of diversion does not serve a use area, OpenH2O subtracts the canal&rsquo;s losses and does not divide the rest. It shows the rest on the point of diversion&rsquo;s page as delivered to the named site the point feeds, or as Not delivered to a use area, and does not credit it to anyone.</td>
           </tr>
           <tr>
             <td class="col-name">A month with no ETAW</td>
@@ -147,11 +147,11 @@
           </tr>
           <tr>
             <td class="col-name">A month recorded as 0</td>
-            <td>A diversion recorded as 0 for a month does not give any use area a delivery and does not write divided rows for that month.</td>
+            <td>When a diversion&rsquo;s volume for a month is 0, OpenH2O does not record a delivery to any use area for that month.</td>
           </tr>
           <tr>
-            <td class="col-name">The date of a divided row</td>
-            <td>A divided row carries the date of the diversion record it was divided from, whatever day in the month that is, and that record&rsquo;s water year.</td>
+            <td class="col-name">The date of a divided delivery</td>
+            <td>A divided delivery carries the date of the diversion record it was divided from, whatever day in the month that is, and that record&rsquo;s water year.</td>
           </tr>
         </tbody>
       </table>
@@ -175,7 +175,7 @@
           </tr>
           <tr>
             <td class="col-name">No volume</td>
-            <td>When a diversion has no meter reading and no volume entered for a month, OpenH2O does not record a delivery for it, and the use areas it serves do not get canal water from it that month. OpenH2O does not work out a delivery from the crop need of the use areas.</td>
+            <td>When a diversion has no meter reading and no volume entered for a month, OpenH2O does not record a delivery for it, and the use areas it serves do not receive canal water from it that month. OpenH2O does not estimate a delivery from the crop need of the use areas.</td>
           </tr>
           <tr>
             <td class="col-name">An earlier estimate</td>

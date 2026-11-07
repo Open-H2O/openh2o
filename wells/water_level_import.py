@@ -276,7 +276,7 @@ def _read_row(row, mapping, by_key, spans=()):
     """A level dict for a good row, or the sentence that says what is wrong with it."""
     well_text = _cell(row, mapping, "well")
     if not well_text:
-        return "This row has no well."
+        return "This row needs a well."
     wells = by_key.get(well_text.casefold(), set())
     if not wells:
         return f"{well_text} does not match a well on file."
@@ -313,7 +313,7 @@ def _read_row(row, mapping, by_key, spans=()):
         if reason_text:
             notes.append(f"DWR quality: {reason_text}")
     elif not reason_text:
-        return "This row has no depth and no reason."
+        return "This row needs a depth or a reason."
     else:
         reason = _canonical(_REASONS, reason_text)
         if reason is None:

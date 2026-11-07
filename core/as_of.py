@@ -69,8 +69,8 @@ _RUN_LEFT_OUT = ("id", "created_at", "breakdown") + _RUN_KEY
 _LEDGER_KEY = ("parcel_id", "effective_date", "source_type", "water_type_id")
 _LEDGER_FIGURES = ("amount_acre_feet", "description")
 
-DATE_UNREADABLE = "That date could not be read. This page shows today."
-DATE_IN_FUTURE = "That date is in the future. This page shows today."
+DATE_UNREADABLE = "OpenH2O could not read that date. This page shows today's records."
+DATE_IN_FUTURE = "That date is in the future. This page shows today's records."
 
 _ISO_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
 

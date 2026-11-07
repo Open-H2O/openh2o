@@ -54,7 +54,7 @@
     </p>
     {% endif %}
     {% if 'setup' in enabled_modules and user_is_admin %}
-    <p class="text-secondary text-sm">An administrator can load or remove the demonstration data on <a href="{% url 'setup:demonstration' %}" class="text-accent">Demonstration data</a>.</p>
+    <p class="text-secondary text-sm">An administrator can load or remove the demonstration data on the <a href="{% url 'setup:demonstration' %}" class="text-accent">Demonstration data</a> page.</p>
     {% endif %}
   </div>
 
@@ -152,7 +152,7 @@
           </tr>
           <tr>
             <td>Groundwater use on the Use Ledger</td>
-            <td>Where a use area has a well and no meter, the Use Ledger shows the groundwater use that OpenH2O calculated from the use area&rsquo;s crop ET, rainfall and canal deliveries.</td>
+            <td>For a use area with an unmetered well, the Use Ledger shows the groundwater use OpenH2O calculated from the use area&rsquo;s crop ET, rainfall and canal deliveries.</td>
           </tr>
           <tr>
             <td>Crop ET and rainfall, October 2025 to September 2026</td>

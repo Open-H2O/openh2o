@@ -32,7 +32,7 @@
   <div class="text-xs form-span-2" style="color: var(--furnace-400);">{{ edit_form.non_field_errors|join:", " }}</div>
   {% endif %}
   <div class="form-group">
-    <label class="field-label" for="{{ edit_form.month.id_for_label }}">Month (pick any day in it)</label>
+    <label class="field-label" for="{{ edit_form.month.id_for_label }}">Month (any day in it)</label>
     {{ edit_form.month }}
     {% if edit_form.month.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ edit_form.month.errors|join:", " }}</span>{% endif %}
   </div>

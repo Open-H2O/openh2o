@@ -190,7 +190,7 @@ def test_a_lower_total_than_the_read_before_is_refused_beside_the_figure(ref, op
 
     body = text(post(_client(operator), old, **read_form(old, "900")))
 
-    assert "The reading is lower than the previous one, 1,000.00." in body
+    assert "The reading is below the previous reading of 1,000.00." in body
     assert not MeterReading.objects.filter(replaces=old).exists()
 
 

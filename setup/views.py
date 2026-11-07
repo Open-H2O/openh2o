@@ -153,7 +153,7 @@ def setup_wizard(request):
                 boundary = Boundary.objects.create(
                     name=geom_name,
                     geometry=geom,
-                    description="Extent typed on the Setup Wizard",
+                    description="Extent entered on the Setup Wizard",
                     **attrs,
                 )
                 request.session[SESSION_KEY_BOUNDARY] = boundary.pk
@@ -487,11 +487,11 @@ def setup_demonstration(request):
                 "Only an administrator can load or remove the demonstration data.",
             )
         elif action not in demonstration.COMMANDS:
-            messages.error(request, "That button is not one this page has.")
+            messages.error(request, "This page does not have that button.")
         else:
             state = demonstration.status()
             if state.state == "running":
-                messages.info(request, "A run is in progress. This page refreshes until it ends.")
+                messages.info(request, "Another load or removal is still running.")
             elif action == "load" and state.state != "not_loaded":
                 messages.error(
                     request,

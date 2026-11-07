@@ -60,7 +60,7 @@ NOT_LONGITUDE_LATITUDE = (
 SEVERAL_SHAPEFILES = (
     "This zip holds 7 shapefiles: NWISDrainageArea.shp, NWISDrainageLine.shp, "
     "NonContributingDrainageArea.shp, NonContributingDrainageLine.shp, "
-    "WBDHU14.shp, WBDHU16.shp, WBDHU2.shp. Upload a zip with only the one you want."
+    "WBDHU14.shp, WBDHU16.shp, WBDHU2.shp. Upload a zip with only the shapefile you want."
 )
 
 
@@ -201,7 +201,7 @@ def test_the_preview_replaces_the_upload_card_with_the_column_match():
     response = _preview(_client(), SUBBASINS_ZIP)
     html = _text(response)
     assert "Match the file's columns" in html
-    assert "OpenH2O found 5 outlines and 2 columns in sj_valley_subbasins_2227.zip. Changing a column re-counts below." in html
+    assert "OpenH2O found 5 outlines and 2 columns in sj_valley_subbasins_2227.zip. Changing a column updates the counts below." in html
     assert 'hx-swap-oob="true"' in html
     assert 'id="import-card"' in html
     # Basin_Subb is picked without being asked; Owner defaults to Not imported.

@@ -957,8 +957,8 @@ def void(row, *, user, reason):
             raise AlreadyReplaced(ALREADY_REPLACED_SENTENCE)
         if not kind["can_void"](locked):
             raise NotVoidable(
-                f"This {kind['label']} was written by OpenH2O's own calculation "
-                "and cannot be voided. Void the record it came from."
+                f"OpenH2O calculated this {kind['label']}, so it cannot be voided. "
+                "Void the record it came from."
             )
         if not REASON_MIN_LENGTH <= len(text) <= REASON_MAX_LENGTH:
             raise ValueError(REASON_SENTENCE)
@@ -998,12 +998,11 @@ _NOT_COPIED = frozenset(
 def _not_correctable_sentence(kind):
     if kind["key"] == "use_area":
         return (
-            "A use area is not corrected with a new row. Change its acres on its "
-            "page, with a reason."
+            "To correct a use area, change its acres on its page and give a reason."
         )
     return (
-        f"This {kind['label']} was written by OpenH2O's own calculation and cannot "
-        "be corrected. Correct the record it came from."
+        f"OpenH2O calculated this {kind['label']}, so it cannot be corrected. "
+        "Correct the record it came from."
     )
 
 

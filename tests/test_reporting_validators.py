@@ -58,8 +58,7 @@ class TestOrphanedRecordMessageIsRetargeted:
         messages = " ".join(w["message"] for w in validate_report(period, "calwatrs_a1"))
 
         assert (
-            "Create or edit the water year that covers these months; records "
-            "attach when the year is saved, or open each record and save it."
+            "Add the water year that covers its month, or open the record and save it."
         ) in messages
         assert "Re-save them" not in messages
 

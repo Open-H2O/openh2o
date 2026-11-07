@@ -57,7 +57,7 @@ class WaterRight(models.Model):
         max_length=50,
         blank=True,
         help_text="CalWATRS PIN mailed by SWRCB for this water right. The state "
-        "issues one PIN per right; supplied by the agency, not fetched by OpenH2O.",
+        "issues one PIN per right.",
     )
     state_status = models.CharField(
         max_length=50,
@@ -392,8 +392,8 @@ class PointOfDiversion(models.Model):
         default="shares",
         help_text="How each month's water is divided among the use areas this "
         "headgate serves. By shares uses the share entered for each use area, or "
-        "the use area's acreage where no share is entered, and books all of the "
-        "water to the use areas. By crop ET caps each use area at its crop ET divided "
+        "the use area's acreage where no share is entered, and divides all of the "
+        "water among the use areas. By crop ET caps each use area at its crop ET divided "
         "by its irrigation efficiency and lists the rest as not divided.",
     )
 

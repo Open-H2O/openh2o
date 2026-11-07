@@ -345,11 +345,13 @@ def _orphan_diversion_warnings(reporting_period: ReportingPeriod, diversion_type
         warnings.append({
             "level": "error",
             "message": (
-                f"{orphans_in_range} diversion record(s) dated inside this period are "
-                "not attached to a water year; they would be silently missing from "
-                "this CalWATRS filing. Create or edit the water year that covers these "
-                "months; records attach when the year is saved, or open each record "
-                "and save it."
+                f"{orphans_in_range} diversion record dated inside this period is not "
+                "attached to a water year, so the CalWATRS file leaves it out. Add the "
+                "water year that covers its month, or open the record and save it."
+                if orphans_in_range == 1
+                else f"{orphans_in_range} diversion records dated inside this period are not "
+                "attached to a water year, so the CalWATRS file leaves them out. Add the "
+                "water year that covers these months, or open each record and save it."
             ),
         })
 
@@ -364,9 +366,11 @@ def _orphan_diversion_warnings(reporting_period: ReportingPeriod, diversion_type
         warnings.append({
             "level": "warning",
             "message": (
-                f"{orphans_elsewhere} diversion record(s) outside this period do not belong to "
-                "a water year; they will never appear in any filing "
-                "until a period covering their month exists."
+                f"{orphans_elsewhere} diversion record outside this period is not "
+                "attached to a water year, so no CalWATRS file includes it."
+                if orphans_elsewhere == 1
+                else f"{orphans_elsewhere} diversion records outside this period are not "
+                "attached to a water year, so no CalWATRS file includes them."
             ),
         })
     return warnings

@@ -14,7 +14,7 @@
   {% comment %}The description says "surface deliveries" only on deployments
   with the Surface module,
   since the surface half of the sentence goes with the
-  setting it describes.{% endcomment %}<p class="page-description">{% if 'surface' in enabled_modules %}These settings decide how OpenH2O counts surface deliveries and canal seepage, and what{% else %}These settings decide what{% endif %} happens to a zone's unused allocation at year-end.</p>
+  setting it describes.{% endcomment %}<p class="page-description">{% if 'surface' in enabled_modules %}These settings determine how OpenH2O counts surface deliveries and canal seepage, and what{% else %}These settings determine what{% endif %} happens to a zone's unused allocation at year-end.</p>
 </div>
 {% endblock %}
 
@@ -104,7 +104,7 @@
     <div class="card-raised">
       <span class="step-eyebrow">Setting {{ seepage_number }} of {{ settings_total }}</span>
       <h2 class="section-header">{{ form.canal_seepage_credit.label }}</h2>
-      <p class="text-secondary text-sm" style="margin-bottom: var(--space-md);">OpenH2O records each month's canal seepage in the basin's water budget. This setting decides whether a water account is also credited with it.</p>
+      <p class="text-secondary text-sm" style="margin-bottom: var(--space-md);">OpenH2O records each month's canal seepage in the basin's water budget. This setting determines whether OpenH2O also credits it to a water account.</p>
       <div class="field-group mt-sm">
         {% for radio, description in form.canal_seepage_options %}
         <label class="radio-option">

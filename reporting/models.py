@@ -54,7 +54,7 @@ class ReportingProfile(models.Model):
         max_length=100,
         blank=True,
         help_text="Correspondence ID mailed by SWRCB to bind the GEARS account. "
-        "Supplied by the agency; OpenH2O does not issue or fetch it.",
+        "Enter it here.",
     )
     certifier_name = models.CharField(
         max_length=200,

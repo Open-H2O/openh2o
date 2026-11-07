@@ -91,7 +91,7 @@ def several_shapefiles_message(names):
         listed.append(f"and {len(names) - SHAPEFILES_LISTED} more")
     return (
         f"This zip holds {len(names)} shapefiles: {', '.join(listed)}. "
-        "Upload a zip with only the one you want."
+        "Upload a zip with only the shapefile you want."
     )
 
 

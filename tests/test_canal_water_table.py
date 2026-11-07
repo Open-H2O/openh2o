@@ -276,7 +276,7 @@ def test_the_page_shows_the_headings_and_the_totals():
         "Seepage",
         "Spill",
         "Use areas' own records",
-        "Divided up among the other use areas",
+        "Divided among the other use areas",
         "Left after each use area received its ETAW divided by its irrigation efficiency",
     ):
         assert heading in section, heading

@@ -78,8 +78,8 @@ FIGURES = (
     ("carryover", "Carry-over"),
     ("available", "Available"),
     ("credit", "Credit"),
-    ("used", "Used, groundwater budget"),
-    ("remaining", "Remaining, groundwater budget"),
+    ("used", "Groundwater budget used"),
+    ("remaining", "Groundwater budget remaining"),
     ("delivered", "Delivered"),
 )
 FIGURE_LABELS = dict(FIGURES)
@@ -604,15 +604,19 @@ def corrections_since(period, since, all_records=False):
 
 
 def recalculated_words(period, since):
-    """``Moved when OpenH2O recalculated Nov 3, 2026.`` or the sentence for no recalculation on record."""
+    """``Changed. OpenH2O last recalculated on Nov 3, 2026.`` or the sentence for no recalculation on record."""
     newest = (
-        CalculationRequest.objects.filter(reporting_period=period, finished_at__gt=since)
+        CalculationRequest.objects.filter(
+            reporting_period=period,
+            finished_at__gt=since,
+            status__in=["succeeded", "finished_with_notes"],
+        )
         .order_by("-finished_at")
         .first()
     )
     if newest is None:
-        return "Moved since the figures were filed."
-    return f"Moved when OpenH2O recalculated {_day(newest.finished_at)}."
+        return "Changed since the figures were filed."
+    return f"Changed. OpenH2O last recalculated on {_day(newest.finished_at)}."
 
 
 # -- Moved figures ------------------------------------------------------------------------------
@@ -657,15 +661,12 @@ class Comparison:
     def summary(self):
         """The sentence after the first line."""
         if not self.moved:
-            return "No figure has moved since."
+            return "No figure has changed since."
         figures = f"{self.figure_count} figure{'' if self.figure_count == 1 else 's'}"
         # A restated year's table also lists figures that differ only between As filed and
         # Restated, so "since" reaches back to the first filing.
         since = "Since the first filing," if self.restated else "Since then"
-        if self.correction_count:
-            noun = "correction" if self.correction_count == 1 else "corrections"
-            return f"{since} {self.correction_count} {noun} moved {figures}. Acre-feet."
-        return f"{since} {figures} moved. Acre-feet."
+        return f"{since} {figures} changed (acre-feet)."
 
     @property
     def single_correction(self):

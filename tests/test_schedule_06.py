@@ -193,7 +193,7 @@ class TestTheStationPage:
         body = station_page("cimis", "Probe CIMIS Network")
         assert (
             "OpenH2O's schedule updates readings from CIMIS every day "
-            "at 2:00 AM once its key is set. The key is not set on this server." in body
+            "at 2:00 AM once its API key is set on this server." in body
         )
         assert "OpenH2O updates readings from" not in body
 
@@ -217,7 +217,7 @@ class TestTheStationPage:
         for syncing in (True, False):
             body = station_page("manual", "Entered by hand", syncing=syncing)
             assert (
-                "An Operator or Administrator types each reading on this page." in body
+                "An Operator or Administrator enters each reading on this page." in body
             )
             assert "OpenH2O updates readings from" not in body
             assert "Syncing is off" not in body

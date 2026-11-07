@@ -382,7 +382,7 @@ def test_a_start_month_is_required_and_an_end_before_the_start_is_refused(ref):
     f4 = d1["F4"]
     client = operator_client()
     missing = post_add(client, f4, "")
-    assert "Pick a day in the start month." in missing.content.decode()
+    assert "Choose a day in the start month." in missing.content.decode()
     backwards = post_add(client, f4, "2025-11-01", "2025-10-01")
     assert "The end month cannot be before the start month." in backwards.content.decode()
     assert fallow_model().objects.count() == 0
@@ -410,8 +410,8 @@ def test_the_row_for_a_use_area_with_no_period_reads_not_fallow():
     assert "Add fallow period" in body
     assert "End fallow period" not in body
     assert (
-        "Mark the months a use area grows nothing. In a fallow month OpenH2O counts crop ET as 0. "
-        "Without the mark it counts the satellite crop ET, whether or not a crop is on record."
+        "Mark the months a use area is fallow. In a fallow month OpenH2O counts crop ET as 0. "
+        "Otherwise OpenH2O counts the satellite crop ET, whether or not a crop is on record."
     ) in body
 
 
@@ -464,11 +464,11 @@ def test_the_add_form_carries_the_approved_words():
     body = operator_client().get(add_url(field)).content.decode()
     for words in (
         "Add a fallow period",
-        "Start month (pick any day in it)",
+        "Start month (any day in it)",
         "Choose the first full month with no crop. If the crop came out partway through a month, "
         "start with the next month. The satellite crop ET for the partial month already shows the lower use.",
-        "End month (optional, pick any day in it)",
-        "Leave this blank while the use area stays fallow. The use area is fallow in its end month too.",
+        "End month (optional; any day in it)",
+        "Leave this blank while the use area stays fallow. The end month counts as fallow too.",
         "Save",
         "Cancel",
     ):
@@ -479,7 +479,7 @@ def test_the_end_form_asks_for_an_end_month_only():
     field = ParcelFactory()
     make_period(field, dt.date(2026, 3, 1), None)
     body = operator_client().get(end_url(field)).content.decode()
-    assert "End month (pick any day in it)" in body
+    assert "End month (any day in it)" in body
     assert "optional" not in body.split('id="id_end_month"')[0].rsplit("<form", 1)[-1]
     assert 'name="start_month"' not in body
     assert 'name="end_month"' in body

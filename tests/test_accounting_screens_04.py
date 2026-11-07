@@ -148,7 +148,7 @@ def test_the_preview_says_why_a_field_with_no_et_is_zero():
     html = _client().post(
         reverse("accounting:methodology_preview"), {"parcel_id": parcel.pk, "period": "2024-06"}
     ).content.decode()
-    assert "No ET is stored for this use area and month" in html
+    assert "Crop ET is missing for this use area and month" in html
 
 
 def test_the_button_loads_one_active_plan_and_the_page_shows_it():

@@ -73,8 +73,8 @@ from tests.test_fingerprint_04 import (  # noqa: F401  (fixtures are used by nam
 pytestmark = pytest.mark.django_db
 
 # Written out here, never read back from the code under test.
-UNREADABLE = "That date could not be read. This page shows today."
-IN_FUTURE = "That date is in the future. This page shows today."
+UNREADABLE = "OpenH2O could not read that date. This page shows today's records."
+IN_FUTURE = "That date is in the future. This page shows today's records."
 NO_RECORDS = "No records had been entered by then."
 CSV_COLUMNS = [
     "parcel_number", "effective_date", "amount_acre_feet", "source_type",
@@ -1216,7 +1216,7 @@ def test_a_use_area_asked_for_before_it_existed_shows_today_under_a_sentence_and
     day = day_ago(1)  # the district was built today
     today = page(client, url, year_)
     html = page(client, url, year_, as_of=day)
-    assert f"This use area was not on record on {words(day)}. This page shows today." in visible(html)
+    assert f"This use area was not on record on {words(day)}. This page shows today's records." in visible(html)
     assert "as-of-line" not in html and "as-of-reading" not in html  # not pinned, no reading
     assert "Since then" not in visible(html)
     assert parcel_figs(html) == parcel_figs(today)

@@ -154,7 +154,7 @@ def test_add_station_words(auth_client):
     body = auth_client.get(reverse("datasync:station_add")).content.decode().replace("&#x27;", "'")
     assert (
         "This page adds one monitoring station. OpenH2O syncs its readings from a "
-        "public data source, or a person types them on the station's page."
+        "public data source, or a person enters them on the station's page."
     ) in body
     assert "External station ID" not in body
     assert (

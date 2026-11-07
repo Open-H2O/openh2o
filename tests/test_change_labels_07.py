@@ -133,8 +133,6 @@ PLAIN_WORDS = frozenset(
         "core.User.first_name",
         "core.User.last_name",
         "core.User.agency_admin",
-        "datasync.TypedReading.typed_by",
-        "datasync.TypedReading.typed_at",
         "datasync.TypedReading.value",
         "datasync.TypedReading.notes",
         "drinking.SampleResult.event",

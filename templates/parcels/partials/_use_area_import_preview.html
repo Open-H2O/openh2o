@@ -9,7 +9,7 @@ pressed. A count of zero has no row.
 <div id="import-card" hx-swap-oob="true"></div>
 <div class="card-raised">
   <h2 class="card-header-ruled">Match the file's columns</h2>
-  <p class="text-base text-secondary mt-md">OpenH2O found {{ outline_count|intcomma }} outline{{ outline_count|pluralize }} and {{ columns|length|intcomma }} column{{ columns|length|pluralize }} in {{ file_name }}. Changing a column re-counts below.</p>
+  <p class="text-base text-secondary mt-md">OpenH2O found {{ outline_count|intcomma }} outline{{ outline_count|pluralize }} and {{ columns|length|intcomma }} column{{ columns|length|pluralize }} in {{ file_name }}. Changing a column updates the counts below.</p>
 
   <form class="mt-lg" id="import-mapping-form" method="post" action="{% url 'parcels:use_area_import_commit' %}">
     {% csrf_token %}
@@ -20,7 +20,7 @@ pressed. A count of zero has no row.
         <tr>
           <th style="width: 28%;">Field</th>
           <th style="width: 30%;">Your column</th>
-          <th>First five</th>
+          <th>First five values</th>
         </tr>
       </thead>
       <tbody>

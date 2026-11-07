@@ -322,8 +322,8 @@ _LABEL = 12
 
 _COVERS = (
     "OpenH2O computed the code from every row below at the moment the code was "
-    "issued, records marked void or replaced included, and from every Change "
-    "history entry of those rows. Station readings covers only readings typed by "
+    "issued, including records marked void or replaced, and from every Change "
+    "history entry of those rows. Station readings covers only readings entered by "
     "hand. For a use area with a record in the "
     "year, the code reads its number and whether it was voided, not its acres or "
     "other details. For a fallow period it reads the end month only up to the "
@@ -331,8 +331,8 @@ _COVERS = (
     "Nothing else is covered: links and settings (which zone a use area is in, "
     "which well and meter serve it, which use areas a point of diversion serves, "
     "which accounts are active, account names, site settings), the stored OpenET "
-    "figures, and anything a later version of OpenH2O adds. A change to these can "
-    "move the Figures as filed card without changing this code."
+    "figures, and anything a later version of OpenH2O adds. These can "
+    "change a figure on the Figures as filed card without changing this code."
 )
 
 _STEPS = (
@@ -343,8 +343,8 @@ _STEPS = (
     "Press Check for changes. OpenH2O recomputes the code from the records now.",
     "Read the answer. It gives the number of corrections recorded since, and names the "
     "parts to look at where changes have no correction on record. An unrecorded change "
-    "in the corrected record's own part, or in a part a recalculation writes when the "
-    "correction started one, reads as the correction alone. \"Can no longer "
+    "in the corrected record's own part, or in a part a recalculation writes, "
+    "shows only as the correction. \"Can no longer "
     "read\" means a later version removed what a part was computed from.",
 )
 

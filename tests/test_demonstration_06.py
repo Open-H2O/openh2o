@@ -399,10 +399,10 @@ def test_the_remove_step_lists_what_goes_and_what_people_added(admin_client, few
         f.ParcelFactory()
     body = admin_client.get(URL + "?remove=1").content.decode()
     assert "Removing deletes every record on this site, 3 in all" in body
-    assert "1 of these records was added by people since the load" in body
+    assert "People added 1 of these records since the load" in body
     assert "Use areas" in body
     # The load made the site's name and settings, so the step says they go.
-    assert "so they go too, with any setting changed since the load" in body
+    assert "so removing deletes them too, with any setting changed since the load" in body
 
 
 def test_the_remove_button_returns_the_site_to_empty(admin_client, few_rows):
@@ -439,7 +439,7 @@ def test_a_second_press_while_a_run_holds_the_lock_starts_nothing(admin_client, 
     cursor.execute("SELECT pg_advisory_lock(%s)", [demo.ADVISORY_LOCK_KEY])
     try:
         response = admin_client.post(URL, {"action": "load"}, follow=True)
-        assert "A run is in progress" in response.content.decode()
+        assert "Another load or removal is still running." in response.content.decode()
         assert not demo.is_loaded()
         assert demo.last_record() is None
         partial = admin_client.get(URL, HTTP_HX_REQUEST="true").content.decode()

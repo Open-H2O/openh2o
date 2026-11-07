@@ -53,7 +53,7 @@
           <td class="text-secondary">{{ row.date }}</td>
           <td class="text-secondary text-sm">{{ row.parameter }}</td>
           <td class="td-num">
-            {% if row.value is not None %}{{ row.value|floatformat:2 }} {% if row.unit %}<span class="text-tertiary" style="font-size: 0.7rem;">{{ row.unit }}</span>{% endif %}{% else %}<span class="value-empty">Not recorded</span>{% endif %}
+            {% if row.value is not None %}{{ row.value|floatformat:2 }} {% if row.unit and '(' not in row.parameter %}<span class="text-tertiary" style="font-size: 0.7rem;">{{ row.unit }}</span>{% endif %}{% else %}<span class="value-empty">Not recorded</span>{% endif %}
           </td>
           <td class="td-num"><span class="record-void-text">{% if row.earlier is not None %}{{ row.earlier|floatformat:2 }}{% else %}Not recorded{% endif %}</span></td>
           {% if has_revised_dates %}<td class="text-secondary">{{ row.revised }}</td>{% endif %}

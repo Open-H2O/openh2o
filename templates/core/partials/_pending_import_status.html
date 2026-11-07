@@ -7,6 +7,6 @@
 {% endcomment %}
 <div id="pending-import-status" hx-get="{% url 'core:pending_import_status' token %}" hx-trigger="every 2s" hx-swap="outerHTML" aria-live="polite">
   <div class="card-raised">
-    <p class="text-base m-0">OpenH2O is importing {{ file_name }}. OpenH2O shows the result here when it finishes.</p>
+    <p class="text-base m-0">OpenH2O is importing {{ file_name }}. The result shows here when the import finishes.</p>
   </div>
 </div>

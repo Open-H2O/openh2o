@@ -943,7 +943,7 @@ class SamplingSchedule(models.Model):
     last_done = models.DateField(null=True, blank=True)
     next_due = models.DateField(
         null=True, blank=True,
-        help_text="Typed by the operator; never computed from the frequency.",
+        help_text="Entered by the operator; never computed from the frequency.",
     )
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

@@ -24,8 +24,8 @@
   <p class="page-description">
     When one well or canal feeds several use areas, someone sets each use area's share of
     that water by hand. This page compares each hand-entered share with the share
-    satellite crop-water use (ET) implies. It flags a use area where the two are far apart
-    for a check on the source's page, and it never changes a split.
+    satellite crop-water use (ET) implies. It flags a use area where the two are far apart,
+    so someone can check the share on the source's page.
   </p>
 </div>
 {% endblock %}
@@ -69,9 +69,8 @@
       <p class="text-secondary text-base" style="margin-top: var(--space-md);">
         A use area is flagged when its entered share is {{ divergence_points }} or more
         percentage points from the share its estimated crop-water use (ET) implies.
-        The check reads how a shared source's water is split among its use areas; it
-        does not judge whether a use area's balance closes, and it never changes a
-        split.
+        The check looks only at how a shared source's water is split among its use areas.
+        It does not judge whether a use area's balance closes.
       </p>
     </div>
 
@@ -162,7 +161,7 @@
               {% if row.gap_points is not None %}{{ row.gap_points|floatformat:2 }}{% else %}<span class="value-empty">No ET estimate</span>{% endif %}
             </td>
             <td class="th-right">
-              {% if row.flag %}<span class="badge badge-orange" title="This use area's entered share is {{ divergence_points }}+ points from its ET-implied share">review split</span>{% endif %}
+              {% if row.flag %}<span class="badge badge-orange" title="This use area's entered share is at least {{ divergence_points }} points from its ET-implied share">review split</span>{% endif %}
             </td>
           </tr>
           {% endfor %}

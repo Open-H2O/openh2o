@@ -87,10 +87,6 @@ FIELD_WORD_KEPT: dict = {
     # outlines, the basin's canals and fields, and the ET and rainfall estimated
     # on each of them. Land outside the record, measured 2026-10-31.
     "templates/about_demonstration_data.html": 5,
-    # "its boundaries, fields and monitoring stations are public records": the
-    # same public land, in the demonstration's one-paragraph description.
-    "templates/setup/partials/_demonstration_status.html": 1,
-    "templates/setup/wizard.html": 1,
     # "Field outlines": the outlines in the person's own file, before any of
     # them is a use area (the heading Brent approved on the drawing, ruling 70).
     "templates/parcels/use_area_import.html": 1,
@@ -239,6 +235,15 @@ def test_a_stations_readings_are_not_fetched_on_a_screen(pattern, advice):
     found = _all_hits(_screen_files(), pattern)
     assert not found, (
         f"{len(found)} sentence(s) say a station's readings are fetched:\n" + _report(found, advice))
+
+
+# -- 1b. Words struck in the language passes --------------------------------------------------
+
+@pytest.mark.parametrize("pattern,advice", words.RETIRED_WORDS)
+def test_a_screen_does_not_use_a_struck_word(pattern, advice):
+    found = _all_hits(_screen_files(), pattern)
+    assert not found, (
+        f"{len(found)} sentence(s) use a word Brent struck:\n" + _report(found, advice))
 
 
 # -- 2. A page is named by its own name ----------------------------------------------------
