@@ -35,9 +35,19 @@ jobs:
       - name: Lint
         run: ruff check .
 
+  # The suite runs as four jobs at once. As one job it took 37 to 60 minutes on
+  # GitHub's runners and was cancelled at the 60-minute limit with no test failed.
+  # The module-drop proof boots a separate Django process for each of its 30
+  # cases and is about a third of the run on its own, so it is one job; the other
+  # test files are dealt round-robin into three. The workflow passes only when all
+  # four do, which is what `make deploy` reads (scripts/ci_gate.py).
   pytest:
     runs-on: ubuntu-latest
     timeout-minutes: 60  # backstop: a hung run fails here instead of at the 6h runner limit
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [module-drop, "1", "2", "3"]
     env:
       # Throwaway values for CI only, not secrets. Same as clean-install.yml.
       DJANGO_SETTINGS_MODULE: config.settings.local
@@ -71,10 +81,31 @@ jobs:
       - name: Start database and web
         run: docker compose up -d --wait db web
 
+      # Every test module sits directly in tests/ (pyproject.toml's python_files).
+      # The step fails if the three parts and the module-drop job do not together
+      # hold every module exactly once.
+      - name: Choose this job's test files
+        env:
+          PART: ${{ matrix.part }}
+        run: |
+          python3 - <<'EOF' > files.txt
+          import glob, os, sys
+          drop = "tests/test_droppability_acceptance.py"
+          names = sorted({*glob.glob("tests/test_*.py"), *glob.glob("tests/*_tests.py"), *glob.glob("tests/tests.py")})
+          rest = [n for n in names if n != drop]
+          parts = {str(k): rest[k - 1::3] for k in (1, 2, 3)}
+          dealt = sorted(n for files in parts.values() for n in files) + [drop]
+          if sorted(dealt) != names:
+              sys.exit("the parts do not hold every test module exactly once")
+          part = os.environ["PART"]
+          print("\n".join([drop] if part == "module-drop" else parts[part]))
+          EOF
+          wc -l < files.txt
+
       - name: Run the test suite
         run: >-
           docker compose exec -T -e OPENH2O_MODULES=all web
-          python -m pytest tests/
+          python -m pytest $(cat files.txt)
           --ds=config.settings.local
           -m "not network"
           -p no:cacheprovider
