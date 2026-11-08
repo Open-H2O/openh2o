@@ -252,13 +252,13 @@ dev-css: ## Compile static/css/output.css from this folder with the image's Tail
 dev-up: guard-prod dev-css ## Start the stack with docker-compose.dev.yml: edits are live in the web container with no rebuild
 	$(DEV_COMPOSE) up -d --build
 
-test: ## Run the tests in T (a path or node id; all of tests/ when T is not given), pinned to local settings with every module on
+test: ## Run the tests in T (a path or node id; all of tests/ when T is not given), pinned to local settings with every module on; waits on a lock so two runs never share the test database
 	@if [ "$(DEV_BIND)" = "bind" ]; then \
 		echo "guard-fresh skipped: docker-compose.dev.yml is in use, so the web container runs this folder's own source."; \
 	else \
 		$(MAKE) --no-print-directory guard-fresh; \
 	fi
-	$(COMPOSE) exec -e OPENH2O_MODULES=all web python -m pytest $(T) -v --ds=config.settings.local
+	python3 scripts/with_test_lock.py $(COMPOSE) exec -e OPENH2O_MODULES=all web python -m pytest $(T) -v --ds=config.settings.local
 
 golden-update: ## Rewrite the golden files for the tests in T (required), then copy tests/golden out of the container unless docker-compose.dev.yml is in use
 	@test -n "$(T)" -a "$(T)" != "tests/" || { echo "Usage: make golden-update T=tests/test_nav_golden.py"; exit 1; }
