@@ -208,8 +208,13 @@ def test_the_guide_table_matches_the_checked_table():
 def test_the_guide_count_sentence_matches_the_table():
     from pathlib import Path
 
-    text = (Path(__file__).resolve().parent.parent / "docs" / "DATA-STANDARDS.md").read_text()
-    without = sum(1 for pcode, _w, _u in TABLE.values() if not pcode)
-    words = {9: "Nine", 11: "Eleven", 10: "Ten", 8: "Eight"}
-    assert f"{words[without]} of the eighteen have no USGS parameter code" in text
-    assert without == 9
+    text = " ".join((Path(__file__).resolve().parent.parent / "docs" / "DATA-STANDARDS.md").read_text().split())
+    with_pcode = sum(1 for pcode, _w, _u in TABLE.values() if pcode)
+    with_wqx = sum(1 for _p, wqx, _u in TABLE.values() if wqx)
+    words = {8: "eight", 9: "nine", 10: "ten", 11: "eleven", 12: "twelve"}
+    assert len(TABLE) == 18
+    assert (
+        f"Of the eighteen, {words[with_wqx]} also have an EPA WQX characteristic name"
+        f" and {words[with_pcode]} a USGS parameter code" in text
+    )
+    assert with_pcode == 9

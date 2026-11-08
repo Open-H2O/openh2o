@@ -49,12 +49,13 @@ proves the address belongs to the site. A site that only people inside the
 building can reach can run without either.
 
 <!-- defines: docker -->
-Each path normally uses Docker. A site that only this computer or the office network reaches can also be done without it. OpenH2O
-ships as three *containers*. A container is a sealed package that holds one part
-of the program and everything that part needs, and it runs the same way on any
-computer. Docker is the program that builds and runs containers. Without Docker,
-you install OpenH2O's parts directly on the computer. Installing without Docker is
-the only option on a hosted server whose provider does not allow containers.
+Each path normally uses Docker. A site reached only from this computer or the office
+network can also run without it. OpenH2O ships as three *containers*. A container is
+a sealed package that holds one part of the program and everything that part needs,
+and it runs the same way on any computer. Docker is the program that builds and runs
+containers. Without Docker, you install OpenH2O's parts directly on the computer.
+Installing without Docker is the only option on a hosted server whose provider does
+not allow containers.
 [docs/INSTALL-WITHOUT-DOCKER.md](docs/INSTALL-WITHOUT-DOCKER.md) describes the whole
 process.
 
@@ -105,19 +106,17 @@ openh2o.com turns that setting off.
 You will see the demonstration, the same one running at
 [openh2o.com](https://openh2o.com). *Seeding* means loading a starting set of data
 into the empty database: small reference lists such as units and categories, or a
-whole demonstration dataset. Everything the demonstration load uses ships with OpenH2O: its
-streams, monitoring stations, readings and satellite ET. It also loads the
-demonstration's water rights, deliveries, parcels and ledger entries. It works
-without any key.
+whole demonstration dataset. The demonstration's streams, monitoring stations,
+readings, satellite ET, water rights, deliveries, parcels and ledger entries all
+ship with OpenH2O, so loading it does not need a key.
 
-The demonstration's consumptive-use figures come from that stored satellite ET. For
-your own records, they need an OpenET key (free from
-[etdata.org](https://etdata.org)), because OpenH2O calculates them from satellite
-ET. `run_calculations` also needs a calculation method, which only
-`seed_calculation_plan` creates; `load_demonstration` creates it for the
-demonstration. For a site with a domain, encryption, scheduled data
-updates and production security settings, follow [DEPLOY.md](DEPLOY.md).
-`make help` lists every shortcut command.
+The demonstration's consumptive-use figures come from that stored satellite ET. To
+calculate those figures for your own records, OpenH2O needs an OpenET key (free from
+[etdata.org](https://etdata.org)). `run_calculations` also needs a calculation
+method: `load_demonstration` creates one for the demonstration, and
+`seed_calculation_plan` creates one for your own site. For a site with a domain,
+encryption, scheduled data updates and production security settings, follow
+[DEPLOY.md](DEPLOY.md). `make help` lists every shortcut command.
 
 ---
 
@@ -127,14 +126,13 @@ For an organization with no software staff, a capable AI agent such as Claude Co
 can install OpenH2O and then keep running the site and explaining it to the staff.
 
 - **Loading existing records.** Point the agent at the records you already have,
-  such as a county assessor's parcel export, a set of spreadsheets or an export
-  from an old system. The agent works out how your columns match OpenH2O's
-  importers and loads the records. Most of the import tools accept your own column
-  names, and each can check a file in a dry run or a preview before writing anything.
-  `import_parcels` holds the file in a staging table and stops without importing when
-  an outline cannot be read or a parcel cannot be saved; the other imports save each row
-  that passes their checks and list the rows they refused. See
-  [docs/DATA-IMPORT.md](docs/DATA-IMPORT.md).
+  such as a county assessor's parcel export, a set of spreadsheets or an export from
+  an old system. The agent works out how your columns match OpenH2O's importers and
+  loads the records. Most import tools accept your own column names, and each can
+  check a file in a dry run or a preview before saving anything. `import_parcels`
+  imports nothing when an outline cannot be read or a parcel cannot be saved. The
+  other imports save each row that passes their checks and list the rows they
+  rejected. See [docs/DATA-IMPORT.md](docs/DATA-IMPORT.md).
 - **Routine work.** The agent can run the monthly data updates, remove monitoring
   stations that have stopped reporting and read the health check on a schedule. It
   can also explain what each health check result means.
@@ -148,13 +146,11 @@ installation and through each of these jobs.
 
 ## What it looks like
 
-These screenshots show the demonstration data, the same records the live demo at
-[openh2o.com](https://openh2o.com) runs. Invented sample data carries a *Demo* label
-and appears beside the real published records.
+These screenshots show the demonstration data, the same records as the live demo at
+[openh2o.com](https://openh2o.com). Invented sample data carries a *Demo* label and
+appears beside the real published records.
 
-**The dashboard** shows the water balance for the water year: supplies by source,
-uses (crop ET from OpenET's satellite estimate and pumped water not consumed), the balance between them, and how many
-accounts are in surplus or in deficit.
+**The dashboard** shows the water balance for the water year: supplies by source, uses (crop ET and pumped water not consumed), the balance between supplies and uses, and how many accounts are in surplus or in deficit.
 
 ![The OpenH2O dashboard for water year 2025-2026, showing supplies of 15,846.63 acre-feet by source, uses of 17,515.96 acre-feet (crop ET of 16,209.28 plus pumped water not consumed of 1,306.68) and a balance of -1,669.32 acre-feet](docs/screenshots/dashboard.png)
 
@@ -197,7 +193,7 @@ site.
 - The **ObservedProperty registry** links every measured quantity (stream discharge, depth to groundwater, ET, reservoir storage and others) to a **UCUM unit**, and to its **USGS parameter code** and **EPA WQX characteristic name** where one exists.
 - A **SourceParameter crosswalk** maps each outside source's own parameter codes to that vocabulary. USGS code `00060`, CDEC code `20` and a CNRFC streamflow forecast all resolve to the same `discharge` concept.
 - Measurements carry **quality flags** (provisional, approved or estimated), and groundwater wells carry a **vertical datum** (NAVD88 or NGVD29). Both follow OGC SensorThings conventions.
-- A **conformance check** (`check_conformance`) lists every kind of measurement that has no unit or no USGS code and every source code that maps to no kind, and it counts the stored measurements linked to no kind. The check exits with an error when a kind has no unit or a source code maps to no kind, which lets a script stop on it. Someone has to run it by hand, and OpenH2O does not publish anywhere yet.
+- A **conformance check** (`check_conformance`) lists each kind of measurement that lacks a unit or a USGS code and counts the stored measurements not linked to a kind. It exits with an error when a kind lacks a unit. Someone has to run it by hand, and OpenH2O does not publish anywhere yet.
 
 The full crosswalk, the standards roadmap (OGC SensorThings API, Frictionless,
 WaDE 2.0) and a machine-readable export are in

@@ -164,9 +164,10 @@ docker compose exec web python manage.py prove_gee_auth --limit 5
 ```
 
 If the command prints a table of ET and no sign-in error, the key and the project
-work. The command does not read `OPENET_MODE`. Once the tier is on, the first line
-`sync_openet_parcels` prints reads `OPENET_MODE=gee -> GEEOpenETAdapter`. To go back to the API-key tier, set `OPENET_MODE=api` and restart the web
-container.
+work. The command does not read `OPENET_MODE`. Once the tier is on,
+`sync_openet_parcels` prints `OPENET_MODE=gee -> GEEOpenETAdapter` at the start of
+its first line. To go back to the API-key tier, set `OPENET_MODE=api` and restart
+the web container.
 
 ### 5. Get ET for every parcel
 

@@ -4,11 +4,11 @@
 
 This guide is for anyone who exchanges water data between OpenH2O and another
 system. OpenH2O keeps one list of the kinds of measurement it handles, such as
-stream discharge or depth to groundwater. Each kind on the list carries a UCUM unit.
-Eleven of the eighteen also carry an EPA WQX characteristic name, and nine carry a
-USGS parameter code. Each outside data source's own parameter codes are mapped onto the
-same list, so a stream flow from USGS and a stream flow from CDEC are recorded as
-the same kind of measurement.
+stream discharge or depth to groundwater. Each kind of measurement on the list has a
+UCUM unit. Of the eighteen, eleven also have an EPA WQX characteristic name and nine
+a USGS parameter code. Each outside data source's own parameter codes are mapped
+onto the same list, so a stream flow from USGS and a stream flow from CDEC are
+recorded as the same kind of measurement.
 
 The mapping is also published in this folder as [crosswalk.csv](crosswalk.csv). To
 write the same file from a running site, run
@@ -50,9 +50,9 @@ three identifiers from outside vocabularies:
 | `wind_speed` | Wind Speed | none | Wind velocity | `m/s` |
 | `extracted_volume` | Extracted Volume | none | none | `[acr_us].[ft_i]` |
 
-Nine of the eighteen have no USGS parameter code on OpenH2O's list. Where the WQX
-column reads none, the WQX list has no value for that kind of measurement. The UCUM
-units were looked up in the published UCUM tables and entered by hand.
+Where the WQX column reads none, EPA's WQX list does not name that kind of
+measurement. The UCUM units were looked up in the published UCUM tables and entered
+by hand.
 
 The list is defined in `standards/management/commands/seed_observed_properties.py`,
 and the model is `ObservedProperty` in `standards/models.py`.
@@ -74,11 +74,12 @@ to `discharge`, so their figures can be compared and published together.
 | DWR SGMA Portal | `gw_level` | The same dataset, limited to wells in the SGMA monitoring program |
 | California Irrigation Management Information System (CIMIS) | `day-asce-eto`, `day-precip`, `day-sol-rad-avg`, `day-wind-spd-avg`, `day-air-tmp-avg` | Daily reference ET and weather |
 | NOAA Global Historical Climatology Network Daily (GHCND) | `PRCP`, `TMAX`, `TMIN`, `SNOW` | Daily climate. `TMAX` and `TMIN` both map to `air_temperature`. |
-| Entered by hand | `00060`, `00065`, `00010`, `72019`, `72020`, `62610` | Readings a person types on a station's page, with the USGS codes |
+| Entered by hand | `00060`, `00065`, `00010`, `72019`, `72020`, `62610` | Readings a person types on a station's page, under the USGS codes |
 | California Nevada River Forecast Center (CNRFC) | `streamflow`, `precip` | Forecasts of river flow and precipitation |
 
-A USGS reading also carries its daily statistic (daily high, low or average). The mapping
-goes by code alone, so all three of water temperature map to `water_temperature`.
+A USGS reading is also marked as a daily high, low or average. The mapping goes by
+code alone, so the daily high, low and average of water temperature all map to
+`water_temperature`.
 
 DWR is the California Department of Water Resources. OpenET's evapotranspiration
 (ET) and GRIDMET's precipitation are not in this table. OpenH2O stores them for each
@@ -87,20 +88,21 @@ parcel as inputs to the monthly water balance and does not map them to the list.
 The mapping of codes to keys is `CODE_TO_KEY`, a table written by hand in
 `seed_observed_properties.py`. When `python manage.py seed_observed_properties`
 runs, it reads each source adapter's list of codes and looks up each code in
-`CODE_TO_KEY`. A reading typed at a station of the Entered by hand source (code
-`manual`) uses the USGS codes, so that source maps them the same way. The test in
-`tests/test_standards_registry.py` fails when an adapter
-emits a code that `CODE_TO_KEY` does not map. [crosswalk.csv](crosswalk.csv) has one
-row for each mapping, with the source, the source's code, and the key's name, USGS
-code, WQX characteristic name and UCUM unit.
+`CODE_TO_KEY`. A reading typed at an Entered by hand station (source code `manual`)
+uses the USGS codes and maps the same way as a USGS reading. The test in
+`tests/test_standards_registry.py` fails when an adapter emits a code that
+`CODE_TO_KEY` does not map. [crosswalk.csv](crosswalk.csv) has one row for each
+mapping, with the source, the source's code, and the key's name, USGS code, WQX
+characteristic name and UCUM unit.
 
 ---
 
 ## 3. Quality flags and vertical datum
 
-- **Quality flag.** Each meter reading and sensor measurement carries a quality
-  flag of `provisional`, `approved` or `estimated`. A new record is provisional. On a well's page, the meter reading form and
-  Correct this record let a person mark a reading as estimated. No screen marks a record approved.
+- **Quality flag.** Each meter reading and sensor measurement carries a quality flag
+  of `provisional`, `approved` or `estimated`. A new record is provisional. A person
+  can mark a reading estimated in a well's meter reading form or through Correct
+  this record. No screen sets a record to approved.
 - **Vertical datum.** OpenH2O stores each groundwater well's vertical datum as
   `NAVD88` or `NGVD29`.
 
@@ -124,14 +126,13 @@ they do not compare the result with the MCL.
 python manage.py check_conformance
 ```
 
-The command exits with an error when a kind of measurement has no UCUM unit, so a
-script can stop on that gap. A source code that maps to no key is not caught here: the
-seed command, `seed_observed_properties`, prints a warning for each one, and
-`tests/test_standards_registry.py` fails. The check also lists the
-kinds of measurement that have no USGS code, and it counts the stored measurements
-that are linked to no kind of measurement. Neither of those reports makes the
-command exit with an error. Nothing runs the command automatically. Run it by hand
-after you change the list or an adapter.
+The command exits with an error when a kind of measurement lacks a UCUM unit. It
+also lists the kinds that lack a USGS code and counts the stored measurements not
+linked to a kind, and neither of those makes it exit with an error. It does not
+catch a source code that `CODE_TO_KEY` does not map: `seed_observed_properties`
+prints a warning for each such code, and `tests/test_standards_registry.py` fails.
+Nothing runs the command automatically. Run it by hand after you change the list or
+an adapter.
 
 `ObservedProperty.is_publishable()` returns true only for a kind of measurement that
 has both a USGS code and a UCUM unit.
@@ -146,18 +147,19 @@ layouts of GEARS and CalWATRS, two reporting systems run by state agencies. Open
 does not submit reports to the state, and neither system can currently accept a
 file that OpenH2O produces.
 
-- **GEARS.** OpenH2O writes two GEARS layouts: monthly metered extraction by well,
-  and monthly use from OpenET for the field-months the by-well layout does not hold.
-  The by-well layout writes each well's meter readings once. Figures are in acre-feet.
+- **GEARS.** OpenH2O writes two GEARS files: monthly metered extraction for each
+  well, and monthly use from OpenET for each field-month the well file does not
+  cover. The well file lists each well's meter readings once. Figures are in
+  acre-feet.
 - **CalWATRS.** OpenH2O writes the Direct Use and To Storage layouts for each point
   of diversion, in acre-feet and cubic feet per second. A parcel with both
   groundwater and surface water is marked as combined use. A diversion with no water
   right ID is left out of the file, and the check OpenH2O runs on each report lists
   it as a warning. The Measurement Method column shows the method recorded for the
-  diversion. For a diversion measured by a device, the column adds the device's
-  type after the method. A record with no method shows "Not stated". The last column,
-  Re-diverted Volume (AF), holds the volume of a point of diversion that is linked as
-  re-diverting another point's water. That point's Volume (AF) column reads 0.
+  diversion. For a diversion measured by a device, the column adds the device's type
+  after the method. A record with no method shows "Not stated". For a point of
+  diversion that re-diverts another point's water, the file gives the volume in the
+  last column, Re-diverted Volume (AF), and 0 in Volume (AF).
 
 The files are written by `reporting/generators.py`, and the models are in
 `reporting/models.py`.
@@ -172,8 +174,8 @@ which OpenH2O calculates, and precipitation, which OpenH2O reads from GRIDMET.
 - **Effective precipitation.** The monthly water balance subtracts effective
   precipitation from crop ET. The method is set on the Methodology Settings page.
   The choices are all of the month's precipitation, a fixed fraction of it, or the
-  USDA-SCS (TR-21) method. The USDA-SCS method never estimates more than the
-  month's precipitation or the month's ET as the satellite reads it. The methods are in
+  USDA-SCS (TR-21) method. The USDA-SCS method never estimates more than the month's
+  precipitation or the month's satellite ET. The methods are in
   `accounting/precip_math.py`.
 - **Precipitation.** OpenH2O reads each parcel's monthly precipitation in
   millimeters from GRIDMET's daily `pr` band, through Google Earth Engine. The

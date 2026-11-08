@@ -17,9 +17,9 @@ Every import command takes `--dry-run`. With it, the command checks the file and
 reports what it would do, and your records stay as they were. Run each command with
 `--dry-run` first.
 
-Where an import skips a row that is already on the site, a record someone voided does
-not count as on the site: importing it again adds it as a new record that counts. A
-use area is the exception, because a voided use area keeps its number.
+An import that skips rows already on the site does not skip a voided record: importing
+it again adds it as a new, active record. A voided use area is the exception: it keeps
+its number, so the import skips it.
 
 Commands run inside the `web` container, which cannot see the files on your
 computer. Copy the file into the container with `docker compose cp` first, then give
@@ -29,12 +29,11 @@ with the same name, so copy all of them and give the command the path of the `.s
 file. An import screen uploads the file from your browser, so you do not need to
 copy it.
 
-A zipped shapefile holds one shapefile and its `.prj` file. OpenH2O refuses a zip
-that holds several shapefiles and names them (the first ten, then how many more), so
-you can send the one you want. It
-reads any projection the `.prj` file states, including the State Plane and UTM
-projections county and state files use, and refuses a file whose coordinates are not
-longitude and latitude when no `.prj` file says what they are.
+A zipped shapefile must hold only one shapefile. When a zip holds several, OpenH2O
+rejects it and names the first ten and how many more there are; zip the one you want on
+its own and try again. OpenH2O reads any projection a `.prj` file states, including the
+State Plane and UTM projections that county and state files use. Without a `.prj` file,
+it accepts only longitude and latitude.
 
 An AI agent can do the column matching for you. Point the agent at your file and ask
 it to import the records. The file might be a county assessor's export, a
@@ -52,26 +51,26 @@ docker compose exec web python manage.py load_demonstration    # the demonstrati
 docker compose exec web python manage.py remove_demonstration  # take it out again
 ```
 
-`load_demonstration` loads the demonstration, a real groundwater basin with published
-records and invented sample data. It gives you a complete site to explore
-while you gather your own records. It loads only into a site that does not hold records
-of its own, and it does not use the network: every outside record it uses ships with
-OpenH2O.
-`remove_demonstration` takes it out and leaves the site as a clean install, with its
-users and reference lists kept. Settings changed while the demonstration was loaded
-go back to their defaults unless the site had its own settings before the load.
-Remove it before you import your own records, and load it before you run the Setup
-Wizard, whose boundary is a record of the site's own. An administrator can do both
-from Settings > Setup Wizard > Demonstration data.
+`load_demonstration` loads published records from a real groundwater basin, together
+with invented sample data: a complete site to explore while you gather your own
+records. It loads only into a site that does not yet hold records of its own, and it
+does not need a network connection, because every outside record it uses ships with
+OpenH2O. `remove_demonstration` removes it and leaves a clean install, keeping the
+site's users and reference lists. On removal, any setting changed while the
+demonstration was loaded returns to its default, unless the site had its own settings
+before the load. Load the demonstration before you run the Setup Wizard, because the
+boundary the wizard saves is one of the site's own records, and remove it before you
+import your own records. An administrator can load and remove it from Settings > Setup
+Wizard > Demonstration data.
 
 ---
 
 ## 2. The Setup Wizard
 
 A new site begins at the Setup Wizard (`/setup/`). On a site that does not hold records
-of its own and runs the default modules, the wizard first asks how to start: load the demonstration data, or start
-with your own records. Starting with your own records opens its first step, which
-offers four choices:
+of its own and runs the default modules, the wizard first asks how to start: load the
+demonstration data, or start with your own records. Choosing to start with your own
+records opens the wizard's first step, which offers four choices:
 
 1. Select a boundary already on the site.
 2. Upload a boundary file: a zipped shapefile, a KML file or a GeoJSON file.
@@ -96,33 +95,33 @@ docker compose exec web python manage.py import_boundary --file /tmp/boundary.ge
 
 ## 3. File imports
 
-Seven import screens take a file in two steps: the preview, then Import. OpenH2O
-keeps the uploaded file on the server between the two, so a file is limited by
-its size (25 MB), not by its number of rows. Import runs in a background process,
-and the screen shows the result when it finishes. An upload waits at most a day
-for Import: after that, upload the file again. OpenH2O deletes the stored file
-once Import finishes, whether or not it succeeds.
+Seven import screens take a file in two steps: the preview, then Import. OpenH2O keeps
+the uploaded file on the server between the preview and Import, so a file can be up to
+25 MB with any number of rows. Import runs in a background process, and the screen
+shows the result when it finishes. OpenH2O keeps an upload for a day; after that,
+upload the file again. OpenH2O deletes the stored file once Import finishes, whether or
+not it succeeds.
 
 ### Use areas: the Import use areas screen, or `import_parcels`
 
-Wells, accounts and the ledger are all attached to use areas (parcels), so they
-come first. The Import use areas button on the Use Areas page opens the screen
-(`/parcels/import/`). It reads a zipped shapefile, a KML file or a GeoJSON file of
-up to 25 MB, such as a county's parcel file or a Google Earth file of field
-outlines. OpenH2O matches a column to the parcel number (and, if you choose one,
-the owner) and shows the first five values beside each choice. The preview counts
-what Import would do: new use areas with their acres, numbers already on file
-(skipped, never changed), outlines outside the site's boundary, and features with no
-readable outline, no parcel number or a parcel number over 50 characters (not
-imported). A parcel is inside the boundary
-when a point within its outline is inside it. Outlines that share a parcel number
-become one use area holding all of them. For a Google Earth file whose outlines carry
+Import use areas first: ledger entries are filed under a use area, a water account
+holds use areas, and a well is linked to the use areas it serves. The Import use areas
+button on the Use Areas page opens the screen (`/parcels/import/`). The screen reads a
+zipped shapefile, a KML file or a GeoJSON file of up to 25 MB, such as a county parcel
+file or a Google Earth file of field outlines. OpenH2O proposes a column for the parcel
+number, you can choose one for the owner, and the screen shows the first five values
+beside each. The preview counts the new use areas and their acres, and the ones Import
+skips: parcel numbers already on file, which it never changes, and outlines outside the
+site's boundary. It also counts the features it leaves out: those without a readable
+outline or a parcel number, or with a parcel number over 50 characters. A parcel counts
+as inside the boundary when a point within its outline lies inside it. Outlines that
+share a parcel number become one use area. For a Google Earth file whose outlines carry
 only names, choose the Name column: each name becomes the use area's number.
 
-`import_parcels` reads the same files (a `.zip`, `.kml`, `.geojson` or `.json`) or a
-bare shapefile from the command line. Unlike the screen, it does not leave out parcels
-outside the boundary, it reads the parcel number from `APN` unless you name another
-column, and it stops on an outline it cannot read:
+`import_parcels` reads the same zip, KML, GeoJSON and JSON files, and an unzipped
+shapefile, from the command line. It differs from the screen in three ways: it imports
+parcels outside the boundary, it reads the parcel number from the `APN` column unless
+you name another, and it stops at an outline it cannot read:
 
 ```bash
 docker compose cp parcels.geojson web:/tmp/
@@ -136,15 +135,14 @@ docker compose exec web python manage.py import_parcels /tmp/parcels.geojson
 | Owner name | `OWNER` | `--owner-field` | no |
 | Outline | the feature's geometry | none | yes |
 
-The command joins the outlines that share an APN into one parcel, reads every parcel
-into a holding table, then adds the new parcels to the site; `--dry-run` reports the
-same counts a real run gives, unless a parcel cannot be saved, which only a real run
-finds. A parcel whose APN is already on the site is skipped.
-When a feature has no APN, the command skips that feature, counts it as an error and
-imports the rest of the file. When a feature's outline cannot be read, the command
-names the feature and stops without importing any of the file's parcels. If any
-parcel cannot be added, the command stops without adding any and names the ones it
-refused.
+The command joins the outlines that share an APN into one parcel, checks every parcel,
+then adds the new ones to the site. A dry run reports the same counts as a real run,
+except that only a real run finds a parcel that cannot be saved. The command skips a
+parcel whose APN is already on the site. When a feature has no APN, the command skips
+that feature, counts it as an error and imports the rest of the file. When a feature's
+outline cannot be read, the command names the feature and stops without importing any
+of the file's parcels. If any parcel cannot be added, the command stops without adding
+any and names the ones it refused.
 
 ### Wells: `import_wells`
 
@@ -171,7 +169,7 @@ docker compose exec web python manage.py import_wells /tmp/wells.csv
 | Casing diameter (in) | `casing_diameter_in` | none | |
 | Capacity (gpm) | `capacity_gpm` | none | |
 | Year pumping began | `year_pumping_began` | none | |
-| Well type | `well_type` | none | Matched to the name of a well type already on the site, with capital and small letters treated alike. When the value does not match any well type on the site, the well is imported without a type and the command reports a warning. |
+| Well type | `well_type` | none | Matched to the name of a well type already on the site, with capital and small letters treated alike. When the file's well type is not one of the site's well types, the command imports the well without a type and reports a warning. |
 
 The command ignores any column that is not in this table and names each one once in
 its report. The rest of the file is imported. With `--dry-run`, the command lists
@@ -184,26 +182,26 @@ and the command names it. Pass `--skip-duplicates` to skip such rows instead.
 ### Wells, points of diversion, storage ponds and recharge sites: the Import screen
 
 The Import wells button on the Wells page and the Import buttons on the Surface
-Diversions and Recharge Sites pages open the same import screen (`/infrastructure/import/?type=well`,
-`diversion` or `recharge_site`). Each import screen links to the others under
-"Importing something else?", so the storage pond import
-(`/infrastructure/import/?type=storage`) is one link away when the recharge module is on. The screen reads a CSV file, a
-GeoJSON file, a zipped shapefile or a KML file of up to 25 MB. A mapping
-step shows the column OpenH2O matched to each field, and you can change any match
-before you import.
+Diversions and Recharge Sites pages open the same import screen
+(`/infrastructure/import/?type=well`, `diversion` or `recharge_site`). Each import
+screen links to the others under "Importing something else?", and when the recharge
+module is on, that list includes the storage pond import
+(`/infrastructure/import/?type=storage`). The screen reads a CSV file, a GeoJSON file,
+a zipped shapefile or a KML file of up to 25 MB. A mapping step shows the column
+OpenH2O matched to each field, and you can change any match before you import.
 
-The screen recognizes more column names than `import_wells` does. It reads the
-column names of the Department of Water Resources' well completion report export,
-such as `WCRNUMBER`, `DECIMALLATITUDE`, `DECIMALLONGITUDE` and `TOTALCOMPLETEDDEPTH`.
-For a well, it also reads tested yield, casing material, the top and bottom of the
-well screen, pump type and measurement method. For a point of diversion, it reads
-the stream name, the local name, the maximum rate, the water right (`APPL_ID`) and
-the parcel the point serves. For a recharge site, it reads the site type, the
-capacity in acre-feet and the operator. Before you upload, the screen lists each
-column it reads for the type you chose, and which are required: a name, and either a
-latitude and a longitude or a geometry. The mapping step then lists every field for
-that type. A file with no site type column saves each recharge site row as a spreading
-basin and each storage pond row as a storage pond.
+The screen recognizes more column names than `import_wells` does. It reads the column
+names of the Department of Water Resources' well completion report export, such as
+`WCRNUMBER`, `DECIMALLATITUDE`, `DECIMALLONGITUDE` and `TOTALCOMPLETEDDEPTH`. For a
+well, it also reads tested yield, casing material, the top and bottom of the well
+screen, pump type and measurement method. For a point of diversion, it reads the stream
+name, the local name, the maximum rate, the water right (`APPL_ID`) and the parcel the
+point serves. For a recharge site, it reads the site type, the capacity in acre-feet
+and the operator. Before you upload, the screen lists each column it reads for the type
+you chose and marks the required ones: a name, and either latitude and longitude or a
+geometry. The mapping step then lists every field for that type. When a file has no
+site type column, OpenH2O saves each recharge site row as a spreading basin and each
+storage pond row as a storage pond.
 
 Unlike `import_wells`, the screen refuses a row whose name is already on the site or
 appears twice in the file. A point of diversion that names a water right needs that
@@ -211,28 +209,30 @@ right on the site first, so import the water rights before the points of diversi
 
 ### Water levels: the Import water levels screen
 
-The Import water levels button on the Wells page, and the same button in a well's
-Measurement history, open the import screen (`/wells/water-levels/import/`). It
-reads a CSV file of up to 25 MB, such as the groundwater level data the Department of
-Water Resources (DWR) publishes from its SGMA Portal, or a sheet of the organization's own. Each row is one visit
-to a well: a depth to water in feet below land surface, or the reason the depth was not read.
+The Import water levels button on the Wells page and in each well's Measurement history
+opens the import screen (`/wells/water-levels/import/`). The screen reads a CSV file of
+up to 25 MB, such as the groundwater level data the Department of Water Resources (DWR)
+publishes from its SGMA Portal, or the organization's own spreadsheet. Each row is one
+visit to a well: a depth to water in feet below land surface, or the reason the depth
+was not read.
 
 | Column | DWR's column | Required | Notes |
 |---|---|---|---|
-| Well | WELL_NAME | yes | The well's name, state well number or WCR number, as it is on the site. Capital letters and spaces at either end do not matter. A row whose well matches none, or more than one, is listed as an error. |
-| Date | MSMT_DATE | yes | Written as `YYYY-MM-DD` or `M/D/YYYY`, with or without a time. A date with no time is saved at noon. |
+| Well | WELL_NAME | yes | The well's name, state well number or WCR number, as the site records it, ignoring capital letters and spaces at either end. OpenH2O lists a row as an error unless exactly one well has that name or number. |
+| Date | MSMT_DATE | yes | Written as `YYYY-MM-DD` or `M/D/YYYY`, with or without a time. OpenH2O records a date without a time at noon. |
 | Depth | GSE_GWE | a depth or a reason | Feet below land surface. |
-| Reason | WLM_QA_DESC | a depth or a reason | One of the twelve reasons on the well page, in DWR's wording. On a row that has a depth, DWR's quality remark in this column is kept in the notes. |
-| Method | WLM_DESC | no | One of the seven methods on the well page, in DWR's wording. Any other method is kept in the notes. |
+| Reason | WLM_QA_DESC | a depth or a reason | One of the twelve reasons on the well page, in DWR's wording. On a row that has a depth, OpenH2O copies DWR's quality remark from this column into the notes. |
+| Method | WLM_DESC | no | One of the seven methods on the well page, in DWR's wording. OpenH2O copies any other method into the notes. |
 | Notes | MSMT_CMT | no | Copied as written. |
 
-The mapping step shows the column OpenH2O matched to each field, and you can change
-any match. The preview counts the new levels, the rows already on file and the
-errors. A row is skipped when its well, date and depth (or reason) are already on the
-site or repeat an earlier row of the file. A row dated in a water year that has been finalized is
-listed as an error, in the preview and when you import, even when the same level is already on the site. The import does not convert units: a file in meters, or one that gives a
-groundwater elevation or a depth below the top of the casing, needs a depth in feet
-below land surface before you import it.
+The mapping step shows the column OpenH2O matched to each field, and you can change any
+match. The preview counts the new levels, the rows already on file and the errors.
+OpenH2O skips a row whose well, date and depth or reason are already on the site or
+repeat an earlier row of the file. It lists a row dated in a finalized water year as an
+error, in the preview and at import, even when the same level is already on the site.
+OpenH2O does not convert units, so convert a file in meters, or one that gives
+groundwater elevation or depth below the top of the casing, to depth in feet below land
+surface before you import it.
 
 ### Water rights: the Water Rights Import screen
 
@@ -260,10 +260,10 @@ can add it on the right's edit page (`/surface/rights/<id>/edit/`).
 
 ### Diversion records: the diversion import screen and `import_diversion_records`
 
-You can import a file of monthly diversion volumes through Import diversion records
-on the Surface Diversions page (`/surface/diversion/import/`) or with the
-`import_diversion_records` command. The file is a CSV file, up to 25 MB on the
-screen. OpenH2O reads two layouts and tells them apart by their column headings:
+You can import a file of monthly diversion volumes through Import diversion records on
+the Surface Diversions page (`/surface/diversion/import/`) or with the
+`import_diversion_records` command. The file is a CSV file, and the screen takes up to
+25 MB. OpenH2O reads two layouts and tells them apart by their column headings:
 
 | Layout | Recognized by | How OpenH2O reads it |
 |---|---|---|
@@ -282,21 +282,23 @@ OpenH2O saves nothing for a row whose point it cannot find, and the preview name
 row so you can add a point column or choose a whole-file point, then import again.
 
 OpenH2O converts units at 325,851 gallons per acre-foot, 748.05 gallons per CCF,
-1,000,000 gallons per MG and 1.9835 acre-feet per cfs-day, and the preview names
-the first 200 rows it converted and counts the rest.
+1,000,000 gallons per MG and 1.9835 acre-feet per cfs-day. The preview names the first
+200 rows it converted and counts the rest.
 
-The report-year setting is on the Delivery Settings page, under Reporting year.
-When a Water Use Reported file has no `calendar_month` column, OpenH2O uses the
-setting to find the calendar year of each month. The report year can be a water
-year from October to September, a calendar year, or a season that starts in a month you choose. The water year choice always runs October to September, whatever month the site's own water year starts in.
+The report-year setting is on the Delivery Settings page, under Reporting year. When a
+Water Use Reported file has no `calendar_month` column, OpenH2O uses the setting to
+find the calendar year of each month. The report year can be a water year from October
+to September, a calendar year, or a season that starts in a month you choose. The Water
+year choice always means October to September, even when the site's own water year
+starts in another month.
 
 When a file has rows of the type `USE`, the import screen asks how to handle them,
 and the mapping step shows how many there are. The choices are:
 
 - leave them out;
-- record as water returned the amount by which each `USE` row exceeds the matching
-  `DIRECT` row, never more than that `DIRECT` row's volume. A `USE` row with no matching
-  `DIRECT` row for its point and month is refused;
+- record as water returned the amount by which each `USE` row exceeds its `DIRECT` row
+  for the same point and month, up to that `DIRECT` row's volume. OpenH2O rejects a
+  `USE` row that has no such `DIRECT` row;
 - import them as direct diversions.
 
 OpenH2O keeps your answer and offers it again the next time a file has `USE` rows.
@@ -306,18 +308,17 @@ direct diversion and storage need separate rows.
 Rows for the same point, month and type within one file are added together into one
 record, because a book of deliveries often lists several deliveries a month at one
 headgate. The preview shows how many rows were combined. A record whose point, month
-and type are already on the site is skipped and counted. OpenH2O refuses rows for
-months in a water year that has been finalized; to change a record already in such a year, an
-administrator uses Correct this record on its page.
+and type are already on the site is skipped and counted. OpenH2O rejects rows for
+months in a finalized water year. To change a record in a finalized year, an
+administrator uses Correct this record on the record's page.
 
-In the mapping step you also choose the measurement method and the data state for
-every record in the file. By default the method is left blank and the data state is
+In the mapping step you also choose the measurement method and the data state for every
+record in the file. By default the method is left blank and the data state is
 provisional. Choose a different data state when the file holds figures that have
-already been published. Before anything is saved, the preview shows each error
-message with its rows, the first 200 conversions and combined months, and the first
-500 rows without a point, and counts any it does not list. The import
-reports the same counts and assigns each record to the water year that holds its
-month.
+already been published. Before OpenH2O saves anything, the preview shows each error
+message with its rows. It also lists the first 200 conversions and combined months and
+the first 500 rows without a point, and counts the rest. The import reports the same
+counts and assigns each record to the water year that holds its month.
 
 The command takes `--point` for the whole-file point, `--method` and `--data-state`
 for the method and data state, and `--use-rule` with `drop`, `returned` or
@@ -349,21 +350,22 @@ Dry run.
 | `transaction_date` | no | The date the entry was recorded. |
 | `description` | no | Any text. |
 
-A ledger file downloaded from the Use Ledger has one more column, `calculation_method`,
-last. On a `calculated` row it names the calculation's methodology and its settings
-code, for example `Default Methodology, settings a582bd80c59b`, the same text the row's
-"How was this calculated?" page prints; on every other row it is blank. The import
-ignores the column, so a downloaded file imports back unchanged.
+A ledger file downloaded from the Use Ledger ends with one more column,
+`calculation_method`. On a `calculated` row it gives the methodology and its settings
+code, for example `Default Methodology, settings a582bd80c59b`, as the row's "How was
+this calculated?" page shows them. On every other row it is blank. The import ignores
+the column, so a downloaded file imports back unchanged.
 
-A file saved from a past date with the As of box starts with a line naming that date, and the
-import refuses it: its rows are compared with today's, so a row since corrected or voided would
-come back as a new entry. Download today's file to import.
+A file downloaded with the As of box set to a past date carries a line naming that
+date, and the import rejects it. The import compares a file's rows with today's ledger,
+so a row corrected or voided since that date would come back as a new entry. Download
+today's file to import.
 
 On the ledger, water taken against the allocation is a negative amount and water added to it is a positive amount. The table below gives the sign for each source type. Manual entries, CSV imports and adjustments keep the sign you give them.
 
 When an amount's sign does not match its source type, OpenH2O reverses the sign and
-lists every row it changed. An `allocation` or `recharge` row with an amount of 0 is
-a row error: OpenH2O lists it and imports the file's other rows.
+lists every row it changed. OpenH2O lists an `allocation` or `recharge` row with an
+amount of 0 as an error and imports the file's other rows.
 
 | `source_type` code | Sign |
 |---|---|
@@ -377,12 +379,12 @@ a row error: OpenH2O lists it and imports the file's other rows.
 | `adjustment` | either |
 | `calculated` | negative |
 
-OpenH2O skips a row that repeats the parcel, date, source type and amount of an
-entry already on the site or of an earlier row in the file. It refuses entries for a
-water year that has been finalized; an administrator corrects an entry already in such a year on the
-ledger page.
+OpenH2O skips a row that repeats the parcel, date, source type and amount of an entry
+already on the site or of an earlier row in the file. OpenH2O rejects entries in a
+finalized water year. To change an entry in a finalized year, an administrator corrects
+it on the ledger page.
 
-A water year in OpenH2O is a record on the Water Years page, with a name, a first date on the first day of a month and a last date on the last day of a month. Each imported entry is filed under the water year that includes its date. An entry dated outside every water year on the site waits without one and is filed when a water year covering its date is created. With the command, `--reporting-period` limits the import to one water year: pass its name exactly as the Water Years page shows it, and a row dated outside that water year is not imported and is listed as an error. The command reads a comma-separated file unless you pass another character with `--delimiter`.
+You create each water year on the Water Years page, with a name, a start on the first of a month and an end on the last day of a month. OpenH2O files each imported entry under the water year that contains its date. An entry dated outside every water year on the site stays unfiled until someone creates a water year that covers its date. With the command, `--reporting-period` limits the import to one water year: give its name exactly as the Water Years page shows it. OpenH2O lists each row dated outside that year as an error and does not import it. The command reads a comma-separated file unless you pass another character with `--delimiter`.
 
 ```bash
 docker compose cp ledger.csv web:/tmp/
@@ -394,32 +396,33 @@ docker compose exec web python manage.py import_ledger_csv /tmp/ledger.csv \
 
 ### Drinking water: lab sample results
 
-To import a lab results file, use the Import lab results button on the Sample
-Results page (`/drinking/import/`). There is no command for lab results. The file
-can be a .csv, .tab or .txt file of up to 25 MB, and OpenH2O works
-out a .txt file's separator by reading it. California's Division of Drinking Water
-publishes lab results in its Safe Drinking Water Information System (SDWIS) files.
-They are tab-separated files in zip archives, with one file for each span of years,
-so unzip the archive before you upload. The SDWIS4 file holds every water system in
-California, so upload only the rows for the water systems on your site.
+To import a lab results file, use the Import lab results button on the Sample Results
+page (`/drinking/import/`). There is no command for lab results. The file can be a
+.csv, .tab or .txt file of up to 25 MB. OpenH2O detects the separator in a .txt file.
+California's Division of Drinking Water publishes lab results in its Safe Drinking
+Water Information System (SDWIS) files. They are tab-separated files in zip archives,
+with one file for each span of years, so unzip the archive before you upload. The
+SDWIS4 file holds every water system in California, so upload only the rows for the
+water systems on your site.
 
-OpenH2O recognizes the Division of Drinking Water's column headings, such as
-`PS Code`, `Sample Date`, `Analyte Code` and `Result`, and several headings that
-commercial labs use instead. OpenH2O imports a row when it has a PS Code, a sample
-date, an Analyte Name and a result. A row with an Analyte Code and no Analyte Name is a
-row error. A row that repeats a result already on file, or an earlier row of the same
-file, is skipped and counted as a duplicate. Any other row whose sample date falls in a water year
-that has been finalized is a row error. A row with a blank result is imported as a
+OpenH2O recognizes the Division of Drinking Water's column headings, such as `PS Code`,
+`Sample Date`, `Analyte Code` and `Result`, and several headings that commercial labs
+use instead. OpenH2O imports a row when it has a PS Code, a sample date, an Analyte
+Name and a result. OpenH2O lists a row with an Analyte Code and no Analyte Name as an
+error. It skips a row that repeats a result already on file or an earlier row of the
+same file, and counts it as a duplicate. It lists any other row whose sample date falls
+in a finalized water year as an error. A row with a blank result is imported as a
 non-detect when its "Less than reporting level" column is marked and it gives a
 reporting level.
 
 A PS Code is the code of a sampling point. For a California water system, OpenH2O
-builds each point's PS Code from the PWSID, the facility ID and the point number. For
-a system in another state, enter each point's code exactly as it appears in the lab
-results file. A PS Code that does not match any sampling
-point on the site is a row error. OpenH2O does not create a sampling point from a lab
-file, because a mistyped code would then add a monitoring location that does not
-exist. Add the sampling point first with Add sampling points on the Water Systems page (Drinking water > Water Systems), then import the file again.
+builds each point's PS Code from the PWSID, the facility ID and the point number. For a
+system in another state, enter each point's code exactly as it appears in the lab
+results file. OpenH2O lists a row as an error when no sampling point on the site has
+its PS Code. OpenH2O does not create a sampling point from a lab file, because a
+mistyped code would then add a monitoring location that does not exist. Add the
+sampling point first with Add sampling points on the Water Systems page (Drinking
+water > Water Systems), then import the file again.
 
 An analyte the site does not have yet is added from the file's Analyte Code and
 Analyte Name, and the preview says so. When the file carries MCL and DLR columns,
@@ -428,10 +431,10 @@ with them.
 
 ### Drinking water: production by month
 
-You can import a file of a water system's monthly production with the Import button
-on the Production page (`/drinking/production/import/`) or with the
-`import_production` command. The file is a CSV file, up to 25 MB on the screen.
-OpenH2O reads two layouts and tells them apart by their column headings:
+You can import a file of a water system's monthly production with the Import button on
+the Production page (`/drinking/production/import/`) or with the `import_production`
+command. The file is a CSV file, and the screen takes up to 25 MB. OpenH2O reads two
+layouts and tells them apart by their column headings:
 
 | Layout | Recognized by | How OpenH2O reads it |
 |---|---|---|
@@ -441,17 +444,17 @@ OpenH2O reads two layouts and tells them apart by their column headings:
 OpenH2O converts units with the same figures as the other imports: 325,851 gallons
 per acre-foot, 1,000,000 gallons per MG and 748.05 gallons per CCF.
 
-A row whose month and type of water are already on the site is skipped and counted,
-so importing the same file twice saves nothing the second time. A month in a water year that has
-been finalized is a row error. To enter one month
-by hand, use Enter water produced, purchased or sold on the Production page.
+A row whose month and type of water are already on the site is skipped and counted, so
+importing the same file twice saves nothing the second time. OpenH2O lists a month in a
+finalized water year as an error. To enter one month by hand, use Enter water produced,
+purchased or sold on the Production page.
 
 The import screen saves the figures to the site's water system. A site keeps the
-records of one water system; the command's `--pwsid` names the system only when
-someone has added a second one another way, such as on the administration site. For a file in the eAR
-layout, `--unit-for-blank` sets the unit for rows with a blank unit. For a monthly
-log, `--operator-year` sets the report year and `--operator-unit` sets the unit. In
-these commands, replace `XX1234567` with your system's PWSID.
+records of one water system. The command needs `--pwsid` only when someone has added a
+second system some other way, such as through the administration site. For a file in
+the eAR layout, `--unit-for-blank` sets the unit for rows with a blank unit. For a
+monthly log, `--operator-year` sets the report year and `--operator-unit` sets the
+unit. In these commands, replace `XX1234567` with your system's PWSID.
 
 ```bash
 docker compose cp ear-2024-production.csv web:/tmp/
@@ -493,10 +496,11 @@ Setting up a small water system usually starts from its PWSID, the identificatio
 number of a public water system in EPA's records. The Add a water system page
 (`/drinking/onboard/`) looks up the PWSID in EPA's Envirofacts records. It shows the
 water system's record and its facilities, and it saves them when you confirm. A site
-keeps the records of one water system: once a system is on the site, the page turns
-down any other PWSID and saves nothing. A facility that has no state facility ID is skipped, and the review lists it. When the
-PWSID is already on the site, the review says so. If you confirm, OpenH2O updates the
-system and its facilities from EPA's current record.
+keeps the records of one water system, so once a system is on the site, OpenH2O rejects
+any other PWSID on this page and saves nothing. A facility that has no state facility
+ID is skipped, and the review lists it. When the PWSID is already on the site, the
+review says so. If you confirm, OpenH2O updates the system and its facilities from
+EPA's current record.
 
 ---
 
@@ -512,12 +516,13 @@ These records have no file import and no public source. Each has its own page:
 - Sampling points: Add sampling points on the Water Systems page (Drinking water > Water Systems)
 - The sampling schedule: `/drinking/schedule/add/`
 
-A water level, or a visit with no measurement and its reason, is typed on the well's
-page under Add a water level. A reading at a station the organization measures itself,
-such as a staff gauge, is typed on the station's page under Add a reading. Add the
-station first on Add monitoring station (`/datasync/stations/add/`) with the data source
-Entered by hand. A station of a public source (CDEC, USGS, NOAA, DWR) takes its
-readings only from that source, so it does not have an Add a reading form.
+Enter a water level, or a visit without a measurement and its reason, on the well's
+page under Add a water level. Enter a reading at a station the organization measures
+itself, such as a staff gauge, on the station's page under Add a reading. Add the
+station first on Add monitoring station (`/datasync/stations/add/`) with the data
+source Entered by hand. Readings at a station of a public source, such as CDEC, USGS,
+NOAA or DWR, come only from that source, so the station's page has no Add a reading
+form.
 
 ---
 

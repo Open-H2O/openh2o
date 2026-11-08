@@ -351,19 +351,20 @@ set -a && source .env && set +a
 <!-- defines: migrations -->
 `collectstatic` gathers the static files into one folder. `migrate` runs the
 *migrations*, which create or update the database tables to match this version of
-OpenH2O. Run it after every install and every update. `record_filed_figures` records, once,
-the figures of each water year finalized before OpenH2O kept them, and `record_fingerprints` takes
-the code of each finalized water year that has none (the Changes to this year's records card). `createcachetable` creates
-one more table, where OpenH2O keeps short-lived values. `ensure_superuser` creates
-the first account.
+OpenH2O. Run it after every install and every update. `record_filed_figures`
+records, once, the figures of each water year finalized before OpenH2O began keeping
+them. `record_fingerprints` computes the code on the Changes to this year's records
+card for each finalized water year that does not have one. `createcachetable`
+creates one more table, where OpenH2O keeps short-lived values. `ensure_superuser`
+creates the first account.
 
-`ensure_superuser` creates the account only when the site does not have an active host
-administrator. While the site has one, it does not change any account. After you
-first sign in, change the password on your profile page. Keep both lines in `.env`,
-so a wiped database gets the account back the next time the six steps run. You can
-also create the account with `.venv/bin/python manage.py createsuperuser`, which asks
-for each value. Section 7 of [DEPLOY.md](../DEPLOY.md) covers changing the account's
-email address later.
+`ensure_superuser` creates the account only when the site does not have an active
+host administrator. While the site has one, it does not change any account. After
+you first sign in, change the password on your profile page. Keep both account lines
+in `.env`: after the database is wiped, the next run of the six steps recreates the
+account. You can also create the account with
+`.venv/bin/python manage.py createsuperuser`, which asks for each value. Section 7
+of [DEPLOY.md](../DEPLOY.md) covers changing the account's email address later.
 
 <!-- defines: seed_data -->
 Then load the reference lists every site needs, such as units and categories:
@@ -372,12 +373,12 @@ Then load the reference lists every site needs, such as units and categories:
 .venv/bin/python manage.py seed_data
 ```
 
-To *seed* a database is to load a starting set of records into it. `load_demonstration`
-loads the demonstration data: published records from a real groundwater basin,
-together with invented sample data, and `remove_demonstration` takes it out again.
-Phase 3 of the [AI operator guide](AI-OPERATOR-GUIDE.md) describes the demonstration
-data and when to remove it.
-On this path, start each of Phase 3's commands with `.venv/bin/python manage.py`.
+*Seeding* means loading a starting set of records into the database.
+`load_demonstration` loads the demonstration data: published records from a real
+groundwater basin, together with invented sample data. `remove_demonstration`
+removes it. Phase 3 of the [AI operator guide](AI-OPERATOR-GUIDE.md) describes the
+demonstration data and when to remove it. On this path, start each of Phase 3's
+commands with `.venv/bin/python manage.py`.
 
 ### The background service
 
@@ -478,13 +479,14 @@ LOGS=/var/log/openh2o
 
 These are the jobs in `crontab.txt`, at the same times, except the nightly backup.
 The backup script runs through Docker, so it does not work on this path. Section 11
-shows how to back up by hand. Site health's Backup card reads the record that script
-writes, so on this path the card says OpenH2O cannot find the backups folder. `manage.py` reads `.env` by itself, so the jobs need no other settings. The last job deletes sync logs,
-health-check results and published staging records older than a year, and keeps readings
-typed at a station entered by hand. The jobs
-sync a data source only after that source's stations are turned on. Phase 4 of the
-[AI operator guide](AI-OPERATOR-GUIDE.md) describes turning stations on and explains
-each job.
+shows how to back up by hand. Site health's Backup card reads the status file the
+backup script writes, so on this path the card says OpenH2O cannot find the backups
+folder. `manage.py` reads `.env` itself, so the jobs need no other settings. The
+last job deletes sync logs, health-check results and readings OpenH2O fetched more
+than a year ago. It keeps every reading typed at an Entered by hand station. The
+jobs sync a data source only after that source's stations are turned on. Phase 4 of
+the [AI operator guide](AI-OPERATOR-GUIDE.md) describes turning stations on and
+explains each job.
 
 ---
 
@@ -529,14 +531,15 @@ same network, and confirm that the connection is refused.
 
 ### The production settings
 
-Use `config.settings.production` on this path, with the three settings from
-section 7 turned off. The production settings keep `DEBUG` off and sign-up closed,
-so people get accounts only from an administrator. They refuse to start when the
-database password is empty or one of four common defaults (`openh2o`, `postgres`, `password` and
-`changeme`), or when `ALLOWED_HOSTS` is empty. Set a strong password and the site's address anyway. The development
-settings, `config.settings.local`, are for work on the code. They turn `DEBUG` on,
-which shows the site's error traces, settings and database queries on any page that
-hits an error. Check the settings:
+Use `config.settings.production` on this path, with the three settings from section
+7 turned off. The production settings keep `DEBUG` off and sign-up closed, so people
+get accounts only from an administrator. Under them OpenH2O will not start when the
+database password is empty or one of four common defaults (`openh2o`, `postgres`,
+`password` and `changeme`), or when `ALLOWED_HOSTS` is empty. Set a strong password
+and put the site's address in `ALLOWED_HOSTS`. The development settings,
+`config.settings.local`, are for work on the code. They turn `DEBUG` on, which shows
+the site's error traces, settings and database queries on any page that hits an
+error. Check the settings:
 
 ```bash
 set -a && source .env && set +a
