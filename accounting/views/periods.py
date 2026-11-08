@@ -23,7 +23,7 @@ from accounting.statements import (
     take_statement,
 )
 from core.access import admin_required
-from accounting.services import attach_orphans_to_period
+from accounting.services import create_water_year, water_year_created_sentence
 from parcels.models import ParcelLedger
 
 
@@ -225,17 +225,9 @@ def period_create(request):
     success message on the period page this redirects to.
     """
     if request.method == "POST":
-        form = ReportingPeriodForm(request.POST)
-        if form.is_valid():
-            period = form.save()
-            counts = attach_orphans_to_period(period)
-            messages.success(
-                request,
-                f"Water year created. OpenH2O attached "
-                f"{counts['diversion_records']} diversion records and "
-                f"{counts['ledger_rows']} ledger entries dated inside it to this "
-                f"water year.",
-            )
+        period, counts, form = create_water_year(request.POST)
+        if period is not None:
+            messages.success(request, water_year_created_sentence(counts))
             return redirect("accounting:period_detail", pk=period.pk)
     else:
         form = ReportingPeriodForm()

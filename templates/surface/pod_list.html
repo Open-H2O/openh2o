@@ -62,7 +62,7 @@
         type="text"
         id="filter-search" name="q"
         value="{{ q }}"
-        placeholder="Name or stream..."
+        placeholder="Name, local name or stream..."
         hx-get="{% url 'surface:pod_list' %}"
         hx-target="#results"
         hx-trigger="keyup changed delay:300ms"

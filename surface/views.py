@@ -203,7 +203,9 @@ def pod_list(request):
 
     if q:
         queryset = queryset.filter(
-            Q(name__icontains=q) | Q(stream_name__icontains=q)
+            Q(name__icontains=q)
+            | Q(stream_name__icontains=q)
+            | Q(local_name__icontains=q)
         )
     if status:
         queryset = queryset.filter(status=status)
@@ -1032,18 +1034,10 @@ def commit_stored_rights(pending):
     _columns, rows = parse_stored_rights(pending)
     mapping = pending.settings.get("mapping", {})
 
-    existing_right_ids = set(WaterRight.objects.values_list("right_id", flat=True))
-    results = importer.validate_rows(rows, mapping, existing_right_ids)
-    created = importer.commit_rows(results)
-    skipped = [
-        {"index": r["index"], "errors": r["errors"]} for r in results if r["errors"]
-    ]
-    # Message E rows 5 and 6: a right created without a figure in another unit.
-    noted = [
-        {"index": r["index"], "warnings": r["warnings"]}
-        for r in results
-        if not r["errors"] and r["warnings"]
-    ]
+    outcome = importer.import_rights(rows, mapping)
+    created = outcome["created"]
+    skipped = outcome["skipped"]
+    noted = outcome["noted"]
     shown_skipped, skipped_not_listed = pending_imports.cap_error_rows(skipped)
     shown_noted, noted_not_listed = pending_imports.cap_error_rows(noted)
     return {
@@ -1054,7 +1048,7 @@ def commit_stored_rights(pending):
         "noted": shown_noted,
         "noted_count": len(noted),
         "noted_not_listed": noted_not_listed,
-        "total": len(results),
+        "total": outcome["total"],
     }
 
 

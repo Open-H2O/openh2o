@@ -89,6 +89,7 @@ from surface.importer import (
     too_large_message,
 )
 from surface.models import DiversionRecord, PointOfDiversion, WaterRight
+from surface.points import point_named
 
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MB, the same ceiling every other importer uses
 
@@ -293,9 +294,7 @@ def resolve_point(row_l, whole_file_point, *, right_cache, right_points_cache):
     for key in _POINT_COLUMNS:
         value = row_l.get(key, "").strip()
         if value:
-            point = PointOfDiversion.objects.filter(local_name=value).first()
-            if point is None:
-                point = PointOfDiversion.objects.filter(name=value).first()
+            point = point_named(value)
             if point:
                 return point, None
             return None, (

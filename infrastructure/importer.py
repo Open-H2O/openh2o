@@ -1020,3 +1020,32 @@ def commit_rows(valid_results, infra_type):
 # depending on this optional module. They are imported above and kept under
 # their old names here, so parse_upload and every caller of
 # infrastructure.importer._parse_* behave exactly as before.
+
+
+def existing_registration_ids(infra_type):
+    """Well registration ids already on file (wells only), so duplicates are caught."""
+    existing_reg_ids = set()
+    if infra_type == "well":
+        from wells.models import Well
+
+        existing_reg_ids = set(
+            Well.objects.exclude(well_registration_id__isnull=True)
+            .exclude(well_registration_id="")
+            .values_list("well_registration_id", flat=True)
+        )
+    return existing_reg_ids
+
+
+def import_infrastructure(rows, mapping, infra_type, *, dry_run=False):
+    """Validate the rows against the mapping and, unless ``dry_run``, save them.
+
+    The Import screen's worker and the ``import_infrastructure`` command both
+    call this. Returns ``(results, created)``: the per-row results from
+    ``validate_rows`` and the number of records saved (0 on a dry run).
+    """
+    results = validate_rows(
+        rows, mapping, infra_type, existing_registration_ids(infra_type),
+        existing_names=existing_names(infra_type),
+    )
+    created = 0 if dry_run else commit_rows(results, infra_type)
+    return results, created

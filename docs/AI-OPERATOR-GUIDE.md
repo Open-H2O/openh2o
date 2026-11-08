@@ -334,6 +334,13 @@ yet hold records of its own, and `remove_demonstration` removes it. To explore t
 demonstration, load it on the new site before anything else, and remove it before you
 load the organization's own records.
 
+Before you load any records, set the organization's name with `set_organization`. Every
+email the site sends starts its subject line with that name.
+
+```bash
+docker compose exec web python manage.py set_organization --name "Example Ditch Company"
+```
+
 For the organization's own records, start with the Setup Wizard. On a site that does
 not hold records of its own and runs the default modules, the wizard first asks whether
 to load the demonstration data or start with the organization's own records. It then
@@ -372,15 +379,14 @@ the steps finish, the wizard lists the monitoring stations inside the boundary, 
 with its own switch, and offers **Enable all**. Click it, because the populate step
 creates every station switched off.
 
-On a server you reach only over SSH, run the same steps as commands.
-`import_boundary` reads only GeoJSON, so convert a shapefile or a KML file to
-GeoJSON first. `auto_populate` then fills the area in from public sources, and
-`activate_stations` turns on the stations that `auto_populate` found (Phase 4). If
-the parcel or stream download stops partway, its failure message gives the last
-OBJECTID it reached. Run `auto_populate` again with `--steps parcels` or
-`--steps flowlines` and `--resume-from` that number. The Data import guide shows
-each command, including the `docker compose cp` step that copies a file into the
-container.
+On a server you reach only over SSH, run the same steps as commands. `import_boundary`
+reads the same GeoJSON, zipped shapefile and KML files as the wizard's upload.
+`auto_populate` then fills the area in from public sources, and `activate_stations`
+turns on the stations that `auto_populate` found (Phase 4). If the parcel or stream
+download stops partway, its failure message gives the last OBJECTID it reached. Run
+`auto_populate` again with `--steps parcels` or `--steps flowlines` and `--resume-from`
+that number. The Data import guide shows each command, including the `docker compose cp`
+step that copies a file into the container.
 
 ### Option A: The demonstration data
 
@@ -451,7 +457,7 @@ place the table gives:
 | Which unit the delivery records use, such as a miner's inch | OpenH2O has no field for a miner's inch. Convert the figures to acre-feet, or to cfs and hours, before you import them. |
 | Which headgate is which point of diversion | The point of diversion's local name, on its edit page. The point's page then shows it as "known locally as" that name. |
 | How to count the `USE` rows in California's Water Use Reported export: left out, as water returned, or as direct diversions | The diversion import screen asks on its preview when a file has `USE` rows, and it keeps the answer for the next file. |
-| Which parcels each point of diversion serves, each field's share of that point's water, and whether to divide the water by share or by crop ET | The share on the link between the point and the parcel, set on the point's own page. Without a share, OpenH2O divides the water by acreage. To divide by crop ET, set **How the water is divided among the use areas** on the point's edit page. |
+| Which parcels each point of diversion serves, each field's share of that point's water, and whether to divide the water by share or by crop ET | `import_parcels` links each use area to its point when the file of use areas has a headgate column. The share on the link between the point and the parcel, set on the point's own page. Without a share, OpenH2O divides the water by acreage. To divide by crop ET, set **How the water is divided among the use areas** on the point's edit page. |
 | Each measuring device's nickname, calibration date and accuracy | The device record, from **Add device** on the point's own page. |
 | Which year a season belongs to | The Delivery Settings page (`/accounting/delivery-settings/`), under Reporting year. It is set once for the whole site. |
 | Which month your water year starts in | The water year setting on the Delivery Settings page (`/accounting/delivery-settings/`). The default is 10, October. Before the first allocation, set the month. |
@@ -477,13 +483,13 @@ shows a preview and saves only after you confirm.
 | Parcel outlines, as a zipped shapefile, KML or GeoJSON | The Import use areas screen at `/parcels/import/`, or `import_parcels` | Both read the same files. Water accounts link to parcels, so import the parcels before you create accounts. |
 | A list of wells, as a CSV file | The import screen at `/infrastructure/import/?type=well`, or `import_wells` | Both create the same records. The screen asks you to match the file's columns first. |
 | Water levels measured at the wells, as a CSV file | `/wells/water-levels/import/` | The screen reads DWR's groundwater level data from its SGMA Portal, and the organization's own spreadsheet. Each row identifies its well by name, state well number or WCR number, so import the wells first. |
-| A list of water rights | `/surface/rights/import/` | It reads a CSV file. Import the water rights before the points of diversion. |
-| Points of diversion, as a CSV, GeoJSON, KML or shapefile | The same import screen as the wells, at `/infrastructure/import/?type=diversion` | |
-| Storage ponds or recharge sites | The same import screen, with `?type=storage` or `?type=recharge_site` | Each of these import pages links to the others under "Importing something else?". |
+| A list of water rights | `import_water_rights` or the import screen at `/surface/rights/import/` | From the state's CSV list, the command creates the same water rights as the screen. Import the water rights before the points of diversion. |
+| Points of diversion, as a CSV, GeoJSON, KML or shapefile | `import_infrastructure --type diversion` or the Import screen at `/infrastructure/import/?type=diversion` | The command reads the same files as the screen. It creates the same points of diversion. To link each use area to its point, run `import_parcels` again with a headgate column after the points are on the site. |
+| Storage ponds or recharge sites | `import_infrastructure` with `--type storage` or `--type recharge_site`. On the Import screen, use `?type=storage` or `?type=recharge_site` at the end of the address. | Each of these import pages links to the others under "Importing something else?". |
 | A public water system, by its PWSID | `/drinking/onboard/` | A PWSID is the identification number of a public water system in EPA's records. The page looks the system up in EPA's Envirofacts records and adds the system and its facilities. A site keeps the records of one water system. Once a system is on the site, the page rejects a different PWSID, and entering the same PWSID again updates the system from EPA's current record. Add the sampling points on the page that follows. |
 | Laboratory results | `/drinking/import/` | It matches the column headings of California's Division of Drinking Water and several headings that commercial labs use. |
 | A year of production by month and source | `/drinking/production/import/`, or `import_production` | It reads an eAR export or a monthly log. The screen and the command both save to the site's water system. The command needs `--pwsid` only when someone has added a second system another way, such as on the administration site. |
-| Past ledger entries, as a CSV file | `import_ledger_csv`, or the Upload CSV page of the Use Ledger (`/accounting/ledger/upload/`) | The Upload CSV page imports the file at once unless you tick Dry run. Each entry counts in the water year its date falls in, so first create the water years under Water accounting > Water Years. An entry dated outside every water year belongs to none until someone creates a water year that covers its date. With `--reporting-period` and a water year's name, the command imports only the rows dated inside that water year. |
+| Past ledger entries, as a CSV file | `import_ledger_csv`, or the Upload CSV page of the Use Ledger (`/accounting/ledger/upload/`) | The Upload CSV page imports the file at once unless you tick Dry run. Each entry counts in the water year its date falls in. Create the water years first with `create_water_year` or under Water accounting > Water Years. An entry dated outside every water year belongs to none until someone creates a water year that covers its date. With `--reporting-period` and a water year's name, the command imports only the rows dated inside that water year. |
 | A year of diversion volumes, in California's Water Use Reported export or the organization's own book of deliveries | `/surface/diversion/import/`, or `import_diversion_records` | OpenH2O recognizes either layout by its column headings, and the preview lists the conversions OpenH2O made. Set the report year first, as the next paragraph describes. |
 
 Before you import diversion records, ask how the organization counts a reporting year:
@@ -494,14 +500,15 @@ only when the site runs the `surface` section. The reporting year applies only t
 diversion files, and is separate from the month the site's water year starts in.
 
 Water accounts and allocations have no import. Create them on the Accounts and
-Allocations pages under Water accounting. Before the first allocation, set the month
-the water year starts in on Delivery Settings, and create each water year to start on
-the first of a month and end on the last day of a month. You can also enter water
-levels one at a time on the well's page. For a station the organization measures
-itself, an Operator or Administrator first adds the station on Add monitoring station
+Allocations pages under Water accounting. Before the first allocation, set the water
+year's first month on the Delivery Settings page. Then create each water year with
+`create_water_year` or on the Water Years page. A water year starts on the first day of
+a month and ends on the last day of a month. You can also enter water levels one at a
+time on the well's page. For a station the organization measures itself, an Operator or
+Administrator first adds the station on Add monitoring station
 (`/datasync/stations/add/`) with the data source Entered by hand; its readings then go
-on the station's page under Add a reading. The Data import guide lists every record
-that is entered by hand and the page for each.
+on the station's page under Add a reading. The Data import guide lists every record that
+is entered by hand and the page for each.
 
 ✋ **Checkpoint:** before you create accounts, confirm with the person that the
 boundary looks right on the map and which parcels the organization's accounts will
@@ -618,15 +625,15 @@ Upgrades in section 11 of DEPLOY.md gives the fix. The schedule runs these jobs:
   whatever its age. It deletes a revised reading with its earlier values once the
   newest of them passes the retention period.
 
-The times are in the computer's own time zone. The page of each switched-on station
-that OpenH2O syncs shows its next scheduled fetch in the site's time zone, set at
-`/admin/` under Core > Site configs or, without that, by `TIME_ZONE`. Set the
-computer's clock to the same zone. Until its key is set, the schedule skips CIMIS or
-NOAA with one line in the log. OpenET is not on the schedule: run `sync_openet_parcels`
-when the organization wants new months. The ntfy service sends notifications to a phone
-or a browser. For an alert when a sync fails, put `OPENH2O_NTFY_URL=` in `.env`,
-followed by the address of an ntfy topic, then run `make install-cron` again to copy
-the address into the schedule.
+The times are in the computer's own time zone. A station's page shows when OpenH2O next
+reads that station's data. The page gives that time in the site's time zone. Set the
+site's time zone with `set_organization --time-zone`. A site whose organization's name
+was never set uses the `TIME_ZONE` setting in `.env`. Set the computer's clock to the
+same zone. Until its key is set, the schedule skips CIMIS or NOAA with one line in the
+log. OpenET is not on the schedule: run `sync_openet_parcels` when the organization
+wants new months. The ntfy service sends notifications to a phone or a browser. For an
+alert when a sync fails, put `OPENH2O_NTFY_URL=` in `.env`, followed by the address of
+an ntfy topic, then run `make install-cron` again to copy the address into the schedule.
 
 On Windows, Task Scheduler runs the schedule. The jobs run in Git
 Bash, which comes with Git for Windows (https://git-scm.com/download/win), so install
@@ -765,24 +772,24 @@ the boundary and reviewing the accounts, the allocations and the recorded data.
 Reporting is under development and off by default, so leave it off. OpenH2O does not
 submit reports to the state.
 
-Before the first password reset, check the name the site's emails go out under.
-Every email the site sends starts its subject line with the site's name. OpenH2O
-takes the site's name from the organization's name, which is set at `/admin/` under
-Core > Site configs. It takes the site's address from `ALLOWED_HOSTS`. It saves both
-when the migrations run. Check what it saved:
+Before the first password reset, check the name the site's emails go out under. Every
+email the site sends starts its subject line with the site's name. The command
+`set_organization` sets the organization's name. The site's emails use that name. The
+site's address comes from `ALLOWED_HOSTS`. The migrations save that address in place of
+the placeholder `example.com`. Check what it saved:
 
 ```bash
 docker compose exec web python manage.py shell -c "from django.contrib.sites.models import Site; s = Site.objects.get_current(); print(s.name, '|', s.domain)"
 ```
 
-The command should print the organization's name and the site's web address. If either
-one still reads `example.com`, set the missing value. The organization's name goes in
-at `/admin/` under Core > Site configs, and the address goes in `ALLOWED_HOSTS` in
-`.env`. After a change to `.env`, run `docker compose up -d`. Then run
+The command should print the organization's name and the site's web address. If the name
+still reads `example.com`, run `set_organization` with the organization's name. If the
+address still reads `example.com`, put the address in `ALLOWED_HOSTS` in `.env`. After a
+change to `.env`, run `docker compose up -d`. Then run
 `docker compose exec web python manage.py migrate` and check again. `manage.py check`
 also reports a missing name or address, as `openh2o.W002`. A site reached only at
-`localhost` takes `localhost` as its address; the warning clears once the
-organization's name is set and the migrations have run again.
+`localhost` takes `localhost` as its address. `manage.py check` stops reporting
+`openh2o.W002` once `set_organization` has set the organization's name.
 
 If a consultant set up the site, finish with *Handing a site over* in section 11 of
 DEPLOY.md. The organization's host administrator then deactivates the consultant's

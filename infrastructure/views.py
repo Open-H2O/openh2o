@@ -709,18 +709,6 @@ def _confirmed_mapping(request: HttpRequest) -> dict[str, str]:
     }
 
 
-def _existing_registration_ids(infra_type: str) -> set[str]:
-    """Well registration ids already on file (wells only), so duplicates are caught."""
-    existing_reg_ids: set[str] = set()
-    if infra_type == "well":
-        existing_reg_ids = set(
-            Well.objects.exclude(well_registration_id__isnull=True)
-            .exclude(well_registration_id="")
-            .values_list("well_registration_id", flat=True)
-        )
-    return existing_reg_ids
-
-
 def _import_result_context(
     results: list, created: int, rows: list, infra_type: str
 ) -> dict:
@@ -779,11 +767,7 @@ def commit_stored_infrastructure(pending):
     mapping = pending.settings.get("mapping", {})
     _columns, rows = parse_stored_infrastructure(pending)
 
-    results = importer.validate_rows(
-        rows, mapping, infra_type, _existing_registration_ids(infra_type),
-        existing_names=importer.existing_names(infra_type),
-    )
-    created = importer.commit_rows(results, infra_type)
+    results, created = importer.import_infrastructure(rows, mapping, infra_type)
     return _import_result_context(results, created, rows, infra_type)
 
 

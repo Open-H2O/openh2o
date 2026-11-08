@@ -26,8 +26,9 @@ OH2O.followResults reads them after every swap and filters the map to them.
           onclick="if(!event.target.closest('a')){window.location='{% url 'surface:pod_detail' pod.pk %}';}">
         <td>
           <a href="{% url 'surface:pod_detail' pod.pk %}" class="data-table-link">
-            {{ pod.name }}
+            {% if pod.local_name %}{{ pod.local_name }}{% else %}{{ pod.name }}{% endif %}
           </a>
+          {% if pod.local_name %}<div class="text-secondary text-sm">{{ pod.name }}</div>{% endif %}
         </td>
         <td class="text-secondary text-sm">{{ pod.stream_name|blank }}</td>
         <td>{% include "surface/partials/_status_badge.html" with status=pod.status %}</td>

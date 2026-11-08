@@ -300,11 +300,14 @@ def validate_rows(rows, mapping, existing_right_ids):
 
 
 def _src(row: dict[str, Any], mapping: dict[str, str], field: str) -> str:
-    """The row's stripped value for ``field`` through the column mapping, or "" when unmapped or blank."""
+    """The row's stripped value for ``field`` through the column mapping, or "" when unmapped, blank, or NA / NaN in any capitals."""
     col = mapping.get(field)
     if not col:
         return ""
-    return (row.get(col) or "").strip()
+    value = (row.get(col) or "").strip()
+    if value.lower() in ("na", "nan"):
+        return ""
+    return value
 
 
 def _blank(errors: list[str], mapping: dict[str, str], field: str) -> None:
@@ -502,3 +505,33 @@ def commit_rows(valid_results):
                 )
 
     return created
+
+
+def import_rights(rows, mapping, *, dry_run=False):
+    """Validate every row and, unless ``dry_run``, create the rights that passed.
+
+    The one path the Water Rights Import screen's worker and the
+    ``import_water_rights`` command both take. Returns ``{"results",
+    "created", "skipped", "noted", "total"}``: ``skipped`` and ``noted`` are
+    the full lists of ``{"index", "errors"}`` and ``{"index", "warnings"}``,
+    not capped. ``index`` is 0-based; the file row is ``index + 2``.
+    """
+    existing_right_ids = set(WaterRight.objects.values_list("right_id", flat=True))
+    results = validate_rows(rows, mapping, existing_right_ids)
+    created = 0 if dry_run else commit_rows(results)
+    skipped = [
+        {"index": r["index"], "errors": r["errors"]} for r in results if r["errors"]
+    ]
+    # Message E rows 5 and 6: a right created without a figure in another unit.
+    noted = [
+        {"index": r["index"], "warnings": r["warnings"]}
+        for r in results
+        if not r["errors"] and r["warnings"]
+    ]
+    return {
+        "results": results,
+        "created": created,
+        "skipped": skipped,
+        "noted": noted,
+        "total": len(results),
+    }

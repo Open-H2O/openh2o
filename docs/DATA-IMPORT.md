@@ -85,8 +85,8 @@ can add one later. The wizard's second step shows the boundary on a map for you 
 confirm. Its third step runs the populate steps described in section 4, one at a
 time.
 
-To load a boundary from a GeoJSON file with a command instead, use
-`import_boundary`:
+To load a boundary file with a command instead, use `import_boundary`. It reads the same
+files as the wizard's upload:
 
 ```bash
 docker compose cp boundary.geojson web:/tmp/
@@ -136,6 +136,7 @@ docker compose exec web python manage.py import_parcels /tmp/parcels.geojson
 |---|---|---|---|
 | Parcel number (APN) | `APN` | `--parcel-number-field` | yes |
 | Owner name | `OWNER` | `--owner-field` | no |
+| Headgate | `HEADGATE` | `--headgate-field` | no |
 | Outline | the feature's geometry | none | yes |
 
 The command joins the outlines that share an APN into one parcel, checks every parcel,
@@ -146,6 +147,17 @@ that feature, counts it as an error and imports the rest of the file. When a fea
 outline cannot be read, the command names the feature and stops without importing any
 of the file's parcels. If any parcel cannot be added, the command stops without adding
 any and names the ones it refused.
+
+With a headgate column, `import_parcels` links each use area to its point of diversion.
+Each value in the column must be the local name of a point already on the site. A
+point's name works too. Import the points of diversion before you run the command with
+this column. The command links new use areas and use areas already on the site. It skips
+a use area that is already linked to that point. It never changes a share you set.
+OpenH2O divides a point's water among its use areas by acreage until you set a share for
+each use area on the point's page. If a value is not the name of a point on the site,
+the command lists the value. It then stops without importing any use area. The command
+ignores a crop column. OpenH2O's figures for a use area are the same whatever crop the
+use area grows.
 
 ### Wells: `import_wells`
 
@@ -210,6 +222,18 @@ Unlike `import_wells`, the screen refuses a row whose name is already on the sit
 appears twice in the file. A point of diversion that names a water right needs that
 right on the site first, so import the water rights before the points of diversion.
 
+The `import_infrastructure` command reads the same files as the Import screen. It checks
+each row by the screen's rules. Give the kind of record after `--type`: `well`,
+`diversion`, `storage` or `recharge_site`. To read a value from a column the screen
+would not recognize, give `--column`, such as `--column local_name=HEADGATE`. A dry run
+lists OpenH2O's name for each value and the column the command reads for it.
+
+```bash
+docker compose cp points.csv web:/tmp/
+docker compose exec web python manage.py import_infrastructure /tmp/points.csv --type diversion --dry-run
+docker compose exec web python manage.py import_infrastructure /tmp/points.csv --type diversion
+```
+
 ### Water levels: the Import water levels screen
 
 The Import water levels button on the Wells page and in each well's Measurement history
@@ -256,10 +280,22 @@ be up to 25 MB.
 | `DIRECT_SEASON_START_MONTH_1` / `DIRECT_DIV_SEASON_START_DAY_1` / `DIRECT_DIV_SEASON_END_MONTH_1` / `DIRECT_DIV_SEASON_END_DAY_1` | no | The direct diversion season. |
 | `STORAGE_SEASON_START_MONTH_1` / `STORAGE_SEASON_START_DAY_1` / `STORAGE_SEASON_END_MONTH_1` / `STORAGE_SEASON_END_DAY_1` | no | The storage season. |
 
+In the state's list, "NA" and "NaN" stand for a blank. OpenH2O imports "NA" and "NaN" as blanks.
+
 The mapping step shows each column OpenH2O matched, and you can change a match. The
 preview shows the first rows, and the import reports how many rights it created and
 how many it skipped. When the list leaves out a right's season or maximum rate, you
 can add it on the right's edit page (`/surface/rights/<id>/edit/`).
+
+The `import_water_rights` command reads the same file as the Water Rights Import screen.
+The command creates the same water rights as the screen. To read a value from a column
+the screen would not recognize, give `--column`, such as `--column net_acreage=ACRES`.
+
+```bash
+docker compose cp rights.csv web:/tmp/
+docker compose exec web python manage.py import_water_rights /tmp/rights.csv --dry-run
+docker compose exec web python manage.py import_water_rights /tmp/rights.csv
+```
 
 ### Diversion records: the diversion import screen and `import_diversion_records`
 
@@ -387,7 +423,11 @@ already on the site or of an earlier row in the file. OpenH2O rejects entries in
 finalized water year. To change an entry in a finalized year, an administrator corrects
 it on the ledger page.
 
-You create each water year on the Water Years page, with a name, a start on the first of a month and an end on the last day of a month. OpenH2O files each imported entry under the water year that contains its date. An entry dated outside every water year on the site stays unfiled until someone creates a water year that covers its date. With the command, `--reporting-period` limits the import to one water year: give its name exactly as the Water Years page shows it. OpenH2O lists each row dated outside that year as an error and does not import it. The command reads a comma-separated file unless you pass another character with `--delimiter`.
+You create each water year on the Water Years page or with `create_water_year`. A water year starts on the first day of a month and ends on the last day of a month. Give each water year a name. OpenH2O files each imported entry under the water year that contains its date. An entry dated outside every water year on the site stays unfiled until someone creates a water year that covers its date. With the command, `--reporting-period` limits the import to one water year: give its name exactly as the Water Years page shows it. OpenH2O lists each row dated outside that year as an error and does not import it. The command reads a comma-separated file unless you pass another character with `--delimiter`.
+
+```bash
+docker compose exec web python manage.py create_water_year --name "2024 Water Year" --start 2023-10-01 --end 2024-09-30
+```
 
 ```bash
 docker compose cp ledger.csv web:/tmp/
@@ -532,20 +572,28 @@ form.
 ## A sensible order
 
 1. Load the reference lists with `seed_data`. To explore the demonstration first, run
-   `load_demonstration`, and run `remove_demonstration` before the next step.
+   `load_demonstration`, and run `remove_demonstration` before the next step. Set the
+   organization's name with `set_organization` or at `/admin/` under Core > Site
+   configs.
 2. Open the Setup Wizard (`/setup/`), choose Start with your own records, and choose,
-   upload or type a boundary, or start without one. With a boundary, run the wizard's populate step to add monitoring
-   stations, and basins, parcels and streams if you need them.
+   upload or type a boundary, or start without one. With a boundary, run the wizard's
+   populate step to add monitoring stations, and basins, parcels and streams if you need
+   them. Without a browser, load the boundary with `import_boundary` and run
+   `auto_populate`.
 3. Import your use areas on the Import use areas screen, or with `import_parcels`.
 4. Import your wells with `import_wells` or the Wells page's Import screen.
    Then import the wells' water levels on the Import water levels screen.
-5. Import your water rights, or add them by hand, before the points of diversion.
-   Then import points of diversion, storage ponds and recharge sites on the Import
-   screen.
+5. Import your water rights with `import_water_rights` or the Water Rights Import
+   screen. You can also add a right by hand on the Water Rights page. Next, import
+   points of diversion, storage ponds and recharge sites with `import_infrastructure` or
+   the Import screen. A point that names a water right needs that right on the site
+   first. Then run `import_parcels` again with the headgate column to link each use area
+   to its point.
 6. For a drinking-water system, add the system from its PWSID, then add its sampling
    points, then import lab results and production.
 7. Create water accounts and allocations on their pages.
-8. Create the water years, then import ledger history with `import_ledger_csv` or
-   the Upload CSV page, and diversion records with the diversion import.
+8. Create the water years with `create_water_year` or on the Water Years page. Then
+   import ledger history with `import_ledger_csv` or the Upload CSV page. Import
+   diversion records with `import_diversion_records` or the diversion import screen.
 9. Connect the live data sources and set up the update schedule, as
    [DEPLOY.md](../DEPLOY.md) describes.

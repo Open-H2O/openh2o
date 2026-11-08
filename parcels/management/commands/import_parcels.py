@@ -14,6 +14,7 @@ from __future__ import annotations
 import os
 from typing import Any
 
+from django.apps import apps as django_apps
 from django.contrib.gis.gdal import GDALException
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
@@ -54,6 +55,15 @@ class Command(BaseCommand):
             help="Field name in the source data containing the owner name (default: OWNER).",
         )
         parser.add_argument(
+            "--headgate-field",
+            default=None,
+            help=(
+                "The column that names each use area's headgate. The command reads the column "
+                "HEADGATE unless you name another. Each value must be the local name of a point "
+                "of diversion on the site. A point's name works too."
+            ),
+        )
+        parser.add_argument(
             "--dry-run",
             action="store_true",
             help="Stage records but do not promote to Parcel table. Reports what would happen.",
@@ -65,6 +75,8 @@ class Command(BaseCommand):
         parcel_number_field = options["parcel_number_field"]
         owner_field = options["owner_field"]
         dry_run = options["dry_run"]
+        headgate_given = options["headgate_field"] is not None
+        headgate_field = options["headgate_field"] or "HEADGATE"
 
         if not os.path.exists(file_path):
             raise CommandError(f"File not found: {file_path}")
@@ -74,7 +86,31 @@ class Command(BaseCommand):
         if dry_run:
             self.stdout.write(self.style.WARNING("[DRY RUN] No records will be promoted."))
 
+        self._promotion_refused = False
         features = self._read_features(file_path)
+
+        # Without the surface app the command ignores a headgate column, as it
+        # ignores any other column; a column named on purpose is refused.
+        headgates: dict[str, list[str]] = {}
+        if django_apps.is_installed("surface"):
+            # A column named on purpose that the file lacks is refused (row 33),
+            # so a mistyped name never skips every link without a word.
+            if headgate_given and not any(
+                headgate_field in (feature.get("properties") or {}) for feature in features
+            ):
+                raise CommandError(
+                    f"The file does not have a column named {headgate_field}. "
+                    "Check the spelling against the file's first row."
+                )
+            headgates = self._headgates_in(features, parcel_number_field, headgate_field)
+            if headgates:
+                self._refuse_unknown_headgates(headgates)
+        elif headgate_given:
+            raise CommandError(
+                "This site runs without OpenH2O's Surface Water pages. Add surface to "
+                "OPENH2O_MODULES in .env to link use areas to headgates."
+            )
+
         staged_ids, staged_pending, staged_duplicate, staged_error = self._stage_features(
             features, parcel_number_field
         )
@@ -103,11 +139,24 @@ class Command(BaseCommand):
         if staged_ids:
             ParcelStaging.objects.filter(id__in=staged_ids).delete()
 
+        # A refused outline or a refused promotion imported nothing, so no
+        # link is made and no linking line is printed.
+        linking = (
+            bool(headgates)
+            and not staged_error_outline
+            and (dry_run or not self._promotion_refused)
+        )
+        linked = already = 0
+        if linking:
+            linked, already = self._link_headgates(headgates, dry_run)
+
         self.stdout.write(
             self.style.SUCCESS(
                 f"Imported {imported_count} parcels, {staged_duplicate} duplicates skipped, {staged_error} errors"
             )
         )
+        if linking:
+            self.stdout.write(self._linking_line(linked, already))
 
     def _detect_format(self, file_path: str, fmt: str | None) -> str:
         """Return the explicit format, or the one the file extension implies."""
@@ -265,7 +314,106 @@ class Command(BaseCommand):
                     "  Nothing was imported. Refused: " + ", ".join(refused) + "."
                 )
             )
+            self._promotion_refused = True
             return 0, failed_count
         now = timezone.now()
         pending_qs.update(status="imported", imported_at=now)
         return imported_count, failed_count
+
+    def _headgates_in(
+        self, features: list[dict[str, Any]], parcel_number_field: str, headgate_field: str
+    ) -> dict[str, list[str]]:
+        """Return {parcel number: its headgate values}; empty when the file has no such column.
+
+        A blank cell adds no value, so a use area with only blank cells is absent.
+        """
+        has_column = any(
+            headgate_field in (feature.get("properties") or {}) for feature in features
+        )
+        if not has_column:
+            return {}
+        found: dict[str, list[str]] = {}
+        for feature in features:
+            properties = feature.get("properties") or {}
+            number = properties.get(parcel_number_field)
+            number = "" if number is None else str(number).strip()
+            cell = properties.get(headgate_field)
+            cell = "" if cell is None else str(cell).strip()
+            if not number or not cell:
+                continue
+            values = found.setdefault(number, [])
+            if cell not in values:
+                values.append(cell)
+        return found
+
+    def _refuse_unknown_headgates(self, headgates: dict[str, list[str]]) -> None:
+        """Name every value no point holds, then stop before anything is saved."""
+        from surface.points import point_named
+
+        missing = False
+        for number, values in headgates.items():
+            for value in values:
+                if point_named(value) is None:
+                    missing = True
+                    self.stdout.write(
+                        self.style.ERROR(
+                            f"Use area {number}: OpenH2O did not find a point of diversion named '{value}'."
+                        )
+                    )
+        if missing:
+            raise CommandError(
+                "The command did not import any use area. Add the missing points of diversion "
+                "or correct the names in the file. Then run the command again."
+            )
+
+    def _link_headgates(self, headgates: dict[str, list[str]], dry_run: bool) -> tuple[int, int]:
+        """Add the missing use area to headgate links; return (use areas linked, already linked).
+
+        A link is made at the model's own default share, and an existing link
+        is never touched.
+        """
+        from surface.models import PointOfDiversionParcel
+        from surface.points import point_named
+
+        on_site = {
+            p.parcel_number: p
+            for p in Parcel.objects.filter(parcel_number__in=list(headgates))
+        }
+        linked = already = 0
+        with transaction.atomic():
+            for number, values in headgates.items():
+                parcel = on_site.get(number)
+                added = False
+                for value in values:
+                    point = point_named(value)
+                    if parcel is None:
+                        # Dry run: the use area would be new, so its link would be too.
+                        # A real run that did not save it has nothing to link.
+                        added = added or dry_run
+                        continue
+                    if PointOfDiversionParcel.objects.filter(
+                        point_of_diversion=point, parcel=parcel
+                    ).exists():
+                        continue
+                    added = True
+                    if not dry_run:
+                        PointOfDiversionParcel.objects.create(
+                            point_of_diversion=point, parcel=parcel
+                        )
+                if added:
+                    linked += 1
+                else:
+                    already += 1
+        return linked, already
+
+    def _linking_line(self, linked: int, already: int) -> str:
+        areas = "1 use area" if linked == 1 else f"{linked} use areas"
+        line = f"OpenH2O linked {areas} to {'its headgate' if linked == 1 else 'their headgates'}."
+        if already:
+            if already == 1:
+                line += " Another 1 use area in the file was already linked to its headgate."
+            else:
+                line += (
+                    f" Another {already} use areas in the file were already linked to their headgates."
+                )
+        return line

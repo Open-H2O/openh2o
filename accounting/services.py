@@ -796,6 +796,34 @@ def attach_orphans_to_period(period: ReportingPeriod) -> dict[str, int]:
     return counts
 
 
+def create_water_year(data):
+    """Create a water year from form data and attach the orphaned rows inside it.
+
+    One function for the Water Years page and the ``create_water_year``
+    command. ``data`` is checked by ``ReportingPeriodForm``. Returns
+    ``(period, counts, None)`` on success, with ``counts`` from
+    ``attach_orphans_to_period``, and ``(None, None, form)`` when the form
+    refuses it, for the caller to show the form's own errors.
+    """
+    from accounting.forms import ReportingPeriodForm
+
+    form = ReportingPeriodForm(data)
+    if not form.is_valid():
+        return None, None, form
+    period = form.save()
+    return period, attach_orphans_to_period(period), None
+
+
+def water_year_created_sentence(counts: dict[str, int]) -> str:
+    """The sentence that reports a new water year and what it attached."""
+    return (
+        f"Water year created. OpenH2O attached "
+        f"{counts['diversion_records']} diversion records and "
+        f"{counts['ledger_rows']} ledger entries dated inside it to this "
+        f"water year."
+    )
+
+
 def parcel_balance(parcel: Parcel, reporting_period: ReportingPeriod | None = None) -> Decimal:
     """Sum of all ledger entries for a parcel.
 

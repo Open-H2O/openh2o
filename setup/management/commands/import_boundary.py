@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
-Load an operator's own GeoJSON boundary file into a Boundary row.
+Load an operator's own boundary file into a Boundary row.
+
+The file can be GeoJSON, a zipped shapefile or a KML file.
 
 **The gap this closes.** ``docs/AI-OPERATOR-GUIDE.md`` tells a headless
 operator (no browser, SSH only) that the command-line path "reaches the same
@@ -10,7 +12,7 @@ agency that has "Only a basin boundary". That was never true:
 existing ``Boundary`` row by name or pk — it never creates one — and until
 this command existed, the Setup Wizard's upload view
 (``setup/views.py``) was the ONLY code in the whole platform that could turn
-an operator's own GeoJSON file into a ``Boundary``. A headless operator
+an operator's own boundary file into a ``Boundary``. A headless operator
 literally could not load their own boundary.
 
 This command is the missing piece: the headless equivalent of the wizard's
@@ -36,18 +38,22 @@ optional module and would trip the composition rule in
 import json
 import os
 
+from django.core.files import File
 from django.core.management.base import BaseCommand, CommandError
 
 from geography.models import Boundary
-from setup.boundaries import boundary_from_geojson_text
+from setup.boundaries import boundary_from_geojson_text, boundary_from_upload
+
+#: A file with one of these extensions goes through the wizard's
+#: ``boundary_from_upload``. Every other file keeps the GeoJSON path it always had.
+MAP_FILE_EXTENSIONS = (".zip", ".kml")
 
 
 class Command(BaseCommand):
     help = (
-        "Load an operator's own GeoJSON boundary file into a Boundary row — "
-        "the headless equivalent of the Setup Wizard's upload step. "
-        "Idempotent: re-running against the same file updates the boundary "
-        "in place rather than duplicating it."
+        "Load a boundary from a GeoJSON file, a zipped shapefile or a KML file. "
+        "The Setup Wizard's upload step reads the same files. When a boundary of "
+        "the same name is already on the site, the command updates that boundary."
     )
 
     def add_arguments(self, parser):
@@ -55,7 +61,7 @@ class Command(BaseCommand):
             "--file",
             dest="file_path",
             required=True,
-            help="Path to the operator's GeoJSON file.",
+            help="The path of the boundary file inside the container.",
         )
         parser.add_argument(
             "--name",
@@ -80,37 +86,23 @@ class Command(BaseCommand):
         if not os.path.isfile(file_path):
             raise CommandError(f"No such file: {file_path}")
 
-        try:
-            with open(file_path, "rb") as fh:
-                raw = fh.read()
-        except OSError as exc:
-            raise CommandError(f"Couldn't read {file_path}: {exc}")
-
         fallback_name = os.path.splitext(os.path.basename(file_path))[0]
 
-        # Reuse the Setup Wizard's own operator-facing wording for these three
-        # failure shapes (setup/views.py) — they were written for a water
-        # district engineer, and matching them verbatim is the reason this
-        # command shares the wizard's parser instead of writing its own.
-        try:
-            name, geom, attrs = boundary_from_geojson_text(
-                raw, fallback_name=fallback_name
-            )
-        except UnicodeDecodeError:
-            raise CommandError(
-                "That file couldn't be read as text. A GeoJSON file is a "
-                "plain-text file — make sure you exported GeoJSON, not a "
-                "shapefile or a zip archive."
-            )
-        except json.JSONDecodeError:
-            raise CommandError(
-                "The file isn't valid JSON. A GeoJSON file is text that "
-                "starts with '{' — check you exported GeoJSON (not a "
-                "shapefile, KML, or zip)."
-            )
-        except ValueError as exc:
-            # Specific, plain-language reason from parse_geojson_boundary.
-            raise CommandError(str(exc))
+        if file_path.lower().endswith(MAP_FILE_EXTENSIONS):
+            # A zipped shapefile or a KML file: the Setup Wizard's own function,
+            # given the opened file with its name.
+            try:
+                with open(file_path, "rb") as fh:
+                    uploaded = File(fh, name=os.path.basename(file_path))
+                    name, geom, attrs, _count = boundary_from_upload(
+                        uploaded, fallback_name=fallback_name
+                    )
+            except OSError as exc:
+                raise CommandError(f"Couldn't read {file_path}: {exc}")
+            except (ValueError, ImportError) as exc:
+                raise CommandError(str(exc))
+        else:
+            name, geom, attrs = self._read_geojson(file_path, fallback_name)
 
         if name_override:
             name = name_override
@@ -134,6 +126,35 @@ class Command(BaseCommand):
         self.stdout.write(
             f"\nNext: python manage.py auto_populate --boundary \"{name}\""
         )
+
+    def _read_geojson(self, file_path, fallback_name):
+        try:
+            with open(file_path, "rb") as fh:
+                raw = fh.read()
+        except OSError as exc:
+            raise CommandError(f"Couldn't read {file_path}: {exc}")
+
+        # Reuse the Setup Wizard's own operator-facing wording for these three
+        # failure shapes (setup/views.py). They were written for a water
+        # district engineer, and matching them verbatim is the reason this
+        # command shares the wizard's parser instead of writing its own.
+        try:
+            return boundary_from_geojson_text(raw, fallback_name=fallback_name)
+        except UnicodeDecodeError:
+            raise CommandError(
+                "That file couldn't be read as text. A GeoJSON file is a "
+                "plain-text file — make sure you exported GeoJSON, not a "
+                "shapefile or a zip archive."
+            )
+        except json.JSONDecodeError:
+            raise CommandError(
+                "The file isn't valid JSON. A GeoJSON file is text that "
+                "starts with '{' — check you exported GeoJSON (not a "
+                "shapefile, KML, or zip)."
+            )
+        except ValueError as exc:
+            # Specific, plain-language reason from parse_geojson_boundary.
+            raise CommandError(str(exc))
 
     def _report(self, name, geom, attrs):
         """The parsed boundary's facts, in the style of seed_merced_base.

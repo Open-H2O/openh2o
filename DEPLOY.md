@@ -655,13 +655,14 @@ docker compose logs web --tail=50
 ```
 
 **The name the site's emails go out under:** every email the site sends starts its
-subject line with the site's name. OpenH2O takes that name from the organization's name,
-set at `/admin/` under Core > Site configs, and the site's address from `ALLOWED_HOSTS`.
-It saves both when the migrations run, but only over the placeholder `example.com`. It
-also replaces a saved `localhost`, `127.0.0.1` or `::1` once `ALLOWED_HOSTS` names a
-public host, so a site first set up on its own computer takes its domain when it moves.
-It never changes a saved public address. Set the organization's name there after the
-superuser exists. Check what it saved:
+subject line with the site's name. The site's emails use the organization's name. The
+command `set_organization` sets the organization's name. The site's address comes from
+`ALLOWED_HOSTS`. OpenH2O saves the address when the migrations run. The migrations
+replace a saved address only when it is the placeholder `example.com`. It also replaces
+a saved `localhost`, `127.0.0.1` or `::1` once `ALLOWED_HOSTS` names a public host, so a
+site first set up on its own computer takes its domain when it moves. It never changes a
+saved public address. Set the organization's name after the superuser exists. Check what
+it saved:
 
 ```bash
 docker compose exec web python manage.py shell -c "from django.contrib.sites.models import Site; s = Site.objects.get_current(); print(s.name, '|', s.domain)"
@@ -669,11 +670,11 @@ docker compose exec web python manage.py shell -c "from django.contrib.sites.mod
 
 The command should print the organization's name and the site's web address.
 `docker compose exec web python manage.py check` also reports a missing name or address,
-with the warning code `openh2o.W002`. If the name is missing, set the organization's
-name at `/admin/` under Core > Site configs, then run the migrations again (section 6).
-A site reached only at `localhost` takes `localhost` as its address; the warning clears
-once the organization's name is set and the migrations have run again. A site on the
-office network takes the computer's address on that network.
+with the warning code `openh2o.W002`. If the name is missing, run `set_organization`
+with the organization's name. A site reached only at `localhost` takes `localhost` as
+its address. `manage.py check` stops reporting `openh2o.W002` once `set_organization`
+has set the organization's name. A site on the office network takes the computer's
+address on that network.
 
 **Who can reach the site:** the checks above show that the site answers. They do not
 show who can reach it. A site can work correctly and still be open to the whole
@@ -896,13 +897,14 @@ health. The jobs are in `crontab.txt`:
 | `run_health_checks` | Every 6 hours | Checks the database, the disk, the certificate, the migrations and the data sources |
 | `prune_old_data --confirm` | The 1st of each month at 3:00 | Deletes sync logs and health-check results older than a year, published readings OpenH2O received more than a year ago whatever date they describe, and unfinished import uploads older than a day. It keeps readings at Entered by hand stations, and deletes a revised reading with its earlier values once OpenH2O received the newest of them more than a year ago |
 
-The times are in the server's own time zone. The page of each switched-on station that
-OpenH2O syncs shows its next scheduled fetch in the site's time zone, set at `/admin/`
-under Core > Site configs or, without that, by `TIME_ZONE`. Set the server's clock to
-the same zone. Until its key is set, the schedule skips CIMIS or NOAA with one line in
-the log. OpenET is not on the schedule: OpenET's figures arrive through
-`sync_openet_parcels`, which the organization runs when it wants figures for new months
-(Phase 4 of the AI operator guide).
+The times are in the server's own time zone. A station's page shows when OpenH2O next
+reads that station's data. The page gives that time in the site's time zone. Set the
+site's time zone with `set_organization --time-zone`. A site whose organization's name
+was never set uses the `TIME_ZONE` setting in `.env`. Set the server's clock to the same
+zone. Until its key is set, the schedule skips CIMIS or NOAA with one line in the log.
+OpenET is not on the schedule: OpenET's figures arrive through `sync_openet_parcels`,
+which the organization runs when it wants figures for new months (Phase 4 of the AI
+operator guide).
 
 You can also run the calculation by hand, for one water year or one month:
 `docker compose exec web python manage.py run_accounting --period "WY 2025-2026"` or

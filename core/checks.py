@@ -103,15 +103,15 @@ def check_site_identity_is_set(app_configs, **kwargs):
             f"with '[{PLACEHOLDER}]' at the front of the subject line, to "
             "whoever asked for it.",
             hint=(
-                "The name and web address are worked out from settings this "
-                "platform already holds: the organization's name, set at "
-                "/admin/ under Core > Site configs, and the web address from "
-                "ALLOWED_HOSTS in .env. A site that only its own computer "
-                "reaches can list just localhost, and its address is then "
-                "localhost. Fill "
-                "in whichever is still blank, then run "
-                "'docker compose exec web python manage.py migrate' — that is "
-                "what applies it. See DEPLOY.md, section 10."
+                "The site's name comes from the organization's name. Set the "
+                "organization's name with 'docker compose exec web python "
+                "manage.py set_organization --name' followed by the name. The "
+                "site's address comes from ALLOWED_HOSTS in .env. A site used "
+                "only on its own computer can have localhost as its only "
+                "address. After a change to ALLOWED_HOSTS, run 'docker compose "
+                "exec web python manage.py migrate'. The migrations replace the "
+                "placeholder address example.com with the address from "
+                "ALLOWED_HOSTS. See section 10 of DEPLOY.md."
             ),
             id=SITE_IDENTITY_WARNING_ID,
         )
