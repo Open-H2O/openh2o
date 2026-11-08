@@ -65,7 +65,7 @@ files = [
   "templates/partials/_demonstration_banner.html",
 ]
 labels = []
-checked_at = "d09cd007"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "README.md"
@@ -89,7 +89,7 @@ files = [
   "datasync/management/commands/sync_openet_parcels.py",
 ]
 labels = []
-checked_at = "d09cd007"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "README.md"
@@ -109,7 +109,7 @@ files = [
   "crontab.txt",
 ]
 labels = []
-checked_at = "953a3149"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "README.md"
@@ -144,7 +144,7 @@ labels = [
   { text = "Population served", where = "templates/drinking/overview.html" },
   { text = "EPA Envirofacts", where = "drinking/provenance.py" },
 ]
-checked_at = "a5905879"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "README.md"
@@ -198,7 +198,7 @@ files = [
   "crontab.txt",
 ]
 labels = []
-checked_at = "8a99d70d"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "README.md"
@@ -329,7 +329,7 @@ files = [
   "static/css/tokens.css",
 ]
 labels = []
-checked_at = "3a340c75"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "CONTRIBUTING.md"
@@ -341,7 +341,7 @@ files = [
   "standards/management/commands/seed_observed_properties.py",
 ]
 labels = []
-checked_at = "8a99d70d"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "CONTRIBUTING.md"
@@ -590,35 +590,35 @@ files = [
   "docker-compose.yml",
 ]
 labels = []
-checked_at = "d09cd007"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "DEPLOY.md"
 heading = "4. Caddy / HTTPS Configuration"
 files = ["Caddyfile", "docker-compose.yml", "error-pages/503.html"]
 labels = []
-checked_at = "d09cd007"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "DEPLOY.md"
 heading = "Branch A: Only this computer, or the office network"
 files = ["Caddyfile", "docker-compose.yml", "config/settings/production.py"]
 labels = []
-checked_at = "d09cd007"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "DEPLOY.md"
 heading = "Branch B: Public internet, and this server obtains its own certificate"
 files = ["Caddyfile", "docker-compose.yml", "config/settings/production.py"]
 labels = []
-checked_at = "d09cd007"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "DEPLOY.md"
 heading = "Branch C: Public internet, and something in front of the server handles the encryption"
 files = ["Caddyfile", "config/settings/production.py"]
 labels = []
-checked_at = "d09cd007"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "DEPLOY.md"
@@ -630,7 +630,7 @@ files = [
   "core/management/commands/ensure_superuser.py",
 ]
 labels = []
-checked_at = "d09cd007"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "DEPLOY.md"
@@ -662,7 +662,7 @@ labels = [
   { text = "Change email", where = "templates/core/users_list.html" },
   { text = "Users", where = "core/modules.py" },
 ]
-checked_at = "685236c9"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "DEPLOY.md"
@@ -680,7 +680,7 @@ files = [
   "standards/management/commands/check_conformance.py",
 ]
 labels = []
-checked_at = "8a99d70d"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "DEPLOY.md"
@@ -708,7 +708,7 @@ files = [
   "config/settings/base.py",
 ]
 labels = []
-checked_at = "8a99d70d"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "DEPLOY.md"
@@ -731,7 +731,7 @@ files = [
 labels = [
   { text = "Site health", where = "templates/health/dashboard.html" },
 ]
-checked_at = "685236c9"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "DEPLOY.md"
@@ -778,7 +778,7 @@ files = [
   "crontab.txt",
 ]
 labels = []
-checked_at = "d09cd007"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "DEPLOY.md"
@@ -788,7 +788,7 @@ files = [
   ".gitignore",
 ]
 labels = []
-checked_at = "d09cd007"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "DEPLOY.md"
@@ -801,7 +801,7 @@ files = [
   "templates/core/users_list.html",
 ]
 labels = []
-checked_at = "d09cd007"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "DEPLOY.md"
@@ -824,7 +824,7 @@ files = [
 labels = [
   { text = "Site health", where = "templates/health/dashboard.html" },
 ]
-checked_at = "8a99d70d"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "DEPLOY.md"
@@ -842,7 +842,7 @@ files = [
   "docker-compose.yml",
 ]
 labels = []
-checked_at = "8a99d70d"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "DEPLOY.md"
@@ -904,7 +904,7 @@ document = "DEPLOY.md"
 heading = "Data Pruning"
 files = ["health/management/commands/prune_old_data.py", "Makefile"]
 labels = []
-checked_at = "8a99d70d"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "DEPLOY.md"
@@ -921,7 +921,7 @@ files = [
   "Makefile",
 ]
 labels = []
-checked_at = "8a99d70d"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "DEPLOY.md"
@@ -962,7 +962,7 @@ files = [
   "docker-compose.yml",
 ]
 labels = []
-checked_at = "d09cd007"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "DEPLOY.md"
@@ -974,7 +974,7 @@ files = [
   "Dockerfile",
 ]
 labels = []
-checked_at = "d09cd007"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "DEPLOY.md"
@@ -1000,7 +1000,7 @@ files = [
   "entrypoint.sh",
 ]
 labels = []
-checked_at = "8a99d70d"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "DEPLOY.md"
@@ -1031,7 +1031,7 @@ files = [
   "docker-compose.yml",
 ]
 labels = []
-checked_at = "8a99d70d"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "DEPLOY.md"
@@ -1073,14 +1073,14 @@ files = [
   "core/checks.py",
 ]
 labels = []
-checked_at = "d09cd007"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/README.md"
 heading = "docs/"
 files = ["standards/management/commands/check_conformance.py", "static/css/tokens.css"]
 labels = []
-checked_at = "3a340c75"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/ROADMAP.md"
@@ -1114,7 +1114,7 @@ files = [
 labels = [
   { text = "Delivery Settings", where = "core/modules.py" },
 ]
-checked_at = "953a3149"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/ROADMAP.md"
@@ -1126,7 +1126,7 @@ files = [
   "accounting/ledger_import.py",
 ]
 labels = []
-checked_at = "38b6199e"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/ROADMAP.md"
@@ -1170,14 +1170,14 @@ labels = [
   { text = "Use ledger", where = "templates/accounting/ledger_list.html" },
   { text = "Dry run", where = "templates/accounting/csv_upload.html" },
 ]
-checked_at = "953a3149"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
 heading = "1. The demonstration data"
 files = ["core/management/commands/seed_merced.py", "core/management/commands/seed_data.py", "geography/management/commands/auto_populate.py"]
 labels = []
-checked_at = "d09cd007"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1199,7 +1199,7 @@ labels = [
   { text = "Type an extent", where = "templates/setup/wizard.html" },
   { text = "Start without one", where = "templates/setup/wizard.html" },
 ]
-checked_at = "953a3149"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1207,21 +1207,21 @@ heading = "3. File imports"
 files = []
 why_none = "Heading line only; no claim about the code."
 labels = []
-checked_at = "953a3149"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
 heading = "Use areas: the Import use areas screen, or `import_parcels`"
 files = ["parcels/management/commands/import_parcels.py", "parcels/models.py", "infrastructure/views.py", "parcels/use_area_import.py", "parcels/views.py", "templates/parcels/use_area_import.html", "templates/parcels/partials/_use_area_import_preview.html", "core/geofiles.py"]
 labels = []
-checked_at = "953a3149"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
 heading = "Wells: `import_wells`"
 files = ["wells/management/commands/import_wells.py", "wells/models.py"]
 labels = []
-checked_at = "38b6199e"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1244,7 +1244,7 @@ labels = [
   { text = "Surface diversions", where = "templates/surface/pod_list.html" },
   { text = "Recharge sites", where = "templates/recharge/list.html" },
 ]
-checked_at = "953a3149"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1265,7 +1265,7 @@ labels = [
   { text = "Import water levels", where = "templates/wells/partials/_measurement_history.html" },
   { text = "Add a water level", where = "templates/wells/partials/_water_level_form.html" },
 ]
-checked_at = "38b6199e"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1309,7 +1309,7 @@ labels = [
   { text = "Reporting year", where = "templates/accounting/delivery_settings.html" },
   { text = "Data status", where = "templates/surface/partials/_diversion_import_preview.html" },
 ]
-checked_at = "953a3149"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1334,7 +1334,7 @@ labels = [
   { text = "Dry run", where = "templates/accounting/csv_upload.html" },
   { text = "Water years", where = "templates/accounting/periods_list.html" },
 ]
-checked_at = "a5905879"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1355,7 +1355,7 @@ labels = [
   { text = "Add sampling points", where = "templates/drinking/overview.html" },
   { text = "Drinking water", where = "templates/drinking/overview.html" },
 ]
-checked_at = "60a428b8"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1377,7 +1377,7 @@ labels = [
   { text = "Unit for rows with a blank unit", where = "templates/drinking/partials/_production_import_preview.html" },
   { text = "Report year", where = "templates/drinking/partials/_production_import_preview.html" },
 ]
-checked_at = "60a428b8"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1414,7 +1414,7 @@ files = [
 labels = [
   { text = "Add a water system", where = "templates/drinking/onboard.html" },
 ]
-checked_at = "d09cd007"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1433,7 +1433,7 @@ labels = [
   { text = "Add sampling points", where = "templates/drinking/overview.html" },
   { text = "Drinking water", where = "templates/drinking/overview.html" },
 ]
-checked_at = "8a99d70d"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1464,14 +1464,14 @@ document = "docs/DATA-STANDARDS.md"
 heading = "Data Standards & Interoperability"
 files = ["standards/management/commands/seed_observed_properties.py", "standards/management/commands/export_crosswalk.py", "docker-compose.yml"]
 labels = []
-checked_at = "953a3149"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
 heading = "1. The kinds of measurement (ObservedProperty)"
 files = ["standards/management/commands/seed_observed_properties.py", "standards/models.py"]
 labels = []
-checked_at = "953a3149"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
@@ -1491,14 +1491,14 @@ files = [
   "datasync/models.py",
 ]
 labels = []
-checked_at = "953a3149"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
 heading = "3. Quality flags and vertical datum"
 files = ["measurements/models.py", "measurements/admin.py", "wells/models.py"]
 labels = []
-checked_at = "953a3149"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
@@ -1524,7 +1524,7 @@ files = [
   "Makefile",
 ]
 labels = []
-checked_at = "953a3149"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
@@ -1536,7 +1536,7 @@ files = [
   "core/modules.py",
 ]
 labels = []
-checked_at = "953a3149"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
@@ -1553,7 +1553,7 @@ labels = [
   { text = "Methodology Settings", where = "templates/accounting/methodology_settings.html" },
   { text = "USDA-SCS (TR-21)", where = "accounting/precip_math.py" },
 ]
-checked_at = "953a3149"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/DATA-STANDARDS.md"
@@ -1608,7 +1608,7 @@ labels = [
   { text = "Methodology Settings", where = "templates/accounting/methodology_settings.html" },
   { text = "Delivery settings", where = "templates/accounting/delivery_settings.html" },
 ]
-checked_at = "953a3149"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/water-budget-terms.md"
@@ -1680,7 +1680,7 @@ files = [
   "datasync/management/commands/prove_gee_auth.py",
 ]
 labels = []
-checked_at = "3a340c75"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/earth-engine-tier-setup.md"
@@ -1718,7 +1718,7 @@ files = [
   "config/settings/production.py",
 ]
 labels = []
-checked_at = "d09cd007"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1757,7 +1757,7 @@ files = [
   "core/management/commands/seed_data.py",
 ]
 labels = []
-checked_at = "8a99d70d"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1776,14 +1776,14 @@ files = [
   "config/urls.py",
 ]
 labels = []
-checked_at = "d09cd007"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
 heading = "Phase 3: Load data"
 files = ["core/management/commands/seed_merced.py", "core/demonstration.py", "setup/views.py"]
 labels = []
-checked_at = "8a99d70d"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1827,7 +1827,7 @@ files = [
   "data/merced/stations.json",
 ]
 labels = []
-checked_at = "d09cd007"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1866,7 +1866,7 @@ labels = [
   { text = "Schedule", where = "core/modules.py" },
   { text = "+ Add to schedule", where = "templates/drinking/schedule.html" },
 ]
-checked_at = "953a3149"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1904,7 +1904,7 @@ labels = [
   { text = "Delivery Settings", where = "core/modules.py" },
   { text = "Reporting year", where = "templates/accounting/delivery_settings.html" },
 ]
-checked_at = "953a3149"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1929,7 +1929,7 @@ files = [
   "accounting/management/commands/sync_openet_to_ledger.py",
 ]
 labels = []
-checked_at = "8a99d70d"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1958,7 +1958,7 @@ files = [
 labels = [
   { text = "Needs API key", where = "datasync/freshness.py" },
 ]
-checked_at = "8a99d70d"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1978,7 +1978,7 @@ labels = [
   { text = "Enable all", where = "templates/setup/partials/_station_review.html" },
   { text = "Setup Wizard", where = "core/modules.py" },
 ]
-checked_at = "8a99d70d"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -2009,7 +2009,7 @@ labels = [
   { text = "Viewer", where = "templates/core/users_list.html" },
   { text = "+ Add user", where = "templates/core/users_list.html" },
 ]
-checked_at = "953a3149"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -2050,7 +2050,7 @@ labels = [
   { text = "ET / Meter Agreement", where = "health/models.py" },
   { text = "Needs API key", where = "datasync/freshness.py" },
 ]
-checked_at = "8a99d70d"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -2074,7 +2074,7 @@ labels = [
   { text = "None up to date", where = "datasync/freshness.py" },
   { text = "OpenH2O is temporarily unavailable", where = "error-pages/503.html" },
 ]
-checked_at = "8a99d70d"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -2094,7 +2094,7 @@ files = [
 labels = [
   { text = "Source code", where = "templates/base.html" },
 ]
-checked_at = "d09cd007"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -2224,7 +2224,7 @@ files = [
   "core/management/commands/seed_merced.py",
 ]
 labels = []
-checked_at = "3a340c75"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -2254,7 +2254,7 @@ files = [
   "health/management/commands/prune_old_data.py",
 ]
 labels = []
-checked_at = "8a99d70d"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -2273,7 +2273,7 @@ files = [
   "core/adapters.py",
 ]
 labels = []
-checked_at = "3a340c75"
+checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
