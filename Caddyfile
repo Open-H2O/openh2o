@@ -1,9 +1,15 @@
 # Entry point for both local dev (plain HTTP on LAN) and a service in front of the
 # server that handles the encryption (the organization's own proxy or a load
-# balancer, for example). That service forwards plain HTTP here, so the site below asserts
-# X-Forwarded-Proto=https to the app. Django's production settings trust that header
-# (SECURE_PROXY_SSL_HEADER); without it SECURE_SSL_REDIRECT would bounce every
-# request to https and loop forever behind such a service.
+# balancer, for example). That service forwards plain HTTP here, so the app needs a
+# header to learn the visitor's connection was encrypted. Django's production settings
+# trust X-Forwarded-Proto (SECURE_PROXY_SSL_HEADER). Without it SECURE_SSL_REDIRECT
+# would bounce every request to https and loop forever behind such a service.
+# The site below sends that header with the value of OPENH2O_FORWARDED_PROTO.
+# The value is https unless .env sets it.
+# A site reached only from its own computer or the office network over plain HTTP sets
+# it to http (DEPLOY.md, section 4, Branch A).
+# Otherwise Django treats every request as HTTPS and refuses each sign-in from an
+# http:// address with a 403.
 #
 # The site address is OPENH2O_SITE_ADDRESS, read from .env through docker-compose.yml,
 # and it is ":80" when .env does not set it. Leave it unset on a site reached only from
@@ -121,7 +127,7 @@
     # Proxy everything else to Django
     handle {
         reverse_proxy web:8000 {
-            header_up X-Forwarded-Proto https
+            header_up X-Forwarded-Proto {$OPENH2O_FORWARDED_PROTO:https}
             # Ride out a brief web outage (nightly DB reset, a manual or
             # deploy-time restart) instead of 502-ing the visitor: retry the
             # upstream until it answers, so a request that arrives mid-restart

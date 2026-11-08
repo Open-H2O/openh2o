@@ -53,6 +53,9 @@ curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker $USER
 ```
 
+<!-- defines: terminal -->A *terminal* is the window where you type a command for the computer
+to run. Type each command in this guide into a terminal.
+
 The second command takes effect at your next sign-in. Linux reads your groups only
 when you sign in, so a `docker` command in the same terminal still fails with
 `permission denied`. Sign out and sign in again. Until you do, put
@@ -149,8 +152,10 @@ CSRF_TRUSTED_ORIGINS=https://your-domain.com
 A site on this computer only, or on the office network, has no domain, so
 `CSRF_TRUSTED_ORIGINS` stays empty. `localhost` and `127.0.0.1` are two names for the
 address a computer uses for itself, and no other computer can reach that address.
-For a site on the office network, list the computer's address on that network
-instead. `hostname -I` prints it:
+Put the computer's address on the office network in `ALLOWED_HOSTS`. The command
+`hostname -I` prints the address on a Linux computer. Set the office router to give
+this computer the same address every time. Every request fails if the address changes
+and `ALLOWED_HOSTS` still holds the old address.
 
 ```bash
 # only this computer
@@ -211,17 +216,19 @@ Leave `OPENH2O_SITE_ADDRESS` unset in `.env`, so Caddy answers at any
 address. There is no domain to name and no certificate to obtain. You reach the site at `http://localhost`, or at the computer's address on
 the office network.
 
-Then set these three settings in `.env`:
+Then set these four settings in `.env`:
 
 ```bash
 SECURE_SSL_REDIRECT=False
 SESSION_COOKIE_SECURE=False
 CSRF_COOKIE_SECURE=False
+OPENH2O_FORWARDED_PROTO=http
 ```
 
-The production settings mark the sign-in cookies secure, and a browser sends a cookie
-marked secure only over HTTPS. Without these three settings, every sign-in over plain
-`http://` fails with a 403 error, while pages that do not need a sign-in still load.
+The production settings require HTTPS. The first three lines turn that requirement off
+for this branch. The line `OPENH2O_FORWARDED_PROTO=http` makes Caddy pass each request
+to OpenH2O as plain HTTP. Every sign-in over `http://` fails with a 403 error until
+`.env` holds all four lines. Pages that do not need a sign-in still load.
 Phase 2, step 3 of the [AI operator guide](docs/AI-OPERATOR-GUIDE.md) gives the same
 settings. Keep `DEBUG` off, keep `ALLOWED_HOSTS` set to the site's own address and keep
 the strong database password.
@@ -332,9 +339,11 @@ certificate. With a bare domain, it requests one. The service in front of the se
 still sends plain traffic, so the requests loop until they fail.
 
 <!-- defines: x_forwarded_proto -->
-Keep the `header_up X-Forwarded-Proto https` line. It makes Caddy add a header to
-each request it passes on. The `X-Forwarded-Proto` header tells OpenH2O that the
-visitor's connection was encrypted, and OpenH2O's production settings trust it.
+Keep the `header_up X-Forwarded-Proto` line in the `Caddyfile` that comes with
+OpenH2O. The line makes Caddy add a header to each request it passes on. Leave
+`OPENH2O_FORWARDED_PROTO` unset so that the header says `https`. The
+`X-Forwarded-Proto` header tells OpenH2O that the visitor's connection was encrypted,
+and OpenH2O's production settings trust it.
 Without the header, OpenH2O sees plain traffic and redirects every request to HTTPS,
 so the requests loop.
 
@@ -365,6 +374,14 @@ docker compose ps
 
 Once all three are up, `db` and `web` show `Up (healthy)`, and `caddy` shows `Up`,
 because the compose file does not give Caddy a health check.
+
+On a new site the `web` container creates every database table before it reports
+healthy. Creating the tables can take several minutes on a small computer. During that
+time `docker compose ps` shows `web` as `health: starting`. If `docker compose up`
+stops with a message that the `web` container is unhealthy, read
+`docker compose logs web`. A log that still shows tables being created means the start
+has not finished. Wait until `docker compose ps` shows `web` as `Up (healthy)`. Then
+run `docker compose up -d` again to start Caddy.
 
 ---
 
@@ -696,14 +713,17 @@ service in front.
 
 ### The Setup Wizard (`/setup/`)
 
-<!-- defines: geojson -->
+<!-- defines: geojson --><!-- defines: shapefile --><!-- defines: kml -->
 The Setup Wizard loads the organization's area through the browser. It asks for
 the boundary of the area the site covers and shows that boundary on a map for you to
 confirm. It then runs the populate steps, which download basins, parcels, streams
 and monitoring stations for the area from public services, shows their progress,
 and turns on the stations those steps find. The boundary can be a zipped shapefile,
-a KML file or a GeoJSON file. GeoJSON is a plain-text format for map shapes and the
-facts attached to them, such as a name and an area. You can also type the area's
+a KML file or a GeoJSON file. A *shapefile* is a map saved as several files that share
+one name and differ only in their endings, such as `.shp` and `.dbf`. Zip all of the
+files together for the upload. *KML* is the map format Google Earth saves. GeoJSON is
+a plain-text format for map shapes and the facts attached to them, such as a name and
+an area. You can also type the area's
 north, south, east and west edges by hand, or start without a boundary.
 
 - **Where it is.** Click **Settings** in the top bar, beside your sign-in name, then
@@ -1087,9 +1107,10 @@ docker compose exec web python manage.py sync_source cdec
 A sync fetches from the live public services. A source whose key is missing is skipped
 until the key is in `.env`. The Update readings now button on a station's page updates
 that station in the background, over the same period as the scheduled sync. Only an
-Operator or Administrator sees the button. From the command line, `sync_source` with the
-station's source code and `--station <id>` does the same, where `<id>` is the number in
-the station page's address, as in `sync_source usgs --station 12`. Stations of the
+Operator or Administrator sees the button. The command `sync_source` updates one
+station the same way. It takes the data source's short name and `--station` with the
+number in the station page's address. The command `sync_source usgs --station 12`
+updates the USGS station whose page is `/datasync/stations/12/`. Stations of the
 Entered by hand source are never synced; a person types their readings on each station's
 page.
 
@@ -1260,6 +1281,7 @@ Two terms in the tables need explaining:
 | `CSRF_COOKIE_SECURE` | No | `True` | Sends the form-check cookie only over HTTPS. Set `False` on Branch A |
 | `ACCESS_CONTROL_ENFORCED` | No | `True` | Closes sign-up and keeps the administrator pages for administrators. Set `False` only on an open demonstration site, where anyone may sign up. A viewer stays read-only either way |
 | `OPENH2O_SITE_ADDRESS` | No | `:80` | The address Caddy answers at. With a bare domain such as `water.example.org`, Caddy obtains a certificate (section 4, Branch B). With `http://water.example.org`, it answers only at that name over plain HTTP (Branch C). Caddy reads the setting when its container starts, so run `docker compose up -d` after a change |
+| `OPENH2O_FORWARDED_PROTO` | No | `https` | Caddy passes each request to OpenH2O as HTTPS unless this setting is `http`. Set it to `http` for Branch A in section 4. Leave it unset for Branches B and C. Caddy reads the setting when its container starts. Run `docker compose up -d` after changing it |
 | `OPENH2O_MODULES` | No | every module except `reporting` | The modules of OpenH2O the site runs, separated by commas, or `all`. The list must include `core`, `geography`, `measurements` and `standards`. A list that leaves out a module another module needs stops the site at start with an error that names the missing module. The demonstration needs every module in the default |
 | `SOURCE_CODE_URL` | No | `https://github.com/Open-H2O/openh2o` | The address the Source code link at the foot of every page points at. An organization that runs a changed copy of OpenH2O for its users sets this to where it publishes its changes (the AGPL, section 13). The site ignores a value that does not start with `http://` or `https://`, logs a warning at start and keeps the default link |
 | `TIME_ZONE` | No | `America/Los_Angeles` | The site's time zone |

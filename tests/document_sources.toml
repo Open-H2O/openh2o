@@ -1910,9 +1910,27 @@ checked_at = "59b5fce9"
 document = "docs/AI-OPERATOR-GUIDE.md"
 heading = "Phase 4: Connect live data sources"
 files = []
-why_none = "Heading line only; the claims sit in the three subsections below it."
+why_none = "Heading line only; the claims sit in the subsections below it."
 labels = []
 checked_at = "d09cd007"
+
+[[section]]
+document = "docs/AI-OPERATOR-GUIDE.md"
+heading = "Create the calculation plan"
+files = [
+  "accounting/management/commands/seed_calculation_plan.py",
+  "accounting/views/settings_pages.py",
+  "templates/accounting/methodology_settings.html",
+  "core/demonstration.py",
+  "templates/accounting/partials/_dashboard_content.html",
+  "templates/parcels/partials/_detail_pane.html",
+  "accounting/management/commands/run_accounting.py",
+  "crontab.txt",
+]
+labels = [
+  { text = "Load the default calculation plan", where = "templates/accounting/methodology_settings.html" },
+]
+checked_at = "b25f935a"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"

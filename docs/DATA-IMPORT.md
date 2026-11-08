@@ -6,7 +6,9 @@ This guide explains how to load an organization's own records into OpenH2O. The
 demonstration data gives you a complete sample site to explore. The Setup
 Wizard sets the area your site covers and runs the populate step, which fills in
 basins, parcels, streams and monitoring stations from public sources. The file
-imports load the records you already have.
+imports load the records you already have. Records are often kept as *CSV files*. A CSV
+file holds a table as plain text. Each row is one line of text with commas between its
+columns. Any spreadsheet program opens and saves this format.
 
 Some imports are screens in the browser, and some are commands that you run on the
 server. Several are both. On an import screen you upload the file and check a
@@ -24,10 +26,10 @@ its number, so the import skips it.
 Commands run inside the `web` container, which cannot see the files on your
 computer. Copy the file into the container with `docker compose cp` first, then give
 the command the `/tmp/` path that the copy created. Every command example in this
-guide that reads a file copies it to `/tmp/` first. A shapefile is several files
-with the same name, so copy all of them and give the command the path of the `.shp`
-file. An import screen uploads the file from your browser, so you do not need to
-copy it.
+guide that reads a file copies it to `/tmp/` first. A *shapefile* is a map saved
+as several files that share one name and differ only in their endings, such as `.shp`
+and `.dbf`. Copy all of the files and give the command the path of the `.shp` file.
+An import screen uploads the file from your browser, so you do not need to copy it.
 
 A zipped shapefile must hold only one shapefile. When a zip holds several, OpenH2O
 rejects it and names the first ten and how many more there are; zip the one you want on
@@ -73,7 +75,8 @@ demonstration data, or start with your own records. Choosing to start with your 
 records opens the wizard's first step, which offers four choices:
 
 1. Select a boundary already on the site.
-2. Upload a boundary file: a zipped shapefile, a KML file or a GeoJSON file.
+2. Upload a boundary file: a zipped shapefile, a KML file or a GeoJSON file. KML is the
+   map format Google Earth saves.
 3. Type an extent by hand.
 4. Start without a boundary.
 
@@ -118,8 +121,8 @@ as inside the boundary when a point within its outline lies inside it. Outlines 
 share a parcel number become one use area. For a Google Earth file whose outlines carry
 only names, choose the Name column: each name becomes the use area's number.
 
-`import_parcels` reads the same zip, KML, GeoJSON and JSON files, and an unzipped
-shapefile, from the command line. It differs from the screen in three ways: it imports
+The `import_parcels` command reads the same zip, KML, GeoJSON and JSON files. It also
+reads an unzipped shapefile. It differs from the screen in three ways: it imports
 parcels outside the boundary, it reads the parcel number from the `APN` column unless
 you name another, and it stops at an outline it cannot read:
 

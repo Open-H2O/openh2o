@@ -67,7 +67,10 @@ EXPOSE 8000
 # Liveness: 200 the moment gunicorn is serving. Caddy's readiness gate
 # (depends_on: service_healthy) and any restart key off this, so a boot never
 # forwards traffic to a not-yet-listening web container (no boot-time 502s).
-HEALTHCHECK --interval=15s --timeout=5s --start-period=40s --retries=3 \
+# A new site's first start creates every table before gunicorn serves. That took about
+# 130 s on a 2-processor computer, so the start period gives it 300 s. The 5-second
+# start interval reports healthy soon after it is ready (Docker Engine 25 or later).
+HEALTHCHECK --interval=15s --timeout=5s --start-period=300s --start-interval=5s --retries=3 \
     CMD curl -fsS http://127.0.0.1:8000/health/live/ || exit 1
 
 ENTRYPOINT ["/app/entrypoint.sh"]

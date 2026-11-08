@@ -152,6 +152,16 @@ the ones the organization uses, separated by commas. The sections are `core`,
 another section needs, the site does not start, and its error message names the
 missing section.
 
+An organization that runs only a drinking-water system can switch water accounting
+off. The sections `parcels` and `accounting` go on or off together. The sections
+`wells`, `datasync`, `surface`, `recharge` and `reporting` need `parcels` and
+`accounting`. Leave all seven out. The site keeps the sign-in, the map and Drinking
+water. Use this line in `.env` for a drinking-water system without water accounting:
+
+```bash
+OPENH2O_MODULES=core,geography,measurements,standards,drinking,setup,infrastructure,health,feedback
+```
+
 Start the containers and load the reference lists:
 
 ```bash
@@ -187,6 +197,14 @@ seeds the demonstration data.
 ✋ **Checkpoint:** `docker compose ps` shows `db` and `web` as `Up (healthy)` and
 `caddy` as `Up`. Caddy's row shows only `Up` because the compose file does not give
 Caddy a health check. Wait until all three rows show these states before you go on.
+
+On a new site the `web` container creates every database table before it reports
+healthy. Creating the tables can take several minutes on a small computer. During
+that time `docker compose ps` shows `web` as `health: starting`. If
+`docker compose up` stops with a message that the `web` container is unhealthy, read
+`docker compose logs web`. A log that still shows tables being created means the start
+has not finished. Wait until `docker compose ps` shows `web` as `Up (healthy)`. Then run
+`docker compose up -d` again to start Caddy.
 
 ---
 
@@ -224,7 +242,7 @@ warns about them. If it does, switch the site to the production settings.
    | Who needs to reach it | `ALLOWED_HOSTS` | `CSRF_TRUSTED_ORIGINS` |
    |---|---|---|
    | Only this computer | `localhost,127.0.0.1` | leave empty |
-   | The office network | the computer's address on that network, such as `192.168.1.40` | leave empty |
+   | The office network | the computer's address on that network, such as `192.168.1.40`. The command `hostname -I` prints the address on a Linux computer. Ask the person to set the office router to give this computer the same address every time. | leave empty |
    | People outside | the organization's domain, such as `water.example.org` | `https://` and the domain, such as `https://water.example.org` |
 
 3. **HTTPS, and the three settings that depend on it.** The production settings
@@ -235,8 +253,8 @@ warns about them. If it does, switch the site to the production settings.
 
    | Who needs to reach it | What to do |
    |---|---|
-   | People outside | Choose one of the two setups in section 4 of [DEPLOY.md](../DEPLOY.md). Where Caddy obtains the certificate (Branch B), point the domain's A record at this computer and set `OPENH2O_SITE_ADDRESS` in `.env` to the bare domain, then run `docker compose up -d`. Where a tunnel, the organization's own proxy or a load balancer in front of this computer handles the encryption (Branch C), leave `OPENH2O_SITE_ADDRESS` unset. Without the setting, Caddy answers at any address over plain HTTP, so pointing DNS at the computer does not by itself produce a certificate. Keep the three settings on. |
-   | Only this computer, or the office network | There is no certificate to obtain. Turn the three settings off in `.env`: <br>`SECURE_SSL_REDIRECT=False`<br>`SESSION_COOKIE_SECURE=False`<br>`CSRF_COOKIE_SECURE=False` |
+   | People outside | Choose one of the two setups in section 4 of [DEPLOY.md](../DEPLOY.md). Where Caddy obtains the certificate (Branch B), point the domain's A record at this computer and set `OPENH2O_SITE_ADDRESS` in `.env` to the bare domain, then run `docker compose up -d`. Where a tunnel, the organization's own proxy or a load balancer in front of this computer handles the encryption (Branch C), leave `OPENH2O_SITE_ADDRESS` unset. Without the setting, Caddy answers at any address over plain HTTP, so pointing DNS at the computer does not by itself produce a certificate. Keep the three settings on. Leave `OPENH2O_FORWARDED_PROTO` unset. |
+   | Only this computer, or the office network | There is no certificate to obtain. Turn the three settings off in `.env` and add a fourth line: <br>`SECURE_SSL_REDIRECT=False`<br>`SESSION_COOKIE_SECURE=False`<br>`CSRF_COOKIE_SECURE=False`<br>`OPENH2O_FORWARDED_PROTO=http`<br>The line `OPENH2O_FORWARDED_PROTO=http` makes Caddy pass each request to OpenH2O as plain HTTP. Every sign-in from an `http://` address fails with a 403 error until `.env` holds that line. |
 
    After you change `.env`, run `docker compose up -d` so the website container reads
    the new values. In every setup, keep `DEBUG` off, keep `ALLOWED_HOSTS` set to the
@@ -329,11 +347,14 @@ from public sources. Use it when you have a browser. Only an administrator can o
 it, so sign in as the administrator first. Click **Settings** in the top bar, beside
 your sign-in name, then **Setup Wizard**. You can also go straight to `/setup/`.
 
-<!-- defines: geojson -->
+<!-- defines: geojson --><!-- defines: shapefile --><!-- defines: kml -->
 The wizard's first step offers four choices:
 
 1. Select a boundary already on the site.
-2. Upload a boundary file: a zipped shapefile, a KML file or a GeoJSON file. GeoJSON
+2. Upload a boundary file: a zipped shapefile, a KML file or a GeoJSON file. A
+   *shapefile* is a map saved as several files that share one name and differ only in
+   their endings, such as `.shp` and `.dbf`. Zip all of the files together for the
+   upload. *KML* is the map format Google Earth saves. GeoJSON
    is a plain-text format for map shapes and the facts attached to them, such as a
    name and an area. Most GIS programs can write it.
 3. Type the north, south, east and west edges of the area in decimal degrees. The
@@ -402,7 +423,10 @@ Before you load anything, read the organization's existing files and ask how it
 keeps its records. OpenH2O is built to import records in the form the organization
 already keeps them.
 
-As you go, fill in the worksheet `docs/crosswalk-worksheet.csv`. Add a row for each
+<!-- defines: csv -->
+As you go, fill in the worksheet `docs/crosswalk-worksheet.csv`. A *CSV file* holds a
+table as plain text. Each row is one line of text with commas between its columns. Any
+spreadsheet program opens and saves this format. Add a row for each
 file the organization gives you, with these columns:
 
 - the file's own name;
@@ -443,6 +467,10 @@ Each kind of record has its own import screen or command, and several have both.
 The table lists them in the order to load them. The Data import guide describes each
 one in full.
 
+<!-- defines: dry_run -->Every import command takes `--dry-run`. A *dry run* checks the
+file and reports what the command would do without saving anything. An import screen
+shows a preview and saves only after you confirm.
+
 | The organization has | Use | Notes |
 |---|---|---|
 | Only a boundary | `import_boundary`, then `auto_populate` | `import_boundary` loads a GeoJSON boundary file. `auto_populate` then downloads basins, parcels, streams and monitoring stations for that boundary, which must already be on the site. |
@@ -482,6 +510,33 @@ cover.
 ---
 
 ## Phase 4: Connect live data sources
+
+### Create the calculation plan
+
+A *calculation plan* is the list of steps OpenH2O follows to calculate a use area's
+figures from its satellite ET. OpenH2O comes with a default plan. Loading the
+demonstration installs the default plan. Removing the demonstration deletes the plan
+again. Create the default plan before the first OpenET run on the organization's own
+use areas:
+
+```bash
+docker compose exec web python manage.py seed_calculation_plan
+```
+
+An administrator can also create the plan with **Load the default calculation plan** on
+the Methodology Settings page (`/accounting/methodology/`). The page then lists the
+plan's steps. Until a plan exists the Dashboard shows "This site has no calculation
+plan yet." and each use area's page shows "OpenH2O has not calculated crop ET for this
+use area in this water year."
+
+The schedule set up under **Keys and the schedule** runs the calculation at 3:30 every
+night. The calculation uses this plan and the months of ET that OpenET has sent. Each
+run calculates every use area's supplies, uses and water balance for the water year.
+Run this command to calculate the figures immediately:
+
+```bash
+docker compose exec web python manage.py run_accounting --open-periods
+```
 
 ### Ask before you spend the OpenET allowance
 
@@ -793,8 +848,9 @@ use area's page says the use area was not on record and shows today. On the
 demonstration, no record is older than its last load. The ledger import rejects a file
 downloaded with a past date in the As of box.
 
-On an installation without Docker, load the variables in `.env` into the terminal as
-the [no-Docker install guide](INSTALL-WITHOUT-DOCKER.md) shows. Run each command
+<!-- defines: terminal -->A *terminal* is the window where you type a command for the computer
+to run. On an installation without Docker, load the variables in `.env` into the
+terminal as the [no-Docker install guide](INSTALL-WITHOUT-DOCKER.md) shows. Run each command
 above with this installation's Python in place of `docker compose exec web`, and
 restart OpenH2O's background service with the command that guide gives.
 

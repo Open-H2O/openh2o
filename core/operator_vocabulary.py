@@ -38,6 +38,8 @@ RUN_001 = "x86-blind-run-001"
 RUN_002 = "x86-blind-run-002"
 RUN_003 = "x86-blind-run-003"
 RUN_004 = "arm64-local-run-004"
+#: The fifth clean-room run (x86, a stranger starting from the repository).
+RUN_005 = "x86-stranger-run-005"
 
 
 @dataclass(frozen=True)
@@ -524,6 +526,58 @@ TERMS: tuple = (
             "into one folder before they can be served; collectstatic is the "
             "step that gathers them, and WhiteNoise is the piece of code that "
             "then hands them to a visitor's browser efficiently."
+        ),
+    ),
+    OperatorTerm(
+        slug="terminal",
+        label="terminal / command line",
+        patterns=(r"\bterminals?\b", r"\bcommand[- ]lines?\b"),
+        reported_by=(RUN_005,),
+        plain_english=(
+            "The terminal is a window where you type a command and press "
+            "Enter instead of clicking. The command line is what you type "
+            "there."
+        ),
+    ),
+    OperatorTerm(
+        slug="shapefile",
+        label="shapefile",
+        patterns=(r"\bshapefiles?\b",),
+        reported_by=(RUN_005,),
+        plain_english=(
+            "A shapefile is a set of files that together hold map shapes, "
+            "such as parcel outlines, and is sent around as one zipped folder."
+        ),
+    ),
+    OperatorTerm(
+        slug="kml",
+        label="KML",
+        patterns=(r"\bKML\b",),
+        reported_by=(RUN_005,),
+        plain_english=(
+            "KML is a file format for map shapes and pins that Google Earth "
+            "opens."
+        ),
+    ),
+    OperatorTerm(
+        slug="csv",
+        label="CSV",
+        patterns=(r"\bCSVs?\b",),
+        reported_by=(RUN_005,),
+        plain_english=(
+            "A CSV is a plain text file holding a table, one row per line "
+            "with commas between the cells. A spreadsheet program opens it."
+        ),
+    ),
+    OperatorTerm(
+        slug="dry_run",
+        label="dry run",
+        patterns=(r"\bdry[- ]runs?\b",),
+        reported_by=(RUN_005,),
+        plain_english=(
+            "A dry run does everything a command would do except save the "
+            "result, so you can see what it would change before it changes "
+            "anything."
         ),
     ),
 )

@@ -18,7 +18,9 @@ them structural:
    its default, ``{$OPENH2O_SITE_ADDRESS::80}``. Two of the three branches tell the
    operator to leave the setting unset, and that advice silently becomes wrong the
    day a domain is committed into the file.
-4. The `Caddyfile` still carries ``header_up X-Forwarded-Proto https``. The
+4. The `Caddyfile` still carries ``header_up X-Forwarded-Proto
+   {$OPENH2O_FORWARDED_PROTO:https}``, the header line with its setting, whose
+   default is ``https``. The
    ``upstream-terminator`` branch's correctness rests on it, and
    ``production.py``'s ``SECURE_PROXY_SSL_HEADER`` is the other half of the pair.
 
@@ -62,7 +64,7 @@ CERTIFICATE_BRANCH = "own-certificate"
 #: ``reverse_proxy … {`` lines are directives inside a site, not addresses.
 SITE_ADDRESS = re.compile(r"^(\S.*?)\s*\{\s*$")
 
-FORWARDED_PROTO = "header_up X-Forwarded-Proto https"
+FORWARDED_PROTO = "header_up X-Forwarded-Proto {$OPENH2O_FORWARDED_PROTO:https}"
 
 
 @dataclass(frozen=True)
@@ -220,7 +222,8 @@ def test_the_shipped_caddyfile_still_defaults_to_a_bare_port():
 def test_the_shipped_caddyfile_still_asserts_the_forwarded_protocol():
     assert _scan_the_real_files().caddyfile_has_forwarded_proto, (
         f"the shipped Caddyfile no longer carries {FORWARDED_PROTO!r}. The "
-        "upstream-terminator branch's correctness rests on it: without the "
+        "upstream-terminator branch's correctness rests on it, with the setting "
+        "defaulting to https: without the "
         "header Django cannot know the visitor's connection was encrypted, and "
         "SECURE_SSL_REDIRECT redirects a request that is already as encrypted "
         "as it is going to get. production.py's SECURE_PROXY_SSL_HEADER is the "
@@ -271,7 +274,7 @@ _GOOD_CADDYFILE = """\
 {$OPENH2O_SITE_ADDRESS::80} {
     handle {
         reverse_proxy web:8000 {
-            header_up X-Forwarded-Proto https
+            header_up X-Forwarded-Proto {$OPENH2O_FORWARDED_PROTO:https}
         }
     }
 }

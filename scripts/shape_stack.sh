@@ -93,12 +93,13 @@ EOF
 }
 
 # Waits for the web container's own HEALTHCHECK (Dockerfile: curl against
-# /health/live/) to report healthy. The first build can take up to ~110s;
-# later ones 6-7s off the layer cache.
+# /health/live/) to report healthy. A new site's first start can take about
+# 130s, so the wait is 320s, above the Dockerfile's 300s start period. Later ones
+# 6-7s off the layer cache.
 wait_for_web_healthy() {
   local project="$1"
   local tries=0
-  local max_tries=60
+  local max_tries=160
   while [ "$tries" -lt "$max_tries" ]; do
     local status
     status="$($COMPOSE -p "$project" ps --format json web 2>/dev/null | python3 -c '

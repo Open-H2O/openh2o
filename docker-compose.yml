@@ -82,6 +82,10 @@ services:
       # when it is not, which is also what a set-but-empty value must fall back to,
       # because Caddy reads an empty address as an error.
       OPENH2O_SITE_ADDRESS: ${OPENH2O_SITE_ADDRESS:-:80}
+      # The value Caddy sends in X-Forwarded-Proto. Set in .env; "https" when it is not.
+      # Set it to "http" only on a site reached over plain HTTP from this computer or
+      # the office network.
+      OPENH2O_FORWARDED_PROTO: ${OPENH2O_FORWARDED_PROTO:-https}
     ports:
       - "80:80"
       - "443:443"

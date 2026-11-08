@@ -303,8 +303,9 @@ sudo mkdir -p /var/log/openh2o
 sudo chown "$USER" /var/log/openh2o
 ```
 
-<!-- defines: environment_variable -->
-Before you run commands by hand, load `.env` into the terminal:
+<!-- defines: environment_variable --><!-- defines: terminal -->
+A *terminal* is the window where you type a command for the computer to run. Load
+`.env` into the terminal before you run commands by hand:
 
 ```bash
 set -a && source .env && set +a
