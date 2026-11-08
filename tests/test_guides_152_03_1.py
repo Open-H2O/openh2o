@@ -98,3 +98,21 @@ def test_the_headgate_row_is_in_the_use_areas_table():
     ]
     assert rows, "row 44: no table row begins with the cell Headgate"
     assert "`HEADGATE`" in rows[0] and "`--headgate-field`" in rows[0]
+
+
+# Rows 76 to 80 (ruling 108), the follow-up sentences the post-build re-read called for.
+_FOLLOW_UP = [
+    ("docs/DATA-IMPORT.md", "`import_parcels` differs from the Import use areas screen in four ways: it imports parcels outside the boundary, it reads the parcel number from the `APN` column unless you name another column, it stops at an outline it cannot read, and it links each use area to its headgate from a headgate column:"),
+    ("README.md", "`import_parcels` does not import any use area when an outline cannot be read, a parcel cannot be saved or the file names a headgate that is not on the site."),
+    ("docs/DATA-IMPORT.md", "If the file of use areas has a headgate column, run `import_parcels` on that file after you import the points of diversion in step 5."),
+    ("docs/AI-OPERATOR-GUIDE.md", "`import_boundary` loads a boundary from a GeoJSON file, a zipped shapefile or a KML file."),
+    ("docs/DATA-IMPORT.md", "Before you give a shapefile to `import_boundary` or `import_infrastructure`, zip its files together."),
+]
+
+
+@pytest.mark.parametrize("path,sentence", _FOLLOW_UP)
+def test_the_follow_up_sentences_are_in_place(path, sentence):
+    from pathlib import Path
+
+    text = " ".join(Path(path).read_text().split())
+    assert sentence in text

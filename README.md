@@ -131,7 +131,8 @@ can install OpenH2O and then keep running the site and explaining it to the staf
   loads the records. Most import tools accept your own column names. You can
   check a file before an import saves anything. <!-- defines: dry_run -->An import
   command checks the file in a *dry run*. An import screen shows a preview.
-  `import_parcels` imports nothing when an outline cannot be read or a parcel cannot be saved. The
+  `import_parcels` does not import any use area when an outline cannot be read, a parcel
+  cannot be saved or the file names a headgate that is not on the site. The
   other imports save each row that passes their checks and list the rows they
   rejected. See [docs/DATA-IMPORT.md](docs/DATA-IMPORT.md).
 - **Routine work.** The agent can run the monthly data updates, remove monitoring

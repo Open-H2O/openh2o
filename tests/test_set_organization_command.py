@@ -155,3 +155,30 @@ def test_the_w002_hint_is_row_73(placeholder_site):
 
     assert len(warnings) == 1
     assert warnings[0].hint == ROW_73
+
+
+def test_a_rename_reaches_the_site_name_the_emails_use(db):
+    # Main session, 152-03.1 re-read: apply_site_identity writes the name only
+    # over example.com, so a rename must be written by the command itself.
+
+    call_command("set_organization", "--name", "Example Ditch Company", stdout=StringIO())
+    call_command("set_organization", "--name", "Example Irrigation Company", stdout=StringIO())
+
+    Site.objects.clear_cache()
+    assert Site.objects.get_current().name == "Example Irrigation Company"
+
+
+def test_the_time_zone_alone_changes_once_the_organization_has_a_record(db):
+
+    call_command("set_organization", "--name", "Example Ditch Company", stdout=StringIO())
+    call_command("set_organization", "--time-zone", "America/Denver", stdout=StringIO())
+
+    config = SiteConfig.objects.get()
+    assert (config.agency_name, config.timezone) == ("Example Ditch Company", "America/Denver")
+
+
+def test_the_time_zone_alone_on_a_site_with_no_record_asks_for_the_name(db):
+
+    with pytest.raises(CommandError) as err:
+        call_command("set_organization", "--time-zone", "America/Denver", stdout=StringIO())
+    assert str(err.value) == "Give the organization's name after --name."

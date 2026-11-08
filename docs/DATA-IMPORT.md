@@ -23,13 +23,14 @@ An import that skips rows already on the site does not skip a voided record: imp
 it again adds it as a new, active record. A voided use area is the exception: it keeps
 its number, so the import skips it.
 
-Commands run inside the `web` container, which cannot see the files on your
-computer. Copy the file into the container with `docker compose cp` first, then give
-the command the `/tmp/` path that the copy created. Every command example in this
-guide that reads a file copies it to `/tmp/` first. A *shapefile* is a map saved
-as several files that share one name and differ only in their endings, such as `.shp`
-and `.dbf`. Copy all of the files and give the command the path of the `.shp` file.
-An import screen uploads the file from your browser, so you do not need to copy it.
+Commands run inside the `web` container, which cannot see the files on your computer.
+Copy the file into the container with `docker compose cp` first, then give the command
+the `/tmp/` path that the copy created. Every command example in this guide that reads a
+file copies it to `/tmp/` first. A *shapefile* is a map saved as several files that
+share one name and differ only in their endings, such as `.shp` and `.dbf`. Copy all of
+the files and give the command the path of the `.shp` file. Before you give a shapefile
+to `import_boundary` or `import_infrastructure`, zip its files together. An import
+screen uploads the file from your browser, so you do not need to copy it.
 
 A zipped shapefile must hold only one shapefile. When a zip holds several, OpenH2O
 rejects it and names the first ten and how many more there are; zip the one you want on
@@ -122,9 +123,10 @@ share a parcel number become one use area. For a Google Earth file whose outline
 only names, choose the Name column: each name becomes the use area's number.
 
 The `import_parcels` command reads the same zip, KML, GeoJSON and JSON files. It also
-reads an unzipped shapefile. It differs from the screen in three ways: it imports
-parcels outside the boundary, it reads the parcel number from the `APN` column unless
-you name another, and it stops at an outline it cannot read:
+reads an unzipped shapefile. `import_parcels` differs from the Import use areas screen
+in four ways: it imports parcels outside the boundary, it reads the parcel number from
+the `APN` column unless you name another column, it stops at an outline it cannot read,
+and it links each use area to its headgate from a headgate column:
 
 ```bash
 docker compose cp parcels.geojson web:/tmp/
@@ -581,6 +583,8 @@ form.
    them. Without a browser, load the boundary with `import_boundary` and run
    `auto_populate`.
 3. Import your use areas on the Import use areas screen, or with `import_parcels`.
+   If the file of use areas has a headgate column, run `import_parcels` on that file
+   after you import the points of diversion in step 5.
 4. Import your wells with `import_wells` or the Wells page's Import screen.
    Then import the wells' water levels on the Import water levels screen.
 5. Import your water rights with `import_water_rights` or the Water Rights Import
