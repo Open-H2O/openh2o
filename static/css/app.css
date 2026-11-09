@@ -4451,9 +4451,13 @@ details[open] > summary .disclosure-mark {
         grid-template-columns: minmax(0, 1fr);
     }
 }
+/* Each .form-group carries its own bottom margin, so the stack adds no gap;
+   the last field gives up its margin so a refusal line sits right under it. */
 .form-stack {
     display: grid;
-    gap: var(--space-md);
+}
+.form-stack > .form-group:last-child {
+    margin-bottom: 0;
 }
 
 /* -- Drinking onboarding: sampling-point builder --------------- */
