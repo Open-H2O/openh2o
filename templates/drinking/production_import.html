@@ -3,7 +3,6 @@
 
 {% block title %}Import production - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Import production{% endblock %}
-{% block page_head_class %}page-head--medium{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -18,7 +17,12 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-stack page-medium">
+{% comment %}
+  The import pages use the wide measure, as the lab import does: the preview
+  swaps tables into this page, and at the medium measure the page sat in a
+  narrow column under the full-width header and demo banner.
+{% endcomment %}
+<div class="page-stack page-wide">
 
   <a href="{% url 'drinking:production' %}" class="back-link">&larr; Back to Production</a>
 
