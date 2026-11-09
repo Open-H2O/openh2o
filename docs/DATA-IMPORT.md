@@ -484,10 +484,10 @@ with them.
 
 ### Drinking water: production by month
 
-You can import a file of a water system's monthly production with the Import button on
-the Production page (`/drinking/production/import/`) or with the `import_production`
-command. The file is a CSV file, and the screen takes up to 25 MB. OpenH2O reads two
-layouts and tells them apart by their column headings:
+You can import a file of a water system's monthly production with the
+`import_production` command or the import screen at `/drinking/production/import/`. The
+Production page links to that screen. The file is a CSV file, and the screen takes up to
+25 MB. OpenH2O reads two layouts and tells them apart by their column headings:
 
 | Layout | Recognized by | How OpenH2O reads it |
 |---|---|---|
@@ -545,19 +545,19 @@ or with `import_boundary`.
 
 ### From a PWSID, for a drinking-water system
 
-Setting up a small water system usually starts from its PWSID, the identification
-number of a public water system in EPA's records. The `add_water_system` command and
-the Add a water system page (`/drinking/onboard/`) look up the PWSID in EPA's
-Envirofacts records. The page shows the water system's record and its facilities. When
-you confirm, the page saves both. The command saves both as soon as it runs. With
-`--dry-run`, the command prints the review and does not save anything. A site keeps the
-records of one water system. Once a system is on the site, OpenH2O refuses any other
-PWSID and does not save anything. OpenH2O skips a facility that has no state facility
-ID. The review and the command list each facility it skips. When the PWSID is already
-on the site, the review and the dry run say so. If you confirm, OpenH2O updates the
-system and its facilities from EPA's record. OpenH2O keeps a copy of each record it
-reads from EPA for 30 days. A lookup within those 30 days reads the copy and not EPA's
-service.
+Setting up a small water system usually starts from its PWSID, the identification number
+of a public water system in EPA's records. The `add_water_system` command and the Add a
+water system page (`/drinking/onboard/`) look up the PWSID in EPA's Envirofacts records.
+The page shows the water system's record and its facilities. When you confirm, the page
+saves both. The command saves both as soon as it runs. With `--dry-run`,
+`add_water_system` prints the review and leaves the site's water system and facilities
+as they were. A site keeps the records of one water system. Once a system is on the
+site, OpenH2O refuses any other PWSID and does not save anything. OpenH2O skips a
+facility that has no state facility ID. The review and the command list each facility it
+skips. When the PWSID is already on the site, the review and the dry run say so. If you
+confirm, OpenH2O updates the system and its facilities from EPA's record. OpenH2O keeps
+a copy of each record it reads from EPA for 30 days. A lookup within those 30 days reads
+the copy and not EPA's service.
 
 Then add the sampling points. The `add_sampling_point` command adds one sampling point
 to a facility. You can also add points one at a time on the Sampling points page. The
@@ -620,11 +620,12 @@ form.
    the Import screen. A point that names a water right needs that right on the site
    first. Then run `import_parcels` again with the headgate column to link each use area
    to its point.
-6. For a drinking-water system, add the system from its PWSID with `add_water_system`
-   or on the Add a water system page. Then add its sampling points with
+6. For a drinking-water system, add the system from its PWSID with `add_water_system` or
+   on the Add a water system page. Then add its sampling points with
    `add_sampling_point` or with Add sampling points on the Water Systems page. Then
    import lab results with `import_lab_results` or the import screen. Import production
-   with `import_production` or the Production page's Import button.
+   with the `import_production` command or the import screen at
+   `/drinking/production/import/`.
 7. Create water accounts and allocations on their pages.
 8. Create the water years with `create_water_year` or on the Water Years page. Then
    import ledger history with `import_ledger_csv` or the Upload CSV page. Import

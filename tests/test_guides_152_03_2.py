@@ -75,7 +75,8 @@ ROW_71_NOW = (
 ROW_72 = (
     "The page shows the water system's record and its facilities. When you confirm, "
     "the page saves both. The command saves both as soon as it runs. With "
-    "`--dry-run`, the command prints the review and does not save anything."
+    "`--dry-run`, `add_water_system` prints the review and leaves the site's water "
+    "system and facilities as they were."  # row 89
 )
 ROW_72_NOW = (
     "It shows the water system's record and its facilities, and it saves them when "
@@ -129,8 +130,8 @@ ROW_81 = (
     "`add_water_system` or on the Add a water system page. Then add its sampling "
     "points with `add_sampling_point` or with Add sampling points on the Water "
     "Systems page. Then import lab results with `import_lab_results` or the import "
-    "screen. Import production with `import_production` or the Production page's "
-    "Import button."
+    "screen. Import production with the `import_production` command or the import "
+    "screen at `/drinking/production/import/`."  # row 91
 )
 ROW_81_NOW = (
     "For a drinking-water system, add the system from its PWSID, then add its "
@@ -307,3 +308,31 @@ def test_the_result_after_refresh_says_row_66(client_in, epa):
     text = _text_of(result)
     assert ROW_66.format(name=name, pwsid="CA1010001") in text
     assert ROW_66_NOW not in text
+
+
+# Rows 88 to 92 (ruling 110): what the post-build re-read found.
+ROWS_88_TO_92 = [
+    ("README.md", "OpenH2O imports California DDW lab exports. On the Add a water system page, "
+     "you enter a system's PWSID and OpenH2O fills in the system's details from EPA's records."),
+    ("docs/DATA-IMPORT.md", "You can import a file of a water system's monthly production with the "
+     "`import_production` command or the import screen at `/drinking/production/import/`. "
+     "The Production page links to that screen."),
+    ("templates/about_demonstration_data.html", "On the Sample Results page and each sampling "
+     "point\u2019s page, a label says the results came from imported lab files."),
+]
+ROWS_88_TO_92_GONE = [
+    ("README.md", "a setup wizard that fills in a system's details from public records"),
+    ("docs/DATA-IMPORT.md", "with the Import button on the Production page"),
+    ("templates/about_demonstration_data.html", "names its publisher"),
+]
+
+
+@pytest.mark.parametrize("path,sentence", ROWS_88_TO_92)
+def test_rows_88_to_92_are_in_place(path, sentence):
+    text = (ROOT / path).read_text().replace("&rsquo;", "\u2019")
+    assert _flat(sentence) in _flat(text)
+
+
+@pytest.mark.parametrize("path,phrase", ROWS_88_TO_92_GONE)
+def test_rows_88_to_92_replaced_the_old_words(path, phrase):
+    assert _flat(phrase) not in _flat((ROOT / path).read_text())
