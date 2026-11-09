@@ -4441,7 +4441,7 @@ details[open] > summary .disclosure-mark {
 
 /* Two columns below 1400 px: with the sidebar open, the five columns' minimums
    and the button need about 1,300 px of window, and at 1,265 px the button ran
-   past the card (152-03.2 collision sweep). */
+   past the card. */
 @media (max-width: 1399px) {
     .sp-add-form {
         grid-template-columns: 1fr 1fr;

@@ -178,7 +178,7 @@ CALIFORNIA_NAMES: tuple = (
     (r"so the wizard finds none outside California", "the Setup Wizard's subbasin and parcel sources cover one state (2026-10-18)"),
     (r"California water system", "a PS Code is built from the PWSID only in California's format; another state's code is typed as the lab file has it"),
     (r"California PS Code", "the same: only California's PS Codes begin with the PWSID"),
-    (r"system outside California", "the same: a system elsewhere types its code as the lab file has it (ruling 109, 2026-11-08)"),
+    (r"system outside California", "the same: a system elsewhere types its code as the lab file has it (2026-11-08)"),
     (r"California's reporting format", "the state's own format, the approved name for it (2026-10-12: \"California's reporting format, not layout\")"),
 )
 CALIFORNIA = re.compile(r"\bCalifornia\b")
