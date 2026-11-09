@@ -35,10 +35,13 @@
       from drinking/production_import.py. The description, this line, the
       file label, its help and the loading line are settled sentences.
     {% endcomment %}
-    <p class="text-base text-secondary mt-md">OpenH2O saves nothing until you press Import on the preview.</p>
+    <div class="upload-split mt-md">
+    <div>
+    <p class="text-base text-secondary">OpenH2O saves nothing until you press Import on the preview.</p>
     <p class="text-base text-secondary mt-sm">OpenH2O skips a row whose month and type of water are already on file.</p>
+    </div>
 
-    <form class="mt-lg"
+    <form class="card-inset"
       id="production-import-upload-form"
       method="post"
       action="{% url 'drinking:production_import_preview' %}"
@@ -68,6 +71,7 @@
         <span id="production-import-spinner" class="htmx-indicator text-tertiary text-sm">Reading the file&hellip;</span>
       </div>
     </form>
+    </div>
   </div>
 
   {% comment %}Mapping/settings, preview and results are swapped in here by HTMX.{% endcomment %}

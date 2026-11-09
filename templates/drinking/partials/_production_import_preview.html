@@ -29,7 +29,7 @@ pressed.
       <div class="form-help">OpenH2O applies this unit to every row that does not give a unit.</div>
     </div>
     {% elif layout == "mapped" %}
-    <div class="form-row-2col">
+    <div class="form-row-auto">
       <div class="form-group">
         <label class="form-label" for="production-month-column">Which column holds the month</label>
         <select id="production-month-column" name="month_column" class="form-select">
@@ -50,9 +50,6 @@ pressed.
         </select>
       </div>
       {% endfor %}
-    </div>
-
-    <div class="form-row-2col mt-md">
       <div class="form-group">
         <label class="form-label" for="production-operator-unit">Unit</label>
         <select id="production-operator-unit" name="operator_unit" class="form-select">
@@ -74,7 +71,7 @@ pressed.
 
     {% if show_refusals %}
     {% for sentence in refusals %}
-    <div class="form-error-text mt-md">{{ sentence }}</div>
+    <div class="form-error-text mt-sm">{{ sentence }}</div>
     {% endfor %}
     {% endif %}
     {% else %}
@@ -97,7 +94,7 @@ pressed.
     </div>
     {% endif %}
 
-    <div class="row-start pt-sm mt-lg" style="gap: var(--space-sm);">
+    <div class="row-start pt-sm{% if layout != "mapped" %} mt-lg{% endif %}" style="gap: var(--space-sm);">
       <button type="submit" class="btn-secondary"
         hx-post="{% url 'drinking:production_import_preview' %}"
         hx-target="#production-import-area"
@@ -162,7 +159,7 @@ pressed.
   <p class="text-base text-secondary">The file&rsquo;s first {{ preview_rows|length }} of {{ row_count }} rows</p>
   {% endif %}
   <div class="table-scroll{% if row_count > preview_rows|length %} mt-md{% endif %}">
-  <table class="data-table" id="production-import-rows">
+  <table class="data-table data-table--fit" id="production-import-rows">
     <thead><tr>{% for column in preview_columns %}<th>{{ column }}</th>{% endfor %}</tr></thead>
     <tbody>
       {% for row in preview_rows %}

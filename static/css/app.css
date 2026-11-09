@@ -903,6 +903,28 @@ html { color-scheme: dark; }
 .page-grid-2col > * {
     min-width: 0;
 }
+
+/* The upload card on the drinking import pages ran the full content width at
+   the wide measure while its file picker and button sat in the left fifth, and
+   two independent page reviewers named the empty card. The notes sit in a left
+   column and the form, in a `.card-inset` panel, in a right column that reads
+   as the action area. Below 1,100px (the sidebar takes ~240px) it is one
+   column. */
+.upload-split {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    gap: var(--space-lg);
+    align-items: start;
+}
+.upload-split > .card-inset {
+    padding: var(--space-lg);
+    border-radius: var(--radius-lg);
+}
+@media (max-width: 1100px) {
+    .upload-split {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
 /* Each card its content's height a card beside a longer
    list is not stretched to its neighbour's height. */
 .page-grid-2col--align-start {
@@ -4409,6 +4431,23 @@ details[open] > summary .disclosure-mark {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: var(--space-md);
+}
+
+/* The mapping step of the production import: the month, each mapped column,
+   the unit and the report year share one grid that fills the row, so a lone
+   field is not left in half a row with an empty half beside it. */
+.form-row-auto {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--space-md);
+}
+
+/* The file's own rows: two short columns fit their content instead of
+   stretching across the card. A log with many columns still scrolls inside
+   its .table-scroll. */
+.data-table--fit {
+    width: auto;
+    min-width: 20rem;
 }
 
 /* -- Drinking onboarding: sampling-point builder --------------- */

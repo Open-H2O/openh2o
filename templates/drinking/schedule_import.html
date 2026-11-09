@@ -29,12 +29,16 @@
 
   <div class="card-raised">
     <h2 class="card-header-ruled">The state's sampling schedule</h2>
-    <p class="text-base text-secondary mt-md">OpenH2O saves nothing until you press Import on the preview.</p>
+    <div class="upload-split mt-md">
+    <div>
+    <p class="text-base text-secondary">OpenH2O saves nothing until you press Import on the preview.</p>
     <p class="text-base text-secondary mt-sm">Each row names a sampling point by its PS Code. Add the sampling points before you import the file.</p>
     <p class="text-base text-secondary mt-sm">When a row's sampling point and analyte are already on the schedule, the preview lists each change before OpenH2O saves it.</p>
     <p class="text-base text-secondary mt-sm">OpenH2O saves each row's GROUP and NOTES in the notes of a new schedule row. On a row already on the schedule, OpenH2O changes only the frequency, Last done and Next due.</p>
 
-    <form class="mt-lg"
+    </div>
+
+    <form class="card-inset"
       id="schedule-import-form"
       method="post"
       action="{% url 'drinking:schedule_import_preview' %}"
@@ -62,6 +66,7 @@
         <span id="schedule-import-spinner" class="htmx-indicator text-tertiary text-sm">Reading the file&hellip;</span>
       </div>
     </form>
+    </div>
   </div>
 
   {% comment %} The preview and the result are swapped in here by HTMX. #import-area carries the card gap in app.css. {% endcomment %}
