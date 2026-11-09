@@ -487,33 +487,80 @@ with them.
 You can import a file of a water system's monthly production with the
 `import_production` command or the import screen at `/drinking/production/import/`. The
 Production page links to that screen. The file is a CSV file, and the screen takes up to
-25 MB. OpenH2O reads two layouts and tells them apart by their column headings:
+25 MB. OpenH2O tells the first two kinds of file below apart by their column headings.
+For any other headings, you choose on the preview what each column holds.
 
 | Layout | Recognized by | How OpenH2O reads it |
 |---|---|---|
-| California's Electronic Annual Report (eAR) production export | The columns `PWSID`, `Year`, `Month`, `TypeCode` and `Quantity as in Units Reported` | Each row is one month of one type of water. `TypeCode` is one of `GW`, `SW`, `Purchased`, `Sold`, `Recycled`, `NonPotable` and `NonPotableSold`, and any other code is a row error. `Units of Measure As Reported` is `G`, `MG`, `AF`, `CCF` or blank. A blank unit is a row error until you choose a unit for blank rows in the mapping step. The export can repeat a row up to five times, and OpenH2O keeps one copy and reports how many it dropped. `PWSID` must match the water system on the site. |
-| A monthly log kept on Section 5 of the eAR template | A `Date/Month` column and at least one of the six source columns | `Date/Month` holds the twelve month names. The rows `Maximum Day`, `Annual Total` and `Percent Treated` are skipped, and the preview names them. Each source has its own column: "Water Produced from Groundwater (Wells)", "...Surface Water", "Finished Water Purchased...", "Water Sold to Another PWS", "Non-potable..." and "Recycled". The "Total Amount of Potable Water" column is a total on the printed form, and OpenH2O does not read it. The log does not name the system, year or unit, so on the preview you enter the report year and choose one unit for the whole file. Gallons is the default. |
+| California's Electronic Annual Report (eAR) production export | The columns `PWSID`, `Year`, `Month`, `TypeCode` and `Quantity as in Units Reported` | Each row is one month of one type of water. `TypeCode` is one of `GW`, `SW`, `Purchased`, `Sold`, `Recycled`, `NonPotable` and `NonPotableSold`, and any other code is a row error. `Units of Measure As Reported` is `G`, `MG`, `AF`, `CCF` or blank. A blank unit is a row error until you choose a unit for blank rows in the mapping step. When the export repeats a month and type of water, OpenH2O keeps the first row and reports how many it skipped. `PWSID` must match the water system on the site. |
+| A monthly log kept on Section 5 of the eAR template | A `Date/Month` column and at least one of the six source columns | `Date/Month` holds the twelve month names. OpenH2O skips any row whose `Date/Month` is not a full month name. The template's `Maximum Day`, `Annual Total` and `Percent Treated` rows are three such rows. Once you enter the report year, the preview names each skipped row. Each source has its own column: "Water Produced from Groundwater (Wells)", "...Surface Water", "Finished Water Purchased...", "Water Sold to Another PWS", "Non-potable..." and "Recycled". The "Total Amount of Potable Water" column is a total on the printed form, and OpenH2O does not read it. The log does not name the system, year or unit, so on the preview you enter the report year and choose one unit for the whole file. Gallons is the default. |
+| A monthly log with its own column headings | Any other column headings | On the preview you choose the column that holds the month. For each other column you choose the type of water it holds. The month can be written `2024-01`, `1/2024` or `January 2024`. A column of month names with no year also works. In that case you enter the report year. You choose one unit for the whole file. This kind of log has no default unit. The import takes one column for each type of water. When the log has a column for each well, add the wells together into one column first. |
+
+When a file has a January figure and no other month of that type of water, OpenH2O
+marks the January figure as one figure for the whole year. This applies to the eAR
+export and to a log on the eAR template.
 
 OpenH2O converts units with the same figures as the other imports: 325,851 gallons
 per acre-foot, 1,000,000 gallons per MG and 748.05 gallons per CCF.
 
-A row whose month and type of water are already on the site is skipped and counted, so
-importing the same file twice saves nothing the second time. OpenH2O lists a month in a
-finalized water year as an error. To enter one month by hand, use Enter water produced,
-purchased or sold on the Production page.
+When a month and type of water are already on the site as a figure for the whole system,
+the import skips that figure. Importing the same file twice saves nothing the second
+time. A month entered by hand for one facility does not stop the import from saving the
+file's figure for that month and type of water. OpenH2O lists a month in a finalized
+water year as an error. To enter one month by hand, use Enter water produced, purchased
+or sold on the Production page.
 
-The import screen saves the figures to the site's water system. A site keeps the
-records of one water system. The command needs `--pwsid` only when someone has added a
-second system some other way, such as through the administration site. For a file in
-the eAR layout, `--unit-for-blank` sets the unit for rows with a blank unit. For a
-monthly log, `--operator-year` sets the report year and `--operator-unit` sets the
-unit. In these commands, replace `XX1234567` with your system's PWSID.
+The import screen saves the figures to the site's water system. A site keeps the records
+of one water system. The command needs `--pwsid` only when someone has added a second
+system some other way, such as through the administration site. For a file in the eAR
+layout, `--unit-for-blank` sets the unit for rows with a blank unit. For a monthly log,
+`--operator-year` sets the report year and `--operator-unit` sets the unit. For a log
+with its own column headings, `--column` names what each column holds. `--operator-unit`
+sets the unit for the whole file. In these commands, replace `XX1234567` with your
+system's PWSID.
 
 ```bash
 docker compose cp ear-2024-production.csv web:/tmp/
 docker compose exec web python manage.py import_production /tmp/ear-2024-production.csv \
   --pwsid XX1234567 --dry-run
 docker compose exec web python manage.py import_production /tmp/ear-2024-production.csv --pwsid XX1234567
+```
+
+```bash
+docker compose cp production-log.csv web:/tmp/
+docker compose exec web python manage.py import_production /tmp/production-log.csv \
+  --column month=Month --column groundwater="All wells (gallons)" --operator-unit G --dry-run
+```
+
+### Drinking water: the sampling schedule
+
+You can import the state's sampling schedule with the `import_schedule` command or the
+import screen at `/drinking/schedule/import/`. The Schedule page links to that screen
+with **Import the state's schedule**. The import reads the Last and Next Sample Report
+from California's Division of Drinking Water. Save the report as a CSV file.
+
+Each row names a sampling point by its PS Code. Add the sampling points before the
+import. OpenH2O looks for each row's analyte by its code and then by its name. When no
+analyte on the site has the row's code or name, OpenH2O shows the analyte's name under
+**What is sampled** on the Schedule page.
+
+`FREQ MONTHS` sets the frequency. OpenH2O saves 1, 3, 12, 36, 72, 108 and 120 months as
+Monthly, Quarterly, Annual, Every 3 years, Every 6 years, Every 9 years and Every 10
+years. OpenH2O saves any other number as Other. A new schedule row then gives the months
+in its notes. The state gives the next due date as a month only. OpenH2O keeps it as a
+month.
+
+You can import a newer file over an older one. When a schedule row has the sampling
+point and analyte of a row in the file, OpenH2O changes only that schedule row's
+frequency, Last done and Next due. The preview lists each change before anything is
+saved. A new schedule row gets the file's GROUP and NOTES in its notes. A changed
+schedule row keeps its own notes. A schedule row the newer file leaves out stays on the
+schedule. With `--dry-run` the command lists the same changes and saves nothing.
+
+```bash
+docker compose cp sample-schedule.csv web:/tmp/
+docker compose exec web python manage.py import_schedule /tmp/sample-schedule.csv --dry-run
+docker compose exec web python manage.py import_schedule /tmp/sample-schedule.csv
 ```
 
 ---
@@ -586,7 +633,7 @@ These records have no file import and no public source. Each has its own page:
 - Allocations: `/accounting/allocations/create/`
 - Water system facilities that the PWSID lookup did not add: `/drinking/facilities/add/`
 - Sampling points: Add sampling points on the Water Systems page (Drinking water > Water Systems) or `add_sampling_point`
-- The sampling schedule: `/drinking/schedule/add/`
+- The sampling schedule, when you do not have the state's file: `/drinking/schedule/add/`
 
 Enter a water level, or a visit without a measurement and its reason, on the well's
 page under Add a water level. Enter a reading at a station the organization measures

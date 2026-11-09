@@ -103,6 +103,12 @@ KINDS = {
         commit_url_name="drinking:production_import_commit",
         extensions=(".csv",),
     ),
+    "schedule": Kind(
+        commit="drinking.views.schedule_import:commit_stored_schedule",
+        result_template="drinking/partials/_schedule_import_result.html",
+        commit_url_name="drinking:schedule_import_commit",
+        extensions=(".csv",),
+    ),
     "infrastructure": Kind(
         commit="infrastructure.views:commit_stored_infrastructure",
         result_template="infrastructure/partials/_import_result.html",

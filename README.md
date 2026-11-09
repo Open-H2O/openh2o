@@ -128,7 +128,7 @@ can install OpenH2O and then keep running the site and explaining it to the staf
 - **Loading existing records.** Point the agent at the records you already have,
   such as a county assessor's parcel export, a set of spreadsheets or an export from
   an old system. The agent works out how your columns match OpenH2O's importers and
-  loads the records. Most import tools accept your own column names. You can
+  loads the records. Several import tools accept your own column names. You can
   check a file before an import saves anything. <!-- defines: dry_run -->An import
   command checks the file in a *dry run*. An import screen shows a preview.
   `import_parcels` does not import any use area when an outline cannot be read, a parcel
@@ -176,7 +176,7 @@ and names the source of every figure.
 - **A water ledger** that records supplies, use and allocations by water type and zone. Every figure can be traced to its entries.
 - **Surface-water rights**, with points of diversion and diversion records.
 - **Managed aquifer recharge** sites and events.
-- **Drinking-water quality.** Water systems, facilities and sampling points are kept under their EPA PWSID. OpenH2O imports California DDW lab exports. On the Add a water system page, you enter a system's PWSID and OpenH2O fills in the system's details from EPA's records. Quality and quantity records live in the same site.
+- **Drinking-water quality.** Water systems, facilities and sampling points are kept under their EPA PWSID. OpenH2O imports California DDW lab exports and the state's sampling schedule. It also imports a water system's monthly production. On the Add a water system page, you enter a system's PWSID and OpenH2O fills in the system's details from EPA's records. Quality and quantity records live in the same site.
 - **Data from public sources.** <!-- defines: api_key --> USGS, CDEC and DWR's Water Data Library and SGMA Portal are switched on and do not need credentials. CIMIS and NOAA are switched on and start fetching once you add a free API key. An *API key* is a long password-like string that lets a program fetch data from another organization's computers. Treat it like a password. CNRFC and OpenET satellite ET are off until you turn them on, and OpenET also needs a key. OpenH2O maps every source's data to one shared vocabulary (see [Data standards](#data-standards--interoperability)).
 - **Reporting (under development, off by default):** figures written in California's reporting format. OpenH2O does not submit reports to the state.
 - **Open-standards publishing (not yet live).** The data model is designed for publishing as OGC SensorThings, Frictionless Data Packages and WaDE 2.0, but OpenH2O does not publish anywhere yet.
@@ -245,7 +245,7 @@ openh2o/
   accounting/    Water accounts, allocations, reporting periods
   surface/       Surface-water rights, points of diversion, diversions
   recharge/      Managed aquifer recharge sites and events
-  drinking/      Drinking-water systems, facilities, sampling points, lab results
+  drinking/      Drinking-water systems, facilities, sampling points, lab results, production and the sampling schedule
   infrastructure/ Adding and importing wells, points of diversion and recharge sites
   datasync/      External data adapters (7 sources + OpenET)
   setup/         First-run setup wizard (watershed, sources, imports)

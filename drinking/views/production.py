@@ -303,21 +303,53 @@ def production_import_page(request):
 
 
 def _production_import_settings_context(*, unit_for_blank="", operator_year="",
-                                          operator_unit="G"):
+                                          operator_unit="G", month_column="",
+                                          column_types=None):
     return {
         "unit_choices": PRODUCTION_UNIT_CHOICES,
+        "type_choices": PRODUCTION_TYPE_CHOICES,
         "unit_for_blank": unit_for_blank,
         "operator_year": operator_year,
         "operator_unit": operator_unit,
+        "month_column": month_column,
+        "column_types": column_types or {},
     }
 
 
+_COLUMN_TYPE_PREFIX = "column_type:"
+
+
 def _posted_production_settings(data):
-    """The mapping-step settings as posted, as the stored upload remembers them."""
+    """The mapping-step settings as posted, as the stored upload remembers them.
+
+    ``operator_unit`` stays blank when it is not chosen: the Section 5 log reads
+    a blank as gallons, a log with its own headings refuses it.
+    """
+    valid_types = {code for code, _label in PRODUCTION_TYPE_CHOICES}
+    column_types = {
+        key[len(_COLUMN_TYPE_PREFIX):]: value.strip()
+        for key, value in data.items()
+        if key.startswith(_COLUMN_TYPE_PREFIX) and value.strip() in valid_types
+    }
     return {
         "unit_for_blank": data.get("unit_for_blank", "").strip(),
         "operator_year": data.get("operator_year", "").strip(),
-        "operator_unit": data.get("operator_unit", "").strip() or "G",
+        "operator_unit": data.get("operator_unit", "").strip(),
+        "month_column": data.get("month_column", "").strip(),
+        "column_types": column_types,
+    }
+
+
+def _production_mapping(page_settings):
+    """The importer's ``mapping`` for a set of stored settings."""
+    month = page_settings.get("month_column", "")
+    return {
+        "month": month,
+        "columns": {
+            heading: code
+            for heading, code in (page_settings.get("column_types") or {}).items()
+            if heading != month
+        },
     }
 
 
@@ -327,7 +359,8 @@ def _production_run_settings(page_settings):
     return {
         "unit_for_blank": page_settings.get("unit_for_blank") or None,
         "operator_year": int(year) if year.isdigit() else None,
-        "operator_unit": page_settings.get("operator_unit") or "G",
+        "operator_unit": page_settings.get("operator_unit") or None,
+        "mapping": _production_mapping(page_settings),
     }
 
 
@@ -419,14 +452,35 @@ def production_import_preview(request):
     pending.settings = page_settings
     pending.save(update_fields=["settings"])
 
-    result = production_import_service.import_production_rows(
-        columns, rows, system=system, layout=layout,
-        **_production_run_settings(page_settings),
-        dry_run=True,
-    )
+    try:
+        result = production_import_service.import_production_rows(
+            columns, rows, system=system, layout=layout,
+            **_production_run_settings(page_settings),
+            dry_run=True,
+        )
+    except ImportError as exc:
+        return render(
+            request,
+            "drinking/partials/_production_import_result.html",
+            {"error": str(exc)},
+        )
 
+    if layout == "operator_log" and not page_settings["operator_unit"]:
+        page_settings = {**page_settings, "operator_unit": "G"}
     context = _production_import_settings_context(**page_settings)
     context.update(_capped_errors(result))
+    if layout == "mapped":
+        month = page_settings["month_column"]
+        context["mapped_columns"] = [
+            {"heading": column, "type": page_settings["column_types"].get(column, "")}
+            for column in columns
+            if column != month
+        ]
+        # The refusals are said once the person has pressed Update preview,
+        # never on the first look at the file.
+        context["show_refusals"] = not new_upload
+        context["needs_year"] = production_import_service.month_needs_year(rows, month)
+        context["can_import"] = not result["refusals"] and not result["year_missing"]
     context["token"] = pending.token
     context["row_count"] = len(rows)
     # The file's own rows under its own column names, bounded.
@@ -455,11 +509,14 @@ def commit_stored_production(pending):
     except ImportError as exc:
         return {"error": str(exc)}
 
-    result = production_import_service.import_production_rows(
-        columns, rows, system=system, layout=layout,
-        **_production_run_settings(pending.settings),
-        dry_run=False,
-    )
+    try:
+        result = production_import_service.import_production_rows(
+            columns, rows, system=system, layout=layout,
+            **_production_run_settings(pending.settings),
+            dry_run=False,
+        )
+    except ImportError as exc:
+        return {"error": str(exc)}
     return _capped_errors(result)
 
 
@@ -469,13 +526,18 @@ def production_import_commit(request):
     """Start writing the stored file with the confirmed mapping-step settings."""
     page_settings = _posted_production_settings(request.POST)
 
-    # A log with no year imports nothing: show the preview again, with the
-    # year box asking for it.
-    if not page_settings["operator_year"].isdigit():
+    # A log with no year, a log with its own headings that is not fully
+    # mapped, or one with no unit chosen imports nothing: show the preview
+    # again, with the step asking.
+    needs_check = (
+        not page_settings["operator_year"].isdigit()
+        or "month_column" in request.POST
+    )
+    if needs_check:
         pending = pending_imports.previewed(request, "production")
         if pending is not None:
             try:
-                columns, _rows = parse_stored_production(pending)
+                columns, rows = parse_stored_production(pending)
                 layout = production_import_service.recognise_layout(columns)
             except FileNotFoundError:
                 return pending_imports.refused(request, "production")
@@ -485,7 +547,24 @@ def production_import_commit(request):
                     "drinking/partials/_production_import_result.html",
                     {"error": str(exc)},
                 )
-            if layout == "operator_log":
+            if layout == "operator_log" and not page_settings["operator_year"].isdigit():
                 return production_import_preview(request)
+            if layout == "mapped":
+                run = _production_run_settings(page_settings)
+                try:
+                    unit = production_import_service.normalise_unit(run["operator_unit"])
+                except ImportError:
+                    return production_import_preview(request)
+                mapping = run["mapping"]
+                if (
+                    production_import_service.mapping_refusals(mapping, unit)
+                    or (
+                        run["operator_year"] is None
+                        and production_import_service.month_needs_year(
+                            rows, mapping["month"]
+                        )
+                    )
+                ):
+                    return production_import_preview(request)
 
     return pending_imports.start_import(request, "production", page_settings)

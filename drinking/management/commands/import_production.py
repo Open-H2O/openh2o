@@ -12,8 +12,25 @@ import os
 
 from django.core.management.base import BaseCommand, CommandError
 
-from drinking.production_import import import_production_rows, parse_csv
+from core.import_commands import check_columns, column_overrides, write_columns
 from drinking.models import WaterSystem
+from drinking.production_import import (
+    import_production_rows,
+    parse_csv,
+    recognise_layout,
+)
+
+#: ``--column`` names -> the type of water each one holds (``month`` is the month column).
+COLUMN_TYPES = {
+    "groundwater": "GW",
+    "surface_water": "SW",
+    "purchased": "PU",
+    "sold": "SO",
+    "non_potable": "NP",
+    "recycled": "RC",
+    "non_potable_sold": "NS",
+}
+COLUMN_NAMES = ["month", *COLUMN_TYPES]
 
 
 class Command(BaseCommand):
@@ -44,9 +61,19 @@ class Command(BaseCommand):
                  "year of its own.",
         )
         parser.add_argument(
-            "--operator-unit", type=str, default="G",
-            help="Unit for every row of an operator's-log file (default: G, "
-                 "gallons).",
+            "--operator-unit", type=str, default=None,
+            help="The unit of every figure in a monthly log: G, MG, AF or CCF. "
+                 "When --operator-unit is left out, OpenH2O reads a log on the "
+                 "eAR template in gallons. A log with its own column headings "
+                 "needs --operator-unit.",
+        )
+        parser.add_argument(
+            "--column", action="append", default=None, metavar="NAME=COLUMN",
+            help="For a log with its own column headings, give one --column for "
+                 "each column you want imported. Write each --column as "
+                 "OpenH2O's name for a value, an equals sign and a column name. "
+                 "The names are month, groundwater, surface_water, purchased, "
+                 "sold, non_potable, recycled and non_potable_sold.",
         )
 
     def handle(self, *args, **options):
@@ -85,22 +112,58 @@ class Command(BaseCommand):
             except ImportError as exc:
                 raise CommandError(str(exc))
 
+        layout = recognise_layout(columns)
+        mapping = None
+        if layout == "mapped":
+            overrides = column_overrides(options["column"], COLUMN_NAMES)
+            if not overrides:
+                raise CommandError(
+                    "OpenH2O does not know the columns in this file: "
+                    + ", ".join(columns)
+                    + ". Name the month column and at least one other column "
+                    "with --column."
+                )
+            if not options["operator_unit"]:
+                raise CommandError(
+                    "A log with its own column headings needs --operator-unit."
+                )
+            check_columns(overrides, columns)
+            write_columns(self.stdout, COLUMN_NAMES, overrides)
+            mapping = {
+                "month": overrides.get("month", ""),
+                "columns": {
+                    column: COLUMN_TYPES[name]
+                    for name, column in overrides.items()
+                    if name != "month"
+                },
+            }
+
         try:
             result = import_production_rows(
-                columns, rows, system=system,
+                columns, rows, system=system, layout=layout,
                 unit_for_blank=options["unit_for_blank"],
                 operator_year=options["operator_year"],
                 operator_unit=options["operator_unit"],
+                mapping=mapping,
                 dry_run=dry_run,
             )
         except ImportError as exc:
             raise CommandError(str(exc))
 
+        if result["refusals"]:
+            raise CommandError("\n".join(result["refusals"]))
         if result["year_missing"]:
+            if layout == "mapped":
+                raise CommandError(
+                    "The month column does not give a year. Pass --operator-year."
+                )
             raise CommandError("The log carries no year; pass --operator-year.")
 
         action = "Would create" if dry_run else "Created"
-        self.stdout.write(f"Layout recognised: {result['layout']}")
+        # A log with its own headings has no layout name to print: "Columns read:"
+        # above already says what the command reads.
+        if result["layout"] != "mapped":
+            self.stdout.write(f"Layout recognised: {result['layout']}")
         self.stdout.write(
             self.style.SUCCESS(
                 f"{action} {result['created']} record(s), "

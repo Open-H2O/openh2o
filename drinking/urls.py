@@ -11,6 +11,7 @@ from drinking.views import (
     results,
     sampling_points,
     schedule,
+    schedule_import,
 )
 
 app_name = "drinking"
@@ -80,6 +81,17 @@ urlpatterns = [
     # The sampling schedule.
     path("schedule/", schedule.schedule, name="schedule"),
     path("schedule/add/", schedule.schedule_add, name="schedule_add"),
+    path("schedule/import/", schedule_import.schedule_import_page, name="schedule_import"),
+    path(
+        "schedule/import/preview/",
+        schedule_import.schedule_import_preview,
+        name="schedule_import_preview",
+    ),
+    path(
+        "schedule/import/commit/",
+        schedule_import.schedule_import_commit,
+        name="schedule_import_commit",
+    ),
     path("schedule/<int:pk>/edit/", schedule.schedule_edit, name="schedule_edit"),
     # Named to read as a sibling of the import flow above: page -> lookup -> commit
     # is the same shape as page -> preview -> commit, and an operator who has used

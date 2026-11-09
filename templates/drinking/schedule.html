@@ -40,11 +40,12 @@
     <h2 class="card-header-ruled">Nothing on the schedule yet</h2>
     {% if user_can_write %}
     <p class="text-base text-secondary mt-md">
-      Add a row for each item on your sampling checklist and enter its
-      frequency and dates.
+      Import the state's schedule file. You can also add a row for each item
+      on your sampling checklist.
     </p>
-    <div class="row-start mt-lg">
-      <a href="{% url 'drinking:schedule_add' %}" class="btn-primary">+ Add to schedule</a>
+    <div class="row-start mt-lg" style="gap: var(--space-sm);">
+      <a href="{% url 'drinking:schedule_import' %}" class="btn-primary">Import the state's schedule</a>
+      <a href="{% url 'drinking:schedule_add' %}" class="btn-secondary">+ Add to schedule</a>
     </div>
     {% endif %}
   </div>
@@ -52,7 +53,12 @@
   <div class="card-raised table-scroll" style="padding: 0;">
     <div class="ledger-card-head row-start" style="justify-content: space-between; gap: var(--space-md);">
       <div class="text-secondary text-base">{{ rows|length }} row{{ rows|length|pluralize }}, earliest date first</div>
-      {% if user_can_write %}<a href="{% url 'drinking:schedule_add' %}" class="btn-secondary btn-sm">+ Add to schedule</a>{% endif %}
+      {% if user_can_write %}
+      <div class="row-start" style="gap: var(--space-sm);">
+        <a href="{% url 'drinking:schedule_import' %}" class="btn-secondary btn-sm">Import the state's schedule</a>
+        <a href="{% url 'drinking:schedule_add' %}" class="btn-secondary btn-sm">+ Add to schedule</a>
+      </div>
+      {% endif %}
     </div>
     <table class="data-table">
       <thead>
@@ -71,7 +77,7 @@
           <td>
             {{ row.label }}
             {% if row.group_label and row.analyte %}<div class="text-secondary text-sm">{{ row.analyte.name }}</div>{% endif %}
-            {% if row.notes %}<div class="text-secondary text-sm">{{ row.notes }}</div>{% endif %}
+            {% if row.notes %}<div class="text-secondary text-sm">{{ row.notes|linebreaksbr }}</div>{% endif %}
           </td>
           <td class="text-sm">
             {% if row.sampling_point %}<a href="{% url 'drinking:sampling_point_detail' row.sampling_point.pk %}" class="data-table-link text-mono">{{ row.sampling_point.ps_code }}</a>{% else %}<span class="value-empty">Not set</span>{% endif %}
@@ -80,8 +86,13 @@
           <td class="text-sm tabular-nums">{% if row.last_done %}{{ row.last_done|date:"M j, Y" }}{% else %}<span class="value-empty">Not recorded</span>{% endif %}</td>
           <td class="text-sm tabular-nums">
             {% if row.next_due %}
+              {% if row.next_due_is_month %}
+              {{ row.next_due|date:"M Y" }}
+              {% if row.date_passed %}<div class="text-secondary text-sm">that month has passed</div>{% endif %}
+              {% else %}
               {{ row.next_due|date:"M j, Y" }}
-              {% if row.next_due < today %}<div class="text-secondary text-sm">past the date you set</div>{% endif %}
+              {% if row.date_passed %}<div class="text-secondary text-sm">past the date you set</div>{% endif %}
+              {% endif %}
             {% else %}
               <span class="value-empty">No date set</span>
             {% endif %}

@@ -1383,6 +1383,26 @@ checked_at = "59b5fce9"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
+heading = "Drinking water: the sampling schedule"
+files = [
+  "drinking/schedule_import.py",
+  "drinking/views/schedule_import.py",
+  "drinking/views/schedule.py",
+  "drinking/urls.py",
+  "drinking/management/commands/import_schedule.py",
+  "drinking/models.py",
+  "templates/drinking/schedule.html",
+  "templates/drinking/schedule_import.html",
+  "templates/drinking/partials/_schedule_import_preview.html",
+]
+labels = [
+  { text = "Import the state's schedule", where = "templates/drinking/schedule.html" },
+  { text = "What is sampled", where = "templates/drinking/schedule.html" },
+]
+checked_at = "f9fdc9db"
+
+[[section]]
+document = "docs/DATA-IMPORT.md"
 heading = "4. Filling in from public sources"
 files = []
 why_none = "Heading line only; no claim about the code."

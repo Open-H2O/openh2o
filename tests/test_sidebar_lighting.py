@@ -105,6 +105,7 @@ EXPECTED_LIT = {
     "/drinking/production/": "Production",
     "/drinking/production/add/": "Production",
     "/drinking/production/import/": "Production",
+    "/drinking/schedule/import/": "Schedule",
     "/drinking/results/": "Sample Results",
     "/drinking/results/<int:pk>/": "Sample Results",
     "/drinking/sampling-points/": "Sampling Points",

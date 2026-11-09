@@ -452,8 +452,9 @@ class TestTheProductionImport:
             svc.parse_csv(F(), "p.csv")
         with pytest.raises(ImportError, match="This page imports CSV files only"):
             svc.parse_csv(F(), "p.xlsx")
-        with pytest.raises(ImportError, match="OpenH2O does not recognize the columns in this file: Well, Date"):
-            svc.recognise_layout(["Well", "Date"])
+        # Unknown headings go to the mapping step, not a refusal; the command's
+        # sentence for them is in tests/test_production_own_columns.py.
+        assert svc.recognise_layout(["Well", "Date"]) == "mapped"
 
 
 class TestTheProductionRowErrors:

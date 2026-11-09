@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Import the state's schedule - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Import the state's schedule{% endblock %}
+{% block page_head_class %}page-head--medium{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    {% include "partials/_crumb_root.html" %}
+    <a href="{% url 'drinking:overview' %}">Water Systems</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'drinking:schedule' %}">Schedule</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Import the state's schedule</span>
+  </nav>
+  <p class="page-description">This page imports the Last and Next Sample Report from California's Division of Drinking Water. The page takes the report as a CSV file.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack page-medium">
+
+  <a href="{% url 'drinking:schedule' %}" class="back-link">&larr; Back to the schedule</a>
+
+  <div class="card-raised">
+    <h2 class="card-header-ruled">The state's sampling schedule</h2>
+    <p class="text-base text-secondary mt-md">OpenH2O saves nothing until you press Import on the preview.</p>
+    <p class="text-base text-secondary mt-sm">Each row names a sampling point by its PS Code. Add the sampling points before you import the file.</p>
+    <p class="text-base text-secondary mt-sm">When a row's sampling point and analyte are already on the schedule, the preview lists each change before OpenH2O saves it.</p>
+    <p class="text-base text-secondary mt-sm">OpenH2O saves each row's GROUP and NOTES in the notes of a new schedule row. On a row already on the schedule, OpenH2O changes only the frequency, Last done and Next due.</p>
+
+    <form class="mt-lg"
+      id="schedule-import-form"
+      method="post"
+      action="{% url 'drinking:schedule_import_preview' %}"
+      enctype="multipart/form-data"
+      hx-post="{% url 'drinking:schedule_import_preview' %}"
+      hx-target="#import-area"
+      hx-encoding="multipart/form-data"
+      hx-indicator="#schedule-import-spinner">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label class="form-label" for="schedule-import-file">Schedule file <span class="required-mark">*</span></label>
+        <div class="file-picker">
+          <label class="btn-secondary file-picker-button">
+            Choose file
+            <input type="file" id="schedule-import-file" name="file" accept=".csv" required class="file-picker-input">
+          </label>
+          <span class="file-picker-name text-tertiary text-sm" id="schedule-import-file-name">No file chosen</span>
+        </div>
+        <div class="form-help">OpenH2O imports a CSV file of up to 25 MB, any number of rows.</div>
+      </div>
+
+      <div class="row-start pt-sm">
+        <button type="submit" class="btn-primary">Upload &amp; preview</button>
+        <span id="schedule-import-spinner" class="htmx-indicator text-tertiary text-sm">Reading the file&hellip;</span>
+      </div>
+    </form>
+  </div>
+
+  {% comment %} The preview and the result are swapped in here by HTMX. #import-area carries the card gap in app.css. {% endcomment %}
+  <div id="import-area"></div>
+
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Columns OpenH2O reads</h2>
+    <div class="table-scroll mt-md">
+      <table class="data-table help-cases-table">
+        <thead>
+          <tr>
+            <th>Column</th>
+            <th>Required</th>
+            <th>What it holds</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-name">PSCODE</td>
+            <td class="col-sure">Yes</td>
+            <td>The sampling point's PS Code. A sampling point with this code must be on the site.</td>
+          </tr>
+          <tr>
+            <td class="col-name">ANALYTE CODE</td>
+            <td class="col-sure">No</td>
+            <td>The Division of Drinking Water's four-digit analyte code. OpenH2O looks for the analyte by this code first.</td>
+          </tr>
+          <tr>
+            <td class="col-name">ANALYTE</td>
+            <td class="col-sure">Yes</td>
+            <td>The analyte's name. When no analyte on the site has the code or the name, OpenH2O shows the name under What is sampled.</td>
+          </tr>
+          <tr>
+            <td class="col-name">FREQ MONTHS</td>
+            <td class="col-sure">Yes</td>
+            <td>The number of months between samples. OpenH2O saves 1, 3, 12, 36, 72, 108 and 120 months as Monthly, Quarterly, Annual, Every 3 years, Every 6 years, Every 9 years and Every 10 years. OpenH2O saves any other number as Other. A new schedule row then gives the months in its notes.</td>
+          </tr>
+          <tr>
+            <td class="col-name">LAST SAMPLE</td>
+            <td class="col-sure">No</td>
+            <td>The last sample's date in the form M/D/YYYY.</td>
+          </tr>
+          <tr>
+            <td class="col-name">NEXT SAMPLE DUE</td>
+            <td class="col-sure">Yes</td>
+            <td>The next sample's due month in the form YYYY/MM. OpenH2O keeps it as a month.</td>
+          </tr>
+          <tr>
+            <td class="col-name">GROUP</td>
+            <td class="col-sure">No</td>
+            <td>Saved in the row's notes.</td>
+          </tr>
+          <tr>
+            <td class="col-name">NOTES</td>
+            <td class="col-sure">No</td>
+            <td>Saved in the row's notes after the group.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="text-base text-secondary mt-md">OpenH2O does not read the file's other columns. Lab results come in through Import lab results.</p>
+  </div>
+
+</div>
+
+<script>
+  (function() {
+    var input = document.getElementById('schedule-import-file');
+    var name = document.getElementById('schedule-import-file-name');
+    if (!input || !name) return;
+    input.addEventListener('change', function() {
+      name.textContent = (input.files && input.files.length)
+        ? input.files[0].name
+        : 'No file chosen';
+    });
+  })();
+</script>
+{% endblock %}

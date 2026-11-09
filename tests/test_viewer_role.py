@@ -270,7 +270,9 @@ WRITE_PAGES = [
     "drinking:onboard_commit", "drinking:onboard_lookup", "drinking:onboard_points",
     "drinking:onboard_points_add", "drinking:production_add", "drinking:production_import",
     "drinking:production_import_commit", "drinking:production_import_preview",
-    "drinking:schedule_add", "drinking:schedule_edit", "geography:zone_create",
+    "drinking:schedule_add", "drinking:schedule_edit", "drinking:schedule_import",
+    "drinking:schedule_import_commit", "drinking:schedule_import_preview",
+    "geography:zone_create",
     "geography:zone_edit", "geography:zone_parcel_assign", "geography:zone_parcel_remove",
     "infrastructure:add", "infrastructure:import", "infrastructure:import_commit",
     "infrastructure:import_preview", "infrastructure:parcel_create", "parcels:edit_field",
@@ -379,3 +381,31 @@ def test_a_viewer_cannot_fetch_or_type_a_reading_and_an_operator_can(viewer, ope
 
     assert _client(operator).post(add, typed).status_code == 302
     assert DataRecordStaging.objects.count() == 1
+
+
+def test_a_viewer_cannot_preview_or_import_the_states_schedule_and_an_operator_can(viewer, operator):
+    """152-03.3 (ISS-374): the two new POST routes, and the upload page, refuse a viewer."""
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    from drinking.models import SamplingSchedule
+
+    # Invented test data.
+    text = (
+        "PSCODE,ANALYTE,FREQ MONTHS,NEXT SAMPLE DUE\n"
+        "XX0000001_001_001,Invented Group,12,2035/07\n"
+    )
+    preview = reverse("drinking:schedule_import_preview")
+    commit = reverse("drinking:schedule_import_commit")
+    page = reverse("drinking:schedule_import")
+
+    client = _client(viewer)
+    upload = SimpleUploadedFile("schedule.csv", text.encode(), content_type="text/csv")
+    assert _refused(client.post(preview, {"file": upload})) == (403, True)
+    assert _refused(client.post(commit, {"token": "00000000-0000-0000-0000-000000000000"})) == (403, True)
+    assert _refused(client.get(page)) == (403, True)
+    assert not SamplingSchedule.objects.exists()
+
+    upload = SimpleUploadedFile("schedule.csv", text.encode(), content_type="text/csv")
+    response = _client(operator).post(preview, {"file": upload})
+    assert response.status_code == 200
+    assert READ_ONLY_MESSAGE not in response.content.decode()

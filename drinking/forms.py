@@ -313,6 +313,8 @@ class SamplingScheduleForm(forms.ModelForm):
     def __init__(self, *args, system=None, **kwargs):
         super().__init__(*args, **kwargs)
         self._system = system
+        # A due date the state gave as a month stays a month until a different day is saved.
+        self._saved_next_due = self.instance.next_due if self.instance.pk else None
         self.fields["analyte"].queryset = Analyte.objects.order_by("name")
         points = SamplingPoint.objects.order_by("ps_code")
         if system is not None:
@@ -331,6 +333,8 @@ class SamplingScheduleForm(forms.ModelForm):
         instance = super().save(commit=False)
         if self._system is not None and instance.system_id is None:
             instance.system = self._system
+        if instance.next_due_is_month and instance.next_due != self._saved_next_due:
+            instance.next_due_is_month = False
         if commit:
             instance.save()
         return instance

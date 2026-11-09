@@ -8,7 +8,10 @@ pressed.
 
 {% endcomment %}
 <div class="card-raised">
-  <h2 class="card-header-ruled">{{ row_count }} row{{ row_count|pluralize }} from {% if layout == "ear" %}an eAR export{% else %}a monthly log{% endif %}</h2>
+  <h2 class="card-header-ruled">{{ row_count }} row{{ row_count|pluralize }} from {% if layout == "ear" %}an eAR export{% elif layout == "mapped" %}a log with its own column headings{% else %}a monthly log{% endif %}</h2>
+  {% if layout == "mapped" %}
+  <p class="text-base text-secondary mt-md">OpenH2O does not know these column headings. Choose what each column holds. Then press Update preview.</p>
+  {% endif %}
 
   <form id="production-import-mapping-form" class="mt-lg">
     {% csrf_token %}
@@ -25,6 +28,55 @@ pressed.
       </select>
       <div class="form-help">OpenH2O applies this unit to every row that does not give a unit.</div>
     </div>
+    {% elif layout == "mapped" %}
+    <div class="form-row-2col">
+      <div class="form-group">
+        <label class="form-label" for="production-month-column">Which column holds the month</label>
+        <select id="production-month-column" name="month_column" class="form-select">
+          <option value=""{% if not month_column %} selected{% endif %}>Not chosen</option>
+          {% for heading in preview_columns %}
+          <option value="{{ heading }}"{% if month_column == heading %} selected{% endif %}>{{ heading }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% for column in mapped_columns %}
+      <div class="form-group">
+        <label class="form-label" for="production-column-{{ forloop.counter }}">{{ column.heading }}</label>
+        <select id="production-column-{{ forloop.counter }}" name="column_type:{{ column.heading }}" class="form-select">
+          <option value=""{% if not column.type %} selected{% endif %}>Not imported</option>
+          {% for value, label in type_choices %}
+          <option value="{{ value }}"{% if column.type == value %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="form-row-2col mt-md">
+      <div class="form-group">
+        <label class="form-label" for="production-operator-unit">Unit</label>
+        <select id="production-operator-unit" name="operator_unit" class="form-select">
+          <option value="">Not chosen</option>
+          {% for value, label in unit_choices %}
+          <option value="{{ value }}"{% if operator_unit == value %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <div class="form-help">OpenH2O reads every figure in the log in this unit.</div>
+      </div>
+      {% if needs_year %}
+      <div class="form-group">
+        <label class="form-label" for="production-operator-year">Report year</label>
+        <input type="number" id="production-operator-year" name="operator_year" class="form-input" value="{{ operator_year }}" placeholder="2022">
+        <div class="{% if year_missing %}form-error-text{% else %}form-help{% endif %}">The month column does not give a year. Enter the report year.</div>
+      </div>
+      {% endif %}
+    </div>
+
+    {% if show_refusals %}
+    {% for sentence in refusals %}
+    <div class="form-error-text mt-md">{{ sentence }}</div>
+    {% endfor %}
+    {% endif %}
     {% else %}
     <div class="form-row-2col">
       <div class="form-group">
@@ -50,14 +102,17 @@ pressed.
         hx-post="{% url 'drinking:production_import_preview' %}"
         hx-target="#production-import-area"
         hx-include="closest form">Update preview</button>
+      {% if layout != "mapped" or can_import %}
       <button type="submit" class="btn-primary"
         hx-post="{% url 'drinking:production_import_commit' %}"
         hx-target="#production-import-area"
         hx-include="closest form">Import {{ created }} record{{ created|pluralize }}</button>
+      {% endif %}
     </div>
   </form>
 </div>
 
+{% if layout != "mapped" or can_import %}
 <div class="card-raised">
   <h3 class="section-header-sm">Preview</h3>
   <div class="row-start" style="gap: var(--space-sm); margin-top: var(--space-md); flex-wrap: wrap;">
@@ -68,6 +123,7 @@ pressed.
     {% if error_count %}<span class="badge badge-orange">{{ error_count }} with errors</span>{% endif %}
   </div>
 </div>
+{% endif %}
 
 {% if skipped_rows %}
 <div class="card-raised">

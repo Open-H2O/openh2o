@@ -4470,6 +4470,7 @@ details[open] > summary .disclosure-mark {
    every other stacked card on the site. */
 #onboard-area,
 #import-area,
+#production-import-area,
 /* Same defect class: the CSV upload swap target renders an error card beside
    the results stack with no gap when both appear. */
 #upload-results {

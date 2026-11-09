@@ -13,7 +13,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Import production</span>
   </nav>
-  <p class="page-description">This page imports monthly production figures from a CSV file: California&rsquo;s Electronic Annual Report (eAR) export, or a monthly log kept on Section 5 of the eAR template.</p>
+  <p class="page-description">This page imports monthly production figures from a CSV file. It reads California's Electronic Annual Report (eAR) export or a monthly log kept on Section 5 of the eAR template. For a log with its own column headings, you choose on the preview what each column holds.</p>
 </div>
 {% endblock %}
 
@@ -184,6 +184,10 @@
         </tbody>
       </table>
     </div>
+
+    <h3 class="section-header-sm mt-lg">A log with its own column headings</h3>
+    <p class="text-base text-secondary mt-sm">On the preview, choose the column that holds the month. For each other column, choose the type of water it holds. Then choose one unit for the whole file. This kind of log has no default unit.</p>
+    <p class="text-base text-secondary mt-sm">The import takes one column for each type of water. When the log has a column for each well, add the wells together into one column first.</p>
   </div>
 
 </div>

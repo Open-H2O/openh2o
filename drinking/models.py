@@ -899,6 +899,7 @@ SCHEDULE_FREQUENCY_CHOICES = [
     ("quarterly", "Quarterly"),
     ("annual", "Annual"),
     ("every_3_years", "Every 3 years"),
+    ("every_6_years", "Every 6 years"),
     ("every_9_years", "Every 9 years"),
     ("every_10_years", "Every 10 years"),
     ("other", "Other"),
@@ -942,6 +943,11 @@ class SamplingSchedule(models.Model):
     next_due = models.DateField(
         null=True, blank=True,
         help_text="Entered by the operator; never computed from the frequency.",
+    )
+    # True when the state's file gave the due date as a month only; next_due
+    # then holds that month's first day, so the list still sorts by date.
+    next_due_is_month = models.BooleanField(
+        verbose_name="Next due given as a month", default=False
     )
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

@@ -85,6 +85,7 @@
         <label class="form-label" for="{{ form.next_due.id_for_label }}">{{ form.next_due.label }}</label>
         {{ form.next_due }}
         <div class="form-help">Enter the date from your checklist. OpenH2O does not calculate the next date from the frequency.</div>
+        {% if row and row.next_due_is_month %}<div class="form-help">The state's file gives this date as a month: {{ row.next_due|date:"F Y" }}. The box shows the first day of that month. When you save a different day, OpenH2O keeps that day in place of the month.</div>{% endif %}
         {% for error in form.next_due.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
       </div>
 

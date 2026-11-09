@@ -22,16 +22,23 @@ def schedule(request):
     platform holds the schedule and does not judge it.
     """
     system = WaterSystem.objects.order_by("pwsid").first()
-    rows = (
+    rows = list(
         SamplingSchedule.objects.filter(system=system)
         .select_related("analyte", "sampling_point")
         if system is not None
         else SamplingSchedule.objects.none()
     )
+    today = timezone.localdate()
+    first_of_month = today.replace(day=1)
+    for row in rows:
+        # A date given as a month has passed only after that month's last day.
+        row.date_passed = bool(row.next_due) and row.next_due < (
+            first_of_month if row.next_due_is_month else today
+        )
     return render(
         request,
         "drinking/schedule.html",
-        {"system": system, "rows": rows, "today": timezone.localdate()},
+        {"system": system, "rows": rows, "today": today},
     )
 
 

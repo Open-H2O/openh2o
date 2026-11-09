@@ -1,0 +1,39 @@
+{% comment %}
+Outcome of an Import on the state's schedule: an error before any row was
+read, or what was added, changed and skipped.
+{% endcomment %}
+{% if error %}
+<div class="card-raised" style="border-left: 3px solid var(--color-error); padding: var(--space-md);">
+  <p class="text-base" style="margin: 0; color: var(--color-error);">{{ error }}</p>
+</div>
+{% else %}
+<div class="card-raised">
+  <p class="text-base text-secondary">OpenH2O added {{ added_count }} row{{ added_count|pluralize }} to the schedule and changed {{ changed_count }} row{{ changed_count|pluralize }}.</p>
+  {% if error_count %}<p class="text-base text-secondary mt-sm">OpenH2O skipped {{ error_count }} row{{ error_count|pluralize }} with errors.</p>{% endif %}
+
+    {% if errors %}
+    <h3 class="text-base mt-lg">Rows with errors</h3>
+    <table class="data-table mt-sm">
+      <thead>
+        <tr>
+          <th style="width: 5rem;">Row</th>
+          <th>What is wrong</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for err in errors %}
+        <tr>
+          <td class="text-mono">{{ err.line }}</td>
+          <td class="text-furnace">{% for message in err.messages %}<div>{{ message }}</div>{% endfor %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% include "core/partials/_rows_not_listed.html" with count=errors_not_listed what="rows with errors" %}
+    {% endif %}
+
+  <div class="row-start pt-sm" style="margin-top: var(--space-lg);">
+    <a href="{% url 'drinking:schedule' %}" class="btn-primary">Back to the schedule</a>
+  </div>
+</div>
+{% endif %}

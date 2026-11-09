@@ -227,11 +227,10 @@ def test_recognises_operator_log_layout():
     assert production_import.recognise_layout(columns) == "operator_log"
 
 
-def test_unrecognised_layout_raises_naming_headers():
-    with pytest.raises(ImportError) as exc_info:
-        production_import.recognise_layout(["foo", "bar"])
-    assert "foo" in str(exc_info.value)
-    assert "bar" in str(exc_info.value)
+def test_unknown_headings_go_to_the_mapping_step():
+    # Headings OpenH2O does not know are no longer refused: the preview asks what
+    # each column holds (tests/test_production_own_columns.py).
+    assert production_import.recognise_layout(["foo", "bar"]) == "mapped"
 
 
 # ---------------------------------------------------------------------------

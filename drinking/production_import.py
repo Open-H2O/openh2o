@@ -26,6 +26,13 @@ layouts, recognised by header:
   -- the report year and the whole-file unit (default gallons) are the
   mapping step's own questions.
 
+* **A log with its own column headings** -- any other headings. The person (or
+  the command's ``--column`` options) says which column holds the month and
+  which type of water each other column holds: ``mapping`` is
+  ``{"month": heading, "columns": {heading: type_code}}``. One column per type
+  of water, one unit for the whole file with no default, every saved row for
+  the whole system (no facility), provenance ``operator_log``.
+
 Conversions: 1,000,000 gallons per MG, 748.05 gallons per CCF, 325,851
 gallons per acre-foot -- the same figures ``drinking.models.SystemProduction``
 computes at save, and the same figures ``surface/diversion_import.py`` carries
@@ -42,6 +49,7 @@ import csv
 import datetime as dt
 import io
 import math
+import re
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
@@ -143,10 +151,10 @@ def parse_csv(file_obj, filename=""):
 
 
 def recognise_layout(columns):
-    """'ear' or 'operator_log', by header alone.
+    """'ear', 'operator_log' or 'mapped', by header alone.
 
-    Raises ImportError naming the headers seen when neither is recognised --
-    never a silent guess.
+    Headings that are neither of the first two are 'mapped': the person says
+    what each column holds, so no heading is refused here.
     """
     present = {c.strip() for c in columns if c}
     if _EAR_REQUIRED <= present:
@@ -155,11 +163,100 @@ def recognise_layout(columns):
     if "Date/Month" in present and any(col in present for col in _OPERATOR_SOURCE_COLUMNS):
         return "operator_log"
 
-    raise ImportError(
-        "OpenH2O does not recognize the columns in this file: "
-        + ", ".join(columns)
-        + ". The tables below list the columns OpenH2O imports."
+    return "mapped"
+
+
+def normalise_unit(value):
+    """The unit code for ``value`` upper-cased, or None for a blank one.
+
+    Raises ImportError (the import's row 101 sentence) for a unit it does not know.
+    """
+    written = (value or "").strip()
+    if not written:
+        return None
+    code = written.upper()
+    if code not in _UNIT_CODES:
+        raise ImportError(
+            f"OpenH2O does not recognize the unit '{written}'. Use G, MG, AF or CCF."
+        )
+    return code
+
+
+_MONTH_ABBREVIATIONS = {name[:3]: number for name, number in _MONTH_NAMES.items()}
+
+
+def _month_by_name(word):
+    word = word.strip().lower().rstrip(".")
+    return _MONTH_NAMES.get(word) or (
+        _MONTH_ABBREVIATIONS.get(word) if len(word) == 3 else None
     )
+
+
+def read_month(cell):
+    """Read a month cell: ``(year, month)``, ``(None, month)`` for a month name
+    that carries no year, or None when the cell cannot be read.
+
+    Reads ``2024-01``, ``1/2024``, ``January 2024``, ``1/1/2024``, ``2024-01-15``
+    and a bare month name.
+    """
+    text = (cell or "").strip()
+    if not text:
+        return None
+    match = re.fullmatch(r"(\d{4})[-/](\d{1,2})(?:[-/]\d{1,2})?", text)
+    if match:
+        year, month = int(match.group(1)), int(match.group(2))
+        return (year, month) if 1 <= month <= 12 else None
+    match = re.fullmatch(r"(\d{1,2})/(?:\d{1,2}/)?(\d{4})", text)
+    if match:
+        # M/YYYY, or M/D/YYYY (the first number is the month, as the eAR writes it).
+        month, year = int(match.group(1)), int(match.group(2))
+        return (year, month) if 1 <= month <= 12 else None
+    match = re.fullmatch(r"([A-Za-z.]+),?\s+(\d{4})", text)
+    if match:
+        month = _month_by_name(match.group(1))
+        return (int(match.group(2)), month) if month else None
+    month = _month_by_name(text)
+    if month:
+        return (None, month)
+    return None
+
+
+def month_needs_year(rows, month_column):
+    """True when a cell of the month column is a month name with no year."""
+    if not month_column:
+        return False
+    for row in rows:
+        read = read_month(row.get(month_column))
+        if read is not None and read[0] is None:
+            return True
+    return False
+
+
+def mapping_refusals(mapping, unit):
+    """The sentences (rows 74, 75, 76, 73, in that order) that stop a mapped
+    import before it reads a row; an empty list when the mapping is complete."""
+    mapping = mapping or {}
+    refusals = []
+    if not mapping.get("month"):
+        refusals.append("Choose the column that holds the month.")
+    typed = mapping.get("columns") or {}
+    if not typed:
+        refusals.append("Choose the type of water in at least one column.")
+    labels = dict(PRODUCTION_TYPE_CHOICES)
+    by_type = {}
+    for heading, code in typed.items():
+        by_type.setdefault(code, []).append(heading)
+    for code, headings in by_type.items():
+        if len(headings) > 1:
+            label = labels.get(code, code)
+            refusals.append(
+                f"{headings[0]} and {headings[1]} are both set to {label}. "
+                f"OpenH2O keeps one {label.lower()} figure a month. "
+                "Add the two columns together in the file first."
+            )
+    if not unit:
+        refusals.append("Choose the unit of the figures in this file.")
+    return refusals
 
 
 # ---------------------------------------------------------------------------
@@ -298,13 +395,49 @@ def _process_operator_log_row(line_num, row, *, year, unit):
     return {"line": line_num, "entries": entries, "errors": errors}
 
 
+def _process_mapped_row(line_num, row, *, mapping, year, unit):
+    month_column = mapping["month"]
+    if not any((value or "").strip() for value in row.values()):
+        return {"line": line_num, "entries": [], "errors": []}
+    cell = (row.get(month_column) or "").strip()
+    read = read_month(cell)
+    if read is None:
+        return {
+            "line": line_num,
+            "entries": [],
+            "errors": [f"OpenH2O cannot read a month from {month_column} '{cell}'."],
+        }
+    row_year = read[0] if read[0] is not None else year
+    entries = []
+    errors = []
+    for column, type_code in mapping["columns"].items():
+        raw = (row.get(column) or "").strip()
+        if raw == "":
+            continue
+        try:
+            volume = Decimal(raw.replace(",", ""))
+        except InvalidOperation:
+            errors.append(f"{column} '{raw}' is not a number.")
+            continue
+        entries.append(
+            {
+                "year": row_year,
+                "month": read[1],
+                "type_code": type_code,
+                "unit": unit,
+                "volume": volume,
+            }
+        )
+    return {"line": line_num, "entries": entries, "errors": errors}
+
+
 # ---------------------------------------------------------------------------
 # build_rows -- pure (no writes); commit_rows -- dedup, save
 # ---------------------------------------------------------------------------
 
 
 def build_rows(columns, rows, layout, *, system, unit_for_blank=None,
-                operator_year=None, operator_unit="G"):
+                operator_year=None, operator_unit=None, mapping=None):
     """Turn raw CSV rows into candidate SystemProduction field-sets.
 
     Returns a dict: candidates, skipped_rows, duplicate_rows_in_file, errors.
@@ -317,8 +450,43 @@ def build_rows(columns, rows, layout, *, system, unit_for_blank=None,
     candidates_by_key = {}
     duplicate_rows_in_file = 0
 
+    unit_for_blank = normalise_unit(unit_for_blank)
+    operator_unit = normalise_unit(operator_unit)
+    if layout == "operator_log":
+        # The Section 5 log keeps its gallons default.
+        operator_unit = operator_unit or "G"
+
     year_missing = False
-    if layout == "ear":
+    if layout == "mapped":
+        mapping = mapping or {}
+        if mapping_refusals(mapping, operator_unit):
+            pass
+        elif operator_year is None and month_needs_year(rows, mapping["month"]):
+            year_missing = True
+        else:
+            for line_num, row in enumerate(rows, start=2):
+                entry = _process_mapped_row(
+                    line_num, row, mapping=mapping, year=operator_year, unit=operator_unit
+                )
+                if entry["errors"]:
+                    errors.append(
+                        {"line": line_num, "message": " ".join(entry["errors"])}
+                    )
+                    continue
+                for item in entry["entries"]:
+                    key = (item["year"], item["month"], item["type_code"])
+                    if key in candidates_by_key:
+                        duplicate_rows_in_file += 1
+                        continue
+                    candidates_by_key[key] = {
+                        "year": item["year"],
+                        "month": item["month"],
+                        "type_code": item["type_code"],
+                        "unit_as_reported": item["unit"],
+                        "volume_as_reported": item["volume"],
+                        "source_lines": [line_num],
+                    }
+    elif layout == "ear":
         for line_num, row in enumerate(rows, start=2):
             entry = _process_ear_row(line_num, row, system=system, unit_for_blank=unit_for_blank)
             if entry.get("errors"):
@@ -379,7 +547,9 @@ def build_rows(columns, rows, layout, *, system, unit_for_blank=None,
         months_present.setdefault((year, type_code), set()).add(month)
     for key, candidate in candidates_by_key.items():
         year, month, type_code = key
-        if month == 1 and months_present.get((year, type_code)) == {1}:
+        # Only the state's own layouts put a whole year in the January row. A log
+        # with its own headings that holds only January means January.
+        if layout != "mapped" and month == 1 and months_present.get((year, type_code)) == {1}:
             candidate["annual_in_january"] = True
         else:
             candidate["annual_in_january"] = False
@@ -477,7 +647,7 @@ def commit_rows(built, *, system, provenance, dry_run=False):
 
 def import_production_rows(columns, rows, *, system, layout=None,
                             unit_for_blank=None, operator_year=None,
-                            operator_unit="G", dry_run=False):
+                            operator_unit=None, mapping=None, dry_run=False):
     """Parse-to-commit in one call: what both the view and the command use.
 
     Returns the full report dict: layout, created, skipped_duplicates,
@@ -488,9 +658,15 @@ def import_production_rows(columns, rows, *, system, layout=None,
 
     provenance = "ear_export" if layout == "ear" else "operator_log"
 
+    unit_for_blank = normalise_unit(unit_for_blank)
+    operator_unit = normalise_unit(operator_unit)
+    refusals = (
+        mapping_refusals(mapping, operator_unit) if layout == "mapped" else []
+    )
+
     built = build_rows(
         columns, rows, layout, system=system, unit_for_blank=unit_for_blank,
-        operator_year=operator_year, operator_unit=operator_unit,
+        operator_year=operator_year, operator_unit=operator_unit, mapping=mapping,
     )
     committed = commit_rows(built, system=system, provenance=provenance, dry_run=dry_run)
 
@@ -502,5 +678,6 @@ def import_production_rows(columns, rows, *, system, layout=None,
         "duplicate_rows_in_file": built["duplicate_rows_in_file"],
         "errors": committed["errors"],
         "year_missing": built["year_missing"],
+        "refusals": refusals,
         "dry_run": dry_run,
     }

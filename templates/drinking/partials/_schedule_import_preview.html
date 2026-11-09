@@ -1,0 +1,89 @@
+{% comment %}
+Preview of the state's schedule file: what Import would add and change, with
+nothing written yet. The token is the stored upload (core/pending_imports.py).
+{% endcomment %}
+<div class="card-raised">
+  <h2 class="card-header-ruled">{{ row_count }} row{{ row_count|pluralize }} from the state's schedule file</h2>
+  <p class="text-base text-secondary mt-md">OpenH2O will add {{ new_count }} row{{ new_count|pluralize }} to the schedule.</p>
+  {% if changed_count %}<p class="text-base text-secondary mt-sm">OpenH2O will change {{ changed_count }} row{{ changed_count|pluralize }} already on the schedule. Each change is listed below.</p>{% endif %}
+  {% if unchanged_count %}<p class="text-base text-secondary mt-sm">{{ unchanged_count }} row{{ unchanged_count|pluralize }} {{ unchanged_count|pluralize:"is,are" }} already on the schedule with the same frequency and dates.</p>{% endif %}
+  {% if error_count %}<p class="text-base text-secondary mt-sm">{{ error_count }} row{{ error_count|pluralize }} {{ error_count|pluralize:"has,have" }} errors. OpenH2O skips {{ error_count|pluralize:"it,them" }}.</p>{% endif %}
+  {% if repeat_count %}<p class="text-base text-secondary mt-sm">{{ repeat_count }} row{{ repeat_count|pluralize }} {{ repeat_count|pluralize:"repeats,repeat" }} the sampling point and analyte of an earlier row in the file. OpenH2O keeps the first row and skips {{ repeat_count|pluralize:"the repeat,the repeats" }}.</p>{% endif %}
+
+    {% if changes %}
+    <h3 class="text-base mt-lg">Changes to rows already on the schedule</h3>
+    <table class="data-table mt-sm">
+      <thead>
+        <tr>
+          <th>Sampling point</th>
+          <th>What is sampled</th>
+          <th>What changes</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for change in changes %}
+        <tr>
+          <td class="text-mono">{{ change.point }}</td>
+          <td>{{ change.label }}</td>
+          <td>{% for line in change.lines %}<div>{{ line }}</div>{% endfor %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
+    {% if left_out %}
+    <h3 class="text-base mt-lg">Rows on the schedule that this file does not have</h3>
+    <p class="text-base text-secondary mt-sm">OpenH2O leaves these rows as they are.</p>
+    <table class="data-table mt-sm">
+      <thead>
+        <tr>
+          <th>Sampling point</th>
+          <th>What is sampled</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in left_out %}
+        <tr>
+          <td class="text-mono">{{ row.point }}</td>
+          <td>{{ row.label }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
+    {% if errors %}
+    <h3 class="text-base mt-lg">Rows with errors</h3>
+    <table class="data-table mt-sm">
+      <thead>
+        <tr>
+          <th style="width: 5rem;">Row</th>
+          <th>What is wrong</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for err in errors %}
+        <tr>
+          <td class="text-mono">{{ err.line }}</td>
+          <td class="text-furnace">{% for message in err.messages %}<div>{{ message }}</div>{% endfor %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% include "core/partials/_rows_not_listed.html" with count=errors_not_listed what="rows with errors" %}
+    {% endif %}
+
+  <form class="mt-lg"
+    method="post"
+    action="{% url 'drinking:schedule_import_commit' %}"
+    hx-post="{% url 'drinking:schedule_import_commit' %}"
+    hx-target="#import-area">
+    {% csrf_token %}
+    <input type="hidden" name="token" value="{{ token }}">
+    <div class="row-start" style="gap: var(--space-sm);">
+      <button type="submit" class="btn-primary">Import</button>
+      <a href="{% url 'drinking:schedule_import' %}" class="btn-secondary">Choose a different file</a>
+    </div>
+  </form>
+</div>

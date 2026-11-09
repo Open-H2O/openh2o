@@ -209,3 +209,23 @@ def test_the_real_history_lists_both_fetched_lines():
     found = {line["text"] for line in json.loads(done.stdout)["lines"]}
     assert "Fetched" in found
     assert "Fetched is the day OpenH2O got it." in found
+
+
+def test_a_guide_list_marker_is_not_a_word():
+    rows = "| # | Where | Now | Fixed |\n|---|---|---|---|\n| 1 | A | Old | The schedule, when you have no file: `/x/add/` |\n"
+    line = {"file": "docs/x.md", "kind": "guide", "today": "", "text": "- The schedule, when you have no file: /x/add/"}
+    assert nw.not_in_rows([line], nw.approved_words([rows])) == []
+
+
+def test_a_quoted_placeholder_passes_its_row():
+    rows = "| # | Where | Now | Fixed |\n|---|---|---|---|\n| 1 | A | | OpenH2O cannot read a month from {column} '{value}'. |\n"
+    line = {"file": T, "kind": "sentence", "today": "", "text": "OpenH2O cannot read a month from X 'X'."}
+    assert nw.not_in_rows([line], nw.approved_words([rows])) == []
+
+
+def test_two_approved_buttons_side_by_side_pass_and_an_unapproved_one_does_not():
+    rows = "| # | Where | Now | Fixed |\n|---|---|---|---|\n| 1 | A | | Import the file |\n| 2 | B | | + Add a row |\n"
+    words = nw.approved_words([rows])
+    both = {"file": T, "kind": "sentence", "today": "", "text": "Import the file + Add a row"}
+    other = {"file": T, "kind": "sentence", "today": "", "text": "Import the file + Delete a row"}
+    assert texts(nw.not_in_rows([both, other], words)) == {"Import the file + Delete a row"}

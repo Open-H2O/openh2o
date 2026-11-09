@@ -266,7 +266,23 @@ def approved_words(sources: list) -> str:
 
 def _in_rows(text: str, corpus: str) -> bool:
     """A sentence may sit inside a row's words. A bare label needs a place of its own in a cell: a row saying
-    "Status of the right on file" does not approve a column headed "Status"."""
+    "Status of the right on file" does not approve a column headed "Status".
+
+    A guide's list marker is not a word. Two short controls side by side ("Import the file + Add a row") are
+    read by the template reader as one run; it passes when it splits into two approved labels."""
+    text = re.sub(r"^[-*]\s+", "", text)
+    if _one_line_in_rows(text, corpus):
+        return True
+    words = text.split()
+    if len(words) <= 10 and not re.search(r"[.!?]", text):
+        return any(
+            _one_line_in_rows(" ".join(words[:k]), corpus) and _one_line_in_rows(" ".join(words[k:]), corpus)
+            for k in range(1, len(words))
+        )
+    return False
+
+
+def _one_line_in_rows(text: str, corpus: str) -> bool:
     if len(text.split()) < 4 and not re.search(r"\bX\b", text):
         bare = text.strip(" .,:;()'")
         # A cell that is the whole label passes too: a split on "/" would cut a path such as /drinking/import/.
@@ -274,7 +290,8 @@ def _in_rows(text: str, corpus: str) -> bool:
             return True
         cells = (part.strip(" .,:;()'") for row in corpus.splitlines() for part in re.split(r'[,;/:"]', row))
         return bare in cells
-    pieces = [p.strip(" .,:;()") for p in re.split(r"\bX\b", norm(text))]
+    # A quote around a placeholder ('X') is part of the placeholder, not a word.
+    pieces = [p.strip(" .,:;()'") for p in re.split(r"\bX\b", norm(text))]
     for piece in pieces:
         if piece and not re.search(r"(?<!\w)" + re.escape(piece) + r"(?!\w)", corpus):
             return False

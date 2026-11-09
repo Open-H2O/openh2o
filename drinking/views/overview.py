@@ -81,8 +81,10 @@ def overview(request):
         system.next_due_row = next_due.get(system.pk)
         # Worded the way the schedule page words it: the operator's date,
         # passed, and never a verdict on it.
+        # A date given as a month has passed only after that month's last day.
+        due = system.next_due_row
         system.next_due_passed = bool(
-            system.next_due_row and system.next_due_row.next_due < today
+            due and due.next_due < (today.replace(day=1) if due.next_due_is_month else today)
         )
         system.sampling_point_count = point_counts.get(system.pk, 0)
         system.result_count = result_counts.get(system.pk, 0)
