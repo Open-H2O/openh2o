@@ -1,0 +1,14 @@
+{% comment %} The file's own rows under its own column names (core/pending_imports.py PREVIEW_ROW_LIMIT). {% endcomment %}
+{% if row_count > preview_rows|length %}
+<p class="text-base text-secondary">The file&rsquo;s first {{ preview_rows|length }} of {{ row_count }} rows</p>
+{% endif %}
+<div class="table-scroll{% if row_count > preview_rows|length %} mt-md{% endif %}">
+<table class="data-table" id="production-import-rows">
+  <thead><tr>{% for column in preview_columns %}<th>{{ column }}</th>{% endfor %}</tr></thead>
+  <tbody>
+    {% for row in preview_rows %}
+    <tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>

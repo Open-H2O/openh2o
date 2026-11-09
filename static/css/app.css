@@ -4433,21 +4433,27 @@ details[open] > summary .disclosure-mark {
     gap: var(--space-md);
 }
 
-/* The mapping step of the production import: the month, each mapped column,
-   the unit and the report year share one grid that fills the row, so a lone
-   field is not left in half a row with an empty half beside it. */
-.form-row-auto {
+/* The mapping step of the production import: the fields in one column
+   (.form-stack) beside the file's own rows (.mapping-split), so each choice
+   sits next to the figures it names and a refusal sits under the fields.
+   Two page reviewers named the fields left in half a row, a refusal hanging
+   far from its field, and a two-column table alone in a full-width card.
+   A log with many columns still scrolls inside its .table-scroll. One column
+   below 1,100px, as .upload-split. */
+.mapping-split {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: var(--space-md);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--space-xl);
+    align-items: start;
 }
-
-/* The file's own rows: two short columns fit their content instead of
-   stretching across the card. A log with many columns still scrolls inside
-   its .table-scroll. */
-.data-table--fit {
-    width: auto;
-    min-width: 20rem;
+@media (max-width: 1100px) {
+    .mapping-split {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+.form-stack {
+    display: grid;
+    gap: var(--space-md);
 }
 
 /* -- Drinking onboarding: sampling-point builder --------------- */

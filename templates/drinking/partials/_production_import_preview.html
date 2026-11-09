@@ -13,7 +13,17 @@ pressed.
   <p class="text-base text-secondary mt-md">OpenH2O does not know these column headings. Choose what each column holds. Then press Update preview.</p>
   {% endif %}
 
-  <form id="production-import-mapping-form" class="mt-lg">
+  {% if layout == "mapped" %}
+  {% comment %}
+    The mapping fields in one column beside the file's own rows: each
+    choice sits next to the figures it names, and a refusal sits under
+    the fields it concerns. Two page reviewers named the fields left in
+    half a row and a two-column table alone in a full-width card.
+  {% endcomment %}
+  <div class="mapping-split mt-lg">
+  <div>
+  {% endif %}
+  <form id="production-import-mapping-form"{% if layout != "mapped" %} class="mt-lg"{% endif %}>
     {% csrf_token %}
     <input type="hidden" name="token" value="{{ token }}">
 
@@ -29,7 +39,7 @@ pressed.
       <div class="form-help">OpenH2O applies this unit to every row that does not give a unit.</div>
     </div>
     {% elif layout == "mapped" %}
-    <div class="form-row-auto">
+    <div class="form-stack">
       <div class="form-group">
         <label class="form-label" for="production-month-column">Which column holds the month</label>
         <select id="production-month-column" name="month_column" class="form-select">
@@ -107,6 +117,13 @@ pressed.
       {% endif %}
     </div>
   </form>
+  {% if layout == "mapped" %}
+  </div>
+  <div>
+    {% if preview_rows %}{% include "drinking/partials/_production_file_rows.html" %}{% endif %}
+  </div>
+  </div>
+  {% endif %}
 </div>
 
 {% if layout != "mapped" or can_import %}
@@ -152,21 +169,13 @@ pressed.
 </div>
 {% endif %}
 
-{% comment %} The file's own rows under its own column names, the first 200 at most (core/pending_imports.py PREVIEW_ROW_LIMIT). {% endcomment %}
-{% if preview_rows %}
+{% comment %}
+  The file's own rows under its own column names, the first 200 at most
+  (core/pending_imports.py PREVIEW_ROW_LIMIT). For a log with its own
+  headings they sit beside the mapping fields, in the card above.
+{% endcomment %}
+{% if preview_rows and layout != "mapped" %}
 <div class="card-raised">
-  {% if row_count > preview_rows|length %}
-  <p class="text-base text-secondary">The file&rsquo;s first {{ preview_rows|length }} of {{ row_count }} rows</p>
-  {% endif %}
-  <div class="table-scroll{% if row_count > preview_rows|length %} mt-md{% endif %}">
-  <table class="data-table data-table--fit" id="production-import-rows">
-    <thead><tr>{% for column in preview_columns %}<th>{{ column }}</th>{% endfor %}</tr></thead>
-    <tbody>
-      {% for row in preview_rows %}
-      <tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  </div>
+  {% include "drinking/partials/_production_file_rows.html" %}
 </div>
 {% endif %}
