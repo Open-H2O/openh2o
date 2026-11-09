@@ -441,21 +441,29 @@ docker compose exec web python manage.py import_ledger_csv /tmp/ledger.csv \
 
 ### Drinking water: lab sample results
 
-To import a lab results file, use the Import lab results button on the Sample Results
-page (`/drinking/import/`). There is no command for lab results. The file can be a
-.csv, .tab or .txt file of up to 25 MB. OpenH2O detects the separator in a .txt file.
+To import a lab results file, use the `import_lab_results` command or the import
+screen at `/drinking/import/`. The Import lab results button on the Sample Results page
+opens that screen. The file can be a .csv, .tab or .txt file. The screen takes a file of
+up to 25 MB. OpenH2O detects the separator in a .txt file.
 California's Division of Drinking Water publishes lab results in its Safe Drinking
 Water Information System (SDWIS) files. They are tab-separated files in zip archives,
 with one file for each span of years, so unzip the archive before you upload. The
 SDWIS4 file holds every water system in California, so upload only the rows for the
 water systems on your site.
 
+```bash
+docker compose cp lab-results.tab web:/tmp/
+docker compose exec web python manage.py import_lab_results /tmp/lab-results.tab --dry-run
+docker compose exec web python manage.py import_lab_results /tmp/lab-results.tab
+```
+
 OpenH2O recognizes the Division of Drinking Water's column headings, such as `PS Code`,
 `Sample Date`, `Analyte Code` and `Result`, and several headings that commercial labs
 use instead. OpenH2O imports a row when it has a PS Code, a sample date, an Analyte
 Name and a result. OpenH2O lists a row with an Analyte Code and no Analyte Name as an
-error. It skips a row that repeats a result already on file or an earlier row of the
-same file, and counts it as a duplicate. It lists any other row whose sample date falls
+error. OpenH2O skips a row whose result is already on file and a row that repeats an
+earlier row of the same file. The preview counts the first as already on file and the
+second as repeated in this file. It lists any other row whose sample date falls
 in a finalized water year as an error. A row with a blank result is imported as a
 non-detect when its "Less than reporting level" column is marked and it gives a
 reporting level.
@@ -466,8 +474,8 @@ system in another state, enter each point's code exactly as it appears in the la
 results file. OpenH2O lists a row as an error when no sampling point on the site has
 its PS Code. OpenH2O does not create a sampling point from a lab file, because a
 mistyped code would then add a monitoring location that does not exist. Add the
-sampling point first with Add sampling points on the Water Systems page (Drinking
-water > Water Systems), then import the file again.
+sampling point first with `add_sampling_point` or with Add sampling points on the Water
+Systems page (Drinking water > Water Systems). Then import the file again.
 
 An analyte the site does not have yet is added from the file's Analyte Code and
 Analyte Name, and the preview says so. When the file carries MCL and DLR columns,
@@ -538,14 +546,33 @@ or with `import_boundary`.
 ### From a PWSID, for a drinking-water system
 
 Setting up a small water system usually starts from its PWSID, the identification
-number of a public water system in EPA's records. The Add a water system page
-(`/drinking/onboard/`) looks up the PWSID in EPA's Envirofacts records. It shows the
-water system's record and its facilities, and it saves them when you confirm. A site
-keeps the records of one water system, so once a system is on the site, OpenH2O rejects
-any other PWSID on this page and saves nothing. A facility that has no state facility
-ID is skipped, and the review lists it. When the PWSID is already on the site, the
-review says so. If you confirm, OpenH2O updates the system and its facilities from
-EPA's current record.
+number of a public water system in EPA's records. The `add_water_system` command and
+the Add a water system page (`/drinking/onboard/`) look up the PWSID in EPA's
+Envirofacts records. The page shows the water system's record and its facilities. When
+you confirm, the page saves both. The command saves both as soon as it runs. With
+`--dry-run`, the command prints the review and does not save anything. A site keeps the
+records of one water system. Once a system is on the site, OpenH2O refuses any other
+PWSID and does not save anything. OpenH2O skips a facility that has no state facility
+ID. The review and the command list each facility it skips. When the PWSID is already
+on the site, the review and the dry run say so. If you confirm, OpenH2O updates the
+system and its facilities from EPA's record. OpenH2O keeps a copy of each record it
+reads from EPA for 30 days. A lookup within those 30 days reads the copy and not EPA's
+service.
+
+Then add the sampling points. The `add_sampling_point` command adds one sampling point
+to a facility. You can also add points one at a time on the Sampling points page. The
+Add sampling points link on the Water Systems page opens it. For a California water
+system, give the facility ID and the point number. OpenH2O builds the PS Code from the
+PWSID, the facility ID and the point number. For a system outside California, give the
+point's code with `--ps-code` exactly as it appears in the lab results file. In these
+commands, replace `XX1234567` with your system's PWSID and `010` with one of its
+facility IDs.
+
+```bash
+docker compose exec web python manage.py add_water_system XX1234567 --dry-run
+docker compose exec web python manage.py add_water_system XX1234567
+docker compose exec web python manage.py add_sampling_point --facility 010 --point-number 010 --type source
+```
 
 ---
 
@@ -558,7 +585,7 @@ These records have no file import and no public source. Each has its own page:
 - Water accounts: `/accounting/accounts/create/`
 - Allocations: `/accounting/allocations/create/`
 - Water system facilities that the PWSID lookup did not add: `/drinking/facilities/add/`
-- Sampling points: Add sampling points on the Water Systems page (Drinking water > Water Systems)
+- Sampling points: Add sampling points on the Water Systems page (Drinking water > Water Systems) or `add_sampling_point`
 - The sampling schedule: `/drinking/schedule/add/`
 
 Enter a water level, or a visit without a measurement and its reason, on the well's
@@ -593,8 +620,11 @@ form.
    the Import screen. A point that names a water right needs that right on the site
    first. Then run `import_parcels` again with the headgate column to link each use area
    to its point.
-6. For a drinking-water system, add the system from its PWSID, then add its sampling
-   points, then import lab results and production.
+6. For a drinking-water system, add the system from its PWSID with `add_water_system`
+   or on the Add a water system page. Then add its sampling points with
+   `add_sampling_point` or with Add sampling points on the Water Systems page. Then
+   import lab results with `import_lab_results` or the import screen. Import production
+   with `import_production` or the Production page's Import button.
 7. Create water accounts and allocations on their pages.
 8. Create the water years with `create_water_year` or on the Water Years page. Then
    import ledger history with `import_ledger_csv` or the Upload CSV page. Import

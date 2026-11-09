@@ -82,6 +82,14 @@ def _text(value):
     return "" if value is None else str(value).strip()
 
 
+def _name(value):
+    """A name with each run of whitespace collapsed to one space.
+
+    EPA pads names with runs of spaces, so the names are cleaned on the way in.
+    """
+    return " ".join(_text(value).split())
+
+
 def _flag(value):
     """EPA sends the STRINGS "Y" and "N", not booleans.
 
@@ -152,7 +160,7 @@ def map_water_system(payload, warnings=None):
 
     kwargs = {
         "pwsid": _text(payload.get("pwsid")),
-        "name": _text(payload.get("pws_name")),
+        "name": _name(payload.get("pws_name")),
         "is_wholesaler": _flag(payload.get("is_wholesaler_ind")),
         "is_school_or_daycare": _flag(payload.get("is_school_or_daycare_ind")),
         # EPA's two published aggregates. These land in their own fields; they
@@ -235,7 +243,7 @@ def map_facility(payload, warnings=None):
         # the log; the operator reads the page.
         raise UnmappableFacility(
             f"EPA facility {epa_facility_id or '(unidentified)'} "
-            f"({_text(payload.get('facility_name'))}) has no "
+            f"({_name(payload.get('facility_name'))}) has no "
             f"state-assigned facility ID, so OpenH2O cannot build a PS Code for "
             f"the facility."
         )
@@ -245,7 +253,7 @@ def map_facility(payload, warnings=None):
         # numerically: "DST" is a real, live key carrying CA1010001_DST_900.
         "facility_id": state_facility_id,
         "epa_facility_id": epa_facility_id,
-        "name": _text(payload.get("facility_name")),
+        "name": _name(payload.get("facility_name")),
         "is_source": _flag(payload.get("is_source_ind")),
     }
 

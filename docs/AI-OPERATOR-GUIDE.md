@@ -463,7 +463,7 @@ place the table gives:
 | Which month your water year starts in | The water year setting on the Delivery Settings page (`/accounting/delivery-settings/`). The default is 10, October. Before the first allocation, set the month. |
 | The unit of the rows in a production file whose unit is blank | **Unit for rows with a blank unit**, on the preview of the production import screen. |
 | Which facility each name in the organization's files means | The facility's local name, on its add or edit page under Drinking water > Facilities. |
-| Whether any laboratory results exist only on paper | A CSV file with the lab import's columns, typed up from the paper and imported at `/drinking/import/`. |
+| Whether any laboratory results exist only on paper | Type the results into a CSV file with the lab import's columns. Import the file with `import_lab_results` or at `/drinking/import/`. |
 | Which meter feeds which water source | The source column of the production file: one of the six source columns of a monthly log, or `TypeCode` in an export of California's Electronic Annual Report (eAR). |
 | Whether the organization wants OpenH2O to hold its sampling schedule | The Schedule page under Drinking water: add each row with **+ Add to schedule**. |
 
@@ -474,8 +474,9 @@ The table lists them in the order to load them. The Data import guide describes 
 one in full.
 
 <!-- defines: dry_run -->Every import command takes `--dry-run`. A *dry run* checks the
-file and reports what the command would do without saving anything. An import screen
-shows a preview and saves only after you confirm.
+file and reports what the command would do without saving anything. Most import screens
+show a preview and save only after you confirm. The Upload CSV page of the Use Ledger
+saves the file at once unless you tick Dry run.
 
 | The organization has | Use | Notes |
 |---|---|---|
@@ -486,8 +487,8 @@ shows a preview and saves only after you confirm.
 | A list of water rights | `import_water_rights` or the import screen at `/surface/rights/import/` | From the state's CSV list, the command creates the same water rights as the screen. Import the water rights before the points of diversion. |
 | Points of diversion, as a CSV, GeoJSON, KML or shapefile | `import_infrastructure --type diversion` or the Import screen at `/infrastructure/import/?type=diversion` | The command reads the same files as the screen. It creates the same points of diversion. To link each use area to its point, run `import_parcels` again with a headgate column after the points are on the site. |
 | Storage ponds or recharge sites | `import_infrastructure` with `--type storage` or `--type recharge_site`. On the Import screen, use `?type=storage` or `?type=recharge_site` at the end of the address. | Each of these import pages links to the others under "Importing something else?". |
-| A public water system, by its PWSID | `/drinking/onboard/` | A PWSID is the identification number of a public water system in EPA's records. The page looks the system up in EPA's Envirofacts records and adds the system and its facilities. A site keeps the records of one water system. Once a system is on the site, the page rejects a different PWSID, and entering the same PWSID again updates the system from EPA's current record. Add the sampling points on the page that follows. |
-| Laboratory results | `/drinking/import/` | It matches the column headings of California's Division of Drinking Water and several headings that commercial labs use. |
+| A public water system, by its PWSID | `add_water_system` or `/drinking/onboard/` | A PWSID is the identification number of a public water system in EPA's records. The command and the page add the system and its facilities from EPA's Envirofacts records. A site keeps the records of one water system. Once a system is on the site, OpenH2O refuses a different PWSID. To update the system from EPA's record, run the command again or look up the same PWSID and press Refresh. Add the sampling points with `add_sampling_point` or on the page that follows. |
+| Laboratory results | `import_lab_results` or `/drinking/import/` | The command and the screen read the column headings of California's Division of Drinking Water and several headings that commercial labs use. |
 | A year of production by month and source | `/drinking/production/import/`, or `import_production` | It reads an eAR export or a monthly log. The screen and the command both save to the site's water system. The command needs `--pwsid` only when someone has added a second system another way, such as on the administration site. |
 | Past ledger entries, as a CSV file | `import_ledger_csv`, or the Upload CSV page of the Use Ledger (`/accounting/ledger/upload/`) | The Upload CSV page imports the file at once unless you tick Dry run. Each entry counts in the water year its date falls in. Create the water years first with `create_water_year` or under Water accounting > Water Years. An entry dated outside every water year belongs to none until someone creates a water year that covers its date. With `--reporting-period` and a water year's name, the command imports only the rows dated inside that water year. |
 | A year of diversion volumes, in California's Water Use Reported export or the organization's own book of deliveries | `/surface/diversion/import/`, or `import_diversion_records` | OpenH2O recognizes either layout by its column headings, and the preview lists the conversions OpenH2O made. Set the report year first, as the next paragraph describes. |

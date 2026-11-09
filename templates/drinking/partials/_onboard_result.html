@@ -79,7 +79,7 @@
   <p class="text-base text-secondary mt-md">
     {% if result.created %}OpenH2O added{% else %}OpenH2O updated{% endif %}
     <strong>{{ result.system.name|default:pwsid }}</strong>
-    (<span class="text-mono">{{ result.system.pwsid }}</span>){% if not result.created %} from EPA's current record{% endif %}.
+    (<span class="text-mono">{{ result.system.pwsid }}</span>){% if not result.created %} from EPA's record{% endif %}.
     Of the {{ epa_facility_count }} facilit{{ epa_facility_count|pluralize:"y,ies" }} EPA sent,
     OpenH2O created {{ result.facilities_created }}{% if result.skipped %},
     updated {{ result.facilities_updated }} and left out the {{ result.skipped|length }} listed below{% else %}

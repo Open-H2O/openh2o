@@ -124,7 +124,7 @@
       <tbody>
         <tr>
           <td class="col-name">Water system</td>
-          <td>{% if already_onboarded %}Updated from EPA's current record. OpenH2O already has this system and its {{ existing_facility_count }} facilit{{ existing_facility_count|pluralize:"y,ies" }}.{% else %}Created with the name, status, system type, owner type, primary source and mailing address in EPA's record{% endif %}</td>
+          <td>{% if already_onboarded %}OpenH2O updates the system from EPA's record. OpenH2O already has this system and its {{ existing_facility_count }} facilit{{ existing_facility_count|pluralize:"y,ies" }}.{% else %}Created with the name, status, system type, owner type, primary source and mailing address in EPA's record{% endif %}</td>
           <td>State classification and regulating agency. OpenH2O fills a blank regulating agency from the Regulating Agency column of an imported lab file.</td>
         </tr>
         <tr>

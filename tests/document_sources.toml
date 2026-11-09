@@ -1340,6 +1340,8 @@ checked_at = "59b5fce9"
 document = "docs/DATA-IMPORT.md"
 heading = "Drinking water: lab sample results"
 files = [
+  "drinking/management/commands/import_lab_results.py",
+  "drinking/management/commands/add_sampling_point.py",
   "drinking/importer.py",
   "drinking/views/lab_import.py",
   "drinking/views/onboard.py",
@@ -1405,6 +1407,9 @@ checked_at = "d09cd007"
 document = "docs/DATA-IMPORT.md"
 heading = "From a PWSID, for a drinking-water system"
 files = [
+  "drinking/management/commands/add_water_system.py",
+  "drinking/management/commands/add_sampling_point.py",
+  "drinking/onboarding.py",
   "drinking/views/onboard.py",
   "drinking/urls.py",
   "drinking/envirofacts.py",
@@ -1420,6 +1425,7 @@ checked_at = "59b5fce9"
 document = "docs/DATA-IMPORT.md"
 heading = "What is entered by hand"
 files = [
+  "drinking/management/commands/add_sampling_point.py",
   "surface/urls.py",
   "accounting/urls.py",
   "drinking/urls.py",
@@ -1439,6 +1445,9 @@ checked_at = "59b5fce9"
 document = "docs/DATA-IMPORT.md"
 heading = "A sensible order"
 files = [
+  "drinking/management/commands/add_water_system.py",
+  "drinking/management/commands/add_sampling_point.py",
+  "drinking/management/commands/import_lab_results.py",
   "core/management/commands/seed_data.py",
   "core/management/commands/seed_merced.py",
   "setup/views.py",
@@ -1833,6 +1842,7 @@ checked_at = "59b5fce9"
 document = "docs/AI-OPERATOR-GUIDE.md"
 heading = "Look at the organization's records first"
 files = [
+  "drinking/management/commands/import_lab_results.py",
   "docs/crosswalk-worksheet.csv",
   "surface/diversion_import.py",
   "surface/models.py",
@@ -1872,6 +1882,9 @@ checked_at = "59b5fce9"
 document = "docs/AI-OPERATOR-GUIDE.md"
 heading = "Option B: The organization's own records"
 files = [
+  "drinking/management/commands/add_water_system.py",
+  "drinking/management/commands/add_sampling_point.py",
+  "drinking/management/commands/import_lab_results.py",
   "setup/management/commands/import_boundary.py",
   "geography/management/commands/auto_populate.py",
   "parcels/management/commands/import_parcels.py",

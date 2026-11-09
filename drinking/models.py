@@ -308,10 +308,8 @@ class SystemFacility(models.Model):
         "segment.",
     )
     name = models.CharField(max_length=200, blank=True)
-    # The operator's own word for the
-    # facility, shown BESIDE the state's padded name and never in place of it:
-    # the state's name is what the lab file and the state's reports carry, so
-    # it stays the one the record is matched on.
+    # The operator's own word for the facility. It is shown beside EPA's name
+    # and never replaces it.
     local_name = models.CharField(
         max_length=200, blank=True,
         help_text="What the operator calls it: Cedar Well 02.",

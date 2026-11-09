@@ -130,14 +130,19 @@ REQUIRED_COLUMN_NAMES = {
 }
 
 
-def missing_columns_message(fields):
-    """``This file has no Sample Date, Analyte Name or Result column. ...``"""
+def missing_columns_sentence(fields):
+    """``This file has no Sample Date, Analyte Name or Result column.``"""
     names = [REQUIRED_COLUMN_NAMES[field] for field in fields]
     listed = names[0] if len(names) == 1 else (
         f"{', '.join(names[:-1])} or {names[-1]}"
     )
+    return f"This file has no {listed} column."
+
+
+def missing_columns_message(fields):
+    """The screen's message: the sentence plus a pointer to the table below it."""
     return (
-        f"This file has no {listed} column. "
+        f"{missing_columns_sentence(fields)} "
         "The table below lists the columns OpenH2O imports."
     )
 
@@ -1296,3 +1301,83 @@ def record_regulating_agency(rows, mapping, validated):
             system.regulating_agency = entry["value"]
             system.save(update_fields=["regulating_agency"])
     return outcomes
+
+
+def preview_counts(validated):
+    """The counts a preview shows (and a dry run reports) for validated rows.
+
+    ``duplicate_count`` is rows already on file, with the rows that only
+    repeat an earlier row of the same file taken out; those are
+    ``repeat_count``. ``new_analytes`` is the sorted names the commit would
+    add. ``committable`` is the rows a commit would turn into results.
+    ``limits_fill_count`` is results already on file that would gain the
+    file's limits.
+    """
+    repeat_count = sum(
+        1 for item in validated if item["data"].get("repeat_in_file")
+    )
+    duplicate_count = sum(
+        1 for item in validated if item["data"].get("is_duplicate")
+    ) - repeat_count
+    new_analytes = sorted(
+        {
+            item["data"]["analyte_name"]
+            for item in validated
+            if not item["errors"] and item["data"].get("analyte_id") is None
+            and item["data"].get("analyte_name")
+        }
+    )
+    committable = sum(
+        1
+        for item in validated
+        if not item["errors"] and not item["data"].get("is_duplicate")
+    )
+    limits_fill_count = sum(
+        1
+        for item in validated
+        if not item["errors"] and item["data"].get("fill_limits_pk") is not None
+    )
+    return {
+        "error_count": sum(1 for item in validated if item["errors"]),
+        "duplicate_count": duplicate_count,
+        "repeat_count": repeat_count,
+        "new_analytes": new_analytes,
+        "committable": committable,
+        "limits_fill_count": limits_fill_count,
+    }
+
+
+def unknown_ps_codes(validated):
+    """The sorted PS Codes the rows name that no sampling point carries.
+
+    Detected structurally (a row that carried a PS Code but got no
+    ``sampling_point_id``) rather than by matching the error string, so a
+    reworded message cannot silently switch this off.
+    """
+    return sorted(
+        {
+            item["data"]["ps_code"]
+            for item in validated
+            if item["data"].get("ps_code")
+            and item["data"].get("sampling_point_id") is None
+        }
+    )
+
+
+def import_lab_rows(columns, rows, source_file=""):
+    """Map, validate and write a parsed lab file; the one path screen and command share.
+
+    Returns ``{"mapping", "validated", "counts", "agency"}``. Rows are
+    validated from scratch here, and the regulating agency is recorded after
+    the commit so a file that lands nothing still records the agency it names.
+    """
+    mapping = auto_map_columns(columns)
+    validated = validate_rows(rows, mapping)
+    counts = commit_rows(validated, source_file=source_file)
+    agency = record_regulating_agency(rows, mapping, validated)
+    return {
+        "mapping": mapping,
+        "validated": validated,
+        "counts": counts,
+        "agency": agency,
+    }

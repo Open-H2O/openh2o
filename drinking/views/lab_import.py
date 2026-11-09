@@ -48,14 +48,7 @@ def _unknown_ps_code_routes(validated):
     names a system this site carries. Any other code is still reported, without
     a link.
     """
-    unknown = sorted(
-        {
-            item["data"]["ps_code"]
-            for item in validated
-            if item["data"].get("ps_code")
-            and item["data"].get("sampling_point_id") is None
-        }
-    )
+    unknown = importer.unknown_ps_codes(validated)
     if not unknown:
         return []
 
@@ -145,38 +138,11 @@ def import_preview(request):
     validated = importer.validate_rows(rows, mapping)
     preview = _preview_rows(rows, mapping, validated)
 
+    counts = importer.preview_counts(validated)
     error_rows = [r for r in preview if r["errors"]]
     warning_rows = [r for r in preview if r["warnings"] and not r["errors"]]
-    error_count = len(error_rows)
     error_rows, error_rows_not_listed = pending_imports.cap_error_rows(error_rows)
     warning_rows, warning_rows_not_listed = pending_imports.cap_error_rows(warning_rows)
-    repeat_count = sum(
-        1 for item in validated if item["data"].get("repeat_in_file")
-    )
-    duplicate_count = sum(
-        1 for item in validated if item["data"].get("is_duplicate")
-    ) - repeat_count
-    new_analytes = sorted(
-        {
-            item["data"]["analyte_name"]
-            for item in validated
-            if not item["errors"] and item["data"].get("analyte_id") is None
-            and item["data"].get("analyte_name")
-        }
-    )
-    committable = sum(
-        1
-        for item in validated
-        if not item["errors"] and not item["data"].get("is_duplicate")
-    )
-    # Results already on file that predate the limits and will gain them from
-    # this file. A file that creates nothing but fills
-    # these still has something to commit.
-    limits_fill_count = sum(
-        1
-        for item in validated
-        if not item["errors"] and item["data"].get("fill_limits_pk") is not None
-    )
 
     return render(
         request,
@@ -191,14 +157,14 @@ def import_preview(request):
             "error_rows": error_rows,
             "warning_rows": warning_rows,
             "row_count": len(rows),
-            "error_count": error_count,
+            "error_count": counts["error_count"],
             "error_rows_not_listed": error_rows_not_listed,
             "warning_rows_not_listed": warning_rows_not_listed,
-            "duplicate_count": duplicate_count,
-            "repeat_count": repeat_count,
-            "new_analytes": new_analytes,
-            "committable": committable,
-            "limits_fill_count": limits_fill_count,
+            "duplicate_count": counts["duplicate_count"],
+            "repeat_count": counts["repeat_count"],
+            "new_analytes": counts["new_analytes"],
+            "committable": counts["committable"],
+            "limits_fill_count": counts["limits_fill_count"],
             "unknown_ps_codes": _unknown_ps_code_routes(validated),
             # The regulating-agency line the commit will print,
             # decided by the same function the commit calls; nothing written.
@@ -226,14 +192,14 @@ def commit_stored_lab(pending):
     duplicate a row is about to become.
     """
     columns, rows = parse_stored_lab(pending)
-    mapping = importer.auto_map_columns(columns)
-    validated = importer.validate_rows(rows, mapping)
     # The file's name goes with the commit so each result can say which file
-    # the limits it carries arrived in.
-    counts = importer.commit_rows(validated, source_file=pending.original_name[:255])
-    # After the commit, so a file that lands nothing still records the agency
-    # it names for the system its rows resolved to.
-    agency = importer.record_regulating_agency(rows, mapping, validated)
+    # the limits it carries arrived in. Rows are re-validated from scratch.
+    outcome = importer.import_lab_rows(
+        columns, rows, source_file=pending.original_name[:255]
+    )
+    validated = outcome["validated"]
+    counts = outcome["counts"]
+    agency = outcome["agency"]
 
     skipped = [
         {"index": item["index"] + 2, "errors": item["errors"]}
