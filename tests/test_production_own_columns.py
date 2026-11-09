@@ -477,3 +477,10 @@ def test_a_log_with_its_own_headings_holding_only_january_is_january(tmp_path, s
     _run(_file(tmp_path, text), *COLUMN_ARGS, "--operator-unit", "G")
     row = SystemProduction.objects.get()
     assert (row.month, row.annual_in_january) == (1, False)
+
+
+def test_the_first_look_chooses_a_column_headed_month_and_offers_no_type_for_it(client_in, system):
+    page = _upload(client_in).content.decode()
+    assert '<option value="Month" selected>' in page
+    assert 'name="column_type:Month"' not in page
+    assert 'name="column_type:All wells (gallons)"' in page

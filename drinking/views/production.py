@@ -452,6 +452,14 @@ def production_import_preview(request):
     pending.settings = page_settings
     pending.save(update_fields=["settings"])
 
+    if layout == "mapped" and new_upload and not page_settings["month_column"]:
+        # A heading that is plainly the month is chosen on the first look; the
+        # person can change it before pressing Update preview.
+        guess = next(
+            (c for c in columns if c.strip().lower() in ("month", "date", "date/month", "month/year")),
+            "",
+        )
+        page_settings = {**page_settings, "month_column": guess}
     try:
         result = production_import_service.import_production_rows(
             columns, rows, system=system, layout=layout,
