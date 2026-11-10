@@ -3,6 +3,16 @@
 {% block title %}Sampling points for {{ system.name|default:system.pwsid }} - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Sampling points for {{ system.name|default:system.pwsid }}{% endblock %}
 
+{% comment %}
+  The system's name is the page title above, so its three badges sit beside the
+  title (page_meta) and not in a card of their own.
+{% endcomment %}
+{% block page_meta %}
+<span class="badge badge-blue text-mono">{{ system.pwsid }}</span>
+<span class="badge badge-grey">{{ facilities|length }} facilit{{ facilities|length|pluralize:"y,ies" }} on record</span>
+<span class="badge {% if point_count %}badge-green{% else %}badge-orange{% endif %}">{{ point_count }} sampling point{{ point_count|pluralize }} listed</span>
+{% endblock %}
+
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
@@ -38,23 +48,6 @@
 <div class="page-stack page-wide">
 
   <a href="{% url 'drinking:onboard' %}" class="back-link">&larr; Back to Add a water system</a>
-
-  {% comment %}
-    The operator's own system comes first. Landing on three paragraphs of
-    explanation before the name of the system you are working on gives the
-    teaching prose the same rank as the thing it teaches about; the identity
-    strip is what tells you at a glance where you are and how far along you are.
-  {% endcomment %}
-  <div class="card-raised">
-    <div class="row-between" style="align-items: baseline; flex-wrap: wrap; gap: var(--space-sm);">
-      <h2 class="card-header-ruled" style="margin: 0; border: 0;">{{ system.name|default:system.pwsid }}</h2>
-      <div class="row-start" style="gap: var(--space-xs); flex-wrap: wrap;">
-        <span class="badge badge-blue text-mono">{{ system.pwsid }}</span>
-        <span class="badge badge-grey">{{ facilities|length }} facilit{{ facilities|length|pluralize:"y,ies" }} on record</span>
-        <span class="badge {% if point_count %}badge-green{% else %}badge-orange{% endif %}">{{ point_count }} sampling point{{ point_count|pluralize }} listed</span>
-      </div>
-    </div>
-  </div>
 
   {% comment %}
     Body prose caps at 75ch (DESIGN.md copy rule 6), inline as the six sibling

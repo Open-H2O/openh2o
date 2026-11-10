@@ -374,13 +374,57 @@ class TestBuilderIsOneFormOneTable:
 
         html = response.content.decode()
         tbody = _tbody(html)
-        assert tbody.count('<tr class="row-group">') == 2, (
-            "the whole table should regenerate with both facilities' groups, "
+        # 152-03.4 row 12: no group rows; each facility is one cell of the
+        # first column, spanning its points.
+        assert 'class="row-group"' not in tbody
+        assert tbody.count("<td class=\"points-facility\"") == 2, (
+            "the whole table should regenerate with both facilities, "
             "not one row spliced into the old one"
         )
         assert tbody.index("Unsampled Plant") < tbody.index("New Tap"), (
-            "the new point's row should sit under ITS OWN facility's group"
+            "the new point's row should sit beside ITS OWN facility's cell"
         )
+
+    def test_the_table_has_a_facility_column_spanning_each_facilitys_points(
+        self, client_in, builder_system
+    ):
+        # A second point on the sampled facility: its cell must span both rows.
+        SamplingPointFactory(
+            ps_code="CA1010781_007_002", name="Tap 2",
+            facility=builder_system["with_points"],
+        )
+        html = client_in.get(
+            reverse("drinking:onboard_points", args=[builder_system["system"].pwsid])
+        ).content.decode()
+        listed = html.split('id="points-listed"', 1)[1]
+        thead = listed.split("<thead>", 1)[1].split("</thead>", 1)[0]
+        assert "<th>Facility</th><th>PS Code</th><th>Name</th><th>Point type</th>" in thead
+        tbody = _tbody(listed)
+        assert 'class="row-group"' not in tbody
+        cells = re.findall(r'<td class="points-facility" rowspan="(\d+)">', tbody)
+        assert cells == ["2"], "one cell, spanning the facility's two points"
+        # The codes line sits under the facility, with no "·" before it.
+        assert "Codes begin" in tbody
+        assert "&middot; Codes begin" not in tbody
+        assert "CA1010781_007_</span>" in tbody
+        # The widths and the first column's padding come from one class.
+        assert 'class="data-table text-sm data-table--grouped points-table"' in listed
+
+    def test_the_summary_card_is_gone_and_its_badges_sit_beside_the_title(
+        self, client_in, builder_system
+    ):
+        html = client_in.get(
+            reverse("drinking:onboard_points", args=[builder_system["system"].pwsid])
+        ).content.decode()
+        head = html.split('class="page-head-meta"', 1)[1].split(
+            'class="page-head-actions"', 1
+        )[0]
+        assert "CA1010781" in head
+        assert "2 facilities on record" in head
+        assert "1 sampling point listed</span>" in head
+        # Nowhere else on the page: the card that held them is gone.
+        assert html.count("facilities on record") == 1
+        assert html.count("sampling point listed</span>") == 1
 
     def test_a_duplicate_post_returns_already_listed_and_the_table(
         self, client_in, builder_system

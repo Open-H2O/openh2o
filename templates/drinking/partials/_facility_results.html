@@ -10,55 +10,21 @@ OH2O.followResults reads them after every swap and filters the map to them.
 {{ result_pks|json_script:"results-map-pks" }}
 
 {% comment %}
-The map coverage sentence. It lives HERE, not on the page around it, because it
-quotes `total_count` — how many rows the list is showing — and an htmx swap
-re-renders this partial and nothing else. Outside #results it silently went
-stale: the table dropped to 6 rows and the sentence still said "21 of the 61"
-(UAT-001, 2026-08-27).
+The map coverage note is NOT here. It is a block with an id inside the map card
+(partials/_facility_note.html), and on an htmx swap this partial re-renders it
+out of band, the way it does the head above. It quotes `total_count`, how many
+rows the list is showing, and an htmx swap re-renders #results and nothing
+else, so a note left outside went stale: the table dropped to 6 rows and the
+sentence still said "21 of the 61" (UAT-001, 2026-08-27).
 
 The MAP itself stays outside #results and must not be moved in here: four
 controls on this page swap #results wholesale, and a map inside is destroyed and
 rebuilt on every keystroke.
 
-Every number is computed in `drinking/views/facilities.py::facilities` on each render and
-NEVER written down — the demonstration happens to be 21 of 61, and an
-Envirofacts-onboarded system starts at zero because EPA publishes no
-coordinates at all.
-
-`mapped_facility_count` / `total_facility_count` are deliberately UNFILTERED —
-this first sentence is about what the platform HOLDS. The second sentence
-is the located-subset sentence: the map FOLLOWS the
-list (OH2O.followResults, wired in _drinking_overview_map.html), so under a
-filter it does not contradict the table, and no clause says the map is
-unfiltered.
-{% endcomment %}{% if mapped_facility_count %}
-<p class="page-description">
-  Only facilities with a location recorded are on the map. The state&rsquo;s
-  Groundwater Ambient Monitoring and Assessment Program (GAMA) publishes
-  coordinates for groundwater sources only.
-</p>
-{% if q or facility_type or activity_status %}
-<p class="page-description">
-  {% if total_count and not result_located_count %}{# 2026-10-18: matches with no location (approved row). #}
-  The map follows the list: {{ total_count|intcomma }}
-  facilit{{ total_count|pluralize:"y,ies" }}{% if facility_type %} of that type{% endif %}{% if activity_status %} with that status{% endif %}
-  {% if q %}match{{ total_count|pluralize:"es," }} &ldquo;{{ q }}&rdquo;{% else %}{{ total_count|pluralize:"is,are" }} listed{% endif %}, and {% if total_count == 1 %}it has{% else %}they have{% endif %} no location recorded.
-  {% else %}
-  The map follows the list: showing {{ total_count|intcomma }}
-  facilit{{ total_count|pluralize:"y,ies" }}{% if q %} matching &ldquo;{{ q }}&rdquo;{% endif %}{% if facility_type %} of that type{% endif %}{% if activity_status %} with that status{% endif %},
-  {% if result_located_count == total_count %}all{% else %}{{ result_located_count|intcomma }} of them{% endif %} with a location.
-  {% endif %}
-</p>
-{% endif %}
-{% elif total_facility_count %}{# A site with no facilities shows the empty page below, not this #}
-<p class="page-description">
-  No facility on this site has a location recorded, so this page cannot show
-  a map yet. The state&rsquo;s Groundwater Ambient Monitoring and Assessment
-  Program (GAMA) publishes coordinates for groundwater sources only, and EPA&rsquo;s
-  Envirofacts record carries none. An administrator enters a facility&rsquo;s
-  location at /admin/ under Drinking Water &gt; System Facilities.
-</p>
-{% endif %}
+Every number is computed in `drinking/views/facilities.py::facilities` on each
+render and NEVER written down.
+{% endcomment %}
+{% if hx_request and all_count %}{% include "drinking/partials/_facility_note.html" with oob=True %}{% endif %}
 
 {% if page_obj.object_list %}
 <div class="card-raised table-scroll" style="padding: 0;">

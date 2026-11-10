@@ -105,9 +105,12 @@
       count are the lab file's), and a single label on it would claim one
       publisher for three.
     {% endcomment %}
+    <div class="record-card-head row-between card-header-ruled">
     <h2 class="section-header" style="margin-top: 0;">
       {% if facility.facility_type %}{{ facility.get_facility_type_display }}{% else %}Facility{% endif %}{% if facility.name and not facility.name_adds_nothing %}: <span class="text-secondary">{{ facility.name }}</span>{% endif %} {% if facility.added_by_hand %}{% source_label "OPERATOR_ENTERED" %}{% else %}{% source_label "EPA_SDWIS" %}{% endif %}
     </h2>
+    <a href="{% url 'drinking:facility_edit' facility.pk %}" class="btn-secondary btn-sm">{% if facility.added_by_hand %}Edit facility{% else %}Edit local name{% endif %}</a>
+    </div>
     {% comment %}
       A facility typed in on this deployment's form is the
       operator's, not EPA's, so the label above names the operator for it; the
@@ -115,29 +118,15 @@
       link is the one write door on this page: the form decides how much of
       the facility is the operator's to change (drinking/views/facilities.py::facility_edit).
     {% endcomment %}
-    <p class="mt-sm" style="margin-bottom: 0;"><a href="{% url 'drinking:facility_edit' facility.pk %}" class="btn-secondary btn-sm">{% if facility.added_by_hand %}Edit facility{% else %}Edit local name{% endif %}</a></p>
 
-    <div class="field-grid-auto mt-md">
-      {% if not geojson %}
-      {% comment %}
-        The no-map fact is a row of the record (a
-        fact beside the thing it governs), not a line under the card, which reads
-        as a paragraph.
-        The two rows lead the grid and span its width,
-        where the map card stands on a located facility; as the tenth field of
-        a two-column grid the Map row was "in the right-hand column, easy to
-        miss". `.field-grid-2-span` is `grid-column: 1 / -1`, unscoped, so it
-        spans this grid too.
-      {% endcomment %}
-      <div class="field-group field-grid-2-span">
-        <div class="field-label">Map</div>
-        <div class="field-value">None. No published coordinate for this facility</div>
-      </div>
-      <div class="field-group field-grid-2-span">
-        <div class="field-label">Positions from</div>
-        <div class="field-value">The state's Groundwater Ambient Monitoring and Assessment Program (GAMA), for groundwater sources only</div>
-      </div>
-      {% endif %}
+    {% comment %}
+      The card's body is a 3 : 2 split (.record-split, as .upload-split): the
+      facility's own fields at the left, and at the right a .card-inset that
+      holds the rest: the no-map rows, System and PWSID, the metered well and
+      the identifier.
+    {% endcomment %}
+    <div class="record-split">
+    <div class="field-grid-auto">
       <div class="field-group">
         <div class="field-label">Facility ID</div>
         <div class="field-value-mono">{{ facility.facility_id }}</div>
@@ -174,6 +163,25 @@
       <div class="field-group">
         <div class="field-label">EPA facility ID</div>
         <div class="field-value-mono">{{ facility.epa_facility_id }}</div>
+      </div>
+      {% endif %}
+    </div>
+    <div class="card-inset record-split-inset">
+      {% if not geojson %}
+      {% comment %}
+        The no-map fact is a row of the record (a
+        fact beside the thing it governs), not a line under the card, which reads
+        as a paragraph.
+        The two rows lead the inset and each spans both of its columns, where
+        the map card stands on a located facility.
+      {% endcomment %}
+      <div class="field-group record-split-wide">
+        <div class="field-label">Map</div>
+        <div class="field-value">None. No published coordinate for this facility</div>
+      </div>
+      <div class="field-group record-split-wide">
+        <div class="field-label">Positions from</div>
+        <div class="field-value">The state's Groundwater Ambient Monitoring and Assessment Program (GAMA), for groundwater sources only</div>
       </div>
       {% endif %}
       {% comment %}
@@ -214,7 +222,8 @@
         </div>
       </div>
       {% endif %}
-      {% include "partials/_identifier_line.html" with record=facility %}
+      {% include "partials/_identifier_line.html" with record=facility span_class="record-split-wide" %}
+    </div>
     </div>
 
     {% comment %}

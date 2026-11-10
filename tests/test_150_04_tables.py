@@ -54,9 +54,20 @@ def test_no_badge_colour_is_hard_coded():
         assert "oklch(" not in body and "rgba(" not in body, selector
 
 
-def test_the_onboarding_review_table_shares_its_sentence_columns_evenly():
+def test_the_onboarding_review_table_takes_its_widths_from_a_colgroup():
+    # 152-03.4 row 11: a fifth, a quarter and the rest, not equal thirds.
     html = (BASE / "templates" / "drinking" / "partials" / "_onboard_review.html").read_text()
+    assert "help-cases-table--even" not in html
+    assert "onboard-cases-table" in html
+    colgroup = html.split("<colgroup>", 1)[1].split("</colgroup>", 1)[0]
+    assert re.findall(r"width:\s*(\d+)%", colgroup) == ["18", "26", "56"]
+    assert "table-layout: fixed" in _rule(".onboard-cases-table")
+
+
+def test_the_even_columns_class_is_still_used_by_the_onboarding_page():
+    html = (BASE / "templates" / "drinking" / "onboard.html").read_text()
     assert "help-cases-table--even" in html
+    assert ".help-cases-table--even" in APP_CSS
 
 
 @pytest.mark.parametrize(

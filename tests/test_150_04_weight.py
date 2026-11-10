@@ -132,14 +132,15 @@ def test_w3_on_a_facility_with_no_location_the_map_row_is_the_first_field_group(
     resp = _client().get(reverse("drinking:facility_detail", args=[facility.pk]))
     assert resp.status_code == 200
     html = resp.content.decode()
-    grid = html.split('<div class="field-grid-auto mt-md">', 1)[1]
-    first_group = grid.split('<div class="field-group', 2)[1]
+    # The no-map rows lead the card's inset (152-03.4), each spanning both of
+    # its columns; the record's own fields stay on the grid at the left.
+    inset = html.split('<div class="card-inset record-split-inset">', 1)[1]
+    first_group = inset.split('<div class="field-group', 2)[1]
     first_label = first_group.split('<div class="field-label">', 1)[1].split("</div>", 1)[0]
-    # RED before: the first field group was Facility ID; Map was the tenth.
     assert first_label == "Map"
-    assert first_group.startswith(' field-grid-2-span">')
-    second_group = grid.split('<div class="field-group', 3)[2]
-    assert second_group.startswith(' field-grid-2-span">')
+    assert first_group.startswith(' record-split-wide">')
+    second_group = inset.split('<div class="field-group', 3)[2]
+    assert second_group.startswith(' record-split-wide">')
     assert 'Positions from</div>' in second_group
     assert "None. No published coordinate for this facility" in html
 
@@ -156,9 +157,12 @@ def test_w3_a_located_facility_has_no_map_row():
     ).content.decode()
     assert "No published coordinate for this facility" not in html
     # The map card leads instead, and the record grid starts at Facility ID.
-    grid = html.split('<div class="field-grid-auto mt-md">', 1)[1]
+    grid = html.split('<div class="field-grid-auto">', 1)[1]
     first_group = grid.split('<div class="field-group', 2)[1]
     assert first_group.split('<div class="field-label">', 1)[1].startswith("Facility ID</div>")
+    # No Map or Positions from rows in the inset either.
+    inset = html.split('<div class="card-inset record-split-inset">', 1)[1]
+    assert "Positions from</div>" not in inset
 
 
 # -- F6: the finish action in the station review's head row ----------------

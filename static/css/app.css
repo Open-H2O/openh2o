@@ -1302,6 +1302,30 @@ html { color-scheme: dark; }
     background-color: color-mix(in srgb, var(--color-elevated) 85%, transparent);
 }
 
+/* The onboarding sampling-points table: the facility is the first column, one
+   cell spanning that facility's points, with its codes line under its name.
+   Fixed widths (30 / 24 / 26 / 20 per cent), no vertical rule, and the first
+   column's left padding equal to the card head's. */
+.points-table {
+    table-layout: fixed;
+}
+.points-table th:nth-child(1) { width: 30%; }
+.points-table th:nth-child(2) { width: 24%; }
+.points-table th:nth-child(3) { width: 26%; }
+.points-table th:nth-child(4) { width: 20%; }
+.points-table th:first-child,
+.points-table td.points-facility {
+    padding-left: var(--space-lg);
+}
+.points-table td.points-facility {
+    vertical-align: top;
+    color: var(--color-text-primary);
+}
+.points-facility-codes {
+    margin-top: 2px;
+    font-size: 0.8125rem;
+}
+
 /* A row the page has flagged for the reader's attention (the shared-supply
    check marks parcels drawing on a supply claimed by more than one account).
    Warning amber, per the severity ladder in tokens.css — it was a hardcoded
@@ -4561,6 +4585,56 @@ details[open] > summary .disclosure-mark {
     color: var(--forest-400);
 }
 
+/* The review's first card: "Not saved yet" and the Preview tag on one line, the
+   tag right after the heading, the rule under both. Only this card; the saved
+   screen keeps its full-width box. */
+.onboard-head {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+}
+.onboard-head h2 {
+    margin: 0;
+    font-size: inherit;
+    font-weight: inherit;
+}
+.onboard-status--tag {
+    display: inline-flex;
+    margin-bottom: 0;
+    padding: var(--space-xs) var(--space-sm);
+    font-size: 0.875rem;
+}
+
+/* The Saved / Not saved table: a fixed layout whose widths come from its
+   colgroup (a fifth, a quarter, the rest), not equal thirds. */
+.onboard-cases-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+/* "What EPA holds": the system's own fields at the left, the mailing address
+   and the totals at the right, equal columns. The heading sits flush with the
+   head of the card above. One column below 1,100px, as .upload-split. */
+.onboard-holds-head {
+    margin-top: 0;
+}
+.onboard-holds-split {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-xl);
+    align-items: start;
+}
+/* Each column's first heading sits right under the card head's rule. */
+.onboard-holds-split > div > :first-child {
+    margin-top: 0;
+}
+@media (max-width: 1100px) {
+    .onboard-holds-split {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
 /* -- Accounting / reporting page polish ------------------------ */
 
 /* Methodology step cards — the ordered calculation chain. Each step gets a
@@ -4921,6 +4995,61 @@ details[open] > summary .disclosure-mark {
 .map-card-head .swatch-dot,
 .map-card-head .swatch-fill {
     background: currentColor;
+}
+
+/* The facilities list's map card: under the head, the controls and the
+   coverage note in a left column (19rem at least) and the map at the right
+   (2.4fr). One column below 1,100px, the controls above the map. */
+.facility-map-split {
+    display: grid;
+    grid-template-columns: minmax(19rem, 1fr) minmax(0, 2.4fr);
+}
+.facility-map-aside {
+    padding: var(--space-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    border-right: 1px solid var(--color-border);
+}
+.facility-map-aside .form-select,
+.facility-map-aside .form-input {
+    width: 100%;
+}
+@media (max-width: 1100px) {
+    .facility-map-split {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .facility-map-aside {
+        border-right: 0;
+        border-bottom: 1px solid var(--color-border);
+    }
+}
+/* The Search box takes the row's spare width where the controls sit in a row. */
+.toolbar-row > .facility-filter-search {
+    flex: 1;
+    min-width: 200px;
+}
+/* No located facility: the controls in one row under the head, as the toolbar
+   looked before. */
+.facility-map-toolbar {
+    padding: var(--space-md) var(--space-lg);
+}
+/* The coverage note, ruled off from the controls above it. */
+.facility-map-note {
+    margin-top: var(--space-xs);
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--color-border);
+}
+.facility-map-note .page-description {
+    max-width: none;
+    margin: 0;
+}
+.facility-map-note .page-description + .page-description {
+    margin-top: var(--space-sm);
+}
+.facility-map-note--wide {
+    margin-top: 0;
+    padding: var(--space-md) var(--space-lg);
 }
 
 /* Three-key variant of the map card head (Monitoring Stations): the
@@ -5323,6 +5452,46 @@ details[open] > summary .disclosure-mark {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     column-gap: var(--space-lg);
+}
+
+/* A record card whose head carries its action: the heading at the left and the
+   button at the right on one line (.row-between), ruled under both
+   (.card-header-ruled). The facility page. */
+.record-card-head {
+    flex-wrap: wrap;
+    margin-bottom: 0;
+}
+.record-card-head .section-header {
+    margin: 0;
+    padding-bottom: 0;
+    border-bottom: 0;
+}
+
+/* Under that head, a 3 : 2 split as .upload-split: the record's own fields on
+   .field-grid-auto at the left, a .card-inset of related facts at the right.
+   The inset is a two-column grid; a fact that needs the width takes
+   .record-split-wide. One column below 1,100px. */
+.record-split {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    gap: var(--space-lg);
+    align-items: start;
+    margin-top: var(--space-md);
+}
+.record-split-inset {
+    padding: var(--space-lg);
+    border-radius: var(--radius-lg);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--space-lg);
+}
+.record-split-inset > .record-split-wide {
+    grid-column: 1 / -1;
+}
+@media (max-width: 1100px) {
+    .record-split {
+        grid-template-columns: minmax(0, 1fr);
+    }
 }
 
 /* -- D. Weight and position --------------------------------------------- */

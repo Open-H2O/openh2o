@@ -1,0 +1,35 @@
+{% load humanize %}{% comment %}
+  The map coverage note, in a block with an id inside the map card: under the
+  filters in the card's left column, or under the filters row when no facility
+  has a location. The page includes it once; `_facility_results.html` includes
+  it again with oob=True on an htmx request, so it follows every swap of
+  #results (UAT-001: it once went stale outside #results).
+{% endcomment %}<div id="facilities-map-note" class="facility-map-note{% if not located_count %} facility-map-note--wide{% endif %}"{% if oob %} hx-swap-oob="true"{% endif %}>{% if mapped_facility_count %}
+<p class="page-description">
+  Only facilities with a location recorded are on the map. The state&rsquo;s
+  Groundwater Ambient Monitoring and Assessment Program (GAMA) publishes
+  coordinates for groundwater sources only.
+</p>
+{% if q or facility_type or activity_status %}
+<p class="page-description">
+  {% if total_count and not result_located_count %}{# 2026-10-18: a filter whose results have no location (approved row). #}
+  The map follows the list: {{ total_count|intcomma }}
+  facilit{{ total_count|pluralize:"y,ies" }}{% if facility_type %} of that type{% endif %}{% if activity_status %} with that status{% endif %}
+  {% if q %}match{{ total_count|pluralize:"es," }} &ldquo;{{ q }}&rdquo;{% else %}{{ total_count|pluralize:"is,are" }} listed{% endif %}, and {% if total_count == 1 %}it has{% else %}they have{% endif %} no location recorded.
+  {% else %}
+  The map follows the list: showing {{ total_count|intcomma }}
+  facilit{{ total_count|pluralize:"y,ies" }}{% if q %} matching &ldquo;{{ q }}&rdquo;{% endif %}{% if facility_type %} of that type{% endif %}{% if activity_status %} with that status{% endif %},
+  {% if result_located_count == total_count %}all{% else %}{{ result_located_count|intcomma }} of them{% endif %} with a location.
+  {% endif %}
+</p>
+{% endif %}
+{% elif total_facility_count %}{# A site with no facilities shows the empty page below, not this #}
+<p class="page-description">
+  No facility on this site has a location recorded, so this page cannot show
+  a map yet. The state&rsquo;s Groundwater Ambient Monitoring and Assessment
+  Program (GAMA) publishes coordinates for groundwater sources only, and EPA&rsquo;s
+  Envirofacts record carries none. An administrator enters a facility&rsquo;s
+  location at /admin/ under Drinking Water &gt; System Facilities.
+</p>
+{% endif %}
+</div>

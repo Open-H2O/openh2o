@@ -1,0 +1,59 @@
+{% comment %}
+  The three controls: Search, Type and Status. One partial, because the page
+  places them three ways (in the map card's left column, in one row when no
+  facility has a location, and in the plain card when there is no facility
+  at all), and the ids and `hx-include` lists must not differ between them.
+  Both selects are built in the view from the types PRESENT in the database,
+  not from the models' full choices tables. Read
+  drinking/views/facilities.py::_present_choices before changing that: a full
+  FACILITY_TYPE_CHOICES list renders the option text "Well", "Clear Well" and
+  "Wellhead" on every load, including an empty database, and the droppability
+  vocabulary gate reads option text as page prose.
+{% endcomment %}
+<div class="facility-filter-search">
+  <label class="form-label" for="filter-search">Search</label>
+  <input
+    type="text"
+    id="filter-search" name="q"
+    value="{{ q }}"
+    placeholder="Facility ID or name..."
+    hx-get="{% url 'drinking:facilities' %}"
+    hx-target="#results"
+    hx-trigger="keyup changed delay:300ms"
+    hx-include="#filter-facility-type, #filter-activity-status"
+    autocomplete="off"
+    class="form-input search-input-icon"
+  >
+</div>
+<div>
+  <label class="form-label" for="filter-facility-type">Type</label>
+  <select
+    id="filter-facility-type" name="facility_type"
+    hx-get="{% url 'drinking:facilities' %}"
+    hx-target="#results"
+    hx-trigger="change"
+    hx-include="#filter-search, #filter-activity-status"
+    class="form-select"
+  >
+    <option value="" {% if not facility_type %}selected{% endif %}>All Types</option>
+    {% for val, label in facility_type_choices %}
+      <option value="{{ val }}" {% if facility_type == val %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+</div>
+<div>
+  <label class="form-label" for="filter-activity-status">Status</label>
+  <select
+    id="filter-activity-status" name="activity_status"
+    hx-get="{% url 'drinking:facilities' %}"
+    hx-target="#results"
+    hx-trigger="change"
+    hx-include="#filter-search, #filter-facility-type"
+    class="form-select"
+  >
+    <option value="" {% if not activity_status %}selected{% endif %}>All Statuses</option>
+    {% for val, label in activity_status_choices %}
+      <option value="{{ val }}" {% if activity_status == val %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+</div>

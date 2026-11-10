@@ -5,6 +5,7 @@
 
 {% block title %}Facilities - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Facilities{% endblock %}
+{% block page_actions %}{% if user_can_write %}<a href="{% url 'drinking:facility_add' %}" class="btn-secondary btn-sm">+ Add facility</a>{% endif %}{% endblock %}
 
 {% comment %}
 Loading a map library is the real cost of
@@ -44,68 +45,6 @@ nobody would notice until one of them broke.
 <div class="page-stack page-wide">
 
   {% comment %}
-  Both selects are built in the view from the types PRESENT in the database, not
-  from the models' full choices tables. Read drinking/views/facilities.py::_present_choices
-  before changing that — a full FACILITY_TYPE_CHOICES list renders the option
-  text "Well", "Clear Well" and "Wellhead" on every load, including an empty
-  database, and the droppability vocabulary gate reads option text as page prose.
-  {% endcomment %}
-  <div class="card-raised toolbar-row">
-    <div style="flex: 1; min-width: 200px;">
-      <label class="form-label" for="filter-search">Search</label>
-      <input
-        type="text"
-        id="filter-search" name="q"
-        value="{{ q }}"
-        placeholder="Facility ID or name..."
-        hx-get="{% url 'drinking:facilities' %}"
-        hx-target="#results"
-        hx-trigger="keyup changed delay:300ms"
-        hx-include="#filter-facility-type, #filter-activity-status"
-        autocomplete="off"
-        class="form-input search-input-icon"
-      >
-    </div>
-    <div>
-      <label class="form-label" for="filter-facility-type">Type</label>
-      <select
-        id="filter-facility-type" name="facility_type"
-        hx-get="{% url 'drinking:facilities' %}"
-        hx-target="#results"
-        hx-trigger="change"
-        hx-include="#filter-search, #filter-activity-status"
-        class="form-select"
-      >
-        <option value="" {% if not facility_type %}selected{% endif %}>All Types</option>
-        {% for val, label in facility_type_choices %}
-          <option value="{{ val }}" {% if facility_type == val %}selected{% endif %}>{{ label }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div>
-      <label class="form-label" for="filter-activity-status">Status</label>
-      <select
-        id="filter-activity-status" name="activity_status"
-        hx-get="{% url 'drinking:facilities' %}"
-        hx-target="#results"
-        hx-trigger="change"
-        hx-include="#filter-search, #filter-facility-type"
-        class="form-select"
-      >
-        <option value="" {% if not activity_status %}selected{% endif %}>All Statuses</option>
-        {% for val, label in activity_status_choices %}
-          <option value="{{ val }}" {% if activity_status == val %}selected{% endif %}>{{ label }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    {% if user_can_write %}
-    <div style="margin-left: auto; align-self: flex-end;">
-      <a href="{% url 'drinking:facility_add' %}" class="btn-secondary">+ Add facility</a>
-    </div>
-    {% endif %}
-  </div>
-
-  {% comment %}
   The overview map card: the head (the count line and the key on one
   row, partials/_map_card_head.html) above the map. The map and the list are
   both FACILITIES here — a 1:1 correspondence the Sampling Points page does
@@ -121,7 +60,7 @@ nobody would notice until one of them broke.
   `drinking:facilities_geojson` takes no parameters, so the filtering happens
   client-side, the same way every other Bucket-3 map's does:
   OH2O.followResults narrows what the map DRAWS to the list's own pks, and
-  the sentence in `_facility_results.html` names the located subset of
+  the note in `_facility_note.html` names the located subset of
   the list, so the map and the table do not contradict each other.
   
 
@@ -130,33 +69,56 @@ nobody would notice until one of them broke.
   text. That has shipped to openh2o.com once, and
   `test_no_template_ships_a_multi_line_django_comment` now guards it.
   {% endcomment %}
-  {% comment %} No records at all, no map card: its head would only say nothing has a location. {% endcomment %}{% if all_count %}
+  {% comment %}
+  The map card holds the controls, the note and the map. A site with no
+  facility at all has no map card, so the controls keep a plain card of their
+  own: its head would only say nothing has a location.
+  {% endcomment %}
+  {% if not all_count %}
+  <div class="card-raised toolbar-row">
+    {% include "drinking/partials/_facility_filters.html" %}
+  </div>
+  {% else %}
   <div class="card-raised" style="padding: 0; overflow: hidden;">
     {% include "partials/_map_card_head.html" with head_id="facilities-map-head" title="Facilities" noun="facility" noun_plural="facilities" key_label="Facility" swatch="dot" swatch_token="blue-bright" %}
     {% if located_count %}
-    <div id="drinking-facilities-map" style="height: 380px; width: 100%;"></div>
+    {% comment %}
+    Two columns under the head: the controls and the note at the left, the map
+    at the right. One column below 1,100px, the controls above the map.
+    {% endcomment %}
+    <div class="facility-map-split">
+      <div class="facility-map-aside">
+        {% include "drinking/partials/_facility_filters.html" %}
+        {% include "drinking/partials/_facility_note.html" %}
+      </div>
+      <div id="drinking-facilities-map" style="height: 400px; width: 100%;"></div>
+    </div>
+    {% else %}
+    {% comment %} No located facility: no map column. The controls in one row, then the no-location sentence. {% endcomment %}
+    <div class="toolbar-row facility-map-toolbar">
+      {% include "drinking/partials/_facility_filters.html" %}
+    </div>
+    {% include "drinking/partials/_facility_note.html" %}
     {% endif %}
   </div>
   {% endif %}
 
   {% comment %}
-  THE SENTENCE LIVES IN `_facility_results.html`, INSIDE #results, and the map
-  does not. That split is not tidiness — it is the fix for UAT-001 (found by
-  a verification pass on 2026-08-27, staging `8c32906`).
+  THE NOTE IS A BLOCK WITH AN ID INSIDE THE MAP CARD, and `_facility_results.html`
+  re-renders it out of band on every swap of #results (UAT-001, found by a
+  verification pass on 2026-08-27, staging `8c32906`). The map stays OUTSIDE
+  #results and the note follows it by that out-of-band swap.
 
-  Both halves of it matter and they pull opposite ways:
+  Both halves matter and they pull opposite ways:
 
-  * The MAP must stay OUTSIDE, because all four controls here are
+  * The MAP must stay OUTSIDE #results, because all four controls here are
     `hx-target="#results"` and a map inside would be torn down and rebuilt on
     every keystroke.
-  * The SENTENCE must be INSIDE, because it quotes `total_count` — the number
-    of rows the list is showing — and an htmx swap re-renders nothing but
-    #results. Outside, it never updated: typing `WELL 01` dropped the table to
-    6 rows while the sentence still read "21 of the 61" and the map still drew
-    21 dots, with nothing explaining the mismatch. That is exactly the
-    confusion the divergence clause was ruled into existence to prevent, and it
-    was invisible on a full `?q=` page load — which is what every guard and
-    every manual check had used.
+  * The NOTE quotes `total_count`, the number of rows the list is showing, and
+    an htmx swap re-renders nothing but #results, so on its own it never
+    updated: typing `WELL 01` dropped the table to 6 rows while the note still
+    read "21 of the 61" and the map still drew 21 dots. The out-of-band
+    re-render keeps it current, and a full `?q=` page load renders it here.
 
   `core/workspace.py::list_response` hands the SAME context dict to the page
   template and the results partial, so the partial already had every count it
