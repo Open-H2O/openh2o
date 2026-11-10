@@ -62,6 +62,9 @@ Section 9 explains the choice.
 The commands in this section change the computer itself, so each starts with `sudo`,
 the Linux command that runs the next command with administrator rights.
 
+<!-- defines: apt_get -->
+`apt-get` is the program that installs software on Ubuntu.
+
 The commands are written for Ubuntu 24.04 LTS, the operating system named in
 section 1 of [DEPLOY.md](../DEPLOY.md). Other Linux distributions give these
 packages different names, and some ship different versions. On another distribution,
@@ -301,6 +304,19 @@ its owner:
 ```bash
 sudo mkdir -p /var/log/openh2o
 sudo chown "$USER" /var/log/openh2o
+```
+
+`OPENH2O_MODULES` lists the sections of OpenH2O that the site runs. When `.env` has
+no `OPENH2O_MODULES` line, the site runs every section except `reporting`. An
+organization that runs only a drinking-water system can switch water accounting off.
+The sections `parcels` and `accounting` go on or off together. The sections `wells`,
+`datasync`, `surface`, `recharge` and `reporting` need `parcels` and `accounting`. To
+switch water accounting off, leave `parcels`, `accounting` and the five sections that
+need them out of `OPENH2O_MODULES`. The site keeps the sign-in, the map and Drinking
+water. Add this line to `.env` for a drinking-water system without water accounting:
+
+```bash
+OPENH2O_MODULES=core,geography,measurements,standards,drinking,setup,infrastructure,health,feedback
 ```
 
 <!-- defines: environment_variable --><!-- defines: terminal -->

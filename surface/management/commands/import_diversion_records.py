@@ -15,6 +15,9 @@ from django.core.management.base import BaseCommand, CommandError
 from surface.diversion_import import import_diversion_rows, parse_csv
 from surface.models import PointOfDiversion
 
+#: The key `surface.diversion_import` files records under when no water year covers them.
+NO_WATER_YEAR = "No water year assigned"
+
 
 class Command(BaseCommand):
     help = "Import diversion records (the state's Water Use Reported layout or a ditch tender's book) from a CSV file."
@@ -102,6 +105,15 @@ class Command(BaseCommand):
                 f"{len(result['unresolved_rows'])} row(s) unresolved"
             )
         )
+        not_in_a_water_year = result["periods_attached"].get(NO_WATER_YEAR, 0)
+        if not dry_run and not_in_a_water_year:
+            self.stdout.write(
+                self.style.WARNING(
+                    f"{not_in_a_water_year} record(s) are not in a water year yet. "
+                    "Create each water year that covers their months with "
+                    "create_water_year. OpenH2O then attaches them."
+                )
+            )
         if result["use_rows_present"]:
             self.stdout.write(
                 f"  {result['use_rows_present']} USE row(s) in this file; "
@@ -128,4 +140,6 @@ class Command(BaseCommand):
         for err in result["errors"]:
             self.stdout.write(self.style.ERROR(f"  Row {err['line']}: {err['message']}"))
         for period_name, count in result["periods_attached"].items():
+            if period_name == NO_WATER_YEAR:
+                continue
             self.stdout.write(f"  {count} record(s) attached to '{period_name}'")

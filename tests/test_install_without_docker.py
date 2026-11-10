@@ -497,3 +497,25 @@ def test_every_exclusion_carries_a_reason():
         "the form 'class — why', and put the evidence in "
         "112-02-DEPENDENCY-DERIVATION.md."
     )
+
+
+def test_section_7_holds_the_operator_guides_drinking_water_modules_line():
+    """ISS-388: a drinking-water-only site is told the same `OPENH2O_MODULES` line on both paths.
+
+    The line is read from `docs/AI-OPERATOR-GUIDE.md`, the document that owns it,
+    so the two guides cannot drift apart.
+    """
+    operator_guide = (REPO_ROOT / "docs" / "AI-OPERATOR-GUIDE.md").read_text()
+    guide_lines = [
+        line for line in operator_guide.splitlines()
+        if line.startswith("OPENH2O_MODULES=core")
+    ]
+    assert len(guide_lines) == 1, "the operator guide must hold exactly one OPENH2O_MODULES=core line"
+
+    document = (REPO_ROOT / "docs" / "INSTALL-WITHOUT-DOCKER.md").read_text()
+    section_7 = document.split("## 7. Settings", 1)[1].split("\n## 8.", 1)[0]
+    section_lines = [
+        line for line in section_7.splitlines() if line.startswith("OPENH2O_MODULES=")
+    ]
+
+    assert section_lines == guide_lines

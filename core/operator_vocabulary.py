@@ -40,6 +40,8 @@ RUN_003 = "x86-blind-run-003"
 RUN_004 = "arm64-local-run-004"
 #: The fifth clean-room run (x86, a stranger starting from the repository).
 RUN_005 = "x86-stranger-run-005"
+#: The eighth clean-room run (x86, the water system's stranger on the fixed repository).
+RUN_008 = "x86-stranger-run-008"
 
 
 @dataclass(frozen=True)
@@ -579,6 +581,13 @@ TERMS: tuple = (
             "result, so you can see what it would change before it changes "
             "anything."
         ),
+    ),
+    OperatorTerm(
+        slug="apt_get",
+        label="apt-get",
+        patterns=(r"\bapt-get\b", r"\bapt\b"),
+        reported_by=(RUN_008,),
+        plain_english="apt-get is the program that installs software on Ubuntu.",
     ),
 )
 

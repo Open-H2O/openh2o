@@ -24,6 +24,9 @@ every command in this guide that begins `docker compose` runs it. A command that
 begins `sudo` runs with administrator rights. Installing software on the server
 needs those rights.
 
+<!-- defines: apt_get -->
+`apt-get` is the program that installs software on Ubuntu.
+
 | Requirement | Minimum |
 |-------------|---------|
 | Operating system | Ubuntu 22.04 or newer (the commands here are written for 24.04) |

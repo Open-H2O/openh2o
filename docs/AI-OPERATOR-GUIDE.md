@@ -310,19 +310,19 @@ travels only over HTTPS. The command below works in every setup:
 ```bash
 docker compose exec web python manage.py shell -c "
 from django.test import Client
-c = Client(SERVER_NAME='water.example.org', secure=True)
+c = Client(SERVER_NAME='water.example.org', HTTP_X_FORWARDED_PROTO='https')
 r = c.post('/accounts/login/', {'login': 'ADMIN_EMAIL', 'password': 'ADMIN_PASSWORD'})
 print(r.status_code)
 "
 ```
 
-In place of `water.example.org`, give an address from `ALLOWED_HOSTS`. On a site
-without HTTPS, use `SERVER_NAME='localhost'` and leave out `secure=True`. `localhost`
-works on every site, because the production settings add it to `ALLOWED_HOSTS`. Put
-the administrator's email address and password in place of `ADMIN_EMAIL` and
-`ADMIN_PASSWORD`. The command prints 302 when the sign-in works. It prints 200 when
-the sign-in form came back, which usually means the email address or password is
-wrong.
+`HTTP_X_FORWARDED_PROTO='https'` marks the test sign-in as an HTTPS request. In place
+of `water.example.org`, give an address from `ALLOWED_HOSTS`. On a site without
+HTTPS, use `SERVER_NAME='localhost'`. `localhost` works on every site, because the
+production settings add it to `ALLOWED_HOSTS`. Put the administrator's email address
+and password in place of `ADMIN_EMAIL` and `ADMIN_PASSWORD`. The command prints 302
+when the sign-in works. It prints 200 when the sign-in form came back, which usually
+means the email address or password is wrong.
 
 ---
 
@@ -492,7 +492,7 @@ saves the file at once unless you tick Dry run.
 | The state's sampling schedule | `import_schedule` or `/drinking/schedule/import/` | The command and the screen read the Last and Next Sample Report from California's Division of Drinking Water. A newer file changes the frequency and dates of rows already on the schedule. |
 | A year of production by month and source | `/drinking/production/import/`, or `import_production` | It reads an eAR export or a monthly log. The screen and the command both save to the site's water system. The command needs `--pwsid` only when someone has added a second system another way, such as on the administration site. |
 | Past ledger entries, as a CSV file | `import_ledger_csv`, or the Upload CSV page of the Use Ledger (`/accounting/ledger/upload/`) | The Upload CSV page imports the file at once unless you tick Dry run. Each entry counts in the water year its date falls in. Create the water years first with `create_water_year` or under Water accounting > Water Years. An entry dated outside every water year belongs to none until someone creates a water year that covers its date. With `--reporting-period` and a water year's name, the command imports only the rows dated inside that water year. |
-| A year of diversion volumes, in California's Water Use Reported export or the organization's own book of deliveries | `/surface/diversion/import/`, or `import_diversion_records` | OpenH2O recognizes either layout by its column headings, and the preview lists the conversions OpenH2O made. Set the report year first, as the next paragraph describes. |
+| A year of diversion volumes, in California's Water Use Reported export or the organization's own book of deliveries | `/surface/diversion/import/`, or `import_diversion_records` | OpenH2O recognizes either layout by its column headings, and the preview lists the conversions OpenH2O made. Set the report year first, as the next paragraph describes. Then create each water year the file covers with `create_water_year` or under Water accounting > Water Years. When you create a water year, OpenH2O attaches each record dated inside it that is not yet in a water year. |
 
 Before you import diversion records, ask how the organization counts a reporting year:
 as an October-to-September water year, a calendar year, or an irrigation season that
