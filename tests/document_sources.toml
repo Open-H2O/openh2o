@@ -109,7 +109,7 @@ files = [
   "crontab.txt",
 ]
 labels = []
-checked_at = "59b5fce9"
+checked_at = "bf4a79a9"
 
 [[section]]
 document = "README.md"
@@ -570,7 +570,7 @@ files = [
   "crontab.txt",
 ]
 labels = []
-checked_at = "d09cd007"
+checked_at = "bf4a79a9"
 
 [[section]]
 document = "DEPLOY.md"
@@ -1170,7 +1170,7 @@ labels = [
   { text = "Use ledger", where = "templates/accounting/ledger_list.html" },
   { text = "Dry run", where = "templates/accounting/csv_upload.html" },
 ]
-checked_at = "59b5fce9"
+checked_at = "bf4a79a9"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1309,7 +1309,7 @@ labels = [
   { text = "Reporting year", where = "templates/accounting/delivery_settings.html" },
   { text = "Data status", where = "templates/surface/partials/_diversion_import_preview.html" },
 ]
-checked_at = "59b5fce9"
+checked_at = "bf4a79a9"
 
 [[section]]
 document = "docs/DATA-IMPORT.md"
@@ -1805,7 +1805,7 @@ files = [
   "config/urls.py",
 ]
 labels = []
-checked_at = "59b5fce9"
+checked_at = "bf4a79a9"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -1937,7 +1937,7 @@ labels = [
   { text = "Delivery Settings", where = "core/modules.py" },
   { text = "Reporting year", where = "templates/accounting/delivery_settings.html" },
 ]
-checked_at = "59b5fce9"
+checked_at = "bf4a79a9"
 
 [[section]]
 document = "docs/AI-OPERATOR-GUIDE.md"
@@ -2195,7 +2195,7 @@ files = [
   "config/settings/base.py",
 ]
 labels = []
-checked_at = "3a340c75"
+checked_at = "bf4a79a9"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
@@ -2246,7 +2246,7 @@ files = [
   "Dockerfile",
 ]
 labels = []
-checked_at = "3a340c75"
+checked_at = "bf4a79a9"
 
 [[section]]
 document = "docs/INSTALL-WITHOUT-DOCKER.md"
