@@ -4623,17 +4623,7 @@ details[open] > summary .disclosure-mark {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-xl);
-    align-items: stretch;
-}
-/* The system's fields spread down the left column so both columns end on one
-   line. */
-.onboard-holds-split > div:first-child {
-    display: flex;
-    flex-direction: column;
-}
-.onboard-holds-split > div:first-child > .field-grid-2 {
-    flex: 1;
-    align-content: space-between;
+    align-items: start;
 }
 /* Each column's first heading sits right under the card head's rule. */
 .onboard-holds-split > div > :first-child {
@@ -5489,9 +5479,11 @@ details[open] > summary .disclosure-mark {
     margin-top: var(--space-md);
 }
 /* The panel runs the full height of the fields beside it; neither side's rows
-   spread to fill the height. */
+   spread to fill the height. The fields start as far down as the panel's own
+   first label, so the three columns share a top line. */
 .record-split > .field-grid-auto {
     align-content: start;
+    padding-top: var(--space-lg);
 }
 .record-split-inset {
     padding: var(--space-lg);
@@ -5512,6 +5504,9 @@ details[open] > summary .disclosure-mark {
 @media (max-width: 1100px) {
     .record-split {
         grid-template-columns: minmax(0, 1fr);
+    }
+    .record-split > .field-grid-auto {
+        padding-top: 0;
     }
 }
 
