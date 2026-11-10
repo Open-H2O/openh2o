@@ -4496,7 +4496,7 @@ details[open] > summary .disclosure-mark {
    narrowest facility list still needs to read without wrapping. */
 .sp-add-form {
     display: grid;
-    grid-template-columns: minmax(14rem, 1.5fr) minmax(8rem, 11rem) minmax(12rem, 1fr) minmax(9rem, 12rem) auto;
+    grid-template-columns: minmax(16rem, 2fr) minmax(8rem, 10rem) minmax(11rem, 1fr) minmax(8rem, 10rem) auto;
     gap: var(--space-sm) var(--space-md);
     align-items: start;
 }
@@ -4623,7 +4623,17 @@ details[open] > summary .disclosure-mark {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-xl);
-    align-items: start;
+    align-items: stretch;
+}
+/* The system's fields spread down the left column so both columns end on one
+   line. */
+.onboard-holds-split > div:first-child {
+    display: flex;
+    flex-direction: column;
+}
+.onboard-holds-split > div:first-child > .field-grid-2 {
+    flex: 1;
+    align-content: space-between;
 }
 /* Each column's first heading sits right under the card head's rule. */
 .onboard-holds-split > div > :first-child {
@@ -5475,8 +5485,13 @@ details[open] > summary .disclosure-mark {
     display: grid;
     grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
     gap: var(--space-lg);
-    align-items: start;
+    align-items: stretch;
     margin-top: var(--space-md);
+}
+/* The panel runs the full height of the fields beside it; neither side's rows
+   spread to fill the height. */
+.record-split > .field-grid-auto {
+    align-content: start;
 }
 .record-split-inset {
     padding: var(--space-lg);
@@ -5484,6 +5499,12 @@ details[open] > summary .disclosure-mark {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     column-gap: var(--space-lg);
+    align-content: start;
+}
+/* A long address keeps to one line and its Copy button drops under it, so the
+   address never breaks before its last few characters. */
+.record-split-inset .field-row {
+    flex-wrap: wrap;
 }
 .record-split-inset > .record-split-wide {
     grid-column: 1 / -1;
